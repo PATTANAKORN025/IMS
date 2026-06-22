@@ -10,13 +10,9 @@ route:
 
 receivers:
   - name: 'default'
-    email_configs:
-      - to: 'admin@example.com'
-        from: 'alertmanager@example.com'
-        smarthost: 'smtp.example.com:587'
-        auth_username: 'alertmanager@example.com'
-        auth_password: 'password'
-        require_tls: true
+    webhook_configs:
+      - url: 'https://localhost:9095/webhook'
+        send_resolved: true
 
 inhibit_rules:
   - source_match:
