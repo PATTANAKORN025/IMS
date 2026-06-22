@@ -61,18 +61,25 @@
             },
             "tours": {
                 "welcome": "5.0.0"
+            },
+            "dialog": {
+                "export": {
+                    "pretty": true,
+                    "json-view": false
+                }
             }
         },
         "menu-menu-item-right-sidebar": true,
         "menu-menu-item-left-sidebar": true,
         "telemetryEnabled": true,
         "debug": {
-            "filter": "filterSelected",
+            "filter": "filterAll",
             "filteredNodes": [
                 "debug_windows",
                 "d348ccfd73fdeb13",
                 "78a864f2049e5fdc"
             ]
-        }
+        },
+        "menu-menu-item-sidebar": false
     }
 }
