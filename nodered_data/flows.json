@@ -1,109 +1,40 @@
 [
     {
-        "id": "1fab305bdc2941bf",
+        "id": "8bf5bf82223c02d8",
         "type": "tab",
-        "label": "WINDOWS SERVER",
+        "label": "ERP-MASTER-UBUNTU",
         "disabled": false,
         "info": "",
         "env": []
     },
     {
-        "id": "5d6cdfc2514b73b3",
-        "type": "tab",
-        "label": "UBUNTU SERVER",
-        "disabled": false,
-        "info": "",
-        "env": []
-    },
-    {
-        "id": "group_windows",
+        "id": "group_world_class",
         "type": "group",
-        "z": "1fab305bdc2941bf",
-        "name": "Windows Server (SNMP Sim)",
+        "z": "8bf5bf82223c02d8",
+        "name": " SNMP Pipeline",
         "style": {
-            "stroke": "#0078D7",
-            "fill": "#e3f2fd",
-            "label": true
+            "stroke": "#004D40",
+            "fill": "#E0F2F1",
+            "label": true,
+            "label-position": "n",
+            "color": "#004D40"
         },
         "nodes": [
+            "inject_ubuntu",
             "inject_windows",
-            "snmp_windows",
-            "function_windows",
-            "debug_windows"
+            "walk_cpu",
+            "parse_cpu",
+            "walk_storage",
+            "parse_storage_sql",
+            "insert_db",
+            "debug_success",
+            "catch_all",
+            "debug_error"
         ],
-        "x": 66,
-        "y": 71,
-        "w": 940,
-        "h": 82
-    },
-    {
-        "id": "f5b1cf4f02cb3562",
-        "type": "group",
-        "z": "5d6cdfc2514b73b3",
-        "name": "🏭 Ubuntu Server (ERP-MASTER) Monitoring",
-        "style": {
-            "stroke": "#009688",
-            "fill": "#e0f2f1",
-            "label": true,
-            "label-position": "n",
-            "color": "#004d40"
-        },
-        "nodes": [
-            "c1520ead82ffcbfb",
-            "6d3f12d82b9c88e8",
-            "1d5c5568f1c714e1",
-            "138b51f3945922ae",
-            "8b98f75e8e9b9b63",
-            "f492e6171fc075e8",
-            "1dc065c42a7850c8",
-            "d348ccfd73fdeb13"
-        ],
-        "x": 34,
-        "y": 71,
-        "w": 1052,
-        "h": 178
-    },
-    {
-        "id": "3ab368bf52877761",
-        "type": "group",
-        "z": "1fab305bdc2941bf",
-        "name": "🏭 Windows Server Monitoring",
-        "style": {
-            "stroke": "#1976D2",
-            "fill": "#e3f2fd",
-            "label": true,
-            "label-position": "n",
-            "color": "#0d47a1"
-        },
-        "nodes": [
-            "42596929a4855334",
-            "dd54e5b48f68bd6f",
-            "6cc66299075cd3e4",
-            "78a864f2049e5fdc"
-        ],
-        "x": 66,
-        "y": 183,
-        "w": 1046,
-        "h": 82
-    },
-    {
-        "id": "c3fc81d23aedfd2f",
-        "type": "ui_group",
-        "name": "machine 10.20.12.33",
-        "tab": "8b552cc4472db1f1",
-        "order": 1,
-        "disp": true,
-        "width": 6,
-        "collapse": true,
-        "className": ""
-    },
-    {
-        "id": "8b552cc4472db1f1",
-        "type": "ui_tab",
-        "name": "Machine Status",
-        "icon": "dashboard",
-        "disabled": false,
-        "hidden": false
+        "x": 2,
+        "y": 55,
+        "w": 1494,
+        "h": 242
     },
     {
         "id": "1e85a2c10bfc324b",
@@ -127,7 +58,8 @@
                 "name": "Untitled Theme 1",
                 "default": "#4B7930",
                 "baseColor": "#4B7930",
-                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif"
+                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif",
+                "edited": false
             },
             "themeState": {
                 "base-color": {
@@ -203,83 +135,176 @@
         }
     },
     {
-        "id": "709dc66b63e2bec5",
-        "type": "global-config",
-        "env": []
+        "id": "c512f7e9e484ea58",
+        "type": "postgreSQLConfig",
+        "name": "IMS Database",
+        "host": "ims-timescaledb",
+        "hostFieldType": "str",
+        "port": "5432",
+        "portFieldType": "num",
+        "database": "ims-timescaledb",
+        "databaseFieldType": "str",
+        "ssl": "false",
+        "sslFieldType": "bool",
+        "applicationName": "",
+        "applicationNameType": "str",
+        "max": "10",
+        "maxFieldType": "num",
+        "idle": "1000",
+        "idleFieldType": "num",
+        "connectionTimeout": "10000",
+        "connectionTimeoutFieldType": "num",
+        "user": "postgres",
+        "userFieldType": "str",
+        "password": "password",
+        "passwordFieldType": "str"
+    },
+    {
+        "id": "inject_ubuntu",
+        "type": "inject",
+        "z": "8bf5bf82223c02d8",
+        "g": "group_world_class",
+        "name": "Poll Ubuntu (10s)",
+        "props": [
+            {
+                "p": "machine_id",
+                "v": "ERP-MASTER-UBUNTU",
+                "vt": "str"
+            }
+        ],
+        "repeat": "10",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 1,
+        "topic": "",
+        "x": 138,
+        "y": 96,
+        "wires": [
+            [
+                "walk_cpu"
+            ]
+        ]
     },
     {
         "id": "inject_windows",
         "type": "inject",
-        "z": "1fab305bdc2941bf",
-        "g": "group_windows",
-        "name": "Poll Every 10s",
+        "z": "8bf5bf82223c02d8",
+        "g": "group_world_class",
+        "name": "Poll Windows (10s)",
         "props": [
             {
-                "p": "payload"
+                "p": "machine_id",
+                "v": "ERP-MASTER-WINDOWS",
+                "vt": "str"
             }
         ],
         "repeat": "10",
         "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
+        "once": true,
+        "onceDelay": 6,
         "topic": "",
-        "payload": "",
-        "payloadType": "date",
-        "x": 192,
-        "y": 112,
+        "x": 148,
+        "y": 176,
         "wires": [
             [
-                "snmp_windows"
+                "walk_cpu"
             ]
         ]
     },
     {
-        "id": "snmp_windows",
-        "type": "snmp",
-        "z": "1fab305bdc2941bf",
-        "g": "group_windows",
+        "id": "walk_cpu",
+        "type": "snmp walker",
+        "z": "8bf5bf82223c02d8",
+        "g": "group_world_class",
         "host": "ims-snmpsim",
         "version": "2c",
         "timeout": "5",
         "community": "Netk@",
         "auth": "noAuthNoPriv",
-        "oids": "1.3.6.1.2.1.25.3.3.1.2.1,1.3.6.1.2.1.25.2.2.0,1.3.6.1.2.1.25.2.3.1.6.1,1.3.6.1.2.1.25.2.3.1.5.2,1.3.6.1.2.1.25.2.3.1.6.2",
-        "name": "SNMP Windows",
-        "x": 392,
-        "y": 112,
+        "oids": "1.3.6.1.2.1.25.3.3.1.2",
+        "name": "1. Walk All CPU Cores",
+        "x": 440,
+        "y": 96,
         "wires": [
             [
-                "function_windows"
+                "parse_cpu"
             ]
         ]
     },
     {
-        "id": "function_windows",
+        "id": "parse_cpu",
         "type": "function",
-        "z": "1fab305bdc2941bf",
-        "g": "group_windows",
-        "name": "Parse & Clean Windows Data",
-        "func": "// 1. Defensive Coding: ตรวจสอบความถูกต้องของ Payload\nif (!msg.payload) {\n    node.warn(\"ไม่มีข้อมูล Payload จาก Windows SNMP\");\n    return null;\n}\n\nif (msg.payload.error) {\n    node.error(\"SNMP Windows Error: \" + msg.payload.error);\n    return null;\n}\n\n// 2. แปลงเป็น Array เสมอ\nlet data = Array.isArray(msg.payload) ? msg.payload : [msg.payload];\n\n// 3. ตรวจสอบว่าได้ข้อมูลครบ 5 ตัวตาม OID หรือไม่\nif (data.length < 5) {\n    node.warn(\"⚠️ ข้อมูล Windows มาไม่ครบ 5 ตัว ได้มาแค่: \" + data.length + \" ตัว\");\n    return null;\n}\n\ntry {\n    // 4. ดึงข้อมูลทีละตัว (ป้องกันค่า undefined ด้วย || 0)\n    let cpuLoad    = parseFloat(data[0].value || 0);\n    let ramTotalKB = parseFloat(data[1].value || 0);\n    let ramUsedKB  = parseFloat(data[2].value || 0);\n    let diskTotalKB= parseFloat(data[3].value || 0);\n    let diskUsedKB = parseFloat(data[4].value || 0);\n\n    // 5. คำนวณหน่วย RAM (KB -> MB)\n    let ramTotalMB = (ramTotalKB / 1024).toFixed(2);\n    let ramUsedMB  = (ramUsedKB / 1024).toFixed(2);\n    let ramFreeMB  = (parseFloat(ramTotalMB) - parseFloat(ramUsedMB)).toFixed(2);\n\n    // 6. คำนวณหน่วย Disk (KB -> GB)\n    let diskTotalGB = (diskTotalKB / 1048576).toFixed(2);\n    let diskUsedGB  = (diskUsedKB / 1048576).toFixed(2);\n    let diskFreeGB  = (parseFloat(diskTotalGB) - parseFloat(diskUsedGB)).toFixed(2);\n\n    // 7. จัดรูปแบบ JSON Output ให้สวยงาม\n    msg.payload = {\n        machine_id: \"ERP-Windows-Simulator\",\n        cpu_load_percent: cpuLoad,\n        memory: {\n            total_mb: parseFloat(ramTotalMB),\n            used_mb: parseFloat(ramUsedMB),\n            free_mb: parseFloat(ramFreeMB)\n        },\n        disk: {\n            total_gb: parseFloat(diskTotalGB),\n            used_gb: parseFloat(diskUsedGB),\n            free_gb: parseFloat(diskFreeGB)\n        },\n        timestamp: new Date().toISOString()\n    };\n\n    // --- ส่วนนี้เตรียมไว้สำหรับเสียบเข้าโหนด PostgreSQL ---\n    msg.query = \"INSERT INTO ims.machine_telemetry (time, machine_id, cpu_load, ram_used_mb, disk_used_gb) VALUES (NOW(), $1, $2, $3, $4);\";\n    msg.params = [\n        msg.payload.machine_id,\n        msg.payload.cpu_load_percent,\n        msg.payload.memory.used_mb,\n        msg.payload.disk.used_gb\n    ];\n\n    return msg;\n\n} catch (error) {\n    node.error(\"💥 พังตอนแปลงข้อมูล Windows: \" + error.message);\n    return null;\n}",
+        "z": "8bf5bf82223c02d8",
+        "g": "group_world_class",
+        "name": "2. Aggregate Cores",
+        "func": "if (!msg.payload || !Array.isArray(msg.payload)) return null;\n\nlet totalLoad = 0;\nlet coreCount = 0;\nconst len = msg.payload.length;\n\nfor (let i = 0; i < len; i++) {\n    const item = msg.payload[i];\n    if (item.oid && item.oid.indexOf('25.3.3.1.2') !== -1) {\n        const val = Number(item.value);\n        if (Number.isFinite(val)) {\n            totalLoad += val;\n            coreCount++;\n        }\n    }\n}\n\nmsg.telemetry = {\n    machine_id: msg.machine_id,\n    cpu_cores: coreCount,\n    cpu_avg_load: coreCount > 0 ? Number((totalLoad / coreCount).toFixed(2)) : 0,\n    time_stamp: new Date().toISOString()\n};\n\nreturn msg;",
         "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 638,
-        "y": 112,
+        "x": 650,
+        "y": 96,
         "wires": [
             [
-                "debug_windows"
+                "walk_storage"
             ]
         ]
     },
     {
-        "id": "debug_windows",
+        "id": "walk_storage",
+        "type": "snmp walker",
+        "z": "8bf5bf82223c02d8",
+        "g": "group_world_class",
+        "host": "ims-snmpsim",
+        "version": "2c",
+        "timeout": "5",
+        "community": "Netk@",
+        "auth": "noAuthNoPriv",
+        "oids": "1.3.6.1.2.1.25.2.3.1",
+        "name": "3. Walk Storage/RAM",
+        "x": 860,
+        "y": 96,
+        "wires": [
+            [
+                "parse_storage_sql"
+            ]
+        ]
+    },
+    {
+        "id": "parse_storage_sql",
+        "type": "function",
+        "z": "8bf5bf82223c02d8",
+        "g": "group_world_class",
+        "name": "4. Parse & Format SQL",
+        "func": "if (!msg.payload || !Array.isArray(msg.payload)) return null;\n\nconst disks = {};\nconst len = msg.payload.length;\n\nfor (let i = 0; i < len; i++) {\n    const item = msg.payload[i];\n    if (!item || !item.oid) continue;\n\n    const parts = item.oid.split('.');\n    const idx = parts.pop();\n    const metricType = parts.pop();\n\n    if (!disks[idx]) disks[idx] = { type: \"\", descr: \"\", au: 0, size: 0, used: 0 };\n\n    switch(metricType) {\n        case \"2\": disks[idx].type = String(item.value); break;\n        case \"3\": disks[idx].descr = Buffer.isBuffer(item.value) ? item.value.toString('ascii') : String(item.value); break;\n        case \"4\": disks[idx].au = Number(item.value) || 0; break;\n        case \"5\": disks[idx].size = Number(item.value) || 0; break;\n        case \"6\": disks[idx].used = Number(item.value) || 0; break;\n    }\n}\n\nlet ramTotalMB = 0, ramUsedMB = 0;\nlet diskTotalGB = 0, diskUsedGB = 0;\n\nfor (const idx in disks) {\n    const d = disks[idx];\n    if (!d.au || !d.size) continue;\n\n    const sizeBytes = d.size * d.au;\n    const usedBytes = d.used * d.au;\n    const typeStr = d.type || \"\";\n    const descStr = (d.descr || \"\").toUpperCase();\n\n    if (typeStr.includes(\"25.2.1.2\") || descStr.includes(\"MEMORY\")) {\n        ramTotalMB += sizeBytes / 1048576;\n        ramUsedMB += usedBytes / 1048576;\n    } else if (typeStr.includes(\"25.2.1.4\") || descStr.includes(\"C:\") || descStr.includes(\"/\")) {\n        diskTotalGB += sizeBytes / 1073741824;\n        diskUsedGB += usedBytes / 1073741824;\n    }\n}\n\nconst t = msg.telemetry || {};\nt.ram_total_mb = Number(ramTotalMB.toFixed(2)) || 0;\nt.ram_used_mb = Number(ramUsedMB.toFixed(2)) || 0;\nt.ram_free_mb = Number((ramTotalMB - ramUsedMB).toFixed(2)) || 0;\nt.disk_total_gb = Number(diskTotalGB.toFixed(2)) || 0;\nt.disk_used_gb = Number(diskUsedGB.toFixed(2)) || 0;\nt.disk_free_gb = Number((diskTotalGB - diskUsedGB).toFixed(2)) || 0;\n\nmsg.payload = t;\n\nmsg.query = 'INSERT INTO public.machine_telemetry (\"time\", machine_id, cpu_cores, cpu_load_percent, ram_total_mb, ram_used_mb, ram_free_mb, disk_total_gb, disk_used_gb, disk_free_gb) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);';\n\nmsg.params = [\n    t.time_stamp,\n    t.machine_id,\n    t.cpu_cores,\n    t.cpu_avg_load,\n    t.ram_total_mb,\n    t.ram_used_mb,\n    t.ram_free_mb,\n    t.disk_total_gb,\n    t.disk_used_gb,\n    t.disk_free_gb\n];\n\nreturn msg;",
+        "outputs": 1,
+        "x": 1090,
+        "y": 96,
+        "wires": [
+            [
+                "insert_db",
+                "debug_success"
+            ]
+        ]
+    },
+    {
+        "id": "insert_db",
+        "type": "postgresql",
+        "z": "8bf5bf82223c02d8",
+        "g": "group_world_class",
+        "name": "TimescaleDB",
+        "query": "",
+        "postgreSQLConfig": "c512f7e9e484ea58",
+        "split": false,
+        "rowsPerMsg": 1,
+        "outputs": 0,
+        "x": 1382,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "debug_success",
         "type": "debug",
-        "z": "1fab305bdc2941bf",
-        "g": "group_windows",
-        "name": "Windows Output",
+        "z": "8bf5bf82223c02d8",
+        "g": "group_world_class",
+        "name": "Payload Sent",
         "active": true,
         "tosidebar": true,
         "console": false,
@@ -288,263 +313,40 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 880,
-        "y": 112,
+        "x": 1380,
+        "y": 96,
         "wires": []
     },
     {
-        "id": "42596929a4855334",
-        "type": "inject",
-        "z": "1fab305bdc2941bf",
-        "g": "3ab368bf52877761",
-        "name": "Poll Every 10s (Offset)",
-        "props": [
-            {
-                "p": "payload"
-            }
-        ],
-        "repeat": "10",
-        "crontab": "",
-        "once": true,
-        "onceDelay": "5",
-        "topic": "",
-        "payload": "",
-        "payloadType": "date",
-        "x": 222,
-        "y": 224,
+        "id": "catch_all",
+        "type": "catch",
+        "z": "8bf5bf82223c02d8",
+        "g": "group_world_class",
+        "name": "Catch Global Errors",
+        "scope": null,
+        "uncaught": false,
+        "x": 134,
+        "y": 256,
         "wires": [
             [
-                "dd54e5b48f68bd6f"
+                "debug_error"
             ]
         ]
     },
     {
-        "id": "dd54e5b48f68bd6f",
-        "type": "snmp",
-        "z": "1fab305bdc2941bf",
-        "g": "3ab368bf52877761",
-        "host": "ims-snmpsim",
-        "version": "2c",
-        "timeout": "5",
-        "community": "Netk@",
-        "auth": "noAuthNoPriv",
-        "oids": "1.3.6.1.2.1.25.3.3.1.2.1,1.3.6.1.2.1.25.2.2.0,1.3.6.1.2.1.25.2.3.1.6.1,1.3.6.1.2.1.25.2.3.1.5.2,1.3.6.1.2.1.25.2.3.1.6.2",
-        "name": "SNMP Windows",
-        "x": 458,
-        "y": 224,
-        "wires": [
-            [
-                "6cc66299075cd3e4"
-            ]
-        ]
-    },
-    {
-        "id": "6cc66299075cd3e4",
-        "type": "function",
-        "z": "1fab305bdc2941bf",
-        "g": "3ab368bf52877761",
-        "name": "Parse & Clean Windows Data",
-        "func": "if (!msg.payload) { return null; }\nif (msg.payload.error) { return null; }\n\nlet data = Array.isArray(msg.payload) ? msg.payload : [msg.payload];\nif (data.length < 5) { return null; }\n\ntry {\n    let cpuLoad    = parseFloat(data[0].value || 0);\n    let ramTotalKB = parseFloat(data[1].value || 0);\n    let ramUsedKB  = parseFloat(data[2].value || 0);\n    let diskTotalKB= parseFloat(data[3].value || 0);\n    let diskUsedKB = parseFloat(data[4].value || 0);\n\n    let ramTotalMB = (ramTotalKB / 1024).toFixed(2);\n    let ramUsedMB  = (ramUsedKB / 1024).toFixed(2);\n    let ramFreeMB  = (parseFloat(ramTotalMB) - parseFloat(ramUsedMB)).toFixed(2);\n\n    let diskTotalGB = (diskTotalKB / 1048576).toFixed(2);\n    let diskUsedGB  = (diskUsedKB / 1048576).toFixed(2);\n    let diskFreeGB  = (parseFloat(diskTotalGB) - parseFloat(diskUsedGB)).toFixed(2);\n\n    msg.payload = {\n        machine_id: \"Windows-Simulator\",\n        cpu_load_percent: cpuLoad,\n        ram_total_mb: parseFloat(ramTotalMB),\n        ram_used_mb: parseFloat(ramUsedMB),\n        ram_free_mb: parseFloat(ramFreeMB),\n        disk_total_gb: parseFloat(diskTotalGB),\n        disk_used_gb: parseFloat(diskUsedGB),\n        disk_free_gb: parseFloat(diskFreeGB),\n        timestamp: new Date().toISOString()\n    };\n\n    return msg;\n} catch (error) {\n    return null;\n}",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 748,
-        "y": 224,
-        "wires": [
-            [
-                "78a864f2049e5fdc"
-            ]
-        ]
-    },
-    {
-        "id": "78a864f2049e5fdc",
+        "id": "debug_error",
         "type": "debug",
-        "z": "1fab305bdc2941bf",
-        "g": "3ab368bf52877761",
-        "name": "Windows Output",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 986,
-        "y": 224,
-        "wires": []
-    },
-    {
-        "id": "c1520ead82ffcbfb",
-        "type": "inject",
-        "z": "5d6cdfc2514b73b3",
-        "g": "f5b1cf4f02cb3562",
-        "name": "Poll Every 10s",
-        "props": [
-            {
-                "p": "payload"
-            }
-        ],
-        "repeat": "10",
-        "crontab": "",
-        "once": true,
-        "onceDelay": 0.1,
-        "topic": "",
-        "payload": "",
-        "payloadType": "date",
-        "x": 160,
-        "y": 112,
-        "wires": [
-            [
-                "6d3f12d82b9c88e8"
-            ]
-        ]
-    },
-    {
-        "id": "6d3f12d82b9c88e8",
-        "type": "snmp",
-        "z": "5d6cdfc2514b73b3",
-        "g": "f5b1cf4f02cb3562",
-        "host": "ims-snmpsim",
-        "version": "2c",
-        "timeout": "5",
-        "community": "Netk@",
-        "auth": "noAuthNoPriv",
-        "oids": "1.3.6.1.4.1.2021.10.1.3.1,1.3.6.1.4.1.2021.4.5.0,1.3.6.1.4.1.2021.4.6.0",
-        "name": "SNMP Ubuntu CPU/RAM",
-        "x": 386,
-        "y": 112,
-        "wires": [
-            [
-                "1d5c5568f1c714e1"
-            ]
-        ]
-    },
-    {
-        "id": "1d5c5568f1c714e1",
-        "type": "function",
-        "z": "5d6cdfc2514b73b3",
-        "g": "f5b1cf4f02cb3562",
-        "name": "Parse & Clean Ubuntu CPU/RAM",
-        "func": "if (!msg.payload) { return null; }\nif (msg.payload.error) {\n    node.error(\"Ubuntu SNMP Error: \" + msg.payload.error);\n    return null;\n}\n\nlet data = Array.isArray(msg.payload) ? msg.payload : [msg.payload];\nif (data.length < 3) { return null; }\n\ntry {\n    let cpuLoad = parseFloat(data[0].value || 0);\n    let ramTotalKB = parseFloat(data[1].value || 0);\n    let ramFreeKB = parseFloat(data[2].value || 0);\n\n    let ramTotalMB = (ramTotalKB / 1024).toFixed(2);\n    let ramFreeMB = (ramFreeKB / 1024).toFixed(2);\n    let ramUsedMB = (parseFloat(ramTotalMB) - parseFloat(ramFreeMB)).toFixed(2);\n\n    msg.payload = {\n        machine_id: \"Ubuntu-ERP-MASTER\",\n        cpu_load_1m: cpuLoad,\n        ram_total_mb: parseFloat(ramTotalMB),\n        ram_used_mb: parseFloat(ramUsedMB),\n        ram_free_mb: parseFloat(ramFreeMB),\n        timestamp: new Date().toISOString()\n    };\n\n    return msg;\n} catch (error) {\n    node.error(\"Parse Error Ubuntu: \" + error.message);\n    return null;\n}",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 660,
-        "y": 112,
-        "wires": [
-            [
-                "138b51f3945922ae"
-            ]
-        ]
-    },
-    {
-        "id": "138b51f3945922ae",
-        "type": "debug",
-        "z": "5d6cdfc2514b73b3",
-        "g": "f5b1cf4f02cb3562",
-        "name": "Ubuntu CPU/RAM",
+        "z": "8bf5bf82223c02d8",
+        "g": "group_world_class",
+        "name": "System Errors",
         "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": true,
-        "complete": "payload",
+        "complete": "error.message",
         "targetType": "msg",
-        "statusVal": "payload",
-        "statusType": "auto",
-        "x": 950,
-        "y": 112,
-        "wires": []
-    },
-    {
-        "id": "8b98f75e8e9b9b63",
-        "type": "inject",
-        "z": "5d6cdfc2514b73b3",
-        "g": "f5b1cf4f02cb3562",
-        "name": "Poll Every 30s",
-        "props": [
-            {
-                "p": "payload"
-            }
-        ],
-        "repeat": "30",
-        "crontab": "",
-        "once": true,
-        "onceDelay": "2",
-        "topic": "",
-        "payload": "",
-        "payloadType": "date",
-        "x": 160,
-        "y": 208,
-        "wires": [
-            [
-                "f492e6171fc075e8"
-            ]
-        ]
-    },
-    {
-        "id": "f492e6171fc075e8",
-        "type": "snmp walker",
-        "z": "5d6cdfc2514b73b3",
-        "g": "f5b1cf4f02cb3562",
-        "host": "ims-snmpsim",
-        "version": "2c",
-        "timeout": "10",
-        "community": "Netk@",
-        "auth": "noAuthNoPriv",
-        "oids": "1.3.6.1.2.1.25.2.3.1",
-        "name": "SNMP Walk Ubuntu Disk",
-        "x": 386,
-        "y": 208,
-        "wires": [
-            [
-                "1dc065c42a7850c8"
-            ]
-        ]
-    },
-    {
-        "id": "1dc065c42a7850c8",
-        "type": "function",
-        "z": "5d6cdfc2514b73b3",
-        "g": "f5b1cf4f02cb3562",
-        "name": "Parse & Clean Ubuntu Disk",
-        "func": "const varbinds = msg.payload;\nif (!Array.isArray(varbinds) || varbinds.length === 0) { return null; }\n\nconst disks = {};\nvarbinds.forEach(item => {\n    const match = item.oid.match(/\\.(\\d+)$/);\n    if (!match) return;\n    const index = match[1];\n    if (!disks[index]) disks[index] = {};\n\n    if (item.oid.startsWith(\"1.3.6.1.2.1.25.2.3.1.3.\")) disks[index].descr = Buffer.isBuffer(item.value) ? item.value.toString('ascii') : item.value;\n    if (item.oid.startsWith(\"1.3.6.1.2.1.25.2.3.1.4.\")) disks[index].allocUnit = Number(item.value);\n    if (item.oid.startsWith(\"1.3.6.1.2.1.25.2.3.1.5.\")) disks[index].sizeBlocks = Number(item.value);\n    if (item.oid.startsWith(\"1.3.6.1.2.1.25.2.3.1.6.\")) disks[index].usedBlocks = Number(item.value);\n});\n\nlet summary = { total_GB: 0, used_GB: 0, free_GB: 0 };\nfor (const index in disks) {\n    const d = disks[index];\n    if (d.descr && d.sizeBlocks > 0 && d.allocUnit > 0) {\n        // Filter out RAM and Docker overlays\n        if (d.descr.toUpperCase().includes(\"MEMORY\") || d.descr.includes(\"run/containerd\")) continue;\n\n        const totalBytes = d.sizeBlocks * d.allocUnit;\n        const usedBytes = d.usedBlocks * d.allocUnit;\n        summary.total_GB += totalBytes / 1024**3;\n        summary.used_GB += usedBytes / 1024**3;\n        summary.free_GB += (totalBytes - usedBytes) / 1024**3;\n    }\n}\n\nmsg.payload = {\n    machine_id: \"Ubuntu-ERP-MASTER\",\n    disk_total_gb: Number(summary.total_GB.toFixed(2)),\n    disk_used_gb: Number(summary.used_GB.toFixed(2)),\n    disk_free_gb: Number(summary.free_GB.toFixed(2)),\n    timestamp: new Date().toISOString()\n};\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 680,
-        "y": 208,
-        "wires": [
-            [
-                "d348ccfd73fdeb13"
-            ]
-        ]
-    },
-    {
-        "id": "d348ccfd73fdeb13",
-        "type": "debug",
-        "z": "5d6cdfc2514b73b3",
-        "g": "f5b1cf4f02cb3562",
-        "name": "Ubuntu Disk Output",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 950,
-        "y": 208,
+        "x": 336,
+        "y": 256,
         "wires": []
     }
 ]

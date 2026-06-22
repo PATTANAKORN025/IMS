@@ -5,11 +5,11 @@ datasources:
     uid: timescaledb
     type: postgres
     access: proxy
-    url: timescaledb:5432
-    database: ${POSTGRES_DB}
-    user: ${POSTGRES_USER}
+    url: ims-timescaledb:5432
+    database: ims-timescaledb
+    user: postgres
     secureJsonData:
-      password: ${POSTGRES_PASSWORD}
+      password: password
     jsonData:
       sslmode: disable
       postgresVersion: 1600
