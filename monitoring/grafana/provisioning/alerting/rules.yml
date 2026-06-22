@@ -1,0 +1,127 @@
+apiVersion: 1
+groups:
+  - orgId: 1
+    name: IMS Server Alerts
+    folder: IMS Alerts
+    interval: 1m
+    rules:
+      - uid: ims-high-cpu-ubuntu
+        title: High CPU Load - Ubuntu
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: timescaledb
+            model:
+              rawSql: "SELECT AVG(cpu_load_percent) AS cpu_avg FROM public.machine_telemetry WHERE machine_id = 'ERP-MASTER-UBUNTU' AND time > now() - interval '5 minutes'"
+              format: time_series
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: mean
+          - refId: C
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              evaluator:
+                type: gt
+                params:
+                  - 85
+        for: 5m
+        labels:
+          severity: critical
+          server: ubuntu
+        annotations:
+          summary: "High CPU Load on Ubuntu Server"
+          description: "CPU average is {{ $values.C }}% for the last 5 minutes"
+      - uid: ims-high-cpu-windows
+        title: High CPU Load - Windows
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: timescaledb
+            model:
+              rawSql: "SELECT AVG(cpu_load_percent) AS cpu_avg FROM public.machine_telemetry WHERE machine_id = 'ERP-MASTER-WINDOWS' AND time > now() - interval '5 minutes'"
+              format: time_series
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: mean
+          - refId: C
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              evaluator:
+                type: gt
+                params:
+                  - 85
+        for: 5m
+        labels:
+          severity: critical
+          server: windows
+        annotations:
+          summary: "High CPU Load on Windows Server"
+          description: "CPU average is {{ $values.C }}% for the last 5 minutes"
+      - uid: ims-high-ram-ubuntu
+        title: High RAM Usage - Ubuntu
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: timescaledb
+            model:
+              rawSql: "SELECT AVG(ram_used_mb) AS ram_avg FROM public.machine_telemetry WHERE machine_id = 'ERP-MASTER-UBUNTU' AND time > now() - interval '5 minutes'"
+              format: time_series
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: mean
+          - refId: C
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              evaluator:
+                type: gt
+                params:
+                  - 13000
+        for: 5m
+        labels:
+          severity: warning
+          server: ubuntu
+        annotations:
+          summary: "High RAM Usage on Ubuntu Server"
+          description: "RAM average is {{ $values.C }} MB for the last 5 minutes"
