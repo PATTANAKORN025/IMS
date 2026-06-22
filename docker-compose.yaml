@@ -39,6 +39,10 @@ services:
     volumes:
       - timescaledb_data:/var/lib/postgresql/data
       - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    deploy:
+      resources:
+        limits:
+          memory: 2G
     healthcheck:
       test:
         - CMD-SHELL
@@ -167,7 +171,8 @@ services:
     deploy:
       resources:
         limits:
-          memory: 1.5G
+          cpus: '1.0'
+          memory: 1G
     healthcheck:
       test:
         - CMD-SHELL
