@@ -1,0 +1,185 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  timescaledb:
+    image: timescale/timescaledb:2.17.2-pg16
+    container_name: ims-timescaledb
+    restart: unless-stopped
+    init: true
+    environment:
+      TZ: ${TZ:-Asia/Bangkok}
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    command:
+      - postgres
+      - -c
+      - shared_preload_libraries=timescaledb,pg_stat_statements
+      - -c
+      - max_connections=100
+      - -c
+      - shared_buffers=256MB
+      - -c
+      - effective_cache_size=768MB
+      - -c
+      - work_mem=16MB
+      - -c
+      - maintenance_work_mem=128MB
+      - -c
+      - wal_compression=on
+      - -c
+      - timezone=${TZ:-Asia/Bangkok}
+    volumes:
+      - timescaledb_data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U ${POSTGRES_USER:?set POSTGRES_USER in .env} -d ${POSTGRES_DB:?set POSTGRES_DB in .env}
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    logging: *default-logging
+    networks:
+      - ims-net
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    container_name: ims-prometheus
+    restart: unless-stopped
+    init: true
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+      - --web.enable-lifecycle
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      - alertmanager
+    logging: *default-logging
+    networks:
+      - ims-net
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: ims-alertmanager
+    restart: unless-stopped
+    init: true
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+      - --web.external-url=${ALERTMANAGER_EXTERNAL_URL:-http://localhost:9093}
+    volumes:
+      - ./monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager_data:/alertmanager
+    ports:
+      - "9093:9093"
+    logging: *default-logging
+    networks:
+      - ims-net
+
+  grafana:
+    image: grafana/grafana-oss:11.1.0
+    container_name: ims-grafana
+    restart: unless-stopped
+    init: true
+    environment:
+      TZ: ${TZ:-Asia/Bangkok}
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:?set GRAFANA_ADMIN_USER in .env}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD in .env}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:-http://localhost:3000}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+      prometheus:
+        condition: service_started
+      alertmanager:
+        condition: service_started
+    logging: *default-logging
+    networks:
+      - ims-net
+
+  snmpsim:
+    image: tandrup/snmpsim:latest
+    container_name: ims-snmpsim
+    restart: unless-stopped
+    init: true
+    command:
+      - python
+      - /usr/local/bin/snmpsimd.py
+      - --data-dir=/data
+      - --agent-udpv4-endpoint=0.0.0.0:161
+      - --process-user=nobody
+      - --process-group=nogroup
+      - --v2c-arch
+    volumes:
+      - ./monitoring/snmpsim:/data:ro
+    ports:
+      - "1161:161/udp"
+    logging: *default-logging
+    networks:
+      - ims-net
+
+  node-red:
+    image: nodered/node-red:4.0.5-22-minimal
+    container_name: ims-node-red
+    restart: unless-stopped
+    init: true
+    user: "1000:1000"
+    environment:
+      TZ: ${TZ:-Asia/Bangkok}
+      NODE_RED_ENABLE_PROJECTS: "false"
+      NODE_OPTIONS: "--max-old-space-size=256"
+      PGHOST: timescaledb
+      PGPORT: "5432"
+      PGDATABASE: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+      PGUSER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    ports:
+      - "1880:1880"
+    volumes:
+      - ./nodered_data:/data
+      - /etc/localtime:/etc/localtime:ro
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+      grafana:
+        condition: service_started
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - node -e "const http=require('http');const req=http.get('http://127.0.0.1:1880/',res=>process.exit(res.statusCode&&res.statusCode<500?0:1));req.on('error',()=>process.exit(1));req.setTimeout(3000,()=>{req.destroy();process.exit(1);});"
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging: *default-logging
+    networks:
+      - ims-net
+
+volumes:
+  timescaledb_data:
+  prometheus_data:
+  alertmanager_data:
+  grafana_data:
+
+networks:
+  ims-net:
+    driver: bridge

@@ -1,0 +1,15 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: ops-webhook
+  group_by: ["alertname", "severity", "machine_id"]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+
+receivers:
+  - name: ops-webhook
+    webhook_configs:
+      - url: https://example.com/webhook
+        send_resolved: true
