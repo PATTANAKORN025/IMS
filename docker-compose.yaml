@@ -33,6 +33,8 @@ services:
       - -c
       - wal_compression=on
       - -c
+      - max_wal_size=1GB
+      - -c
       - timezone=${TZ:-Asia/Bangkok}
     volumes:
       - timescaledb_data:/var/lib/postgresql/data
@@ -146,7 +148,7 @@ services:
     environment:
       TZ: ${TZ:-Asia/Bangkok}
       NODE_RED_ENABLE_PROJECTS: "false"
-      NODE_OPTIONS: "--max-old-space-size=256"
+      NODE_OPTIONS: "--max-old-space-size=1024"
       PGHOST: timescaledb
       PGPORT: "5432"
       PGDATABASE: ${POSTGRES_DB:?set POSTGRES_DB in .env}
@@ -162,6 +164,10 @@ services:
         condition: service_healthy
       grafana:
         condition: service_started
+    deploy:
+      resources:
+        limits:
+          memory: 1.5G
     healthcheck:
       test:
         - CMD-SHELL
