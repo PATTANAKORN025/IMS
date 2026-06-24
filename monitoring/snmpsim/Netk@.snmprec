@@ -1,24 +1,55 @@
-# --- 1. Storage Types & Descriptions ---
+# IMS SNMP Simulator — Chaos Engineering Profile
+# Phase 15: Realistic degradation, link flapping, high error rates
+# Purpose: Validate AIOps alerts (InterfaceDown, ServiceDown, ThermalWarning)
+
+# --- CPU Cores (fluctuating 10-95%) ---
+1.3.6.1.2.1.25.3.3.1.2.1|2:numeric|min=10,max=90,rate=5
+1.3.6.1.2.1.25.3.3.1.2.2|2:numeric|min=15,max=80,rate=8
+1.3.6.1.2.1.25.3.3.1.2.3|2:numeric|min=5,max=95,rate=3
+1.3.6.1.2.1.25.3.3.1.2.4|2:numeric|min=20,max=70,rate=6
+
+# --- Storage & RAM ---
 1.3.6.1.2.1.25.2.3.1.2.1|6|1.3.6.1.2.1.25.2.1.2
 1.3.6.1.2.1.25.2.3.1.2.2|6|1.3.6.1.2.1.25.2.1.4
 1.3.6.1.2.1.25.2.3.1.3.1|4|Physical Memory
 1.3.6.1.2.1.25.2.3.1.3.2|4|C:\ Label:System
-
-# --- 2. Allocation Units & Total Size (Fixed) ---
-# RAM 16GB, Disk 500GB
 1.3.6.1.2.1.25.2.3.1.4.1|2|1024
 1.3.6.1.2.1.25.2.3.1.4.2|2|4096
 1.3.6.1.2.1.25.2.3.1.5.1|2|16777216
 1.3.6.1.2.1.25.2.3.1.5.2|2|131072000
-
-# --- 3. DYNAMIC RAM & DISK USED (Memory Leak Simulation) ---
-# RAM: starts at 4GB, grows to 15GB (simulates memory leak, 100MB increments)
 1.3.6.1.2.1.25.2.3.1.6.1|2:numeric|min=4194304,max=15728640,rate=102400
-# Disk: grows gradually (log accumulation, 50MB increments)
-1.3.6.1.2.1.25.2.3.1.6.2|2:numeric|min=65536000,max=125000000,rate=12800
+1.3.6.1.2.1.25.2.3.1.6.2|2:numeric|min=65536000,max=125000000,rate=50000
 
-# --- 4. DYNAMIC CPU CORES (Independent fluctuation 5-99%) ---
-1.3.6.1.2.1.25.3.3.1.2.1|2:numeric|min=5,max=95,rate=15
-1.3.6.1.2.1.25.3.3.1.2.2|2:numeric|min=10,max=85,rate=12
-1.3.6.1.2.1.25.3.3.1.2.3|2:numeric|min=5,max=100,rate=20
-1.3.6.1.2.1.25.3.3.1.2.4|2:numeric|min=20,max=75,rate=8
+# --- Interface Names ---
+1.3.6.1.2.1.2.2.1.2.1|4|eth0
+1.3.6.1.2.1.2.2.1.2.2|4|wlan0
+
+# --- Interface Speed ---
+1.3.6.1.2.1.2.2.1.5.1|65|10000000000
+1.3.6.1.2.1.2.2.1.5.2|65|1200000000
+
+# --- 64-bit Network Counters (100Gbps capable) ---
+1.3.6.1.2.1.31.1.1.1.6.1|65:numeric|min=10000000,max=50000000000,rate=8500000
+1.3.6.1.2.1.31.1.1.1.10.1|65:numeric|min=5000000,max=30000000000,rate=4500000
+1.3.6.1.2.1.31.1.1.1.6.2|65:numeric|min=1000000,max=10000000000,rate=1500000
+1.3.6.1.2.1.31.1.1.1.10.2|65:numeric|min=500000,max=5000000000,rate=800000
+
+# --- 32-bit Fallback Counters ---
+1.3.6.1.2.1.2.2.1.10.1|65:numeric|min=10000,max=4294967295,rate=1500000
+1.3.6.1.2.1.2.2.1.16.1|65:numeric|min=5000,max=4294967295,rate=800000
+1.3.6.1.2.1.2.2.1.10.2|65:numeric|min=1000,max=4294967295,rate=500000
+1.3.6.1.2.1.2.2.1.16.2|65:numeric|min=1000,max=4294967295,rate=200000
+
+# --- CHAOS: Network Errors (high rate for alert testing) ---
+1.3.6.1.2.1.2.2.1.14.1|65:numeric|min=0,max=500,rate=15
+1.3.6.1.2.1.2.2.1.14.2|65:numeric|min=0,max=150,rate=5
+# --- CHAOS: Network Drops ---
+1.3.6.1.2.1.2.2.1.13.1|65:numeric|min=0,max=200,rate=8
+1.3.6.1.2.1.2.2.1.13.2|65:numeric|min=0,max=50,rate=3
+
+# --- CHAOS: Interface Status (eth0 flapping between UP/DOWN) ---
+1.3.6.1.2.1.2.2.1.8.1|2:numeric|min=1,max=2,rate=1
+1.3.6.1.2.1.2.2.1.8.2|2|1
+
+# --- Temperature (fluctuates with workload, peaks at 88C for thermal alert testing) ---
+1.3.6.1.4.1.2021.13.16.2.1.7.1|2:numeric|min=45,max=88,rate=3

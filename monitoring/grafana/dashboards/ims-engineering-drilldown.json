@@ -1,858 +1,1626 @@
 {
-  "annotations": {
-    "list": [
-      {
-        "builtIn": 1,
-        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
-        "enable": true,
-        "hide": true,
-        "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
-        "type": "dashboard"
-      }
-    ]
-  },
-  "editable": true,
-  "fiscalYearStartMonth": 0,
-  "graphTooltip": 1,
-  "id": null,
-  "links": [
-    {
-      "title": "NOC Overview",
-      "url": "/d/ims-noc-overview",
-      "type": "link",
-      "icon": "external link",
-      "targetBlank": true
-    }
-  ],
-  "panels": [
-    {
-      "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
-      "id": 100,
-      "title": "Machine Summary",
-      "type": "row"
-    },
-    {
-      "id": 1,
-      "title": "CPU Load",
-      "type": "gauge",
-      "datasource": { "uid": "timescaledb" },
-      "gridPos": { "h": 6, "w": 4, "x": 0, "y": 1 },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "yellow", "value": null },
-              { "color": "orange", "value": 70 },
-              { "color": "red", "value": 90 }
-            ]
-          }
-        }
-      },
-      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "values": false } },
-      "targets": [{
-        "refId": "A",
-        "format": "table",
-        "rawSql": "SELECT cpu_load_percent AS value FROM public.machine_telemetry WHERE \"time\" > NOW() - INTERVAL '2 minutes' AND machine_id = '${machine_id}' ORDER BY \"time\" DESC LIMIT 1"
-      }]
-    },
-    {
-      "id": 2,
-      "title": "RAM Usage",
-      "type": "gauge",
-      "datasource": { "uid": "timescaledb" },
-      "gridPos": { "h": 6, "w": 4, "x": 4, "y": 1 },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "purple", "value": null },
-              { "color": "dark-orange", "value": 75 },
-              { "color": "red", "value": 90 }
-            ]
-          }
-        }
-      },
-      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "values": false } },
-      "targets": [{
-        "refId": "A",
-        "format": "table",
-        "rawSql": "SELECT (ram_used_mb / NULLIF(ram_total_mb, 0) * 100) AS value FROM public.machine_telemetry WHERE \"time\" > NOW() - INTERVAL '2 minutes' AND machine_id = '${machine_id}' ORDER BY \"time\" DESC LIMIT 1"
-      }]
-    },
-    {
-      "id": 3,
-      "title": "Disk Usage",
-      "type": "gauge",
-      "datasource": { "uid": "timescaledb" },
-      "gridPos": { "h": 6, "w": 4, "x": 8, "y": 1 },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "cyan", "value": null },
-              { "color": "blue", "value": 70 },
-              { "color": "red", "value": 90 }
-            ]
-          }
-        }
-      },
-      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "values": false } },
-      "targets": [{
-        "refId": "A",
-        "format": "table",
-        "rawSql": "SELECT (disk_used_gb / NULLIF(disk_total_gb, 0) * 100) AS value FROM public.machine_telemetry WHERE \"time\" > NOW() - INTERVAL '2 minutes' AND machine_id = '${machine_id}' ORDER BY \"time\" DESC LIMIT 1"
-      }]
-    },
-    {
-      "id": 4,
-      "title": "Temperature",
-      "type": "gauge",
-      "datasource": { "uid": "timescaledb" },
-      "gridPos": { "h": 6, "w": 4, "x": 12, "y": 1 },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "celsius",
-          "min": 0,
-          "max": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 65 },
-              { "color": "orange", "value": 75 },
-              { "color": "red", "value": 80 }
-            ]
-          }
-        }
-      },
-      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "values": false } },
-      "targets": [{
-        "refId": "A",
-        "format": "table",
-        "rawSql": "SELECT temp_c AS value FROM public.machine_telemetry WHERE \"time\" > NOW() - INTERVAL '2 minutes' AND machine_id = '${machine_id}' AND temp_c > 0 ORDER BY \"time\" DESC LIMIT 1"
-      }]
-    },
-    {
-      "id": 5,
-      "title": "Network RX",
-      "type": "stat",
-      "datasource": { "uid": "timescaledb" },
-      "gridPos": { "h": 6, "w": 4, "x": 16, "y": 1 },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "Mbps",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 500 },
-              { "color": "red", "value": 900 }
-            ]
-          },
-          "color": { "mode": "thresholds" }
-        }
-      },
-      "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "reduceOptions": { "calcs": ["lastNotNull"], "values": false }
-      },
-      "targets": [{
-        "refId": "A",
-        "format": "table",
-        "rawSql": "SELECT avg_rx_mbps AS value FROM public.telemetry_minute_summary WHERE machine_id = '${machine_id}' AND $__timeFilter(\"bucket\") ORDER BY \"bucket\" DESC LIMIT 1"
-      }]
-    },
-    {
-      "id": 6,
-      "title": "Uptime",
-      "type": "stat",
-      "datasource": { "uid": "timescaledb" },
-      "gridPos": { "h": 6, "w": 4, "x": 20, "y": 1 },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "dtdurations",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "red", "value": null },
-              { "color": "yellow", "value": 86400 },
-              { "color": "green", "value": 604800 }
-            ]
-          },
-          "color": { "mode": "thresholds" }
-        }
-      },
-      "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "center",
-        "reduceOptions": { "calcs": ["lastNotNull"], "values": false }
-      },
-      "targets": [{
-        "refId": "A",
-        "format": "table",
-        "rawSql": "SELECT seconds_since_last AS value FROM public.v_uptime_summary WHERE machine_id = '${machine_id}'"
-      }]
-    },
-    {
-      "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 7 },
-      "id": 200,
-      "title": "Time Series Analysis",
-      "type": "row"
-    },
-    {
-      "id": 10,
-      "title": "CPU Load Over Time",
-      "type": "timeseries",
-      "datasource": { "uid": "timescaledb" },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "color": { "mode": "fixed", "fixedColor": "yellow" },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "yellow", "value": null },
-              { "color": "orange", "value": 70 },
-              { "color": "red", "value": 90 }
-            ]
-          },
-          "custom": {
-            "fillOpacity": 20,
-            "lineWidth": 2,
-            "spanNulls": true,
-            "gradientMode": "scheme",
-            "thresholdsStyle": { "mode": "line+area" }
-          }
-        }
-      },
-      "options": {
-        "tooltip": { "mode": "multi", "sort": "desc" },
-        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] }
-      },
-      "targets": [{
-        "refId": "A",
-        "format": "time_series",
-        "rawSql": "SELECT time_bucket('1 minute', \"time\") AS \"time\", cpu_load_percent AS \"CPU Load %\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}' ORDER BY 1"
-      }]
-    },
-    {
-      "id": 12,
-      "title": "Memory Usage",
-      "type": "timeseries",
-      "datasource": { "uid": "timescaledb" },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "decmbytes",
-          "min": 0,
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "fillOpacity": 20,
-            "lineWidth": 2,
-            "spanNulls": true,
-            "gradientMode": "scheme"
-          }
-        }
-      },
-      "options": {
-        "tooltip": { "mode": "multi", "sort": "desc" },
-        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "format": "time_series",
-          "rawSql": "SELECT time_bucket('1 minute', \"time\") AS \"time\", ram_used_mb AS \"Used (MB)\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}' ORDER BY 1"
-        },
-        {
-          "refId": "B",
-          "format": "time_series",
-          "rawSql": "SELECT time_bucket('1 minute', \"time\") AS \"time\", ram_total_mb AS \"Total (MB)\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}' ORDER BY 1"
-        }
-      ]
-    },
-    {
-      "id": 13,
-      "title": "Disk Usage",
-      "type": "timeseries",
-      "datasource": { "uid": "timescaledb" },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "decgbytes",
-          "min": 0,
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "fillOpacity": 20,
-            "lineWidth": 2,
-            "spanNulls": true,
-            "gradientMode": "scheme"
-          }
-        }
-      },
-      "options": {
-        "tooltip": { "mode": "multi", "sort": "desc" },
-        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "format": "time_series",
-          "rawSql": "SELECT time_bucket('1 minute', \"time\") AS \"time\", disk_used_gb * 1024 AS \"Used (MB)\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}' ORDER BY 1"
-        },
-        {
-          "refId": "B",
-          "format": "time_series",
-          "rawSql": "SELECT time_bucket('1 minute', \"time\") AS \"time\", disk_total_gb * 1024 AS \"Total (MB)\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}' ORDER BY 1"
-        }
-      ]
-    },
-    {
-      "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 24 },
-      "id": 300,
-      "title": "Network & Environment",
-      "type": "row"
-    },
-    {
-      "id": 41,
-      "title": "Network Packet Health",
-      "type": "timeseries",
-      "datasource": { "uid": "timescaledb" },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 42 },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "pps",
-          "min": 0,
-          "color": { "mode": "fixed", "fixedColor": "red" },
-          "custom": {
-            "fillOpacity": 30,
-            "lineWidth": 2,
-            "spanNulls": true
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "orange", "value": 1 },
-              { "color": "red", "value": 10 }
-            ]
-          }
-        },
-        "overrides": [
-          {
-            "matcher": { "id": "byName", "options": "Download (Mbps)" },
-            "properties": [
-              { "id": "color", "value": { "fixedColor": "#1F60C4", "mode": "fixed" } },
-              { "id": "custom.fillOpacity", "value": 30 }
-            ]
-          },
-          {
-            "matcher": { "id": "byName", "options": "Upload (Mbps)" },
-            "properties": [
-              { "id": "color", "value": { "fixedColor": "#5794F2", "mode": "fixed" } },
-              { "id": "custom.fillOpacity", "value": 30 }
-            ]
-          }
+    "annotations": {
+        "list": [
+            {
+                "builtIn": 1,
+                "datasource": {
+                    "type": "grafana",
+                    "uid": "-- Grafana --"
+                },
+                "enable": true,
+                "hide": true,
+                "iconColor": "rgba(0, 211, 255, 1)",
+                "name": "Annotations & Alerts",
+                "type": "dashboard"
+            }
         ]
-      },
-      "options": {
-        "tooltip": { "mode": "multi", "sort": "desc" },
-        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "format": "time_series",
-          "rawSql": "SELECT \"bucket\" AS \"time\", machine_id AS metric, avg_rx_mbps AS \"Download (Mbps)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(\"bucket\") AND machine_id = '${machine_id}' ORDER BY 1"
-        },
-        {
-          "refId": "B",
-          "format": "time_series",
-          "rawSql": "SELECT \"bucket\" AS \"time\", machine_id AS metric, (avg_tx_mbps * -1) AS \"Upload (Mbps)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(\"bucket\") AND machine_id = '${machine_id}' ORDER BY 1"
-        }
-      ]
     },
-    {
-      "id": 13,
-      "title": "Disk Usage",
-      "type": "timeseries",
-      "datasource": { "uid": "timescaledb" },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "decmbytes",
-          "min": 0,
-          "color": { "mode": "fixed", "fixedColor": "cyan" },
-          "custom": {
-            "fillOpacity": 20,
-            "lineWidth": 2,
-            "spanNulls": true,
-            "gradientMode": "scheme"
-          }
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 1,
+    "id": null,
+    "links": [
+        {
+            "title": "NOC Overview",
+            "url": "/d/ims-noc-overview",
+            "type": "link",
+            "icon": "external link",
+            "targetBlank": true
+        }
+    ],
+    "panels": [
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 0
+            },
+            "id": 100,
+            "title": "Machine Summary",
+            "type": "row"
         },
-        "overrides": [
-          {
-            "matcher": { "id": "byName", "options": "RX Mbps" },
-            "properties": [
-              { "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }
+        {
+            "id": 1,
+            "title": "CPU Load",
+            "type": "gauge",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 6,
+                "w": 4,
+                "x": 0,
+                "y": 1
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "percent",
+                    "min": 0,
+                    "max": 100,
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "yellow",
+                                "value": null
+                            },
+                            {
+                                "color": "orange",
+                                "value": 70
+                            },
+                            {
+                                "color": "red",
+                                "value": 90
+                            }
+                        ]
+                    },
+                    "color": {
+                        "mode": "thresholds"
+                    }
+                }
+            },
+            "options": {
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "values": false
+                },
+                "unit": "percent"
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "table",
+                    "rawSql": "SELECT cpu_load_percent AS value FROM public.machine_telemetry WHERE \"time\" > NOW() - INTERVAL '2 minutes' AND machine_id = '${machine_id}' ORDER BY \"time\" DESC LIMIT 1"
+                }
             ]
-          },
-          {
-            "matcher": { "id": "byName", "options": "TX Mbps" },
-            "properties": [
-              { "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } }
+        },
+        {
+            "id": 2,
+            "title": "RAM Usage",
+            "type": "gauge",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 6,
+                "w": 4,
+                "x": 4,
+                "y": 1
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "percent",
+                    "min": 0,
+                    "max": 100,
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "purple",
+                                "value": null
+                            },
+                            {
+                                "color": "dark-orange",
+                                "value": 75
+                            },
+                            {
+                                "color": "red",
+                                "value": 90
+                            }
+                        ]
+                    },
+                    "color": {
+                        "mode": "thresholds"
+                    }
+                }
+            },
+            "options": {
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "values": false
+                },
+                "unit": "mbytes"
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "table",
+                    "rawSql": "SELECT (ram_used_mb / NULLIF(ram_total_mb, 0) * 100) AS value FROM public.machine_telemetry WHERE \"time\" > NOW() - INTERVAL '2 minutes' AND machine_id = '${machine_id}' ORDER BY \"time\" DESC LIMIT 1"
+                }
             ]
-          }
+        },
+        {
+            "id": 3,
+            "title": "Disk Usage",
+            "type": "gauge",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 6,
+                "w": 4,
+                "x": 8,
+                "y": 1
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "percent",
+                    "min": 0,
+                    "max": 100,
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "cyan",
+                                "value": null
+                            },
+                            {
+                                "color": "blue",
+                                "value": 70
+                            },
+                            {
+                                "color": "red",
+                                "value": 90
+                            }
+                        ]
+                    },
+                    "color": {
+                        "mode": "thresholds"
+                    }
+                }
+            },
+            "options": {
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "values": false
+                },
+                "unit": "gbytes"
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "table",
+                    "rawSql": "SELECT (disk_used_gb / NULLIF(disk_total_gb, 0) * 100) AS value FROM public.machine_telemetry WHERE \"time\" > NOW() - INTERVAL '2 minutes' AND machine_id = '${machine_id}' ORDER BY \"time\" DESC LIMIT 1"
+                }
+            ]
+        },
+        {
+            "id": 4,
+            "title": "Temperature",
+            "type": "gauge",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 6,
+                "w": 4,
+                "x": 12,
+                "y": 1
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "celsius",
+                    "min": 0,
+                    "max": 100,
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 65
+                            },
+                            {
+                                "color": "orange",
+                                "value": 75
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    },
+                    "color": {
+                        "mode": "thresholds"
+                    }
+                }
+            },
+            "options": {
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "values": false
+                },
+                "unit": "celsius"
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "table",
+                    "rawSql": "SELECT temp_c AS value FROM public.machine_telemetry WHERE \"time\" > NOW() - INTERVAL '2 minutes' AND machine_id = '${machine_id}' AND temp_c > 0 ORDER BY \"time\" DESC LIMIT 1"
+                }
+            ]
+        },
+        {
+            "id": 5,
+            "title": "Network RX",
+            "type": "stat",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 6,
+                "w": 4,
+                "x": 16,
+                "y": 1
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "Mbps",
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 500
+                            },
+                            {
+                                "color": "red",
+                                "value": 900
+                            }
+                        ]
+                    },
+                    "color": {
+                        "mode": "thresholds"
+                    }
+                }
+            },
+            "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "values": false
+                },
+                "unit": "mbps"
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "table",
+                    "rawSql": "SELECT avg_rx_mbps AS value FROM public.telemetry_minute_summary WHERE machine_id = '${machine_id}' AND $__timeFilter(\"bucket\") ORDER BY \"bucket\" DESC LIMIT 1"
+                }
+            ]
+        },
+        {
+            "id": 6,
+            "title": "Uptime",
+            "type": "stat",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 6,
+                "w": 4,
+                "x": 20,
+                "y": 1
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "dtdurations",
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "red",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 86400
+                            },
+                            {
+                                "color": "green",
+                                "value": 604800
+                            }
+                        ]
+                    },
+                    "color": {
+                        "mode": "thresholds"
+                    }
+                }
+            },
+            "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "values": false
+                },
+                "unit": "dtdurations"
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "table",
+                    "rawSql": "SELECT seconds_since_last AS value FROM public.v_uptime_summary WHERE machine_id = '${machine_id}'"
+                }
+            ]
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 7
+            },
+            "id": 200,
+            "title": "Time Series Analysis",
+            "type": "row"
+        },
+        {
+            "id": 10,
+            "title": "CPU Load Over Time",
+            "type": "timeseries",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 8
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "percent",
+                    "min": 0,
+                    "max": 100,
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "yellow",
+                                "value": null
+                            },
+                            {
+                                "color": "orange",
+                                "value": 70
+                            },
+                            {
+                                "color": "red",
+                                "value": 90
+                            }
+                        ]
+                    },
+                    "custom": {
+                        "fillOpacity": 20,
+                        "lineWidth": 2,
+                        "spanNulls": true,
+                        "gradientMode": "scheme",
+                        "thresholdsStyle": {
+                            "mode": "line+area"
+                        }
+                    }
+                }
+            },
+            "options": {
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                },
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "calcs": [
+                        "mean",
+                        "max",
+                        "lastNotNull"
+                    ]
+                },
+                "unit": "percent",
+                "custom": {
+                    "drawStyle": "line",
+                    "fillOpacity": 15,
+                    "gradientMode": "scheme"
+                }
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "time_series",
+                    "rawSql": "SELECT time_bucket('1 minute', \"time\") AS \"time\", cpu_load_percent AS \"CPU Load %\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}' ORDER BY 1"
+                }
+            ]
+        },
+        {
+            "id": 12,
+            "title": "Memory Usage",
+            "type": "timeseries",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 8
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "mbytes",
+                    "min": 0,
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "custom": {
+                        "fillOpacity": 20,
+                        "lineWidth": 2,
+                        "spanNulls": true,
+                        "gradientMode": "scheme"
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "purple",
+                                "value": null
+                            },
+                            {
+                                "color": "dark-orange",
+                                "value": 75
+                            },
+                            {
+                                "color": "red",
+                                "value": 90
+                            }
+                        ]
+                    }
+                }
+            },
+            "options": {
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                },
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ]
+                },
+                "unit": "mbytes",
+                "custom": {
+                    "drawStyle": "line",
+                    "fillOpacity": 15,
+                    "gradientMode": "scheme"
+                }
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "time_series",
+                    "rawSql": "SELECT time_bucket('1 minute', \"time\") AS \"time\", ram_used_mb AS \"Used (MB)\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}' ORDER BY 1"
+                },
+                {
+                    "refId": "B",
+                    "format": "time_series",
+                    "rawSql": "SELECT time_bucket('1 minute', \"time\") AS \"time\", ram_total_mb AS \"Total (MB)\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}' ORDER BY 1"
+                }
+            ]
+        },
+        {
+            "id": 13,
+            "title": "Disk Usage",
+            "type": "timeseries",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 16
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "gbytes",
+                    "min": 0,
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "custom": {
+                        "fillOpacity": 20,
+                        "lineWidth": 2,
+                        "spanNulls": true,
+                        "gradientMode": "scheme"
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "cyan",
+                                "value": null
+                            },
+                            {
+                                "color": "blue",
+                                "value": 70
+                            },
+                            {
+                                "color": "red",
+                                "value": 90
+                            }
+                        ]
+                    }
+                }
+            },
+            "options": {
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                },
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ]
+                },
+                "unit": "gbytes",
+                "custom": {
+                    "drawStyle": "line",
+                    "fillOpacity": 15,
+                    "gradientMode": "scheme"
+                }
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "time_series",
+                    "rawSql": "SELECT time_bucket('1 minute', \"time\") AS \"time\", disk_used_gb AS \"Used (GB)\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}' ORDER BY 1"
+                },
+                {
+                    "refId": "B",
+                    "format": "time_series",
+                    "rawSql": "SELECT time_bucket('1 minute', \"time\") AS \"time\", disk_total_gb AS \"Total (GB)\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}' ORDER BY 1"
+                }
+            ]
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 24
+            },
+            "id": 300,
+            "title": "Network & Environment",
+            "type": "row"
+        },
+        {
+            "id": 41,
+            "title": "Network Packet Health",
+            "type": "timeseries",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 42
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "pps",
+                    "min": 0,
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "custom": {
+                        "fillOpacity": 30,
+                        "lineWidth": 2,
+                        "spanNulls": true
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "orange",
+                                "value": 50
+                            },
+                            {
+                                "color": "red",
+                                "value": 100
+                            }
+                        ]
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Download (Mbps)"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#1F60C4",
+                                    "mode": "fixed"
+                                }
+                            },
+                            {
+                                "id": "custom.fillOpacity",
+                                "value": 30
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Upload (Mbps)"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#5794F2",
+                                    "mode": "fixed"
+                                }
+                            },
+                            {
+                                "id": "custom.fillOpacity",
+                                "value": 30
+                            }
+                        ]
+                    }
+                ]
+            },
+            "options": {
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                },
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ]
+                },
+                "custom": {
+                    "drawStyle": "bars",
+                    "fillOpacity": 80
+                }
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "time_series",
+                    "rawSql": "SELECT \"bucket\" AS \"time\", machine_id AS metric, avg_rx_mbps AS \"Download (Mbps)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(\"bucket\") AND machine_id = '${machine_id}' ORDER BY 1"
+                },
+                {
+                    "refId": "B",
+                    "format": "time_series",
+                    "rawSql": "SELECT \"bucket\" AS \"time\", machine_id AS metric, (avg_tx_mbps * -1) AS \"Upload (Mbps)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(\"bucket\") AND machine_id = '${machine_id}' ORDER BY 1"
+                }
+            ]
+        },
+        {
+            "id": 13,
+            "title": "Ethernet/WiFi Bandwidth",
+            "type": "timeseries",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 16
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "mbps",
+                    "min": 0,
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "custom": {
+                        "fillOpacity": 20,
+                        "lineWidth": 2,
+                        "spanNulls": true,
+                        "gradientMode": "scheme"
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "RX Mbps"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "green",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "TX Mbps"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "blue",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "options": {
+                "tooltip": {
+                    "mode": "multi"
+                },
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ]
+                },
+                "unit": "mbps",
+                "custom": {
+                    "drawStyle": "line",
+                    "fillOpacity": 10,
+                    "gradientMode": "scheme"
+                }
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "time_series",
+                    "rawSql": "SELECT \"time\", key AS \"Interface\", (value->>'rx_mbps')::NUMERIC AS \"RX Mbps\", (value->>'tx_mbps')::NUMERIC AS \"TX Mbps\" FROM public.machine_telemetry, jsonb_each(interface_metrics) WHERE machine_id = '${machine_id}' AND $__timeFilter(\"time\") AND value ? 'rx_mbps' ORDER BY 1"
+                }
+            ]
+        },
+        {
+            "id": 26,
+            "title": "Interface Error Rates (eth0 vs wlan0)",
+            "type": "timeseries",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 25
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "pps",
+                    "min": 0,
+                    "custom": {
+                        "fillOpacity": 30,
+                        "lineWidth": 2,
+                        "spanNulls": true,
+                        "gradientMode": "opacity"
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "orange",
+                                "value": 50
+                            },
+                            {
+                                "color": "red",
+                                "value": 100
+                            }
+                        ]
+                    },
+                    "color": {
+                        "mode": "thresholds"
+                    }
+                }
+            },
+            "options": {
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                },
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ]
+                },
+                "custom": {
+                    "drawStyle": "bars",
+                    "fillOpacity": 80
+                }
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "legendFormat": "{{Interface}} Errors",
+                    "format": "time_series",
+                    "rawSql": "SELECT \"time\", key AS \"Interface\", (value->>'errors')::NUMERIC AS \"Errors\" FROM public.machine_telemetry, jsonb_each(interface_metrics) WHERE machine_id = '${machine_id}' AND $__timeFilter(\"time\") AND value ? 'errors' ORDER BY 1"
+                },
+                {
+                    "refId": "B",
+                    "legendFormat": "{{Interface}} Drops",
+                    "format": "time_series",
+                    "rawSql": "SELECT \"time\", key AS \"Interface\", (value->>'drops')::NUMERIC AS \"Drops\" FROM public.machine_telemetry, jsonb_each(interface_metrics) WHERE machine_id = '${machine_id}' AND $__timeFilter(\"time\") AND value ? 'drops' ORDER BY 1"
+                }
+            ]
+        },
+        {
+            "id": 21,
+            "title": "Temperature Sensors",
+            "type": "timeseries",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 33
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "celsius",
+                    "min": 0,
+                    "max": 100,
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 65
+                            },
+                            {
+                                "color": "orange",
+                                "value": 75
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    },
+                    "custom": {
+                        "fillOpacity": 10,
+                        "lineWidth": 2,
+                        "spanNulls": true,
+                        "thresholdsStyle": {
+                            "mode": "line"
+                        }
+                    },
+                    "color": {
+                        "mode": "thresholds"
+                    }
+                }
+            },
+            "options": {
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                },
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ]
+                },
+                "unit": "celsius",
+                "custom": {
+                    "drawStyle": "line",
+                    "fillOpacity": 10,
+                    "gradientMode": "scheme"
+                }
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "time_series",
+                    "rawSql": "SELECT \"bucket\" AS \"time\", max_temp_c AS \"Temperature (°C)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(\"bucket\") AND machine_id = '${machine_id}' AND max_temp_c > 0 ORDER BY 1"
+                }
+            ]
+        },
+        {
+            "id": 22,
+            "title": "Disk Usage Trend",
+            "type": "timeseries",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 33
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "GB",
+                    "min": 0,
+                    "custom": {
+                        "fillOpacity": 20,
+                        "lineWidth": 2,
+                        "spanNulls": true
+                    }
+                }
+            },
+            "options": {
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                },
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ]
+                },
+                "unit": "gbytes",
+                "custom": {
+                    "drawStyle": "line",
+                    "fillOpacity": 15
+                }
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "time_series",
+                    "rawSql": "SELECT time_bucket('5 minutes', \"time\") AS \"time\", AVG(disk_used_gb) AS \"Used (GB)\", AVG(disk_total_gb) AS \"Total (GB)\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}' GROUP BY 1 ORDER BY 1"
+                }
+            ]
+        },
+        {
+            "id": 23,
+            "title": "RAM Usage Trend",
+            "type": "timeseries",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 33
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "MB",
+                    "min": 0,
+                    "custom": {
+                        "fillOpacity": 20,
+                        "lineWidth": 2,
+                        "spanNulls": true
+                    }
+                }
+            },
+            "options": {
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                },
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ]
+                },
+                "unit": "mbytes",
+                "custom": {
+                    "drawStyle": "line",
+                    "fillOpacity": 15
+                }
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "time_series",
+                    "rawSql": "SELECT time_bucket('5 minutes', \"time\") AS \"time\", AVG(ram_used_mb) AS \"Used (MB)\", AVG(ram_total_mb) AS \"Total (MB)\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}' GROUP BY 1 ORDER BY 1"
+                }
+            ]
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 41
+            },
+            "id": 500,
+            "title": "AIOps — ANOMALY DETECTION (3-Sigma Z-Score)",
+            "type": "row"
+        },
+        {
+            "id": 40,
+            "title": "CPU Anomaly Score (Z-Score)",
+            "type": "timeseries",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 42
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "short",
+                    "custom": {
+                        "fillOpacity": 15,
+                        "lineWidth": 2,
+                        "spanNulls": true,
+                        "thresholdsStyle": {
+                            "mode": "line"
+                        }
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 2
+                            },
+                            {
+                                "color": "red",
+                                "value": 3
+                            }
+                        ]
+                    },
+                    "color": {
+                        "mode": "thresholds"
+                    }
+                }
+            },
+            "options": {
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                },
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ]
+                },
+                "unit": "short",
+                "custom": {
+                    "drawStyle": "line",
+                    "fillOpacity": 10
+                }
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "time_series",
+                    "rawSql": "WITH stats AS (SELECT \"bucket\", machine_id, avg_cpu, AVG(avg_cpu) OVER w AS moving_avg, COALESCE(STDDEV(avg_cpu) OVER w, 0) AS moving_stddev FROM public.telemetry_minute_summary WHERE machine_id = '${machine_id}' AND $__timeFilter(\"bucket\") WINDOW w AS (PARTITION BY machine_id ORDER BY \"bucket\" ROWS BETWEEN 60 PRECEDING AND 1 PRECEDING)) SELECT \"bucket\" AS \"time\", CASE WHEN moving_stddev > 0 THEN (avg_cpu - moving_avg) / moving_stddev ELSE 0 END AS \"Z-Score\" FROM stats WHERE moving_avg > 0 ORDER BY 1"
+                }
+            ]
+        },
+        {
+            "id": 12,
+            "title": "Packet Loss Analytics",
+            "type": "timeseries",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 8
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "short",
+                    "min": 0,
+                    "color": {
+                        "mode": "fixed",
+                        "fixedColor": "red"
+                    },
+                    "custom": {
+                        "fillOpacity": 20,
+                        "lineWidth": 2,
+                        "spanNulls": true,
+                        "gradientMode": "scheme"
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "orange",
+                                "value": 1
+                            },
+                            {
+                                "color": "red",
+                                "value": 10
+                            }
+                        ]
+                    }
+                }
+            },
+            "options": {
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                },
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ]
+                },
+                "custom": {
+                    "drawStyle": "bars",
+                    "fillOpacity": 80
+                }
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "legendFormat": "Errors/min",
+                    "format": "time_series",
+                    "rawSql": "SELECT \"bucket\" AS \"time\", total_rx_errors AS \"RX Errors\" FROM public.telemetry_minute_summary WHERE machine_id = '${machine_id}' AND $__timeFilter(\"bucket\") ORDER BY 1"
+                },
+                {
+                    "refId": "B",
+                    "legendFormat": "Drops/min",
+                    "format": "time_series",
+                    "rawSql": "SELECT \"bucket\" AS \"time\", total_rx_drops AS \"RX Drops\" FROM public.telemetry_minute_summary WHERE machine_id = '${machine_id}' AND $__timeFilter(\"bucket\") ORDER BY 1"
+                }
+            ]
+        },
+        {
+            "id": 42,
+            "title": "Interface Status",
+            "type": "stat",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 6,
+                "x": 0,
+                "y": 50
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "red",
+                                "value": null
+                            },
+                            {
+                                "color": "green",
+                                "value": 1
+                            }
+                        ]
+                    },
+                    "mappings": [
+                        {
+                            "type": "value",
+                            "options": {
+                                "1": {
+                                    "text": "LINK UP",
+                                    "color": "green"
+                                }
+                            }
+                        },
+                        {
+                            "type": "value",
+                            "options": {
+                                "2": {
+                                    "text": "LINK DOWN",
+                                    "color": "red"
+                                }
+                            }
+                        }
+                    ],
+                    "color": {
+                        "mode": "thresholds"
+                    }
+                }
+            },
+            "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "textMode": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "values": false
+                }
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "table",
+                    "rawSql": "SELECT min_if_status AS value FROM public.telemetry_minute_summary WHERE machine_id = '${machine_id}' AND $__timeFilter(\"bucket\") ORDER BY \"bucket\" DESC LIMIT 1"
+                }
+            ]
+        },
+        {
+            "id": 43,
+            "title": "Total RX Errors (Session)",
+            "type": "stat",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 6,
+                "x": 6,
+                "y": 50
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "short",
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "orange",
+                                "value": 50
+                            },
+                            {
+                                "color": "red",
+                                "value": 100
+                            }
+                        ]
+                    },
+                    "color": {
+                        "mode": "thresholds"
+                    }
+                }
+            },
+            "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "center",
+                "textMode": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "values": false
+                }
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "table",
+                    "rawSql": "SELECT SUM(total_rx_errors) AS value FROM public.telemetry_minute_summary WHERE machine_id = '${machine_id}' AND $__timeFilter(\"bucket\")"
+                }
+            ]
+        },
+        {
+            "id": 44,
+            "title": "Total RX Drops (Session)",
+            "type": "stat",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 6,
+                "x": 12,
+                "y": 50
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "short",
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "orange",
+                                "value": 50
+                            },
+                            {
+                                "color": "red",
+                                "value": 100
+                            }
+                        ]
+                    },
+                    "color": {
+                        "mode": "thresholds"
+                    }
+                }
+            },
+            "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "center",
+                "textMode": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "values": false
+                }
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "table",
+                    "rawSql": "SELECT SUM(total_rx_drops) AS value FROM public.telemetry_minute_summary WHERE machine_id = '${machine_id}' AND $__timeFilter(\"bucket\")"
+                }
+            ]
+        },
+        {
+            "id": 45,
+            "title": "Packet Loss Rate",
+            "type": "gauge",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 6,
+                "x": 18,
+                "y": 50
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "percent",
+                    "min": 0,
+                    "max": 100,
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 0.01
+                            },
+                            {
+                                "color": "red",
+                                "value": 0.05
+                            }
+                        ]
+                    },
+                    "color": {
+                        "mode": "thresholds"
+                    }
+                }
+            },
+            "options": {
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "values": false
+                },
+                "unit": "percentunit"
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "table",
+                    "rawSql": "WITH agg AS (SELECT SUM(total_rx_errors + total_rx_drops) AS total_issues, SUM(total_rx_errors + total_rx_drops + (avg_rx_mbps * 60 * 125000)) AS total_packets FROM public.telemetry_minute_summary WHERE machine_id = '${machine_id}' AND $__timeFilter(\"bucket\")) SELECT CASE WHEN total_packets > 0 THEN ROUND(((total_issues::NUMERIC / total_packets::NUMERIC) * 100)::NUMERIC, 4) ELSE 0 END AS value FROM agg"
+                }
+            ]
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 54
+            },
+            "id": 400,
+            "title": "Recent Telemetry Data",
+            "type": "row"
+        },
+        {
+            "id": 30,
+            "title": "Latest Readings",
+            "type": "table",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 24,
+                "x": 0,
+                "y": 55
+            },
+            "fieldConfig": {
+                "defaults": {},
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "time"
+                        },
+                        "properties": [
+                            {
+                                "id": "unit",
+                                "value": "dateTimeFromNow"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "options": {
+                "showHeader": true,
+                "sortBy": [
+                    {
+                        "displayName": "time",
+                        "desc": true
+                    }
+                ]
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "table",
+                    "rawSql": "SELECT \"time\", cpu_load_percent AS cpu_pct, (ram_used_mb / NULLIF(ram_total_mb, 0) * 100) AS ram_pct, (disk_used_gb / NULLIF(disk_total_gb, 0) * 100) AS disk_pct, temp_c AS temp, net_rx_errors AS rx_err, net_rx_drops AS rx_drop, net_if_status AS if_status FROM public.machine_telemetry WHERE machine_id = '${machine_id}' ORDER BY \"time\" DESC LIMIT 50"
+                }
+            ]
+        }
+    ],
+    "schemaVersion": 39,
+    "tags": [
+        "ims",
+        "engineering",
+        "drilldown"
+    ],
+    "templating": {
+        "list": [
+            {
+                "name": "machine_id",
+                "label": "Machine",
+                "type": "query",
+                "query": "SELECT DISTINCT machine_id FROM public.machine_telemetry ORDER BY machine_id",
+                "datasource": {
+                    "uid": "timescaledb"
+                },
+                "refresh": 2,
+                "multi": false,
+                "includeAll": false,
+                "sort": 1,
+                "current": {
+                    "text": "ERP-MASTER-UBUNTU",
+                    "value": "ERP-MASTER-UBUNTU"
+                }
+            }
         ]
-      },
-      "options": {
-        "tooltip": { "mode": "multi", "sort": "desc" },
-        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] }
-      },
-      "targets": [{
-        "refId": "A",
-        "format": "time_series",
-        "rawSql": "SELECT \"time\", key AS \"Interface\", (value->>'rx_mbps')::NUMERIC AS \"RX Mbps\", (value->>'tx_mbps')::NUMERIC AS \"TX Mbps\" FROM public.machine_telemetry, jsonb_each(interface_metrics) WHERE machine_id = '${machine_id}' AND $__timeFilter(\"time\") AND value ? 'rx_mbps' ORDER BY 1"
-      }]
     },
-    {
-      "id": 26,
-      "title": "Interface Error Rates (eth0 vs wlan0)",
-      "type": "timeseries",
-      "datasource": { "uid": "timescaledb" },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 25 },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "pps",
-          "min": 0,
-          "custom": {
-            "fillOpacity": 30,
-            "lineWidth": 2,
-            "spanNulls": true,
-            "gradientMode": "opacity"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "orange", "value": 5 },
-              { "color": "red", "value": 20 }
-            ]
-          }
-        }
-      },
-      "options": {
-        "tooltip": { "mode": "multi", "sort": "desc" },
-        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "legendFormat": "{{Interface}} Errors",
-          "format": "time_series",
-          "rawSql": "SELECT \"time\", key AS \"Interface\", (value->>'errors')::NUMERIC AS \"Errors\" FROM public.machine_telemetry, jsonb_each(interface_metrics) WHERE machine_id = '${machine_id}' AND $__timeFilter(\"time\") AND value ? 'errors' ORDER BY 1"
-        },
-        {
-          "refId": "B",
-          "legendFormat": "{{Interface}} Drops",
-          "format": "time_series",
-          "rawSql": "SELECT \"time\", key AS \"Interface\", (value->>'drops')::NUMERIC AS \"Drops\" FROM public.machine_telemetry, jsonb_each(interface_metrics) WHERE machine_id = '${machine_id}' AND $__timeFilter(\"time\") AND value ? 'drops' ORDER BY 1"
-        }
-      ]
+    "time": {
+        "from": "now-1h",
+        "to": "now"
     },
-    {
-      "id": 21,
-      "title": "Temperature Sensors",
-      "type": "timeseries",
-      "datasource": { "uid": "timescaledb" },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 33 },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "celsius",
-          "min": 0,
-          "max": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 65 },
-              { "color": "red", "value": 80 }
-            ]
-          },
-          "custom": {
-            "fillOpacity": 10,
-            "lineWidth": 2,
-            "spanNulls": true,
-            "thresholdsStyle": { "mode": "line" }
-          }
-        }
-      },
-      "options": {
-        "tooltip": { "mode": "multi", "sort": "desc" },
-        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] }
-      },
-      "targets": [{
-        "refId": "A",
-        "format": "time_series",
-        "rawSql": "SELECT \"bucket\" AS \"time\", max_temp_c AS \"Temperature (°C)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(\"bucket\") AND machine_id = '${machine_id}' AND max_temp_c > 0 ORDER BY 1"
-      }]
-    },
-    {
-      "id": 22,
-      "title": "Disk Usage Trend",
-      "type": "timeseries",
-      "datasource": { "uid": "timescaledb" },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 33 },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "GB",
-          "min": 0,
-          "custom": {
-            "fillOpacity": 20,
-            "lineWidth": 2,
-            "spanNulls": true
-          }
-        }
-      },
-      "options": {
-        "tooltip": { "mode": "multi", "sort": "desc" },
-        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] }
-      },
-      "targets": [{
-        "refId": "A",
-        "format": "time_series",
-        "rawSql": "SELECT time_bucket('5 minutes', \"time\") AS \"time\", AVG(disk_used_gb) AS \"Used (GB)\", AVG(disk_total_gb) AS \"Total (GB)\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}' GROUP BY 1 ORDER BY 1"
-      }]
-    },
-    {
-      "id": 23,
-      "title": "RAM Usage Trend",
-      "type": "timeseries",
-      "datasource": { "uid": "timescaledb" },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 33 },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "MB",
-          "min": 0,
-          "custom": {
-            "fillOpacity": 20,
-            "lineWidth": 2,
-            "spanNulls": true
-          }
-        }
-      },
-      "options": {
-        "tooltip": { "mode": "multi", "sort": "desc" },
-        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] }
-      },
-      "targets": [{
-        "refId": "A",
-        "format": "time_series",
-        "rawSql": "SELECT time_bucket('5 minutes', \"time\") AS \"time\", AVG(ram_used_mb) AS \"Used (MB)\", AVG(ram_total_mb) AS \"Total (MB)\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}' GROUP BY 1 ORDER BY 1"
-      }]
-    },
-    {
-      "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 41 },
-      "id": 500,
-      "title": "AIOps — ANOMALY DETECTION (3-Sigma Z-Score)",
-      "type": "row"
-    },
-    {
-      "id": 40,
-      "title": "CPU Anomaly Score (Z-Score)",
-      "type": "timeseries",
-      "datasource": { "uid": "timescaledb" },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 42 },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "custom": {
-            "fillOpacity": 15,
-            "lineWidth": 2,
-            "spanNulls": true,
-            "thresholdsStyle": { "mode": "line" }
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 2 },
-              { "color": "red", "value": 3 }
-            ]
-          }
-        }
-      },
-      "options": {
-        "tooltip": { "mode": "multi", "sort": "desc" },
-        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] }
-      },
-      "targets": [{
-        "refId": "A",
-        "format": "time_series",
-        "rawSql": "WITH stats AS (SELECT \"bucket\", machine_id, avg_cpu, AVG(avg_cpu) OVER w AS moving_avg, COALESCE(STDDEV(avg_cpu) OVER w, 0) AS moving_stddev FROM public.telemetry_minute_summary WHERE machine_id = '${machine_id}' AND $__timeFilter(\"bucket\") WINDOW w AS (PARTITION BY machine_id ORDER BY \"bucket\" ROWS BETWEEN 60 PRECEDING AND 1 PRECEDING)) SELECT \"bucket\" AS \"time\", CASE WHEN moving_stddev > 0 THEN (avg_cpu - moving_avg) / moving_stddev ELSE 0 END AS \"Z-Score\" FROM stats WHERE moving_avg > 0 ORDER BY 1"
-      }]
-    },
-    {
-      "id": 12,
-      "title": "Memory Usage",
-      "type": "timeseries",
-      "datasource": { "uid": "timescaledb" },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "decmbytes",
-          "min": 0,
-          "color": { "mode": "fixed", "fixedColor": "purple" },
-          "custom": {
-            "fillOpacity": 20,
-            "lineWidth": 2,
-            "spanNulls": true,
-            "gradientMode": "scheme"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "orange", "value": 1 },
-              { "color": "red", "value": 10 }
-            ]
-          }
-        }
-      },
-      "options": {
-        "tooltip": { "mode": "multi", "sort": "desc" },
-        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "legendFormat": "Errors/min",
-          "format": "time_series",
-          "rawSql": "SELECT \"bucket\" AS \"time\", total_rx_errors AS \"RX Errors\" FROM public.telemetry_minute_summary WHERE machine_id = '${machine_id}' AND $__timeFilter(\"bucket\") ORDER BY 1"
-        },
-        {
-          "refId": "B",
-          "legendFormat": "Drops/min",
-          "format": "time_series",
-          "rawSql": "SELECT \"bucket\" AS \"time\", total_rx_drops AS \"RX Drops\" FROM public.telemetry_minute_summary WHERE machine_id = '${machine_id}' AND $__timeFilter(\"bucket\") ORDER BY 1"
-        }
-      ]
-    },
-    {
-      "id": 42,
-      "title": "Interface Status",
-      "type": "stat",
-      "datasource": { "uid": "timescaledb" },
-      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 50 },
-      "fieldConfig": {
-        "defaults": {
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "red", "value": null },
-              { "color": "green", "value": 1 }
-            ]
-          },
-          "mappings": [
-            { "type": "value", "options": { "1": { "text": "LINK UP", "color": "green" } } },
-            { "type": "value", "options": { "2": { "text": "LINK DOWN", "color": "red" } } }
-          ],
-          "color": { "mode": "thresholds" }
-        }
-      },
-      "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "center",
-        "textMode": "auto",
-        "reduceOptions": { "calcs": ["lastNotNull"], "values": false }
-      },
-      "targets": [{
-        "refId": "A",
-        "format": "table",
-        "rawSql": "SELECT min_if_status AS value FROM public.telemetry_minute_summary WHERE machine_id = '${machine_id}' AND $__timeFilter(\"bucket\") ORDER BY \"bucket\" DESC LIMIT 1"
-      }]
-    },
-    {
-      "id": 43,
-      "title": "Total RX Errors (Session)",
-      "type": "stat",
-      "datasource": { "uid": "timescaledb" },
-      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 50 },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "orange", "value": 10 },
-              { "color": "red", "value": 100 }
-            ]
-          },
-          "color": { "mode": "thresholds" }
-        }
-      },
-      "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "center",
-        "textMode": "auto",
-        "reduceOptions": { "calcs": ["lastNotNull"], "values": false }
-      },
-      "targets": [{
-        "refId": "A",
-        "format": "table",
-        "rawSql": "SELECT SUM(total_rx_errors) AS value FROM public.telemetry_minute_summary WHERE machine_id = '${machine_id}' AND $__timeFilter(\"bucket\")"
-      }]
-    },
-    {
-      "id": 44,
-      "title": "Total RX Drops (Session)",
-      "type": "stat",
-      "datasource": { "uid": "timescaledb" },
-      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 50 },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "orange", "value": 10 },
-              { "color": "red", "value": 50 }
-            ]
-          },
-          "color": { "mode": "thresholds" }
-        }
-      },
-      "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "center",
-        "textMode": "auto",
-        "reduceOptions": { "calcs": ["lastNotNull"], "values": false }
-      },
-      "targets": [{
-        "refId": "A",
-        "format": "table",
-        "rawSql": "SELECT SUM(total_rx_drops) AS value FROM public.telemetry_minute_summary WHERE machine_id = '${machine_id}' AND $__timeFilter(\"bucket\")"
-      }]
-    },
-    {
-      "id": 45,
-      "title": "Packet Loss Rate",
-      "type": "gauge",
-      "datasource": { "uid": "timescaledb" },
-      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 50 },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 0.01 },
-              { "color": "red", "value": 0.1 }
-            ]
-          }
-        }
-      },
-      "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"], "values": false }
-      },
-      "targets": [{
-        "refId": "A",
-        "format": "table",
-        "rawSql": "WITH agg AS (SELECT SUM(total_rx_errors + total_rx_drops) AS total_issues, SUM(total_rx_errors + total_rx_drops + (avg_rx_mbps * 60 * 125000)) AS total_packets FROM public.telemetry_minute_summary WHERE machine_id = '${machine_id}' AND $__timeFilter(\"bucket\")) SELECT CASE WHEN total_packets > 0 THEN ROUND(((total_issues::NUMERIC / total_packets::NUMERIC) * 100)::NUMERIC, 4) ELSE 0 END AS value FROM agg"
-      }]
-    },
-    {
-      "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 54 },
-      "id": 400,
-      "title": "Recent Telemetry Data",
-      "type": "row"
-    },
-    {
-      "id": 30,
-      "title": "Latest Readings",
-      "type": "table",
-      "datasource": { "uid": "timescaledb" },
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 55 },
-      "fieldConfig": {
-        "defaults": {},
-        "overrides": [
-          {
-            "matcher": { "id": "byName", "options": "time" },
-            "properties": [
-              { "id": "unit", "value": "dateTimeFromNow" }
-            ]
-          }
+    "timepicker": {
+        "refresh_intervals": [
+            "5s",
+            "10s",
+            "30s",
+            "1m"
         ]
-      },
-      "options": {
-        "showHeader": true,
-        "sortBy": [{ "displayName": "time", "desc": true }]
-      },
-      "targets": [{
-        "refId": "A",
-        "format": "table",
-        "rawSql": "SELECT \"time\", cpu_load_percent AS cpu_pct, (ram_used_mb / NULLIF(ram_total_mb, 0) * 100) AS ram_pct, (disk_used_gb / NULLIF(disk_total_gb, 0) * 100) AS disk_pct, temp_c AS temp, net_rx_errors AS rx_err, net_rx_drops AS rx_drop, net_if_status AS if_status FROM public.machine_telemetry WHERE machine_id = '${machine_id}' ORDER BY \"time\" DESC LIMIT 50"
-      }]
-    }
-  ],
-  "schemaVersion": 39,
-  "tags": ["ims", "engineering", "drilldown"],
-  "templating": {
-    "list": [
-      {
-        "name": "machine_id",
-        "label": "Machine",
-        "type": "query",
-        "query": "SELECT DISTINCT machine_id FROM public.machine_telemetry ORDER BY machine_id",
-        "datasource": { "uid": "timescaledb" },
-        "refresh": 2,
-        "multi": false,
-        "includeAll": false,
-        "sort": 1,
-        "current": {
-          "text": "ERP-MASTER-UBUNTU",
-          "value": "ERP-MASTER-UBUNTU"
-        }
-      }
-    ]
-  },
-  "time": { "from": "now-1h", "to": "now" },
-  "timepicker": { "refresh_intervals": ["5s", "10s", "30s", "1m"] },
-  "timezone": "Asia/Bangkok",
-  "title": "IMS Engineering Drill-Down",
-  "uid": "ims-engineering",
-  "version": 4,
-  "refresh": "10s"
+    },
+    "timezone": "Asia/Bangkok",
+    "title": "IMS Engineering Drill-Down",
+    "uid": "ims-engineering",
+    "version": 4,
+    "refresh": "10s"
 }
