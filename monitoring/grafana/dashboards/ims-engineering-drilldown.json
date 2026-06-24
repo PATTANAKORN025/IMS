@@ -157,7 +157,7 @@
         },
         {
             "id": 3,
-            "title": "Disk Usage",
+            "title": "Storage Saturation",
             "type": "gauge",
             "datasource": {
                 "uid": "timescaledb"
@@ -480,8 +480,8 @@
             ]
         },
         {
-            "id": 12,
-            "title": "Memory Usage",
+            "id": 501,
+            "title": "Memory Saturation",
             "type": "timeseries",
             "datasource": {
                 "uid": "timescaledb"
@@ -558,8 +558,8 @@
             ]
         },
         {
-            "id": 13,
-            "title": "Disk Usage",
+            "id": 502,
+            "title": "Ethernet/WiFi Bandwidth (Per-Interface)",
             "type": "timeseries",
             "datasource": {
                 "uid": "timescaledb"
@@ -572,7 +572,7 @@
             },
             "fieldConfig": {
                 "defaults": {
-                    "unit": "gbytes",
+                    "unit": "mbps",
                     "min": 0,
                     "color": {
                         "mode": "thresholds"
@@ -600,7 +600,101 @@
                             }
                         ]
                     }
-                }
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "eth0 Download"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#1F60C4",
+                                    "mode": "fixed"
+                                }
+                            },
+                            {
+                                "id": "custom.fillOpacity",
+                                "value": 30
+                            },
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 2
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "eth0 Upload"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#5794F2",
+                                    "mode": "fixed"
+                                }
+                            },
+                            {
+                                "id": "custom.fillOpacity",
+                                "value": 30
+                            },
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 2
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "wlan0 Download"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#8E24AA",
+                                    "mode": "fixed"
+                                }
+                            },
+                            {
+                                "id": "custom.fillOpacity",
+                                "value": 30
+                            },
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 2
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "wlan0 Upload"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#E02F44",
+                                    "mode": "fixed"
+                                }
+                            },
+                            {
+                                "id": "custom.fillOpacity",
+                                "value": 30
+                            },
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 2
+                            }
+                        ]
+                    }
+                ]
             },
             "options": {
                 "tooltip": {
@@ -615,7 +709,7 @@
                         "max"
                     ]
                 },
-                "unit": "gbytes",
+                "unit": "mbps",
                 "custom": {
                     "drawStyle": "line",
                     "fillOpacity": 15,
@@ -626,12 +720,7 @@
                 {
                     "refId": "A",
                     "format": "time_series",
-                    "rawSql": "SELECT time_bucket('1 minute', \"time\") AS \"time\", disk_used_gb AS \"Used (GB)\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}' ORDER BY 1"
-                },
-                {
-                    "refId": "B",
-                    "format": "time_series",
-                    "rawSql": "SELECT time_bucket('1 minute', \"time\") AS \"time\", disk_total_gb AS \"Total (GB)\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}' ORDER BY 1"
+                    "rawSql": "SELECT mt.\"time\", t.iface || ' Download' AS metric, (t.value->>'rx_mbps')::NUMERIC AS \"Mbps\" FROM public.machine_telemetry mt CROSS JOIN LATERAL jsonb_each(mt.interface_metrics) t(iface, value) WHERE $__timeFilter(mt.\"time\") AND mt.machine_id = '${machine_id}' AND (t.value->>'rx_mbps')::NUMERIC > 0 UNION ALL SELECT mt.\"time\", t.iface || ' Upload' AS metric, ((t.value->>'tx_mbps')::NUMERIC * -1) AS \"Mbps\" FROM public.machine_telemetry mt CROSS JOIN LATERAL jsonb_each(mt.interface_metrics) t(iface, value) WHERE $__timeFilter(mt.\"time\") AND mt.machine_id = '${machine_id}' AND (t.value->>'tx_mbps')::NUMERIC > 0 ORDER BY 1"
                 }
             ]
         },
@@ -763,93 +852,6 @@
             ]
         },
         {
-            "id": 13,
-            "title": "Ethernet/WiFi Bandwidth",
-            "type": "timeseries",
-            "datasource": {
-                "uid": "timescaledb"
-            },
-            "gridPos": {
-                "h": 8,
-                "w": 12,
-                "x": 0,
-                "y": 16
-            },
-            "fieldConfig": {
-                "defaults": {
-                    "unit": "mbps",
-                    "min": 0,
-                    "color": {
-                        "mode": "thresholds"
-                    },
-                    "custom": {
-                        "fillOpacity": 20,
-                        "lineWidth": 2,
-                        "spanNulls": true,
-                        "gradientMode": "scheme"
-                    }
-                },
-                "overrides": [
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "RX Mbps"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "green",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "TX Mbps"
-                        },
-                        "properties": [
-                            {
-                                "id": "color",
-                                "value": {
-                                    "fixedColor": "blue",
-                                    "mode": "fixed"
-                                }
-                            }
-                        ]
-                    }
-                ]
-            },
-            "options": {
-                "tooltip": {
-                    "mode": "multi"
-                },
-                "legend": {
-                    "displayMode": "table",
-                    "placement": "bottom",
-                    "calcs": [
-                        "mean",
-                        "max"
-                    ]
-                },
-                "unit": "mbps",
-                "custom": {
-                    "drawStyle": "line",
-                    "fillOpacity": 10,
-                    "gradientMode": "scheme"
-                }
-            },
-            "targets": [
-                {
-                    "refId": "A",
-                    "format": "time_series",
-                    "rawSql": "SELECT \"time\", key AS \"Interface\", (value->>'rx_mbps')::NUMERIC AS \"RX Mbps\", (value->>'tx_mbps')::NUMERIC AS \"TX Mbps\" FROM public.machine_telemetry, jsonb_each(interface_metrics) WHERE machine_id = '${machine_id}' AND $__timeFilter(\"time\") AND value ? 'rx_mbps' ORDER BY 1"
-                }
-            ]
-        },
-        {
             "id": 26,
             "title": "Interface Error Rates (eth0 vs wlan0)",
             "type": "timeseries",
@@ -867,10 +869,11 @@
                     "unit": "pps",
                     "min": 0,
                     "custom": {
-                        "fillOpacity": 30,
-                        "lineWidth": 2,
-                        "spanNulls": true,
-                        "gradientMode": "opacity"
+                        "drawStyle": "bars",
+                        "fillOpacity": 80,
+                        "lineWidth": 1,
+                        "spanNulls": false,
+                        "gradientMode": "none"
                     },
                     "thresholds": {
                         "mode": "absolute",
@@ -892,7 +895,39 @@
                     "color": {
                         "mode": "thresholds"
                     }
-                }
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Errors"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#C4162A",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Drops"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#FF9830",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
             },
             "options": {
                 "tooltip": {
@@ -1137,6 +1172,8 @@
             "fieldConfig": {
                 "defaults": {
                     "unit": "short",
+                    "min": -4,
+                    "max": 4,
                     "custom": {
                         "fillOpacity": 15,
                         "lineWidth": 2,
@@ -1149,16 +1186,20 @@
                         "mode": "absolute",
                         "steps": [
                             {
-                                "color": "green",
-                                "value": null
+                                "color": "red",
+                                "value": -4
                             },
                             {
-                                "color": "yellow",
-                                "value": 2
+                                "color": "green",
+                                "value": -3
+                            },
+                            {
+                                "color": "green",
+                                "value": 3
                             },
                             {
                                 "color": "red",
-                                "value": 3
+                                "value": 4
                             }
                         ]
                     },
@@ -1196,7 +1237,7 @@
         },
         {
             "id": 12,
-            "title": "Packet Loss Analytics",
+            "title": "Network Interface Degradation",
             "type": "timeseries",
             "datasource": {
                 "uid": "timescaledb"
