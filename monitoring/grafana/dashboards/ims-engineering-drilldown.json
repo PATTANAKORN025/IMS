@@ -364,14 +364,14 @@
           {
             "matcher": { "id": "byName", "options": "Download (Mbps)" },
             "properties": [
-              { "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } },
+              { "id": "color", "value": { "fixedColor": "#1F60C4", "mode": "fixed" } },
               { "id": "custom.fillOpacity", "value": 30 }
             ]
           },
           {
             "matcher": { "id": "byName", "options": "Upload (Mbps)" },
             "properties": [
-              { "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } },
+              { "id": "color", "value": { "fixedColor": "#5794F2", "mode": "fixed" } },
               { "id": "custom.fillOpacity", "value": 30 }
             ]
           }
