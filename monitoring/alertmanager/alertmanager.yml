@@ -2,21 +2,127 @@ global:
   resolve_timeout: 5m
 
 route:
-  group_by: ['alertname', 'server']
-  group_wait: 10s
-  group_interval: 10s
-  repeat_interval: 12h
-  receiver: 'default'
+  receiver: 'ims-webhook-default'
+  group_by: ['alertname', 'cluster', 'job', 'severity']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 3h
+  routes:
+    # Watchdog goes to null (deadman's switch)
+    - matchers:
+        - alertname="Watchdog"
+      receiver: 'null'
+      group_wait: 0s
+      group_interval: 1m
+      repeat_interval: 1m
+    - matchers:
+        - severity="critical"
+      receiver: 'ims-slack-critical'
+      group_wait: 10s
+      group_interval: 5m
+      repeat_interval: 30m
+      continue: true
+
+    - matchers:
+        - severity="warning"
+      receiver: 'ims-webhook-default'
+      group_wait: 30s
+      group_interval: 10m
+      repeat_interval: 2h
+
+    - matchers:
+        - severity="info"
+      receiver: 'ims-webhook-default'
+      group_interval: 30m
+      repeat_interval: 24h
 
 receivers:
-  - name: 'default'
+  - name: 'null'
+  - name: 'ims-webhook-default'
     webhook_configs:
-      - url: 'https://localhost:9095/webhook'
+      - url: 'http://node-red:1880/alert-webhook'
+        send_resolved: true
+        http_config:
+          follow_redirects: true
+
+  - name: 'ims-slack-critical'
+    webhook_configs:
+      - url: 'http://node-red:1880/alert-webhook'
+        send_resolved: true
+    slack_configs:
+      - api_url: 'https://hooks.slack.com/services/YOUR/WEBHOOK/URL'
+        channel: '#ims-critical-alerts'
+        title: '{{ if eq .Status "firing" }}:rotating_light: [CRITICAL]{{ else }}:white_check_mark: [RESOLVED]{{ end }} {{ .GroupLabels.alertname }}'
+        text: >-
+          {{ range .Alerts }}
+          *Machine:* {{ .Labels.machine_id }}
+          *Summary:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          *Started:* {{ .StartsAt.Format "2006-01-02 15:04:05" }}
+          {{ if .EndsAt }}*Ended:* {{ .EndsAt.Format "2006-01-02 15:04:05" }}{{ end }}
+          {{ end }}
+        color: '{{ if eq .Status "firing" }}danger{{ else }}good{{ end }}'
+        send_resolved: true
+
+  - name: 'ims-deadman'
+    webhook_configs:
+      - url: 'http://node-red:1880/alert-webhook'
         send_resolved: true
 
 inhibit_rules:
-  - source_match:
-      severity: 'critical'
-    target_match:
-      severity: 'warning'
-    equal: ['alertname', 'server']
+  # InterfaceDown inhibits ALL telemetry warnings on same machine
+  - source_matchers:
+      - alertname="InterfaceDown"
+    target_matchers:
+      - severity="warning"
+      - service="network"
+    equal: ['machine_id']
+
+  # InterfaceDown inhibits CPU/RAM/Thermal warnings
+  - source_matchers:
+      - alertname="InterfaceDown"
+    target_matchers_re:
+      alertname: "CPUHigh|MemorySaturation|ThermalRunaway"
+    equal: ['machine_id']
+
+  # ServiceDown inhibits ALL warnings on same machine
+  - source_matchers:
+      - alertname="ServiceDown"
+    target_matchers:
+      - severity="warning"
+    equal: ['machine_id']
+
+  # NodeREDDown inhibits telemetry-related warnings
+  - source_matchers:
+      - alertname="NodeREDDown"
+    target_matchers:
+      - alertname="TelemetryGap"
+    equal: []
+
+  # Critical inhibits Warning for same alertname + machine
+  - source_matchers:
+      - severity="critical"
+    target_matchers:
+      - severity="warning"
+    equal: ['alertname', 'machine_id']
+
+  # Critical inhibits Info
+  - source_matchers:
+      - severity="critical"
+    target_matchers:
+      - severity="info"
+    equal: ['alertname', 'machine_id']
+
+  # ThermalRunawayCritical inhibits ThermalRunawayWarning
+  - source_matchers:
+      - alertname="ThermalRunawayCritical"
+    target_matchers:
+      - alertname="ThermalRunawayWarning"
+    equal: ['machine_id']
+
+  # NetworkDropsCritical inhibits NetworkErrorsSpike
+  - source_matchers:
+      - alertname="NetworkDropsCritical"
+    target_matchers:
+      - alertname="NetworkErrorsSpike"
+    equal: ['machine_id']
