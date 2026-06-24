@@ -617,11 +617,15 @@
                             },
                             {
                                 "id": "custom.fillOpacity",
-                                "value": 30
+                                "value": 40
                             },
                             {
                                 "id": "custom.lineWidth",
                                 "value": 2
+                            },
+                            {
+                                "id": "custom.zIndex",
+                                "value": 1
                             }
                         ]
                     },
@@ -640,11 +644,15 @@
                             },
                             {
                                 "id": "custom.fillOpacity",
-                                "value": 30
+                                "value": 40
                             },
                             {
                                 "id": "custom.lineWidth",
                                 "value": 2
+                            },
+                            {
+                                "id": "custom.zIndex",
+                                "value": 1
                             }
                         ]
                     },
@@ -663,10 +671,14 @@
                             },
                             {
                                 "id": "custom.fillOpacity",
-                                "value": 30
+                                "value": 40
                             },
                             {
                                 "id": "custom.lineWidth",
+                                "value": 2
+                            },
+                            {
+                                "id": "custom.zIndex",
                                 "value": 2
                             }
                         ]
@@ -686,10 +698,14 @@
                             },
                             {
                                 "id": "custom.fillOpacity",
-                                "value": 30
+                                "value": 40
                             },
                             {
                                 "id": "custom.lineWidth",
+                                "value": 2
+                            },
+                            {
+                                "id": "custom.zIndex",
                                 "value": 2
                             }
                         ]
