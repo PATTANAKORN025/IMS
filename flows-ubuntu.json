@@ -1,303 +1,370 @@
 [
-    {
-        "id": "ims-tab-v5",
-        "type": "tab",
-        "label": "IMS Enterprise Engine v5",
-        "disabled": false,
-        "info": "Phase 13: 5-Thread Parallel SNMP Walker — Zero-Leak & Wrap Protection",
-        "env": []
+  {
+    "id": "ims-tab-v5",
+    "type": "tab",
+    "label": "IMS Enterprise Engine v5",
+    "disabled": false,
+    "info": "Phase 16: 4-Thread SNMP Walker (3 walks + 1 SNMP GET) — Network Data Fix",
+    "env": []
+  },
+  {
+    "id": "pg_config",
+    "type": "postgreSQLConfig",
+    "name": "IMS Database",
+    "host": "ims-pgbouncer",
+    "hostFieldType": "str",
+    "port": 5432,
+    "portFieldType": "num",
+    "database": "ims",
+    "databaseFieldType": "str",
+    "ssl": false,
+    "sslFieldType": "bool",
+    "max": 10,
+    "idle": 10000,
+    "connectionTimeout": 10000,
+    "user": "ims_admin",
+    "userFieldType": "str",
+    "password": "",
+    "passwordFieldType": "env",
+    "passwordEnv": "PGPASSWORD"
+  },
+  {
+    "id": "inject_ubuntu",
+    "type": "inject",
+    "z": "ims-tab-v5",
+    "name": "Poll Ubuntu (10s)",
+    "props": [
+      {
+        "p": "machine_id",
+        "v": "ERP-MASTER-UBUNTU",
+        "vt": "str"
+      }
+    ],
+    "repeat": "10",
+    "crontab": "",
+    "once": true,
+    "onceDelay": 0.1,
+    "topic": "ERP-MASTER-UBUNTU",
+    "x": 140,
+    "y": 120,
+    "wires": [
+      [
+        "fork_5_ways"
+      ]
+    ]
+  },
+  {
+    "id": "inject_windows",
+    "type": "inject",
+    "z": "ims-tab-v5",
+    "name": "Poll Windows (10s)",
+    "props": [
+      {
+        "p": "machine_id",
+        "v": "ERP-MASTER-WINDOWS",
+        "vt": "str"
+      }
+    ],
+    "repeat": "10",
+    "crontab": "",
+    "once": true,
+    "onceDelay": 5,
+    "topic": "ERP-MASTER-WINDOWS",
+    "x": 140,
+    "y": 200,
+    "wires": [
+      [
+        "fork_5_ways"
+      ]
+    ]
+  },
+  {
+    "id": "fork_5_ways",
+    "type": "function",
+    "z": "ims-tab-v5",
+    "name": "Fork 4 Walker Threads",
+    "func": "const mid = msg.machine_id || msg.topic;\nreturn [\n    { machine_id: mid, topic: mid, _walker: 'cpu', payload: '' },\n    { machine_id: mid, topic: mid, _walker: 'storage', payload: '' },\n    { machine_id: mid, topic: mid, _walker: 'network', payload: '' },\n    { machine_id: mid, topic: mid, _walker: 'temp', payload: '' }\n];",
+    "outputs": 4,
+    "x": 360,
+    "y": 160,
+    "wires": [
+      ["walk_cpu"],
+      ["walk_storage"],
+      ["walk_net_get"],
+      ["walk_temp"]
+    ]
+  },
+  {
+    "id": "walk_cpu",
+    "type": "snmp walker",
+    "z": "ims-tab-v5",
+    "host": "ims-snmpsim",
+    "version": "2c",
+    "timeout": "5",
+    "community": "apex_mock",
+    "auth": "noAuthNoPriv",
+    "oids": "1.3.6.1.2.1.25.3.3.1.2",
+    "name": "Walk CPU",
+    "x": 580,
+    "y": 60,
+    "wires": [
+      [
+        "join_sync"
+      ]
+    ]
+  },
+  {
+    "id": "walk_storage",
+    "type": "snmp walker",
+    "z": "ims-tab-v5",
+    "host": "ims-snmpsim",
+    "version": "2c",
+    "timeout": "5",
+    "community": "apex_mock",
+    "auth": "noAuthNoPriv",
+    "oids": "1.3.6.1.2.1.25.2.3.1",
+    "name": "Walk Storage",
+    "x": 580,
+    "y": 120,
+    "wires": [
+      [
+        "join_sync"
+      ]
+    ]
+  },
+  {
+    "id": "walk_net_get",
+    "type": "function",
+    "z": "ims-tab-v5",
+    "name": "SNMP GET Network",
+    "func": "const snmp = global.get('snmp');\nif (!snmp) { msg.payload = []; return msg; }\nconst oids = [\n    '1.3.6.1.2.1.2.2.1.2.1', '1.3.6.1.2.1.2.2.1.2.2',\n    '1.3.6.1.2.1.2.2.1.5.1', '1.3.6.1.2.1.2.2.1.5.2',\n    '1.3.6.1.2.1.31.1.1.1.6.1', '1.3.6.1.2.1.31.1.1.1.6.2',\n    '1.3.6.1.2.1.31.1.1.1.10.1', '1.3.6.1.2.1.31.1.1.1.10.2',\n    '1.3.6.1.2.1.2.2.1.10.1', '1.3.6.1.2.1.2.2.1.10.2',\n    '1.3.6.1.2.1.2.2.1.16.1', '1.3.6.1.2.1.2.2.1.16.2',\n    '1.3.6.1.2.1.2.2.1.14.1', '1.3.6.1.2.1.2.2.1.14.2',\n    '1.3.6.1.2.1.2.2.1.13.1', '1.3.6.1.2.1.2.2.1.13.2',\n    '1.3.6.1.2.1.2.2.1.8.1', '1.3.6.1.2.1.2.2.1.8.2'\n];\nconst session = snmp.createSession('ims-snmpsim', 'apex_mock', {\n    port: 161, version: snmp.Version2c, retries: 1, timeout: 3000\n});\nconst nodeRef = node;\nconst msgRef = msg;\nsession.get(oids, function(error, varbinds) {\n    session.close();\n    if (error) { msgRef.payload = []; nodeRef.send(msgRef); return; }\n    const results = [];\n    varbinds.forEach(function(vb) {\n        if (vb.type !== 129) results.push({ oid: vb.oid, value: vb.value, type: vb.type });\n    });\n    msgRef.payload = results;\n    nodeRef.send(msgRef);\n});\nreturn null;",
+    "outputs": 1,
+    "x": 580,
+    "y": 210,
+    "wires": [["join_sync"]]
+  },
+  {
+    "id": "walk_temp",
+    "type": "snmp walker",
+    "z": "ims-tab-v5",
+    "host": "ims-snmpsim",
+    "version": "2c",
+    "timeout": "5",
+    "community": "apex_mock",
+    "auth": "noAuthNoPriv",
+    "oids": "1.3.6.1.4.1.2021.13.16.2.1.7",
+    "name": "Walk Temp",
+    "x": 580,
+    "y": 300,
+    "wires": [
+      [
+        "join_sync"
+      ]
+    ]
+  },
+  {
+    "id": "catch_walker",
+    "type": "catch",
+    "z": "ims-tab-v5",
+    "name": "Catch Walker Error",
+    "scope": [
+      "walk_cpu",
+      "walk_storage",
+      "walk_net_get",
+      "walk_temp"
+    ],
+    "uncaught": false,
+    "x": 360,
+    "y": 360,
+    "wires": [
+      [
+        "bypass_error"
+      ]
+    ]
+  },
+  {
+    "id": "bypass_error",
+    "type": "function",
+    "z": "ims-tab-v5",
+    "name": "Bypass Empty",
+    "func": "msg.payload = [];\nreturn msg;",
+    "outputs": 1,
+    "x": 560,
+    "y": 360,
+    "wires": [
+      [
+        "join_sync"
+      ]
+    ]
+  },
+  {
+    "id": "join_sync",
+    "type": "join",
+    "z": "ims-tab-v5",
+    "name": "Barrier Sync (4)",
+    "mode": "custom",
+    "build": "array",
+    "property": "payload",
+    "propertyType": "msg",
+    "key": "topic",
+    "joiner": "\\n",
+    "joinerType": "str",
+    "accumulate": false,
+    "timeout": "8",
+    "count": "4",
+    "reduceRight": false,
+    "x": 800,
+    "y": 180,
+    "wires": [
+      [
+        "sre_parser"
+      ]
+    ]
+  },
+  {
+    "id": "sre_parser",
+    "type": "function",
+    "z": "ims-tab-v5",
+    "name": "Bulletproof AIOps Parser",
+    "func": "if (!msg.payload || !Array.isArray(msg.payload)) return null;\n\nconst flatData = msg.payload.flat();\nmsg.payload = null;\n\nlet cpuTotal=0, coreCount=0;\nlet ramTotalMB=0, ramUsedMB=0, diskTotalGB=0, diskUsedGB=0;\nlet netRxBytes=0, netTxBytes=0, netRxErrors=0, netRxDrops=0, netIfStatus=1, maxTemp=0;\nconst disks={}, ifaces={};\n\nfor (let i = 0; i < flatData.length; i++) {\n    const item = flatData[i];\n    if (!item || !item.oid) continue;\n    const oid = String(item.oid);\n    const val = item.value;\n    \n    if (oid.startsWith('1.3.6.1.2.1.25.3.3.1.2.')) { const v = Number(val); if(Number.isFinite(v)){ cpuTotal+=v; coreCount++; } continue; }\n    \n    if (oid.startsWith('1.3.6.1.2.1.25.2.3.1.')) {\n        const parts = oid.split('.'); const idx = parts.pop(); const mt = parts.pop();\n        if (!disks[idx]) disks[idx] = { type: '', descr: '', au: 0, size: 0, used: 0 };\n        if (mt === '2') disks[idx].type = String(val);\n        else if (mt === '3') disks[idx].descr = String(val).toUpperCase();\n        else if (mt === '4') disks[idx].au = Number(val) || 0;\n        else if (mt === '5') disks[idx].size = Number(val) || 0;\n        else if (mt === '6') disks[idx].used = Number(val) || 0;\n        continue;\n    }\n    \n    if (oid.startsWith('1.3.6.1.2.1.31.1.1.1.6.')) { const idx=oid.split('.').pop(); if(!ifaces[idx]) ifaces[idx]={name:'port_'+idx,rx64:0,tx64:0,rx32:0,tx32:0,err:0,drop:0,status:1}; ifaces[idx].rx64=Number(val)||0; netRxBytes+=ifaces[idx].rx64; continue; }\n    if (oid.startsWith('1.3.6.1.2.1.31.1.1.1.10.')){ const idx=oid.split('.').pop(); if(!ifaces[idx]) ifaces[idx]={name:'port_'+idx,rx64:0,tx64:0,rx32:0,tx32:0,err:0,drop:0,status:1}; ifaces[idx].tx64=Number(val)||0; netTxBytes+=ifaces[idx].tx64; continue; }\n    \n    if (oid.startsWith('1.3.6.1.2.1.2.2.1.2.')) { const idx=oid.split('.').pop(); if(!ifaces[idx]) ifaces[idx]={name:'',rx64:0,tx64:0,rx32:0,tx32:0,err:0,drop:0,status:1}; ifaces[idx].name=String(val); continue; }\n    if (oid.startsWith('1.3.6.1.2.1.2.2.1.10.')) { const idx=oid.split('.').pop(); if(!ifaces[idx]) ifaces[idx]={name:'port_'+idx,rx64:0,tx64:0,rx32:0,tx32:0,err:0,drop:0,status:1}; ifaces[idx].rx32=Number(val)||0; if(netRxBytes===0) netRxBytes+=ifaces[idx].rx32; continue; }\n    if (oid.startsWith('1.3.6.1.2.1.2.2.1.16.')) { const idx=oid.split('.').pop(); if(!ifaces[idx]) ifaces[idx]={name:'port_'+idx,rx64:0,tx64:0,rx32:0,tx32:0,err:0,drop:0,status:1}; ifaces[idx].tx32=Number(val)||0; if(netTxBytes===0) netTxBytes+=ifaces[idx].tx32; continue; }\n    \n    if (oid.startsWith('1.3.6.1.2.1.2.2.1.14.')) { const idx=oid.split('.').pop(); if(!ifaces[idx]) ifaces[idx]={name:'port_'+idx,rx64:0,tx64:0,rx32:0,tx32:0,err:0,drop:0,status:1}; ifaces[idx].err+=Number(val)||0; netRxErrors+=Number(val)||0; continue; }\n    if (oid.startsWith('1.3.6.1.2.1.2.2.1.13.')) { const idx=oid.split('.').pop(); if(!ifaces[idx]) ifaces[idx]={name:'port_'+idx,rx64:0,tx64:0,rx32:0,tx32:0,err:0,drop:0,status:1}; ifaces[idx].drop+=Number(val)||0; netRxDrops+=Number(val)||0; continue; }\n    if (oid.startsWith('1.3.6.1.2.1.2.2.1.8.')) { const idx=oid.split('.').pop(); if(!ifaces[idx]) ifaces[idx]={name:'port_'+idx,rx64:0,tx64:0,rx32:0,tx32:0,err:0,drop:0,status:1}; const st=Number(val); if(st===2){ ifaces[idx].status=2; netIfStatus=2; } continue; }\n    \n    if (oid.startsWith('1.3.6.1.4.1.2021.13.16.2.1.7.')) { const t = Number(val); if (Number.isFinite(t) && t > maxTemp) maxTemp = t; }\n}\n\nflatData.length = 0;\n\nfor (const idx in disks) {\n    const d = disks[idx];\n    if (!d.au || !d.size) continue;\n    const sb = d.size * d.au, ub = d.used * d.au, ds = d.descr;\n    if (d.type.includes('25.2.1.2') || ds.includes('MEMORY')) { ramTotalMB += sb / 1048576; ramUsedMB += ub / 1048576; }\n    else if (d.type.includes('25.2.1.4') || ds.includes('C:') || ds.includes('/')) { diskTotalGB += sb / 1073741824; diskUsedGB += ub / 1073741824; }\n}\n\n// Fail-Safe Identity Protection\nconst mid = (msg.machine_id || msg.topic || '').replace(/'/g, \"''\");\nif (!mid) {\n    node.warn(\"Pipeline dropped: Missing machine_id\");\n    return null; \n}\n\nconst now = Date.now();\nconst prevIfaces = JSON.parse(JSON.stringify(flow.get('ifaces_prev_'+mid) || {}));\nconst prevTs = flow.get('ts_prev_'+mid) || (now - 10000);\nconst elapsedSec = (now - prevTs) / 1000;\nconst finalIfaces = {};\nlet rxAll = 0, txAll = 0;\n\nfor(const idx in ifaces){\n    const iface=ifaces[idx]; \n    let rxMbps=0, txMbps=0;\n    if(iface.status === 2) { \n        rxMbps=0; txMbps=0; \n    }\n    else if(elapsedSec > 0 && prevIfaces[idx]) {\n        const rx = iface.rx64 || iface.rx32; const tx = iface.tx64 || iface.tx32;\n        const prevRx = prevIfaces[idx].rx64 || prevIfaces[idx].rx32; \n        const prevTx = prevIfaces[idx].tx64 || prevIfaces[idx].tx32;\n        \n        let rxDiff = rx - prevRx; let txDiff = tx - prevTx;\n        \n        if(rxDiff < 0) rxDiff += 18446744073709552000; if(txDiff < 0) txDiff += 18446744073709552000; rxMbps = Number(((rxDiff*8)/(elapsedSec*1000000)).toFixed(2)); txMbps = Number(((txDiff*8)/(elapsedSec*1000000)).toFixed(2)); if (!Number.isFinite(rxMbps) || rxMbps < 0) rxMbps = 0; if (!Number.isFinite(txMbps) || txMbps < 0) txMbps = 0;\n    }\n    finalIfaces[iface.name||'port_'+idx] = { rx_mbps:rxMbps, tx_mbps:txMbps, errors:iface.err, drops:iface.drop, status:iface.status===1?'UP':'DOWN' };\n    rxAll += rxMbps; txAll += txMbps;\n}\n\nflow.set('ifaces_prev_'+mid, JSON.parse(JSON.stringify(ifaces)));\nflow.set('ts_prev_'+mid, now);\n\nconst safeNum = (v) => Number.isFinite(v) && v >= 0 && v < 1e15 ? Number(v.toFixed(2)) : 0;\nconst ts = new Date().toISOString();\nconst ifaceJson = String(JSON.stringify(finalIfaces)).replace(/'/g, \"''\");\n\nmsg.query = `INSERT INTO public.machine_telemetry (\"time\", machine_id, cpu_cores, cpu_load_percent, ram_total_mb, ram_used_mb, ram_free_mb, disk_total_gb, disk_used_gb, disk_free_gb, net_rx_bytes, net_tx_bytes, net_rx_errors, net_rx_drops, net_if_status, temp_c, rx_mbps, tx_mbps, interface_metrics) VALUES ('${ts}', '${mid}', ${coreCount}, ${coreCount > 0 ? safeNum(cpuTotal/coreCount) : 0}, ${safeNum(ramTotalMB)}, ${safeNum(ramUsedMB)}, ${safeNum(ramTotalMB - ramUsedMB)}, ${safeNum(diskTotalGB)}, ${safeNum(diskUsedGB)}, ${safeNum(diskTotalGB - diskUsedGB)}, ${netRxBytes}, ${netTxBytes}, ${netRxErrors}, ${netRxDrops}, ${netIfStatus}, ${maxTemp}, ${safeNum(rxAll)}, ${safeNum(txAll)}, '${ifaceJson}'::jsonb);`;\n\nmsg.payload = { machine_id: mid, ts: ts, rxMbps: rxAll, errors: netRxErrors, status: netIfStatus, temp: maxTemp };\nreturn msg;\n",
+    "noerr": 0,
+    "outputs": 1,
+    "x": 1020,
+    "y": 180,
+    "wires": [
+      [
+        "db_insert",
+        "debug_ok"
+      ]
+    ]
+  },
+  {
+    "id": "db_insert",
+    "type": "postgresql",
+    "z": "ims-tab-v5",
+    "name": "TimescaleDB",
+    "query": "",
+    "postgreSQLConfig": "pg_config",
+    "split": false,
+    "outputs": 0,
+    "x": 1240,
+    "y": 220,
+    "wires": []
+  },
+  {
+    "id": "debug_ok",
+    "type": "debug",
+    "z": "ims-tab-v5",
+    "name": "Telemetry OK",
+    "active": true,
+    "complete": "payload",
+    "targetType": "msg",
+    "x": 1240,
+    "y": 140,
+    "wires": []
+  },
+  {
+    "id": "global_catch",
+    "type": "catch",
+    "z": "ims-tab-v5",
+    "name": "Global Catch",
+    "scope": null,
+    "uncaught": false,
+    "x": 140,
+    "y": 420,
+    "wires": [
+      [
+        "debug_err"
+      ]
+    ]
+  },
+  {
+    "id": "debug_err",
+    "type": "debug",
+    "z": "ims-tab-v5",
+    "name": "Pipeline Error",
+    "active": true,
+    "tosidebar": true,
+    "console": true,
+    "tostatus": true,
+    "complete": "error.message",
+    "targetType": "msg",
+    "x": 380,
+    "y": 420,
+    "wires": []
+  },
+  {
+    "id": "ims-alert-tab",
+    "type": "tab",
+    "label": "IMS Alert Processing",
+    "disabled": false,
+    "info": "Alertmanager webhook receiver — POST /alert-webhook",
+    "env": []
+  },
+  {
+    "id": "alert_http_in",
+    "type": "http in",
+    "z": "ims-alert-tab",
+    "name": "POST /alert-webhook",
+    "url": "/alert-webhook",
+    "method": "post",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 160,
+    "y": 200,
+    "wires": [
+      [
+        "alert_respond",
+        "alert_format"
+      ]
+    ]
+  },
+  {
+    "id": "alert_respond",
+    "type": "http response",
+    "z": "ims-alert-tab",
+    "name": "200 OK",
+    "statusCode": "200",
+    "headers": {
+      "Content-Type": "application/json"
     },
-    {
-        "id": "pg_config",
-        "type": "postgreSQLConfig",
-        "name": "IMS Database",
-        "host": "ims-pgbouncer",
-        "hostFieldType": "str",
-        "port": 5432,
-        "portFieldType": "num",
-        "database": "ims",
-        "databaseFieldType": "str",
-        "ssl": false,
-        "sslFieldType": "bool",
-        "max": 10,
-        "idle": 10000,
-        "connectionTimeout": 10000,
-        "user": "ims_admin",
-        "userFieldType": "str",
-        "password": "",
-        "passwordFieldType": "env",
-        "passwordEnv": "PGPASSWORD"
-    },
-    {
-        "id": "inject_ubuntu",
-        "type": "inject",
-        "z": "ims-tab-v5",
-        "name": "Poll Ubuntu (10s)",
-        "props": [
-            {
-                "p": "machine_id",
-                "v": "ERP-MASTER-UBUNTU",
-                "vt": "str"
-            }
-        ],
-        "repeat": "10",
-        "crontab": "",
-        "once": true,
-        "onceDelay": 0.1,
-        "topic": "ERP-MASTER-UBUNTU",
-        "x": 140,
-        "y": 120,
-        "wires": [
-            [
-                "fork_5_ways"
-            ]
-        ]
-    },
-    {
-        "id": "inject_windows",
-        "type": "inject",
-        "z": "ims-tab-v5",
-        "name": "Poll Windows (10s)",
-        "props": [
-            {
-                "p": "machine_id",
-                "v": "ERP-MASTER-WINDOWS",
-                "vt": "str"
-            }
-        ],
-        "repeat": "10",
-        "crontab": "",
-        "once": true,
-        "onceDelay": 5,
-        "topic": "ERP-MASTER-WINDOWS",
-        "x": 140,
-        "y": 200,
-        "wires": [
-            [
-                "fork_5_ways"
-            ]
-        ]
-    },
-    {
-        "id": "fork_5_ways",
-        "type": "function",
-        "z": "ims-tab-v5",
-        "name": "Fork 5 Walker Threads",
-        "func": "const mid = msg.machine_id || msg.topic;\nreturn [\n    { machine_id: mid, topic: mid, _walker: 'cpu', payload: '' },\n    { machine_id: mid, topic: mid, _walker: 'storage', payload: '' },\n    { machine_id: mid, topic: mid, _walker: 'net32', payload: '' },\n    { machine_id: mid, topic: mid, _walker: 'net64', payload: '' },\n    { machine_id: mid, topic: mid, _walker: 'temp', payload: '' }\n];",
-        "outputs": 5,
-        "x": 360,
-        "y": 160,
-        "wires": [
-            ["walk_cpu"],
-            ["walk_storage"],
-            ["walk_net32"],
-            ["walk_net64"],
-            ["walk_temp"]
-        ]
-    },
-    {
-        "id": "walk_cpu",
-        "type": "snmp walker",
-        "z": "ims-tab-v5",
-        "host": "ims-snmpsim",
-        "version": "2c",
-        "timeout": "5",
-        "community": "apex_mock",
-        "auth": "noAuthNoPriv",
-        "oids": "1.3.6.1.2.1.25.3.3.1.2",
-        "name": "Walk CPU",
-        "x": 580,
-        "y": 60,
-        "wires": [
-            ["join_sync"]
-        ]
-    },
-    {
-        "id": "walk_storage",
-        "type": "snmp walker",
-        "z": "ims-tab-v5",
-        "host": "ims-snmpsim",
-        "version": "2c",
-        "timeout": "5",
-        "community": "apex_mock",
-        "auth": "noAuthNoPriv",
-        "oids": "1.3.6.1.2.1.25.2.3.1",
-        "name": "Walk Storage",
-        "x": 580,
-        "y": 120,
-        "wires": [
-            ["join_sync"]
-        ]
-    },
-    {
-        "id": "walk_net32",
-        "type": "snmp walker",
-        "z": "ims-tab-v5",
-        "host": "ims-snmpsim",
-        "version": "2c",
-        "timeout": "5",
-        "community": "apex_mock",
-        "auth": "noAuthNoPriv",
-        "oids": "1.3.6.1.2.1.2.2.1",
-        "name": "Walk Net 32b",
-        "x": 580,
-        "y": 180,
-        "wires": [
-            ["join_sync"]
-        ]
-    },
-    {
-        "id": "walk_net64",
-        "type": "snmp walker",
-        "z": "ims-tab-v5",
-        "host": "ims-snmpsim",
-        "version": "2c",
-        "timeout": "5",
-        "community": "apex_mock",
-        "auth": "noAuthNoPriv",
-        "oids": "1.3.6.1.2.1.31.1.1.1",
-        "name": "Walk Net 64b",
-        "x": 580,
-        "y": 240,
-        "wires": [
-            ["join_sync"]
-        ]
-    },
-    {
-        "id": "walk_temp",
-        "type": "snmp walker",
-        "z": "ims-tab-v5",
-        "host": "ims-snmpsim",
-        "version": "2c",
-        "timeout": "5",
-        "community": "apex_mock",
-        "auth": "noAuthNoPriv",
-        "oids": "1.3.6.1.4.1.2021.13.16.2.1.7",
-        "name": "Walk Temp",
-        "x": 580,
-        "y": 300,
-        "wires": [
-            ["join_sync"]
-        ]
-    },
-    {
-        "id": "catch_walker",
-        "type": "catch",
-        "z": "ims-tab-v5",
-        "name": "Catch Walker Error",
-        "scope": ["walk_cpu", "walk_storage", "walk_net32", "walk_net64", "walk_temp"],
-        "uncaught": false,
-        "x": 360,
-        "y": 360,
-        "wires": [
-            ["bypass_error"]
-        ]
-    },
-    {
-        "id": "bypass_error",
-        "type": "function",
-        "z": "ims-tab-v5",
-        "name": "Bypass Empty",
-        "func": "msg.payload = [];\nreturn msg;",
-        "outputs": 1,
-        "x": 560,
-        "y": 360,
-        "wires": [
-            ["join_sync"]
-        ]
-    },
-    {
-        "id": "join_sync",
-        "type": "join",
-        "z": "ims-tab-v5",
-        "name": "Barrier Sync (5)",
-        "mode": "custom",
-        "build": "array",
-        "property": "payload",
-        "propertyType": "msg",
-        "key": "topic",
-        "joiner": "\\n",
-        "joinerType": "str",
-        "accumulate": false,
-        "timeout": "8",
-        "count": "5",
-        "reduceRight": false,
-        "x": 800,
-        "y": 180,
-        "wires": [
-            ["sre_parser"]
-        ]
-    },
-    {
-        "id": "sre_parser",
-        "type": "function",
-        "z": "ims-tab-v5",
-        "name": "AIOps Parser",
-        "func": "if (!msg.payload || !Array.isArray(msg.payload)) return null;\n\nconst flatData = msg.payload.flat();\nmsg.payload = null;\n\nlet cpuTotal=0, coreCount=0;\nlet ramTotalMB=0, ramUsedMB=0, diskTotalGB=0, diskUsedGB=0;\nlet netRxBytes=0, netTxBytes=0, netRxErrors=0, netRxDrops=0, netIfStatus=1, maxTemp=0;\nconst disks={}, ifaces={};\n\nfor (let i = 0; i < flatData.length; i++) {\n    const item = flatData[i];\n    if (!item || !item.oid) continue;\n    const oid = String(item.oid);\n    const val = item.value;\n    \n    if (oid.startsWith('1.3.6.1.2.1.25.3.3.1.2.')) {\n        const v = Number(val); if(Number.isFinite(v)){ cpuTotal+=v; coreCount++; }\n    }\n    else if (oid.startsWith('1.3.6.1.2.1.25.2.3.1.')) {\n        const parts = oid.split('.'); const idx = parts.pop(); const mt = parts.pop();\n        if (!disks[idx]) disks[idx] = { type: '', descr: '', au: 0, size: 0, used: 0 };\n        if (mt === '2') disks[idx].type = String(val);\n        else if (mt === '3') disks[idx].descr = String(val).toUpperCase();\n        else if (mt === '4') disks[idx].au = Number(val) || 0;\n        else if (mt === '5') disks[idx].size = Number(val) || 0;\n        else if (mt === '6') disks[idx].used = Number(val) || 0;\n    }\n    else if (oid.startsWith('1.3.6.1.2.1.31.1.1.1.6.')) {\n        const idx=oid.split('.').pop();\n        if(!ifaces[idx]) ifaces[idx]={name:'port_'+idx,rx64:0,tx64:0,rx32:0,tx32:0,err:0,drop:0,status:1};\n        ifaces[idx].rx64=Number(val)||0; netRxBytes+=ifaces[idx].rx64;\n    }\n    else if (oid.startsWith('1.3.6.1.2.1.31.1.1.1.10.')){\n        const idx=oid.split('.').pop();\n        if(!ifaces[idx]) ifaces[idx]={name:'port_'+idx,rx64:0,tx64:0,rx32:0,tx32:0,err:0,drop:0,status:1};\n        ifaces[idx].tx64=Number(val)||0; netTxBytes+=ifaces[idx].tx64;\n    }\n    else if (oid.startsWith('1.3.6.1.2.1.2.2.1.2.')) {\n        const idx=oid.split('.').pop();\n        if(!ifaces[idx]) ifaces[idx]={name:'',rx64:0,tx64:0,rx32:0,tx32:0,err:0,drop:0,status:1};\n        ifaces[idx].name=String(val);\n    }\n    else if (oid.startsWith('1.3.6.1.2.1.2.2.1.10.')) {\n        const idx=oid.split('.').pop();\n        if(!ifaces[idx]) ifaces[idx]={name:'port_'+idx,rx64:0,tx64:0,rx32:0,tx32:0,err:0,drop:0,status:1};\n        ifaces[idx].rx32=Number(val)||0; if(netRxBytes===0) netRxBytes+=ifaces[idx].rx32;\n    }\n    else if (oid.startsWith('1.3.6.1.2.1.2.2.1.16.')) {\n        const idx=oid.split('.').pop();\n        if(!ifaces[idx]) ifaces[idx]={name:'port_'+idx,rx64:0,tx64:0,rx32:0,tx32:0,err:0,drop:0,status:1};\n        ifaces[idx].tx32=Number(val)||0; if(netTxBytes===0) netTxBytes+=ifaces[idx].tx32;\n    }\n    else if (oid.startsWith('1.3.6.1.2.1.2.2.1.14.')) {\n        const idx=oid.split('.').pop();\n        if(!ifaces[idx]) ifaces[idx]={name:'port_'+idx,rx64:0,tx64:0,rx32:0,tx32:0,err:0,drop:0,status:1};\n        ifaces[idx].err+=Number(val)||0; netRxErrors+=Number(val)||0;\n    }\n    else if (oid.startsWith('1.3.6.1.2.1.2.2.1.13.')) {\n        const idx=oid.split('.').pop();\n        if(!ifaces[idx]) ifaces[idx]={name:'port_'+idx,rx64:0,tx64:0,rx32:0,tx32:0,err:0,drop:0,status:1};\n        ifaces[idx].drop+=Number(val)||0; netRxDrops+=Number(val)||0;\n    }\n    else if (oid.startsWith('1.3.6.1.2.1.2.2.1.8.')) {\n        const idx=oid.split('.').pop();\n        if(!ifaces[idx]) ifaces[idx]={name:'port_'+idx,rx64:0,tx64:0,rx32:0,tx32:0,err:0,drop:0,status:1};\n        const st=Number(val); if(st===2){ ifaces[idx].status=2; netIfStatus=2; }\n    }\n    else if (oid.startsWith('1.3.6.1.4.1.2021.13.16.2.1.7.')) {\n        const t = Number(val); if (Number.isFinite(t) && t > maxTemp) maxTemp = t;\n    }\n}\n\nflatData.length = 0;\n\nfor (const idx in disks) {\n    const d = disks[idx];\n    if (!d.au || !d.size) continue;\n    const sb = d.size * d.au, ub = d.used * d.au, ds = d.descr;\n    if (d.type.includes('25.2.1.2') || ds.includes('MEMORY')) { ramTotalMB += sb / 1048576; ramUsedMB += ub / 1048576; }\n    else if (d.type.includes('25.2.1.4') || ds.includes('C:') || ds.includes('/')) { diskTotalGB += sb / 1073741824; diskUsedGB += ub / 1073741824; }\n}\n\nconst now = Date.now();\nconst mid = String(msg.topic).replace(/'/g, \"''\");\nconst prevIfaces = flow.get('ifaces_prev_'+mid) || {};\nconst prevTs = flow.get('ts_prev_'+mid) || (now - 10000);\nconst elapsedSec = (now - prevTs) / 1000;\nconst finalIfaces = {};\nlet rxAll = 0, txAll = 0;\n\nfor(const idx in ifaces){\n    const iface=ifaces[idx]; \n    let rxMbps=0, txMbps=0;\n    if(iface.status === 2) { rxMbps=0; txMbps=0; }\n    else if(elapsedSec >= 2 && prevIfaces[idx]) {\n        const rx=iface.rx64||iface.rx32; const tx=iface.tx64||iface.tx32;\n        const prevRx=prevIfaces[idx].rx64||prevIfaces[idx].rx32; \n        const prevTx=prevIfaces[idx].tx64||prevIfaces[idx].tx32;\n        let rxDiff = rx - prevRx; let txDiff = tx - prevTx;\n        if(rxDiff < 0) rxDiff += 18446744073709552000;\n        if(txDiff < 0) txDiff += 18446744073709552000;\n        rxMbps = Number(((rxDiff*8)/(elapsedSec*1000000)).toFixed(2));\n        txMbps = Number(((txDiff*8)/(elapsedSec*1000000)).toFixed(2));\n    } else if (prevIfaces[idx]) {\n        rxMbps = prevIfaces[idx].rx_mbps || 0;\n        txMbps = prevIfaces[idx].tx_mbps || 0;\n    }\n    finalIfaces[iface.name||'port_'+idx] = { rx_mbps:rxMbps, tx_mbps:txMbps, errors:iface.err, drops:iface.drop, status:iface.status===1?'UP':'DOWN' };\n    rxAll += rxMbps; txAll += txMbps;\n}\n\nflow.set('ifaces_prev_'+mid, ifaces);\nflow.set('ts_prev_'+mid, now);\n\nconst safeNum = (v) => Number.isFinite(v) && v >= 0 && v < 1e15 ? Number(v.toFixed(2)) : 0;\nconst ts = new Date().toISOString();\nconst ifaceJson = String(JSON.stringify(finalIfaces)).replace(/'/g, \"''\");\n\nmsg.query = `INSERT INTO public.machine_telemetry (\"time\", machine_id, cpu_cores, cpu_load_percent, ram_total_mb, ram_used_mb, ram_free_mb, disk_total_gb, disk_used_gb, disk_free_gb, net_rx_bytes, net_tx_bytes, net_rx_errors, net_rx_drops, net_if_status, temp_c, rx_mbps, tx_mbps, interface_metrics) VALUES ('${ts}', '${mid}', ${coreCount}, ${coreCount > 0 ? safeNum(cpuTotal/coreCount) : 0}, ${safeNum(ramTotalMB)}, ${safeNum(ramUsedMB)}, ${safeNum(ramTotalMB - ramUsedMB)}, ${safeNum(diskTotalGB)}, ${safeNum(diskUsedGB)}, ${safeNum(diskTotalGB - diskUsedGB)}, ${netRxBytes}, ${netTxBytes}, ${netRxErrors}, ${netRxDrops}, ${netIfStatus}, ${maxTemp}, ${safeNum(rxAll)}, ${safeNum(txAll)}, '${ifaceJson}'::jsonb);`;\n\nmsg.payload = { machine_id: mid, ts: ts, rxMbps: rxAll, errors: netRxErrors, status: netIfStatus, temp: maxTemp };\nreturn msg;",
-        "noerr": 0,
-        "outputs": 1,
-        "x": 1020,
-        "y": 180,
-        "wires": [
-            [
-                "db_insert",
-                "debug_ok"
-            ]
-        ]
-    },
-    {
-        "id": "db_insert",
-        "type": "postgresql",
-        "z": "ims-tab-v5",
-        "name": "TimescaleDB",
-        "query": "",
-        "postgreSQLConfig": "pg_config",
-        "split": false,
-        "outputs": 0,
-        "x": 1240,
-        "y": 220,
-        "wires": []
-    },
-    {
-        "id": "debug_ok",
-        "type": "debug",
-        "z": "ims-tab-v5",
-        "name": "Telemetry OK",
-        "active": true,
-        "complete": "payload",
-        "targetType": "msg",
-        "x": 1240,
-        "y": 140,
-        "wires": []
-    },
-    {
-        "id": "global_catch",
-        "type": "catch",
-        "z": "ims-tab-v5",
-        "name": "Global Catch",
-        "scope": null,
-        "uncaught": false,
-        "x": 140,
-        "y": 420,
-        "wires": [
-            [
-                "debug_err"
-            ]
-        ]
-    },
-    {
-        "id": "debug_err",
-        "type": "debug",
-        "z": "ims-tab-v5",
-        "name": "Pipeline Error",
-        "active": true,
-        "tosidebar": true,
-        "console": true,
-        "tostatus": true,
-        "complete": "error.message",
-        "targetType": "msg",
-        "x": 380,
-        "y": 420,
-        "wires": []
-    }
+    "x": 400,
+    "y": 120,
+    "wires": []
+  },
+  {
+    "id": "alert_format",
+    "type": "function",
+    "z": "ims-alert-tab",
+    "name": "Format Alert Text",
+    "func": "const payload = msg.payload;\nif (!payload || !payload.alerts) return null;\n\nconst alerts = payload.alerts;\nlet msgText = '\\ud83d\\udd14 *IMS SYSTEM ALERT [' + (payload.status || 'unknown').toUpperCase() + ']* \\ud83d\\udd14\\n\\n';\n\nfor (let i = 0; i < alerts.length; i++) {\n    const a = alerts[i];\n    const labels = a.labels || {};\n    const annotations = a.annotations || {};\n    \n    let icon = '\\u26a0\\ufe0f';\n    if (labels.severity === 'critical') icon = '\\ud83d\\udd25';\n    if (payload.status === 'resolved') icon = '\\u2705';\n\n    msgText += icon + ' *' + (labels.alertname || 'Unknown Alert') + '*\\n';\n    msgText += '\\ud83d\\dda5\\ufe0f *Host:* ' + (labels.machine_id || labels.instance || 'System') + '\\n';\n    msgText += '\\ud83d\\udcdd *Detail:* ' + (annotations.summary || 'N/A') + '\\n';\n    if (annotations.description) msgText += '\\ud83d\\udca1 *Desc:* ' + annotations.description + '\\n';\n    \n    const startTime = a.startsAt ? new Date(a.startsAt).toLocaleString('th-TH') : 'Unknown';\n    msgText += '\\ud83d\\udd52 *Time:* ' + startTime + '\\n';\n    msgText += '-------------------\\n';\n}\n\nmsg.payload = msgText;\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 420,
+    "y": 240,
+    "wires": [
+      [
+        "alert_debug"
+      ]
+    ]
+  },
+  {
+    "id": "alert_debug",
+    "type": "debug",
+    "z": "ims-alert-tab",
+    "name": "Alert Log",
+    "active": true,
+    "tosidebar": true,
+    "console": true,
+    "tostatus": true,
+    "complete": "payload",
+    "targetType": "msg",
+    "x": 640,
+    "y": 240,
+    "wires": []
+  }
 ]

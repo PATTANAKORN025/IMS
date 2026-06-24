@@ -1,5 +1,5 @@
 # IMS SNMP Simulator — Chaos Engineering Profile
-# Phase 15: Realistic degradation, link flapping, high error rates
+# Phase Apex: "The Immortal Apex System" — Heartbeat Spikes Edition
 # Purpose: Validate AIOps alerts (InterfaceDown, ServiceDown, ThermalWarning)
 
 # --- CPU Cores (fluctuating 10-95%) ---
@@ -28,11 +28,15 @@
 1.3.6.1.2.1.2.2.1.5.1|65|10000000000
 1.3.6.1.2.1.2.2.1.5.2|65|1200000000
 
-# --- 64-bit Network Counters (100Gbps capable) ---
-1.3.6.1.2.1.31.1.1.1.6.1|65:numeric|min=10000000,max=50000000000,rate=8500000
-1.3.6.1.2.1.31.1.1.1.10.1|65:numeric|min=5000000,max=30000000000,rate=4500000
-1.3.6.1.2.1.31.1.1.1.6.2|65:numeric|min=1000000,max=10000000000,rate=1500000
-1.3.6.1.2.1.31.1.1.1.10.2|65:numeric|min=500000,max=5000000000,rate=800000
+# --- 64-BIT NETWORK COUNTERS (Realistic Enterprise Fluctuation) ---
+# eth0 RX: ~300 Mbps effective (10Gbps link, moderate load)
+1.3.6.1.2.1.31.1.1.1.6.1|65:numeric|min=100000000,max=5000000000,rate=45000000
+# eth0 TX: ~120 Mbps effective
+1.3.6.1.2.1.31.1.1.1.10.1|65:numeric|min=50000000,max=2000000000,rate=15000000
+# wlan0 RX: ~85 Mbps effective
+1.3.6.1.2.1.31.1.1.1.6.2|65:numeric|min=10000000,max=800000000,rate=8500000
+# wlan0 TX: ~35 Mbps effective
+1.3.6.1.2.1.31.1.1.1.10.2|65:numeric|min=5000000,max=400000000,rate=3500000
 
 # --- 32-bit Fallback Counters ---
 1.3.6.1.2.1.2.2.1.10.1|65:numeric|min=10000,max=4294967295,rate=1500000
@@ -40,16 +44,17 @@
 1.3.6.1.2.1.2.2.1.10.2|65:numeric|min=1000,max=4294967295,rate=500000
 1.3.6.1.2.1.2.2.1.16.2|65:numeric|min=1000,max=4294967295,rate=200000
 
-# --- CHAOS: Network Errors (high rate for alert testing) ---
-1.3.6.1.2.1.2.2.1.14.1|65:numeric|min=0,max=500,rate=15
+# --- CHAOS: Network Errors (Cable Fault Simulation) ---
+1.3.6.1.2.1.2.2.1.14.1|65:numeric|min=0,max=2000,rate=45
 1.3.6.1.2.1.2.2.1.14.2|65:numeric|min=0,max=150,rate=5
 # --- CHAOS: Network Drops ---
-1.3.6.1.2.1.2.2.1.13.1|65:numeric|min=0,max=200,rate=8
+1.3.6.1.2.1.2.2.1.13.1|65:numeric|min=0,max=500,rate=15
 1.3.6.1.2.1.2.2.1.13.2|65:numeric|min=0,max=50,rate=3
 
 # --- CHAOS: Interface Status (eth0 flapping between UP/DOWN) ---
 1.3.6.1.2.1.2.2.1.8.1|2:numeric|min=1,max=2,rate=1
 1.3.6.1.2.1.2.2.1.8.2|2|1
 
-# --- Temperature (fluctuates with workload, peaks at 88C for thermal alert testing) ---
-1.3.6.1.4.1.2021.13.16.2.1.7.1|2:numeric|min=45,max=88,rate=3
+# --- Temperature (AC Failure Simulation: peaks at 95C for thermal alert testing) ---
+1.3.6.1.4.1.2021.13.16.2.1.7.0|2|0
+1.3.6.1.4.1.2021.13.16.2.1.7.1|2:numeric|min=45,max=95,rate=8
