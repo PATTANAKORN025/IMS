@@ -573,7 +573,6 @@
             "fieldConfig": {
                 "defaults": {
                     "unit": "mbps",
-                    "min": 0,
                     "color": {
                         "mode": "thresholds"
                     },
@@ -736,7 +735,12 @@
                 {
                     "refId": "A",
                     "format": "time_series",
-                    "rawSql": "SELECT mt.\"time\", t.iface || ' Download' AS metric, (t.value->>'rx_mbps')::NUMERIC AS \"Mbps\" FROM public.machine_telemetry mt CROSS JOIN LATERAL jsonb_each(mt.interface_metrics) t(iface, value) WHERE $__timeFilter(mt.\"time\") AND mt.machine_id = '${machine_id}' AND (t.value->>'rx_mbps')::NUMERIC > 0 UNION ALL SELECT mt.\"time\", t.iface || ' Upload' AS metric, ((t.value->>'tx_mbps')::NUMERIC * -1) AS \"Mbps\" FROM public.machine_telemetry mt CROSS JOIN LATERAL jsonb_each(mt.interface_metrics) t(iface, value) WHERE $__timeFilter(mt.\"time\") AND mt.machine_id = '${machine_id}' AND (t.value->>'tx_mbps')::NUMERIC > 0 ORDER BY 1"
+                    "rawSql": "SELECT mt.\"time\", t.key || ' Download' AS metric, (t.value->>'rx_mbps')::NUMERIC AS \"Mbps\" FROM public.machine_telemetry mt CROSS JOIN LATERAL jsonb_each(mt.interface_metrics) AS t(key, value) WHERE $__timeFilter(mt.\"time\") AND mt.machine_id = '${machine_id}' AND (t.value->>'rx_mbps')::NUMERIC > 0 ORDER BY 1"
+                },
+                {
+                    "refId": "B",
+                    "format": "time_series",
+                    "rawSql": "SELECT mt.\"time\", t.key || ' Upload' AS metric, ((t.value->>'tx_mbps')::NUMERIC * -1) AS \"Mbps\" FROM public.machine_telemetry mt CROSS JOIN LATERAL jsonb_each(mt.interface_metrics) AS t(key, value) WHERE $__timeFilter(mt.\"time\") AND mt.machine_id = '${machine_id}' AND (t.value->>'tx_mbps')::NUMERIC > 0 ORDER BY 1"
                 }
             ]
         },
