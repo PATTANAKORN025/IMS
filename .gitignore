@@ -27,3 +27,14 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Temp scripts (auto-generated)
+_tmp_*.js
+_tmp_*.sql
+
+# K6 results
+tests/k6/*-results.json
+
+# Docker data volumes (catch-all)
+*_data/
+**/node_modules/

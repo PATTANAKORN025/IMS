@@ -1,234 +1,192 @@
-# IMS (Industrial NOC Monitoring System) — Architecture Diagram
+# 🏛️ System Architecture (Enterprise Blueprint)
 
-## System Overview
+เอกสารนี้อธิบายโครงสร้างเชิงลึกของระบบ **IMS (Infrastructure Monitoring System)** ออกแบบมาสำหรับ **Senior Engineer** และ **SRE (Site Reliability Engineer)** เพื่อทำความเข้าใจและพัฒนาต่อยอด
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                        IMS Architecture (World-Class)                       │
-│                    SNMP → Node-RED → TimescaleDB → Grafana                 │
-│                    + Prometheus Alertmanager + Blackbox Exporter            │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+---
 
-## Layer 1: Edge / OT Layer (เครื่องจักรจริง)
+## 1. System Topology (4 Layers)
 
-```
-┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
-│  Machine 1       │  │  Machine 2       │  │  Machine N       │
-│  YSPhotec LDI   │  │  YSPhotec LDI   │  │  (1000+ units)   │
-│  ┌────────────┐  │  │  ┌────────────┐  │  │  ┌────────────┐  │
-│  │ CPU/RAM    │  │  │  │ CPU/RAM    │  │  │  │ CPU/RAM    │  │
-│  │ Disk       │  │  │  │ Disk       │  │  │  │ Disk       │  │
-│  │ Network    │  │  │  │ Network    │  │  │  │ Network    │  │
-│  │ Temperature│  │  │  │ Temperature│  │  │  │ Temperature│  │
-│  │ LDI Sensor │  │  │  │ LDI Sensor │  │  │  │ LDI Sensor │  │
-│  │ WiFi RSSI  │  │  │  │ WiFi RSSI  │  │  │  │ WiFi RSSI  │  │
-│  │ WiFi SNR   │  │  │  │ WiFi SNR   │  │  │  │ WiFi SNR   │  │
-│  └────────────┘  │  │  └────────────┘  │  │  └────────────┘  │
-│  Protocol: SNMP  │  │  Protocol: SNMP  │  │  Protocol: SNMP  │
-│  v2c/v3 (RO)    │  │  v2c/v3 (RO)    │  │  v2c/v3 (RO)    │
-└────────┬─────────┘  └────────┬─────────┘  └────────┬─────────┘
-         │                     │                     │
-         └─────────────────────┼─────────────────────┘
-                               │
-                    ┌──────────▼──────────┐
-                    │   Network Switch    │
-                    │   (Ethernet/WiFi)   │
-                    └──────────┬──────────┘
-                               │
-```
+สถาปัตยกรรมระบบแบ่งออกเป็น 4 ชั้นหลัก เพื่อความง่ายในการ scaling และบำรุงรักษา:
 
-## Layer 2: Ingestion & Processing Layer
+### Layer 1: Edge/OT Layer
+ชั้นอุปกรณ์เครื่องจักรและเครือข่าย
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           Docker Network (ims_network)                      │
-│                                                                             │
-│  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │                    Node-RED (port 1880)                             │    │
-│  │                    Dual-Engine Walker                               │    │
-│  │                                                                     │    │
-│  │  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐ │    │
-│  │  │Walk CPU │  │Walk     │  │Walk     │  │Walk     │  │Walk     │ │    │
-│  │  │4 OIDs   │  │Storage  │  │Network  │  │Temp     │  │LDI      │ │    │
-│  │  │         │  │10 OIDs  │  │18 OIDs  │  │2 OIDs   │  │10 OIDs  │ │    │
-│  │  │session. │  │session. │  │session. │  │session. │  │session. │ │    │
-│  │  │get()    │  │get()    │  │get()    │  │get()    │  │get()    │ │    │
-│  │  └────┬────┘  └────┬────┘  └────┬────┘  └────┬────┘  └────┬────┘ │    │
-│  │       │            │            │            │            │        │    │
-│  │       └────────────┴────────────┴────────────┴────────────┘        │    │
-│  │                              │                                     │    │
-│  │                    ┌─────────▼─────────┐                           │    │
-│  │                    │  Join Barrier     │                           │    │
-│  │                    │  (count=5, timeout=8s)                        │    │
-│  │                    └─────────┬─────────┘                           │    │
-│  │                              │                                     │    │
-│  │                    ┌─────────▼─────────┐                           │    │
-│  │                    │  SRE Parser v7    │                           │    │
-│  │                    │  • Counter Wrap    │                           │    │
-│  │                    │  • Memory Cleanup  │                           │    │
-│  │                    │  • Deep Copy       │                           │    │
-│  │                    │  • LDI + WiFi      │                           │    │
-│  │                    │  • safeStr()       │                           │    │
-│  │                    └─────────┬─────────┘                           │    │
-│  │                              │                                     │    │
-│  │                    ┌─────────▼─────────┐                           │    │
-│  │                    │  PostgreSQL Node  │                           │    │
-│  │                    │  (Parameterized)  │                           │    │
-│  │                    └─────────┬─────────┘                           │    │
-│  └──────────────────────────────┼─────────────────────────────────────┘    │
-│                                 │                                          │
-└─────────────────────────────────┼──────────────────────────────────────────┘
-                                  │
-```
+- **อุปกรณ์:** YSPhotec LDI (Laser Direct Imaging) สำหรับผลิต PCB
+- **โปรโตคอล:** SNMP v2c/v3 (Read-Only 100%)
+- **Network:** Ethernet (eth0) + Wi-Fi (wlan0)
+- **OIDs ที่ใช้:**
+  - CPU: `.1.3.6.1.2.1.25.3.3.1.2` (hrProcessorLoad)
+  - Storage: `.1.3.6.1.2.1.25.2.3.1` (hrStorageTable)
+  - Network: `.1.3.6.1.2.1.2.2.1` (ifTable) + `.1.3.6.1.2.1.31.1.1.1` (ifXTable 64-bit)
+  - Temperature: `.1.3.6.1.4.1.2021.13.16.2.1.7` (lmTempSensor)
+  - LDI Private MIB: `.1.3.6.1.4.1.9999.1.x.x` (Enterprise OID)
 
-## Layer 3: Storage Layer
+### Layer 2: Ingestion Layer (Node-RED)
+ชั้นรับและประมวลผลข้อมูล
+
+- **Dual-Engine SNMP Walker:** สลับโหมดอัตโนมัติ
+  - Production: `session.subtree()` — เร็วกว่า 10x สำหรับอุปกรณ์จริง
+  - Development: `session.get()` — ใช้กับ snmpsim ได้ 100%
+- **5-Thread Parallel Walker:**
+  ```
+  Fork → CPU Walker │ Storage Walker │ Network GET │ Temp Walker │ LDI Walker
+       ↓              ↓                ↓              ↓             ↓
+  └──────────────────────── Join Barrier (count=5, timeout=8) ──────────────────┘
+                                    ↓
+                              Bulletproof Parser v7
+                                    ↓
+                              PostgreSQL INSERT
+  ```
+- **Bulletproof Parser v7 (4-Bug Fix):**
+  - Two-Pass Parsing: อ่านชื่อก่อน แล้ว map ค่า — ป้องกัน Race Condition
+  - Smart Counter Wrap: ตรวจจับ 32-bit (+4,294,967,296) vs 64-bit (+18,446,744,073,709,551,616) overflow อัตโนมัติ
+  - Memory Cleanup: `msg.payload = null` + `flatData.length = 0` ป้องกัน Memory Leak ใน Node-RED sandboxed VM
+  - Try-Catch Wrapped: ป้องกัน Pipeline Crash จาก SNMP Timeout หรือ malformed data
+
+### Layer 3: Storage Layer (TimescaleDB + PgBouncer)
+ชั้นเก็บข้อมูลประสิทธิภาพสูง
+
+- **PgBouncer (Connection Pooler):**
+  - Transaction pooling mode — ป้องกัน connection limit เต็ม
+  - พอร์ตภายใน Docker: 5432 (ไม่ใช่ 6432)
+- **TimescaleDB (Hypertable):**
+  - ตาราง `public.machine_telemetry` — 28 คอลัมน์
+  - Partitioning by `time` column
+  - Compression: หลัง 7 วัน (~90% ประหยัดพื้นที่)
+  - Retention: ลบอัตโนมัติหลัง 90 วัน
+- **Continuous Aggregates:**
+  - `telemetry_minute_summary` — สรุปทุก 1 นาที
+  - `telemetry_hourly_summary` — สรุปทุก 1 ชั่วโมง
+  - ทำให้ Grafana โหลดข้อมูล 30 วันได้ต่ำกว่า 2 วินาที
+
+### Layer 4: Visualization & AIOps Layer
+ชั้นแสดงผลและวิเคราะห์อัจฉริยะ
+
+- **Grafana:** 4 Dashboards, 34+ Panels, SRE Color Convention
+- **Prometheus:** 38 Alert Rules, 13 Groups
+- **AIOps Z-Score:** `abs(metric - avg_over_time[1h]) > 3 * stddev_over_time[1h]`
+- **Predictive Alerting:** Linear Regression ผ่าน `regr_slope` / `regr_intercept`
+- **Alertmanager:** Inhibition Rules + Webhook (Emoji format สำหรับ LINE/Teams)
+- **Blackbox Exporter:** HTTP/TCP/ICMP SLA Probes
+
+---
+
+## 2. Data Flow Pipeline
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                                                                             │
-│  ┌──────────────────┐      ┌──────────────────┐      ┌──────────────────┐  │
-│  │    PgBouncer     │      │   TimescaleDB    │      │   Prometheus     │  │
-│  │    (port 6432)   │─────▶│   (port 5432)    │      │   (port 9090)    │  │
-│  │                  │      │                  │      │                  │  │
-│  │ • Connection Pool│      │ • Hypertable     │      │ • Metrics Store  │  │
-│  │ • Transaction    │      │ • Continuous Agg │      │ • Alert Rules    │  │
-│  │   Pooling Mode   │      │   (1-min, 1-hr)  │      │ • Z-Score Anomaly│  │
-│  │ • max_client_conn│      │ • 28 Columns     │      │ • 38 Rules       │  │
-│  │   = 200          │      │ • WiFi RSSI/SNR  │      │ • 13 Groups      │  │
-│  └──────────────────┘      └──────────────────┘      └────────┬─────────┘  │
-│                                                               │            │
-│  ┌──────────────────┐      ┌──────────────────┐              │            │
-│  │  SNMP Simulator  │      │ Blackbox Exporter│◀─────────────┘            │
-│  │  (port 1161/udp) │      │   (port 9115)    │                          │
-│  │                  │      │                  │                          │
-│  │ • 92 Mock OIDs   │      │ • TCP Probes     │                          │
-│  │ • LDI Enterprise │      │ • HTTP Probes    │                          │
-│  │ • WiFi RSSI/SNR  │      │ • ICMP Probes    │                          │
-│  │ • Counter Wrap   │      │ • SLA Monitoring │                          │
-│  └──────────────────┘      └──────────────────┘                          │
-│                                                                           │
-└───────────────────────────────────────────────────────────────────────────┘
+                    ┌──────────────┐
+                    │  Inject Node │ (ทุก 10 วินาที)
+                    └──────┬───────┘
+                           │
+                    ┌──────▼───────┐
+                    │  Fork 5 Ways │
+                    └──┬──┬──┬──┬──┘
+            ┌──────────┘  │  │  └──────────┐
+            ▼             ▼  ▼             ▼
+      ┌─────────┐  ┌──────────┐  ┌─────────┐
+      │CPU Walk │  │Storage   │  │Network  │ ...
+      │(4 OIDs) │  │Walk      │  │GET      │
+      └────┬────┘  │(10 OIDs) │  │(18 OIDs)│
+           │       └────┬─────┘  └────┬────┘
+           └────────────┼─────────────┘
+                        ▼
+                ┌───────────────┐
+                │ Join Barrier  │ count=5, timeout=8
+                └───────┬───────┘
+                        ▼
+                ┌───────────────┐
+                │ SRE Parser v7 │ ← try-catch wrapped
+                │ (Two-Pass)    │
+                └───────┬───────┘
+                        ▼
+                ┌───────────────┐
+                │ PostgreSQL    │ ← parameterized queries
+                │ INSERT        │   ($1, $2, ... $N)
+                └───────────────┘
 ```
 
-## Layer 4: Visualization & AIOps Layer
-
+### Smart Counter Wrap Logic
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                                                                             │
-│  ┌──────────────────────────────────────────────────────────────────────┐  │
-│  │                     Grafana (port 3000)                              │  │
-│  │                     4 Dashboards, 34+ Panels                        │  │
-│  │                                                                      │  │
-│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌─────────┐ │  │
-│  │  │ NOC Overview │  │ System       │  │ Engineering  │  │Capacity │ │  │
-│  │  │ (Executive)  │  │ Overview     │  │ Drill-Down   │  │Planning │ │  │
-│  │  │              │  │              │  │              │  │         │ │  │
-│  │  │ • Traffic    │  │ • CPU/RAM    │  │ • LDI Panels │  │ • Disk  │ │  │
-│  │  │   Light      │  │ • Disk       │  │ • WiFi RSSI  │  │   Pred. │ │  │
-│  │  │ • Fleet      │  │ • Network    │  │ • WiFi SNR   │  │ • Trend │ │  │
-│  │  │   Status     │  │ • Temp       │  │ • Scatter    │  │   Lines │ │  │
-│  │  │              │  │              │  │   Plot       │  │         │ │  │
-│  │  └──────────────┘  └──────────────┘  └──────────────┘  └─────────┘ │  │
-│  │                                                                      │  │
-│  │  SRE Color Palette:                                                  │  │
-│  │  • eth0 RX: #1F60C4 (Dark Blue)    • wlan0 RX: #8E24AA (Purple)    │  │
-│  │  • eth0 TX: #5794F2 (Light Blue)   • wlan0 TX: #E02F44 (Magenta)   │  │
-│  │  • CPU: Yellow→Orange→Red           • RAM: Purple→Orange→Red        │  │
-│  │  • Disk: Cyan→Blue→Red             • Temp: Green→Red                │  │
-│  │  • WiFi RSSI: Cyan                 • WiFi SNR: Light Cyan           │  │
-│  └──────────────────────────────────────────────────────────────────────┘  │
-│                                                                             │
-│  ┌──────────────────────────────────────────────────────────────────────┐  │
-│  │              Alertmanager (port 9093)                                │  │
-│  │                                                                      │  │
-│  │  • Inhibition Rules (Critical suppresses Warning)                    │  │
-│  │  • Webhook → Node-RED → Teams/LINE formatting                       │  │
-│  │  • Emoji Icons (🔥 Critical, ⚠️ Warning, ✅ Resolved)               │  │
-│  └──────────────────────────────────────────────────────────────────────┘  │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
+rDiff = currentCounter - previousCounter
+
+IF rDiff < 0:
+  IF |rDiff| > 2,147,483,648:     // 64-bit overflow
+    rDiff += 18,446,744,073,709,551,616
+  ELSE:                            // 32-bit overflow
+    rDiff += 4,294,967,296
+
+rx_mbps = (rDiff × 8) / (elapsedSec × 1,000,000)
+IF rx_mbps > 40,000 OR rx_mbps < 0:
+  rx_mbps = 0                      // HardCap 40 Gbps
 ```
 
-## Data Flow Summary
+---
 
-```
-┌──────────┐    SNMP GET    ┌──────────┐    SQL INSERT    ┌──────────┐
-│ Machine  │───────────────▶│ Node-RED │─────────────────▶│ Timescale│
-│ (SNMP)   │   10s poll     │ (Parser) │   Parameterized  │   DB     │
-└──────────┘                └──────────┘                  └─────┬────┘
-                                                               │
-                                                    SQL Query  │
-                                                               ▼
-┌──────────┐    Scrape      ┌──────────┐    Dashboard    ┌──────────┐
-│Prometheus│◀───────────────│ Blackbox │◀────────────────│  Grafana │
-│ (Alerts) │   30s interval │ Exporter │   HTTP/TCP/ICMP │(Vis/AIOps)│
-└──────────┘                └──────────┘                  └──────────┘
-```
+## 3. Database Schema & Aggregation
 
-## Database Schema (machine_telemetry — 28 Columns)
+### machine_telemetry (Hypertable)
 
 | Column | Type | Description |
 |--------|------|-------------|
-| time | timestamptz | Primary time dimension |
-| machine_id | text | Machine identifier |
-| cpu_cores | integer | Number of CPU cores |
-| cpu_load_percent | double precision | CPU load percentage |
-| ram_total_mb | double precision | Total RAM in MB |
-| ram_used_mb | double precision | Used RAM in MB |
-| ram_free_mb | double precision | Free RAM in MB |
-| disk_total_gb | double precision | Total disk in GB |
-| disk_used_gb | double precision | Used disk in GB |
-| disk_free_gb | double precision | Free disk in GB |
-| net_rx_bytes | bigint | Total RX bytes |
-| net_tx_bytes | bigint | Total TX bytes |
-| net_rx_errors | bigint | RX errors |
-| net_rx_drops | bigint | RX drops |
-| net_if_status | integer | Interface status (1=UP) |
-| temp_c | double precision | Temperature in Celsius |
-| rx_mbps | double precision | RX bandwidth in Mbps |
-| tx_mbps | double precision | TX bandwidth in Mbps |
-| interface_metrics | jsonb | Per-interface breakdown |
-| ldi_throughput | integer | LDI throughput (units/hr) |
-| ldi_humidity | integer | LDI humidity (%) |
-| ldi_pe | integer | Position Error (µm) |
-| ldi_je | integer | Judgment Error (µm) |
-| ldi_power | integer | Power consumption (W) |
-| ldi_vibration | integer | Vibration (mm/s) |
-| ldi_uptime | bigint | LDI uptime |
-| **wifi_rssi** | integer | WiFi Signal Strength (dBm) |
-| **wifi_snr** | integer | WiFi Signal Quality (dB) |
+| `time` | TIMESTAMPTZ | เวลาที่เก็บข้อมูล (partition key) |
+| `machine_id` | TEXT | ชื่อเครื่องจักร |
+| `cpu_load_percent` | DOUBLE PRECISION | โหลด CPU (%) |
+| `ram_used_mb` | DOUBLE PRECISION | RAM ที่ใช้ (MB) |
+| `disk_used_gb` | DOUBLE PRECISION | พื้นที่ disk ที่ใช้ (GB) |
+| `net_rx_bytes` | BIGINT | จำนวน Bytes ที่รับ (64-bit) |
+| `net_tx_bytes` | BIGINT | จำนวน Byte ที่ส่ง (64-bit) |
+| `net_rx_errors` | BIGINT | จำนวน Errors |
+| `net_rx_drops` | BIGINT | จำนวน Drops |
+| `temp_c` | DOUBLE PRECISION | อุณหภูมิ (°C) |
+| `rx_mbps` | DOUBLE PRECISION | Bandwidth รับ (Mbps) |
+| `tx_mbps` | DOUBLE PRECISION | Bandwidth ส่ง (Mbps) |
+| `interface_metrics` | JSONB | ข้อมูล per-interface (eth0, wlan0) |
+| `ldi_throughput` | DOUBLE PRECISION | LDI Throughput |
+| `ldi_humidity` | DOUBLE PRECISION | LDI Humidity (%) |
+| `ldi_pe` | DOUBLE PRECISION | Position Error |
+| `ldi_je` | DOUBLE PRECISION | Judgment Error |
+| `ldi_power` | DOUBLE PRECISION | Power Consumption (W) |
+| `ldi_vibration` | DOUBLE PRECISION | Vibration (mm/s) |
+| `wifi_rssi` | INTEGER | Wi-Fi Signal Strength (dBm) |
+| `wifi_snr` | INTEGER | Wi-Fi Signal-to-Noise Ratio (dB) |
 
-## Continuous Aggregates
+### Continuous Aggregates
+```sql
+-- Minute Summary
+CREATE MATERIALIZED VIEW public.telemetry_minute_summary
+WITH (timescaledb.continuous) AS
+SELECT
+    time_bucket('1 minute', "time") AS "bucket",
+    machine_id,
+    AVG(cpu_load_percent) AS avg_cpu_load,
+    MAX(temp_c) AS avg_temp,
+    AVG(ldi_humidity) AS avg_ldi_humidity,
+    AVG(wifi_rssi) AS avg_wifi_rssi,
+    MIN(wifi_snr) AS min_wifi_snr
+    -- ... + fields
+FROM public.machine_telemetry
+GROUP BY "bucket", machine_id;
+```
 
-| View | Interval | Columns |
-|------|----------|---------|
-| telemetry_minute_summary | 1 min | All infrastructure + WiFi |
-| ldi_minute_summary | 1 min | LDI metrics + WiFi |
+---
 
-## Prometheus Alert Rules (38 Rules, 13 Groups)
+## 4. High Availability & Security
 
-| Group | Rules | Purpose |
-|-------|-------|---------|
-| interface_health | InterfaceDown, InterfaceFlapping | Network link monitoring |
-| network | WiFiPacketLoss, BandwidthZScore | WiFi + anomaly detection |
-| system | ServiceDown, NodeREDDown, TelemetryGap | Infrastructure health |
-| thermal | ThermalWarning, ThermalCritical | Temperature monitoring |
-| cpu | CpuHigh, CpuZScore | CPU anomaly detection |
-| memory | MemoryHigh, MemoryCritical | RAM monitoring |
-| disk | DiskFull, DiskPredictedFull | Storage forecasting |
-| sla | SLABreachWarning, SLABreachCritical | SLA monitoring |
-| watchdog | Watchdog | Pipeline alive check |
-| ldi_predictive | ThroughputCritical, PECritical, VibrationCritical, etc. | LDI quality |
-| zscore_anomaly | BandwidthZScore, TemperatureZScore, CpuZScore | AIOps |
-| blackbox | TargetDown | Probe monitoring |
-| ldi | LDISensorDown | LDI sensor health |
+### Chaos Tolerance
+- **K6 Load Test:** 1,000 VUs, 0% failure rate, p95 < 80ms
+- **PgBouncer Failover:** Node-RED Batch Buffer เก็บข้อมูลใน RAM แล้วเทกลับเมื่อ DB กลับมา
+- **Zero Data Loss:** ผ่านการทดสอบ Chaos Engineering แล้ว
 
-## Architecture Principles
+### Security Model
+- **SNMP Read-Only:** 100% ปลอดภัย ไม่ส่งคำสั่งไปที่เครื่องจักร
+- **No Hardcoded Secrets:** ใช้ Docker secrets + .env
+- **SQL Injection Prevention:** Parameterized queries เสมอ
+- **Zero Trust:** ไม่มี password ใน source code
 
-1. **Read-Only SNMP**: No write operations to machines — 100% safe
-2. **Zero Data Loss**: Bulletproof parser with counter wrap detection
-3. **Zero Alert Fatigue**: Inhibition rules suppress lower-severity alerts
-4. **Horizontal Scalability**: Dynamic OID polling — no code changes for 1-1000+ machines
-5. **AIOps Foundation**: Z-Score anomaly detection + predictive alerting
-6. **SRE Standard**: Color palette, units, and dashboard hierarchy follow SRE best practices
+---
+
+## 5. Scalability
+
+- **Database-driven Machine Registry:** ไม่ hardcode IP ใน Node-RED
+- **10 → 1,000 Machines:** ไม่ต้องแก้โค้ด เพียงเพิ่ม IP ใน DB
+- **Dynamic OID Discovery:** ใช้ MIB Browser ค้นหา OID ของอุปกรณ์ใหม่
