@@ -29,24 +29,29 @@ The system ensures 99.99% SLA, Zero-Leak memory processing, and Predictive AIOps
 - **Storage/RAM:** `.1.3.6.1.2.1.25.2.3.1` (HOST-RESOURCES-MIB)
 - **Network (64-bit):** `.1.3.6.1.2.1.31.1.1.1.6` (RX) / `.10` (TX) (IF-MIB High Capacity)
 - **Temp:** `.1.3.6.1.4.1.2021.13.16.2.1.7` (LM-SENSORS-MIB)
+- **LDI Private MIB:** `.1.3.6.1.4.1.99999.1.1.x` (Enterprise Private — LDI Manufacturing)
+  - `.1` Throughput (units/sec) | `.2` Temperature (°C) | `.3` Humidity (%)
+  - `.4` PE — Process Efficiency (%) | `.5` JE — Junction Efficiency (%)
+  - `.6` Power (Watts) | `.7` Vibration (mm/s RMS) | `.8` Uptime (Counter64)
 
 ## Architecture Diagram
 ```
-┌─────────────┐     ┌─────────────┐     ┌──────────────┐
-│  SNMP Agent │────▶│  Node-RED   │────▶│  PgBouncer   │
-│  (snmpsim)  │     │  Pipeline   │     │  (Pooler)    │
-└─────────────┘     └──────┬──────┘     └──────┬───────┘
-                           │                    │
-                           ▼                    ▼
-                    ┌─────────────┐     ┌──────────────┐
-                    │  Grafana    │◀────│  TimescaleDB │
-                    │  Dashboard  │     │  (PostgreSQL)│
-                    └──────┬──────┘     └──────────────┘
-                           │
-                           ▼
-                    ┌─────────────┐
-                    │  Alerting   │◀──── Prometheus + Alertmanager
-                    └─────────────┘
+┌─────────────┐     ┌──────────────────────────────┐     ┌──────────────┐
+│  SNMP Agent │────▶│  Node-RED Pipeline (v6)       │────▶│  PgBouncer   │
+│  (snmpsim)  │     │  5-Thread Parallel Walker     │     │  (Pooler)    │
+│  LDI MIB    │     │  CPU│Storage│Network│Temp│LDI  │     └──────┬───────┘
+└─────────────┘     └──────────────┬───────────────┘              │
+                                   │                              ▼
+                                   ▼                       ┌──────────────┐
+                            ┌─────────────┐                │  TimescaleDB │
+                            │  Grafana    │◀───────────────│  (PostgreSQL)│
+                            │  Dashboard  │                └──────────────┘
+                            └──────┬──────┘
+                                   │
+                                   ▼
+                            ┌─────────────┐
+                            │  Alerting   │◀──── Prometheus + Alertmanager
+                            └─────────────┘
 ```
 
 ## Services & Ports
@@ -62,11 +67,20 @@ The system ensures 99.99% SLA, Zero-Leak memory processing, and Predictive AIOps
 
 ## Database Schema
 - `public.machines` — Machine registry
-- `public.machine_telemetry` — Raw telemetry (hypertable)
-- `public.telemetry_minute_summary` — 1-minute continuous aggregate
-- `public.telemetry_hourly_summary` — 1-hour continuous aggregate
+- `public.machine_telemetry` — Raw telemetry (hypertable) + LDI columns
+- `public.telemetry_minute_summary` — 1-minute continuous aggregate (with LDI)
+- `public.telemetry_hourly_summary` — 1-hour continuous aggregate (with LDI)
 - `public.alert_rules` — Alert threshold definitions
 - `public.alert_history` — Alert event log
+
+### LDI Columns (machine_telemetry)
+- `ldi_throughput` (int) — units/sec
+- `ldi_humidity` (int) — ambient humidity %
+- `ldi_pe` (int) — Process Efficiency %
+- `ldi_je` (int) — Junction Efficiency %
+- `ldi_power` (int) — Watts
+- `ldi_vibration` (int) — mm/s RMS
+- `ldi_uptime` (bigint) — seconds since start
 
 ## Alert Thresholds
 | Metric | Warning | Critical |
@@ -83,3 +97,6 @@ The system ensures 99.99% SLA, Zero-Leak memory processing, and Predictive AIOps
 - TimescaleDB hypertable requires `time` column as partitioning key
 - Grafana dashboards are read-only mounted; edit JSON files directly
 - Secrets must exist as files in `secrets/` directory before `docker compose up`
+- **snmpsim Integer type (2)** fluctuates; **Counter64 (65)** accumulates — use type 2 for manufacturing metrics
+- **join_sync `count` field** (string) must match `joinCount` (number) — they are separate fields
+- **LDI Private MIB** uses enterprise `.1.3.6.1.4.1.99999` — all 8 OIDs under `.1.1.x`

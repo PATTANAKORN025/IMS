@@ -81,8 +81,8 @@ inhibit_rules:
   # InterfaceDown inhibits CPU/RAM/Thermal warnings
   - source_matchers:
       - alertname="InterfaceDown"
-    target_matchers_re:
-      alertname: "CPUHigh|MemorySaturation|ThermalRunaway"
+    target_matchers:
+      - alertname=~"CPUHigh|MemorySaturation|ThermalRunaway"
     equal: ['machine_id']
 
   # ServiceDown inhibits ALL warnings on same machine

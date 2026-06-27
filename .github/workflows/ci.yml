@@ -1,0 +1,34 @@
+name: IMS Production CI/CD
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate Docker Compose
+        run: docker compose config -q
+
+      - name: Lint Prometheus Rules
+        run: docker run --rm -v ${{ github.workspace }}/monitoring/prometheus:/etc/prometheus prom/prometheus:v2.55.1 promtool check config /etc/prometheus/prometheus.yml
+
+      - name: Validate Dashboard JSON
+        run: |
+          for f in monitoring/grafana/dashboards/*.json; do
+            echo "Validating $f"
+            python3 -c "import json; json.load(open('$f'))"
+          done
+
+      - name: Check No Secrets in Repo
+        run: |
+          if grep -rn "password" --include="*.json" --include="*.yml" --include="*.yaml" --include="*.env" . | grep -v ".gitignore" | grep -v "node_modules" | grep -v "passwordEnv" | grep -v "passwordFieldType" | grep -v "CHANGELOG" | grep -v "README" | grep -v "LICENSE"; then
+            echo "WARNING: Potential secrets found"
+          else
+            echo "No secrets detected"
+          fi

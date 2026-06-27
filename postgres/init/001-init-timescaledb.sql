@@ -38,7 +38,15 @@ CREATE TABLE public.machine_telemetry (
     temp_c              DOUBLE PRECISION DEFAULT 0,
     rx_mbps             DOUBLE PRECISION DEFAULT 0,
     tx_mbps             DOUBLE PRECISION DEFAULT 0,
-    interface_metrics   JSONB DEFAULT '{}'::jsonb
+    interface_metrics   JSONB DEFAULT '{}'::jsonb,
+    -- LDI Private MIB (Enterprise .1.3.6.1.4.1.99999)
+    ldi_throughput      INT DEFAULT 0,
+    ldi_humidity        INT DEFAULT 0,
+    ldi_pe              INT DEFAULT 0,
+    ldi_je              INT DEFAULT 0,
+    ldi_power           INT DEFAULT 0,
+    ldi_vibration       INT DEFAULT 0,
+    ldi_uptime          BIGINT DEFAULT 0
 );
 
 SELECT create_hypertable('public.machine_telemetry', 'time', if_not_exists => TRUE);
@@ -55,7 +63,7 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
     RETURN 0::NUMERIC;
 END;
-$$ LANGUAGE plpgsql IMMUTABLE;
+$$ LANGUAGE plpgsql IMMUTABLE PARALLEL SAFE;
 
 -- Compression (saves ~90% disk after 7 days)
 ALTER TABLE public.machine_telemetry SET (
@@ -88,7 +96,16 @@ SELECT
     MAX(net_rx_errors) - MIN(net_rx_errors) AS total_rx_errors,
     MAX(net_rx_drops) - MIN(net_rx_drops) AS total_rx_drops,
     MIN(net_if_status) AS min_if_status,
-    MAX(temp_c) AS max_temp_c
+    MAX(temp_c) AS max_temp_c,
+    AVG(ldi_throughput) AS avg_ldi_throughput,
+    MAX(ldi_throughput) AS max_ldi_throughput,
+    AVG(ldi_humidity) AS avg_ldi_humidity,
+    AVG(ldi_pe) AS avg_ldi_pe,
+    MIN(ldi_pe) AS min_ldi_pe,
+    AVG(ldi_je) AS avg_ldi_je,
+    AVG(ldi_power) AS avg_ldi_power,
+    AVG(ldi_vibration) AS avg_ldi_vibration,
+    MAX(ldi_vibration) AS max_ldi_vibration
 FROM public.machine_telemetry
 GROUP BY "bucket", machine_id;
 
@@ -115,7 +132,16 @@ SELECT
     MAX(max_temp_c) AS max_temp_c,
     SUM(total_rx_errors) AS total_rx_errors,
     SUM(total_rx_drops) AS total_rx_drops,
-    MIN(min_if_status) AS min_if_status
+    MIN(min_if_status) AS min_if_status,
+    AVG(avg_ldi_throughput) AS avg_ldi_throughput,
+    MAX(max_ldi_throughput) AS max_ldi_throughput,
+    AVG(avg_ldi_humidity) AS avg_ldi_humidity,
+    AVG(avg_ldi_pe) AS avg_ldi_pe,
+    MIN(min_ldi_pe) AS min_ldi_pe,
+    AVG(avg_ldi_je) AS avg_ldi_je,
+    AVG(avg_ldi_power) AS avg_ldi_power,
+    AVG(avg_ldi_vibration) AS avg_ldi_vibration,
+    MAX(max_ldi_vibration) AS max_ldi_vibration
 FROM public.telemetry_minute_summary
 GROUP BY "hour_bucket", machine_id;
 

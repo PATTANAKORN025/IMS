@@ -23,13 +23,6 @@ scrape_configs:
       - targets:
           - localhost:9090
 
-  # ── Node-RED Metrics ──────────────────────────────────────
-  - job_name: node-red
-    metrics_path: /metrics
-    static_configs:
-      - targets:
-          - node-red:1880
-
   # ── Alertmanager ──────────────────────────────────────────
   - job_name: alertmanager
     static_configs:
@@ -40,14 +33,15 @@ scrape_configs:
   - job_name: blackbox-exporter
     static_configs:
       - targets:
-          - blackbox:9115
+          - blackbox-exporter:9115
 
   # ── Blackbox: HTTP Probes (SLA) ──────────────────────────
-  - job_name: blackbox-http
+  - job_name: 'blackbox-http'
     metrics_path: /probe
     params:
       module: [http_2xx]
     scrape_interval: 30s
+    scrape_timeout: 10s
     static_configs:
       - targets:
           - http://grafana:3000/api/health
@@ -60,32 +54,34 @@ scrape_configs:
       - source_labels: [__param_target]
         target_label: instance
       - target_label: __address__
-        replacement: blackbox:9115
+        replacement: blackbox-exporter:9115
 
   # ── Blackbox: TCP Probes (Port Check) ────────────────────
-  - job_name: blackbox-tcp
+  - job_name: 'blackbox-tcp'
     metrics_path: /probe
     params:
       module: [tcp_connect]
     scrape_interval: 30s
+    scrape_timeout: 10s
     static_configs:
       - targets:
           - timescaledb:5432
-          - pgbouncer:6432
+          - pgbouncer:5432
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target
       - source_labels: [__param_target]
         target_label: instance
       - target_label: __address__
-        replacement: blackbox:9115
+        replacement: blackbox-exporter:9115
 
   # ── Blackbox: ICMP Probes (Ping) ─────────────────────────
-  - job_name: blackbox-icmp
+  - job_name: 'blackbox-icmp'
     metrics_path: /probe
     params:
       module: [icmp]
     scrape_interval: 30s
+    scrape_timeout: 10s
     static_configs:
       - targets:
           - grafana
@@ -97,4 +93,4 @@ scrape_configs:
       - source_labels: [__param_target]
         target_label: instance
       - target_label: __address__
-        replacement: blackbox:9115
+        replacement: blackbox-exporter:9115
