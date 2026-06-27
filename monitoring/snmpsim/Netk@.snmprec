@@ -1,14 +1,17 @@
-# IMS SNMP Simulator — Chaos Engineering Profile
-# Phase Apex: "The Immortal Apex System" — Heartbeat Spikes Edition
-# Purpose: Validate AIOps alerts (InterfaceDown, ServiceDown, ThermalWarning)
+# IMS SNMP Simulator — Dynamic Industrial Profile (Req7)
+# Realism via the snmpsim `numeric` variation module:
+#   function=sin  -> production-cycle waves    deviation=N -> sensor/RF noise    wrap=1 -> Counter rollover
+# Sine recipe: function=sin,initial=0,scale=(max-min)/2,offset=(max+min)/2,rate=2*pi/period_seconds
+#   (initial=0 is required so the final `v += vold` does not shift the wave off-range)
+# Purpose: validate AIOps alerts (InterfaceDown, ServiceDown, Thermal, Wi-Fi SNR, predictive bandwidth)
 
-# --- CPU Cores (fluctuating 10-95%) ---
-1.3.6.1.2.1.25.3.3.1.2.1|2:numeric|min=10,max=90,rate=5
-1.3.6.1.2.1.25.3.3.1.2.2|2:numeric|min=15,max=80,rate=8
-1.3.6.1.2.1.25.3.3.1.2.3|2:numeric|min=5,max=95,rate=3
-1.3.6.1.2.1.25.3.3.1.2.4|2:numeric|min=20,max=70,rate=6
+# --- CPU Cores (sine load waves 5-95% + jitter) ---
+1.3.6.1.2.1.25.3.3.1.2.1|2:numeric|function=sin,initial=0,min=10,max=90,scale=40,offset=50,rate=0.0698,deviation=3
+1.3.6.1.2.1.25.3.3.1.2.2|2:numeric|function=sin,initial=0,min=15,max=80,scale=32.5,offset=47.5,rate=0.0898,deviation=4
+1.3.6.1.2.1.25.3.3.1.2.3|2:numeric|function=sin,initial=0,min=5,max=95,scale=45,offset=50,rate=0.0571,deviation=3
+1.3.6.1.2.1.25.3.3.1.2.4|2:numeric|function=sin,initial=0,min=20,max=70,scale=25,offset=45,rate=0.0785,deviation=3
 
-# --- Storage & RAM ---
+# --- Storage & RAM (linear drift + slight noise) ---
 1.3.6.1.2.1.25.2.3.1.2.1|6|1.3.6.1.2.1.25.2.1.2
 1.3.6.1.2.1.25.2.3.1.2.2|6|1.3.6.1.2.1.25.2.1.4
 1.3.6.1.2.1.25.2.3.1.3.1|4|Physical Memory
@@ -17,8 +20,8 @@
 1.3.6.1.2.1.25.2.3.1.4.2|2|4096
 1.3.6.1.2.1.25.2.3.1.5.1|2|16777216
 1.3.6.1.2.1.25.2.3.1.5.2|2|131072000
-1.3.6.1.2.1.25.2.3.1.6.1|2:numeric|min=4194304,max=15728640,rate=102400
-1.3.6.1.2.1.25.2.3.1.6.2|2:numeric|min=65536000,max=125000000,rate=50000
+1.3.6.1.2.1.25.2.3.1.6.1|2:numeric|min=4194304,max=15728640,rate=102400,deviation=8192
+1.3.6.1.2.1.25.2.3.1.6.2|2:numeric|min=65536000,max=125000000,rate=50000,deviation=5000
 
 # --- Interface Names ---
 1.3.6.1.2.1.2.2.1.2.1|4|eth0
@@ -28,71 +31,71 @@
 1.3.6.1.2.1.2.2.1.5.1|65|10000000000
 1.3.6.1.2.1.2.2.1.5.2|65|1200000000
 
-# --- 64-BIT NETWORK COUNTERS (Enterprise Grade Fluctuation) ---
-# eth0 (Core Switch) - ~360 Mbps, saturates in ~6h
-1.3.6.1.2.1.31.1.1.1.6.1|65:numeric|min=100000000,max=1000000000000,rate=45000000
-1.3.6.1.2.1.31.1.1.1.10.1|65:numeric|min=50000000,max=500000000000,rate=15000000
-# wlan0 (IoT WiFi) - ~68 Mbps, saturates in ~6h
-1.3.6.1.2.1.31.1.1.1.6.2|65:numeric|min=10000000,max=200000000000,rate=8500000
-1.3.6.1.2.1.31.1.1.1.10.2|65:numeric|min=5000000,max=100000000000,rate=3500000
+# --- 64-BIT HC NETWORK COUNTERS (tag 70 = Counter64, wrap=1 at true 2^64-1) ---
+# These are ifHCInOctets/ifHCOutOctets -> MUST be Counter64 (tag 70). The previous
+# tag 65 (Counter32) + max=1e12 overflowed 2^32 after ~95s and nulled out.
+# eth0 (Core Switch) ~360 Mbps; wlan0 (IoT WiFi). Parser wrap handling is exercised
+# by the 32-bit counters below (~48min cycle) and by container-restart resets.
+1.3.6.1.2.1.31.1.1.1.6.1|70:numeric|min=100000000,max=18446744073709551615,rate=45000000,wrap=1
+1.3.6.1.2.1.31.1.1.1.10.1|70:numeric|min=50000000,max=18446744073709551615,rate=15000000,wrap=1
+1.3.6.1.2.1.31.1.1.1.6.2|70:numeric|min=10000000,max=18446744073709551615,rate=8500000,wrap=1
+1.3.6.1.2.1.31.1.1.1.10.2|70:numeric|min=5000000,max=18446744073709551615,rate=3500000,wrap=1
 
-# --- 32-bit Fallback Counters ---
-1.3.6.1.2.1.2.2.1.10.1|65:numeric|min=10000,max=4294967295,rate=1500000
-1.3.6.1.2.1.2.2.1.16.1|65:numeric|min=5000,max=4294967295,rate=800000
-1.3.6.1.2.1.2.2.1.10.2|65:numeric|min=1000,max=4294967295,rate=500000
-1.3.6.1.2.1.2.2.1.16.2|65:numeric|min=1000,max=4294967295,rate=200000
+# --- 32-bit Fallback Counters (wrap at true 2^32-1 -> ~48min cycle, genuinely tests wrap math) ---
+1.3.6.1.2.1.2.2.1.10.1|65:numeric|min=10000,max=4294967295,rate=1500000,wrap=1
+1.3.6.1.2.1.2.2.1.16.1|65:numeric|min=5000,max=4294967295,rate=800000,wrap=1
+1.3.6.1.2.1.2.2.1.10.2|65:numeric|min=1000,max=4294967295,rate=500000,wrap=1
+1.3.6.1.2.1.2.2.1.16.2|65:numeric|min=1000,max=4294967295,rate=200000,wrap=1
 
-# --- CHAOS: Network Errors (Cable Fault Simulation) ---
-1.3.6.1.2.1.2.2.1.14.1|65:numeric|min=0,max=2000,rate=45
-1.3.6.1.2.1.2.2.1.14.2|65:numeric|min=0,max=150,rate=5
-# --- CHAOS: Network Drops ---
-1.3.6.1.2.1.2.2.1.13.1|65:numeric|min=0,max=500,rate=15
-1.3.6.1.2.1.2.2.1.13.2|65:numeric|min=0,max=50,rate=3
+# --- CHAOS: Network Errors (cable fault) wrap=1 ---
+1.3.6.1.2.1.2.2.1.14.1|65:numeric|min=0,max=2000,rate=45,wrap=1
+1.3.6.1.2.1.2.2.1.14.2|65:numeric|min=0,max=150,rate=5,wrap=1
+# --- CHAOS: Network Drops wrap=1 ---
+1.3.6.1.2.1.2.2.1.13.1|65:numeric|min=0,max=500,rate=15,wrap=1
+1.3.6.1.2.1.2.2.1.13.2|65:numeric|min=0,max=50,rate=3,wrap=1
 
-# --- CHAOS: Interface Status (eth0 flapping between UP/DOWN) ---
+# --- CHAOS: Interface Status (eth0 flapping UP/DOWN by design) ---
 1.3.6.1.2.1.2.2.1.8.1|2:numeric|min=1,max=2,rate=1
 1.3.6.1.2.1.2.2.1.8.2|2|1
 
-# --- Temperature (Breathing Heat: realistic thermal fluctuation) ---
+# --- Temperature (sine "breathing heat" 65-92C + noise; crosses 70/85 alert thresholds each cycle) ---
 1.3.6.1.4.1.2021.13.16.2.1.7.0|2|0
-1.3.6.1.4.1.2021.13.16.2.1.7.1|2:numeric|min=65,max=92,rate=4
+1.3.6.1.4.1.2021.13.16.2.1.7.1|2:numeric|function=sin,initial=0,min=65,max=92,scale=13.5,offset=78.5,rate=0.0628,deviation=2
 
 # ============================================================
 # LDI PRIVATE MIB — Enterprise .1.3.6.1.4.1.9999
-# Manufacturing Machine Telemetry (Dynamic Mock Data)
-# Rate tuned for realistic 10s polling (slow oscillation)
+# Manufacturing telemetry: sine production cycles + sensor noise
 # ============================================================
 
-# 1. Throughput (20-180 side/hr, slow sine wave ~30s cycle)
-1.3.6.1.4.1.9999.1.1.0|2:numeric|min=20,max=180,rate=2
+# 1. Throughput (20-180 units, true sine ~120s production cycle + jitter)
+1.3.6.1.4.1.9999.1.1.0|2:numeric|function=sin,initial=0,min=20,max=180,scale=80,offset=100,rate=0.0524,deviation=5
 
-# 2. LDI Temperature (22.1 - 22.7 °C, scaled x100, slow drift)
-1.3.6.1.4.1.9999.1.2.0|2:numeric|min=2210,max=2270,rate=1
+# 2. LDI Temperature (22.1-22.7 C x100, drift + noise)
+1.3.6.1.4.1.9999.1.2.0|2:numeric|min=2210,max=2270,rate=1,deviation=10
 
-# 3. LDI Humidity (53% - 60%, scaled x100, slow drift)
-1.3.6.1.4.1.9999.1.3.0|2:numeric|min=5300,max=6000,rate=1
+# 3. LDI Humidity (53-60% x100, drift + noise)
+1.3.6.1.4.1.9999.1.3.0|2:numeric|min=5300,max=6000,rate=1,deviation=15
 
-# 4. Position Error (PE2: -15.0 to -7.0 µm, PE5: +7.0 to +18.0 µm, scaled x100)
-1.3.6.1.4.1.9999.1.4.2|2:numeric|min=-1500,max=-700,rate=8
-1.3.6.1.4.1.9999.1.4.5|2:numeric|min=700,max=1800,rate=10
+# 4. Position Error (PE2 -15..-7um, PE5 +7..+18um, x100, + noise)
+1.3.6.1.4.1.9999.1.4.2|2:numeric|min=-1500,max=-700,rate=8,deviation=20
+1.3.6.1.4.1.9999.1.4.5|2:numeric|min=700,max=1800,rate=10,deviation=20
 
-# 5. Judgment Error (4.0 - 16.0 µm, scaled x100)
-1.3.6.1.4.1.9999.1.5.1|2:numeric|min=400,max=1600,rate=12
+# 5. Judgment Error (4-16um x100, + noise)
+1.3.6.1.4.1.9999.1.5.1|2:numeric|min=400,max=1600,rate=12,deviation=15
 
-# 6. Power Consumption (1200-3500W, slow drift)
-1.3.6.1.4.1.9999.1.6.1|2:numeric|min=1200,max=3500,rate=5
+# 6. Power (1200-3500W, slow sine shift cycle ~180s + noise)
+1.3.6.1.4.1.9999.1.6.1|2:numeric|function=sin,initial=0,min=1200,max=3500,scale=1150,offset=2350,rate=0.0349,deviation=30
 
-# 7. Vibration (0.5-12.0 mm/s, scaled x100, slow drift)
-1.3.6.1.4.1.9999.1.7.1|2:numeric|min=50,max=1200,rate=6
+# 7. Vibration (0.5-12.0 mm/s x100, drift + spikes)
+1.3.6.1.4.1.9999.1.7.1|2:numeric|min=50,max=1200,rate=6,deviation=40
 
 # ============================================================
 # WiFi SIGNAL QUALITY — Enterprise .1.3.6.1.4.1.9999.2.x
-# RSSI: -85 to -40 dBm (stronger = closer to 0)
-# SNR: 10-40 dB (>25 = excellent, <15 = poor)
+# RSSI -85..-40 dBm, SNR 10-40 dB (<20 trips the SNR alert), + RF jitter
 # ============================================================
 
 # 8. WiFi RSSI (Received Signal Strength Indicator)
-1.3.6.1.4.1.9999.2.1.0|2:numeric|min=-85,max=-40,rate=3
+1.3.6.1.4.1.9999.2.1.0|2:numeric|min=-85,max=-40,rate=3,deviation=3
 
 # 9. WiFi SNR (Signal-to-Noise Ratio)
-1.3.6.1.4.1.9999.2.2.0|2:numeric|min=10,max=40,rate=2
+1.3.6.1.4.1.9999.2.2.0|2:numeric|min=10,max=40,rate=2,deviation=2
