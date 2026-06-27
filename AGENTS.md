@@ -59,9 +59,9 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c "SELECT machine_id, 
 
 ### Node-RED Flows
 
-- **`flows-ubuntu.json` is source of truth**; `nodered_data/flows.json` is runtime copy (gitignored)
-- **After editing flows**: copy `flows-ubuntu.json` → `nodered_data/flows.json`, then restart Node-RED
-- **NEVER use PowerShell `ConvertTo-Json`** to edit `flows-ubuntu.json` — it corrupts `\n` escape sequences in `func` fields, causing SyntaxError in Node-RED
+- **`node-red/flows/ingestion.json` is source of truth** for ingestion pipeline; `node-red/flows/alerting.json` for alerting. Runtime copies in `nodered_data/`
+- **After editing flows**: copy split files to `nodered_data/`, then restart Node-RED
+- **NEVER use PowerShell `ConvertTo-Json`** to edit flow JSON — it corrupts `\n` escape sequences in `func` fields, causing SyntaxError in Node-RED
 - **Node-RED `func` fields are single-line JSON strings** — edits must preserve `\n` escape sequences, never introduce literal line breaks
 - **Node-RED function nodes run in sandboxed VM** — `require()` is unavailable; use `global.get()` for installed packages
 - **`snmp walker` nodes unreliable** with snmpsimd (GETNEXT doesn't respect subtree boundaries) — use direct SNMP GET with function nodes instead
@@ -102,16 +102,16 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c "SELECT machine_id, 
 
 ## Node-RED Flow Architecture
 
-4-Thread Parallel Walker:
-1. Fork → CPU walker, Storage walker, SNMP GET Network function node, Temp walker
-2. Join barrier (count=4, timeout=8)
+5-Thread Parallel Walker:
+1. Fork → CPU walker, Storage walker, Network walker, Temp walker, LDI walker
+2. Join barrier (count=5, timeout=15)
 3. Parser (try-catch wrapped) → PostgreSQL INSERT via parameterized queries (`msg.params`)
 
 Parser features:
 - Fail-safe identity: `(msg.machine_id || msg.topic || '').replace(/'/g, "''")`
 - Deep copy for flow context: `JSON.parse(JSON.stringify())` on read/write
 - Explicit memory cleanup: `msg.payload = null` + `flatData.length = 0`
-- Temperature stores last reading (not max) for realistic fluctuation
+- Temperature stores max reading per poll cycle (intentional for manufacturing peak-temp tracking)
 
 ## Grafana Dashboards
 
@@ -157,7 +157,7 @@ Requires K6 installed separately (`choco install k6` / `brew install k6`).
 
 - `secrets/`, `.env` — credentials never committed
 - `*_data/` — all Docker volumes ignored
-- `nodered_data/flows.json` — runtime file, not committed (use `flows-ubuntu.json` instead)
+- `nodered_data/flows.json` — runtime file, not committed (use `node-red/flows/` instead)
 - `nodered_data/node_modules/` — Node-RED packages
 
 ## SRE Verification Protocol
