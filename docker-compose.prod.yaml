@@ -1,0 +1,16 @@
+# ใช้ตอน production: docker compose -f docker-compose.yaml -f docker-compose.prod.yaml up -d
+services:
+  pgbouncer:
+    ports: []  # ปิด public exposure — เข้าผ่าน internal network เท่านั้น
+
+  node-red:
+    environment:
+      - NODE_ENV=production
+    # เพิ่ม volume mount สำหรับ settings.js ที่มี adminAuth ตั้งไว้
+    volumes:
+      - ./nodered_data:/data
+      - ./node-red/settings-prod.js:/data/settings.js:ro
+
+  grafana:
+    ports:
+      - "127.0.0.1:3000:3000"  # bind localhost เท่านั้น ใส่ reverse proxy ด้านหน้าถ้าต้องเข้าถึงจากนอก

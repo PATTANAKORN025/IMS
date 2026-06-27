@@ -11,6 +11,10 @@ secrets/
 # Docker named-volume / local data dirs
 *_data/
 
+# AI tooling / test artifacts — not project source
+.mimocode/mimocode.json
+.playwright-mcp/
+
 # IDE
 .vscode/
 .idea/
@@ -34,16 +38,11 @@ tests/k6/*-results.json
 # node_modules everywhere
 **/node_modules/
 
-# ── MiMoCode workspace ────────────────────────────────────
-# mimocode.json contains MCP secrets (GitHub PAT). Never commit.
-.mimocode/mimocode.json
-
 # ── Node-RED data dir ─────────────────────────────────────
-# nodered_data/ holds runtime state (flows.json, .config*, .npm cache) AND the
-# hand-maintained config (settings.js, package.json). Ignore the runtime,
-# version-control the config. (`!nodered_data/` re-includes the dir so the
-# per-file negations below can take effect despite the `*_data/` rule above.)
 !nodered_data/
 nodered_data/*
 !nodered_data/settings.js
 !nodered_data/package.json
+
+# Backups (created by scripts/backup-db.sh)
+backups/
