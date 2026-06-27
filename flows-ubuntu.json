@@ -49,7 +49,7 @@
     "y": 120,
     "wires": [
       [
-        "fork_5_ways"
+        "resolve_device"
       ]
     ]
   },
@@ -118,7 +118,7 @@
         "join_sync"
       ]
     ],
-    "func": "const snmp = global.get('snmp');\nif (!snmp) { msg.payload = []; return msg; }\nconst oids = [\n    '1.3.6.1.2.1.25.3.3.1.2.1',\n    '1.3.6.1.2.1.25.3.3.1.2.2',\n    '1.3.6.1.2.1.25.3.3.1.2.3',\n    '1.3.6.1.2.1.25.3.3.1.2.4'\n];\nconst session = snmp.createSession('ims-snmpsim','Netk@',{port:161,version:snmp.Version2c,retries:1,timeout:3000});\nconst nodeRef = node; const msgRef = msg;\nsession.get(oids, function(error, varbinds) {\n    session.close();\n    if (error) { msgRef.payload = []; nodeRef.send(msgRef); return; }\n    const results = [];\n    varbinds.forEach(function(vb) { if (vb.type !== 129) results.push({oid:vb.oid,value:vb.value,type:vb.type}); });\n    msgRef.payload = results;\n    nodeRef.send(msgRef);\n});\nreturn null;"
+    "func": "const snmp = global.get('snmp');\nif (!snmp) { msg.payload = []; return msg; }\nconst oids = [\n    '1.3.6.1.2.1.25.3.3.1.2.1',\n    '1.3.6.1.2.1.25.3.3.1.2.2',\n    '1.3.6.1.2.1.25.3.3.1.2.3',\n    '1.3.6.1.2.1.25.3.3.1.2.4'\n];\nconst session = snmp.createSession(msg.host || 'ims-snmpsim', msg.community || 'Netk@', {port: msg.snmp_port || 161, version: snmp.Version2c,retries:1,timeout:3000});\nsession.on('error', function(err) { node.error('SNMP session error: ' + err.message); });;\nconst nodeRef = node; const msgRef = msg;\nsession.get(oids, function(error, varbinds) {\n    session.close();\n    if (error) { msgRef.payload = []; nodeRef.send(msgRef); return; }\n    const results = [];\n    varbinds.forEach(function(vb) { if (vb.type !== 129) results.push({oid:vb.oid,value:vb.value,type:vb.type}); });\n    msgRef.payload = results;\n    nodeRef.send(msgRef);\n});\nreturn null;"
   },
   {
     "id": "walk_storage",
@@ -133,14 +133,14 @@
         "join_sync"
       ]
     ],
-    "func": "const snmp = global.get('snmp');\nif (!snmp) { msg.payload = []; return msg; }\nconst oids = [\n    '1.3.6.1.2.1.25.2.3.1.2.1',\n    '1.3.6.1.2.1.25.2.3.1.2.2',\n    '1.3.6.1.2.1.25.2.3.1.3.1',\n    '1.3.6.1.2.1.25.2.3.1.3.2',\n    '1.3.6.1.2.1.25.2.3.1.4.1',\n    '1.3.6.1.2.1.25.2.3.1.4.2',\n    '1.3.6.1.2.1.25.2.3.1.5.1',\n    '1.3.6.1.2.1.25.2.3.1.5.2',\n    '1.3.6.1.2.1.25.2.3.1.6.1',\n    '1.3.6.1.2.1.25.2.3.1.6.2'\n];\nconst session = snmp.createSession('ims-snmpsim','Netk@',{port:161,version:snmp.Version2c,retries:1,timeout:3000});\nconst nodeRef = node; const msgRef = msg;\nsession.get(oids, function(error, varbinds) {\n    session.close();\n    if (error) { msgRef.payload = []; nodeRef.send(msgRef); return; }\n    const results = [];\n    varbinds.forEach(function(vb) { if (vb.type !== 129) results.push({oid:vb.oid,value:vb.value,type:vb.type}); });\n    msgRef.payload = results;\n    nodeRef.send(msgRef);\n});\nreturn null;"
+    "func": "const snmp = global.get('snmp');\nif (!snmp) { msg.payload = []; return msg; }\nconst session = snmp.createSession(msg.host || 'ims-snmpsim', msg.community || 'Netk@', { port: msg.snmp_port || 161, version: snmp.Version2c, retries: 1, timeout: 3000 });\nsession.on('error', function(err) { node.error('SNMP session error: ' + err.message); });\nconst nodeRef = node; const msgRef = msg;\nconst prodMode = (typeof env !== 'undefined' && env.get && env.get('NODE_ENV') === 'production');\nconst results = [];\n\nif (prodMode) {\n    session.subtree('1.3.6.1.2.1.25.2.3.1', 20, function(vbs) {\n        vbs.forEach(function(vb) {\n            if (vb.type !== 129) {\n                var oid = Array.isArray(vb.oid) ? vb.oid.join('.') : String(vb.oid);\n                results.push({oid:oid, value:vb.value, type:vb.type});\n            }\n        });\n    }, function(err) {\n        session.close();\n        msgRef.payload = results;\n        nodeRef.send(msgRef);\n    });\n} else {\n    var oids = [\n    '1.3.6.1.2.1.25.2.3.1.2.1', '1.3.6.1.2.1.25.2.3.1.2.2',\n    '1.3.6.1.2.1.25.2.3.1.3.1', '1.3.6.1.2.1.25.2.3.1.3.2',\n    '1.3.6.1.2.1.25.2.3.1.4.1', '1.3.6.1.2.1.25.2.3.1.4.2',\n    '1.3.6.1.2.1.25.2.3.1.5.1', '1.3.6.1.2.1.25.2.3.1.5.2',\n    '1.3.6.1.2.1.25.2.3.1.6.1', '1.3.6.1.2.1.25.2.3.1.6.2'\n    ];\n    session.get(oids, function(error, varbinds) {\n        session.close();\n        if (!error) varbinds.forEach(function(vb) { if (vb.type !== 129) results.push({oid:vb.oid, value:vb.value, type:vb.type}); });\n        msgRef.payload = results;\n        nodeRef.send(msgRef);\n    });\n}\nreturn null;"
   },
   {
     "id": "walk_net_get",
     "type": "function",
     "z": "ims-tab-v5",
     "name": "Walk Network (Dual-Engine)",
-    "func": "const snmp = global.get('snmp');\nif (!snmp) { msg.payload = []; return msg; }\nconst session = snmp.createSession('ims-snmpsim','Netk@',{port:161,version:snmp.Version2c,retries:1,timeout:3000});\nconst nodeRef = node; const msgRef = msg;\nconst prodMode = (typeof env !== 'undefined' && env.get && env.get('NODE_ENV') === 'production');\nconst results = [];\n\nif (prodMode) {\n    var roots = ['1.3.6.1.2.1.2.2.1', '1.3.6.1.2.1.31.1.1.1'];\n    var done = 0;\n    function onFeed(vbs) {\n        vbs.forEach(function(vb) {\n            if (vb.type !== 129) {\n                var oid = Array.isArray(vb.oid) ? vb.oid.join('.') : String(vb.oid);\n                results.push({oid:oid,value:vb.value,type:vb.type});\n            }\n        });\n    }\n    roots.forEach(function(root) {\n        session.subtree(root, 20, onFeed, function(err) {\n            done++;\n            if (done === roots.length) { session.close(); msgRef.payload = results; nodeRef.send(msgRef); }\n        });\n    });\n} else {\n    var oids = [\n    '1.3.6.1.2.1.1.3.0',\n    '1.3.6.1.2.1.2.2.1.2.1',\n    '1.3.6.1.2.1.2.2.1.2.2',\n    '1.3.6.1.2.1.2.2.1.5.1',\n    '1.3.6.1.2.1.2.2.1.5.2',\n    '1.3.6.1.2.1.31.1.1.1.6.1',\n    '1.3.6.1.2.1.31.1.1.1.6.2',\n    '1.3.6.1.2.1.31.1.1.1.10.1',\n    '1.3.6.1.2.1.31.1.1.1.10.2',\n    '1.3.6.1.2.1.2.2.1.10.1',\n    '1.3.6.1.2.1.2.2.1.10.2',\n    '1.3.6.1.2.1.2.2.1.16.1',\n    '1.3.6.1.2.1.2.2.1.16.2',\n    '1.3.6.1.2.1.2.2.1.14.1',\n    '1.3.6.1.2.1.2.2.1.14.2',\n    '1.3.6.1.2.1.2.2.1.13.1',\n    '1.3.6.1.2.1.2.2.1.13.2',\n    '1.3.6.1.2.1.2.2.1.8.1',\n    '1.3.6.1.2.1.2.2.1.8.2'\n    ];\n    session.get(oids, function(error, varbinds) {\n        session.close();\n        if (!error) varbinds.forEach(function(vb) { if (vb.type !== 129) results.push({oid:vb.oid,value:vb.value,type:vb.type}); });\n        msgRef.payload = results; nodeRef.send(msgRef);\n    });\n}\nreturn null;",
+    "func": "const snmp = global.get('snmp');\nif (!snmp) { msg.payload = []; return msg; }\nconst session = snmp.createSession(msg.host || 'ims-snmpsim', msg.community || 'Netk@', {port: msg.snmp_port || 161, version: snmp.Version2c,retries:1,timeout:3000});\nsession.on('error', function(err) { node.error('SNMP session error: ' + err.message); });;\nconst nodeRef = node; const msgRef = msg;\nconst prodMode = (typeof env !== 'undefined' && env.get && env.get('NODE_ENV') === 'production');\nconst results = [];\n\nif (prodMode) {\n    var roots = ['1.3.6.1.2.1.2.2.1', '1.3.6.1.2.1.31.1.1.1'];\n    var done = 0;\n    function onFeed(vbs) {\n        vbs.forEach(function(vb) {\n            if (vb.type !== 129) {\n                var oid = Array.isArray(vb.oid) ? vb.oid.join('.') : String(vb.oid);\n                results.push({oid:oid,value:vb.value,type:vb.type});\n            }\n        });\n    }\n    roots.forEach(function(root) {\n        session.subtree(root, 20, onFeed, function(err) {\n            done++;\n            if (done === roots.length) { session.close(); msgRef.payload = results; nodeRef.send(msgRef); }\n        });\n    });\n} else {\n    var oids = [\n    '1.3.6.1.2.1.1.3.0',\n    '1.3.6.1.2.1.2.2.1.2.1',\n    '1.3.6.1.2.1.2.2.1.2.2',\n    '1.3.6.1.2.1.2.2.1.5.1',\n    '1.3.6.1.2.1.2.2.1.5.2',\n    '1.3.6.1.2.1.31.1.1.1.6.1',\n    '1.3.6.1.2.1.31.1.1.1.6.2',\n    '1.3.6.1.2.1.31.1.1.1.10.1',\n    '1.3.6.1.2.1.31.1.1.1.10.2',\n    '1.3.6.1.2.1.2.2.1.10.1',\n    '1.3.6.1.2.1.2.2.1.10.2',\n    '1.3.6.1.2.1.2.2.1.16.1',\n    '1.3.6.1.2.1.2.2.1.16.2',\n    '1.3.6.1.2.1.2.2.1.14.1',\n    '1.3.6.1.2.1.2.2.1.14.2',\n    '1.3.6.1.2.1.2.2.1.13.1',\n    '1.3.6.1.2.1.2.2.1.13.2',\n    '1.3.6.1.2.1.2.2.1.8.1',\n    '1.3.6.1.2.1.2.2.1.8.2'\n    ];\n    session.get(oids, function(error, varbinds) {\n        session.close();\n        if (!error) varbinds.forEach(function(vb) { if (vb.type !== 129) results.push({oid:vb.oid,value:vb.value,type:vb.type}); });\n        msgRef.payload = results; nodeRef.send(msgRef);\n    });\n}\nreturn null;",
     "outputs": 1,
     "x": 580,
     "y": 210,
@@ -164,7 +164,7 @@
         "join_sync"
       ]
     ],
-    "func": "const snmp = global.get('snmp');\nif (!snmp) { msg.payload = []; return msg; }\nconst oids = [\n    '1.3.6.1.4.1.2021.13.16.2.1.7.0',\n    '1.3.6.1.4.1.2021.13.16.2.1.7.1'\n];\nconst session = snmp.createSession('ims-snmpsim','Netk@',{port:161,version:snmp.Version2c,retries:1,timeout:3000});\nconst nodeRef = node; const msgRef = msg;\nsession.get(oids, function(error, varbinds) {\n    session.close();\n    if (error) { msgRef.payload = []; nodeRef.send(msgRef); return; }\n    const results = [];\n    varbinds.forEach(function(vb) { if (vb.type !== 129) results.push({oid:vb.oid,value:vb.value,type:vb.type}); });\n    msgRef.payload = results;\n    nodeRef.send(msgRef);\n});\nreturn null;"
+    "func": "const snmp = global.get('snmp');\nif (!snmp) { msg.payload = []; return msg; }\nconst oids = [\n    '1.3.6.1.4.1.2021.13.16.2.1.7.0',\n    '1.3.6.1.4.1.2021.13.16.2.1.7.1'\n];\nconst session = snmp.createSession(msg.host || 'ims-snmpsim', msg.community || 'Netk@', {port: msg.snmp_port || 161, version: snmp.Version2c,retries:1,timeout:3000});\nsession.on('error', function(err) { node.error('SNMP session error: ' + err.message); });;\nconst nodeRef = node; const msgRef = msg;\nsession.get(oids, function(error, varbinds) {\n    session.close();\n    if (error) { msgRef.payload = []; nodeRef.send(msgRef); return; }\n    const results = [];\n    varbinds.forEach(function(vb) { if (vb.type !== 129) results.push({oid:vb.oid,value:vb.value,type:vb.type}); });\n    msgRef.payload = results;\n    nodeRef.send(msgRef);\n});\nreturn null;"
   },
   {
     "id": "catch_walker",
@@ -215,7 +215,7 @@
         "join_sync"
       ]
     ],
-    "func": "const snmp = global.get('snmp');\nif (!snmp) { msg.payload = []; return msg; }\nconst oids = [\n    '1.3.6.1.4.1.9999.1.1.0',\n    '1.3.6.1.4.1.9999.1.2.0',\n    '1.3.6.1.4.1.9999.1.3.0',\n    '1.3.6.1.4.1.9999.1.4.2',\n    '1.3.6.1.4.1.9999.1.4.5',\n    '1.3.6.1.4.1.9999.1.5.1',\n    '1.3.6.1.4.1.9999.1.6.1',\n    '1.3.6.1.4.1.9999.1.7.1',\n    '1.3.6.1.4.1.9999.2.1.0',\n    '1.3.6.1.4.1.9999.2.2.0'\n];\nconst session = snmp.createSession('ims-snmpsim','Netk@',{port:161,version:snmp.Version2c,retries:1,timeout:3000});\nconst nodeRef = node; const msgRef = msg;\nsession.get(oids, function(error, varbinds) {\n    session.close();\n    if (error) { msgRef.payload = []; nodeRef.send(msgRef); return; }\n    const results = [];\n    varbinds.forEach(function(vb) { if (vb.type !== 129) results.push({oid:vb.oid,value:vb.value,type:vb.type}); });\n    msgRef.payload = results;\n    nodeRef.send(msgRef);\n});\nreturn null;"
+    "func": "const snmp = global.get('snmp');\nif (!snmp) { msg.payload = []; return msg; }\nconst oids = [\n    '1.3.6.1.4.1.9999.1.1.0',\n    '1.3.6.1.4.1.9999.1.2.0',\n    '1.3.6.1.4.1.9999.1.3.0',\n    '1.3.6.1.4.1.9999.1.4.2',\n    '1.3.6.1.4.1.9999.1.4.5',\n    '1.3.6.1.4.1.9999.1.5.1',\n    '1.3.6.1.4.1.9999.1.6.1',\n    '1.3.6.1.4.1.9999.1.7.1',\n    '1.3.6.1.4.1.9999.2.1.0',\n    '1.3.6.1.4.1.9999.2.2.0'\n];\nconst session = snmp.createSession(msg.host || 'ims-snmpsim', msg.community || 'Netk@', {port: msg.snmp_port || 161, version: snmp.Version2c,retries:1,timeout:3000});\nsession.on('error', function(err) { node.error('SNMP session error: ' + err.message); });;\nconst nodeRef = node; const msgRef = msg;\nsession.get(oids, function(error, varbinds) {\n    session.close();\n    if (error) { msgRef.payload = []; nodeRef.send(msgRef); return; }\n    const results = [];\n    varbinds.forEach(function(vb) { if (vb.type !== 129) results.push({oid:vb.oid,value:vb.value,type:vb.type}); });\n    msgRef.payload = results;\n    nodeRef.send(msgRef);\n});\nreturn null;"
   },
   {
     "id": "join_sync",
@@ -390,5 +390,60 @@
     "x": 640,
     "y": 240,
     "wires": []
+  },
+  {
+    "id": "inject_registry",
+    "type": "inject",
+    "z": "ims-tab-v5",
+    "name": "Refresh Device Registry (5min)",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": 300,
+    "crontab": "",
+    "once": true,
+    "onceDelay": 5,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "wires": [
+      [
+        "device_registry"
+      ]
+    ]
+  },
+  {
+    "id": "device_registry",
+    "type": "function",
+    "z": "ims-tab-v5",
+    "name": "Load Device Registry",
+    "func": "const pg = global.get('pg');\nif (!pg) { node.error('pg module not available'); return null; }\nconst msgRef = msg;\nconst sql = 'SELECT machine_id, hostname, community, snmp_port FROM public.machines WHERE enabled = true';\npg.query(sql, [], function(err, result) {\n    if (err) { node.error('Device Registry query failed: ' + err.message); return; }\n    const registry = {};\n    if (result && result.rows) {\n        result.rows.forEach(function(row) {\n            registry[row.machine_id] = {\n                hostname: row.hostname || row.machine_id,\n                community: row.community || 'public',\n                snmp_port: row.snmp_port || 161\n            };\n        });\n    }\n    const g = global.get('deviceRegistry') || {};\n    Object.assign(g, registry);\n    global.set('deviceRegistry', g);\n    node.log('Device registry loaded: ' + Object.keys(registry).length + ' devices');\n});\nreturn null;",
+    "outputs": 0,
+    "timeout": "",
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "wires": []
+  },
+  {
+    "id": "resolve_device",
+    "type": "function",
+    "z": "ims-tab-v5",
+    "name": "Resolve Device",
+    "func": "const registry = global.get('deviceRegistry') || {};\nconst mid = msg.machine_id || msg.topic || '';\nconst device = registry[mid];\nif (!device) {\n    // Fallback to default for simulator\n    msg.host = msg.host || 'ims-snmpsim';\n    msg.community = msg.community || 'Netk@';\n    msg.snmp_port = msg.snmp_port || 161;\n} else {\n    msg.host = device.hostname;\n    msg.community = device.community;\n    msg.snmp_port = device.snmp_port;\n}\nmsg.machine_id = mid;\nmsg.topic = mid;\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "wires": [
+      [
+        "fork_5_ways"
+      ]
+    ]
   }
 ]
