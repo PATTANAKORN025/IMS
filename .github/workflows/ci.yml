@@ -15,6 +15,12 @@ jobs:
       - name: Seed .env for validation
         run: cp .env.example .env
 
+      - name: Create secret stubs for compose validation
+        run: |
+          mkdir -p secrets
+          echo "placeholder" > secrets/postgres_password.txt
+          echo "placeholder" > secrets/grafana_admin_password.txt
+
       - name: Validate Docker Compose
         run: docker compose config -q
 
@@ -54,17 +60,10 @@ jobs:
             echo "Runtime flow not found (gitignored) — skipping"
           fi
 
-      - name: Check No Secrets in Repo
+      - name: Secret Scan (gitleaks)
         run: |
-          MATCHES=$(grep -rn "password" --include="*.json" --include="*.yml" --include="*.yaml" . 2>/dev/null \
-            | grep -v ".gitignore" | grep -v "node_modules" \
-            | grep -v "passwordEnv" | grep -v "passwordFieldType" \
-            | grep -v "CHANGELOG" | grep -v "README" || true)
-          if [ -n "$MATCHES" ]; then
-            echo "WARNING: Potential secrets found:"
-            echo "$MATCHES"
-          else
-            echo "No secrets detected"
-          fi
+          docker run --rm -v "${{ github.workspace }}:/repo" zricethezav/gitleaks:latest \
+            detect --source=/repo --no-git --redact --verbose \
+            --config=/repo/.gitleaks.toml --exit-code 1
 
 

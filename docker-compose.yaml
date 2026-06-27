@@ -106,7 +106,7 @@ services:
       LOG_DISCONNECTIONS: "0"
       AUTH_TYPE: plain
     ports:
-      - "6432:5432"
+      - "127.0.0.1:6432:5432"
     deploy:
       resources:
         limits: *resource-small
@@ -133,13 +133,12 @@ services:
       - --storage.tsdb.retention.time=30d
       - --storage.tsdb.retention.size=2GB
       - --web.enable-lifecycle
-      - --web.enable-admin-api
     volumes:
       - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./monitoring/prometheus/rules:/etc/prometheus/rules:ro
       - prometheus_data:/prometheus
     ports:
-      - "9090:9090"
+      - "127.0.0.1:9090:9090"
     deploy:
       resources:
         limits: *resource-medium
@@ -169,7 +168,7 @@ services:
       - ./monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
       - alertmanager_data:/alertmanager
     ports:
-      - "9093:9093"
+      - "127.0.0.1:9093:9093"
     deploy:
       resources:
         limits: *resource-small
@@ -244,7 +243,7 @@ services:
     volumes:
       - ./monitoring/snmpsim:/data:ro
     ports:
-      - "1161:161/udp"
+      - "127.0.0.1:1161:161/udp"
     deploy:
       resources:
         limits: *resource-small
@@ -269,7 +268,7 @@ services:
     volumes:
       - ./monitoring/blackbox/blackbox.yml:/etc/blackbox_exporter/config.yml:ro
     ports:
-      - "9115:9115"
+      - "127.0.0.1:9115:9115"
     deploy:
       resources:
         limits: *resource-small
@@ -292,7 +291,9 @@ services:
       TZ: ${TZ:-Asia/Bangkok}
       NODE_RED_ENABLE_PROJECTS: "false"
       NODE_OPTIONS: "--max-old-space-size=1024"
-      CREDENTIAL_SECRET: ${NODE_RED_CREDENTIAL_SECRET:-ims-nodered-credential-secret}
+      CREDENTIAL_SECRET: ${NODE_RED_CREDENTIAL_SECRET:?set NODE_RED_CREDENTIAL_SECRET in .env}
+      NODE_RED_ADMIN_USER: ${NODE_RED_ADMIN_USER:-admin}
+      NODE_RED_ADMIN_PASSWORD_HASH: ${NODE_RED_ADMIN_PASSWORD_HASH:-}
       PGHOST: pgbouncer
       PGPORT: "5432"
       PGDATABASE: ${POSTGRES_DB}
@@ -301,7 +302,7 @@ services:
     secrets:
       - postgres_password
     ports:
-      - "1880:1880"
+      - "127.0.0.1:1880:1880"
     volumes:
       - ./nodered_data:/data
       - /etc/localtime:/etc/localtime:ro

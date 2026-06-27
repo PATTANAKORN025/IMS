@@ -1,0 +1,24 @@
+title = "IMS gitleaks config"
+
+# Extend the built-in ruleset (AWS keys, PEM blocks, Slack/GitHub tokens, etc.)
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Documentation, example placeholders, and vendored deps are not real secrets"
+paths = [
+  '''\.env$''',
+  '''\.env\.example''',
+  '''\.gitleaks\.toml''',
+  '''(^|/)node_modules/''',
+  '''(^|/)nodered_data/''',
+  '''(^|/)docs/''',
+  '''(^|/)\.playwright-mcp/''',
+  '''README\.md''',
+]
+regexes = [
+  '''change-me-please''',
+  '''your-line-notify-token-here''',
+  '''YOUR/WEBHOOK/URL''',
+  '''Netk@''',
+]
