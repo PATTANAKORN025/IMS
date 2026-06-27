@@ -9,9 +9,9 @@
 
 ## 🚀 Project Overview & Objectives
 
-**IMS (Infrastructure Monitoring System)** คือ ระบบ Monitoring แบบ Real-time สำหรับ Infrastructure ในองค์กร ออกแบบมาเพื่อ **APEX Circuit** โดยเฉพาะ สำหรับตรวจสอบและเฝ้าระวังสถานะของเครื่องจักร **YSPhotec / LDI (Laser Direct Imaging)** ในสายการผลิต PCB
+**IMS (Infrastructure Monitoring System)** คือ ระบบ Monitoring แบบ Real-time สำหรับ Infrastructure ในองค์กร ออกแบบมาเพื่อ **APEX Circuit** โดยเฉพาะ สำหรับตรวจสอบและเฝ้าระวังสถานะของเครื่องจักร **LDI (Laser Direct Imaging)** ในสายการผลิต PCB
 
-ระบบดึงข้อมูลผ่านโปรโตคอล **Out-of-Band SNMP** (Read-Only 100%) ซึ่งมั่นใจได้ว่า **ปลอดภัย 100% และไม่รบกวนการทำงานของเครื่องจักร** รองรับการขยาย規模ได้ถึง **1,000+ เครื่อง** พร้อมกัน
+ระบบดึงข้อมูลผ่านโปรโตคอล **Out-of-Band SNMP** (Read-Only 100%) ซึ่งมั่นใจได้ว่า **ปลอดภัย 100% และไม่รบกวนการทำงานของเครื่องจักร** รองรับการขยายได้ถึง **1,000+ เครื่อง** พร้อมกัน
 
 ### 🎯 วัตถุประสงค์หลัก 5 ข้อ
 
@@ -37,18 +37,18 @@
 
 ```text
 ┌─────────────────────────────────────────────────────────────────┐
-│                    EDGE / OT LAYER                              │
-│   [ YSPhotec LDI Machines ] ──(SNMP v2c/v3 Read-Only)──▶      │
+│                    EDGE / OT LAYER                              │ 
+│   [ YSPhotec LDI Machines ] ──(SNMP v2c/v3 Read-Only)──▶       │
 └─────────────────────────────┬───────────────────────────────────┘
                               │
                               ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                 INGESTION LAYER (Node-RED)                      │
-│   [ Dual-Engine SNMP Walker ] ──▶ [ Bulletproof Parser v7 ]   │
-│   - Fork 5 ชั้น: CPU / Storage / Network / Temp / LDI          │
-│   - Join Barrier (count=5, timeout=8)                          │
-│   - Smart Counter Wrap (32/64-bit)                             │
-│   - Memory Cleanup + Try-Catch Wrapped                         │
+┌──────────────────────────────────────────────────────────────────┐
+│                 INGESTION LAYER (Node-RED)                       │
+│   [ Dual-Engine SNMP Walker ] ──▶ [ Bulletproof Parser v7 ]     │
+│   - Fork 5 ชั้น: CPU / Storage / Network / Temp / LDI             │
+│   - Join Barrier (count=5, timeout=8)                           │
+│   - Smart Counter Wrap (32/64-bit)                              │
+│   - Memory Cleanup + Try-Catch Wrapped                          │
 └─────────────────────────────┬───────────────────────────────────┘
                               │ Batch INSERT (parameterized queries)
                               ▼
