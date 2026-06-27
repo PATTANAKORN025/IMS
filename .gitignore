@@ -12,7 +12,7 @@ secrets/
 *_data/
 
 # AI tooling / test artifacts — not project source
-.mimocode/mimocode.json
+.mimocode/
 .playwright-mcp/
 
 # IDE
