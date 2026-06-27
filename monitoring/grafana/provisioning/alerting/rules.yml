@@ -1,5 +1,8 @@
 apiVersion: 1
 
+# Telemetry alerting engine = Grafana-managed SQL over the TimescaleDB continuous
+# aggregates (Ironclad Rule 5: never query the raw machine_telemetry table).
+# Prometheus/Alertmanager is reserved for blackbox SLA + up/self-monitoring only.
 groups:
   - orgId: 1
     name: IMS Infrastructure
@@ -19,11 +22,11 @@ groups:
               rawSql: |
                 SELECT
                   machine_id AS metric,
-                  AVG(cpu_load_percent) AS value
-                FROM public.machine_telemetry
-                WHERE "time" > NOW() - INTERVAL '5 minutes'
+                  AVG(avg_cpu) AS value
+                FROM telemetry_minute_summary
+                WHERE bucket > NOW() - INTERVAL '5 minutes'
                 GROUP BY machine_id
-                HAVING AVG(cpu_load_percent) > 85
+                HAVING AVG(avg_cpu) > 85
               format: time_series
         noDataState: OK
         execErrState: Error
@@ -47,11 +50,11 @@ groups:
               rawSql: |
                 SELECT
                   machine_id AS metric,
-                  AVG(ram_used_mb) / NULLIF(AVG(ram_total_mb), 0) * 100 AS value
-                FROM public.machine_telemetry
-                WHERE "time" > NOW() - INTERVAL '5 minutes'
+                  AVG(avg_ram_used) / NULLIF(AVG(avg_ram_total), 0) * 100 AS value
+                FROM telemetry_minute_summary
+                WHERE bucket > NOW() - INTERVAL '5 minutes'
                 GROUP BY machine_id
-                HAVING AVG(ram_used_mb) / NULLIF(AVG(ram_total_mb), 0) * 100 > 90
+                HAVING AVG(avg_ram_used) / NULLIF(AVG(avg_ram_total), 0) * 100 > 90
               format: time_series
         noDataState: OK
         execErrState: Error
@@ -75,11 +78,11 @@ groups:
               rawSql: |
                 SELECT
                   machine_id AS metric,
-                  AVG(disk_used_gb) / NULLIF(AVG(disk_total_gb), 0) * 100 AS value
-                FROM public.machine_telemetry
-                WHERE "time" > NOW() - INTERVAL '10 minutes'
+                  AVG(avg_disk_used) / NULLIF(AVG(avg_disk_total), 0) * 100 AS value
+                FROM telemetry_minute_summary
+                WHERE bucket > NOW() - INTERVAL '10 minutes'
                 GROUP BY machine_id
-                HAVING AVG(disk_used_gb) / NULLIF(AVG(disk_total_gb), 0) * 100 > 90
+                HAVING AVG(avg_disk_used) / NULLIF(AVG(avg_disk_total), 0) * 100 > 90
               format: time_series
         noDataState: OK
         execErrState: Error
@@ -103,11 +106,11 @@ groups:
               rawSql: |
                 SELECT
                   machine_id AS metric,
-                  MAX(temperature_c) AS value
-                FROM public.machine_telemetry
-                WHERE "time" > NOW() - INTERVAL '5 minutes'
+                  MAX(max_temp_c) AS value
+                FROM telemetry_minute_summary
+                WHERE bucket > NOW() - INTERVAL '5 minutes'
                 GROUP BY machine_id
-                HAVING MAX(temperature_c) > 80
+                HAVING MAX(max_temp_c) > 80
               format: time_series
         noDataState: OK
         execErrState: Error
@@ -117,3 +120,192 @@ groups:
         annotations:
           summary: "Temperature above 80C on {{ $labels.machine_id }}"
           description: "Max temperature is {{ $values.A }}°C"
+
+      # ── Req5: Wi-Fi signal quality ────────────────────────────────
+      # SNR below 20 dB sustained for 5 min. The >0 guard skips machines
+      # with no Wi-Fi reading (wifi_snr defaults to 0 for ethernet-only hosts).
+      - uid: ims-wifi-snr-low
+        title: Wi-Fi SNR Low
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: timescaledb
+            model:
+              rawSql: |
+                SELECT
+                  machine_id AS metric,
+                  AVG(avg_wifi_snr) AS value
+                FROM telemetry_minute_summary
+                WHERE bucket > NOW() - INTERVAL '5 minutes'
+                GROUP BY machine_id
+                HAVING AVG(avg_wifi_snr) < 20 AND AVG(avg_wifi_snr) > 0
+              format: time_series
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        labels:
+          severity: warning
+          service: wifi
+        annotations:
+          summary: "Wi-Fi SNR below 20 dB on {{ $labels.machine_id }}"
+          description: "Average SNR is {{ $values.A }} dB (poor signal quality)"
+
+      # ── Req5: Predictive bandwidth-saturation forecast ────────────
+      # Linear regression (regr_slope/regr_intercept) over the last 30 min of
+      # minute-CA rx_mbps, extrapolated 60 min ahead. Fires when the trend is
+      # rising AND the projected value exceeds ~1 Gbps (near the wlan0 link cap),
+      # i.e. an EARLY warning before saturation actually occurs.
+      - uid: ims-bandwidth-saturation-forecast
+        title: Bandwidth Saturation Forecast
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 1800
+              to: 0
+            datasourceUid: timescaledb
+            model:
+              rawSql: |
+                SELECT
+                  machine_id AS metric,
+                  regr_slope(avg_rx_mbps, EXTRACT(EPOCH FROM (bucket - NOW()))) * 3600
+                    + regr_intercept(avg_rx_mbps, EXTRACT(EPOCH FROM (bucket - NOW()))) AS value
+                FROM telemetry_minute_summary
+                WHERE bucket > NOW() - INTERVAL '30 minutes'
+                GROUP BY machine_id
+                HAVING COUNT(*) >= 5
+                   AND regr_slope(avg_rx_mbps, EXTRACT(EPOCH FROM (bucket - NOW()))) > 0
+                   AND regr_slope(avg_rx_mbps, EXTRACT(EPOCH FROM (bucket - NOW()))) * 3600
+                       + regr_intercept(avg_rx_mbps, EXTRACT(EPOCH FROM (bucket - NOW()))) > 1000
+              format: time_series
+        noDataState: OK
+        execErrState: Error
+        for: 10m
+        labels:
+          severity: warning
+          service: network
+        annotations:
+          summary: "Bandwidth trending toward saturation on {{ $labels.machine_id }}"
+          description: "Projected RX in 60 min is {{ $values.A }} Mbps (rising trend, approaching link capacity)"
+
+      # ── Network: interface down (sustained the full bucket) ───────
+      - uid: ims-interface-down
+        title: Interface Down
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: timescaledb
+            model:
+              rawSql: |
+                SELECT
+                  machine_id AS metric,
+                  MIN(min_if_status) AS value
+                FROM telemetry_minute_summary
+                WHERE bucket > NOW() - INTERVAL '2 minutes'
+                GROUP BY machine_id
+                HAVING MIN(min_if_status) >= 2
+              format: time_series
+        noDataState: OK
+        execErrState: Error
+        for: 1m
+        labels:
+          severity: critical
+          service: network
+        annotations:
+          summary: "Network interface DOWN on {{ $labels.machine_id }}"
+          description: "Interface status has been down for the full sampling window."
+
+      - uid: ims-network-drops
+        title: Network Packet Drops
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: timescaledb
+            model:
+              rawSql: |
+                SELECT
+                  machine_id AS metric,
+                  MAX(total_rx_drops) AS value
+                FROM telemetry_minute_summary
+                WHERE bucket > NOW() - INTERVAL '5 minutes'
+                GROUP BY machine_id
+                HAVING MAX(total_rx_drops) > 50
+              format: time_series
+        noDataState: OK
+        execErrState: Error
+        for: 2m
+        labels:
+          severity: critical
+          service: network
+        annotations:
+          summary: "High packet drops on {{ $labels.machine_id }}"
+          description: "{{ $values.A }} RX drops in a 1-minute bucket. Congestion or buffer overflow."
+
+      # ── LDI manufacturing: hard-threshold critical alerts ─────────
+      # (>0 guard skips non-LDI hosts where ldi_* defaults to 0)
+      - uid: ims-ldi-pe-critical
+        title: LDI Process Efficiency Critical
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: timescaledb
+            model:
+              rawSql: |
+                SELECT
+                  machine_id AS metric,
+                  MIN(min_ldi_pe) AS value
+                FROM telemetry_minute_summary
+                WHERE bucket > NOW() - INTERVAL '5 minutes'
+                GROUP BY machine_id
+                HAVING MIN(min_ldi_pe) < 50 AND MIN(min_ldi_pe) > 0
+              format: time_series
+        noDataState: OK
+        execErrState: Error
+        for: 1m
+        labels:
+          severity: critical
+          service: ldi
+        annotations:
+          summary: "LDI Process Efficiency critical on {{ $labels.machine_id }}"
+          description: "PE dropped to {{ $values.A }}%. Immediate inspection required."
+
+      - uid: ims-ldi-vibration-critical
+        title: LDI Vibration Critical
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: timescaledb
+            model:
+              rawSql: |
+                SELECT
+                  machine_id AS metric,
+                  MAX(max_ldi_vibration) AS value
+                FROM telemetry_minute_summary
+                WHERE bucket > NOW() - INTERVAL '5 minutes'
+                GROUP BY machine_id
+                HAVING MAX(max_ldi_vibration) > 12
+              format: time_series
+        noDataState: OK
+        execErrState: Error
+        for: 1m
+        labels:
+          severity: critical
+          service: ldi
+        annotations:
+          summary: "LDI Vibration critical on {{ $labels.machine_id }}"
+          description: "Vibration {{ $values.A }} mm/s exceeds safe threshold. Possible bearing failure."

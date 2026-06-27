@@ -1,0 +1,15 @@
+apiVersion: 1
+
+# Route Grafana-managed alerts to the same Node-RED webhook that Alertmanager
+# uses (flows-ubuntu.json: alert_http_in -> /alert-webhook), so telemetry alerts
+# reach the engineering team's notification channel.
+contactPoints:
+  - orgId: 1
+    name: ims-node-red-webhook
+    receivers:
+      - uid: ims-nodered-webhook
+        type: webhook
+        settings:
+          url: http://node-red:1880/alert-webhook
+          httpMethod: POST
+        disableResolveMessage: false
