@@ -10,8 +10,6 @@
 --
 -- SAFE TO RUN: Uses IF NOT EXISTS / IF EXISTS guards. Idempotent.
 
-BEGIN;
-
 -- Step 1: Drop dependent continuous aggregates
 DROP MATERIALIZED VIEW IF EXISTS public.telemetry_hourly_summary CASCADE;
 DROP MATERIALIZED VIEW IF EXISTS public.telemetry_minute_summary CASCADE;
@@ -122,4 +120,4 @@ SELECT add_continuous_aggregate_policy('public.telemetry_hourly_summary',
     if_not_exists   => TRUE
 );
 
-COMMIT;
+

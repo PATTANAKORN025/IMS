@@ -3,8 +3,6 @@
 -- Stage 3.4: ldiTemp calculated by parser but not stored
 -- LDI OID .1.2.0 returns centidegrees, parser divides by 100
 
-BEGIN;
-
 -- Drop dependent continuous aggregates
 DROP MATERIALIZED VIEW IF EXISTS public.telemetry_hourly_summary CASCADE;
 DROP MATERIALIZED VIEW IF EXISTS public.telemetry_minute_summary CASCADE;
@@ -108,5 +106,3 @@ SELECT add_continuous_aggregate_policy('public.telemetry_hourly_summary',
     schedule_interval => INTERVAL '1 hour',
     if_not_exists   => TRUE
 );
-
-COMMIT;
