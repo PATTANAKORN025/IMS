@@ -39,17 +39,19 @@ CREATE TABLE public.machine_telemetry (
     rx_mbps             DOUBLE PRECISION DEFAULT 0,
     tx_mbps             DOUBLE PRECISION DEFAULT 0,
     interface_metrics   JSONB DEFAULT '{}'::jsonb,
-    -- LDI Private MIB (Enterprise .1.3.6.1.4.1.99999)
-    ldi_throughput      INT DEFAULT 0,
-    ldi_humidity        INT DEFAULT 0,
-    ldi_pe              INT DEFAULT 0,
-    ldi_je              INT DEFAULT 0,
-    ldi_power           INT DEFAULT 0,
-    ldi_vibration       INT DEFAULT 0,
+    -- LDI Private MIB (Enterprise .1.3.6.1.4.1.9999)
+    ldi_throughput      DOUBLE PRECISION DEFAULT 0,
+    ldi_humidity        DOUBLE PRECISION DEFAULT 0,
+    ldi_pe              DOUBLE PRECISION DEFAULT 0,
+    ldi_je              DOUBLE PRECISION DEFAULT 0,
+    ldi_power           DOUBLE PRECISION DEFAULT 0,
+    ldi_vibration       DOUBLE PRECISION DEFAULT 0,
     ldi_uptime          BIGINT DEFAULT 0,
-    -- Wi-Fi RF metrics (private MIB .1.3.6.1.4.1.99999.2.x): RSSI in dBm (negative), SNR in dB
+    -- Wi-Fi RF metrics (private MIB .1.3.6.1.4.1.9999.2.x): RSSI in dBm (negative), SNR in dB
     wifi_rssi           INT DEFAULT 0,
-    wifi_snr            INT DEFAULT 0
+    wifi_snr            INT DEFAULT 0,
+    -- Disk description (hrStorageDescr from HOST-RESOURCES-MIB)
+    disk_description    TEXT DEFAULT ''
 );
 
 SELECT create_hypertable('public.machine_telemetry', 'time', if_not_exists => TRUE);
@@ -86,8 +88,8 @@ WITH (timescaledb.continuous) AS
 SELECT
     time_bucket('1 minute', "time") AS "bucket",
     machine_id,
-    AVG(cpu_load_percent) AS avg_cpu,
-    MAX(cpu_load_percent) AS max_cpu,
+    AVG(cpu_load_percent) AS avg_cpu_load,
+    MAX(cpu_load_percent) AS max_cpu_load,
     AVG(ram_used_mb) AS avg_ram_used,
     AVG(ram_total_mb) AS avg_ram_total,
     AVG(disk_used_gb) AS avg_disk_used,
@@ -99,7 +101,7 @@ SELECT
     MAX(net_rx_errors) - MIN(net_rx_errors) AS total_rx_errors,
     MAX(net_rx_drops) - MIN(net_rx_drops) AS total_rx_drops,
     MIN(net_if_status) AS min_if_status,
-    MAX(temp_c) AS max_temp_c,
+    MAX(temp_c) AS max_temp,
     AVG(ldi_throughput) AS avg_ldi_throughput,
     MAX(ldi_throughput) AS max_ldi_throughput,
     AVG(ldi_humidity) AS avg_ldi_humidity,
@@ -131,13 +133,13 @@ WITH (timescaledb.continuous) AS
 SELECT
     time_bucket('1 hour', "bucket") AS "hour_bucket",
     machine_id,
-    AVG(avg_cpu) AS avg_cpu,
-    MAX(max_cpu) AS max_cpu,
+    AVG(avg_cpu_load) AS avg_cpu_load,
+    MAX(max_cpu_load) AS max_cpu_load,
     AVG(avg_ram_used) AS avg_ram_used,
     AVG(avg_disk_used) AS avg_disk_used,
     AVG(avg_rx_mbps) AS avg_rx_mbps,
     AVG(avg_tx_mbps) AS avg_tx_mbps,
-    MAX(max_temp_c) AS max_temp_c,
+    MAX(max_temp) AS max_temp,
     SUM(total_rx_errors) AS total_rx_errors,
     SUM(total_rx_drops) AS total_rx_drops,
     MIN(min_if_status) AS min_if_status,
