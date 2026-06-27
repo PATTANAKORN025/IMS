@@ -838,7 +838,7 @@
         },
         {
             "id": 23,
-            "title": "RAM Usage (All Machines)",
+            "title": "RAM Saturation (Fleet)",
             "type": "timeseries",
             "datasource": {
                 "uid": "timescaledb"

@@ -1,14 +1,41 @@
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# IMS — Industrial NOC Monitoring System
+# Phase 2: Zero-Risk Architecture with PgBouncer + Secrets
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 x-logging: &default-logging
   driver: json-file
   options:
     max-size: "10m"
-    max-file: "3"
+    max-file: "5"
+
+x-restart: &default-restart
+  restart: unless-stopped
+
+x-healthcheck-defaults: &healthcheck-defaults
+  interval: 15s
+  timeout: 5s
+  retries: 5
+  start_period: 30s
+
+x-resource-small: &resource-small
+  cpus: '0.5'
+  memory: 256M
+
+x-resource-medium: &resource-medium
+  cpus: '1.0'
+  memory: 1G
+
+x-resource-large: &resource-large
+  cpus: '2.0'
+  memory: 2G
 
 services:
+  # ── TimescaleDB ───────────────────────────────────────────
   timescaledb:
     image: timescale/timescaledb:2.17.2-pg16
     container_name: ims-timescaledb
-    restart: unless-stopped
+    <<: *default-restart
     init: true
     environment:
       TZ: ${TZ:-Asia/Bangkok}
@@ -16,6 +43,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       PGDATA: /var/lib/postgresql/data/pgdata
+    secrets:
+      - postgres_password
     command:
       - postgres
       - -c
@@ -35,52 +64,103 @@ services:
       - -c
       - max_wal_size=1GB
       - -c
+      - checkpoint_completion_target=0.9
+      - -c
+      - random_page_cost=1.1
+      - -c
+      - effective_io_concurrency=200
+      - -c
       - timezone=${TZ:-Asia/Bangkok}
     volumes:
       - timescaledb_data:/var/lib/postgresql/data
       - ./postgres/init:/docker-entrypoint-initdb.d:ro
     deploy:
       resources:
-        limits:
-          memory: 2G
+        limits: *resource-large
+        reservations:
+          cpus: '0.5'
+          memory: 512M
     healthcheck:
-      test:
-        - CMD-SHELL
-        - pg_isready -U ${POSTGRES_USER:?set POSTGRES_USER in .env} -d ${POSTGRES_DB:?set POSTGRES_DB in .env}
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 30s
-    logging: *default-logging
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      <<: *healthcheck-defaults
     networks:
-      - ims-net
+      - ims-internal
+    logging: *default-logging
 
+  # ── PgBouncer (Connection Pooler) ─────────────────────────
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    container_name: ims-pgbouncer
+    <<: *default-restart
+    init: true
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@timescaledb:5432/${POSTGRES_DB}
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: 200
+      DEFAULT_POOL_SIZE: 20
+      MIN_POOL_SIZE: 5
+      RESERVE_POOL_SIZE: 5
+      SERVER_IDLE_TIMEOUT: 300
+      CLIENT_IDLE_TIMEOUT: 300
+      LOG_CONNECTIONS: "0"
+      LOG_DISCONNECTIONS: "0"
+      AUTH_TYPE: plain
+    ports:
+      - "6432:5432"
+    deploy:
+      resources:
+        limits: *resource-small
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    networks:
+      - ims-internal
+    logging: *default-logging
+
+  # ── Prometheus ────────────────────────────────────────────
   prometheus:
     image: prom/prometheus:v2.55.1
     container_name: ims-prometheus
-    restart: unless-stopped
+    <<: *default-restart
     init: true
+    user: "nobody:nobody"
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.path=/prometheus
-      - --storage.tsdb.retention.time=15d
+      - --storage.tsdb.retention.time=30d
+      - --storage.tsdb.retention.size=2GB
       - --web.enable-lifecycle
+      - --web.enable-admin-api
     volumes:
       - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/rules:/etc/prometheus/rules:ro
       - prometheus_data:/prometheus
     ports:
       - "9090:9090"
+    deploy:
+      resources:
+        limits: *resource-medium
+        reservations:
+          cpus: '0.25'
+          memory: 256M
     depends_on:
-      - alertmanager
-    logging: *default-logging
+      alertmanager:
+        condition: service_started
     networks:
-      - ims-net
+      - ims-internal
+      - ims-monitoring
+    logging: *default-logging
 
+  # ── Alertmanager ──────────────────────────────────────────
   alertmanager:
     image: prom/alertmanager:v0.27.0
     container_name: ims-alertmanager
-    restart: unless-stopped
+    <<: *default-restart
     init: true
+    user: "nobody:nobody"
     command:
       - --config.file=/etc/alertmanager/alertmanager.yml
       - --storage.path=/alertmanager
@@ -90,27 +170,52 @@ services:
       - alertmanager_data:/alertmanager
     ports:
       - "9093:9093"
-    logging: *default-logging
+    deploy:
+      resources:
+        limits: *resource-small
+        reservations:
+          cpus: '0.1'
+          memory: 64M
     networks:
-      - ims-net
+      - ims-internal
+      - ims-monitoring
+    logging: *default-logging
 
+  # ── Grafana ───────────────────────────────────────────────
   grafana:
     image: grafana/grafana-oss:11.1.0
     container_name: ims-grafana
-    restart: unless-stopped
+    <<: *default-restart
     init: true
+    user: "472:472"
     environment:
       TZ: ${TZ:-Asia/Bangkok}
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:?set GRAFANA_ADMIN_USER in .env}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD in .env}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_AUTH_ANONYMOUS_ENABLED: "false"
       GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:-http://localhost:3000}
+      GF_INSTALL_PLUGINS: "grafana-clock-panel,grafana-piechart-panel"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/ims-noc-overview.json
+      GF_SECURITY_COOKIE_SECURE: "false"
+      GF_SECURITY_STRICT_TRANSPORT_SECURITY: "false"
+      GF_LOG_LEVEL: "info"
+    secrets:
+      - grafana_admin_password
     volumes:
       - grafana_data:/var/lib/grafana
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
     ports:
       - "3000:3000"
+    deploy:
+      resources:
+        limits: *resource-medium
+        reservations:
+          cpus: '0.25'
+          memory: 128M
     depends_on:
       timescaledb:
         condition: service_healthy
@@ -118,79 +223,129 @@ services:
         condition: service_started
       alertmanager:
         condition: service_started
-    logging: *default-logging
     networks:
-      - ims-net
+      - ims-internal
+      - ims-monitoring
+    logging: *default-logging
 
+  # ── SNMP Simulator ────────────────────────────────────────
   snmpsim:
     image: tandrup/snmpsim:latest
     container_name: ims-snmpsim
-    restart: unless-stopped
+    <<: *default-restart
     init: true
+    entrypoint: ["python", "/usr/local/bin/snmpsimd.py"]
     command:
-      - python
-      - /usr/local/bin/snmpsimd.py
       - --data-dir=/data
       - --agent-udpv4-endpoint=0.0.0.0:161
+      - --force-index-rebuild
       - --process-user=nobody
       - --process-group=nogroup
-      - --v2c-arch
     volumes:
       - ./monitoring/snmpsim:/data:ro
     ports:
       - "1161:161/udp"
-    logging: *default-logging
+    deploy:
+      resources:
+        limits: *resource-small
+        reservations:
+          cpus: '0.1'
+          memory: 32M
     networks:
-      - ims-net
+      - ims-internal
+    logging: *default-logging
 
+  # ── Blackbox Exporter (Uptime/SLA Probes) ─────────────────
+  blackbox-exporter:
+    image: prom/blackbox-exporter:v0.25.0
+    container_name: ims-blackbox
+    <<: *default-restart
+    init: true
+    user: root
+    cap_add:
+      - NET_RAW
+    command:
+      - --config.file=/etc/blackbox_exporter/config.yml
+    volumes:
+      - ./monitoring/blackbox/blackbox.yml:/etc/blackbox_exporter/config.yml:ro
+    ports:
+      - "9115:9115"
+    deploy:
+      resources:
+        limits: *resource-small
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+    networks:
+      - ims-internal
+      - ims-monitoring
+    logging: *default-logging
+
+  # ── Node-RED ──────────────────────────────────────────────
   node-red:
     image: nodered/node-red:4.0.5-22-minimal
     container_name: ims-node-red
-    restart: unless-stopped
+    <<: *default-restart
     init: true
     user: "1000:1000"
     environment:
       TZ: ${TZ:-Asia/Bangkok}
       NODE_RED_ENABLE_PROJECTS: "false"
       NODE_OPTIONS: "--max-old-space-size=1024"
-      PGHOST: timescaledb
+      CREDENTIAL_SECRET: ${NODE_RED_CREDENTIAL_SECRET:-ims-nodered-credential-secret}
+      PGHOST: pgbouncer
       PGPORT: "5432"
-      PGDATABASE: ${POSTGRES_DB:?set POSTGRES_DB in .env}
-      PGUSER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
-      PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      PGDATABASE: ${POSTGRES_DB}
+      PGUSER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    secrets:
+      - postgres_password
     ports:
       - "1880:1880"
     volumes:
       - ./nodered_data:/data
       - /etc/localtime:/etc/localtime:ro
-    depends_on:
-      timescaledb:
-        condition: service_healthy
-      grafana:
-        condition: service_started
     deploy:
       resources:
-        limits:
-          cpus: '1.0'
-          memory: 1G
+        limits: *resource-medium
+        reservations:
+          cpus: '0.25'
+          memory: 256M
     healthcheck:
       test:
         - CMD-SHELL
         - node -e "const http=require('http');const req=http.get('http://127.0.0.1:1880/',res=>process.exit(res.statusCode&&res.statusCode<500?0:1));req.on('error',()=>process.exit(1));req.setTimeout(3000,()=>{req.destroy();process.exit(1);});"
-      interval: 30s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-    logging: *default-logging
+      <<: *healthcheck-defaults
+      start_period: 45s
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+      pgbouncer:
+        condition: service_started
+      grafana:
+        condition: service_started
     networks:
-      - ims-net
+      - ims-internal
+    logging: *default-logging
 
 volumes:
   timescaledb_data:
+    driver: local
   prometheus_data:
+    driver: local
   alertmanager_data:
+    driver: local
   grafana_data:
+    driver: local
 
 networks:
-  ims-net:
+  ims-internal:
     driver: bridge
+  ims-monitoring:
+    driver: bridge
+
+secrets:
+  postgres_password:
+    file: ./secrets/postgres_password.txt
+  grafana_admin_password:
+    file: ./secrets/grafana_admin_password.txt

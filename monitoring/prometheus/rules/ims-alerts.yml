@@ -1,0 +1,412 @@
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# IMS Prometheus Alert Rules — Phase 2
+# Machine-aware alerts with IF-MIB network and temperature
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+groups:
+  # ── Node-RED Pipeline Health ──────────────────────────────
+  - name: nodered_health
+    rules:
+      - alert: NodeREDDown
+        expr: up{job="node-red"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: nodered
+        annotations:
+          summary: "Node-RED pipeline is DOWN"
+          description: "Data pipeline unreachable for >1 minute. Telemetry gaps occurring."
+          runbook: "docker logs ims-node-red --tail 100"
+
+      - alert: NodeREDHighMemory
+        expr: process_resident_memory_bytes{job="node-red"} > 800 * 1024 * 1024
+        for: 5m
+        labels:
+          severity: warning
+          service: nodered
+        annotations:
+          summary: "Node-RED memory > 800MB"
+          description: "Memory: {{ $value | humanize1024 }}B"
+
+  # ── Telemetry Gap Detection ──────────────────────────────
+  - name: telemetry_gap
+    rules:
+      - alert: TelemetryGap
+        expr: (time() - pg_stat_activity_max_tx_start{datname="ims"}) > 120
+        for: 2m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: "No new telemetry data for >2 minutes"
+
+  # ── Infrastructure Self-Monitoring ────────────────────────
+  - name: infrastructure_health
+    rules:
+      - alert: PrometheusDown
+        expr: up{job="prometheus"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: prometheus
+        annotations:
+          summary: "Prometheus is DOWN"
+
+      - alert: AlertmanagerDown
+        expr: up{job="alertmanager"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: alertmanager
+        annotations:
+          summary: "Alertmanager is DOWN — alerts may be lost"
+
+      - alert: TargetDown
+        expr: up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Target {{ $labels.instance }} ({{ $labels.job }}) is DOWN"
+
+      - alert: HighScrapeErrors
+        expr: rate(prometheus_target_scrapes_exceeded_body_size_limit_total[5m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High scrape error rate on {{ $labels.job }}"
+
+  # ── Database Health ──────────────────────────────────────
+  - name: database_health
+    rules:
+      - alert: TimescaleDBHighConnections
+        expr: pg_stat_activity_count > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: timescaledb
+        annotations:
+          summary: "TimescaleDB connections > 80"
+          description: "Current: {{ $value }} / 100 max"
+
+      - alert: TimescaleDBDeadlocks
+        expr: increase(pg_stat_database_deadlocks[5m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+          service: timescaledb
+        annotations:
+          summary: "TimescaleDB deadlock detected"
+
+      - alert: TimescaleDBReplicationLag
+        expr: pg_replication_lag > 30
+        for: 5m
+        labels:
+          severity: critical
+          service: timescaledb
+        annotations:
+          summary: "TimescaleDB replication lag > 30s"
+
+  # ── SLA / Uptime Monitoring (Blackbox) ───────────────────
+  - name: sla_uptime
+    rules:
+      - alert: ServiceDown
+        expr: probe_success == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: blackbox
+        annotations:
+          summary: "Service {{ $labels.instance }} is DOWN"
+          description: "Probe failed for >1 minute. SLA impact."
+          runbook: "Check service health: docker ps | grep {{ $labels.instance }}"
+
+      - alert: ServiceHighLatency
+        expr: probe_duration_seconds > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: blackbox
+        annotations:
+          summary: "High latency on {{ $labels.instance }}"
+          description: "Response time: {{ $value | humanizeDuration }}"
+
+      - alert: SLABreachWarning
+        expr: (1 - avg_over_time(probe_success[1h])) * 100 > 0.01
+        for: 5m
+        labels:
+          severity: warning
+          service: blackbox
+        annotations:
+          summary: "SLA breach risk: {{ $labels.instance }}"
+          description: "Uptime dropped below 99.99% in the last hour"
+
+      - alert: SSLCertExpiring
+        expr: (probe_ssl_earliest_cert_expiry - time()) / 86400 < 30
+        for: 1h
+        labels:
+          severity: warning
+          service: blackbox
+        annotations:
+          summary: "SSL cert for {{ $labels.instance }} expires in < 30 days"
+          description: "Days remaining: {{ $value | humanizeDuration }}"
+
+  # ── AIOps: Thermal Runaway Detection ─────────────────────
+  - name: thermal_runaway
+    rules:
+      - alert: ThermalRunawayCritical
+        expr: max_over_time(temp_c[5m]) > 80
+        for: 5m
+        labels:
+          severity: critical
+          service: thermal
+        annotations:
+          summary: "THERMAL RUNAWAY: {{ $labels.machine_id }} temp > 80C"
+          description: "Server temperature critical for 5+ minutes. Check HVAC immediately."
+          runbook: "Check server room cooling, verify AC units, inspect CPU heatsinks"
+
+      - alert: ThermalRunawayWarning
+        expr: max_over_time(temp_c[5m]) > 65
+        for: 3m
+        labels:
+          severity: warning
+          service: thermal
+        annotations:
+          summary: "Temperature rising: {{ $labels.machine_id }} > 65C"
+          description: "Temperature trending upward. May need cooling adjustment."
+
+      - alert: ThermalCorrelation
+        expr: (avg_over_time(cpu_load_percent[5m]) > 70) and (max_over_time(temp_c[5m]) > 70)
+        for: 5m
+        labels:
+          severity: warning
+          service: thermal
+        annotations:
+          summary: "High CPU + High Temp correlation: {{ $labels.machine_id }}"
+          description: "CPU load {{ $value }}% with elevated temperature. Possible sustained workload."
+
+  # ── AIOps: Network Degradation Detection ─────────────────
+  - name: network_degradation
+    rules:
+      - alert: NetworkErrorsSpike
+        expr: increase(net_rx_errors[1m]) > 100
+        for: 1m
+        labels:
+          severity: warning
+          service: network
+        annotations:
+          summary: "Network errors spike on {{ $labels.machine_id }}"
+          description: "{{ $value }} new errors in 1 minute. Check cable/port integrity."
+
+      - alert: NetworkDropsCritical
+        expr: increase(net_rx_drops[1m]) > 50
+        for: 1m
+        labels:
+          severity: critical
+          service: network
+        annotations:
+          summary: "CRITICAL packet drops: {{ $labels.machine_id }}"
+          description: "{{ $value }} packets dropped in 1 minute. Network congestion or buffer overflow."
+
+      - alert: BandwidthAnomaly
+        expr: avg_over_time(rx_mbps[5m]) > 100
+        for: 5m
+        labels:
+          severity: warning
+          service: network
+        annotations:
+          summary: "Bandwidth anomaly: {{ $labels.machine_id }}"
+          description: "Sustained bandwidth > 100Mbps for 5 minutes. Verify expected traffic pattern."
+
+      - alert: WiFiPacketLoss
+        expr: net_rx_drops > 100
+        for: 2m
+        labels:
+          severity: warning
+          service: network
+        annotations:
+          summary: "High packet drops on {{ $labels.machine_id }}"
+          description: "Interface dropped {{ $value }} packets/sec. Check RF environment or switch port."
+
+  # ── AIOps: Saturation Detection ──────────────────────────
+  - name: saturation
+    rules:
+      - alert: DiskSaturation
+        expr: (disk_used_gb / disk_total_gb) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          service: storage
+        annotations:
+          summary: "Disk > 85% full on {{ $labels.machine_id }}"
+          description: "Disk usage: {{ $value | printf \"%.1f\" }}%. Plan expansion."
+
+      - alert: MemorySaturation
+        expr: (ram_used_mb / ram_total_mb) * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+          service: memory
+        annotations:
+          summary: "Memory > 90% on {{ $labels.machine_id }}"
+          description: "RAM usage: {{ $value | printf \"%.1f\" }}%. OOM risk."
+
+  # ── Deadman's Switch (Watchdog) ──────────────────────────
+  - name: watchdog
+    rules:
+      - alert: Watchdog
+        expr: vector(1)
+        labels:
+          severity: none
+        annotations:
+          summary: "IMS Watchdog - monitoring pipeline is alive"
+
+  # ── AIOps: Z-Score Anomaly Detection ─────────────────────
+  - name: zscore_anomaly
+    rules:
+      - alert: BandwidthZScoreAnomaly
+        expr: abs(rx_mbps - avg_over_time(rx_mbps[1h])) > 3 * stddev_over_time(rx_mbps[1h])
+        for: 2m
+        labels:
+          severity: warning
+          service: network
+        annotations:
+          summary: "Bandwidth Z-Score anomaly: {{ $labels.machine_id }}"
+          description: "RX bandwidth deviates >3σ from 1-hour rolling mean. Value: {{ $value | printf \"%.1f\" }} Mbps. Possible traffic surge or misconfiguration."
+
+      - alert: TemperatureZScoreAnomaly
+        expr: abs(temp_c - avg_over_time(temp_c[1h])) > 3 * stddev_over_time(temp_c[1h])
+        for: 2m
+        labels:
+          severity: warning
+          service: thermal
+        annotations:
+          summary: "Temperature Z-Score anomaly: {{ $labels.machine_id }}"
+          description: "Temperature deviates >3σ from 1-hour rolling mean. Value: {{ $value | printf \"%.0f\" }}°C. Possible thermal event or cooling failure."
+
+      - alert: CpuZScoreAnomaly
+        expr: abs(cpu_load_percent - avg_over_time(cpu_load_percent[1h])) > 3 * stddev_over_time(cpu_load_percent[1h])
+        for: 2m
+        labels:
+          severity: warning
+          service: compute
+        annotations:
+          summary: "CPU load Z-Score anomaly: {{ $labels.machine_id }}"
+          description: "CPU load deviates >3σ from 1-hour rolling mean. Value: {{ $value | printf \"%.1f\" }}%. Possible workload spike."
+
+  # ── Interface Flapping Detection ─────────────────────────
+  - name: interface_health
+    rules:
+      - alert: InterfaceFlapping
+        expr: changes(net_if_status[5m]) > 3
+        for: 1m
+        labels:
+          severity: warning
+          service: network
+        annotations:
+          summary: "Interface flapping on {{ $labels.machine_id }}"
+          description: "Network interface status changed {{ $value }} times in 5 minutes. Check cable/switch."
+
+      - alert: InterfaceDown
+        expr: net_if_status == 2
+        for: 30s
+        labels:
+          severity: critical
+          service: network
+        annotations:
+          summary: "Interface DOWN: {{ $labels.machine_id }}"
+          description: "Network interface is DOWN. Immediate intervention required."
+
+  # ── LDI Manufacturing: 3-Sigma Z-Score Predictive Alerts ─
+  - name: ldi_predictive
+    rules:
+      - alert: LDI_ThroughputCritical
+        expr: ldi_throughput < (avg_over_time(ldi_throughput[1h]) - 3 * stddev_over_time(ldi_throughput[1h]))
+        for: 2m
+        labels:
+          severity: critical
+          service: ldi
+        annotations:
+          summary: "LDI Throughput CRITICAL: {{ $labels.machine_id }}"
+          description: "Throughput {{ $value }} units/sec — below 3σ lower bound. Possible machine fault or jam."
+
+      - alert: LDI_ThroughputWarning
+        expr: ldi_throughput < (avg_over_time(ldi_throughput[30m]) - 2 * stddev_over_time(ldi_throughput[30m]))
+        for: 3m
+        labels:
+          severity: warning
+          service: ldi
+        annotations:
+          summary: "LDI Throughput degraded: {{ $labels.machine_id }}"
+          description: "Throughput {{ $value }} units/sec — below 2σ. Trending toward fault."
+
+      - alert: LDI_PECritical
+        expr: ldi_pe < 50
+        for: 1m
+        labels:
+          severity: critical
+          service: ldi
+        annotations:
+          summary: "LDI Process Efficiency CRITICAL: {{ $labels.machine_id }}"
+          description: "PE dropped to {{ $value }}%. Immediate inspection required."
+
+      - alert: LDI_PEZScore
+        expr: ldi_pe < (avg_over_time(ldi_pe[1h]) - 3 * stddev_over_time(ldi_pe[1h]))
+        for: 2m
+        labels:
+          severity: warning
+          service: ldi
+        annotations:
+          summary: "LDI PE Z-Score anomaly: {{ $labels.machine_id }}"
+          description: "PE {{ $value }}% — deviates >3σ from rolling mean. Predictive maintenance recommended."
+
+      - alert: LDI_VibrationCritical
+        expr: ldi_vibration > 12
+        for: 1m
+        labels:
+          severity: critical
+          service: ldi
+        annotations:
+          summary: "LDI Vibration CRITICAL: {{ $labels.machine_id }}"
+          description: "Vibration {{ $value }} mm/s — exceeds safe threshold. Possible bearing failure."
+
+      - alert: LDI_VibrationZScore
+        expr: ldi_vibration > (avg_over_time(ldi_vibration[1h]) + 3 * stddev_over_time(ldi_vibration[1h]))
+        for: 2m
+        labels:
+          severity: warning
+          service: ldi
+        annotations:
+          summary: "LDI Vibration Z-Score anomaly: {{ $labels.machine_id }}"
+          description: "Vibration {{ $value }} mm/s — >3σ above rolling mean. Mechanical wear likely."
+
+      - alert: LDI_TemperatureHigh
+        expr: ldi_throughput > 0 and max_over_time(ldi_throughput[5m]) > 0 and ldi_pe < (avg_over_time(ldi_pe[1h]) - 2 * stddev_over_time(ldi_pe[1h])) and ldi_vibration > (avg_over_time(ldi_vibration[1h]) + 2 * stddev_over_time(ldi_vibration[1h]))
+        for: 3m
+        labels:
+          severity: warning
+          service: ldi
+        annotations:
+          summary: "LDI Correlated Degradation: {{ $labels.machine_id }}"
+          description: "PE dropping + Vibration rising = possible thermal-mechanical coupling. Inspect bearings and cooling."
+
+      - alert: LDI_JEZScore
+        expr: ldi_je < (avg_over_time(ldi_je[1h]) - 3 * stddev_over_time(ldi_je[1h]))
+        for: 2m
+        labels:
+          severity: warning
+          service: ldi
+        annotations:
+          summary: "LDI Junction Efficiency Z-Score: {{ $labels.machine_id }}"
+          description: "JE {{ $value }}% — deviates >3σ from rolling mean. Junction degradation detected."
+
+      - alert: LDI_PowerSpike
+        expr: ldi_power > (avg_over_time(ldi_power[1h]) + 3 * stddev_over_time(ldi_power[1h]))
+        for: 2m
+        labels:
+          severity: warning
+          service: ldi
+        annotations:
+          summary: "LDI Power spike: {{ $labels.machine_id }}"
+          description: "Power {{ $value }}W — >3σ above mean. Check for electrical fault or overload."
