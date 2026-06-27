@@ -1,5 +1,5 @@
 import http from 'k6/http';
-import { check, sleep, textSummary } from 'k6';
+import { check, sleep } from 'k6';
 import { Counter, Rate, Trend } from 'k6/metrics';
 
 const webhookSuccess = new Rate('webhook_success');
@@ -45,15 +45,16 @@ export default function () {
 
 export function handleSummary(data) {
   const m = data.metrics;
+  const result = {
+    timestamp: new Date().toISOString(),
+    total_runs: m.webhook_success?.values?.count || 0,
+    success_rate: ((m.webhook_success?.values?.rate || 0) * 100).toFixed(2) + '%',
+    errors: m.webhook_errors?.values?.count || 0,
+    avg_duration: (m.webhook_duration?.values?.avg || 0).toFixed(1) + 'ms',
+    p95_duration: (m.webhook_duration?.values?.['p(95)'] || 0).toFixed(1) + 'ms',
+  };
   return {
-    'tests/k6/chaos-results.json': JSON.stringify({
-      timestamp: new Date().toISOString(),
-      total_runs: m.webhook_success?.values?.count || 0,
-      success_rate: m.webhook_success?.values?.rate || 0,
-      errors: m.webhook_errors?.values?.count || 0,
-      avg_duration: m.webhook_duration?.values?.avg || 0,
-      p95_duration: m.webhook_duration?.values?.['p(95)'] || 0,
-    }, null, 2),
-    stdout: textSummary(data, { indent: ' ', enableColors: true }),
+    'tests/k6/chaos-results.json': JSON.stringify(result, null, 2),
+    stdout: JSON.stringify(result, null, 2) + '\n',
   };
 }
