@@ -105,8 +105,6 @@ services:
       LOG_CONNECTIONS: "0"
       LOG_DISCONNECTIONS: "0"
       AUTH_TYPE: plain
-    ports:
-      - "127.0.0.1:6432:5432"
     deploy:
       resources:
         limits: *resource-small
@@ -242,8 +240,6 @@ services:
       - --process-group=nogroup
     volumes:
       - ./monitoring/snmpsim:/data:ro
-    ports:
-      - "127.0.0.1:1161:161/udp"
     deploy:
       resources:
         limits: *resource-small
