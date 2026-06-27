@@ -8,12 +8,8 @@ secrets/
 *.key
 *.pem
 
-# Docker volumes (local data)
+# Docker named-volume / local data dirs
 *_data/
-nodered_data/
-
-# Node-RED runtime (catch-all)
-nodered_data/**
 
 # IDE
 .vscode/
@@ -35,6 +31,15 @@ _tmp_*.sql
 # K6 results
 tests/k6/*-results.json
 
-# Docker data volumes (catch-all)
-*_data/
+# node_modules everywhere
 **/node_modules/
+
+# ── Node-RED data dir ─────────────────────────────────────
+# nodered_data/ holds runtime state (flows.json, .config*, .npm cache) AND the
+# hand-maintained config (settings.js, package.json). Ignore the runtime,
+# version-control the config. (`!nodered_data/` re-includes the dir so the
+# per-file negations below can take effect despite the `*_data/` rule above.)
+!nodered_data/
+nodered_data/*
+!nodered_data/settings.js
+!nodered_data/package.json
