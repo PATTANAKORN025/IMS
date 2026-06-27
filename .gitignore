@@ -34,6 +34,10 @@ tests/k6/*-results.json
 # node_modules everywhere
 **/node_modules/
 
+# ── MiMoCode workspace ────────────────────────────────────
+# mimocode.json contains MCP secrets (GitHub PAT). Never commit.
+.mimocode/mimocode.json
+
 # ── Node-RED data dir ─────────────────────────────────────
 # nodered_data/ holds runtime state (flows.json, .config*, .npm cache) AND the
 # hand-maintained config (settings.js, package.json). Ignore the runtime,
