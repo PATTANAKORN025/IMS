@@ -29,11 +29,14 @@ jobs:
 
       - name: Lint Prometheus Alert Rules
         run: |
-          docker run --rm \
-            --entrypoint promtool \
-            -v ${{ github.workspace }}/monitoring/prometheus/rules:/etc/prometheus/rules \
-            prom/prometheus:v2.55.1 \
-            check rules /etc/prometheus/rules/*.yml
+          for f in monitoring/prometheus/rules/*.yml; do
+            echo "Checking $f"
+            docker run --rm \
+              --entrypoint promtool \
+              -v "${{ github.workspace }}/monitoring/prometheus/rules:/etc/prometheus/rules" \
+              prom/prometheus:v2.55.1 \
+              check rules "/etc/prometheus/rules/$(basename $f)"
+          done
 
       - name: Validate Dashboard JSON
         run: |
