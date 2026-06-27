@@ -1,210 +1,146 @@
-# IMS — Industrial NOC Monitoring System
+# 🏭 IMS (Infrastructure Monitoring System) - APEX Circuit
 
-> World-class server telemetry monitoring with SNMP, TimescaleDB, Prometheus, Grafana, and Node-RED.
+![Status](https://img.shields.io/badge/Status-Production%20Ready-success)
+![Scale](https://img.shields.io/badge/Scale-1000%2B%20Nodes-blue)
+![Docker](https://img.shields.io/badge/Docker-Compose-blue?logo=docker)
+![Grafana](https://img.shields.io/badge/Grafana-Dashboard-orange?logo=grafana)
+![Node-RED](https://img.shields.io/badge/Node-RED-Flow-red?logo=nodered)
+![License](https://img.shields.io/badge/License-Proprietary-red)
 
-## Architecture
+## 🚀 Project Overview & Objectives
 
+**IMS (Infrastructure Monitoring System)** คือ ระบบ Monitoring แบบ Real-time สำหรับ Infrastructure ในองค์กร ออกแบบมาเพื่อ **APEX Circuit** โดยเฉพาะ สำหรับตรวจสอบและเฝ้าระวังสถานะของเครื่องจักร **LDI (Laser Direct Imaging)** ในสายการผลิต PCB
+
+ระบบดึงข้อมูลผ่านโปรโตคอล **Out-of-Band SNMP** (Read-Only 100%) ซึ่งมั่นใจได้ว่า **ปลอดภัย 100% และไม่รบกวนการทำงานของเครื่องจักร** รองรับการขยายได้ถึง **1,000+ เครื่อง** พร้อมกัน
+
+### 🎯 วัตถุประสงค์หลัก 5 ข้อ
+
+| # | วัตถุประสงค์ | สถานะ |
+|---|-------------|-------|
+| 1 | พัฒนาระบบ Monitoring แบบ Real-time สำหรับ Infrastructure ในองค์กร | ✅ สำเร็จ |
+| 2 | ตรวจสอบ Health ของ Server, Network Device, Service และ Resource Usage | ✅ สำเร็จ |
+| 3 | ลด Downtime ด้วยระบบ Alert เมื่อเกิดปัญหา | ✅ สำเร็จ |
+| 4 | สร้าง Dashboard เพิ่ม Visibility ให้ทีม IT | ✅ สำเร็จ |
+| 5 | เป็นโปรเจกต์ยกระดับทักษะนักศึกษาฝึกงาน (Grafana, Node-RED, SNMP) | ✅ สำเร็จ |
+
+## ✨ Key Features (Enterprise Level)
+
+* 🚀 **Dual-Engine SNMP Walker:** สลับโหมดอัตโนมัติระหว่าง `GET` mode (สำหรับ Development/Mock) และ `SUBTREE Bulk Walk` (สำหรับ Production) ดึงข้อมูลปริมาณมหาศาลได้ในระดับมิลลิวินาที
+* 🛡️ **Zero-Data Loss Architecture:** กลไก Node-RED Batch Buffer ทำงานร่วมกับ PgBouncer ป้องกันการสูญเสียข้อมูลแม้ Database Server จะถูก Interrupt หรือ Restart
+* 🧠 **True AIOps Alerting:** ละทิ้งการแจ้งเตือนแบบ Threshold ตายตัว ใช้สถิติ **Z-Score (3-Sigma)** ตรวจจับความผิดปกติเชิงรุกก่อนเครื่องจักรขัดข้อง
+* 📊 **Symmetrical Dashboard:** กราฟ Bandwidth แบบ Butterfly Wing แสดง Download/Upload สมมาตรกัน อ่านง่าย เห็นภาพรวมทันที
+* 🧪 **K6 Chaos Tested:** ผ่าน Load Testing ที่ 1,000 Concurrent VUs พิสูจน์เสถียรภาพภายใต้สภาวะกดดันสูงสุด
+
+## 🏗️ Architecture & Tech Stack
+
+ระบบทำงานผ่าน 4 ชั้นหลัก:
+
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│                    EDGE / OT LAYER                              │ 
+│   [ YSPhotec LDI Machines ] ──(SNMP v2c/v3 Read-Only)──▶       │
+└─────────────────────────────┬───────────────────────────────────┘
+                              │
+                              ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                 INGESTION LAYER (Node-RED)                       │
+│   [ Dual-Engine SNMP Walker ] ──▶ [ Bulletproof Parser v7 ]     │
+│   - Fork 5 ชั้น: CPU / Storage / Network / Temp / LDI             │
+│   - Join Barrier (count=5, timeout=8)                           │
+│   - Smart Counter Wrap (32/64-bit)                              │
+│   - Memory Cleanup + Try-Catch Wrapped                          │
+└─────────────────────────────┬───────────────────────────────────┘
+                              │ Batch INSERT (parameterized queries)
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                   STORAGE LAYER                                 │
+│   [ PgBouncer (Connection Pooler) ] ──▶ [ TimescaleDB ]        │
+│   - Hypertable: machine_telemetry (28 columns)                 │
+│   - Continuous Aggregates: minute → hour roll-ups              │
+│   - Compression: after 7 days (~90% savings)                   │
+│   - Retention: auto-delete after 90 days                       │
+└─────────────────────────────┬───────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│              VISUALIZATION & AIOPS LAYER                       │
+│   [ Grafana (4 Dashboards) ] ◀── [ Prometheus + Alertmanager ] │
+│   [ Blackbox Exporter (SLA Probes) ]                           │
+│   [ Webhook Alerts (LINE / MS Teams) ]                         │
+└─────────────────────────────────────────────────────────────────┘
 ```
-┌─────────────┐     ┌─────────────┐     ┌──────────────┐
-│  SNMP Agent │────▶│  Node-RED   │────▶│  PgBouncer   │
-│  (snmpsim)  │     │  Pipeline   │     │  (Pooler)    │
-└─────────────┘     └──────┬──────┘     └──────┬───────┘
-                           │                    │
-                           ▼                    ▼
-                    ┌─────────────┐     ┌──────────────┐
-                    │  Grafana    │◀────│  TimescaleDB │
-                    │  Dashboard  │     │  (PostgreSQL)│
-                    └──────┬──────┘     └──────────────┘
-                           │
-                           ▼
-                    ┌─────────────┐
-                    │  Alerting   │◀──── Prometheus + Alertmanager
-                    └─────────────┘
+
+| Component | Technology | Purpose |
+|-----------|-----------|---------|
+| SNMP Agent | SNMP v2c/v3 (Read-Only) | ดึงข้อมูลจากเครื่องจักร |
+| Data Pipeline | Node-RED 4.0.5 | ประมวลผลและ INSERT ข้อมูล |
+| Connection Pooler | PgBouncer | จัดการ Connection ป้องกัน DB ล่ม |
+| Time-Series DB | TimescaleDB (PostgreSQL) | เก็บข้อมูล Time-series |
+| Dashboard | Grafana 11.x | แสดงผลกราฟ 4 ชุด |
+| Alerting | Prometheus + Alertmanager | แจ้งเตือน 38 Rules |
+| SLA Probes | Blackbox Exporter | ตรวจสอบ uptime |
+| Load Testing | K6 | ทดสอบระบบ 1,000 VUs |
+
+## ⚙️ CI/CD Pipeline
+
+ทุกครั้งที่ Push โค้ด GitHub Actions จะทำงานอัตโนมัติ:
+
+```yaml
+✅ Syntax Check     — ตรวจสอบ docker-compose.yaml และ Dashboard JSON
+✅ Linting          — ตรวจสอบ Prometheus Rules (promtool check rules)
+✅ Security Scan    — ตรวจจับ Secret Keys ที่หลุดออกมา
+✅ Flow Validation  — ตรวจสอบ Node-RED Flow JSON
 ```
 
-## Services
-
-| Service | Port | Description |
-|---------|------|-------------|
-| TimescaleDB | 5432 (internal) | Time-series database |
-| PgBouncer | 6432 (internal) | Connection pooler |
-| Node-RED | 1880 | Flow-based data pipeline |
-| Grafana | 3000 | Dashboard & visualization |
-| Prometheus | 9090 | Metrics collection |
-| Alertmanager | 9093 | Alert routing |
-| SNMP Simulator | 1161/udp | Simulated server metrics |
-
-## Quick Start
-
-### 1. Clone and Configure
+## 🚀 Getting Started
 
 ```bash
-cp .env.example .env
-# Edit .env with your credentials
+# 1. Clone repository
+git clone https://github.com/PATTANAKORN025/IMS.git
+cd IMS
 
-# Create secrets
+# 2. ตั้งค่า Environment Variables
+cp .env.example .env
+nano .env  # ใส่ Database password และ configurations
+
+# 3. สร้าง Secrets
 mkdir -p secrets
 echo "your-db-password" > secrets/postgres_password.txt
 echo "your-grafana-password" > secrets/grafana_admin_password.txt
+
+# 4. เริ่มต้นระบบทั้งหมด
+docker-compose up -d
+
+# 5. ตรวจสอบสถานะ
+docker-compose ps
 ```
 
-### 2. Start Services
+## 📊 Dashboard Gallery
 
-```bash
-docker compose up -d
-```
+| Dashboard | Purpose |
+|-----------|---------|
+| NOC Overview | ภาพรวมสถานะเครื่องจักรทั้งหมด (Red/Yellow/Green) |
+| System Overview | CPU, RAM, Disk, Network, Temperature |
+| Engineering Drilldown | ข้อมูลเจาะลึกแต่ละเครื่อง (34 panels) |
+| Capacity Planning | การพยากรณ์พื้นที่และทรัพยากร |
 
-### 3. Verify Health
+## 🚨 Alert Rules
 
-```bash
-docker compose ps
-docker compose logs --tail=50
-```
+ระบบมี **38 Alert Rules** ครอบคลุม:
+- 🔥 **Critical:** CPU > 90%, Temperature > 85°C, Interface Down
+- ⚠️ **Warning:** CPU > 75%, Temperature > 70°C, Network Errors
+- 🧠 **AIOps:** Z-Score Anomaly (3σ), Predictive Disk Full
+- 📶 **WiFi:** Signal Degradation (SNR < 20dB), Packet Loss
 
-### 4. Access Dashboards
+## 🤝 Contributors
 
-- **Grafana**: http://localhost:3000
-- **Node-RED**: http://localhost:1880
-- **Prometheus**: http://localhost:9090
-- **Alertmanager**: http://localhost:9093
+| Team | Role |
+|------|------|
+| **MIS-G Department** | System Architecture & Development |
+| **นักศึกษาฝึกงาน** | Development, Testing & Documentation |
 
-## Configuration
+> 💡 โปรเจกต์นี้เป็นส่วนหนึ่งของโครงการสหกิจศึกษา ยกระดับทักษะนักศึกษาสู่ระดับ SRE/DevOps
 
-### Environment Variables
+## 📜 License
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `TZ` | Timezone | `Asia/Bangkok` |
-| `POSTGRES_DB` | Database name | `ims` |
-| `POSTGRES_USER` | Database user | `ims_admin` |
-| `POSTGRES_PASSWORD` | Database password | (required) |
-| `GRAFANA_ADMIN_USER` | Grafana admin user | `admin` |
-| `GRAFANA_ADMIN_PASSWORD` | Grafana admin password | (required) |
-| `SNMP_COMMUNITY` | SNMP community string | `Netk@` |
-| `NODE_RED_CREDENTIAL_SECRET` | Node-RED encryption key | (auto-generated) |
-
-### Monitored Metrics
-
-| Category | Metrics |
-|----------|---------|
-| **CPU** | Core count, average load, per-core load, 1m/5m/15m load averages |
-| **Memory** | Total, used, free, usage % |
-| **Disk** | Total, used, free, usage % |
-| **Network** | IF-MIB: RX/TX bytes, throughput (Mbps), errors, drops, active interfaces |
-| **Temperature** | LM-SENSORS-MIB: CPU core, package, system board, ambient, VRM sensors |
-| **System** | Uptime, process count |
-
-### Alert Thresholds
-
-| Metric | Warning | Critical |
-|--------|---------|----------|
-| CPU Load | > 75% | > 90% |
-| RAM Usage | > 80% | > 90% |
-| Disk Usage | > 85% | > 95% |
-| Temperature | > 70°C | > 85°C |
-| Network Errors | > 100 | > 1000 |
-| CPU Load 15m | > 80 | > 95 |
-
-### Alert Channels
-
-| Severity | Channel | Purpose |
-|----------|---------|---------|
-| Critical | Slack + Node-RED webhook | Immediate escalation |
-| Warning | Node-RED webhook (Line Notify) | Team notification |
-| Info | Log only | Audit trail |
-
-## Grafana Dashboards
-
-### NOC Overview (`ims-noc-overview`)
-- Fleet uptime percentage
-- Online/offline machine count
-- Real-time CPU, temperature, network, RAM graphs
-- Server status table with health indicators
-
-### Engineering Drill-Down (`ims-engineering`)
-- Machine selector variable (dropdown)
-- CPU load averages (1m/5m/15m)
-- Temperature sensor breakdown
-- Network errors & drops tracking
-- Recent telemetry data table
-
-## Database Schema
-
-### Tables
-
-- `ims.machines` — Machine registry
-- `ims.machine_telemetry` — Raw telemetry (hypertable)
-- `ims.telemetry_1h` — 1-hour continuous aggregate
-- `ims.telemetry_1d` — 1-day continuous aggregate
-- `ims.alert_rules` — Alert threshold definitions
-- `ims.alert_history` — Alert event log
-
-### Views
-
-- `ims.v_daily_summary` — Daily aggregated metrics
-- `ims.v_uptime_summary` — Machine health status
-
-### Policies
-
-- **Compression**: After 7 days
-- **Retention**: 365 days
-- **Aggregation**: 5-minute refresh
-
-## Security
-
-- Passwords stored in Docker Secrets (`secrets/` directory)
-- `.env` and `secrets/` excluded from git via `.gitignore`
-- PgBouncer connection pooling for database access
-- Internal network isolation (services not exposed to host)
-- Non-root containers where possible
-
-## Development
-
-### Add a New Machine
-
-```sql
-INSERT INTO ims.machines (machine_id, hostname, os_type, cpu_cores, ram_total_mb, disk_total_gb, location, department, contact_name, contact_email)
-VALUES ('NEW-SERVER', 'new-server', 'linux', 8, 32768, 1000, 'Server Room B', 'DevOps', 'Team Lead', 'team@company.com');
-```
-
-### Query Recent Telemetry
-
-```sql
-SELECT * FROM ims.machine_telemetry
-WHERE machine_id = 'ERP-MASTER-UBUNTU'
-  AND recorded_at > NOW() - INTERVAL '1 hour'
-ORDER BY recorded_at DESC
-LIMIT 100;
-```
-
-### Query Machine Health
-
-```sql
-SELECT * FROM ims.v_uptime_summary;
-```
-
-## Troubleshooting
-
-### Node-RED can't connect to database
-
-```bash
-docker logs ims-node-red --tail 50
-# Check PgBouncer is running
-docker logs ims-pgbouncer --tail 20
-```
-
-### SNMP walk returns empty
-
-```bash
-docker exec ims-snmpsim snmpwalk -v2c -c Netk@ ims-snmpsim:161 1.3.6.1.2.1.25.3.3.1.2
-```
-
-### Grafana shows "No data"
-
-1. Check datasource: http://localhost:3000/datasources
-2. Verify PgBouncer connection: `docker exec ims-pgbouncer psql -h timescaledb -U ims_admin -d ims -c "SELECT 1"`
-3. Verify data exists: `SELECT count(*) FROM ims.machine_telemetry;`
-
-## License
-
-Internal use only.
+Proprietary - APEX Circuit

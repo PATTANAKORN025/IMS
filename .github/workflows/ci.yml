@@ -1,4 +1,4 @@
-name: IMS Production CI/CD
+name: IMS World-Class CI/CD
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-  validate:
+  validate-architecture:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -18,8 +18,25 @@ jobs:
       - name: Validate Docker Compose
         run: docker compose config -q
 
-      - name: Lint Prometheus Rules
-        run: docker run --rm --entrypoint promtool -v ${{ github.workspace }}/monitoring/prometheus:/etc/prometheus prom/prometheus:v2.55.1 check config /etc/prometheus/prometheus.yml
+      - name: Lint Prometheus Config
+        run: |
+          docker run --rm \
+            --entrypoint promtool \
+            -v ${{ github.workspace }}/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml \
+            -v ${{ github.workspace }}/monitoring/prometheus/rules:/etc/prometheus/rules \
+            prom/prometheus:v2.55.1 \
+            check config /etc/prometheus/prometheus.yml
+
+      - name: Lint Prometheus Alert Rules
+        run: |
+          for f in monitoring/prometheus/rules/*.yml; do
+            echo "Checking $f"
+            docker run --rm \
+              --entrypoint promtool \
+              -v "${{ github.workspace }}/monitoring/prometheus/rules:/etc/prometheus/rules" \
+              prom/prometheus:v2.55.1 \
+              check rules "/etc/prometheus/rules/$(basename $f)"
+          done
 
       - name: Validate Dashboard JSON
         run: |
@@ -28,10 +45,26 @@ jobs:
             python3 -c "import json; json.load(open('$f'))"
           done
 
+      - name: Validate Node-RED Flow JSON
+        run: |
+          python3 -c "import json; f=json.load(open('flows-ubuntu.json')); print(f'Source flow valid: {len(f)} nodes')"
+          if [ -f nodered_data/flows.json ]; then
+            python3 -c "import json; f=json.load(open('nodered_data/flows.json')); print(f'Runtime flow valid: {len(f)} nodes')"
+          else
+            echo "Runtime flow not found (gitignored) — skipping"
+          fi
+
       - name: Check No Secrets in Repo
         run: |
-          if grep -rn "password" --include="*.json" --include="*.yml" --include="*.yaml" --include="*.env" . | grep -v ".gitignore" | grep -v "node_modules" | grep -v "passwordEnv" | grep -v "passwordFieldType" | grep -v "CHANGELOG" | grep -v "README" | grep -v "LICENSE"; then
-            echo "WARNING: Potential secrets found"
+          MATCHES=$(grep -rn "password" --include="*.json" --include="*.yml" --include="*.yaml" . 2>/dev/null \
+            | grep -v ".gitignore" | grep -v "node_modules" \
+            | grep -v "passwordEnv" | grep -v "passwordFieldType" \
+            | grep -v "CHANGELOG" | grep -v "README" || true)
+          if [ -n "$MATCHES" ]; then
+            echo "WARNING: Potential secrets found:"
+            echo "$MATCHES"
           else
             echo "No secrets detected"
           fi
+
+
