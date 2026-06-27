@@ -1,0 +1,161 @@
+[
+  {
+    "id": "ims-alert-tab",
+    "type": "tab",
+    "label": "IMS Alerting Pipeline",
+    "disabled": false,
+    "info": "Alertmanager webhook → LINE/Teams"
+  },
+  {
+    "id": "alert_http_in",
+    "type": "http in",
+    "z": "ims-alert-tab",
+    "name": "POST /alert-webhook",
+    "url": "/alert-webhook",
+    "method": "post",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 160,
+    "y": 200,
+    "wires": [
+      [
+        "alert_respond",
+        "alert_format"
+      ]
+    ]
+  },
+  {
+    "id": "alert_respond",
+    "type": "http response",
+    "z": "ims-alert-tab",
+    "name": "200 OK",
+    "statusCode": "200",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "x": 400,
+    "y": 120,
+    "wires": []
+  },
+  {
+    "id": "alert_format",
+    "type": "function",
+    "z": "ims-alert-tab",
+    "name": "Format Alert Text",
+    "func": "const payload = msg.payload;\nif (!payload || !payload.alerts) return null;\n\nconst alerts = payload.alerts;\nlet msgText = '\\ud83d\\udd14 *IMS SYSTEM ALERT [' + (payload.status || 'unknown').toUpperCase() + ']* \\ud83d\\udd14\\n\\n';\n\nfor (let i = 0; i < alerts.length; i++) {\n    const a = alerts[i];\n    const labels = a.labels || {};\n    const annotations = a.annotations || {};\n    \n    let icon = '\\u26a0\\ufe0f';\n    if (labels.severity === 'critical') icon = '\\ud83d\\udd25';\n    if (payload.status === 'resolved') icon = '\\u2705';\n\n    msgText += icon + ' *' + (labels.alertname || 'Unknown Alert') + '*\\n';\n    msgText += '\\ud83d\\dda5\\ufe0f *Host:* ' + (labels.machine_id || labels.instance || 'System') + '\\n';\n    msgText += '\\ud83d\\udcdd *Detail:* ' + (annotations.summary || 'N/A') + '\\n';\n    if (annotations.description) msgText += '\\ud83d\\udca1 *Desc:* ' + annotations.description + '\\n';\n    \n    const startTime = a.startsAt ? new Date(a.startsAt).toLocaleString('th-TH') : 'Unknown';\n    msgText += '\\ud83d\\udd52 *Time:* ' + startTime + '\\n';\n    msgText += '-------------------\\n';\n}\n\nmsg.payload = msgText;\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 420,
+    "y": 240,
+    "wires": [
+      [
+        "alert_debug",
+        "alert_line_format",
+        "alert_teams_format"
+      ]
+    ]
+  },
+  {
+    "id": "alert_debug",
+    "type": "debug",
+    "z": "ims-alert-tab",
+    "name": "Alert Log",
+    "active": true,
+    "tosidebar": true,
+    "console": true,
+    "tostatus": true,
+    "complete": "payload",
+    "targetType": "msg",
+    "x": 640,
+    "y": 240,
+    "wires": []
+  },
+  {
+    "id": "alert_line_format",
+    "type": "function",
+    "z": "ims-alert-tab",
+    "name": "Format LINE Notify",
+    "func": "const token = 'YOUR_LINE_NOTIFY_TOKEN';\nmsg.headers = { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/x-www-form-urlencoded' };\nmsg.payload = 'message=' + encodeURIComponent(msg.payload);\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 500,
+    "y": 200,
+    "wires": [
+      [
+        "alert_line_notify"
+      ]
+    ]
+  },
+  {
+    "id": "alert_line_notify",
+    "type": "http request",
+    "z": "ims-alert-tab",
+    "name": "LINE Notify",
+    "method": "POST",
+    "ret": "txt",
+    "paytoqs": "ignore",
+    "url": "https://notify-api.line.me/api/notify",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 720,
+    "y": 200,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "alert_teams_format",
+    "type": "function",
+    "z": "ims-alert-tab",
+    "name": "Format Teams Webhook",
+    "func": "const card = {\n    '@type': 'MessageCard',\n    '@context': 'http://schema.org/extensions',\n    themeColor: 'FF0000',\n    summary: 'IMS Alert',\n    sections: [{\n        activityTitle: 'IMS System Alert',\n        text: msg.payload,\n        markdown: true\n    }]\n};\nmsg.payload = JSON.stringify(card);\nmsg.headers = { 'Content-Type': 'application/json' };\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 500,
+    "y": 260,
+    "wires": [
+      [
+        "alert_teams_webhook"
+      ]
+    ]
+  },
+  {
+    "id": "alert_teams_webhook",
+    "type": "http request",
+    "z": "ims-alert-tab",
+    "name": "MS Teams Webhook",
+    "method": "POST",
+    "ret": "txt",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 720,
+    "y": 260,
+    "wires": [
+      []
+    ]
+  }
+]
