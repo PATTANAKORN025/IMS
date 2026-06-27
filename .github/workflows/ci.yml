@@ -1,4 +1,4 @@
-name: IMS Production CI/CD
+name: IMS World-Class CI/CD
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-  validate:
+  validate-architecture:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -18,8 +18,20 @@ jobs:
       - name: Validate Docker Compose
         run: docker compose config -q
 
-      - name: Lint Prometheus Rules
-        run: docker run --rm --entrypoint promtool -v ${{ github.workspace }}/monitoring/prometheus:/etc/prometheus prom/prometheus:v2.55.1 check config /etc/prometheus/prometheus.yml
+      - name: Lint Prometheus Config
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml \
+            -v ${{ github.workspace }}/monitoring/prometheus/rules:/etc/prometheus/rules \
+            prom/prometheus:v2.55.1 \
+            check config /etc/prometheus/prometheus.yml
+
+      - name: Lint Prometheus Alert Rules
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}/monitoring/prometheus/rules:/etc/prometheus/rules \
+            prom/prometheus:v2.55.1 \
+            check rules /etc/prometheus/rules/*.yml
 
       - name: Validate Dashboard JSON
         run: |
@@ -28,10 +40,68 @@ jobs:
             python3 -c "import json; json.load(open('$f'))"
           done
 
+      - name: Validate Node-RED Flow JSON
+        run: |
+          python3 -c "import json; f=json.load(open('flows-ubuntu.json')); print(f'Flow valid: {len(f)} nodes')"
+          python3 -c "import json; f=json.load(open('nodered_data/flows.json')); print(f'Runtime flow valid: {len(f)} nodes')"
+
       - name: Check No Secrets in Repo
         run: |
-          if grep -rn "password" --include="*.json" --include="*.yml" --include="*.yaml" --include="*.env" . | grep -v ".gitignore" | grep -v "node_modules" | grep -v "passwordEnv" | grep -v "passwordFieldType" | grep -v "CHANGELOG" | grep -v "README" | grep -v "LICENSE"; then
-            echo "WARNING: Potential secrets found"
+          MATCHES=$(grep -rn "password" --include="*.json" --include="*.yml" --include="*.yaml" . 2>/dev/null \
+            | grep -v ".gitignore" | grep -v "node_modules" \
+            | grep -v "passwordEnv" | grep -v "passwordFieldType" \
+            | grep -v "CHANGELOG" | grep -v "README" || true)
+          if [ -n "$MATCHES" ]; then
+            echo "WARNING: Potential secrets found:"
+            echo "$MATCHES"
           else
             echo "No secrets detected"
           fi
+
+  smoke-test:
+    runs-on: ubuntu-latest
+    needs: validate-architecture
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start Stack
+        run: |
+          cp .env.example .env
+          docker compose up -d
+          sleep 30
+
+      - name: Health Check — All Containers
+        run: |
+          docker compose ps --format json | python3 -c "
+          import sys, json
+          for line in sys.stdin:
+              s = json.loads(line)
+              name = s['Name']
+              state = s['State']
+              if state != 'running':
+                  print(f'FAIL: {name} is {state}')
+                  sys.exit(1)
+              print(f'OK: {name}')
+          "
+
+      - name: Health Check — Prometheus Targets
+        run: |
+          STATUS=$(curl -sf http://localhost:9090/api/v1/targets | python3 -c "
+          import sys, json
+          data = json.load(sys.stdin)
+          ups = sum(1 for t in data['data']['activeTargets'] if t['health'] == 'up')
+          total = len(data['data']['activeTargets'])
+          print(f'{ups}/{total}')
+          ")
+          echo "Prometheus targets UP: $STATUS"
+
+      - name: Health Check — Grafana
+        run: curl -sf http://localhost:3000/api/health
+
+      - name: Health Check — Database
+        run: |
+          docker exec ims-timescaledb psql -U ims_admin -d ims -c "SELECT COUNT(*) FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '5 minutes';"
+
+      - name: Tear Down
+        if: always()
+        run: docker compose down -v
