@@ -12,11 +12,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Seed .env for validation
+        run: cp .env.example .env
+
       - name: Validate Docker Compose
         run: docker compose config -q
 
       - name: Lint Prometheus Rules
-        run: docker run --rm -v ${{ github.workspace }}/monitoring/prometheus:/etc/prometheus prom/prometheus:v2.55.1 promtool check config /etc/prometheus/prometheus.yml
+        run: docker run --rm --entrypoint promtool -v ${{ github.workspace }}/monitoring/prometheus:/etc/prometheus prom/prometheus:v2.55.1 check config /etc/prometheus/prometheus.yml
 
       - name: Validate Dashboard JSON
         run: |

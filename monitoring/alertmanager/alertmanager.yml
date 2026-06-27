@@ -70,59 +70,18 @@ receivers:
         send_resolved: true
 
 inhibit_rules:
-  # InterfaceDown inhibits ALL telemetry warnings on same machine
-  - source_matchers:
-      - alertname="InterfaceDown"
-    target_matchers:
-      - severity="warning"
-      - service="network"
-    equal: ['machine_id']
-
-  # InterfaceDown inhibits CPU/RAM/Thermal warnings
-  - source_matchers:
-      - alertname="InterfaceDown"
-    target_matchers:
-      - alertname=~"CPUHigh|MemorySaturation|ThermalRunaway"
-    equal: ['machine_id']
-
-  # ServiceDown inhibits ALL warnings on same machine
+  # A down service (blackbox probe_success==0) suppresses its own latency /
+  # SLA-risk warnings for the same instance — no point paging on slowness
+  # when the thing is already hard-down.
   - source_matchers:
       - alertname="ServiceDown"
     target_matchers:
-      - severity="warning"
-    equal: ['machine_id']
+      - alertname=~"ServiceHighLatency|SLABreachWarning"
+    equal: ['instance']
 
-  # NodeREDDown inhibits telemetry-related warnings
-  - source_matchers:
-      - alertname="NodeREDDown"
-    target_matchers:
-      - alertname="TelemetryGap"
-    equal: []
-
-  # Critical inhibits Warning for same alertname + machine
+  # Any critical on an instance suppresses warnings on that same instance.
   - source_matchers:
       - severity="critical"
     target_matchers:
       - severity="warning"
-    equal: ['alertname', 'machine_id']
-
-  # Critical inhibits Info
-  - source_matchers:
-      - severity="critical"
-    target_matchers:
-      - severity="info"
-    equal: ['alertname', 'machine_id']
-
-  # ThermalRunawayCritical inhibits ThermalRunawayWarning
-  - source_matchers:
-      - alertname="ThermalRunawayCritical"
-    target_matchers:
-      - alertname="ThermalRunawayWarning"
-    equal: ['machine_id']
-
-  # NetworkDropsCritical inhibits NetworkErrorsSpike
-  - source_matchers:
-      - alertname="NetworkDropsCritical"
-    target_matchers:
-      - alertname="NetworkErrorsSpike"
-    equal: ['machine_id']
+    equal: ['instance']

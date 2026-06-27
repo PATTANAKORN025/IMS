@@ -46,7 +46,10 @@ CREATE TABLE public.machine_telemetry (
     ldi_je              INT DEFAULT 0,
     ldi_power           INT DEFAULT 0,
     ldi_vibration       INT DEFAULT 0,
-    ldi_uptime          BIGINT DEFAULT 0
+    ldi_uptime          BIGINT DEFAULT 0,
+    -- Wi-Fi RF metrics (private MIB .1.3.6.1.4.1.99999.2.x): RSSI in dBm (negative), SNR in dB
+    wifi_rssi           INT DEFAULT 0,
+    wifi_snr            INT DEFAULT 0
 );
 
 SELECT create_hypertable('public.machine_telemetry', 'time', if_not_exists => TRUE);
@@ -105,7 +108,12 @@ SELECT
     AVG(ldi_je) AS avg_ldi_je,
     AVG(ldi_power) AS avg_ldi_power,
     AVG(ldi_vibration) AS avg_ldi_vibration,
-    MAX(ldi_vibration) AS max_ldi_vibration
+    MAX(ldi_vibration) AS max_ldi_vibration,
+    -- Wi-Fi RF: MIN(snr) = worst signal-to-noise in the bucket (used by the SNR<20 alert)
+    AVG(wifi_rssi) AS avg_wifi_rssi,
+    MIN(wifi_rssi) AS min_wifi_rssi,
+    AVG(wifi_snr) AS avg_wifi_snr,
+    MIN(wifi_snr) AS min_wifi_snr
 FROM public.machine_telemetry
 GROUP BY "bucket", machine_id;
 
@@ -141,7 +149,11 @@ SELECT
     AVG(avg_ldi_je) AS avg_ldi_je,
     AVG(avg_ldi_power) AS avg_ldi_power,
     AVG(avg_ldi_vibration) AS avg_ldi_vibration,
-    MAX(max_ldi_vibration) AS max_ldi_vibration
+    MAX(max_ldi_vibration) AS max_ldi_vibration,
+    AVG(avg_wifi_rssi) AS avg_wifi_rssi,
+    MIN(min_wifi_rssi) AS min_wifi_rssi,
+    AVG(avg_wifi_snr) AS avg_wifi_snr,
+    MIN(min_wifi_snr) AS min_wifi_snr
 FROM public.telemetry_minute_summary
 GROUP BY "hour_bucket", machine_id;
 
