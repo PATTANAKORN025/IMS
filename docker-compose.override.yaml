@@ -1,15 +1,6 @@
-# ใช้ตอน dev/test เท่านั้น: docker compose -f docker-compose.yaml -f docker-compose.override.yaml up -d
+# Dev overrides: docker compose up -d (loads this automatically)
+# Snmpsim comes from base compose — no override needed
 services:
-  snmpsim:
-    image: tandrup/snmpsim
-    container_name: ims-snmpsim
-    networks:
-      - ims-internal
-    volumes:
-      - ./monitoring/snmpsim:/usr/share/snmpsim/data
-    ports:
-      - "1161:161/udp"
-
   node-red:
     environment:
       - NODE_ENV=development
