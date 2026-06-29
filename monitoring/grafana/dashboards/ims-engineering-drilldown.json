@@ -1,1 +1,2482 @@
-{"annotations":{"list":[{"builtIn":1,"datasource":{"type":"grafana","uid":"-- Grafana --"},"enable":true,"hide":true,"iconColor":"rgba(0, 211, 255, 1)","name":"Annotations & Alerts","type":"dashboard"}]},"editable":true,"fiscalYearStartMonth":0,"graphTooltip":1,"id":null,"links":[{"title":"NOC Overview","url":"/d/ims-noc-overview","type":"link","icon":"external link","targetBlank":true}],"panels":[{"collapsed":false,"gridPos":{"h":1,"w":24,"x":0,"y":0},"id":100,"title":"Machine Summary","type":"row"},{"id":1,"title":"CPU Load","type":"gauge","datasource":{"uid":"timescaledb"},"gridPos":{"h":6,"w":4,"x":0,"y":1},"fieldConfig":{"defaults":{"unit":"percent","min":0,"max":100,"thresholds":{"mode":"absolute","steps":[{"color":"yellow","value":null},{"color":"orange","value":70},{"color":"red","value":90}]},"color":{"mode":"thresholds"}}},"options":{"reduceOptions":{"calcs":["lastNotNull"],"values":false},"unit":"percent"},"targets":[{"refId":"A","format":"table","rawSql":"SELECT cpu_load_percent AS value FROM public.machine_telemetry WHERE \"time\" > NOW() - INTERVAL '2 minutes' AND machine_id = '${machine_id}' ORDER BY \"time\" DESC LIMIT 1"}]},{"id":2,"title":"RAM Usage","type":"gauge","datasource":{"uid":"timescaledb"},"gridPos":{"h":6,"w":4,"x":4,"y":7},"fieldConfig":{"defaults":{"unit":"percent","min":0,"max":100,"thresholds":{"mode":"absolute","steps":[{"color":"purple","value":null},{"color":"dark-orange","value":75},{"color":"red","value":90}]},"color":{"mode":"thresholds"}}},"options":{"reduceOptions":{"calcs":["lastNotNull"],"values":false},"unit":"mbytes"},"targets":[{"refId":"A","format":"table","rawSql":"SELECT (ram_used_mb / NULLIF(ram_total_mb, 0) * 100) AS value FROM public.machine_telemetry WHERE \"time\" > NOW() - INTERVAL '2 minutes' AND machine_id = '${machine_id}' ORDER BY \"time\" DESC LIMIT 1"}]},{"id":3,"title":"Storage Saturation","type":"gauge","datasource":{"uid":"timescaledb"},"gridPos":{"h":6,"w":4,"x":8,"y":13},"fieldConfig":{"defaults":{"unit":"percent","min":0,"max":100,"thresholds":{"mode":"absolute","steps":[{"color":"cyan","value":null},{"color":"blue","value":70},{"color":"red","value":90}]},"color":{"mode":"thresholds"}}},"options":{"reduceOptions":{"calcs":["lastNotNull"],"values":false},"unit":"gbytes"},"targets":[{"refId":"A","format":"table","rawSql":"SELECT (disk_used_gb / NULLIF(disk_total_gb, 0) * 100) AS value FROM public.machine_telemetry WHERE \"time\" > NOW() - INTERVAL '2 minutes' AND machine_id = '${machine_id}' ORDER BY \"time\" DESC LIMIT 1"}]},{"id":4,"title":"Temperature","type":"gauge","datasource":{"uid":"timescaledb"},"gridPos":{"h":6,"w":4,"x":12,"y":19},"fieldConfig":{"defaults":{"unit":"celsius","min":0,"max":100,"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"yellow","value":65},{"color":"orange","value":75},{"color":"red","value":80}]},"color":{"mode":"thresholds"}}},"options":{"reduceOptions":{"calcs":["lastNotNull"],"values":false},"unit":"celsius"},"targets":[{"refId":"A","format":"table","rawSql":"SELECT temp_c AS value FROM public.machine_telemetry WHERE \"time\" > NOW() - INTERVAL '2 minutes' AND machine_id = '${machine_id}' AND temp_c > 0 ORDER BY \"time\" DESC LIMIT 1"}]},{"id":5,"title":"Network RX","type":"stat","datasource":{"uid":"timescaledb"},"gridPos":{"h":6,"w":4,"x":16,"y":25},"fieldConfig":{"defaults":{"unit":"bps","thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"yellow","value":500},{"color":"red","value":900}]},"color":{"mode":"thresholds"}}},"options":{"colorMode":"background","graphMode":"area","justifyMode":"auto","reduceOptions":{"calcs":["lastNotNull"],"values":false},"unit":"mbps"},"targets":[{"refId":"A","format":"table","rawSql":"SELECT avg_rx_mbps AS value FROM public.telemetry_minute_summary WHERE machine_id = '${machine_id}' AND $__timeFilter(\"bucket\") ORDER BY \"bucket\" DESC LIMIT 1"}]},{"id":6,"title":"Uptime","type":"stat","datasource":{"uid":"timescaledb"},"gridPos":{"h":6,"w":4,"x":20,"y":31},"fieldConfig":{"defaults":{"unit":"dtdurations","thresholds":{"mode":"absolute","steps":[{"color":"red","value":null},{"color":"yellow","value":86400},{"color":"green","value":604800}]},"color":{"mode":"thresholds"}}},"options":{"colorMode":"background","graphMode":"none","justifyMode":"center","reduceOptions":{"calcs":["lastNotNull"],"values":false},"unit":"dtdurations"},"targets":[{"refId":"A","format":"table","rawSql":"SELECT seconds_since_last AS value FROM public.v_uptime_summary WHERE machine_id = '${machine_id}'"}]},{"collapsed":false,"gridPos":{"h":1,"w":24,"x":0,"y":37},"id":200,"title":"Time Series Analysis","type":"row"},{"id":10,"title":"CPU Load Over Time","type":"timeseries","datasource":{"uid":"timescaledb"},"gridPos":{"h":8,"w":12,"x":0,"y":38},"fieldConfig":{"defaults":{"unit":"percent","min":0,"max":100,"color":{"mode":"thresholds"},"thresholds":{"mode":"absolute","steps":[{"color":"yellow","value":null},{"color":"orange","value":70},{"color":"red","value":90}]},"custom":{"fillOpacity":20,"lineWidth":2,"spanNulls":true,"gradientMode":"scheme","thresholdsStyle":{"mode":"line+area"}}}},"options":{"tooltip":{"mode":"multi","sort":"desc"},"legend":{"displayMode":"table","placement":"bottom","calcs":["mean","max","lastNotNull"]},"unit":"percent","custom":{"drawStyle":"line","fillOpacity":15,"gradientMode":"scheme"}},"targets":[{"refId":"A","format":"time_series","rawSql":"SELECT time_bucket('1 minute', \"time\") AS \"time\", cpu_load_percent AS \"CPU Load %\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}' ORDER BY 1"}]},{"id":501,"title":"Memory Saturation","type":"timeseries","datasource":{"uid":"timescaledb"},"gridPos":{"h":8,"w":12,"x":12,"y":46},"fieldConfig":{"defaults":{"unit":"mbytes","min":0,"color":{"mode":"thresholds"},"custom":{"fillOpacity":20,"lineWidth":2,"spanNulls":true,"gradientMode":"scheme"},"thresholds":{"mode":"absolute","steps":[{"color":"purple","value":null},{"color":"dark-orange","value":75},{"color":"red","value":90}]}}},"options":{"tooltip":{"mode":"multi","sort":"desc"},"legend":{"displayMode":"table","placement":"bottom","calcs":["mean","max"]},"unit":"mbytes","custom":{"drawStyle":"line","fillOpacity":15,"gradientMode":"scheme"}},"targets":[{"refId":"A","format":"time_series","rawSql":"SELECT time_bucket('1 minute', \"time\") AS \"time\", ram_used_mb AS \"Used (MB)\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}' ORDER BY 1"},{"refId":"B","format":"time_series","rawSql":"SELECT time_bucket('1 minute', \"time\") AS \"time\", ram_total_mb AS \"Total (MB)\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}' ORDER BY 1"}]},{"id":502,"title":"Ethernet/WiFi Bandwidth (Per-Interface)","type":"timeseries","datasource":{"uid":"timescaledb"},"gridPos":{"h":8,"w":12,"x":0,"y":54},"fieldConfig":{"defaults":{"unit":"bps","color":{"mode":"thresholds"},"custom":{"fillOpacity":20,"lineWidth":2,"spanNulls":true,"gradientMode":"scheme","axisCenteredZero":true,"axisLabel":"Bandwidth"},"thresholds":{"mode":"absolute","steps":[{"color":"cyan","value":null},{"color":"blue","value":70},{"color":"red","value":90}]}},"overrides":[{"matcher":{"id":"byName","options":"eth0 RX (bps)"},"properties":[{"id":"color","value":{"fixedColor":"#1F60C4","mode":"fixed"}},{"id":"custom.fillOpacity","value":40}]},{"matcher":{"id":"byName","options":"wlan0 RX (bps)"},"properties":[{"id":"color","value":{"fixedColor":"#8E24AA","mode":"fixed"}},{"id":"custom.fillOpacity","value":40}]},{"matcher":{"id":"byName","options":"eth0 TX (bps)"},"properties":[{"id":"color","value":{"fixedColor":"#5794F2","mode":"fixed"}},{"id":"custom.fillOpacity","value":40}]},{"matcher":{"id":"byName","options":"wlan0 TX (bps)"},"properties":[{"id":"color","value":{"fixedColor":"#E02F44","mode":"fixed"}},{"id":"custom.fillOpacity","value":40}]}]},"options":{"tooltip":{"mode":"multi","sort":"desc"},"legend":{"displayMode":"table","placement":"bottom","calcs":["mean","max"]},"unit":"mbps","custom":{"drawStyle":"line","fillOpacity":15,"gradientMode":"scheme"}},"targets":[{"refId":"A","format":"time_series","rawSql":"SELECT mt.\"time\", (mt.interface_metrics->'eth0'->>'rx_mbps')::numeric * 1000000 AS \"eth0 RX (bps)\", (mt.interface_metrics->'wlan0'->>'rx_mbps')::numeric * 1000000 AS \"wlan0 RX (bps)\" FROM public.machine_telemetry mt WHERE $__timeFilter(mt.\"time\") AND mt.machine_id = '${machine_id}' ORDER BY 1"},{"refId":"B","format":"time_series","rawSql":"SELECT mt.\"time\", (mt.interface_metrics->'eth0'->>'tx_mbps')::numeric * -1000000 AS \"eth0 TX (bps)\", (mt.interface_metrics->'wlan0'->>'tx_mbps')::numeric * -1000000 AS \"wlan0 TX (bps)\" FROM public.machine_telemetry mt WHERE $__timeFilter(mt.\"time\") AND mt.machine_id = '${machine_id}' ORDER BY 1"}]},{"collapsed":false,"gridPos":{"h":1,"w":24,"x":0,"y":62},"id":300,"title":"Network & Environment","type":"row"},{"id":41,"title":"Network Packet Health","type":"timeseries","datasource":{"uid":"timescaledb"},"gridPos":{"h":8,"w":12,"x":12,"y":63},"fieldConfig":{"defaults":{"unit":"bps","min":0,"color":{"mode":"thresholds"},"custom":{"fillOpacity":30,"lineWidth":2,"spanNulls":true},"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"orange","value":50},{"color":"red","value":100}]}},"overrides":[{"matcher":{"id":"byName","options":"Download (Mbps)"},"properties":[{"id":"color","value":{"fixedColor":"#1F60C4","mode":"fixed"}},{"id":"custom.fillOpacity","value":30}]},{"matcher":{"id":"byName","options":"Upload (Mbps)"},"properties":[{"id":"color","value":{"fixedColor":"#5794F2","mode":"fixed"}},{"id":"custom.fillOpacity","value":30}]}]},"options":{"tooltip":{"mode":"multi","sort":"desc"},"legend":{"displayMode":"table","placement":"bottom","calcs":["mean","max"]},"custom":{"drawStyle":"bars","fillOpacity":80}},"targets":[{"refId":"A","format":"time_series","rawSql":"SELECT \"bucket\" AS \"time\", machine_id AS metric, avg_rx_mbps AS \"Download (Mbps)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(\"bucket\") AND machine_id = '${machine_id}' ORDER BY 1"},{"refId":"B","format":"time_series","rawSql":"SELECT \"bucket\" AS \"time\", machine_id AS metric, (avg_tx_mbps * -1) AS \"Upload (Mbps)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(\"bucket\") AND machine_id = '${machine_id}' ORDER BY 1"}]},{"id":26,"title":"Interface Error Rates (eth0 vs wlan0)","type":"timeseries","datasource":{"uid":"timescaledb"},"gridPos":{"h":8,"w":12,"x":12,"y":71},"fieldConfig":{"defaults":{"unit":"bps","min":0,"custom":{"drawStyle":"bars","fillOpacity":80,"lineWidth":1,"spanNulls":false,"gradientMode":"none"},"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"orange","value":50},{"color":"red","value":100}]},"color":{"mode":"thresholds"}},"overrides":[{"matcher":{"id":"byName","options":"Errors"},"properties":[{"id":"color","value":{"fixedColor":"#C4162A","mode":"fixed"}}]},{"matcher":{"id":"byName","options":"Drops"},"properties":[{"id":"color","value":{"fixedColor":"#FF9830","mode":"fixed"}}]}]},"options":{"tooltip":{"mode":"multi","sort":"desc"},"legend":{"displayMode":"table","placement":"bottom","calcs":["mean","max"]},"custom":{"drawStyle":"bars","fillOpacity":80}},"targets":[{"refId":"A","legendFormat":"{{Interface}} Errors","format":"time_series","rawSql":"SELECT \"time\", key AS \"Interface\", (value->>'errors')::NUMERIC AS \"Errors\" FROM public.machine_telemetry, jsonb_each(interface_metrics) WHERE machine_id = '${machine_id}' AND $__timeFilter(\"time\") AND value ? 'errors' ORDER BY 1"},{"refId":"B","legendFormat":"{{Interface}} Drops","format":"time_series","rawSql":"SELECT \"time\", key AS \"Interface\", (value->>'drops')::NUMERIC AS \"Drops\" FROM public.machine_telemetry, jsonb_each(interface_metrics) WHERE machine_id = '${machine_id}' AND $__timeFilter(\"time\") AND value ? 'drops' ORDER BY 1"}]},{"id":21,"title":"Temperature Sensors","type":"timeseries","datasource":{"uid":"timescaledb"},"gridPos":{"h":8,"w":12,"x":0,"y":79},"fieldConfig":{"defaults":{"unit":"celsius","min":0,"max":100,"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"yellow","value":65},{"color":"orange","value":75},{"color":"red","value":80}]},"custom":{"fillOpacity":10,"lineWidth":2,"spanNulls":true,"thresholdsStyle":{"mode":"line"}},"color":{"mode":"thresholds"}}},"options":{"tooltip":{"mode":"multi","sort":"desc"},"legend":{"displayMode":"table","placement":"bottom","calcs":["mean","max"]},"unit":"celsius","custom":{"drawStyle":"line","fillOpacity":10,"gradientMode":"scheme"}},"targets":[{"refId":"A","format":"time_series","rawSql":"SELECT \"bucket\" AS \"time\", max_temp AS \"Temperature (°C)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(\"bucket\") AND machine_id = '${machine_id}' AND max_temp > 0 ORDER BY 1"}]},{"id":22,"title":"Disk Usage Trend","type":"timeseries","datasource":{"uid":"timescaledb"},"gridPos":{"h":8,"w":12,"x":0,"y":87},"fieldConfig":{"defaults":{"unit":"GB","min":0,"custom":{"fillOpacity":20,"lineWidth":2,"spanNulls":true}}},"options":{"tooltip":{"mode":"multi","sort":"desc"},"legend":{"displayMode":"table","placement":"bottom","calcs":["mean","max"]},"unit":"gbytes","custom":{"drawStyle":"line","fillOpacity":15}},"targets":[{"refId":"A","format":"time_series","rawSql":"SELECT time_bucket('5 minutes', \"time\") AS \"time\", AVG(disk_used_gb) AS \"Used (GB)\", AVG(disk_total_gb) AS \"Total (GB)\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}' GROUP BY 1 ORDER BY 1"}]},{"id":23,"title":"RAM Usage Trend","type":"timeseries","datasource":{"uid":"timescaledb"},"gridPos":{"h":8,"w":12,"x":12,"y":95},"fieldConfig":{"defaults":{"unit":"MB","min":0,"custom":{"fillOpacity":20,"lineWidth":2,"spanNulls":true}}},"options":{"tooltip":{"mode":"multi","sort":"desc"},"legend":{"displayMode":"table","placement":"bottom","calcs":["mean","max"]},"unit":"mbytes","custom":{"drawStyle":"line","fillOpacity":15}},"targets":[{"refId":"A","format":"time_series","rawSql":"SELECT time_bucket('5 minutes', \"time\") AS \"time\", AVG(ram_used_mb) AS \"Used (MB)\", AVG(ram_total_mb) AS \"Total (MB)\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}' GROUP BY 1 ORDER BY 1"}]},{"collapsed":false,"gridPos":{"h":1,"w":24,"x":0,"y":103},"id":500,"title":"AIOps — ANOMALY DETECTION (3-Sigma Z-Score)","type":"row"},{"id":40,"title":"CPU Anomaly Score (Z-Score)","type":"timeseries","datasource":{"uid":"timescaledb"},"gridPos":{"h":8,"w":12,"x":0,"y":104},"fieldConfig":{"defaults":{"unit":"short","min":-4,"max":4,"custom":{"fillOpacity":15,"lineWidth":2,"spanNulls":true,"thresholdsStyle":{"mode":"line"}},"thresholds":{"mode":"absolute","steps":[{"color":"red","value":-4},{"color":"green","value":-3},{"color":"green","value":3},{"color":"red","value":4}]},"color":{"mode":"thresholds"}}},"options":{"tooltip":{"mode":"multi","sort":"desc"},"legend":{"displayMode":"table","placement":"bottom","calcs":["mean","max"]},"unit":"short","custom":{"drawStyle":"line","fillOpacity":10}},"targets":[{"refId":"A","format":"time_series","rawSql":"WITH stats AS (SELECT \"bucket\", machine_id, avg_cpu_load, AVG(avg_cpu_load) OVER w AS moving_avg, COALESCE(STDDEV(avg_cpu_load) OVER w, 0) AS moving_stddev FROM public.telemetry_minute_summary WHERE machine_id = '${machine_id}' AND $__timeFilter(\"bucket\") WINDOW w AS (PARTITION BY machine_id ORDER BY \"bucket\" ROWS BETWEEN 60 PRECEDING AND 1 PRECEDING)) SELECT \"bucket\" AS \"time\", CASE WHEN moving_stddev > 0 THEN (avg_cpu_load - moving_avg) / moving_stddev ELSE 0 END AS \"Z-Score\" FROM stats WHERE moving_avg > 0 ORDER BY 1"}]},{"id":12,"title":"Network Interface Degradation","type":"timeseries","datasource":{"uid":"timescaledb"},"gridPos":{"h":8,"w":12,"x":12,"y":112},"fieldConfig":{"defaults":{"unit":"short","min":0,"color":{"mode":"fixed","fixedColor":"red"},"custom":{"fillOpacity":20,"lineWidth":2,"spanNulls":true,"gradientMode":"scheme"},"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"orange","value":1},{"color":"red","value":10}]}}},"options":{"tooltip":{"mode":"multi","sort":"desc"},"legend":{"displayMode":"table","placement":"bottom","calcs":["mean","max"]},"custom":{"drawStyle":"bars","fillOpacity":80}},"targets":[{"refId":"A","legendFormat":"Errors/min","format":"time_series","rawSql":"SELECT \"bucket\" AS \"time\", total_rx_errors AS \"RX Errors\" FROM public.telemetry_minute_summary WHERE machine_id = '${machine_id}' AND $__timeFilter(\"bucket\") ORDER BY 1"},{"refId":"B","legendFormat":"Drops/min","format":"time_series","rawSql":"SELECT \"bucket\" AS \"time\", total_rx_drops AS \"RX Drops\" FROM public.telemetry_minute_summary WHERE machine_id = '${machine_id}' AND $__timeFilter(\"bucket\") ORDER BY 1"}]},{"id":42,"title":"Interface Status","type":"stat","datasource":{"uid":"timescaledb"},"gridPos":{"h":4,"w":6,"x":0,"y":120},"fieldConfig":{"defaults":{"thresholds":{"mode":"absolute","steps":[{"color":"red","value":null},{"color":"green","value":1}]},"mappings":[{"type":"value","options":{"1":{"text":"LINK UP","color":"green"}}},{"type":"value","options":{"2":{"text":"LINK DOWN","color":"red"}}}],"color":{"mode":"thresholds"}}},"options":{"colorMode":"background","graphMode":"none","justifyMode":"center","textMode":"auto","reduceOptions":{"calcs":["lastNotNull"],"values":false}},"targets":[{"refId":"A","format":"table","rawSql":"SELECT net_if_status AS \"value\" FROM public.machine_telemetry WHERE machine_id = '${machine_id}' AND $__timeFilter(\"time\") ORDER BY \"time\" DESC LIMIT 1"}]},{"id":43,"title":"Total RX Errors (Session)","type":"stat","datasource":{"uid":"timescaledb"},"gridPos":{"h":4,"w":6,"x":6,"y":124},"fieldConfig":{"defaults":{"unit":"short","thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"orange","value":50},{"color":"red","value":100}]},"color":{"mode":"thresholds"}}},"options":{"colorMode":"background","graphMode":"area","justifyMode":"center","textMode":"auto","reduceOptions":{"calcs":["lastNotNull"],"values":false}},"targets":[{"refId":"A","format":"table","rawSql":"SELECT SUM(total_rx_errors) AS value FROM public.telemetry_minute_summary WHERE machine_id = '${machine_id}' AND $__timeFilter(\"bucket\")"}]},{"id":44,"title":"Total RX Drops (Session)","type":"stat","datasource":{"uid":"timescaledb"},"gridPos":{"h":4,"w":6,"x":12,"y":128},"fieldConfig":{"defaults":{"unit":"short","thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"orange","value":50},{"color":"red","value":100}]},"color":{"mode":"thresholds"}}},"options":{"colorMode":"background","graphMode":"area","justifyMode":"center","textMode":"auto","reduceOptions":{"calcs":["lastNotNull"],"values":false}},"targets":[{"refId":"A","format":"table","rawSql":"SELECT SUM(total_rx_drops) AS value FROM public.telemetry_minute_summary WHERE machine_id = '${machine_id}' AND $__timeFilter(\"bucket\")"}]},{"id":45,"title":"Packet Loss Rate","type":"gauge","datasource":{"uid":"timescaledb"},"gridPos":{"h":4,"w":6,"x":18,"y":132},"fieldConfig":{"defaults":{"unit":"percent","min":0,"max":100,"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"yellow","value":0.01},{"color":"red","value":0.05}]},"color":{"mode":"thresholds"}}},"options":{"reduceOptions":{"calcs":["lastNotNull"],"values":false},"unit":"percentunit"},"targets":[{"refId":"A","format":"table","rawSql":"WITH agg AS (SELECT SUM(total_rx_errors + total_rx_drops) AS total_issues, SUM(total_rx_errors + total_rx_drops + (avg_rx_mbps * 60 * 125000)) AS total_packets FROM public.telemetry_minute_summary WHERE machine_id = '${machine_id}' AND $__timeFilter(\"bucket\")) SELECT CASE WHEN total_packets > 0 THEN ROUND(((total_issues::NUMERIC / total_packets::NUMERIC) * 100)::NUMERIC, 4) ELSE 0 END AS value FROM agg"}]},{"id":507,"type":"row","title":"LDI Manufacturing Telemetry","collapsed":false,"gridPos":{"h":1,"w":24,"x":0,"y":136}},{"datasource":{"type":"postgres","uid":"timescaledb"},"fieldConfig":{"defaults":{"color":{"mode":"palette-classic"},"custom":{"axisBorderShow":false,"axisCenteredZero":false,"axisLabel":"","axisPlacement":"auto","barAlignment":0,"barWidthFactor":0.6,"drawStyle":"line","fillOpacity":15,"gradientMode":"none","hideFrom":{"legend":false,"tooltip":false,"viz":false},"insertNulls":false,"lineInterpolation":"smooth","lineWidth":2,"pointSize":5,"scaleDistribution":{"type":"linear"},"showPoints":"auto","spanNulls":true,"stacking":{"group":"A","mode":"none"},"thresholdsStyle":{"mode":"off"}},"mappings":[],"unit":"short","min":0,"max":5000},"overrides":[{"matcher":{"id":"byName","options":"Throughput (units/sec)"},"properties":[{"id":"color","value":{"fixedColor":"#73BF69","mode":"fixed"}},{"id":"custom.axisPlacement","value":"left"},{"id":"custom.axisLabel","value":"Throughput (units/sec)"},{"id":"unit","value":"short"}]},{"matcher":{"id":"byName","options":"PE (%)"},"properties":[{"id":"color","value":{"fixedColor":"#FADE2A","mode":"fixed"}},{"id":"custom.axisPlacement","value":"right"},{"id":"custom.axisLabel","value":"PE (%)"},{"id":"unit","value":"percent"},{"id":"max","value":100}]}]},"options":{"legend":{"calcs":["mean","max"],"displayMode":"table","placement":"bottom"},"tooltip":{"mode":"multi","sort":"desc"}},"type":"timeseries","id":503,"title":"LDI Throughput & Process Efficiency","gridPos":{"h":8,"w":12,"x":0,"y":137},"targets":[{"refId":"A","rawSql":"SELECT $__timeGroupAlias(\"time\", $__interval), ldi_throughput AS \"Throughput (units/sec)\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}' ORDER BY 1","format":"time_series"},{"refId":"B","rawSql":"SELECT $__timeGroupAlias(\"time\", $__interval), ldi_pe AS \"PE (%)\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}' ORDER BY 1","format":"time_series"}]},{"datasource":{"type":"postgres","uid":"timescaledb"},"fieldConfig":{"defaults":{"color":{"mode":"palette-classic"},"custom":{"axisBorderShow":false,"axisCenteredZero":false,"axisLabel":"","axisPlacement":"auto","barAlignment":0,"barWidthFactor":0.6,"drawStyle":"line","fillOpacity":15,"gradientMode":"none","hideFrom":{"legend":false,"tooltip":false,"viz":false},"insertNulls":false,"lineInterpolation":"smooth","lineWidth":2,"pointSize":5,"scaleDistribution":{"type":"linear"},"showPoints":"auto","spanNulls":true,"stacking":{"group":"A","mode":"none"},"thresholdsStyle":{"mode":"off"}},"mappings":[],"unit":"percent","min":0,"max":100},"overrides":[{"matcher":{"id":"byName","options":"JE (%)"},"properties":[{"id":"color","value":{"fixedColor":"#8F3BB3","mode":"fixed"}},{"id":"custom.axisPlacement","value":"left"},{"id":"custom.axisLabel","value":"JE (%)"},{"id":"unit","value":"percent"}]},{"matcher":{"id":"byName","options":"Humidity (%)"},"properties":[{"id":"color","value":{"fixedColor":"#5794F2","mode":"fixed"}},{"id":"custom.axisPlacement","value":"right"},{"id":"custom.axisLabel","value":"Humidity (%)"},{"id":"unit","value":"percent"}]}]},"options":{"legend":{"calcs":["mean","max"],"displayMode":"table","placement":"bottom"},"tooltip":{"mode":"multi","sort":"desc"}},"type":"timeseries","id":504,"title":"LDI Junction Efficiency & Humidity","gridPos":{"h":8,"w":12,"x":12,"y":145},"targets":[{"refId":"A","rawSql":"SELECT $__timeGroupAlias(\"time\", $__interval), ldi_je AS \"JE (%)\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}' ORDER BY 1","format":"time_series"},{"refId":"B","rawSql":"SELECT $__timeGroupAlias(\"time\", $__interval), ldi_humidity AS \"Humidity (%)\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}' ORDER BY 1","format":"time_series"}]},{"datasource":{"type":"postgres","uid":"timescaledb"},"fieldConfig":{"defaults":{"color":{"mode":"palette-classic"},"custom":{"axisBorderShow":false,"axisCenteredZero":false,"axisLabel":"","axisPlacement":"auto","barAlignment":0,"barWidthFactor":0.6,"drawStyle":"line","fillOpacity":15,"gradientMode":"none","hideFrom":{"legend":false,"tooltip":false,"viz":false},"insertNulls":false,"lineInterpolation":"smooth","lineWidth":2,"pointSize":5,"scaleDistribution":{"type":"linear"},"showPoints":"auto","spanNulls":true,"stacking":{"group":"A","mode":"none"},"thresholdsStyle":{"mode":"off"}},"mappings":[],"unit":"watt","min":0},"overrides":[{"matcher":{"id":"byName","options":"Power (W)"},"properties":[{"id":"color","value":{"fixedColor":"#FF9830","mode":"fixed"}},{"id":"custom.axisPlacement","value":"left"},{"id":"custom.axisLabel","value":"Power (W)"},{"id":"unit","value":"watt"}]},{"matcher":{"id":"byName","options":"Vibration (mm/s)"},"properties":[{"id":"color","value":{"fixedColor":"#C4162A","mode":"fixed"}},{"id":"custom.axisPlacement","value":"right"},{"id":"custom.axisLabel","value":"Vibration (mm/s)"},{"id":"unit","value":"short"},{"id":"thresholds","value":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"yellow","value":8},{"color":"red","value":12}]}},{"id":"custom.thresholdsStyle","value":{"mode":"line"}}]}]},"options":{"legend":{"calcs":["mean","max"],"displayMode":"table","placement":"bottom"},"tooltip":{"mode":"multi","sort":"desc"}},"type":"timeseries","id":505,"title":"LDI Power Consumption & Vibration","gridPos":{"h":8,"w":12,"x":0,"y":153},"targets":[{"refId":"A","rawSql":"SELECT $__timeGroupAlias(\"time\", $__interval), ldi_power AS \"Power (W)\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}' ORDER BY 1","format":"time_series"},{"refId":"B","rawSql":"SELECT $__timeGroupAlias(\"time\", $__interval), ldi_vibration AS \"Vibration (mm/s)\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}' ORDER BY 1","format":"time_series"}]},{"datasource":{"type":"postgres","uid":"timescaledb"},"id":506,"title":"LDI Quality Scatter (PE vs JE)","type":"xychart","gridPos":{"h":8,"w":12,"x":12,"y":161},"targets":[{"refId":"A","rawSql":"SELECT ldi_pe AS \"PE\", ldi_je AS \"JE\", EXTRACT(EPOCH FROM (NOW() - \"time\"))::int AS \"Age\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}' ORDER BY 1","format":"table"},{"refId":"B","rawSql":"SELECT 10 AS \"PE Upper\", 10 AS \"JE Upper\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}' LIMIT 1","format":"table","hide":false}],"fieldConfig":{"defaults":{"color":{"mode":"palette-classic"},"custom":{"hideFrom":{"legend":false,"tooltip":false,"viz":false},"pointSize":8,"fillOpacity":60,"strokeWidth":1,"pointStyle":{"mode":"circle"}},"mappings":[],"unit":"short","thresholds":{"mode":"absolute","steps":[{"color":"red","value":null},{"color":"green","value":-10},{"color":"green","value":10},{"color":"red","value":20}]}},"overrides":[{"matcher":{"id":"byName","options":"PE"},"properties":[{"id":"custom.axisPlacement","value":"left"},{"id":"custom.axisLabel","value":"Process Efficiency (%)"},{"id":"min","value":0},{"id":"max","value":100}]},{"matcher":{"id":"byName","options":"JE"},"properties":[{"id":"custom.axisPlacement","value":"bottom"},{"id":"custom.axisLabel","value":"Junction Efficiency (%)"},{"id":"min","value":0},{"id":"max","value":100}]}]},"options":{"legend":{"displayMode":"list","placement":"bottom"},"showLegend":{"mode":"list"}}},{"collapsed":false,"gridPos":{"h":1,"w":24,"x":0,"y":169},"id":400,"title":"Recent Telemetry Data","type":"row"},{"id":30,"title":"Latest Readings","type":"table","datasource":{"uid":"timescaledb"},"gridPos":{"h":8,"w":24,"x":0,"y":170},"fieldConfig":{"defaults":{},"overrides":[{"matcher":{"id":"byName","options":"time"},"properties":[{"id":"unit","value":"dateTimeFromNow"}]}]},"options":{"showHeader":true,"sortBy":[{"displayName":"time","desc":true}]},"targets":[{"refId":"A","format":"table","rawSql":"SELECT \"time\", cpu_load_percent AS cpu_pct, (ram_used_mb / NULLIF(ram_total_mb, 0) * 100) AS ram_pct, (disk_used_gb / NULLIF(disk_total_gb, 0) * 100) AS disk_pct, temp_c AS temp, net_rx_errors AS rx_err, net_rx_drops AS rx_drop, net_if_status AS if_status FROM public.machine_telemetry WHERE machine_id = '${machine_id}' ORDER BY \"time\" DESC LIMIT 50"}]},{"id":517,"type":"row","title":"WiFi Signal Quality","collapsed":false,"gridPos":{"h":1,"w":24,"x":0,"y":178},"panels":[]},{"id":518,"type":"timeseries","title":"WiFi Signal Strength (RSSI)","description":"Received Signal Strength Indicator. -50 dBm = Excellent, -70 dBm = Good, -80 dBm = Poor","gridPos":{"h":8,"w":12,"x":0,"y":179},"datasource":{"type":"grafana-postgresql-datasource","uid":"timescaledb"},"fieldConfig":{"defaults":{"color":{"mode":"palette-classic"},"custom":{"axisBorderShow":false,"axisCenteredZero":false,"axisLabel":"dBm","drawStyle":"line","fillOpacity":20,"gradientMode":"scheme","lineWidth":2,"pointSize":5,"showPoints":"auto","spanNulls":false,"stacking":{"group":"A","mode":"none"},"thresholdsStyle":{"mode":"dashed"}},"thresholds":{"mode":"absolute","steps":[{"color":"red","value":null},{"color":"orange","value":-80},{"color":"yellow","value":-70},{"color":"green","value":-50}]},"unit":"dBm","min":-90,"max":-30},"overrides":[]},"options":{"legend":{"calcs":["mean","min","max"],"displayMode":"table","placement":"bottom"},"tooltip":{"mode":"multi","sort":"desc"}},"targets":[{"rawSql":"SELECT\n  $__timeFilter(\"time\") AS time,\n  wifi_rssi AS \"RSSI (dBm)\",\n  machine_id\nFROM public.machine_telemetry\nWHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}'\nORDER BY time ASC","format":"time_series","refId":"A"}]},{"id":519,"type":"timeseries","title":"WiFi Signal Quality (SNR)","description":"Signal-to-Noise Ratio. >25 dB = Excellent, 15-25 dB = Fair, <15 dB = Poor","gridPos":{"h":8,"w":12,"x":12,"y":187},"datasource":{"type":"grafana-postgresql-datasource","uid":"timescaledb"},"fieldConfig":{"defaults":{"color":{"mode":"palette-classic"},"custom":{"axisBorderShow":false,"axisCenteredZero":false,"axisLabel":"dB","drawStyle":"line","fillOpacity":20,"gradientMode":"scheme","lineWidth":2,"pointSize":5,"showPoints":"auto","spanNulls":false,"stacking":{"group":"A","mode":"none"},"thresholdsStyle":{"mode":"dashed"}},"thresholds":{"mode":"absolute","steps":[{"color":"red","value":null},{"color":"orange","value":15},{"color":"yellow","value":20},{"color":"green","value":25}]},"unit":"dB","min":0,"max":50},"overrides":[]},"options":{"legend":{"calcs":["mean","min","max"],"displayMode":"table","placement":"bottom"},"tooltip":{"mode":"multi","sort":"desc"}},"targets":[{"rawSql":"SELECT\n  $__timeFilter(\"time\") AS time,\n  wifi_snr AS \"SNR (dB)\",\n  machine_id\nFROM public.machine_telemetry\nWHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}'\nORDER BY time ASC","format":"time_series","refId":"A"}]}],"schemaVersion":39,"tags":["ims","engineering","drilldown"],"templating":{"list":[{"name":"machine_id","label":"Machine","type":"query","query":"SELECT DISTINCT machine_id FROM public.machine_telemetry ORDER BY machine_id","datasource":{"uid":"timescaledb"},"refresh":2,"multi":false,"includeAll":false,"sort":1,"current":{"text":"ERP-MASTER-UBUNTU","value":"ERP-MASTER-UBUNTU"}}]},"time":{"from":"now-1h","to":"now"},"timepicker":{"refresh_intervals":["5s","10s","30s","1m"]},"timezone":"Asia/Bangkok","title":"IMS Engineering Drill-Down","uid":"ims-engineering","version":4,"refresh":"10s"}
+{
+    "annotations": {
+        "list": [
+            {
+                "builtIn": 1,
+                "datasource": {
+                    "type": "grafana",
+                    "uid": "-- Grafana --"
+                },
+                "enable": true,
+                "hide": true,
+                "iconColor": "rgba(0, 211, 255, 1)",
+                "name": "Annotations & Alerts",
+                "type": "dashboard"
+            }
+        ]
+    },
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 1,
+    "id": null,
+    "links": [
+        {
+            "title": "NOC Overview",
+            "url": "/d/ims-noc-overview",
+            "type": "link",
+            "icon": "external link",
+            "targetBlank": true
+        }
+    ],
+    "panels": [
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 0
+            },
+            "id": 100,
+            "title": "Machine Summary",
+            "type": "row"
+        },
+        {
+            "id": 1,
+            "title": "CPU Load",
+            "type": "gauge",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 6,
+                "w": 4,
+                "x": 0,
+                "y": 1
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "percent",
+                    "min": 0,
+                    "max": 100,
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "yellow",
+                                "value": null
+                            },
+                            {
+                                "color": "orange",
+                                "value": 70
+                            },
+                            {
+                                "color": "red",
+                                "value": 90
+                            }
+                        ]
+                    },
+                    "color": {
+                        "mode": "thresholds"
+                    }
+                }
+            },
+            "options": {
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "values": false
+                },
+                "unit": "percent"
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "table",
+                    "rawSql": "SELECT cpu_load_percent AS value FROM public.machine_telemetry WHERE \"time\" > NOW() - INTERVAL '2 minutes' AND machine_id = '${machine_id}' ORDER BY \"time\" DESC LIMIT 1"
+                }
+            ]
+        },
+        {
+            "id": 2,
+            "title": "RAM Usage",
+            "type": "gauge",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 6,
+                "w": 4,
+                "x": 4,
+                "y": 7
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "percent",
+                    "min": 0,
+                    "max": 100,
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "purple",
+                                "value": null
+                            },
+                            {
+                                "color": "dark-orange",
+                                "value": 75
+                            },
+                            {
+                                "color": "red",
+                                "value": 90
+                            }
+                        ]
+                    },
+                    "color": {
+                        "mode": "thresholds"
+                    }
+                }
+            },
+            "options": {
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "values": false
+                },
+                "unit": "mbytes"
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "table",
+                    "rawSql": "SELECT (ram_used_mb / NULLIF(ram_total_mb, 0) * 100) AS value FROM public.machine_telemetry WHERE \"time\" > NOW() - INTERVAL '2 minutes' AND machine_id = '${machine_id}' ORDER BY \"time\" DESC LIMIT 1"
+                }
+            ]
+        },
+        {
+            "id": 3,
+            "title": "Storage Saturation",
+            "type": "gauge",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 6,
+                "w": 4,
+                "x": 8,
+                "y": 13
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "percent",
+                    "min": 0,
+                    "max": 100,
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "cyan",
+                                "value": null
+                            },
+                            {
+                                "color": "blue",
+                                "value": 70
+                            },
+                            {
+                                "color": "red",
+                                "value": 90
+                            }
+                        ]
+                    },
+                    "color": {
+                        "mode": "thresholds"
+                    }
+                }
+            },
+            "options": {
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "values": false
+                },
+                "unit": "gbytes"
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "table",
+                    "rawSql": "SELECT (disk_used_gb / NULLIF(disk_total_gb, 0) * 100) AS value FROM public.machine_telemetry WHERE \"time\" > NOW() - INTERVAL '2 minutes' AND machine_id = '${machine_id}' ORDER BY \"time\" DESC LIMIT 1"
+                }
+            ]
+        },
+        {
+            "id": 4,
+            "title": "Temperature",
+            "type": "gauge",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 6,
+                "w": 4,
+                "x": 12,
+                "y": 19
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "celsius",
+                    "min": 0,
+                    "max": 100,
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 65
+                            },
+                            {
+                                "color": "orange",
+                                "value": 75
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    },
+                    "color": {
+                        "mode": "thresholds"
+                    }
+                }
+            },
+            "options": {
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "values": false
+                },
+                "unit": "celsius"
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "table",
+                    "rawSql": "SELECT temp_c AS value FROM public.machine_telemetry WHERE \"time\" > NOW() - INTERVAL '2 minutes' AND machine_id = '${machine_id}' AND temp_c > 0 ORDER BY \"time\" DESC LIMIT 1"
+                }
+            ]
+        },
+        {
+            "id": 5,
+            "title": "Network RX",
+            "type": "stat",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 6,
+                "w": 4,
+                "x": 16,
+                "y": 25
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "bps",
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 500
+                            },
+                            {
+                                "color": "red",
+                                "value": 900
+                            }
+                        ]
+                    },
+                    "color": {
+                        "mode": "thresholds"
+                    }
+                }
+            },
+            "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "values": false
+                },
+                "unit": "mbps"
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "table",
+                    "rawSql": "SELECT avg_rx_mbps AS value FROM public.telemetry_minute_summary WHERE machine_id = '${machine_id}' AND $__timeFilter(\"bucket\") ORDER BY \"bucket\" DESC LIMIT 1"
+                }
+            ]
+        },
+        {
+            "id": 6,
+            "title": "Uptime",
+            "type": "stat",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 6,
+                "w": 4,
+                "x": 20,
+                "y": 31
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "dtdurations",
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "red",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 86400
+                            },
+                            {
+                                "color": "green",
+                                "value": 604800
+                            }
+                        ]
+                    },
+                    "color": {
+                        "mode": "thresholds"
+                    }
+                }
+            },
+            "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "values": false
+                },
+                "unit": "dtdurations"
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "table",
+                    "rawSql": "SELECT seconds_since_last AS value FROM public.v_uptime_summary WHERE machine_id = '${machine_id}'"
+                }
+            ]
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 37
+            },
+            "id": 200,
+            "title": "Time Series Analysis",
+            "type": "row"
+        },
+        {
+            "id": 10,
+            "title": "CPU Load Over Time",
+            "type": "timeseries",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 38
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "percent",
+                    "min": 0,
+                    "max": 100,
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "yellow",
+                                "value": null
+                            },
+                            {
+                                "color": "orange",
+                                "value": 70
+                            },
+                            {
+                                "color": "red",
+                                "value": 90
+                            }
+                        ]
+                    },
+                    "custom": {
+                        "fillOpacity": 20,
+                        "lineWidth": 2,
+                        "spanNulls": true,
+                        "gradientMode": "scheme",
+                        "thresholdsStyle": {
+                            "mode": "line+area"
+                        }
+                    }
+                }
+            },
+            "options": {
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                },
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "calcs": [
+                        "mean",
+                        "max",
+                        "lastNotNull"
+                    ]
+                },
+                "unit": "percent",
+                "custom": {
+                    "drawStyle": "line",
+                    "fillOpacity": 15,
+                    "gradientMode": "scheme"
+                }
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "time_series",
+                    "rawSql": "SELECT time_bucket('1 minute', \"time\") AS \"time\", cpu_load_percent AS \"CPU Load %\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}' ORDER BY 1"
+                }
+            ]
+        },
+        {
+            "id": 501,
+            "title": "Memory Saturation",
+            "type": "timeseries",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 46
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "mbytes",
+                    "min": 0,
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "custom": {
+                        "fillOpacity": 20,
+                        "lineWidth": 2,
+                        "spanNulls": true,
+                        "gradientMode": "scheme"
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "purple",
+                                "value": null
+                            },
+                            {
+                                "color": "dark-orange",
+                                "value": 75
+                            },
+                            {
+                                "color": "red",
+                                "value": 90
+                            }
+                        ]
+                    }
+                }
+            },
+            "options": {
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                },
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ]
+                },
+                "unit": "mbytes",
+                "custom": {
+                    "drawStyle": "line",
+                    "fillOpacity": 15,
+                    "gradientMode": "scheme"
+                }
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "time_series",
+                    "rawSql": "SELECT time_bucket('1 minute', \"time\") AS \"time\", ram_used_mb AS \"Used (MB)\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}' ORDER BY 1"
+                },
+                {
+                    "refId": "B",
+                    "format": "time_series",
+                    "rawSql": "SELECT time_bucket('1 minute', \"time\") AS \"time\", ram_total_mb AS \"Total (MB)\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}' ORDER BY 1"
+                }
+            ]
+        },
+        {
+            "id": 502,
+            "title": "Ethernet/WiFi Bandwidth (Per-Interface)",
+            "type": "timeseries",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 54
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "bps",
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "custom": {
+                        "fillOpacity": 20,
+                        "lineWidth": 2,
+                        "spanNulls": true,
+                        "gradientMode": "scheme",
+                        "axisCenteredZero": true,
+                        "axisLabel": "Bandwidth"
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "cyan",
+                                "value": null
+                            },
+                            {
+                                "color": "blue",
+                                "value": 70
+                            },
+                            {
+                                "color": "red",
+                                "value": 90
+                            }
+                        ]
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "eth0 RX (bps)"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#1F60C4",
+                                    "mode": "fixed"
+                                }
+                            },
+                            {
+                                "id": "custom.fillOpacity",
+                                "value": 40
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "wlan0 RX (bps)"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#8E24AA",
+                                    "mode": "fixed"
+                                }
+                            },
+                            {
+                                "id": "custom.fillOpacity",
+                                "value": 40
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "eth0 TX (bps)"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#5794F2",
+                                    "mode": "fixed"
+                                }
+                            },
+                            {
+                                "id": "custom.fillOpacity",
+                                "value": 40
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "wlan0 TX (bps)"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#E02F44",
+                                    "mode": "fixed"
+                                }
+                            },
+                            {
+                                "id": "custom.fillOpacity",
+                                "value": 40
+                            }
+                        ]
+                    }
+                ]
+            },
+            "options": {
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                },
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ]
+                },
+                "unit": "mbps",
+                "custom": {
+                    "drawStyle": "line",
+                    "fillOpacity": 15,
+                    "gradientMode": "scheme"
+                }
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "time_series",
+                    "rawSql": "SELECT mt.\"time\", (mt.interface_metrics->'eth0'->>'rx_mbps')::numeric * 1000000 AS \"eth0 RX (bps)\", (mt.interface_metrics->'wlan0'->>'rx_mbps')::numeric * 1000000 AS \"wlan0 RX (bps)\" FROM public.machine_telemetry mt WHERE $__timeFilter(mt.\"time\") AND mt.machine_id = '${machine_id}' ORDER BY 1"
+                },
+                {
+                    "refId": "B",
+                    "format": "time_series",
+                    "rawSql": "SELECT mt.\"time\", (mt.interface_metrics->'eth0'->>'tx_mbps')::numeric * -1000000 AS \"eth0 TX (bps)\", (mt.interface_metrics->'wlan0'->>'tx_mbps')::numeric * -1000000 AS \"wlan0 TX (bps)\" FROM public.machine_telemetry mt WHERE $__timeFilter(mt.\"time\") AND mt.machine_id = '${machine_id}' ORDER BY 1"
+                }
+            ]
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 62
+            },
+            "id": 300,
+            "title": "Network & Environment",
+            "type": "row"
+        },
+        {
+            "id": 41,
+            "title": "Network Packet Health",
+            "type": "timeseries",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 63
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "bps",
+                    "min": 0,
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "custom": {
+                        "fillOpacity": 30,
+                        "lineWidth": 2,
+                        "spanNulls": true
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "orange",
+                                "value": 50
+                            },
+                            {
+                                "color": "red",
+                                "value": 100
+                            }
+                        ]
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Download (Mbps)"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#1F60C4",
+                                    "mode": "fixed"
+                                }
+                            },
+                            {
+                                "id": "custom.fillOpacity",
+                                "value": 30
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Upload (Mbps)"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#5794F2",
+                                    "mode": "fixed"
+                                }
+                            },
+                            {
+                                "id": "custom.fillOpacity",
+                                "value": 30
+                            }
+                        ]
+                    }
+                ]
+            },
+            "options": {
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                },
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ]
+                },
+                "custom": {
+                    "drawStyle": "bars",
+                    "fillOpacity": 80
+                }
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "time_series",
+                    "rawSql": "SELECT \"bucket\" AS \"time\", machine_id AS metric, avg_rx_mbps AS \"Download (Mbps)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(\"bucket\") AND machine_id = '${machine_id}' ORDER BY 1"
+                },
+                {
+                    "refId": "B",
+                    "format": "time_series",
+                    "rawSql": "SELECT \"bucket\" AS \"time\", machine_id AS metric, (avg_tx_mbps * -1) AS \"Upload (Mbps)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(\"bucket\") AND machine_id = '${machine_id}' ORDER BY 1"
+                }
+            ]
+        },
+        {
+            "id": 26,
+            "title": "Interface Error Rates (eth0 vs wlan0)",
+            "type": "timeseries",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 71
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "bps",
+                    "min": 0,
+                    "custom": {
+                        "drawStyle": "bars",
+                        "fillOpacity": 80,
+                        "lineWidth": 1,
+                        "spanNulls": false,
+                        "gradientMode": "none"
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "orange",
+                                "value": 50
+                            },
+                            {
+                                "color": "red",
+                                "value": 100
+                            }
+                        ]
+                    },
+                    "color": {
+                        "mode": "thresholds"
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Errors"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#C4162A",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Drops"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#FF9830",
+                                    "mode": "fixed"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "options": {
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                },
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ]
+                },
+                "custom": {
+                    "drawStyle": "bars",
+                    "fillOpacity": 80
+                }
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "legendFormat": "{{Interface}} Errors",
+                    "format": "time_series",
+                    "rawSql": "SELECT \"time\", key AS \"Interface\", (value->>'errors')::NUMERIC AS \"Errors\" FROM public.machine_telemetry, jsonb_each(interface_metrics) WHERE machine_id = '${machine_id}' AND $__timeFilter(\"time\") AND value ? 'errors' ORDER BY 1"
+                },
+                {
+                    "refId": "B",
+                    "legendFormat": "{{Interface}} Drops",
+                    "format": "time_series",
+                    "rawSql": "SELECT \"time\", key AS \"Interface\", (value->>'drops')::NUMERIC AS \"Drops\" FROM public.machine_telemetry, jsonb_each(interface_metrics) WHERE machine_id = '${machine_id}' AND $__timeFilter(\"time\") AND value ? 'drops' ORDER BY 1"
+                }
+            ]
+        },
+        {
+            "id": 21,
+            "title": "Temperature Sensors",
+            "type": "timeseries",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 79
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "celsius",
+                    "min": 0,
+                    "max": 100,
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 65
+                            },
+                            {
+                                "color": "orange",
+                                "value": 75
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    },
+                    "custom": {
+                        "fillOpacity": 10,
+                        "lineWidth": 2,
+                        "spanNulls": true,
+                        "thresholdsStyle": {
+                            "mode": "line"
+                        }
+                    },
+                    "color": {
+                        "mode": "thresholds"
+                    }
+                }
+            },
+            "options": {
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                },
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ]
+                },
+                "unit": "celsius",
+                "custom": {
+                    "drawStyle": "line",
+                    "fillOpacity": 10,
+                    "gradientMode": "scheme"
+                }
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "time_series",
+                    "rawSql": "SELECT \"bucket\" AS \"time\", max_temp AS \"Temperature (°C)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(\"bucket\") AND machine_id = '${machine_id}' AND max_temp > 0 ORDER BY 1"
+                }
+            ]
+        },
+        {
+            "id": 22,
+            "title": "Disk Usage Trend",
+            "type": "timeseries",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 87
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "GB",
+                    "min": 0,
+                    "custom": {
+                        "fillOpacity": 20,
+                        "lineWidth": 2,
+                        "spanNulls": true
+                    }
+                }
+            },
+            "options": {
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                },
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ]
+                },
+                "unit": "gbytes",
+                "custom": {
+                    "drawStyle": "line",
+                    "fillOpacity": 15
+                }
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "time_series",
+                    "rawSql": "SELECT \"bucket\" AS \"time\", '${interface} Download' AS metric, avg_rx_mbps AS \"${interface} RX (Mbps)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(\"bucket\") AND machine_id = '${machine_id}' ORDER BY 1"
+                },
+                {
+                    "refId": "B",
+                    "format": "time_series",
+                    "rawSql": "SELECT \"bucket\" AS \"time\", '${interface} Upload' AS metric, (avg_tx_mbps * -1) AS \"${interface} TX (Mbps)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(\"bucket\") AND machine_id = '${machine_id}' ORDER BY 1"
+                }
+            ]
+        },
+        {
+            "id": 23,
+            "title": "RAM Usage Trend",
+            "type": "timeseries",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 95
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "MB",
+                    "min": 0,
+                    "custom": {
+                        "fillOpacity": 20,
+                        "lineWidth": 2,
+                        "spanNulls": true
+                    }
+                }
+            },
+            "options": {
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                },
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ]
+                },
+                "unit": "mbytes",
+                "custom": {
+                    "drawStyle": "line",
+                    "fillOpacity": 15
+                }
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "time_series",
+                    "rawSql": "SELECT \"bucket\" AS \"time\", machine_id AS metric, total_rx_errors AS \"Errors\", total_rx_drops AS \"Drops\" FROM public.telemetry_minute_summary WHERE $__timeFilter(\"bucket\") AND machine_id = '${machine_id}' ORDER BY 1"
+                }
+            ]
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 103
+            },
+            "id": 500,
+            "title": "AIOps — ANOMALY DETECTION (3-Sigma Z-Score)",
+            "type": "row"
+        },
+        {
+            "id": 40,
+            "title": "CPU Anomaly Score (Z-Score)",
+            "type": "timeseries",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 104
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "short",
+                    "min": -4,
+                    "max": 4,
+                    "custom": {
+                        "fillOpacity": 15,
+                        "lineWidth": 2,
+                        "spanNulls": true,
+                        "thresholdsStyle": {
+                            "mode": "line"
+                        }
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "red",
+                                "value": -4
+                            },
+                            {
+                                "color": "green",
+                                "value": -3
+                            },
+                            {
+                                "color": "green",
+                                "value": 3
+                            },
+                            {
+                                "color": "red",
+                                "value": 4
+                            }
+                        ]
+                    },
+                    "color": {
+                        "mode": "thresholds"
+                    }
+                }
+            },
+            "options": {
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                },
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ]
+                },
+                "unit": "short",
+                "custom": {
+                    "drawStyle": "line",
+                    "fillOpacity": 10
+                }
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "time_series",
+                    "rawSql": "WITH stats AS (SELECT \"bucket\", machine_id, avg_cpu_load, AVG(avg_cpu_load) OVER w AS moving_avg, COALESCE(STDDEV(avg_cpu_load) OVER w, 0) AS moving_stddev FROM public.telemetry_minute_summary WHERE machine_id = '${machine_id}' AND $__timeFilter(\"bucket\") WINDOW w AS (PARTITION BY machine_id ORDER BY \"bucket\" ROWS BETWEEN 60 PRECEDING AND 1 PRECEDING)) SELECT \"bucket\" AS \"time\", CASE WHEN moving_stddev > 0 THEN (avg_cpu_load - moving_avg) / moving_stddev ELSE 0 END AS \"Z-Score\" FROM stats WHERE moving_avg > 0 ORDER BY 1"
+                }
+            ]
+        },
+        {
+            "id": 12,
+            "title": "Network Interface Degradation",
+            "type": "timeseries",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 112
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "short",
+                    "min": 0,
+                    "color": {
+                        "mode": "fixed",
+                        "fixedColor": "red"
+                    },
+                    "custom": {
+                        "fillOpacity": 20,
+                        "lineWidth": 2,
+                        "spanNulls": true,
+                        "gradientMode": "scheme"
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "orange",
+                                "value": 1
+                            },
+                            {
+                                "color": "red",
+                                "value": 10
+                            }
+                        ]
+                    }
+                }
+            },
+            "options": {
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                },
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ]
+                },
+                "custom": {
+                    "drawStyle": "bars",
+                    "fillOpacity": 80
+                }
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "legendFormat": "Errors/min",
+                    "format": "time_series",
+                    "rawSql": "SELECT \"bucket\" AS \"time\", total_rx_errors AS \"RX Errors\" FROM public.telemetry_minute_summary WHERE machine_id = '${machine_id}' AND $__timeFilter(\"bucket\") ORDER BY 1"
+                },
+                {
+                    "refId": "B",
+                    "legendFormat": "Drops/min",
+                    "format": "time_series",
+                    "rawSql": "SELECT \"bucket\" AS \"time\", total_rx_drops AS \"RX Drops\" FROM public.telemetry_minute_summary WHERE machine_id = '${machine_id}' AND $__timeFilter(\"bucket\") ORDER BY 1"
+                }
+            ]
+        },
+        {
+            "id": 42,
+            "title": "Interface Status",
+            "type": "stat",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 6,
+                "x": 0,
+                "y": 120
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "red",
+                                "value": null
+                            },
+                            {
+                                "color": "green",
+                                "value": 1
+                            }
+                        ]
+                    },
+                    "mappings": [
+                        {
+                            "type": "value",
+                            "options": {
+                                "1": {
+                                    "text": "LINK UP",
+                                    "color": "green"
+                                }
+                            }
+                        },
+                        {
+                            "type": "value",
+                            "options": {
+                                "2": {
+                                    "text": "LINK DOWN",
+                                    "color": "red"
+                                }
+                            }
+                        }
+                    ],
+                    "color": {
+                        "mode": "thresholds"
+                    }
+                }
+            },
+            "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "textMode": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "values": false
+                }
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "table",
+                    "rawSql": "SELECT net_if_status AS \"value\" FROM public.machine_telemetry WHERE machine_id = '${machine_id}' AND $__timeFilter(\"time\") ORDER BY \"time\" DESC LIMIT 1"
+                }
+            ]
+        },
+        {
+            "id": 43,
+            "title": "Total RX Errors (Session)",
+            "type": "stat",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 6,
+                "x": 6,
+                "y": 124
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "short",
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "orange",
+                                "value": 50
+                            },
+                            {
+                                "color": "red",
+                                "value": 100
+                            }
+                        ]
+                    },
+                    "color": {
+                        "mode": "thresholds"
+                    }
+                }
+            },
+            "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "center",
+                "textMode": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "values": false
+                }
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "table",
+                    "rawSql": "SELECT SUM(total_rx_errors) AS value FROM public.telemetry_minute_summary WHERE machine_id = '${machine_id}' AND $__timeFilter(\"bucket\")"
+                }
+            ]
+        },
+        {
+            "id": 44,
+            "title": "Total RX Drops (Session)",
+            "type": "stat",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 6,
+                "x": 12,
+                "y": 128
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "short",
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "orange",
+                                "value": 50
+                            },
+                            {
+                                "color": "red",
+                                "value": 100
+                            }
+                        ]
+                    },
+                    "color": {
+                        "mode": "thresholds"
+                    }
+                }
+            },
+            "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "center",
+                "textMode": "auto",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "values": false
+                }
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "table",
+                    "rawSql": "SELECT SUM(total_rx_drops) AS value FROM public.telemetry_minute_summary WHERE machine_id = '${machine_id}' AND $__timeFilter(\"bucket\")"
+                }
+            ]
+        },
+        {
+            "id": 45,
+            "title": "Packet Loss Rate",
+            "type": "gauge",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 4,
+                "w": 6,
+                "x": 18,
+                "y": 132
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "percent",
+                    "min": 0,
+                    "max": 100,
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 0.01
+                            },
+                            {
+                                "color": "red",
+                                "value": 0.05
+                            }
+                        ]
+                    },
+                    "color": {
+                        "mode": "thresholds"
+                    }
+                }
+            },
+            "options": {
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "values": false
+                },
+                "unit": "percentunit"
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "table",
+                    "rawSql": "WITH agg AS (SELECT SUM(total_rx_errors + total_rx_drops) AS total_issues, SUM(total_rx_errors + total_rx_drops + (avg_rx_mbps * 60 * 125000)) AS total_packets FROM public.telemetry_minute_summary WHERE machine_id = '${machine_id}' AND $__timeFilter(\"bucket\")) SELECT CASE WHEN total_packets > 0 THEN ROUND(((total_issues::NUMERIC / total_packets::NUMERIC) * 100)::NUMERIC, 4) ELSE 0 END AS value FROM agg"
+                }
+            ]
+        },
+        {
+            "id": 507,
+            "type": "row",
+            "title": "LDI Manufacturing Telemetry",
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 136
+            }
+        },
+        {
+            "datasource": {
+                "type": "postgres",
+                "uid": "timescaledb"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "barWidthFactor": 0.6,
+                        "drawStyle": "line",
+                        "fillOpacity": 15,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "insertNulls": false,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": true,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "unit": "short",
+                    "min": 0,
+                    "max": 5000
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Throughput (units/sec)"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#73BF69",
+                                    "mode": "fixed"
+                                }
+                            },
+                            {
+                                "id": "custom.axisPlacement",
+                                "value": "left"
+                            },
+                            {
+                                "id": "custom.axisLabel",
+                                "value": "Throughput (units/sec)"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "short"
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "PE (%)"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#FADE2A",
+                                    "mode": "fixed"
+                                }
+                            },
+                            {
+                                "id": "custom.axisPlacement",
+                                "value": "right"
+                            },
+                            {
+                                "id": "custom.axisLabel",
+                                "value": "PE (%)"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "percent"
+                            },
+                            {
+                                "id": "max",
+                                "value": 100
+                            }
+                        ]
+                    }
+                ]
+            },
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "type": "timeseries",
+            "id": 503,
+            "title": "LDI Throughput & Process Efficiency",
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 137
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "rawSql": "SELECT $__timeGroupAlias(\"time\", $__interval), ldi_throughput AS \"Throughput (units/sec)\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}' ORDER BY 1",
+                    "format": "time_series"
+                },
+                {
+                    "refId": "B",
+                    "rawSql": "SELECT $__timeGroupAlias(\"time\", $__interval), ldi_pe AS \"PE (%)\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}' ORDER BY 1",
+                    "format": "time_series"
+                }
+            ]
+        },
+        {
+            "datasource": {
+                "type": "postgres",
+                "uid": "timescaledb"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "barWidthFactor": 0.6,
+                        "drawStyle": "line",
+                        "fillOpacity": 15,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "insertNulls": false,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": true,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "unit": "percent",
+                    "min": 0,
+                    "max": 100
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "JE (%)"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#8F3BB3",
+                                    "mode": "fixed"
+                                }
+                            },
+                            {
+                                "id": "custom.axisPlacement",
+                                "value": "left"
+                            },
+                            {
+                                "id": "custom.axisLabel",
+                                "value": "JE (%)"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "percent"
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Humidity (%)"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#5794F2",
+                                    "mode": "fixed"
+                                }
+                            },
+                            {
+                                "id": "custom.axisPlacement",
+                                "value": "right"
+                            },
+                            {
+                                "id": "custom.axisLabel",
+                                "value": "Humidity (%)"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "percent"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "type": "timeseries",
+            "id": 504,
+            "title": "LDI Junction Efficiency & Humidity",
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 145
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "rawSql": "SELECT $__timeGroupAlias(\"time\", $__interval), ldi_je AS \"JE (%)\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}' ORDER BY 1",
+                    "format": "time_series"
+                },
+                {
+                    "refId": "B",
+                    "rawSql": "SELECT $__timeGroupAlias(\"time\", $__interval), ldi_humidity AS \"Humidity (%)\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}' ORDER BY 1",
+                    "format": "time_series"
+                }
+            ]
+        },
+        {
+            "datasource": {
+                "type": "postgres",
+                "uid": "timescaledb"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "barWidthFactor": 0.6,
+                        "drawStyle": "line",
+                        "fillOpacity": 15,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "insertNulls": false,
+                        "lineInterpolation": "smooth",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": true,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "unit": "watt",
+                    "min": 0
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Power (W)"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#FF9830",
+                                    "mode": "fixed"
+                                }
+                            },
+                            {
+                                "id": "custom.axisPlacement",
+                                "value": "left"
+                            },
+                            {
+                                "id": "custom.axisLabel",
+                                "value": "Power (W)"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "watt"
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Vibration (mm/s)"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "#C4162A",
+                                    "mode": "fixed"
+                                }
+                            },
+                            {
+                                "id": "custom.axisPlacement",
+                                "value": "right"
+                            },
+                            {
+                                "id": "custom.axisLabel",
+                                "value": "Vibration (mm/s)"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "short"
+                            },
+                            {
+                                "id": "thresholds",
+                                "value": {
+                                    "mode": "absolute",
+                                    "steps": [
+                                        {
+                                            "color": "green",
+                                            "value": null
+                                        },
+                                        {
+                                            "color": "yellow",
+                                            "value": 8
+                                        },
+                                        {
+                                            "color": "red",
+                                            "value": 12
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "id": "custom.thresholdsStyle",
+                                "value": {
+                                    "mode": "line"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "type": "timeseries",
+            "id": 505,
+            "title": "LDI Power Consumption & Vibration",
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 153
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "rawSql": "SELECT $__timeGroupAlias(\"time\", $__interval), ldi_power AS \"Power (W)\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}' ORDER BY 1",
+                    "format": "time_series"
+                },
+                {
+                    "refId": "B",
+                    "rawSql": "SELECT $__timeGroupAlias(\"time\", $__interval), ldi_vibration AS \"Vibration (mm/s)\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}' ORDER BY 1",
+                    "format": "time_series"
+                }
+            ]
+        },
+        {
+            "datasource": {
+                "type": "postgres",
+                "uid": "timescaledb"
+            },
+            "id": 506,
+            "title": "LDI Quality Scatter (PE vs JE)",
+            "type": "xychart",
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 161
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "rawSql": "SELECT ldi_pe AS \"PE\", ldi_je AS \"JE\", EXTRACT(EPOCH FROM (NOW() - \"time\"))::int AS \"Age\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}' ORDER BY 1",
+                    "format": "table"
+                },
+                {
+                    "refId": "B",
+                    "rawSql": "SELECT 10 AS \"PE Upper\", 10 AS \"JE Upper\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}' LIMIT 1",
+                    "format": "table",
+                    "hide": false
+                }
+            ],
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "pointSize": 8,
+                        "fillOpacity": 60,
+                        "strokeWidth": 1,
+                        "pointStyle": {
+                            "mode": "circle"
+                        }
+                    },
+                    "mappings": [],
+                    "unit": "short",
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "red",
+                                "value": null
+                            },
+                            {
+                                "color": "green",
+                                "value": -10
+                            },
+                            {
+                                "color": "green",
+                                "value": 10
+                            },
+                            {
+                                "color": "red",
+                                "value": 20
+                            }
+                        ]
+                    }
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "PE"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.axisPlacement",
+                                "value": "left"
+                            },
+                            {
+                                "id": "custom.axisLabel",
+                                "value": "Process Efficiency (%)"
+                            },
+                            {
+                                "id": "min",
+                                "value": 0
+                            },
+                            {
+                                "id": "max",
+                                "value": 100
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "JE"
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.axisPlacement",
+                                "value": "bottom"
+                            },
+                            {
+                                "id": "custom.axisLabel",
+                                "value": "Junction Efficiency (%)"
+                            },
+                            {
+                                "id": "min",
+                                "value": 0
+                            },
+                            {
+                                "id": "max",
+                                "value": 100
+                            }
+                        ]
+                    }
+                ]
+            },
+            "options": {
+                "legend": {
+                    "displayMode": "list",
+                    "placement": "bottom"
+                },
+                "showLegend": {
+                    "mode": "list"
+                },
+                "tooltip": {
+                    "mode": "single"
+                }
+            },
+            "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                    {
+                        "color": "transparent",
+                        "value": null
+                    },
+                    {
+                        "color": "red",
+                        "value": 10
+                    }
+                ]
+            }
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 169
+            },
+            "id": 400,
+            "title": "Recent Telemetry Data",
+            "type": "row"
+        },
+        {
+            "id": 30,
+            "title": "Latest Readings",
+            "type": "table",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 24,
+                "x": 0,
+                "y": 170
+            },
+            "fieldConfig": {
+                "defaults": {},
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "time"
+                        },
+                        "properties": [
+                            {
+                                "id": "unit",
+                                "value": "dateTimeFromNow"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "options": {
+                "showHeader": true,
+                "sortBy": [
+                    {
+                        "displayName": "time",
+                        "desc": true
+                    }
+                ]
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "table",
+                    "rawSql": "SELECT \"time\", cpu_load_percent AS cpu_pct, (ram_used_mb / NULLIF(ram_total_mb, 0) * 100) AS ram_pct, (disk_used_gb / NULLIF(disk_total_gb, 0) * 100) AS disk_pct, temp_c AS temp, net_rx_errors AS rx_err, net_rx_drops AS rx_drop, net_if_status AS if_status FROM public.machine_telemetry WHERE machine_id = '${machine_id}' ORDER BY \"time\" DESC LIMIT 50"
+                }
+            ]
+        },
+        {
+            "id": 517,
+            "type": "row",
+            "title": "WiFi Signal Quality",
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 178
+            },
+            "panels": []
+        },
+        {
+            "id": 518,
+            "type": "timeseries",
+            "title": "WiFi Signal Strength (RSSI)",
+            "description": "Received Signal Strength Indicator. -50 dBm = Excellent, -70 dBm = Good, -80 dBm = Poor",
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 179
+            },
+            "datasource": {
+                "type": "grafana-postgresql-datasource",
+                "uid": "timescaledb"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisLabel": "dBm",
+                        "drawStyle": "line",
+                        "fillOpacity": 20,
+                        "gradientMode": "scheme",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "dashed"
+                        }
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "red",
+                                "value": null
+                            },
+                            {
+                                "color": "orange",
+                                "value": -80
+                            },
+                            {
+                                "color": "yellow",
+                                "value": -70
+                            },
+                            {
+                                "color": "green",
+                                "value": -50
+                            }
+                        ]
+                    },
+                    "unit": "dBm",
+                    "min": -90,
+                    "max": -30
+                },
+                "overrides": []
+            },
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "min",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "rawSql": "SELECT\n  $__timeFilter(\"time\") AS time,\n  wifi_rssi AS \"RSSI (dBm)\",\n  machine_id\nFROM public.machine_telemetry\nWHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}'\nORDER BY time ASC",
+                    "format": "time_series",
+                    "refId": "A"
+                }
+            ]
+        },
+        {
+            "id": 519,
+            "type": "timeseries",
+            "title": "WiFi Signal Quality (SNR)",
+            "description": "Signal-to-Noise Ratio. >25 dB = Excellent, 15-25 dB = Fair, <15 dB = Poor",
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 187
+            },
+            "datasource": {
+                "type": "grafana-postgresql-datasource",
+                "uid": "timescaledb"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisLabel": "dB",
+                        "drawStyle": "line",
+                        "fillOpacity": 20,
+                        "gradientMode": "scheme",
+                        "lineWidth": 2,
+                        "pointSize": 5,
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "dashed"
+                        }
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "red",
+                                "value": null
+                            },
+                            {
+                                "color": "orange",
+                                "value": 15
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 20
+                            },
+                            {
+                                "color": "green",
+                                "value": 25
+                            }
+                        ]
+                    },
+                    "unit": "dB",
+                    "min": 0,
+                    "max": 50
+                },
+                "overrides": []
+            },
+            "options": {
+                "legend": {
+                    "calcs": [
+                        "mean",
+                        "min",
+                        "max"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom"
+                },
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                }
+            },
+            "targets": [
+                {
+                    "rawSql": "SELECT\n  $__timeFilter(\"time\") AS time,\n  wifi_snr AS \"SNR (dB)\",\n  machine_id\nFROM public.machine_telemetry\nWHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}'\nORDER BY time ASC",
+                    "format": "time_series",
+                    "refId": "A"
+                }
+            ]
+        }
+    ],
+    "schemaVersion": 39,
+    "tags": [
+        "ims",
+        "engineering",
+        "drilldown"
+    ],
+    "templating": {
+        "list": [
+            {
+                "name": "machine_id",
+                "label": "Machine",
+                "type": "query",
+                "query": "SELECT DISTINCT machine_id FROM public.machine_telemetry ORDER BY machine_id",
+                "datasource": {
+                    "uid": "timescaledb"
+                },
+                "refresh": 2,
+                "multi": false,
+                "includeAll": false,
+                "sort": 1,
+                "current": {
+                    "text": "ERP-MASTER-UBUNTU",
+                    "value": "ERP-MASTER-UBUNTU"
+                }
+            },
+            {
+                "name": "interface",
+                "type": "custom",
+                "query": "eth0,wlan0",
+                "current": {
+                    "text": "eth0",
+                    "value": "eth0"
+                },
+                "options": [
+                    {
+                        "text": "eth0",
+                        "value": "eth0",
+                        "selected": true
+                    },
+                    {
+                        "text": "wlan0",
+                        "value": "wlan0",
+                        "selected": false
+                    }
+                ],
+                "label": "Interface"
+            }
+        ]
+    },
+    "time": {
+        "from": "now-1h",
+        "to": "now"
+    },
+    "timepicker": {
+        "refresh_intervals": [
+            "5s",
+            "10s",
+            "30s",
+            "1m"
+        ]
+    },
+    "timezone": "Asia/Bangkok",
+    "title": "IMS Engineering Drill-Down",
+    "uid": "ims-engineering",
+    "version": 4,
+    "refresh": "10s"
+}
