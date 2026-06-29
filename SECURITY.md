@@ -1,24 +1,111 @@
-# Security Policy
+# 🔒 Security Policy
 
-## Known Limitations (สถานะปัจจุบัน — อัปเดตล่าสุด: 2026-06-27)
+> **นโยบายความปลอดภัยของ IMS (Infrastructure Monitoring System)**
+> ทราบข้อจำกัดและแผนแก้ไขก่อน deploy ไปยัง Production
 
-ระบบนี้อยู่ระหว่างการพัฒนา (Staging) มีข้อจำกัดด้านความปลอดภัยที่ทราบแล้ว
-และอยู่ใน roadmap การแก้ไข:
+---
 
-| รายการ | สถานะ | แผนแก้ไข |
-|---|---|---|
-| PgBouncer port เปิด public บน host | ทราบแล้ว | bind localhost-only หรือใส่ reverse proxy |
-| Node-RED Admin UI ไม่มี authentication | ทราบแล้ว | เพิ่ม adminAuth ใน settings.js ก่อน deploy จริง |
-| SNMP community string เป็น plain text ใน flow config | ทราบแล้ว | ย้ายไป environment variable |
-| PgBouncer ใช้ AUTH_TYPE: plain | ทราบแล้ว (trade-off เพื่อความเข้ากันได้) | พิจารณาเปลี่ยน password hashing method ที่ต้นทาง |
+<div align="center">
 
-## การรายงานปัญหาความปลอดภัย
+![Security](https://img.shields.io/badge/Security-Policy-red)
+![Status](https://img.shields.io/badge/Status-Staging-yellow)
+![Updated](https://img.shields.io/badge/Updated-2026--06--29-blue)
 
-ถ้าพบช่องโหว่เพิ่มเติม โปรดรายงานผ่าน GitHub Issue พร้อม label `security`
-หรือติดต่อผู้ดูแลโปรเจคโดยตรงสำหรับปัญหาที่ sensitive
+</div>
 
-## ห้ามใช้งานในเครือข่ายโรงงานจริง จนกว่าจะ
+---
 
-- [ ] ปิด public exposure ของทุก admin port (PgBouncer, Node-RED, Grafana)
-- [ ] เพิ่ม authentication ให้ Node-RED Editor
-- [ ] ย้าย credential ทั้งหมดออกจาก plain text config
+## 📋 Known Limitations
+
+| # | Issue | Severity | Status | Fix Plan |
+|---|---|---|---|---|
+| 1 | PgBouncer port exposed on host | ⚠️ Medium | Known | Bind localhost-only or use reverse proxy |
+| 2 | Node-RED Admin UI has no auth | 🔴 High | Known | Add `adminAuth` in settings.js before production |
+| 3 | SNMP community string in plain text | ⚠️ Medium | Known | Move to environment variable |
+| 4 | PgBouncer uses AUTH_TYPE: plain | ⚠️ Medium | Known (trade-off) | Consider password hashing at source |
+
+---
+
+## ✅ Production Hardening Checklist
+
+### Before Granting Network Access
+
+- [ ] Remove PgBouncer host port binding (already done in prod compose)
+- [ ] Enable Node-RED adminAuth (generate bcrypt hash)
+- [ ] Bind Grafana to localhost only (already done in prod compose)
+- [ ] Review all Docker secrets in `secrets/` directory
+- [ ] Enable SNMPv3 for production devices (replacing v2c)
+
+### Before Connecting to Real Machines
+
+- [ ] Verify SNMPv3 authentication and encryption
+- [ ] Test community string rotation procedure
+- [ ] Audit all OID access permissions
+- [ ] Enable audit logging on target devices
+
+### Ongoing Security Practices
+
+- [ ] Rotate Docker secrets quarterly
+- [ ] Monitor for CVE updates in base images
+- [ ] Review Gitleaks scanning results weekly
+- [ ] Audit Prometheus/Alertmanager access logs
+
+---
+
+## 🛡️ Security Controls
+
+### Network Security
+
+| Control | Implementation |
+|---|---|
+| **Container Isolation** | Docker bridge network — services communicate via DNS |
+| **No Host Port Exposure** | Internal services only accessible within Docker network |
+| **SNMP Community** | File-based community string (not hardcoded in flows) |
+| **Secrets Management** | Docker secrets in `secrets/` directory (gitignored) |
+
+### Application Security
+
+| Control | Implementation |
+|---|---|
+| **SQL Injection Prevention** | `safeStr()` escaping on all user inputs |
+| **Credential Rotation** | Manual rotation required for stale `flows_cred.json` |
+| **CI/CD Security** | Gitleaks scanning, stub secrets for validation |
+| **Plugin Policy** | Only open-source plugins/MCP (MIT/ISC/BSD/Apache-2.0) |
+
+### Data Security
+
+| Control | Implementation |
+|---|---|
+| **Database Access** | PgBouncer connection pooling with authentication |
+| **Backup Encryption** | Database dumps should be encrypted before storage |
+| **Log Sanitization** | No secrets logged in Docker container logs |
+
+---
+
+## 🚨 Reporting Vulnerabilities
+
+If you discover a security vulnerability:
+
+1. **Do NOT** open a public GitHub Issue
+2. Email the security team directly or use GitHub's private vulnerability reporting
+3. Include: description, steps to reproduce, potential impact
+4. Allow 48 hours for initial response
+
+---
+
+## 📚 References
+
+- [Docker Security Best Practices](https://docs.docker.com/engine/security/)
+- [PostgreSQL Security](https://www.postgresql.org/docs/current/auth.html)
+- [SNMPv3 Security](https://datatracker.ietf.org/doc/html/rfc3411)
+- [Grafana Security](https://grafana.com/docs/grafana/latest/setup-grafana/security/)
+
+---
+
+<div align="center">
+
+**IMS Security Policy — Version 1.0**
+
+*Review before every production deployment*
+
+</div>
