@@ -1,115 +1,173 @@
 # 🛠️ System Administration & SRE Guide
 
-คู่มือสำหรับทีม IT (MIS-G) ในการดูแลระบบ **IMS (Infrastructure Monitoring System)**
+> **คู่มือสำหรับทีม IT (MIS-G) ในการดูแลระบบ IMS**
+> ครอบคลุม Docker management, device registration, alert management, troubleshooting
 
 ---
 
-## 1. System Management (Docker Management)
+<div align="center">
+
+![Admin](https://img.shields.io/badge/Admin-SRE%20Guide-green)
+![Version](https://img.shields.io/badge/Version-1.0-blue)
+![Audience](https://img.shields.io/badge/Audience-IT%20Team-purple)
+
+</div>
+
+---
+
+## 📑 Table of Contents
+
+1. [System Management](#-system-management)
+2. [Adding New Devices](#-adding-new-devices)
+3. [Alert Management](#-alert-management)
+4. [Troubleshooting](#-troubleshooting)
+5. [Backup & Recovery](#-backup--recovery)
+6. [Performance Monitoring](#-performance-monitoring)
+
+---
+
+## 🐳 System Management
+
+### Container Overview
 
 ระบบทำงานบน Docker Compose ทั้งหมด 8 containers:
 
+| Container | Service | Port | Purpose |
+|---|---|---|---|
+| `ims-timescaledb` | TimescaleDB | 5432 (internal) | Time-series database |
+| `ims-pgbouncer` | PgBouncer | 5432 (internal) | Connection pooler |
+| `ims-node-red` | Node-RED | 1880 | Data pipeline |
+| `ims-grafana` | Grafana | 3000 | Dashboard |
+| `ims-prometheus` | Prometheus | 9090 | Metrics & alerting |
+| `ims-alertmanager` | Alertmanager | 9093 | Alert routing |
+| `ims-blackbox` | Blackbox Exporter | 9115 | SLA probes |
+| `ims-snmpsim` | SNMP Simulator | 161/udp | Dev testing |
+
+### Common Operations
+
 ```bash
 # ตรวจสอบสถานะทั้งหมด
-docker-compose ps
+docker compose ps
 
 # เริ่มต้นระบบทั้งหมด
-docker-compose up -d
+docker compose up -d
 
 # ปิดระบบทั้งหมด
-docker-compose down
+docker compose down
 
 # Clean Restart (ทำลายข้อมูลทั้งหมด เริ่มใหม่)
-docker-compose down -v && docker-compose up -d
+docker compose down -v && docker compose up -d
 
 # Restart เฉพาะ service ที่มีปัญหา
-docker-compose restart node-red
-docker-compose restart pgbouncer
-docker-compose restart grafana
-docker-compose restart prometheus alertmanager
+docker compose restart node-red
+docker compose restart pgbouncer
+docker compose restart grafana
+docker compose restart prometheus alertmanager
 
 # ดู Real-time Log (Last 50 lines)
-docker logs -f --tail 50 node-red
-docker logs -f --tail 50 pgbouncer
+docker compose logs -f --tail 50 node-red
+docker compose logs -f --tail 50 pgbouncer
 
 # ตรวจสอบ Resource Usage
 docker stats --no-stream
 ```
 
-> 💡 **Note:** หลัง `docker-compose down -v` ต้องรอ 40 วินาทีให้ระบบทั้งหมด startup ก่อนตรวจสอบ
+> 💡 **Note:** หลัง `docker compose down -v` ต้องรอ 40 วินาทีให้ระบบทั้งหมด startup ก่อนตรวจสอบ
+
+### Service Health Checks
+
+```bash
+# Database
+docker compose exec timescaledb pg_isready -U ims_admin -d ims
+
+# Node-RED
+curl -s http://localhost:1880/
+
+# Grafana
+curl -s http://localhost:3000/api/health
+
+# Prometheus
+curl -s http://localhost:9090/-/healthy
+
+# Alertmanager
+curl -s http://localhost:9093/-/healthy
+```
 
 ---
 
-## 2. Adding New Devices (Network/Server)
+## 📱 Adding New Devices
 
-### 2.1 เพิ่ม IP ของอุปกรณ์ใหม่
+### Step 1: Register in Database
 
-1. **เพิ่ม IP ในตาราง machine_telemetry:**
 ```sql
-INSERT INTO public.machine_telemetry (machine_id, time, cpu_load_percent)
-VALUES ('NEW-MACHINE-01', NOW(), 0);
+-- เพิ่มเครื่องใหม่ใน device registry
+INSERT INTO public.machines (machine_id, host, community, snmp_port)
+VALUES ('NEW-MACHINE-01', '192.168.1.100', 'public', 161);
+
+-- ตรวจสอบ
+SELECT * FROM public.machines;
 ```
 
-2. **เพิ่ม Inject Node ใน Node-RED UI:**
-   - เปิด http://localhost:1880
-   - คัดลอก Inject Node ที่มีอยู่
-   - เปลี่ยน `machine_id` เป็นชื่อเครื่องใหม่
-   - เปลี่ยน `topic` เป็น IP ของเครื่องใหม่
-   - ต่อเข้า `fork_5_ways` node
-
-3. **Restart Node-RED:**
-```bash
-docker-compose restart node-red
-```
-
-### 2.2 ค้นหา SNMP OID ของอุปกรณ์ใหม่
-
-ใช้ MIB Browser (iReasoning หรือ SnmpB):
-1. ต่อสาย LAN เข้าวงเน็ตเวิร์กของเครื่องจักร
-2. เปิด MIB Browser → ใส่ IP ของเครื่อง
-3. กด "Walk" เพื่อกวาด OID ทั้งหมด
-4. ค้นหา OID ที่ต้องการ (อุณหภูมิ, CPU, etc.)
-
-### 2.3 จำลองอุปกรณ์ด้วย SNMP Simulator
-
-แก้ไขไฟล์ `monitoring/snmpsim/Netk@.snmprec`:
+### Step 2: Verify SNMP Connectivity
 
 ```bash
-# รูปแบบ: OID|Type|Parameters
-# Type: 2=integer, 4=string, 65=counter64
-
-# ตัวอย่าง: เพิ่ม OID สำหรับอุปกรณ์ใหม่
-1.3.6.1.4.1.9999.1.1.0|2:numeric|min=20,max=180,rate=2
-1.3.6.1.4.1.9999.1.2.0|2:numeric|min=2210,max=2270,rate=1
-1.3.6.1.4.1.9999.1.3.0|2:numeric|min=5300,max=6000,rate=1
+# Test SNMP from Node-RED container
+docker exec ims-node-red node -e "
+const snmp = require('net-snmp');
+const session = snmp.createSession('192.168.1.100', 'public', {port: 161, timeout: 5000});
+session.get(['1.3.6.1.2.1.1.1.0'], (err, varbinds) => {
+    if (err) console.error('ERROR:', err.message);
+    else console.log('OK:', varbinds[0].value.toString());
+    session.close();
+});
+"
 ```
+
+### Step 3: Verify Data Flow
 
 ```bash
-# Restart SNMP Simulator
-docker restart ims-snmpsim
+# รอ 30 วินาทีให้ poll cycle ทำงาน
+sleep 30
 
-# ตรวจสอบ log
-docker logs --tail=10 ims-snmpsim
+# ตรวจสอบข้อมูล
+docker compose exec timescaledb psql -U ims_admin -d ims -c \
+  "SELECT machine_id, COUNT(*) as rows, MAX(time) as latest
+   FROM public.machine_telemetry
+   WHERE machine_id = 'NEW-MACHINE-01'
+   GROUP BY machine_id;"
 ```
+
+### Step 4: Add Dashboard Panel (Optional)
+
+ถ้าต้องการ dashboard เฉพาะสำหรับเครื่องใหม่:
+
+1. เปิด Grafana → Dashboard → Edit
+2. เพิ่ม panel ใหม่
+3. ใช้ query: `SELECT * FROM public.machine_telemetry WHERE machine_id = 'NEW-MACHINE-01'`
+4. บันทึก dashboard
 
 ---
 
-## 3. Alert Management
+## ⚠️ Alert Management
 
-### 3.1 แก้ไข Alert Rules
+### Alert Rules Location
 
 ไฟล์: `monitoring/prometheus/rules/ims-alerts.yml`
 
-**ตัวอย่าง: แก้ไข Threshold ของ WiFi Signal Degradation:**
+### Editing Alert Rules
+
+**ตัวอย่าง: แก้ไข Threshold ของ High CPU Load:**
 
 ```yaml
-- alert: WiFi_Signal_Degradation
-  # เปลี่ยนจาก 50 drops เป็น 100 drops
-  expr: rate(network_rx_drops{interface="wlan0"}[5m]) > 100
-  for: 2m
+- alert: HighCpuLoad
+  # เปลี่ยนจาก 80% เป็น 85%
+  expr: avg_over_time(cpu_load_percent[5m]) > 85
+  for: 5m
   labels:
     severity: warning
   annotations:
-    summary: "Wi-Fi signal degraded on {{ $labels.machine_id }}"
+    summary: "High CPU load on {{ $labels.machine_id }}"
+    description: "CPU load {{ $value }}% exceeds threshold 85%"
 ```
 
 **ตัวอย่าง: เพิ่ม Alert ใหม่สำหรับ LDI Vibration:**
@@ -125,40 +183,39 @@ docker logs --tail=10 ims-snmpsim
     description: "Vibration {{ $value }} mm/s exceeds threshold 10.0"
 ```
 
-> ⚠️ **Warning:** หลังแก้ไขไฟล์ .yml ต้อง reload Prometheus:
-> ```bash
-> curl -X POST http://localhost:9090/-/reload
-> ```
-
-### 3.2 ตรวจสอบ Alert Rules
+### Reload Configuration
 
 ```bash
+# หลังแก้ไข alert rules ต้อง reload
+curl -X POST http://localhost:9090/-/reload
+
 # ตรวจสอบ syntax
-docker run --rm --entrypoint promtool \
-  -v $(pwd)/monitoring/prometheus/rules:/etc/prometheus/rules \
-  prom/prometheus:v2.55.1 \
-  check rules /etc/prometheus/rules/ims-alerts.yml
+docker compose exec prometheus promtool check rules /etc/prometheus/rules/ims-alerts.yml
 ```
 
-### 3.3 Inhibition Rules
+### Inhibition Rules
 
 ระบบมี Inhibition Rules อัตโนมัติ:
-- `InterfaceDown` (critical) → ระงับ Warning ทั้งหมดสำหรับเครื่องเดียวกัน
-- `ServiceDown` (critical) → ระงับ Warning ทั้งหมดสำหรับเครื่องเดียวกัน
-- `NodeREDDown` → ระงับ `TelemetryGap`
+
+| Source Alert | Suppressed Alerts | Scope |
+|---|---|---|
+| `InterfaceDown` (critical) | Warning ทั้งหมด | Same machine |
+| `ServiceDown` (critical) | Warning ทั้งหมด | Same machine |
+| `NodeREDDown` | `TelemetryGap` | Global |
+| `Critical` | `Warning`, `Info` | Same alertname + machine |
 
 ---
 
-## 4. Troubleshooting & Maintenance
+## 🔧 Troubleshooting
 
-### ปัญหายอดฮิตและวิธีแก้
+### Common Issues & Solutions
 
-| ปัญหา | สาเหตุที่เป็นไปได้ | วิธีแก้ |
-|--------|-------------------|--------|
+| ปัญหา | สาเหตุ | วิธีแก้ |
+|---|---|---|
 | Grafana แสดง "No Data" | PgBouncer connection เต็ม หรือ DB ล่ม | `docker restart ims-pgbouncer` + เช็ค disk space |
 | Alert ไม่ส่งไป LINE/Teams | Alertmanager Webhook ขาด | เช็ค Node-RED log ที่ `POST/alert-webhook` node |
 | กราฟ Bandwidth กระโดดเป็น Tbps | 32-bit Counter Wrap | Parser จัดการแล้ว แต่ถ้ายังเจอ เช็คว่าอุปกรณ์รองรับ 64-bit HC |
-| Node-RED ไม่เริ่มทำงาน | Syntax Error ใน Flow JSON | เช็ค log: `docker logs --tail=50 node-red` |
+| Node-RED ไม่เริ่มทำงาน | Syntax Error ใน Flow JSON | เช็ค log: `docker compose logs --tail=50 node-red` |
 | Continuous Aggregate ไม่มีข้อมูล | ต้อง refresh ด้วยมือ | `CALL refresh_continuous_aggregate('public.telemetry_minute_summary', NULL, NULL);` |
 | Container ไม่ขึ้น "Restarting" | Config ผิด หรือ port ชน | เช็ค log ของ container นั้นๆ |
 
@@ -166,23 +223,23 @@ docker run --rm --entrypoint promtool \
 
 ```bash
 # 1. Clean Restart
-docker-compose down -v && docker-compose up -d
+docker compose down -v && docker compose up -d
 
 # 2. รอ 40 วินาที
-Start-Sleep -Seconds 40
+sleep 40
 
 # 3. ตรวจสอบ 8 containers
-docker-compose ps
+docker compose ps
 
 # 4. ตรวจสอบข้อมูลไหล
-docker exec ims-timescaledb psql -U ims_admin -d ims -c "
+docker compose exec timescaledb psql -U ims_admin -d ims -c "
 SELECT machine_id, COUNT(*) as rows, MAX(time) as latest
 FROM public.machine_telemetry
 WHERE time > NOW() - INTERVAL '5 minutes'
 GROUP BY machine_id;"
 
 # 5. ตรวจสอบ Continuous Aggregates
-docker exec ims-timescaledb psql -U ims_admin -d ims -c "
+docker compose exec timescaledb psql -U ims_admin -d ims -c "
 SELECT bucket, avg_cpu_load, avg_temp
 FROM public.telemetry_minute_summary
 ORDER BY bucket DESC LIMIT 4;"
@@ -202,20 +259,119 @@ print(f'Prometheus: {ups}/{total} targets UP')
 
 ---
 
-## 5. Backup & Recovery
+## 💾 Backup & Recovery
 
 ### Database Backup
+
 ```bash
 # Backup ทั้ง database
-docker exec ims-timescaledb pg_dump -U ims_admin ims > backup_$(date +%Y%m%d).sql
+docker compose exec timescaledb pg_dump -U ims_admin ims > backup_$(date +%Y%m%d).sql
 
 # Restore
-cat backup_20260627.sql | docker exec -i ims-timescaledb psql -U ims_admin -d ims
+cat backup_20260627.sql | docker compose exec -T timescaledb psql -U ims_admin -d ims
+
+# Automated backup (cron)
+0 2 * * * docker compose exec timescaledb pg_dump -U ims_admin ims > /backup/ims_$(date +\%Y\%m\%d).sql
 ```
 
 ### Flow Backup
+
 ```bash
 # flows-ubuntu.json คือ source of truth ที่ git ดูแลอยู่แล้ว
 # สำรอง nodered_data/flows.json (runtime copy)
 cp nodered_data/flows.json nodered_data/flows.json.bak
+
+# Restore from backup
+cp nodered_data/flows.json.bak nodered_data/flows.json
+docker compose restart node-red
 ```
+
+### Configuration Backup
+
+```bash
+# Backup docker-compose files
+cp docker-compose.yaml docker-compose.yaml.bak
+cp docker-compose.prod.yaml docker-compose.prod.yaml.bak
+
+# Backup Prometheus config
+cp monitoring/prometheus/prometheus.yml monitoring/prometheus/prometheus.yml.bak
+cp monitoring/prometheus/rules/ims-alerts.yml monitoring/prometheus/rules/ims-alerts.yml.bak
+
+# Backup Grafana dashboards
+cp -r monitoring/grafana/dashboards/ monitoring/grafana/dashboards.bak/
+```
+
+---
+
+## 📊 Performance Monitoring
+
+### System Metrics
+
+```bash
+# Container resource usage
+docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}"
+
+# Database connections
+docker compose exec timescaledb psql -U ims_admin -d ims -c "
+SELECT count(*) as active_connections
+FROM pg_stat_activity
+WHERE state = 'active';"
+
+# Disk usage
+docker compose exec timescaledb psql -U ims_admin -d ims -c "
+SELECT pg_size_pretty(pg_database_size('ims')) as database_size;"
+
+# Table sizes
+docker compose exec timescaledb psql -U ims_admin -d ims -c "
+SELECT relname as table_name,
+       pg_size_pretty(pg_total_relation_size(relid)) as total_size
+FROM pg_catalog.pg_statio_user_tables
+ORDER BY pg_total_relation_size(relid) DESC;"
+```
+
+### Prometheus Metrics
+
+```bash
+# Scrape duration
+curl -s http://localhost:9090/api/v1/query?query=prometheus_scrape_duration_seconds
+
+# Samples ingested
+curl -s http://localhost:9090/api/v1/query?query=prometheus_tsdb_head_samples_appended_total
+
+# Alert count
+curl -s http://localhost:9090/api/v1/alerts | python3 -c "
+import json, sys
+data = json.load(sys.stdin)
+print(f'Active alerts: {len(data[\"data\"][\"alerts\"])}')
+"
+```
+
+### Log Analysis
+
+```bash
+# Node-RED errors
+docker compose logs node-red 2>&1 | grep -i "error" | tail -20
+
+# Prometheus errors
+docker compose logs prometheus 2>&1 | grep -i "error" | tail -20
+
+# Alertmanager errors
+docker compose logs alertmanager 2>&1 | grep -i "error" | tail -20
+
+# Database slow queries
+docker compose exec timescaledb psql -U ims_admin -d ims -c "
+SELECT query, calls, mean_time, total_time
+FROM pg_stat_statements
+ORDER BY mean_time DESC
+LIMIT 10;"
+```
+
+---
+
+<div align="center">
+
+**IMS Admin Manual — Version 1.0**
+
+*For IT Team & MIS-G*
+
+</div>
