@@ -46,3 +46,19 @@ nodered_data/*
 
 # Backups (created by scripts/backup-db.sh)
 backups/
+
+# Workspace artifacts (AI tooling, not project source)
+ABOUT-ME.md
+ARCHIVES/
+CONTEXT.md
+GLOBAL-INSTRUCTIONS.md
+INPUTS/
+OUTPUTS/
+PROJECT-README.md
+SKILLS/
+START.md
+TASKS.md
+TEMPLATES/
+dashboard.html
+memory/
+backup_*.sql
