@@ -1,0 +1,17 @@
+# Default owner for all files
+*                           @PATTANAKORN025
+
+# Database schema requires TimescaleDB review
+/database/                 @PATTANAKORN025
+/postgres/                 @PATTANAKORN025
+
+# Security-sensitive files
+/SECURITY.md               @PATTANAKORN025
+/.env.example              @PATTANAKORN025
+/docker-compose*.yaml      @PATTANAKORN025
+
+# CI/CD pipeline
+/.github/                  @PATTANAKORN025
+
+# Node-RED flows (critical data pipeline)
+/node-red/flows/           @PATTANAKORN025
