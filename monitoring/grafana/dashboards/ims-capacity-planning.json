@@ -379,13 +379,13 @@
                     "refId": "A",
                     "legendFormat": "{{ machine_id }} — Used",
                     "format": "time_series",
-                    "rawSql": "SELECT time_bucket('1 hour', \"time\") AS \"time\", machine_id, AVG(disk_used_gb) AS \"Disk Used (GB)\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") GROUP BY 1, 2 ORDER BY 1"
+                    "rawSql": "SELECT time_bucket('1 hour', \"time\") AS \"time\", machine_id, AVG(disk_used_gb) AS \"Disk Used (GB)\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id LIKE '${machine_id}' GROUP BY 1, 2 ORDER BY 1"
                 },
                 {
                     "refId": "B",
                     "legendFormat": "{{ machine_id }} — Total",
                     "format": "time_series",
-                    "rawSql": "SELECT time_bucket('1 hour', \"time\") AS \"time\", machine_id, AVG(disk_total_gb) AS \"Disk Total (GB)\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") GROUP BY 1, 2 ORDER BY 1"
+                    "rawSql": "SELECT time_bucket('1 hour', \"time\") AS \"time\", machine_id, AVG(disk_total_gb) AS \"Disk Total (GB)\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id LIKE '${machine_id}' GROUP BY 1, 2 ORDER BY 1"
                 }
             ]
         },
@@ -944,6 +944,182 @@
                     "rawSql": "WITH daily_disk AS (SELECT machine_id, regr_slope(disk_used_gb, EXTRACT(EPOCH FROM time_bucket('1 day', \"time\"))) AS slope, regr_intercept(disk_used_gb, EXTRACT(EPOCH FROM time_bucket('1 day', \"time\"))) AS intercept FROM public.machine_telemetry WHERE \"time\" > NOW() - INTERVAL '30 days' GROUP BY machine_id), latest AS (SELECT machine_id, disk_used_gb, disk_total_gb FROM public.machine_telemetry WHERE \"time\" > NOW() - INTERVAL '5 minutes' GROUP BY machine_id, disk_used_gb, disk_total_gb) SELECT l.machine_id AS \"Machine\", ROUND(l.disk_used_gb::NUMERIC, 1) || ' / ' || ROUND(l.disk_total_gb::NUMERIC, 1) || ' GB' AS \"Disk Usage\", CASE WHEN COALESCE(d.slope, 0) <= 0 THEN 9999 ELSE GREATEST(0, ROUND(((l.disk_total_gb - d.intercept) / d.slope - EXTRACT(EPOCH FROM NOW()) / 86400)::NUMERIC, 0)) END AS \"Days Left\" FROM latest l LEFT JOIN daily_disk d ON l.machine_id = d.machine_id WHERE CASE WHEN COALESCE(d.slope, 0) <= 0 THEN 9999 ELSE GREATEST(0, ((l.disk_total_gb - d.intercept) / d.slope - EXTRACT(EPOCH FROM NOW()) / 86400)) END < 14 ORDER BY \"Days Left\" ASC"
                 }
             ]
+        },
+        {
+            "id": 600,
+            "type": "row",
+            "title": "AIOps Anomaly Detection (Z-Score)",
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 50
+            }
+        },
+        {
+            "id": 601,
+            "title": "CPU Z-Score Anomaly (3σ)",
+            "description": "Standard deviations from mean. Values beyond ±3 indicate anomalous behavior not seen in recent history.",
+            "type": "timeseries",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 51
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "none",
+                    "custom": {
+                        "axisCenteredZero": true,
+                        "fillOpacity": 30,
+                        "lineWidth": 2,
+                        "spanNulls": true,
+                        "thresholdsStyle": {
+                            "mode": "dashed"
+                        }
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "red",
+                                "value": -3
+                            },
+                            {
+                                "color": "transparent",
+                                "value": -2
+                            },
+                            {
+                                "color": "green",
+                                "value": -1
+                            },
+                            {
+                                "color": "green",
+                                "value": 1
+                            },
+                            {
+                                "color": "transparent",
+                                "value": 2
+                            },
+                            {
+                                "color": "red",
+                                "value": 3
+                            }
+                        ]
+                    },
+                    "color": {
+                        "mode": "palette-classic"
+                    }
+                }
+            },
+            "options": {
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                },
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ]
+                }
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "time_series",
+                    "rawSql": "WITH stats AS (  SELECT machine_id, AVG(cpu_load_percent) AS mu,   COALESCE(NULLIF(STDDEV(cpu_load_percent), 0), 1) AS sigma   FROM public.machine_telemetry   WHERE time > NOW() - INTERVAL '24 hours'   GROUP BY machine_id) SELECT t.\"time\" AS time, t.machine_id AS metric, ROUND(((t.cpu_load_percent - s.mu) / s.sigma)::NUMERIC, 2) AS \"Z-Score\" FROM public.machine_telemetry t JOIN stats s ON t.machine_id = s.machine_id WHERE $__timeFilter(t.\"time\") ORDER BY 1"
+                }
+            ]
+        },
+        {
+            "id": 602,
+            "title": "Temperature Z-Score Anomaly (3σ)",
+            "description": "Standard deviations from 24h mean temperature. Spikes beyond ±3σ indicate thermal anomalies.",
+            "type": "timeseries",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 51
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "none",
+                    "custom": {
+                        "axisCenteredZero": true,
+                        "fillOpacity": 30,
+                        "lineWidth": 2,
+                        "spanNulls": true,
+                        "thresholdsStyle": {
+                            "mode": "dashed"
+                        }
+                    },
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "red",
+                                "value": -3
+                            },
+                            {
+                                "color": "transparent",
+                                "value": -2
+                            },
+                            {
+                                "color": "green",
+                                "value": -1
+                            },
+                            {
+                                "color": "green",
+                                "value": 1
+                            },
+                            {
+                                "color": "transparent",
+                                "value": 2
+                            },
+                            {
+                                "color": "red",
+                                "value": 3
+                            }
+                        ]
+                    },
+                    "color": {
+                        "mode": "palette-classic"
+                    }
+                }
+            },
+            "options": {
+                "tooltip": {
+                    "mode": "multi",
+                    "sort": "desc"
+                },
+                "legend": {
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "calcs": [
+                        "mean",
+                        "max"
+                    ]
+                }
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "time_series",
+                    "rawSql": "WITH stats AS (  SELECT machine_id, AVG(temp_c) AS mu,   COALESCE(NULLIF(STDDEV(temp_c), 0), 1) AS sigma   FROM public.machine_telemetry   WHERE time > NOW() - INTERVAL '24 hours' AND temp_c > 0   GROUP BY machine_id) SELECT t.\"time\" AS time, t.machine_id AS metric, ROUND(((t.temp_c - s.mu) / s.sigma)::NUMERIC, 2) AS \"Z-Score\" FROM public.machine_telemetry t JOIN stats s ON t.machine_id = s.machine_id WHERE $__timeFilter(t.\"time\") AND t.temp_c > 0 ORDER BY 1"
+                }
+            ]
         }
     ],
     "schemaVersion": 39,
@@ -954,7 +1130,26 @@
         "forecast"
     ],
     "templating": {
-        "list": []
+        "list": [
+            {
+                "name": "machine_id",
+                "type": "query",
+                "query": "SELECT DISTINCT machine_id FROM public.machine_telemetry ORDER BY machine_id",
+                "datasource": {
+                    "uid": "timescaledb"
+                },
+                "refresh": 2,
+                "includeAll": true,
+                "allValue": "%",
+                "multi": false,
+                "current": {
+                    "text": "All",
+                    "value": "$__all"
+                },
+                "sort": 1,
+                "label": "Machine"
+            }
+        ]
     },
     "time": {
         "from": "now-30d",

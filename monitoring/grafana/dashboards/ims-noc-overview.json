@@ -299,16 +299,9 @@
                     {
                         "matcher": {
                             "id": "byName",
-                            "options": "health_status"
+                            "options": "Status"
                         },
                         "properties": [
-                            {
-                                "id": "custom.cellOptions",
-                                "value": {
-                                    "type": "color-background",
-                                    "mode": "basic"
-                                }
-                            },
                             {
                                 "id": "mappings",
                                 "value": [
@@ -316,8 +309,9 @@
                                         "type": "value",
                                         "options": {
                                             "online": {
+                                                "text": "ONLINE",
                                                 "color": "green",
-                                                "text": "ONLINE"
+                                                "index": 0
                                             }
                                         }
                                     },
@@ -325,8 +319,9 @@
                                         "type": "value",
                                         "options": {
                                             "stale": {
+                                                "text": "STALE",
                                                 "color": "yellow",
-                                                "text": "STALE"
+                                                "index": 1
                                             }
                                         }
                                     },
@@ -334,24 +329,98 @@
                                         "type": "value",
                                         "options": {
                                             "offline": {
+                                                "text": "OFFLINE",
                                                 "color": "red",
-                                                "text": "OFFLINE"
+                                                "index": 2
                                             }
                                         }
                                     }
                                 ]
+                            },
+                            {
+                                "id": "custom.cellOptions",
+                                "value": {
+                                    "type": "color-background",
+                                    "mode": "basic"
+                                }
                             }
                         ]
                     },
                     {
                         "matcher": {
                             "id": "byName",
-                            "options": "seconds_since_last"
+                            "options": "CPU (%)"
                         },
                         "properties": [
                             {
                                 "id": "unit",
-                                "value": "s"
+                                "value": "percent"
+                            },
+                            {
+                                "id": "thresholds",
+                                "value": {
+                                    "mode": "absolute",
+                                    "steps": [
+                                        {
+                                            "color": "green",
+                                            "value": null
+                                        },
+                                        {
+                                            "color": "yellow",
+                                            "value": 75
+                                        },
+                                        {
+                                            "color": "red",
+                                            "value": 90
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "id": "custom.cellOptions",
+                                "value": {
+                                    "type": "gradient-gauge",
+                                    "mode": "basic"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Temp (°C)"
+                        },
+                        "properties": [
+                            {
+                                "id": "unit",
+                                "value": "celsius"
+                            },
+                            {
+                                "id": "thresholds",
+                                "value": {
+                                    "mode": "absolute",
+                                    "steps": [
+                                        {
+                                            "color": "green",
+                                            "value": null
+                                        },
+                                        {
+                                            "color": "yellow",
+                                            "value": 70
+                                        },
+                                        {
+                                            "color": "red",
+                                            "value": 85
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "id": "custom.cellOptions",
+                                "value": {
+                                    "type": "gradient-gauge",
+                                    "mode": "basic"
+                                }
                             }
                         ]
                     }
@@ -364,13 +433,16 @@
                         "displayName": "health_status",
                         "desc": false
                     }
-                ]
+                ],
+                "footer": {
+                    "show": false
+                }
             },
             "targets": [
                 {
                     "refId": "A",
                     "format": "table",
-                    "rawSql": "SELECT machine_id AS \"Server Name\", health_status AS \"Status\", seconds_since_last AS \"Latency (Sec)\", current_cpu AS \"CPU (%)\", current_temp AS \"Temp (°C)\", interface_status AS \"Link\", last_seen AS \"Last Update\" FROM public.v_uptime_summary ORDER BY CASE health_status WHEN 'offline' THEN 0 WHEN 'stale' THEN 1 ELSE 2 END, machine_id"
+                    "rawSql": "SELECT machine_id AS \"Server Name\", health_status AS \"Status\", seconds_since_last AS \"Latency (Sec)\", current_cpu AS \"CPU (%)\", current_temp AS \"Temp (°C)\", interface_status AS \"Link\", last_seen AS \"Last Update\" FROM public.v_uptime_summary WHERE machine_id LIKE '${machine_id}' ORDER BY CASE health_status WHEN 'offline' THEN 0 WHEN 'stale' THEN 1 ELSE 2 END, machine_id"
                 }
             ]
         },
@@ -388,7 +460,7 @@
         },
         {
             "id": 50,
-            "title": "Interface Status",
+            "title": "Interface Status (${interface})",
             "type": "table",
             "datasource": {
                 "uid": "timescaledb"
@@ -455,7 +527,7 @@
                 {
                     "refId": "A",
                     "format": "table",
-                    "rawSql": "SELECT machine_id AS \"Server\", MIN(min_if_status) AS \"Link Status\" FROM public.telemetry_minute_summary WHERE $__timeFilter(\"bucket\") GROUP BY machine_id ORDER BY machine_id"
+                    "rawSql": "SELECT machine_id AS \"Server\", interface_metrics->'${interface}'->>'status' AS \"${interface} Status\", ROUND((interface_metrics->'${interface}'->>'rx_mbps')::NUMERIC, 2) AS \"${interface} RX (Mbps)\", ROUND((interface_metrics->'${interface}'->>'tx_mbps')::NUMERIC, 2) AS \"${interface} TX (Mbps)\", COALESCE((interface_metrics->'${interface}'->>'errors')::INT, 0) AS \"Errors\", COALESCE((interface_metrics->'${interface}'->>'drops')::INT, 0) AS \"Drops\" FROM public.telemetry_minute_summary WHERE $__timeFilter(\"bucket\") AND machine_id LIKE '${machine_id}' GROUP BY machine_id, interface_metrics ORDER BY machine_id"
                 }
             ]
         },
@@ -751,8 +823,8 @@
             "fieldConfig": {
                 "defaults": {
                     "unit": "Mbps",
-                    "min": 0,
                     "custom": {
+                        "axisCenteredZero": true,
                         "fillOpacity": 30,
                         "lineWidth": 2,
                         "spanNulls": true
@@ -898,7 +970,7 @@
                         "lastNotNull"
                     ]
                 },
-                "unit": "mbytes",
+                "unit": "percent",
                 "custom": {
                     "drawStyle": "line",
                     "fillOpacity": 15
@@ -921,7 +993,48 @@
         "executive"
     ],
     "templating": {
-        "list": []
+        "list": [
+            {
+                "name": "machine_id",
+                "type": "query",
+                "query": "SELECT DISTINCT machine_id FROM public.v_uptime_summary ORDER BY machine_id",
+                "datasource": {
+                    "uid": "timescaledb"
+                },
+                "refresh": 2,
+                "includeAll": true,
+                "allValue": "%",
+                "multi": true,
+                "current": {
+                    "text": "All",
+                    "value": "$__all"
+                },
+                "sort": 1,
+                "label": "Machine"
+            },
+            {
+                "name": "interface",
+                "type": "custom",
+                "query": "eth0,wlan0",
+                "current": {
+                    "text": "eth0",
+                    "value": "eth0"
+                },
+                "options": [
+                    {
+                        "text": "eth0",
+                        "value": "eth0",
+                        "selected": true
+                    },
+                    {
+                        "text": "wlan0",
+                        "value": "wlan0",
+                        "selected": false
+                    }
+                ],
+                "label": "Interface"
+            }
+        ]
     },
     "time": {
         "from": "now-1h",
