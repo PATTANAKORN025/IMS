@@ -5,11 +5,15 @@ Docker-based server monitoring stack: SNMP → Node-RED → TimescaleDB → Graf
 ## Key Commands
 
 ```bash
-# Start all services
-docker compose up -d
+# Start all services (dev mode — includes snmpsim)
+make up
+# or: docker compose -f docker-compose.yaml -f docker-compose.override.yaml up -d
+
+# Start in production mode (no snmpsim, localhost-only ports)
+make up-prod
 
 # Stop all services
-docker compose down
+make down
 
 # Clean restart (destroys volumes, reinitializes DB)
 docker compose down -v && docker compose up -d
@@ -17,9 +21,23 @@ docker compose down -v && docker compose up -d
 # Restart specific services (after config changes)
 docker compose restart node-red grafana alertmanager prometheus
 
+# Full verification
+make verify
+
+# Unit tests
+make test-unit
+# or: npm test --prefix tests/unit
+
+# Load tests (requires k6 installed separately)
+make test-load
+
 # View logs
 docker compose logs -f node-red
 docker compose logs --tail=50
+
+# DB backup / restore
+make backup
+make restore FILE=backups/backup_YYYYMMDD.sql
 
 # Validate config before deploying
 docker compose config
@@ -31,7 +49,8 @@ docker compose exec prometheus promtool check config /etc/prometheus/prometheus.
 docker compose exec prometheus wget -qO- "http://localhost:9090/api/v1/targets"
 
 # Check DB data
-docker compose exec timescaledb psql -U ims_admin -d ims -c "SELECT machine_id, COUNT(*) FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '5 minutes' GROUP BY machine_id;"
+docker compose exec timescaledb psql -U ims_admin -d ims -c \
+  "SELECT machine_id, COUNT(*) FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '5 minutes' GROUP BY machine_id;"
 ```
 
 ## Prerequisites
@@ -46,14 +65,20 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c "SELECT machine_id, 
 
 ## Architecture
 
-- **TimescaleDB** (port 5432 internal) — PostgreSQL + time-series extension
-- **PgBouncer** (port 6432) — connection pooler, all DB access goes through here
-- **Node-RED** (port 1880) — SNMP polling pipeline, writes to DB via `pg` module
-- **Grafana** (port 3000) — dashboards, provisioned from `monitoring/grafana/`
-- **Prometheus** (port 9090) — metrics scraping
-- **Alertmanager** (port 9093) — alert routing with inhibition rules
-- **SNMP Simulator** (port 1161/udp) — simulated server metrics for testing
-- **Blackbox Exporter** (port 9115) — SLA probes (HTTP, TCP, ICMP)
+- **TimescaleDB** (internal only) — PostgreSQL + time-series extension
+- **PgBouncer** (internal only) — connection pooler, all DB access goes through here. **No host port mapping** — use internal DNS `pgbouncer:5432`
+- **Node-RED** (127.0.0.1:1880) — SNMP polling pipeline, writes to DB via `pg` module
+- **Grafana** (3000, prod: 127.0.0.1:3000) — dashboards, provisioned from `monitoring/grafana/`
+- **Prometheus** (127.0.0.1:9090) — metrics scraping
+- **Alertmanager** (127.0.0.1:9093) — alert routing with inhibition rules
+- **SNMP Simulator** (internal only) — simulated server metrics for dev mode. **No host port mapping** — container-to-container via `ims-snmpsim:161`
+- **Blackbox Exporter** (127.0.0.1:9115) — SLA probes (HTTP, TCP, ICMP)
+
+## Compose Files
+
+- `docker-compose.yaml` — base definition for all 8 services
+- `docker-compose.override.yaml` — dev mode: enables snmpsim, sets `NODE_ENV=development`
+- `docker-compose.prod.yaml` — production mode: removes snmpsim, binds Grafana to localhost only, PgBouncer no host port
 
 ## Critical Gotchas
 
@@ -64,7 +89,8 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c "SELECT machine_id, 
 - **NEVER use PowerShell `ConvertTo-Json`** to edit flow JSON — it corrupts `\n` escape sequences in `func` fields, causing SyntaxError in Node-RED
 - **Node-RED `func` fields are single-line JSON strings** — edits must preserve `\n` escape sequences, never introduce literal line breaks
 - **Node-RED function nodes run in sandboxed VM** — `require()` is unavailable; use `global.get()` for installed packages
-- **`snmp walker` nodes unreliable** with snmpsimd (GETNEXT doesn't respect subtree boundaries) — use direct SNMP GET with function nodes instead
+- **`snmp walker` nodes unreliable** with snmpsim (GETNEXT doesn't respect subtree boundaries) — use direct SNMP GET with function nodes instead
+- **For complex flow modifications**: use file-based scripts (`_tmp_*.js`) instead of `node -e` inline — PowerShell quoting issues make inline edits fragile
 
 ### Docker DNS
 
@@ -80,6 +106,7 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c "SELECT machine_id, 
 - TimescaleDB hypertable requires `time` column as partitioning key
 - `interface_metrics` column is `jsonb` — use `jsonb_each()` not `jsonb_each_text()`
 - Continuous aggregates take ~3 min to populate after clean restart
+- **Migrations in `database/migrations/`**: idempotent SQL (IF EXISTS/IF NOT EXISTS). **Never wrap in BEGIN/COMMIT** — `CREATE MATERIALIZED VIEW ... WITH DATA` fails inside transaction blocks.
 
 ### Prometheus / Alerting
 
@@ -92,6 +119,9 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c "SELECT machine_id, 
 - Dashboards are read-only mounted; edit JSON files in `monitoring/grafana/dashboards/`
 - Use `jsonb_each()` with `CROSS JOIN LATERAL` for per-interface bandwidth queries
 - PostgreSQL `ROUND()` only accepts `NUMERIC`, not `DOUBLE PRECISION` — cast with `::NUMERIC`
+- **Template variables**: NOC Overview + Capacity Planning have `$machine_id` (multi-select, All=`%`) and `$interface` (eth0/wlan0). Engineering has `$machine_id` (single-select) + `$interface`. All queries filter via `LIKE '${machine_id}'` for All compatibility.
+- **Symmetrical network panels**: Use `axisCenteredZero: true` + Upload multiplied by `-1`. Never set `min: 0` on symmetrical panels.
+- **RAM saturation panels**: Query returns percent (`AVG(ram_used)/AVG(ram_total)*100`), so `unit` must be `percent` in both `fieldConfig.defaults` AND `options`.
 
 ### SNMP Simulator
 
@@ -99,6 +129,7 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c "SELECT machine_id, 
 - eth0 flapping (rate=1) is by design for InterfaceDown alert testing
 - eth0 64-bit counters require max ≤5B to avoid null (type 129)
 - Container uses community string `public` (file: `Netk@.snmprec`)
+- **Counters saturate at max, do NOT wrap** — after ~94-111s, counters hit configured max and produce 0 Mbps
 
 ## Node-RED Flow Architecture
 
@@ -106,6 +137,7 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c "SELECT machine_id, 
 1. Fork → CPU walker, Storage walker, Network walker, Temp walker, LDI walker
 2. Join barrier (count=5, timeout=15)
 3. Parser (try-catch wrapped) → PostgreSQL INSERT via parameterized queries (`msg.params`)
+4. DB insert retry buffer: `catch_db_insert` → `retry_store` (max 5 retries) → `retry_delay` (5s) → `retry_rebuild` → `db_insert`
 
 Parser features:
 - Fail-safe identity: `(msg.machine_id || msg.topic || '').replace(/'/g, "''")`
@@ -113,12 +145,18 @@ Parser features:
 - Explicit memory cleanup: `msg.payload = null` + `flatData.length = 0`
 - Temperature stores max reading per poll cycle (intentional for manufacturing peak-temp tracking)
 
+Node-RED npm packages (`nodered_data/package.json`):
+- `pg` ^8.22.0 — PostgreSQL client (used in function nodes, NOT the dashboard node)
+- `node-red-contrib-postgresql` ^0.15.4 — PostgreSQL node for flow
+- `node-red-node-snmp` ^2.1.0 — SNMP nodes (walker unreliable, use function nodes with `global.get('snmp')`)
+- `node-red-dashboard` ~3.6.6 — Dashboard UI
+
 ## Grafana Dashboards
 
 JSON dashboards in `monitoring/grafana/dashboards/`:
-- `ims-noc-overview.json` — executive fleet view
+- `ims-noc-overview.json` — executive fleet view (home dashboard)
 - `ims-main.json` — system overview
-- `ims-engineering-drilldown.json` — per-machine deep dive
+- `ims-engineering-drilldown.json` — per-machine deep dive (includes LDI panels 503-507)
 - `ims-capacity-planning.json` — forecasting
 
 **SRE color convention:**
@@ -137,28 +175,51 @@ Critical alerts suppress lower-severity alerts for the same issue:
 - `NodeREDDown` suppresses `TelemetryGap`
 - Critical suppresses Warning and Info for same alertname + machine
 
+## Git Workflow
+
+- **Branch naming**: `feat/<topic>`, `fix/<topic>`, `chore/<topic>`, `docs/<topic>`, `refactor/<topic>`, `test/<topic>`, `security/<topic>`
+- **Commits**: Conventional Commits — `<type>(<scope>): <summary>` (feat, fix, docs, chore, refactor, test, security, perf)
+- **PRs**: Squash merge only, auto-delete head branches, require CI + conversation resolution before merge to main
+- **Branch protection**: No force push, no direct push to main, require status checks
+- **Tags**: Semantic Versioning (`v1.0.0`)
+
+## CI/CD (`.github/workflows/ci.yml`)
+
+Runs on push/PR to `main`. Single job `validate-architecture`:
+1. Creates secret stubs (`echo "placeholder"`) — CI validates paths, not file contents
+2. `docker compose config -q` — validates compose syntax
+3. `promtool check config` — validates Prometheus YAML
+4. `promtool check rules` — validates alert rules
+5. JSON validation — Grafana dashboards + Node-RED flows via `python3 -c "import json"`
+6. `gitleaks detect` — secret scan with `.gitleaks.toml` allowlist
+
+No unit tests or integration tests in CI yet — run locally via `make test-unit`.
+
 ## Testing
 
-K6 stress tests in `tests/k6/`:
+Unit tests in `tests/unit/`:
 ```bash
-# DB write stress
-k6 run tests/k6/db-write-stress.js
-
-# Grafana query stress
-k6 run tests/k6/grafana-query-stress.js
-
-# Full pipeline E2E
-k6 run tests/k6/pipeline-stress.js
+make test-unit
+# or: npm test --prefix tests/unit
 ```
+- `parser.test.js` — 9 parser unit tests
+- `counter-wraparound.test.js` — 14 counter-wraparound tests
 
-Requires K6 installed separately (`choco install k6` / `brew install k6`).
+K6 load tests in `tests/k6/` (requires `choco install k6` / `brew install k6`):
+```bash
+make test-load
+# or: k6 run tests/k6/pipeline-stress.js
+```
 
 ## Git Ignore Rules
 
 - `secrets/`, `.env` — credentials never committed
 - `*_data/` — all Docker volumes ignored
+- `.mimocode/`, `.playwright-mcp/` — AI tooling, not project source
 - `nodered_data/flows.json` — runtime file, not committed (use `node-red/flows/` instead)
-- `nodered_data/node_modules/` — Node-RED packages
+- `nodered_data/settings.js`, `nodered_data/package.json` — committed (whitelisted)
+- `backup_*.sql`, `backups/` — DB backups never committed
+- `_tmp_*.js`, `_tmp_*.sql` — temp scripts auto-generated
 
 ## SRE Verification Protocol
 
