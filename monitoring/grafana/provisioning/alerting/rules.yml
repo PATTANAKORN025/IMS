@@ -22,11 +22,11 @@ groups:
               rawSql: |
                 SELECT
                   machine_id AS metric,
-                  AVG(avg_cpu) AS value
+                  AVG(avg_cpu_load) AS value
                 FROM telemetry_minute_summary
                 WHERE bucket > NOW() - INTERVAL '5 minutes'
                 GROUP BY machine_id
-                HAVING AVG(avg_cpu) > 85
+                HAVING AVG(avg_cpu_load) > 85
               format: time_series
         noDataState: OK
         execErrState: Error
@@ -106,11 +106,11 @@ groups:
               rawSql: |
                 SELECT
                   machine_id AS metric,
-                  MAX(max_temp_c) AS value
+                  MAX(max_temp) AS value
                 FROM telemetry_minute_summary
                 WHERE bucket > NOW() - INTERVAL '5 minutes'
                 GROUP BY machine_id
-                HAVING MAX(max_temp_c) > 80
+                HAVING MAX(max_temp) > 80
               format: time_series
         noDataState: OK
         execErrState: Error

@@ -731,7 +731,7 @@
                 {
                     "refId": "A",
                     "format": "time_series",
-                    "rawSql": "SELECT \"bucket\" AS \"time\", machine_id AS metric, max_temp_c AS \"Temperature (°C)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(\"bucket\") AND max_temp_c > 0 ORDER BY 1"
+                    "rawSql": "SELECT \"bucket\" AS \"time\", machine_id AS metric, max_temp AS \"Temperature (°C)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(\"bucket\") AND max_temp > 0 ORDER BY 1"
                 }
             ]
         },
