@@ -57,13 +57,13 @@ The system targets ~99% SLA (single-instance architecture), Zero-Leak memory pro
 ## Services & Ports
 | Service | Port | Description |
 |---------|------|-------------|
-| TimescaleDB | 5432 (internal) | Time-series database |
-| PgBouncer | 6432 (internal) | Connection pooler |
-| Node-RED | 1880 | Flow-based data pipeline |
-| Grafana | 3000 | Dashboard & visualization |
-| Prometheus | 9090 | Metrics collection |
-| Alertmanager | 9093 | Alert routing |
-| SNMP Simulator | 1161/udp | Simulated server metrics |
+| TimescaleDB | 5432 (internal only) | Time-series database |
+| PgBouncer | 5432→container (no host port) | Connection pooler |
+| Node-RED | 1880 (localhost only) | Flow-based data pipeline |
+| Grafana | 3000 (localhost only) | Dashboard & visualization |
+| Prometheus | 9090 (localhost only) | Metrics collection |
+| Alertmanager | 9093 (localhost only) | Alert routing |
+| SNMP Simulator | 161/udp (internal only) | Simulated server metrics |
 
 ## Database Schema
 - `public.machines` — Machine registry
@@ -86,6 +86,10 @@ The system targets ~99% SLA (single-instance architecture), Zero-Leak memory pro
 - `wifi_rssi` (int) — Received Signal Strength Indicator (dBm)
 - `wifi_snr` (int) — Signal-to-Noise Ratio (dB)
 
+### Additional Columns (machine_telemetry)
+- `ldi_temp` (double precision) — LDI machine temperature °C (÷100 from snmpsim OID .1.2.0)
+- `disk_description` (text) — hrStorageDescr from HOST-RESOURCES-MIB
+
 ## Alert Thresholds
 | Metric | Warning | Critical |
 |--------|---------|----------|
@@ -101,7 +105,12 @@ The system targets ~99% SLA (single-instance architecture), Zero-Leak memory pro
 
 ## Gotchas
 - PgBouncer uses `transaction` pooling mode — no prepared statements
-- Node-RED `flows.json` is gitignored; always edit `flows-ubuntu.json`
+- `node-red/flows/ingestion.json` is source of truth for ingestion pipeline; `node-red/flows/alerting.json` for alerting. Runtime copies in `nodered_data/`
+- After editing flows: copy split files to `nodered_data/`, then restart Node-RED
+- **NEVER use PowerShell `ConvertTo-Json`** to edit flow JSON — it corrupts `\n` escape sequences in `func` fields, causing SyntaxError in Node-RED
+- **Node-RED `func` fields are single-line JSON strings** — edits must preserve `\n` escape sequences, never introduce literal line breaks
+- **Node-RED function nodes run in sandboxed VM** — `require()` is unavailable; use `global.get()` for installed packages
+- **`snmp walker` nodes unreliable** with snmpsimd (GETNEXT doesn't respect subtree boundaries) — use direct SNMP GET with function nodes instead
 - TimescaleDB hypertable requires `time` column as partitioning key
 - Grafana dashboards are read-only mounted; edit JSON files directly
 - Secrets must exist as files in `secrets/` directory before `docker compose up`
@@ -110,4 +119,7 @@ The system targets ~99% SLA (single-instance architecture), Zero-Leak memory pro
 - **LDI Private MIB** uses enterprise `.1.3.6.1.4.1.9999` (4 nines) — all OIDs under `.1.x.x`
 - **`session.subtree()` DOES NOT WORK with snmpsim** — GETNEXT returns wrong subtrees. Only `session.get()` with explicit OIDs is reliable for snmpsim
 - **TimescaleDB hypertable ALTER requires 7-step sequence** — drop caggs, disable compression, ALTER, re-enable, recreate caggs (see `alter-hypertable-columns` skill)
-- **PowerShell `ConvertTo-Json` corrupts Node-RED flows** — `\n` escapes become literal line breaks. Use Node.js `JSON.stringify()` or Edit tool directly
+- **TimescaleDB migrations can't use BEGIN/COMMIT** — `CREATE MATERIALIZED VIEW ... WITH (timescaledb.continuous)` fails inside a transaction block. Write migrations without transaction wrappers.
+- **Docker host port conflicts on Windows** — snmpsim (1161/udp) and pgbouncer (6432) can conflict with native Windows services. Remove host port mappings; Node-RED accesses via Docker network.
+- **`nodered_data/` is bind-mounted** — persists across `docker compose down -v`. Credential files survive volume destruction. Delete `nodered_data/flows_cred.json` manually if encryption key changes.
+- **Z-Score alert rules NOT in Prometheus** — only a comment "FOLLOW-UP" in `ims-alerts.yml:16`. No actual `stddev_over_time` PromQL rules implemented.
