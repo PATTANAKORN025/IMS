@@ -123,3 +123,8 @@ The system targets ~99% SLA (single-instance architecture), Zero-Leak memory pro
 - **Docker host port conflicts on Windows** — snmpsim (1161/udp) and pgbouncer (6432) can conflict with native Windows services. Remove host port mappings; Node-RED accesses via Docker network.
 - **`nodered_data/` is bind-mounted** — persists across `docker compose down -v`. Credential files survive volume destruction. Delete `nodered_data/flows_cred.json` manually if encryption key changes.
 - **Z-Score alert rules NOT in Prometheus** — only a comment "FOLLOW-UP" in `ims-alerts.yml:16`. No actual `stddev_over_time` PromQL rules implemented.
+- **LDI OID `.9999` is ENTIRELY MOCKED** — Enterprise Number 9999 is a custom MIB created by the team. The actual YSPhotec LDI machine may not support SNMP at all, or may use completely different OIDs. Must request real MIB file from vendor before connecting.
+- **Ubuntu/Windows SNMP data is safe** — uses standard MIBs (HOST-RESOURCES-MIB, UCD-SNMP-MIB). Simulated data format will likely match real machines.
+- **Real-world SNMP troubleshooting priority**: (1) SNMP service disabled on target (Windows default), (2) Firewall blocking UDP 161, (3) Community string mismatch, (4) Real OID ≠ simulated OID, (5) Host hardcode 'ims-snmpsim', (6) Network latency differs from Docker internal
+- **Node-RED 4.0.5 is two major versions behind** (5.0 released June 2026). Upgrade requires Node.js 22.9+. Plan upgrade carefully — 5.0 has breaking Editor changes.
+- **PgBouncer port 6432 MUST NOT be exposed** on factory network before auth is configured
