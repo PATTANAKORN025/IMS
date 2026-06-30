@@ -451,11 +451,57 @@
                         "thresholdsStyle": {
                             "mode": "line+area"
                         }
-                    },
-                    "thresholdsStyle": {
-                        "mode": "line+area"
                     }
-                }
+                },
+                "overrides": [
+                    {
+                        "matcher": {
+                            "id": "byName",
+                            "options": "Z-Score (Anomaly)"
+                        },
+                        "properties": [
+                            {
+                                "id": "color",
+                                "value": {
+                                    "fixedColor": "rgba(255, 0, 0, 0.15)",
+                                    "mode": "fixed"
+                                }
+                            },
+                            {
+                                "id": "custom.fillOpacity",
+                                "value": 30
+                            },
+                            {
+                                "id": "custom.lineWidth",
+                                "value": 0
+                            },
+                            {
+                                "id": "custom.drawStyle",
+                                "value": "bars"
+                            },
+                            {
+                                "id": "custom.axisPlacement",
+                                "value": "right"
+                            },
+                            {
+                                "id": "custom.axisLabel",
+                                "value": "Anomaly (Z)"
+                            },
+                            {
+                                "id": "unit",
+                                "value": "short"
+                            },
+                            {
+                                "id": "min",
+                                "value": -4
+                            },
+                            {
+                                "id": "max",
+                                "value": 4
+                            }
+                        ]
+                    }
+                ]
             },
             "options": {
                 "tooltip": {
@@ -483,6 +529,13 @@
                     "refId": "A",
                     "format": "time_series",
                     "rawSql": "SELECT time_bucket('1 minute', \"time\") AS \"time\", cpu_load_percent AS \"CPU Load %\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id = '${machine_id}' ORDER BY 1"
+                },
+                {
+                    "refId": "B",
+                    "format": "time_series",
+                    "rawSql": "WITH stats AS (SELECT \"bucket\", machine_id, avg_cpu_load, AVG(avg_cpu_load) OVER w AS mu, COALESCE(STDDEV(avg_cpu_load) OVER w, 0) AS sigma FROM public.telemetry_minute_summary WHERE machine_id = '${machine_id}' AND $__timeFilter(\"bucket\") WINDOW w AS (PARTITION BY machine_id ORDER BY \"bucket\" ROWS BETWEEN 60 PRECEDING AND 1 PRECEDING)) SELECT \"bucket\" AS \"time\", CASE WHEN sigma > 0 THEN ROUND(((avg_cpu_load - mu) / sigma)::NUMERIC, 2) ELSE 0 END AS \"Anomaly\" FROM stats WHERE mu > 0 ORDER BY 1",
+                    "legendFormat": "Z-Score (Anomaly)",
+                    "hide": false
                 }
             ]
         },
