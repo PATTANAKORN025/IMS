@@ -527,7 +527,7 @@
                 {
                     "refId": "A",
                     "format": "table",
-                    "rawSql": "SELECT machine_id AS \"Server\", interface_metrics->'${interface}'->>'status' AS \"${interface} Status\", ROUND((interface_metrics->'${interface}'->>'rx_mbps')::NUMERIC, 2) AS \"${interface} RX (Mbps)\", ROUND((interface_metrics->'${interface}'->>'tx_mbps')::NUMERIC, 2) AS \"${interface} TX (Mbps)\", COALESCE((interface_metrics->'${interface}'->>'errors')::INT, 0) AS \"Errors\", COALESCE((interface_metrics->'${interface}'->>'drops')::INT, 0) AS \"Drops\" FROM public.telemetry_minute_summary WHERE $__timeFilter(\"bucket\") AND machine_id LIKE '${machine_id}' GROUP BY machine_id, interface_metrics ORDER BY machine_id"
+                    "rawSql": "SELECT DISTINCT ON (machine_id) machine_id AS \"Server\", interface_metrics->'${interface}'->>'status' AS \"${interface} Status\", ROUND((interface_metrics->'${interface}'->>'rx_mbps')::NUMERIC, 2) AS \"${interface} RX (Mbps)\", ROUND((interface_metrics->'${interface}'->>'tx_mbps')::NUMERIC, 2) AS \"${interface} TX (Mbps)\", COALESCE((interface_metrics->'${interface}'->>'errors')::INT, 0) AS \"Errors\", COALESCE((interface_metrics->'${interface}'->>'drops')::INT, 0) AS \"Drops\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id LIKE '${machine_id}' ORDER BY machine_id, \"time\" DESC"
                 }
             ]
         },
