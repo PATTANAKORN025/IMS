@@ -145,7 +145,7 @@
                     ],
                     "values": false
                 },
-                "unit": "mbytes"
+                "unit": "percent"
             },
             "targets": [
                 {
@@ -202,7 +202,7 @@
                     ],
                     "values": false
                 },
-                "unit": "gbytes"
+                "unit": "percent"
             },
             "targets": [
                 {
@@ -321,7 +321,7 @@
                     ],
                     "values": false
                 },
-                "unit": "mbps"
+                "unit": "bps"
             },
             "targets": [
                 {
@@ -708,7 +708,7 @@
                         "max"
                     ]
                 },
-                "unit": "mbps",
+                "unit": "bps",
                 "custom": {
                     "drawStyle": "line",
                     "fillOpacity": 15,
@@ -756,14 +756,14 @@
             "fieldConfig": {
                 "defaults": {
                     "unit": "bps",
-                    "min": 0,
                     "color": {
                         "mode": "thresholds"
                     },
                     "custom": {
                         "fillOpacity": 30,
                         "lineWidth": 2,
-                        "spanNulls": true
+                        "spanNulls": true,
+                        "axisCenteredZero": true
                     },
                     "thresholds": {
                         "mode": "absolute",
@@ -1061,7 +1061,7 @@
             },
             "fieldConfig": {
                 "defaults": {
-                    "unit": "GB",
+                    "unit": "gbytes",
                     "min": 0,
                     "custom": {
                         "fillOpacity": 20,
@@ -1093,12 +1093,14 @@
                 {
                     "refId": "A",
                     "format": "time_series",
-                    "rawSql": "SELECT \"bucket\" AS \"time\", '${interface} Download' AS metric, avg_rx_mbps AS \"${interface} RX (Mbps)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(\"bucket\") AND machine_id = '${machine_id}' ORDER BY 1"
+                    "rawSql": "SELECT \"bucket\" AS \"time\", machine_id AS metric, avg_disk_used AS \"Disk Used (GB)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(\"bucket\") AND machine_id = '${machine_id}' ORDER BY 1",
+                    "legendFormat": "{{machine_id}} — Used"
                 },
                 {
                     "refId": "B",
                     "format": "time_series",
-                    "rawSql": "SELECT \"bucket\" AS \"time\", '${interface} Upload' AS metric, (avg_tx_mbps * -1) AS \"${interface} TX (Mbps)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(\"bucket\") AND machine_id = '${machine_id}' ORDER BY 1"
+                    "rawSql": "SELECT \"bucket\" AS \"time\", machine_id AS metric, avg_disk_total AS \"Disk Total (GB)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(\"bucket\") AND machine_id = '${machine_id}' ORDER BY 1",
+                    "legendFormat": "{{machine_id}} — Total"
                 }
             ]
         },
@@ -1117,7 +1119,7 @@
             },
             "fieldConfig": {
                 "defaults": {
-                    "unit": "MB",
+                    "unit": "mbytes",
                     "min": 0,
                     "custom": {
                         "fillOpacity": 20,
@@ -1149,7 +1151,8 @@
                 {
                     "refId": "A",
                     "format": "time_series",
-                    "rawSql": "SELECT \"bucket\" AS \"time\", machine_id AS metric, total_rx_errors AS \"Errors\", total_rx_drops AS \"Drops\" FROM public.telemetry_minute_summary WHERE $__timeFilter(\"bucket\") AND machine_id = '${machine_id}' ORDER BY 1"
+                    "rawSql": "SELECT \"bucket\" AS \"time\", machine_id AS metric, avg_ram_used AS \"RAM Used (MB)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(\"bucket\") AND machine_id = '${machine_id}' ORDER BY 1",
+                    "legendFormat": "{{machine_id}} — Used"
                 }
             ]
         },
@@ -1559,7 +1562,7 @@
                     ],
                     "values": false
                 },
-                "unit": "percentunit"
+                "unit": "percent"
             },
             "targets": [
                 {
