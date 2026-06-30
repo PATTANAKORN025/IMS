@@ -325,7 +325,7 @@
             },
             "fieldConfig": {
                 "defaults": {
-                    "unit": "GB",
+                    "unit": "gbytes",
                     "min": 0,
                     "custom": {
                         "fillOpacity": 15,
