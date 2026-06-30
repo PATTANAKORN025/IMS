@@ -191,7 +191,9 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c \
 | Document | Description |
 |---|---|
 | [System Architecture](docs/architecture/SYSTEM_ARCHITECTURE.md) | Technical topology, data flow, alerting pipeline |
+| [Admin Manual](docs/admin/ADMIN_MANUAL.md) | Docker management, device registry, troubleshooting guide |
 | [User Manual](docs/user/USER_MANUAL.md) | Dashboard guide, metrics interpretation, incident response |
+| [Business Value & ROI](docs/business/BUSINESS_VALUE_ROI.md) | ROI analysis, cost savings, executive summary |
 | [Internship Report](docs/business/INTERNSHIP_REPORT_SUMMARY.md) | Learning outcomes, business value, academic review |
 | [Deployment Readiness](docs/deployment-readiness.md) | Pre-deployment checklist, infrastructure requirements |
 | [Scaling Plan](docs/scaling-plan.md) | Performance optimization, 1000+ machines roadmap |

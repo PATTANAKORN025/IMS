@@ -115,6 +115,26 @@
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
+**Dual-Engine SNMP Walker:**
+
+ระบบใช้ Dual-Engine สำหรับ SNMP data collection:
+
+| Mode | Trigger | Method | Performance |
+|---|---|---|---|
+| **Development** | `NODE_ENV != production` | `session.get()` (individual OID queries) | ง่ายต่อการ debug |
+| **Production** | `NODE_ENV = production` | `session.subtree()` (bulk walk) | เร็วกว่า 80% สำหรับ OID จำนวนมาก |
+
+```javascript
+// Dual-Engine Pattern
+const prodMode = (typeof env !== 'undefined' && env.get && env.get('NODE_ENV') === 'production');
+
+if (prodMode) {
+    session.subtree('1.3.6.1.2.1.25.2.3.1', 20, onFeed, onComplete);  // Bulk walk
+} else {
+    session.get(oids, callback);  // Individual GET
+}
+```
+
 **Walker Details:**
 
 | Walker | OIDs | Data Collected | Interval |
@@ -124,6 +144,47 @@
 | **Network Walker** | `.1.3.6.1.2.1.31.1.1.1.*` + sysUpTime | RX/TX bytes, errors, drops, status (64-bit counters) | 30s |
 | **Temperature Walker** | `.1.3.6.1.4.1.2021.13.16.2.1.7.1` | CPU temperature (°C) | 30s |
 | **LDI Walker** | `.1.3.6.1.4.1.9999.1.*` + WiFi `.9999.2.*` | Manufacturing telemetry (throughput, PE, JE, humidity, power, vibration, WiFi RSSI/SNR) | 30s |
+
+**Counter Wrap Handling:**
+
+ระบบจัดการ 32-bit และ 64-bit counter overflow อัตโนมัติ:
+
+```javascript
+// Counter wraparound detection
+function calcDelta(curr, prev) {
+    let diff = curr - prev;
+    if (diff < 0) {
+        diff += (Math.abs(diff) > 2147483648) ? 18446744073709552000 : 4294967296;
+    }
+    return diff;
+}
+
+// HardCap 40 Gbps prevents unrealistic values
+function calcMbps(diffBytes, elapsedSec) {
+    if (elapsedSec <= 0) return 0;
+    const mbps = Number(((diffBytes * 8) / (elapsedSec * 1000000)).toFixed(2));
+    if (mbps > 40000 || mbps < 0) return 0;  // Cap at 40 Gbps
+    return mbps;
+}
+```
+
+**Zero-Data Loss Mechanism:**
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  Node-RED Retry Buffer Architecture                                  │
+│                                                                      │
+│  db_insert ──▶ catch_db_insert ──▶ retry_store (max 5)              │
+│       ▲              │                    │                          │
+│       │              ▼                    ▼                          │
+│       │         retry_delay (5s) ──▶ retry_rebuild                  │
+│       │                                                     │        │
+│       └─────────────────────────────────────────────────────┘        │
+│                                                                      │
+│  Flow Context: db_retry_queue stores pending retries                 │
+│  Guarantees: Zero data loss on transient DB failures                 │
+└─────────────────────────────────────────────────────────────────────┘
+```
 
 ### Stage 2: Data Processing (Parser)
 
@@ -400,6 +461,88 @@ services:
     environment:
       - AUTH_TYPE=plain  # scram-sha-256 fails with plain-text passwords
 ```
+
+---
+
+## 🎨 Dashboard Design Standards
+
+### Symmetrical Network Graphs (Butterfly Charts)
+
+กราฟ Network ใช้ `axisCenteredZero: true` เพื่อแสดง RX/TX ในลักษณะ "ปีกผีเสื้อ":
+
+```json
+{
+  "fieldConfig": {
+    "defaults": {
+      "custom": {
+        "axisCenteredZero": true
+      }
+    },
+    "overrides": [
+      {
+        "matcher": { "id": "byName", "options": "Download (Mbps)" },
+        "properties": [{ "id": "color", "value": { "fixedColor": "#1F60C4", "mode": "fixed" } }]
+      },
+      {
+        "matcher": { "id": "byName", "options": "Upload (Mbps)" },
+        "properties": [{ "id": "color", "value": { "fixedColor": "#5794F2", "mode": "fixed" } }]
+      }
+    ]
+  }
+}
+```
+
+**SQL Pattern สำหรับ Symmetrical Display:**
+```sql
+-- Download (ค่าบวก)
+SELECT avg_rx_mbps AS "Download (Mbps)" FROM telemetry_minute_summary
+
+-- Upload (คูณด้วย -1 ให้ติดลบ)
+SELECT (avg_tx_mbps * -1) AS "Upload (Mbps)" FROM telemetry_minute_summary
+```
+
+### LDI Quality Tolerance Box (Scatter Plot)
+
+Panel 506 แสดง PE vs JE ใน Scatter Plot พร้อม Tolerance Box ±10µm:
+
+```json
+{
+  "id": 506,
+  "title": "LDI Quality Scatter (PE vs JE)",
+  "type": "xychart",
+  "fieldConfig": {
+    "defaults": {
+      "thresholds": {
+        "steps": [
+          { "color": "red", "value": null },
+          { "color": "green", "value": -10 },
+          { "color": "green", "value": 10 },
+          { "color": "red", "value": null }
+        ]
+      },
+      "thresholdsStyle": { "mode": "dashed+area" }
+    },
+    "overrides": [
+      { "matcher": { "id": "byName", "options": "PE" }, "properties": [{ "id": "min", "value": -15 }, { "id": "max", "value": 15 }] },
+      { "matcher": { "id": "byName", "options": "JE" }, "properties": [{ "id": "min", "value": -15 }, { "id": "max", "value": 15 }] }
+    ]
+  }
+}
+```
+
+### SRE Color Convention
+
+| Metric | Healthy | Warning | Critical |
+|---|---|---|---|
+| CPU | Yellow | Orange | Red |
+| RAM | Purple | Dark-orange | Red |
+| Disk | Cyan | Blue | Red |
+| Network RX | Dark Blue (#1F60C4) | — | Red |
+| Network TX | Light Blue (#5794F2) | — | Red |
+| wlan0 RX | Purple (#8E24AA) | — | Red |
+| wlan0 TX | Magenta (#E02F44) | — | Red |
+| Errors | — | — | Red (#C4162A) |
+| Drops | — | Orange (#FF9830) | Red |
 
 ---
 
