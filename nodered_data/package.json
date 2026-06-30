@@ -1,0 +1,12 @@
+{
+    "name": "ims-nodered",
+    "description": "IMS Server Monitoring — Node-RED Flows",
+    "version": "1.0.0",
+    "private": true,
+    "dependencies": {
+        "node-red-contrib-postgresql": "^0.15.4",
+        "node-red-dashboard": "~3.6.6",
+        "node-red-node-snmp": "^2.1.0",
+        "pg": "^8.22.0"
+    }
+}
