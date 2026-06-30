@@ -19,6 +19,7 @@ The system targets ~99% SLA (single-instance architecture), Zero-Leak memory pro
    - ต้องมี `flatData.length = 0` และ `msg.payload = null` เพื่อทำ Explicit Garbage Collection ป้องกัน Memory Leak
 3. **Database Rules:**
    - ใช้ **Continuous Aggregates** (`telemetry_minute_summary`, `telemetry_hourly_summary`) สำหรับ Grafana เสมอ ห้าม Query ตาราง raw ตรงๆ สำหรับกราฟ Time-Series
+   - **ข้อยกเว้น:** คอลัมน์ `interface_metrics` (jsonb) ไม่มีใน continuous aggregate — ต้อง query จาก `machine_telemetry` โดยตรงด้วย `SELECT DISTINCT ON (machine_id) ... ORDER BY machine_id, "time" DESC` เพื่อดึง row ล่าสุดต่อเครื่อง
    - ต้องคำนวณ Mbps (Network Bandwidth) ที่ระดับ Database หรือทำ Delta ผ่าน Node-RED context
 4. **Grafana Queries:**
    - ห้ามใช้ `$__interval` เพียวๆ ใน SQL เด็ดขาด ให้ใช้ `$__timeGroupAlias("time", $__interval)`
@@ -66,7 +67,7 @@ The system targets ~99% SLA (single-instance architecture), Zero-Leak memory pro
 | SNMP Simulator | 161/udp (internal only) | Simulated server metrics |
 
 ## Database Schema
-- `public.machines` — Machine registry
+- `public.machines` — Machine registry (hostname, community, snmp_port, enabled). Created by migration 005. Queried by `device_registry` function node every 5 min.
 - `public.machine_telemetry` — Raw telemetry (hypertable) + LDI columns
 - `public.telemetry_minute_summary` — 1-minute continuous aggregate (with LDI)
 - `public.telemetry_hourly_summary` — 1-hour continuous aggregate (with LDI)
@@ -110,6 +111,7 @@ The system targets ~99% SLA (single-instance architecture), Zero-Leak memory pro
 - **NEVER use PowerShell `ConvertTo-Json`** to edit flow JSON — it corrupts `\n` escape sequences in `func` fields, causing SyntaxError in Node-RED
 - **Node-RED `func` fields are single-line JSON strings** — edits must preserve `\n` escape sequences, never introduce literal line breaks
 - **Node-RED function nodes run in sandboxed VM** — `require()` is unavailable; use `global.get()` for installed packages
+- **`pg` module requires pre-built Pool in `settings.js`** — sandboxed VM also blocks `process.env`. Create `new pg.Pool({...})` in `functionGlobalContext` and export as `pgPool`. Function nodes use `global.get('pgPool').query()`, never `require('pg')`. Verified 2026-06-30.
 - **`snmp walker` nodes unreliable** with snmpsimd (GETNEXT doesn't respect subtree boundaries) — use direct SNMP GET with function nodes instead
 - TimescaleDB hypertable requires `time` column as partitioning key
 - Grafana dashboards are read-only mounted; edit JSON files directly
@@ -122,10 +124,12 @@ The system targets ~99% SLA (single-instance architecture), Zero-Leak memory pro
 - **TimescaleDB migrations can't use BEGIN/COMMIT** — `CREATE MATERIALIZED VIEW ... WITH (timescaledb.continuous)` fails inside a transaction block. Write migrations without transaction wrappers.
 - **Docker host port conflicts on Windows** — snmpsim (1161/udp) and pgbouncer (6432) can conflict with native Windows services. Remove host port mappings; Node-RED accesses via Docker network.
 - **`nodered_data/` is bind-mounted** — persists across `docker compose down -v`. Credential files survive volume destruction. Delete `nodered_data/flows_cred.json` manually if encryption key changes.
-- **Z-Score alert rules NOT in Prometheus** — only a comment "FOLLOW-UP" in `ims-alerts.yml:16`. No actual `stddev_over_time` PromQL rules implemented.
+- **Z-Score alert rules NOT in Prometheus** — only a comment "FOLLOW-UP" in `ims-alerts.yml:16`. No actual `stddev_over_time` PromQL rules implemented. However, Grafana Capacity Planning dashboard now has SQL-based Z-Score panels (CPU + Temperature, 3σ thresholds, axisCenteredZero). Added 2026-06-30.
 - **LDI OID `.9999` is ENTIRELY MOCKED** — Enterprise Number 9999 is a custom MIB created by the team. The actual YSPhotec LDI machine may not support SNMP at all, or may use completely different OIDs. Must request real MIB file from vendor before connecting.
 - **Ubuntu/Windows SNMP data is safe** — uses standard MIBs (HOST-RESOURCES-MIB, UCD-SNMP-MIB). Simulated data format will likely match real machines.
 - **Real-world SNMP troubleshooting priority**: (1) SNMP service disabled on target (Windows default), (2) Firewall blocking UDP 161, (3) Community string mismatch, (4) Real OID ≠ simulated OID, (5) Host hardcode 'ims-snmpsim', (6) Network latency differs from Docker internal
 - **Node-RED 4.0.5 is two major versions behind** (5.0 released June 2026). Upgrade requires Node.js 22.9+. Plan upgrade carefully — 5.0 has breaking Editor changes.
 - **PgBouncer port 6432 MUST NOT be exposed** on factory network before auth is configured
 - **Grafana column drift after cagg recreation** — When `telemetry_minute_summary` is dropped and recreated, column names change (e.g. `avg_cpu`→`avg_cpu_load`, `max_temp_c`→`max_temp`, `avg_temp` doesn't exist). ALL Grafana panels AND Grafana alert rules (`rules.yml`) must be updated to match the new column names. Always run `\d public.telemetry_minute_summary` after recreation and grep all dashboard JSONs + alert rules for stale references.
+- **Grafana `unit` must be set in BOTH `fieldConfig.defaults` AND `options`** — `options.unit` overrides `fieldConfig.defaults.unit` for display. Example: RAM saturation query returns percent but `options.unit: "mbytes"` showed "93.8 MB" instead of "93.8%". Both must be `"percent"`. Verified 2026-06-30.
+- **Symmetrical network panels require two settings** — `axisCenteredZero: true` in `fieldConfig.defaults.custom` AND remove `min: 0` from defaults. Upload queries multiply by `-1`. All three must be present for butterfly chart. Verified 2026-06-30.
