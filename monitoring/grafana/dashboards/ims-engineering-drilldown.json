@@ -2059,6 +2059,9 @@
                         "strokeWidth": 1,
                         "pointStyle": {
                             "mode": "circle"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "dashed+area"
                         }
                     },
                     "mappings": [],
@@ -2067,20 +2070,12 @@
                         "mode": "absolute",
                         "steps": [
                             {
-                                "color": "red",
+                                "color": "transparent",
                                 "value": null
                             },
                             {
-                                "color": "green",
-                                "value": -10
-                            },
-                            {
-                                "color": "green",
-                                "value": 10
-                            },
-                            {
                                 "color": "red",
-                                "value": 20
+                                "value": 10
                             }
                         ]
                     }

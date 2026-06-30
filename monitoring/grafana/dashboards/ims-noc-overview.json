@@ -44,7 +44,7 @@
         {
             "id": 1,
             "title": "System Uptime",
-            "type": "stat",
+            "type": "gauge",
             "datasource": {
                 "uid": "timescaledb"
             },
@@ -57,7 +57,7 @@
             "fieldConfig": {
                 "defaults": {
                     "unit": "percent",
-                    "min": 0,
+                    "min": 90,
                     "max": 100,
                     "thresholds": {
                         "mode": "absolute",
@@ -82,16 +82,18 @@
                 }
             },
             "options": {
-                "colorMode": "background",
-                "graphMode": "none",
-                "justifyMode": "center",
-                "textMode": "value_and_name",
                 "reduceOptions": {
                     "calcs": [
                         "lastNotNull"
                     ],
-                    "values": false
-                }
+                    "values": false,
+                    "fields": ""
+                },
+                "orientation": "auto",
+                "showThresholdLabels": false,
+                "showThresholdMarkers": true,
+                "minVizWidth": 75,
+                "minVizHeight": 75
             },
             "targets": [
                 {
@@ -459,201 +461,12 @@
             "type": "row"
         },
         {
-            "id": 50,
-            "title": "Interface Status (${interface})",
-            "type": "table",
-            "datasource": {
-                "uid": "timescaledb"
-            },
-            "gridPos": {
-                "h": 5,
-                "w": 8,
-                "x": 0,
-                "y": 17
-            },
-            "fieldConfig": {
-                "defaults": {},
-                "overrides": [
-                    {
-                        "matcher": {
-                            "id": "byName",
-                            "options": "Link Status"
-                        },
-                        "properties": [
-                            {
-                                "id": "custom.cellOptions",
-                                "value": {
-                                    "type": "color-background",
-                                    "mode": "basic"
-                                }
-                            },
-                            {
-                                "id": "mappings",
-                                "value": [
-                                    {
-                                        "type": "value",
-                                        "options": {
-                                            "1": {
-                                                "color": "green",
-                                                "text": "UP"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "type": "value",
-                                        "options": {
-                                            "2": {
-                                                "color": "red",
-                                                "text": "DOWN"
-                                            }
-                                        }
-                                    }
-                                ]
-                            }
-                        ]
-                    }
-                ]
-            },
-            "options": {
-                "showHeader": true,
-                "sortBy": [
-                    {
-                        "displayName": "Link Status",
-                        "desc": false
-                    }
-                ]
-            },
-            "targets": [
-                {
-                    "refId": "A",
-                    "format": "table",
-                    "rawSql": "SELECT DISTINCT ON (machine_id) machine_id AS \"Server\", interface_metrics->'${interface}'->>'status' AS \"${interface} Status\", ROUND((interface_metrics->'${interface}'->>'rx_mbps')::NUMERIC, 2) AS \"${interface} RX (Mbps)\", ROUND((interface_metrics->'${interface}'->>'tx_mbps')::NUMERIC, 2) AS \"${interface} TX (Mbps)\", COALESCE((interface_metrics->'${interface}'->>'errors')::INT, 0) AS \"Errors\", COALESCE((interface_metrics->'${interface}'->>'drops')::INT, 0) AS \"Drops\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") AND machine_id LIKE '${machine_id}' ORDER BY machine_id, \"time\" DESC"
-                }
-            ]
-        },
-        {
-            "id": 51,
-            "title": "Total Errors (Fleet)",
-            "type": "stat",
-            "datasource": {
-                "uid": "timescaledb"
-            },
-            "gridPos": {
-                "h": 5,
-                "w": 8,
-                "x": 8,
-                "y": 17
-            },
-            "fieldConfig": {
-                "defaults": {
-                    "unit": "short",
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "orange",
-                                "value": 10
-                            },
-                            {
-                                "color": "red",
-                                "value": 100
-                            }
-                        ]
-                    },
-                    "color": {
-                        "mode": "thresholds"
-                    }
-                }
-            },
-            "options": {
-                "colorMode": "background",
-                "graphMode": "area",
-                "justifyMode": "center",
-                "textMode": "auto",
-                "reduceOptions": {
-                    "calcs": [
-                        "lastNotNull"
-                    ],
-                    "values": false
-                }
-            },
-            "targets": [
-                {
-                    "refId": "A",
-                    "format": "table",
-                    "rawSql": "SELECT 'Fleet Errors' AS metric, SUM(total_rx_errors) AS value FROM public.telemetry_minute_summary WHERE $__timeFilter(\"bucket\")"
-                }
-            ]
-        },
-        {
-            "id": 52,
-            "title": "Total Drops (Fleet)",
-            "type": "stat",
-            "datasource": {
-                "uid": "timescaledb"
-            },
-            "gridPos": {
-                "h": 5,
-                "w": 8,
-                "x": 16,
-                "y": 17
-            },
-            "fieldConfig": {
-                "defaults": {
-                    "unit": "short",
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "orange",
-                                "value": 10
-                            },
-                            {
-                                "color": "red",
-                                "value": 50
-                            }
-                        ]
-                    },
-                    "color": {
-                        "mode": "thresholds"
-                    }
-                }
-            },
-            "options": {
-                "colorMode": "background",
-                "graphMode": "area",
-                "justifyMode": "center",
-                "textMode": "auto",
-                "reduceOptions": {
-                    "calcs": [
-                        "lastNotNull"
-                    ],
-                    "values": false
-                }
-            },
-            "targets": [
-                {
-                    "refId": "A",
-                    "format": "table",
-                    "rawSql": "SELECT 'Fleet Drops' AS metric, SUM(total_rx_drops) AS value FROM public.telemetry_minute_summary WHERE $__timeFilter(\"bucket\")"
-                }
-            ]
-        },
-        {
             "collapsed": false,
             "gridPos": {
                 "h": 1,
                 "w": 24,
                 "x": 0,
-                "y": 22
+                "y": 31
             },
             "id": 300,
             "title": "KEY METRICS (Real-Time)",
@@ -670,7 +483,7 @@
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 17
+                "y": 26
             },
             "fieldConfig": {
                 "defaults": {
@@ -742,7 +555,7 @@
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 17
+                "y": 26
             },
             "fieldConfig": {
                 "defaults": {
@@ -818,7 +631,7 @@
                 "h": 8,
                 "w": 12,
                 "x": 0,
-                "y": 25
+                "y": 34
             },
             "fieldConfig": {
                 "defaults": {
@@ -919,7 +732,7 @@
                 "h": 8,
                 "w": 12,
                 "x": 12,
-                "y": 25
+                "y": 34
             },
             "fieldConfig": {
                 "defaults": {
@@ -981,6 +794,131 @@
                     "refId": "A",
                     "format": "time_series",
                     "rawSql": "SELECT time_bucket('1 minute', \"time\") AS \"time\", machine_id AS metric, AVG(ram_used_mb) / NULLIF(AVG(ram_total_mb), 0) * 100 AS \"RAM Usage %\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") GROUP BY 1, 2 ORDER BY 1"
+                }
+            ]
+        },
+        {
+            "id": 50,
+            "title": "Top 5 CPU Usage",
+            "type": "bargauge",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 0,
+                "y": 17
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "percent",
+                    "min": 0,
+                    "max": 100,
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 75
+                            },
+                            {
+                                "color": "red",
+                                "value": 90
+                            }
+                        ]
+                    },
+                    "color": {
+                        "mode": "thresholds"
+                    }
+                },
+                "overrides": []
+            },
+            "options": {
+                "orientation": "horizontal",
+                "displayMode": "gradient",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "values": false,
+                    "fields": ""
+                },
+                "showUnfilled": true
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "time_series",
+                    "rawSql": "SELECT machine_id AS metric, AVG(cpu_load_percent) AS \"CPU %\" FROM public.machine_telemetry WHERE $__timeFilter(\"time\") GROUP BY machine_id ORDER BY 2 DESC LIMIT 5"
+                }
+            ]
+        },
+        {
+            "id": 51,
+            "title": "Top 5 Packet Drops",
+            "type": "bargauge",
+            "datasource": {
+                "uid": "timescaledb"
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 12,
+                "x": 12,
+                "y": 17
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "unit": "short",
+                    "min": 0,
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "yellow",
+                                "value": 10
+                            },
+                            {
+                                "color": "orange",
+                                "value": 50
+                            },
+                            {
+                                "color": "red",
+                                "value": 100
+                            }
+                        ]
+                    },
+                    "color": {
+                        "mode": "thresholds"
+                    }
+                },
+                "overrides": []
+            },
+            "options": {
+                "orientation": "horizontal",
+                "displayMode": "gradient",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "values": false,
+                    "fields": ""
+                },
+                "showUnfilled": true
+            },
+            "targets": [
+                {
+                    "refId": "A",
+                    "format": "time_series",
+                    "rawSql": "SELECT machine_id AS metric, SUM(total_rx_drops) AS \"Packet Drops\" FROM public.telemetry_minute_summary WHERE $__timeFilter(\"bucket\") GROUP BY machine_id ORDER BY 2 DESC LIMIT 5"
                 }
             ]
         }
