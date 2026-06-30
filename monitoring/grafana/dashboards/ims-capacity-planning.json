@@ -525,7 +525,7 @@
                         "max"
                     ]
                 },
-                "unit": "mbytes",
+                "unit": "percent",
                 "custom": {
                     "drawStyle": "line",
                     "fillOpacity": 15
