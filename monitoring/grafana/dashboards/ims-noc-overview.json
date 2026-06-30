@@ -854,7 +854,8 @@
                 {
                     "refId": "A",
                     "format": "table",
-                    "rawSql": "SELECT machine_id AS \"Server\", ROUND(AVG(cpu_load_percent)::NUMERIC, 1) AS \"CPU\" FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '5 minutes' GROUP BY machine_id ORDER BY 2 DESC LIMIT 5"
+                    "rawSql": "SELECT machine_id AS \"Server\", ROUND(AVG(cpu_load_percent)::NUMERIC, 1) AS \"CPU\" FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '5 minutes' GROUP BY machine_id ORDER BY 2 DESC LIMIT 5",
+                    "timeColumn": ""
                 }
             ]
         },
@@ -918,7 +919,8 @@
                 {
                     "refId": "A",
                     "format": "table",
-                    "rawSql": "SELECT machine_id AS \"Server\", SUM(total_rx_drops)::INT AS \"Packet Drops\" FROM public.telemetry_minute_summary WHERE bucket > NOW() - INTERVAL '5 minutes' GROUP BY machine_id ORDER BY 2 DESC LIMIT 5"
+                    "rawSql": "SELECT machine_id AS \"Server\", SUM(total_rx_drops)::INT AS \"Packet Drops\" FROM public.telemetry_minute_summary WHERE bucket > NOW() - INTERVAL '5 minutes' GROUP BY machine_id ORDER BY 2 DESC LIMIT 5",
+                    "timeColumn": ""
                 }
             ]
         }

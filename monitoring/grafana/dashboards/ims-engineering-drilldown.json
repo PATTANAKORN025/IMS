@@ -435,6 +435,10 @@
                             },
                             {
                                 "color": "red",
+                                "value": 85
+                            },
+                            {
+                                "color": "red",
                                 "value": 90
                             }
                         ]
@@ -447,6 +451,9 @@
                         "thresholdsStyle": {
                             "mode": "line+area"
                         }
+                    },
+                    "thresholdsStyle": {
+                        "mode": "line+area"
                     }
                 }
             },
@@ -518,9 +525,16 @@
                             },
                             {
                                 "color": "red",
+                                "value": 85
+                            },
+                            {
+                                "color": "red",
                                 "value": 90
                             }
                         ]
+                    },
+                    "thresholdsStyle": {
+                        "mode": "line"
                     }
                 }
             },
@@ -2070,14 +2084,25 @@
                         "mode": "absolute",
                         "steps": [
                             {
-                                "color": "transparent",
+                                "color": "red",
                                 "value": null
                             },
                             {
-                                "color": "red",
+                                "color": "green",
+                                "value": -10
+                            },
+                            {
+                                "color": "green",
                                 "value": 10
+                            },
+                            {
+                                "color": "red",
+                                "value": null
                             }
                         ]
+                    },
+                    "thresholdsStyle": {
+                        "mode": "dashed+area"
                     }
                 },
                 "overrides": [
@@ -2097,11 +2122,11 @@
                             },
                             {
                                 "id": "min",
-                                "value": 0
+                                "value": -15
                             },
                             {
                                 "id": "max",
-                                "value": 100
+                                "value": 15
                             }
                         ]
                     },
@@ -2121,11 +2146,11 @@
                             },
                             {
                                 "id": "min",
-                                "value": 0
+                                "value": -15
                             },
                             {
                                 "id": "max",
-                                "value": 100
+                                "value": 15
                             }
                         ]
                     }
@@ -2147,12 +2172,20 @@
                 "mode": "absolute",
                 "steps": [
                     {
-                        "color": "transparent",
+                        "color": "red",
                         "value": null
                     },
                     {
-                        "color": "red",
+                        "color": "green",
+                        "value": -10
+                    },
+                    {
+                        "color": "green",
                         "value": 10
+                    },
+                    {
+                        "color": "red",
+                        "value": null
                     }
                 ]
             }
