@@ -44,12 +44,8 @@ jobs:
               check rules "/etc/prometheus/rules/$(basename $f)"
           done
 
-      - name: Validate Dashboard JSON
-        run: |
-          for f in monitoring/grafana/dashboards/*.json; do
-            echo "Validating $f"
-            python3 -c "import json; json.load(open('$f'))"
-          done
+      - name: Lint Grafana Dashboards
+        run: node tests/lint/dashboard-linter.js
 
       - name: Validate Node-RED Flow JSON
         run: |
