@@ -154,10 +154,15 @@ Node-RED npm packages (`nodered_data/package.json`):
 ## Grafana Dashboards
 
 JSON dashboards in `monitoring/grafana/dashboards/`:
-- `ims-noc-overview.json` — executive fleet view (home dashboard)
-- `ims-main.json` — system overview
-- `ims-engineering-drilldown.json` — per-machine deep dive (includes LDI panels 503-507)
-- `ims-capacity-planning.json` — forecasting
+- `ims-noc-overview.json` — Executive NOC Overview: fleet status, CPU/RAM/Network timeseries, LDI Yield Risk, Power Cost, drill-down links to Engineering
+- `ims-engineering-drilldown.json` — Engineering Drill-Down: per-machine deep dive with repeat by $machine_id, CPU/RAM/Temp/Network gauges, Z-Score anomaly overlays, LDI panels, WiFi, interface errors
+- `ims-capacity-planning.json` — AIOps & Capacity Forecast: days-until-full regression, fleet health score, disk/RAM/CPU trends, Z-Score anomaly detection
+
+**Variable syntax (SQL injection-proof):**
+- Single-select: `WHERE machine_id = '${machine_id}'`
+- Multi-select: `WHERE machine_id IN (${machine_id:sqlstring})`
+- JSONB filter: `AND key IN (${interface:sqlstring})`
+- $interface is INDEPENDENT of $machine_id (no circular dependency)
 
 **SRE color convention:**
 - CPU: Yellow → Orange → Red
