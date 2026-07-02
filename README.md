@@ -147,7 +147,7 @@ IMS/
 ### 1. Setup
 ```bash
 # Clone repository
-git clone https://github.com/PATTANAKOORN/IMS.git
+git clone [https://github.com/PATTANAKOORN/IMS.git](https://github.com/PATTANAKORN025/IMS.git)
 cd IMS
 
 # Create secrets
