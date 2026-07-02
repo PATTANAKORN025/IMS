@@ -189,7 +189,7 @@
       ],
       "links": [
         {
-          "title": "Capacity forecast →",
+          "title": "Capacity forecast \u2192",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -257,7 +257,7 @@
       ],
       "links": [
         {
-          "title": "Capacity forecast →",
+          "title": "Capacity forecast \u2192",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -325,7 +325,7 @@
       ],
       "links": [
         {
-          "title": "Capacity forecast →",
+          "title": "Capacity forecast \u2192",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -472,7 +472,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "CPU Load %",
-          "rawSql": "SELECT time_bucket_gapfill($__interval, bucket) AS time, locf(avg_cpu_load) AS \"CPU Load %\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id = '${machine_id}' GROUP BY time_bucket_gapfill($__interval, bucket) ORDER BY 1",
+          "rawSql": "SELECT bucket AS time, avg_cpu_load AS \"CPU Load %\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id = '${machine_id}' ORDER BY 1",
           "format": "time_series"
         },
         {
@@ -554,7 +554,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "RAM %",
-          "rawSql": "SELECT time_bucket_gapfill($__interval, bucket) AS time, locf(ROUND((avg_ram_used / NULLIF(avg_ram_total, 0) * 100)::NUMERIC, 1)) AS \"RAM %\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id = '${machine_id}' GROUP BY time_bucket_gapfill($__interval, bucket) ORDER BY 1",
+          "rawSql": "SELECT bucket AS time, ROUND((avg_ram_used / NULLIF(avg_ram_total, 0) * 100)::NUMERIC, 1) AS \"RAM %\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id = '${machine_id}' ORDER BY 1",
           "format": "time_series"
         }
       ],
@@ -682,7 +682,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "eth0 RX (bps)",
-          "rawSql": "SELECT time_bucket_gapfill($__interval, time) AS time, locf((interface_metrics->'eth0'->>'rx_mbps')::numeric * 1000000) AS \"eth0 RX (bps)\" FROM public.machine_telemetry WHERE $__timeFilter(time) AND machine_id = '${machine_id}' GROUP BY time_bucket_gapfill($__interval, time) ORDER BY 1",
+          "rawSql": "SELECT time, (interface_metrics->'eth0'->>'rx_mbps')::numeric * 1000000 AS \"eth0 RX (bps)\" FROM public.machine_telemetry WHERE $__timeFilter(time) AND machine_id = '${machine_id}' ORDER BY 1",
           "format": "time_series"
         },
         {
@@ -691,7 +691,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "eth0 TX (bps)",
-          "rawSql": "SELECT time_bucket_gapfill($__interval, time) AS time, locf((interface_metrics->'eth0'->>'tx_mbps')::numeric * -1000000) AS \"eth0 TX (bps)\" FROM public.machine_telemetry WHERE $__timeFilter(time) AND machine_id = '${machine_id}' GROUP BY time_bucket_gapfill($__interval, time) ORDER BY 1",
+          "rawSql": "SELECT time, (interface_metrics->'eth0'->>'tx_mbps')::numeric * -1000000 AS \"eth0 TX (bps)\" FROM public.machine_telemetry WHERE $__timeFilter(time) AND machine_id = '${machine_id}' ORDER BY 1",
           "format": "time_series"
         },
         {
@@ -700,7 +700,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "wlan0 RX (bps)",
-          "rawSql": "SELECT time_bucket_gapfill($__interval, time) AS time, locf((interface_metrics->'wlan0'->>'rx_mbps')::numeric * 1000000) AS \"wlan0 RX (bps)\" FROM public.machine_telemetry WHERE $__timeFilter(time) AND machine_id = '${machine_id}' GROUP BY time_bucket_gapfill($__interval, time) ORDER BY 1",
+          "rawSql": "SELECT time, (interface_metrics->'wlan0'->>'rx_mbps')::numeric * 1000000 AS \"wlan0 RX (bps)\" FROM public.machine_telemetry WHERE $__timeFilter(time) AND machine_id = '${machine_id}' ORDER BY 1",
           "format": "time_series"
         },
         {
@@ -709,7 +709,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "wlan0 TX (bps)",
-          "rawSql": "SELECT time_bucket_gapfill($__interval, time) AS time, locf((interface_metrics->'wlan0'->>'tx_mbps')::numeric * -1000000) AS \"wlan0 TX (bps)\" FROM public.machine_telemetry WHERE $__timeFilter(time) AND machine_id = '${machine_id}' GROUP BY time_bucket_gapfill($__interval, time) ORDER BY 1",
+          "rawSql": "SELECT time, (interface_metrics->'wlan0'->>'tx_mbps')::numeric * -1000000 AS \"wlan0 TX (bps)\" FROM public.machine_telemetry WHERE $__timeFilter(time) AND machine_id = '${machine_id}' ORDER BY 1",
           "format": "time_series"
         }
       ],
@@ -834,8 +834,8 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "legendFormat": "Temperature °C",
-          "rawSql": "SELECT time_bucket_gapfill($__interval, bucket) AS time, locf(max_temp) AS \"Temperature (°C)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id = '${machine_id}' AND max_temp > 0 GROUP BY time_bucket_gapfill($__interval, bucket) ORDER BY 1",
+          "legendFormat": "Temperature \u00b0C",
+          "rawSql": "SELECT bucket AS time, max_temp AS \"Temperature (\u00b0C)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id = '${machine_id}' AND max_temp > 0 ORDER BY 1",
           "format": "time_series"
         },
         {
@@ -923,7 +923,7 @@
               },
               {
                 "id": "unit",
-                "value": "µm"
+                "value": "\u00b5m"
               }
             ]
           }
@@ -952,7 +952,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "Throughput",
-          "rawSql": "SELECT time_bucket_gapfill($__interval, time) AS time, locf(ldi_throughput) AS \"Throughput\" FROM public.machine_telemetry WHERE $__timeFilter(time) AND machine_id = '${machine_id}' AND ldi_throughput > 0 GROUP BY time_bucket_gapfill($__interval, time) ORDER BY 1",
+          "rawSql": "SELECT time, ldi_throughput AS \"Throughput\" FROM public.machine_telemetry WHERE $__timeFilter(time) AND machine_id = '${machine_id}' AND ldi_throughput > 0 ORDER BY 1",
           "format": "time_series"
         },
         {
@@ -961,18 +961,18 @@
             "uid": "timescaledb"
           },
           "legendFormat": "PE",
-          "rawSql": "SELECT time_bucket_gapfill($__interval, time) AS time, locf(ldi_pe) AS \"PE\" FROM public.machine_telemetry WHERE $__timeFilter(time) AND machine_id = '${machine_id}' AND ldi_pe IS NOT NULL GROUP BY time_bucket_gapfill($__interval, time) ORDER BY 1",
+          "rawSql": "SELECT time, ldi_pe AS \"PE\" FROM public.machine_telemetry WHERE $__timeFilter(time) AND machine_id = '${machine_id}' AND ldi_pe IS NOT NULL ORDER BY 1",
           "format": "time_series"
         }
       ],
       "links": [
         {
-          "title": "OEE & Yield →",
+          "title": "OEE & Yield \u2192",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
       ],
-      "description": "LDI manufacturing throughput (left axis, green) and Process Efficiency in µm (right axis, yellow). PE within ±10µm tolerance is normal."
+      "description": "LDI manufacturing throughput (left axis, green) and Process Efficiency in \u00b5m (right axis, yellow). PE within \u00b110\u00b5m tolerance is normal."
     },
     {
       "id": 504,
@@ -1012,7 +1012,7 @@
               },
               {
                 "id": "unit",
-                "value": "µm"
+                "value": "\u00b5m"
               }
             ]
           },
@@ -1064,7 +1064,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "JE",
-          "rawSql": "SELECT time_bucket_gapfill($__interval, time) AS time, locf(ldi_je) AS \"JE\" FROM public.machine_telemetry WHERE $__timeFilter(time) AND machine_id = '${machine_id}' AND ldi_je IS NOT NULL GROUP BY time_bucket_gapfill($__interval, time) ORDER BY 1",
+          "rawSql": "SELECT time, ldi_je AS \"JE\" FROM public.machine_telemetry WHERE $__timeFilter(time) AND machine_id = '${machine_id}' AND ldi_je IS NOT NULL ORDER BY 1",
           "format": "time_series"
         },
         {
@@ -1073,23 +1073,23 @@
             "uid": "timescaledb"
           },
           "legendFormat": "Humidity",
-          "rawSql": "SELECT time_bucket_gapfill($__interval, time) AS time, locf(ldi_humidity) AS \"Humidity\" FROM public.machine_telemetry WHERE $__timeFilter(time) AND machine_id = '${machine_id}' AND ldi_humidity > 0 GROUP BY time_bucket_gapfill($__interval, time) ORDER BY 1",
+          "rawSql": "SELECT time, ldi_humidity AS \"Humidity\" FROM public.machine_telemetry WHERE $__timeFilter(time) AND machine_id = '${machine_id}' AND ldi_humidity > 0 ORDER BY 1",
           "format": "time_series"
         }
       ],
       "links": [
         {
-          "title": "OEE & Yield →",
+          "title": "OEE & Yield \u2192",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
       ],
-      "description": "Junction Efficiency in µm (purple) and Humidity % (blue, right axis). High humidity may affect LDI precision."
+      "description": "Junction Efficiency in \u00b5m (purple) and Humidity % (blue, right axis). High humidity may affect LDI precision."
     },
     {
       "id": 500,
       "type": "row",
-      "title": "AIOps — ANOMALY DETECTION (3-Sigma Z-Score)",
+      "title": "AIOps \u2014 ANOMALY DETECTION (3-Sigma Z-Score)",
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -1185,7 +1185,7 @@
           "format": "time_series"
         }
       ],
-      "description": "CPU Z-Score computed using 60-minute rolling window. The centered-zero axis shows deviation magnitude. Red zones = anomalies beyond ±3σ."
+      "description": "CPU Z-Score computed using 60-minute rolling window. The centered-zero axis shows deviation magnitude. Red zones = anomalies beyond \u00b13\u03c3."
     },
     {
       "id": 26,

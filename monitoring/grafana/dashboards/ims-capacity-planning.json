@@ -444,20 +444,20 @@
       "targets": [
         {
           "refId": "A",
-          "legendFormat": "{{ machine_id }} — Used",
+          "legendFormat": "{{ machine_id }} \u2014 Used",
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket_gapfill($__interval, time) AS time, machine_id, locf(AVG(disk_used_gb)) AS \"Disk Used (GB)\" FROM public.machine_telemetry WHERE $__timeFilter(time) AND machine_id IN (${machine_id:sqlstring}) GROUP BY time_bucket_gapfill($__interval, time), machine_id ORDER BY 1",
+          "rawSql": "SELECT time_bucket('1 hour', time) AS time, machine_id, AVG(disk_used_gb) AS \"Disk Used (GB)\" FROM public.machine_telemetry WHERE $__timeFilter(time) AND machine_id IN (${machine_id:sqlstring}) GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series"
         },
         {
           "refId": "B",
-          "legendFormat": "{{ machine_id }} — Total",
+          "legendFormat": "{{ machine_id }} \u2014 Total",
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket_gapfill($__interval, time) AS time, machine_id, locf(AVG(disk_total_gb)) AS \"Disk Total (GB)\" FROM public.machine_telemetry WHERE $__timeFilter(time) AND machine_id IN (${machine_id:sqlstring}) GROUP BY time_bucket_gapfill($__interval, time), machine_id ORDER BY 1",
+          "rawSql": "SELECT time_bucket('1 hour', time) AS time, machine_id, AVG(disk_total_gb) AS \"Disk Total (GB)\" FROM public.machine_telemetry WHERE $__timeFilter(time) AND machine_id IN (${machine_id:sqlstring}) GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series"
         }
       ],
@@ -542,7 +542,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{ machine_id }}",
-          "rawSql": "SELECT time_bucket_gapfill($__interval, time) AS time, machine_id, locf(AVG(cpu_load_percent)) AS \"Avg CPU %\" FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '30 days' AND machine_id IN (${machine_id:sqlstring}) GROUP BY time_bucket_gapfill($__interval, time), machine_id ORDER BY 1",
+          "rawSql": "SELECT time_bucket('1 day', time) AS time, machine_id, AVG(cpu_load_percent) AS \"Avg CPU %\" FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '30 days' AND machine_id IN (${machine_id:sqlstring}) GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series"
         }
       ],
@@ -615,7 +615,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{ machine_id }}",
-          "rawSql": "SELECT time_bucket_gapfill($__interval, time) AS time, machine_id, locf(AVG(ram_used_mb) / NULLIF(AVG(ram_total_mb), 0) * 100) AS \"Avg RAM %\" FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '30 days' AND machine_id IN (${machine_id:sqlstring}) GROUP BY time_bucket_gapfill($__interval, time), machine_id ORDER BY 1",
+          "rawSql": "SELECT time_bucket('1 day', time) AS time, machine_id, AVG(ram_used_mb) / NULLIF(AVG(ram_total_mb), 0) * 100 AS \"Avg RAM %\" FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '30 days' AND machine_id IN (${machine_id:sqlstring}) GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series"
         }
       ],
@@ -624,7 +624,7 @@
     {
       "id": 500,
       "type": "row",
-      "title": "AIOps — ANOMALY DETECTION",
+      "title": "AIOps \u2014 ANOMALY DETECTION",
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -635,7 +635,7 @@
     },
     {
       "id": 601,
-      "title": "CPU Z-Score Anomaly (3σ)",
+      "title": "CPU Z-Score Anomaly (3\u03c3)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -721,11 +721,11 @@
           "format": "time_series"
         }
       ],
-      "description": "Fleet-wide CPU Z-Score anomaly detection using 60-minute rolling window. Red zones = ±3σ anomalies."
+      "description": "Fleet-wide CPU Z-Score anomaly detection using 60-minute rolling window. Red zones = \u00b13\u03c3 anomalies."
     },
     {
       "id": 602,
-      "title": "Temperature Z-Score Anomaly (3σ)",
+      "title": "Temperature Z-Score Anomaly (3\u03c3)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -811,7 +811,7 @@
           "format": "time_series"
         }
       ],
-      "description": "Fleet-wide temperature Z-Score anomaly detection. Red zones indicate readings beyond ±3 standard deviations."
+      "description": "Fleet-wide temperature Z-Score anomaly detection. Red zones indicate readings beyond \u00b13 standard deviations."
     }
   ],
   "graphTooltip": 1
