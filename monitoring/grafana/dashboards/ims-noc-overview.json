@@ -309,11 +309,11 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{ machine_id }}",
-          "rawSql": "SELECT time_bucket_gapfill($__interval, time) AS time, machine_id, locf(ROUND(100.0 * SUM(CASE WHEN ABS(ldi_pe) > 10 OR ABS(ldi_je) > 10 THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0)::NUMERIC, 1)) AS \"Yield Risk %\" FROM public.machine_telemetry WHERE $__timeFilter(time) AND ldi_pe IS NOT NULL GROUP BY time_bucket_gapfill($__interval, time), machine_id ORDER BY 1",
+          "rawSql": "WITH ldi AS (SELECT time_bucket('1 hour', time) AS time, machine_id, ldi_pe, ldi_je FROM public.machine_telemetry WHERE $__timeFilter(time) AND ldi_pe IS NOT NULL) SELECT time, machine_id, ROUND(100.0 * SUM(CASE WHEN ABS(ldi_pe) > 10 OR ABS(ldi_je) > 10 THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0)::NUMERIC, 1) AS \"Yield Risk %\" FROM ldi GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series"
         }
       ],
-      "description": "Fleet-wide CPU Z-Score anomaly detection using 60-minute rolling window. Red zones = ±3σ anomalies."
+      "description": "Fleet-wide CPU Z-Score anomaly detection using 60-minute rolling window. Red zones = \u00b13\u03c3 anomalies."
     },
     {
       "id": 602,
@@ -373,7 +373,7 @@
           "format": "table"
         }
       ],
-      "description": "Fleet-wide temperature Z-Score anomaly detection. Red zones indicate readings beyond ±3 standard deviations."
+      "description": "Fleet-wide temperature Z-Score anomaly detection. Red zones indicate readings beyond \u00b13 standard deviations."
     },
     {
       "id": 200,
@@ -450,13 +450,13 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT machine_id AS \"Server Name\", CASE WHEN MAX(time) > NOW() - INTERVAL '2 minutes' THEN 'online' WHEN MAX(time) > NOW() - INTERVAL '10 minutes' THEN 'stale' ELSE 'offline' END AS \"Status\", ROUND(AVG(cpu_load_percent)::NUMERIC, 1) AS \"CPU (%)\", ROUND(AVG(temp_c)::NUMERIC, 0) AS \"Temp (°C)\", MAX(time) AS \"Last Update\" FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '10 minutes' GROUP BY machine_id ORDER BY machine_id",
+          "rawSql": "SELECT machine_id AS \"Server Name\", CASE WHEN MAX(time) > NOW() - INTERVAL '2 minutes' THEN 'online' WHEN MAX(time) > NOW() - INTERVAL '10 minutes' THEN 'stale' ELSE 'offline' END AS \"Status\", ROUND(AVG(cpu_load_percent)::NUMERIC, 1) AS \"CPU (%)\", ROUND(AVG(temp_c)::NUMERIC, 0) AS \"Temp (\u00b0C)\", MAX(time) AS \"Last Update\" FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '10 minutes' GROUP BY machine_id ORDER BY machine_id",
           "format": "table"
         }
       ],
       "links": [
         {
-          "title": "Drill-down → Engineering: ${__value.text}",
+          "title": "Drill-down \u2192 Engineering: ${__value.text}",
           "url": "/d/ims-engineering?var-machine_id=${__value.text}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -542,13 +542,13 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{ machine_id }}",
-          "rawSql": "SELECT time_bucket_gapfill($__interval, bucket) AS time, machine_id, locf(avg_cpu_load) AS \"CPU Load %\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id IN (${machine_id:sqlstring}) GROUP BY time_bucket_gapfill($__interval, bucket), machine_id ORDER BY 1",
+          "rawSql": "SELECT bucket AS time, machine_id, avg_cpu_load AS \"CPU Load %\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id IN (${machine_id:sqlstring}) ORDER BY 1",
           "format": "time_series"
         }
       ],
       "links": [
         {
-          "title": "Drill-down → ${__value.text}",
+          "title": "Drill-down \u2192 ${__value.text}",
           "url": "/d/ims-engineering?var-machine_id=${__value.text}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -620,7 +620,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{ machine_id }}",
-          "rawSql": "SELECT time_bucket_gapfill($__interval, bucket) AS time, machine_id, locf(max_temp) AS \"Temperature (°C)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id IN (${machine_id:sqlstring}) AND max_temp > 0 GROUP BY time_bucket_gapfill($__interval, bucket), machine_id ORDER BY 1",
+          "rawSql": "SELECT bucket AS time, machine_id, max_temp AS \"Temperature (\u00b0C)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id IN (${machine_id:sqlstring}) AND max_temp > 0 ORDER BY 1",
           "format": "time_series"
         }
       ],
@@ -727,7 +727,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{ machine_id }} RX",
-          "rawSql": "SELECT time_bucket_gapfill($__interval, bucket) AS time, machine_id, locf(avg_rx_mbps) AS \"RX (Mbps)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id IN (${machine_id:sqlstring}) GROUP BY time_bucket_gapfill($__interval, bucket), machine_id ORDER BY 1",
+          "rawSql": "SELECT bucket AS time, machine_id, avg_rx_mbps AS \"RX (Mbps)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id IN (${machine_id:sqlstring}) ORDER BY 1",
           "format": "time_series"
         },
         {
@@ -736,7 +736,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{ machine_id }} TX",
-          "rawSql": "SELECT time_bucket_gapfill($__interval, bucket) AS time, machine_id, locf(avg_tx_mbps) * -1 AS \"TX (Mbps)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id IN (${machine_id:sqlstring}) GROUP BY time_bucket_gapfill($__interval, bucket), machine_id ORDER BY 1",
+          "rawSql": "SELECT bucket AS time, machine_id, avg_tx_mbps * -1 AS \"TX (Mbps)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id IN (${machine_id:sqlstring}) ORDER BY 1",
           "format": "time_series"
         }
       ],
@@ -818,7 +818,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{ machine_id }}",
-          "rawSql": "SELECT time_bucket_gapfill($__interval, bucket) AS time, machine_id, locf(ROUND((avg_ram_used / NULLIF(avg_ram_total, 0) * 100)::NUMERIC, 1)) AS \"RAM %\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id IN (${machine_id:sqlstring}) GROUP BY time_bucket_gapfill($__interval, bucket), machine_id ORDER BY 1",
+          "rawSql": "SELECT bucket AS time, machine_id, ROUND((avg_ram_used / NULLIF(avg_ram_total, 0) * 100)::NUMERIC, 1) AS \"RAM %\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id IN (${machine_id:sqlstring}) ORDER BY 1",
           "format": "time_series"
         }
       ],
@@ -831,7 +831,7 @@
           "targetBlank": true
         }
       ],
-      "description": "RAM saturation: (avg_ram_used / avg_ram_total) × 100 from 1-minute continuous aggregate. Yellow at 75%, Red at 90%."
+      "description": "RAM saturation: (avg_ram_used / avg_ram_total) \u00d7 100 from 1-minute continuous aggregate. Yellow at 75%, Red at 90%."
     }
   ],
   "graphTooltip": 1
