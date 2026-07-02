@@ -31,32 +31,52 @@
 
 ### High-Level Architecture
 
-```
-                    ┌─────────────────────────────────────────────────────────┐
-                    │                    IMS Monitoring Stack                  │
-                    │                                                         │
-    ┌───────────┐   │  ┌──────────┐   ┌──────────┐   ┌────────────────────┐  │
-    │  Server    │──▶│  │  SNMP    │──▶│  Node-RED│──▶│    TimescaleDB     │  │
-    │  Farm      │   │  │ Simulator│   │ Pipeline │   │ (PostgreSQL + TS)  │  │
-    └───────────┘   │  └──────────┘   └────┬─────┘   └─────────┬──────────┘  │
-                    │                      │                     │             │
-    ┌───────────┐   │               ┌──────▼─────┐       ┌──────▼──────┐     │
-    │  Network   │──▶│               │ Prometheus │       │   Grafana   │     │
-    │  Devices   │   │               │  (Scrape)  │       │ (Dashboard) │     │
-    └───────────┘   │               └──────┬─────┘       └─────────────┘     │
-                    │                      │                                  │
-                    │               ┌──────▼──────┐                          │
-                    │               │ Alertmanager │                          │
-                    │               │  (Route)     │                          │
-                    │               └──────┬──────┘                          │
-                    │                      │                                  │
-                    │        ┌─────────────┼─────────────┐                   │
-                    │        ▼             ▼             ▼                   │
-                    │  ┌──────────┐  ┌──────────┐  ┌──────────┐            │
-                    │  │  LINE    │  │MS Teams  │  │  Email   │            │
-                    │  │  Notify  │  │ Webhook  │  │ (Future) │            │
-                    │  └──────────┘  └──────────┘  └──────────┘            │
-                    └─────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph "Data Collection Layer"
+        S1[Server 1<br/>SNMP Agent]
+        S2[Server 2<br/>SNMP Agent]
+        S3[Server N<br/>SNMP Agent]
+        SIM[ims-snmpsim<br/>Dev Simulator]
+    end
+
+    subgraph "Pipeline Layer"
+        NR[ims-node-red<br/>5-Thread Parallel Walker]
+        P[ims-pgbouncer<br/>Connection Pooler<br/>Transaction Mode]
+    end
+
+    subgraph "Storage Layer"
+        TS[(ims-timescaledb<br/>PostgreSQL + TimescaleDB<br/>Hypertable + CAGG)]
+    end
+
+    subgraph "Visualization Layer"
+        GR[ims-grafana<br/>3 Dashboards<br/>NOC / Engineering / Capacity]
+    end
+
+    subgraph "Alerting Layer"
+        PR[ims-prometheus<br/>Metrics Scraping]
+        AM[ims-alertmanager<br/>Route & Inhibit]
+    end
+
+    subgraph "SLA Probing"
+        BB[ims-blackbox<br/>HTTP/TCP/ICMP Probes]
+    end
+
+    S1 -->|SNMP v2c| NR
+    S2 -->|SNMP v2c| NR
+    S3 -->|SNMP v2c| NR
+    SIM -->|SNMP v2c| NR
+    NR -->|Parameterized INSERT| P
+    P -->|Transaction Pool| TS
+    TS -->|Read| GR
+    TS -->|Scrape| PR
+    PR --> AM
+    BB --> PR
+
+    style TS fill:#f3e5f5,stroke:#7b1fa2
+    style GR fill:#e8f5e9,stroke:#2e7d32
+    style NR fill:#e3f2fd,stroke:#1565c0
+    style AM fill:#fff3e0,stroke:#e65100
 ```
 
 ### Component Inventory
