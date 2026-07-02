@@ -1,0 +1,19 @@
+{
+  "name": "ims",
+  "version": "0.0.0-development",
+  "private": true,
+  "description": "Industrial NOC Monitoring System",
+  "devDependencies": {
+    "semantic-release": "^24.0.0"
+  },
+  "release": {
+    "branches": [
+      "main"
+    ],
+    "plugins": [
+      "@semantic-release/commit-analyzer",
+      "@semantic-release/release-notes-generator",
+      "@semantic-release/github"
+    ]
+  }
+}

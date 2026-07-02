@@ -1,4 +1,4 @@
-.PHONY: up up-prod down restart verify backup restore test-unit test-load logs
+.PHONY: up up-prod down restart verify backup restore test-unit test-load test-visual logs
 
 up:
 	docker compose -f docker-compose.yaml -f docker-compose.override.yaml up -d
@@ -26,6 +26,10 @@ test-unit:
 
 test-load:
 	k6 run tests/k6/pipeline-stress.js
+
+test-visual:
+	npx playwright install chromium 2>/dev/null
+	node tests/playwright/dashboard-visual-regression.js
 
 logs:
 	docker compose logs -f node-red

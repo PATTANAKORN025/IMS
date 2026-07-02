@@ -26,8 +26,6 @@ const DASHBOARDS = [
     { uid: 'ims-noc-overview', name: 'NOC Overview', wait: 5000 },
     { uid: 'ims-engineering', name: 'Engineering Drill-Down', wait: 5000 },
     { uid: 'ims-capacity', name: 'Capacity Planning', wait: 5000 },
-    { uid: 'ims-oee-yield', name: 'OEE & Yield Analysis', wait: 5000 },
-    { uid: 'ims-servers', name: 'Server Monitoring', wait: 5000 },
 ];
 
 async function run() {
