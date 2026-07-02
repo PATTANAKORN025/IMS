@@ -15,6 +15,13 @@
   },
   "links": [
     {
+      "title": "TV Kiosk Mode",
+      "url": "/d/ims-capacity?orgId=1&kiosk=tv",
+      "type": "link",
+      "icon": "bolt",
+      "targetBlank": true
+    },
+    {
       "title": "NOC Overview",
       "url": "/d/ims-noc-overview",
       "type": "link",
@@ -486,7 +493,8 @@
           "placement": "bottom",
           "calcs": [
             "mean",
-            "max"
+            "max",
+            "lastNotNull"
           ]
         },
         "connectNullPoints": true
@@ -557,7 +565,8 @@
           "placement": "bottom",
           "calcs": [
             "mean",
-            "max"
+            "max",
+            "lastNotNull"
           ]
         },
         "connectNullPoints": true
@@ -657,7 +666,8 @@
           "placement": "bottom",
           "calcs": [
             "mean",
-            "max"
+            "max",
+            "lastNotNull"
           ]
         },
         "connectNullPoints": true
@@ -745,7 +755,8 @@
           "placement": "bottom",
           "calcs": [
             "mean",
-            "max"
+            "max",
+            "lastNotNull"
           ]
         },
         "connectNullPoints": true
@@ -762,5 +773,6 @@
         }
       ]
     }
-  ]
+  ],
+  "graphTooltip": 1
 }
