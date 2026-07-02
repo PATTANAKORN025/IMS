@@ -360,7 +360,8 @@
             "spanNulls": true,
             "thresholdsStyle": {
               "mode": "line"
-            }
+            },
+            "gradientMode": "scheme"
           },
           "thresholds": {
             "mode": "absolute",
@@ -452,7 +453,8 @@
           "custom": {
             "fillOpacity": 20,
             "lineWidth": 2,
-            "spanNulls": true
+            "spanNulls": true,
+            "gradientMode": "scheme"
           },
           "thresholds": {
             "mode": "absolute",
@@ -522,7 +524,8 @@
           "custom": {
             "fillOpacity": 20,
             "lineWidth": 2,
-            "spanNulls": true
+            "spanNulls": true,
+            "gradientMode": "scheme"
           },
           "thresholds": {
             "mode": "absolute",
@@ -606,7 +609,8 @@
             "spanNulls": true,
             "thresholdsStyle": {
               "mode": "dashed"
-            }
+            },
+            "gradientMode": "scheme"
           },
           "thresholds": {
             "mode": "absolute",
@@ -693,7 +697,8 @@
             "spanNulls": true,
             "thresholdsStyle": {
               "mode": "dashed"
-            }
+            },
+            "gradientMode": "scheme"
           },
           "thresholds": {
             "mode": "absolute",

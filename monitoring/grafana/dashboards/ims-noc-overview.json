@@ -223,7 +223,8 @@
           "custom": {
             "fillOpacity": 20,
             "lineWidth": 2,
-            "spanNulls": true
+            "spanNulls": true,
+            "gradientMode": "scheme"
           },
           "thresholds": {
             "mode": "absolute",
@@ -309,7 +310,7 @@
         "overrides": []
       },
       "options": {
-        "colorMode": "background",
+        "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "center",
         "reduceOptions": {
@@ -451,7 +452,8 @@
           "custom": {
             "fillOpacity": 20,
             "lineWidth": 2,
-            "spanNulls": true
+            "spanNulls": true,
+            "gradientMode": "scheme"
           },
           "thresholds": {
             "mode": "absolute",
@@ -526,7 +528,8 @@
           "custom": {
             "fillOpacity": 20,
             "lineWidth": 2,
-            "spanNulls": true
+            "spanNulls": true,
+            "gradientMode": "scheme"
           },
           "thresholds": {
             "mode": "absolute",
@@ -616,7 +619,8 @@
             "axisCenteredZero": true,
             "fillOpacity": 15,
             "lineWidth": 2,
-            "spanNulls": true
+            "spanNulls": true,
+            "gradientMode": "scheme"
           }
         },
         "overrides": [
@@ -718,7 +722,8 @@
           "custom": {
             "fillOpacity": 20,
             "lineWidth": 2,
-            "spanNulls": true
+            "spanNulls": true,
+            "gradientMode": "scheme"
           },
           "thresholds": {
             "mode": "absolute",

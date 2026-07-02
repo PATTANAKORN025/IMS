@@ -34,24 +34,44 @@
 
 ---
 
-## 🏗️ Architecture Overview
+## Architecture Overview
 
-```
-┌─────────────┐    SNMP v2c/v3     ┌───────────┐    PostgreSQL    ┌───────────┐
-│  Network     │ ─────────────────▶ │  Node-RED  │ ──────────────▶ │TimescaleDB│
-│  Devices     │                    │  (Pipeline)│                 │ (Time-Ser)│
-│  Servers     │                    └───────────┘                 └─────┬─────┘
-└─────────────┘                          │                              │
-                                         │                              │
-                                   ┌─────▼─────┐                 ┌──────▼──────┐
-                                   │ Prometheus │                 │   Grafana   │
-                                   │(Scraping)  │                 │(Dashboard) │
-                                   └─────┬─────┘                 └─────────────┘
-                                         │
-                                   ┌─────▼──────┐
-                                   │Alertmanager │
-                                   │(Webhooks)   │
-                                   └─────────────┘
+```mermaid
+graph LR
+    subgraph "Data Collection"
+        A[Network Devices<br/>Servers] -->|SNMP v2c/v3| B[SNMP Simulator<br/>(Dev)]
+    end
+
+    subgraph "Data Pipeline"
+        B --> C[Node-RED<br/>5-Thread Walker]
+        C -->|JSON Parse<br/>Mbps Calc| D[PostgreSQL INSERT<br/>via PgBouncer]
+    end
+
+    subgraph "Storage"
+        D --> E[(TimescaleDB<br/>Hypertable)]
+        E -->|Auto-Refresh| F[(telemetry_minute_summary<br/>Continuous Aggregate)]
+    end
+
+    subgraph "Visualization"
+        F --> G[Grafana<br/>3 Dashboards]
+        G -->|Drill-Down| G1[NOC Overview]
+        G -->|Drill-Down| G2[Engineering]
+        G -->|Drill-Down| G3[Capacity]
+    end
+
+    subgraph "Alerting"
+        F --> H[Prometheus<br/>Scraping]
+        H --> I[Alertmanager<br/>Webhooks]
+    end
+
+    subgraph "SLA Probing"
+        J[Blackbox Exporter] -->|HTTP/TCP/ICMP| H
+    end
+
+    style A fill:#e1f5fe
+    style E fill:#f3e5f5
+    style G fill:#e8f5e9
+    style H fill:#fff3e0
 ```
 
 ### Tech Stack ที่ใช้
