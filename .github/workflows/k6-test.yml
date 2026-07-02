@@ -1,0 +1,76 @@
+name: K6 Stress Test
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 2 * * 1'  # Weekly Monday 2am
+
+jobs:
+  k6-stress:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Seed environment
+        run: |
+          cp .env.example .env
+          mkdir -p secrets
+          echo "test-password" > secrets/postgres_password.txt
+          echo "test-password" > secrets/grafana_admin_password.txt
+
+      - name: Start IMS stack
+        run: docker compose up -d
+        timeout-minutes: 5
+
+      - name: Wait for services
+        run: |
+          echo "Waiting 40s for full startup..."
+          sleep 40
+          docker compose ps
+          docker compose exec -T timescaledb psql -U ims_admin -d ims -c "SELECT 1" || exit 1
+
+      - name: Install K6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D68
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6 -y
+
+      - name: Run K6 Stress Test
+        run: |
+          k6 run tests/k6/pipeline-stress.js \
+            --out json=k6-results.json \
+            --summary-export=k6-summary.json
+
+      - name: Upload K6 Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: k6-results
+          path: |
+            k6-results.json
+            k6-summary.json
+
+      - name: Check K6 Results
+        if: always()
+        run: |
+          if [ -f k6-summary.json ]; then
+            echo "=== K6 Summary ==="
+            python3 -c "
+          import json
+          with open('k6-summary.json') as f:
+              d = json.load(f)
+              http = d.get('metrics',{}).get('http_req_failed',{})
+              rate = http.get('values',{}).get('rate',1)
+              print(f'Error rate: {rate*100:.2f}%')
+              if rate > 0.05:
+                  print('FAIL: Error rate > 5%')
+                  exit(1)
+              print('PASS: Error rate within threshold')
+          "
+          fi
+
+      - name: Cleanup
+        if: always()
+        run: docker compose down -v
