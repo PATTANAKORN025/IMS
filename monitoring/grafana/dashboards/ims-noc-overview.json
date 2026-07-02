@@ -14,6 +14,13 @@
   },
   "links": [
     {
+      "title": "TV Kiosk Mode",
+      "url": "/d/ims-noc-overview?orgId=1&kiosk=tv",
+      "type": "link",
+      "icon": "bolt",
+      "targetBlank": true
+    },
+    {
       "title": "Engineering Drill-Down",
       "url": "/d/ims-engineering",
       "type": "link",
@@ -256,7 +263,8 @@
           "placement": "bottom",
           "calcs": [
             "mean",
-            "max"
+            "max",
+            "lastNotNull"
           ]
         },
         "connectNullPoints": true
@@ -485,7 +493,8 @@
           "placement": "bottom",
           "calcs": [
             "mean",
-            "max"
+            "max",
+            "lastNotNull"
           ]
         },
         "connectNullPoints": true
@@ -561,7 +570,8 @@
           "placement": "bottom",
           "calcs": [
             "mean",
-            "max"
+            "max",
+            "lastNotNull"
           ]
         },
         "connectNullPoints": true
@@ -666,7 +676,8 @@
           "placement": "bottom",
           "calcs": [
             "mean",
-            "max"
+            "max",
+            "lastNotNull"
           ]
         },
         "connectNullPoints": true
@@ -755,7 +766,8 @@
           "placement": "bottom",
           "calcs": [
             "mean",
-            "max"
+            "max",
+            "lastNotNull"
           ]
         },
         "connectNullPoints": true
@@ -781,5 +793,6 @@
         }
       ]
     }
-  ]
+  ],
+  "graphTooltip": 1
 }
