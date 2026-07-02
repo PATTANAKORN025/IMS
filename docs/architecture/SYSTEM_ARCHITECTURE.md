@@ -34,32 +34,32 @@
 ```mermaid
 graph TB
     subgraph "Data Collection Layer"
-        S1[Server 1<br/>SNMP Agent]
-        S2[Server 2<br/>SNMP Agent]
-        S3[Server N<br/>SNMP Agent]
-        SIM[ims-snmpsim<br/>Dev Simulator]
+        S1["Server 1<br/>SNMP Agent"]
+        S2["Server 2<br/>SNMP Agent"]
+        S3["Server N<br/>SNMP Agent"]
+        SIM["ims-snmpsim<br/>Dev Simulator"]
     end
 
     subgraph "Pipeline Layer"
-        NR[ims-node-red<br/>5-Thread Parallel Walker]
-        P[ims-pgbouncer<br/>Connection Pooler<br/>Transaction Mode]
+        NR["ims-node-red<br/>5-Thread Parallel Walker"]
+        P["ims-pgbouncer<br/>Connection Pooler<br/>Transaction Mode"]
     end
 
     subgraph "Storage Layer"
-        TS[(ims-timescaledb<br/>PostgreSQL + TimescaleDB<br/>Hypertable + CAGG)]
+        TS[("ims-timescaledb<br/>PostgreSQL + TimescaleDB<br/>Hypertable + CAGG")]
     end
 
     subgraph "Visualization Layer"
-        GR[ims-grafana<br/>3 Dashboards<br/>NOC / Engineering / Capacity]
+        GR["ims-grafana<br/>3 Dashboards<br/>NOC / Engineering / Capacity"]
     end
 
     subgraph "Alerting Layer"
-        PR[ims-prometheus<br/>Metrics Scraping]
-        AM[ims-alertmanager<br/>Route & Inhibit]
+        PR["ims-prometheus<br/>Metrics Scraping"]
+        AM["ims-alertmanager<br/>Route & Inhibit"]
     end
 
     subgraph "SLA Probing"
-        BB[ims-blackbox<br/>HTTP/TCP/ICMP Probes]
+        BB["ims-blackbox<br/>HTTP/TCP/ICMP Probes"]
     end
 
     S1 -->|SNMP v2c| NR
