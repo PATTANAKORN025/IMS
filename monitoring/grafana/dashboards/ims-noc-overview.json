@@ -178,7 +178,7 @@
           "format": "table"
         }
       ],
-      "description": "Days until RAM saturation based on 30-day linear regression trend."
+      "description": "Number of machines reporting telemetry within the last 5 minutes."
     },
     {
       "id": 4,
@@ -240,7 +240,7 @@
           "format": "table"
         }
       ],
-      "description": "Composite fleet health score (0-100%). Same calculation as NOC Overview."
+      "description": "Composite fleet health score (0-100%). Weighted average of CPU, RAM, disk, network, and temperature status."
     },
     {
       "id": 601,
@@ -313,7 +313,7 @@
           "format": "time_series"
         }
       ],
-      "description": "Fleet-wide CPU Z-Score anomaly detection using 60-minute rolling window. Red zones = \u00b13\u03c3 anomalies."
+      "description": "Percentage of LDI readings where Process Efficiency (PE) or Junction Efficiency (JE) exceeds ±10µm tolerance. High values indicate manufacturing quality risk."
     },
     {
       "id": 602,
@@ -373,7 +373,7 @@
           "format": "table"
         }
       ],
-      "description": "Fleet-wide temperature Z-Score anomaly detection. Red zones indicate readings beyond \u00b13 standard deviations."
+      "description": "Estimated daily power cost in Thai Baht based on average LDI power consumption × 24 hours × 4.5 THB/kWh."
     },
     {
       "id": 200,
@@ -450,18 +450,18 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT machine_id AS \"Server Name\", CASE WHEN MAX(time) > NOW() - INTERVAL '2 minutes' THEN 'online' WHEN MAX(time) > NOW() - INTERVAL '10 minutes' THEN 'stale' ELSE 'offline' END AS \"Status\", ROUND(AVG(cpu_load_percent)::NUMERIC, 1) AS \"CPU (%)\", ROUND(AVG(temp_c)::NUMERIC, 0) AS \"Temp (\u00b0C)\", MAX(time) AS \"Last Update\" FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '10 minutes' GROUP BY machine_id ORDER BY machine_id",
+          "rawSql": "SELECT machine_id AS \"Server Name\", CASE WHEN MAX(time) > NOW() - INTERVAL '2 minutes' THEN 'online' WHEN MAX(time) > NOW() - INTERVAL '10 minutes' THEN 'stale' ELSE 'offline' END AS \"Status\", ROUND(AVG(cpu_load_percent)::NUMERIC, 1) AS \"CPU (%)\", ROUND(AVG(temp_c)::NUMERIC, 0) AS \"Temp (°C)\", MAX(time) AS \"Last Update\" FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '10 minutes' GROUP BY machine_id ORDER BY machine_id",
           "format": "table"
         }
       ],
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering: ${__value.text}",
-          "url": "/d/ims-engineering?var-machine_id=${__value.text}&from=${__from}&to=${__to}",
+          "title": "Drill-down → Engineering: ${__data.fields[\"Server Name\"]}",
+          "url": "/d/ims-engineering?var-machine_id=${__data.fields[\"Server Name\"]}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
       ],
-      "description": "Hourly disk usage trend with total capacity line. Linear regression forecast helps capacity planning."
+      "description": "Real-time fleet status table showing each machine's CPU, RAM, disk, temperature, network, and LDI health. Click machine name to drill down."
     },
     {
       "id": 300,
@@ -555,120 +555,6 @@
                 "value": 2
               }
             ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "E2E-SERVER-000"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#9B59B6",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "E2E-SERVER-001"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#E74C3C",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "E2E-SERVER-002"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#3498DB",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "E2E-SERVER-003"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#2ECC71",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "E2E-SERVER-004"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#F39C12",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "E2E-SERVER-005"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#1ABC9C",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              }
-            ]
           }
         ]
       },
@@ -701,12 +587,12 @@
       ],
       "links": [
         {
-          "title": "Drill-down \u2192 ${__value.text}",
-          "url": "/d/ims-engineering?var-machine_id=${__value.text}&from=${__from}&to=${__to}",
+          "title": "Drill-down → ${__field.labels.machine_id}",
+          "url": "/d/ims-engineering?var-machine_id=${__field.labels.machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
       ],
-      "description": "30-day daily average CPU utilization per machine. Used for long-term capacity forecasting."
+      "description": "Real-time CPU utilization (%) for all machines, sampled every 10 seconds. Yellow >75%, Red >90%."
     },
     {
       "id": 21,
@@ -786,120 +672,6 @@
                 "value": 2
               }
             ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "E2E-SERVER-000"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#9B59B6",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "E2E-SERVER-001"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#E74C3C",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "E2E-SERVER-002"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#3498DB",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "E2E-SERVER-003"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#2ECC71",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "E2E-SERVER-004"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#F39C12",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "E2E-SERVER-005"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#1ABC9C",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              }
-            ]
           }
         ]
       },
@@ -926,20 +698,20 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{ machine_id }}",
-          "rawSql": "SELECT bucket AS time, machine_id, max_temp AS \"Temperature (\u00b0C)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id IN (${machine_id:sqlstring}) AND max_temp > 0 ORDER BY 1",
+          "rawSql": "SELECT bucket AS time, machine_id, max_temp AS \"Temperature (°C)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id IN (${machine_id:sqlstring}) AND max_temp > 0 ORDER BY 1",
           "format": "time_series"
         }
       ],
       "links": [
         {
           "title": "Drill Down to Engineering",
-          "url": "/d/ims-engineering?var-machine_id=${__value.text}&from=${__from}&to=${__to}",
+          "url": "/d/ims-engineering?var-machine_id=${__field.labels.machine_id}&from=${__from}&to=${__to}",
           "type": "link",
           "icon": "external link",
           "targetBlank": true
         }
       ],
-      "description": "30-day daily average RAM utilization per machine. Used for long-term capacity forecasting."
+      "description": "Real-time temperature (°C) for all machines. Yellow >70°C, Red >85°C."
     },
     {
       "id": 500,
@@ -1015,120 +787,6 @@
                 "value": 2
               }
             ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "E2E-SERVER-000"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#9B59B6",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "E2E-SERVER-001"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#E74C3C",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "E2E-SERVER-002"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#3498DB",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "E2E-SERVER-003"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#2ECC71",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "E2E-SERVER-004"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#F39C12",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "E2E-SERVER-005"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#1ABC9C",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              }
-            ]
           }
         ]
       },
@@ -1171,13 +829,13 @@
       "links": [
         {
           "title": "Drill Down to Engineering",
-          "url": "/d/ims-engineering?var-machine_id=${__value.text}&from=${__from}&to=${__to}",
+          "url": "/d/ims-engineering?var-machine_id=${__field.labels.machine_id}&from=${__from}&to=${__to}",
           "type": "link",
           "icon": "external link",
           "targetBlank": true
         }
       ],
-      "description": "Average RX/TX Mbps from continuous aggregate. TX is inverted (negative) for symmetrical display around zero."
+      "description": "Network throughput (Mbps) for all machines. Download (positive) and Upload (negative, inverted axis) per interface."
     },
     {
       "id": 23,
@@ -1259,120 +917,6 @@
                 "value": 2
               }
             ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "E2E-SERVER-000"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#9B59B6",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "E2E-SERVER-001"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#E74C3C",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "E2E-SERVER-002"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#3498DB",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "E2E-SERVER-003"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#2ECC71",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "E2E-SERVER-004"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#F39C12",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "E2E-SERVER-005"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#1ABC9C",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              }
-            ]
           }
         ]
       },
@@ -1406,13 +950,13 @@
       "links": [
         {
           "title": "Drill Down to Engineering",
-          "url": "/d/ims-engineering?var-machine_id=${__value.text}&from=${__from}&to=${__to}",
+          "url": "/d/ims-engineering?var-machine_id=${__field.labels.machine_id}&from=${__from}&to=${__to}",
           "type": "link",
           "icon": "external link",
           "targetBlank": true
         }
       ],
-      "description": "RAM saturation: (avg_ram_used / avg_ram_total) \u00d7 100 from 1-minute continuous aggregate. Yellow at 75%, Red at 90%."
+      "description": "RAM utilization (%) across the fleet. Calculated as (avg_ram_used / avg_ram_total) × 100 from the 1-minute continuous aggregate."
     }
   ],
   "graphTooltip": 1
