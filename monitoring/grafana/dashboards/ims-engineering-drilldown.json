@@ -189,12 +189,12 @@
       ],
       "links": [
         {
-          "title": "Capacity forecast \u2192",
+          "title": "Capacity forecast →",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
       ],
-      "description": "Days until disk saturation based on 30-day linear regression. Red < 30d, Orange < 90d, Green > 180d."
+      "description": "Current CPU utilization (%) for the selected machine. Yellow >75%, Red >90%."
     },
     {
       "id": 2,
@@ -257,12 +257,12 @@
       ],
       "links": [
         {
-          "title": "Capacity forecast \u2192",
+          "title": "Capacity forecast →",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
       ],
-      "description": "Days until RAM saturation based on 30-day linear regression trend."
+      "description": "Current RAM utilization (%) for the selected machine. Yellow >75%, Red >90%."
     },
     {
       "id": 3,
@@ -325,12 +325,12 @@
       ],
       "links": [
         {
-          "title": "Capacity forecast \u2192",
+          "title": "Capacity forecast →",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
       ],
-      "description": "Days until CPU reaches 100% saturation based on 30-day linear regression."
+      "description": "Current disk utilization (%) for the selected machine. Yellow >75%, Red >90%."
     },
     {
       "id": 4,
@@ -391,7 +391,7 @@
           "format": "table"
         }
       ],
-      "description": "Composite fleet health score (0-100%). Same calculation as NOC Overview."
+      "description": "Current temperature (°C) for the selected machine. Yellow >70°C, Red >85°C."
     },
     {
       "id": 200,
@@ -485,7 +485,7 @@
           "format": "time_series"
         }
       ],
-      "description": "Hourly disk usage trend with total capacity line. Linear regression forecast helps capacity planning."
+      "description": "CPU utilization over time for the selected machine. Yellow >75%, Red >90% threshold lines."
     },
     {
       "id": 501,
@@ -679,38 +679,22 @@
         {
           "refId": "A",
           "datasource": {
+            "type": "postgres",
             "uid": "timescaledb"
           },
-          "legendFormat": "eth0 RX (bps)",
-          "rawSql": "SELECT time, (interface_metrics->'eth0'->>'rx_mbps')::numeric * 1000000 AS \"eth0 RX (bps)\" FROM public.machine_telemetry WHERE $__timeFilter(time) AND machine_id = '${machine_id}' ORDER BY 1",
-          "format": "time_series"
+          "rawSql": "SELECT time, (val->>'rx_mbps')::numeric * 1000000 AS \"Download (bps)\"\nFROM public.machine_telemetry,\nLATERAL jsonb_each(interface_metrics) AS iface(key, val)\nWHERE $__timeFilter(time)\n  AND machine_id = '${machine_id}'\n  AND iface.key = '${interface}'\nORDER BY 1",
+          "format": "time_series",
+          "maxDataPoints": 300
         },
         {
           "refId": "B",
           "datasource": {
+            "type": "postgres",
             "uid": "timescaledb"
           },
-          "legendFormat": "eth0 TX (bps)",
-          "rawSql": "SELECT time, (interface_metrics->'eth0'->>'tx_mbps')::numeric * -1000000 AS \"eth0 TX (bps)\" FROM public.machine_telemetry WHERE $__timeFilter(time) AND machine_id = '${machine_id}' ORDER BY 1",
-          "format": "time_series"
-        },
-        {
-          "refId": "C",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "legendFormat": "wlan0 RX (bps)",
-          "rawSql": "SELECT time, (interface_metrics->'wlan0'->>'rx_mbps')::numeric * 1000000 AS \"wlan0 RX (bps)\" FROM public.machine_telemetry WHERE $__timeFilter(time) AND machine_id = '${machine_id}' ORDER BY 1",
-          "format": "time_series"
-        },
-        {
-          "refId": "D",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "legendFormat": "wlan0 TX (bps)",
-          "rawSql": "SELECT time, (interface_metrics->'wlan0'->>'tx_mbps')::numeric * -1000000 AS \"wlan0 TX (bps)\" FROM public.machine_telemetry WHERE $__timeFilter(time) AND machine_id = '${machine_id}' ORDER BY 1",
-          "format": "time_series"
+          "rawSql": "SELECT time, (val->>'tx_mbps')::numeric * -1000000 AS \"Upload (bps)\"\nFROM public.machine_telemetry,\nLATERAL jsonb_each(interface_metrics) AS iface(key, val)\nWHERE $__timeFilter(time)\n  AND machine_id = '${machine_id}'\n  AND iface.key = '${interface}'\nORDER BY 1",
+          "format": "time_series",
+          "maxDataPoints": 300
         }
       ],
       "description": "Per-interface bandwidth extracted from interface_metrics JSONB. eth0 = dark/light blue, wlan0 = purple/magenta. TX inverted for symmetry."
@@ -834,8 +818,8 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "legendFormat": "Temperature \u00b0C",
-          "rawSql": "SELECT bucket AS time, max_temp AS \"Temperature (\u00b0C)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id = '${machine_id}' AND max_temp > 0 ORDER BY 1",
+          "legendFormat": "Temperature °C",
+          "rawSql": "SELECT bucket AS time, max_temp AS \"Temperature (°C)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id = '${machine_id}' AND max_temp > 0 ORDER BY 1",
           "format": "time_series"
         },
         {
@@ -848,7 +832,7 @@
           "format": "time_series"
         }
       ],
-      "description": "30-day daily average RAM utilization per machine. Used for long-term capacity forecasting."
+      "description": "Temperature readings from sensor OIDs (UCD-SNMP lmSensors) for the selected machine."
     },
     {
       "id": 507,
@@ -923,7 +907,7 @@
               },
               {
                 "id": "unit",
-                "value": "\u00b5m"
+                "value": "µm"
               }
             ]
           }
@@ -967,12 +951,12 @@
       ],
       "links": [
         {
-          "title": "OEE & Yield \u2192",
+          "title": "OEE & Yield →",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
       ],
-      "description": "LDI manufacturing throughput (left axis, green) and Process Efficiency in \u00b5m (right axis, yellow). PE within \u00b110\u00b5m tolerance is normal."
+      "description": "LDI manufacturing throughput (left axis, green) and Process Efficiency in µm (right axis, yellow). PE within ±10µm tolerance is normal."
     },
     {
       "id": 504,
@@ -1012,7 +996,7 @@
               },
               {
                 "id": "unit",
-                "value": "\u00b5m"
+                "value": "µm"
               }
             ]
           },
@@ -1079,17 +1063,17 @@
       ],
       "links": [
         {
-          "title": "OEE & Yield \u2192",
+          "title": "OEE & Yield →",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
       ],
-      "description": "Junction Efficiency in \u00b5m (purple) and Humidity % (blue, right axis). High humidity may affect LDI precision."
+      "description": "Junction Efficiency in µm (purple) and Humidity % (blue, right axis). High humidity may affect LDI precision."
     },
     {
       "id": 500,
       "type": "row",
-      "title": "AIOps \u2014 ANOMALY DETECTION (3-Sigma Z-Score)",
+      "title": "AIOps — ANOMALY DETECTION (3-Sigma Z-Score)",
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -1182,10 +1166,11 @@
             "uid": "timescaledb"
           },
           "rawSql": "WITH stats AS (SELECT bucket, avg_cpu_load, AVG(avg_cpu_load) OVER w AS moving_avg, COALESCE(STDDEV(avg_cpu_load) OVER w, 0) AS moving_stddev FROM public.telemetry_minute_summary WHERE machine_id = '${machine_id}' AND $__timeFilter(bucket) WINDOW w AS (PARTITION BY machine_id ORDER BY bucket ROWS BETWEEN 60 PRECEDING AND 1 PRECEDING)) SELECT bucket AS time, CASE WHEN moving_stddev > 0 THEN ROUND(((avg_cpu_load - moving_avg) / moving_stddev)::NUMERIC, 2) ELSE 0 END AS \"Z-Score\" FROM stats ORDER BY 1",
-          "format": "time_series"
+          "format": "time_series",
+          "maxDataPoints": 300
         }
       ],
-      "description": "CPU Z-Score computed using 60-minute rolling window. The centered-zero axis shows deviation magnitude. Red zones = anomalies beyond \u00b13\u03c3."
+      "description": "CPU Z-Score computed using 60-minute rolling window. Values beyond ±3σ indicate anomalies."
     },
     {
       "id": 26,
@@ -1278,7 +1263,7 @@
           "format": "time_series"
         }
       ],
-      "description": "Per-interface errors (red) and drops (orange) from interface_metrics JSONB. Filtered by the $interface variable."
+      "description": "Per-interface errors (red) and drops (orange) from interface_metrics JSONB. Filtered by $interface variable."
     }
   ],
   "graphTooltip": 1
