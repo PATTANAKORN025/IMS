@@ -24,6 +24,12 @@ jobs:
       - name: Build Node-RED image
         run: docker compose build node-red
 
+      - name: Smoke test Node-RED boot
+        run: |
+          docker compose up -d timescaledb node-red
+          sleep 25
+          docker logs ims-node-red 2>&1 | grep -q "Started flows" || (docker logs ims-node-red; exit 1)
+
       - name: Lint Prometheus Config
         run: |
           docker run --rm \
