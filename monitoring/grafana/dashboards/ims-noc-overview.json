@@ -74,7 +74,7 @@
           "uid": "-- Grafana --"
         },
         "enable": true,
-        "hide": true,
+        "hide": false,
         "iconColor": "rgba(0, 211, 255, 1)",
         "name": "Annotations & Alerts",
         "type": "dashboard"
@@ -111,6 +111,36 @@
         },
         "timezone": "Asia/Bangkok",
         "bgColor": "transparent"
+      }
+    },
+    {
+      "id": 998,
+      "type": "alertlist",
+      "title": "Active Alerts",
+      "description": "Currently firing alerts from Grafana unified alerting.",
+      "gridPos": {
+        "h": 4,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "options": {
+        "showOptions": "current",
+        "sortOrder": 1,
+        "stateFilter": {
+          "firing": true,
+          "pending": false,
+          "noData": false,
+          "normal": false,
+          "error": false
+        },
+        "alertName": "",
+        "dashboardAlerts": false,
+        "folder": null
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
       }
     },
     {
@@ -261,9 +291,9 @@
           "min": 0,
           "max": 100,
           "custom": {
-            "fillOpacity": 20,
+            "fillOpacity": 15,
             "lineWidth": 2,
-            "spanNulls": true,
+            "spanNulls": 60000,
             "gradientMode": "scheme"
           },
           "thresholds": {
@@ -438,11 +468,105 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Last Update"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "unit",
+                "value": "dateTimeFromNow"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "CPU (%)"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "gauge",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "orange",
+                      "value": 75
+                    },
+                    {
+                      "color": "red",
+                      "value": 85
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Temp (°C)"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "gauge",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "orange",
+                      "value": 70
+                    },
+                    {
+                      "color": "red",
+                      "value": 85
+                    }
+                  ]
+                }
+              }
+            ]
           }
         ]
       },
       "options": {
-        "showHeader": true
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "Status",
+            "desc": false
+          }
+        ]
       },
       "targets": [
         {
@@ -494,9 +618,9 @@
           "min": 0,
           "max": 100,
           "custom": {
-            "fillOpacity": 20,
+            "fillOpacity": 15,
             "lineWidth": 2,
-            "spanNulls": true,
+            "spanNulls": 60000,
             "gradientMode": "scheme"
           },
           "thresholds": {
@@ -611,9 +735,9 @@
         "defaults": {
           "unit": "celsius",
           "custom": {
-            "fillOpacity": 20,
+            "fillOpacity": 15,
             "lineWidth": 2,
-            "spanNulls": true,
+            "spanNulls": 60000,
             "gradientMode": "scheme"
           },
           "thresholds": {
@@ -745,7 +869,7 @@
             "axisCenteredZero": true,
             "fillOpacity": 15,
             "lineWidth": 2,
-            "spanNulls": true,
+            "spanNulls": 60000,
             "gradientMode": "scheme"
           }
         },
@@ -856,9 +980,9 @@
           "min": 0,
           "max": 100,
           "custom": {
-            "fillOpacity": 20,
+            "fillOpacity": 15,
             "lineWidth": 2,
-            "spanNulls": true,
+            "spanNulls": 60000,
             "gradientMode": "scheme"
           },
           "thresholds": {
