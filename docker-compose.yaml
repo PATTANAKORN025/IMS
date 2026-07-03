@@ -82,7 +82,10 @@ services:
           memory: 512M
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-      <<: *healthcheck-defaults
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      #<<: *healthcheck-defaults
     networks:
       - ims-internal
     logging: *default-logging
@@ -105,12 +108,15 @@ services:
       LOG_CONNECTIONS: "0"
       LOG_DISCONNECTIONS: "0"
       AUTH_TYPE: plain
+      LISTEN_PORT: "6432"
     deploy:
       resources:
         limits: *resource-small
         reservations:
           cpus: '0.1'
           memory: 64M
+    ports:
+      - "6433:6432"
     depends_on:
       timescaledb:
         condition: service_healthy
@@ -291,7 +297,7 @@ services:
       NODE_RED_ADMIN_USER: ${NODE_RED_ADMIN_USER:-admin}
       NODE_RED_ADMIN_PASSWORD_HASH: ${NODE_RED_ADMIN_PASSWORD_HASH:-}
       PGHOST: pgbouncer
-      PGPORT: "5432"
+      PGPORT: "6432"
       PGDATABASE: ${POSTGRES_DB}
       PGUSER: ${POSTGRES_USER}
       PGPASSWORD: ${POSTGRES_PASSWORD}
