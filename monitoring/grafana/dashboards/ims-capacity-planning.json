@@ -438,7 +438,7 @@
           "custom": {
             "fillOpacity": 15,
             "lineWidth": 2,
-            "spanNulls": true,
+            "spanNulls": 60000,
             "thresholdsStyle": {
               "mode": "line"
             },
@@ -462,7 +462,33 @@
             ]
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Disk Total (GB)"
+            },
+            "properties": [
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "red"
+                }
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "tooltip": {
@@ -533,9 +559,9 @@
           "min": 0,
           "max": 100,
           "custom": {
-            "fillOpacity": 20,
+            "fillOpacity": 15,
             "lineWidth": 2,
-            "spanNulls": true,
+            "spanNulls": 60000,
             "gradientMode": "scheme"
           },
           "thresholds": {
@@ -606,9 +632,9 @@
           "min": 0,
           "max": 100,
           "custom": {
-            "fillOpacity": 20,
+            "fillOpacity": 15,
             "lineWidth": 2,
-            "spanNulls": true,
+            "spanNulls": 60000,
             "gradientMode": "scheme"
           },
           "thresholds": {
@@ -690,9 +716,9 @@
           "unit": "none",
           "custom": {
             "axisCenteredZero": true,
-            "fillOpacity": 30,
+            "fillOpacity": 15,
             "lineWidth": 2,
-            "spanNulls": true,
+            "spanNulls": 60000,
             "thresholdsStyle": {
               "mode": "dashed"
             },
@@ -812,9 +838,9 @@
           "unit": "none",
           "custom": {
             "axisCenteredZero": true,
-            "fillOpacity": 30,
+            "fillOpacity": 15,
             "lineWidth": 2,
-            "spanNulls": true,
+            "spanNulls": 60000,
             "thresholdsStyle": {
               "mode": "dashed"
             },

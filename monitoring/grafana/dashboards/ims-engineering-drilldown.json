@@ -74,7 +74,7 @@
           "uid": "-- Grafana --"
         },
         "enable": true,
-        "hide": true,
+        "hide": false,
         "iconColor": "rgba(0, 211, 255, 1)",
         "name": "Annotations & Alerts",
         "type": "dashboard"
@@ -424,9 +424,9 @@
           "min": 0,
           "max": 100,
           "custom": {
-            "fillOpacity": 20,
+            "fillOpacity": 15,
             "lineWidth": 2,
-            "spanNulls": true,
+            "spanNulls": 60000,
             "gradientMode": "scheme"
           },
           "thresholds": {
@@ -506,9 +506,9 @@
           "min": 0,
           "max": 100,
           "custom": {
-            "fillOpacity": 20,
+            "fillOpacity": 15,
             "lineWidth": 2,
-            "spanNulls": true,
+            "spanNulls": 60000,
             "gradientMode": "scheme"
           },
           "thresholds": {
@@ -592,7 +592,7 @@
             "axisCenteredZero": true,
             "fillOpacity": 15,
             "lineWidth": 2,
-            "spanNulls": true,
+            "spanNulls": 60000,
             "gradientMode": "scheme"
           }
         },
@@ -718,7 +718,7 @@
           "custom": {
             "fillOpacity": 15,
             "lineWidth": 2,
-            "spanNulls": true,
+            "spanNulls": 60000,
             "thresholdsStyle": {
               "mode": "dashed"
             },
@@ -864,9 +864,10 @@
           "custom": {
             "fillOpacity": 15,
             "lineWidth": 2,
-            "spanNulls": true,
+            "spanNulls": 60000,
             "gradientMode": "scheme"
-          }
+          },
+          "unit": "mbps"
         },
         "overrides": [
           {
@@ -976,7 +977,7 @@
           "custom": {
             "fillOpacity": 15,
             "lineWidth": 2,
-            "spanNulls": true,
+            "spanNulls": 60000,
             "gradientMode": "scheme"
           }
         },
@@ -1100,9 +1101,9 @@
           "unit": "none",
           "custom": {
             "axisCenteredZero": true,
-            "fillOpacity": 30,
+            "fillOpacity": 15,
             "lineWidth": 2,
-            "spanNulls": true,
+            "spanNulls": 60000,
             "thresholdsStyle": {
               "mode": "dashed"
             },
@@ -1190,9 +1191,10 @@
           "custom": {
             "fillOpacity": 15,
             "lineWidth": 2,
-            "spanNulls": true,
+            "spanNulls": 60000,
             "gradientMode": "scheme"
-          }
+          },
+          "unit": "pps"
         },
         "overrides": [
           {
