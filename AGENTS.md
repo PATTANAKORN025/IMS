@@ -200,6 +200,10 @@ Runs on push/PR to `main`. Single job `validate-architecture`:
 
 No unit tests or integration tests in CI yet — run locally via `make test-unit`.
 
+### K6 Stress Test (`.github/workflows/k6-test.yml`)
+
+Weekly (Monday 2am) or manual trigger. Spins up full stack, runs `tests/k6/pipeline-stress.js`, uploads results artifact. Error rate threshold: 5%.
+
 ## Testing
 
 Unit tests in `tests/unit/`:
@@ -207,8 +211,9 @@ Unit tests in `tests/unit/`:
 make test-unit
 # or: npm test --prefix tests/unit
 ```
-- `parser.test.js` — 9 parser unit tests
-- `counter-wraparound.test.js` — 14 counter-wraparound tests
+- `parser.test.js` — parser unit tests
+- `counter-wraparound.test.js` — counter-wraparound tests
+- `boundary-validation.test.js` — out-of-range/garbage value handling
 
 K6 load tests in `tests/k6/` (requires `choco install k6` / `brew install k6`):
 ```bash
