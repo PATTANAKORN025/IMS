@@ -12,11 +12,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Seed .env for validation
         run: cp .env.example .env
 
       - name: Validate Docker Compose
         run: docker compose config -q
+
+      - name: Build Node-RED image
+        run: docker compose build node-red
 
       - name: Lint Prometheus Config
         run: |
