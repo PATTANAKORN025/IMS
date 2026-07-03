@@ -49,12 +49,10 @@ jobs:
 
       - name: Validate Node-RED Flow JSON
         run: |
-          python3 -c "import json; f=json.load(open('flows-ubuntu.json')); print(f'Source flow valid: {len(f)} nodes')"
-          if [ -f nodered_data/flows.json ]; then
-            python3 -c "import json; f=json.load(open('nodered_data/flows.json')); print(f'Runtime flow valid: {len(f)} nodes')"
-          else
-            echo "Runtime flow not found (gitignored) — skipping"
-          fi
+          for f in node-red/flows/*.json; do
+            echo "Checking $f"
+            python3 -c "import json; f=json.load(open('$f')); print(f'VALID: {len(f)} nodes')"
+          done
 
       - name: Secret Scan (gitleaks)
         run: |

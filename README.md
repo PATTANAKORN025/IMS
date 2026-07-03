@@ -36,24 +36,13 @@
 
 ## Dashboard Screenshots
 
-> Screenshots captured from a running IMS instance. Open each dashboard in kiosk mode for NOC wall display.
+> Screenshots coming soon. Open each dashboard in kiosk mode for NOC wall display.
 
 | Dashboard | Description | Kiosk Link |
 |-----------|------------|------------|
 | **NOC Overview** | Fleet health, CPU/RAM/Network timeseries, LDI Yield Risk, Power Cost | [Open Kiosk](http://localhost:3000/d/ims-noc-overview?kiosk=tv) |
 | **Engineering Drill-Down** | Per-machine gauges, CPU/RAM/Network/Temp with Z-Score anomaly detection | [Open Kiosk](http://localhost:3000/d/ims-engineering?kiosk=tv) |
 | **AIOps & Capacity** | Days-until-full regression, fleet Z-Score anomalies, disk/RAM/CPU trends | [Open Kiosk](http://localhost:3000/d/ims-capacity?kiosk=tv) |
-
-### NOC Overview
-![NOC Overview](docs/images/noc-overview.png)
-
-### Engineering Drill-Down
-![Engineering Drill-Down](docs/images/engineering-drilldown.png)
-
-### AIOps & Capacity Forecast
-![Capacity Planning](docs/images/capacity-planning.png)
-
-> **Note**: Screenshots must be captured from a running Grafana instance and saved to `docs/images/`.
 
 ---
 
@@ -144,7 +133,12 @@ IMS/
 ├── docker-compose.yaml          # Main Docker orchestration
 ├── docker-compose.override.yaml # Dev overrides (snmpsim)
 ├── docker-compose.prod.yaml     # Production overrides
-├── flows-ubuntu.json            # Node-RED flows (source of truth)
+├── node-red/
+│   ├── flows/                   # Node-RED flows (Source of Truth)
+│   │   ├── ingestion.json       # SNMP pipeline: walkers → parser → DB
+│   │   └── alerting.json        # Alertmanager webhook → LINE/Teams
+│   ├── Dockerfile               # Custom build: installs npm dependencies
+│   └── settings.js              # Node-RED runtime settings
 ├── .env.example                 # Environment variables template
 ├── secrets/                     # Docker secrets (gitignored)
 ├── postgres/

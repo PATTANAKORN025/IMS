@@ -274,7 +274,9 @@ services:
 
   # ── Node-RED ──────────────────────────────────────────────
   node-red:
-    image: nodered/node-red:4.0.5-22-minimal
+    build:
+      context: .
+      dockerfile: node-red/Dockerfile
     container_name: ims-node-red
     <<: *default-restart
     init: true
