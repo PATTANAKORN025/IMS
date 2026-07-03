@@ -43,8 +43,6 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       PGDATA: /var/lib/postgresql/data/pgdata
-    secrets:
-      - postgres_password
     command:
       - postgres
       - -c
@@ -199,8 +197,6 @@ services:
       GF_SECURITY_COOKIE_SECURE: "false"
       GF_SECURITY_STRICT_TRANSPORT_SECURITY: "false"
       GF_LOG_LEVEL: "info"
-    secrets:
-      - grafana_admin_password
     volumes:
       - grafana_data:/var/lib/grafana
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
@@ -286,7 +282,7 @@ services:
     environment:
       TZ: ${TZ:-Asia/Bangkok}
       NODE_RED_ENABLE_PROJECTS: "false"
-      NODE_OPTIONS: "--max-old-space-size=1024"
+      NODE_OPTIONS: "--max-old-space-size=2048"
       CREDENTIAL_SECRET: ${NODE_RED_CREDENTIAL_SECRET:?set NODE_RED_CREDENTIAL_SECRET in .env}
       NODE_RED_ADMIN_USER: ${NODE_RED_ADMIN_USER:-admin}
       NODE_RED_ADMIN_PASSWORD_HASH: ${NODE_RED_ADMIN_PASSWORD_HASH:-}
@@ -295,8 +291,6 @@ services:
       PGDATABASE: ${POSTGRES_DB}
       PGUSER: ${POSTGRES_USER}
       PGPASSWORD: ${POSTGRES_PASSWORD}
-    secrets:
-      - postgres_password
     ports:
       - "127.0.0.1:1880:1880"
     volumes:
@@ -304,10 +298,10 @@ services:
       - /etc/localtime:/etc/localtime:ro
     deploy:
       resources:
-        limits: *resource-medium
+        limits: *resource-large
         reservations:
-          cpus: '0.25'
-          memory: 256M
+          cpus: '0.5'
+          memory: 512M
     healthcheck:
       test:
         - CMD-SHELL
@@ -340,9 +334,3 @@ networks:
     driver: bridge
   ims-monitoring:
     driver: bridge
-
-secrets:
-  postgres_password:
-    file: ./secrets/postgres_password.txt
-  grafana_admin_password:
-    file: ./secrets/grafana_admin_password.txt

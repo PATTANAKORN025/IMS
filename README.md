@@ -62,7 +62,7 @@
 ```mermaid
 graph LR
     subgraph "Data Collection"
-        A["Network Devices<br/>Servers"] -->|SNMP v2c/v3| B["SNMP Simulator<br/>(Dev)"]
+        A["Network Devices<br/>Servers"] -->|SNMP v2c| B["SNMP Simulator<br/>(Dev)"]
     end
 
     subgraph "Data Pipeline"
@@ -101,11 +101,11 @@ graph LR
 
 | Layer | Technology | หน้าที่ |
 |---|---|---|
-| **Data Collection** | SNMP v2c/v3, Node-RED | เก็บข้อมูลจาก Network Devices และ Servers |
+| **Data Collection** | SNMP v2c, Node-RED | เก็บข้อมูลจาก Network Devices และ Servers |
 | **Data Pipeline** | Node-RED Function Nodes | ประมวลผลข้อมูลดิบ, คำนวณ bandwidth, จัดรูปแบบ |
 | **Storage** | TimescaleDB (PostgreSQL) | เก็บข้อมูล time-series พร้อม hypertable optimization |
 | **Visualization** | Grafana | Dashboard แบบ real-time, drill-down, forecasting |
-| **Alerting** | Prometheus + Alertmanager | ตรวจจับ anomalies, ส่ง notification ผ่าน webhook |
+| **Alerting** | Prometheus + Alertmanager | ตรวจสอบ health status, SLA probing, ส่ง notification ผ่าน webhook |
 | **Infrastructure** | Docker Compose | Container orchestration สำหรับ dev/prod |
 | **Testing** | K6 Load Testing | ทดสอบ performance และ stress testing |
 
@@ -119,9 +119,9 @@ graph LR
 - **LDI Manufacturing Telemetry**: Throughput, PE, JE, Humidity, Power, Vibration
 
 ### ⚡ Zero Downtime Alerting
-- **AIOps Z-Score Anomaly Detection** สำหรับ temperature และ metrics อื่นๆ
-- **Predictive Alerting** ด้วย Linear Regression (regr_slope/regr_intercept)
 - **Smart Inhibition Rules**: Critical alerts suppress lower-severity alerts อัตโนมัติ
+- **SLA Probing**: HTTP/TCP/ICMP probes ผ่าน Blackbox Exporter
+- **Webhook Integration**: Alertmanager → Node-RED → External notification
 
 ### 🎯 Enterprise Dashboard
 - **NOC Overview**: Executive fleet view สำหรับผู้บริหาร
@@ -130,9 +130,9 @@ graph LR
 - **Capacity Planning**: Forecasting สำหรับ long-term resource planning
 
 ### 🛡️ Security & Reliability
-- **SNMP v2c/v3** support (v3 แนะนำสำหรับ production)
+- **SNMP v2c** support (v3 planned for production)
 - **PgBouncer** connection pooling สำหรับ database scalability
-- **Docker secrets management** แยก credentials ออกจาก codebase
+- **Environment-based secrets** via `.env` file (gitignored)
 - **CI/CD pipeline** พร้อม Gitleaks security scanning
 
 ---

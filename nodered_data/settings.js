@@ -25,6 +25,7 @@ module.exports = {
     functionGlobalContext: {
         snmp: require('net-snmp'),
         pg: require('pg'),
+        fs: require('fs'),
         pgPool: new (require('pg').Pool)({
             host: process.env.PGHOST || 'pgbouncer',
             port: parseInt(process.env.PGPORT) || 5432,

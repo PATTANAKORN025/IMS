@@ -4,6 +4,7 @@
     "version": "1.0.0",
     "private": true,
     "dependencies": {
+        "net-snmp": "^3.11.0",
         "node-red-contrib-postgresql": "^0.15.4",
         "node-red-dashboard": "~3.6.6",
         "node-red-node-snmp": "^2.1.0",

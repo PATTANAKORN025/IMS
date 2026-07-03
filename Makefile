@@ -22,7 +22,9 @@ restore:
 	bash scripts/restore-db.sh $(FILE)
 
 test-unit:
-	npm test --prefix tests/unit
+	node tests/unit/boundary-validation.test.js
+	node tests/unit/parser.test.js
+	node tests/unit/counter-wraparound.test.js
 
 test-load:
 	k6 run tests/k6/pipeline-stress.js

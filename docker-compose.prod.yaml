@@ -6,10 +6,7 @@ services:
   node-red:
     environment:
       - NODE_ENV=production
-    # เพิ่ม volume mount สำหรับ settings.js ที่มี adminAuth ตั้งไว้
-    volumes:
-      - ./nodered_data:/data
-      - ./node-red/settings-prod.js:/data/settings.js:ro
+    # settings.js already supports adminAuth via NODE_RED_ADMIN_PASSWORD_HASH env var
 
   grafana:
     ports:
