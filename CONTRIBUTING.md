@@ -27,14 +27,16 @@
 
 ### Node-RED Flows
 
-- `flows-ubuntu.json` is the **source of truth** — never edit `nodered_data/flows.json` directly
+- `node-red/flows/` is the **source of truth** — never edit `nodered_data/flows.json` directly
 - After editing flows, run `make restart` to apply changes
 - Function nodes use `global.get('snmp')` — `require()` is unavailable in sandboxed VM
 - `func` fields are single-line JSON strings — preserve `\n` escape sequences
 
 ```bash
 # Validate flow JSON
-node -e "const j=JSON.parse(require('fs').readFileSync('flows-ubuntu.json','utf8')); console.log('Valid:', j.length, 'nodes')"
+for f in node-red/flows/*.json; do
+  node -e "const j=JSON.parse(require('fs').readFileSync('$f','utf8')); console.log('Valid:', j.length, 'nodes')"
+done
 ```
 
 ### Database
@@ -114,7 +116,10 @@ for f in monitoring/grafana/dashboards/*.json; do python -c "import json; json.l
 ```
 IMS/
 ├── docker-compose.yaml          # Main orchestration
-├── flows-ubuntu.json            # Node-RED flows (source of truth)
+├── node-red/
+│   ├── flows/                   # Node-RED flows (Source of Truth)
+│   ├── Dockerfile               # Custom build: installs npm dependencies
+│   └── settings.js              # Runtime settings
 ├── postgres/init/               # DB schema
 ├── database/migrations/         # TimescaleDB migrations
 ├── monitoring/

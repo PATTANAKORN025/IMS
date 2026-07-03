@@ -277,7 +277,7 @@ cat backup_20260627.sql | docker compose exec -T timescaledb psql -U ims_admin -
 ### Flow Backup
 
 ```bash
-# flows-ubuntu.json คือ source of truth ที่ git ดูแลอยู่แล้ว
+# node-red/flows/ คือ source of truth ที่ git ดูแลอยู่แล้ว
 # สำรอง nodered_data/flows.json (runtime copy)
 cp nodered_data/flows.json nodered_data/flows.json.bak
 
