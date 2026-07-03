@@ -47,6 +47,7 @@ CREATE TABLE public.machine_telemetry (
     ldi_power           DOUBLE PRECISION DEFAULT 0,
     ldi_vibration       DOUBLE PRECISION DEFAULT 0,
     ldi_uptime          BIGINT DEFAULT 0,
+    ldi_temp            DOUBLE PRECISION DEFAULT 0,
     -- Wi-Fi RF metrics (private MIB .1.3.6.1.4.1.9999.2.x): RSSI in dBm (negative), SNR in dB
     wifi_rssi           INT DEFAULT 0,
     wifi_snr            INT DEFAULT 0,
@@ -111,6 +112,8 @@ SELECT
     AVG(ldi_power) AS avg_ldi_power,
     AVG(ldi_vibration) AS avg_ldi_vibration,
     MAX(ldi_vibration) AS max_ldi_vibration,
+    AVG(ldi_temp) AS avg_ldi_temp,
+    MAX(ldi_temp) AS max_ldi_temp,
     -- Wi-Fi RF: MIN(snr) = worst signal-to-noise in the bucket (used by the SNR<20 alert)
     AVG(wifi_rssi) AS avg_wifi_rssi,
     MIN(wifi_rssi) AS min_wifi_rssi,
@@ -152,6 +155,8 @@ SELECT
     AVG(avg_ldi_power) AS avg_ldi_power,
     AVG(avg_ldi_vibration) AS avg_ldi_vibration,
     MAX(max_ldi_vibration) AS max_ldi_vibration,
+    AVG(avg_ldi_temp) AS avg_ldi_temp,
+    MAX(max_ldi_temp) AS max_ldi_temp,
     AVG(avg_wifi_rssi) AS avg_wifi_rssi,
     MIN(min_wifi_rssi) AS min_wifi_rssi,
     AVG(avg_wifi_snr) AS avg_wifi_snr,
@@ -167,6 +172,7 @@ SELECT add_continuous_aggregate_policy('public.telemetry_hourly_summary',
 );
 
 -- ── Fleet Status View ───────────────────────────────────
+-- Scans only last 24h to prevent full hypertable scan as data grows
 CREATE OR REPLACE VIEW public.v_uptime_summary AS
 SELECT
     machine_id,
@@ -181,6 +187,7 @@ SELECT
     ROUND(AVG(temp_c)::NUMERIC, 1) AS current_temp,
     MIN(net_if_status) AS interface_status
 FROM public.machine_telemetry
+WHERE "time" > NOW() - INTERVAL '24 hours'
 GROUP BY machine_id;
 
 -- ── Alert Rules ─────────────────────────────────────────

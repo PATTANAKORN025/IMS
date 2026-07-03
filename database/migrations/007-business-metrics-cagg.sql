@@ -27,19 +27,19 @@ SELECT
   time_bucket('1 hour', time) AS bucket,
   machine_id,
   -- Power Cost (THB/day) = avg_watts * 24 * 4.5 / 1000
-  ROUND(AVG(ldi_power) * 24 * 4.5 / 1000, 2) AS power_cost_thb,
+  ROUND((AVG(ldi_power) * 24 * 4.5 / 1000)::NUMERIC, 2) AS power_cost_thb,
   -- Yield Risk: % of readings where PE or JE outside tolerance
-  ROUND(100.0 * SUM(CASE WHEN ABS(ldi_pe) > 10 OR ABS(ldi_je) > 10 THEN 1 ELSE 0 END)
-    / NULLIF(COUNT(*), 0), 1) AS yield_risk_pct,
+  ROUND((100.0 * SUM(CASE WHEN ABS(ldi_pe) > 10 OR ABS(ldi_je) > 10 THEN 1 ELSE 0 END)
+    / NULLIF(COUNT(*), 0))::NUMERIC, 1) AS yield_risk_pct,
   -- Average throughput
-  ROUND(AVG(ldi_throughput), 2) AS avg_throughput,
+  ROUND(AVG(ldi_throughput)::NUMERIC, 2) AS avg_throughput,
   -- OEE = Availability * Performance * Quality
   CASE
     WHEN AVG(ldi_throughput) = 0 THEN 0
-    ELSE ROUND(
+    ELSE ROUND((
       (AVG(ldi_throughput) / NULLIF(MAX(ldi_throughput), 0)) *
       (1 - (AVG(ldi_pe) + AVG(ldi_je)) / 200) * 100
-    , 1)
+    )::NUMERIC, 1)
   END AS oee_pct
 FROM public.machine_telemetry
 WHERE ldi_pe IS NOT NULL OR ldi_power IS NOT NULL
@@ -55,7 +55,7 @@ SELECT add_continuous_aggregate_policy('business_metrics_hourly',
 
 -- 3. Compression policy
 ALTER MATERIALIZED VIEW public.business_metrics_hourly SET (timescaledb.compress,
-  segmentby = 'machine_id',
-  orderby = 'bucket'
+  timescaledb.compress_segmentby = 'machine_id',
+  timescaledb.compress_orderby = 'bucket'
 );
 SELECT add_compression_policy('business_metrics_hourly', INTERVAL '7 days');

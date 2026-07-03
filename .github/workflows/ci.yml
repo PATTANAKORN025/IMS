@@ -15,12 +15,6 @@ jobs:
       - name: Seed .env for validation
         run: cp .env.example .env
 
-      - name: Create secret stubs for compose validation
-        run: |
-          mkdir -p secrets
-          echo "placeholder" > secrets/postgres_password.txt
-          echo "placeholder" > secrets/grafana_admin_password.txt
-
       - name: Validate Docker Compose
         run: docker compose config -q
 
@@ -46,6 +40,12 @@ jobs:
 
       - name: Lint Grafana Dashboards
         run: node tests/lint/dashboard-linter.js
+
+      - name: Run Unit Tests
+        run: |
+          node tests/unit/boundary-validation.test.js
+          node tests/unit/parser.test.js
+          node tests/unit/counter-wraparound.test.js
 
       - name: Validate Node-RED Flow JSON
         run: |
