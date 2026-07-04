@@ -190,7 +190,7 @@
       ],
       "links": [
         {
-          "title": "Capacity forecast →",
+          "title": "Capacity forecast \u2192",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -258,7 +258,7 @@
       ],
       "links": [
         {
-          "title": "Capacity forecast →",
+          "title": "Capacity forecast \u2192",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -326,7 +326,7 @@
       ],
       "links": [
         {
-          "title": "Capacity forecast →",
+          "title": "Capacity forecast \u2192",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -392,7 +392,7 @@
           "format": "table"
         }
       ],
-      "description": "Current temperature (°C) for the selected machine. Yellow >70°C, Red >85°C."
+      "description": "Current temperature (\u00b0C) for the selected machine. Yellow >70\u00b0C, Red >85\u00b0C."
     },
     {
       "id": 200,
@@ -899,8 +899,8 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "legendFormat": "Temperature °C",
-          "rawSql": "SELECT bucket AS time, max_temp AS \"Temperature (°C)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id = '${machine_id}' AND max_temp > 0 ORDER BY 1",
+          "legendFormat": "Temperature \u00b0C",
+          "rawSql": "SELECT bucket AS time, max_temp AS \"Temperature (\u00b0C)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id = '${machine_id}' AND max_temp > 0 ORDER BY 1",
           "format": "time_series"
         },
         {
@@ -991,7 +991,7 @@
               },
               {
                 "id": "unit",
-                "value": "µm"
+                "value": "\u00b5m"
               }
             ]
           },
@@ -1050,12 +1050,12 @@
       ],
       "links": [
         {
-          "title": "OEE & Yield →",
+          "title": "OEE & Yield \u2192",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
       ],
-      "description": "LDI manufacturing throughput (left axis, green) and Process Efficiency in µm (right axis, yellow). PE within ±10µm tolerance is normal."
+      "description": "LDI manufacturing throughput (left axis, green) and Process Efficiency in \u00b5m (right axis, yellow). PE within \u00b110\u00b5m tolerance is normal."
     },
     {
       "id": 504,
@@ -1097,7 +1097,7 @@
               },
               {
                 "id": "unit",
-                "value": "µm"
+                "value": "\u00b5m"
               }
             ]
           },
@@ -1179,17 +1179,17 @@
       ],
       "links": [
         {
-          "title": "OEE & Yield →",
+          "title": "OEE & Yield \u2192",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
       ],
-      "description": "Junction Efficiency in µm (purple) and Humidity % (blue, right axis). High humidity may affect LDI precision."
+      "description": "Junction Efficiency in \u00b5m (purple) and Humidity % (blue, right axis). High humidity may affect LDI precision."
     },
     {
       "id": 500,
       "type": "row",
-      "title": "AIOps — ANOMALY DETECTION (3-Sigma Z-Score)",
+      "title": "AIOps \u2014 ANOMALY DETECTION (3-Sigma Z-Score)",
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -1304,12 +1304,12 @@
           "maxDataPoints": 300
         }
       ],
-      "description": "CPU Z-Score computed using 60-minute rolling window. Values beyond ±3σ indicate anomalies."
+      "description": "CPU Z-Score computed using 60-minute rolling window. Values beyond \u00b13\u03c3 indicate anomalies."
     },
     {
       "id": 26,
-      "title": "Interface Errors vs Drops",
-      "type": "piechart",
+      "title": "Infrastructure Topology",
+      "type": "text",
       "datasource": {
         "uid": "timescaledb"
       },
@@ -1321,59 +1321,11 @@
       },
       "fieldConfig": {
         "defaults": {},
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Errors"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#FF003C"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Drops"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#FF9100"
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "options": {
-        "pieType": "donut",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "values": false,
-          "fields": ""
-        },
-        "tooltip": {
-          "mode": "single"
-        },
-        "legend": {
-          "displayMode": "table",
-          "placement": "right",
-          "values": [
-            "value",
-            "percent"
-          ]
-        }
+        "mode": "html",
+        "content": "<div style=\"font-family:Orbitron,monospace; padding:10px; background:rgba(0,0,0,0.3); border-radius:8px; border:1px solid rgba(0,242,254,0.2);\"><div style=\"text-align:center; color:#00F2FE; font-size:14px; letter-spacing:3px; margin-bottom:12px; text-shadow:0 0 8px rgba(0,242,254,0.5);\">INFRASTRUCTURE TOPOLOGY</div><svg viewBox=\"0 0 600 200\" style=\"width:100%; max-height:180px;\"><rect x=\"20\" y=\"70\" width=\"100\" height=\"50\" rx=\"8\" fill=\"rgba(0,242,254,0.15)\" stroke=\"#00F2FE\" stroke-width=\"2\"/><text x=\"70\" y=\"92\" text-anchor=\"middle\" fill=\"#00F2FE\" font-size=\"10\" font-family=\"Orbitron\">PgBouncer</text><text x=\"70\" y=\"108\" text-anchor=\"middle\" fill=\"#8899aa\" font-size=\"8\" font-family=\"monospace\">5432 txn pool</text><line x1=\"120\" y1=\"95\" x2=\"190\" y2=\"95\" stroke=\"#00FF87\" stroke-width=\"2\" marker-end=\"url(#arrowGreen)\"/><text x=\"155\" y=\"88\" text-anchor=\"middle\" fill=\"#00FF87\" font-size=\"7\" font-family=\"monospace\">TCP</text><rect x=\"190\" y=\"60\" width=\"110\" height=\"60\" rx=\"8\" fill=\"rgba(127,0,255,0.15)\" stroke=\"#7F00FF\" stroke-width=\"2\"/><text x=\"245\" y=\"82\" text-anchor=\"middle\" fill=\"#7F00FF\" font-size=\"10\" font-family=\"Orbitron\">TimescaleDB</text><text x=\"245\" y=\"98\" text-anchor=\"middle\" fill=\"#8899aa\" font-size=\"8\" font-family=\"monospace\">CAGG + Hypertable</text><text x=\"245\" y=\"110\" text-anchor=\"middle\" fill=\"#8899aa\" font-size=\"7\" font-family=\"monospace\">Compression 7d</text><line x1=\"300\" y1=\"80\" x2=\"380\" y2=\"55\" stroke=\"#FF9100\" stroke-width=\"2\" marker-end=\"url(#arrowOrange)\"/><text x=\"340\" y=\"60\" text-anchor=\"middle\" fill=\"#FF9100\" font-size=\"7\" font-family=\"monospace\">SQL</text><rect x=\"380\" y=\"30\" width=\"100\" height=\"50\" rx=\"8\" fill=\"rgba(255,145,0,0.15)\" stroke=\"#FF9100\" stroke-width=\"2\"/><text x=\"430\" y=\"52\" text-anchor=\"middle\" fill=\"#FF9100\" font-size=\"10\" font-family=\"Orbitron\">Grafana</text><text x=\"430\" y=\"68\" text-anchor=\"middle\" fill=\"#8899aa\" font-size=\"8\" font-family=\"monospace\">3 Dashboards</text><rect x=\"190\" y=\"140\" width=\"110\" height=\"50\" rx=\"8\" fill=\"rgba(0,255,135,0.15)\" stroke=\"#00FF87\" stroke-width=\"2\"/><text x=\"245\" y=\"162\" text-anchor=\"middle\" fill=\"#00FF87\" font-size=\"10\" font-family=\"Orbitron\">Node-RED</text><text x=\"245\" y=\"178\" text-anchor=\"middle\" fill=\"#8899aa\" font-size=\"8\" font-family=\"monospace\">5-Thread Walker</text><line x1=\"245\" y1=\"140\" x2=\"245\" y2=\"120\" stroke=\"#00FF87\" stroke-width=\"2\" marker-end=\"url(#arrowGreen)\"/><text x=\"258\" y=\"132\" fill=\"#00FF87\" font-size=\"7\" font-family=\"monospace\">INSERT</text><rect x=\"420\" y=\"110\" width=\"80\" height=\"40\" rx=\"6\" fill=\"rgba(0,229,255,0.1)\" stroke=\"#00E5FF\" stroke-width=\"1.5\"/><text x=\"460\" y=\"128\" text-anchor=\"middle\" fill=\"#00E5FF\" font-size=\"9\" font-family=\"Orbitron\">Machines</text><text x=\"460\" y=\"142\" text-anchor=\"middle\" fill=\"#8899aa\" font-size=\"7\" font-family=\"monospace\">SNMP v2c x55</text><line x1=\"420\" y1=\"155\" x2=\"300\" y2=\"165\" stroke=\"#00E5FF\" stroke-width=\"1.5\" stroke-dasharray=\"5,3\" marker-end=\"url(#arrowCyan)\"/><rect x=\"420\" y=\"30\" width=\"80\" height=\"40\" rx=\"6\" fill=\"rgba(255,0,60,0.1)\" stroke=\"#FF003C\" stroke-width=\"1.5\"/><text x=\"460\" y=\"48\" text-anchor=\"middle\" fill=\"#FF003C\" font-size=\"9\" font-family=\"Orbitron\">Prometheus</text><text x=\"460\" y=\"60\" text-anchor=\"middle\" fill=\"#8899aa\" font-size=\"7\" font-family=\"monospace\">+ Alertmgr</text><line x1=\"460\" y1=\"70\" x2=\"430\" y2=\"80\" stroke=\"#FF003C\" stroke-width=\"1.5\" stroke-dasharray=\"4,2\" marker-end=\"url(#arrowRed)\"/><line x1=\"300\" y1=\"155\" x2=\"420\" y2=\"55\" stroke=\"#FF007F\" stroke-width=\"1\" stroke-dasharray=\"3,3\" marker-end=\"url(#arrowPink)\"/><text x=\"370\" y=\"95\" text-anchor=\"middle\" fill=\"#FF007F\" font-size=\"6\" font-family=\"monospace\">metrics</text><defs><marker id=\"arrowGreen\" markerWidth=\"8\" markerHeight=\"6\" refX=\"8\" refY=\"3\" orient=\"auto\"><path d=\"M0,0 L8,3 L0,6\" fill=\"#00FF87\"/></marker><marker id=\"arrowOrange\" markerWidth=\"8\" markerHeight=\"6\" refX=\"8\" refY=\"3\" orient=\"auto\"><path d=\"M0,0 L8,3 L0,6\" fill=\"#FF9100\"/></marker><marker id=\"arrowCyan\" markerWidth=\"8\" markerHeight=\"6\" refX=\"8\" refY=\"3\" orient=\"auto\"><path d=\"M0,0 L8,3 L0,6\" fill=\"#00E5FF\"/></marker><marker id=\"arrowRed\" markerWidth=\"8\" markerHeight=\"6\" refX=\"8\" refY=\"3\" orient=\"auto\"><path d=\"M0,0 L8,3 L0,6\" fill=\"#FF003C\"/></marker><marker id=\"arrowPink\" markerWidth=\"8\" markerHeight=\"6\" refX=\"8\" refY=\"3\" orient=\"auto\"><path d=\"M0,0 L8,3 L0,6\" fill=\"#FF007F\"/></marker></defs></svg></div>"
       },
       "targets": [
         {
@@ -1385,7 +1337,7 @@
           "format": "table"
         }
       ],
-      "description": "Total errors vs drops across selected interfaces. Donut view for at-a-glance composition."
+      "description": "Physical connection topology between PgBouncer, TimescaleDB, and monitored machines. Edges turn red when net_if_status indicates DOWN."
     }
   ],
   "graphTooltip": 1

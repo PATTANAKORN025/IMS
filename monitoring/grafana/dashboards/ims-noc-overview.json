@@ -231,7 +231,7 @@
     {
       "id": 4,
       "title": "Fleet Health Score",
-      "type": "stat",
+      "type": "volkovlabs-echarts-panel",
       "datasource": {
         "uid": "timescaledb"
       },
@@ -242,41 +242,12 @@
         "y": 3
       },
       "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 70
-              },
-              {
-                "color": "green",
-                "value": 90
-              }
-            ]
-          }
-        },
+        "defaults": {},
         "overrides": []
       },
       "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "center",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "values": false
-        },
-        "noValue": "N/A"
+        "option": "{\"series\": [{\"type\": \"gauge\", \"startAngle\": 220, \"endAngle\": -40, \"center\": [\"50%\", \"55%\"], \"radius\": \"90%\", \"min\": 0, \"max\": 100, \"splitNumber\": 10, \"axisLine\": {\"lineStyle\": {\"width\": 15, \"color\": [[0.5, \"#FF003C\"], [0.7, \"#FF9100\"], [0.9, \"#FFD600\"], [1, \"#00FF87\"]]}}, \"pointer\": {\"icon\": \"path://M12.8,0.7l12,40.1H0.7L12.8,0.7z\", \"length\": \"60%\", \"width\": 10, \"offsetCenter\": [0, \"-10%\"], \"itemStyle\": {\"color\": \"auto\"}}, \"axisTick\": {\"length\": 8, \"lineStyle\": {\"color\": \"auto\", \"width\": 1}}, \"splitLine\": {\"length\": 15, \"lineStyle\": {\"color\": \"auto\", \"width\": 2}}, \"axisLabel\": {\"color\": \"#8899aa\", \"fontSize\": 10, \"distance\": 25}, \"title\": {\"show\": true, \"offsetCenter\": [0, \"70%\"], \"fontSize\": 13, \"color\": \"#00F2FE\", \"fontFamily\": \"Orbitron\"}, \"detail\": {\"fontSize\": 36, \"offsetCenter\": [0, \"40%\"], \"valueAnimation\": true, \"formatter\": \"{value}%\", \"color\": \"auto\", \"fontWeight\": \"bold\", \"fontFamily\": \"Orbitron\"}, \"data\": [{\"value\": 0, \"name\": \"FLEET HEALTH\"}], \"animationDuration\": 2000, \"animationEasingUpdate\": \"bounceOut\"}]}",
+        "mapJSON": "{}"
       },
       "targets": [
         {
@@ -606,10 +577,10 @@
       },
       "options": {
         "mode": "html",
-        "content": "<div style=\"text-align:center;padding:2px 0;\"><hr style=\"border:none;border-top:2px solid #00F2FE;opacity:0.4;margin:0;\"/></div>"
+        "content": "<style>\n  @import url(\"https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap\");\n  .dashboard-page {\n    background: radial-gradient(circle at center, #0a0b10 0%, #000000 100%) !important;\n    font-family: \"Orbitron\", sans-serif !important;\n  }\n  .panel-container {\n    background: rgba(10, 15, 30, 0.6) !important;\n    border: 1px solid rgba(0, 242, 254, 0.2) !important;\n    box-shadow: 0 0 15px rgba(0, 242, 254, 0.05), inset 0 0 20px rgba(0, 242, 254, 0.02) !important;\n    backdrop-filter: blur(10px) !important;\n    border-radius: 8px !important;\n  }\n  .panel-title {\n    font-family: \"Orbitron\", sans-serif !important;\n    text-transform: uppercase;\n    letter-spacing: 2px;\n    color: #00F2FE !important;\n    text-shadow: 0 0 8px rgba(0, 242, 254, 0.6) !important;\n  }\n  @keyframes neonPulse {\n    0% { box-shadow: 0 0 5px #FF003C, inset 0 0 5px #FF003C; }\n    50% { box-shadow: 0 0 20px #FF003C, inset 0 0 10px #FF003C; }\n    100% { box-shadow: 0 0 5px #FF003C, inset 0 0 5px #FF003C; }\n  }\n  .status-critical { animation: neonPulse 1.5s infinite; border-color: #FF003C !important; }\n</style>\n<div style=\"display:flex; justify-content:space-between; align-items:center; height:100%; border-bottom: 2px solid #00F2FE; box-shadow: 0 2px 10px rgba(0,242,254,0.3); padding: 0 16px;\">\n  <div style=\"font-size:28px; font-weight:900; color:#fff; text-shadow: 0 0 10px #00F2FE, 0 0 20px #00F2FE; letter-spacing:4px;\">\n    APEX <span style=\"color:#00F2FE;\">NOC</span> SYNC\n  </div>\n  <div style=\"color:#00FF87; font-size:13px; text-shadow: 0 0 5px #00FF87;\">SYSTEM ONLINE // SECURE CONNECTION</div>\n</div>"
       },
       "datasource": null,
-      "description": "Visual section divider."
+      "description": "Cyberpunk NOC command center banner with animated neon CSS theme."
     },
     {
       "id": 300,
