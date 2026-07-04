@@ -71,6 +71,23 @@
   },
   "panels": [
     {
+      "id": 900,
+      "type": "text",
+      "title": "",
+      "gridPos": {
+        "h": 2,
+        "w": 18,
+        "x": 0,
+        "y": 0
+      },
+      "options": {
+        "mode": "html",
+        "content": "<style>\n  @import url(\"https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap\");\n  .dashboard-page {\n    background: radial-gradient(circle at center, #0a0b10 0%, #000000 100%) !important;\n    font-family: \"Orbitron\", sans-serif !important;\n  }\n  .panel-container {\n    background: rgba(10, 15, 30, 0.6) !important;\n    border: 1px solid rgba(0, 242, 254, 0.2) !important;\n    box-shadow: 0 0 15px rgba(0, 242, 254, 0.05), inset 0 0 20px rgba(0, 242, 254, 0.02) !important;\n    backdrop-filter: blur(10px) !important;\n    border-radius: 8px !important;\n  }\n  .panel-title {\n    font-family: \"Orbitron\", sans-serif !important;\n    text-transform: uppercase;\n    letter-spacing: 2px;\n    color: #00F2FE !important;\n    text-shadow: 0 0 8px rgba(0, 242, 254, 0.6) !important;\n  }\n  @keyframes neonPulse {\n    0% { box-shadow: 0 0 5px #FF003C, inset 0 0 5px #FF003C; }\n    50% { box-shadow: 0 0 20px #FF003C, inset 0 0 10px #FF003C; }\n    100% { box-shadow: 0 0 5px #FF003C, inset 0 0 5px #FF003C; }\n  }\n  .status-critical { animation: neonPulse 1.5s infinite; border-color: #FF003C !important; }\n</style><div style=\"display:flex;justify-content:space-between;align-items:center;height:100%;border-bottom:2px solid #00F2FE;box-shadow:0 2px 10px rgba(0,242,254,0.3);padding:0 16px;\"><div style=\"font-size:24px;font-weight:900;color:#fff;text-shadow:0 0 10px #00F2FE,0 0 20px #00F2FE;letter-spacing:3px;\">AIOps & <span style=\"color:#00F2FE;\">CAPACITY</span> FORECAST</div><div style=\"color:#00FF87;font-size:12px;text-shadow:0 0 5px #00FF87;\">PREDICTIVE ANALYTICS</div></div>"
+      },
+      "datasource": null,
+      "description": "Cyberpunk command center banner with glassmorphism CSS theme."
+    },
+    {
       "id": 997,
       "type": "grafana-clock-panel",
       "title": "",
@@ -156,7 +173,7 @@
               "type": "value",
               "options": {
                 "9999": {
-                  "text": "∞",
+                  "text": "\u221e",
                   "color": "green",
                   "index": 0
                 }
@@ -167,7 +184,7 @@
         "overrides": []
       },
       "options": {
-        "colorMode": "value",
+        "colorMode": "background-solid",
         "graphMode": "area",
         "justifyMode": "center",
         "reduceOptions": {
@@ -233,7 +250,7 @@
               "type": "value",
               "options": {
                 "9999": {
-                  "text": "∞",
+                  "text": "\u221e",
                   "color": "green",
                   "index": 0
                 }
@@ -244,7 +261,7 @@
         "overrides": []
       },
       "options": {
-        "colorMode": "value",
+        "colorMode": "background-solid",
         "graphMode": "area",
         "justifyMode": "center",
         "reduceOptions": {
@@ -310,7 +327,7 @@
               "type": "value",
               "options": {
                 "9999": {
-                  "text": "∞",
+                  "text": "\u221e",
                   "color": "green",
                   "index": 0
                 }
@@ -321,7 +338,7 @@
         "overrides": []
       },
       "options": {
-        "colorMode": "value",
+        "colorMode": "background-solid",
         "graphMode": "area",
         "justifyMode": "center",
         "reduceOptions": {
@@ -384,7 +401,7 @@
         "overrides": []
       },
       "options": {
-        "colorMode": "value",
+        "colorMode": "background-solid",
         "graphMode": "area",
         "justifyMode": "center",
         "reduceOptions": {
@@ -444,7 +461,8 @@
               "mode": "line"
             },
             "gradientMode": "opacity",
-            "drawStyle": "line"
+            "drawStyle": "line",
+            "lineInterpolation": "smooth"
           },
           "thresholds": {
             "mode": "absolute",
@@ -526,7 +544,7 @@
       "targets": [
         {
           "refId": "A",
-          "legendFormat": "{{ machine_id }} — Used",
+          "legendFormat": "{{ machine_id }} \u2014 Used",
           "datasource": {
             "uid": "timescaledb"
           },
@@ -535,7 +553,7 @@
         },
         {
           "refId": "B",
-          "legendFormat": "{{ machine_id }} — Total",
+          "legendFormat": "{{ machine_id }} \u2014 Total",
           "datasource": {
             "uid": "timescaledb"
           },
@@ -544,7 +562,7 @@
         },
         {
           "refId": "C",
-          "legendFormat": "Forecast — {{ machine_id }}",
+          "legendFormat": "Forecast \u2014 {{ machine_id }}",
           "datasource": {
             "uid": "timescaledb"
           },
@@ -752,7 +770,7 @@
     {
       "id": 500,
       "type": "row",
-      "title": "AIOps — ANOMALY DETECTION",
+      "title": "AIOps \u2014 ANOMALY DETECTION",
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -763,7 +781,7 @@
     },
     {
       "id": 601,
-      "title": "CPU Z-Score Anomaly (3σ)",
+      "title": "CPU Z-Score Anomaly (3\u03c3)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -868,11 +886,11 @@
           "maxDataPoints": 300
         }
       ],
-      "description": "Fleet-wide CPU Z-Score anomaly detection using 60-minute rolling window. Red zones = ±3σ anomalies."
+      "description": "Fleet-wide CPU Z-Score anomaly detection using 60-minute rolling window. Red zones = \u00b13\u03c3 anomalies."
     },
     {
       "id": 602,
-      "title": "Temperature Z-Score Anomaly (3σ)",
+      "title": "Temperature Z-Score Anomaly (3\u03c3)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -977,7 +995,7 @@
           "maxDataPoints": 300
         }
       ],
-      "description": "Fleet-wide temperature Z-Score anomaly detection. Red zones indicate readings beyond ±3 standard deviations."
+      "description": "Fleet-wide temperature Z-Score anomaly detection. Red zones indicate readings beyond \u00b13 standard deviations."
     }
   ],
   "graphTooltip": 1
