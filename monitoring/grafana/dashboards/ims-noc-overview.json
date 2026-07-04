@@ -231,7 +231,7 @@
     {
       "id": 4,
       "title": "Fleet Health Score",
-      "type": "stat",
+      "type": "volkovlabs-echarts-panel",
       "datasource": {
         "uid": "timescaledb"
       },
@@ -242,41 +242,12 @@
         "y": 3
       },
       "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 70
-              },
-              {
-                "color": "green",
-                "value": 90
-              }
-            ]
-          }
-        },
+        "defaults": {},
         "overrides": []
       },
       "options": {
-        "colorMode": "background-solid",
-        "graphMode": "area",
-        "justifyMode": "center",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "values": false
-        },
-        "noValue": "N/A"
+        "code": "let score = 0;\nif (data.series.length > 0 && data.series[0].fields.length > 0) {\n  const field = data.series[0].fields.find(f => f.name === 'value' || f.name === 'health_score');\n  if (field && field.values.length > 0) score = field.values[0];\n}\nreturn {\n  backgroundColor: 'transparent',\n  series: [{\n    type: 'gauge',\n    startAngle: 180, endAngle: 0,\n    min: 0, max: 100,\n    pointer: { show: false },\n    progress: {\n      show: true, overlap: false, roundCap: true, clip: false,\n      itemStyle: {\n        color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [\n          { offset: 0, color: '#FF003C' },\n          { offset: 0.5, color: '#FF9100' },\n          { offset: 1, color: '#00FF87' }\n        ]),\n        shadowBlur: 15, shadowColor: 'rgba(0, 255, 135, 0.6)'\n      }\n    },\n    axisLine: { lineStyle: { width: 15, color: [[1, 'rgba(255,255,255,0.05)']] } },\n    detail: { fontSize: 40, color: '#fff', textShadowBlur: 10, textShadowColor: '#00FF87', formatter: '{value}%' },\n    data: [{ value: score, name: 'FLEET HEALTH' }],\n    title: { color: '#00F2FE', fontSize: 12, offsetCenter: ['0%', '30%'] }\n  }]\n};",
+        "option": "{}"
       },
       "targets": [
         {
@@ -606,7 +577,7 @@
       },
       "options": {
         "mode": "html",
-        "content": "<style>\n  @import url(\"https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap\");\n  .dashboard-page {\n    background: radial-gradient(circle at center, #0a0b10 0%, #000000 100%) !important;\n    font-family: \"Orbitron\", sans-serif !important;\n  }\n  .panel-container {\n    background: rgba(10, 15, 30, 0.6) !important;\n    border: 1px solid rgba(0, 242, 254, 0.2) !important;\n    box-shadow: 0 0 15px rgba(0, 242, 254, 0.05), inset 0 0 20px rgba(0, 242, 254, 0.02) !important;\n    backdrop-filter: blur(10px) !important;\n    border-radius: 8px !important;\n  }\n  .panel-title {\n    font-family: \"Orbitron\", sans-serif !important;\n    text-transform: uppercase;\n    letter-spacing: 2px;\n    color: #00F2FE !important;\n    text-shadow: 0 0 8px rgba(0, 242, 254, 0.6) !important;\n  }\n  @keyframes neonPulse {\n    0% { box-shadow: 0 0 5px #FF003C, inset 0 0 5px #FF003C; }\n    50% { box-shadow: 0 0 20px #FF003C, inset 0 0 10px #FF003C; }\n    100% { box-shadow: 0 0 5px #FF003C, inset 0 0 5px #FF003C; }\n  }\n  .status-critical { animation: neonPulse 1.5s infinite; border-color: #FF003C !important; }\n</style>\n<div style=\"display:flex; justify-content:space-between; align-items:center; height:100%; border-bottom: 2px solid #00F2FE; box-shadow: 0 2px 10px rgba(0,242,254,0.3); padding: 0 16px;\">\n  <div style=\"font-size:28px; font-weight:900; color:#fff; text-shadow: 0 0 10px #00F2FE, 0 0 20px #00F2FE; letter-spacing:4px;\">\n    APEX <span style=\"color:#00F2FE;\">NOC</span> SYNC\n  </div>\n  <div style=\"color:#00FF87; font-size:13px; text-shadow: 0 0 5px #00FF87;\">SYSTEM ONLINE // SECURE CONNECTION</div>\n</div>"
+        "content": "<style>\n  @import url(\"https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap\");\n  .dashboard-page {\n    background: radial-gradient(circle at center, #0a0b10 0%, #000000 100%) !important;\n    font-family: \"Orbitron\", sans-serif !important;\n  }\n  .panel-container {\n    background: rgba(10, 15, 30, 0.6) !important;\n    border: 1px solid rgba(0, 242, 254, 0.2) !important;\n    box-shadow: 0 0 15px rgba(0, 242, 254, 0.05), inset 0 0 20px rgba(0, 242, 254, 0.02) !important;\n    backdrop-filter: blur(10px) !important;\n    border-radius: 8px !important;\n  }\n  .panel-title {\n    font-family: \"Orbitron\", sans-serif !important;\n    text-transform: uppercase;\n    letter-spacing: 2px;\n    color: #00F2FE !important;\n    text-shadow: 0 0 8px rgba(0, 242, 254, 0.6) !important;\n  }\n  @keyframes neonPulse {\n    0% { box-shadow: 0 0 5px #FF003C, inset 0 0 5px #FF003C; }\n    50% { box-shadow: 0 0 20px #FF003C, inset 0 0 10px #FF003C; }\n    100% { box-shadow: 0 0 5px #FF003C, inset 0 0 5px #FF003C; }\n  }\n  .status-critical { animation: neonPulse 1.5s infinite; border-color: #FF003C !important; }\n\nbody::after {\n  content: \" \";\n  display: block;\n  position: absolute;\n  top: 0; left: 0; bottom: 0; right: 0;\n  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));\n  z-index: 2;\n  background-size: 100% 4px, 6px 100%;\n  pointer-events: none;\n}\n</style>\n<div style=\"display:flex; justify-content:space-between; align-items:center; height:100%; border-bottom: 2px solid #00F2FE; box-shadow: 0 2px 10px rgba(0,242,254,0.3); padding: 0 16px;\">\n  <div style=\"font-size:28px; font-weight:900; color:#fff; text-shadow: 0 0 10px #00F2FE, 0 0 20px #00F2FE; letter-spacing:4px;\">\n    APEX <span style=\"color:#00F2FE;\">NOC</span> SYNC\n  </div>\n  <div style=\"color:#00FF87; font-size:13px; text-shadow: 0 0 5px #00FF87;\">SYSTEM ONLINE // SECURE CONNECTION</div>\n</div>"
       },
       "datasource": null,
       "description": "Cyberpunk NOC command center banner with animated neon CSS theme."
