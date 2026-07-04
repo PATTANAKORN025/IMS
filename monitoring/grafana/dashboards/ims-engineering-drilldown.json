@@ -190,7 +190,7 @@
       ],
       "links": [
         {
-          "title": "Capacity forecast \u2192",
+          "title": "Capacity forecast →",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -258,7 +258,7 @@
       ],
       "links": [
         {
-          "title": "Capacity forecast \u2192",
+          "title": "Capacity forecast →",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -326,7 +326,7 @@
       ],
       "links": [
         {
-          "title": "Capacity forecast \u2192",
+          "title": "Capacity forecast →",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -392,7 +392,7 @@
           "format": "table"
         }
       ],
-      "description": "Current temperature (\u00b0C) for the selected machine. Yellow >70\u00b0C, Red >85\u00b0C."
+      "description": "Current temperature (°C) for the selected machine. Yellow >70°C, Red >85°C."
     },
     {
       "id": 200,
@@ -425,10 +425,12 @@
           "min": 0,
           "max": 100,
           "custom": {
-            "fillOpacity": 10,
+            "fillOpacity": 15,
             "lineWidth": 2,
             "spanNulls": 60000,
-            "gradientMode": "none"
+            "gradientMode": "opacity",
+            "drawStyle": "line",
+            "lineInterpolation": "smooth"
           },
           "thresholds": {
             "mode": "absolute",
@@ -448,7 +450,23 @@
             ]
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "^(?!.*TX|Upload|Z-Score).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00FF87"
+                }
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "tooltip": {
@@ -507,10 +525,12 @@
           "min": 0,
           "max": 100,
           "custom": {
-            "fillOpacity": 10,
+            "fillOpacity": 15,
             "lineWidth": 2,
             "spanNulls": 60000,
-            "gradientMode": "none"
+            "gradientMode": "opacity",
+            "drawStyle": "line",
+            "lineInterpolation": "smooth"
           },
           "thresholds": {
             "mode": "absolute",
@@ -530,7 +550,23 @@
             ]
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "^(?!.*TX|Upload).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00F2FE"
+                }
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "tooltip": {
@@ -591,10 +627,11 @@
           "unit": "bps",
           "custom": {
             "axisCenteredZero": true,
-            "fillOpacity": 10,
+            "fillOpacity": 15,
             "lineWidth": 2,
             "spanNulls": 60000,
-            "gradientMode": "none"
+            "gradientMode": "opacity",
+            "drawStyle": "line"
           }
         },
         "overrides": [
@@ -669,6 +706,21 @@
                 "value": "negative-Y"
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*TX|Upload|Upload.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF007F"
+                }
+              }
+            ]
           }
         ]
       },
@@ -729,13 +781,14 @@
         "defaults": {
           "unit": "celsius",
           "custom": {
-            "fillOpacity": 10,
+            "fillOpacity": 15,
             "lineWidth": 2,
             "spanNulls": 60000,
             "thresholdsStyle": {
               "mode": "dashed"
             },
-            "gradientMode": "none"
+            "gradientMode": "opacity",
+            "drawStyle": "line"
           },
           "thresholds": {
             "mode": "absolute",
@@ -806,6 +859,21 @@
                 "value": "bars"
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "^Temperature"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF9100"
+                }
+              }
+            ]
           }
         ]
       },
@@ -831,8 +899,8 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "legendFormat": "Temperature \u00b0C",
-          "rawSql": "SELECT bucket AS time, max_temp AS \"Temperature (\u00b0C)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id = '${machine_id}' AND max_temp > 0 ORDER BY 1",
+          "legendFormat": "Temperature °C",
+          "rawSql": "SELECT bucket AS time, max_temp AS \"Temperature (°C)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id = '${machine_id}' AND max_temp > 0 ORDER BY 1",
           "format": "time_series"
         },
         {
@@ -875,10 +943,12 @@
       "fieldConfig": {
         "defaults": {
           "custom": {
-            "fillOpacity": 10,
+            "fillOpacity": 15,
             "lineWidth": 2,
             "spanNulls": 60000,
-            "gradientMode": "none"
+            "gradientMode": "opacity",
+            "drawStyle": "line",
+            "lineInterpolation": "smooth"
           },
           "unit": "mbps"
         },
@@ -921,7 +991,22 @@
               },
               {
                 "id": "unit",
-                "value": "\u00b5m"
+                "value": "µm"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*TX|Upload|Upload.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF007F"
+                }
               }
             ]
           }
@@ -965,12 +1050,12 @@
       ],
       "links": [
         {
-          "title": "OEE & Yield \u2192",
+          "title": "OEE & Yield →",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
       ],
-      "description": "LDI manufacturing throughput (left axis, green) and Process Efficiency in \u00b5m (right axis, yellow). PE within \u00b110\u00b5m tolerance is normal."
+      "description": "LDI manufacturing throughput (left axis, green) and Process Efficiency in µm (right axis, yellow). PE within ±10µm tolerance is normal."
     },
     {
       "id": 504,
@@ -988,10 +1073,12 @@
       "fieldConfig": {
         "defaults": {
           "custom": {
-            "fillOpacity": 10,
+            "fillOpacity": 15,
             "lineWidth": 2,
             "spanNulls": 60000,
-            "gradientMode": "none"
+            "gradientMode": "opacity",
+            "drawStyle": "line",
+            "lineInterpolation": "smooth"
           }
         },
         "overrides": [
@@ -1010,7 +1097,7 @@
               },
               {
                 "id": "unit",
-                "value": "\u00b5m"
+                "value": "µm"
               }
             ]
           },
@@ -1034,6 +1121,21 @@
               {
                 "id": "unit",
                 "value": "percent"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FADE2A"
+                }
               }
             ]
           }
@@ -1077,17 +1179,17 @@
       ],
       "links": [
         {
-          "title": "OEE & Yield \u2192",
+          "title": "OEE & Yield →",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
       ],
-      "description": "Junction Efficiency in \u00b5m (purple) and Humidity % (blue, right axis). High humidity may affect LDI precision."
+      "description": "Junction Efficiency in µm (purple) and Humidity % (blue, right axis). High humidity may affect LDI precision."
     },
     {
       "id": 500,
       "type": "row",
-      "title": "AIOps \u2014 ANOMALY DETECTION (3-Sigma Z-Score)",
+      "title": "AIOps — ANOMALY DETECTION (3-Sigma Z-Score)",
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -1114,13 +1216,15 @@
           "unit": "none",
           "custom": {
             "axisCenteredZero": true,
-            "fillOpacity": 10,
+            "fillOpacity": 15,
             "lineWidth": 2,
             "spanNulls": 60000,
             "thresholdsStyle": {
               "mode": "dashed"
             },
-            "gradientMode": "none"
+            "gradientMode": "opacity",
+            "drawStyle": "line",
+            "lineInterpolation": "smooth"
           },
           "thresholds": {
             "mode": "absolute",
@@ -1155,87 +1259,18 @@
             "mode": "palette-classic"
           }
         },
-        "overrides": []
-      },
-      "options": {
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        },
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "mean",
-            "max",
-            "lastNotNull"
-          ]
-        },
-        "connectNullPoints": true
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "WITH stats AS (SELECT bucket, avg_cpu_load, AVG(avg_cpu_load) OVER w AS moving_avg, COALESCE(STDDEV(avg_cpu_load) OVER w, 0) AS moving_stddev FROM public.telemetry_minute_summary WHERE machine_id = '${machine_id}' AND $__timeFilter(bucket) WINDOW w AS (PARTITION BY machine_id ORDER BY bucket ROWS BETWEEN 60 PRECEDING AND 1 PRECEDING)) SELECT bucket AS time, CASE WHEN moving_stddev > 0 THEN ROUND(((avg_cpu_load - moving_avg) / moving_stddev)::NUMERIC, 2) ELSE 0 END AS \"Z-Score\" FROM stats ORDER BY 1",
-          "format": "time_series",
-          "maxDataPoints": 300
-        }
-      ],
-      "description": "CPU Z-Score computed using 60-minute rolling window. Values beyond \u00b13\u03c3 indicate anomalies."
-    },
-    {
-      "id": 26,
-      "title": "Interface Error Rates",
-      "type": "timeseries",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 37
-      },
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "fillOpacity": 10,
-            "lineWidth": 2,
-            "spanNulls": 60000,
-            "gradientMode": "none"
-          },
-          "unit": "pps"
-        },
         "overrides": [
           {
             "matcher": {
-              "id": "byName",
-              "options": "Errors"
+              "id": "byRegexp",
+              "options": "^(?!.*TX|Upload|Z-Score).*"
             },
             "properties": [
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#C4162A",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Drops"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#FF9830",
-                  "mode": "fixed"
+                  "mode": "fixed",
+                  "fixedColor": "#00FF87"
                 }
               }
             ]
@@ -1264,21 +1299,93 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "legendFormat": "Errors",
-          "rawSql": "SELECT time, key AS \"Interface\", (value->>'errors')::NUMERIC AS \"Errors\" FROM public.machine_telemetry, jsonb_each(interface_metrics) WHERE machine_id = '${machine_id}' AND $__timeFilter(time) AND key = ANY(ARRAY[${interface:sqlstring}]::text[]) AND value ? 'errors' ORDER BY 1",
-          "format": "time_series"
+          "rawSql": "WITH stats AS (SELECT bucket, avg_cpu_load, AVG(avg_cpu_load) OVER w AS moving_avg, COALESCE(STDDEV(avg_cpu_load) OVER w, 0) AS moving_stddev FROM public.telemetry_minute_summary WHERE machine_id = '${machine_id}' AND $__timeFilter(bucket) WINDOW w AS (PARTITION BY machine_id ORDER BY bucket ROWS BETWEEN 60 PRECEDING AND 1 PRECEDING)) SELECT bucket AS time, CASE WHEN moving_stddev > 0 THEN ROUND(((avg_cpu_load - moving_avg) / moving_stddev)::NUMERIC, 2) ELSE 0 END AS \"Z-Score\" FROM stats ORDER BY 1",
+          "format": "time_series",
+          "maxDataPoints": 300
+        }
+      ],
+      "description": "CPU Z-Score computed using 60-minute rolling window. Values beyond ±3σ indicate anomalies."
+    },
+    {
+      "id": 26,
+      "title": "Interface Errors vs Drops",
+      "type": "piechart",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 37
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Errors"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF003C"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Drops"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF9100"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false,
+          "fields": ""
         },
+        "tooltip": {
+          "mode": "single"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "values": [
+            "value",
+            "percent"
+          ]
+        }
+      },
+      "targets": [
         {
-          "refId": "B",
+          "refId": "A",
           "datasource": {
             "uid": "timescaledb"
           },
-          "legendFormat": "Drops",
-          "rawSql": "SELECT time, key AS \"Interface\", (value->>'drops')::NUMERIC AS \"Drops\" FROM public.machine_telemetry, jsonb_each(interface_metrics) WHERE machine_id = '${machine_id}' AND $__timeFilter(time) AND key = ANY(ARRAY[${interface:sqlstring}]::text[]) AND value ? 'drops' ORDER BY 1",
-          "format": "time_series"
+          "rawSql": "SELECT 'Errors' AS metric, SUM((value->>'errors')::NUMERIC) AS value FROM public.machine_telemetry, jsonb_each(interface_metrics) WHERE machine_id = '${machine_id}' AND $__timeFilter(time) AND key = ANY(ARRAY[${interface:sqlstring}]::text[]) AND value ? 'errors' UNION ALL SELECT 'Drops' AS metric, SUM((value->>'drops')::NUMERIC) AS value FROM public.machine_telemetry, jsonb_each(interface_metrics) WHERE machine_id = '${machine_id}' AND $__timeFilter(time) AND key = ANY(ARRAY[${interface:sqlstring}]::text[]) AND value ? 'drops'",
+          "format": "table"
         }
       ],
-      "description": "Per-interface errors (red) and drops (orange) from interface_metrics JSONB. Filtered by $interface variable."
+      "description": "Total errors vs drops across selected interfaces. Donut view for at-a-glance composition."
     }
   ],
   "graphTooltip": 1

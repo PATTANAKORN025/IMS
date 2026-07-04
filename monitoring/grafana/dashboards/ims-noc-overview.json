@@ -157,6 +157,23 @@
       "collapsed": false
     },
     {
+      "id": 901,
+      "type": "text",
+      "title": "",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 3
+      },
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"text-align:center;padding:2px 0;\"><hr style=\"border:none;border-top:1px solid #00F2FE;opacity:0.25;margin:0;\"/></div>"
+      },
+      "datasource": null,
+      "description": "Visual section divider."
+    },
+    {
       "id": 2,
       "title": "Machines Online",
       "type": "stat",
@@ -188,8 +205,8 @@
         "overrides": []
       },
       "options": {
-        "colorMode": "background-solid",
-        "graphMode": "none",
+        "colorMode": "value",
+        "graphMode": "area",
         "justifyMode": "center",
         "reduceOptions": {
           "calcs": [
@@ -250,8 +267,8 @@
         "overrides": []
       },
       "options": {
-        "colorMode": "background-solid",
-        "graphMode": "none",
+        "colorMode": "value",
+        "graphMode": "area",
         "justifyMode": "center",
         "reduceOptions": {
           "calcs": [
@@ -312,7 +329,7 @@
         "overrides": []
       },
       "options": {
-        "colorMode": "background-solid",
+        "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "center",
         "reduceOptions": {
@@ -484,12 +501,6 @@
             },
             "properties": [
               {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "color-text"
-                }
-              },
-              {
                 "id": "thresholds",
                 "value": {
                   "mode": "absolute",
@@ -508,6 +519,13 @@
                     }
                   ]
                 }
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "gauge",
+                  "mode": "gradient"
+                }
               }
             ]
           },
@@ -517,12 +535,6 @@
               "options": "Temp (\u00b0C)"
             },
             "properties": [
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "color-text"
-                }
-              },
               {
                 "id": "thresholds",
                 "value": {
@@ -541,6 +553,13 @@
                       "value": 55
                     }
                   ]
+                }
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "gauge",
+                  "mode": "gradient"
                 }
               }
             ]
@@ -576,6 +595,23 @@
       "description": "Real-time fleet status table showing each machine's CPU, RAM, disk, temperature, network, and LDI health. Click machine name to drill down."
     },
     {
+      "id": 900,
+      "type": "text",
+      "title": "",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 18
+      },
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"text-align:center;padding:2px 0;\"><hr style=\"border:none;border-top:2px solid #00F2FE;opacity:0.4;margin:0;\"/></div>"
+      },
+      "datasource": null,
+      "description": "Visual section divider."
+    },
+    {
       "id": 300,
       "type": "row",
       "title": "KEY METRICS (Real-Time)",
@@ -606,10 +642,12 @@
           "min": 0,
           "max": 100,
           "custom": {
-            "fillOpacity": 10,
+            "fillOpacity": 15,
             "lineWidth": 2,
             "spanNulls": 60000,
-            "gradientMode": "none"
+            "gradientMode": "opacity",
+            "drawStyle": "line",
+            "lineInterpolation": "smooth"
           },
           "thresholds": {
             "mode": "absolute",
@@ -632,39 +670,16 @@
         "overrides": [
           {
             "matcher": {
-              "id": "byName",
-              "options": "ERP-MASTER-UBUNTU"
+              "id": "byRegexp",
+              "options": "^(?!.*TX|Upload|Z-Score).*"
             },
             "properties": [
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#FF6B35",
-                  "mode": "fixed"
+                  "mode": "fixed",
+                  "fixedColor": "#00FF87"
                 }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "ERP-MASTER-WINDOWS"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#4ECDC4",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
               }
             ]
           }
@@ -723,10 +738,11 @@
         "defaults": {
           "unit": "celsius",
           "custom": {
-            "fillOpacity": 10,
+            "fillOpacity": 15,
             "lineWidth": 2,
             "spanNulls": 60000,
-            "gradientMode": "none"
+            "gradientMode": "opacity",
+            "drawStyle": "line"
           },
           "thresholds": {
             "mode": "absolute",
@@ -749,39 +765,16 @@
         "overrides": [
           {
             "matcher": {
-              "id": "byName",
-              "options": "ERP-MASTER-UBUNTU"
+              "id": "byRegexp",
+              "options": "^Temperature"
             },
             "properties": [
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#FF6B35",
-                  "mode": "fixed"
+                  "mode": "fixed",
+                  "fixedColor": "#FF9100"
                 }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "ERP-MASTER-WINDOWS"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#4ECDC4",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
               }
             ]
           }
@@ -855,51 +848,14 @@
           "unit": "mbps",
           "custom": {
             "axisCenteredZero": true,
-            "fillOpacity": 10,
+            "fillOpacity": 15,
             "lineWidth": 2,
             "spanNulls": 60000,
-            "gradientMode": "none"
+            "gradientMode": "opacity",
+            "drawStyle": "line"
           }
         },
         "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "ERP-MASTER-UBUNTU"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#FF6B35",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "ERP-MASTER-WINDOWS"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#4ECDC4",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              }
-            ]
-          },
           {
             "matcher": {
               "id": "byRegexp",
@@ -909,6 +865,21 @@
               {
                 "id": "custom.transform",
                 "value": "negative-Y"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*TX|Upload|Upload.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF007F"
+                }
               }
             ]
           }
@@ -980,10 +951,12 @@
           "min": 0,
           "max": 100,
           "custom": {
-            "fillOpacity": 10,
+            "fillOpacity": 15,
             "lineWidth": 2,
             "spanNulls": 60000,
-            "gradientMode": "none"
+            "gradientMode": "opacity",
+            "drawStyle": "line",
+            "lineInterpolation": "smooth"
           },
           "thresholds": {
             "mode": "absolute",
@@ -1006,39 +979,16 @@
         "overrides": [
           {
             "matcher": {
-              "id": "byName",
-              "options": "ERP-MASTER-UBUNTU"
+              "id": "byRegexp",
+              "options": "^(?!.*TX|Upload).*"
             },
             "properties": [
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#FF6B35",
-                  "mode": "fixed"
+                  "mode": "fixed",
+                  "fixedColor": "#00F2FE"
                 }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "ERP-MASTER-WINDOWS"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "#4ECDC4",
-                  "mode": "fixed"
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 2
               }
             ]
           }
