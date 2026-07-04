@@ -192,7 +192,8 @@ services:
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_AUTH_ANONYMOUS_ENABLED: "false"
       GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:-http://localhost:3000}
-      GF_INSTALL_PLUGINS: "grafana-clock-panel,grafana-piechart-panel"
+      GF_INSTALL_PLUGINS: "grafana-clock-panel,grafana-piechart-panel,volkovlabs-echarts-panel,marcusolsson-hexmap-panel"
+      GF_PANELS_DISABLE_SANITIZE_HTML: "true"
       GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/ims-noc-overview.json
       GF_SECURITY_COOKIE_SECURE: "false"
       GF_SECURITY_STRICT_TRANSPORT_SECURITY: "false"
