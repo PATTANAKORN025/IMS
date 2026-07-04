@@ -94,7 +94,7 @@
       },
       "options": {
         "mode": "html",
-        "content": "<style>\n@import url(\"https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap\");\n.dashboard-page {\n  background: radial-gradient(circle at center, #0B0E14 0%, #040508 100%),\n              linear-gradient(0deg, transparent 24%, rgba(0,242,254,0.03) 25%, rgba(0,242,254,0.03) 26%, transparent 27%),\n              linear-gradient(90deg, transparent 24%, rgba(0,242,254,0.03) 25%, rgba(0,242,254,0.03) 26%, transparent 27%) !important;\n  background-size: 100% 100%, 50px 50px, 50px 50px !important;\n  font-family: 'Rajdhani', sans-serif !important;\n}\n.panel-container {\n  background: linear-gradient(180deg, rgba(20, 25, 40, 0.9) 0%, rgba(10, 12, 20, 0.95) 100%) !important;\n  border: 1px solid rgba(0, 242, 254, 0.3) !important;\n  border-radius: 10px !important;\n  box-shadow: 0 10px 20px rgba(0,0,0,0.4), inset 0 0 10px rgba(0, 242, 254, 0.1) !important;\n}\n.panel-title {\n  font-family: 'Rajdhani', sans-serif !important;\n  font-weight: 700; letter-spacing: 2px;\n  color: #00F2FE !important;\n}\n.react-grid-item { padding: 3px !important; }\n@keyframes fluidPulse {\n  0% { filter: drop-shadow(0 0 8px #FF003C); opacity: 0.85; }\n  50% { filter: drop-shadow(0 0 25px #FF003C); opacity: 1; }\n  100% { filter: drop-shadow(0 0 8px #FF003C); opacity: 0.85; }\n}\n.status-critical { animation: fluidPulse 2s cubic-bezier(0.4, 0, 0.2, 1) infinite !important; }\n</style><div style=\"display:flex;justify-content:space-between;align-items:center;height:100%;border-bottom:2px solid #00F2FE;box-shadow:0 2px 15px rgba(0,242,254,0.4);padding:0 16px;\"><div style=\"font-size:32px;font-weight:700;color:#fff;text-shadow:0 0 15px #00F2FE;letter-spacing:5px;font-family:Rajdhani,sans-serif;\">IMS Engineering Drill-Down</div><div style=\"color:#00FF87;font-size:13px;text-shadow:0 0 5px #00FF87;\">NOC COMMAND CENTER // LIVE</div></div>"
+        "content": "<style>\n@import url(\"https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap\");\n.dashboard-page {\n  background: radial-gradient(circle at center, #0B0E14 0%, #040508 100%),\n              linear-gradient(0deg, transparent 24%, rgba(0,242,254,0.03) 25%, rgba(0,242,254,0.03) 26%, transparent 27%),\n              linear-gradient(90deg, transparent 24%, rgba(0,242,254,0.03) 25%, rgba(0,242,254,0.03) 26%, transparent 27%) !important;\n  background-size: 100% 100%, 50px 50px, 50px 50px !important;\n  font-family: 'Rajdhani', sans-serif !important;\n}\n.panel-container {\n  background: linear-gradient(180deg, rgba(20,25,40,0.9) 0%, rgba(10,15,25,0.95) 100%) !important;\n  border: none !important;\n  border-left: 3px solid #00F2FE !important;\n  box-shadow: none !important;\n  border-radius: 0 !important;\n}\n.panel-title {\n  font-family: 'Rajdhani', sans-serif !important;\n  font-weight: 700; letter-spacing: 2px;\n  color: #00F2FE !important;\n}\n.react-grid-item { padding: 0 !important; margin: 0 !important; }\n.row-container { background: rgba(0,242,254,0.06) !important; border-left: 3px solid #00F2FE !important; }\n</style><div style=\"display:flex;justify-content:space-between;align-items:center;height:100%;border-bottom:2px solid #00F2FE;padding:0 16px;\"><div style=\"font-size:26px;font-weight:700;color:#fff;letter-spacing:4px;font-family:Rajdhani,sans-serif;\">ENGINEERING DRILL-DOWN</div><div style=\"color:#00FF87;font-size:12px;\">PER-MACHINE DIAGNOSTICS</div></div>"
       },
       "datasource": null,
       "description": "Cyberpunk command center banner with glassmorphism CSS theme.",
@@ -211,12 +211,12 @@
       ],
       "links": [
         {
-          "title": "Capacity forecast \u2192",
+          "title": "Capacity forecast →",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         },
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -285,12 +285,12 @@
       ],
       "links": [
         {
-          "title": "Capacity forecast \u2192",
+          "title": "Capacity forecast →",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         },
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -359,12 +359,12 @@
       ],
       "links": [
         {
-          "title": "Capacity forecast \u2192",
+          "title": "Capacity forecast →",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         },
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -430,12 +430,17 @@
           "format": "table"
         }
       ],
-      "description": "Current temperature (\u00b0C) for the selected machine. Yellow >70\u00b0C, Red >85\u00b0C.",
+      "description": "Current temperature (°C) for the selected machine. Yellow >70°C, Red >85°C.",
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": true
+        },
+        {
+          "title": "Drill-down → Engineering",
+          "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
       ]
@@ -477,8 +482,7 @@
             "spanNulls": 60000,
             "gradientMode": "opacity",
             "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "spacing": 10
+            "lineInterpolation": "smooth"
           },
           "thresholds": {
             "mode": "absolute",
@@ -547,7 +551,7 @@
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -589,8 +593,7 @@
             "spanNulls": 60000,
             "gradientMode": "opacity",
             "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "spacing": 10
+            "lineInterpolation": "smooth"
           }
         },
         "overrides": [
@@ -725,7 +728,7 @@
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -756,8 +759,7 @@
             },
             "gradientMode": "opacity",
             "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "spacing": 10
+            "lineInterpolation": "smooth"
           },
           "thresholds": {
             "mode": "absolute",
@@ -868,8 +870,8 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "legendFormat": "Temperature \u00b0C",
-          "rawSql": "SELECT bucket AS time, max_temp AS \"Temperature (\u00b0C)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id = '${machine_id}' AND max_temp > 0 ORDER BY 1",
+          "legendFormat": "Temperature °C",
+          "rawSql": "SELECT bucket AS time, max_temp AS \"Temperature (°C)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id = '${machine_id}' AND max_temp > 0 ORDER BY 1",
           "format": "time_series"
         },
         {
@@ -886,7 +888,7 @@
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -926,8 +928,7 @@
             "spanNulls": 60000,
             "gradientMode": "opacity",
             "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "spacing": 10
+            "lineInterpolation": "smooth"
           },
           "unit": "mbps"
         },
@@ -970,7 +971,7 @@
               },
               {
                 "id": "unit",
-                "value": "\u00b5m"
+                "value": "µm"
               }
             ]
           },
@@ -1029,17 +1030,17 @@
       ],
       "links": [
         {
-          "title": "OEE & Yield \u2192",
+          "title": "OEE & Yield →",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         },
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
       ],
-      "description": "LDI manufacturing throughput (left axis, green) and Process Efficiency in \u00b5m (right axis, yellow). PE within \u00b110\u00b5m tolerance is normal.",
+      "description": "LDI manufacturing throughput (left axis, green) and Process Efficiency in µm (right axis, yellow). PE within ±10µm tolerance is normal.",
       "transparent": true
     },
     {
@@ -1063,8 +1064,7 @@
             "spanNulls": 60000,
             "gradientMode": "opacity",
             "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "spacing": 10
+            "lineInterpolation": "smooth"
           }
         },
         "overrides": [
@@ -1083,7 +1083,7 @@
               },
               {
                 "id": "unit",
-                "value": "\u00b5m"
+                "value": "µm"
               }
             ]
           },
@@ -1165,17 +1165,17 @@
       ],
       "links": [
         {
-          "title": "OEE & Yield \u2192",
+          "title": "OEE & Yield →",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         },
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
       ],
-      "description": "Junction Efficiency in \u00b5m (purple) and Humidity % (blue, right axis). High humidity may affect LDI precision.",
+      "description": "Junction Efficiency in µm (purple) and Humidity % (blue, right axis). High humidity may affect LDI precision.",
       "transparent": true
     },
     {
@@ -1196,7 +1196,7 @@
         "overrides": []
       },
       "options": {
-        "code": "let peData = [], jeData = [];\nif (data.series.length >= 2) {\n  const peS = data.series.find(s => s.name === 'PE' || s.fields[0]?.name === 'PE');\n  const jeS = data.series.find(s => s.name === 'JE' || s.fields[0]?.name === 'JE');\n  if (peS && peS.fields.length >= 2) {\n    const times = peS.fields.find(f => f.name === 'time' || f.name === '_time');\n    const vals = peS.fields.find(f => f.name !== 'time' && f.name !== '_time' && f.name !== 'machine_id');\n    if (times && vals) {\n      for (let i = 0; i < Math.min(times.values.length, 500); i++) {\n        peData.push([new Date(times.values[i]).getTime(), vals.values[i]]);\n      }\n    }\n  }\n  if (jeS && jeS.fields.length >= 2) {\n    const times = jeS.fields.find(f => f.name === 'time' || f.name === '_time');\n    const vals = jeS.fields.find(f => f.name !== 'time' && f.name !== '_time' && f.name !== 'machine_id');\n    if (times && vals) {\n      for (let i = 0; i < Math.min(times.values.length, 500); i++) {\n        jeData.push([new Date(times.values[i]).getTime(), vals.values[i]]);\n      }\n    }\n  }\n}\nreturn {\n  backgroundColor: 'transparent',\n  tooltip: { trigger: 'item' },\n  legend: { data: ['Process Efficiency', 'Junction Efficiency'], textStyle: { color: '#aaa' }, top: 5 },\n  xAxis: { type: 'time', axisLine: { lineStyle: { color: '#333' } }, axisLabel: { color: '#888' } },\n  yAxis: { type: 'value', name: '\u00b5m', axisLine: { lineStyle: { color: '#333' } }, axisLabel: { color: '#888' } },\n  series: [\n    {\n      name: 'Process Efficiency', type: 'scatter', symbolSize: 5, data: peData,\n      itemStyle: { color: '#00FF87', shadowBlur: 5, shadowColor: 'rgba(0,255,135,0.5)' }\n    },\n    {\n      name: 'Junction Efficiency', type: 'scatter', symbolSize: 5, data: jeData,\n      itemStyle: { color: '#00F2FE', shadowBlur: 5, shadowColor: 'rgba(0,242,254,0.5)' }\n    }\n  ],\n  markArea: {\n    silent: true,\n    data: [[\n      { yAxis: -10, itemStyle: { color: 'rgba(0, 255, 135, 0.08)', borderColor: 'rgba(0, 255, 135, 0.3)', borderWidth: 1 } },\n      { yAxis: 10 }\n    ]]\n  },\n  grid: { left: 50, right: 20, top: 40, bottom: 30 }\n};",
+        "code": "let peData = [], jeData = [];\nif (data.series.length >= 2) {\n  const peS = data.series.find(s => s.name === 'PE' || s.fields[0]?.name === 'PE');\n  const jeS = data.series.find(s => s.name === 'JE' || s.fields[0]?.name === 'JE');\n  if (peS && peS.fields.length >= 2) {\n    const times = peS.fields.find(f => f.name === 'time' || f.name === '_time');\n    const vals = peS.fields.find(f => f.name !== 'time' && f.name !== '_time' && f.name !== 'machine_id');\n    if (times && vals) {\n      for (let i = 0; i < Math.min(times.values.length, 500); i++) {\n        peData.push([new Date(times.values[i]).getTime(), vals.values[i]]);\n      }\n    }\n  }\n  if (jeS && jeS.fields.length >= 2) {\n    const times = jeS.fields.find(f => f.name === 'time' || f.name === '_time');\n    const vals = jeS.fields.find(f => f.name !== 'time' && f.name !== '_time' && f.name !== 'machine_id');\n    if (times && vals) {\n      for (let i = 0; i < Math.min(times.values.length, 500); i++) {\n        jeData.push([new Date(times.values[i]).getTime(), vals.values[i]]);\n      }\n    }\n  }\n}\nreturn {\n  backgroundColor: 'transparent',\n  tooltip: { trigger: 'item' },\n  legend: { data: ['Process Efficiency', 'Junction Efficiency'], textStyle: { color: '#aaa' }, top: 5 },\n  xAxis: { type: 'time', axisLine: { lineStyle: { color: '#333' } }, axisLabel: { color: '#888' } },\n  yAxis: { type: 'value', name: 'µm', axisLine: { lineStyle: { color: '#333' } }, axisLabel: { color: '#888' } },\n  series: [\n    {\n      name: 'Process Efficiency', type: 'scatter', symbolSize: 5, data: peData,\n      itemStyle: { color: '#00FF87', shadowBlur: 5, shadowColor: 'rgba(0,255,135,0.5)' }\n    },\n    {\n      name: 'Junction Efficiency', type: 'scatter', symbolSize: 5, data: jeData,\n      itemStyle: { color: '#00F2FE', shadowBlur: 5, shadowColor: 'rgba(0,242,254,0.5)' }\n    }\n  ],\n  markArea: {\n    silent: true,\n    data: [[\n      { yAxis: -10, itemStyle: { color: 'rgba(0, 255, 135, 0.08)', borderColor: 'rgba(0, 255, 135, 0.3)', borderWidth: 1 } },\n      { yAxis: 10 }\n    ]]\n  },\n  grid: { left: 50, right: 20, top: 40, bottom: 30 }\n};",
         "option": "{}"
       },
       "targets": [
@@ -1217,13 +1217,13 @@
           "format": "time_series"
         }
       ],
-      "description": "LDI quality scatter with \u00b110\u00b5m tolerance zone (green band). Points outside the zone indicate quality risk.",
+      "description": "LDI quality scatter with ±10µm tolerance zone (green band). Points outside the zone indicate quality risk.",
       "transparent": true
     },
     {
       "id": 500,
       "type": "row",
-      "title": "AIOps \u2014 ANOMALY DETECTION (3-Sigma Z-Score)",
+      "title": "AIOps — ANOMALY DETECTION (3-Sigma Z-Score)",
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -1259,8 +1259,7 @@
             },
             "gradientMode": "opacity",
             "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "spacing": 10
+            "lineInterpolation": "smooth"
           },
           "thresholds": {
             "mode": "absolute",
@@ -1340,11 +1339,11 @@
           "maxDataPoints": 300
         }
       ],
-      "description": "CPU Z-Score computed using 60-minute rolling window. Values beyond \u00b13\u03c3 indicate anomalies.",
+      "description": "CPU Z-Score computed using 60-minute rolling window. Values beyond ±3σ indicate anomalies.",
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -1412,29 +1411,29 @@
       },
       "options": {
         "mode": "html",
-        "content": "<div style=\"display:flex; align-items:center; justify-content:center; height:100%; padding:0 16px;\"><a href=\"/d/ims-noc-overview\" target=\"_blank\" style=\"flex:1; display:flex; align-items:center; justify-content:center; padding:10px 0; margin:0 4px; background:rgba(15,20,30,0.8); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#889; font-size:14px; font-weight:700; font-family:Rajdhani,monospace; letter-spacing:2px; text-decoration:none; transition:filter 0.2s; \" onmouseover=\"this.style.filter='brightness(1.5)'\" onmouseout=\"this.style.filter='brightness(1)'\">SERVER HEALTH</a><a href=\"/d/ims-engineering\" target=\"_blank\" style=\"flex:1; display:flex; align-items:center; justify-content:center; padding:10px 0; margin:0 4px; background:rgba(15,20,30,0.8); border:2px solid #00FF87; border-radius:8px; color:#fff; font-size:14px; font-weight:700; font-family:Rajdhani,monospace; letter-spacing:2px; text-decoration:none; transition:filter 0.2s; box-shadow: 0 0 12px #00FF8740;\" onmouseover=\"this.style.filter='brightness(1.5)'\" onmouseout=\"this.style.filter='brightness(1)'\">\u25b8 NETWORK ANALYTICS</a><a href=\"/d/ims-capacity\" target=\"_blank\" style=\"flex:1; display:flex; align-items:center; justify-content:center; padding:10px 0; margin:0 4px; background:rgba(15,20,30,0.8); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#889; font-size:14px; font-weight:700; font-family:Rajdhani,monospace; letter-spacing:2px; text-decoration:none; transition:filter 0.2s; \" onmouseover=\"this.style.filter='brightness(1.5)'\" onmouseout=\"this.style.filter='brightness(1)'\">CAPACITY PLANNING</a></div>"
+        "content": "<div style=\"display:flex; align-items:center; justify-content:center; height:100%; padding:0 16px;\"><a href=\"/d/ims-noc-overview\" target=\"_blank\" style=\"flex:1; display:flex; align-items:center; justify-content:center; padding:10px 0; margin:0 4px; background:rgba(15,20,30,0.8); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#889; font-size:14px; font-weight:700; font-family:Rajdhani,monospace; letter-spacing:2px; text-decoration:none; transition:filter 0.2s; \" onmouseover=\"this.style.filter='brightness(1.5)'\" onmouseout=\"this.style.filter='brightness(1)'\">SERVER HEALTH</a><a href=\"/d/ims-engineering\" target=\"_blank\" style=\"flex:1; display:flex; align-items:center; justify-content:center; padding:10px 0; margin:0 4px; background:rgba(15,20,30,0.8); border:2px solid #00FF87; border-radius:8px; color:#fff; font-size:14px; font-weight:700; font-family:Rajdhani,monospace; letter-spacing:2px; text-decoration:none; transition:filter 0.2s; box-shadow: 0 0 12px #00FF8740;\" onmouseover=\"this.style.filter='brightness(1.5)'\" onmouseout=\"this.style.filter='brightness(1)'\">▸ NETWORK ANALYTICS</a><a href=\"/d/ims-capacity\" target=\"_blank\" style=\"flex:1; display:flex; align-items:center; justify-content:center; padding:10px 0; margin:0 4px; background:rgba(15,20,30,0.8); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#889; font-size:14px; font-weight:700; font-family:Rajdhani,monospace; letter-spacing:2px; text-decoration:none; transition:filter 0.2s; \" onmouseover=\"this.style.filter='brightness(1.5)'\" onmouseout=\"this.style.filter='brightness(1)'\">CAPACITY PLANNING</a></div>"
       },
       "datasource": null,
       "transparent": true,
-      "description": "Navigation hub \u2014 quick jump between dashboards."
+      "description": "Navigation hub — quick jump between dashboards."
     },
     {
       "id": 99,
       "type": "text",
       "title": "",
       "gridPos": {
-        "h": 2,
+        "h": 1,
         "w": 24,
         "x": 0,
         "y": 49
       },
       "options": {
         "mode": "html",
-        "content": "<div style=\"display:flex;align-items:center;justify-content:center;height:100%;padding:0 16px;\"><a href=\"/d/ims-noc-overview\" target=\"_blank\" style=\"flex:1;display:flex;align-items:center;justify-content:center;padding:12px 0;margin:0 4px;background:rgba(15,20,30,0.85);border:1px solid rgba(255,255,255,0.15);border-radius:8px;cursor:pointer;color:#889;font-size:15px;font-weight:700;font-family:Rajdhani,monospace;letter-spacing:2px;text-decoration:none;transition:all 0.2s;\" onmouseover=\"this.style.filter='brightness(1.3)';this.style.transform='scale(1.02)'\" onmouseout=\"this.style.filter='brightness(1)';this.style.transform='scale(1)'\">SERVER HEALTH</a><a href=\"/d/ims-engineering\" target=\"_blank\" style=\"flex:1;display:flex;align-items:center;justify-content:center;padding:12px 0;margin:0 4px;background:rgba(15,20,30,0.85);border:2px solid #00FF87;border-radius:8px;cursor:pointer;color:#fff;font-size:15px;font-weight:700;font-family:Rajdhani,monospace;letter-spacing:2px;text-decoration:none;transition:all 0.2s;box-shadow: 0 0 15px #00FF8750;\" onmouseover=\"this.style.filter='brightness(1.3)';this.style.transform='scale(1.02)'\" onmouseout=\"this.style.filter='brightness(1)';this.style.transform='scale(1)'\">\u25b8 NETWORK ANALYTICS</a><a href=\"/d/ims-capacity\" target=\"_blank\" style=\"flex:1;display:flex;align-items:center;justify-content:center;padding:12px 0;margin:0 4px;background:rgba(15,20,30,0.85);border:1px solid rgba(255,255,255,0.15);border-radius:8px;cursor:pointer;color:#889;font-size:15px;font-weight:700;font-family:Rajdhani,monospace;letter-spacing:2px;text-decoration:none;transition:all 0.2s;\" onmouseover=\"this.style.filter='brightness(1.3)';this.style.transform='scale(1.02)'\" onmouseout=\"this.style.filter='brightness(1)';this.style.transform='scale(1)'\">CAPACITY PLANNING</a></div>"
+        "content": "<div style=\"display:flex;align-items:center;justify-content:center;height:100%;padding:0 12px;\"><a href=\"/d/ims-noc-overview\" target=\"_blank\" style=\"flex:1;display:flex;align-items:center;justify-content:center;padding:8px 0;margin:0 3px;background:rgba(15,20,30,0.8);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:#889;font-size:13px;font-weight:700;font-family:Rajdhani,monospace;letter-spacing:2px;text-decoration:none;transition:filter 0.2s;\" onmouseover=\"this.style.filter='brightness(1.3)'\" onmouseout=\"this.style.filter='brightness(1)'\">SERVER HEALTH</a><a href=\"/d/ims-engineering\" target=\"_blank\" style=\"flex:1;display:flex;align-items:center;justify-content:center;padding:8px 0;margin:0 3px;background:rgba(15,20,30,0.8);border:2px solid #00FF87;border-radius:6px;color:#fff;font-size:13px;font-weight:700;font-family:Rajdhani,monospace;letter-spacing:2px;text-decoration:none;transition:filter 0.2s;box-shadow:0 0 8px #00FF8740;\" onmouseover=\"this.style.filter='brightness(1.3)'\" onmouseout=\"this.style.filter='brightness(1)'\">▸ NETWORK ANALYTICS</a><a href=\"/d/ims-capacity\" target=\"_blank\" style=\"flex:1;display:flex;align-items:center;justify-content:center;padding:8px 0;margin:0 3px;background:rgba(15,20,30,0.8);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:#889;font-size:13px;font-weight:700;font-family:Rajdhani,monospace;letter-spacing:2px;text-decoration:none;transition:filter 0.2s;\" onmouseover=\"this.style.filter='brightness(1.3)'\" onmouseout=\"this.style.filter='brightness(1)'\">CAPACITY PLANNING</a></div>"
       },
       "datasource": null,
       "transparent": true,
-      "description": "Navigation hub \u2014 quick jump between dashboards."
+      "description": "Navigation hub — quick jump between dashboards."
     }
   ],
   "graphTooltip": 1
