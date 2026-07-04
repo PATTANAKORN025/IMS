@@ -201,6 +201,9 @@ cp .env.example .env
 # Development mode (with SNMP simulator)
 docker compose up -d
 
+# Deploy Node-RED flows (required after first start)
+make deploy-flows
+
 # Production mode
 docker compose -f docker-compose.yaml -f docker-compose.prod.yaml up -d
 ```

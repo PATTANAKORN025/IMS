@@ -6,6 +6,10 @@ services:
   node-red:
     environment:
       - NODE_ENV=production
+      - LINE_CHANNEL_ACCESS_TOKEN=${LINE_CHANNEL_ACCESS_TOKEN:-}
+      - LINE_USER_ID=${LINE_USER_ID:-}
+      - TEAMS_WEBHOOK_URL=${TEAMS_WEBHOOK_URL:-}
+      - TEAMS_WEBHOOK_TYPE=${TEAMS_WEBHOOK_TYPE:-AdaptiveCard}
     # settings.js already supports adminAuth via NODE_RED_ADMIN_PASSWORD_HASH env var
 
   grafana:
