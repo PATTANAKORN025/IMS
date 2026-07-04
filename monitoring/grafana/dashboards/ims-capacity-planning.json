@@ -490,8 +490,8 @@
           },
           {
             "matcher": {
-              "id": "byName",
-              "options": "Forecast — {{ machine_id }}"
+              "id": "byRegexp",
+              "options": "/^Forecast.*/"
             },
             "properties": [
               {
