@@ -94,7 +94,7 @@
       },
       "options": {
         "mode": "html",
-        "content": "<style>\n@import url(\"https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap\");\n.dashboard-page {\n  background: radial-gradient(circle at center, #0B0E14 0%, #040508 100%),\n              linear-gradient(0deg, transparent 24%, rgba(0,242,254,0.03) 25%, rgba(0,242,254,0.03) 26%, transparent 27%),\n              linear-gradient(90deg, transparent 24%, rgba(0,242,254,0.03) 25%, rgba(0,242,254,0.03) 26%, transparent 27%) !important;\n  background-size: 100% 100%, 50px 50px, 50px 50px !important;\n  font-family: 'Rajdhani', sans-serif !important;\n}\n.panel-container {\n  background: linear-gradient(135deg, rgba(11,14,20,0.8) 0%, rgba(15,20,30,0.5) 100%) !important;\n  border: 1px solid rgba(0,242,254,0.15) !important;\n  box-shadow: 0 4px 30px rgba(0,0,0,0.5), inset 0 0 20px rgba(0,242,254,0.05) !important;\n  backdrop-filter: blur(12px) !important;\n  border-radius: 12px !important;\n}\n.panel-title {\n  font-family: 'Rajdhani', sans-serif !important;\n  font-weight: 700; letter-spacing: 2px;\n  color: #00F2FE !important;\n  transition: text-shadow 0.3s ease-in-out;\n}\n.panel-title:hover {\n  text-shadow: 2px 0 #FF003C, -2px 0 #00F2FE !important;\n}\n.react-grid-item { padding: 5px !important; }\n.panel-container:hover {\n  transform: scale(1.01);\n  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);\n  cursor: pointer;\n}\n@keyframes fluidPulse {\n  0% { filter: drop-shadow(0 0 5px #FF003C); opacity: 0.8; }\n  50% { filter: drop-shadow(0 0 20px #FF003C); opacity: 1; }\n  100% { filter: drop-shadow(0 0 5px #FF003C); opacity: 0.8; }\n}\n.status-critical { animation: fluidPulse 2s cubic-bezier(0.4, 0, 0.2, 1) infinite; }\n</style><div style=\"display:flex;justify-content:space-between;align-items:center;height:100%;border-bottom:2px solid #00F2FE;box-shadow:0 2px 15px rgba(0,242,254,0.4);padding:0 16px;\"><div style=\"font-size:32px;font-weight:700;color:#fff;text-shadow:0 0 15px #00F2FE;letter-spacing:5px;font-family:Rajdhani,sans-serif;\">ENGINEERING <span style=\"color:#00F2FE;\">DRILL-DOWN</span></div><div style=\"color:#00FF87;font-size:13px;text-shadow:0 0 5px #00FF87;\">PER-MACHINE DIAGNOSTICS</div></div>"
+        "content": "<style>\n@import url(\"https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap\");\n.dashboard-page {\n  background: radial-gradient(circle at center, #0B0E14 0%, #040508 100%),\n              linear-gradient(0deg, transparent 24%, rgba(0,242,254,0.03) 25%, rgba(0,242,254,0.03) 26%, transparent 27%),\n              linear-gradient(90deg, transparent 24%, rgba(0,242,254,0.03) 25%, rgba(0,242,254,0.03) 26%, transparent 27%) !important;\n  background-size: 100% 100%, 50px 50px, 50px 50px !important;\n  font-family: 'Rajdhani', sans-serif !important;\n}\n.panel-container {\n  background: rgba(11,14,20,0.65) !important;\n  border: 1px solid rgba(0,242,254,0.12) !important;\n  box-shadow: 0 4px 30px rgba(0,0,0,0.5), inset 0 0 20px rgba(0,242,254,0.04) !important;\n  border-radius: 10px !important;\n}\n.panel-title {\n  font-family: 'Rajdhani', sans-serif !important;\n  font-weight: 700; letter-spacing: 2px;\n  color: #00F2FE !important;\n}\n.react-grid-item { padding: 3px !important; }\n</style><div style=\"display:flex;justify-content:space-between;align-items:center;height:100%;border-bottom:2px solid #00F2FE;box-shadow:0 2px 12px rgba(0,242,254,0.3);padding:0 16px;\"><div style=\"font-size:28px;font-weight:700;color:#fff;text-shadow:0 0 12px #00F2FE;letter-spacing:4px;font-family:Rajdhani,sans-serif;\">ENGINEERING DRILL-DOWN</div><div style=\"color:#00FF87;font-size:12px;text-shadow:0 0 4px #00FF87;\">PER-MACHINE DIAGNOSTICS</div></div>"
       },
       "datasource": null,
       "description": "Cyberpunk command center banner with glassmorphism CSS theme.",
@@ -146,7 +146,8 @@
         "x": 0,
         "y": 2
       },
-      "collapsed": false
+      "collapsed": false,
+      "transparent": true
     },
     {
       "id": 1,
@@ -449,7 +450,8 @@
         "x": 0,
         "y": 9
       },
-      "collapsed": false
+      "collapsed": false,
+      "transparent": true
     },
     {
       "id": 501,
@@ -470,8 +472,8 @@
           "min": 0,
           "max": 100,
           "custom": {
-            "fillOpacity": 15,
-            "lineWidth": 2,
+            "fillOpacity": 20,
+            "lineWidth": 3,
             "spanNulls": 60000,
             "gradientMode": "opacity",
             "drawStyle": "line",
@@ -560,7 +562,8 @@
         "x": 0,
         "y": 18
       },
-      "collapsed": false
+      "collapsed": false,
+      "transparent": true
     },
     {
       "id": 502,
@@ -580,8 +583,8 @@
           "unit": "bps",
           "custom": {
             "axisCenteredZero": true,
-            "fillOpacity": 15,
-            "lineWidth": 2,
+            "fillOpacity": 20,
+            "lineWidth": 3,
             "spanNulls": 60000,
             "gradientMode": "opacity",
             "drawStyle": "line",
@@ -743,8 +746,8 @@
         "defaults": {
           "unit": "celsius",
           "custom": {
-            "fillOpacity": 15,
-            "lineWidth": 2,
+            "fillOpacity": 20,
+            "lineWidth": 3,
             "spanNulls": 60000,
             "thresholdsStyle": {
               "mode": "dashed"
@@ -896,7 +899,8 @@
         "x": 0,
         "y": 27
       },
-      "collapsed": false
+      "collapsed": false,
+      "transparent": true
     },
     {
       "id": 503,
@@ -914,8 +918,8 @@
       "fieldConfig": {
         "defaults": {
           "custom": {
-            "fillOpacity": 15,
-            "lineWidth": 2,
+            "fillOpacity": 20,
+            "lineWidth": 3,
             "spanNulls": 60000,
             "gradientMode": "opacity",
             "drawStyle": "line",
@@ -1050,8 +1054,8 @@
       "fieldConfig": {
         "defaults": {
           "custom": {
-            "fillOpacity": 15,
-            "lineWidth": 2,
+            "fillOpacity": 20,
+            "lineWidth": 3,
             "spanNulls": 60000,
             "gradientMode": "opacity",
             "drawStyle": "line",
@@ -1221,7 +1225,8 @@
         "x": 0,
         "y": 36
       },
-      "collapsed": false
+      "collapsed": false,
+      "transparent": true
     },
     {
       "id": 40,
@@ -1241,8 +1246,8 @@
           "unit": "none",
           "custom": {
             "axisCenteredZero": true,
-            "fillOpacity": 15,
-            "lineWidth": 2,
+            "fillOpacity": 20,
+            "lineWidth": 3,
             "spanNulls": 60000,
             "thresholdsStyle": {
               "mode": "dashed"
@@ -1388,6 +1393,24 @@
       ],
       "description": "Holographic radar: 6-axis system health matrix showing CPU, RAM, Storage, Thermal, Net RX, Net TX.",
       "transparent": true
+    },
+    {
+      "id": 99,
+      "type": "text",
+      "title": "",
+      "gridPos": {
+        "h": 2,
+        "w": 24,
+        "x": 0,
+        "y": 46
+      },
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"display:flex; align-items:center; justify-content:center; height:100%; padding:0 16px;\"><a href=\"/d/ims-noc-overview\" target=\"_blank\" style=\"flex:1; display:flex; align-items:center; justify-content:center; padding:10px 0; margin:0 4px; background:rgba(15,20,30,0.8); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#889; font-size:14px; font-weight:700; font-family:Rajdhani,monospace; letter-spacing:2px; text-decoration:none; transition:filter 0.2s; \" onmouseover=\"this.style.filter='brightness(1.5)'\" onmouseout=\"this.style.filter='brightness(1)'\">SERVER HEALTH</a><a href=\"/d/ims-engineering\" target=\"_blank\" style=\"flex:1; display:flex; align-items:center; justify-content:center; padding:10px 0; margin:0 4px; background:rgba(15,20,30,0.8); border:2px solid #00FF87; border-radius:8px; color:#fff; font-size:14px; font-weight:700; font-family:Rajdhani,monospace; letter-spacing:2px; text-decoration:none; transition:filter 0.2s; box-shadow: 0 0 12px #00FF8740;\" onmouseover=\"this.style.filter='brightness(1.5)'\" onmouseout=\"this.style.filter='brightness(1)'\">\u25b8 NETWORK ANALYTICS</a><a href=\"/d/ims-capacity\" target=\"_blank\" style=\"flex:1; display:flex; align-items:center; justify-content:center; padding:10px 0; margin:0 4px; background:rgba(15,20,30,0.8); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#889; font-size:14px; font-weight:700; font-family:Rajdhani,monospace; letter-spacing:2px; text-decoration:none; transition:filter 0.2s; \" onmouseover=\"this.style.filter='brightness(1.5)'\" onmouseout=\"this.style.filter='brightness(1)'\">CAPACITY PLANNING</a></div>"
+      },
+      "datasource": null,
+      "transparent": true,
+      "description": "Navigation hub \u2014 quick jump between dashboards."
     }
   ],
   "graphTooltip": 1
