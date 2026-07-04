@@ -97,7 +97,8 @@
         "content": "<style>\n  @import url(\"https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap\");\n  .dashboard-page {\n    background: radial-gradient(circle at center, #0a0b10 0%, #000000 100%) !important;\n    font-family: \"Orbitron\", sans-serif !important;\n  }\n  .panel-container {\n    background: rgba(10, 15, 30, 0.6) !important;\n    border: 1px solid rgba(0, 242, 254, 0.2) !important;\n    box-shadow: 0 0 15px rgba(0, 242, 254, 0.05), inset 0 0 20px rgba(0, 242, 254, 0.02) !important;\n    backdrop-filter: blur(10px) !important;\n    border-radius: 8px !important;\n  }\n  .panel-title {\n    font-family: \"Orbitron\", sans-serif !important;\n    text-transform: uppercase;\n    letter-spacing: 2px;\n    color: #00F2FE !important;\n    text-shadow: 0 0 8px rgba(0, 242, 254, 0.6) !important;\n  }\n  @keyframes neonPulse {\n    0% { box-shadow: 0 0 5px #FF003C, inset 0 0 5px #FF003C; }\n    50% { box-shadow: 0 0 20px #FF003C, inset 0 0 10px #FF003C; }\n    100% { box-shadow: 0 0 5px #FF003C, inset 0 0 5px #FF003C; }\n  }\n  .status-critical { animation: neonPulse 1.5s infinite; border-color: #FF003C !important; }\n</style><div style=\"display:flex;justify-content:space-between;align-items:center;height:100%;border-bottom:2px solid #00F2FE;box-shadow:0 2px 10px rgba(0,242,254,0.3);padding:0 16px;\"><div style=\"font-size:24px;font-weight:900;color:#fff;text-shadow:0 0 10px #00F2FE,0 0 20px #00F2FE;letter-spacing:3px;\">ENGINEERING <span style=\"color:#00F2FE;\">DRILL-DOWN</span></div><div style=\"color:#00FF87;font-size:12px;text-shadow:0 0 5px #00FF87;\">PER-MACHINE DIAGNOSTICS</div></div>"
       },
       "datasource": null,
-      "description": "Cyberpunk command center banner with glassmorphism CSS theme."
+      "description": "Cyberpunk command center banner with glassmorphism CSS theme.",
+      "transparent": true
     },
     {
       "id": 998,
@@ -129,7 +130,8 @@
         "timezone": "Asia/Bangkok",
         "bgColor": "transparent"
       },
-      "description": "Current time and date (Asia/Bangkok timezone)."
+      "description": "Current time and date (Asia/Bangkok timezone).",
+      "transparent": true
     },
     {
       "id": 100,
@@ -147,7 +149,7 @@
       "collapsed": false
     },
     {
-      "id": 10,
+      "id": 1,
       "title": "System Resources",
       "type": "volkovlabs-echarts-panel",
       "datasource": {
@@ -159,12 +161,13 @@
         "x": 0,
         "y": 3
       },
+      "transparent": true,
       "fieldConfig": {
         "defaults": {},
         "overrides": []
       },
       "options": {
-        "code": "let cpu = 0, ram = 0, disk = 0;\nif (data.series.length >= 3) {\n  for (const s of data.series) {\n    if (s.fields.length > 0) {\n      const val = s.fields[0].values[0] || 0;\n      const ref = s.name || s.fields[0].name || '';\n      if (ref.includes('CPU') || ref === 'A') cpu = val;\n      else if (ref.includes('RAM') || ref === 'B') ram = val;\n      else if (ref.includes('Disk') || ref === 'C') disk = val;\n    }\n  }\n}\nfunction makeRing(val, color, r, w) {\n  return {\n    type: 'gauge', startAngle: 225, endAngle: -45,\n    center: ['50%', '50%'], radius: r,\n    min: 0, max: 100,\n    pointer: { show: false },\n    progress: { show: true, overlap: false, roundCap: true, clip: false,\n      itemStyle: { color: color, shadowBlur: 20, shadowColor: color }\n    },\n    axisLine: { lineStyle: { width: w, color: [[1, 'rgba(255,255,255,0.04)']] } },\n    axisTick: { show: false }, splitLine: { show: false }, axisLabel: { show: false },\n    detail: { fontSize: 14, color: '#fff', offsetCenter: [0, '0%'],\n      formatter: function(v) { return v + '%'; }, textShadowBlur: 6, textShadowColor: color },\n    data: [{ value: val }]\n  };\n}\nreturn {\n  backgroundColor: 'transparent',\n  series: [\n    makeRing(cpu, '#00FF87', '85%', 12),\n    makeRing(ram, '#00F2FE', '65%', 12),\n    makeRing(disk, '#7F00FF', '45%', 12),\n    {\n      type: 'text', left: 'center', top: '40%',\n      style: { text: cpu.toFixed(0) + '%\\nCPU', fill: '#00FF87', fontSize: 18,\n        fontWeight: 'bold', textAlign: 'center', fontFamily: 'Orbitron, monospace',\n        textShadowBlur: 8, textShadowColor: '#00FF87' }\n    },\n    {\n      type: 'text', left: 'center', top: '55%',\n      style: { text: ram.toFixed(0) + '% RAM | ' + disk.toFixed(0) + '% Disk', fill: '#8899aa', fontSize: 11,\n        textAlign: 'center', fontFamily: 'monospace' }\n    }\n  ]\n};",
+        "code": "const getVal = (idx) => {\n  try {\n    const f = data.series[idx].fields.find(x => x.type === 'number');\n    const v = f.values.buffer || f.values; return v[v.length - 1] || 0;\n  } catch(e) { return 0; }\n};\nreturn {\n  backgroundColor: 'transparent',\n  angleAxis: { max: 100, clockwise: true, show: false },\n  radiusAxis: { type: 'category', show: true, axisLabel: { show: false }, axisLine: { show: false }, axisTick: { show: false } },\n  polar: { center: ['50%', '50%'], radius: '80%' },\n  series: [\n    { type: 'bar', data: [{ value: getVal(0), itemStyle: { color: '#00FF87', shadowBlur: 15, shadowColor: '#00FF87' } }], coordinateSystem: 'polar', roundCap: true, barWidth: 15, barGap: '-100%' },\n    { type: 'bar', data: [{ value: getVal(1), itemStyle: { color: '#00F2FE', shadowBlur: 15, shadowColor: '#00F2FE' } }], coordinateSystem: 'polar', roundCap: true, barWidth: 15, barGap: '-100%' },\n    { type: 'bar', data: [{ value: getVal(2), itemStyle: { color: '#7F00FF', shadowBlur: 15, shadowColor: '#7F00FF' } }], coordinateSystem: 'polar', roundCap: true, barWidth: 15, barGap: '-100%' }\n  ]\n};",
         "option": "{}"
       },
       "targets": [
@@ -193,7 +196,7 @@
           "format": "table"
         }
       ],
-      "description": "Concentric sci-fi rings: CPU (emerald), RAM (sapphire), Disk (purple).",
+      "description": "Arc Reactor: CPU (emerald), RAM (sapphire), Disk (purple) concentric rings.",
       "links": [
         {
           "title": "Capacity forecast \u2192",
@@ -261,7 +264,8 @@
           "format": "table"
         }
       ],
-      "description": "Current temperature (\u00b0C) for the selected machine. Yellow >70\u00b0C, Red >85\u00b0C."
+      "description": "Current temperature (\u00b0C) for the selected machine. Yellow >70\u00b0C, Red >85\u00b0C.",
+      "transparent": true
     },
     {
       "id": 200,
@@ -274,106 +278,6 @@
         "y": 9
       },
       "collapsed": false
-    },
-    {
-      "id": 10,
-      "title": "CPU Load Over Time",
-      "type": "timeseries",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 10
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "custom": {
-            "fillOpacity": 15,
-            "lineWidth": 2,
-            "spanNulls": 60000,
-            "gradientMode": "opacity",
-            "drawStyle": "line",
-            "lineInterpolation": "smooth"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 80
-              },
-              {
-                "color": "red",
-                "value": 90
-              }
-            ]
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": "^(?!.*TX|Upload|Z-Score).*"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#00FF87"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "options": {
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        },
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "mean",
-            "max",
-            "lastNotNull"
-          ]
-        },
-        "connectNullPoints": true
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "legendFormat": "CPU Load %",
-          "rawSql": "SELECT bucket AS time, avg_cpu_load AS \"CPU Load %\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id = '${machine_id}' ORDER BY 1",
-          "format": "time_series"
-        },
-        {
-          "refId": "B",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "legendFormat": "Z-Score (Anomaly)",
-          "rawSql": "WITH stats AS (SELECT bucket, avg_cpu_load, AVG(avg_cpu_load) OVER w AS mu, COALESCE(STDDEV(avg_cpu_load) OVER w, 0) AS sigma FROM public.telemetry_minute_summary WHERE machine_id = '${machine_id}' AND $__timeFilter(bucket) WINDOW w AS (PARTITION BY machine_id ORDER BY bucket ROWS BETWEEN 60 PRECEDING AND 1 PRECEDING)) SELECT bucket AS time, CASE WHEN sigma > 0 THEN ROUND(((avg_cpu_load - mu) / sigma)::NUMERIC, 2) ELSE 0 END AS \"Z-Score\" FROM stats ORDER BY 1",
-          "format": "time_series"
-        }
-      ],
-      "description": "CPU utilization over time for the selected machine. Yellow >75%, Red >90% threshold lines."
     },
     {
       "id": 501,
@@ -464,7 +368,8 @@
           "format": "time_series"
         }
       ],
-      "description": "RAM utilization for the selected machine. Yellow at 75%, Red at 90%. Gapfilled via LOCF."
+      "description": "RAM utilization for the selected machine. Yellow at 75%, Red at 90%. Gapfilled via LOCF.",
+      "transparent": true
     },
     {
       "id": 300,
@@ -632,7 +537,8 @@
           "maxDataPoints": 300
         }
       ],
-      "description": "Per-interface bandwidth from interface_metrics JSONB. Download positive, Upload mirrored via negative-Y axis."
+      "description": "Per-interface bandwidth from interface_metrics JSONB. Download positive, Upload mirrored via negative-Y axis.",
+      "transparent": true
     },
     {
       "id": 21,
@@ -784,7 +690,8 @@
           "format": "time_series"
         }
       ],
-      "description": "Temperature readings from sensor OIDs (UCD-SNMP lmSensors) for the selected machine."
+      "description": "Temperature readings from sensor OIDs (UCD-SNMP lmSensors) for the selected machine.",
+      "transparent": true
     },
     {
       "id": 507,
@@ -926,7 +833,8 @@
           "targetBlank": true
         }
       ],
-      "description": "LDI manufacturing throughput (left axis, green) and Process Efficiency in \u00b5m (right axis, yellow). PE within \u00b110\u00b5m tolerance is normal."
+      "description": "LDI manufacturing throughput (left axis, green) and Process Efficiency in \u00b5m (right axis, yellow). PE within \u00b110\u00b5m tolerance is normal.",
+      "transparent": true
     },
     {
       "id": 504,
@@ -1055,7 +963,8 @@
           "targetBlank": true
         }
       ],
-      "description": "Junction Efficiency in \u00b5m (purple) and Humidity % (blue, right axis). High humidity may affect LDI precision."
+      "description": "Junction Efficiency in \u00b5m (purple) and Humidity % (blue, right axis). High humidity may affect LDI precision.",
+      "transparent": true
     },
     {
       "id": 510,
@@ -1096,7 +1005,8 @@
           "format": "time_series"
         }
       ],
-      "description": "LDI quality scatter with \u00b110\u00b5m tolerance zone (green band). Points outside the zone indicate quality risk."
+      "description": "LDI quality scatter with \u00b110\u00b5m tolerance zone (green band). Points outside the zone indicate quality risk.",
+      "transparent": true
     },
     {
       "id": 500,
@@ -1216,7 +1126,8 @@
           "maxDataPoints": 300
         }
       ],
-      "description": "CPU Z-Score computed using 60-minute rolling window. Values beyond \u00b13\u03c3 indicate anomalies."
+      "description": "CPU Z-Score computed using 60-minute rolling window. Values beyond \u00b13\u03c3 indicate anomalies.",
+      "transparent": true
     },
     {
       "id": 26,
@@ -1249,7 +1160,8 @@
           "format": "table"
         }
       ],
-      "description": "Physical connection topology between PgBouncer, TimescaleDB, and monitored machines. Edges turn red when net_if_status indicates DOWN."
+      "description": "Physical connection topology between PgBouncer, TimescaleDB, and monitored machines. Edges turn red when net_if_status indicates DOWN.",
+      "transparent": true
     }
   ],
   "graphTooltip": 1

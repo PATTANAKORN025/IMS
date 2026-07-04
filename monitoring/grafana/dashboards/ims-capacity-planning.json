@@ -85,7 +85,8 @@
         "content": "<style>\n  @import url(\"https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap\");\n  .dashboard-page {\n    background: radial-gradient(circle at center, #0a0b10 0%, #000000 100%) !important;\n    font-family: \"Orbitron\", sans-serif !important;\n  }\n  .panel-container {\n    background: rgba(10, 15, 30, 0.6) !important;\n    border: 1px solid rgba(0, 242, 254, 0.2) !important;\n    box-shadow: 0 0 15px rgba(0, 242, 254, 0.05), inset 0 0 20px rgba(0, 242, 254, 0.02) !important;\n    backdrop-filter: blur(10px) !important;\n    border-radius: 8px !important;\n  }\n  .panel-title {\n    font-family: \"Orbitron\", sans-serif !important;\n    text-transform: uppercase;\n    letter-spacing: 2px;\n    color: #00F2FE !important;\n    text-shadow: 0 0 8px rgba(0, 242, 254, 0.6) !important;\n  }\n  @keyframes neonPulse {\n    0% { box-shadow: 0 0 5px #FF003C, inset 0 0 5px #FF003C; }\n    50% { box-shadow: 0 0 20px #FF003C, inset 0 0 10px #FF003C; }\n    100% { box-shadow: 0 0 5px #FF003C, inset 0 0 5px #FF003C; }\n  }\n  .status-critical { animation: neonPulse 1.5s infinite; border-color: #FF003C !important; }\n</style><div style=\"display:flex;justify-content:space-between;align-items:center;height:100%;border-bottom:2px solid #00F2FE;box-shadow:0 2px 10px rgba(0,242,254,0.3);padding:0 16px;\"><div style=\"font-size:24px;font-weight:900;color:#fff;text-shadow:0 0 10px #00F2FE,0 0 20px #00F2FE;letter-spacing:3px;\">AIOps & <span style=\"color:#00F2FE;\">CAPACITY</span> FORECAST</div><div style=\"color:#00FF87;font-size:12px;text-shadow:0 0 5px #00FF87;\">PREDICTIVE ANALYTICS</div></div>"
       },
       "datasource": null,
-      "description": "Cyberpunk command center banner with glassmorphism CSS theme."
+      "description": "Cyberpunk command center banner with glassmorphism CSS theme.",
+      "transparent": true
     },
     {
       "id": 997,
@@ -117,7 +118,8 @@
         "timezone": "Asia/Bangkok",
         "bgColor": "transparent"
       },
-      "description": "Current time and date (Asia/Bangkok timezone)."
+      "description": "Current time and date (Asia/Bangkok timezone).",
+      "transparent": true
     },
     {
       "id": 100,
@@ -206,7 +208,8 @@
           "format": "table"
         }
       ],
-      "description": "Days until disk saturation based on 30-day linear regression. Red < 30d, Orange < 90d, Green > 180d."
+      "description": "Days until disk saturation based on 30-day linear regression. Red < 30d, Orange < 90d, Green > 180d.",
+      "transparent": true
     },
     {
       "id": 2,
@@ -283,7 +286,8 @@
           "format": "table"
         }
       ],
-      "description": "Days until RAM saturation based on 30-day linear regression trend."
+      "description": "Days until RAM saturation based on 30-day linear regression trend.",
+      "transparent": true
     },
     {
       "id": 3,
@@ -360,7 +364,8 @@
           "format": "table"
         }
       ],
-      "description": "Days until CPU reaches 100% saturation based on 30-day linear regression."
+      "description": "Days until CPU reaches 100% saturation based on 30-day linear regression.",
+      "transparent": true
     },
     {
       "id": 4,
@@ -422,7 +427,8 @@
           "format": "table"
         }
       ],
-      "description": "Composite fleet health score (0-100%) from v_fleet_health view."
+      "description": "Composite fleet health score (0-100%) from v_fleet_health view.",
+      "transparent": true
     },
     {
       "id": 200,
@@ -571,7 +577,8 @@
           "maxDataPoints": 300
         }
       ],
-      "description": "Hourly disk usage trend with linear regression forecast (dashed orange, 30-day projection)."
+      "description": "Hourly disk usage trend with linear regression forecast (dashed orange, 30-day projection).",
+      "transparent": true
     },
     {
       "id": 300,
@@ -674,7 +681,8 @@
           "format": "time_series"
         }
       ],
-      "description": "30-day daily average CPU utilization per machine. Used for long-term capacity forecasting."
+      "description": "30-day daily average CPU utilization per machine. Used for long-term capacity forecasting.",
+      "transparent": true
     },
     {
       "id": 21,
@@ -765,7 +773,8 @@
           "format": "time_series"
         }
       ],
-      "description": "30-day daily average RAM utilization per machine. Used for long-term capacity forecasting."
+      "description": "30-day daily average RAM utilization per machine. Used for long-term capacity forecasting.",
+      "transparent": true
     },
     {
       "id": 500,
@@ -886,7 +895,8 @@
           "maxDataPoints": 300
         }
       ],
-      "description": "Fleet-wide CPU Z-Score anomaly detection using 60-minute rolling window. Red zones = \u00b13\u03c3 anomalies."
+      "description": "Fleet-wide CPU Z-Score anomaly detection using 60-minute rolling window. Red zones = \u00b13\u03c3 anomalies.",
+      "transparent": true
     },
     {
       "id": 602,
@@ -995,7 +1005,8 @@
           "maxDataPoints": 300
         }
       ],
-      "description": "Fleet-wide temperature Z-Score anomaly detection. Red zones indicate readings beyond \u00b13 standard deviations."
+      "description": "Fleet-wide temperature Z-Score anomaly detection. Red zones indicate readings beyond \u00b13 standard deviations.",
+      "transparent": true
     }
   ],
   "graphTooltip": 1
