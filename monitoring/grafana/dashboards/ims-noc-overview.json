@@ -231,7 +231,7 @@
     {
       "id": 4,
       "title": "Fleet Health Score",
-      "type": "volkovlabs-echarts-panel",
+      "type": "stat",
       "datasource": {
         "uid": "timescaledb"
       },
@@ -242,12 +242,41 @@
         "y": 3
       },
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 70
+              },
+              {
+                "color": "green",
+                "value": 90
+              }
+            ]
+          }
+        },
         "overrides": []
       },
       "options": {
-        "option": "{\"series\": [{\"type\": \"gauge\", \"startAngle\": 220, \"endAngle\": -40, \"center\": [\"50%\", \"55%\"], \"radius\": \"90%\", \"min\": 0, \"max\": 100, \"splitNumber\": 10, \"axisLine\": {\"lineStyle\": {\"width\": 15, \"color\": [[0.5, \"#FF003C\"], [0.7, \"#FF9100\"], [0.9, \"#FFD600\"], [1, \"#00FF87\"]]}}, \"pointer\": {\"icon\": \"path://M12.8,0.7l12,40.1H0.7L12.8,0.7z\", \"length\": \"60%\", \"width\": 10, \"offsetCenter\": [0, \"-10%\"], \"itemStyle\": {\"color\": \"auto\"}}, \"axisTick\": {\"length\": 8, \"lineStyle\": {\"color\": \"auto\", \"width\": 1}}, \"splitLine\": {\"length\": 15, \"lineStyle\": {\"color\": \"auto\", \"width\": 2}}, \"axisLabel\": {\"color\": \"#8899aa\", \"fontSize\": 10, \"distance\": 25}, \"title\": {\"show\": true, \"offsetCenter\": [0, \"70%\"], \"fontSize\": 13, \"color\": \"#00F2FE\", \"fontFamily\": \"Orbitron\"}, \"detail\": {\"fontSize\": 36, \"offsetCenter\": [0, \"40%\"], \"valueAnimation\": true, \"formatter\": \"{value}%\", \"color\": \"auto\", \"fontWeight\": \"bold\", \"fontFamily\": \"Orbitron\"}, \"data\": [{\"value\": 0, \"name\": \"FLEET HEALTH\"}], \"animationDuration\": 2000, \"animationEasingUpdate\": \"bounceOut\"}]}",
-        "mapJSON": "{}"
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "noValue": "N/A"
       },
       "targets": [
         {
@@ -259,7 +288,7 @@
           "format": "table"
         }
       ],
-      "description": "Composite fleet health score (0-100%) from v_fleet_health view. Red <70%, Yellow <90%, Green \u226590%."
+      "description": "Composite fleet health score (0-100%) from v_fleet_health view."
     },
     {
       "id": 601,
