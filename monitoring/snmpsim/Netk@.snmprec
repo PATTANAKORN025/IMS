@@ -2,11 +2,11 @@
 # Phase Apex: "The Immortal Apex System" — Heartbeat Spikes Edition
 # Purpose: Validate AIOps alerts (InterfaceDown, ServiceDown, ThermalWarning)
 
-# --- CPU Cores (fluctuating 10-95%) ---
-1.3.6.1.2.1.25.3.3.1.2.1|2:numeric|min=10,max=90,rate=5
-1.3.6.1.2.1.25.3.3.1.2.2|2:numeric|min=15,max=80,rate=8
-1.3.6.1.2.1.25.3.3.1.2.3|2:numeric|min=5,max=95,rate=3
-1.3.6.1.2.1.25.3.3.1.2.4|2:numeric|min=20,max=70,rate=6
+# --- CPU Cores (smooth random walk, 10-95%) ---
+1.3.6.1.2.1.25.3.3.1.2.1|2:numeric|min=10,max=90,rate=1
+1.3.6.1.2.1.25.3.3.1.2.2|2:numeric|min=15,max=80,rate=1
+1.3.6.1.2.1.25.3.3.1.2.3|2:numeric|min=5,max=95,rate=1
+1.3.6.1.2.1.25.3.3.1.2.4|2:numeric|min=20,max=70,rate=1
 
 # --- Storage & RAM ---
 1.3.6.1.2.1.25.2.3.1.2.1|6|1.3.6.1.2.1.25.2.1.2
@@ -53,9 +53,9 @@
 1.3.6.1.2.1.2.2.1.8.1|2:numeric|min=1,max=2,rate=1
 1.3.6.1.2.1.2.2.1.8.2|2|1
 
-# --- Temperature (Breathing Heat: realistic thermal fluctuation) ---
+# --- Temperature (smooth thermal drift) ---
 1.3.6.1.4.1.2021.13.16.2.1.7.0|2|0
-1.3.6.1.4.1.2021.13.16.2.1.7.1|2:numeric|min=65,max=92,rate=4
+1.3.6.1.4.1.2021.13.16.2.1.7.1|2:numeric|min=65,max=92,rate=1
 
 # ============================================================
 # LDI PRIVATE MIB — Enterprise .1.3.6.1.4.1.9999
@@ -64,7 +64,7 @@
 # ============================================================
 
 # 1. Throughput (20-180 side/hr, slow sine wave ~30s cycle)
-1.3.6.1.4.1.9999.1.1.0|2:numeric|min=20,max=180,rate=2
+1.3.6.1.4.1.9999.1.1.0|2:numeric|min=20,max=180,rate=1
 
 # 2. LDI Temperature (22.1 - 22.7 °C, scaled x100, slow drift)
 1.3.6.1.4.1.9999.1.2.0|2:numeric|min=2210,max=2270,rate=1
@@ -73,17 +73,17 @@
 1.3.6.1.4.1.9999.1.3.0|2:numeric|min=5300,max=6000,rate=1
 
 # 4. Position Error (PE2: -15.0 to -7.0 µm, PE5: +7.0 to +18.0 µm, scaled x100)
-1.3.6.1.4.1.9999.1.4.2|2:numeric|min=-1500,max=-700,rate=8
-1.3.6.1.4.1.9999.1.4.5|2:numeric|min=700,max=1800,rate=10
+1.3.6.1.4.1.9999.1.4.2|2:numeric|min=-1500,max=-700,rate=2
+1.3.6.1.4.1.9999.1.4.5|2:numeric|min=700,max=1800,rate=2
 
 # 5. Judgment Error (4.0 - 16.0 µm, scaled x100)
-1.3.6.1.4.1.9999.1.5.1|2:numeric|min=400,max=1600,rate=12
+1.3.6.1.4.1.9999.1.5.1|2:numeric|min=400,max=1600,rate=2
 
 # 6. Power Consumption (1200-3500W, slow drift)
-1.3.6.1.4.1.9999.1.6.1|2:numeric|min=1200,max=3500,rate=5
+1.3.6.1.4.1.9999.1.6.1|2:numeric|min=1200,max=3500,rate=2
 
 # 7. Vibration (0.5-12.0 mm/s, scaled x100, slow drift)
-1.3.6.1.4.1.9999.1.7.1|2:numeric|min=50,max=1200,rate=6
+1.3.6.1.4.1.9999.1.7.1|2:numeric|min=50,max=1200,rate=2
 
 # ============================================================
 # WiFi SIGNAL QUALITY — Enterprise .1.3.6.1.4.1.9999.2.x

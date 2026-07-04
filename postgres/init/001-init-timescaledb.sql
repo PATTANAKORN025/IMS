@@ -227,6 +227,21 @@ CREATE TABLE public.alert_history (
     created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- ── Device Registry ─────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.machines (
+    machine_id    TEXT PRIMARY KEY,
+    hostname      TEXT NOT NULL,
+    community     TEXT NOT NULL DEFAULT 'Netk@',
+    snmp_port     INT NOT NULL DEFAULT 161,
+    enabled       BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+INSERT INTO public.machines (machine_id, hostname, community, snmp_port) VALUES
+    ('ERP-MASTER-WINDOWS', 'ims-snmpsim', 'Netk@', 161),
+    ('ERP-MASTER-UBUNTU',  'ims-snmpsim', 'Netk@', 161)
+ON CONFLICT (machine_id) DO NOTHING;
+
 -- ── Fleet Health Views ─────────────────────────────────
 -- v_fleet_health: per-machine snapshot from raw telemetry (last 5 min)
 CREATE OR REPLACE VIEW public.v_fleet_health AS
