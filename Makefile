@@ -1,4 +1,4 @@
-.PHONY: up up-prod down restart verify backup restore test-unit test-load test-visual logs
+.PHONY: up up-prod down restart deploy-flows verify backup restore test-unit test-load test-visual logs
 
 up:
 	docker compose -f docker-compose.yaml -f docker-compose.override.yaml up -d
@@ -11,6 +11,10 @@ down:
 
 restart:
 	docker compose restart node-red grafana alertmanager prometheus
+
+deploy-flows:
+	@echo "Deploying split flows to Node-RED..."
+	curl -X POST http://127.0.0.1:1880/flows -H 'Content-Type: application/json' -d @<(jq -s 'add' node-red/flows/*.json)
 
 verify:
 	bash scripts/verify-deployment.sh
