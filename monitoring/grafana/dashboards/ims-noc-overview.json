@@ -167,7 +167,7 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "h": 6,
+        "h": 4,
         "w": 6,
         "x": 0,
         "y": 3
@@ -191,7 +191,7 @@
         "overrides": []
       },
       "options": {
-        "colorMode": "background-solid",
+        "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "center",
         "reduceOptions": {
@@ -217,7 +217,7 @@
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -231,7 +231,7 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "h": 6,
+        "h": 4,
         "w": 6,
         "x": 6,
         "y": 3
@@ -262,7 +262,7 @@
         "overrides": []
       },
       "options": {
-        "colorMode": "background-solid",
+        "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "center",
         "reduceOptions": {
@@ -288,7 +288,7 @@
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -302,7 +302,7 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "h": 6,
+        "h": 4,
         "w": 6,
         "x": 12,
         "y": 3
@@ -333,7 +333,7 @@
         "overrides": []
       },
       "options": {
-        "colorMode": "background-solid",
+        "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "center",
         "reduceOptions": {
@@ -355,11 +355,11 @@
           "format": "table"
         }
       ],
-      "description": "Percentage of LDI readings exceeding \u00b110\u00b5m tolerance in the last hour. Green <5%, Yellow <15%, Red \u226515%.",
+      "description": "Percentage of LDI readings exceeding ±10µm tolerance in the last hour. Green <5%, Yellow <15%, Red ≥15%.",
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -373,7 +373,7 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "h": 6,
+        "h": 4,
         "w": 6,
         "x": 18,
         "y": 3
@@ -402,7 +402,7 @@
         "overrides": []
       },
       "options": {
-        "colorMode": "background-solid",
+        "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "center",
         "reduceOptions": {
@@ -424,11 +424,11 @@
           "format": "table"
         }
       ],
-      "description": "Estimated daily power cost in Thai Baht based on average LDI power consumption \u00d7 24 hours \u00d7 4.5 THB/kWh.",
+      "description": "Estimated daily power cost in Thai Baht based on average LDI power consumption × 24 hours × 4.5 THB/kWh.",
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -555,7 +555,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Temp (\u00b0C)"
+              "options": "Temp (°C)"
             },
             "properties": [
               {
@@ -597,7 +597,7 @@
             "desc": false
           }
         ],
-        "rowHeight": 0.8
+        "rowHeight": 0.6
       },
       "targets": [
         {
@@ -605,13 +605,13 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT machine_id AS \"Server Name\", CASE WHEN MAX(time) > NOW() - INTERVAL '2 minutes' THEN 'online' WHEN MAX(time) > NOW() - INTERVAL '10 minutes' THEN 'stale' ELSE 'offline' END AS \"Status\", ROUND(AVG(cpu_load_percent)::NUMERIC, 1) AS \"CPU (%)\", ROUND(AVG(temp_c)::NUMERIC, 0) AS \"Temp (\u00b0C)\", MAX(time) AS \"Last Update\" FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '10 minutes' GROUP BY machine_id ORDER BY machine_id",
+          "rawSql": "SELECT machine_id AS \"Server Name\", CASE WHEN MAX(time) > NOW() - INTERVAL '2 minutes' THEN 'online' WHEN MAX(time) > NOW() - INTERVAL '10 minutes' THEN 'stale' ELSE 'offline' END AS \"Status\", ROUND(AVG(cpu_load_percent)::NUMERIC, 1) AS \"CPU (%)\", ROUND(AVG(temp_c)::NUMERIC, 0) AS \"Temp (°C)\", MAX(time) AS \"Last Update\" FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '10 minutes' GROUP BY machine_id ORDER BY machine_id",
           "format": "table"
         }
       ],
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering: ${__data.fields[\"Server Name\"]}",
+          "title": "Drill-down → Engineering: ${__data.fields[\"Server Name\"]}",
           "url": "/d/ims-engineering?var-machine_id=${__data.fields[\"Server Name\"]}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -635,7 +635,7 @@
         "content": "<div style=\"font-family:Rajdhani,monospace; padding:8px; background:rgba(0,0,0,0.3); border-radius:12px; border:1px solid rgba(0,242,254,0.15);\">\n<div style=\"text-align:center; color:#00F2FE; font-size:13px; letter-spacing:3px; margin-bottom:6px; text-shadow:0 0 8px rgba(0,242,254,0.5);\">FLEET HEXMAP</div>\n<svg viewBox=\"0 0 400 120\" style=\"width:100%; max-height:100px;\">\n  <defs>\n    <linearGradient id=\"hg1\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#00FF87\"/><stop offset=\"100%\" stop-color=\"#00CC6A\"/></linearGradient>\n    <linearGradient id=\"hg2\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#FF9100\"/><stop offset=\"100%\" stop-color=\"#FF6D00\"/></linearGradient>\n    <linearGradient id=\"hg3\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#FF003C\"/><stop offset=\"100%\" stop-color=\"#CC0030\"/></linearGradient>\n    <linearGradient id=\"hg4\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#00F2FE\"/><stop offset=\"100%\" stop-color=\"#00B8D4\"/></linearGradient>\n    <filter id=\"hexglow\"><feGaussianBlur stdDeviation=\"1.5\" result=\"b\"/><feMerge><feMergeNode in=\"b\"/><feMergeNode in=\"SourceGraphic\"/></feMerge></filter>\n  </defs>\n  <!-- Row 1 -->\n  <g transform=\"translate(40,30)\" filter=\"url(#hexglow)\">\n    <polygon points=\"0,-25 22,-12.5 22,12.5 0,25 -22,12.5 -22,-12.5\" fill=\"url(#hg1)\" stroke=\"#00FF87\" stroke-width=\"1\" opacity=\"0.8\"/><text x=\"0\" y=\"4\" text-anchor=\"middle\" fill=\"#000\" font-size=\"8\" font-family=\"Rajdhani\" font-weight=\"700\">S00</text>\n  </g>\n  <g transform=\"translate(88,30)\" filter=\"url(#hexglow)\">\n    <polygon points=\"0,-25 22,-12.5 22,12.5 0,25 -22,12.5 -22,-12.5\" fill=\"url(#hg1)\" stroke=\"#00FF87\" stroke-width=\"1\" opacity=\"0.8\"/><text x=\"0\" y=\"4\" text-anchor=\"middle\" fill=\"#000\" font-size=\"8\" font-family=\"Rajdhani\" font-weight=\"700\">S01</text>\n  </g>\n  <g transform=\"translate(136,30)\" filter=\"url(#hexglow)\">\n    <polygon points=\"0,-25 22,-12.5 22,12.5 0,25 -22,12.5 -22,-12.5\" fill=\"url(#hg2)\" stroke=\"#FF9100\" stroke-width=\"1\" opacity=\"0.8\"/><text x=\"0\" y=\"4\" text-anchor=\"middle\" fill=\"#000\" font-size=\"8\" font-family=\"Rajdhani\" font-weight=\"700\">S02</text>\n  </g>\n  <g transform=\"translate(184,30)\" filter=\"url(#hexglow)\">\n    <polygon points=\"0,-25 22,-12.5 22,12.5 0,25 -22,12.5 -22,-12.5\" fill=\"url(#hg1)\" stroke=\"#00FF87\" stroke-width=\"1\" opacity=\"0.8\"/><text x=\"0\" y=\"4\" text-anchor=\"middle\" fill=\"#000\" font-size=\"8\" font-family=\"Rajdhani\" font-weight=\"700\">S03</text>\n  </g>\n  <g transform=\"translate(232,30)\" filter=\"url(#hexglow)\">\n    <polygon points=\"0,-25 22,-12.5 22,12.5 0,25 -22,12.5 -22,-12.5\" fill=\"url(#hg1)\" stroke=\"#00FF87\" stroke-width=\"1\" opacity=\"0.8\"/><text x=\"0\" y=\"4\" text-anchor=\"middle\" fill=\"#000\" font-size=\"8\" font-family=\"Rajdhani\" font-weight=\"700\">S04</text>\n  </g>\n  <g transform=\"translate(280,30)\" filter=\"url(#hexglow)\">\n    <polygon points=\"0,-25 22,-12.5 22,12.5 0,25 -22,12.5 -22,-12.5\" fill=\"url(#hg3)\" stroke=\"#FF003C\" stroke-width=\"1.5\" opacity=\"0.9\"/><text x=\"0\" y=\"4\" text-anchor=\"middle\" fill=\"#fff\" font-size=\"8\" font-family=\"Rajdhani\" font-weight=\"700\">S05</text>\n  </g>\n  <g transform=\"translate(328,30)\" filter=\"url(#hexglow)\">\n    <polygon points=\"0,-25 22,-12.5 22,12.5 0,25 -22,12.5 -22,-12.5\" fill=\"url(#hg4)\" stroke=\"#00F2FE\" stroke-width=\"1\" opacity=\"0.8\"/><text x=\"0\" y=\"4\" text-anchor=\"middle\" fill=\"#000\" font-size=\"8\" font-family=\"Rajdhani\" font-weight=\"700\">S06</text>\n  </g>\n  <!-- Row 2 (offset) -->\n  <g transform=\"translate(64,65)\" filter=\"url(#hexglow)\">\n    <polygon points=\"0,-25 22,-12.5 22,12.5 0,25 -22,12.5 -22,-12.5\" fill=\"url(#hg1)\" stroke=\"#00FF87\" stroke-width=\"1\" opacity=\"0.8\"/><text x=\"0\" y=\"4\" text-anchor=\"middle\" fill=\"#000\" font-size=\"8\" font-family=\"Rajdhani\" font-weight=\"700\">S07</text>\n  </g>\n  <g transform=\"translate(112,65)\" filter=\"url(#hexglow)\">\n    <polygon points=\"0,-25 22,-12.5 22,12.5 0,25 -22,12.5 -22,-12.5\" fill=\"url(#hg1)\" stroke=\"#00FF87\" stroke-width=\"1\" opacity=\"0.8\"/><text x=\"0\" y=\"4\" text-anchor=\"middle\" fill=\"#000\" font-size=\"8\" font-family=\"Rajdhani\" font-weight=\"700\">ERP</text>\n  </g>\n  <g transform=\"translate(160,65)\" filter=\"url(#hexglow)\">\n    <polygon points=\"0,-25 22,-12.5 22,12.5 0,25 -22,12.5 -22,-12.5\" fill=\"url(#hg2)\" stroke=\"#FF9100\" stroke-width=\"1\" opacity=\"0.8\"/><text x=\"0\" y=\"4\" text-anchor=\"middle\" fill=\"#000\" font-size=\"8\" font-family=\"Rajdhani\" font-weight=\"700\">DB</text>\n  </g>\n  <g transform=\"translate(208,65)\" filter=\"url(#hexglow)\">\n    <polygon points=\"0,-25 22,-12.5 22,12.5 0,25 -22,12.5 -22,-12.5\" fill=\"url(#hg1)\" stroke=\"#00FF87\" stroke-width=\"1\" opacity=\"0.8\"/><text x=\"0\" y=\"4\" text-anchor=\"middle\" fill=\"#000\" font-size=\"8\" font-family=\"Rajdhani\" font-weight=\"700\">NR</text>\n  </g>\n  <g transform=\"translate(256,65)\" filter=\"url(#hexglow)\">\n    <polygon points=\"0,-25 22,-12.5 22,12.5 0,25 -22,12.5 -22,-12.5\" fill=\"url(#hg1)\" stroke=\"#00FF87\" stroke-width=\"1\" opacity=\"0.8\"/><text x=\"0\" y=\"4\" text-anchor=\"middle\" fill=\"#000\" font-size=\"8\" font-family=\"Rajdhani\" font-weight=\"700\">GFX</text>\n  </g>\n  <g transform=\"translate(304,65)\" filter=\"url(#hexglow)\">\n    <polygon points=\"0,-25 22,-12.5 22,12.5 0,25 -22,12.5 -22,-12.5\" fill=\"url(#hg1)\" stroke=\"#00FF87\" stroke-width=\"1\" opacity=\"0.8\"/><text x=\"0\" y=\"4\" text-anchor=\"middle\" fill=\"#000\" font-size=\"8\" font-family=\"Rajdhani\" font-weight=\"700\">BB</text>\n  </g>\n  <!-- Row 3 -->\n  <g transform=\"translate(40,100)\" filter=\"url(#hexglow)\">\n    <polygon points=\"0,-25 22,-12.5 22,12.5 0,25 -22,12.5 -22,-12.5\" fill=\"url(#hg4)\" stroke=\"#00F2FE\" stroke-width=\"1\" opacity=\"0.8\"/><text x=\"0\" y=\"4\" text-anchor=\"middle\" fill=\"#000\" font-size=\"8\" font-family=\"Rajdhani\" font-weight=\"700\">P1</text>\n  </g>\n  <g transform=\"translate(88,100)\" filter=\"url(#hexglow)\">\n    <polygon points=\"0,-25 22,-12.5 22,12.5 0,25 -22,12.5 -22,-12.5\" fill=\"url(#hg4)\" stroke=\"#00F2FE\" stroke-width=\"1\" opacity=\"0.8\"/><text x=\"0\" y=\"4\" text-anchor=\"middle\" fill=\"#000\" font-size=\"8\" font-family=\"Rajdhani\" font-weight=\"700\">P2</text>\n  </g>\n  <g transform=\"translate(136,100)\" filter=\"url(#hexglow)\">\n    <polygon points=\"0,-25 22,-12.5 22,12.5 0,25 -22,12.5 -22,-12.5\" fill=\"url(#hg1)\" stroke=\"#00FF87\" stroke-width=\"1\" opacity=\"0.8\"/><text x=\"0\" y=\"4\" text-anchor=\"middle\" fill=\"#000\" font-size=\"8\" font-family=\"Rajdhani\" font-weight=\"700\">AL</text>\n  </g>\n  <!-- Legend -->\n  <circle cx=\"220\" cy=\"108\" r=\"5\" fill=\"#00FF87\" opacity=\"0.8\"/><text x=\"230\" y=\"112\" fill=\"#889\" font-size=\"8\" font-family=\"Rajdhani\">Healthy</text>\n  <circle cx=\"280\" cy=\"108\" r=\"5\" fill=\"#FF9100\" opacity=\"0.8\"/><text x=\"290\" y=\"112\" fill=\"#889\" font-size=\"8\" font-family=\"Rajdhani\">Warning</text>\n  <circle cx=\"340\" cy=\"108\" r=\"5\" fill=\"#FF003C\" opacity=\"0.8\"/><text x=\"350\" y=\"112\" fill=\"#889\" font-size=\"8\" font-family=\"Rajdhani\">Critical</text>\n</svg>\n</div>"
       },
       "datasource": null,
-      "description": "Honeycomb fleet topology \u2014 hexagons color-coded by health status."
+      "description": "Honeycomb fleet topology — hexagons color-coded by health status."
     },
     {
       "id": 900,
@@ -649,7 +649,7 @@
       },
       "options": {
         "mode": "html",
-        "content": "<style>\n@import url(\"https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap\");\n.dashboard-page {\n  background: radial-gradient(circle at center, #0B0E14 0%, #040508 100%),\n              linear-gradient(0deg, transparent 24%, rgba(0,242,254,0.03) 25%, rgba(0,242,254,0.03) 26%, transparent 27%),\n              linear-gradient(90deg, transparent 24%, rgba(0,242,254,0.03) 25%, rgba(0,242,254,0.03) 26%, transparent 27%) !important;\n  background-size: 100% 100%, 50px 50px, 50px 50px !important;\n  font-family: 'Rajdhani', sans-serif !important;\n}\n.panel-container {\n  background: linear-gradient(180deg, rgba(20, 25, 40, 0.9) 0%, rgba(10, 12, 20, 0.95) 100%) !important;\n  border: 1px solid rgba(0, 242, 254, 0.3) !important;\n  border-radius: 10px !important;\n  box-shadow: 0 10px 20px rgba(0,0,0,0.4), inset 0 0 10px rgba(0, 242, 254, 0.1) !important;\n}\n.panel-title {\n  font-family: 'Rajdhani', sans-serif !important;\n  font-weight: 700; letter-spacing: 2px;\n  color: #00F2FE !important;\n}\n.react-grid-item { padding: 3px !important; }\n@keyframes fluidPulse {\n  0% { filter: drop-shadow(0 0 8px #FF003C); opacity: 0.85; }\n  50% { filter: drop-shadow(0 0 25px #FF003C); opacity: 1; }\n  100% { filter: drop-shadow(0 0 8px #FF003C); opacity: 0.85; }\n}\n.status-critical { animation: fluidPulse 2s cubic-bezier(0.4, 0, 0.2, 1) infinite !important; }\n</style><div style=\"display:flex;justify-content:space-between;align-items:center;height:100%;border-bottom:2px solid #00F2FE;box-shadow:0 2px 15px rgba(0,242,254,0.4);padding:0 16px;\"><div style=\"font-size:32px;font-weight:700;color:#fff;text-shadow:0 0 15px #00F2FE;letter-spacing:5px;font-family:Rajdhani,sans-serif;\">IMS NOC Overview</div><div style=\"color:#00FF87;font-size:13px;text-shadow:0 0 5px #00FF87;\">NOC COMMAND CENTER // LIVE</div></div>"
+        "content": "<style>\n@import url(\"https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap\");\n.dashboard-page {\n  background: radial-gradient(circle at center, #0B0E14 0%, #040508 100%),\n              linear-gradient(0deg, transparent 24%, rgba(0,242,254,0.03) 25%, rgba(0,242,254,0.03) 26%, transparent 27%),\n              linear-gradient(90deg, transparent 24%, rgba(0,242,254,0.03) 25%, rgba(0,242,254,0.03) 26%, transparent 27%) !important;\n  background-size: 100% 100%, 50px 50px, 50px 50px !important;\n  font-family: 'Rajdhani', sans-serif !important;\n}\n.panel-container {\n  background: linear-gradient(180deg, rgba(20,25,40,0.9) 0%, rgba(10,15,25,0.95) 100%) !important;\n  border: none !important;\n  border-left: 3px solid #00F2FE !important;\n  box-shadow: none !important;\n  border-radius: 0 !important;\n}\n.panel-title {\n  font-family: 'Rajdhani', sans-serif !important;\n  font-weight: 700; letter-spacing: 2px;\n  color: #00F2FE !important;\n}\n.react-grid-item { padding: 0 !important; margin: 0 !important; }\n.row-container { background: rgba(0,242,254,0.06) !important; border-left: 3px solid #00F2FE !important; }\n</style><div style=\"display:flex;justify-content:space-between;align-items:center;height:100%;border-bottom:2px solid #00F2FE;padding:0 16px;\"><div style=\"font-size:26px;font-weight:700;color:#fff;letter-spacing:4px;font-family:Rajdhani,sans-serif;\">APEX COMMAND</div><div style=\"color:#00FF87;font-size:12px;\">SYSTEM ONLINE // SECURE</div></div>"
       },
       "datasource": null,
       "description": "Cyberpunk NOC command center banner with animated neon CSS theme.",
@@ -692,8 +692,7 @@
             "spanNulls": 60000,
             "gradientMode": "opacity",
             "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "spacing": 10
+            "lineInterpolation": "smooth"
           },
           "thresholds": {
             "mode": "absolute",
@@ -760,8 +759,13 @@
       ],
       "links": [
         {
-          "title": "Drill-down \u2192 ${__field.labels.machine_id}",
+          "title": "Drill-down → ${__field.labels.machine_id}",
           "url": "/d/ims-engineering?var-machine_id=${__field.labels.machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": true
+        },
+        {
+          "title": "Drill-down → Engineering",
+          "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
       ],
@@ -789,8 +793,7 @@
             "lineWidth": 3,
             "spanNulls": 60000,
             "gradientMode": "opacity",
-            "drawStyle": "line",
-            "spacing": 10
+            "drawStyle": "line"
           },
           "thresholds": {
             "mode": "absolute",
@@ -851,7 +854,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{ machine_id }}",
-          "rawSql": "SELECT bucket AS time, machine_id, max_temp AS \"Temperature (\u00b0C)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id IN (${machine_id:sqlstring}) AND max_temp > 0 ORDER BY 1",
+          "rawSql": "SELECT bucket AS time, machine_id, max_temp AS \"Temperature (°C)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id IN (${machine_id:sqlstring}) AND max_temp > 0 ORDER BY 1",
           "format": "time_series"
         }
       ],
@@ -862,9 +865,14 @@
           "type": "link",
           "icon": "external link",
           "targetBlank": true
+        },
+        {
+          "title": "Drill-down → Engineering",
+          "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": true
         }
       ],
-      "description": "Real-time temperature (\u00b0C) for all machines. Yellow >70\u00b0C, Red >85\u00b0C.",
+      "description": "Real-time temperature (°C) for all machines. Yellow >70°C, Red >85°C.",
       "transparent": true
     },
     {
@@ -902,8 +910,7 @@
             "lineWidth": 3,
             "spanNulls": 60000,
             "gradientMode": "opacity",
-            "drawStyle": "line",
-            "spacing": 10
+            "drawStyle": "line"
           }
         },
         "overrides": [
@@ -979,6 +986,11 @@
           "type": "link",
           "icon": "external link",
           "targetBlank": true
+        },
+        {
+          "title": "Drill-down → Engineering",
+          "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": true
         }
       ],
       "description": "Network throughput (Mbps) for all machines. Download (positive) and Upload (negative-Y axis) per interface.",
@@ -1008,8 +1020,7 @@
             "spanNulls": 60000,
             "gradientMode": "opacity",
             "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "spacing": 10
+            "lineInterpolation": "smooth"
           },
           "thresholds": {
             "mode": "absolute",
@@ -1081,9 +1092,14 @@
           "type": "link",
           "icon": "external link",
           "targetBlank": true
+        },
+        {
+          "title": "Drill-down → Engineering",
+          "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": true
         }
       ],
-      "description": "RAM utilization (%) across the fleet. Calculated as (avg_ram_used / avg_ram_total) \u00d7 100 from the 1-minute continuous aggregate.",
+      "description": "RAM utilization (%) across the fleet. Calculated as (avg_ram_used / avg_ram_total) × 100 from the 1-minute continuous aggregate.",
       "transparent": true
     },
     {
@@ -1098,29 +1114,29 @@
       },
       "options": {
         "mode": "html",
-        "content": "<div style=\"display:flex; align-items:center; justify-content:center; height:100%; padding:0 16px;\"><a href=\"/d/ims-noc-overview\" target=\"_blank\" style=\"flex:1; display:flex; align-items:center; justify-content:center; padding:10px 0; margin:0 4px; background:rgba(15,20,30,0.8); border:2px solid #00F2FE; border-radius:8px; color:#fff; font-size:14px; font-weight:700; font-family:Rajdhani,monospace; letter-spacing:2px; text-decoration:none; transition:filter 0.2s; box-shadow: 0 0 12px #00F2FE40;\" onmouseover=\"this.style.filter='brightness(1.5)'\" onmouseout=\"this.style.filter='brightness(1)'\">\u25b8 SERVER HEALTH</a><a href=\"/d/ims-engineering\" target=\"_blank\" style=\"flex:1; display:flex; align-items:center; justify-content:center; padding:10px 0; margin:0 4px; background:rgba(15,20,30,0.8); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#889; font-size:14px; font-weight:700; font-family:Rajdhani,monospace; letter-spacing:2px; text-decoration:none; transition:filter 0.2s; \" onmouseover=\"this.style.filter='brightness(1.5)'\" onmouseout=\"this.style.filter='brightness(1)'\">NETWORK ANALYTICS</a><a href=\"/d/ims-capacity\" target=\"_blank\" style=\"flex:1; display:flex; align-items:center; justify-content:center; padding:10px 0; margin:0 4px; background:rgba(15,20,30,0.8); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#889; font-size:14px; font-weight:700; font-family:Rajdhani,monospace; letter-spacing:2px; text-decoration:none; transition:filter 0.2s; \" onmouseover=\"this.style.filter='brightness(1.5)'\" onmouseout=\"this.style.filter='brightness(1)'\">CAPACITY PLANNING</a></div>"
+        "content": "<div style=\"display:flex; align-items:center; justify-content:center; height:100%; padding:0 16px;\"><a href=\"/d/ims-noc-overview\" target=\"_blank\" style=\"flex:1; display:flex; align-items:center; justify-content:center; padding:10px 0; margin:0 4px; background:rgba(15,20,30,0.8); border:2px solid #00F2FE; border-radius:8px; color:#fff; font-size:14px; font-weight:700; font-family:Rajdhani,monospace; letter-spacing:2px; text-decoration:none; transition:filter 0.2s; box-shadow: 0 0 12px #00F2FE40;\" onmouseover=\"this.style.filter='brightness(1.5)'\" onmouseout=\"this.style.filter='brightness(1)'\">▸ SERVER HEALTH</a><a href=\"/d/ims-engineering\" target=\"_blank\" style=\"flex:1; display:flex; align-items:center; justify-content:center; padding:10px 0; margin:0 4px; background:rgba(15,20,30,0.8); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#889; font-size:14px; font-weight:700; font-family:Rajdhani,monospace; letter-spacing:2px; text-decoration:none; transition:filter 0.2s; \" onmouseover=\"this.style.filter='brightness(1.5)'\" onmouseout=\"this.style.filter='brightness(1)'\">NETWORK ANALYTICS</a><a href=\"/d/ims-capacity\" target=\"_blank\" style=\"flex:1; display:flex; align-items:center; justify-content:center; padding:10px 0; margin:0 4px; background:rgba(15,20,30,0.8); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#889; font-size:14px; font-weight:700; font-family:Rajdhani,monospace; letter-spacing:2px; text-decoration:none; transition:filter 0.2s; \" onmouseover=\"this.style.filter='brightness(1.5)'\" onmouseout=\"this.style.filter='brightness(1)'\">CAPACITY PLANNING</a></div>"
       },
       "datasource": null,
       "transparent": true,
-      "description": "Navigation hub \u2014 quick jump between dashboards."
+      "description": "Navigation hub — quick jump between dashboards."
     },
     {
       "id": 99,
       "type": "text",
       "title": "",
       "gridPos": {
-        "h": 2,
+        "h": 1,
         "w": 24,
         "x": 0,
         "y": 40
       },
       "options": {
         "mode": "html",
-        "content": "<div style=\"display:flex;align-items:center;justify-content:center;height:100%;padding:0 16px;\"><a href=\"/d/ims-noc-overview\" target=\"_blank\" style=\"flex:1;display:flex;align-items:center;justify-content:center;padding:12px 0;margin:0 4px;background:rgba(15,20,30,0.85);border:2px solid #00F2FE;border-radius:8px;cursor:pointer;color:#fff;font-size:15px;font-weight:700;font-family:Rajdhani,monospace;letter-spacing:2px;text-decoration:none;transition:all 0.2s;box-shadow: 0 0 15px #00F2FE50;\" onmouseover=\"this.style.filter='brightness(1.3)';this.style.transform='scale(1.02)'\" onmouseout=\"this.style.filter='brightness(1)';this.style.transform='scale(1)'\">\u25b8 SERVER HEALTH</a><a href=\"/d/ims-engineering\" target=\"_blank\" style=\"flex:1;display:flex;align-items:center;justify-content:center;padding:12px 0;margin:0 4px;background:rgba(15,20,30,0.85);border:1px solid rgba(255,255,255,0.15);border-radius:8px;cursor:pointer;color:#889;font-size:15px;font-weight:700;font-family:Rajdhani,monospace;letter-spacing:2px;text-decoration:none;transition:all 0.2s;\" onmouseover=\"this.style.filter='brightness(1.3)';this.style.transform='scale(1.02)'\" onmouseout=\"this.style.filter='brightness(1)';this.style.transform='scale(1)'\">NETWORK ANALYTICS</a><a href=\"/d/ims-capacity\" target=\"_blank\" style=\"flex:1;display:flex;align-items:center;justify-content:center;padding:12px 0;margin:0 4px;background:rgba(15,20,30,0.85);border:1px solid rgba(255,255,255,0.15);border-radius:8px;cursor:pointer;color:#889;font-size:15px;font-weight:700;font-family:Rajdhani,monospace;letter-spacing:2px;text-decoration:none;transition:all 0.2s;\" onmouseover=\"this.style.filter='brightness(1.3)';this.style.transform='scale(1.02)'\" onmouseout=\"this.style.filter='brightness(1)';this.style.transform='scale(1)'\">CAPACITY PLANNING</a></div>"
+        "content": "<div style=\"display:flex;align-items:center;justify-content:center;height:100%;padding:0 12px;\"><a href=\"/d/ims-noc-overview\" target=\"_blank\" style=\"flex:1;display:flex;align-items:center;justify-content:center;padding:8px 0;margin:0 3px;background:rgba(15,20,30,0.8);border:2px solid #00F2FE;border-radius:6px;color:#fff;font-size:13px;font-weight:700;font-family:Rajdhani,monospace;letter-spacing:2px;text-decoration:none;transition:filter 0.2s;box-shadow:0 0 8px #00F2FE40;\" onmouseover=\"this.style.filter='brightness(1.3)'\" onmouseout=\"this.style.filter='brightness(1)'\">▸ SERVER HEALTH</a><a href=\"/d/ims-engineering\" target=\"_blank\" style=\"flex:1;display:flex;align-items:center;justify-content:center;padding:8px 0;margin:0 3px;background:rgba(15,20,30,0.8);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:#889;font-size:13px;font-weight:700;font-family:Rajdhani,monospace;letter-spacing:2px;text-decoration:none;transition:filter 0.2s;\" onmouseover=\"this.style.filter='brightness(1.3)'\" onmouseout=\"this.style.filter='brightness(1)'\">NETWORK ANALYTICS</a><a href=\"/d/ims-capacity\" target=\"_blank\" style=\"flex:1;display:flex;align-items:center;justify-content:center;padding:8px 0;margin:0 3px;background:rgba(15,20,30,0.8);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:#889;font-size:13px;font-weight:700;font-family:Rajdhani,monospace;letter-spacing:2px;text-decoration:none;transition:filter 0.2s;\" onmouseover=\"this.style.filter='brightness(1.3)'\" onmouseout=\"this.style.filter='brightness(1)'\">CAPACITY PLANNING</a></div>"
       },
       "datasource": null,
       "transparent": true,
-      "description": "Navigation hub \u2014 quick jump between dashboards."
+      "description": "Navigation hub — quick jump between dashboards."
     }
   ],
   "graphTooltip": 1,
