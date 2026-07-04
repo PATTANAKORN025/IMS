@@ -188,7 +188,7 @@
         "overrides": []
       },
       "options": {
-        "colorMode": "background",
+        "colorMode": "background-solid",
         "graphMode": "none",
         "justifyMode": "center",
         "reduceOptions": {
@@ -250,7 +250,7 @@
         "overrides": []
       },
       "options": {
-        "colorMode": "background",
+        "colorMode": "background-solid",
         "graphMode": "none",
         "justifyMode": "center",
         "reduceOptions": {
@@ -276,7 +276,7 @@
     {
       "id": 601,
       "title": "LDI Yield Risk (% Outside Tolerance)",
-      "type": "timeseries",
+      "type": "stat",
       "datasource": {
         "uid": "timescaledb"
       },
@@ -291,12 +291,6 @@
           "unit": "percent",
           "min": 0,
           "max": 100,
-          "custom": {
-            "fillOpacity": 15,
-            "lineWidth": 2,
-            "spanNulls": 60000,
-            "gradientMode": "scheme"
-          },
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -318,20 +312,16 @@
         "overrides": []
       },
       "options": {
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        },
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
+        "colorMode": "background-solid",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "reduceOptions": {
           "calcs": [
-            "mean",
-            "max",
             "lastNotNull"
-          ]
+          ],
+          "values": false
         },
-        "connectNullPoints": true
+        "noValue": "N/A"
       },
       "targets": [
         {
@@ -339,12 +329,11 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "legendFormat": "{{ machine_id }}",
-          "rawSql": "WITH ldi AS (SELECT time_bucket('1 hour', time) AS time, machine_id, ldi_pe, ldi_je FROM public.machine_telemetry WHERE $__timeFilter(time) AND ldi_pe IS NOT NULL) SELECT time, machine_id, ROUND(100.0 * SUM(CASE WHEN ABS(ldi_pe) > 10 OR ABS(ldi_je) > 10 THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0)::NUMERIC, 1) AS \"Yield Risk %\" FROM ldi GROUP BY 1, 2 ORDER BY 1",
-          "format": "time_series"
+          "rawSql": "WITH ldi AS (SELECT machine_id, ldi_pe, ldi_je FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '1 hour' AND ldi_pe IS NOT NULL) SELECT ROUND(100.0 * SUM(CASE WHEN ABS(ldi_pe) > 10 OR ABS(ldi_je) > 10 THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0)::NUMERIC, 1) AS value FROM ldi",
+          "format": "table"
         }
       ],
-      "description": "Percentage of LDI readings where Process Efficiency (PE) or Junction Efficiency (JE) exceeds \u00b110\u00b5m tolerance. High values indicate manufacturing quality risk."
+      "description": "Percentage of LDI readings exceeding \u00b110\u00b5m tolerance in the last hour. Green <5%, Yellow <15%, Red \u226515%."
     },
     {
       "id": 602,
@@ -497,8 +486,7 @@
               {
                 "id": "custom.cellOptions",
                 "value": {
-                  "type": "gauge",
-                  "mode": "gradient"
+                  "type": "color-text"
                 }
               },
               {
@@ -512,11 +500,11 @@
                     },
                     {
                       "color": "orange",
-                      "value": 75
+                      "value": 80
                     },
                     {
                       "color": "red",
-                      "value": 85
+                      "value": 90
                     }
                   ]
                 }
@@ -532,8 +520,7 @@
               {
                 "id": "custom.cellOptions",
                 "value": {
-                  "type": "gauge",
-                  "mode": "gradient"
+                  "type": "color-text"
                 }
               },
               {
@@ -547,11 +534,11 @@
                     },
                     {
                       "color": "orange",
-                      "value": 70
+                      "value": 45
                     },
                     {
                       "color": "red",
-                      "value": 85
+                      "value": 55
                     }
                   ]
                 }
@@ -619,10 +606,10 @@
           "min": 0,
           "max": 100,
           "custom": {
-            "fillOpacity": 15,
+            "fillOpacity": 10,
             "lineWidth": 2,
             "spanNulls": 60000,
-            "gradientMode": "scheme"
+            "gradientMode": "none"
           },
           "thresholds": {
             "mode": "absolute",
@@ -633,7 +620,7 @@
               },
               {
                 "color": "yellow",
-                "value": 70
+                "value": 80
               },
               {
                 "color": "red",
@@ -736,10 +723,10 @@
         "defaults": {
           "unit": "celsius",
           "custom": {
-            "fillOpacity": 15,
+            "fillOpacity": 10,
             "lineWidth": 2,
             "spanNulls": 60000,
-            "gradientMode": "scheme"
+            "gradientMode": "none"
           },
           "thresholds": {
             "mode": "absolute",
@@ -750,11 +737,11 @@
               },
               {
                 "color": "yellow",
-                "value": 70
+                "value": 45
               },
               {
                 "color": "red",
-                "value": 85
+                "value": 55
               }
             ]
           }
@@ -868,10 +855,10 @@
           "unit": "mbps",
           "custom": {
             "axisCenteredZero": true,
-            "fillOpacity": 15,
+            "fillOpacity": 10,
             "lineWidth": 2,
             "spanNulls": 60000,
-            "gradientMode": "scheme"
+            "gradientMode": "none"
           }
         },
         "overrides": [
@@ -993,10 +980,10 @@
           "min": 0,
           "max": 100,
           "custom": {
-            "fillOpacity": 15,
+            "fillOpacity": 10,
             "lineWidth": 2,
             "spanNulls": 60000,
-            "gradientMode": "scheme"
+            "gradientMode": "none"
           },
           "thresholds": {
             "mode": "absolute",
@@ -1007,11 +994,11 @@
               },
               {
                 "color": "yellow",
-                "value": 75
+                "value": 85
               },
               {
                 "color": "red",
-                "value": 90
+                "value": 95
               }
             ]
           }

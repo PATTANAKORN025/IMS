@@ -167,7 +167,7 @@
         "overrides": []
       },
       "options": {
-        "colorMode": "background",
+        "colorMode": "background-solid",
         "graphMode": "area",
         "justifyMode": "center",
         "reduceOptions": {
@@ -177,7 +177,7 @@
           "values": false
         },
         "noValue": "N/A",
-        "textMode": "value_and_name"
+        "textMode": "value"
       },
       "targets": [
         {
@@ -244,7 +244,7 @@
         "overrides": []
       },
       "options": {
-        "colorMode": "background",
+        "colorMode": "background-solid",
         "graphMode": "area",
         "justifyMode": "center",
         "reduceOptions": {
@@ -254,7 +254,7 @@
           "values": false
         },
         "noValue": "N/A",
-        "textMode": "value_and_name"
+        "textMode": "value"
       },
       "targets": [
         {
@@ -321,7 +321,7 @@
         "overrides": []
       },
       "options": {
-        "colorMode": "background",
+        "colorMode": "background-solid",
         "graphMode": "area",
         "justifyMode": "center",
         "reduceOptions": {
@@ -331,7 +331,7 @@
           "values": false
         },
         "noValue": "N/A",
-        "textMode": "value_and_name"
+        "textMode": "value"
       },
       "targets": [
         {
@@ -384,7 +384,7 @@
         "overrides": []
       },
       "options": {
-        "colorMode": "background",
+        "colorMode": "background-solid",
         "graphMode": "none",
         "justifyMode": "center",
         "reduceOptions": {
@@ -437,13 +437,13 @@
           "unit": "gbytes",
           "min": 0,
           "custom": {
-            "fillOpacity": 15,
+            "fillOpacity": 10,
             "lineWidth": 2,
             "spanNulls": 60000,
             "thresholdsStyle": {
               "mode": "line"
             },
-            "gradientMode": "scheme"
+            "gradientMode": "none"
           },
           "thresholds": {
             "mode": "absolute",
@@ -599,10 +599,10 @@
           "min": 0,
           "max": 100,
           "custom": {
-            "fillOpacity": 15,
+            "fillOpacity": 10,
             "lineWidth": 2,
             "spanNulls": 60000,
-            "gradientMode": "scheme"
+            "gradientMode": "none"
           },
           "thresholds": {
             "mode": "absolute",
@@ -613,7 +613,7 @@
               },
               {
                 "color": "yellow",
-                "value": 70
+                "value": 80
               },
               {
                 "color": "red",
@@ -672,10 +672,10 @@
           "min": 0,
           "max": 100,
           "custom": {
-            "fillOpacity": 15,
+            "fillOpacity": 10,
             "lineWidth": 2,
             "spanNulls": 60000,
-            "gradientMode": "scheme"
+            "gradientMode": "none"
           },
           "thresholds": {
             "mode": "absolute",
@@ -686,11 +686,11 @@
               },
               {
                 "color": "yellow",
-                "value": 75
+                "value": 85
               },
               {
                 "color": "red",
-                "value": 90
+                "value": 95
               }
             ]
           }
@@ -756,13 +756,13 @@
           "unit": "none",
           "custom": {
             "axisCenteredZero": true,
-            "fillOpacity": 15,
+            "fillOpacity": 10,
             "lineWidth": 2,
             "spanNulls": 60000,
             "thresholdsStyle": {
               "mode": "dashed"
             },
-            "gradientMode": "scheme"
+            "gradientMode": "none"
           },
           "thresholds": {
             "mode": "absolute",
@@ -878,13 +878,13 @@
           "unit": "none",
           "custom": {
             "axisCenteredZero": true,
-            "fillOpacity": 15,
+            "fillOpacity": 10,
             "lineWidth": 2,
             "spanNulls": 60000,
             "thresholdsStyle": {
               "mode": "dashed"
             },
-            "gradientMode": "scheme"
+            "gradientMode": "none"
           },
           "thresholds": {
             "mode": "absolute",
