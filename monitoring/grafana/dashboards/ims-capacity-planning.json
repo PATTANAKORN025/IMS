@@ -184,7 +184,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH daily_usage AS (SELECT machine_id, time_bucket('1 day', hour_bucket) AS day, AVG(avg_disk_used) AS avg_used FROM public.telemetry_hourly_summary WHERE hour_bucket > NOW() - INTERVAL '30 days' GROUP BY 1, 2), regression AS (SELECT machine_id, COALESCE(regr_slope(avg_used, EXTRACT(EPOCH FROM day)), 0) AS slope, COALESCE(regr_intercept(avg_used, EXTRACT(EPOCH FROM day)), 0) AS intercept FROM daily_usage GROUP BY machine_id) SELECT machine_id AS metric, CASE WHEN slope <= 0 THEN 9999 WHEN (SELECT AVG(avg_disk_total) FROM public.telemetry_hourly_summary WHERE machine_id = r.machine_id) <= 0 THEN 9999 ELSE GREATEST(0, ((SELECT AVG(avg_disk_total) FROM public.telemetry_hourly_summary WHERE machine_id = r.machine_id) - intercept) / slope - EXTRACT(EPOCH FROM NOW()) / 86400) END AS value FROM regression r ORDER BY value ASC LIMIT 1",
+          "rawSql": "WITH daily_usage AS (SELECT machine_id, time_bucket('1 day', hour_bucket) AS day, AVG(avg_disk_used) AS avg_used FROM public.telemetry_hourly_summary WHERE hour_bucket > NOW() - INTERVAL '30 days' GROUP BY 1, 2), totals AS (SELECT machine_id, disk_total_gb FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '10 minutes' GROUP BY machine_id, disk_total_gb ORDER BY time DESC), regression AS (SELECT machine_id, COALESCE(regr_slope(avg_used, EXTRACT(EPOCH FROM day)), 0) AS slope, COALESCE(regr_intercept(avg_used, EXTRACT(EPOCH FROM day)), 0) AS intercept FROM daily_usage GROUP BY machine_id) SELECT machine_id AS metric, CASE WHEN slope <= 0 THEN 9999 WHEN t.disk_total_gb <= 0 THEN 9999 ELSE GREATEST(0, (t.disk_total_gb - intercept) / slope - EXTRACT(EPOCH FROM NOW()) / 86400) END AS value FROM regression r JOIN totals t ON t.machine_id = r.machine_id ORDER BY value ASC LIMIT 1",
           "format": "table"
         }
       ],
@@ -261,7 +261,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH daily_usage AS (SELECT machine_id, time_bucket('1 day', hour_bucket) AS day, AVG(avg_ram_used) AS avg_used FROM public.telemetry_hourly_summary WHERE hour_bucket > NOW() - INTERVAL '30 days' GROUP BY 1, 2), regression AS (SELECT machine_id, COALESCE(regr_slope(avg_used, EXTRACT(EPOCH FROM day)), 0) AS slope, COALESCE(regr_intercept(avg_used, EXTRACT(EPOCH FROM day)), 0) AS intercept FROM daily_usage GROUP BY machine_id) SELECT machine_id AS metric, CASE WHEN slope <= 0 THEN 9999 WHEN (SELECT AVG(avg_ram_total) FROM public.telemetry_hourly_summary WHERE machine_id = r.machine_id) <= 0 THEN 9999 ELSE GREATEST(0, ((SELECT AVG(avg_ram_total) FROM public.telemetry_hourly_summary WHERE machine_id = r.machine_id) - intercept) / slope - EXTRACT(EPOCH FROM NOW()) / 86400) END AS value FROM regression r ORDER BY value ASC LIMIT 1",
+          "rawSql": "WITH daily_usage AS (SELECT machine_id, time_bucket('1 day', hour_bucket) AS day, AVG(avg_ram_used) AS avg_used FROM public.telemetry_hourly_summary WHERE hour_bucket > NOW() - INTERVAL '30 days' GROUP BY 1, 2), totals AS (SELECT machine_id, ram_total_mb FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '10 minutes' GROUP BY machine_id, ram_total_mb ORDER BY time DESC), regression AS (SELECT machine_id, COALESCE(regr_slope(avg_used, EXTRACT(EPOCH FROM day)), 0) AS slope, COALESCE(regr_intercept(avg_used, EXTRACT(EPOCH FROM day)), 0) AS intercept FROM daily_usage GROUP BY machine_id) SELECT machine_id AS metric, CASE WHEN slope <= 0 THEN 9999 WHEN t.ram_total_mb <= 0 THEN 9999 ELSE GREATEST(0, (t.ram_total_mb - intercept) / slope - EXTRACT(EPOCH FROM NOW()) / 86400) END AS value FROM regression r JOIN totals t ON t.machine_id = r.machine_id ORDER BY value ASC LIMIT 1",
           "format": "table"
         }
       ],
@@ -542,7 +542,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('1 hour', hour_bucket) AS hour_bucket, machine_id, AVG(avg_disk_used) AS \"Disk Used (GB)\" FROM public.telemetry_hourly_summary WHERE $__timeFilter(hour_bucket) AND machine_id IN (${machine_id:sqlstring}) GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('1 hour', hour_bucket) AS \"time\", machine_id, AVG(avg_disk_used) AS \"Disk Used (GB)\" FROM public.telemetry_hourly_summary WHERE $__timeFilter(hour_bucket) AND machine_id IN (${machine_id:sqlstring}) GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series"
         },
         {
@@ -551,7 +551,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('1 hour', hour_bucket) AS hour_bucket, machine_id, AVG(avg_disk_total) AS \"Disk Total (GB)\" FROM public.telemetry_hourly_summary WHERE $__timeFilter(hour_bucket) AND machine_id IN (${machine_id:sqlstring}) GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time, disk_total_gb AS \"Disk Total (GB)\" FROM public.machine_telemetry WHERE $__timeFilter(time) AND machine_id IN (${machine_id:sqlstring}) AND disk_total_gb > 0 ORDER BY 1",
           "format": "time_series"
         },
         {
@@ -646,7 +646,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{ machine_id }}",
-          "rawSql": "SELECT time_bucket('1 day', hour_bucket) AS hour_bucket, machine_id, AVG(avg_cpu_load) AS \"Avg CPU %\" FROM public.telemetry_hourly_summary WHERE hour_bucket > NOW() - INTERVAL '30 days' AND machine_id IN (${machine_id:sqlstring}) GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('1 day', hour_bucket) AS \"time\", machine_id, AVG(avg_cpu_load) AS \"Avg CPU %\" FROM public.telemetry_hourly_summary WHERE hour_bucket > NOW() - INTERVAL '30 days' AND machine_id IN (${machine_id:sqlstring}) GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series"
         }
       ],
@@ -719,7 +719,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{ machine_id }}",
-          "rawSql": "SELECT time_bucket('1 day', hour_bucket) AS hour_bucket, machine_id, AVG(avg_ram_used) / NULLIF(AVG(avg_ram_total), 0) * 100 AS \"Avg RAM %\" FROM public.telemetry_hourly_summary WHERE hour_bucket > NOW() - INTERVAL '30 days' AND machine_id IN (${machine_id:sqlstring}) GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "WITH hourly AS (SELECT hour_bucket, machine_id, AVG(avg_ram_used) AS ram_used FROM public.telemetry_hourly_summary WHERE hour_bucket > NOW() - INTERVAL '30 days' AND machine_id IN (${machine_id:sqlstring}) GROUP BY 1, 2), totals AS (SELECT DISTINCT ON (machine_id) machine_id, ram_total_mb FROM public.machine_telemetry WHERE ram_total_mb > 0 ORDER BY machine_id, time DESC) SELECT h.hour_bucket AS time, h.machine_id, ROUND((h.ram_used / NULLIF(t.ram_total_mb, 0) * 100)::NUMERIC, 1) AS \"Avg RAM %\" FROM hourly h JOIN totals t ON t.machine_id = h.machine_id ORDER BY 1",
           "format": "time_series"
         }
       ],
