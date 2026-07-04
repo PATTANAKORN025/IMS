@@ -656,6 +656,18 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*Upload.*"
+            },
+            "properties": [
+              {
+                "id": "custom.transform",
+                "value": "negative-Y"
+              }
+            ]
           }
         ]
       },
@@ -692,12 +704,12 @@
             "type": "postgres",
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, (val->>'tx_mbps')::numeric * -1000000 AS \"Upload (bps)\"\nFROM public.machine_telemetry,\nLATERAL jsonb_each(interface_metrics) AS iface(key, val)\nWHERE $__timeFilter(time)\n  AND machine_id = '${machine_id}'\n  AND iface.key = ${interface:sqlstring}\nORDER BY 1",
+          "rawSql": "SELECT time, (val->>'tx_mbps')::numeric * 1000000 AS \"Upload (bps)\"\nFROM public.machine_telemetry,\nLATERAL jsonb_each(interface_metrics) AS iface(key, val)\nWHERE $__timeFilter(time)\n  AND machine_id = '${machine_id}'\n  AND iface.key = ${interface:sqlstring}\nORDER BY 1",
           "format": "time_series",
           "maxDataPoints": 300
         }
       ],
-      "description": "Per-interface bandwidth extracted from interface_metrics JSONB. eth0 = dark/light blue, wlan0 = purple/magenta. TX inverted for symmetry."
+      "description": "Per-interface bandwidth from interface_metrics JSONB. Download positive, Upload mirrored via negative-Y axis."
     },
     {
       "id": 21,
