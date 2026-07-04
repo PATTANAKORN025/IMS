@@ -266,11 +266,11 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH latest AS (SELECT machine_id, disk_used_gb / NULLIF(disk_total_gb, 0) * 100 AS disk_pct, ram_used_mb / NULLIF(ram_total_mb, 0) * 100 AS ram_pct, cpu_load_percent AS cpu_pct FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '5 minutes' GROUP BY machine_id, disk_used_gb, disk_total_gb, ram_used_mb, ram_total_mb, cpu_load_percent) SELECT 'Fleet Score' AS metric, ROUND(AVG(CASE WHEN disk_pct > 90 OR ram_pct > 95 OR cpu_pct > 90 THEN 0 WHEN disk_pct > 80 OR ram_pct > 85 OR cpu_pct > 80 THEN 50 ELSE 100 END), 1) AS value FROM latest",
+          "rawSql": "SELECT 'Fleet Score' AS metric, value FROM public.v_fleet_score",
           "format": "table"
         }
       ],
-      "description": "Composite fleet health score (0-100%). Weighted average of CPU, RAM, disk, network, and temperature status."
+      "description": "Composite fleet health score (0-100%) from v_fleet_health view. Red <70%, Yellow <90%, Green ≥90%."
     },
     {
       "id": 601,
@@ -911,6 +911,18 @@
                 "value": 2
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*TX.*"
+            },
+            "properties": [
+              {
+                "id": "custom.transform",
+                "value": "negative-Y"
+              }
+            ]
           }
         ]
       },
@@ -946,7 +958,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{ machine_id }} TX",
-          "rawSql": "SELECT bucket AS time, machine_id, avg_tx_mbps * -1 AS \"TX (Mbps)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id IN (${machine_id:sqlstring}) ORDER BY 1",
+          "rawSql": "SELECT bucket AS time, machine_id, avg_tx_mbps AS \"TX (Mbps)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id IN (${machine_id:sqlstring}) ORDER BY 1",
           "format": "time_series"
         }
       ],
@@ -959,7 +971,7 @@
           "targetBlank": true
         }
       ],
-      "description": "Network throughput (Mbps) for all machines. Download (positive) and Upload (negative, inverted axis) per interface."
+      "description": "Network throughput (Mbps) for all machines. Download (positive) and Upload (negative-Y axis) per interface."
     },
     {
       "id": 23,
