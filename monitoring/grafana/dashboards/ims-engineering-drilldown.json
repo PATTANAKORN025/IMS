@@ -84,7 +84,7 @@
   "panels": [
     {
       "id": 998,
-      "type": "clock",
+      "type": "grafana-clock-panel",
       "title": "",
       "datasource": null,
       "gridPos": {
@@ -111,7 +111,8 @@
         },
         "timezone": "Asia/Bangkok",
         "bgColor": "transparent"
-      }
+      },
+      "description": "Current time and date (Asia/Bangkok timezone)."
     },
     {
       "id": 100,
@@ -189,7 +190,7 @@
       ],
       "links": [
         {
-          "title": "Capacity forecast →",
+          "title": "Capacity forecast \u2192",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -257,7 +258,7 @@
       ],
       "links": [
         {
-          "title": "Capacity forecast →",
+          "title": "Capacity forecast \u2192",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -325,7 +326,7 @@
       ],
       "links": [
         {
-          "title": "Capacity forecast →",
+          "title": "Capacity forecast \u2192",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -391,7 +392,7 @@
           "format": "table"
         }
       ],
-      "description": "Current temperature (°C) for the selected machine. Yellow >70°C, Red >85°C."
+      "description": "Current temperature (\u00b0C) for the selected machine. Yellow >70\u00b0C, Red >85\u00b0C."
     },
     {
       "id": 200,
@@ -830,8 +831,8 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "legendFormat": "Temperature °C",
-          "rawSql": "SELECT bucket AS time, max_temp AS \"Temperature (°C)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id = '${machine_id}' AND max_temp > 0 ORDER BY 1",
+          "legendFormat": "Temperature \u00b0C",
+          "rawSql": "SELECT bucket AS time, max_temp AS \"Temperature (\u00b0C)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id = '${machine_id}' AND max_temp > 0 ORDER BY 1",
           "format": "time_series"
         },
         {
@@ -920,7 +921,7 @@
               },
               {
                 "id": "unit",
-                "value": "µm"
+                "value": "\u00b5m"
               }
             ]
           }
@@ -964,12 +965,12 @@
       ],
       "links": [
         {
-          "title": "OEE & Yield →",
+          "title": "OEE & Yield \u2192",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
       ],
-      "description": "LDI manufacturing throughput (left axis, green) and Process Efficiency in µm (right axis, yellow). PE within ±10µm tolerance is normal."
+      "description": "LDI manufacturing throughput (left axis, green) and Process Efficiency in \u00b5m (right axis, yellow). PE within \u00b110\u00b5m tolerance is normal."
     },
     {
       "id": 504,
@@ -1009,7 +1010,7 @@
               },
               {
                 "id": "unit",
-                "value": "µm"
+                "value": "\u00b5m"
               }
             ]
           },
@@ -1076,17 +1077,17 @@
       ],
       "links": [
         {
-          "title": "OEE & Yield →",
+          "title": "OEE & Yield \u2192",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
       ],
-      "description": "Junction Efficiency in µm (purple) and Humidity % (blue, right axis). High humidity may affect LDI precision."
+      "description": "Junction Efficiency in \u00b5m (purple) and Humidity % (blue, right axis). High humidity may affect LDI precision."
     },
     {
       "id": 500,
       "type": "row",
-      "title": "AIOps — ANOMALY DETECTION (3-Sigma Z-Score)",
+      "title": "AIOps \u2014 ANOMALY DETECTION (3-Sigma Z-Score)",
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -1183,7 +1184,7 @@
           "maxDataPoints": 300
         }
       ],
-      "description": "CPU Z-Score computed using 60-minute rolling window. Values beyond ±3σ indicate anomalies."
+      "description": "CPU Z-Score computed using 60-minute rolling window. Values beyond \u00b13\u03c3 indicate anomalies."
     },
     {
       "id": 26,
