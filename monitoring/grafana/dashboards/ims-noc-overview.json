@@ -83,15 +83,33 @@
   },
   "panels": [
     {
+      "id": 0,
+      "type": "text",
+      "title": "",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "options": {
+        "mode": "html",
+        "content": "<style>\n@import url(\"https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap\");\n* { box-sizing: border-box; }\n.dashboard-page {\n  background: radial-gradient(circle at center,#0B0E14 0%,#040508 100%),\n    linear-gradient(0deg,transparent 24%,rgba(0,242,254,.03) 25%,rgba(0,242,254,.03) 26%,transparent 27%),\n    linear-gradient(90deg,transparent 24%,rgba(0,242,254,.03) 25%,rgba(0,242,254,.03) 26%,transparent 27%) !important;\n  background-size: 100% 100%,50px 50px,50px 50px !important;\n  font-family:'Rajdhani',sans-serif !important;\n}\n.panel-container {\n  position: relative;\n  background: linear-gradient(135deg,rgba(16,20,30,.95) 0%,rgba(10,12,20,.98) 100%);\n  border: 1px solid rgba(0,242,254,.2);\n  box-shadow: 0 0 10px rgba(0,242,254,.05);\n  border-radius: 2px;\n  padding: 8px;\n}\n.panel-container::before {\n  content: \"\"; position: absolute; top: 0; left: 0; right: 0; height: 2px;\n  background: #00F2FE;\n}\n.panel-title { font-size: 12px; color: #B0B0B0; text-transform: uppercase; letter-spacing: 1px; }\n</style><div style=\"display:flex;align-items:center;gap:20px;height:100%;padding:0 16px;\n  border-bottom:2px solid #00F2FE;background:linear-gradient(90deg,rgba(0,242,254,.08),transparent);\">\n  <div style=\"font-size:24px;font-weight:700;color:#fff;text-shadow:0 0 12px #00F2FE;letter-spacing:4px;\n    font-family:Rajdhani,sans-serif;white-space:nowrap;\">APEX <span style=\"color:#00F2FE\">COMMAND</span></div>\n  <div style=\"flex:1\"></div>\n  <span style=\"color:#00FF87;font-size:11px;text-shadow:0 0 4px #00FF87;letter-spacing:1px;\">SYSTEM ONLINE</span>\n  <span style=\"color:#889;font-size:11px;letter-spacing:1px;padding:0 8px;\">|</span>\n  <a href=\"/d/ims-noc-overview\" target=\"_blank\" style=\"color:#00F2FE;font-size:11px;text-decoration:none;letter-spacing:1px;font-weight:700;\">NOC</a>\n  <a href=\"/d/ims-engineering\" target=\"_blank\" style=\"color:#00FF87;font-size:11px;text-decoration:none;letter-spacing:1px;font-weight:700;\">ENG</a>\n  <a href=\"/d/ims-capacity\" target=\"_blank\" style=\"color:#7F00FF;font-size:11px;text-decoration:none;letter-spacing:1px;font-weight:700;\">CAP</a>\n</div>"
+      },
+      "datasource": null,
+      "transparent": true,
+      "description": "Unified command banner with navigation."
+    },
+    {
       "id": 999,
       "type": "grafana-clock-panel",
       "title": "",
       "datasource": null,
       "gridPos": {
         "h": 2,
-        "w": 24,
+        "w": 12,
         "x": 0,
-        "y": 0
+        "y": 1
       },
       "options": {
         "mode": "clock",
@@ -122,9 +140,9 @@
       "description": "Currently firing alerts from Grafana unified alerting.",
       "gridPos": {
         "h": 4,
-        "w": 24,
-        "x": 0,
-        "y": 0
+        "w": 12,
+        "x": 12,
+        "y": 1
       },
       "options": {
         "showOptions": "current",
@@ -154,7 +172,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 2
+        "y": 3
       },
       "collapsed": false,
       "transparent": true
@@ -170,7 +188,7 @@
         "h": 4,
         "w": 8,
         "x": 0,
-        "y": 3
+        "y": 4
       },
       "fieldConfig": {
         "defaults": {
@@ -241,7 +259,7 @@
         "h": 4,
         "w": 8,
         "x": 8,
-        "y": 3
+        "y": 4
       },
       "fieldConfig": {
         "defaults": {
@@ -312,7 +330,7 @@
         "h": 4,
         "w": 8,
         "x": 16,
-        "y": 3
+        "y": 4
       },
       "fieldConfig": {
         "defaults": {
@@ -378,7 +396,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 9
+        "y": 10
       },
       "collapsed": false,
       "transparent": true
@@ -394,7 +412,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 10
+        "y": 11
       },
       "fieldConfig": {
         "defaults": {},
@@ -513,7 +531,7 @@
             "desc": false
           }
         ],
-        "rowHeight": 0.6
+        "rowHeight": 0.4
       },
       "targets": [
         {
@@ -536,24 +554,6 @@
       "transparent": true
     },
     {
-      "id": 950,
-      "type": "text",
-      "title": "Fleet Hexmap",
-      "gridPos": {
-        "h": 4,
-        "w": 24,
-        "x": 0,
-        "y": 18
-      },
-      "transparent": true,
-      "options": {
-        "mode": "html",
-        "content": "<div style=\"font-family:Rajdhani,monospace; padding:8px; background:rgba(0,0,0,0.3); border-radius:12px; border:1px solid rgba(0,242,254,0.15);\">\n<div style=\"text-align:center; color:#00F2FE; font-size:13px; letter-spacing:3px; margin-bottom:6px; text-shadow:0 0 8px rgba(0,242,254,0.5);\">FLEET HEXMAP</div>\n<svg viewBox=\"0 0 400 120\" style=\"width:100%; max-height:100px;\">\n  <defs>\n    <linearGradient id=\"hg1\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#00FF87\"/><stop offset=\"100%\" stop-color=\"#00CC6A\"/></linearGradient>\n    <linearGradient id=\"hg2\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#FF9100\"/><stop offset=\"100%\" stop-color=\"#FF6D00\"/></linearGradient>\n    <linearGradient id=\"hg3\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#FF003C\"/><stop offset=\"100%\" stop-color=\"#CC0030\"/></linearGradient>\n    <linearGradient id=\"hg4\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#00F2FE\"/><stop offset=\"100%\" stop-color=\"#00B8D4\"/></linearGradient>\n    <filter id=\"hexglow\"><feGaussianBlur stdDeviation=\"1.5\" result=\"b\"/><feMerge><feMergeNode in=\"b\"/><feMergeNode in=\"SourceGraphic\"/></feMerge></filter>\n  </defs>\n  <!-- Row 1 -->\n  <g transform=\"translate(40,30)\" filter=\"url(#hexglow)\">\n    <polygon points=\"0,-25 22,-12.5 22,12.5 0,25 -22,12.5 -22,-12.5\" fill=\"url(#hg1)\" stroke=\"#00FF87\" stroke-width=\"1\" opacity=\"0.8\"/><text x=\"0\" y=\"4\" text-anchor=\"middle\" fill=\"#000\" font-size=\"8\" font-family=\"Rajdhani\" font-weight=\"700\">S00</text>\n  </g>\n  <g transform=\"translate(88,30)\" filter=\"url(#hexglow)\">\n    <polygon points=\"0,-25 22,-12.5 22,12.5 0,25 -22,12.5 -22,-12.5\" fill=\"url(#hg1)\" stroke=\"#00FF87\" stroke-width=\"1\" opacity=\"0.8\"/><text x=\"0\" y=\"4\" text-anchor=\"middle\" fill=\"#000\" font-size=\"8\" font-family=\"Rajdhani\" font-weight=\"700\">S01</text>\n  </g>\n  <g transform=\"translate(136,30)\" filter=\"url(#hexglow)\">\n    <polygon points=\"0,-25 22,-12.5 22,12.5 0,25 -22,12.5 -22,-12.5\" fill=\"url(#hg2)\" stroke=\"#FF9100\" stroke-width=\"1\" opacity=\"0.8\"/><text x=\"0\" y=\"4\" text-anchor=\"middle\" fill=\"#000\" font-size=\"8\" font-family=\"Rajdhani\" font-weight=\"700\">S02</text>\n  </g>\n  <g transform=\"translate(184,30)\" filter=\"url(#hexglow)\">\n    <polygon points=\"0,-25 22,-12.5 22,12.5 0,25 -22,12.5 -22,-12.5\" fill=\"url(#hg1)\" stroke=\"#00FF87\" stroke-width=\"1\" opacity=\"0.8\"/><text x=\"0\" y=\"4\" text-anchor=\"middle\" fill=\"#000\" font-size=\"8\" font-family=\"Rajdhani\" font-weight=\"700\">S03</text>\n  </g>\n  <g transform=\"translate(232,30)\" filter=\"url(#hexglow)\">\n    <polygon points=\"0,-25 22,-12.5 22,12.5 0,25 -22,12.5 -22,-12.5\" fill=\"url(#hg1)\" stroke=\"#00FF87\" stroke-width=\"1\" opacity=\"0.8\"/><text x=\"0\" y=\"4\" text-anchor=\"middle\" fill=\"#000\" font-size=\"8\" font-family=\"Rajdhani\" font-weight=\"700\">S04</text>\n  </g>\n  <g transform=\"translate(280,30)\" filter=\"url(#hexglow)\">\n    <polygon points=\"0,-25 22,-12.5 22,12.5 0,25 -22,12.5 -22,-12.5\" fill=\"url(#hg3)\" stroke=\"#FF003C\" stroke-width=\"1.5\" opacity=\"0.9\"/><text x=\"0\" y=\"4\" text-anchor=\"middle\" fill=\"#fff\" font-size=\"8\" font-family=\"Rajdhani\" font-weight=\"700\">S05</text>\n  </g>\n  <g transform=\"translate(328,30)\" filter=\"url(#hexglow)\">\n    <polygon points=\"0,-25 22,-12.5 22,12.5 0,25 -22,12.5 -22,-12.5\" fill=\"url(#hg4)\" stroke=\"#00F2FE\" stroke-width=\"1\" opacity=\"0.8\"/><text x=\"0\" y=\"4\" text-anchor=\"middle\" fill=\"#000\" font-size=\"8\" font-family=\"Rajdhani\" font-weight=\"700\">S06</text>\n  </g>\n  <!-- Row 2 (offset) -->\n  <g transform=\"translate(64,65)\" filter=\"url(#hexglow)\">\n    <polygon points=\"0,-25 22,-12.5 22,12.5 0,25 -22,12.5 -22,-12.5\" fill=\"url(#hg1)\" stroke=\"#00FF87\" stroke-width=\"1\" opacity=\"0.8\"/><text x=\"0\" y=\"4\" text-anchor=\"middle\" fill=\"#000\" font-size=\"8\" font-family=\"Rajdhani\" font-weight=\"700\">S07</text>\n  </g>\n  <g transform=\"translate(112,65)\" filter=\"url(#hexglow)\">\n    <polygon points=\"0,-25 22,-12.5 22,12.5 0,25 -22,12.5 -22,-12.5\" fill=\"url(#hg1)\" stroke=\"#00FF87\" stroke-width=\"1\" opacity=\"0.8\"/><text x=\"0\" y=\"4\" text-anchor=\"middle\" fill=\"#000\" font-size=\"8\" font-family=\"Rajdhani\" font-weight=\"700\">ERP</text>\n  </g>\n  <g transform=\"translate(160,65)\" filter=\"url(#hexglow)\">\n    <polygon points=\"0,-25 22,-12.5 22,12.5 0,25 -22,12.5 -22,-12.5\" fill=\"url(#hg2)\" stroke=\"#FF9100\" stroke-width=\"1\" opacity=\"0.8\"/><text x=\"0\" y=\"4\" text-anchor=\"middle\" fill=\"#000\" font-size=\"8\" font-family=\"Rajdhani\" font-weight=\"700\">DB</text>\n  </g>\n  <g transform=\"translate(208,65)\" filter=\"url(#hexglow)\">\n    <polygon points=\"0,-25 22,-12.5 22,12.5 0,25 -22,12.5 -22,-12.5\" fill=\"url(#hg1)\" stroke=\"#00FF87\" stroke-width=\"1\" opacity=\"0.8\"/><text x=\"0\" y=\"4\" text-anchor=\"middle\" fill=\"#000\" font-size=\"8\" font-family=\"Rajdhani\" font-weight=\"700\">NR</text>\n  </g>\n  <g transform=\"translate(256,65)\" filter=\"url(#hexglow)\">\n    <polygon points=\"0,-25 22,-12.5 22,12.5 0,25 -22,12.5 -22,-12.5\" fill=\"url(#hg1)\" stroke=\"#00FF87\" stroke-width=\"1\" opacity=\"0.8\"/><text x=\"0\" y=\"4\" text-anchor=\"middle\" fill=\"#000\" font-size=\"8\" font-family=\"Rajdhani\" font-weight=\"700\">GFX</text>\n  </g>\n  <g transform=\"translate(304,65)\" filter=\"url(#hexglow)\">\n    <polygon points=\"0,-25 22,-12.5 22,12.5 0,25 -22,12.5 -22,-12.5\" fill=\"url(#hg1)\" stroke=\"#00FF87\" stroke-width=\"1\" opacity=\"0.8\"/><text x=\"0\" y=\"4\" text-anchor=\"middle\" fill=\"#000\" font-size=\"8\" font-family=\"Rajdhani\" font-weight=\"700\">BB</text>\n  </g>\n  <!-- Row 3 -->\n  <g transform=\"translate(40,100)\" filter=\"url(#hexglow)\">\n    <polygon points=\"0,-25 22,-12.5 22,12.5 0,25 -22,12.5 -22,-12.5\" fill=\"url(#hg4)\" stroke=\"#00F2FE\" stroke-width=\"1\" opacity=\"0.8\"/><text x=\"0\" y=\"4\" text-anchor=\"middle\" fill=\"#000\" font-size=\"8\" font-family=\"Rajdhani\" font-weight=\"700\">P1</text>\n  </g>\n  <g transform=\"translate(88,100)\" filter=\"url(#hexglow)\">\n    <polygon points=\"0,-25 22,-12.5 22,12.5 0,25 -22,12.5 -22,-12.5\" fill=\"url(#hg4)\" stroke=\"#00F2FE\" stroke-width=\"1\" opacity=\"0.8\"/><text x=\"0\" y=\"4\" text-anchor=\"middle\" fill=\"#000\" font-size=\"8\" font-family=\"Rajdhani\" font-weight=\"700\">P2</text>\n  </g>\n  <g transform=\"translate(136,100)\" filter=\"url(#hexglow)\">\n    <polygon points=\"0,-25 22,-12.5 22,12.5 0,25 -22,12.5 -22,-12.5\" fill=\"url(#hg1)\" stroke=\"#00FF87\" stroke-width=\"1\" opacity=\"0.8\"/><text x=\"0\" y=\"4\" text-anchor=\"middle\" fill=\"#000\" font-size=\"8\" font-family=\"Rajdhani\" font-weight=\"700\">AL</text>\n  </g>\n  <!-- Legend -->\n  <circle cx=\"220\" cy=\"108\" r=\"5\" fill=\"#00FF87\" opacity=\"0.8\"/><text x=\"230\" y=\"112\" fill=\"#889\" font-size=\"8\" font-family=\"Rajdhani\">Healthy</text>\n  <circle cx=\"280\" cy=\"108\" r=\"5\" fill=\"#FF9100\" opacity=\"0.8\"/><text x=\"290\" y=\"112\" fill=\"#889\" font-size=\"8\" font-family=\"Rajdhani\">Warning</text>\n  <circle cx=\"340\" cy=\"108\" r=\"5\" fill=\"#FF003C\" opacity=\"0.8\"/><text x=\"350\" y=\"112\" fill=\"#889\" font-size=\"8\" font-family=\"Rajdhani\">Critical</text>\n</svg>\n</div>"
-      },
-      "datasource": null,
-      "description": "Honeycomb fleet topology \u2014 hexagons color-coded by health status."
-    },
-    {
       "id": 300,
       "type": "row",
       "title": "KEY METRICS (Real-Time)",
@@ -561,7 +561,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 18
+        "y": 19
       },
       "collapsed": false,
       "transparent": true
@@ -577,7 +577,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 19
+        "y": 20
       },
       "fieldConfig": {
         "defaults": {
@@ -681,7 +681,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 19
+        "y": 20
       },
       "fieldConfig": {
         "defaults": {
@@ -781,7 +781,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 27
+        "y": 28
       },
       "collapsed": false,
       "transparent": true
@@ -797,7 +797,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 28
+        "y": 29
       },
       "fieldConfig": {
         "defaults": {
@@ -905,7 +905,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 28
+        "y": 29
       },
       "fieldConfig": {
         "defaults": {
@@ -999,24 +999,6 @@
       ],
       "description": "RAM utilization (%) across the fleet. Calculated as (avg_ram_used / avg_ram_total) \u00d7 100 from the 1-minute continuous aggregate.",
       "transparent": true
-    },
-    {
-      "id": 99,
-      "type": "text",
-      "title": "",
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 42
-      },
-      "options": {
-        "mode": "html",
-        "content": "<div style=\"display:flex;align-items:center;justify-content:center;height:100%;padding:0 12px;\"><a href=\"/d/ims-noc-overview\" target=\"_blank\" style=\"flex:1;display:flex;align-items:center;justify-content:center;padding:8px 0;margin:0 3px;background:rgba(15,20,30,0.8);border:2px solid #00F2FE;border-radius:2px;color:#fff;font-size:13px;font-weight:700;font-family:Rajdhani,monospace;letter-spacing:2px;text-decoration:none;box-shadow:0 0 8px #00F2FE40;\" onmouseover=\"this.style.filter='brightness(1.3)'\" onmouseout=\"this.style.filter='brightness(1)'\">\u25b8 SERVER HEALTH</a><a href=\"/d/ims-engineering\" target=\"_blank\" style=\"flex:1;display:flex;align-items:center;justify-content:center;padding:8px 0;margin:0 3px;background:rgba(15,20,30,0.8);border:1px solid rgba(255,255,255,0.1);border-radius:2px;color:#889;font-size:13px;font-weight:700;font-family:Rajdhani,monospace;letter-spacing:2px;text-decoration:none;\" onmouseover=\"this.style.filter='brightness(1.3)'\" onmouseout=\"this.style.filter='brightness(1)'\">NETWORK ANALYTICS</a><a href=\"/d/ims-capacity\" target=\"_blank\" style=\"flex:1;display:flex;align-items:center;justify-content:center;padding:8px 0;margin:0 3px;background:rgba(15,20,30,0.8);border:1px solid rgba(255,255,255,0.1);border-radius:2px;color:#889;font-size:13px;font-weight:700;font-family:Rajdhani,monospace;letter-spacing:2px;text-decoration:none;\" onmouseover=\"this.style.filter='brightness(1.3)'\" onmouseout=\"this.style.filter='brightness(1)'\">CAPACITY PLANNING</a></div>"
-      },
-      "datasource": null,
-      "transparent": true,
-      "description": "Navigation hub \u2014 quick jump between dashboards."
     }
   ],
   "graphTooltip": 1,
