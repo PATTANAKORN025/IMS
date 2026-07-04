@@ -14,6 +14,10 @@ secrets/
 # AI tooling / test artifacts — not project source
 .mimocode/
 .playwright-mcp/
+.ai/
+AGENTS.md
+MEMORY.md
+checkpoint.md
 
 # IDE
 .vscode/
