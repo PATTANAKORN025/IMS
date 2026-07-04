@@ -147,53 +147,25 @@
       "collapsed": false
     },
     {
-      "id": 1,
-      "title": "CPU Load",
-      "type": "gauge",
+      "id": 10,
+      "title": "System Resources",
+      "type": "volkovlabs-echarts-panel",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "h": 6,
-        "w": 6,
+        "w": 18,
         "x": 0,
         "y": 3
       },
       "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 80
-              },
-              {
-                "color": "red",
-                "value": 90
-              }
-            ]
-          }
-        },
+        "defaults": {},
         "overrides": []
       },
       "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "values": false
-        },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "noValue": "N/A"
+        "code": "let cpu = 0, ram = 0, disk = 0;\nif (data.series.length >= 3) {\n  for (const s of data.series) {\n    if (s.fields.length > 0) {\n      const val = s.fields[0].values[0] || 0;\n      const ref = s.name || s.fields[0].name || '';\n      if (ref.includes('CPU') || ref === 'A') cpu = val;\n      else if (ref.includes('RAM') || ref === 'B') ram = val;\n      else if (ref.includes('Disk') || ref === 'C') disk = val;\n    }\n  }\n}\nfunction makeRing(val, color, r, w) {\n  return {\n    type: 'gauge', startAngle: 225, endAngle: -45,\n    center: ['50%', '50%'], radius: r,\n    min: 0, max: 100,\n    pointer: { show: false },\n    progress: { show: true, overlap: false, roundCap: true, clip: false,\n      itemStyle: { color: color, shadowBlur: 20, shadowColor: color }\n    },\n    axisLine: { lineStyle: { width: w, color: [[1, 'rgba(255,255,255,0.04)']] } },\n    axisTick: { show: false }, splitLine: { show: false }, axisLabel: { show: false },\n    detail: { fontSize: 14, color: '#fff', offsetCenter: [0, '0%'],\n      formatter: function(v) { return v + '%'; }, textShadowBlur: 6, textShadowColor: color },\n    data: [{ value: val }]\n  };\n}\nreturn {\n  backgroundColor: 'transparent',\n  series: [\n    makeRing(cpu, '#00FF87', '85%', 12),\n    makeRing(ram, '#00F2FE', '65%', 12),\n    makeRing(disk, '#7F00FF', '45%', 12),\n    {\n      type: 'text', left: 'center', top: '40%',\n      style: { text: cpu.toFixed(0) + '%\\nCPU', fill: '#00FF87', fontSize: 18,\n        fontWeight: 'bold', textAlign: 'center', fontFamily: 'Orbitron, monospace',\n        textShadowBlur: 8, textShadowColor: '#00FF87' }\n    },\n    {\n      type: 'text', left: 'center', top: '55%',\n      style: { text: ram.toFixed(0) + '% RAM | ' + disk.toFixed(0) + '% Disk', fill: '#8899aa', fontSize: 11,\n        textAlign: 'center', fontFamily: 'monospace' }\n    }\n  ]\n};",
+        "option": "{}"
       },
       "targets": [
         {
@@ -203,137 +175,17 @@
           },
           "rawSql": "SELECT cpu_load_percent AS value FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '2 minutes' AND machine_id = '${machine_id}' ORDER BY time DESC LIMIT 1",
           "format": "table"
-        }
-      ],
-      "links": [
-        {
-          "title": "Capacity forecast \u2192",
-          "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
-          "targetBlank": true
-        }
-      ],
-      "description": "Current CPU utilization (%) for the selected machine. Yellow >75%, Red >90%."
-    },
-    {
-      "id": 2,
-      "title": "RAM Usage",
-      "type": "gauge",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 6,
-        "x": 6,
-        "y": 3
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 85
-              },
-              {
-                "color": "red",
-                "value": 95
-              }
-            ]
-          }
         },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "values": false
-        },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "noValue": "N/A"
-      },
-      "targets": [
         {
-          "refId": "A",
+          "refId": "B",
           "datasource": {
             "uid": "timescaledb"
           },
           "rawSql": "SELECT ROUND((ram_used_mb / NULLIF(ram_total_mb, 0) * 100)::NUMERIC, 1) AS value FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '2 minutes' AND machine_id = '${machine_id}' ORDER BY time DESC LIMIT 1",
           "format": "table"
-        }
-      ],
-      "links": [
-        {
-          "title": "Capacity forecast \u2192",
-          "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
-          "targetBlank": true
-        }
-      ],
-      "description": "Current RAM utilization (%) for the selected machine. Yellow >75%, Red >90%."
-    },
-    {
-      "id": 3,
-      "title": "Storage Saturation",
-      "type": "gauge",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 6,
-        "x": 12,
-        "y": 3
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 70
-              },
-              {
-                "color": "red",
-                "value": 90
-              }
-            ]
-          }
         },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "values": false
-        },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "noValue": "N/A"
-      },
-      "targets": [
         {
-          "refId": "A",
+          "refId": "C",
           "datasource": {
             "uid": "timescaledb"
           },
@@ -341,14 +193,14 @@
           "format": "table"
         }
       ],
+      "description": "Concentric sci-fi rings: CPU (emerald), RAM (sapphire), Disk (purple).",
       "links": [
         {
           "title": "Capacity forecast \u2192",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
-      ],
-      "description": "Current disk utilization (%) for the selected machine. Yellow >75%, Red >90%."
+      ]
     },
     {
       "id": 4,
@@ -1204,6 +1056,47 @@
         }
       ],
       "description": "Junction Efficiency in \u00b5m (purple) and Humidity % (blue, right axis). High humidity may affect LDI precision."
+    },
+    {
+      "id": 510,
+      "title": "LDI Quality Scatter",
+      "type": "volkovlabs-echarts-panel",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 28
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "code": "let peData = [], jeData = [];\nif (data.series.length >= 2) {\n  const peS = data.series.find(s => s.name === 'PE' || s.fields[0]?.name === 'PE');\n  const jeS = data.series.find(s => s.name === 'JE' || s.fields[0]?.name === 'JE');\n  if (peS && peS.fields.length >= 2) {\n    const times = peS.fields.find(f => f.name === 'time' || f.name === '_time');\n    const vals = peS.fields.find(f => f.name !== 'time' && f.name !== '_time' && f.name !== 'machine_id');\n    if (times && vals) {\n      for (let i = 0; i < Math.min(times.values.length, 500); i++) {\n        peData.push([new Date(times.values[i]).getTime(), vals.values[i]]);\n      }\n    }\n  }\n  if (jeS && jeS.fields.length >= 2) {\n    const times = jeS.fields.find(f => f.name === 'time' || f.name === '_time');\n    const vals = jeS.fields.find(f => f.name !== 'time' && f.name !== '_time' && f.name !== 'machine_id');\n    if (times && vals) {\n      for (let i = 0; i < Math.min(times.values.length, 500); i++) {\n        jeData.push([new Date(times.values[i]).getTime(), vals.values[i]]);\n      }\n    }\n  }\n}\nreturn {\n  backgroundColor: 'transparent',\n  tooltip: { trigger: 'item' },\n  legend: { data: ['Process Efficiency', 'Junction Efficiency'], textStyle: { color: '#aaa' }, top: 5 },\n  xAxis: { type: 'time', axisLine: { lineStyle: { color: '#333' } }, axisLabel: { color: '#888' } },\n  yAxis: { type: 'value', name: '\u00b5m', axisLine: { lineStyle: { color: '#333' } }, axisLabel: { color: '#888' } },\n  series: [\n    {\n      name: 'Process Efficiency', type: 'scatter', symbolSize: 5, data: peData,\n      itemStyle: { color: '#00FF87', shadowBlur: 5, shadowColor: 'rgba(0,255,135,0.5)' }\n    },\n    {\n      name: 'Junction Efficiency', type: 'scatter', symbolSize: 5, data: jeData,\n      itemStyle: { color: '#00F2FE', shadowBlur: 5, shadowColor: 'rgba(0,242,254,0.5)' }\n    }\n  ],\n  markArea: {\n    silent: true,\n    data: [[\n      { yAxis: -10, itemStyle: { color: 'rgba(0, 255, 135, 0.08)', borderColor: 'rgba(0, 255, 135, 0.3)', borderWidth: 1 } },\n      { yAxis: 10 }\n    ]]\n  },\n  grid: { left: 50, right: 20, top: 40, bottom: 30 }\n};",
+        "option": "{}"
+      },
+      "targets": [
+        {
+          "refId": "PE",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT time, ldi_pe AS \"PE\" FROM public.machine_telemetry WHERE $__timeFilter(time) AND machine_id = '${machine_id}' AND ldi_pe IS NOT NULL ORDER BY 1",
+          "format": "time_series"
+        },
+        {
+          "refId": "JE",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT time, ldi_je AS \"JE\" FROM public.machine_telemetry WHERE $__timeFilter(time) AND machine_id = '${machine_id}' AND ldi_je IS NOT NULL ORDER BY 1",
+          "format": "time_series"
+        }
+      ],
+      "description": "LDI quality scatter with \u00b110\u00b5m tolerance zone (green band). Points outside the zone indicate quality risk."
     },
     {
       "id": 500,
