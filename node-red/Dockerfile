@@ -1,9 +1,16 @@
 FROM nodered/node-red:4.0.5-22-minimal
 
-WORKDIR /usr/src/node-red
+# Switch to root to install extra dependencies, then switch back
+USER root
 
-COPY nodered_data/package.json .
-RUN npm install --omit=dev --no-fund
+COPY nodered_data/package.json /tmp/package.json
+RUN cd /tmp && npm install --omit=dev --no-fund && \
+    mv node_modules /usr/src/node_modules && \
+    npm cache clean --force && \
+    rm /tmp/package.json && \
+    chown -R node-red:node-red /usr/src/node_modules
 
-# Explicitly set NODE_PATH so /data/settings.js can find the modules
-ENV NODE_PATH=/usr/src/node-red/node_modules
+USER node-red
+
+# Node-RED finds extra modules (net-snmp, pg, etc.) via this path
+ENV NODE_RED_EXTRA_NODE_PATH=/usr/src/node_modules
