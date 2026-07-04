@@ -235,7 +235,7 @@
     {
       "id": 4,
       "title": "Fleet Health Score",
-      "type": "volkovlabs-echarts-panel",
+      "type": "stat",
       "datasource": {
         "uid": "timescaledb"
       },
@@ -246,12 +246,41 @@
         "y": 3
       },
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 70
+              },
+              {
+                "color": "green",
+                "value": 90
+              }
+            ]
+          }
+        },
         "overrides": []
       },
       "options": {
-        "code": "let score = 0;\ntry {\n  const field = data.series[0].fields.find(f => f.type === 'number');\n  const vals = field.values.buffer || field.values;\n  score = vals[vals.length - 1] || 0;\n} catch(e) { score = 0; }\nreturn {\n  backgroundColor: 'transparent',\n  series: [{\n    type: 'gauge', startAngle: 180, endAngle: 0, min: 0, max: 100, pointer: { show: false },\n    progress: {\n      show: true, overlap: false, roundCap: true, clip: false,\n      itemStyle: {\n        color: new echarts.graphic.LinearGradient(0,0,1,0, [{offset:0,color:'#FF003C'},{offset:0.5,color:'#FF9100'},{offset:1,color:'#00FF87'}]),\n        shadowBlur: 20, shadowColor: '#00FF87'\n      }\n    },\n    axisLine: { lineStyle: { width: 15, color: [[1, 'rgba(255,255,255,0.05)']] } },\n    splitLine: { show: false }, axisTick: { show: false }, axisLabel: { show: false },\n    detail: { fontSize: 45, color: '#00FF87', textShadowBlur: 10, textShadowColor: '#00FF87', formatter: '{value}%', offsetCenter: [0, '-10%'] },\n    data: [{ value: Number(score).toFixed(1) }]\n  }]\n};",
-        "option": "{}"
+        "colorMode": "background-solid",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "noValue": "N/A"
       },
       "targets": [
         {

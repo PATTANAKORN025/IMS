@@ -150,25 +150,53 @@
     },
     {
       "id": 1,
-      "title": "System Resources",
-      "type": "volkovlabs-echarts-panel",
+      "title": "CPU Load",
+      "type": "gauge",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "h": 6,
-        "w": 18,
+        "w": 6,
         "x": 0,
         "y": 3
       },
       "transparent": true,
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 80
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          }
+        },
         "overrides": []
       },
       "options": {
-        "code": "const getVal = (idx) => {\n  try {\n    const f = data.series[idx].fields.find(x => x.type === 'number');\n    const v = f.values.buffer || f.values; return v[v.length - 1] || 0;\n  } catch(e) { return 0; }\n};\nreturn {\n  backgroundColor: 'transparent',\n  angleAxis: { max: 100, clockwise: true, show: false },\n  radiusAxis: { type: 'category', show: true, axisLabel: { show: false }, axisLine: { show: false }, axisTick: { show: false } },\n  polar: { center: ['50%', '50%'], radius: '80%' },\n  series: [\n    { type: 'bar', data: [{ value: getVal(0), itemStyle: { color: '#00FF87', shadowBlur: 15, shadowColor: '#00FF87' } }], coordinateSystem: 'polar', roundCap: true, barWidth: 15, barGap: '-100%' },\n    { type: 'bar', data: [{ value: getVal(1), itemStyle: { color: '#00F2FE', shadowBlur: 15, shadowColor: '#00F2FE' } }], coordinateSystem: 'polar', roundCap: true, barWidth: 15, barGap: '-100%' },\n    { type: 'bar', data: [{ value: getVal(2), itemStyle: { color: '#7F00FF', shadowBlur: 15, shadowColor: '#7F00FF' } }], coordinateSystem: 'polar', roundCap: true, barWidth: 15, barGap: '-100%' }\n  ]\n};",
-        "option": "{}"
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "noValue": "N/A"
       },
       "targets": [
         {
@@ -178,17 +206,139 @@
           },
           "rawSql": "SELECT cpu_load_percent AS value FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '2 minutes' AND machine_id = '${machine_id}' ORDER BY time DESC LIMIT 1",
           "format": "table"
-        },
+        }
+      ],
+      "links": [
         {
-          "refId": "B",
+          "title": "Capacity forecast \u2192",
+          "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": true
+        }
+      ],
+      "description": "Current CPU utilization (%) for the selected machine. Yellow >80%, Red >90%."
+    },
+    {
+      "id": 2,
+      "title": "RAM Usage",
+      "type": "gauge",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 6,
+        "y": 3
+      },
+      "transparent": true,
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 85
+              },
+              {
+                "color": "red",
+                "value": 95
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "noValue": "N/A"
+      },
+      "targets": [
+        {
+          "refId": "A",
           "datasource": {
             "uid": "timescaledb"
           },
           "rawSql": "SELECT ROUND((ram_used_mb / NULLIF(ram_total_mb, 0) * 100)::NUMERIC, 1) AS value FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '2 minutes' AND machine_id = '${machine_id}' ORDER BY time DESC LIMIT 1",
           "format": "table"
-        },
+        }
+      ],
+      "links": [
         {
-          "refId": "C",
+          "title": "Capacity forecast \u2192",
+          "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": true
+        }
+      ],
+      "description": "Current RAM utilization (%) for the selected machine. Yellow >85%, Red >95%."
+    },
+    {
+      "id": 3,
+      "title": "Storage Saturation",
+      "type": "gauge",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 12,
+        "y": 3
+      },
+      "transparent": true,
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "noValue": "N/A"
+      },
+      "targets": [
+        {
+          "refId": "A",
           "datasource": {
             "uid": "timescaledb"
           },
@@ -196,14 +346,14 @@
           "format": "table"
         }
       ],
-      "description": "Arc Reactor: CPU (emerald), RAM (sapphire), Disk (purple) concentric rings.",
       "links": [
         {
           "title": "Capacity forecast \u2192",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
-      ]
+      ],
+      "description": "Current disk utilization (%) for the selected machine. Yellow >70%, Red >90%."
     },
     {
       "id": 4,
@@ -1133,9 +1283,7 @@
       "id": 26,
       "title": "Infrastructure Topology",
       "type": "text",
-      "datasource": {
-        "uid": "timescaledb"
-      },
+      "datasource": null,
       "gridPos": {
         "h": 8,
         "w": 12,
