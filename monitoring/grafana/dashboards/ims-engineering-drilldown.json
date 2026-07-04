@@ -83,22 +83,22 @@
   },
   "panels": [
     {
-      "id": 900,
+      "id": 0,
       "type": "text",
       "title": "",
       "gridPos": {
-        "h": 2,
-        "w": 18,
+        "h": 1,
+        "w": 24,
         "x": 0,
         "y": 0
       },
       "options": {
         "mode": "html",
-        "content": "<style>\n@import url(\"https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap\");\n.dashboard-page {\n  background: radial-gradient(circle at center, #0B0E14 0%, #040508 100%),\n    linear-gradient(0deg,transparent 24%,rgba(0,242,254,0.03) 25%,rgba(0,242,254,0.03) 26%,transparent 27%),\n    linear-gradient(90deg,transparent 24%,rgba(0,242,254,0.03) 25%,rgba(0,242,254,0.03) 26%,transparent 27%) !important;\n  background-size: 100% 100%,50px 50px,50px 50px !important;\n  font-family:'Rajdhani',sans-serif !important;\n}\n.panel-container {\n  position: relative;\n  background: linear-gradient(135deg,rgba(16,20,30,0.95) 0%,rgba(10,12,20,0.98) 100%) !important;\n  border: 1px solid rgba(0,242,254,0.4) !important;\n  box-shadow: 0 0 10px rgba(0,242,254,0.1) !important;\n  border-radius: 2px !important;\n}\n.panel-container::before {\n  content: \"\";\n  position: absolute;\n  top: 0; left: 0; right: 0; height: 2px;\n  background: #00F2FE;\n}\n.panel-title { font-size: 16px !important; color: #E0E0E0 !important; text-transform: uppercase; }\n.react-grid-item { padding: 2px !important; margin: 0 !important; }\n.row-container { background: rgba(0,242,254,0.04) !important; border-left: 3px solid #00F2FE !important; }\n</style><div style=\"display:flex;justify-content:space-between;align-items:center;height:100%;border-bottom:2px solid #00F2FE;padding:0 16px;\"><div style=\"font-size:26px;font-weight:700;color:#fff;letter-spacing:4px;font-family:Rajdhani,sans-serif;\">ENGINEERING DRILL-DOWN</div><div style=\"color:#00FF87;font-size:12px;\">PER-MACHINE DIAGNOSTICS</div></div>"
+        "content": "<style>\n@import url(\"https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap\");\n* { box-sizing: border-box; }\n.dashboard-page {\n  background: radial-gradient(circle at center,#0B0E14 0%,#040508 100%),\n    linear-gradient(0deg,transparent 24%,rgba(0,242,254,.03) 25%,rgba(0,242,254,.03) 26%,transparent 27%),\n    linear-gradient(90deg,transparent 24%,rgba(0,242,254,.03) 25%,rgba(0,242,254,.03) 26%,transparent 27%) !important;\n  background-size: 100% 100%,50px 50px,50px 50px !important;\n  font-family:'Rajdhani',sans-serif !important;\n}\n.panel-container {\n  position: relative;\n  background: linear-gradient(135deg,rgba(16,20,30,.95) 0%,rgba(10,12,20,.98) 100%);\n  border: 1px solid rgba(0,242,254,.2);\n  box-shadow: 0 0 10px rgba(0,242,254,.05);\n  border-radius: 2px;\n  padding: 8px;\n}\n.panel-container::before {\n  content: \"\"; position: absolute; top: 0; left: 0; right: 0; height: 2px;\n  background: #00F2FE;\n}\n.panel-title { font-size: 12px; color: #B0B0B0; text-transform: uppercase; letter-spacing: 1px; }\n</style><div style=\"display:flex;align-items:center;gap:20px;height:100%;padding:0 16px;\n  border-bottom:2px solid #00F2FE;background:linear-gradient(90deg,rgba(0,242,254,.08),transparent);\">\n  <div style=\"font-size:24px;font-weight:700;color:#fff;text-shadow:0 0 12px #00F2FE;letter-spacing:4px;\n    font-family:Rajdhani,sans-serif;white-space:nowrap;\">APEX <span style=\"color:#00F2FE\">COMMAND</span></div>\n  <div style=\"flex:1\"></div>\n  <span style=\"color:#00FF87;font-size:11px;text-shadow:0 0 4px #00FF87;letter-spacing:1px;\">SYSTEM ONLINE</span>\n  <span style=\"color:#889;font-size:11px;letter-spacing:1px;padding:0 8px;\">|</span>\n  <a href=\"/d/ims-noc-overview\" target=\"_blank\" style=\"color:#00F2FE;font-size:11px;text-decoration:none;letter-spacing:1px;font-weight:700;\">NOC</a>\n  <a href=\"/d/ims-engineering\" target=\"_blank\" style=\"color:#00FF87;font-size:11px;text-decoration:none;letter-spacing:1px;font-weight:700;\">ENG</a>\n  <a href=\"/d/ims-capacity\" target=\"_blank\" style=\"color:#7F00FF;font-size:11px;text-decoration:none;letter-spacing:1px;font-weight:700;\">CAP</a>\n</div>"
       },
       "datasource": null,
-      "description": "Cyberpunk command center banner with glassmorphism CSS theme.",
-      "transparent": true
+      "transparent": true,
+      "description": "Unified command banner with navigation."
     },
     {
       "id": 998,
@@ -107,9 +107,9 @@
       "datasource": null,
       "gridPos": {
         "h": 2,
-        "w": 6,
-        "x": 18,
-        "y": 0
+        "w": 24,
+        "x": 0,
+        "y": 1
       },
       "options": {
         "mode": "clock",
@@ -144,7 +144,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 2
+        "y": 3
       },
       "collapsed": false,
       "transparent": true
@@ -160,7 +160,7 @@
         "h": 6,
         "w": 6,
         "x": 0,
-        "y": 3
+        "y": 4
       },
       "transparent": true,
       "fieldConfig": {
@@ -234,7 +234,7 @@
         "h": 6,
         "w": 6,
         "x": 6,
-        "y": 3
+        "y": 4
       },
       "transparent": true,
       "fieldConfig": {
@@ -308,7 +308,7 @@
         "h": 6,
         "w": 6,
         "x": 12,
-        "y": 3
+        "y": 4
       },
       "transparent": true,
       "fieldConfig": {
@@ -382,7 +382,7 @@
         "h": 6,
         "w": 6,
         "x": 18,
-        "y": 3
+        "y": 4
       },
       "fieldConfig": {
         "defaults": {
@@ -453,7 +453,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 9
+        "y": 10
       },
       "collapsed": false,
       "transparent": true
@@ -467,9 +467,9 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 10
+        "w": 24,
+        "x": 0,
+        "y": 11
       },
       "fieldConfig": {
         "defaults": {
@@ -565,7 +565,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 18
+        "y": 19
       },
       "collapsed": false,
       "transparent": true
@@ -581,7 +581,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 19
+        "y": 20
       },
       "fieldConfig": {
         "defaults": {
@@ -745,7 +745,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 19
+        "y": 20
       },
       "fieldConfig": {
         "defaults": {
@@ -902,7 +902,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 27
+        "y": 28
       },
       "collapsed": false,
       "transparent": true
@@ -916,9 +916,9 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
+        "w": 8,
         "x": 0,
-        "y": 28
+        "y": 29
       },
       "fieldConfig": {
         "defaults": {
@@ -1052,9 +1052,9 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 28
+        "w": 8,
+        "x": 8,
+        "y": 29
       },
       "fieldConfig": {
         "defaults": {
@@ -1187,9 +1187,9 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 28
+        "w": 8,
+        "x": 16,
+        "y": 29
       },
       "fieldConfig": {
         "defaults": {},
@@ -1228,7 +1228,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 36
+        "y": 37
       },
       "collapsed": false,
       "transparent": true
@@ -1242,9 +1242,9 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 6,
+        "w": 24,
         "x": 0,
-        "y": 37
+        "y": 38
       },
       "fieldConfig": {
         "defaults": {
@@ -1348,74 +1348,6 @@
           "targetBlank": true
         }
       ]
-    },
-    {
-      "id": 520,
-      "type": "text",
-      "title": "System Status",
-      "gridPos": {
-        "h": 8,
-        "w": 6,
-        "x": 18,
-        "y": 37
-      },
-      "transparent": true,
-      "options": {
-        "mode": "html",
-        "content": "<div style=\"text-align:center;padding:10px;font-family:Rajdhani,monospace;\"><div style=\"color:#00F2FE;font-size:11px;letter-spacing:2px;margin-bottom:8px;\">SYSTEM STATUS</div><div style=\"color:#00FF87;font-size:28px;font-weight:700;text-shadow:0 0 8px #00FF87;\">ONLINE</div><div style=\"color:#889;font-size:10px;margin-top:6px;\">All Services Operational</div><div style=\"margin-top:12px;padding-top:8px;border-top:1px solid rgba(0,242,254,0.15);\"><div style=\"display:flex;justify-content:space-around;font-size:10px;\"><div><span style=\"color:#00FF87;\">&#9679;</span> DB</div><div><span style=\"color:#00FF87;\">&#9679;</span> NR</div><div><span style=\"color:#00FF87;\">&#9679;</span> GFX</div></div></div></div>"
-      },
-      "datasource": null,
-      "description": "System status summary panel."
-    },
-    {
-      "id": 26,
-      "title": "System Matrix Analysis",
-      "type": "text",
-      "datasource": null,
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 6,
-        "y": 37
-      },
-      "fieldConfig": {
-        "defaults": {},
-        "overrides": []
-      },
-      "options": {
-        "mode": "html",
-        "content": "<div style=\"font-family:Rajdhani,monospace; padding:8px; background:rgba(0,0,0,0.3); border-radius:12px; border:1px solid rgba(0,242,254,0.15);\">\n<div style=\"text-align:center; color:#00F2FE; font-size:13px; letter-spacing:3px; margin-bottom:8px; text-shadow:0 0 8px rgba(0,242,254,0.5);\">SYSTEM MATRIX ANALYSIS</div>\n<svg viewBox=\"0 0 300 280\" style=\"width:100%; max-height:240px;\">\n  <defs>\n    <filter id=\"glow\"><feGaussianBlur stdDeviation=\"2\" result=\"blur\"/><feMerge><feMergeNode in=\"blur\"/><feMergeNode in=\"SourceGraphic\"/></feMerge></filter>\n    <linearGradient id=\"radarFill\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n      <stop offset=\"0%\" stop-color=\"rgba(0,255,135,0.25)\"/>\n      <stop offset=\"100%\" stop-color=\"rgba(0,255,135,0.05)\"/>\n    </linearGradient>\n  </defs>\n  <!-- Radar grid (5 concentric polygons) -->\n  <g transform=\"translate(150,140)\" filter=\"url(#glow)\">\n    <polygon points=\"0,-110 95,-55 95,55 0,110 -95,55 -95,-55\" fill=\"none\" stroke=\"rgba(0,242,254,0.08)\" stroke-width=\"1\"/>\n    <polygon points=\"0,-88 76,-44 76,44 0,88 -76,44 -76,-44\" fill=\"none\" stroke=\"rgba(0,242,254,0.12)\" stroke-width=\"1\"/>\n    <polygon points=\"0,-66 57,-33 57,33 0,66 -57,33 -57,-33\" fill=\"none\" stroke=\"rgba(0,242,254,0.16)\" stroke-width=\"1\"/>\n    <polygon points=\"0,-44 38,-22 38,22 0,44 -38,22 -38,-22\" fill=\"none\" stroke=\"rgba(0,242,254,0.20)\" stroke-width=\"1\"/>\n    <polygon points=\"0,-22 19,-11 19,11 0,22 -19,11 -19,-11\" fill=\"none\" stroke=\"rgba(0,242,254,0.25)\" stroke-width=\"1\"/>\n    <!-- Axis lines -->\n    <line x1=\"0\" y1=\"0\" x2=\"0\" y2=\"-110\" stroke=\"rgba(0,242,254,0.15)\" stroke-width=\"1\"/>\n    <line x1=\"0\" y1=\"0\" x2=\"95\" y2=\"-55\" stroke=\"rgba(0,242,254,0.15)\" stroke-width=\"1\"/>\n    <line x1=\"0\" y1=\"0\" x2=\"95\" y2=\"55\" stroke=\"rgba(0,242,254,0.15)\" stroke-width=\"1\"/>\n    <line x1=\"0\" y1=\"0\" x2=\"0\" y2=\"110\" stroke=\"rgba(0,242,254,0.15)\" stroke-width=\"1\"/>\n    <line x1=\"0\" y1=\"0\" x2=\"-95\" y2=\"55\" stroke=\"rgba(0,242,254,0.15)\" stroke-width=\"1\"/>\n    <line x1=\"0\" y1=\"0\" x2=\"-95\" y2=\"-55\" stroke=\"rgba(0,242,254,0.15)\" stroke-width=\"1\"/>\n    <!-- Data polygon -->\n    <polygon points=\"0,-93.5 76,-44 57,33 0,88 -57,22 -76,-33\" fill=\"url(#radarFill)\" stroke=\"#00FF87\" stroke-width=\"2\" filter=\"url(#glow)\"/>\n    <!-- Data points -->\n    <circle cx=\"0\" cy=\"-93.5\" r=\"4\" fill=\"#00FF87\" filter=\"url(#glow)\"/>\n    <circle cx=\"76\" cy=\"-44\" r=\"4\" fill=\"#00F2FE\" filter=\"url(#glow)\"/>\n    <circle cx=\"57\" cy=\"33\" r=\"4\" fill=\"#7F00FF\" filter=\"url(#glow)\"/>\n    <circle cx=\"0\" cy=\"88\" r=\"4\" fill=\"#FF9100\" filter=\"url(#glow)\"/>\n    <circle cx=\"-57\" cy=\"22\" r=\"4\" fill=\"#00E5FF\" filter=\"url(#glow)\"/>\n    <circle cx=\"-76\" cy=\"-33\" r=\"4\" fill=\"#FF007F\" filter=\"url(#glow)\"/>\n  </g>\n  <!-- Labels -->\n  <text x=\"150\" y=\"22\" text-anchor=\"middle\" fill=\"#00F2FE\" font-size=\"10\" font-family=\"Rajdhani,monospace\" font-weight=\"700\">CPU Load</text>\n  <text x=\"262\" y=\"82\" text-anchor=\"start\" fill=\"#00F2FE\" font-size=\"10\" font-family=\"Rajdhani,monospace\" font-weight=\"700\">Memory</text>\n  <text x=\"262\" y=\"202\" text-anchor=\"start\" fill=\"#00F2FE\" font-size=\"10\" font-family=\"Rajdhani,monospace\" font-weight=\"700\">Storage</text>\n  <text x=\"150\" y=\"268\" text-anchor=\"middle\" fill=\"#00F2FE\" font-size=\"10\" font-family=\"Rajdhani,monospace\" font-weight=\"700\">Thermal</text>\n  <text x=\"38\" y=\"202\" text-anchor=\"end\" fill=\"#00F2FE\" font-size=\"10\" font-family=\"Rajdhani,monospace\" font-weight=\"700\">Net RX</text>\n  <text x=\"38\" y=\"82\" text-anchor=\"end\" fill=\"#00F2FE\" font-size=\"10\" font-family=\"Rajdhani,monospace\" font-weight=\"700\">Net TX</text>\n</svg>\n</div>"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT 'Errors' AS metric, SUM((value->>'errors')::NUMERIC) AS value FROM public.machine_telemetry, jsonb_each(interface_metrics) WHERE machine_id = '${machine_id}' AND $__timeFilter(time) AND key = ANY(ARRAY[${interface:sqlstring}]::text[]) AND value ? 'errors' UNION ALL SELECT 'Drops' AS metric, SUM((value->>'drops')::NUMERIC) AS value FROM public.machine_telemetry, jsonb_each(interface_metrics) WHERE machine_id = '${machine_id}' AND $__timeFilter(time) AND key = ANY(ARRAY[${interface:sqlstring}]::text[]) AND value ? 'drops'",
-          "format": "table"
-        }
-      ],
-      "description": "Holographic radar: 6-axis system health matrix showing CPU, RAM, Storage, Thermal, Net RX, Net TX.",
-      "transparent": true
-    },
-    {
-      "id": 99,
-      "type": "text",
-      "title": "",
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 46
-      },
-      "options": {
-        "mode": "html",
-        "content": "<div style=\"display:flex;align-items:center;justify-content:center;height:100%;padding:0 12px;\"><a href=\"/d/ims-noc-overview\" target=\"_blank\" style=\"flex:1;display:flex;align-items:center;justify-content:center;padding:8px 0;margin:0 3px;background:rgba(15,20,30,0.8);border:1px solid rgba(255,255,255,0.1);border-radius:2px;color:#889;font-size:13px;font-weight:700;font-family:Rajdhani,monospace;letter-spacing:2px;text-decoration:none;\" onmouseover=\"this.style.filter='brightness(1.3)'\" onmouseout=\"this.style.filter='brightness(1)'\">SERVER HEALTH</a><a href=\"/d/ims-engineering\" target=\"_blank\" style=\"flex:1;display:flex;align-items:center;justify-content:center;padding:8px 0;margin:0 3px;background:rgba(15,20,30,0.8);border:2px solid #00FF87;border-radius:2px;color:#fff;font-size:13px;font-weight:700;font-family:Rajdhani,monospace;letter-spacing:2px;text-decoration:none;box-shadow:0 0 8px #00FF8740;\" onmouseover=\"this.style.filter='brightness(1.3)'\" onmouseout=\"this.style.filter='brightness(1)'\">\u25b8 NETWORK ANALYTICS</a><a href=\"/d/ims-capacity\" target=\"_blank\" style=\"flex:1;display:flex;align-items:center;justify-content:center;padding:8px 0;margin:0 3px;background:rgba(15,20,30,0.8);border:1px solid rgba(255,255,255,0.1);border-radius:2px;color:#889;font-size:13px;font-weight:700;font-family:Rajdhani,monospace;letter-spacing:2px;text-decoration:none;\" onmouseover=\"this.style.filter='brightness(1.3)'\" onmouseout=\"this.style.filter='brightness(1)'\">CAPACITY PLANNING</a></div>"
-      },
-      "datasource": null,
-      "transparent": true,
-      "description": "Navigation hub \u2014 quick jump between dashboards."
     }
   ],
   "graphTooltip": 1

@@ -71,22 +71,22 @@
   },
   "panels": [
     {
-      "id": 900,
+      "id": 0,
       "type": "text",
       "title": "",
       "gridPos": {
-        "h": 2,
-        "w": 18,
+        "h": 1,
+        "w": 24,
         "x": 0,
         "y": 0
       },
       "options": {
         "mode": "html",
-        "content": "<style>\n@import url(\"https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap\");\n.dashboard-page {\n  background: radial-gradient(circle at center, #0B0E14 0%, #040508 100%),\n    linear-gradient(0deg,transparent 24%,rgba(0,242,254,0.03) 25%,rgba(0,242,254,0.03) 26%,transparent 27%),\n    linear-gradient(90deg,transparent 24%,rgba(0,242,254,0.03) 25%,rgba(0,242,254,0.03) 26%,transparent 27%) !important;\n  background-size: 100% 100%,50px 50px,50px 50px !important;\n  font-family:'Rajdhani',sans-serif !important;\n}\n.panel-container {\n  position: relative;\n  background: linear-gradient(135deg,rgba(16,20,30,0.95) 0%,rgba(10,12,20,0.98) 100%) !important;\n  border: 1px solid rgba(0,242,254,0.4) !important;\n  box-shadow: 0 0 10px rgba(0,242,254,0.1) !important;\n  border-radius: 2px !important;\n}\n.panel-container::before {\n  content: \"\";\n  position: absolute;\n  top: 0; left: 0; right: 0; height: 2px;\n  background: #00F2FE;\n}\n.panel-title { font-size: 16px !important; color: #E0E0E0 !important; text-transform: uppercase; }\n.react-grid-item { padding: 2px !important; margin: 0 !important; }\n.row-container { background: rgba(0,242,254,0.04) !important; border-left: 3px solid #00F2FE !important; }\n</style><div style=\"display:flex;justify-content:space-between;align-items:center;height:100%;border-bottom:2px solid #00F2FE;padding:0 16px;\"><div style=\"font-size:26px;font-weight:700;color:#fff;letter-spacing:4px;font-family:Rajdhani,sans-serif;\">AIOps & CAPACITY FORECAST</div><div style=\"color:#00FF87;font-size:12px;\">PREDICTIVE ANALYTICS</div></div>"
+        "content": "<style>\n@import url(\"https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap\");\n* { box-sizing: border-box; }\n.dashboard-page {\n  background: radial-gradient(circle at center,#0B0E14 0%,#040508 100%),\n    linear-gradient(0deg,transparent 24%,rgba(0,242,254,.03) 25%,rgba(0,242,254,.03) 26%,transparent 27%),\n    linear-gradient(90deg,transparent 24%,rgba(0,242,254,.03) 25%,rgba(0,242,254,.03) 26%,transparent 27%) !important;\n  background-size: 100% 100%,50px 50px,50px 50px !important;\n  font-family:'Rajdhani',sans-serif !important;\n}\n.panel-container {\n  position: relative;\n  background: linear-gradient(135deg,rgba(16,20,30,.95) 0%,rgba(10,12,20,.98) 100%);\n  border: 1px solid rgba(0,242,254,.2);\n  box-shadow: 0 0 10px rgba(0,242,254,.05);\n  border-radius: 2px;\n  padding: 8px;\n}\n.panel-container::before {\n  content: \"\"; position: absolute; top: 0; left: 0; right: 0; height: 2px;\n  background: #00F2FE;\n}\n.panel-title { font-size: 12px; color: #B0B0B0; text-transform: uppercase; letter-spacing: 1px; }\n</style><div style=\"display:flex;align-items:center;gap:20px;height:100%;padding:0 16px;\n  border-bottom:2px solid #00F2FE;background:linear-gradient(90deg,rgba(0,242,254,.08),transparent);\">\n  <div style=\"font-size:24px;font-weight:700;color:#fff;text-shadow:0 0 12px #00F2FE;letter-spacing:4px;\n    font-family:Rajdhani,sans-serif;white-space:nowrap;\">APEX <span style=\"color:#00F2FE\">COMMAND</span></div>\n  <div style=\"flex:1\"></div>\n  <span style=\"color:#00FF87;font-size:11px;text-shadow:0 0 4px #00FF87;letter-spacing:1px;\">SYSTEM ONLINE</span>\n  <span style=\"color:#889;font-size:11px;letter-spacing:1px;padding:0 8px;\">|</span>\n  <a href=\"/d/ims-noc-overview\" target=\"_blank\" style=\"color:#00F2FE;font-size:11px;text-decoration:none;letter-spacing:1px;font-weight:700;\">NOC</a>\n  <a href=\"/d/ims-engineering\" target=\"_blank\" style=\"color:#00FF87;font-size:11px;text-decoration:none;letter-spacing:1px;font-weight:700;\">ENG</a>\n  <a href=\"/d/ims-capacity\" target=\"_blank\" style=\"color:#7F00FF;font-size:11px;text-decoration:none;letter-spacing:1px;font-weight:700;\">CAP</a>\n</div>"
       },
       "datasource": null,
-      "description": "Cyberpunk command center banner with glassmorphism CSS theme.",
-      "transparent": true
+      "transparent": true,
+      "description": "Unified command banner with navigation."
     },
     {
       "id": 997,
@@ -95,9 +95,9 @@
       "datasource": null,
       "gridPos": {
         "h": 2,
-        "w": 6,
-        "x": 18,
-        "y": 0
+        "w": 24,
+        "x": 0,
+        "y": 1
       },
       "options": {
         "mode": "clock",
@@ -129,7 +129,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 2
+        "y": 3
       },
       "collapsed": false,
       "transparent": true
@@ -145,7 +145,7 @@
         "h": 6,
         "w": 6,
         "x": 0,
-        "y": 3
+        "y": 4
       },
       "fieldConfig": {
         "defaults": {
@@ -230,7 +230,7 @@
         "h": 6,
         "w": 6,
         "x": 6,
-        "y": 3
+        "y": 4
       },
       "fieldConfig": {
         "defaults": {
@@ -315,7 +315,7 @@
         "h": 6,
         "w": 6,
         "x": 12,
-        "y": 3
+        "y": 4
       },
       "fieldConfig": {
         "defaults": {
@@ -400,7 +400,7 @@
         "h": 6,
         "w": 6,
         "x": 18,
-        "y": 3
+        "y": 4
       },
       "fieldConfig": {
         "defaults": {
@@ -468,7 +468,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 9
+        "y": 10
       },
       "collapsed": false,
       "transparent": true
@@ -484,7 +484,7 @@
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 10
+        "y": 11
       },
       "fieldConfig": {
         "defaults": {
@@ -626,7 +626,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 20
+        "y": 21
       },
       "collapsed": false,
       "transparent": true
@@ -642,7 +642,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 21
+        "y": 22
       },
       "fieldConfig": {
         "defaults": {
@@ -741,7 +741,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 21
+        "y": 22
       },
       "fieldConfig": {
         "defaults": {
@@ -837,7 +837,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 29
+        "y": 30
       },
       "collapsed": false,
       "transparent": true
@@ -853,7 +853,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 30
+        "y": 31
       },
       "fieldConfig": {
         "defaults": {
@@ -970,7 +970,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 30
+        "y": 31
       },
       "fieldConfig": {
         "defaults": {
@@ -1075,24 +1075,6 @@
           "targetBlank": true
         }
       ]
-    },
-    {
-      "id": 99,
-      "type": "text",
-      "title": "",
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 39
-      },
-      "options": {
-        "mode": "html",
-        "content": "<div style=\"display:flex;align-items:center;justify-content:center;height:100%;padding:0 12px;\"><a href=\"/d/ims-noc-overview\" target=\"_blank\" style=\"flex:1;display:flex;align-items:center;justify-content:center;padding:8px 0;margin:0 3px;background:rgba(15,20,30,0.8);border:1px solid rgba(255,255,255,0.1);border-radius:2px;color:#889;font-size:13px;font-weight:700;font-family:Rajdhani,monospace;letter-spacing:2px;text-decoration:none;\" onmouseover=\"this.style.filter='brightness(1.3)'\" onmouseout=\"this.style.filter='brightness(1)'\">SERVER HEALTH</a><a href=\"/d/ims-engineering\" target=\"_blank\" style=\"flex:1;display:flex;align-items:center;justify-content:center;padding:8px 0;margin:0 3px;background:rgba(15,20,30,0.8);border:1px solid rgba(255,255,255,0.1);border-radius:2px;color:#889;font-size:13px;font-weight:700;font-family:Rajdhani,monospace;letter-spacing:2px;text-decoration:none;\" onmouseover=\"this.style.filter='brightness(1.3)'\" onmouseout=\"this.style.filter='brightness(1)'\">NETWORK ANALYTICS</a><a href=\"/d/ims-capacity\" target=\"_blank\" style=\"flex:1;display:flex;align-items:center;justify-content:center;padding:8px 0;margin:0 3px;background:rgba(15,20,30,0.8);border:2px solid #7F00FF;border-radius:2px;color:#fff;font-size:13px;font-weight:700;font-family:Rajdhani,monospace;letter-spacing:2px;text-decoration:none;box-shadow:0 0 8px #7F00FF40;\" onmouseover=\"this.style.filter='brightness(1.3)'\" onmouseout=\"this.style.filter='brightness(1)'\">\u25b8 CAPACITY PLANNING</a></div>"
-      },
-      "datasource": null,
-      "transparent": true,
-      "description": "Navigation hub \u2014 quick jump between dashboards."
     }
   ],
   "graphTooltip": 1
