@@ -205,7 +205,7 @@
         "overrides": []
       },
       "options": {
-        "colorMode": "value",
+        "colorMode": "background-solid",
         "graphMode": "area",
         "justifyMode": "center",
         "reduceOptions": {
@@ -267,7 +267,7 @@
         "overrides": []
       },
       "options": {
-        "colorMode": "value",
+        "colorMode": "background-solid",
         "graphMode": "area",
         "justifyMode": "center",
         "reduceOptions": {
@@ -329,7 +329,7 @@
         "overrides": []
       },
       "options": {
-        "colorMode": "value",
+        "colorMode": "background-solid",
         "graphMode": "area",
         "justifyMode": "center",
         "reduceOptions": {
@@ -389,7 +389,7 @@
         "overrides": []
       },
       "options": {
-        "colorMode": "value",
+        "colorMode": "background-solid",
         "graphMode": "area",
         "justifyMode": "center",
         "reduceOptions": {
