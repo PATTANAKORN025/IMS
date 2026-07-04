@@ -94,7 +94,7 @@
       },
       "options": {
         "mode": "html",
-        "content": "<style>\n@import url(\"https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap\");\n.dashboard-page {\n  background: radial-gradient(circle at center, #0B0E14 0%, #040508 100%),\n              linear-gradient(0deg, transparent 24%, rgba(0,242,254,0.03) 25%, rgba(0,242,254,0.03) 26%, transparent 27%, transparent 74%, rgba(0,242,254,0.03) 75%, rgba(0,242,254,0.03) 76%, transparent 77%, transparent),\n              linear-gradient(90deg, transparent 24%, rgba(0,242,254,0.03) 25%, rgba(0,242,254,0.03) 26%, transparent 27%, transparent 74%, rgba(0,242,254,0.03) 75%, rgba(0,242,254,0.03) 76%, transparent 77%, transparent) !important;\n  background-size: 100% 100%, 50px 50px, 50px 50px !important;\n  font-family: 'Rajdhani', sans-serif !important;\n}\n.panel-container {\n  background: linear-gradient(135deg, rgba(11,14,20,0.8) 0%, rgba(15,20,30,0.5) 100%) !important;\n  border: 1px solid rgba(0,242,254,0.15) !important;\n  box-shadow: 0 4px 30px rgba(0,0,0,0.5), inset 0 0 20px rgba(0,242,254,0.05) !important;\n  backdrop-filter: blur(12px) !important;\n  border-radius: 12px !important;\n}\n.panel-title { font-family: 'Rajdhani', sans-serif !important; font-weight: 700; letter-spacing: 2px; color: #00F2FE !important; }\n@keyframes neonPulse { 0%{box-shadow:0 0 5px #FF003C,inset 0 0 5px #FF003C} 50%{box-shadow:0 0 20px #FF003C,inset 0 0 10px #FF003C} 100%{box-shadow:0 0 5px #FF003C,inset 0 0 5px #FF003C} }\n.status-critical { animation: neonPulse 1.5s infinite; border-color: #FF003C !important; }\n</style>\n<div style=\"display:flex;justify-content:space-between;align-items:center;height:100%;border-bottom:2px solid #00F2FE;box-shadow:0 2px 15px rgba(0,242,254,0.4);padding:0 16px;\">\n  <div style=\"font-size:36px;font-weight:700;color:#fff;text-shadow:0 0 15px #00F2FE;letter-spacing:5px;font-family:Rajdhani,sans-serif;\">ENGINEERING <span style=\"color:#00F2FE;\">DRILL-DOWN</span></div>\n  <div style=\"color:#00FF87;font-size:13px;text-shadow:0 0 5px #00FF87;\">SYSTEM ONLINE // SECURE CONNECTION</div>\n</div>"
+        "content": "<style>\n@import url(\"https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap\");\n.dashboard-page {\n  background: radial-gradient(circle at center, #0B0E14 0%, #040508 100%),\n              linear-gradient(0deg, transparent 24%, rgba(0,242,254,0.03) 25%, rgba(0,242,254,0.03) 26%, transparent 27%),\n              linear-gradient(90deg, transparent 24%, rgba(0,242,254,0.03) 25%, rgba(0,242,254,0.03) 26%, transparent 27%) !important;\n  background-size: 100% 100%, 50px 50px, 50px 50px !important;\n  font-family: 'Rajdhani', sans-serif !important;\n}\n.panel-container {\n  background: linear-gradient(135deg, rgba(11,14,20,0.8) 0%, rgba(15,20,30,0.5) 100%) !important;\n  border: 1px solid rgba(0,242,254,0.15) !important;\n  box-shadow: 0 4px 30px rgba(0,0,0,0.5), inset 0 0 20px rgba(0,242,254,0.05) !important;\n  backdrop-filter: blur(12px) !important;\n  border-radius: 12px !important;\n  animation: float 6s ease-in-out infinite !important;\n}\n.panel-title {\n  font-family: 'Rajdhani', sans-serif !important;\n  font-weight: 700; letter-spacing: 2px;\n  color: #00F2FE !important;\n  transition: text-shadow 0.3s ease-in-out;\n}\n.panel-title:hover {\n  text-shadow: 2px 0 #FF003C, -2px 0 #00F2FE !important;\n}\n@keyframes fluidPulse {\n  0% { filter: drop-shadow(0 0 5px #FF003C); opacity: 0.8; }\n  50% { filter: drop-shadow(0 0 20px #FF003C); opacity: 1; }\n  100% { filter: drop-shadow(0 0 5px #FF003C); opacity: 0.8; }\n}\n@keyframes float {\n  0% { transform: translateY(0px); }\n  50% { transform: translateY(-3px); }\n  100% { transform: translateY(0px); }\n}\n.status-critical { animation: fluidPulse 2s cubic-bezier(0.4, 0, 0.2, 1) infinite; }\n</style><div style=\"display:flex;justify-content:space-between;align-items:center;height:100%;border-bottom:2px solid #00F2FE;box-shadow:0 2px 15px rgba(0,242,254,0.4);padding:0 16px;\"><div style=\"font-size:32px;font-weight:700;color:#fff;text-shadow:0 0 15px #00F2FE;letter-spacing:5px;font-family:Rajdhani,sans-serif;\">ENGINEERING <span style=\"color:#00F2FE;\">DRILL-DOWN</span></div><div style=\"color:#00FF87;font-size:13px;text-shadow:0 0 5px #00FF87;\">PER-MACHINE DIAGNOSTICS</div></div>"
       },
       "datasource": null,
       "description": "Cyberpunk command center banner with glassmorphism CSS theme.",
@@ -1179,7 +1179,7 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
+        "w": 6,
         "x": 0,
         "y": 37
       },
@@ -1280,6 +1280,24 @@
       "transparent": true
     },
     {
+      "id": 520,
+      "type": "text",
+      "title": "System Status",
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 18,
+        "y": 37
+      },
+      "transparent": true,
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"text-align:center;padding:10px;font-family:Rajdhani,monospace;\"><div style=\"color:#00F2FE;font-size:11px;letter-spacing:2px;margin-bottom:8px;\">SYSTEM STATUS</div><div style=\"color:#00FF87;font-size:28px;font-weight:700;text-shadow:0 0 8px #00FF87;\">ONLINE</div><div style=\"color:#889;font-size:10px;margin-top:6px;\">All Services Operational</div><div style=\"margin-top:12px;padding-top:8px;border-top:1px solid rgba(0,242,254,0.15);\"><div style=\"display:flex;justify-content:space-around;font-size:10px;\"><div><span style=\"color:#00FF87;\">&#9679;</span> DB</div><div><span style=\"color:#00FF87;\">&#9679;</span> NR</div><div><span style=\"color:#00FF87;\">&#9679;</span> GFX</div></div></div></div>"
+      },
+      "datasource": null,
+      "description": "System status summary panel."
+    },
+    {
       "id": 26,
       "title": "System Matrix Analysis",
       "type": "text",
@@ -1287,7 +1305,7 @@
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 12,
+        "x": 6,
         "y": 37
       },
       "fieldConfig": {
