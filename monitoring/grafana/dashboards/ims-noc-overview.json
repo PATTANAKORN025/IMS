@@ -40,7 +40,7 @@
       {
         "name": "machine_id",
         "type": "query",
-        "query": "SELECT DISTINCT machine_id FROM public.machine_telemetry ORDER BY machine_id",
+        "query": "SELECT DISTINCT machine_id FROM public.sys_metrics ORDER BY machine_id",
         "datasource": {
           "uid": "timescaledb"
         },
@@ -53,7 +53,7 @@
       {
         "name": "interface",
         "type": "query",
-        "query": "SELECT DISTINCT key FROM (SELECT interface_metrics FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '10 minutes' ORDER BY time DESC LIMIT 100) AS recent, jsonb_object_keys(recent.interface_metrics) AS key ORDER BY key",
+        "query": "SELECT DISTINCT interface_name FROM public.net_metrics WHERE time > NOW() - INTERVAL '10 minutes' ORDER BY interface_name",
         "datasource": {
           "uid": "timescaledb"
         },
@@ -143,7 +143,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT COUNT(DISTINCT machine_id) AS value FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '5 minutes'",
+          "rawSql": "SELECT COUNT(DISTINCT machine_id) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '5 minutes'",
           "format": "table"
         }
       ]
@@ -204,7 +204,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH latest AS (SELECT machine_id, disk_used_gb / NULLIF(disk_total_gb, 0) * 100 AS disk_pct, ram_used_mb / NULLIF(ram_total_mb, 0) * 100 AS ram_pct, cpu_load_percent AS cpu_pct FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '5 minutes' GROUP BY machine_id, disk_used_gb, disk_total_gb, ram_used_mb, ram_total_mb, cpu_load_percent) SELECT 'Fleet Score' AS metric, ROUND(AVG(CASE WHEN disk_pct > 90 OR ram_pct > 95 OR cpu_pct > 90 THEN 0 WHEN disk_pct > 80 OR ram_pct > 85 OR cpu_pct > 80 THEN 50 ELSE 100 END), 1) AS value FROM latest",
+          "rawSql": "WITH latest AS (SELECT machine_id, disk_used_gb / NULLIF(disk_total_gb, 0) * 100 AS disk_pct, ram_used_mb / NULLIF(ram_total_mb, 0) * 100 AS ram_pct, cpu_load_percent AS cpu_pct FROM public.sys_metrics WHERE time > NOW() - INTERVAL '5 minutes' GROUP BY machine_id, disk_used_gb, disk_total_gb, ram_used_mb, ram_total_mb, cpu_load_percent) SELECT 'Fleet Score' AS metric, ROUND(AVG(CASE WHEN disk_pct > 90 OR ram_pct > 95 OR cpu_pct > 90 THEN 0 WHEN disk_pct > 80 OR ram_pct > 85 OR cpu_pct > 80 THEN 50 ELSE 100 END), 1) AS value FROM latest",
           "format": "table"
         }
       ]
@@ -276,7 +276,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{ machine_id }}",
-          "rawSql": "WITH ldi AS (SELECT time_bucket('1 hour', time) AS time, machine_id, ldi_pe, ldi_je FROM public.machine_telemetry WHERE $__timeFilter(time) AND ldi_pe IS NOT NULL) SELECT time, machine_id, ROUND(100.0 * SUM(CASE WHEN ABS(ldi_pe) > 10 OR ABS(ldi_je) > 10 THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0)::NUMERIC, 1) AS \"Yield Risk %\" FROM ldi GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "WITH ldi AS (SELECT time_bucket('1 hour', time) AS time, machine_id, ldi_pe, ldi_je FROM public.ldi_metrics WHERE $__timeFilter(time) AND ldi_pe IS NOT NULL) SELECT time, machine_id, ROUND(100.0 * SUM(CASE WHEN ABS(ldi_pe) > 10 OR ABS(ldi_je) > 10 THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0)::NUMERIC, 1) AS \"Yield Risk %\" FROM ldi GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series"
         }
       ]
@@ -335,7 +335,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH power_data AS (SELECT machine_id, AVG(ldi_power) AS avg_watts FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '1 day' AND ldi_power IS NOT NULL GROUP BY machine_id) SELECT 'Fleet Power Cost' AS metric, ROUND(SUM(avg_watts * 24 * 4.5 / 1000)::NUMERIC, 0) AS value FROM power_data",
+          "rawSql": "WITH power_data AS (SELECT machine_id, AVG(ldi_power) AS avg_watts FROM public.ldi_metrics WHERE time > NOW() - INTERVAL '1 day' AND ldi_power IS NOT NULL GROUP BY machine_id) SELECT 'Fleet Power Cost' AS metric, ROUND(SUM(avg_watts * 24 * 4.5 / 1000)::NUMERIC, 0) AS value FROM power_data",
           "format": "table"
         }
       ]
@@ -415,7 +415,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT machine_id AS \"Server Name\", CASE WHEN MAX(time) > NOW() - INTERVAL '2 minutes' THEN 'online' WHEN MAX(time) > NOW() - INTERVAL '10 minutes' THEN 'stale' ELSE 'offline' END AS \"Status\", ROUND(AVG(cpu_load_percent)::NUMERIC, 1) AS \"CPU (%)\", ROUND(AVG(temp_c)::NUMERIC, 0) AS \"Temp (°C)\", MAX(time) AS \"Last Update\" FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '10 minutes' GROUP BY machine_id ORDER BY machine_id",
+          "rawSql": "SELECT machine_id AS \"Server Name\", CASE WHEN MAX(time) > NOW() - INTERVAL '2 minutes' THEN 'online' WHEN MAX(time) > NOW() - INTERVAL '10 minutes' THEN 'stale' ELSE 'offline' END AS \"Status\", ROUND(AVG(cpu_load_percent)::NUMERIC, 1) AS \"CPU (%)\", ROUND(AVG(temp_c)::NUMERIC, 0) AS \"Temp (°C)\", MAX(time) AS \"Last Update\" FROM public.sys_metrics WHERE time > NOW() - INTERVAL '10 minutes' GROUP BY machine_id ORDER BY machine_id",
           "format": "table"
         }
       ],
@@ -506,7 +506,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{ machine_id }}",
-          "rawSql": "SELECT bucket AS time, machine_id, avg_cpu_load AS \"CPU Load %\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id IN (${machine_id:sqlstring}) ORDER BY 1",
+          "rawSql": "SELECT time, machine_id, cpu_load_percent AS \"CPU Load %\" FROM public.sys_metrics WHERE $__timeFilter(bucket) AND machine_id IN (${machine_id:sqlstring}) ORDER BY 1",
           "format": "time_series"
         }
       ],
@@ -583,7 +583,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{ machine_id }}",
-          "rawSql": "SELECT bucket AS time, machine_id, max_temp AS \"Temperature (°C)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id IN (${machine_id:sqlstring}) AND max_temp > 0 ORDER BY 1",
+          "rawSql": "SELECT time, machine_id, temp_c AS \"Temperature (°C)\" FROM public.sys_metrics WHERE $__timeFilter(bucket) AND machine_id IN (${machine_id:sqlstring}) AND temp_c > 0 ORDER BY 1",
           "format": "time_series"
         }
       ],
@@ -689,7 +689,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{ machine_id }} RX",
-          "rawSql": "SELECT bucket AS time, machine_id, avg_rx_mbps AS \"RX (Mbps)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id IN (${machine_id:sqlstring}) ORDER BY 1",
+          "rawSql": "SELECT time, machine_id, rx_mbps AS \"RX (Mbps)\" FROM public.net_metrics WHERE $__timeFilter(bucket) AND machine_id IN (${machine_id:sqlstring}) ORDER BY 1",
           "format": "time_series"
         },
         {
@@ -698,7 +698,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{ machine_id }} TX",
-          "rawSql": "SELECT bucket AS time, machine_id, avg_tx_mbps * -1 AS \"TX (Mbps)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id IN (${machine_id:sqlstring}) ORDER BY 1",
+          "rawSql": "SELECT time, machine_id, tx_mbps * -1 AS \"TX (Mbps)\" FROM public.net_metrics WHERE $__timeFilter(bucket) AND machine_id IN (${machine_id:sqlstring}) ORDER BY 1",
           "format": "time_series"
         }
       ],
@@ -779,7 +779,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{ machine_id }}",
-          "rawSql": "SELECT bucket AS time, machine_id, ROUND((avg_ram_used / NULLIF(avg_ram_total, 0) * 100)::NUMERIC, 1) AS \"RAM %\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id IN (${machine_id:sqlstring}) ORDER BY 1",
+          "rawSql": "SELECT time, machine_id, ROUND((ram_used_mb / NULLIF(ram_total_mb, 0) * 100)::NUMERIC, 1) AS \"RAM %\" FROM public.sys_metrics WHERE $__timeFilter(bucket) AND machine_id IN (${machine_id:sqlstring}) ORDER BY 1",
           "format": "time_series"
         }
       ],
