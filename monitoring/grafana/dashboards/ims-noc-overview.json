@@ -94,7 +94,7 @@
       },
       "options": {
         "mode": "html",
-        "content": "<style>\n@import url(\"https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap\");\n.dashboard-page { background: #060810 !important; font-family: \"Rajdhani\", sans-serif !important; }\n.panel-container {\n  background: #060810 !important;\n  border: 1px solid rgba(0, 242, 254, 0.25) !important;\n  border-radius: 4px !important;\n  box-shadow: inset 0 1px 8px rgba(0, 242, 254, 0.03) !important;\n  transition: border-color 0.3s ease, box-shadow 0.3s ease;\n}\n.panel-container:hover {\n  border-color: rgba(0, 242, 254, 0.6) !important;\n  box-shadow: 0 0 12px rgba(0, 242, 254, 0.1) !important;\n}\n.panel-title { color: #A0B0C0 !important; font-size: 14px !important; font-weight: 700 !important; letter-spacing: 1px; }\n</style>\n<div style=\"display:flex;justify-content:space-between;align-items:center;height:100%;padding:0 20px;background:linear-gradient(90deg,rgba(0,242,254,0.1) 0%,transparent 100%);border-left:4px solid #00F2FE;border-radius:4px;box-sizing:border-box;\">\n  <h1 style=\"font-size:20px;font-weight:800;color:#fff;letter-spacing:3px;text-shadow:0 0 10px #00F2FE;margin:0;\">APEX <span style=\"color:#00F2FE;\">COMMAND</span> <span style=\"color:#8899aa;font-size:14px;letter-spacing:1px;\">// </span></h1>\n  <div style=\"display:flex;gap:20px;\">\n    <a href=\"/d/ims-noc-overview\" class=\"active\" style=\"color:#00FF87;text-decoration:none;font-size:14px;font-weight:700;padding:4px 12px;border:1px solid rgba(0,255,135,0.3);background:rgba(0,255,135,0.05);border-radius:4px;\">NOC</a> <a href=\"/d/ims-engineering\" style=\"color:#8899aa;text-decoration:none;font-size:14px;font-weight:700;padding:4px 12px;border:1px solid transparent;border-radius:4px;\">ENG</a> <a href=\"/d/ims-capacity\" style=\"color:#8899aa;text-decoration:none;font-size:14px;font-weight:700;padding:4px 12px;border:1px solid transparent;border-radius:4px;\">CAP</a>\n  </div>\n</div>"
+        "content": "<style>\n@import url(\"https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap\");\n.dashboard-page {\n  background-color: #040508 !important;\n  background-image:\n    linear-gradient(rgba(0,242,254,0.03) 1px, transparent 1px),\n    linear-gradient(90deg, rgba(0,242,254,0.03) 1px, transparent 1px) !important;\n  background-size: 30px 30px !important;\n  font-family: \"Rajdhani\", sans-serif !important;\n}\n.panel-container {\n  background: rgba(6,8,16,0.85) !important;\n  border: 1px solid rgba(0,242,254,0.2) !important;\n  border-radius: 4px !important;\n  transition: border-color 0.3s ease, box-shadow 0.3s ease;\n}\n.panel-container:hover {\n  border-color: rgba(0,242,254,0.5) !important;\n  box-shadow: 0 0 12px rgba(0,242,254,0.08) !important;\n}\n.panel-title { color: #A0B0C0 !important; font-size: 13px !important; font-weight: 700 !important; letter-spacing: 1px; }\n</style>\n<div style=\"display:flex;justify-content:space-between;align-items:center;height:100%;padding:0 20px;background:linear-gradient(90deg,rgba(0,242,254,0.08) 0%,transparent 100%);border-left:4px solid #00F2FE;border-radius:4px;box-sizing:border-box;\">\n  <h1 style=\"font-size:20px;font-weight:800;color:#fff;letter-spacing:3px;text-shadow:0 0 10px #00F2FE;margin:0;\">APEX <span style=\"color:#00F2FE;\">COMMAND</span> <span style=\"color:#8899aa;font-size:14px;letter-spacing:1px;\">// </span></h1>\n  <div style=\"display:flex;gap:20px;\">\n    <a href=\"/d/ims-noc-overview\" style=\"color:#00FF87;text-decoration:none;font-size:14px;font-weight:700;padding:4px 12px;border:1px solid rgba(0,255,135,0.3);background:rgba(0,255,135,0.05);border-radius:4px;\">NOC</a> <a href=\"/d/ims-engineering\" style=\"color:#8899aa;text-decoration:none;font-size:14px;font-weight:700;padding:4px 12px;border:1px solid transparent;border-radius:4px;\">ENG</a> <a href=\"/d/ims-capacity\" style=\"color:#8899aa;text-decoration:none;font-size:14px;font-weight:700;padding:4px 12px;border:1px solid transparent;border-radius:4px;\">CAP</a>\n  </div>\n</div>"
       },
       "datasource": null,
       "transparent": true,
@@ -432,13 +432,13 @@
     },
     {
       "id": 10,
-      "title": "Server Fleet Status",
+      "title": "TOP 10 CRITICAL NODES",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
-        "h": 12,
+        "h": 8,
         "w": 24,
         "x": 0,
         "y": 10
@@ -568,7 +568,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT machine_id AS \"Server Name\", CASE WHEN MAX(time) > NOW() - INTERVAL '2 minutes' THEN 'online' WHEN MAX(time) > NOW() - INTERVAL '10 minutes' THEN 'stale' ELSE 'offline' END AS \"Status\", ROUND(AVG(cpu_load_percent)::NUMERIC, 1) AS \"CPU (%)\", ROUND(AVG(temp_c)::NUMERIC, 0) AS \"Temp (°C)\", COUNT(*)::TEXT AS \"Machines\" FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '10 minutes' GROUP BY machine_id ORDER BY machine_id",
+          "rawSql": "SELECT machine_id AS \"Server Name\", CASE WHEN MAX(time) > NOW() - INTERVAL '2 minutes' THEN 'online' WHEN MAX(time) > NOW() - INTERVAL '10 minutes' THEN 'stale' ELSE 'offline' END AS \"Status\", ROUND(AVG(cpu_load_percent)::NUMERIC, 1) AS \"CPU (%)\", ROUND(AVG(temp_c)::NUMERIC, 0) AS \"Temp (°C)\", COUNT(*)::TEXT AS \"Machines\" FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '10 minutes' GROUP BY machine_id ORDER BY \"CPU (%)\" DESC LIMIT 10",
           "format": "table"
         }
       ],
@@ -597,7 +597,7 @@
     },
     {
       "id": 20,
-      "title": "CPU Load (All Machines)",
+      "title": "CPU Load (Fleet Envelope)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -645,38 +645,8 @@
         "overrides": [
           {
             "matcher": {
-              "id": "byRegexp",
-              "options": "^(?!.*TX|Upload|Z-Score).*"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#00FF87"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": "(?i).*UBUNTU.*"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#00FF87"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": "(?i).*WINDOWS.*"
+              "id": "byName",
+              "options": "Fleet Average"
             },
             "properties": [
               {
@@ -685,20 +655,24 @@
                   "mode": "fixed",
                   "fixedColor": "#00F2FE"
                 }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
               }
             ]
           },
           {
             "matcher": {
-              "id": "byRegexp",
-              "options": "(?i).*(Forecast|Regression|Linear).*"
+              "id": "byName",
+              "options": "Worst Machine"
             },
             "properties": [
               {
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#4A5568"
+                  "fixedColor": "#FF003C"
                 }
               },
               {
@@ -706,6 +680,10 @@
                 "value": {
                   "fill": "dash"
                 }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 15
               }
             ]
           }
@@ -713,29 +691,33 @@
       },
       "options": {
         "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
+          "mode": "single",
+          "sort": "none"
         },
         "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "mean",
-            "max",
-            "lastNotNull"
-          ]
+          "displayMode": "list",
+          "placement": "bottom"
         },
         "connectNullPoints": true
       },
       "targets": [
         {
-          "refId": "A",
+          "refId": "AVG",
+          "legendFormat": "Fleet Average",
+          "rawSql": "SELECT bucket AS time, ROUND(AVG(avg_cpu_load)::NUMERIC,1) AS value FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) GROUP BY bucket ORDER BY 1",
+          "format": "time_series",
           "datasource": {
             "uid": "timescaledb"
-          },
-          "legendFormat": "{{ machine_id }}",
-          "rawSql": "SELECT bucket AS time, machine_id, avg_cpu_load AS \"CPU Load %\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id IN (${machine_id:sqlstring}) ORDER BY 1",
-          "format": "time_series"
+          }
+        },
+        {
+          "refId": "MAX",
+          "legendFormat": "Worst Machine",
+          "rawSql": "SELECT bucket AS time, ROUND(MAX(avg_cpu_load)::NUMERIC,1) AS value FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) GROUP BY bucket ORDER BY 1",
+          "format": "time_series",
+          "datasource": {
+            "uid": "timescaledb"
+          }
         }
       ],
       "links": [
@@ -750,12 +732,12 @@
           "targetBlank": true
         }
       ],
-      "description": "Real-time CPU utilization (%) for all machines, sampled every 10 seconds. Yellow >75%, Red >90%.",
+      "description": "Fleet-wide cpu load envelope: average (solid cyan) vs worst-case ceiling (dashed red).",
       "transparent": true
     },
     {
       "id": 21,
-      "title": "Temperature (All Machines)",
+      "title": "Temperature (Fleet Envelope)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -800,8 +782,8 @@
         "overrides": [
           {
             "matcher": {
-              "id": "byRegexp",
-              "options": "^Temperature"
+              "id": "byName",
+              "options": "Fleet Average"
             },
             "properties": [
               {
@@ -810,50 +792,24 @@
                   "mode": "fixed",
                   "fixedColor": "#FF9100"
                 }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
               }
             ]
           },
           {
             "matcher": {
-              "id": "byRegexp",
-              "options": "(?i).*UBUNTU.*"
+              "id": "byName",
+              "options": "Hottest Machine"
             },
             "properties": [
               {
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#00FF87"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": "(?i).*WINDOWS.*"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#00F2FE"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": "(?i).*(Forecast|Regression|Linear).*"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#4A5568"
+                  "fixedColor": "#FF003C"
                 }
               },
               {
@@ -861,6 +817,10 @@
                 "value": {
                   "fill": "dash"
                 }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 15
               }
             ]
           }
@@ -868,29 +828,33 @@
       },
       "options": {
         "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
+          "mode": "single",
+          "sort": "none"
         },
         "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "mean",
-            "max",
-            "lastNotNull"
-          ]
+          "displayMode": "list",
+          "placement": "bottom"
         },
         "connectNullPoints": true
       },
       "targets": [
         {
-          "refId": "A",
+          "refId": "AVG",
+          "legendFormat": "Fleet Average",
+          "rawSql": "SELECT bucket AS time, ROUND(AVG(max_temp)::NUMERIC,1) AS value FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND max_temp > 0 GROUP BY bucket ORDER BY 1",
+          "format": "time_series",
           "datasource": {
             "uid": "timescaledb"
-          },
-          "legendFormat": "{{ machine_id }}",
-          "rawSql": "SELECT bucket AS time, machine_id, max_temp AS \"Temperature (°C)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id IN (${machine_id:sqlstring}) AND max_temp > 0 ORDER BY 1",
-          "format": "time_series"
+          }
+        },
+        {
+          "refId": "MAX",
+          "legendFormat": "Hottest Machine",
+          "rawSql": "SELECT bucket AS time, ROUND(MAX(max_temp)::NUMERIC,1) AS value FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND max_temp > 0 GROUP BY bucket ORDER BY 1",
+          "format": "time_series",
+          "datasource": {
+            "uid": "timescaledb"
+          }
         }
       ],
       "links": [
@@ -907,7 +871,7 @@
           "targetBlank": true
         }
       ],
-      "description": "Real-time temperature (°C) for all machines. Yellow >70°C, Red >85°C.",
+      "description": "Fleet-wide temperature envelope: average (solid cyan) vs worst-case ceiling (dashed red).",
       "transparent": true
     },
     {
@@ -1054,7 +1018,7 @@
     },
     {
       "id": 23,
-      "title": "RAM Saturation (Fleet)",
+      "title": "RAM Saturation (Fleet Envelope)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -1102,8 +1066,8 @@
         "overrides": [
           {
             "matcher": {
-              "id": "byRegexp",
-              "options": "^(?!.*TX|Upload).*"
+              "id": "byName",
+              "options": "Fleet Average"
             },
             "properties": [
               {
@@ -1112,50 +1076,24 @@
                   "mode": "fixed",
                   "fixedColor": "#00F2FE"
                 }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
               }
             ]
           },
           {
             "matcher": {
-              "id": "byRegexp",
-              "options": "(?i).*UBUNTU.*"
+              "id": "byName",
+              "options": "Worst Machine"
             },
             "properties": [
               {
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#00FF87"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": "(?i).*WINDOWS.*"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#00F2FE"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": "(?i).*(Forecast|Regression|Linear).*"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#4A5568"
+                  "fixedColor": "#FF003C"
                 }
               },
               {
@@ -1163,6 +1101,10 @@
                 "value": {
                   "fill": "dash"
                 }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 15
               }
             ]
           }
@@ -1170,29 +1112,33 @@
       },
       "options": {
         "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
+          "mode": "single",
+          "sort": "none"
         },
         "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "mean",
-            "max",
-            "lastNotNull"
-          ]
+          "displayMode": "list",
+          "placement": "bottom"
         },
         "connectNullPoints": true
       },
       "targets": [
         {
-          "refId": "A",
+          "refId": "AVG",
+          "legendFormat": "Fleet Average",
+          "rawSql": "SELECT bucket AS time, ROUND(AVG(avg_ram_used / NULLIF(avg_ram_total, 0) * 100)::NUMERIC,1) AS value FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) GROUP BY bucket ORDER BY 1",
+          "format": "time_series",
           "datasource": {
             "uid": "timescaledb"
-          },
-          "legendFormat": "{{ machine_id }}",
-          "rawSql": "SELECT bucket AS time, machine_id, ROUND((avg_ram_used / NULLIF(avg_ram_total, 0) * 100)::NUMERIC, 1) AS \"RAM %\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id IN (${machine_id:sqlstring}) ORDER BY 1",
-          "format": "time_series"
+          }
+        },
+        {
+          "refId": "MAX",
+          "legendFormat": "Worst Machine",
+          "rawSql": "SELECT bucket AS time, ROUND(MAX(avg_ram_used / NULLIF(avg_ram_total, 0) * 100)::NUMERIC,1) AS value FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) GROUP BY bucket ORDER BY 1",
+          "format": "time_series",
+          "datasource": {
+            "uid": "timescaledb"
+          }
         }
       ],
       "links": [
@@ -1209,7 +1155,7 @@
           "targetBlank": true
         }
       ],
-      "description": "RAM utilization (%) across the fleet. Calculated as (avg_ram_used / avg_ram_total) × 100 from the 1-minute continuous aggregate.",
+      "description": "Fleet-wide ram saturation envelope: average (solid cyan) vs worst-case ceiling (dashed red).",
       "transparent": true
     }
   ],
