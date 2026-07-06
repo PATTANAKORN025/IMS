@@ -5,11 +5,11 @@ datasources:
     uid: timescaledb
     type: postgres
     access: proxy
-    url: ims-pgbouncer:5432
+    url: ims-timescaledb:5432
     database: ims
     user: grafana_reader
     secureJsonData:
-      password: grafana_readonly_pw
+      password: grafana_secure
     jsonData:
       sslmode: disable
       postgresVersion: 1600

@@ -273,7 +273,7 @@ FROM public.v_fleet_health;
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'grafana_reader') THEN
-        CREATE ROLE grafana_reader WITH LOGIN PASSWORD 'grafana_readonly_pw';
+        CREATE ROLE grafana_reader WITH LOGIN PASSWORD 'grafana_secure';
     END IF;
 END
 $$;
