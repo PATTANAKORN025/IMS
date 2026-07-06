@@ -740,8 +740,8 @@
       },
       "options": {
         "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
+          "mode": "single",
+          "sort": "none"
         },
         "legend": {
           "displayMode": "table",
@@ -940,8 +940,8 @@
       },
       "options": {
         "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
+          "mode": "single",
+          "sort": "none"
         },
         "legend": {
           "displayMode": "table",
@@ -1108,8 +1108,8 @@
       },
       "options": {
         "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
+          "mode": "single",
+          "sort": "none"
         },
         "legend": {
           "displayMode": "table",
@@ -1303,8 +1303,8 @@
       },
       "options": {
         "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
+          "mode": "single",
+          "sort": "none"
         },
         "legend": {
           "displayMode": "table",
@@ -1486,8 +1486,8 @@
       },
       "options": {
         "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
+          "mode": "single",
+          "sort": "none"
         },
         "legend": {
           "displayMode": "table",

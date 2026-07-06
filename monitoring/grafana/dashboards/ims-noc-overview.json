@@ -757,8 +757,8 @@
       },
       "options": {
         "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
+          "mode": "single",
+          "sort": "none"
         },
         "legend": {
           "displayMode": "table",
@@ -827,7 +827,8 @@
             "lineWidth": 2,
             "spanNulls": 60000,
             "gradientMode": "opacity",
-            "drawStyle": "line"
+            "drawStyle": "line",
+            "lineInterpolation": "smooth"
           },
           "thresholds": {
             "mode": "absolute",
@@ -965,8 +966,8 @@
       },
       "options": {
         "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
+          "mode": "single",
+          "sort": "none"
         },
         "legend": {
           "displayMode": "table",
@@ -1320,8 +1321,8 @@
       },
       "options": {
         "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
+          "mode": "single",
+          "sort": "none"
         },
         "legend": {
           "displayMode": "table",
