@@ -166,7 +166,7 @@
         "overrides": []
       },
       "options": {
-        "code": "const getVal = (idx) => {\n  try {\n    const f = data.series[idx].fields.find(x => x.type === 'number');\n    const v = f.values.buffer || f.values;\n    return v[v.length - 1] || Infinity;\n  } catch(e) { return Infinity; }\n};\nconst disk = getVal(0); const ram = getVal(1); const cpu = getVal(2);\nconst formatVal = (v) => v > 365 ? 365 : (v < 0 ? 0 : v);\nreturn {\n  backgroundColor: 'transparent',\n  grid: { top: '10%', bottom: '5%', left: '15%', right: '15%' },\n  xAxis: { type: 'value', show: false, max: 365 },\n  yAxis: { type: 'category', data: ['CPU', 'RAM', 'DISK'], axisLine: {show: false}, axisTick: {show: false}, axisLabel: {color: '#00F2FE', fontSize: 16, fontFamily: 'Orbitron', fontWeight: 'bold'} },\n  series: [{\n    type: 'bar',\n    data: [\n      { value: formatVal(cpu), itemStyle: { color: '#00FF87', shadowBlur: 15, shadowColor: '#00FF87'} },\n      { value: formatVal(ram), itemStyle: { color: '#00F2FE', shadowBlur: 15, shadowColor: '#00F2FE'} },\n      { value: formatVal(disk), itemStyle: { color: '#7F00FF', shadowBlur: 15, shadowColor: '#7F00FF'} }\n    ],\n    barWidth: 15,\n    itemStyle: { borderRadius: [0, 8, 8, 0] },\n    label: {\n      show: true, position: 'right', color: '#fff', fontSize: 14,\n      formatter: (p) => {\n        const raw = [cpu, ram, disk][p.dataIndex];\n        return raw > 365 ? 'SAFE (\u221e)' : Math.round(raw) + ' Days';\n      }\n    },\n    showBackground: true,\n    backgroundStyle: { color: 'rgba(255, 255, 255, 0.05)', borderRadius: [0, 8, 8, 0] }\n  }]\n};",
+        "code": "const getVal = (idx) => {\n  try {\n    const f = data.series[idx].fields.find(x => x.type === 'number');\n    const v = f.values.buffer || f.values;\n    return v[v.length - 1] || Infinity;\n  } catch(e) { return Infinity; }\n};\nconst disk = getVal(0); const ram = getVal(1); const cpu = getVal(2);\nconst formatVal = (v) => v > 365 ? 365 : (v < 0 ? 0 : v);\nreturn {\n  backgroundColor: 'transparent',\n  grid: { top: '10%', bottom: '5%', left: '15%', right: '15%' },\n  xAxis: { type: 'value', show: false, max: 365 },\n  yAxis: { type: 'category', data: ['CPU', 'RAM', 'DISK'], axisLine: {show: false}, axisTick: {show: false}, axisLabel: {color: '#00F2FE', fontSize: 16, fontFamily: 'Orbitron', fontWeight: 'bold'} },\n  series: [{\n    type: 'bar',\n    data: [\n      { value: formatVal(cpu), itemStyle: { color: '#00FF87', shadowBlur: 15, shadowColor: '#00FF87'} },\n      { value: formatVal(ram), itemStyle: { color: '#00F2FE', shadowBlur: 15, shadowColor: '#00F2FE'} },\n      { value: formatVal(disk), itemStyle: { color: '#7F00FF', shadowBlur: 15, shadowColor: '#7F00FF'} }\n    ],\n    barWidth: 15,\n    itemStyle: { borderRadius: [0, 8, 8, 0] },\n    label: {\n      show: true, position: 'right', color: '#fff', fontSize: 14,\n      formatter: (p) => {\n        const raw = [cpu, ram, disk][p.dataIndex];\n        return raw > 365 ? 'SAFE (∞)' : Math.round(raw) + ' Days';\n      }\n    },\n    showBackground: true,\n    backgroundStyle: { color: 'rgba(255, 255, 255, 0.05)', borderRadius: [0, 8, 8, 0] }\n  }]\n};",
         "option": "{}"
       },
       "targets": [
@@ -175,7 +175,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT 'Disk' AS metric, CASE WHEN r.slope<=0 THEN 9999 ELSE GREATEST(0,(t.disk_total_gb - r.intercept)/r.slope - EXTRACT(EPOCH FROM NOW())/86400) END AS \"Days Until Full\" FROM (SELECT machine_id, COALESCE(regr_slope(avg_used, EXTRACT(EPOCH FROM day)),0) AS slope, COALESCE(regr_intercept(avg_used, EXTRACT(EPOCH FROM day)),0) AS intercept FROM (SELECT machine_id, time_bucket('1 day',hour_bucket) AS day, AVG(avg_disk_used) AS avg_used FROM public.telemetry_hourly_summary WHERE hour_bucket > NOW()-INTERVAL '30 days' GROUP BY 1,2) d GROUP BY machine_id) r JOIN (SELECT DISTINCT ON (machine_id) machine_id, disk_total_gb FROM public.machine_telemetry WHERE disk_total_gb>0 ORDER BY machine_id, time DESC) t ON t.machine_id=r.machine_id ORDER BY value ASC LIMIT 1",
+          "rawSql": "SELECT 'Disk' AS metric, CASE WHEN r.slope<=0 THEN 9999 ELSE GREATEST(0,(t.disk_total_gb - r.intercept)/r.slope - EXTRACT(EPOCH FROM NOW())/86400) END AS \"Days Until Full\" FROM (SELECT machine_id, COALESCE(regr_slope(avg_used, EXTRACT(EPOCH FROM day)),0) AS slope, COALESCE(regr_intercept(avg_used, EXTRACT(EPOCH FROM day)),0) AS intercept FROM (SELECT machine_id, time_bucket('1 day',hour_bucket) AS day, AVG(avg_disk_used) AS avg_used FROM public.telemetry_hourly_summary WHERE hour_bucket > NOW()-INTERVAL '30 days' GROUP BY 1,2) d GROUP BY machine_id) r JOIN (SELECT DISTINCT ON (machine_id) machine_id, disk_total_gb FROM public.machine_telemetry WHERE disk_total_gb>0 ORDER BY machine_id, time DESC) t ON t.machine_id=r.machine_id ORDER BY 1 ASC LIMIT 1",
           "format": "table"
         },
         {
@@ -183,7 +183,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT 'RAM' AS metric, CASE WHEN r.slope<=0 THEN 9999 ELSE GREATEST(0,(t.ram_total_mb - r.intercept)/r.slope - EXTRACT(EPOCH FROM NOW())/86400) END AS \"Days Until Full\" FROM (SELECT machine_id, COALESCE(regr_slope(avg_used, EXTRACT(EPOCH FROM day)),0) AS slope, COALESCE(regr_intercept(avg_used, EXTRACT(EPOCH FROM day)),0) AS intercept FROM (SELECT machine_id, time_bucket('1 day',hour_bucket) AS day, AVG(avg_ram_used) AS avg_used FROM public.telemetry_hourly_summary WHERE hour_bucket > NOW()-INTERVAL '30 days' GROUP BY 1,2) d GROUP BY machine_id) r JOIN (SELECT DISTINCT ON (machine_id) machine_id, ram_total_mb FROM public.machine_telemetry WHERE ram_total_mb>0 ORDER BY machine_id, time DESC) t ON t.machine_id=r.machine_id ORDER BY value ASC LIMIT 1",
+          "rawSql": "SELECT 'RAM' AS metric, CASE WHEN r.slope<=0 THEN 9999 ELSE GREATEST(0,(t.ram_total_mb - r.intercept)/r.slope - EXTRACT(EPOCH FROM NOW())/86400) END AS \"Days Until Full\" FROM (SELECT machine_id, COALESCE(regr_slope(avg_used, EXTRACT(EPOCH FROM day)),0) AS slope, COALESCE(regr_intercept(avg_used, EXTRACT(EPOCH FROM day)),0) AS intercept FROM (SELECT machine_id, time_bucket('1 day',hour_bucket) AS day, AVG(avg_ram_used) AS avg_used FROM public.telemetry_hourly_summary WHERE hour_bucket > NOW()-INTERVAL '30 days' GROUP BY 1,2) d GROUP BY machine_id) r JOIN (SELECT DISTINCT ON (machine_id) machine_id, ram_total_mb FROM public.machine_telemetry WHERE ram_total_mb>0 ORDER BY machine_id, time DESC) t ON t.machine_id=r.machine_id ORDER BY 1 ASC LIMIT 1",
           "format": "table"
         },
         {
@@ -191,7 +191,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT 'CPU' AS metric, CASE WHEN slope<=0 THEN 9999 ELSE GREATEST(0,(100-intercept)/slope-EXTRACT(EPOCH FROM NOW())/86400) END AS \"Days Until Full\" FROM (SELECT machine_id, COALESCE(regr_slope(avg_cpu, EXTRACT(EPOCH FROM day)),0) AS slope, COALESCE(regr_intercept(avg_cpu, EXTRACT(EPOCH FROM day)),0) AS intercept FROM (SELECT machine_id, time_bucket('1 day',hour_bucket) AS day, AVG(avg_cpu_load) AS avg_cpu FROM public.telemetry_hourly_summary WHERE hour_bucket > NOW()-INTERVAL '30 days' GROUP BY 1,2) d GROUP BY machine_id) ORDER BY 2 ASC LIMIT 1",
+          "rawSql": "SELECT 'CPU' AS metric, CASE WHEN slope<=0 THEN 9999 ELSE GREATEST(0,(100-intercept)/slope-EXTRACT(EPOCH FROM NOW())/86400) END AS \"Days Until Full\" FROM (SELECT machine_id, COALESCE(regr_slope(avg_cpu, EXTRACT(EPOCH FROM day)),0) AS slope, COALESCE(regr_intercept(avg_cpu, EXTRACT(EPOCH FROM day)),0) AS intercept FROM (SELECT machine_id, time_bucket('1 day',hour_bucket) AS day, AVG(avg_cpu_load) AS avg_cpu FROM public.telemetry_hourly_summary WHERE hour_bucket > NOW()-INTERVAL '30 days' GROUP BY 1,2) d GROUP BY machine_id) ORDER BY 1 ASC LIMIT 1",
           "format": "table"
         }
       ],
@@ -252,7 +252,7 @@
               "type": "value",
               "options": {
                 "9999": {
-                  "text": "\u221e",
+                  "text": "∞",
                   "color": "green",
                   "index": 0
                 }
@@ -289,7 +289,7 @@
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -337,7 +337,7 @@
               "type": "value",
               "options": {
                 "9999": {
-                  "text": "\u221e",
+                  "text": "∞",
                   "color": "green",
                   "index": 0
                 }
@@ -374,7 +374,7 @@
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -422,7 +422,7 @@
               "type": "value",
               "options": {
                 "9999": {
-                  "text": "\u221e",
+                  "text": "∞",
                   "color": "green",
                   "index": 0
                 }
@@ -459,7 +459,7 @@
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -530,7 +530,7 @@
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -657,7 +657,7 @@
       "targets": [
         {
           "refId": "A",
-          "legendFormat": "{{ machine_id }} \u2014 Used",
+          "legendFormat": "{{ machine_id }} — Used",
           "datasource": {
             "uid": "timescaledb"
           },
@@ -666,7 +666,7 @@
         },
         {
           "refId": "B",
-          "legendFormat": "{{ machine_id }} \u2014 Total",
+          "legendFormat": "{{ machine_id }} — Total",
           "datasource": {
             "uid": "timescaledb"
           },
@@ -675,7 +675,7 @@
         },
         {
           "refId": "C",
-          "legendFormat": "Forecast \u2014 {{ machine_id }}",
+          "legendFormat": "Forecast — {{ machine_id }}",
           "datasource": {
             "uid": "timescaledb"
           },
@@ -688,7 +688,7 @@
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -800,7 +800,7 @@
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -899,7 +899,7 @@
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -908,7 +908,7 @@
     {
       "id": 500,
       "type": "row",
-      "title": "AIOps \u2014 ANOMALY DETECTION",
+      "title": "AIOps — ANOMALY DETECTION",
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -920,7 +920,7 @@
     },
     {
       "id": 601,
-      "title": "CPU Z-Score Anomaly (3\u03c3)",
+      "title": "CPU Z-Score Anomaly (3σ)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -1025,11 +1025,11 @@
           "maxDataPoints": 300
         }
       ],
-      "description": "Fleet-wide CPU Z-Score anomaly detection using 60-minute rolling window. Red zones = \u00b13\u03c3 anomalies.",
+      "description": "Fleet-wide CPU Z-Score anomaly detection using 60-minute rolling window. Red zones = ±3σ anomalies.",
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -1037,7 +1037,7 @@
     },
     {
       "id": 602,
-      "title": "Temperature Z-Score Anomaly (3\u03c3)",
+      "title": "Temperature Z-Score Anomaly (3σ)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -1142,11 +1142,11 @@
           "maxDataPoints": 300
         }
       ],
-      "description": "Fleet-wide temperature Z-Score anomaly detection. Red zones indicate readings beyond \u00b13 standard deviations.",
+      "description": "Fleet-wide temperature Z-Score anomaly detection. Red zones indicate readings beyond ±3 standard deviations.",
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }

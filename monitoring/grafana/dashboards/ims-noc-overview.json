@@ -193,7 +193,7 @@
     {
       "id": 4,
       "title": "Fleet Health Score",
-      "type": "stat",
+      "type": "volkovlabs-echarts-panel",
       "datasource": {
         "uid": "timescaledb"
       },
@@ -229,17 +229,8 @@
         "overrides": []
       },
       "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "center",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "values": false
-        },
-        "noValue": "N/A",
-        "textMode": "value"
+        "code": "let score = 0;\ntry {\n  const field = data.series[0].fields.find(f => f.type === 'number');\n  if (field) {\n    const vals = field.values.buffer || field.values;\n    score = vals[vals.length - 1] || 0;\n  }\n} catch(e) { score = 0; }\n\nreturn {\n  backgroundColor: 'transparent',\n  title: {\n    text: Number(score).toFixed(1) + '%',\n    textStyle: { color: '#00F2FE', fontSize: 40, fontFamily: 'Orbitron', textShadowBlur: 15, textShadowColor: '#00F2FE' },\n    left: 'center', top: 'center'\n  },\n  series: [\n    {\n      type: 'pie', radius: ['70%', '80%'], silent: true,\n      animation: true, animationDuration: 2000, animationEasing: 'cubicInOut',\n      itemStyle: { color: new echarts.graphic.LinearGradient(0,0,1,0,[\n        {offset:0,color:'#FF003C'},{offset:0.5,color:'#FF9100'},{offset:1,color:'#00FF87'}\n      ]), shadowBlur: 20, shadowColor: '#00FF87' },\n      data: [{ value: score }, { value: 100 - score, itemStyle: { color: 'rgba(255,255,255,0.03)', shadowBlur: 0 } }],\n      label: { show: false },\n      startAngle: 90\n    },\n    {\n      type: 'pie', radius: ['55%', '60%'], silent: true,\n      animation: true, animationDuration: 2500, animationEasing: 'cubicInOut',\n      itemStyle: { color: '#00F2FE', shadowBlur: 12, shadowColor: '#00F2FE' },\n      data: [{ value: score * 0.8 }, { value: 100 - (score * 0.8), itemStyle: { color: 'rgba(255,255,255,0.02)', shadowBlur: 0 } }],\n      label: { show: false },\n      startAngle: 45\n    },\n    {\n      type: 'pie', radius: ['40%', '45%'], silent: true,\n      animation: true, animationDuration: 3000, animationEasing: 'cubicInOut',\n      itemStyle: { color: '#7F00FF', shadowBlur: 10, shadowColor: '#7F00FF' },\n      data: [{ value: score * 0.6 }, { value: 100 - (score * 0.6), itemStyle: { color: 'rgba(255,255,255,0.02)', shadowBlur: 0 } }],\n      label: { show: false },\n      startAngle: 135\n    }\n  ]\n};",
+        "option": "{}"
       },
       "targets": [
         {
@@ -255,7 +246,7 @@
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -322,11 +313,11 @@
           "format": "table"
         }
       ],
-      "description": "Percentage of LDI readings exceeding \u00b110\u00b5m tolerance in the last hour. Green <5%, Yellow <15%, Red \u226515%.",
+      "description": "Percentage of LDI readings exceeding ±10µm tolerance in the last hour. Green <5%, Yellow <15%, Red ≥15%.",
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -391,11 +382,11 @@
           "format": "table"
         }
       ],
-      "description": "Estimated daily power cost in Thai Baht based on average LDI power consumption \u00d7 24 hours \u00d7 4.5 THB/kWh.",
+      "description": "Estimated daily power cost in Thai Baht based on average LDI power consumption × 24 hours × 4.5 THB/kWh.",
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -516,7 +507,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Temp (\u00b0C)"
+              "options": "Temp (°C)"
             },
             "properties": [
               {
@@ -565,13 +556,13 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT machine_id AS \"Server Name\", CASE WHEN MAX(time) > NOW() - INTERVAL '2 minutes' THEN 'online' WHEN MAX(time) > NOW() - INTERVAL '10 minutes' THEN 'stale' ELSE 'offline' END AS \"Status\", ROUND(AVG(cpu_load_percent)::NUMERIC, 1) AS \"CPU (%)\", ROUND(AVG(temp_c)::NUMERIC, 0) AS \"Temp (\u00b0C)\", COUNT(*)::TEXT AS \"Machines\" FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '10 minutes' GROUP BY machine_id ORDER BY machine_id",
+          "rawSql": "SELECT machine_id AS \"Server Name\", CASE WHEN MAX(time) > NOW() - INTERVAL '2 minutes' THEN 'online' WHEN MAX(time) > NOW() - INTERVAL '10 minutes' THEN 'stale' ELSE 'offline' END AS \"Status\", ROUND(AVG(cpu_load_percent)::NUMERIC, 1) AS \"CPU (%)\", ROUND(AVG(temp_c)::NUMERIC, 0) AS \"Temp (°C)\", COUNT(*)::TEXT AS \"Machines\" FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '10 minutes' GROUP BY machine_id ORDER BY machine_id",
           "format": "table"
         }
       ],
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering: ${__data.fields[\"Server Name\"]}",
+          "title": "Drill-down → Engineering: ${__data.fields[\"Server Name\"]}",
           "url": "/d/ims-engineering?var-machine_id=${__data.fields[\"Server Name\"]}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -683,12 +674,12 @@
       ],
       "links": [
         {
-          "title": "Drill-down \u2192 ${__field.labels.machine_id}",
+          "title": "Drill-down → ${__field.labels.machine_id}",
           "url": "/d/ims-engineering?var-machine_id=${__field.labels.machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         },
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -778,7 +769,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{ machine_id }}",
-          "rawSql": "SELECT bucket AS time, machine_id, max_temp AS \"Temperature (\u00b0C)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id IN (${machine_id:sqlstring}) AND max_temp > 0 ORDER BY 1",
+          "rawSql": "SELECT bucket AS time, machine_id, max_temp AS \"Temperature (°C)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id IN (${machine_id:sqlstring}) AND max_temp > 0 ORDER BY 1",
           "format": "time_series"
         }
       ],
@@ -791,12 +782,12 @@
           "targetBlank": true
         },
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
       ],
-      "description": "Real-time temperature (\u00b0C) for all machines. Yellow >70\u00b0C, Red >85\u00b0C.",
+      "description": "Real-time temperature (°C) for all machines. Yellow >70°C, Red >85°C.",
       "transparent": true
     },
     {
@@ -815,7 +806,7 @@
     {
       "id": 22,
       "title": "Network Throughput (All Machines)",
-      "type": "timeseries",
+      "type": "barchart",
       "datasource": {
         "uid": "timescaledb"
       },
@@ -829,12 +820,22 @@
         "defaults": {
           "unit": "mbps",
           "custom": {
-            "axisCenteredZero": true,
-            "fillOpacity": 20,
-            "lineWidth": 3,
-            "spanNulls": 60000,
+            "fillOpacity": 40,
+            "lineWidth": 2,
             "gradientMode": "opacity",
-            "drawStyle": "line"
+            "axisCenteredZero": true,
+            "drawStyle": "bars",
+            "barAlignment": 0,
+            "showValue": "never"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "transparent",
+                "value": null
+              }
+            ]
           }
         },
         "overrides": [
@@ -847,15 +848,7 @@
               {
                 "id": "custom.transform",
                 "value": "negative-Y"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": ".*TX|Upload|Upload.*"
-            },
-            "properties": [
+              },
               {
                 "id": "color",
                 "value": {
@@ -864,14 +857,30 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*RX.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00E5FF"
+                }
+              }
+            ]
           }
         ]
       },
       "options": {
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        },
+        "orientation": "auto",
+        "showValue": "never",
+        "groupWidth": 0.7,
+        "barWidth": 0.9,
+        "stacking": "none",
         "legend": {
           "displayMode": "table",
           "placement": "bottom",
@@ -881,7 +890,10 @@
             "lastNotNull"
           ]
         },
-        "connectNullPoints": true
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
       },
       "targets": [
         {
@@ -912,7 +924,7 @@
           "targetBlank": true
         },
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -1018,12 +1030,12 @@
           "targetBlank": true
         },
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
       ],
-      "description": "RAM utilization (%) across the fleet. Calculated as (avg_ram_used / avg_ram_total) \u00d7 100 from the 1-minute continuous aggregate.",
+      "description": "RAM utilization (%) across the fleet. Calculated as (avg_ram_used / avg_ram_total) × 100 from the 1-minute continuous aggregate.",
       "transparent": true
     }
   ],
