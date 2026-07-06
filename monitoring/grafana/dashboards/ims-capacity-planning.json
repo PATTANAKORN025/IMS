@@ -75,14 +75,14 @@
       "type": "text",
       "title": "",
       "gridPos": {
-        "h": 1,
+        "h": 3,
         "w": 24,
         "x": 0,
         "y": 0
       },
       "options": {
         "mode": "html",
-        "content": "<style>\n@import url(\"https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap\");\n.dashboard-page { background: #050505 !important; font-family: 'Rajdhani', sans-serif !important; }\n.panel-container {\n  position: relative;\n  background: #0D1117 !important;\n  border: 1px solid #1F2937 !important;\n  border-radius: 0px !important;\n  box-shadow: 0 4px 6px rgba(0,0,0,0.3) !important;\n}\n.panel-container::before {\n  content: \"\"; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px;\n  background: linear-gradient(90deg, #00F2FE, #00FF87);\n}\n.panel-title { color: #A0AEC0 !important; font-size: 13px !important; text-transform: uppercase; }\n\n@keyframes scanline {\n  0% { transform: translateY(-100%); opacity: 0; }\n  50% { opacity: 0.1; }\n  100% { transform: translateY(1000%); opacity: 0; }\n}\n.panel-container::after {\n  content: \"\";\n  position: absolute;\n  top: 0; left: 0; right: 0; height: 10px;\n  background: linear-gradient(to bottom, transparent, #00F2FE, transparent);\n  animation: scanline 4s linear infinite;\n  pointer-events: none;\n  border-radius: inherit;\n}\n</style><div style=\"display:flex;align-items:center;gap:0;height:100%;padding:0;\n  background:#0D1117;border-bottom:2px solid #1F2937;font-family:'Rajdhani',sans-serif;\">\n  <div style=\"padding:0 16px;font-size:20px;font-weight:700;color:#E5E7EB;letter-spacing:3px;\n    border-right:1px solid #1F2937;white-space:nowrap;\">APEX <span style=\"color:#00F2FE\">CMD</span></div>\n  <div style=\"padding:0 12px;color:#6B7280;font-size:11px;letter-spacing:1px;\">SYSTEM ONLINE</div>\n  <div style=\"flex:1\"></div>\n  <a href=\"/d/ims-noc-overview\" target=\"_blank\"\n    style=\"padding:6px 16px;font-size:12px;font-weight:700;letter-spacing:1px;text-decoration:none;\n    color:#889;border-bottom:2px solid #1F2937;transition:background 0.3s;\n    onmouseover='this.style.background=\"#111827\"' onmouseout='this.style.background=\"transparent\"'\">NOC</a>\n  <a href=\"/d/ims-engineering\" target=\"_blank\"\n    style=\"padding:6px 16px;font-size:12px;font-weight:700;letter-spacing:1px;text-decoration:none;\n    color:#889;border-bottom:2px solid #1F2937;transition:background 0.3s;\n    onmouseover='this.style.background=\"#111827\"' onmouseout='this.style.background=\"transparent\"'\">ENG</a>\n  <a href=\"/d/ims-capacity\" target=\"_blank\"\n    style=\"padding:6px 16px;font-size:12px;font-weight:700;letter-spacing:1px;text-decoration:none;\n    color:#7F00FF;border-bottom:2px solid #7F00FF;transition:background 0.3s;\n    background:#0D1117;\">CAP</a>\n</div>"
+        "content": "<style>\n@import url(\"https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap\");\n.dashboard-page { background: #050505 !important; font-family: 'Rajdhani', sans-serif !important; }\n.panel-container {\n  position: relative;\n  background: #0D1117 !important;\n  border: 1px solid #1F2937 !important;\n  border-radius: 0px !important;\n  box-shadow: 0 4px 6px rgba(0,0,0,0.3) !important;\n}\n.panel-container::before {\n  content: \"\"; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px;\n  background: linear-gradient(90deg, #00F2FE, #00FF87);\n}\n@keyframes scanline {\n  0% { transform: translateY(-100%); }\n  100% { transform: translateY(1000%); }\n}\n.panel-container::after {\n  content: \"\"; position: absolute; top: 0; left: 0; right: 0; height: 10px;\n  background: linear-gradient(to bottom, transparent, #00F2FE, transparent);\n  animation: scanline 4s linear infinite; pointer-events: none;\n  will-change: transform; border-radius: inherit;\n}\n.panel-title { color: #A0AEC0 !important; font-size: 13px !important; text-transform: uppercase; }\n</style><div style=\"height:100%;display:flex;align-items:center;gap:16px;padding:0 20px;background:#0D1117;border-bottom:2px solid #1F2937;\"><span style=\"font-size:28px;font-weight:700;color:#E5E7EB;letter-spacing:4px;font-family:Rajdhani,sans-serif;white-space:nowrap;text-shadow:0 0 15px rgba(0,242,254,0.3);\">APEX <span style=\"color:#00F2FE\">COMMAND</span></span><div style=\"flex:1\"></div><a href=\"/d/ims-noc-overview\" target=\"_blank\" style=\"padding:6px 16px;font-size:13px;font-weight:700;letter-spacing:1px;text-decoration:none;color:#6B7280;border-bottom:2px solid transparent;transition:all 0.3s;\" onmouseover=\"this.style.color='#E5E7EB';this.style.borderBottomColor='#374151'\" onmouseout=\"this.style.color='#6B7280';this.style.borderBottomColor='transparent'\">NOC</a>\n<a href=\"/d/ims-engineering\" target=\"_blank\" style=\"padding:6px 16px;font-size:13px;font-weight:700;letter-spacing:1px;text-decoration:none;color:#6B7280;border-bottom:2px solid transparent;transition:all 0.3s;\" onmouseover=\"this.style.color='#E5E7EB';this.style.borderBottomColor='#374151'\" onmouseout=\"this.style.color='#6B7280';this.style.borderBottomColor='transparent'\">ENG</a>\n<a href=\"/d/ims-capacity\" target=\"_blank\" style=\"padding:6px 16px;font-size:13px;font-weight:700;letter-spacing:1px;text-decoration:none;color:#7F00FF;border-bottom:2px solid #7F00FF;background:#0D1117;\">CAP</a>\n</div>"
       },
       "datasource": null,
       "transparent": true,
@@ -97,7 +97,7 @@
         "h": 2,
         "w": 24,
         "x": 0,
-        "y": 1
+        "y": 3
       },
       "options": {
         "mode": "clock",
@@ -129,7 +129,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 3
+        "y": 5
       },
       "collapsed": false,
       "transparent": true
@@ -142,7 +142,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 7
+        "y": 9
       },
       "collapsed": false,
       "transparent": true
@@ -158,7 +158,7 @@
         "h": 6,
         "w": 24,
         "x": 0,
-        "y": 8
+        "y": 10
       },
       "transparent": true,
       "fieldConfig": {
@@ -205,7 +205,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 3
+        "y": 5
       },
       "collapsed": false,
       "transparent": true
@@ -221,7 +221,7 @@
         "h": 6,
         "w": 6,
         "x": 0,
-        "y": 4
+        "y": 6
       },
       "fieldConfig": {
         "defaults": {
@@ -306,7 +306,7 @@
         "h": 6,
         "w": 6,
         "x": 6,
-        "y": 4
+        "y": 6
       },
       "fieldConfig": {
         "defaults": {
@@ -391,7 +391,7 @@
         "h": 6,
         "w": 6,
         "x": 12,
-        "y": 4
+        "y": 6
       },
       "fieldConfig": {
         "defaults": {
@@ -476,7 +476,7 @@
         "h": 6,
         "w": 6,
         "x": 18,
-        "y": 4
+        "y": 6
       },
       "fieldConfig": {
         "defaults": {
@@ -544,7 +544,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 10
+        "y": 12
       },
       "collapsed": false,
       "transparent": true
@@ -560,7 +560,7 @@
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 11
+        "y": 13
       },
       "fieldConfig": {
         "defaults": {
@@ -702,7 +702,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 21
+        "y": 23
       },
       "collapsed": false,
       "transparent": true
@@ -718,7 +718,7 @@
         "h": 10,
         "w": 12,
         "x": 0,
-        "y": 22
+        "y": 24
       },
       "fieldConfig": {
         "defaults": {
@@ -817,7 +817,7 @@
         "h": 10,
         "w": 12,
         "x": 12,
-        "y": 22
+        "y": 24
       },
       "fieldConfig": {
         "defaults": {
@@ -913,7 +913,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 30
+        "y": 32
       },
       "collapsed": false,
       "transparent": true
@@ -929,7 +929,7 @@
         "h": 10,
         "w": 12,
         "x": 0,
-        "y": 31
+        "y": 33
       },
       "fieldConfig": {
         "defaults": {
@@ -1046,7 +1046,7 @@
         "h": 10,
         "w": 12,
         "x": 12,
-        "y": 31
+        "y": 33
       },
       "fieldConfig": {
         "defaults": {
