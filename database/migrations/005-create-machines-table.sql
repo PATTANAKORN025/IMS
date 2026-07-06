@@ -12,6 +12,6 @@ CREATE TABLE IF NOT EXISTS public.machines (
 
 -- Seed with simulator devices (dev mode)
 INSERT INTO public.machines (machine_id, hostname, community, snmp_port) VALUES
-    ('ERP-MASTER-WINDOWS', 'ims-snmpsim', 'public', 161),
-    ('ERP-MASTER-UBUNTU',  'ims-snmpsim', 'public', 161)
+    ('ERP-MASTER-WINDOWS', 'ims-snmpsim', 'Netk@', 161),
+    ('ERP-MASTER-UBUNTU',  'ims-snmpsim', 'Netk@', 161)
 ON CONFLICT (machine_id) DO NOTHING;
