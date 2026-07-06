@@ -82,7 +82,7 @@
       },
       "options": {
         "mode": "html",
-        "content": "<style>\n.apex-banner {\n  display: flex; justify-content: space-between; align-items: center;\n  background: linear-gradient(90deg, rgba(0, 242, 254, 0.1) 0%, transparent 100%);\n  border-left: 4px solid #00F2FE; padding: 10px 20px; border-radius: 4px;\n}\n.apex-title { font-size: 20px; font-weight: 800; color: #00F2FE; letter-spacing: 2px; }\n.apex-nav a { color: #8899aa; text-decoration: none; margin-left: 20px; font-size: 14px; font-weight: 600; }\n.apex-nav a.active, .apex-nav a:hover { color: #00FF87; }\n</style>\n<div class=\"apex-banner\">\n  <div class=\"apex-title\">APEX COMMAND // NOC</div>\n  <div class=\"apex-nav\">\n    <a href=\"/d/ims-noc-overview\" class=\"active\">CAP</a>\n    <a href=\"/d/ims-engineering\">ENG</a>\n    <a href=\"/d/ims-capacity\">CAP</a>\n  </div>\n</div>"
+        "content": "<style>\n.apex-banner { display:flex; justify-content:space-between; align-items:center; background:linear-gradient(90deg,rgba(0,242,254,0.1) 0%,transparent 100%); border-left:4px solid #00F2FE; padding:10px 20px; border-radius:4px; }\n.apex-title { font-size:20px; font-weight:800; color:#00F2FE; letter-spacing:2px; }\n.apex-nav a { color:#8899aa; text-decoration:none; margin-left:20px; font-size:14px; font-weight:600; }\n.apex-nav a.active, .apex-nav a:hover { color:#00FF87; }\n</style>\n<div class=\"apex-banner\">\n  <div class=\"apex-title\">APEX COMMAND // CAP</div>\n  <div class=\"apex-nav\">\n    <a href=\"/d/ims-noc-overview\">NOC</a>\n    <a href=\"/d/ims-engineering\">ENG</a>\n    <a href=\"/d/ims-capacity\" class=\"active\">CAP</a>\n  </div>\n</div>"
       },
       "datasource": null,
       "transparent": true,
