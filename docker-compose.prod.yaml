@@ -17,4 +17,4 @@ services:
       - "127.0.0.1:3000:3000"  # bind localhost เท่านั้น ใส่ reverse proxy ด้านหน้าถ้าต้องเข้าถึงจากนอก
     environment:
       - GF_PANELS_DISABLE_SANITIZE_HTML=true
-      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-piechart-panel,volkovlabs-echarts-panel,marcusolsson-hexmap-panel
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-piechart-panel,volkovlabs-echarts-panel
