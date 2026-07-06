@@ -87,14 +87,14 @@
       "type": "text",
       "title": "",
       "gridPos": {
-        "h": 3,
+        "h": 5,
         "w": 24,
         "x": 0,
         "y": 0
       },
       "options": {
         "mode": "html",
-        "content": "<style>\n@import url(\"https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap\");\n.dashboard-page { background: #050505 !important; font-family: 'Rajdhani', sans-serif !important; }\n.panel-container {\n  position: relative;\n  background: #0D1117 !important;\n  border: 1px solid #1F2937 !important;\n  border-radius: 0px !important;\n  box-shadow: 0 4px 6px rgba(0,0,0,0.3) !important;\n}\n.panel-container::before {\n  content: \"\"; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px;\n  background: linear-gradient(90deg, #00F2FE, #00FF87);\n}\n@keyframes scanline {\n  0% { transform: translateY(-100%); }\n  100% { transform: translateY(1000%); }\n}\n.panel-container::after {\n  content: \"\"; position: absolute; top: 0; left: 0; right: 0; height: 10px;\n  background: linear-gradient(to bottom, transparent, #00F2FE, transparent);\n  animation: scanline 4s linear infinite; pointer-events: none;\n  will-change: transform; border-radius: inherit;\n}\n.panel-title { color: #A0AEC0 !important; font-size: 13px !important; text-transform: uppercase; }\n</style><div style=\"height:100%;display:flex;align-items:center;gap:16px;padding:0 20px;background:#0D1117;border-bottom:2px solid #1F2937;\"><span style=\"font-size:28px;font-weight:700;color:#E5E7EB;letter-spacing:4px;font-family:Rajdhani,sans-serif;white-space:nowrap;text-shadow:0 0 15px rgba(0,242,254,0.3);\">APEX <span style=\"color:#00F2FE\">COMMAND</span></span><div style=\"flex:1\"></div><a href=\"/d/ims-noc-overview\" target=\"_blank\" style=\"padding:6px 16px;font-size:13px;font-weight:700;letter-spacing:1px;text-decoration:none;color:#00F2FE;border-bottom:2px solid #00F2FE;background:#0D1117;\">NOC</a>\n<a href=\"/d/ims-engineering\" target=\"_blank\" style=\"padding:6px 16px;font-size:13px;font-weight:700;letter-spacing:1px;text-decoration:none;color:#6B7280;border-bottom:2px solid transparent;transition:all 0.3s;\" onmouseover=\"this.style.color='#E5E7EB';this.style.borderBottomColor='#374151'\" onmouseout=\"this.style.color='#6B7280';this.style.borderBottomColor='transparent'\">ENG</a>\n<a href=\"/d/ims-capacity\" target=\"_blank\" style=\"padding:6px 16px;font-size:13px;font-weight:700;letter-spacing:1px;text-decoration:none;color:#6B7280;border-bottom:2px solid transparent;transition:all 0.3s;\" onmouseover=\"this.style.color='#E5E7EB';this.style.borderBottomColor='#374151'\" onmouseout=\"this.style.color='#6B7280';this.style.borderBottomColor='transparent'\">CAP</a>\n</div>"
+        "content": "<style>\n@import url(\"https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap\");\n.dashboard-page { background: #050505 !important; font-family: \"Rajdhani\", sans-serif !important; }\n.panel-container {\n  position: relative;\n  background: linear-gradient(145deg, rgba(16,20,30,0.7) 0%, rgba(5,7,12,0.9) 100%) !important;\n  border-top: 1px solid rgba(0,242,254,0.6) !important;\n  border-left: 1px solid rgba(0,242,254,0.3) !important;\n  border-right: 1px solid rgba(0,242,254,0.1) !important;\n  border-bottom: 1px solid rgba(0,242,254,0.1) !important;\n  box-shadow: 0 10px 30px rgba(0,0,0,0.8), inset 0 1px 15px rgba(0,242,254,0.05) !important;\n  backdrop-filter: blur(16px) !important;\n  border-radius: 6px !important;\n  transition: transform 0.3s cubic-bezier(0.175,0.885,0.32,1.275), box-shadow 0.3s ease;\n}\n.panel-container:hover {\n  transform: translateY(-5px) scale(1.02);\n  box-shadow: 0 15px 40px rgba(0,242,254,0.2), inset 0 1px 15px rgba(0,242,254,0.1) !important;\n  z-index: 100;\n}\n@keyframes scanline {\n  0% { transform: translateY(-100%); }\n  100% { transform: translateY(1000%); }\n}\n.panel-container::after {\n  content: \"\"; position: absolute; top: 0; left: 0; right: 0; height: 10px;\n  background: linear-gradient(to bottom, transparent, #00F2FE, transparent);\n  animation: scanline 4s linear infinite; pointer-events: none;\n  will-change: transform; border-radius: inherit;\n}\n.panel-title { color: #A0AEC0 !important; font-size: 13px !important; text-transform: uppercase; }\n</style>\n<div style=\"height:100%;display:flex;align-items:center;gap:16px;padding:0 20px;background:#0D1117;border-bottom:2px solid #1F2937;\"><span style=\"font-size:28px;font-weight:700;color:#E5E7EB;letter-spacing:4px;font-family:Rajdhani,sans-serif;white-space:nowrap;text-shadow:0 0 15px rgba(0,242,254,0.3);\">APEX <span style=\"color:#00F2FE\">COMMAND</span></span><div style=\"flex:1\"></div><a href=\"/d/ims-noc-overview\" target=\"_blank\" style=\"padding:6px 16px;font-size:13px;font-weight:700;letter-spacing:1px;text-decoration:none;color:#00F2FE;border-bottom:2px solid #00F2FE;background:#0D1117;\">NOC</a><a href=\"/d/ims-engineering\" target=\"_blank\" style=\"padding:6px 16px;font-size:13px;font-weight:700;letter-spacing:1px;text-decoration:none;color:#6B7280;border-bottom:2px solid transparent;transition:all 0.3s;\" onmouseover=\"this.style.color='#E5E7EB';this.style.borderBottomColor='#374151'\" onmouseout=\"this.style.color='#6B7280';this.style.borderBottomColor='transparent'\">ENG</a><a href=\"/d/ims-capacity\" target=\"_blank\" style=\"padding:6px 16px;font-size:13px;font-weight:700;letter-spacing:1px;text-decoration:none;color:#6B7280;border-bottom:2px solid transparent;transition:all 0.3s;\" onmouseover=\"this.style.color='#E5E7EB';this.style.borderBottomColor='#374151'\" onmouseout=\"this.style.color='#6B7280';this.style.borderBottomColor='transparent'\">CAP</a></div>"
       },
       "datasource": null,
       "transparent": true,
@@ -109,7 +109,7 @@
         "h": 2,
         "w": 24,
         "x": 0,
-        "y": 3
+        "y": 5
       },
       "options": {
         "mode": "clock",
@@ -141,7 +141,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 5
+        "y": 7
       },
       "collapsed": false,
       "transparent": true
@@ -155,7 +155,7 @@
         "h": 3,
         "w": 24,
         "x": 0,
-        "y": 6
+        "y": 8
       },
       "options": {
         "showOptions": "current",
@@ -185,7 +185,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 9
+        "y": 11
       },
       "collapsed": false,
       "transparent": true
@@ -201,7 +201,7 @@
         "h": 6,
         "w": 12,
         "x": 6,
-        "y": 10
+        "y": 12
       },
       "fieldConfig": {
         "defaults": {
@@ -272,7 +272,7 @@
         "h": 6,
         "w": 6,
         "x": 0,
-        "y": 10
+        "y": 12
       },
       "fieldConfig": {
         "defaults": {
@@ -343,7 +343,7 @@
         "h": 6,
         "w": 6,
         "x": 18,
-        "y": 10
+        "y": 12
       },
       "fieldConfig": {
         "defaults": {
@@ -409,7 +409,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 5
+        "y": 7
       },
       "collapsed": false,
       "transparent": true
@@ -422,7 +422,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 12
+        "y": 14
       },
       "collapsed": false,
       "transparent": true
@@ -438,7 +438,7 @@
         "h": 12,
         "w": 24,
         "x": 0,
-        "y": 13
+        "y": 15
       },
       "fieldConfig": {
         "defaults": {},
@@ -587,7 +587,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 21
+        "y": 23
       },
       "collapsed": false,
       "transparent": true
@@ -603,7 +603,7 @@
         "h": 10,
         "w": 12,
         "x": 0,
-        "y": 22
+        "y": 24
       },
       "fieldConfig": {
         "defaults": {
@@ -707,7 +707,7 @@
         "h": 10,
         "w": 12,
         "x": 12,
-        "y": 22
+        "y": 24
       },
       "fieldConfig": {
         "defaults": {
@@ -807,7 +807,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 30
+        "y": 32
       },
       "collapsed": false,
       "transparent": true
@@ -823,7 +823,7 @@
         "h": 10,
         "w": 12,
         "x": 0,
-        "y": 31
+        "y": 33
       },
       "fieldConfig": {
         "defaults": {
@@ -931,7 +931,7 @@
         "h": 10,
         "w": 12,
         "x": 12,
-        "y": 31
+        "y": 33
       },
       "fieldConfig": {
         "defaults": {
