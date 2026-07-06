@@ -94,7 +94,7 @@
       },
       "options": {
         "mode": "html",
-        "content": "<style>\n.apex-banner {\n  display: flex; justify-content: space-between; align-items: center;\n  background: linear-gradient(90deg, rgba(0, 242, 254, 0.1) 0%, transparent 100%);\n  border-left: 4px solid #00F2FE; padding: 10px 20px; border-radius: 4px;\n}\n.apex-title { font-size: 20px; font-weight: 800; color: #00F2FE; letter-spacing: 2px; }\n.apex-nav a { color: #8899aa; text-decoration: none; margin-left: 20px; font-size: 14px; font-weight: 600; }\n.apex-nav a.active, .apex-nav a:hover { color: #00FF87; }\n</style>\n<div class=\"apex-banner\">\n  <div class=\"apex-title\">APEX COMMAND // NOC</div>\n  <div class=\"apex-nav\">\n    <a href=\"/d/ims-noc-overview\" class=\"active\">ENG</a>\n    <a href=\"/d/ims-engineering\">ENG</a>\n    <a href=\"/d/ims-capacity\">CAP</a>\n  </div>\n</div>"
+        "content": "<style>\n.apex-banner { display:flex; justify-content:space-between; align-items:center; background:linear-gradient(90deg,rgba(0,242,254,0.1) 0%,transparent 100%); border-left:4px solid #00F2FE; padding:10px 20px; border-radius:4px; }\n.apex-title { font-size:20px; font-weight:800; color:#00F2FE; letter-spacing:2px; }\n.apex-nav a { color:#8899aa; text-decoration:none; margin-left:20px; font-size:14px; font-weight:600; }\n.apex-nav a.active, .apex-nav a:hover { color:#00FF87; }\n</style>\n<div class=\"apex-banner\">\n  <div class=\"apex-title\">APEX COMMAND // ENG</div>\n  <div class=\"apex-nav\">\n    <a href=\"/d/ims-noc-overview\">NOC</a>\n    <a href=\"/d/ims-engineering\" class=\"active\">ENG</a>\n    <a href=\"/d/ims-capacity\">CAP</a>\n  </div>\n</div>"
       },
       "datasource": null,
       "transparent": true,
@@ -569,7 +569,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "RAM %",
-          "rawSql": "SELECT bucket AS time, ROUND((avg_ram_used / NULLIF(avg_ram_total, 0) * 100)::NUMERIC, 1) AS \"RAM %\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id IN (${machine_id:sqlstring}) ORDER BY 1",
+          "rawSql": "SELECT bucket AS time, ROUND((avg_ram_used_mb / NULLIF(avg_ram_total_mb, 0) * 100)::NUMERIC, 1) AS \"RAM %\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id IN (${machine_id:sqlstring}) ORDER BY 1",
           "format": "time_series"
         }
       ],
@@ -1360,7 +1360,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH stats AS (SELECT bucket, avg_cpu_load, AVG(avg_cpu_load) OVER w AS moving_avg, COALESCE(STDDEV(avg_cpu_load) OVER w, 0) AS moving_stddev FROM public.telemetry_minute_summary WHERE machine_id IN (${machine_id:sqlstring}) AND $__timeFilter(bucket) WINDOW w AS (PARTITION BY machine_id ORDER BY bucket ROWS BETWEEN 60 PRECEDING AND 1 PRECEDING)) SELECT bucket AS time, CASE WHEN moving_stddev > 0 THEN ROUND(((avg_cpu_load - moving_avg) / moving_stddev)::NUMERIC, 2) ELSE 0 END AS \"Z-Score\" FROM stats ORDER BY 1",
+          "rawSql": "WITH stats AS (SELECT bucket, avg_cpu_load_percent, AVG(avg_cpu_load_percent) OVER w AS moving_avg, COALESCE(STDDEV(avg_cpu_load_percent) OVER w, 0) AS moving_stddev FROM public.telemetry_minute_summary WHERE machine_id IN (${machine_id:sqlstring}) AND $__timeFilter(bucket) WINDOW w AS (PARTITION BY machine_id ORDER BY bucket ROWS BETWEEN 60 PRECEDING AND 1 PRECEDING)) SELECT bucket AS time, CASE WHEN moving_stddev > 0 THEN ROUND(((avg_cpu_load_percent - moving_avg) / moving_stddev)::NUMERIC, 2) ELSE 0 END AS \"Z-Score\" FROM stats ORDER BY 1",
           "format": "time_series",
           "maxDataPoints": 300
         }
@@ -1480,7 +1480,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT 'CPU Load %' AS metric, AVG(cpu_load) AS value FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '5 minutes'",
+          "rawSql": "SELECT 'CPU Load %' AS metric, AVG(cpu_load_percent) AS value FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '5 minutes'",
           "format": "table"
         },
         {
@@ -1488,7 +1488,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT 'RAM Used %' AS metric, AVG(ram_used / NULLIF(ram_total, 0) * 100) AS value FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '5 minutes'",
+          "rawSql": "SELECT 'RAM Used %' AS metric, AVG(ram_used_mb / NULLIF(ram_total_mb, 0) * 100) AS value FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '5 minutes'",
           "format": "table"
         },
         {
@@ -1593,7 +1593,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT 'Healthy' AS metric, COUNT(*) AS value FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '5 minutes' AND cpu_load < 80 AND ram_used / NULLIF(ram_total, 0) * 100 < 85",
+          "rawSql": "SELECT 'Healthy' AS metric, COUNT(*) AS value FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '5 minutes' AND cpu_load_percent < 80 AND ram_used_mb / NULLIF(ram_total_mb, 0) * 100 < 85",
           "format": "table"
         },
         {
@@ -1601,7 +1601,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT 'Warning' AS metric, COUNT(*) AS value FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '5 minutes' AND (cpu_load BETWEEN 80 AND 90 OR ram_used / NULLIF(ram_total, 0) * 100 BETWEEN 85 AND 95)",
+          "rawSql": "SELECT 'Warning' AS metric, COUNT(*) AS value FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '5 minutes' AND (cpu_load_percent BETWEEN 80 AND 90 OR ram_used_mb / NULLIF(ram_total_mb, 0) * 100 BETWEEN 85 AND 95)",
           "format": "table"
         },
         {
@@ -1609,7 +1609,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT 'Critical' AS metric, COUNT(*) AS value FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '5 minutes' AND (cpu_load > 90 OR ram_used / NULLIF(ram_total, 0) * 100 > 95)",
+          "rawSql": "SELECT 'Critical' AS metric, COUNT(*) AS value FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '5 minutes' AND (cpu_load_percent > 90 OR ram_used_mb / NULLIF(ram_total_mb, 0) * 100 > 95)",
           "format": "table"
         }
       ]
