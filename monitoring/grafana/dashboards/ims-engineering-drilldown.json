@@ -94,7 +94,7 @@
       },
       "options": {
         "mode": "html",
-        "content": "<style>\n@import url(\"https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap\");\n.dashboard-page { background: #05050A !important; font-family: \"Rajdhani\", sans-serif !important; }\n.panel-container { background: rgba(12,16,26,0.8) !important; border: 1px solid rgba(0,242,254,0.15) !important; border-radius: 4px !important; backdrop-filter: blur(4px) !important; box-shadow: inset 0 1px 10px rgba(0,242,254,0.02) !important; transition: border-color 0.3s ease, transform 0.3s ease; }\n.panel-container:hover { border-color: rgba(0,242,254,0.6) !important; transform: translateY(-2px); }\n.panel-title { color: #A0B0C0 !important; font-size: 14px !important; font-weight: 700 !important; letter-spacing: 1px; }\n</style>\n<div class=\"apex-banner\" style=\"display:flex;justify-content:space-between;align-items:center;height:100%;padding:0 20px;background:linear-gradient(90deg,rgba(0,242,254,0.1) 0%,transparent 100%);border-left:4px solid #00F2FE;border-radius:4px;box-sizing:border-box;\">\n  <h1 style=\"font-size:20px;font-weight:800;color:#fff;letter-spacing:3px;text-shadow:0 0 10px #00F2FE;margin:0;\">APEX <span style=\"color:#00F2FE;\">COMMAND</span> <span style=\"color:#8899aa;font-size:14px;letter-spacing:1px;\">// IMS Engineering</span></h1>\n  <div class=\"apex-nav\" style=\"display:flex;gap:20px;\">\n    <a href=\"/d/ims-noc-overview\" style=\"color:#8899aa;text-decoration:none;font-size:14px;font-weight:700;padding:4px 12px;border:1px solid transparent;transition:all 0.2s;\">NOC</a>\n    <a href=\"/d/ims-engineering\" class=\"active\" style=\"color:#8899aa;text-decoration:none;font-size:14px;font-weight:700;padding:4px 12px;border:1px solid transparent;transition:all 0.2s;\">ENG</a>\n    <a href=\"/d/ims-capacity\" style=\"color:#8899aa;text-decoration:none;font-size:14px;font-weight:700;padding:4px 12px;border:1px solid transparent;transition:all 0.2s;\">CAP</a>\n  </div>\n</div>"
+        "content": "<style>\n@import url(\"https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap\");\n.dashboard-page { background: #060810 !important; font-family: \"Rajdhani\", sans-serif !important; }\n.panel-container {\n  background: #060810 !important;\n  border: 1px solid rgba(0, 242, 254, 0.25) !important;\n  border-radius: 4px !important;\n  box-shadow: inset 0 1px 8px rgba(0, 242, 254, 0.03) !important;\n  transition: border-color 0.3s ease, box-shadow 0.3s ease;\n}\n.panel-container:hover {\n  border-color: rgba(0, 242, 254, 0.6) !important;\n  box-shadow: 0 0 12px rgba(0, 242, 254, 0.1) !important;\n}\n.panel-title { color: #A0B0C0 !important; font-size: 14px !important; font-weight: 700 !important; letter-spacing: 1px; }\n</style>\n<div style=\"display:flex;justify-content:space-between;align-items:center;height:100%;padding:0 20px;background:linear-gradient(90deg,rgba(0,242,254,0.1) 0%,transparent 100%);border-left:4px solid #00F2FE;border-radius:4px;box-sizing:border-box;\">\n  <h1 style=\"font-size:20px;font-weight:800;color:#fff;letter-spacing:3px;text-shadow:0 0 10px #00F2FE;margin:0;\">APEX <span style=\"color:#00F2FE;\">COMMAND</span> <span style=\"color:#8899aa;font-size:14px;letter-spacing:1px;\">// </span></h1>\n  <div style=\"display:flex;gap:20px;\">\n    <a href=\"/d/ims-noc-overview\" style=\"color:#8899aa;text-decoration:none;font-size:14px;font-weight:700;padding:4px 12px;border:1px solid transparent;border-radius:4px;\">NOC</a> <a href=\"/d/ims-engineering\" class=\"active\" style=\"color:#00FF87;text-decoration:none;font-size:14px;font-weight:700;padding:4px 12px;border:1px solid rgba(0,255,135,0.3);background:rgba(0,255,135,0.05);border-radius:4px;\">ENG</a> <a href=\"/d/ims-capacity\" style=\"color:#8899aa;text-decoration:none;font-size:14px;font-weight:700;padding:4px 12px;border:1px solid transparent;border-radius:4px;\">CAP</a>\n  </div>\n</div>"
       },
       "datasource": null,
       "transparent": true,
@@ -503,7 +503,7 @@
           "min": 0,
           "max": 100,
           "custom": {
-            "fillOpacity": 20,
+            "fillOpacity": 5,
             "lineWidth": 3,
             "spanNulls": 60000,
             "gradientMode": "opacity",
@@ -526,6 +526,9 @@
                 "value": 95
               }
             ]
+          },
+          "color": {
+            "mode": "palette-classic"
           }
         },
         "overrides": [
@@ -540,6 +543,57 @@
                 "value": {
                   "mode": "fixed",
                   "fixedColor": "#00F2FE"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*UBUNTU.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00FF87"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*WINDOWS.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00F2FE"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*(Forecast|Regression|Linear).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#4A5568"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash"
                 }
               }
             ]
@@ -569,7 +623,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "RAM %",
-          "rawSql": "SELECT bucket AS time, ROUND((avg_ram_used_mb / NULLIF(avg_ram_total_mb, 0) * 100)::NUMERIC, 1) AS \"RAM %\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id IN (${machine_id:sqlstring}) ORDER BY 1",
+          "rawSql": "SELECT bucket AS time, ROUND((avg_ram_used / NULLIF(avg_ram_total, 0) * 100)::NUMERIC, 1) AS \"RAM %\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id IN (${machine_id:sqlstring}) ORDER BY 1",
           "format": "time_series"
         }
       ],
@@ -614,12 +668,15 @@
           "unit": "bps",
           "custom": {
             "axisCenteredZero": true,
-            "fillOpacity": 20,
+            "fillOpacity": 5,
             "lineWidth": 3,
             "spanNulls": 60000,
             "gradientMode": "opacity",
             "drawStyle": "line",
             "lineInterpolation": "smooth"
+          },
+          "color": {
+            "mode": "palette-classic"
           }
         },
         "overrides": [
@@ -709,6 +766,57 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*UBUNTU.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00FF87"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*WINDOWS.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00F2FE"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*(Forecast|Regression|Linear).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#4A5568"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash"
+                }
+              }
+            ]
           }
         ]
       },
@@ -777,7 +885,7 @@
         "defaults": {
           "unit": "celsius",
           "custom": {
-            "fillOpacity": 20,
+            "fillOpacity": 5,
             "lineWidth": 3,
             "spanNulls": 60000,
             "thresholdsStyle": {
@@ -815,6 +923,9 @@
                 "value": 3
               }
             ]
+          },
+          "color": {
+            "mode": "palette-classic"
           }
         },
         "overrides": [
@@ -868,6 +979,57 @@
                 "value": {
                   "mode": "fixed",
                   "fixedColor": "#FF9100"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*UBUNTU.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00FF87"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*WINDOWS.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00F2FE"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*(Forecast|Regression|Linear).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#4A5568"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash"
                 }
               }
             ]
@@ -949,14 +1111,17 @@
       "fieldConfig": {
         "defaults": {
           "custom": {
-            "fillOpacity": 20,
+            "fillOpacity": 5,
             "lineWidth": 3,
             "spanNulls": 60000,
             "gradientMode": "opacity",
             "drawStyle": "line",
             "lineInterpolation": "smooth"
           },
-          "unit": "mbps"
+          "unit": "mbps",
+          "color": {
+            "mode": "palette-classic"
+          }
         },
         "overrides": [
           {
@@ -1012,6 +1177,57 @@
                 "value": {
                   "mode": "fixed",
                   "fixedColor": "#FF007F"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*UBUNTU.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00FF87"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*WINDOWS.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00F2FE"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*(Forecast|Regression|Linear).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#4A5568"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash"
                 }
               }
             ]
@@ -1085,12 +1301,15 @@
       "fieldConfig": {
         "defaults": {
           "custom": {
-            "fillOpacity": 20,
+            "fillOpacity": 5,
             "lineWidth": 3,
             "spanNulls": 60000,
             "gradientMode": "opacity",
             "drawStyle": "line",
             "lineInterpolation": "smooth"
+          },
+          "color": {
+            "mode": "palette-classic"
           }
         },
         "overrides": [
@@ -1147,6 +1366,57 @@
                 "value": {
                   "mode": "fixed",
                   "fixedColor": "#FADE2A"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*UBUNTU.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00FF87"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*WINDOWS.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00F2FE"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*(Forecast|Regression|Linear).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#4A5568"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash"
                 }
               }
             ]
@@ -1277,7 +1547,7 @@
           "unit": "none",
           "custom": {
             "axisCenteredZero": true,
-            "fillOpacity": 20,
+            "fillOpacity": 5,
             "lineWidth": 3,
             "spanNulls": 60000,
             "thresholdsStyle": {
@@ -1335,6 +1605,57 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*UBUNTU.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00FF87"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*WINDOWS.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00F2FE"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*(Forecast|Regression|Linear).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#4A5568"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash"
+                }
+              }
+            ]
           }
         ]
       },
@@ -1360,7 +1681,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH stats AS (SELECT bucket, avg_cpu_load_percent, AVG(avg_cpu_load_percent) OVER w AS moving_avg, COALESCE(STDDEV(avg_cpu_load_percent) OVER w, 0) AS moving_stddev FROM public.telemetry_minute_summary WHERE machine_id IN (${machine_id:sqlstring}) AND $__timeFilter(bucket) WINDOW w AS (PARTITION BY machine_id ORDER BY bucket ROWS BETWEEN 60 PRECEDING AND 1 PRECEDING)) SELECT bucket AS time, CASE WHEN moving_stddev > 0 THEN ROUND(((avg_cpu_load_percent - moving_avg) / moving_stddev)::NUMERIC, 2) ELSE 0 END AS \"Z-Score\" FROM stats ORDER BY 1",
+          "rawSql": "WITH stats AS (SELECT bucket, avg_cpu_load, AVG(avg_cpu_load) OVER w AS moving_avg, COALESCE(STDDEV(avg_cpu_load) OVER w, 0) AS moving_stddev FROM public.telemetry_minute_summary WHERE machine_id IN (${machine_id:sqlstring}) AND $__timeFilter(bucket) WINDOW w AS (PARTITION BY machine_id ORDER BY bucket ROWS BETWEEN 60 PRECEDING AND 1 PRECEDING)) SELECT bucket AS time, CASE WHEN moving_stddev > 0 THEN ROUND(((avg_cpu_load - moving_avg) / moving_stddev)::NUMERIC, 2) ELSE 0 END AS \"Z-Score\" FROM stats ORDER BY 1",
           "format": "time_series",
           "maxDataPoints": 300
         }
@@ -1374,6 +1695,97 @@
           "targetBlank": true
         }
       ]
+    },
+    {
+      "id": 41,
+      "title": "Temperature Anomaly Score (Z-Score)",
+      "type": "timeseries",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 37
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "axisCenteredZero": true,
+            "fillOpacity": 5,
+            "lineWidth": 3,
+            "spanNulls": 60000,
+            "thresholdsStyle": {
+              "mode": "dashed"
+            },
+            "gradientMode": "opacity",
+            "drawStyle": "line",
+            "lineInterpolation": "smooth"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": -3
+              },
+              {
+                "color": "transparent",
+                "value": -2
+              },
+              {
+                "color": "green",
+                "value": -1
+              },
+              {
+                "color": "green",
+                "value": 1
+              },
+              {
+                "color": "transparent",
+                "value": 2
+              },
+              {
+                "color": "red",
+                "value": 3
+              }
+            ]
+          },
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "connectNullPoints": true
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "WITH stats AS (SELECT bucket, machine_id, max_temp, AVG(max_temp) OVER w AS mu, COALESCE(NULLIF(STDDEV(max_temp) OVER w, 0), 1) AS sigma FROM public.telemetry_minute_summary WHERE machine_id IN (${machine_id:sqlstring}) AND max_temp > 0 AND $__timeFilter(bucket) WINDOW w AS (PARTITION BY machine_id ORDER BY bucket ROWS BETWEEN 60 PRECEDING AND 1 PRECEDING)) SELECT bucket AS time, machine_id, ROUND(((max_temp - mu) / sigma)::NUMERIC, 2) AS \"Z-Score\" FROM stats ORDER BY 1",
+          "format": "time_series"
+        }
+      ],
+      "description": "Temperature Z-Score using 60-point rolling window. Values beyond +/-3 sigma indicate thermal anomalies.",
+      "transparent": true
     },
     {
       "id": 1000,
