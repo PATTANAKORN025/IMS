@@ -193,7 +193,7 @@
     {
       "id": 4,
       "title": "Fleet Health Score",
-      "type": "volkovlabs-echarts-panel",
+      "type": "stat",
       "datasource": {
         "uid": "timescaledb"
       },
@@ -224,13 +224,25 @@
                 "value": 90
               }
             ]
+          },
+          "color": {
+            "mode": "thresholds"
           }
         },
         "overrides": []
       },
       "options": {
-        "code": "let score = 0;\ntry {\n  const field = data.series[0].fields.find(f => f.type === 'number');\n  if (field) {\n    const vals = field.values.buffer || field.values;\n    score = vals[vals.length - 1] || 0;\n  }\n} catch(e) { score = 0; }\n\nreturn {\n  backgroundColor: 'transparent',\n  title: {\n    text: Number(score).toFixed(1) + '%',\n    textStyle: { color: '#00F2FE', fontSize: 40, fontFamily: 'Orbitron', textShadowBlur: 15, textShadowColor: '#00F2FE' },\n    left: 'center', top: 'center'\n  },\n  series: [\n    {\n      type: 'pie', radius: ['70%', '80%'], silent: true,\n      animation: true, animationDuration: 2000, animationEasing: 'cubicInOut',\n      itemStyle: { color: new echarts.graphic.LinearGradient(0,0,1,0,[\n        {offset:0,color:'#FF003C'},{offset:0.5,color:'#FF9100'},{offset:1,color:'#00FF87'}\n      ]), shadowBlur: 20, shadowColor: '#00FF87' },\n      data: [{ value: score }, { value: 100 - score, itemStyle: { color: 'rgba(255,255,255,0.03)', shadowBlur: 0 } }],\n      label: { show: false },\n      startAngle: 90\n    },\n    {\n      type: 'pie', radius: ['55%', '60%'], silent: true,\n      animation: true, animationDuration: 2500, animationEasing: 'cubicInOut',\n      itemStyle: { color: '#00F2FE', shadowBlur: 12, shadowColor: '#00F2FE' },\n      data: [{ value: score * 0.8 }, { value: 100 - (score * 0.8), itemStyle: { color: 'rgba(255,255,255,0.02)', shadowBlur: 0 } }],\n      label: { show: false },\n      startAngle: 45\n    },\n    {\n      type: 'pie', radius: ['40%', '45%'], silent: true,\n      animation: true, animationDuration: 3000, animationEasing: 'cubicInOut',\n      itemStyle: { color: '#7F00FF', shadowBlur: 10, shadowColor: '#7F00FF' },\n      data: [{ value: score * 0.6 }, { value: 100 - (score * 0.6), itemStyle: { color: 'rgba(255,255,255,0.02)', shadowBlur: 0 } }],\n      label: { show: false },\n      startAngle: 135\n    }\n  ]\n};",
-        "option": "{}"
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "noValue": "N/A",
+        "textMode": "value"
       },
       "targets": [
         {
@@ -238,7 +250,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT 'Fleet Score' AS metric, value FROM public.v_fleet_score",
+          "rawSql": "SELECT value FROM public.v_fleet_score",
           "format": "table"
         }
       ],
@@ -246,7 +258,7 @@
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down -> Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
