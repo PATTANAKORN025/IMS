@@ -87,14 +87,14 @@
       "type": "text",
       "title": "",
       "gridPos": {
-        "h": 3,
+        "h": 5,
         "w": 24,
         "x": 0,
         "y": 0
       },
       "options": {
         "mode": "html",
-        "content": "<style>\n@import url(\"https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap\");\n.dashboard-page { background: #050505 !important; font-family: 'Rajdhani', sans-serif !important; }\n.panel-container {\n  position: relative;\n  background: #0D1117 !important;\n  border: 1px solid #1F2937 !important;\n  border-radius: 0px !important;\n  box-shadow: 0 4px 6px rgba(0,0,0,0.3) !important;\n}\n.panel-container::before {\n  content: \"\"; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px;\n  background: linear-gradient(90deg, #00F2FE, #00FF87);\n}\n@keyframes scanline {\n  0% { transform: translateY(-100%); }\n  100% { transform: translateY(1000%); }\n}\n.panel-container::after {\n  content: \"\"; position: absolute; top: 0; left: 0; right: 0; height: 10px;\n  background: linear-gradient(to bottom, transparent, #00F2FE, transparent);\n  animation: scanline 4s linear infinite; pointer-events: none;\n  will-change: transform; border-radius: inherit;\n}\n.panel-title { color: #A0AEC0 !important; font-size: 13px !important; text-transform: uppercase; }\n</style><div style=\"height:100%;display:flex;align-items:center;gap:16px;padding:0 20px;background:#0D1117;border-bottom:2px solid #1F2937;\"><span style=\"font-size:28px;font-weight:700;color:#E5E7EB;letter-spacing:4px;font-family:Rajdhani,sans-serif;white-space:nowrap;text-shadow:0 0 15px rgba(0,242,254,0.3);\">APEX <span style=\"color:#00F2FE\">COMMAND</span></span><div style=\"flex:1\"></div><a href=\"/d/ims-noc-overview\" target=\"_blank\" style=\"padding:6px 16px;font-size:13px;font-weight:700;letter-spacing:1px;text-decoration:none;color:#6B7280;border-bottom:2px solid transparent;transition:all 0.3s;\" onmouseover=\"this.style.color='#E5E7EB';this.style.borderBottomColor='#374151'\" onmouseout=\"this.style.color='#6B7280';this.style.borderBottomColor='transparent'\">NOC</a>\n<a href=\"/d/ims-engineering\" target=\"_blank\" style=\"padding:6px 16px;font-size:13px;font-weight:700;letter-spacing:1px;text-decoration:none;color:#00FF87;border-bottom:2px solid #00FF87;background:#0D1117;\">ENG</a>\n<a href=\"/d/ims-capacity\" target=\"_blank\" style=\"padding:6px 16px;font-size:13px;font-weight:700;letter-spacing:1px;text-decoration:none;color:#6B7280;border-bottom:2px solid transparent;transition:all 0.3s;\" onmouseover=\"this.style.color='#E5E7EB';this.style.borderBottomColor='#374151'\" onmouseout=\"this.style.color='#6B7280';this.style.borderBottomColor='transparent'\">CAP</a>\n</div>"
+        "content": "<style>\n@import url(\"https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap\");\n.dashboard-page { background: #050505 !important; font-family: \"Rajdhani\", sans-serif !important; }\n.panel-container {\n  position: relative;\n  background: linear-gradient(145deg, rgba(16,20,30,0.7) 0%, rgba(5,7,12,0.9) 100%) !important;\n  border-top: 1px solid rgba(0,242,254,0.6) !important;\n  border-left: 1px solid rgba(0,242,254,0.3) !important;\n  border-right: 1px solid rgba(0,242,254,0.1) !important;\n  border-bottom: 1px solid rgba(0,242,254,0.1) !important;\n  box-shadow: 0 10px 30px rgba(0,0,0,0.8), inset 0 1px 15px rgba(0,242,254,0.05) !important;\n  backdrop-filter: blur(16px) !important;\n  border-radius: 6px !important;\n  transition: transform 0.3s cubic-bezier(0.175,0.885,0.32,1.275), box-shadow 0.3s ease;\n}\n.panel-container:hover {\n  transform: translateY(-5px) scale(1.02);\n  box-shadow: 0 15px 40px rgba(0,242,254,0.2), inset 0 1px 15px rgba(0,242,254,0.1) !important;\n  z-index: 100;\n}\n@keyframes scanline {\n  0% { transform: translateY(-100%); }\n  100% { transform: translateY(1000%); }\n}\n.panel-container::after {\n  content: \"\"; position: absolute; top: 0; left: 0; right: 0; height: 10px;\n  background: linear-gradient(to bottom, transparent, #00F2FE, transparent);\n  animation: scanline 4s linear infinite; pointer-events: none;\n  will-change: transform; border-radius: inherit;\n}\n.panel-title { color: #A0AEC0 !important; font-size: 13px !important; text-transform: uppercase; }\n</style>\n<div style=\"height:100%;display:flex;align-items:center;gap:16px;padding:0 20px;background:#0D1117;border-bottom:2px solid #1F2937;\"><span style=\"font-size:28px;font-weight:700;color:#E5E7EB;letter-spacing:4px;font-family:Rajdhani,sans-serif;white-space:nowrap;text-shadow:0 0 15px rgba(0,242,254,0.3);\">APEX <span style=\"color:#00F2FE\">COMMAND</span></span><div style=\"flex:1\"></div><a href=\"/d/ims-noc-overview\" target=\"_blank\" style=\"padding:6px 16px;font-size:13px;font-weight:700;letter-spacing:1px;text-decoration:none;color:#6B7280;border-bottom:2px solid transparent;transition:all 0.3s;\" onmouseover=\"this.style.color='#E5E7EB';this.style.borderBottomColor='#374151'\" onmouseout=\"this.style.color='#6B7280';this.style.borderBottomColor='transparent'\">NOC</a><a href=\"/d/ims-engineering\" target=\"_blank\" style=\"padding:6px 16px;font-size:13px;font-weight:700;letter-spacing:1px;text-decoration:none;color:#00FF87;border-bottom:2px solid #00FF87;background:#0D1117;\">ENG</a><a href=\"/d/ims-capacity\" target=\"_blank\" style=\"padding:6px 16px;font-size:13px;font-weight:700;letter-spacing:1px;text-decoration:none;color:#6B7280;border-bottom:2px solid transparent;transition:all 0.3s;\" onmouseover=\"this.style.color='#E5E7EB';this.style.borderBottomColor='#374151'\" onmouseout=\"this.style.color='#6B7280';this.style.borderBottomColor='transparent'\">CAP</a></div>"
       },
       "datasource": null,
       "transparent": true,
@@ -109,7 +109,7 @@
         "h": 2,
         "w": 24,
         "x": 0,
-        "y": 3
+        "y": 5
       },
       "options": {
         "mode": "clock",
@@ -141,7 +141,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 5
+        "y": 7
       },
       "collapsed": false,
       "transparent": true
@@ -154,7 +154,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 9
+        "y": 11
       },
       "collapsed": false,
       "transparent": true
@@ -170,7 +170,7 @@
         "h": 8,
         "w": 6,
         "x": 0,
-        "y": 10
+        "y": 12
       },
       "transparent": true,
       "fieldConfig": {
@@ -221,12 +221,12 @@
       ],
       "links": [
         {
-          "title": "Capacity forecast \u2192",
+          "title": "Capacity forecast →",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         },
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -244,7 +244,7 @@
         "h": 8,
         "w": 6,
         "x": 6,
-        "y": 10
+        "y": 12
       },
       "transparent": true,
       "fieldConfig": {
@@ -295,12 +295,12 @@
       ],
       "links": [
         {
-          "title": "Capacity forecast \u2192",
+          "title": "Capacity forecast →",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         },
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -318,7 +318,7 @@
         "h": 8,
         "w": 6,
         "x": 12,
-        "y": 10
+        "y": 12
       },
       "transparent": true,
       "fieldConfig": {
@@ -369,12 +369,12 @@
       ],
       "links": [
         {
-          "title": "Capacity forecast \u2192",
+          "title": "Capacity forecast →",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         },
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -392,7 +392,7 @@
         "h": 8,
         "w": 6,
         "x": 18,
-        "y": 10
+        "y": 12
       },
       "fieldConfig": {
         "defaults": {
@@ -440,16 +440,16 @@
           "format": "table"
         }
       ],
-      "description": "Current temperature (\u00b0C) for the selected machine. Yellow >70\u00b0C, Red >85\u00b0C.",
+      "description": "Current temperature (°C) for the selected machine. Yellow >70°C, Red >85°C.",
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         },
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -466,7 +466,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 5
+        "y": 7
       },
       "collapsed": false,
       "transparent": true
@@ -479,7 +479,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 12
+        "y": 14
       },
       "collapsed": false,
       "transparent": true
@@ -495,7 +495,7 @@
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 13
+        "y": 15
       },
       "fieldConfig": {
         "defaults": {
@@ -577,7 +577,7 @@
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -591,7 +591,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 21
+        "y": 23
       },
       "collapsed": false,
       "transparent": true
@@ -607,7 +607,7 @@
         "h": 10,
         "w": 12,
         "x": 0,
-        "y": 22
+        "y": 24
       },
       "fieldConfig": {
         "defaults": {
@@ -754,7 +754,7 @@
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -771,7 +771,7 @@
         "h": 10,
         "w": 12,
         "x": 12,
-        "y": 22
+        "y": 24
       },
       "fieldConfig": {
         "defaults": {
@@ -896,8 +896,8 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "legendFormat": "Temperature \u00b0C",
-          "rawSql": "SELECT bucket AS time, max_temp AS \"Temperature (\u00b0C)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id = '${machine_id}' AND max_temp > 0 ORDER BY 1",
+          "legendFormat": "Temperature °C",
+          "rawSql": "SELECT bucket AS time, max_temp AS \"Temperature (°C)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id = '${machine_id}' AND max_temp > 0 ORDER BY 1",
           "format": "time_series"
         },
         {
@@ -914,7 +914,7 @@
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -928,7 +928,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 30
+        "y": 32
       },
       "collapsed": false,
       "transparent": true
@@ -944,7 +944,7 @@
         "h": 10,
         "w": 8,
         "x": 0,
-        "y": 31
+        "y": 33
       },
       "fieldConfig": {
         "defaults": {
@@ -997,7 +997,7 @@
               },
               {
                 "id": "unit",
-                "value": "\u00b5m"
+                "value": "µm"
               }
             ]
           },
@@ -1056,17 +1056,17 @@
       ],
       "links": [
         {
-          "title": "OEE & Yield \u2192",
+          "title": "OEE & Yield →",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         },
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
       ],
-      "description": "LDI manufacturing throughput (left axis, green) and Process Efficiency in \u00b5m (right axis, yellow). PE within \u00b110\u00b5m tolerance is normal.",
+      "description": "LDI manufacturing throughput (left axis, green) and Process Efficiency in µm (right axis, yellow). PE within ±10µm tolerance is normal.",
       "transparent": true
     },
     {
@@ -1080,7 +1080,7 @@
         "h": 10,
         "w": 8,
         "x": 8,
-        "y": 31
+        "y": 33
       },
       "fieldConfig": {
         "defaults": {
@@ -1109,7 +1109,7 @@
               },
               {
                 "id": "unit",
-                "value": "\u00b5m"
+                "value": "µm"
               }
             ]
           },
@@ -1191,17 +1191,17 @@
       ],
       "links": [
         {
-          "title": "OEE & Yield \u2192",
+          "title": "OEE & Yield →",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         },
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
       ],
-      "description": "Junction Efficiency in \u00b5m (purple) and Humidity % (blue, right axis). High humidity may affect LDI precision.",
+      "description": "Junction Efficiency in µm (purple) and Humidity % (blue, right axis). High humidity may affect LDI precision.",
       "transparent": true
     },
     {
@@ -1215,14 +1215,14 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 31
+        "y": 33
       },
       "fieldConfig": {
         "defaults": {},
         "overrides": []
       },
       "options": {
-        "code": "let peData = [], jeData = [];\nif (data.series.length >= 2) {\n  const peS = data.series.find(s => s.name === 'PE' || s.fields[0]?.name === 'PE');\n  const jeS = data.series.find(s => s.name === 'JE' || s.fields[0]?.name === 'JE');\n  if (peS && peS.fields.length >= 2) {\n    const times = peS.fields.find(f => f.name === 'time' || f.name === '_time');\n    const vals = peS.fields.find(f => f.name !== 'time' && f.name !== '_time' && f.name !== 'machine_id');\n    if (times && vals) {\n      for (let i = 0; i < Math.min(times.values.length, 500); i++) {\n        peData.push([new Date(times.values[i]).getTime(), vals.values[i]]);\n      }\n    }\n  }\n  if (jeS && jeS.fields.length >= 2) {\n    const times = jeS.fields.find(f => f.name === 'time' || f.name === '_time');\n    const vals = jeS.fields.find(f => f.name !== 'time' && f.name !== '_time' && f.name !== 'machine_id');\n    if (times && vals) {\n      for (let i = 0; i < Math.min(times.values.length, 500); i++) {\n        jeData.push([new Date(times.values[i]).getTime(), vals.values[i]]);\n      }\n    }\n  }\n}\nreturn {\n  backgroundColor: 'transparent',\n  tooltip: { trigger: 'item' },\n  legend: { data: ['Process Efficiency', 'Junction Efficiency'], textStyle: { color: '#aaa' }, top: 5 },\n  xAxis: { type: 'time', axisLine: { lineStyle: { color: '#333' } }, axisLabel: { color: '#888' } },\n  yAxis: { type: 'value', name: '\u00b5m', axisLine: { lineStyle: { color: '#333' } }, axisLabel: { color: '#888' } },\n  series: [\n    {\n      name: 'Process Efficiency', type: 'scatter', symbolSize: 5, data: peData,\n      itemStyle: { color: '#00FF87', shadowBlur: 5, shadowColor: 'rgba(0,255,135,0.5)' }\n    },\n    {\n      name: 'Junction Efficiency', type: 'scatter', symbolSize: 5, data: jeData,\n      itemStyle: { color: '#00F2FE', shadowBlur: 5, shadowColor: 'rgba(0,242,254,0.5)' }\n    }\n  ],\n  markArea: {\n    silent: true,\n    data: [[\n      { yAxis: -10, itemStyle: { color: 'rgba(0, 255, 135, 0.08)', borderColor: 'rgba(0, 255, 135, 0.3)', borderWidth: 1 } },\n      { yAxis: 10 }\n    ]]\n  },\n  grid: { left: 50, right: 20, top: 40, bottom: 30 }\n};",
+        "code": "let peData = [], jeData = [];\nif (data.series.length >= 2) {\n  const peS = data.series.find(s => s.name === 'PE' || s.fields[0]?.name === 'PE');\n  const jeS = data.series.find(s => s.name === 'JE' || s.fields[0]?.name === 'JE');\n  if (peS && peS.fields.length >= 2) {\n    const times = peS.fields.find(f => f.name === 'time' || f.name === '_time');\n    const vals = peS.fields.find(f => f.name !== 'time' && f.name !== '_time' && f.name !== 'machine_id');\n    if (times && vals) {\n      for (let i = 0; i < Math.min(times.values.length, 500); i++) {\n        peData.push([new Date(times.values[i]).getTime(), vals.values[i]]);\n      }\n    }\n  }\n  if (jeS && jeS.fields.length >= 2) {\n    const times = jeS.fields.find(f => f.name === 'time' || f.name === '_time');\n    const vals = jeS.fields.find(f => f.name !== 'time' && f.name !== '_time' && f.name !== 'machine_id');\n    if (times && vals) {\n      for (let i = 0; i < Math.min(times.values.length, 500); i++) {\n        jeData.push([new Date(times.values[i]).getTime(), vals.values[i]]);\n      }\n    }\n  }\n}\nreturn {\n  backgroundColor: 'transparent',\n  tooltip: { trigger: 'item' },\n  legend: { data: ['Process Efficiency', 'Junction Efficiency'], textStyle: { color: '#aaa' }, top: 5 },\n  xAxis: { type: 'time', axisLine: { lineStyle: { color: '#333' } }, axisLabel: { color: '#888' } },\n  yAxis: { type: 'value', name: 'µm', axisLine: { lineStyle: { color: '#333' } }, axisLabel: { color: '#888' } },\n  series: [\n    {\n      name: 'Process Efficiency', type: 'scatter', symbolSize: 5, data: peData,\n      itemStyle: { color: '#00FF87', shadowBlur: 5, shadowColor: 'rgba(0,255,135,0.5)' }\n    },\n    {\n      name: 'Junction Efficiency', type: 'scatter', symbolSize: 5, data: jeData,\n      itemStyle: { color: '#00F2FE', shadowBlur: 5, shadowColor: 'rgba(0,242,254,0.5)' }\n    }\n  ],\n  markArea: {\n    silent: true,\n    data: [[\n      { yAxis: -10, itemStyle: { color: 'rgba(0, 255, 135, 0.08)', borderColor: 'rgba(0, 255, 135, 0.3)', borderWidth: 1 } },\n      { yAxis: 10 }\n    ]]\n  },\n  grid: { left: 50, right: 20, top: 40, bottom: 30 }\n};",
         "option": "{}"
       },
       "targets": [
@@ -1243,18 +1243,18 @@
           "format": "time_series"
         }
       ],
-      "description": "LDI quality scatter with \u00b110\u00b5m tolerance zone (green band). Points outside the zone indicate quality risk.",
+      "description": "LDI quality scatter with ±10µm tolerance zone (green band). Points outside the zone indicate quality risk.",
       "transparent": true
     },
     {
       "id": 500,
       "type": "row",
-      "title": "AIOps \u2014 ANOMALY DETECTION (3-Sigma Z-Score)",
+      "title": "AIOps — ANOMALY DETECTION (3-Sigma Z-Score)",
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 39
+        "y": 41
       },
       "collapsed": false,
       "transparent": true
@@ -1268,9 +1268,9 @@
       },
       "gridPos": {
         "h": 10,
-        "w": 24,
+        "w": 12,
         "x": 0,
-        "y": 40
+        "y": 42
       },
       "fieldConfig": {
         "defaults": {
@@ -1365,15 +1365,40 @@
           "maxDataPoints": 300
         }
       ],
-      "description": "CPU Z-Score computed using 60-minute rolling window. Values beyond \u00b13\u03c3 indicate anomalies.",
+      "description": "CPU Z-Score computed using 60-minute rolling window. Values beyond ±3σ indicate anomalies.",
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
       ]
+    },
+    {
+      "id": 26,
+      "title": "System Topology",
+      "type": "volkovlabs-echarts-panel",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 42
+      },
+      "transparent": true,
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "code": "return {\n  backgroundColor: 'transparent',\n  tooltip: { backgroundColor: 'rgba(0,0,0,0.8)', borderColor: '#00F2FE', textStyle: {color: '#fff'} },\n  series: [\n    {\n      type: 'graph', layout: 'circular', circular: { rotateLabel: true },\n      animationDuration: 2000,\n      animationDurationUpdate: 1500,\n      animationEasingUpdate: 'cubicInOut',\n      data: [\n        { name: 'APEX CORE', symbolSize: 70, itemStyle: { color: new echarts.graphic.RadialGradient(0.5, 0.5, 1, [{offset: 0, color: '#fff'}, {offset: 1, color: '#00F2FE'}]), shadowBlur: 30, shadowColor: '#00F2FE' } },\n        { name: 'ERP-UBUNTU', symbolSize: 45, itemStyle: { color: '#00FF87', shadowBlur: 15, shadowColor: '#00FF87' } },\n        { name: 'ERP-WINDOWS', symbolSize: 45, itemStyle: { color: '#00FF87', shadowBlur: 15, shadowColor: '#00FF87' } },\n        { name: 'LDI-01', symbolSize: 35, itemStyle: { color: '#FF9100', shadowBlur: 15, shadowColor: '#FF9100' }, symbol: 'rect' },\n        { name: 'DB-CLUSTER', symbolSize: 55, itemStyle: { color: '#7F00FF', shadowBlur: 20, shadowColor: '#7F00FF' }, symbol: 'triangle' }\n      ],\n      links: [\n        { source: 'APEX CORE', target: 'ERP-UBUNTU', lineStyle: { curveness: 0.2 } },\n        { source: 'APEX CORE', target: 'ERP-WINDOWS', lineStyle: { curveness: -0.2 } },\n        { source: 'APEX CORE', target: 'DB-CLUSTER', lineStyle: { curveness: 0.3, width: 3 } },\n        { source: 'ERP-UBUNTU', target: 'LDI-01', lineStyle: { type: 'dashed' } }\n      ],\n      roam: true,\n      label: { show: true, position: 'outside', formatter: '{b}', color: '#fff', textBorderColor: '#000', textBorderWidth: 2, fontSize: 14, fontFamily: 'Orbitron' },\n      lineStyle: { color: 'rgba(0, 242, 254, 0.6)', width: 2, shadowBlur: 5, shadowColor: '#00F2FE' },\n      emphasis: { focus: 'adjacency', lineStyle: { width: 4 }, itemStyle: { shadowBlur: 40 } }\n    }\n  ]\n};",
+        "option": "{}"
+      },
+      "targets": [],
+      "description": "Circular force-directed topology with glowing nodes and animated edges."
     }
   ],
   "graphTooltip": 1
