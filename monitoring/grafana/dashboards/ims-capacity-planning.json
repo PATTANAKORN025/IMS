@@ -41,7 +41,7 @@
       {
         "name": "machine_id",
         "type": "query",
-        "query": "SELECT DISTINCT machine_id FROM public.machine_telemetry ORDER BY machine_id",
+        "query": "SELECT DISTINCT machine_id FROM public.sys_metrics ORDER BY machine_id",
         "datasource": {
           "uid": "timescaledb"
         },
@@ -140,7 +140,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH daily_usage AS (SELECT machine_id, time_bucket('1 day', time) AS day, AVG(disk_used_gb) AS avg_used FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '30 days' GROUP BY 1, 2), regression AS (SELECT machine_id, COALESCE(regr_slope(avg_used, EXTRACT(EPOCH FROM day)), 0) AS slope, COALESCE(regr_intercept(avg_used, EXTRACT(EPOCH FROM day)), 0) AS intercept FROM daily_usage GROUP BY machine_id) SELECT machine_id AS metric, CASE WHEN slope <= 0 THEN 9999 WHEN (SELECT AVG(disk_total_gb) FROM public.machine_telemetry WHERE machine_id = r.machine_id) <= 0 THEN 9999 ELSE GREATEST(0, ((SELECT AVG(disk_total_gb) FROM public.machine_telemetry WHERE machine_id = r.machine_id) - intercept) / slope - EXTRACT(EPOCH FROM NOW()) / 86400) END AS value FROM regression r ORDER BY value ASC LIMIT 1",
+          "rawSql": "WITH daily_usage AS (SELECT machine_id, time_bucket('1 day', time) AS day, AVG(disk_used_gb) AS avg_used FROM public.sys_metrics WHERE time > NOW() - INTERVAL '30 days' GROUP BY 1, 2), regression AS (SELECT machine_id, COALESCE(regr_slope(avg_used, EXTRACT(EPOCH FROM day)), 0) AS slope, COALESCE(regr_intercept(avg_used, EXTRACT(EPOCH FROM day)), 0) AS intercept FROM daily_usage GROUP BY machine_id) SELECT machine_id AS metric, CASE WHEN slope <= 0 THEN 9999 WHEN (SELECT AVG(disk_total_gb) FROM public.sys_metrics WHERE machine_id = r.machine_id) <= 0 THEN 9999 ELSE GREATEST(0, ((SELECT AVG(disk_total_gb) FROM public.sys_metrics WHERE machine_id = r.machine_id) - intercept) / slope - EXTRACT(EPOCH FROM NOW()) / 86400) END AS value FROM regression r ORDER BY value ASC LIMIT 1",
           "format": "table"
         }
       ]
@@ -203,7 +203,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH daily_usage AS (SELECT machine_id, time_bucket('1 day', time) AS day, AVG(ram_used_mb) AS avg_used FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '30 days' GROUP BY 1, 2), regression AS (SELECT machine_id, COALESCE(regr_slope(avg_used, EXTRACT(EPOCH FROM day)), 0) AS slope, COALESCE(regr_intercept(avg_used, EXTRACT(EPOCH FROM day)), 0) AS intercept FROM daily_usage GROUP BY machine_id) SELECT machine_id AS metric, CASE WHEN slope <= 0 THEN 9999 WHEN (SELECT AVG(ram_total_mb) FROM public.machine_telemetry WHERE machine_id = r.machine_id) <= 0 THEN 9999 ELSE GREATEST(0, ((SELECT AVG(ram_total_mb) FROM public.machine_telemetry WHERE machine_id = r.machine_id) - intercept) / slope - EXTRACT(EPOCH FROM NOW()) / 86400) END AS value FROM regression r ORDER BY value ASC LIMIT 1",
+          "rawSql": "WITH daily_usage AS (SELECT machine_id, time_bucket('1 day', time) AS day, AVG(ram_used_mb) AS avg_used FROM public.sys_metrics WHERE time > NOW() - INTERVAL '30 days' GROUP BY 1, 2), regression AS (SELECT machine_id, COALESCE(regr_slope(avg_used, EXTRACT(EPOCH FROM day)), 0) AS slope, COALESCE(regr_intercept(avg_used, EXTRACT(EPOCH FROM day)), 0) AS intercept FROM daily_usage GROUP BY machine_id) SELECT machine_id AS metric, CASE WHEN slope <= 0 THEN 9999 WHEN (SELECT AVG(ram_total_mb) FROM public.sys_metrics WHERE machine_id = r.machine_id) <= 0 THEN 9999 ELSE GREATEST(0, ((SELECT AVG(ram_total_mb) FROM public.sys_metrics WHERE machine_id = r.machine_id) - intercept) / slope - EXTRACT(EPOCH FROM NOW()) / 86400) END AS value FROM regression r ORDER BY value ASC LIMIT 1",
           "format": "table"
         }
       ]
@@ -266,7 +266,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH daily_usage AS (SELECT machine_id, time_bucket('1 day', time) AS day, AVG(cpu_load_percent) AS avg_cpu FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '30 days' GROUP BY 1, 2), regression AS (SELECT machine_id, COALESCE(regr_slope(avg_cpu, EXTRACT(EPOCH FROM day)), 0) AS slope, COALESCE(regr_intercept(avg_cpu, EXTRACT(EPOCH FROM day)), 0) AS intercept FROM daily_usage GROUP BY machine_id) SELECT machine_id AS metric, CASE WHEN slope <= 0 THEN 9999 ELSE GREATEST(0, (100 - intercept) / slope - EXTRACT(EPOCH FROM NOW()) / 86400) END AS value FROM regression r ORDER BY value ASC LIMIT 1",
+          "rawSql": "WITH daily_usage AS (SELECT machine_id, time_bucket('1 day', time) AS day, AVG(cpu_load_percent) AS avg_cpu FROM public.sys_metrics WHERE time > NOW() - INTERVAL '30 days' GROUP BY 1, 2), regression AS (SELECT machine_id, COALESCE(regr_slope(avg_cpu, EXTRACT(EPOCH FROM day)), 0) AS slope, COALESCE(regr_intercept(avg_cpu, EXTRACT(EPOCH FROM day)), 0) AS intercept FROM daily_usage GROUP BY machine_id) SELECT machine_id AS metric, CASE WHEN slope <= 0 THEN 9999 ELSE GREATEST(0, (100 - intercept) / slope - EXTRACT(EPOCH FROM NOW()) / 86400) END AS value FROM regression r ORDER BY value ASC LIMIT 1",
           "format": "table"
         }
       ]
@@ -327,7 +327,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH latest AS (SELECT machine_id, disk_used_gb / NULLIF(disk_total_gb, 0) * 100 AS disk_pct, ram_used_mb / NULLIF(ram_total_mb, 0) * 100 AS ram_pct, cpu_load_percent AS cpu_pct FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '5 minutes' GROUP BY machine_id, disk_used_gb, disk_total_gb, ram_used_mb, ram_total_mb, cpu_load_percent) SELECT 'Fleet Score' AS metric, ROUND(AVG(CASE WHEN disk_pct > 90 OR ram_pct > 95 OR cpu_pct > 90 THEN 0 WHEN disk_pct > 80 OR ram_pct > 85 OR cpu_pct > 80 THEN 50 ELSE 100 END), 1) AS value FROM latest",
+          "rawSql": "WITH latest AS (SELECT machine_id, disk_used_gb / NULLIF(disk_total_gb, 0) * 100 AS disk_pct, ram_used_mb / NULLIF(ram_total_mb, 0) * 100 AS ram_pct, cpu_load_percent AS cpu_pct FROM public.sys_metrics WHERE time > NOW() - INTERVAL '5 minutes' GROUP BY machine_id, disk_used_gb, disk_total_gb, ram_used_mb, ram_total_mb, cpu_load_percent) SELECT 'Fleet Score' AS metric, ROUND(AVG(CASE WHEN disk_pct > 90 OR ram_pct > 95 OR cpu_pct > 90 THEN 0 WHEN disk_pct > 80 OR ram_pct > 85 OR cpu_pct > 80 THEN 50 ELSE 100 END), 1) AS value FROM latest",
           "format": "table"
         }
       ]
@@ -413,7 +413,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('1 hour', time) AS time, machine_id, AVG(disk_used_gb) AS \"Disk Used (GB)\" FROM public.machine_telemetry WHERE $__timeFilter(time) AND machine_id IN (${machine_id:sqlstring}) GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('1 hour', time) AS time, machine_id, AVG(disk_used_gb) AS \"Disk Used (GB)\" FROM public.sys_metrics WHERE $__timeFilter(time) AND machine_id IN (${machine_id:sqlstring}) GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series"
         },
         {
@@ -422,7 +422,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('1 hour', time) AS time, machine_id, AVG(disk_total_gb) AS \"Disk Total (GB)\" FROM public.machine_telemetry WHERE $__timeFilter(time) AND machine_id IN (${machine_id:sqlstring}) GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('1 hour', time) AS time, machine_id, AVG(disk_total_gb) AS \"Disk Total (GB)\" FROM public.sys_metrics WHERE $__timeFilter(time) AND machine_id IN (${machine_id:sqlstring}) GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series"
         }
       ]
@@ -506,7 +506,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{ machine_id }}",
-          "rawSql": "SELECT time_bucket('1 day', time) AS time, machine_id, AVG(cpu_load_percent) AS \"Avg CPU %\" FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '30 days' AND machine_id IN (${machine_id:sqlstring}) GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('1 day', time) AS time, machine_id, AVG(cpu_load_percent) AS \"Avg CPU %\" FROM public.sys_metrics WHERE time > NOW() - INTERVAL '30 days' AND machine_id IN (${machine_id:sqlstring}) GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series"
         }
       ]
@@ -578,7 +578,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{ machine_id }}",
-          "rawSql": "SELECT time_bucket('1 day', time) AS time, machine_id, AVG(ram_used_mb) / NULLIF(AVG(ram_total_mb), 0) * 100 AS \"Avg RAM %\" FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '30 days' AND machine_id IN (${machine_id:sqlstring}) GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('1 day', time) AS time, machine_id, AVG(ram_used_mb) / NULLIF(AVG(ram_total_mb), 0) * 100 AS \"Avg RAM %\" FROM public.sys_metrics WHERE time > NOW() - INTERVAL '30 days' AND machine_id IN (${machine_id:sqlstring}) GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series"
         }
       ]
@@ -679,7 +679,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{ machine_id }}",
-          "rawSql": "WITH stats AS (SELECT bucket, machine_id, avg_cpu_load, AVG(avg_cpu_load) OVER w AS mu, COALESCE(NULLIF(STDDEV(avg_cpu_load) OVER w, 0), 1) AS sigma FROM public.telemetry_minute_summary WHERE machine_id IN (${machine_id:sqlstring}) AND $__timeFilter(bucket) WINDOW w AS (PARTITION BY machine_id ORDER BY bucket ROWS BETWEEN 60 PRECEDING AND 1 PRECEDING)) SELECT bucket AS time, machine_id AS metric, ROUND(((avg_cpu_load - mu) / sigma)::NUMERIC, 2) AS \"Z-Score\" FROM stats ORDER BY 1",
+          "rawSql": "WITH stats AS (SELECT bucket, machine_id, cpu_load_percent, AVG(avg_cpu_load) OVER w AS mu, COALESCE(NULLIF(STDDEV(avg_cpu_load) OVER w, 0), 1) AS sigma FROM public.sys_metrics WHERE machine_id IN (${machine_id:sqlstring}) AND $__timeFilter(bucket) WINDOW w AS (PARTITION BY machine_id ORDER BY bucket ROWS BETWEEN 60 PRECEDING AND 1 PRECEDING)) SELECT time, machine_id AS metric, ROUND(((avg_cpu_load - mu) / sigma)::NUMERIC, 2) AS \"Z-Score\" FROM stats ORDER BY 1",
           "format": "time_series"
         }
       ]
@@ -768,7 +768,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{ machine_id }}",
-          "rawSql": "WITH stats AS (SELECT bucket, machine_id, max_temp, AVG(max_temp) OVER w AS mu, COALESCE(NULLIF(STDDEV(max_temp) OVER w, 0), 1) AS sigma FROM public.telemetry_minute_summary WHERE machine_id IN (${machine_id:sqlstring}) AND max_temp > 0 AND $__timeFilter(bucket) WINDOW w AS (PARTITION BY machine_id ORDER BY bucket ROWS BETWEEN 60 PRECEDING AND 1 PRECEDING)) SELECT bucket AS time, machine_id AS metric, ROUND(((max_temp - mu) / sigma)::NUMERIC, 2) AS \"Z-Score\" FROM stats ORDER BY 1",
+          "rawSql": "WITH stats AS (SELECT bucket, machine_id, temp_c, AVG(temp_c) OVER w AS mu, COALESCE(NULLIF(STDDEV(temp_c) OVER w, 0), 1) AS sigma FROM public.sys_metrics WHERE machine_id IN (${machine_id:sqlstring}) AND temp_c > 0 AND $__timeFilter(bucket) WINDOW w AS (PARTITION BY machine_id ORDER BY bucket ROWS BETWEEN 60 PRECEDING AND 1 PRECEDING)) SELECT time, machine_id AS metric, ROUND(((temp_c - mu) / sigma)::NUMERIC, 2) AS \"Z-Score\" FROM stats ORDER BY 1",
           "format": "time_series"
         }
       ]
