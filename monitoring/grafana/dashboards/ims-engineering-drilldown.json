@@ -456,22 +456,6 @@
       ]
     },
     {
-      "id": 2000,
-      "type": "row",
-      "title": "Machine Summary",
-      "repeat": "machine_id",
-      "repeatDirection": "h",
-      "maxPerRow": 2,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 2
-      },
-      "collapsed": false,
-      "transparent": true
-    },
-    {
       "id": 200,
       "type": "row",
       "title": "Time Series Analysis",
@@ -503,8 +487,8 @@
           "min": 0,
           "max": 100,
           "custom": {
-            "fillOpacity": 5,
-            "lineWidth": 3,
+            "fillOpacity": 0,
+            "lineWidth": 2,
             "spanNulls": 60000,
             "gradientMode": "opacity",
             "drawStyle": "line",
@@ -597,13 +581,28 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*DB.*|(?i).*TIMESCALE.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#7F00FF"
+                }
+              }
+            ]
           }
         ]
       },
       "options": {
         "tooltip": {
-          "mode": "single",
-          "sort": "none"
+          "mode": "multi",
+          "sort": "desc"
         },
         "legend": {
           "displayMode": "table",
@@ -668,8 +667,8 @@
           "unit": "bps",
           "custom": {
             "axisCenteredZero": true,
-            "fillOpacity": 5,
-            "lineWidth": 3,
+            "fillOpacity": 0,
+            "lineWidth": 2,
             "spanNulls": 60000,
             "gradientMode": "opacity",
             "drawStyle": "line",
@@ -817,13 +816,28 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*DB.*|(?i).*TIMESCALE.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#7F00FF"
+                }
+              }
+            ]
           }
         ]
       },
       "options": {
         "tooltip": {
-          "mode": "single",
-          "sort": "none"
+          "mode": "multi",
+          "sort": "desc"
         },
         "legend": {
           "displayMode": "table",
@@ -885,8 +899,8 @@
         "defaults": {
           "unit": "celsius",
           "custom": {
-            "fillOpacity": 5,
-            "lineWidth": 3,
+            "fillOpacity": 0,
+            "lineWidth": 2,
             "spanNulls": 60000,
             "thresholdsStyle": {
               "mode": "dashed"
@@ -1033,13 +1047,28 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*DB.*|(?i).*TIMESCALE.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#7F00FF"
+                }
+              }
+            ]
           }
         ]
       },
       "options": {
         "tooltip": {
-          "mode": "single",
-          "sort": "none"
+          "mode": "multi",
+          "sort": "desc"
         },
         "legend": {
           "displayMode": "table",
@@ -1111,8 +1140,8 @@
       "fieldConfig": {
         "defaults": {
           "custom": {
-            "fillOpacity": 5,
-            "lineWidth": 3,
+            "fillOpacity": 0,
+            "lineWidth": 2,
             "spanNulls": 60000,
             "gradientMode": "opacity",
             "drawStyle": "line",
@@ -1231,13 +1260,28 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*DB.*|(?i).*TIMESCALE.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#7F00FF"
+                }
+              }
+            ]
           }
         ]
       },
       "options": {
         "tooltip": {
-          "mode": "single",
-          "sort": "none"
+          "mode": "multi",
+          "sort": "desc"
         },
         "legend": {
           "displayMode": "table",
@@ -1301,8 +1345,8 @@
       "fieldConfig": {
         "defaults": {
           "custom": {
-            "fillOpacity": 5,
-            "lineWidth": 3,
+            "fillOpacity": 0,
+            "lineWidth": 2,
             "spanNulls": 60000,
             "gradientMode": "opacity",
             "drawStyle": "line",
@@ -1420,13 +1464,28 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*DB.*|(?i).*TIMESCALE.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#7F00FF"
+                }
+              }
+            ]
           }
         ]
       },
       "options": {
         "tooltip": {
-          "mode": "single",
-          "sort": "none"
+          "mode": "multi",
+          "sort": "desc"
         },
         "legend": {
           "displayMode": "table",
@@ -1658,8 +1717,8 @@
           "unit": "none",
           "custom": {
             "axisCenteredZero": true,
-            "fillOpacity": 5,
-            "lineWidth": 3,
+            "fillOpacity": 0,
+            "lineWidth": 2,
             "spanNulls": 60000,
             "thresholdsStyle": {
               "mode": "dashed"
@@ -1701,19 +1760,87 @@
             "mode": "palette-classic"
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*UBUNTU.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00FF87"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*WINDOWS.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00F2FE"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*DB.*|(?i).*TIMESCALE.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#7F00FF"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*(Forecast|Regression|Linear).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#4A5568"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash"
+                }
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "tooltip": {
-          "mode": "single",
-          "sort": "none"
+          "mode": "multi",
+          "sort": "desc"
         },
         "legend": {
           "displayMode": "table",
           "placement": "bottom",
           "calcs": [
             "mean",
-            "max"
+            "max",
+            "lastNotNull"
           ]
         },
         "connectNullPoints": true
