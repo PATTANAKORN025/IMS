@@ -286,10 +286,10 @@
                 "p": "payload"
             }
         ],
-        "repeat": "",
+        "repeat": "300",
         "crontab": "",
         "once": true,
-        "onceDelay": 5,
+        "onceDelay": 1,
         "topic": "",
         "payload": "",
         "payloadType": "date",
