@@ -229,7 +229,7 @@
       "description": "Days until resource saturation for CPU, RAM, and Disk using 30-day linear regression."
     },
     {
-      "id": 100,
+      "id": 103,
       "type": "row",
       "title": "CAPACITY FORECAST",
       "gridPos": {
@@ -598,8 +598,8 @@
           "unit": "gbytes",
           "min": 0,
           "custom": {
-            "fillOpacity": 5,
-            "lineWidth": 3,
+            "fillOpacity": 0,
+            "lineWidth": 2,
             "spanNulls": 60000,
             "thresholdsStyle": {
               "mode": "line"
@@ -720,13 +720,28 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*DB.*|(?i).*TIMESCALE.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#7F00FF"
+                }
+              }
+            ]
           }
         ]
       },
       "options": {
         "tooltip": {
-          "mode": "single",
-          "sort": "none"
+          "mode": "multi",
+          "sort": "desc"
         },
         "legend": {
           "displayMode": "table",
@@ -811,8 +826,8 @@
           "min": 0,
           "max": 100,
           "custom": {
-            "fillOpacity": 5,
-            "lineWidth": 3,
+            "fillOpacity": 0,
+            "lineWidth": 2,
             "spanNulls": 60000,
             "gradientMode": "opacity",
             "drawStyle": "line",
@@ -905,13 +920,28 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*DB.*|(?i).*TIMESCALE.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#7F00FF"
+                }
+              }
+            ]
           }
         ]
       },
       "options": {
         "tooltip": {
-          "mode": "single",
-          "sort": "none"
+          "mode": "multi",
+          "sort": "desc"
         },
         "legend": {
           "displayMode": "table",
@@ -964,8 +994,8 @@
           "min": 0,
           "max": 100,
           "custom": {
-            "fillOpacity": 5,
-            "lineWidth": 3,
+            "fillOpacity": 0,
+            "lineWidth": 2,
             "spanNulls": 60000,
             "gradientMode": "opacity",
             "drawStyle": "line",
@@ -1058,13 +1088,28 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*DB.*|(?i).*TIMESCALE.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#7F00FF"
+                }
+              }
+            ]
           }
         ]
       },
       "options": {
         "tooltip": {
-          "mode": "single",
-          "sort": "none"
+          "mode": "multi",
+          "sort": "desc"
         },
         "legend": {
           "displayMode": "table",
@@ -1129,8 +1174,8 @@
           "unit": "none",
           "custom": {
             "axisCenteredZero": true,
-            "fillOpacity": 5,
-            "lineWidth": 3,
+            "fillOpacity": 0,
+            "lineWidth": 2,
             "spanNulls": 60000,
             "thresholdsStyle": {
               "mode": "dashed"
@@ -1238,13 +1283,28 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*DB.*|(?i).*TIMESCALE.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#7F00FF"
+                }
+              }
+            ]
           }
         ]
       },
       "options": {
         "tooltip": {
-          "mode": "single",
-          "sort": "none"
+          "mode": "multi",
+          "sort": "desc"
         },
         "legend": {
           "displayMode": "table",
@@ -1297,8 +1357,8 @@
           "unit": "none",
           "custom": {
             "axisCenteredZero": true,
-            "fillOpacity": 5,
-            "lineWidth": 3,
+            "fillOpacity": 0,
+            "lineWidth": 2,
             "spanNulls": 60000,
             "thresholdsStyle": {
               "mode": "dashed"
@@ -1406,13 +1466,28 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*DB.*|(?i).*TIMESCALE.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#7F00FF"
+                }
+              }
+            ]
           }
         ]
       },
       "options": {
         "tooltip": {
-          "mode": "single",
-          "sort": "none"
+          "mode": "multi",
+          "sort": "desc"
         },
         "legend": {
           "displayMode": "table",
