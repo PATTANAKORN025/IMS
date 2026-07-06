@@ -82,7 +82,7 @@
       },
       "options": {
         "mode": "html",
-        "content": "<style>\n@import url(\"https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap\");\n.dashboard-page { background: #05050A !important; font-family: \"Rajdhani\", sans-serif !important; }\n.panel-container { background: rgba(12,16,26,0.8) !important; border: 1px solid rgba(0,242,254,0.15) !important; border-radius: 4px !important; backdrop-filter: blur(4px) !important; box-shadow: inset 0 1px 10px rgba(0,242,254,0.02) !important; transition: border-color 0.3s ease, transform 0.3s ease; }\n.panel-container:hover { border-color: rgba(0,242,254,0.6) !important; transform: translateY(-2px); }\n.panel-title { color: #A0B0C0 !important; font-size: 14px !important; font-weight: 700 !important; letter-spacing: 1px; }\n</style>\n<div class=\"apex-banner\" style=\"display:flex;justify-content:space-between;align-items:center;height:100%;padding:0 20px;background:linear-gradient(90deg,rgba(0,242,254,0.1) 0%,transparent 100%);border-left:4px solid #00F2FE;border-radius:4px;box-sizing:border-box;\">\n  <h1 style=\"font-size:20px;font-weight:800;color:#fff;letter-spacing:3px;text-shadow:0 0 10px #00F2FE;margin:0;\">APEX <span style=\"color:#00F2FE;\">COMMAND</span> <span style=\"color:#8899aa;font-size:14px;letter-spacing:1px;\">// IMS Capacity</span></h1>\n  <div class=\"apex-nav\" style=\"display:flex;gap:20px;\">\n    <a href=\"/d/ims-noc-overview\" style=\"color:#8899aa;text-decoration:none;font-size:14px;font-weight:700;padding:4px 12px;border:1px solid transparent;transition:all 0.2s;\">NOC</a>\n    <a href=\"/d/ims-engineering\" style=\"color:#8899aa;text-decoration:none;font-size:14px;font-weight:700;padding:4px 12px;border:1px solid transparent;transition:all 0.2s;\">ENG</a>\n    <a href=\"/d/ims-capacity\" class=\"active\" style=\"color:#8899aa;text-decoration:none;font-size:14px;font-weight:700;padding:4px 12px;border:1px solid transparent;transition:all 0.2s;\">CAP</a>\n  </div>\n</div>"
+        "content": "<style>\n@import url(\"https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap\");\n.dashboard-page { background: #060810 !important; font-family: \"Rajdhani\", sans-serif !important; }\n.panel-container {\n  background: #060810 !important;\n  border: 1px solid rgba(0, 242, 254, 0.25) !important;\n  border-radius: 4px !important;\n  box-shadow: inset 0 1px 8px rgba(0, 242, 254, 0.03) !important;\n  transition: border-color 0.3s ease, box-shadow 0.3s ease;\n}\n.panel-container:hover {\n  border-color: rgba(0, 242, 254, 0.6) !important;\n  box-shadow: 0 0 12px rgba(0, 242, 254, 0.1) !important;\n}\n.panel-title { color: #A0B0C0 !important; font-size: 14px !important; font-weight: 700 !important; letter-spacing: 1px; }\n</style>\n<div style=\"display:flex;justify-content:space-between;align-items:center;height:100%;padding:0 20px;background:linear-gradient(90deg,rgba(0,242,254,0.1) 0%,transparent 100%);border-left:4px solid #00F2FE;border-radius:4px;box-sizing:border-box;\">\n  <h1 style=\"font-size:20px;font-weight:800;color:#fff;letter-spacing:3px;text-shadow:0 0 10px #00F2FE;margin:0;\">APEX <span style=\"color:#00F2FE;\">COMMAND</span> <span style=\"color:#8899aa;font-size:14px;letter-spacing:1px;\">// </span></h1>\n  <div style=\"display:flex;gap:20px;\">\n    <a href=\"/d/ims-noc-overview\" style=\"color:#8899aa;text-decoration:none;font-size:14px;font-weight:700;padding:4px 12px;border:1px solid transparent;border-radius:4px;\">NOC</a> <a href=\"/d/ims-engineering\" style=\"color:#8899aa;text-decoration:none;font-size:14px;font-weight:700;padding:4px 12px;border:1px solid transparent;border-radius:4px;\">ENG</a> <a href=\"/d/ims-capacity\" class=\"active\" style=\"color:#00FF87;text-decoration:none;font-size:14px;font-weight:700;padding:4px 12px;border:1px solid rgba(0,255,135,0.3);background:rgba(0,255,135,0.05);border-radius:4px;\">CAP</a>\n  </div>\n</div>"
       },
       "datasource": null,
       "transparent": true,
@@ -598,7 +598,7 @@
           "unit": "gbytes",
           "min": 0,
           "custom": {
-            "fillOpacity": 20,
+            "fillOpacity": 5,
             "lineWidth": 3,
             "spanNulls": 60000,
             "thresholdsStyle": {
@@ -624,6 +624,9 @@
                 "value": 95
               }
             ]
+          },
+          "color": {
+            "mode": "palette-classic"
           }
         },
         "overrides": [
@@ -663,6 +666,57 @@
                 "value": {
                   "mode": "fixed",
                   "fixedColor": "#7F00FF"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*UBUNTU.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00FF87"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*WINDOWS.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00F2FE"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*(Forecast|Regression|Linear).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#4A5568"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash"
                 }
               }
             ]
@@ -757,7 +811,7 @@
           "min": 0,
           "max": 100,
           "custom": {
-            "fillOpacity": 20,
+            "fillOpacity": 5,
             "lineWidth": 3,
             "spanNulls": 60000,
             "gradientMode": "opacity",
@@ -780,6 +834,9 @@
                 "value": 90
               }
             ]
+          },
+          "color": {
+            "mode": "palette-classic"
           }
         },
         "overrides": [
@@ -794,6 +851,57 @@
                 "value": {
                   "mode": "fixed",
                   "fixedColor": "#00FF87"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*UBUNTU.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00FF87"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*WINDOWS.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00F2FE"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*(Forecast|Regression|Linear).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#4A5568"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash"
                 }
               }
             ]
@@ -856,7 +964,7 @@
           "min": 0,
           "max": 100,
           "custom": {
-            "fillOpacity": 20,
+            "fillOpacity": 5,
             "lineWidth": 3,
             "spanNulls": 60000,
             "gradientMode": "opacity",
@@ -879,6 +987,9 @@
                 "value": 95
               }
             ]
+          },
+          "color": {
+            "mode": "palette-classic"
           }
         },
         "overrides": [
@@ -893,6 +1004,57 @@
                 "value": {
                   "mode": "fixed",
                   "fixedColor": "#00F2FE"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*UBUNTU.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00FF87"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*WINDOWS.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00F2FE"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*(Forecast|Regression|Linear).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#4A5568"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash"
                 }
               }
             ]
@@ -967,7 +1129,7 @@
           "unit": "none",
           "custom": {
             "axisCenteredZero": true,
-            "fillOpacity": 20,
+            "fillOpacity": 5,
             "lineWidth": 3,
             "spanNulls": 60000,
             "thresholdsStyle": {
@@ -1022,6 +1184,57 @@
                 "value": {
                   "mode": "fixed",
                   "fixedColor": "#00FF87"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*UBUNTU.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00FF87"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*WINDOWS.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00F2FE"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*(Forecast|Regression|Linear).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#4A5568"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash"
                 }
               }
             ]
@@ -1084,7 +1297,7 @@
           "unit": "none",
           "custom": {
             "axisCenteredZero": true,
-            "fillOpacity": 20,
+            "fillOpacity": 5,
             "lineWidth": 3,
             "spanNulls": 60000,
             "thresholdsStyle": {
@@ -1139,6 +1352,57 @@
                 "value": {
                   "mode": "fixed",
                   "fixedColor": "#FF9100"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*UBUNTU.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00FF87"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*WINDOWS.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00F2FE"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*(Forecast|Regression|Linear).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#4A5568"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash"
                 }
               }
             ]
