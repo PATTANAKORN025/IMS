@@ -101,7 +101,7 @@
       "description": "OS Taskbar navigation and CSS theme."
     },
     {
-      "id": 998,
+      "id": 1001,
       "type": "grafana-clock-panel",
       "title": "",
       "datasource": null,
@@ -456,7 +456,7 @@
       ]
     },
     {
-      "id": 100,
+      "id": 2000,
       "type": "row",
       "title": "Machine Summary",
       "repeat": "machine_id",
@@ -1399,6 +1399,245 @@
       },
       "targets": [],
       "description": "Circular force-directed topology with glowing nodes and animated edges."
+    },
+    {
+      "id": 1000,
+      "type": "row",
+      "title": "RESOURCE DISTRIBUTION",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 52
+      },
+      "collapsed": false,
+      "transparent": true
+    },
+    {
+      "id": 2001,
+      "title": "CPU / RAM / Storage Distribution",
+      "type": "piechart",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 53
+      },
+      "transparent": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "CPU Load %"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00FF87"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "RAM Used %"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00F2FE"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Disk Used %"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#7F00FF"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "pieType": "donut",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "values": [
+            "value",
+            "percent"
+          ],
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT 'CPU Load %' AS metric, AVG(cpu_load) AS value FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '5 minutes'",
+          "format": "table"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT 'RAM Used %' AS metric, AVG(ram_used / NULLIF(ram_total, 0) * 100) AS value FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '5 minutes'",
+          "format": "table"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT 'Disk Used %' AS metric, AVG(disk_used_gb / NULLIF(disk_total_gb, 0) * 100) AS value FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '5 minutes'",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "id": 1002,
+      "title": "Fleet Status Composition",
+      "type": "piechart",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 53
+      },
+      "transparent": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Healthy"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00FF87"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Warning"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF9100"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Critical"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF003C"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "pieType": "donut",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "values": [
+            "value",
+            "percent"
+          ],
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT 'Healthy' AS metric, COUNT(*) AS value FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '5 minutes' AND cpu_load < 80 AND ram_used / NULLIF(ram_total, 0) * 100 < 85",
+          "format": "table"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT 'Warning' AS metric, COUNT(*) AS value FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '5 minutes' AND (cpu_load BETWEEN 80 AND 90 OR ram_used / NULLIF(ram_total, 0) * 100 BETWEEN 85 AND 95)",
+          "format": "table"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT 'Critical' AS metric, COUNT(*) AS value FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '5 minutes' AND (cpu_load > 90 OR ram_used / NULLIF(ram_total, 0) * 100 > 95)",
+          "format": "table"
+        }
+      ]
     }
   ],
   "graphTooltip": 1
