@@ -82,7 +82,7 @@
       },
       "options": {
         "mode": "html",
-        "content": "<style>\n@import url(\"https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap\");\n.dashboard-page { background: #050505 !important; font-family: 'Rajdhani', sans-serif !important; }\n.panel-container {\n  position: relative;\n  background: #0D1117 !important;\n  border: 1px solid #1F2937 !important;\n  border-radius: 0px !important;\n  box-shadow: 0 4px 6px rgba(0,0,0,0.3) !important;\n}\n.panel-container::before {\n  content: \"\"; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px;\n  background: linear-gradient(90deg, #00F2FE, #00FF87);\n}\n.panel-title { color: #A0AEC0 !important; font-size: 13px !important; text-transform: uppercase; }\n</style><div style=\"display:flex;align-items:center;gap:0;height:100%;padding:0;\n  background:#0D1117;border-bottom:2px solid #1F2937;font-family:'Rajdhani',sans-serif;\">\n  <div style=\"padding:0 16px;font-size:20px;font-weight:700;color:#E5E7EB;letter-spacing:3px;\n    border-right:1px solid #1F2937;white-space:nowrap;\">APEX <span style=\"color:#00F2FE\">CMD</span></div>\n  <div style=\"padding:0 12px;color:#6B7280;font-size:11px;letter-spacing:1px;\">SYSTEM ONLINE</div>\n  <div style=\"flex:1\"></div>\n  <a href=\"/d/ims-noc-overview\" target=\"_blank\"\n    style=\"padding:6px 16px;font-size:12px;font-weight:700;letter-spacing:1px;text-decoration:none;\n    color:#889;border-bottom:2px solid #1F2937;transition:background 0.3s;\n    onmouseover='this.style.background=\"#111827\"' onmouseout='this.style.background=\"transparent\"'\">NOC</a>\n  <a href=\"/d/ims-engineering\" target=\"_blank\"\n    style=\"padding:6px 16px;font-size:12px;font-weight:700;letter-spacing:1px;text-decoration:none;\n    color:#889;border-bottom:2px solid #1F2937;transition:background 0.3s;\n    onmouseover='this.style.background=\"#111827\"' onmouseout='this.style.background=\"transparent\"'\">ENG</a>\n  <a href=\"/d/ims-capacity\" target=\"_blank\"\n    style=\"padding:6px 16px;font-size:12px;font-weight:700;letter-spacing:1px;text-decoration:none;\n    color:#7F00FF;border-bottom:2px solid #7F00FF;transition:background 0.3s;\n    background:#0D1117;\">CAP</a>\n</div>"
+        "content": "<style>\n@import url(\"https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap\");\n.dashboard-page { background: #050505 !important; font-family: 'Rajdhani', sans-serif !important; }\n.panel-container {\n  position: relative;\n  background: #0D1117 !important;\n  border: 1px solid #1F2937 !important;\n  border-radius: 0px !important;\n  box-shadow: 0 4px 6px rgba(0,0,0,0.3) !important;\n}\n.panel-container::before {\n  content: \"\"; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px;\n  background: linear-gradient(90deg, #00F2FE, #00FF87);\n}\n.panel-title { color: #A0AEC0 !important; font-size: 13px !important; text-transform: uppercase; }\n\n@keyframes scanline {\n  0% { transform: translateY(-100%); opacity: 0; }\n  50% { opacity: 0.1; }\n  100% { transform: translateY(1000%); opacity: 0; }\n}\n.panel-container::after {\n  content: \"\";\n  position: absolute;\n  top: 0; left: 0; right: 0; height: 10px;\n  background: linear-gradient(to bottom, transparent, #00F2FE, transparent);\n  animation: scanline 4s linear infinite;\n  pointer-events: none;\n  border-radius: inherit;\n}\n</style><div style=\"display:flex;align-items:center;gap:0;height:100%;padding:0;\n  background:#0D1117;border-bottom:2px solid #1F2937;font-family:'Rajdhani',sans-serif;\">\n  <div style=\"padding:0 16px;font-size:20px;font-weight:700;color:#E5E7EB;letter-spacing:3px;\n    border-right:1px solid #1F2937;white-space:nowrap;\">APEX <span style=\"color:#00F2FE\">CMD</span></div>\n  <div style=\"padding:0 12px;color:#6B7280;font-size:11px;letter-spacing:1px;\">SYSTEM ONLINE</div>\n  <div style=\"flex:1\"></div>\n  <a href=\"/d/ims-noc-overview\" target=\"_blank\"\n    style=\"padding:6px 16px;font-size:12px;font-weight:700;letter-spacing:1px;text-decoration:none;\n    color:#889;border-bottom:2px solid #1F2937;transition:background 0.3s;\n    onmouseover='this.style.background=\"#111827\"' onmouseout='this.style.background=\"transparent\"'\">NOC</a>\n  <a href=\"/d/ims-engineering\" target=\"_blank\"\n    style=\"padding:6px 16px;font-size:12px;font-weight:700;letter-spacing:1px;text-decoration:none;\n    color:#889;border-bottom:2px solid #1F2937;transition:background 0.3s;\n    onmouseover='this.style.background=\"#111827\"' onmouseout='this.style.background=\"transparent\"'\">ENG</a>\n  <a href=\"/d/ims-capacity\" target=\"_blank\"\n    style=\"padding:6px 16px;font-size:12px;font-weight:700;letter-spacing:1px;text-decoration:none;\n    color:#7F00FF;border-bottom:2px solid #7F00FF;transition:background 0.3s;\n    background:#0D1117;\">CAP</a>\n</div>"
       },
       "datasource": null,
       "transparent": true,
@@ -149,70 +149,25 @@
     },
     {
       "id": 50,
-      "title": "Days Until Full (All Resources)",
-      "type": "bargauge",
+      "title": "Days Until Full (Cyberpunk Battery)",
+      "type": "volkovlabs-echarts-panel",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
-        "h": 4,
+        "h": 6,
         "w": 24,
         "x": 0,
         "y": 8
       },
       "transparent": true,
       "fieldConfig": {
-        "defaults": {
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "orange",
-                "value": 30
-              },
-              {
-                "color": "yellow",
-                "value": 90
-              },
-              {
-                "color": "green",
-                "value": 180
-              }
-            ]
-          },
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "9999": {
-                  "text": "\u221e",
-                  "color": "green",
-                  "index": 0
-                }
-              }
-            }
-          ]
-        },
+        "defaults": {},
         "overrides": []
       },
       "options": {
-        "displayMode": "gradient",
-        "orientation": "horizontal",
-        "showThresholdLabels": true,
-        "showThresholdMarkers": true,
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "values": false
-        },
-        "minVizWidth": 0,
-        "minVizHeight": 15,
-        "namePlacement": "auto"
+        "code": "const getVal = (idx) => {\n  try {\n    const f = data.series[idx].fields.find(x => x.type === 'number');\n    const v = f.values.buffer || f.values;\n    return v[v.length - 1] || Infinity;\n  } catch(e) { return Infinity; }\n};\nconst disk = getVal(0); const ram = getVal(1); const cpu = getVal(2);\nconst formatVal = (v) => v > 365 ? 365 : (v < 0 ? 0 : v);\nreturn {\n  backgroundColor: 'transparent',\n  grid: { top: '10%', bottom: '5%', left: '15%', right: '15%' },\n  xAxis: { type: 'value', show: false, max: 365 },\n  yAxis: { type: 'category', data: ['CPU', 'RAM', 'DISK'], axisLine: {show: false}, axisTick: {show: false}, axisLabel: {color: '#00F2FE', fontSize: 16, fontFamily: 'Orbitron', fontWeight: 'bold'} },\n  series: [{\n    type: 'bar',\n    data: [\n      { value: formatVal(cpu), itemStyle: { color: '#00FF87', shadowBlur: 15, shadowColor: '#00FF87'} },\n      { value: formatVal(ram), itemStyle: { color: '#00F2FE', shadowBlur: 15, shadowColor: '#00F2FE'} },\n      { value: formatVal(disk), itemStyle: { color: '#7F00FF', shadowBlur: 15, shadowColor: '#7F00FF'} }\n    ],\n    barWidth: 15,\n    itemStyle: { borderRadius: [0, 8, 8, 0] },\n    label: {\n      show: true, position: 'right', color: '#fff', fontSize: 14,\n      formatter: (p) => {\n        const raw = [cpu, ram, disk][p.dataIndex];\n        return raw > 365 ? 'SAFE (\u221e)' : Math.round(raw) + ' Days';\n      }\n    },\n    showBackground: true,\n    backgroundStyle: { color: 'rgba(255, 255, 255, 0.05)', borderRadius: [0, 8, 8, 0] }\n  }]\n};",
+        "option": "{}"
       },
       "targets": [
         {
@@ -240,7 +195,7 @@
           "format": "table"
         }
       ],
-      "description": "Horizontal bar gauge showing days until saturation for Disk, RAM, and CPU."
+      "description": "Cyberpunk battery gauge: horizontal glowing bars showing days until saturation for CPU, RAM, and Disk."
     },
     {
       "id": 100,
@@ -760,7 +715,7 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "h": 8,
+        "h": 10,
         "w": 12,
         "x": 0,
         "y": 22
@@ -859,7 +814,7 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "h": 8,
+        "h": 10,
         "w": 12,
         "x": 12,
         "y": 22
@@ -971,7 +926,7 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "h": 8,
+        "h": 10,
         "w": 12,
         "x": 0,
         "y": 31
@@ -1088,7 +1043,7 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "h": 8,
+        "h": 10,
         "w": 12,
         "x": 12,
         "y": 31
