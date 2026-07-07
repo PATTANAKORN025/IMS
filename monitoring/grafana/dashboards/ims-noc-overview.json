@@ -53,7 +53,7 @@
       {
         "name": "interface",
         "type": "query",
-        "query": "SELECT 'eth0' AS __text UNION SELECT DISTINCT interface_name AS __text FROM public.net_metrics LIMIT 100;",
+        "query": "SELECT DISTINCT key AS __text FROM public.machine_telemetry, jsonb_object_keys(interface_metrics) AS key WHERE interface_metrics IS NOT NULL LIMIT 100;",
         "datasource": {
           "uid": "timescaledb"
         },
