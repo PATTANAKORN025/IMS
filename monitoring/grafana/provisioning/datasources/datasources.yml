@@ -7,7 +7,7 @@ datasources:
     uid: timescaledb
     type: postgres
     access: proxy
-    url: pgbouncer:5432
+    url: ims-timescaledb:5432
     database: ims
     user: ${GRAFANA_DB_USER}
     secureJsonData:
