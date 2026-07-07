@@ -4,3 +4,6 @@ services:
   node-red:
     environment:
       - NODE_ENV=development
+  pgbouncer:
+        ports:
+          - "6433:5432"

@@ -13,7 +13,11 @@ restart:
 	docker compose restart node-red grafana alertmanager prometheus
 
 verify:
+ifeq ($(OS),Windows_NT)
+	powershell -ExecutionPolicy Bypass -File scripts\verify-deployment.ps1
+else
 	bash scripts/verify-deployment.sh
+endif
 
 backup:
 	bash scripts/backup-db.sh
