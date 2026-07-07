@@ -5,7 +5,7 @@ datasources:
     uid: timescaledb
     type: postgres
     access: proxy
-    url: pgbouncer:6432
+    url: pgbouncer:5432
     database: ims
     user: ${POSTGRES_USER}
     secureJsonData:
