@@ -40,7 +40,7 @@
       {
         "name": "machine_id",
         "type": "query",
-        "query": "SELECT DISTINCT machine_id AS __text FROM public.machines ORDER BY machine_id ASC LIMIT 200;",
+        "query": "SELECT 'NO_MACHINES_FOUND' AS __text UNION SELECT DISTINCT machine_id AS __text FROM public.machines WHERE enabled = true ORDER BY __text ASC;",
         "datasource": {
           "uid": "timescaledb"
         },
@@ -53,7 +53,7 @@
       {
         "name": "interface",
         "type": "query",
-        "query": "SELECT DISTINCT interface_name AS __text FROM public.net_metrics LIMIT 100;",
+        "query": "SELECT 'eth0' AS __text UNION SELECT DISTINCT interface_name AS __text FROM public.net_metrics LIMIT 100;",
         "datasource": {
           "uid": "timescaledb"
         },
