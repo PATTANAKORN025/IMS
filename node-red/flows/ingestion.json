@@ -37,43 +37,6 @@
         "env": []
     },
     {
-        "id": "ims-tab-v5",
-        "type": "tab",
-        "label": "IMS Ingestion Pipeline",
-        "disabled": false,
-        "info": "SNMP walkers → Parser → TimescaleDB"
-    },
-    {
-        "id": "pg_config",
-        "type": "postgreSQLConfig",
-        "name": "IMS Database",
-        "host": "pgbouncer",
-        "hostFieldType": "str",
-        "port": "6432",
-        "portFieldType": "num",
-        "database": "ims",
-        "databaseFieldType": "str",
-        "ssl": "false",
-        "sslFieldType": "bool",
-        "applicationName": "",
-        "applicationNameType": "str",
-        "max": "10",
-        "maxFieldType": "num",
-        "idle": "10000",
-        "idleFieldType": "num",
-        "connectionTimeout": "10000",
-        "connectionTimeoutFieldType": "num",
-        "user": "ims_admin",
-        "userFieldType": "str",
-        "password": "admin1234",
-        "passwordFieldType": "env"
-    },
-    {
-        "id": "7bcdbd074922d466",
-        "type": "global-config",
-        "env": []
-    },
-    {
         "id": "d6ffcaf2f7033983",
         "type": "function",
         "z": "ims-tab-v5",
@@ -298,7 +261,7 @@
                 "p": "payload"
             }
         ],
-        "repeat": "300",
+        "repeat": "",
         "crontab": "",
         "once": false,
         "onceDelay": 1,
@@ -377,7 +340,7 @@
                 "p": "payload"
             }
         ],
-        "repeat": "10",
+        "repeat": "",
         "crontab": "",
         "once": false,
         "onceDelay": 6,
@@ -409,31 +372,6 @@
         "wires": [
             [
                 "a2d8dcc11923e637"
-            ]
-        ]
-    },
-    {
-        "id": "b267a17f03e0bf2c",
-        "type": "inject",
-        "z": "ims-tab-v5",
-        "name": "Scan Subnet (Manual)",
-        "props": [
-            {
-                "p": "subnet",
-                "v": "192.168.1.",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "x": 180,
-        "y": 140,
-        "wires": [
-            [
-                "b408fd2565f6307e"
             ]
         ]
     }
