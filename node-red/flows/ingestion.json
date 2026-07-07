@@ -12,7 +12,7 @@
         "name": "IMS Database",
         "host": "pgbouncer",
         "hostFieldType": "str",
-        "port": 6432,
+        "port": "6432",
         "portFieldType": "num",
         "database": "ims",
         "databaseFieldType": "str",
@@ -20,11 +20,11 @@
         "sslFieldType": "bool",
         "applicationName": "",
         "applicationNameType": "str",
-        "max": 10,
+        "max": "10",
         "maxFieldType": "num",
-        "idle": 10000,
+        "idle": "10000",
         "idleFieldType": "num",
-        "connectionTimeout": 10000,
+        "connectionTimeout": "10000",
         "connectionTimeoutFieldType": "num",
         "user": "ims_admin",
         "userFieldType": "str",
@@ -32,148 +32,161 @@
         "passwordFieldType": "env"
     },
     {
-        "id": "inject_ubuntu",
-        "type": "inject",
-        "z": "ims-tab-v5",
-        "name": "Poll Ubuntu (10s)",
-        "props": [
-            {
-                "p": "machine_id",
-                "v": "ERP-MASTER-UBUNTU",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": true,
-        "onceDelay": 0.1,
-        "topic": "",
-        "x": 370,
-        "y": 440,
-        "wires": [
-            [
-                "resolve_device"
-            ]
-        ]
+        "id": "7bcdbd074922d466",
+        "type": "global-config",
+        "env": []
     },
     {
-        "id": "inject_windows",
-        "type": "inject",
-        "z": "ims-tab-v5",
-        "name": "Poll Windows (10s)",
-        "props": [
-            {
-                "p": "machine_id",
-                "v": "ERP-MASTER-WINDOWS",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": true,
-        "onceDelay": 5,
-        "topic": "",
-        "x": 350,
-        "y": 520,
-        "wires": [
-            [
-                "fork_5_ways"
-            ]
-        ]
+        "id": "ims-tab-v5",
+        "type": "tab",
+        "label": "IMS Ingestion Pipeline",
+        "disabled": false,
+        "info": "SNMP walkers → Parser → TimescaleDB"
     },
     {
-        "id": "fork_5_ways",
+        "id": "pg_config",
+        "type": "postgreSQLConfig",
+        "name": "IMS Database",
+        "host": "pgbouncer",
+        "hostFieldType": "str",
+        "port": "6432",
+        "portFieldType": "num",
+        "database": "ims",
+        "databaseFieldType": "str",
+        "ssl": "false",
+        "sslFieldType": "bool",
+        "applicationName": "",
+        "applicationNameType": "str",
+        "max": "10",
+        "maxFieldType": "num",
+        "idle": "10000",
+        "idleFieldType": "num",
+        "connectionTimeout": "10000",
+        "connectionTimeoutFieldType": "num",
+        "user": "ims_admin",
+        "userFieldType": "str",
+        "password": "admin1234",
+        "passwordFieldType": "env"
+    },
+    {
+        "id": "7bcdbd074922d466",
+        "type": "global-config",
+        "env": []
+    },
+    {
+        "id": "d6ffcaf2f7033983",
         "type": "function",
         "z": "ims-tab-v5",
         "name": "Fork 5 Walker Threads",
-        "func": "const mid = msg.machine_id || msg.topic;\nreturn [\n    { machine_id: mid, topic: mid, _walker: 'cpu', payload: '' },\n    { machine_id: mid, topic: mid, _walker: 'storage', payload: '' },\n    { machine_id: mid, topic: mid, _walker: 'network', payload: '' },\n    { machine_id: mid, topic: mid, _walker: 'temp', payload: '' },\n    { machine_id: mid, topic: mid, _walker: 'ldi', payload: '' }\n];",
+        "func": "const mid = msg.machine_id || msg.topic;\nconst host = msg.host;\nconst community = msg.community;\nconst port = msg.snmp_port;\n\nconst snmp = global.get('snmp');\nif (!snmp) return null;\n\nconst session = snmp.createSession(\n    host || '127.0.0.1',\n    community || 'public',\n    { port: port || 161, version: snmp.Version2c, retries: 0, timeout: 500 }\n);\n//ตรวจสอบ อุปกรณ์ทำงานอยู่?\nconst nodeRef = node;\nsession.get(['1.3.6.1.2.1.1.3.0'], function (error, varbinds) {\n    session.close();\n    if (error) {\n        nodeRef.warn(`Ping failed for ${host} (${mid}) - Skipping walkers`);\n    } else {\n        nodeRef.send([\n            { machine_id: mid, topic: mid, _walker: 'cpu', payload: '', host, community, snmp_port: port },\n            { machine_id: mid, topic: mid, _walker: 'storage', payload: '', host, community, snmp_port: port },\n            { machine_id: mid, topic: mid, _walker: 'network', payload: '', host, community, snmp_port: port },\n            { machine_id: mid, topic: mid, _walker: 'temp', payload: '', host, community, snmp_port: port },\n            { machine_id: mid, topic: mid, _walker: 'ldi', payload: '', host, community, snmp_port: port }\n        ]);\n    }\n});\nreturn null;",
         "outputs": 5,
-        "x": 840,
-        "y": 500,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 940,
+        "y": 480,
         "wires": [
             [
-                "walk_cpu"
+                "88777e250c952277"
             ],
             [
-                "walk_storage"
+                "282caa9e4c6982b2"
             ],
             [
-                "walk_net_get"
+                "3baa1fd05c800263"
             ],
             [
-                "walk_temp"
+                "99162bb1b9195b05"
             ],
             [
-                "walk_ldi"
+                "3a31fd375e9ea2b4"
             ]
         ]
     },
     {
-        "id": "walk_cpu",
+        "id": "88777e250c952277",
         "type": "function",
         "z": "ims-tab-v5",
         "name": "Walk CPU",
-        "func": "const snmp = global.get('snmp');\nif (!snmp) { msg.payload = []; return msg; }\nconst oids = [\n    '1.3.6.1.2.1.25.3.3.1.2.1',\n    '1.3.6.1.2.1.25.3.3.1.2.2',\n    '1.3.6.1.2.1.25.3.3.1.2.3',\n    '1.3.6.1.2.1.25.3.3.1.2.4'\n];\nconst session = snmp.createSession(msg.host || 'ims-snmpsim', msg.community || 'Netk@', {port: msg.snmp_port || 161, version: snmp.Version2c,retries:1,timeout:3000});\nsession.on('error', function(err) { node.error('SNMP session error: ' + err.message); });;\nconst nodeRef = node; const msgRef = msg;\nsession.get(oids, function(error, varbinds) {\n    session.close();\n    if (error) { msgRef.payload = []; nodeRef.send(msgRef); return; }\n    const results = [];\n    varbinds.forEach(function(vb) { if (vb.type !== 129) results.push({oid:vb.oid,value:vb.value,type:vb.type}); });\n    msgRef.payload = results;\n    nodeRef.send(msgRef);\n});\nreturn null;",
+        "func": "const snmp = global.get('snmp');\nif (!snmp) { msg.payload = { cpu: null }; return msg; }\n\nconst baseOid = '1.3.6.1.2.1.25.3.3.1.2';\nconst session = snmp.createSession(\n    msg.host || '127.0.0.1',\n    msg.community || 'public',\n    { port: msg.snmp_port || 161, version: snmp.Version2c, retries: 0, timeout: 1500 }\n);\n\nsession.on('error', function (err) {\n    node.error('SNMP session error: ' + err.message);\n});\n\nconst nodeRef = node;\nconst msgRef = msg;\nconst results = [];\n\nsession.subtree(baseOid, 50, function (varbinds) {\n    varbinds.forEach(item => {\n        if (item.type !== 129) {\n            results.push(item.value);\n        }\n    });\n}, function (error) {\n    session.close();\n    if (error) {\n        nodeRef.error('SNMP subtree error: ' + error.message);\n        msgRef.payload = { cpu: null };\n    } else {\n        let cores = results.length;\n        let totalLoad = results.reduce((sum, val) => sum + Number(val), 0);\n        let avgLoad = cores > 0 ? parseFloat((totalLoad / cores).toFixed(2)) : null;\n        if (cores === 0) {\n            msgRef.payload = { cpu: null };\n        } else {\n            msgRef.payload = { cpu: { cores: cores, load: avgLoad } };\n        }\n    }\n    nodeRef.send(msgRef);\n});\nreturn null;",
         "outputs": 1,
         "timeout": "10",
-        "x": 1350,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1250,
         "y": 420,
         "wires": [
             [
-                "join_sync"
+                "7a87ed23b27278cb"
             ]
         ]
     },
     {
-        "id": "walk_storage",
+        "id": "282caa9e4c6982b2",
         "type": "function",
         "z": "ims-tab-v5",
         "name": "Walk Storage",
-        "func": "const snmp = global.get('snmp');\nif (!snmp) { msg.payload = []; return msg; }\nconst session = snmp.createSession(msg.host || 'ims-snmpsim', msg.community || 'Netk@', { port: msg.snmp_port || 161, version: snmp.Version2c, retries: 1, timeout: 3000 });\nsession.on('error', function(err) { node.error('SNMP session error: ' + err.message); });\nconst nodeRef = node; const msgRef = msg;\nconst prodMode = (typeof env !== 'undefined' && env.get && env.get('NODE_ENV') === 'production');\nconst results = [];\n\nif (prodMode) {\n    session.subtree('1.3.6.1.2.1.25.2.3.1', 20, function(vbs) {\n        vbs.forEach(function(vb) {\n            if (vb.type !== 129) {\n                var oid = Array.isArray(vb.oid) ? vb.oid.join('.') : String(vb.oid);\n                results.push({oid:oid, value:vb.value, type:vb.type});\n            }\n        });\n    }, function(err) {\n        session.close();\n        msgRef.payload = results;\n        nodeRef.send(msgRef);\n    });\n} else {\n    var oids = [\n    '1.3.6.1.2.1.25.2.3.1.2.1', '1.3.6.1.2.1.25.2.3.1.2.2',\n    '1.3.6.1.2.1.25.2.3.1.3.1', '1.3.6.1.2.1.25.2.3.1.3.2',\n    '1.3.6.1.2.1.25.2.3.1.4.1', '1.3.6.1.2.1.25.2.3.1.4.2',\n    '1.3.6.1.2.1.25.2.3.1.5.1', '1.3.6.1.2.1.25.2.3.1.5.2',\n    '1.3.6.1.2.1.25.2.3.1.6.1', '1.3.6.1.2.1.25.2.3.1.6.2'\n    ];\n    session.get(oids, function(error, varbinds) {\n        session.close();\n        if (!error) varbinds.forEach(function(vb) { if (vb.type !== 129) results.push({oid:vb.oid, value:vb.value, type:vb.type}); });\n        msgRef.payload = results;\n        nodeRef.send(msgRef);\n    });\n}\nreturn null;",
+        "func": "const snmp = global.get('snmp');\nif (!snmp) { msg.payload = { disk: null }; return msg; }\n\nconst session = snmp.createSession(\n    msg.host || '127.0.0.1',\n    msg.community || 'public',\n    { port: msg.snmp_port || 161, version: snmp.Version2c, retries: 0, timeout: 1500 }\n);\n\nsession.on('error', function (err) {\n    node.error('SNMP session error: ' + err.message);\n});\n\nconst nodeRef = node;\nconst msgRef = msg;\nconst baseOid = '1.3.6.1.2.1.25.2.3.1';\nconst storageTemp = {};\n\nsession.subtree(baseOid, 50, function (varbinds) {\n    varbinds.forEach(item => {\n        if (item.type !== 129) {\n            let oidStr = Array.isArray(item.oid) ? item.oid.join('.') : String(item.oid);\n            let suffix = oidStr.replace(baseOid + '.', '');\n            let parts = suffix.split('.');\n            let prop = parts[0];\n            let index = parts[1];\n            \n            if (!storageTemp[index]) {\n                storageTemp[index] = { index: index };\n            }\n            let val = (Buffer.isBuffer(item.value)) ? item.value.toString('utf8') : item.value;\n            if (prop === '2') storageTemp[index].type_oid = val;\n            if (prop === '3') storageTemp[index].name = val;\n            if (prop === '4') storageTemp[index].unit = parseInt(val);\n            if (prop === '5') storageTemp[index].size = parseInt(val);\n            if (prop === '6') storageTemp[index].used = parseInt(val);\n        }\n    });\n}, function (error) {\n    session.close();\n    let result = { ramTotal: 0, ramUsed: 0, ramFree: 0, diskTotal: 0, diskUsed: 0, diskFree: 0, desc: {} };\n    if (error) {\n        nodeRef.error('SNMP subtree error: ' + error.message);\n        msgRef.payload = { disk: null };\n    } else {\n        let hasData = false;\n        Object.values(storageTemp).forEach(device => {\n            if (!device.name || device.size == null) return;\n            hasData = true;\n            let nameUpper = String(device.name).toUpperCase();\n            let isRam = nameUpper.includes('MEMORY') || nameUpper.includes('RAM') || nameUpper.includes('VIRTUAL');\n            let totalBytes = (device.size * (device.unit || 1));\n            let usedBytes = (device.used * (device.unit || 1));\n            \n            if (isRam) {\n                result.ramTotal += totalBytes / (1024 * 1024);\n                result.ramUsed += usedBytes / (1024 * 1024);\n            } else {\n                result.diskTotal += totalBytes / (1024 * 1024 * 1024);\n                result.diskUsed += usedBytes / (1024 * 1024 * 1024);\n                let gb = totalBytes / (1024 * 1024 * 1024);\n                result.desc[device.name] = parseFloat(gb.toFixed(2));\n            }\n        });\n        if (!hasData) {\n            msgRef.payload = { disk: null };\n        } else {\n            result.ramTotal = parseFloat(result.ramTotal.toFixed(2));\n            result.ramUsed = parseFloat(result.ramUsed.toFixed(2));\n            result.ramFree = parseFloat((result.ramTotal - result.ramUsed).toFixed(2));\n            result.diskTotal = parseFloat(result.diskTotal.toFixed(2));\n            result.diskUsed = parseFloat(result.diskUsed.toFixed(2));\n            result.diskFree = parseFloat((result.diskTotal - result.diskUsed).toFixed(2));\n            msgRef.payload = { disk: result };\n        }\n    }\n    nodeRef.send(msgRef);\n});\nreturn null;",
         "outputs": 1,
         "timeout": "10",
-        "x": 1350,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1250,
         "y": 460,
         "wires": [
             [
-                "join_sync"
+                "7a87ed23b27278cb"
             ]
         ]
     },
     {
-        "id": "walk_net_get",
+        "id": "3baa1fd05c800263",
         "type": "function",
         "z": "ims-tab-v5",
         "name": "Walk Network (Dual-Engine)",
-        "func": "const snmp = global.get('snmp');\nif (!snmp) { msg.payload = []; return msg; }\nconst session = snmp.createSession(msg.host || 'ims-snmpsim', msg.community || 'Netk@', {port: msg.snmp_port || 161, version: snmp.Version2c,retries:1,timeout:3000});\nsession.on('error', function(err) { node.error('SNMP session error: ' + err.message); });;\nconst nodeRef = node; const msgRef = msg;\nconst prodMode = (typeof env !== 'undefined' && env.get && env.get('NODE_ENV') === 'production');\nconst results = [];\n\nif (prodMode) {\n    var roots = ['1.3.6.1.2.1.2.2.1', '1.3.6.1.2.1.31.1.1.1'];\n    var done = 0;\n    function onFeed(vbs) {\n        vbs.forEach(function(vb) {\n            if (vb.type !== 129) {\n                var oid = Array.isArray(vb.oid) ? vb.oid.join('.') : String(vb.oid);\n                results.push({oid:oid,value:vb.value,type:vb.type});\n            }\n        });\n    }\n    roots.forEach(function(root) {\n        session.subtree(root, 20, onFeed, function(err) {\n            done++;\n            if (done === roots.length) { session.close(); msgRef.payload = results; nodeRef.send(msgRef); }\n        });\n    });\n} else {\n    var oids = [\n    '1.3.6.1.2.1.1.3.0',\n    '1.3.6.1.2.1.2.2.1.2.1',\n    '1.3.6.1.2.1.2.2.1.2.2',\n    '1.3.6.1.2.1.2.2.1.5.1',\n    '1.3.6.1.2.1.2.2.1.5.2',\n    '1.3.6.1.2.1.31.1.1.1.6.1',\n    '1.3.6.1.2.1.31.1.1.1.6.2',\n    '1.3.6.1.2.1.31.1.1.1.10.1',\n    '1.3.6.1.2.1.31.1.1.1.10.2',\n    '1.3.6.1.2.1.2.2.1.10.1',\n    '1.3.6.1.2.1.2.2.1.10.2',\n    '1.3.6.1.2.1.2.2.1.16.1',\n    '1.3.6.1.2.1.2.2.1.16.2',\n    '1.3.6.1.2.1.2.2.1.14.1',\n    '1.3.6.1.2.1.2.2.1.14.2',\n    '1.3.6.1.2.1.2.2.1.13.1',\n    '1.3.6.1.2.1.2.2.1.13.2',\n    '1.3.6.1.2.1.2.2.1.8.1',\n    '1.3.6.1.2.1.2.2.1.8.2'\n    ];\n    session.get(oids, function(error, varbinds) {\n        session.close();\n        if (!error) varbinds.forEach(function(vb) { if (vb.type !== 129) results.push({oid:vb.oid,value:vb.value,type:vb.type}); });\n        msgRef.payload = results; nodeRef.send(msgRef);\n    });\n}\nreturn null;",
+        "func": "const snmp = global.get('snmp');\nif (!snmp) { msg.payload = { interfaces: [] }; return msg; }\n\nconst session = snmp.createSession(\n    msg.host || '127.0.0.1',\n    msg.community || 'public',\n    { port: msg.snmp_port || 161, version: snmp.Version2c, retries: 0, timeout: 1500 }\n);\n\nsession.on('error', function (err) {\n    node.error('SNMP session error: ' + err.message);\n});\n\nconst nodeRef = node;\nconst msgRef = msg;\n\nconst baseOid = '1.3.6.1.2.1.25.2.1';\nconst netTemp = {};\n\nsession.subtree(baseOid, 50, function (varbinds) {\n    varbinds.forEach(item => {\n        if (item.type !== 129) {\n            let oidStr = Array.isArray(item.oid) ? item.oid.join('.') : String(item.oid);\n            let suffix = oidStr.replace(baseOid + '.', '');\n            let parts = suffix.split('.');\n            let prop = parts[0];\n            let index = parts[1];\n\n            if (!netTemp[index]) {\n                netTemp[index] = { index: index };\n            }\n            let val = item.value;\n            if (Buffer.isBuffer(val)) {\n                if (prop === '6') {\n                    let hex = val.toString('hex');\n                    val = hex.match(/.{1,2}/g) ? hex.match(/.{1,2}/g).join(':').toUpperCase() : \"Unknown\";\n                } else {\n                    val = val.toString('utf8');\n                }\n            }\n            if (prop === '2') netTemp[index].name = val;\n            if (prop === '5') netTemp[index].speed = Number(val);\n            if (prop === '6') netTemp[index].mac = val;\n            if (prop === '8') netTemp[index].status = Number(val);\n            if (prop === '10') netTemp[index].rx = Number(val);\n            if (prop === '16') netTemp[index].tx = Number(val);\n        }\n    });\n}, function (error) {\n    session.close();\n\n    if (error) {\n        nodeRef.error('SNMP subtree error: ' + error.message);\n        msgRef.payload = { interfaces: [] };\n    } else {\n        let interfaces = [];\n        Object.values(netTemp).forEach(device => {\n            if (!device.name) return;\n            let nameUpper = String(device.name).toUpperCase();\n\n            // ข้าม Loopback และ Virtual\n            if (nameUpper.includes('LOOPBACK') || nameUpper.includes('VMWARE') || nameUpper.includes('VIRTUAL')) return;\n\n            let statusStr = (device.status === 1) ? \"ON\" : \"OFF\";\n            let speedMbps = device.speed ? (device.speed / 1000000) : 0;\n            let rxMB = device.rx ? parseFloat((device.rx / (1024 * 1024)).toFixed(2)) : 0;\n            let txMB = device.tx ? parseFloat((device.tx / (1024 * 1024)).toFixed(2)) : 0;\n\n            interfaces.push({\n                name: device.name,\n                status: statusStr,\n                received_MB: rxMB,\n                sent_MB: txMB,\n                speed_Mbps: speedMbps,\n                mac_address: device.mac || \"Unknown\"\n            });\n        });\n\n        msgRef.payload = { interfaces: interfaces };\n    }\n\n    nodeRef.send(msgRef);\n});\n\nreturn null;",
         "outputs": 1,
         "timeout": "10",
-        "x": 1300,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1200,
         "y": 500,
         "wires": [
             [
-                "join_sync"
+                "7a87ed23b27278cb"
             ]
         ]
     },
     {
-        "id": "walk_temp",
+        "id": "99162bb1b9195b05",
         "type": "function",
         "z": "ims-tab-v5",
         "name": "Walk Temperature",
-        "func": "const snmp = global.get('snmp');\nif (!snmp) { msg.payload = []; return msg; }\nconst oids = [\n    '1.3.6.1.4.1.2021.13.16.2.1.7.0',\n    '1.3.6.1.4.1.2021.13.16.2.1.7.1'\n];\nconst session = snmp.createSession(msg.host || 'ims-snmpsim', msg.community || 'Netk@', {port: msg.snmp_port || 161, version: snmp.Version2c,retries:1,timeout:3000});\nsession.on('error', function(err) { node.error('SNMP session error: ' + err.message); });;\nconst nodeRef = node; const msgRef = msg;\nsession.get(oids, function(error, varbinds) {\n    session.close();\n    if (error) { msgRef.payload = []; nodeRef.send(msgRef); return; }\n    const results = [];\n    varbinds.forEach(function(vb) { if (vb.type !== 129) results.push({oid:vb.oid,value:vb.value,type:vb.type}); });\n    msgRef.payload = results;\n    nodeRef.send(msgRef);\n});\nreturn null;",
+        "func": "const snmp = global.get('snmp');\nif (!snmp) { msg.payload = { temp: null }; return msg; }\n\nconst session = snmp.createSession(\n    msg.host || '127.0.0.1',\n    msg.community || 'public',\n    { port: msg.snmp_port || 161, version: snmp.Version2c, retries: 0, timeout: 1500 }\n);\n\nsession.on('error', function (err) {\n    node.error('SNMP session error: ' + err.message);\n});\n\nconst nodeRef = node;\nconst msgRef = msg;\nconst oids = [\n    '1.3.6.1.4.1.2021.13.16.2.1.7.0',\n    '1.3.6.1.4.1.2021.13.16.2.1.7.1'\n];\n\nsession.get(oids, function (error, varbinds) {\n    session.close();\n    if (error) {\n        nodeRef.error('SNMP get error: ' + error.message);\n        msgRef.payload = { temp: null };\n    } else {\n        let maxTemp = -999;\n        varbinds.forEach(item => {\n            if (item.type !== 128 && item.type !== 129 && item.type !== 130) {\n                let val = Buffer.isBuffer(item.value) ? item.value.toString('utf8') : item.value;\n                val = Number(val);\n                if (val > maxTemp) maxTemp = val;\n            }\n        });\n        if (maxTemp === -999) {\n            msgRef.payload = { temp: null };\n        } else {\n            if (maxTemp > 1000) maxTemp = maxTemp / 1000;\n            msgRef.payload = { temp: maxTemp };\n        }\n    }\n    nodeRef.send(msgRef);\n});\nreturn null;",
         "outputs": 1,
         "timeout": "10",
-        "x": 1330,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1230,
         "y": 540,
         "wires": [
             [
-                "join_sync"
+                "7a87ed23b27278cb"
             ]
         ]
     },
     {
-        "id": "catch_walker",
+        "id": "04f3540f05fa6ec8",
         "type": "catch",
         "z": "ims-tab-v5",
         "name": "Catch Walker Error",
@@ -185,47 +198,56 @@
             "walk_ldi"
         ],
         "uncaught": false,
-        "x": 770,
-        "y": 720,
+        "x": 810,
+        "y": 620,
         "wires": [
             [
-                "bypass_error"
+                "00595ec98b745e60"
             ]
         ]
     },
     {
-        "id": "bypass_error",
+        "id": "00595ec98b745e60",
         "type": "function",
         "z": "ims-tab-v5",
         "name": "Bypass Empty",
         "func": "msg.payload = [];\nreturn msg;",
         "outputs": 1,
-        "x": 1340,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1240,
         "y": 620,
         "wires": [
             [
-                "join_sync"
+                "7a87ed23b27278cb"
             ]
         ]
     },
     {
-        "id": "walk_ldi",
+        "id": "3a31fd375e9ea2b4",
         "type": "function",
         "z": "ims-tab-v5",
         "name": "Walk LDI (All 8 OIDs)",
-        "func": "const snmp = global.get('snmp');\nif (!snmp) { msg.payload = []; return msg; }\nconst oids = [\n    '1.3.6.1.4.1.9999.1.1.0',\n    '1.3.6.1.4.1.9999.1.2.0',\n    '1.3.6.1.4.1.9999.1.3.0',\n    '1.3.6.1.4.1.9999.1.4.2',\n    '1.3.6.1.4.1.9999.1.4.5',\n    '1.3.6.1.4.1.9999.1.5.1',\n    '1.3.6.1.4.1.9999.1.6.1',\n    '1.3.6.1.4.1.9999.1.7.1',\n    '1.3.6.1.4.1.9999.2.1.0',\n    '1.3.6.1.4.1.9999.2.2.0'\n];\nconst session = snmp.createSession(msg.host || 'ims-snmpsim', msg.community || 'Netk@', {port: msg.snmp_port || 161, version: snmp.Version2c,retries:1,timeout:3000});\nsession.on('error', function(err) { node.error('SNMP session error: ' + err.message); });;\nconst nodeRef = node; const msgRef = msg;\nsession.get(oids, function(error, varbinds) {\n    session.close();\n    if (error) { msgRef.payload = []; nodeRef.send(msgRef); return; }\n    const results = [];\n    varbinds.forEach(function(vb) { if (vb.type !== 129) results.push({oid:vb.oid,value:vb.value,type:vb.type}); });\n    msgRef.payload = results;\n    nodeRef.send(msgRef);\n});\nreturn null;",
+        "func": "const snmp = global.get('snmp');\nif (!snmp) { msg.payload = { ldi: null }; return msg; }\n\nconst session = snmp.createSession(\n    msg.host || '127.0.0.1',\n    msg.community || 'public',\n    { port: msg.snmp_port || 161, version: snmp.Version2c, retries: 0, timeout: 1500 }\n);\n\nsession.on('error', function (err) {\n    node.error('SNMP session error: ' + err.message);\n});\n\nconst nodeRef = node;\nconst msgRef = msg;\nconst oids = [\n    '1.3.6.1.4.1.9999.1.1.0',\n    '1.3.6.1.4.1.9999.1.2.0',\n    '1.3.6.1.4.1.9999.1.3.0',\n    '1.3.6.1.4.1.9999.1.4.2',\n    '1.3.6.1.4.1.9999.1.4.5',\n    '1.3.6.1.4.1.9999.1.5.1',\n    '1.3.6.1.4.1.9999.1.6.1',\n    '1.3.6.1.4.1.9999.1.7.1',\n    '1.3.6.1.4.1.9999.2.1.0',\n    '1.3.6.1.4.1.9999.2.2.0'\n];\n\nsession.get(oids, function (error, varbinds) {\n    session.close();\n    let ldi = { throughput: 0, temperature: 0, humidity: 0, pressure: 0, joule_effect: 0, power_watt: 0, vibration: 0, wifi_rssi: 0, wifi_snr: 0 };\n    if (error) {\n        nodeRef.error('SNMP get error: ' + error.message);\n        msgRef.payload = { ldi: null };\n    } else {\n        let hasData = false;\n        varbinds.forEach(item => {\n            if (item.type !== 128 && item.type !== 129 && item.type !== 130) {\n                hasData = true;\n                let oidString = Array.isArray(item.oid) ? item.oid.join('.') : String(item.oid);\n                let val = Buffer.isBuffer(item.value) ? item.value.toString('utf8') : item.value;\n                val = Number(val);\n                if (oidString.includes('.9999.1.1.0')) ldi.throughput = val;\n                if (oidString.includes('.9999.1.2.0')) ldi.temperature = val;\n                if (oidString.includes('.9999.1.3.0')) ldi.humidity = val;\n                if (oidString.includes('.9999.1.4.2')) ldi.pressure = val;\n                if (oidString.includes('.9999.1.4.5')) ldi.joule_effect = val;\n                if (oidString.includes('.9999.1.5.1')) ldi.power_watt = val;\n                if (oidString.includes('.9999.1.6.1')) ldi.vibration = val;\n                if (oidString.includes('.9999.2.1.0')) ldi.wifi_rssi = val;\n                if (oidString.includes('.9999.2.2.0')) ldi.wifi_snr = val;\n            }\n        });\n        if (!hasData) {\n            msgRef.payload = { ldi: null };\n        } else {\n            msgRef.payload = { ldi: ldi };\n        }\n    }\n    nodeRef.send(msgRef);\n});\nreturn null;",
         "outputs": 1,
         "timeout": "10",
-        "x": 1320,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1220,
         "y": 580,
         "wires": [
             [
-                "join_sync"
+                "7a87ed23b27278cb"
             ]
         ]
     },
     {
-        "id": "join_sync",
+        "id": "7a87ed23b27278cb",
         "type": "join",
         "z": "ims-tab-v5",
         "name": "Barrier Sync (5)",
@@ -236,48 +258,38 @@
         "key": "topic",
         "joiner": "\\n",
         "joinerType": "str",
+        "useparts": true,
         "accumulate": false,
         "timeout": "15",
         "count": "5",
         "reduceRight": false,
-        "x": 1570,
+        "reduceExp": "",
+        "reduceInit": "",
+        "reduceInitType": "",
+        "reduceFixup": "",
+        "x": 1470,
         "y": 520,
         "wires": [
             [
-                "sre_parser"
+                "697d8dfd1a168220"
             ]
         ]
     },
     {
-        "id": "sre_parser",
-        "type": "function",
-        "z": "ims-tab-v5",
-        "name": "Bulletproof AIOps Parser v7",
-        "func": "try {\nif (!msg.payload || !Array.isArray(msg.payload)) return null;\nconst flatData = msg.payload.flat();\nmsg.payload = null;\n\nlet cpuTotal = 0, coreCount = 0;\nlet ramTotalMB = 0, ramUsedMB = 0, diskTotalGB = 0, diskUsedGB = 0;\nlet netRxErrors = 0, netRxDrops = 0, netIfStatus = 1, maxTemp = 0;\nlet ldiThru = 0, ldiTemp = 0, ldiHumid = 0, ldiPE2 = 0, ldiPE5 = 0, ldiJE = 0, ldiPower = 0, ldiVibr = 0;\nlet wifiRssi = 0, wifiSnr = 0;\nconst disks = {}, ifaces = {};\nlet diskDesc = {};\n\nflatData.forEach(function(item) {\n    if (!item || !item.oid) return;\n    const oid = String(item.oid);\n    const val = item.value;\n\n    if (oid.startsWith('1.3.6.1.2.1.25.3.3.1.2.')) {\n        const v = Number(val); if (Number.isFinite(v)) { cpuTotal += v; coreCount++; } return;\n    }\n    if (oid.startsWith('1.3.6.1.4.1.2021.13.16.2.1.7.')) {\n        const t = Number(val); if (Number.isFinite(t) && t > maxTemp) maxTemp = t; return;\n    }\n\n    const diskMatch = oid.match(/1\\.3\\.6\\.1\\.2\\.1\\.25\\.2\\.3\\.1\\.(\\d+)\\.(\\d+)$/);\n    if (diskMatch) {\n        const mt = diskMatch[1], idx = diskMatch[2];\n        if (!disks[idx]) disks[idx] = { type: '', desc: '', size: 0, used: 0, au: 0 };\n        if (mt === '2') disks[idx].type = String(val);\n        if (mt === '3') disks[idx].desc = String(val);\n        if (mt === '4') disks[idx].au = Number(val) || 0;\n        if (mt === '5') disks[idx].size = Number(val) || 0;\n        if (mt === '6') disks[idx].used = Number(val) || 0;\n        return;\n    }\n\n    const ifMatch = oid.match(/1\\.3\\.6\\.1\\.2\\.1\\.(2\\.2\\.1|31\\.1\\.1\\.1)\\.\\d+\\.(\\d+)$/);\n    if (ifMatch) {\n        const table = ifMatch[1], idx = ifMatch[2];\n        if (!ifaces[idx]) ifaces[idx] = { name: 'port_' + idx, rx64: 0, tx64: 0, rx32: 0, tx32: 0, err: 0, drop: 0, status: 1 };\n        if (table === '2.2.1') {\n            if (oid.endsWith('.2.' + idx)) ifaces[idx].name = String(val);\n            if (oid.endsWith('.8.' + idx)) ifaces[idx].status = Number(val);\n            if (oid.endsWith('.10.' + idx)) { ifaces[idx].rx32 = Number(val); }\n            if (oid.endsWith('.16.' + idx)) ifaces[idx].tx32 = Number(val);\n            if (oid.endsWith('.14.' + idx)) { ifaces[idx].err += Number(val); netRxErrors += Number(val); }\n            if (oid.endsWith('.13.' + idx)) { ifaces[idx].drop += Number(val); netRxDrops += Number(val); }\n        } else if (table === '31.1.1.1') {\n            if (oid.endsWith('.6.' + idx)) ifaces[idx].rx64 = Number(val);\n            if (oid.endsWith('.10.' + idx)) ifaces[idx].tx64 = Number(val);\n        }\n        return;\n    }\n\n    if (oid === '1.3.6.1.4.1.9999.1.1.0') { ldiThru = (Number(val) || 0); return; }\n    if (oid === '1.3.6.1.4.1.9999.1.2.0') { ldiTemp = Number(((Number(val) || 0) / 100).toFixed(2)); return; }\n    if (oid === '1.3.6.1.4.1.9999.1.3.0') { ldiHumid = Number(((Number(val) || 0) / 100).toFixed(2)); return; }\n    if (oid === '1.3.6.1.4.1.9999.1.4.2') { ldiPE2 = Number(((Number(val) || 0) / 100).toFixed(2)); return; }\n    if (oid === '1.3.6.1.4.1.9999.1.4.5') { ldiPE5 = Number(((Number(val) || 0) / 100).toFixed(2)); return; }\n    if (oid === '1.3.6.1.4.1.9999.1.5.1') { ldiJE = Number(((Number(val) || 0) / 100).toFixed(2)); return; }\n    if (oid === '1.3.6.1.4.1.9999.1.6.1') { ldiPower = (Number(val) || 0); return; }\n    if (oid === '1.3.6.1.4.1.9999.1.7.1') { ldiVibr = Number(((Number(val) || 0) / 100).toFixed(2)); return; }\n    if (oid === '1.3.6.1.4.1.9999.2.1.0') { wifiRssi = Number(val) || 0; return; }\n    if (oid === '1.3.6.1.4.1.9999.2.2.0') { wifiSnr = Number(val) || 0; return; }\n});\n\nfor (const idx in disks) {\n    const d = disks[idx];\n    if (!d.au || !d.size) continue;\n    const total = d.size * d.au, used = d.used * d.au;\n    if (/25\\.2\\.1\\.2/.test(d.type)) { ramTotalMB += total / 1048576; ramUsedMB += used / 1048576; }\n    if (/25\\.2\\.1\\.4/.test(d.type)) { diskTotalGB += total / 1073741824; diskUsedGB += used / 1073741824; }\n        if (d.desc) diskDesc[idx] = d.desc;\n}\n\nconst mid = (msg.topic || 'UNKNOWN').replace(/'/g, \"''\");\nif (!mid) return null;\nconst now = Date.now();\nconst prevIfaces = JSON.parse(JSON.stringify(flow.get('ifaces_prev_' + mid) || {}));\nconst prevTs = flow.get('ts_prev_' + mid) || (now - 10000);\nconst elapsedSec = (now - prevTs) / 1000;\nconst finalIfaces = {};\nlet rxAll = 0, txAll = 0;\n\nfor (const idx in ifaces) {\n    const curr = ifaces[idx];\n    const prev = prevIfaces[idx] || { rx64: 0, tx64: 0, rx32: 0, tx32: 0 };\n    let rxMbps = 0, txMbps = 0;\n    if (curr.status === 1 && elapsedSec > 0) {\n        const rx = curr.rx64 || curr.rx32;\n        const tx = curr.tx64 || curr.tx32;\n        const pRx = prev.rx64 || prev.rx32;\n        const pTx = prev.tx64 || prev.tx32;\n        let rDiff = rx - pRx;\n        let tDiff = tx - pTx;\n        if (rDiff < 0) rDiff += (Math.abs(rDiff) > 2147483648) ? 18446744073709552000 : 4294967296;\n        if (tDiff < 0) tDiff += (Math.abs(tDiff) > 2147483648) ? 18446744073709552000 : 4294967296;\n        rxMbps = Number(((rDiff * 8) / (elapsedSec * 1000000)).toFixed(2));\n        txMbps = Number(((tDiff * 8) / (elapsedSec * 1000000)).toFixed(2));\n        if (rxMbps > 40000 || rxMbps < 0) rxMbps = 0;\n        if (txMbps > 40000 || txMbps < 0) txMbps = 0;\n    }\n    finalIfaces[curr.name] = { rx_mbps: rxMbps, tx_mbps: txMbps, errors: curr.err, drops: curr.drop, status: curr.status === 1 ? 'UP' : 'DOWN' };\n    rxAll += rxMbps; txAll += txMbps;\n}\n\nflow.set('ifaces_prev_' + mid, JSON.parse(JSON.stringify(ifaces)));\nflow.set('ts_prev_' + mid, now);\n\nconst ts = new Date().toISOString();\nmsg.query = 'INSERT INTO public.machine_telemetry (\"time\",machine_id,cpu_cores,cpu_load_percent,ram_total_mb,ram_used_mb,ram_free_mb,disk_total_gb,disk_used_gb,disk_free_gb,net_rx_bytes,net_tx_bytes,net_rx_errors,net_rx_drops,net_if_status,temp_c,rx_mbps,tx_mbps,interface_metrics,ldi_throughput,ldi_humidity,ldi_pe,ldi_je,ldi_power,ldi_vibration,ldi_uptime,ldi_temp,disk_description,wifi_rssi,wifi_snr) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19::jsonb,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30)';\nmsg.params = [\n    ts, mid, coreCount,\n    coreCount > 0 ? Number((cpuTotal / coreCount).toFixed(2)) : 0,\n    Number(ramTotalMB.toFixed(2)), Number(ramUsedMB.toFixed(2)), Number((ramTotalMB - ramUsedMB).toFixed(2)),\n    Number(diskTotalGB.toFixed(2)), Number(diskUsedGB.toFixed(2)), Number((diskTotalGB - diskUsedGB).toFixed(2)),\n    0, 0, netRxErrors, netRxDrops, netIfStatus, maxTemp,\n    Number(rxAll.toFixed(2)), Number(txAll.toFixed(2)),\n    JSON.stringify(finalIfaces),\n    ldiThru, ldiHumid, Math.round((ldiPE2 + ldiPE5) / 2), ldiJE, ldiPower, ldiVibr, 0,\n    ldiTemp, JSON.stringify(diskDesc), wifiRssi, wifiSnr\n];\n\nmsg.payload = { machine_id: mid, ts: ts, rxMbps: rxAll, errors: netRxErrors, temp: maxTemp, ldiThru: ldiThru, wifiRssi: wifiRssi, wifiSnr: wifiSnr };\nreturn msg;\n} catch (err) { node.error('SRE Parser Crash: ' + err.message, msg); return null; }",
-        "outputs": 1,
-        "timeout": "15",
-        "noerr": 0,
-        "x": 1800,
-        "y": 520,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "global_catch",
+        "id": "93cd963bc1712c95",
         "type": "catch",
         "z": "ims-tab-v5",
         "name": "Global Catch",
         "scope": null,
         "uncaught": false,
-        "x": 790,
-        "y": 760,
+        "x": 830,
+        "y": 660,
         "wires": [
             []
         ]
     },
     {
-        "id": "inject_registry",
+        "id": "f8b891b11bff42fc",
         "type": "inject",
         "z": "ims-tab-v5",
         "name": "Refresh Device Registry (5min)",
@@ -288,21 +300,21 @@
         ],
         "repeat": "300",
         "crontab": "",
-        "once": true,
+        "once": false,
         "onceDelay": 1,
         "topic": "",
         "payload": "",
         "payloadType": "date",
-        "x": 330,
-        "y": 240,
+        "x": 200,
+        "y": 360,
         "wires": [
             [
-                "device_registry"
+                "ad15e8c180c4b9d3"
             ]
         ]
     },
     {
-        "id": "device_registry",
+        "id": "ad15e8c180c4b9d3",
         "type": "function",
         "z": "ims-tab-v5",
         "name": "Load Device Registry",
@@ -313,16 +325,16 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 640,
-        "y": 240,
+        "x": 520,
+        "y": 360,
         "wires": []
     },
     {
-        "id": "resolve_device",
+        "id": "a2d8dcc11923e637",
         "type": "function",
         "z": "ims-tab-v5",
         "name": "Resolve Device",
-        "func": "const registry = global.get('deviceRegistry') || {};\nconst mid = msg.machine_id || msg.topic || '';\nconst device = registry[mid];\n console.log(mid);\nif (!device) {\n    // Fallback to default for simulator\n    msg.host = msg.host || 'ims-snmpsim';\n    msg.community = msg.community || 'Netk@';\n    msg.snmp_port = msg.snmp_port || 161;\n} else {\n    msg.host = device.hostname;\n    msg.community = device.community;\n    msg.snmp_port = device.snmp_port;\n}\nmsg.machine_id = mid;\nmsg.topic = mid;\nreturn msg;",
+        "func": "const registry = global.get('deviceRegistry') || {};\nconst mid = msg.machine_id || msg.topic || '';\nconst device = registry[mid];\n //console.log(mid);\nif (!device) {\n    // Fallback to default for simulator\n    msg.host = msg.host || 'ims-snmpsim';\n    msg.community = msg.community || 'Netk@';\n    msg.snmp_port = msg.snmp_port || 161;\n} else {\n    msg.host = device.hostname;\n    msg.community = device.community;\n    msg.snmp_port = device.snmp_port;\n}\nmsg.machine_id = mid;\nmsg.topic = mid;\nreturn msg;",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
@@ -330,24 +342,80 @@
         "finalize": "",
         "libs": [],
         "x": 600,
-        "y": 440,
+        "y": 500,
         "wires": [
             [
-                "fork_5_ways"
+                "d6ffcaf2f7033983"
             ]
         ]
     },
     {
-        "id": "ims-discovery-tab",
-        "type": "tab",
-        "label": "Auto Discovery",
-        "disabled": false,
-        "info": "This flow scans a subnet for SNMP devices and automatically registers them into the database."
+        "id": "697d8dfd1a168220",
+        "type": "function",
+        "z": "ims-tab-v5",
+        "name": "Bulletproof AIOps Parser v8",
+        "func": "const BATCH_INTERVAL_SEC = 30;\nconst BUFFER_MAX = 600;\n\ntry {\n    if (!msg.payload || !Array.isArray(msg.payload)) return null;\n    const deviceId = String(msg.topic || '').replace(/'/g, \"''\").trim();\n    if (!deviceId) return null;\n\n    // ── Phase 1 & 2: ประมวลผลข้อมูล ──────────────────────────────────────────\n    const parsed = Object.assign({}, ...msg.payload);\n\n    // ── Phase 3: เก็บลง Buffer ──────────────────────────────────────────────\n    const now = Date.now();\n    const bufKey = `batch_buf_${deviceId}`;\n    const buffer = flow.get(bufKey) || { sys: [], net: [], ldi: [], lastFlush: now };\n    const currentTime = new Date().toISOString();\n\n    // System Metrics - Check if ALL are null, if so skip inserting sys_metrics\n    if (parsed.cpu || parsed.disk || parsed.temp !== null) {\n        buffer.sys.push({\n            time: currentTime, \n            device_id: deviceId,\n            cpu_cores: parsed.cpu ? parsed.cpu.cores : null,\n            cpu_load_percent: parsed.cpu ? parsed.cpu.load : null,\n            ram_total_mb: parsed.disk ? parsed.disk.ramTotal : null,\n            ram_used_mb: parsed.disk ? parsed.disk.ramUsed : null,\n            ram_free_mb: parsed.disk ? parsed.disk.ramFree : null,\n            disk_total_gb: parsed.disk ? parsed.disk.diskTotal : null,\n            disk_used_gb: parsed.disk ? parsed.disk.diskUsed : null,\n            disk_free_gb: parsed.disk ? parsed.disk.diskFree : null,\n            disk_description: parsed.disk ? JSON.stringify(parsed.disk.desc || {}) : '{}',\n            temp_c: parsed.temp !== null ? parsed.temp : null\n        });\n    }\n\n    // Network Metrics (Dynamic Interfaces)\n    if (parsed.interfaces && Array.isArray(parsed.interfaces)) {\n        parsed.interfaces.forEach(iface => {\n            buffer.net.push({\n                time: currentTime, \n                device_id: deviceId,\n                iface_name: iface.name,\n                rx_mbps: iface.received_MB || 0,\n                tx_mbps: iface.sent_MB || 0,\n                rx_errors: 0,\n                tx_errors: 0,\n                rx_drops: 0,\n                tx_drops: 0, \n                status: iface.status === 'ON' ? 'UP' : 'DOWN'\n            });\n        });\n    }\n\n    // LDI Metrics\n    if (parsed.ldi) {\n        buffer.ldi.push({\n            time: currentTime, \n            device_id: deviceId,\n            throughput: parsed.ldi.throughput || 0,\n            temperature: parsed.ldi.temperature || 0,\n            humidity: parsed.ldi.humidity || 0,\n            pressure: parsed.ldi.pressure || 0,\n            joule_effect: parsed.ldi.joule_effect || 0,\n            power_watt: parsed.ldi.power_watt || 0,\n            vibration: parsed.ldi.vibration || 0,\n            wifi_rssi: parsed.ldi.wifi_rssi || 0,\n            wifi_snr: parsed.ldi.wifi_snr || 0\n        });\n    }\n\n    // ── Phase 4: ตรวจสอบเงื่อนไขการส่งข้อมูล (Flush) ────────────────────────\n    const elapsedSec = (now - buffer.lastFlush) / 1000;\n    // Condition to flush if buffer has items\n    const totalItems = buffer.sys.length + buffer.net.length + buffer.ldi.length;\n    \n    if (elapsedSec < BATCH_INTERVAL_SEC && buffer.sys.length < BUFFER_MAX) {\n        flow.set(bufKey, buffer);\n        return null;\n    }\n\n    // ── Phase 5: สั่งรัน SQL แบบคู่ขนาน (Concurrent INSERT) ─────────────────\n    const pool = global.get('pgPool');\n    if (!pool) {\n        node.error('pgPool is missing in global context!');\n        return null;\n    }\n\n    const queries = [\n        buildQuery('public.sys_metrics', ['\"time\"', 'device_id', 'cpu_cores', 'cpu_load_percent', 'ram_total_mb', 'ram_used_mb', 'ram_free_mb', 'disk_total_gb', 'disk_used_gb', 'disk_free_gb', 'disk_description', 'temp_c'], buffer.sys),\n        buildQuery('public.net_metrics', ['\"time\"', 'device_id', 'iface_name', 'rx_mbps', 'tx_mbps', 'rx_errors', 'tx_errors', 'rx_drops', 'tx_drops', 'status'], buffer.net),\n        buildQuery('public.ldi_metrics', ['\"time\"', 'device_id', 'throughput', 'temperature', 'humidity', 'pressure', 'joule_effect', 'power_watt', 'vibration', 'wifi_rssi', 'wifi_snr'], buffer.ldi)\n    ].filter(q => q !== null);\n\n    if (queries.length === 0) {\n        flow.set(bufKey, { sys: [], net: [], ldi: [], lastFlush: Date.now() });\n        return null;\n    }\n\n    Promise.all(queries.map(q => pool.query(q.sql, q.params)))\n        .then(() => {\n            node.log(`Batch INSERT OK: Sys=${buffer.sys.length}, Net=${buffer.net.length}, LDI=${buffer.ldi.length}`);\n            flow.set(bufKey, { sys: [], net: [], ldi: [], lastFlush: Date.now() });\n        })\n        .catch(err => {\n            node.error(`Batch INSERT Failed: ${err.message}`);\n            buffer.lastFlush = Date.now();\n            flow.set(bufKey, buffer);\n        });\n\n    return null;\n\n} catch (err) {\n    node.error(`Parser Crash: ${err.message}`, msg);\n    return null;\n}\n\nfunction buildQuery(tableName, columns, rows) {\n    if (!rows || rows.length === 0) return null;\n    const params = [];\n    const placeholders = rows.map((row, rowIndex) => {\n        const tokens = columns.map((col, colIndex) => {\n            const key = col.replace(/\"/g, '');\n            let val = row[key];\n            if (val === null) {\n                return 'NULL';\n            }\n            params.push(val);\n            // param index must match the actual number of pushed params\n            const paramIndex = params.length;\n            return key === 'disk_description' ? `$${paramIndex}::jsonb` : `$${paramIndex}`;\n        });\n        return `(${tokens.join(',')})`;\n    }).join(',');\n\n    return {\n        sql: `INSERT INTO ${tableName} (${columns.join(',')}) VALUES ${placeholders}`,\n        params\n    };\n}",
+        "outputs": 1,
+        "timeout": "15",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1720,
+        "y": 520,
+        "wires": [
+            []
+        ]
     },
     {
-        "id": "discover_inject",
+        "id": "51bf9aba2600cdd5",
         "type": "inject",
-        "z": "ims-discovery-tab",
+        "z": "ims-tab-v5",
+        "name": "Poll All Devices (10s)",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "10",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 6,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 160,
+        "y": 500,
+        "wires": [
+            [
+                "51698fbb631b9a39"
+            ]
+        ]
+    },
+    {
+        "id": "51698fbb631b9a39",
+        "type": "function",
+        "z": "ims-tab-v5",
+        "name": "Split Target Devices",
+        "func": "const registry = global.get('deviceRegistry') || {};\n//console.log(registry);\n\nconst devices = Object.keys(registry).map(id => {\n    return {\n        machine_id: id,\n        host: registry[id].hostname,\n        community: registry[id].community,\n        snmp_port: registry[id].snmp_port\n    };\n});\n\nif (devices.length === 0) {\n    // Fallback if registry empty\n    devices.push({ machine_id: 'ERP-MASTER-UBUNTU' }, { machine_id: 'ERP-MASTER-WINDOWS' });\n}\n\nreturn [devices];",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 410,
+        "y": 500,
+        "wires": [
+            [
+                "a2d8dcc11923e637"
+            ]
+        ]
+    },
+    {
+        "id": "b267a17f03e0bf2c",
+        "type": "inject",
+        "z": "ims-tab-v5",
         "name": "Scan Subnet (Manual)",
         "props": [
             {
@@ -365,51 +433,8 @@
         "y": 140,
         "wires": [
             [
-                "discover_generate"
+                "b408fd2565f6307e"
             ]
-        ]
-    },
-    {
-        "id": "discover_generate",
-        "type": "function",
-        "z": "ims-discovery-tab",
-        "name": "Generate 254 IPs",
-        "func": "const input = msg.subnet || '192.168.1.';\nconst msgs = [];\n\n// ถ้าระบุเป็นวงแลน (ลงท้ายด้วยจุด) ให้สร้าง 254 IPs\nif (input.endsWith('.')) {\n    for (let i = 1; i <= 254; i++) {\n        msgs.push({ ip: input + i });\n    }\n} else {\n    // ถ้าระบุชื่อตรงๆ ให้ใช้แค่ชื่อเดียวเลย\n    msgs.push({ ip: input });\n}\n\nreturn [msgs];",
-        "outputs": 1,
-        "x": 410,
-        "y": 140,
-        "wires": [
-            [
-                "discover_probe"
-            ]
-        ]
-    },
-    {
-        "id": "discover_probe",
-        "type": "function",
-        "z": "ims-discovery-tab",
-        "name": "SNMP Probe (sysName)",
-        "func": "const snmp = global.get('snmp');\nif (!snmp) return null;\n\nconst community = (msg.ip === 'ims-snmpsim') ? 'Netk@' : 'public';\n\nconst session = snmp.createSession(msg.ip, community, { \n    port: 161, \n    version: snmp.Version2c, \n    retries: 1, \n    timeout: 2000 \n});\n\nconst nodeRef = node;\nconst msgRef = msg;\nmsgRef.community = community;\n\nsession.get(['1.3.6.1.2.1.1.5.0'], function (error, varbinds) {\n    if (error) {\n        nodeRef.warn(\"Discovery failed for \" + msgRef.ip + \": \" + error.message);\n    } else {\n        // ถ้ายิงแล้วตอบกลับมา (ถึงจะไม่เจอ sysName ก็ตาม) แปลว่าเครื่องนี้มีตัวตนอยู่จริง!\n        if (varbinds.length > 0 && !snmp.isVarbindError(varbinds[0])) {\n            let val = varbinds[0].value;\n            msgRef.sysName = Buffer.isBuffer(val) ? val.toString('utf8') : String(val);\n        } else {\n            // Simulator ไม่มีค่า sysName ให้ตอบกลับมา เลยเข้าเคสนี้แทน\n            msgRef.sysName = \"AUTO-\" + msgRef.ip; \n        }\n        nodeRef.send(msgRef);\n    }\n    session.close();\n});\n\nreturn null;",
-        "outputs": 1,
-        "x": 650,
-        "y": 140,
-        "wires": [
-            [
-                "discover_register"
-            ]
-        ]
-    },
-    {
-        "id": "discover_register",
-        "type": "function",
-        "z": "ims-discovery-tab",
-        "name": "Register to Database",
-        "func": "const pool = global.get('pgPool');\nif (!pool) return null;\n\nconst machineId = (msg.sysName && msg.sysName.trim() !== '') ? msg.sysName.trim() : 'AUTO-' + msg.ip;\nconst hostname = msg.ip;\nconst community = msg.community || 'public';\n\nconst sql = `\n    INSERT INTO public.machines (machine_id, hostname, community, snmp_port, enabled)\n    VALUES ($1, $2, $3, 161, true)\n    ON CONFLICT (machine_id) DO NOTHING\n`;\n\npool.query(sql, [machineId, hostname, community])\n    .then(result => {\n        if (result.rowCount > 0) {\n            node.warn(`✅ Auto-Registered new device: ${machineId} (${hostname})`);\n        } else {\n            node.warn(`ℹ️ Device already exists: ${machineId}`);\n        }\n    })\n    .catch(err => {\n        node.error(`Failed to register ${hostname}: ${err.message}`);\n    });\n\nreturn null;",
-        "outputs": 1,
-        "x": 880,
-        "y": 140,
-        "wires": [
-            []
         ]
     }
 ]
