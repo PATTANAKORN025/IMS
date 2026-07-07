@@ -489,5 +489,54 @@
                 "b408fd2565f6307e"
             ]
         ]
+    },
+    {
+        "id": "7d26e065645e3f55",
+        "type": "http in",
+        "z": "ims-tab-v5",
+        "name": "K6 Stress Endpoint",
+        "url": "/k6-inject",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 170,
+        "y": 660,
+        "wires": [
+            [
+                "a78883e2a3582eef",
+                "04eaa4d003934907"
+            ]
+        ]
+    },
+    {
+        "id": "04eaa4d003934907",
+        "type": "http response",
+        "z": "ims-tab-v5",
+        "name": "200 OK",
+        "statusCode": "200",
+        "headers": {},
+        "x": 360,
+        "y": 700,
+        "wires": []
+    },
+    {
+        "id": "a78883e2a3582eef",
+        "type": "function",
+        "z": "ims-tab-v5",
+        "name": "Map K6 to V2 Format",
+        "func": "msg.topic = msg.payload.machine_id;\nmsg.payload = msg.payload.metrics;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 380,
+        "y": 660,
+        "wires": [
+            [
+                "697d8dfd1a168220"
+            ]
+        ]
     }
 ]
