@@ -693,7 +693,7 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": "(?i).*UBUNTU.*"
+              "options": ".*[Uu][Bb][Uu][Nn][Tt][Uu].*"
             },
             "properties": [
               {
@@ -708,7 +708,7 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": "(?i).*WINDOWS.*"
+              "options": ".*[Ww][Ii][Nn][Dd][Oo][Ww][Ss].*"
             },
             "properties": [
               {
@@ -723,7 +723,7 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": "(?i).*DB.*|(?i).*TIMESCALE.*"
+              "options": ".*(DB|db|TIMESCALE|timescale).*"
             },
             "properties": [
               {
@@ -738,7 +738,7 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": "(?i).*(Forecast|Regression|Linear).*"
+              "options": ".*(FORECAST|forecast|REGRESSION|regression|LINEAR|linear).*"
             },
             "properties": [
               {
@@ -759,7 +759,7 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": "(?i).*ubuntu.*"
+              "options": ".*[Uu][Bb][Uu][Nn][Tt][Uu].*"
             },
             "properties": [
               {
@@ -774,7 +774,7 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": "(?i).*windows.*"
+              "options": ".*[Ww][Ii][Nn][Dd][Oo][Ww][Ss].*"
             },
             "properties": [
               {
@@ -789,7 +789,7 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": "(?i).*(db|timescale|postgres).*"
+              "options": ".*(DB|db|TIMESCALE|timescale|POSTGRES|postgres).*"
             },
             "properties": [
               {
@@ -804,7 +804,7 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": "(?i).*(forecast|regression).*"
+              "options": ".*(FORECAST|forecast|REGRESSION|regression).*"
             },
             "properties": [
               {
@@ -825,7 +825,7 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": "(?i).*max.*"
+              "options": ".*[Mm][Aa][Xx].*"
             },
             "properties": [
               {
@@ -996,7 +996,7 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": "(?i).*UBUNTU.*"
+              "options": ".*[Uu][Bb][Uu][Nn][Tt][Uu].*"
             },
             "properties": [
               {
@@ -1011,7 +1011,7 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": "(?i).*WINDOWS.*"
+              "options": ".*[Ww][Ii][Nn][Dd][Oo][Ww][Ss].*"
             },
             "properties": [
               {
@@ -1026,7 +1026,7 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": "(?i).*DB.*|(?i).*TIMESCALE.*"
+              "options": ".*(DB|db|TIMESCALE|timescale).*"
             },
             "properties": [
               {
@@ -1041,7 +1041,7 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": "(?i).*(Forecast|Regression|Linear).*"
+              "options": ".*(FORECAST|forecast|REGRESSION|regression|LINEAR|linear).*"
             },
             "properties": [
               {
@@ -1062,7 +1062,7 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": "(?i).*ubuntu.*"
+              "options": ".*[Uu][Bb][Uu][Nn][Tt][Uu].*"
             },
             "properties": [
               {
@@ -1077,7 +1077,7 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": "(?i).*windows.*"
+              "options": ".*[Ww][Ii][Nn][Dd][Oo][Ww][Ss].*"
             },
             "properties": [
               {
@@ -1092,7 +1092,7 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": "(?i).*(db|timescale|postgres).*"
+              "options": ".*(DB|db|TIMESCALE|timescale|POSTGRES|postgres).*"
             },
             "properties": [
               {
@@ -1107,7 +1107,7 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": "(?i).*(forecast|regression).*"
+              "options": ".*(FORECAST|forecast|REGRESSION|regression).*"
             },
             "properties": [
               {
@@ -1128,7 +1128,7 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": "(?i).*max.*"
+              "options": ".*[Mm][Aa][Xx].*"
             },
             "properties": [
               {
@@ -1445,7 +1445,7 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": "(?i).*UBUNTU.*"
+              "options": ".*[Uu][Bb][Uu][Nn][Tt][Uu].*"
             },
             "properties": [
               {
@@ -1460,7 +1460,7 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": "(?i).*WINDOWS.*"
+              "options": ".*[Ww][Ii][Nn][Dd][Oo][Ww][Ss].*"
             },
             "properties": [
               {
@@ -1475,7 +1475,7 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": "(?i).*DB.*|(?i).*TIMESCALE.*"
+              "options": ".*(DB|db|TIMESCALE|timescale).*"
             },
             "properties": [
               {
@@ -1490,7 +1490,7 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": "(?i).*(Forecast|Regression|Linear).*"
+              "options": ".*(FORECAST|forecast|REGRESSION|regression|LINEAR|linear).*"
             },
             "properties": [
               {
@@ -1511,7 +1511,7 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": "(?i).*ubuntu.*"
+              "options": ".*[Uu][Bb][Uu][Nn][Tt][Uu].*"
             },
             "properties": [
               {
@@ -1526,7 +1526,7 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": "(?i).*windows.*"
+              "options": ".*[Ww][Ii][Nn][Dd][Oo][Ww][Ss].*"
             },
             "properties": [
               {
@@ -1541,7 +1541,7 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": "(?i).*(db|timescale|postgres).*"
+              "options": ".*(DB|db|TIMESCALE|timescale|POSTGRES|postgres).*"
             },
             "properties": [
               {
@@ -1556,7 +1556,7 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": "(?i).*(forecast|regression).*"
+              "options": ".*(FORECAST|forecast|REGRESSION|regression).*"
             },
             "properties": [
               {
@@ -1577,7 +1577,7 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": "(?i).*max.*"
+              "options": ".*[Mm][Aa][Xx].*"
             },
             "properties": [
               {
