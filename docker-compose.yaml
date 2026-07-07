@@ -80,7 +80,10 @@ services:
           memory: 512M
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-      <<: *healthcheck-defaults
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      #<<: *healthcheck-defaults
     networks:
       - ims-internal
     logging: *default-logging

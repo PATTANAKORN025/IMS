@@ -17,7 +17,11 @@ deploy-flows:
 	curl -X POST http://127.0.0.1:1880/flows -H 'Content-Type: application/json' -d @<(jq -s 'add' node-red/flows/*.json)
 
 verify:
+ifeq ($(OS),Windows_NT)
+	powershell -ExecutionPolicy Bypass -File scripts\verify-deployment.ps1
+else
 	bash scripts/verify-deployment.sh
+endif
 
 backup:
 	bash scripts/backup-db.sh
