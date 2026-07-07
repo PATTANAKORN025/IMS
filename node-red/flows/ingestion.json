@@ -23,7 +23,7 @@
     "connectionTimeout": 10000,
     "user": "ims_admin",
     "userFieldType": "str",
-    "password": "",
+    "password": "change-me-please",
     "passwordFieldType": "env",
     "passwordEnv": "PGPASSWORD"
   },
