@@ -19,7 +19,7 @@
         "name": "IMS Database",
         "host": "pgbouncer",
         "hostFieldType": "str",
-        "port": "6432",
+        "port": "5432",
         "portFieldType": "num",
         "database": "ims",
         "databaseFieldType": "str",
