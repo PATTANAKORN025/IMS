@@ -47,6 +47,12 @@ tests/k6/*-results.json
 nodered_data/*
 !nodered_data/settings.js
 !nodered_data/package.json
+!nodered_data/Dockerfile
+!nodered_data/settings-prometheus.js
+!nodered_data/flows/
+nodered_data/flows/*
+!nodered_data/flows/ingestion.json
+!nodered_data/flows/alerting.json
 
 # Backups (created by scripts/backup-db.sh)
 backups/
