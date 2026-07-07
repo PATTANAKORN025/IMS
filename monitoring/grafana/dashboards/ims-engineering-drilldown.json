@@ -1701,7 +1701,7 @@
     {
       "id": 510,
       "title": "LDI Quality Scatter",
-      "type": "volkovlabs-echarts-panel",
+      "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
       },
@@ -1712,12 +1712,31 @@
         "h": 8
       },
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "custom": {
+            "fillOpacity": 0,
+            "lineWidth": 2,
+            "lineInterpolation": "smooth"
+          },
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
         "overrides": []
       },
       "options": {
-        "code": "let peData = [], jeData = [];\nif (data.series.length >= 2) {\n  const peS = data.series.find(s => s.name === 'PE' || s.fields[0]?.name === 'PE');\n  const jeS = data.series.find(s => s.name === 'JE' || s.fields[0]?.name === 'JE');\n  if (peS && peS.fields.length >= 2) {\n    const times = peS.fields.find(f => f.name === 'time' || f.name === '_time');\n    const vals = peS.fields.find(f => f.name !== 'time' && f.name !== '_time' && f.name !== 'machine_id');\n    if (times && vals) {\n      for (let i = 0; i < Math.min(times.values.length, 500); i++) {\n        peData.push([new Date(times.values[i]).getTime(), vals.values[i]]);\n      }\n    }\n  }\n  if (jeS && jeS.fields.length >= 2) {\n    const times = jeS.fields.find(f => f.name === 'time' || f.name === '_time');\n    const vals = jeS.fields.find(f => f.name !== 'time' && f.name !== '_time' && f.name !== 'machine_id');\n    if (times && vals) {\n      for (let i = 0; i < Math.min(times.values.length, 500); i++) {\n        jeData.push([new Date(times.values[i]).getTime(), vals.values[i]]);\n      }\n    }\n  }\n}\nreturn {\n  backgroundColor: 'transparent',\n  tooltip: { trigger: 'item' },\n  legend: { data: ['Process Efficiency', 'Junction Efficiency'], textStyle: { color: '#aaa' }, top: 5 },\n  xAxis: { type: 'time', axisLine: { lineStyle: { color: '#333' } }, axisLabel: { color: '#888' } },\n  yAxis: { type: 'value', name: 'µm', axisLine: { lineStyle: { color: '#333' } }, axisLabel: { color: '#888' } },\n  series: [\n    {\n      name: 'Process Efficiency', type: 'scatter', symbolSize: 5, data: peData,\n      itemStyle: { color: '#00FF87', shadowBlur: 5, shadowColor: 'rgba(0,255,135,0.5)' }\n    },\n    {\n      name: 'Junction Efficiency', type: 'scatter', symbolSize: 5, data: jeData,\n      itemStyle: { color: '#00F2FE', shadowBlur: 5, shadowColor: 'rgba(0,242,254,0.5)' }\n    }\n  ],\n  markArea: {\n    silent: true,\n    data: [[\n      { yAxis: -10, itemStyle: { color: 'rgba(0, 255, 135, 0.08)', borderColor: 'rgba(0, 255, 135, 0.3)', borderWidth: 1 } },\n      { yAxis: 10 }\n    ]]\n  },\n  grid: { left: 50, right: 20, top: 40, bottom: 30 }\n};",
-        "option": "{}"
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "mean",
+            "lastNotNull"
+          ]
+        }
       },
       "targets": [
         {
