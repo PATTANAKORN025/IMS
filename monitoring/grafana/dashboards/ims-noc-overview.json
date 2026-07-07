@@ -40,7 +40,7 @@
       {
         "name": "machine_id",
         "type": "query",
-        "query": "SELECT DISTINCT machine_id AS __text FROM public.machine_telemetry ORDER BY machine_id ASC LIMIT 200;",
+        "query": "SELECT machine_id AS __text FROM public.machine_telemetry GROUP BY machine_id ORDER BY machine_id ASC LIMIT 200;",
         "datasource": {
           "uid": "timescaledb"
         },
@@ -53,7 +53,7 @@
       {
         "name": "interface",
         "type": "query",
-        "query": "SELECT DISTINCT interface_key AS __text FROM (SELECT jsonb_object_keys(interface_metrics) AS interface_key FROM public.machine_telemetry LIMIT 100) sub;",
+        "query": "SELECT DISTINCT jsonb_object_keys(interface_metrics) AS __text FROM public.machine_telemetry WHERE interface_metrics IS NOT NULL LIMIT 100;",
         "datasource": {
           "uid": "timescaledb"
         },
@@ -444,7 +444,9 @@
         "h": 7
       },
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "noValue": "AWAITING TELEMETRY"
+        },
         "overrides": [
           {
             "matcher": {
@@ -643,7 +645,8 @@
           },
           "fillOpacity": 0,
           "lineWidth": 2,
-          "lineInterpolation": "smooth"
+          "lineInterpolation": "smooth",
+          "noValue": "AWAITING TELEMETRY"
         },
         "overrides": [
           {
@@ -946,7 +949,8 @@
           },
           "fillOpacity": 0,
           "lineWidth": 2,
-          "lineInterpolation": "smooth"
+          "lineInterpolation": "smooth",
+          "noValue": "AWAITING TELEMETRY"
         },
         "overrides": [
           {
@@ -1251,7 +1255,8 @@
                 "value": null
               }
             ]
-          }
+          },
+          "noValue": "AWAITING TELEMETRY"
         },
         "overrides": [
           {
@@ -1395,7 +1400,8 @@
           },
           "fillOpacity": 0,
           "lineWidth": 2,
-          "lineInterpolation": "smooth"
+          "lineInterpolation": "smooth",
+          "noValue": "AWAITING TELEMETRY"
         },
         "overrides": [
           {

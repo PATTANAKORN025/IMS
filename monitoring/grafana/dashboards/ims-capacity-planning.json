@@ -41,7 +41,7 @@
       {
         "name": "machine_id",
         "type": "query",
-        "query": "SELECT DISTINCT machine_id AS __text FROM public.machine_telemetry ORDER BY machine_id ASC LIMIT 200;",
+        "query": "SELECT machine_id AS __text FROM public.machine_telemetry GROUP BY machine_id ORDER BY machine_id ASC LIMIT 200;",
         "datasource": {
           "uid": "timescaledb"
         },
