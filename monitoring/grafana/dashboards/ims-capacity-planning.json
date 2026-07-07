@@ -41,7 +41,7 @@
       {
         "name": "machine_id",
         "type": "query",
-        "query": "SELECT DISTINCT machine_id FROM public.machine_telemetry ORDER BY machine_id",
+        "query": "SELECT DISTINCT machine_id FROM public.machine_telemetry ORDER BY machine_id LIMIT 100;",
         "datasource": {
           "uid": "timescaledb"
         },
@@ -77,12 +77,12 @@
       "gridPos": {
         "x": 0,
         "y": 0,
-        "w": 20,
-        "h": 2
+        "w": 18,
+        "h": 3
       },
       "options": {
         "mode": "html",
-        "content": "<style>\n  @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap');\n  .dashboard-page { background: #05050A !important; font-family: 'Rajdhani', sans-serif !important;\n    background-image: linear-gradient(rgba(0,242,254,0.03) 1px, transparent 1px),\n      linear-gradient(90deg, rgba(0,242,254,0.03) 1px, transparent 1px) !important;\n    background-size: 30px 30px !important; }\n  .panel-container {\n    background: rgba(8, 12, 20, 0.85) !important;\n    border: 1px solid rgba(0, 242, 254, 0.2) !important;\n    border-radius: 6px !important;\n    backdrop-filter: blur(4px) !important;\n    box-shadow: inset 0 1px 10px rgba(0,242,254,0.02) !important;\n    transition: border-color 0.3s ease, transform 0.3s ease;\n  }\n  .panel-container:hover {\n    border-color: rgba(0, 255, 135, 0.5) !important;\n    transform: translateY(-2px);\n  }\n  .panel-title { color: #A0B0C0 !important; font-size: 14px !important; font-weight: 700 !important; letter-spacing: 1px; }\n</style>\n<div class=\"apex-banner\">\n  <h1 class=\"apex-title\">APEX <span style=\"color:#00F2FE;\">COMMAND</span></h1>\n  <div class=\"apex-nav\">\n      <a href=\"/d/ims-noc-overview\">NOC</a>\n      <a href=\"/d/ims-engineering\">ENG</a>\n      <a href=\"/d/ims-capacity\" class=\"active\">CAP</a>\n  </div>\n</div>"
+        "content": "<style>\n  @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap');\n  .dashboard-page { background: #05050A !important; font-family: 'Rajdhani', sans-serif !important;\n    background-image: linear-gradient(rgba(0,242,254,0.03) 1px, transparent 1px),\n      linear-gradient(90deg, rgba(0,242,254,0.03) 1px, transparent 1px) !important;\n    background-size: 30px 30px !important; }\n  .panel-container {\n    background: rgba(8, 12, 20, 0.85) !important;\n    border: 1px solid rgba(0, 242, 254, 0.2) !important;\n    border-radius: 6px !important;\n    backdrop-filter: blur(4px) !important;\n    box-shadow: inset 0 1px 10px rgba(0,242,254,0.02) !important;\n    transition: border-color 0.3s ease, transform 0.3s ease;\n  }\n  .panel-container:hover { border-color: rgba(0,255,135,0.5) !important; transform: translateY(-2px); }\n  .panel-title { color: #A0B0C0 !important; font-size: 14px !important; font-weight: 700 !important; letter-spacing: 1px; }\n</style>\n<div class=\"apex-banner\">\n  <h1 class=\"apex-title\">APEX <span style=\"color:#00F2FE;\">COMMAND</span></h1>\n  <div class=\"apex-nav\">\n      <a href=\"/d/ims-noc-overview\">NOC</a>\n      <a href=\"/d/ims-engineering\">ENG</a>\n      <a href=\"/d/ims-capacity\" class=\"active\">CAP</a>\n  </div>\n</div>"
       },
       "datasource": null,
       "transparent": true,
@@ -94,10 +94,10 @@
       "title": "",
       "datasource": null,
       "gridPos": {
-        "x": 20,
+        "x": 18,
         "y": 0,
-        "w": 4,
-        "h": 2
+        "w": 6,
+        "h": 3
       },
       "options": {
         "mode": "clock",
@@ -129,7 +129,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 2
+        "y": 3
       },
       "collapsed": false,
       "transparent": true
@@ -138,27 +138,26 @@
       "id": 101,
       "type": "row",
       "title": "CAPACITY FORECAST",
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 3
-      },
       "collapsed": false,
-      "transparent": true
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 24,
+        "h": 1
+      }
     },
     {
       "id": 50,
       "title": "Days Until Full (Resource Battery)",
-      "type": "bargauge",
+      "type": "volkovlabs-echarts-panel",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 0,
-        "y": 9,
+        "y": 10,
         "w": 24,
-        "h": 5
+        "h": 6
       },
       "transparent": true,
       "fieldConfig": {
@@ -187,18 +186,23 @@
         "overrides": []
       },
       "options": {
-        "orientation": "horizontal",
-        "displayMode": "gradient",
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "minVizHeight": 15,
-        "minVizWidth": 75,
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "values": false
-        }
+        "option": "const getVal = (idx) => {\n  try {\n    if (!data || !data.series || !data.series[idx]) return 365;\n    const f = data.series[idx].fields.find(x => x.type === 'number');\n    if (!f || !f.values) return 365;\n    const vals = f.values.buffer || f.values;\n    const val = (typeof vals.get === 'function') ? vals.get(vals.length - 1) : vals[vals.length - 1];\n    return val === null || val === undefined ? 365 : val;\n  } catch(e) { return 365; }\n};\nconst cpu = getVal(0); const ram = getVal(1); const disk = getVal(2);\nreturn {\n  backgroundColor: 'transparent',\n  grid: { top: '10%', bottom: '10%', left: '15%', right: '15%' },\n  xAxis: { type: 'value', show: false, max: 365 },\n  yAxis: { type: 'category', data: ['DISK', 'RAM', 'CPU'], axisLine: {show: false}, axisTick: {show: false}, axisLabel: {color: '#00F2FE', fontSize: 16, fontWeight: 'bold'} },\n  series: [{\n    type: 'bar', barWidth: 20, itemStyle: { borderRadius: [0, 10, 10, 0] },\n    data: [\n      { value: disk, itemStyle: { color: '#7F00FF', shadowBlur: 15, shadowColor: '#7F00FF'} },\n      { value: ram, itemStyle: { color: '#00F2FE', shadowBlur: 15, shadowColor: '#00F2FE'} },\n      { value: cpu, itemStyle: { color: '#00FF87', shadowBlur: 15, shadowColor: '#00FF87'} }\n    ],\n    label: { show: true, position: 'right', color: '#fff', fontSize: 14, formatter: (p) => p.value >= 365 ? 'SAFE' : Math.round(p.value) + ' Days' }\n  }]\n};",
+        "type": "timeseries-to-xy",
+        "seriesCount": 3,
+        "seriesOverrides": [
+          {
+            "alias": "CPU",
+            "color": "#00FF87"
+          },
+          {
+            "alias": "RAM",
+            "color": "#00F2FE"
+          },
+          {
+            "alias": "DISK",
+            "color": "#7F00FF"
+          }
+        ]
       },
       "targets": [
         {
@@ -237,7 +241,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 4,
+        "y": 5,
         "w": 6,
         "h": 5
       },
@@ -322,7 +326,7 @@
       },
       "gridPos": {
         "x": 6,
-        "y": 4,
+        "y": 5,
         "w": 6,
         "h": 5
       },
@@ -407,7 +411,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 4,
+        "y": 5,
         "w": 6,
         "h": 5
       },
@@ -492,7 +496,7 @@
       },
       "gridPos": {
         "x": 18,
-        "y": 4,
+        "y": 5,
         "w": 6,
         "h": 5
       },
@@ -562,7 +566,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 14
+        "y": 16
       },
       "collapsed": false,
       "transparent": true
@@ -576,7 +580,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 15,
+        "y": 17,
         "w": 24,
         "h": 10
       },
@@ -586,7 +590,7 @@
           "min": 0,
           "custom": {
             "fillOpacity": 0,
-            "lineWidth": 2,
+            "lineWidth": 3,
             "spanNulls": 60000,
             "thresholdsStyle": {
               "mode": "line"
@@ -725,12 +729,79 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*ubuntu.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#00FF87",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*windows.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#00F2FE",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*(db|timescale|postgres).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#7F00FF",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*(forecast|regression).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#4A5568",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash"
+                }
+              }
+            ]
           }
         ]
       },
       "options": {
         "tooltip": {
-          "mode": "single"
+          "mode": "single",
+          "sort": "none"
         },
         "legend": {
           "displayMode": "table",
@@ -791,7 +862,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 25
+        "y": 27
       },
       "collapsed": false,
       "transparent": true
@@ -805,7 +876,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 26,
+        "y": 28,
         "w": 12,
         "h": 10
       },
@@ -816,7 +887,7 @@
           "max": 100,
           "custom": {
             "fillOpacity": 0,
-            "lineWidth": 2,
+            "lineWidth": 3,
             "spanNulls": 60000,
             "gradientMode": "opacity",
             "drawStyle": "line",
@@ -927,12 +998,79 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*ubuntu.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#00FF87",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*windows.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#00F2FE",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*(db|timescale|postgres).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#7F00FF",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*(forecast|regression).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#4A5568",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash"
+                }
+              }
+            ]
           }
         ]
       },
       "options": {
         "tooltip": {
-          "mode": "single"
+          "mode": "single",
+          "sort": "none"
         },
         "legend": {
           "displayMode": "table",
@@ -975,7 +1113,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 26,
+        "y": 28,
         "w": 12,
         "h": 10
       },
@@ -986,7 +1124,7 @@
           "max": 100,
           "custom": {
             "fillOpacity": 0,
-            "lineWidth": 2,
+            "lineWidth": 3,
             "spanNulls": 60000,
             "gradientMode": "opacity",
             "drawStyle": "line",
@@ -1097,12 +1235,79 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*ubuntu.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#00FF87",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*windows.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#00F2FE",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*(db|timescale|postgres).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#7F00FF",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*(forecast|regression).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#4A5568",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash"
+                }
+              }
+            ]
           }
         ]
       },
       "options": {
         "tooltip": {
-          "mode": "single"
+          "mode": "single",
+          "sort": "none"
         },
         "legend": {
           "displayMode": "table",
@@ -1144,7 +1349,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 36
+        "y": 38
       },
       "collapsed": false,
       "transparent": true
@@ -1158,7 +1363,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 37,
+        "y": 39,
         "w": 12,
         "h": 10
       },
@@ -1168,7 +1373,7 @@
           "custom": {
             "axisCenteredZero": true,
             "fillOpacity": 0,
-            "lineWidth": 2,
+            "lineWidth": 3,
             "spanNulls": 60000,
             "thresholdsStyle": {
               "mode": "dashed"
@@ -1293,12 +1498,79 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*ubuntu.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#00FF87",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*windows.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#00F2FE",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*(db|timescale|postgres).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#7F00FF",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*(forecast|regression).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#4A5568",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash"
+                }
+              }
+            ]
           }
         ]
       },
       "options": {
         "tooltip": {
-          "mode": "single"
+          "mode": "single",
+          "sort": "none"
         },
         "legend": {
           "displayMode": "table",
@@ -1342,7 +1614,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 37,
+        "y": 39,
         "w": 12,
         "h": 10
       },
@@ -1352,7 +1624,7 @@
           "custom": {
             "axisCenteredZero": true,
             "fillOpacity": 0,
-            "lineWidth": 2,
+            "lineWidth": 3,
             "spanNulls": 60000,
             "thresholdsStyle": {
               "mode": "dashed"
@@ -1477,12 +1749,79 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*ubuntu.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#00FF87",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*windows.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#00F2FE",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*(db|timescale|postgres).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#7F00FF",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*(forecast|regression).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#4A5568",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash"
+                }
+              }
+            ]
           }
         ]
       },
       "options": {
         "tooltip": {
-          "mode": "single"
+          "mode": "single",
+          "sort": "none"
         },
         "legend": {
           "displayMode": "table",
