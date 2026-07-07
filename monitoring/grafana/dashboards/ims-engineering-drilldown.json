@@ -40,7 +40,7 @@
       {
         "name": "machine_id",
         "type": "query",
-        "query": "SELECT DISTINCT machine_id AS __text FROM public.machine_telemetry ORDER BY machine_id ASC;",
+        "query": "SELECT DISTINCT machine_id AS __text FROM public.machine_telemetry ORDER BY machine_id ASC LIMIT 200;",
         "datasource": {
           "uid": "timescaledb"
         },
@@ -53,7 +53,7 @@
       {
         "name": "interface",
         "type": "query",
-        "query": "SELECT DISTINCT keys AS __text FROM public.machine_telemetry, jsonb_object_keys(interface_metrics) AS keys WHERE interface_metrics IS NOT NULL;",
+        "query": "SELECT DISTINCT interface_key AS __text FROM (SELECT jsonb_object_keys(interface_metrics) AS interface_key FROM public.machine_telemetry LIMIT 100) sub;",
         "datasource": {
           "uid": "timescaledb"
         },
@@ -90,7 +90,7 @@
         "x": 0,
         "y": 0,
         "w": 20,
-        "h": 2
+        "h": 3
       },
       "options": {
         "mode": "html",
@@ -109,7 +109,7 @@
         "x": 20,
         "y": 0,
         "w": 4,
-        "h": 2
+        "h": 3
       },
       "options": {
         "mode": "clock",
@@ -139,7 +139,7 @@
       "title": "MACHINE SUMMARY",
       "gridPos": {
         "x": 0,
-        "y": 2,
+        "y": 3,
         "w": 24,
         "h": 1
       },
@@ -155,9 +155,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 3,
+        "y": 4,
         "w": 6,
-        "h": 7
+        "h": 4
       },
       "transparent": true,
       "fieldConfig": {
@@ -229,9 +229,9 @@
       },
       "gridPos": {
         "x": 6,
-        "y": 3,
+        "y": 4,
         "w": 6,
-        "h": 7
+        "h": 4
       },
       "transparent": true,
       "fieldConfig": {
@@ -303,9 +303,9 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 3,
+        "y": 4,
         "w": 6,
-        "h": 7
+        "h": 4
       },
       "transparent": true,
       "fieldConfig": {
@@ -377,9 +377,9 @@
       },
       "gridPos": {
         "x": 18,
-        "y": 3,
+        "y": 4,
         "w": 6,
-        "h": 7
+        "h": 4
       },
       "fieldConfig": {
         "defaults": {
@@ -448,7 +448,7 @@
       "title": "Time Series Analysis",
       "gridPos": {
         "x": 0,
-        "y": 10,
+        "y": 8,
         "w": 24,
         "h": 1
       },
@@ -464,9 +464,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 11,
+        "y": 9,
         "w": 24,
-        "h": 9
+        "h": 8
       },
       "fieldConfig": {
         "defaults": {
@@ -718,19 +718,6 @@
       ]
     },
     {
-      "id": 300,
-      "type": "row",
-      "title": "Network & Environment",
-      "gridPos": {
-        "x": 0,
-        "y": 20,
-        "w": 24,
-        "h": 1
-      },
-      "collapsed": false,
-      "transparent": true
-    },
-    {
       "id": 502,
       "title": "Ethernet/WiFi Bandwidth (Per-Interface)",
       "type": "barchart",
@@ -739,9 +726,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 21,
+        "y": 17,
         "w": 12,
-        "h": 9
+        "h": 8
       },
       "fieldConfig": {
         "defaults": {
@@ -975,9 +962,9 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 21,
+        "y": 17,
         "w": 12,
-        "h": 9
+        "h": 8
       },
       "fieldConfig": {
         "defaults": {
@@ -1295,7 +1282,7 @@
       "title": "LDI Manufacturing Telemetry",
       "gridPos": {
         "x": 0,
-        "y": 30,
+        "y": 25,
         "w": 24,
         "h": 1
       },
@@ -1311,9 +1298,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 31,
+        "y": 26,
         "w": 8,
-        "h": 9
+        "h": 8
       },
       "fieldConfig": {
         "defaults": {
@@ -1516,9 +1503,9 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 31,
+        "y": 26,
         "w": 8,
-        "h": 9
+        "h": 8
       },
       "fieldConfig": {
         "defaults": {
@@ -1720,9 +1707,9 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 31,
+        "y": 26,
         "w": 8,
-        "h": 9
+        "h": 8
       },
       "fieldConfig": {
         "defaults": {},
@@ -1759,7 +1746,7 @@
       "title": "AIOps — ANOMALY DETECTION (3-Sigma Z-Score)",
       "gridPos": {
         "x": 0,
-        "y": 40,
+        "y": 34,
         "w": 24,
         "h": 1
       },
@@ -1775,7 +1762,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 41,
+        "y": 35,
         "w": 12,
         "h": 8
       },
@@ -1857,7 +1844,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 41,
+        "y": 35,
         "w": 12,
         "h": 8
       },
@@ -1928,7 +1915,7 @@
       "title": "RESOURCE DISTRIBUTION",
       "gridPos": {
         "x": 0,
-        "y": 49,
+        "y": 43,
         "w": 24,
         "h": 1
       },
@@ -1944,7 +1931,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 50,
+        "y": 44,
         "w": 12,
         "h": 8
       },
@@ -2054,7 +2041,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 50,
+        "y": 44,
         "w": 12,
         "h": 8
       },
