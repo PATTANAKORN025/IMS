@@ -1,5 +1,8 @@
 # ใช้ตอน production: docker compose -f docker-compose.yaml -f docker-compose.prod.yaml up -d
 services:
+  pgbouncer:
+    ports: []
+
   node-red:
     environment:
       - NODE_ENV=production
