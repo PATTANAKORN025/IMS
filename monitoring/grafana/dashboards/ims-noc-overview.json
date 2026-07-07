@@ -87,14 +87,14 @@
       "type": "text",
       "title": "",
       "gridPos": {
-        "h": 2,
-        "w": 20,
         "x": 0,
-        "y": 0
+        "y": 0,
+        "w": 20,
+        "h": 2
       },
       "options": {
         "mode": "html",
-        "content": "<style>\n@import url(\"https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap\");\n.dashboard-page {\n  background-color: #040508 !important;\n  background-image:\n    linear-gradient(rgba(0,242,254,0.03) 1px, transparent 1px),\n    linear-gradient(90deg, rgba(0,242,254,0.03) 1px, transparent 1px) !important;\n  background-size: 30px 30px !important;\n  font-family: \"Rajdhani\", sans-serif !important;\n}\n.panel-container {\n  background: rgba(6,8,16,0.85) !important;\n  border: 1px solid rgba(0,242,254,0.2) !important;\n  border-radius: 4px !important;\n  transition: border-color 0.3s ease, box-shadow 0.3s ease;\n}\n.panel-container:hover {\n  border-color: rgba(0,242,254,0.5) !important;\n  box-shadow: 0 0 12px rgba(0,242,254,0.08) !important;\n}\n.panel-title { color: #A0B0C0 !important; font-size: 13px !important; font-weight: 700 !important; letter-spacing: 1px; }\n</style>\n<div style=\"display:flex;justify-content:space-between;align-items:center;height:100%;padding:0 20px;background:linear-gradient(90deg,rgba(0,242,254,0.08) 0%,transparent 100%);border-left:4px solid #00F2FE;border-radius:4px;box-sizing:border-box;\">\n  <h1 style=\"font-size:20px;font-weight:800;color:#fff;letter-spacing:3px;text-shadow:0 0 10px #00F2FE;margin:0;\">APEX <span style=\"color:#00F2FE;\">COMMAND</span> <span style=\"color:#8899aa;font-size:14px;letter-spacing:1px;\">// </span></h1>\n  <div style=\"display:flex;gap:20px;\">\n    <a href=\"/d/ims-noc-overview\" style=\"color:#00FF87;text-decoration:none;font-size:14px;font-weight:700;padding:4px 12px;border:1px solid rgba(0,255,135,0.3);background:rgba(0,255,135,0.05);border-radius:4px;\">NOC</a> <a href=\"/d/ims-engineering\" style=\"color:#8899aa;text-decoration:none;font-size:14px;font-weight:700;padding:4px 12px;border:1px solid transparent;border-radius:4px;\">ENG</a> <a href=\"/d/ims-capacity\" style=\"color:#8899aa;text-decoration:none;font-size:14px;font-weight:700;padding:4px 12px;border:1px solid transparent;border-radius:4px;\">CAP</a>\n  </div>\n</div>"
+        "content": "<style>\n  @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap');\n  .dashboard-page { background: #05050A !important; font-family: 'Rajdhani', sans-serif !important;\n    background-image: linear-gradient(rgba(0,242,254,0.03) 1px, transparent 1px),\n      linear-gradient(90deg, rgba(0,242,254,0.03) 1px, transparent 1px) !important;\n    background-size: 30px 30px !important; }\n  .panel-container {\n    background: rgba(8, 12, 20, 0.85) !important;\n    border: 1px solid rgba(0, 242, 254, 0.2) !important;\n    border-radius: 6px !important;\n    backdrop-filter: blur(4px) !important;\n    box-shadow: inset 0 1px 10px rgba(0,242,254,0.02) !important;\n    transition: border-color 0.3s ease, transform 0.3s ease;\n  }\n  .panel-container:hover {\n    border-color: rgba(0, 255, 135, 0.5) !important;\n    transform: translateY(-2px);\n  }\n  .panel-title { color: #A0B0C0 !important; font-size: 14px !important; font-weight: 700 !important; letter-spacing: 1px; }\n</style>\n<div class=\"apex-banner\">\n  <h1 class=\"apex-title\">APEX <span style=\"color:#00F2FE;\">COMMAND</span></h1>\n  <div class=\"apex-nav\">\n      <a href=\"/d/ims-noc-overview\" class=\"active\">NOC</a>\n      <a href=\"/d/ims-engineering\">ENG</a>\n      <a href=\"/d/ims-capacity\">CAP</a>\n  </div>\n</div>"
       },
       "datasource": null,
       "transparent": true,
@@ -106,10 +106,10 @@
       "title": "",
       "datasource": null,
       "gridPos": {
-        "h": 2,
-        "w": 4,
         "x": 20,
-        "y": 0
+        "y": 0,
+        "w": 4,
+        "h": 2
       },
       "options": {
         "mode": "clock",
@@ -152,10 +152,10 @@
       "title": "Active Alerts",
       "description": "Currently firing alerts from Grafana unified alerting.",
       "gridPos": {
-        "h": 4,
-        "w": 24,
         "x": 0,
-        "y": 3
+        "y": 3,
+        "w": 24,
+        "h": 4
       },
       "options": {
         "showOptions": "current",
@@ -185,7 +185,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 6
+        "y": 7
       },
       "collapsed": false,
       "transparent": true
@@ -198,10 +198,10 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "h": 6,
-        "w": 12,
         "x": 6,
-        "y": 7
+        "y": 8,
+        "w": 12,
+        "h": 5
       },
       "fieldConfig": {
         "defaults": {
@@ -272,10 +272,10 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "h": 6,
-        "w": 6,
         "x": 0,
-        "y": 7
+        "y": 8,
+        "w": 6,
+        "h": 5
       },
       "fieldConfig": {
         "defaults": {
@@ -343,10 +343,10 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "h": 6,
-        "w": 6,
         "x": 18,
-        "y": 7
+        "y": 8,
+        "w": 6,
+        "h": 5
       },
       "fieldConfig": {
         "defaults": {
@@ -412,7 +412,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 8
+        "y": 13
       },
       "collapsed": false,
       "transparent": true
@@ -425,7 +425,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 9
+        "y": 14
       },
       "collapsed": false,
       "transparent": true
@@ -438,10 +438,10 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "h": 8,
-        "w": 24,
         "x": 0,
-        "y": 10
+        "y": 15,
+        "w": 24,
+        "h": 7
       },
       "fieldConfig": {
         "defaults": {},
@@ -568,7 +568,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT machine_id AS \"Server Name\", CASE WHEN MAX(time) > NOW() - INTERVAL '2 minutes' THEN 'online' WHEN MAX(time) > NOW() - INTERVAL '10 minutes' THEN 'stale' ELSE 'offline' END AS \"Status\", ROUND(AVG(cpu_load_percent)::NUMERIC, 1) AS \"CPU (%)\", ROUND(AVG(temp_c)::NUMERIC, 0) AS \"Temp (°C)\", COUNT(*)::TEXT AS \"Machines\" FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '10 minutes' GROUP BY machine_id ORDER BY \"CPU (%)\" DESC LIMIT 10",
+          "rawSql": "SELECT machine_id AS \"Server Name\", CASE WHEN MAX(time) > NOW() - INTERVAL '2 minutes' THEN 'online' WHEN MAX(time) > NOW() - INTERVAL '10 minutes' THEN 'stale' ELSE 'offline' END AS \"Status\", ROUND(AVG(cpu_load_percent)::NUMERIC, 1) AS \"CPU (%)\", ROUND(AVG(temp_c)::NUMERIC, 0) AS \"Temp (°C)\", COUNT(*)::TEXT AS \"Samples (10m)\" FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '10 minutes' GROUP BY machine_id ORDER BY \"CPU (%)\" DESC LIMIT 10",
           "format": "table"
         }
       ],
@@ -590,7 +590,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 18
+        "y": 22
       },
       "collapsed": false,
       "transparent": true
@@ -603,10 +603,10 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "h": 10,
-        "w": 12,
         "x": 0,
-        "y": 19
+        "y": 23,
+        "w": 12,
+        "h": 10
       },
       "fieldConfig": {
         "defaults": {
@@ -640,7 +640,10 @@
           },
           "color": {
             "mode": "palette-classic"
-          }
+          },
+          "fillOpacity": 0,
+          "lineWidth": 2,
+          "lineInterpolation": "smooth"
         },
         "overrides": [
           {
@@ -757,8 +760,8 @@
       },
       "options": {
         "tooltip": {
-          "mode": "single",
-          "sort": "none"
+          "mode": "multi",
+          "sort": "desc"
         },
         "legend": {
           "displayMode": "table",
@@ -814,10 +817,10 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "h": 10,
-        "w": 12,
         "x": 12,
-        "y": 19
+        "y": 23,
+        "w": 12,
+        "h": 10
       },
       "fieldConfig": {
         "defaults": {
@@ -849,7 +852,10 @@
           },
           "color": {
             "mode": "palette-classic"
-          }
+          },
+          "fillOpacity": 0,
+          "lineWidth": 2,
+          "lineInterpolation": "smooth"
         },
         "overrides": [
           {
@@ -966,8 +972,8 @@
       },
       "options": {
         "tooltip": {
-          "mode": "single",
-          "sort": "none"
+          "mode": "multi",
+          "sort": "desc"
         },
         "legend": {
           "displayMode": "table",
@@ -1025,7 +1031,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 27
+        "y": 33
       },
       "collapsed": false,
       "transparent": true
@@ -1038,10 +1044,10 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "h": 10,
-        "w": 12,
         "x": 0,
-        "y": 28
+        "y": 34,
+        "w": 12,
+        "h": 10
       },
       "fieldConfig": {
         "defaults": {
@@ -1167,10 +1173,10 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "h": 10,
-        "w": 12,
         "x": 12,
-        "y": 28
+        "y": 34,
+        "w": 12,
+        "h": 10
       },
       "fieldConfig": {
         "defaults": {
@@ -1204,7 +1210,10 @@
           },
           "color": {
             "mode": "palette-classic"
-          }
+          },
+          "fillOpacity": 0,
+          "lineWidth": 2,
+          "lineInterpolation": "smooth"
         },
         "overrides": [
           {
@@ -1321,8 +1330,8 @@
       },
       "options": {
         "tooltip": {
-          "mode": "single",
-          "sort": "none"
+          "mode": "multi",
+          "sort": "desc"
         },
         "legend": {
           "displayMode": "table",
