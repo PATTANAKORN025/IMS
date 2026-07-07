@@ -5,14 +5,14 @@ datasources:
     uid: timescaledb
     type: postgres
     access: proxy
-    url: ims-pgbouncer:5432
+    url: ims-timescaledb:5432
     database: ims
     user: ${GRAFANA_DB_USER:-grafana_reader}
     secureJsonData:
       password: ${GRAFANA_DB_PASSWORD:-grafana_secure}
     jsonData:
       sslmode: disable
-      postgresVersion: 1600
+      postgresVersion: 1400
       timescaledb: true
       maxOpenConns: 20
       maxIdleConns: 5
