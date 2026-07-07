@@ -24,7 +24,7 @@
     "user": "ims_admin",
     "userFieldType": "str",
     "password": "change-me-please",
-    "passwordFieldType": "env",
+    "passwordFieldType": "str",
     "passwordEnv": "PGPASSWORD"
   },
   {
