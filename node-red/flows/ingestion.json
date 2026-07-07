@@ -87,8 +87,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1250,
-        "y": 420,
+        "x": 1270,
+        "y": 400,
         "wires": [
             [
                 "7a87ed23b27278cb"
@@ -107,8 +107,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1250,
-        "y": 460,
+        "x": 1270,
+        "y": 440,
         "wires": [
             [
                 "7a87ed23b27278cb"
@@ -127,8 +127,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1200,
-        "y": 500,
+        "x": 1220,
+        "y": 480,
         "wires": [
             [
                 "7a87ed23b27278cb"
@@ -147,8 +147,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1230,
-        "y": 540,
+        "x": 1250,
+        "y": 520,
         "wires": [
             [
                 "7a87ed23b27278cb"
@@ -188,8 +188,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1240,
-        "y": 620,
+        "x": 1260,
+        "y": 600,
         "wires": [
             [
                 "7a87ed23b27278cb"
@@ -208,8 +208,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1220,
-        "y": 580,
+        "x": 1240,
+        "y": 560,
         "wires": [
             [
                 "7a87ed23b27278cb"
@@ -237,8 +237,8 @@
         "reduceInit": "",
         "reduceInitType": "",
         "reduceFixup": "",
-        "x": 1470,
-        "y": 520,
+        "x": 1490,
+        "y": 500,
         "wires": [
             [
                 "697d8dfd1a168220"
@@ -275,8 +275,8 @@
         "topic": "",
         "payload": "",
         "payloadType": "date",
-        "x": 200,
-        "y": 360,
+        "x": 230,
+        "y": 380,
         "wires": [
             [
                 "ad15e8c180c4b9d3"
@@ -295,8 +295,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 520,
-        "y": 360,
+        "x": 540,
+        "y": 380,
         "wires": []
     },
     {
@@ -311,8 +311,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 600,
-        "y": 500,
+        "x": 680,
+        "y": 480,
         "wires": [
             [
                 "d6ffcaf2f7033983"
@@ -331,8 +331,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1720,
-        "y": 520,
+        "x": 1760,
+        "y": 500,
         "wires": [
             []
         ]
@@ -354,8 +354,8 @@
         "topic": "",
         "payload": "",
         "payloadType": "date",
-        "x": 160,
-        "y": 500,
+        "x": 260,
+        "y": 480,
         "wires": [
             [
                 "51698fbb631b9a39"
@@ -374,8 +374,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 410,
-        "y": 500,
+        "x": 490,
+        "y": 480,
         "wires": [
             [
                 "a2d8dcc11923e637"
@@ -488,5 +488,32 @@
                 "b408fd2565f6307e"
             ]
         ]
+    },
+    {
+        "id": "0f7c426f7a94c611",
+        "type": "comment",
+        "z": "ims-discovery-tab",
+        "name": "🚨 [PRODUCTION] Subnet Config",
+        "info": "1. เปลี่ยน Payload ในกล่อง Inject ด้านซ้ายให้เป็น Subnet ของโรงงานจริง (เช่น `10.0.1.` แทน `192.168.1.`)\n2. ตรวจสอบให้แน่ใจว่าเครื่องเป้าหมายเปิดให้ยิง SNMP (UDP Port 161) ผ่าน Firewall",
+        "x": 250,
+        "y": 80
+    },
+    {
+        "id": "5e3584a70b534a85",
+        "type": "comment",
+        "z": "ims-tab-v5",
+        "name": "🚨 [PRODUCTION] SNMP Community",
+        "info": "ปัจจุบันโค้ดตั้งค่า Community String ไว้เป็น `public` (SNMPv2c)\n\nเมื่อขึ้นระบบจริง:\n- ต้องเข้าไปเปลี่ยน Community String ใน Function Node (Walker) ทุกตัวให้เป็นรหัสลับขององค์กร\n- หรือพิจารณาเปลี่ยนไปใช้ SNMPv3 ถ้าต้องการเข้ารหัสข้อมูล (Encryption)",
+        "x": 480,
+        "y": 140
+    },
+    {
+        "id": "14d8d495c3ccb8a6",
+        "type": "comment",
+        "z": "ims-tab-v5",
+        "name": "🚨 [PRODUCTION] Database Batch Tuning",
+        "info": "ระบบถูกตั้งค่าให้รอ Batch ข้อมูล 600 record หรือทุก 30 วินาที ค่อยยิงเข้า Database\n\nหากบริษัทมีเครื่อง Server มากกว่า 10,000 เครื่อง อาจจะต้องเข้ามาปรับตัวเลขใน Node `Bulletproof AIOps Parser` (บรรทัดที่ 10-11) ให้ Flush ถี่ขึ้น เพื่อไม่ให้ RAM เต็ม",
+        "x": 920,
+        "y": 500
     }
 ]
