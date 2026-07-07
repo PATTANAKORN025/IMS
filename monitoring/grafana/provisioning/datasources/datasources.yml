@@ -7,9 +7,9 @@ datasources:
     access: proxy
     url: ims-pgbouncer:5432
     database: ims
-    user: ${GRAFANA_READER_USER}
+    user: ${GRAFANA_DB_USER:-grafana_reader}
     secureJsonData:
-      password: ${GRAFANA_READER_PASSWORD}
+      password: ${GRAFANA_DB_PASSWORD:-grafana_secure}
     jsonData:
       sslmode: disable
       postgresVersion: 1600
