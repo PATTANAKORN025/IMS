@@ -54,6 +54,7 @@ const QUERIES = [
 ];
 
 function getAuthToken() {
+  // Try token auth first
   const loginRes = http.post(
     `${GRAFANA_URL}/login`,
     JSON.stringify({ user: GRAFANA_USER, password: GRAFANA_PASS }),
@@ -61,9 +62,12 @@ function getAuthToken() {
   );
 
   if (loginRes.status === 200) {
-    return loginRes.json('token');
+    return { type: 'bearer', value: loginRes.json('token') };
   }
-  return null;
+
+  // Fallback: Basic Auth
+  const encoded = btoa(`${GRAFANA_USER}:${GRAFANA_PASS}`);
+  return { type: 'basic', value: encoded };
 }
 
 export function setup() {
@@ -71,11 +75,11 @@ export function setup() {
   if (!token) {
     console.error('Failed to authenticate with Grafana');
   }
-  return { token };
+  return { auth: token };
 }
 
 export default function (data) {
-  if (!data.token) {
+  if (!data.auth) {
     queryErrors.add(1);
     querySuccess.add(0);
     return;
@@ -99,7 +103,7 @@ export default function (data) {
     {
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${data.token}`,
+        'Authorization': data.auth.type === 'basic' ? `Basic ${data.auth.value}` : `Bearer ${data.auth.value}`,
       },
       tags: { name: query.name },
     }
