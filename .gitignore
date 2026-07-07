@@ -72,3 +72,5 @@ TEMPLATES/
 dashboard.html
 memory/
 backup_*.sql
+
+docker-compose.override.yaml

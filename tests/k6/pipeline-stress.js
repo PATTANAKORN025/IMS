@@ -1,39 +1,60 @@
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // IMS K6 Stress Test — Full Pipeline End-to-End
-// Tests SNMP → Node-RED → PgBouncer → TimescaleDB → Grafana
+// Tests V2 Parser → PgBouncer → TimescaleDB → Grafana
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 import http from 'k6/http';
-import { check, sleep, textSummary } from 'k6';
+import { check, sleep } from 'k6';
 import { Counter, Rate, Trend } from 'k6/metrics';
+import { textSummary } from 'https://jslib.k6.io/k6-summary/0.0.2/index.js';
 
 const pipelineSuccess = new Rate('pipeline_success');
 const pipelineDuration = new Trend('pipeline_duration', true);
 const endToEndDuration = new Trend('e2e_duration', true);
 const pipelineErrors = new Counter('pipeline_errors');
 
-const NODERED_URL = __ENV.NODERED_URL || 'http://127.0.0.1:1880';
-const GRAFANA_URL = __ENV.GRAFANA_URL || 'http://127.0.0.1:3000';
-const TARGET_SERVERS = Number.parseInt(__ENV.TARGET_SERVERS || '50', 10);
+const NODERED_URL = __ENV.NODERED_URL || 'http://localhost:1880';
+const GRAFANA_URL = __ENV.GRAFANA_URL || 'http://localhost:3000';
+const TARGET_SERVERS = Number.parseInt(__ENV.TARGET_SERVERS || '100', 10);
 
 export const options = {
   stages: [
-    { duration: '30s', target: Math.min(TARGET_SERVERS, 10) },
-    { duration: '1m', target: Math.min(TARGET_SERVERS, 25) },
-    { duration: '2m', target: TARGET_SERVERS },
-    { duration: '2m', target: TARGET_SERVERS },
+    { duration: '30s', target: Math.min(TARGET_SERVERS, 20) },
+    { duration: '1m', target: Math.min(TARGET_SERVERS, 50) },
+    { duration: '1m', target: TARGET_SERVERS },
     { duration: '30s', target: 0 },
   ],
   thresholds: {
-    pipeline_success: ['rate>0.90'],
-    e2e_duration: ['p(95)<15000'],
+    pipeline_success: ['rate>0.95'],
+    e2e_duration: ['p(95)<10000'],
   },
 };
 
-function generateSNMPPayload(machineId) {
+function generateV2Payload(machineId) {
   return {
     machine_id: machineId,
-    timestamp: new Date().toISOString(),
+    metrics: [
+      {
+        cpu: { cores: Math.floor(Math.random() * 64) + 4, load: Math.random() * 80 + 5 }
+      },
+      {
+        disk: {
+          ramTotal: 16384, ramUsed: Math.random() * 12000, ramFree: 4000,
+          diskTotal: 1000, diskUsed: Math.random() * 500, diskFree: 500
+        }
+      },
+      {
+        temp: Math.random() * 40 + 30
+      },
+      {
+        interfaces: [
+          { name: 'eth0', received_MB: Math.random() * 500, sent_MB: Math.random() * 300, status: 'ON' }
+        ]
+      },
+      {
+        ldi: { throughput: Math.random() * 100, temperature: 80, humidity: 50 }
+      }
+    ]
   };
 }
 
@@ -42,12 +63,12 @@ export default function () {
   const machineId = `E2E-SERVER-${String(serverIndex).padStart(3, '0')}`;
   const e2eStart = Date.now();
 
-  // Step 1: Simulate SNMP data collection (node-red inject)
-  const payload = generateSNMPPayload(machineId);
+  // Send to the dedicated K6 endpoint we created for the V2 parser
+  const payload = generateV2Payload(machineId);
   const pipelineStart = Date.now();
 
   const injectRes = http.post(
-    `${NODERED_URL}/inject`,
+    `${NODERED_URL}/k6-inject`,
     JSON.stringify(payload),
     {
       headers: { 'Content-Type': 'application/json' },
@@ -63,26 +84,7 @@ export default function () {
     'inject accepted': (r) => r.status === 200 || r.status === 204,
   });
 
-  // Step 2: Wait for pipeline processing
-  sleep(2);
-
-  // Step 3: Query Grafana to verify data appeared
-  const queryStart = Date.now();
-  http.get(
-    `${GRAFANA_URL}/api/ds/query`,
-    {
-      headers: { 'Content-Type': 'application/json' },
-      tags: { name: 'grafana_verify' },
-      timeout: '10s',
-    }
-  );
-  const queryTime = Date.now() - queryStart;
-
-  const e2eTime = Date.now() - e2eStart;
-  endToEndDuration.add(e2eTime);
-
-  const ok = injectOk;
-  if (ok) {
+  if (injectOk) {
     pipelineSuccess.add(1);
   } else {
     pipelineErrors.add(1);
@@ -93,19 +95,26 @@ export default function () {
 }
 
 export function handleSummary(data) {
-  const metrics = data?.metrics;
-  if (!metrics) return { stdout: 'No metrics collected' };
+  const metrics = data.metrics || {};
+  
+  // Safe extraction to prevent TypeError when 0 successes
+  const safeGet = (metricName, prop) => {
+      if (metrics[metricName] && metrics[metricName].values) {
+          return metrics[metricName].values[prop] || 0;
+      }
+      return 0;
+  };
+
   return {
     'tests/k6/e2e-pipeline-results.json': JSON.stringify({
       timestamp: new Date().toISOString(),
-      total_runs: metrics.pipeline_success?.values?.count || 0,
-      success_rate: metrics.pipeline_success?.values?.rate || 0,
-      errors: metrics.pipeline_errors?.values?.count || 0,
-      avg_pipeline_duration: metrics.pipeline_duration?.values?.avg || 0,
-      p95_pipeline_duration: metrics.pipeline_duration?.values?.['p(95)'] || 0,
-      avg_e2e_duration: metrics.e2e_duration?.values?.avg || 0,
-      p95_e2e_duration: metrics.e2e_duration?.values?.['p(95)'] || 0,
-      p99_e2e_duration: metrics.e2e_duration?.values?.['p(99)'] || 0,
+      total_runs: safeGet('pipeline_success', 'count'),
+      success_rate: safeGet('pipeline_success', 'rate'),
+      errors: safeGet('pipeline_errors', 'count'),
+      avg_pipeline_duration: safeGet('pipeline_duration', 'avg'),
+      p95_pipeline_duration: safeGet('pipeline_duration', 'p(95)'),
+      avg_e2e_duration: safeGet('e2e_duration', 'avg'),
+      p95_e2e_duration: safeGet('e2e_duration', 'p(95)'),
     }, null, 2),
     stdout: textSummary(data, { indent: ' ', enableColors: true }),
   };

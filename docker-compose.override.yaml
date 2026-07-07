@@ -1,6 +1,0 @@
-# Dev overrides: docker compose up -d (loads this automatically)
-# Snmpsim comes from base compose — no override needed
-services:
-  node-red:
-    environment:
-      - NODE_ENV=development
