@@ -40,7 +40,7 @@
       {
         "name": "machine_id",
         "type": "query",
-        "query": "SELECT DISTINCT machine_id FROM public.machine_telemetry ORDER BY machine_id",
+        "query": "SELECT DISTINCT machine_id FROM public.machine_telemetry ORDER BY machine_id LIMIT 100;",
         "datasource": {
           "uid": "timescaledb"
         },
@@ -53,7 +53,7 @@
       {
         "name": "interface",
         "type": "query",
-        "query": "SELECT DISTINCT key FROM (SELECT interface_metrics FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '10 minutes' ORDER BY time DESC LIMIT 100) AS recent, jsonb_object_keys(recent.interface_metrics) AS key ORDER BY key",
+        "query": "SELECT DISTINCT key FROM (SELECT jsonb_object_keys(interface_metrics) AS key FROM public.machine_telemetry WHERE interface_metrics IS NOT NULL LIMIT 100) sub;",
         "datasource": {
           "uid": "timescaledb"
         },
@@ -89,12 +89,12 @@
       "gridPos": {
         "x": 0,
         "y": 0,
-        "w": 20,
-        "h": 2
+        "w": 18,
+        "h": 3
       },
       "options": {
         "mode": "html",
-        "content": "<style>\n  @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap');\n  .dashboard-page { background: #05050A !important; font-family: 'Rajdhani', sans-serif !important;\n    background-image: linear-gradient(rgba(0,242,254,0.03) 1px, transparent 1px),\n      linear-gradient(90deg, rgba(0,242,254,0.03) 1px, transparent 1px) !important;\n    background-size: 30px 30px !important; }\n  .panel-container {\n    background: rgba(8, 12, 20, 0.85) !important;\n    border: 1px solid rgba(0, 242, 254, 0.2) !important;\n    border-radius: 6px !important;\n    backdrop-filter: blur(4px) !important;\n    box-shadow: inset 0 1px 10px rgba(0,242,254,0.02) !important;\n    transition: border-color 0.3s ease, transform 0.3s ease;\n  }\n  .panel-container:hover {\n    border-color: rgba(0, 255, 135, 0.5) !important;\n    transform: translateY(-2px);\n  }\n  .panel-title { color: #A0B0C0 !important; font-size: 14px !important; font-weight: 700 !important; letter-spacing: 1px; }\n</style>\n<div class=\"apex-banner\">\n  <h1 class=\"apex-title\">APEX <span style=\"color:#00F2FE;\">COMMAND</span></h1>\n  <div class=\"apex-nav\">\n      <a href=\"/d/ims-noc-overview\">NOC</a>\n      <a href=\"/d/ims-engineering\" class=\"active\">ENG</a>\n      <a href=\"/d/ims-capacity\">CAP</a>\n  </div>\n</div>"
+        "content": "<style>\n  @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap');\n  .dashboard-page { background: #05050A !important; font-family: 'Rajdhani', sans-serif !important;\n    background-image: linear-gradient(rgba(0,242,254,0.03) 1px, transparent 1px),\n      linear-gradient(90deg, rgba(0,242,254,0.03) 1px, transparent 1px) !important;\n    background-size: 30px 30px !important; }\n  .panel-container {\n    background: rgba(8, 12, 20, 0.85) !important;\n    border: 1px solid rgba(0, 242, 254, 0.2) !important;\n    border-radius: 6px !important;\n    backdrop-filter: blur(4px) !important;\n    box-shadow: inset 0 1px 10px rgba(0,242,254,0.02) !important;\n    transition: border-color 0.3s ease, transform 0.3s ease;\n  }\n  .panel-container:hover { border-color: rgba(0,255,135,0.5) !important; transform: translateY(-2px); }\n  .panel-title { color: #A0B0C0 !important; font-size: 14px !important; font-weight: 700 !important; letter-spacing: 1px; }\n</style>\n<div class=\"apex-banner\">\n  <h1 class=\"apex-title\">APEX <span style=\"color:#00F2FE;\">COMMAND</span></h1>\n  <div class=\"apex-nav\">\n      <a href=\"/d/ims-noc-overview\">NOC</a>\n      <a href=\"/d/ims-engineering\" class=\"active\">ENG</a>\n      <a href=\"/d/ims-capacity\">CAP</a>\n  </div>\n</div>"
       },
       "datasource": null,
       "transparent": true,
@@ -106,10 +106,10 @@
       "title": "",
       "datasource": null,
       "gridPos": {
-        "x": 20,
+        "x": 18,
         "y": 0,
-        "w": 4,
-        "h": 2
+        "w": 6,
+        "h": 3
       },
       "options": {
         "mode": "clock",
@@ -141,7 +141,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 2
+        "y": 3
       },
       "collapsed": false,
       "transparent": true
@@ -155,7 +155,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 3,
+        "y": 4,
         "w": 6,
         "h": 7
       },
@@ -229,7 +229,7 @@
       },
       "gridPos": {
         "x": 6,
-        "y": 3,
+        "y": 4,
         "w": 6,
         "h": 7
       },
@@ -303,7 +303,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 3,
+        "y": 4,
         "w": 6,
         "h": 7
       },
@@ -377,7 +377,7 @@
       },
       "gridPos": {
         "x": 18,
-        "y": 3,
+        "y": 4,
         "w": 6,
         "h": 7
       },
@@ -450,7 +450,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 10
+        "y": 11
       },
       "collapsed": false,
       "transparent": true
@@ -464,7 +464,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 11,
+        "y": 12,
         "w": 24,
         "h": 9
       },
@@ -475,7 +475,7 @@
           "max": 100,
           "custom": {
             "fillOpacity": 0,
-            "lineWidth": 2,
+            "lineWidth": 3,
             "spanNulls": 60000,
             "gradientMode": "opacity",
             "drawStyle": "line",
@@ -586,12 +586,79 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*ubuntu.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#00FF87",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*windows.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#00F2FE",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*(db|timescale|postgres).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#7F00FF",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*(forecast|regression).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#4A5568",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash"
+                }
+              }
+            ]
           }
         ]
       },
       "options": {
         "tooltip": {
-          "mode": "single"
+          "mode": "single",
+          "sort": "none"
         },
         "legend": {
           "displayMode": "table",
@@ -633,7 +700,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 20
+        "y": 21
       },
       "collapsed": false,
       "transparent": true
@@ -647,7 +714,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 21,
+        "y": 22,
         "w": 12,
         "h": 9
       },
@@ -883,7 +950,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 21,
+        "y": 22,
         "w": 12,
         "h": 9
       },
@@ -892,7 +959,7 @@
           "unit": "celsius",
           "custom": {
             "fillOpacity": 0,
-            "lineWidth": 2,
+            "lineWidth": 3,
             "spanNulls": 60000,
             "thresholdsStyle": {
               "mode": "dashed"
@@ -1057,12 +1124,79 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*ubuntu.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#00FF87",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*windows.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#00F2FE",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*(db|timescale|postgres).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#7F00FF",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "(?i).*(forecast|regression).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#4A5568",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash"
+                }
+              }
+            ]
           }
         ]
       },
       "options": {
         "tooltip": {
-          "mode": "single"
+          "mode": "single",
+          "sort": "none"
         },
         "legend": {
           "displayMode": "table",
@@ -1113,7 +1247,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 30
+        "y": 31
       },
       "collapsed": false,
       "transparent": true
@@ -1127,7 +1261,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 31,
+        "y": 32,
         "w": 8,
         "h": 9
       },
@@ -1332,7 +1466,7 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 31,
+        "y": 32,
         "w": 8,
         "h": 9
       },
@@ -1536,7 +1670,7 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 31,
+        "y": 32,
         "w": 8,
         "h": 9
       },
@@ -1577,7 +1711,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 40
+        "y": 41
       },
       "collapsed": false,
       "transparent": true
@@ -1591,9 +1725,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 41,
+        "y": 42,
         "w": 12,
-        "h": 9
+        "h": 8
       },
       "fieldConfig": {
         "defaults": {
@@ -1673,9 +1807,9 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 41,
+        "y": 42,
         "w": 12,
-        "h": 9
+        "h": 8
       },
       "fieldConfig": {
         "defaults": {
