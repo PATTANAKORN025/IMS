@@ -27,11 +27,11 @@ module.exports = {
         pg: require('pg'),
         fs: require('fs'),
         pgPool: new (require('pg').Pool)({
-            host: process.env.PGHOST || 'pgbouncer',
+            host: process.env.PGHOST || 'ims-timescaledb',
             port: parseInt(process.env.PGPORT) || 5432,
             database: process.env.PGDATABASE || 'ims',
             user: process.env.PGUSER || 'ims_admin',
-            password: process.env.PGPASSWORD || '',
+            password: process.env.PGPASSWORD || 'change-me-please',
             max: 2,
             idleTimeoutMillis: 30000
         }),
