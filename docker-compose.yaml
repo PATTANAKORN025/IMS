@@ -91,6 +91,7 @@ services:
     container_name: ims-pgbouncer
     <<: *default-restart
     init: true
+    entrypoint: ["/bin/sh", "/etc/pgbouncer/entrypoint-wrapper.sh"]
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@timescaledb:5432/${POSTGRES_DB}
       POOL_MODE: transaction
@@ -103,6 +104,8 @@ services:
       LOG_CONNECTIONS: "0"
       LOG_DISCONNECTIONS: "0"
       AUTH_TYPE: plain
+    volumes:
+      - ./pgbouncer/entrypoint-wrapper.sh:/etc/pgbouncer/entrypoint-wrapper.sh:ro
     deploy:
       resources:
         limits: *resource-small
