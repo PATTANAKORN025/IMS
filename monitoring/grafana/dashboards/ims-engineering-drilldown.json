@@ -1716,7 +1716,9 @@
           "custom": {
             "fillOpacity": 0,
             "lineWidth": 2,
-            "lineInterpolation": "smooth"
+            "lineInterpolation": "smooth",
+            "gradientMode": "none",
+            "connectNullPoints": "always"
           },
           "color": {
             "mode": "palette-classic"
