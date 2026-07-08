@@ -29,6 +29,8 @@ DROP TABLE IF EXISTS public.machines CASCADE;
 -- ══════════════════════════════════════════════════════════════
 
 -- ── 1. Device Registry (Static) ─────────────────────────
+-- NOTE: 'enabled' is the canonical column name used by Node-RED and Grafana.
+--       'is_active' is NOT used — Node-RED reads 'enabled' directly.
 CREATE TABLE public.devices (
     device_id       TEXT PRIMARY KEY,
     hostname        TEXT NOT NULL,
@@ -38,7 +40,7 @@ CREATE TABLE public.devices (
     snmp_community  TEXT DEFAULT 'public',
     snmp_port       INTEGER DEFAULT 161,
     poll_interval   INTEGER DEFAULT 1,
-    is_active       BOOLEAN DEFAULT TRUE,
+    enabled         BOOLEAN DEFAULT TRUE,
     created_at      TIMESTAMPTZ DEFAULT NOW(),
     updated_at      TIMESTAMPTZ DEFAULT NOW()
 );
@@ -128,29 +130,53 @@ SELECT time_bucket('1 hour', "time") AS bucket, device_id,
     AVG(wifi_snr) AS avg_snr
 FROM public.ldi_metrics GROUP BY bucket, device_id WITH NO DATA;
 
--- ── CAGG Refresh Policies ───────────────────────────────
-SELECT add_continuous_aggregate_policy('public.sys_hourly',
-    start_offset => INTERVAL '2 hours', end_offset => INTERVAL '10 minutes',
-    schedule_interval => INTERVAL '15 minutes', if_not_exists => TRUE);
-SELECT add_continuous_aggregate_policy('public.net_hourly',
-    start_offset => INTERVAL '2 hours', end_offset => INTERVAL '10 minutes',
-    schedule_interval => INTERVAL '15 minutes', if_not_exists => TRUE);
-SELECT add_continuous_aggregate_policy('public.ldi_hourly',
-    start_offset => INTERVAL '2 hours', end_offset => INTERVAL '10 minutes',
-    schedule_interval => INTERVAL '15 minutes', if_not_exists => TRUE);
+-- ── CAGG Refresh Policies (wrapped for safe boot) ───────
+-- On fresh install the raw tables are empty, so refresh windows can be tiny.
+-- We widen start_offset to 6 hours and schedule every 30 min to avoid
+-- the "policy refresh window too small" error during initdb.
+DO $$ BEGIN
+    PERFORM add_continuous_aggregate_policy('public.sys_hourly',
+        start_offset => INTERVAL '6 hours', end_offset => INTERVAL '30 minutes',
+        schedule_interval => INTERVAL '30 minutes', if_not_exists => TRUE);
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+DO $$ BEGIN
+    PERFORM add_continuous_aggregate_policy('public.net_hourly',
+        start_offset => INTERVAL '6 hours', end_offset => INTERVAL '30 minutes',
+        schedule_interval => INTERVAL '30 minutes', if_not_exists => TRUE);
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+DO $$ BEGIN
+    PERFORM add_continuous_aggregate_policy('public.ldi_hourly',
+        start_offset => INTERVAL '6 hours', end_offset => INTERVAL '30 minutes',
+        schedule_interval => INTERVAL '30 minutes', if_not_exists => TRUE);
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 
 -- ── Compression (compress after 7 days) ─────────────────
-ALTER TABLE public.sys_metrics SET (timescaledb.compress, timescaledb.compress_segmentby = 'device_id', timescaledb.compress_orderby = 'time DESC');
-ALTER TABLE public.net_metrics SET (timescaledb.compress, timescaledb.compress_segmentby = 'device_id', timescaledb.compress_orderby = 'time DESC');
-ALTER TABLE public.ldi_metrics SET (timescaledb.compress, timescaledb.compress_segmentby = 'device_id', timescaledb.compress_orderby = 'time DESC');
-SELECT add_compression_policy('public.sys_metrics', INTERVAL '7 days', if_not_exists => TRUE);
-SELECT add_compression_policy('public.net_metrics', INTERVAL '7 days', if_not_exists => TRUE);
-SELECT add_compression_policy('public.ldi_metrics', INTERVAL '7 days', if_not_exists => TRUE);
+DO $$ BEGIN
+    ALTER TABLE public.sys_metrics SET (timescaledb.compress, timescaledb.compress_segmentby = 'device_id', timescaledb.compress_orderby = 'time DESC');
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+DO $$ BEGIN
+    ALTER TABLE public.net_metrics SET (timescaledb.compress, timescaledb.compress_segmentby = 'device_id', timescaledb.compress_orderby = 'time DESC');
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+DO $$ BEGIN
+    ALTER TABLE public.ldi_metrics SET (timescaledb.compress, timescaledb.compress_segmentby = 'device_id', timescaledb.compress_orderby = 'time DESC');
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+DO $$ BEGIN PERFORM add_compression_policy('public.sys_metrics', INTERVAL '7 days', if_not_exists => TRUE); EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN PERFORM add_compression_policy('public.net_metrics', INTERVAL '7 days', if_not_exists => TRUE); EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN PERFORM add_compression_policy('public.ldi_metrics', INTERVAL '7 days', if_not_exists => TRUE); EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 -- ── Retention (drop raw after 30 days, CAGG stays forever) ─
-SELECT add_retention_policy('public.sys_metrics', INTERVAL '30 days', if_not_exists => TRUE);
-SELECT add_retention_policy('public.net_metrics', INTERVAL '30 days', if_not_exists => TRUE);
-SELECT add_retention_policy('public.ldi_metrics', INTERVAL '30 days', if_not_exists => TRUE);
+DO $$ BEGIN PERFORM add_retention_policy('public.sys_metrics', INTERVAL '30 days', if_not_exists => TRUE); EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN PERFORM add_retention_policy('public.net_metrics', INTERVAL '30 days', if_not_exists => TRUE); EXCEPTION WHEN OTHERS THEN NULL; END $$;
+DO $$ BEGIN PERFORM add_retention_policy('public.ldi_metrics', INTERVAL '30 days', if_not_exists => TRUE); EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 -- ── Real-time aggregation ───────────────────────────────
 ALTER MATERIALIZED VIEW public.sys_hourly SET (timescaledb.materialized_only = false);
@@ -175,7 +201,10 @@ INSERT INTO public.machines (machine_id, hostname, community, snmp_port) VALUES
     ('ERP-MASTER-UBUNTU',  'ims-snmpsim', 'Netk@', 161)
 ON CONFLICT (machine_id) DO NOTHING;
 
--- ── Fleet Health Views (V2) ────────────────────────────
+-- ══════════════════════════════════════════════════════════════
+-- VIEWS
+-- ══════════════════════════════════════════════════════════════
+
 CREATE OR REPLACE VIEW public.v_fleet_health AS
 SELECT DISTINCT ON (d.device_id)
     d.device_id AS machine_id,
