@@ -305,3 +305,18 @@ GRANT SELECT ON ALL TABLES IN SCHEMA public TO grafana_reader;
 GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO grafana_reader;
 ALTER DEFAULT PRIVILEGES FOR ROLE ims_admin IN SCHEMA public GRANT SELECT ON TABLES TO grafana_reader;
 ALTER DEFAULT PRIVILEGES FOR ROLE ims_admin IN SCHEMA public GRANT SELECT ON SEQUENCES TO grafana_reader;
+
+-- ══════════════════════════════════════════════════════════════
+-- MIGRATION TRACKING
+-- ══════════════════════════════════════════════════════════════
+
+CREATE TABLE IF NOT EXISTS public.schema_migrations (
+    version         TEXT PRIMARY KEY,
+    filename        TEXT NOT NULL,
+    applied_at      TIMESTAMPTZ DEFAULT NOW(),
+    checksum        TEXT
+);
+
+INSERT INTO public.schema_migrations (version, filename, checksum)
+VALUES ('001-init-timescaledb', 'postgres/init/001-init-timescaledb.sql', 'builtin-v2')
+ON CONFLICT (version) DO NOTHING;
