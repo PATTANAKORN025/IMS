@@ -308,7 +308,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH ldi AS (SELECT device_id, ldi_pe, ldi_je FROM public.sys_metrics WHERE time > NOW() - INTERVAL '1 hour' AND ldi_pe IS NOT NULL) SELECT ROUND(100.0 * SUM(CASE WHEN ABS(ldi_pe) > 10 OR ABS(ldi_je) > 10 THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0)::NUMERIC, 1) AS value FROM ldi",
+          "rawSql": "WITH ldi AS (SELECT device_id, pressure, joule_effect FROM public.ldi_metrics WHERE time > NOW() - INTERVAL '1 hour' AND pressure IS NOT NULL) SELECT ROUND(100.0 * SUM(CASE WHEN ABS(pressure) > 10 OR ABS(joule_effect) > 10 THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0)::NUMERIC, 1) AS value FROM ldi",
           "format": "table"
         }
       ],
@@ -377,7 +377,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH power_data AS (SELECT device_id, AVG(ldi_power) AS avg_watts FROM public.sys_metrics WHERE time > NOW() - INTERVAL '1 day' AND ldi_power IS NOT NULL GROUP BY device_id) SELECT 'Fleet Power Cost' AS metric, ROUND(SUM(avg_watts * 24 * 4.5 / 1000)::NUMERIC, 0) AS value FROM power_data",
+          "rawSql": "WITH power_data AS (SELECT device_id, AVG(power_watt) AS avg_watts FROM public.ldi_metrics WHERE time > NOW() - INTERVAL '1 day' AND power_watt IS NOT NULL GROUP BY device_id) SELECT 'Fleet Power Cost' AS metric, ROUND(SUM(avg_watts * 24 * 4.5 / 1000)::NUMERIC, 0) AS value FROM power_data",
           "format": "table"
         }
       ],
@@ -1309,7 +1309,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{ machine_id }} RX",
-          "rawSql": "SELECT bucket AS time, device_id, avg_rx_mbps AS \"RX (Mbps)\" FROM public.net_hourly WHERE $__timeFilter(bucket) AND device_id IN (${machine_id:sqlstring}) ORDER BY 1",
+          "rawSql": "SELECT bucket AS time, device_id, avg_rx AS \"RX (Mbps)\" FROM public.net_hourly WHERE $__timeFilter(bucket) AND device_id IN (${machine_id:sqlstring}) ORDER BY 1",
           "format": "time_series"
         },
         {
@@ -1318,7 +1318,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{ machine_id }} TX",
-          "rawSql": "SELECT bucket AS time, device_id, avg_tx_mbps AS \"TX (Mbps)\" FROM public.net_hourly WHERE $__timeFilter(bucket) AND device_id IN (${machine_id:sqlstring}) ORDER BY 1",
+          "rawSql": "SELECT bucket AS time, device_id, avg_tx AS \"TX (Mbps)\" FROM public.net_hourly WHERE $__timeFilter(bucket) AND device_id IN (${machine_id:sqlstring}) ORDER BY 1",
           "format": "time_series"
         }
       ],
