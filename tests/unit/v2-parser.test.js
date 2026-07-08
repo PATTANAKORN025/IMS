@@ -3,6 +3,12 @@
  * Tests: Null-handling, Batch Insert logic, Dynamic Network mapping, Query Builder
  *
  * Run: node tests/unit/v2-parser.test.js
+ *
+ * ARCHITECTURE NOTE: In production, parser logic is embedded within
+ * Node-RED flow JSON (nodered_data/flows/ingestion.json). This test
+ * script utilizes a localized copy for deterministic testing. Future
+ * iterations should extract this logic to an external module
+ * (e.g., nodered_data/lib/parser.js).
  */
 
 const assert = require('assert');
