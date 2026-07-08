@@ -1,28 +1,53 @@
--- IMS Database Initialization — TimescaleDB
--- Phase 7: Living Simulation + Delta Mbps Schema
+-- IMS Database Initialization — TimescaleDB V2 Normalized Schema
+-- Day-1 Fresh Install: Creates all V2 tables, CAGGs, policies, and views
 -- Run after: docker compose down -v && docker compose up -d
 
 -- ── Extensions ──────────────────────────────────────────
 CREATE EXTENSION IF NOT EXISTS timescaledb;
 CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
 
--- ── Clean Legacy Objects (ims.* schema from older phases) ─
-DROP MATERIALIZED VIEW IF EXISTS ims.telemetry_minute_summary CASCADE;
+-- ── Clean Legacy Objects ────────────────────────────────
 DROP MATERIALIZED VIEW IF EXISTS public.telemetry_minute_summary CASCADE;
-DROP VIEW IF EXISTS ims.v_uptime_summary CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS public.telemetry_hourly_summary CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS public.sys_hourly CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS public.net_hourly CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS public.ldi_hourly CASCADE;
 DROP VIEW IF EXISTS public.v_uptime_summary CASCADE;
-DROP TABLE IF EXISTS ims.machine_telemetry CASCADE;
-DROP TABLE IF EXISTS ims.alert_rules CASCADE;
-DROP TABLE IF EXISTS ims.alert_history CASCADE;
+DROP VIEW IF EXISTS public.v_fleet_health CASCADE;
+DROP VIEW IF EXISTS public.v_fleet_score CASCADE;
 DROP TABLE IF EXISTS public.machine_telemetry CASCADE;
-DROP TABLE IF EXISTS public.alert_rules CASCADE;
+DROP TABLE IF EXISTS public.sys_metrics CASCADE;
+DROP TABLE IF EXISTS public.net_metrics CASCADE;
+DROP TABLE IF EXISTS public.ldi_metrics CASCADE;
+DROP TABLE IF EXISTS public.devices CASCADE;
 DROP TABLE IF EXISTS public.alert_history CASCADE;
+DROP TABLE IF EXISTS public.alert_rules CASCADE;
+DROP TABLE IF EXISTS public.machines CASCADE;
 
--- ── Raw Telemetry (write-optimized, counter-based) ───────
-CREATE TABLE public.machine_telemetry (
-    "time"              TIMESTAMPTZ NOT NULL,
-    machine_id          TEXT NOT NULL,
-    cpu_cores           INT,
+-- ══════════════════════════════════════════════════════════════
+-- V2 NORMALIZED SCHEMA
+-- ══════════════════════════════════════════════════════════════
+
+-- ── 1. Device Registry (Static) ─────────────────────────
+CREATE TABLE public.devices (
+    device_id       TEXT PRIMARY KEY,
+    hostname        TEXT NOT NULL,
+    ip_address      TEXT NOT NULL DEFAULT '',
+    location        TEXT DEFAULT '',
+    device_type     TEXT DEFAULT 'server',
+    snmp_community  TEXT DEFAULT 'public',
+    snmp_port       INTEGER DEFAULT 161,
+    poll_interval   INTEGER DEFAULT 1,
+    is_active       BOOLEAN DEFAULT TRUE,
+    created_at      TIMESTAMPTZ DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ── 2. System Metrics (CPU, RAM, Disk, Temp) ────────────
+CREATE TABLE public.sys_metrics (
+    "time"              TIMESTAMPTZ     NOT NULL,
+    device_id           TEXT            NOT NULL REFERENCES public.devices(device_id) ON DELETE CASCADE,
+    cpu_cores           INTEGER,
     cpu_load_percent    DOUBLE PRECISION,
     ram_total_mb        DOUBLE PRECISION,
     ram_used_mb         DOUBLE PRECISION,
@@ -30,167 +55,169 @@ CREATE TABLE public.machine_telemetry (
     disk_total_gb       DOUBLE PRECISION,
     disk_used_gb        DOUBLE PRECISION,
     disk_free_gb        DOUBLE PRECISION,
-    net_rx_bytes        BIGINT DEFAULT 0,
-    net_tx_bytes        BIGINT DEFAULT 0,
-    net_rx_errors       BIGINT DEFAULT 0,
-    net_rx_drops        BIGINT DEFAULT 0,
-    net_if_status       INT DEFAULT 1,
-    temp_c              DOUBLE PRECISION DEFAULT 0,
+    disk_description    TEXT            DEFAULT '',
+    temp_c              DOUBLE PRECISION DEFAULT 0
+);
+SELECT create_hypertable('public.sys_metrics', 'time', chunk_time_interval => INTERVAL '1 day', if_not_exists => TRUE);
+CREATE INDEX IF NOT EXISTS idx_sys_device_time ON public.sys_metrics (device_id, "time" DESC);
+
+-- ── 3. Network Metrics (per-interface row) ──────────────
+CREATE TABLE public.net_metrics (
+    "time"              TIMESTAMPTZ     NOT NULL,
+    device_id           TEXT            NOT NULL REFERENCES public.devices(device_id) ON DELETE CASCADE,
+    iface_name          TEXT            NOT NULL,
     rx_mbps             DOUBLE PRECISION DEFAULT 0,
     tx_mbps             DOUBLE PRECISION DEFAULT 0,
-    interface_metrics   JSONB DEFAULT '{}'::jsonb,
-    -- LDI Private MIB (Enterprise .1.3.6.1.4.1.9999)
-    ldi_throughput      DOUBLE PRECISION DEFAULT 0,
-    ldi_humidity        DOUBLE PRECISION DEFAULT 0,
-    ldi_pe              DOUBLE PRECISION DEFAULT 0,
-    ldi_je              DOUBLE PRECISION DEFAULT 0,
-    ldi_power           DOUBLE PRECISION DEFAULT 0,
-    ldi_vibration       DOUBLE PRECISION DEFAULT 0,
-    ldi_uptime          BIGINT DEFAULT 0,
-    ldi_temp            DOUBLE PRECISION DEFAULT 0,
-    -- Wi-Fi RF metrics (private MIB .1.3.6.1.4.1.9999.2.x): RSSI in dBm (negative), SNR in dB
-    wifi_rssi           INT DEFAULT 0,
-    wifi_snr            INT DEFAULT 0,
-    -- Disk description (hrStorageDescr from HOST-RESOURCES-MIB)
-    disk_description    TEXT DEFAULT ''
+    rx_errors           BIGINT          DEFAULT 0,
+    tx_errors           BIGINT          DEFAULT 0,
+    rx_drops            BIGINT          DEFAULT 0,
+    tx_drops            BIGINT          DEFAULT 0,
+    status              TEXT            DEFAULT 'UP'
 );
+SELECT create_hypertable('public.net_metrics', 'time', chunk_time_interval => INTERVAL '1 day', if_not_exists => TRUE);
+CREATE INDEX IF NOT EXISTS idx_net_device_time ON public.net_metrics (device_id, "time" DESC);
+CREATE INDEX IF NOT EXISTS idx_net_iface ON public.net_metrics (device_id, iface_name, "time" DESC);
 
-SELECT create_hypertable('public.machine_telemetry', 'time', if_not_exists => TRUE);
-
--- Indexes
-CREATE INDEX IF NOT EXISTS idx_machine_time ON public.machine_telemetry (machine_id, "time" DESC);
-CREATE INDEX IF NOT EXISTS idx_machine_interfaces ON public.machine_telemetry USING GIN (interface_metrics);
-
--- Safe ROUND function (handles double precision -> NUMERIC conversion)
-CREATE OR REPLACE FUNCTION safe_round_numeric(val ANYELEMENT, decimals INT DEFAULT 2)
-RETURNS NUMERIC AS $$
-BEGIN
-    RETURN ROUND(val::NUMERIC, decimals);
-EXCEPTION WHEN OTHERS THEN
-    RETURN 0::NUMERIC;
-END;
-$$ LANGUAGE plpgsql IMMUTABLE PARALLEL SAFE;
-
--- Compression (saves ~90% disk after 7 days)
-ALTER TABLE public.machine_telemetry SET (
-    timescaledb.compress,
-    timescaledb.compress_segmentby = 'machine_id',
-    timescaledb.compress_orderby = '"time" DESC'
+-- ── 4. LDI Metrics (Manufacturing equipment) ────────────
+CREATE TABLE public.ldi_metrics (
+    "time"              TIMESTAMPTZ     NOT NULL,
+    device_id           TEXT            NOT NULL REFERENCES public.devices(device_id) ON DELETE CASCADE,
+    throughput          DOUBLE PRECISION DEFAULT 0,
+    temperature         DOUBLE PRECISION DEFAULT 0,
+    humidity            DOUBLE PRECISION DEFAULT 0,
+    pressure            DOUBLE PRECISION DEFAULT 0,
+    joule_effect        DOUBLE PRECISION DEFAULT 0,
+    power_watt          DOUBLE PRECISION DEFAULT 0,
+    vibration           DOUBLE PRECISION DEFAULT 0,
+    wifi_rssi           INTEGER         DEFAULT 0,
+    wifi_snr            INTEGER         DEFAULT 0
 );
-SELECT add_compression_policy('public.machine_telemetry', INTERVAL '7 days', if_not_exists => TRUE);
+SELECT create_hypertable('public.ldi_metrics', 'time', chunk_time_interval => INTERVAL '1 day', if_not_exists => TRUE);
+CREATE INDEX IF NOT EXISTS idx_ldi_device_time ON public.ldi_metrics (device_id, "time" DESC);
 
--- Retention (auto-delete data older than 90 days)
-SELECT add_retention_policy('public.machine_telemetry', INTERVAL '90 days', if_not_exists => TRUE);
+-- ══════════════════════════════════════════════════════════════
+-- CONTINUOUS AGGREGATES
+-- ══════════════════════════════════════════════════════════════
 
--- ── Continuous Aggregate: 1-Minute Summary ───────────────
--- GREATEST(0,...) prevents negative bandwidth when counter resets after reboot
-CREATE MATERIALIZED VIEW public.telemetry_minute_summary
+-- ── sys_hourly ──────────────────────────────────────────
+CREATE MATERIALIZED VIEW public.sys_hourly
 WITH (timescaledb.continuous) AS
-SELECT
-    time_bucket('1 minute', "time") AS "bucket",
-    machine_id,
-    AVG(cpu_load_percent) AS avg_cpu_load,
-    MAX(cpu_load_percent) AS max_cpu_load,
-    AVG(ram_used_mb) AS avg_ram_used,
-    AVG(ram_total_mb) AS avg_ram_total,
-    AVG(disk_used_gb) AS avg_disk_used,
-    AVG(disk_total_gb) AS avg_disk_total,
-    GREATEST(0, (MAX(net_rx_bytes) - MIN(net_rx_bytes))) * 8.0 /
-        NULLIF(EXTRACT(EPOCH FROM (MAX("time") - MIN("time"))), 0) / 1000000 AS avg_rx_mbps,
-    GREATEST(0, (MAX(net_tx_bytes) - MIN(net_tx_bytes))) * 8.0 /
-        NULLIF(EXTRACT(EPOCH FROM (MAX("time") - MIN("time"))), 0) / 1000000 AS avg_tx_mbps,
-    MAX(net_rx_errors) - MIN(net_rx_errors) AS total_rx_errors,
-    MAX(net_rx_drops) - MIN(net_rx_drops) AS total_rx_drops,
-    MIN(net_if_status) AS min_if_status,
-    MAX(temp_c) AS max_temp,
-    AVG(ldi_throughput) AS avg_ldi_throughput,
-    MAX(ldi_throughput) AS max_ldi_throughput,
-    AVG(ldi_humidity) AS avg_ldi_humidity,
-    AVG(ldi_pe) AS avg_ldi_pe,
-    MIN(ldi_pe) AS min_ldi_pe,
-    AVG(ldi_je) AS avg_ldi_je,
-    AVG(ldi_power) AS avg_ldi_power,
-    AVG(ldi_vibration) AS avg_ldi_vibration,
-    MAX(ldi_vibration) AS max_ldi_vibration,
-    AVG(ldi_temp) AS avg_ldi_temp,
-    MAX(ldi_temp) AS max_ldi_temp,
-    -- Wi-Fi RF: MIN(snr) = worst signal-to-noise in the bucket (used by the SNR<20 alert)
-    AVG(wifi_rssi) AS avg_wifi_rssi,
-    MIN(wifi_rssi) AS min_wifi_rssi,
-    AVG(wifi_snr) AS avg_wifi_snr,
-    MIN(wifi_snr) AS min_wifi_snr
-FROM public.machine_telemetry
-GROUP BY "bucket", machine_id;
+SELECT time_bucket('1 hour', "time") AS bucket, device_id,
+    AVG(cpu_load_percent) AS avg_cpu, MAX(cpu_load_percent) AS max_cpu,
+    AVG(ram_used_mb) AS avg_ram_used, AVG(ram_total_mb) AS avg_ram_total,
+    AVG(disk_used_gb) AS avg_disk_used, AVG(disk_total_gb) AS avg_disk_total,
+    MAX(temp_c) AS max_temp
+FROM public.sys_metrics GROUP BY bucket, device_id WITH NO DATA;
 
--- Refresh policy
-SELECT add_continuous_aggregate_policy('public.telemetry_minute_summary',
-    start_offset    => INTERVAL '1 hour',
-    end_offset      => INTERVAL '1 minute',
-    schedule_interval => INTERVAL '1 minute',
-    if_not_exists   => TRUE
-);
-
--- ── Continuous Aggregate: Hourly Summary (for long-term queries) ──
-CREATE MATERIALIZED VIEW public.telemetry_hourly_summary
+-- ── net_hourly ──────────────────────────────────────────
+CREATE MATERIALIZED VIEW public.net_hourly
 WITH (timescaledb.continuous) AS
-SELECT
-    time_bucket('1 hour', "bucket") AS "hour_bucket",
-    machine_id,
-    AVG(avg_cpu_load) AS avg_cpu_load,
-    MAX(max_cpu_load) AS max_cpu_load,
-    AVG(avg_ram_used) AS avg_ram_used,
-    AVG(avg_disk_used) AS avg_disk_used,
-    AVG(avg_rx_mbps) AS avg_rx_mbps,
-    AVG(avg_tx_mbps) AS avg_tx_mbps,
-    MAX(max_temp) AS max_temp,
-    SUM(total_rx_errors) AS total_rx_errors,
-    SUM(total_rx_drops) AS total_rx_drops,
-    MIN(min_if_status) AS min_if_status,
-    AVG(avg_ldi_throughput) AS avg_ldi_throughput,
-    MAX(max_ldi_throughput) AS max_ldi_throughput,
-    AVG(avg_ldi_humidity) AS avg_ldi_humidity,
-    AVG(avg_ldi_pe) AS avg_ldi_pe,
-    MIN(min_ldi_pe) AS min_ldi_pe,
-    AVG(avg_ldi_je) AS avg_ldi_je,
-    AVG(avg_ldi_power) AS avg_ldi_power,
-    AVG(avg_ldi_vibration) AS avg_ldi_vibration,
-    MAX(max_ldi_vibration) AS max_ldi_vibration,
-    AVG(avg_ldi_temp) AS avg_ldi_temp,
-    MAX(max_ldi_temp) AS max_ldi_temp,
-    AVG(avg_wifi_rssi) AS avg_wifi_rssi,
-    MIN(min_wifi_rssi) AS min_wifi_rssi,
-    AVG(avg_wifi_snr) AS avg_wifi_snr,
-    MIN(min_wifi_snr) AS min_wifi_snr
-FROM public.telemetry_minute_summary
-GROUP BY "hour_bucket", machine_id;
+SELECT time_bucket('1 hour', "time") AS bucket, device_id, iface_name,
+    AVG(rx_mbps) AS avg_rx, MAX(rx_mbps) AS max_rx,
+    AVG(tx_mbps) AS avg_tx, MAX(tx_mbps) AS max_tx,
+    SUM(rx_errors) AS total_errors, SUM(rx_drops) AS total_drops
+FROM public.net_metrics GROUP BY bucket, device_id, iface_name WITH NO DATA;
 
-SELECT add_continuous_aggregate_policy('public.telemetry_hourly_summary',
-    start_offset    => INTERVAL '2 days',
-    end_offset      => INTERVAL '1 hour',
-    schedule_interval => INTERVAL '1 hour',
-    if_not_exists   => TRUE
+-- ── ldi_hourly ──────────────────────────────────────────
+CREATE MATERIALIZED VIEW public.ldi_hourly
+WITH (timescaledb.continuous) AS
+SELECT time_bucket('1 hour', "time") AS bucket, device_id,
+    AVG(throughput) AS avg_throughput, MAX(temperature) AS max_temp,
+    AVG(humidity) AS avg_humidity, AVG(power_watt) AS avg_power,
+    AVG(vibration) AS avg_vibration, AVG(wifi_rssi) AS avg_rssi,
+    AVG(wifi_snr) AS avg_snr
+FROM public.ldi_metrics GROUP BY bucket, device_id WITH NO DATA;
+
+-- ── CAGG Refresh Policies ───────────────────────────────
+SELECT add_continuous_aggregate_policy('public.sys_hourly',
+    start_offset => INTERVAL '2 hours', end_offset => INTERVAL '10 minutes',
+    schedule_interval => INTERVAL '15 minutes', if_not_exists => TRUE);
+SELECT add_continuous_aggregate_policy('public.net_hourly',
+    start_offset => INTERVAL '2 hours', end_offset => INTERVAL '10 minutes',
+    schedule_interval => INTERVAL '15 minutes', if_not_exists => TRUE);
+SELECT add_continuous_aggregate_policy('public.ldi_hourly',
+    start_offset => INTERVAL '2 hours', end_offset => INTERVAL '10 minutes',
+    schedule_interval => INTERVAL '15 minutes', if_not_exists => TRUE);
+
+-- ── Compression (compress after 7 days) ─────────────────
+ALTER TABLE public.sys_metrics SET (timescaledb.compress, timescaledb.compress_segmentby = 'device_id', timescaledb.compress_orderby = 'time DESC');
+ALTER TABLE public.net_metrics SET (timescaledb.compress, timescaledb.compress_segmentby = 'device_id', timescaledb.compress_orderby = 'time DESC');
+ALTER TABLE public.ldi_metrics SET (timescaledb.compress, timescaledb.compress_segmentby = 'device_id', timescaledb.compress_orderby = 'time DESC');
+SELECT add_compression_policy('public.sys_metrics', INTERVAL '7 days', if_not_exists => TRUE);
+SELECT add_compression_policy('public.net_metrics', INTERVAL '7 days', if_not_exists => TRUE);
+SELECT add_compression_policy('public.ldi_metrics', INTERVAL '7 days', if_not_exists => TRUE);
+
+-- ── Retention (drop raw after 30 days, CAGG stays forever) ─
+SELECT add_retention_policy('public.sys_metrics', INTERVAL '30 days', if_not_exists => TRUE);
+SELECT add_retention_policy('public.net_metrics', INTERVAL '30 days', if_not_exists => TRUE);
+SELECT add_retention_policy('public.ldi_metrics', INTERVAL '30 days', if_not_exists => TRUE);
+
+-- ── Real-time aggregation ───────────────────────────────
+ALTER MATERIALIZED VIEW public.sys_hourly SET (timescaledb.materialized_only = false);
+ALTER MATERIALIZED VIEW public.net_hourly SET (timescaledb.materialized_only = false);
+ALTER MATERIALIZED VIEW public.ldi_hourly SET (timescaledb.materialized_only = false);
+
+-- ══════════════════════════════════════════════════════════════
+-- LEGACY COMPATIBILITY (machines table for Grafana dropdowns)
+-- ══════════════════════════════════════════════════════════════
+
+CREATE TABLE public.machines (
+    machine_id    TEXT PRIMARY KEY,
+    hostname      TEXT NOT NULL,
+    community     TEXT NOT NULL DEFAULT 'Netk@',
+    snmp_port     INT NOT NULL DEFAULT 161,
+    enabled       BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- ── Fleet Status View ───────────────────────────────────
--- Scans only last 24h to prevent full hypertable scan as data grows
-CREATE OR REPLACE VIEW public.v_uptime_summary AS
-SELECT
-    machine_id,
-    MAX("time") AS last_seen,
-    EXTRACT(EPOCH FROM (NOW() - MAX("time")))::INT AS seconds_since_last,
+INSERT INTO public.machines (machine_id, hostname, community, snmp_port) VALUES
+    ('ERP-MASTER-WINDOWS', 'ims-snmpsim', 'Netk@', 161),
+    ('ERP-MASTER-UBUNTU',  'ims-snmpsim', 'Netk@', 161)
+ON CONFLICT (machine_id) DO NOTHING;
+
+-- ── Fleet Health Views (V2) ────────────────────────────
+CREATE OR REPLACE VIEW public.v_fleet_health AS
+SELECT DISTINCT ON (d.device_id)
+    d.device_id AS machine_id,
+    ROUND((s.cpu_load_percent)::NUMERIC, 1) AS cpu_pct,
+    ROUND((s.ram_used_mb / NULLIF(s.ram_total_mb, 0) * 100)::NUMERIC, 1) AS ram_pct,
+    ROUND((s.disk_used_gb / NULLIF(s.disk_total_gb, 0) * 100)::NUMERIC, 1) AS disk_pct,
+    ROUND(s.temp_c::NUMERIC, 0) AS temp_c,
     CASE
-        WHEN EXTRACT(EPOCH FROM (NOW() - MAX("time"))) <= 30 THEN 'online'
-        WHEN EXTRACT(EPOCH FROM (NOW() - MAX("time"))) <= 300 THEN 'stale'
+        WHEN s.cpu_load_percent > 90 OR s.ram_used_mb / NULLIF(s.ram_total_mb, 0) * 100 > 95
+             OR s.disk_used_gb / NULLIF(s.disk_total_gb, 0) * 100 > 90 THEN 0
+        WHEN s.cpu_load_percent > 80 OR s.ram_used_mb / NULLIF(s.ram_total_mb, 0) * 100 > 85
+             OR s.disk_used_gb / NULLIF(s.disk_total_gb, 0) * 100 > 80 THEN 50
+        ELSE 100
+    END AS health_score,
+    s.time
+FROM public.sys_metrics s
+JOIN public.devices d ON d.device_id = s.device_id
+WHERE s.time > NOW() - INTERVAL '5 minutes'
+ORDER BY d.device_id, s.time DESC;
+
+CREATE OR REPLACE VIEW public.v_fleet_score AS
+SELECT 'Fleet Score' AS metric, ROUND(AVG(health_score)::NUMERIC, 1) AS value
+FROM public.v_fleet_health;
+
+CREATE OR REPLACE VIEW public.v_uptime_summary AS
+SELECT s.device_id AS machine_id, MAX(s.time) AS last_seen,
+    EXTRACT(EPOCH FROM (NOW() - MAX(s.time)))::INT AS seconds_since_last,
+    CASE
+        WHEN EXTRACT(EPOCH FROM (NOW() - MAX(s.time))) <= 30 THEN 'online'
+        WHEN EXTRACT(EPOCH FROM (NOW() - MAX(s.time))) <= 300 THEN 'stale'
         ELSE 'offline'
     END AS health_status,
-    ROUND(AVG(cpu_load_percent)::NUMERIC, 2) AS current_cpu,
-    ROUND(AVG(temp_c)::NUMERIC, 1) AS current_temp,
-    MIN(net_if_status) AS interface_status
-FROM public.machine_telemetry
-WHERE "time" > NOW() - INTERVAL '24 hours'
-GROUP BY machine_id;
+    ROUND(AVG(s.cpu_load_percent)::NUMERIC, 2) AS current_cpu,
+    ROUND(AVG(s.temp_c)::NUMERIC, 1) AS current_temp
+FROM public.sys_metrics s
+WHERE s.time > NOW() - INTERVAL '24 hours'
+GROUP BY s.device_id;
 
--- ── Alert Rules ─────────────────────────────────────────
+-- ══════════════════════════════════════════════════════════════
+-- ALERTING
+-- ══════════════════════════════════════════════════════════════
+
 CREATE TABLE public.alert_rules (
     rule_id       SERIAL PRIMARY KEY,
     machine_id    TEXT,
@@ -208,12 +235,11 @@ INSERT INTO public.alert_rules (machine_id, metric_name, operator, threshold, se
     (NULL, 'cpu_load_percent',  '>', 75, 'warning'),
     (NULL, 'temp_c',            '>', 85, 'critical'),
     (NULL, 'temp_c',            '>', 70, 'warning'),
-    (NULL, 'net_rx_errors',     '>', 100, 'warning'),
-    (NULL, 'net_rx_drops',      '>', 50, 'warning'),
-    (NULL, 'net_if_status',     '=', 2, 'critical')
+    (NULL, 'rx_errors',         '>', 100, 'warning'),
+    (NULL, 'rx_drops',          '>', 50, 'warning'),
+    (NULL, 'status',            '=', 0, 'critical')
 ON CONFLICT DO NOTHING;
 
--- ── Alert History ───────────────────────────────────────
 CREATE TABLE public.alert_history (
     alert_id      SERIAL PRIMARY KEY,
     rule_id       INT REFERENCES public.alert_rules(rule_id),
@@ -227,49 +253,10 @@ CREATE TABLE public.alert_history (
     created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- ── Device Registry ─────────────────────────────────────
-CREATE TABLE IF NOT EXISTS public.machines (
-    machine_id    TEXT PRIMARY KEY,
-    hostname      TEXT NOT NULL,
-    community     TEXT NOT NULL DEFAULT 'Netk@',
-    snmp_port     INT NOT NULL DEFAULT 161,
-    enabled       BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+-- ══════════════════════════════════════════════════════════════
+-- GRAFANA READ-ONLY ROLE
+-- ══════════════════════════════════════════════════════════════
 
-INSERT INTO public.machines (machine_id, hostname, community, snmp_port) VALUES
-    ('ERP-MASTER-WINDOWS', 'ims-snmpsim', 'Netk@', 161),
-    ('ERP-MASTER-UBUNTU',  'ims-snmpsim', 'Netk@', 161)
-ON CONFLICT (machine_id) DO NOTHING;
-
--- ── Fleet Health Views ─────────────────────────────────
--- v_fleet_health: per-machine snapshot from raw telemetry (last 5 min)
-CREATE OR REPLACE VIEW public.v_fleet_health AS
-SELECT DISTINCT ON (m.machine_id)
-    m.machine_id,
-    ROUND((m.cpu_load_percent)::NUMERIC, 1) AS cpu_pct,
-    ROUND((m.ram_used_mb / NULLIF(m.ram_total_mb, 0) * 100)::NUMERIC, 1) AS ram_pct,
-    ROUND((m.disk_used_gb / NULLIF(m.disk_total_gb, 0) * 100)::NUMERIC, 1) AS disk_pct,
-    ROUND(m.temp_c::NUMERIC, 0) AS temp_c,
-    CASE
-        WHEN m.cpu_load_percent > 90 OR m.ram_used_mb / NULLIF(m.ram_total_mb, 0) * 100 > 95
-             OR m.disk_used_gb / NULLIF(m.disk_total_gb, 0) * 100 > 90 THEN 0
-        WHEN m.cpu_load_percent > 80 OR m.ram_used_mb / NULLIF(m.ram_total_mb, 0) * 100 > 85
-             OR m.disk_used_gb / NULLIF(m.disk_total_gb, 0) * 100 > 80 THEN 50
-        ELSE 100
-    END AS health_score,
-    m.time
-FROM public.machine_telemetry m
-WHERE m.time > NOW() - INTERVAL '5 minutes'
-ORDER BY m.machine_id, m.time DESC;
-
--- v_fleet_score: composite fleet score (single-row aggregation)
-CREATE OR REPLACE VIEW public.v_fleet_score AS
-SELECT 'Fleet Score' AS metric,
-       ROUND(AVG(health_score)::NUMERIC, 1) AS value
-FROM public.v_fleet_health;
-
--- ── Read-Only Grafana Role (least privilege) ──────────────
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'grafana_reader') THEN
@@ -280,4 +267,6 @@ $$;
 GRANT CONNECT ON DATABASE ims TO grafana_reader;
 GRANT USAGE ON SCHEMA public TO grafana_reader;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO grafana_reader;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO grafana_reader;
+GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO grafana_reader;
+ALTER DEFAULT PRIVILEGES FOR ROLE ims_admin IN SCHEMA public GRANT SELECT ON TABLES TO grafana_reader;
+ALTER DEFAULT PRIVILEGES FOR ROLE ims_admin IN SCHEMA public GRANT SELECT ON SEQUENCES TO grafana_reader;
