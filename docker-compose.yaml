@@ -106,7 +106,7 @@ services:
       CLIENT_IDLE_TIMEOUT: 300
       LOG_CONNECTIONS: "0"
       LOG_DISCONNECTIONS: "0"
-      AUTH_TYPE: md5
+      AUTH_TYPE: plain
     volumes:
       - ./pgbouncer/entrypoint-wrapper.sh:/etc/pgbouncer/entrypoint-wrapper.sh:ro
     deploy:
@@ -195,6 +195,8 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD in .env}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      GRAFANA_DB_USER: ${GRAFANA_DB_USER:-grafana_reader}
+      GRAFANA_DB_PASSWORD: ${GRAFANA_DB_PASSWORD:-grafana_secure}
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_AUTH_ANONYMOUS_ENABLED: "false"
       GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:-http://localhost:3000}
@@ -295,7 +297,7 @@ services:
       CREDENTIAL_SECRET: ${NODE_RED_CREDENTIAL_SECRET:?set NODE_RED_CREDENTIAL_SECRET in .env}
       NODE_RED_ADMIN_USER: ${NODE_RED_ADMIN_USER:-admin}
       NODE_RED_ADMIN_PASSWORD_HASH: ${NODE_RED_ADMIN_PASSWORD_HASH:-}
-      PGHOST: ims-timescaledb
+      PGHOST: ims-pgbouncer
       PGPORT: "5432"
       PGDATABASE: ${POSTGRES_DB}
       PGUSER: ${POSTGRES_USER}

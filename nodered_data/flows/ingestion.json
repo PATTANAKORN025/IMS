@@ -10,7 +10,7 @@
     "id": "pg_config",
     "type": "postgreSQLConfig",
     "name": "IMS Database",
-    "host": "ims-timescaledb",
+    "host": "ims-pgbouncer",
     "hostFieldType": "str",
     "port": "5432",
     "portFieldType": "num",
