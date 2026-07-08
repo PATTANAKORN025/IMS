@@ -40,7 +40,7 @@
       {
         "name": "machine_id",
         "type": "query",
-        "query": "SELECT 'NO_MACHINES_FOUND' AS __text UNION SELECT DISTINCT machine_id AS __text FROM public.machines WHERE enabled = true ORDER BY __text ASC;",
+        "query": "SELECT machine_id AS __text FROM public.machines WHERE enabled = true ORDER BY machine_id ASC LIMIT 200;",
         "datasource": {
           "uid": "timescaledb"
         },
@@ -53,7 +53,7 @@
       {
         "name": "interface",
         "type": "query",
-        "query": "SELECT DISTINCT key AS __text FROM public.machine_telemetry, jsonb_object_keys(interface_metrics) AS key WHERE interface_metrics IS NOT NULL LIMIT 100;",
+        "query": "SELECT DISTINCT iface_name AS __text FROM public.net_metrics LIMIT 100;",
         "datasource": {
           "uid": "timescaledb"
         },
@@ -202,7 +202,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT cpu_load_percent AS value FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '2 minutes' AND machine_id IN (${machine_id:sqlstring}) ORDER BY time DESC LIMIT 1",
+          "rawSql": "SELECT cpu_load_percent AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '2 minutes' AND device_id IN (${machine_id:sqlstring}) ORDER BY time DESC LIMIT 1",
           "format": "table"
         }
       ],
@@ -276,7 +276,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND((ram_used_mb / NULLIF(ram_total_mb, 0) * 100)::NUMERIC, 1) AS value FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '2 minutes' AND machine_id IN (${machine_id:sqlstring}) ORDER BY time DESC LIMIT 1",
+          "rawSql": "SELECT ROUND((ram_used_mb / NULLIF(ram_total_mb, 0) * 100)::NUMERIC, 1) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '2 minutes' AND device_id IN (${machine_id:sqlstring}) ORDER BY time DESC LIMIT 1",
           "format": "table"
         }
       ],
@@ -350,7 +350,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND((disk_used_gb / NULLIF(disk_total_gb, 0) * 100)::NUMERIC, 1) AS value FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '2 minutes' AND machine_id IN (${machine_id:sqlstring}) ORDER BY time DESC LIMIT 1",
+          "rawSql": "SELECT ROUND((disk_used_gb / NULLIF(disk_total_gb, 0) * 100)::NUMERIC, 1) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '2 minutes' AND device_id IN (${machine_id:sqlstring}) ORDER BY time DESC LIMIT 1",
           "format": "table"
         }
       ],
@@ -423,7 +423,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT temp_c AS value FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '2 minutes' AND machine_id IN (${machine_id:sqlstring}) AND temp_c > 0 ORDER BY time DESC LIMIT 1",
+          "rawSql": "SELECT temp_c AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '2 minutes' AND device_id IN (${machine_id:sqlstring}) AND temp_c > 0 ORDER BY time DESC LIMIT 1",
           "format": "table"
         }
       ],
@@ -703,7 +703,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "RAM %",
-          "rawSql": "SELECT bucket AS time, ROUND((avg_ram_used / NULLIF(avg_ram_total, 0) * 100)::NUMERIC, 1) AS \"RAM %\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id IN (${machine_id:sqlstring}) ORDER BY 1",
+          "rawSql": "SELECT bucket AS time, ROUND((avg_ram_used / NULLIF(avg_ram_total, 0) * 100)::NUMERIC, 1) AS \"RAM %\" FROM public.sys_hourly WHERE $__timeFilter(bucket) AND device_id IN (${machine_id:sqlstring}) ORDER BY 1",
           "format": "time_series"
         }
       ],
@@ -928,7 +928,7 @@
             "type": "postgres",
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, (val->>'rx_mbps')::numeric * 1000000 AS \"Download (bps)\"\nFROM public.machine_telemetry,\nLATERAL jsonb_each(interface_metrics) AS iface(key, val)\nWHERE $__timeFilter(time)\n  AND machine_id IN (${machine_id:sqlstring})\n  AND iface.key IN (${interface:sqlstring})\nORDER BY 1",
+          "rawSql": "SELECT time, (val->>'rx_mbps')::numeric * 1000000 AS \"Download (bps)\"\nFROM public.net_metrics,\nLATERAL jsonb_each(iface_name) AS iface(key, val)\nWHERE $__timeFilter(time)\n  AND device_id IN (${machine_id:sqlstring})\n  AND iface.key IN (${interface:sqlstring})\nORDER BY 1",
           "format": "time_series",
           "maxDataPoints": 300
         },
@@ -938,7 +938,7 @@
             "type": "postgres",
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, (val->>'tx_mbps')::numeric * 1000000 AS \"Upload (bps)\"\nFROM public.machine_telemetry,\nLATERAL jsonb_each(interface_metrics) AS iface(key, val)\nWHERE $__timeFilter(time)\n  AND machine_id IN (${machine_id:sqlstring})\n  AND iface.key IN (${interface:sqlstring})\nORDER BY 1",
+          "rawSql": "SELECT time, (val->>'tx_mbps')::numeric * 1000000 AS \"Upload (bps)\"\nFROM public.net_metrics,\nLATERAL jsonb_each(iface_name) AS iface(key, val)\nWHERE $__timeFilter(time)\n  AND device_id IN (${machine_id:sqlstring})\n  AND iface.key IN (${interface:sqlstring})\nORDER BY 1",
           "format": "time_series",
           "maxDataPoints": 300
         }
@@ -1253,7 +1253,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "Temperature °C",
-          "rawSql": "SELECT bucket AS time, max_temp AS \"Temperature (°C)\" FROM public.telemetry_minute_summary WHERE $__timeFilter(bucket) AND machine_id IN (${machine_id:sqlstring}) AND max_temp > 0 ORDER BY 1",
+          "rawSql": "SELECT bucket AS time, max_temp AS \"Temperature (°C)\" FROM public.sys_hourly WHERE $__timeFilter(bucket) AND device_id IN (${machine_id:sqlstring}) AND max_temp > 0 ORDER BY 1",
           "format": "time_series"
         },
         {
@@ -1262,7 +1262,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "Z-Score (Anomaly)",
-          "rawSql": "WITH stats AS (SELECT bucket, max_temp, AVG(max_temp) OVER w AS mu, COALESCE(STDDEV(max_temp) OVER w, 0) AS sigma FROM public.telemetry_minute_summary WHERE machine_id IN (${machine_id:sqlstring}) AND max_temp > 0 AND $__timeFilter(bucket) WINDOW w AS (PARTITION BY machine_id ORDER BY bucket ROWS BETWEEN 60 PRECEDING AND 1 PRECEDING)) SELECT bucket AS time, CASE WHEN sigma > 0 THEN ROUND(((max_temp - mu) / sigma)::NUMERIC, 2) ELSE 0 END AS \"Z-Score\" FROM stats ORDER BY 1",
+          "rawSql": "WITH stats AS (SELECT bucket, max_temp, AVG(max_temp) OVER w AS mu, COALESCE(STDDEV(max_temp) OVER w, 0) AS sigma FROM public.sys_hourly WHERE device_id IN (${machine_id:sqlstring}) AND max_temp > 0 AND $__timeFilter(bucket) WINDOW w AS (PARTITION BY device_id ORDER BY bucket ROWS BETWEEN 60 PRECEDING AND 1 PRECEDING)) SELECT bucket AS time, CASE WHEN sigma > 0 THEN ROUND(((max_temp - mu) / sigma)::NUMERIC, 2) ELSE 0 END AS \"Z-Score\" FROM stats ORDER BY 1",
           "format": "time_series"
         }
       ],
@@ -1466,7 +1466,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "Throughput",
-          "rawSql": "SELECT time, ldi_throughput AS \"Throughput\" FROM public.machine_telemetry WHERE $__timeFilter(time) AND machine_id IN (${machine_id:sqlstring}) AND ldi_throughput > 0 ORDER BY 1",
+          "rawSql": "SELECT time, ldi_throughput AS \"Throughput\" FROM public.sys_metrics WHERE $__timeFilter(time) AND device_id IN (${machine_id:sqlstring}) AND ldi_throughput > 0 ORDER BY 1",
           "format": "time_series"
         },
         {
@@ -1475,7 +1475,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "PE",
-          "rawSql": "SELECT time, ldi_pe AS \"PE\" FROM public.machine_telemetry WHERE $__timeFilter(time) AND machine_id IN (${machine_id:sqlstring}) AND ldi_pe IS NOT NULL ORDER BY 1",
+          "rawSql": "SELECT time, ldi_pe AS \"PE\" FROM public.sys_metrics WHERE $__timeFilter(time) AND device_id IN (${machine_id:sqlstring}) AND ldi_pe IS NOT NULL ORDER BY 1",
           "format": "time_series"
         }
       ],
@@ -1670,7 +1670,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "JE",
-          "rawSql": "SELECT time, ldi_je AS \"JE\" FROM public.machine_telemetry WHERE $__timeFilter(time) AND machine_id IN (${machine_id:sqlstring}) AND ldi_je IS NOT NULL ORDER BY 1",
+          "rawSql": "SELECT time, ldi_je AS \"JE\" FROM public.sys_metrics WHERE $__timeFilter(time) AND device_id IN (${machine_id:sqlstring}) AND ldi_je IS NOT NULL ORDER BY 1",
           "format": "time_series"
         },
         {
@@ -1679,7 +1679,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "Humidity",
-          "rawSql": "SELECT time, ldi_humidity AS \"Humidity\" FROM public.machine_telemetry WHERE $__timeFilter(time) AND machine_id IN (${machine_id:sqlstring}) AND ldi_humidity > 0 ORDER BY 1",
+          "rawSql": "SELECT time, ldi_humidity AS \"Humidity\" FROM public.sys_metrics WHERE $__timeFilter(time) AND device_id IN (${machine_id:sqlstring}) AND ldi_humidity > 0 ORDER BY 1",
           "format": "time_series"
         }
       ],
@@ -1746,7 +1746,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, ldi_pe AS \"PE\" FROM public.machine_telemetry WHERE $__timeFilter(time) AND machine_id IN (${machine_id:sqlstring}) AND ldi_pe IS NOT NULL ORDER BY 1",
+          "rawSql": "SELECT time, ldi_pe AS \"PE\" FROM public.sys_metrics WHERE $__timeFilter(time) AND device_id IN (${machine_id:sqlstring}) AND ldi_pe IS NOT NULL ORDER BY 1",
           "format": "time_series"
         },
         {
@@ -1754,7 +1754,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, ldi_je AS \"JE\" FROM public.machine_telemetry WHERE $__timeFilter(time) AND machine_id IN (${machine_id:sqlstring}) AND ldi_je IS NOT NULL ORDER BY 1",
+          "rawSql": "SELECT time, ldi_je AS \"JE\" FROM public.sys_metrics WHERE $__timeFilter(time) AND device_id IN (${machine_id:sqlstring}) AND ldi_je IS NOT NULL ORDER BY 1",
           "format": "time_series"
         }
       ],
@@ -1841,7 +1841,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH stats AS (SELECT bucket, avg_cpu_load, AVG(avg_cpu_load) OVER w AS moving_avg, COALESCE(STDDEV(avg_cpu_load) OVER w, 0) AS moving_stddev FROM public.telemetry_minute_summary WHERE machine_id IN (${machine_id:sqlstring}) AND $__timeFilter(bucket) WINDOW w AS (PARTITION BY machine_id ORDER BY bucket ROWS BETWEEN 60 PRECEDING AND 1 PRECEDING)) SELECT bucket AS time, CASE WHEN moving_stddev > 0 THEN ROUND(((avg_cpu_load - moving_avg) / moving_stddev)::NUMERIC, 2) ELSE 0 END AS \"Z-Score\" FROM stats ORDER BY 1",
+          "rawSql": "WITH stats AS (SELECT bucket, avg_cpu, AVG(avg_cpu) OVER w AS moving_avg, COALESCE(STDDEV(avg_cpu) OVER w, 0) AS moving_stddev FROM public.sys_hourly WHERE device_id IN (${machine_id:sqlstring}) AND $__timeFilter(bucket) WINDOW w AS (PARTITION BY device_id ORDER BY bucket ROWS BETWEEN 60 PRECEDING AND 1 PRECEDING)) SELECT bucket AS time, CASE WHEN moving_stddev > 0 THEN ROUND(((avg_cpu - moving_avg) / moving_stddev)::NUMERIC, 2) ELSE 0 END AS \"Z-Score\" FROM stats ORDER BY 1",
           "format": "time_series",
           "maxDataPoints": 300
         }
@@ -1923,7 +1923,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH stats AS (SELECT bucket, machine_id, max_temp, AVG(max_temp) OVER w AS mu, COALESCE(NULLIF(STDDEV(max_temp) OVER w, 0), 1) AS sigma FROM public.telemetry_minute_summary WHERE machine_id IN (${machine_id:sqlstring}) AND max_temp > 0 AND $__timeFilter(bucket) WINDOW w AS (PARTITION BY machine_id ORDER BY bucket ROWS BETWEEN 60 PRECEDING AND 1 PRECEDING)) SELECT bucket AS time, machine_id, ROUND(((max_temp - mu) / sigma)::NUMERIC, 2) AS \"Z-Score\" FROM stats ORDER BY 1",
+          "rawSql": "WITH stats AS (SELECT bucket, device_id, max_temp, AVG(max_temp) OVER w AS mu, COALESCE(NULLIF(STDDEV(max_temp) OVER w, 0), 1) AS sigma FROM public.sys_hourly WHERE device_id IN (${machine_id:sqlstring}) AND max_temp > 0 AND $__timeFilter(bucket) WINDOW w AS (PARTITION BY device_id ORDER BY bucket ROWS BETWEEN 60 PRECEDING AND 1 PRECEDING)) SELECT bucket AS time, device_id, ROUND(((max_temp - mu) / sigma)::NUMERIC, 2) AS \"Z-Score\" FROM stats ORDER BY 1",
           "format": "time_series"
         }
       ],
@@ -2031,7 +2031,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT 'CPU Load %' AS metric, AVG(cpu_load_percent) AS value FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '5 minutes'",
+          "rawSql": "SELECT 'CPU Load %' AS metric, AVG(cpu_load_percent) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '5 minutes'",
           "format": "table"
         },
         {
@@ -2039,7 +2039,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT 'RAM Used %' AS metric, AVG(ram_used_mb / NULLIF(ram_total_mb, 0) * 100) AS value FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '5 minutes'",
+          "rawSql": "SELECT 'RAM Used %' AS metric, AVG(ram_used_mb / NULLIF(ram_total_mb, 0) * 100) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '5 minutes'",
           "format": "table"
         },
         {
@@ -2047,7 +2047,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT 'Disk Used %' AS metric, AVG(disk_used_gb / NULLIF(disk_total_gb, 0) * 100) AS value FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '5 minutes'",
+          "rawSql": "SELECT 'Disk Used %' AS metric, AVG(disk_used_gb / NULLIF(disk_total_gb, 0) * 100) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '5 minutes'",
           "format": "table"
         }
       ],
@@ -2141,7 +2141,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT 'Healthy' AS metric, COUNT(*) AS value FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '5 minutes' AND cpu_load_percent < 80 AND ram_used_mb / NULLIF(ram_total_mb, 0) * 100 < 85",
+          "rawSql": "SELECT 'Healthy' AS metric, COUNT(*) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '5 minutes' AND cpu_load_percent < 80 AND ram_used_mb / NULLIF(ram_total_mb, 0) * 100 < 85",
           "format": "table"
         },
         {
@@ -2149,7 +2149,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT 'Warning' AS metric, COUNT(*) AS value FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '5 minutes' AND (cpu_load_percent BETWEEN 80 AND 90 OR ram_used_mb / NULLIF(ram_total_mb, 0) * 100 BETWEEN 85 AND 95)",
+          "rawSql": "SELECT 'Warning' AS metric, COUNT(*) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '5 minutes' AND (cpu_load_percent BETWEEN 80 AND 90 OR ram_used_mb / NULLIF(ram_total_mb, 0) * 100 BETWEEN 85 AND 95)",
           "format": "table"
         },
         {
@@ -2157,7 +2157,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT 'Critical' AS metric, COUNT(*) AS value FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '5 minutes' AND (cpu_load_percent > 90 OR ram_used_mb / NULLIF(ram_total_mb, 0) * 100 > 95)",
+          "rawSql": "SELECT 'Critical' AS metric, COUNT(*) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '5 minutes' AND (cpu_load_percent > 90 OR ram_used_mb / NULLIF(ram_total_mb, 0) * 100 > 95)",
           "format": "table"
         }
       ],

@@ -41,7 +41,7 @@
       {
         "name": "machine_id",
         "type": "query",
-        "query": "SELECT 'NO_MACHINES_FOUND' AS __text UNION SELECT DISTINCT machine_id AS __text FROM public.machines WHERE enabled = true ORDER BY __text ASC;",
+        "query": "SELECT machine_id AS __text FROM public.machines WHERE enabled = true ORDER BY machine_id ASC LIMIT 200;",
         "datasource": {
           "uid": "timescaledb"
         },
@@ -186,7 +186,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT 'Disk' AS metric, LEAST(CASE WHEN r.slope<=0 THEN 365 ELSE GREATEST(0,(t.disk_total_gb - r.intercept)/r.slope - EXTRACT(EPOCH FROM NOW())/86400) END, 365) AS \"Days Until Full\" FROM (SELECT machine_id, COALESCE(regr_slope(avg_used, EXTRACT(EPOCH FROM day)),0) AS slope, COALESCE(regr_intercept(avg_used, EXTRACT(EPOCH FROM day)),0) AS intercept FROM (SELECT machine_id, time_bucket('1 day',hour_bucket) AS day, AVG(avg_disk_used) AS avg_used FROM public.telemetry_hourly_summary WHERE hour_bucket > NOW()-INTERVAL '30 days' GROUP BY 1,2) d GROUP BY machine_id) r JOIN (SELECT DISTINCT ON (machine_id) machine_id, disk_total_gb FROM public.machine_telemetry WHERE disk_total_gb>0 ORDER BY machine_id, time DESC) t ON t.machine_id=r.machine_id ORDER BY 1 ASC LIMIT 1",
+          "rawSql": "SELECT 'Disk' AS metric, LEAST(CASE WHEN r.slope<=0 THEN 365 ELSE GREATEST(0,(t.disk_total_gb - r.intercept)/r.slope - EXTRACT(EPOCH FROM NOW())/86400) END, 365) AS \"Days Until Full\" FROM (SELECT device_id, COALESCE(regr_slope(avg_used, EXTRACT(EPOCH FROM day)),0) AS slope, COALESCE(regr_intercept(avg_used, EXTRACT(EPOCH FROM day)),0) AS intercept FROM (SELECT device_id, time_bucket('1 day',hour_bucket) AS day, AVG(avg_disk_used) AS avg_used FROM public.sys_hourly WHERE hour_bucket > NOW()-INTERVAL '30 days' GROUP BY 1,2) d GROUP BY device_id) r JOIN (SELECT DISTINCT ON (device_id) device_id, disk_total_gb FROM public.sys_metrics WHERE disk_total_gb>0 ORDER BY device_id, time DESC) t ON t.device_id=r.device_id ORDER BY 1 ASC LIMIT 1",
           "format": "table"
         },
         {
@@ -194,7 +194,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT 'RAM' AS metric, LEAST(CASE WHEN r.slope<=0 THEN 365 ELSE GREATEST(0,(t.ram_total_mb - r.intercept)/r.slope - EXTRACT(EPOCH FROM NOW())/86400) END, 365) AS \"Days Until Full\" FROM (SELECT machine_id, COALESCE(regr_slope(avg_used, EXTRACT(EPOCH FROM day)),0) AS slope, COALESCE(regr_intercept(avg_used, EXTRACT(EPOCH FROM day)),0) AS intercept FROM (SELECT machine_id, time_bucket('1 day',hour_bucket) AS day, AVG(avg_ram_used) AS avg_used FROM public.telemetry_hourly_summary WHERE hour_bucket > NOW()-INTERVAL '30 days' GROUP BY 1,2) d GROUP BY machine_id) r JOIN (SELECT DISTINCT ON (machine_id) machine_id, ram_total_mb FROM public.machine_telemetry WHERE ram_total_mb>0 ORDER BY machine_id, time DESC) t ON t.machine_id=r.machine_id ORDER BY 1 ASC LIMIT 1",
+          "rawSql": "SELECT 'RAM' AS metric, LEAST(CASE WHEN r.slope<=0 THEN 365 ELSE GREATEST(0,(t.ram_total_mb - r.intercept)/r.slope - EXTRACT(EPOCH FROM NOW())/86400) END, 365) AS \"Days Until Full\" FROM (SELECT device_id, COALESCE(regr_slope(avg_used, EXTRACT(EPOCH FROM day)),0) AS slope, COALESCE(regr_intercept(avg_used, EXTRACT(EPOCH FROM day)),0) AS intercept FROM (SELECT device_id, time_bucket('1 day',hour_bucket) AS day, AVG(avg_ram_used) AS avg_used FROM public.sys_hourly WHERE hour_bucket > NOW()-INTERVAL '30 days' GROUP BY 1,2) d GROUP BY device_id) r JOIN (SELECT DISTINCT ON (device_id) device_id, ram_total_mb FROM public.sys_metrics WHERE ram_total_mb>0 ORDER BY device_id, time DESC) t ON t.device_id=r.device_id ORDER BY 1 ASC LIMIT 1",
           "format": "table"
         },
         {
@@ -202,7 +202,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT 'CPU' AS metric, LEAST(CASE WHEN slope<=0 THEN 365 ELSE GREATEST(0,(100-intercept)/slope-EXTRACT(EPOCH FROM NOW())/86400) END, 365) AS \"Days Until Full\" FROM (SELECT machine_id, COALESCE(regr_slope(avg_cpu, EXTRACT(EPOCH FROM day)),0) AS slope, COALESCE(regr_intercept(avg_cpu, EXTRACT(EPOCH FROM day)),0) AS intercept FROM (SELECT machine_id, time_bucket('1 day',hour_bucket) AS day, AVG(avg_cpu_load) AS avg_cpu FROM public.telemetry_hourly_summary WHERE hour_bucket > NOW()-INTERVAL '30 days' GROUP BY 1,2) d GROUP BY machine_id) ORDER BY 2 ASC LIMIT 1",
+          "rawSql": "SELECT 'CPU' AS metric, LEAST(CASE WHEN slope<=0 THEN 365 ELSE GREATEST(0,(100-intercept)/slope-EXTRACT(EPOCH FROM NOW())/86400) END, 365) AS \"Days Until Full\" FROM (SELECT device_id, COALESCE(regr_slope(avg_cpu, EXTRACT(EPOCH FROM day)),0) AS slope, COALESCE(regr_intercept(avg_cpu, EXTRACT(EPOCH FROM day)),0) AS intercept FROM (SELECT device_id, time_bucket('1 day',hour_bucket) AS day, AVG(avg_cpu) AS avg_cpu FROM public.sys_hourly WHERE hour_bucket > NOW()-INTERVAL '30 days' GROUP BY 1,2) d GROUP BY device_id) ORDER BY 2 ASC LIMIT 1",
           "format": "table"
         }
       ],
@@ -279,7 +279,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH daily_usage AS (  SELECT machine_id, time_bucket('1 day', hour_bucket) AS day,    AVG(avg_disk_used) AS avg_used  FROM public.telemetry_hourly_summary  WHERE hour_bucket > NOW() - INTERVAL '30 days'  GROUP BY 1, 2), totals AS (  SELECT DISTINCT ON (machine_id) machine_id, disk_total_gb  FROM public.machine_telemetry  WHERE disk_total_gb > 0  ORDER BY machine_id, time DESC), regression AS (  SELECT machine_id,    COALESCE(regr_slope(avg_used, EXTRACT(EPOCH FROM day)), 0) AS slope,    COALESCE(regr_intercept(avg_used, EXTRACT(EPOCH FROM day)), 0) AS intercept  FROM daily_usage GROUP BY machine_id) SELECT r.machine_id AS metric,  CASE WHEN r.slope <= 0 THEN 9999    WHEN t.disk_total_gb <= 0 THEN 9999    ELSE GREATEST(0, (t.disk_total_gb - r.intercept) / r.slope - EXTRACT(EPOCH FROM NOW()) / 86400)  END AS value FROM regression r JOIN totals t ON t.machine_id = r.machine_id ORDER BY value ASC LIMIT 1",
+          "rawSql": "WITH daily_usage AS (  SELECT device_id, time_bucket('1 day', hour_bucket) AS day,    AVG(avg_disk_used) AS avg_used  FROM public.sys_hourly  WHERE hour_bucket > NOW() - INTERVAL '30 days'  GROUP BY 1, 2), totals AS (  SELECT DISTINCT ON (device_id) device_id, disk_total_gb  FROM public.sys_metrics  WHERE disk_total_gb > 0  ORDER BY device_id, time DESC), regression AS (  SELECT device_id,    COALESCE(regr_slope(avg_used, EXTRACT(EPOCH FROM day)), 0) AS slope,    COALESCE(regr_intercept(avg_used, EXTRACT(EPOCH FROM day)), 0) AS intercept  FROM daily_usage GROUP BY device_id) SELECT r.device_id AS metric,  CASE WHEN r.slope <= 0 THEN 9999    WHEN t.disk_total_gb <= 0 THEN 9999    ELSE GREATEST(0, (t.disk_total_gb - r.intercept) / r.slope - EXTRACT(EPOCH FROM NOW()) / 86400)  END AS value FROM regression r JOIN totals t ON t.device_id = r.device_id ORDER BY value ASC LIMIT 1",
           "format": "table"
         }
       ],
@@ -364,7 +364,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH daily_usage AS (  SELECT machine_id, time_bucket('1 day', hour_bucket) AS day,    AVG(avg_ram_used) AS avg_used  FROM public.telemetry_hourly_summary  WHERE hour_bucket > NOW() - INTERVAL '30 days'  GROUP BY 1, 2), totals AS (  SELECT DISTINCT ON (machine_id) machine_id, ram_total_mb  FROM public.machine_telemetry  WHERE ram_total_mb > 0  ORDER BY machine_id, time DESC), regression AS (  SELECT machine_id,    COALESCE(regr_slope(avg_used, EXTRACT(EPOCH FROM day)), 0) AS slope,    COALESCE(regr_intercept(avg_used, EXTRACT(EPOCH FROM day)), 0) AS intercept  FROM daily_usage GROUP BY machine_id) SELECT r.machine_id AS metric,  CASE WHEN r.slope <= 0 THEN 9999    WHEN t.ram_total_mb <= 0 THEN 9999    ELSE GREATEST(0, (t.ram_total_mb - r.intercept) / r.slope - EXTRACT(EPOCH FROM NOW()) / 86400)  END AS value FROM regression r JOIN totals t ON t.machine_id = r.machine_id ORDER BY value ASC LIMIT 1",
+          "rawSql": "WITH daily_usage AS (  SELECT device_id, time_bucket('1 day', hour_bucket) AS day,    AVG(avg_ram_used) AS avg_used  FROM public.sys_hourly  WHERE hour_bucket > NOW() - INTERVAL '30 days'  GROUP BY 1, 2), totals AS (  SELECT DISTINCT ON (device_id) device_id, ram_total_mb  FROM public.sys_metrics  WHERE ram_total_mb > 0  ORDER BY device_id, time DESC), regression AS (  SELECT device_id,    COALESCE(regr_slope(avg_used, EXTRACT(EPOCH FROM day)), 0) AS slope,    COALESCE(regr_intercept(avg_used, EXTRACT(EPOCH FROM day)), 0) AS intercept  FROM daily_usage GROUP BY device_id) SELECT r.device_id AS metric,  CASE WHEN r.slope <= 0 THEN 9999    WHEN t.ram_total_mb <= 0 THEN 9999    ELSE GREATEST(0, (t.ram_total_mb - r.intercept) / r.slope - EXTRACT(EPOCH FROM NOW()) / 86400)  END AS value FROM regression r JOIN totals t ON t.device_id = r.device_id ORDER BY value ASC LIMIT 1",
           "format": "table"
         }
       ],
@@ -449,7 +449,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH daily_usage AS (SELECT machine_id, time_bucket('1 day', hour_bucket) AS day, AVG(avg_cpu_load) AS avg_cpu FROM public.telemetry_hourly_summary WHERE hour_bucket > NOW() - INTERVAL '30 days' GROUP BY 1, 2), regression AS (SELECT machine_id, COALESCE(regr_slope(avg_cpu, EXTRACT(EPOCH FROM day)), 0) AS slope, COALESCE(regr_intercept(avg_cpu, EXTRACT(EPOCH FROM day)), 0) AS intercept FROM daily_usage GROUP BY machine_id) SELECT machine_id AS metric, CASE WHEN slope <= 0 THEN 9999 ELSE GREATEST(0, (100 - intercept) / slope - EXTRACT(EPOCH FROM NOW()) / 86400) END AS value FROM regression r ORDER BY value ASC LIMIT 1",
+          "rawSql": "WITH daily_usage AS (SELECT device_id, time_bucket('1 day', hour_bucket) AS day, AVG(avg_cpu) AS avg_cpu FROM public.sys_hourly WHERE hour_bucket > NOW() - INTERVAL '30 days' GROUP BY 1, 2), regression AS (SELECT device_id, COALESCE(regr_slope(avg_cpu, EXTRACT(EPOCH FROM day)), 0) AS slope, COALESCE(regr_intercept(avg_cpu, EXTRACT(EPOCH FROM day)), 0) AS intercept FROM daily_usage GROUP BY device_id) SELECT device_id AS metric, CASE WHEN slope <= 0 THEN 9999 ELSE GREATEST(0, (100 - intercept) / slope - EXTRACT(EPOCH FROM NOW()) / 86400) END AS value FROM regression r ORDER BY value ASC LIMIT 1",
           "format": "table"
         }
       ],
@@ -822,7 +822,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('1 hour', hour_bucket) AS \"time\", machine_id, AVG(avg_disk_used) AS \"Disk Used (GB)\" FROM public.telemetry_hourly_summary WHERE $__timeFilter(hour_bucket) AND machine_id IN (${machine_id:sqlstring}) GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('1 hour', hour_bucket) AS \"time\", device_id, AVG(avg_disk_used) AS \"Disk Used (GB)\" FROM public.sys_hourly WHERE $__timeFilter(hour_bucket) AND device_id IN (${machine_id:sqlstring}) GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series"
         },
         {
@@ -831,7 +831,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, disk_total_gb AS \"Disk Total (GB)\" FROM public.machine_telemetry WHERE $__timeFilter(time) AND machine_id IN (${machine_id:sqlstring}) AND disk_total_gb > 0 ORDER BY 1",
+          "rawSql": "SELECT time, disk_total_gb AS \"Disk Total (GB)\" FROM public.sys_metrics WHERE $__timeFilter(time) AND device_id IN (${machine_id:sqlstring}) AND disk_total_gb > 0 ORDER BY 1",
           "format": "time_series"
         },
         {
@@ -840,7 +840,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH daily AS (SELECT machine_id, time_bucket('1 day', hour_bucket) AS day, AVG(avg_disk_used) AS used FROM public.telemetry_hourly_summary WHERE hour_bucket > NOW() - INTERVAL '30 days' AND machine_id IN (${machine_id:sqlstring}) GROUP BY 1, 2), reg AS (SELECT machine_id, COALESCE(regr_slope(used, EXTRACT(EPOCH FROM day)), 0) AS slope, COALESCE(regr_intercept(used, EXTRACT(EPOCH FROM day)), 0) AS intercept FROM daily GROUP BY machine_id) SELECT generate_series AS time, r.machine_id, GREATEST(0, r.slope * EXTRACT(EPOCH FROM generate_series) + r.intercept) AS \"Forecast (GB)\" FROM reg r, generate_series(NOW(), NOW() + INTERVAL '30 days', INTERVAL '1 day') WHERE r.slope > 0 ORDER BY 1, 2",
+          "rawSql": "WITH daily AS (SELECT device_id, time_bucket('1 day', hour_bucket) AS day, AVG(avg_disk_used) AS used FROM public.sys_hourly WHERE hour_bucket > NOW() - INTERVAL '30 days' AND device_id IN (${machine_id:sqlstring}) GROUP BY 1, 2), reg AS (SELECT device_id, COALESCE(regr_slope(used, EXTRACT(EPOCH FROM day)), 0) AS slope, COALESCE(regr_intercept(used, EXTRACT(EPOCH FROM day)), 0) AS intercept FROM daily GROUP BY device_id) SELECT generate_series AS time, r.device_id, GREATEST(0, r.slope * EXTRACT(EPOCH FROM generate_series) + r.intercept) AS \"Forecast (GB)\" FROM reg r, generate_series(NOW(), NOW() + INTERVAL '30 days', INTERVAL '1 day') WHERE r.slope > 0 ORDER BY 1, 2",
           "format": "time_series",
           "maxDataPoints": 300
         }
@@ -1116,7 +1116,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{ machine_id }}",
-          "rawSql": "SELECT time_bucket('1 day', hour_bucket) AS \"time\", machine_id, AVG(avg_cpu_load) AS \"Avg CPU %\" FROM public.telemetry_hourly_summary WHERE hour_bucket > NOW() - INTERVAL '30 days' AND machine_id IN (${machine_id:sqlstring}) GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('1 day', hour_bucket) AS \"time\", device_id, AVG(avg_cpu) AS \"Avg CPU %\" FROM public.sys_hourly WHERE hour_bucket > NOW() - INTERVAL '30 days' AND device_id IN (${machine_id:sqlstring}) GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series"
         }
       ],
@@ -1378,7 +1378,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{ machine_id }}",
-          "rawSql": "WITH totals AS (\n  SELECT DISTINCT ON (machine_id) machine_id, ram_total_mb\n  FROM public.machine_telemetry\n  WHERE ram_total_mb > 0\n  ORDER BY machine_id, time DESC\n)\nSELECT h.hour_bucket AS time, h.machine_id,\n  ROUND((h.avg_ram_used / NULLIF(t.ram_total_mb, 0) * 100)::NUMERIC, 1) AS \"Avg RAM %\"\nFROM public.telemetry_hourly_summary h\nJOIN totals t ON t.machine_id = h.machine_id\nWHERE h.hour_bucket > NOW() - INTERVAL '30 days'\n  AND h.machine_id IN (${machine_id:sqlstring})\nORDER BY 1",
+          "rawSql": "WITH totals AS (\n  SELECT DISTINCT ON (device_id) device_id, ram_total_mb\n  FROM public.sys_metrics\n  WHERE ram_total_mb > 0\n  ORDER BY device_id, time DESC\n)\nSELECT h.hour_bucket AS time, h.device_id,\n  ROUND((h.avg_ram_used / NULLIF(t.ram_total_mb, 0) * 100)::NUMERIC, 1) AS \"Avg RAM %\"\nFROM public.sys_hourly h\nJOIN totals t ON t.device_id = h.device_id\nWHERE h.hour_bucket > NOW() - INTERVAL '30 days'\n  AND h.device_id IN (${machine_id:sqlstring})\nORDER BY 1",
           "format": "time_series"
         }
       ],
@@ -1666,7 +1666,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{ machine_id }}",
-          "rawSql": "WITH stats AS (SELECT bucket, machine_id, avg_cpu_load, AVG(avg_cpu_load) OVER w AS mu, COALESCE(NULLIF(STDDEV(avg_cpu_load) OVER w, 0), 1) AS sigma FROM public.telemetry_minute_summary WHERE machine_id IN (${machine_id:sqlstring}) AND $__timeFilter(bucket) WINDOW w AS (PARTITION BY machine_id ORDER BY bucket ROWS BETWEEN 60 PRECEDING AND 1 PRECEDING)) SELECT bucket AS time, machine_id AS metric, ROUND(((avg_cpu_load - mu) / sigma)::NUMERIC, 2) AS \"Z-Score\" FROM stats ORDER BY 1",
+          "rawSql": "WITH stats AS (SELECT bucket, device_id, avg_cpu, AVG(avg_cpu) OVER w AS mu, COALESCE(NULLIF(STDDEV(avg_cpu) OVER w, 0), 1) AS sigma FROM public.sys_hourly WHERE device_id IN (${machine_id:sqlstring}) AND $__timeFilter(bucket) WINDOW w AS (PARTITION BY device_id ORDER BY bucket ROWS BETWEEN 60 PRECEDING AND 1 PRECEDING)) SELECT bucket AS time, device_id AS metric, ROUND(((avg_cpu - mu) / sigma)::NUMERIC, 2) AS \"Z-Score\" FROM stats ORDER BY 1",
           "format": "time_series",
           "maxDataPoints": 300
         }
@@ -1942,7 +1942,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{ machine_id }}",
-          "rawSql": "WITH stats AS (SELECT bucket, machine_id, max_temp, AVG(max_temp) OVER w AS mu, COALESCE(NULLIF(STDDEV(max_temp) OVER w, 0), 1) AS sigma FROM public.telemetry_minute_summary WHERE machine_id IN (${machine_id:sqlstring}) AND max_temp > 0 AND $__timeFilter(bucket) WINDOW w AS (PARTITION BY machine_id ORDER BY bucket ROWS BETWEEN 60 PRECEDING AND 1 PRECEDING)) SELECT bucket AS time, machine_id AS metric, ROUND(((max_temp - mu) / sigma)::NUMERIC, 2) AS \"Z-Score\" FROM stats ORDER BY 1",
+          "rawSql": "WITH stats AS (SELECT bucket, device_id, max_temp, AVG(max_temp) OVER w AS mu, COALESCE(NULLIF(STDDEV(max_temp) OVER w, 0), 1) AS sigma FROM public.sys_hourly WHERE device_id IN (${machine_id:sqlstring}) AND max_temp > 0 AND $__timeFilter(bucket) WINDOW w AS (PARTITION BY device_id ORDER BY bucket ROWS BETWEEN 60 PRECEDING AND 1 PRECEDING)) SELECT bucket AS time, device_id AS metric, ROUND(((max_temp - mu) / sigma)::NUMERIC, 2) AS \"Z-Score\" FROM stats ORDER BY 1",
           "format": "time_series",
           "maxDataPoints": 300
         }
