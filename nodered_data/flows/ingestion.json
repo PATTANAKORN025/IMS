@@ -478,7 +478,7 @@
     "type": "function",
     "z": "ims-tab-v5",
     "name": "Parse K6 Payload",
-    "func": "if (env.get(\"NODE_ENV\") === \"production\") {\n    var msg403 = { statusCode: 403, payload: JSON.stringify({ error: \"Forbidden\" }), headers: { \"Content-Type\": \"application/json\" } };\n    return [null, msg403];\n}\nvar body = msg.payload;\nif (typeof body === \"string\") {\n    try { body = JSON.parse(body); } catch(e) { body = {}; }\n}\nvar machineId = body.machine_id || (\"K6-SERVER-\" + String(Math.floor(Math.random() * 1000)).padStart(3, \"0\"));\nif (!machineId.startsWith(\"K6-SERVER-\")) machineId = \"K6-SERVER-\" + machineId;\nvar respondMsg = { statusCode: 200, payload: JSON.stringify({ ok: true, machine_id: machineId }), headers: { \"Content-Type\": \"application/json\" } };\nmsg.machine_id = machineId;\nmsg.topic = machineId;\nmsg.payload = \"\";\nreturn [msg, respondMsg];",
+    "func": "var body = msg.payload;\nif (typeof body === 'string') {\n    try { body = JSON.parse(body); } catch(e) { body = {}; }\n}\nvar machineId = body.machine_id || '';\nif (!machineId) {\n    machineId = 'K6-LOAD-TEST-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0');\n}\nvar respondMsg = {\n    statusCode: 200,\n    payload: JSON.stringify({ ok: true, machine_id: machineId }),\n    headers: { 'Content-Type': 'application/json' }\n};\nmsg.machine_id = machineId;\nmsg.topic = machineId;\nmsg.payload = '';\nreturn [msg, respondMsg];",
     "outputs": 2,
     "timeout": "",
     "noerr": 0,

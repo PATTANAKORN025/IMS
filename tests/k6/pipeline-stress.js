@@ -33,28 +33,6 @@ export const options = {
 function generateV2Payload(machineId) {
   return {
     machine_id: machineId,
-    metrics: [
-      {
-        cpu: { cores: Math.floor(Math.random() * 64) + 4, load: Math.random() * 80 + 5 }
-      },
-      {
-        disk: {
-          ramTotal: 16384, ramUsed: Math.random() * 12000, ramFree: 4000,
-          diskTotal: 1000, diskUsed: Math.random() * 500, diskFree: 500
-        }
-      },
-      {
-        temp: Math.random() * 40 + 30
-      },
-      {
-        interfaces: [
-          { name: 'eth0', received_MB: Math.random() * 500, sent_MB: Math.random() * 300, status: 'ON' }
-        ]
-      },
-      {
-        ldi: { throughput: Math.random() * 100, temperature: 80, humidity: 50 }
-      }
-    ]
   };
 }
 
@@ -68,7 +46,7 @@ export default function () {
   const pipelineStart = Date.now();
 
   const injectRes = http.post(
-    `${NODERED_URL}/k6-inject`,
+    `${NODERED_URL}/inject`,
     JSON.stringify(payload),
     {
       headers: { 'Content-Type': 'application/json' },
