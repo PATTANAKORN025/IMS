@@ -9,9 +9,9 @@ datasources:
     access: proxy
     url: ims-timescaledb:5432
     database: ims
-    user: ${GRAFANA_DB_USER}
+    user: grafana_reader
     secureJsonData:
-      password: ${GRAFANA_DB_PASSWORD}
+      password: grafana_secure
     jsonData:
       sslmode: disable
       postgresVersion: 1600
