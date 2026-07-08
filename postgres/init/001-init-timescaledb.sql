@@ -183,6 +183,12 @@ ALTER MATERIALIZED VIEW public.sys_hourly SET (timescaledb.materialized_only = f
 ALTER MATERIALIZED VIEW public.net_hourly SET (timescaledb.materialized_only = false);
 ALTER MATERIALIZED VIEW public.ldi_hourly SET (timescaledb.materialized_only = false);
 
+-- Seed devices table with SNMP simulator targets
+INSERT INTO public.devices (device_id, hostname, ip_address, enabled) VALUES
+    ('ERP-MASTER-WINDOWS', 'ims-snmpsim', '192.168.1.10', true),
+    ('ERP-MASTER-UBUNTU',  'ims-snmpsim', '192.168.1.11', true)
+ON CONFLICT (device_id) DO NOTHING;
+
 -- ══════════════════════════════════════════════════════════════
 -- LEGACY COMPATIBILITY (machines table for Grafana dropdowns)
 -- ══════════════════════════════════════════════════════════════
