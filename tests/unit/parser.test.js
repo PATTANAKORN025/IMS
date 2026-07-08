@@ -3,6 +3,12 @@
  * Tests regression for known bugs (Stage 7.3)
  *
  * Run: node tests/unit/parser.test.js
+ *
+ * ARCHITECTURE NOTE: In production, parser logic is embedded within
+ * Node-RED flow JSON (nodered_data/flows/ingestion.json). This test
+ * script utilizes a localized copy for deterministic testing. Future
+ * iterations should extract this logic to an external module
+ * (e.g., nodered_data/lib/parser.js).
  */
 
 const assert = require('assert');
