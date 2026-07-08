@@ -157,5 +157,43 @@
     "wires": [
       []
     ]
+  },
+  {
+    "id": "alert_catch",
+    "type": "catch",
+    "z": "ims-alert-tab",
+    "name": "Catch Alert Errors",
+    "scope": [
+      "alert_format",
+      "alert_line_format",
+      "alert_line_notify",
+      "alert_teams_format",
+      "alert_teams_webhook"
+    ],
+    "uncaught": false,
+    "x": 640,
+    "y": 360,
+    "wires": [
+      [
+        "alert_error_debug"
+      ]
+    ]
+  },
+  {
+    "id": "alert_error_debug",
+    "type": "debug",
+    "z": "ims-alert-tab",
+    "name": "Alert Delivery Failure",
+    "active": true,
+    "tosidebar": true,
+    "console": true,
+    "tostatus": true,
+    "complete": "error",
+    "targetType": "msg",
+    "statusVal": "error.message",
+    "statusType": "msg",
+    "x": 880,
+    "y": 360,
+    "wires": []
   }
 ]
