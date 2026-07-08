@@ -928,7 +928,7 @@
             "type": "postgres",
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, (val->>'rx_mbps')::numeric * 1000000 AS \"Download (bps)\"\nFROM public.net_metrics,\nLATERAL jsonb_each(iface_name) AS iface(key, val)\nWHERE $__timeFilter(time)\n  AND device_id IN (${machine_id:sqlstring})\n  AND iface.key IN (${interface:sqlstring})\nORDER BY 1",
+          "rawSql": "SELECT time, device_id, iface_name,\n  rx_mbps AS \"Download (Mbps)\",\n  tx_mbps AS \"Upload (Mbps)\"\nFROM public.net_metrics\nWHERE $__timeFilter(time)\n  AND device_id IN (${machine_id:sqlstring})\n  AND iface_name IN (${interface:sqlstring})\nORDER BY time ASC",
           "format": "time_series",
           "maxDataPoints": 300
         },
@@ -938,7 +938,7 @@
             "type": "postgres",
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, (val->>'tx_mbps')::numeric * 1000000 AS \"Upload (bps)\"\nFROM public.net_metrics,\nLATERAL jsonb_each(iface_name) AS iface(key, val)\nWHERE $__timeFilter(time)\n  AND device_id IN (${machine_id:sqlstring})\n  AND iface.key IN (${interface:sqlstring})\nORDER BY 1",
+          "rawSql": "SELECT time, device_id, iface_name,\n  rx_mbps AS \"Download (Mbps)\",\n  tx_mbps AS \"Upload (Mbps)\"\nFROM public.net_metrics\nWHERE $__timeFilter(time)\n  AND device_id IN (${machine_id:sqlstring})\n  AND iface_name IN (${interface:sqlstring})\nORDER BY time ASC",
           "format": "time_series",
           "maxDataPoints": 300
         }
@@ -1466,7 +1466,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "Throughput",
-          "rawSql": "SELECT time, ldi_throughput AS \"Throughput\" FROM public.sys_metrics WHERE $__timeFilter(time) AND device_id IN (${machine_id:sqlstring}) AND ldi_throughput > 0 ORDER BY 1",
+          "rawSql": "SELECT time, throughput AS \"Throughput\" FROM public.ldi_metrics WHERE $__timeFilter(time) AND device_id IN (${machine_id:sqlstring}) AND throughput > 0 ORDER BY 1",
           "format": "time_series"
         },
         {
@@ -1475,7 +1475,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "PE",
-          "rawSql": "SELECT time, ldi_pe AS \"PE\" FROM public.sys_metrics WHERE $__timeFilter(time) AND device_id IN (${machine_id:sqlstring}) AND ldi_pe IS NOT NULL ORDER BY 1",
+          "rawSql": "SELECT time, pressure AS \"PE\" FROM public.ldi_metrics WHERE $__timeFilter(time) AND device_id IN (${machine_id:sqlstring}) AND pressure IS NOT NULL ORDER BY 1",
           "format": "time_series"
         }
       ],
@@ -1670,7 +1670,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "JE",
-          "rawSql": "SELECT time, ldi_je AS \"JE\" FROM public.sys_metrics WHERE $__timeFilter(time) AND device_id IN (${machine_id:sqlstring}) AND ldi_je IS NOT NULL ORDER BY 1",
+          "rawSql": "SELECT time, joule_effect AS \"JE\" FROM public.ldi_metrics WHERE $__timeFilter(time) AND device_id IN (${machine_id:sqlstring}) AND joule_effect IS NOT NULL ORDER BY 1",
           "format": "time_series"
         },
         {
@@ -1679,7 +1679,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "Humidity",
-          "rawSql": "SELECT time, ldi_humidity AS \"Humidity\" FROM public.sys_metrics WHERE $__timeFilter(time) AND device_id IN (${machine_id:sqlstring}) AND ldi_humidity > 0 ORDER BY 1",
+          "rawSql": "SELECT time, humidity AS \"Humidity\" FROM public.ldi_metrics WHERE $__timeFilter(time) AND device_id IN (${machine_id:sqlstring}) AND humidity > 0 ORDER BY 1",
           "format": "time_series"
         }
       ],
@@ -1746,7 +1746,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, ldi_pe AS \"PE\" FROM public.sys_metrics WHERE $__timeFilter(time) AND device_id IN (${machine_id:sqlstring}) AND ldi_pe IS NOT NULL ORDER BY 1",
+          "rawSql": "SELECT time, pressure AS \"PE\" FROM public.ldi_metrics WHERE $__timeFilter(time) AND device_id IN (${machine_id:sqlstring}) AND pressure IS NOT NULL ORDER BY 1",
           "format": "time_series"
         },
         {
@@ -1754,7 +1754,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, ldi_je AS \"JE\" FROM public.sys_metrics WHERE $__timeFilter(time) AND device_id IN (${machine_id:sqlstring}) AND ldi_je IS NOT NULL ORDER BY 1",
+          "rawSql": "SELECT time, joule_effect AS \"JE\" FROM public.ldi_metrics WHERE $__timeFilter(time) AND device_id IN (${machine_id:sqlstring}) AND joule_effect IS NOT NULL ORDER BY 1",
           "format": "time_series"
         }
       ],
