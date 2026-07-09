@@ -40,7 +40,7 @@
       {
         "name": "machine_id",
         "type": "query",
-        "query": "SELECT device_id AS __text FROM public.devices WHERE enabled = true ORDER BY device_id ASC LIMIT 200;",
+        "query": "SELECT device_id AS __text FROM public.devices WHERE enabled = true ORDER BY device_id ASC;",
         "datasource": {
           "uid": "timescaledb"
         },
@@ -53,7 +53,7 @@
       {
         "name": "interface",
         "type": "query",
-        "query": "SELECT DISTINCT iface_name AS __text FROM public.net_metrics LIMIT 100;",
+        "query": "SELECT DISTINCT iface_name AS __text FROM public.net_metrics;",
         "datasource": {
           "uid": "timescaledb"
         },
