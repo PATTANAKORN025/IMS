@@ -138,11 +138,12 @@ open http://localhost:3000
 
 ## Database Schema
 
-- **`machine_telemetry`** — 30-column raw telemetry (CPU, RAM, Disk, Network per-interface, Temperature, LDI manufacturing, WiFi)
-- **`telemetry_minute_summary`** — Continuous aggregate: per-minute fleet averages
-- **`telemetry_hourly_summary`** — Continuous aggregate: per-hour fleet rollups
-- **`machines`** — Device registry (machine_id, hostname, community string, SNMP port)
-- **11 idempotent migrations** in `database/migrations/` (001–011)
+- **`devices`** — Device registry: `device_id`, `hostname`, `ip_address`, `snmp_community`, `snmp_port`, `enabled` (+ 5 metadata cols)
+- **`sys_metrics`** — TimescaleDB hypertable: CPU, RAM, Disk, Temperature per poll cycle (12 columns)
+- **`net_metrics`** — TimescaleDB hypertable: per-interface RX/TX Mbps, errors, drops (10 columns)
+- **`ldi_metrics`** — TimescaleDB hypertable: manufacturing throughput, PE, JE, humidity, power, vibration (11 columns)
+- **`sys_hourly` / `net_hourly` / `ldi_hourly`** — Continuous Aggregates: hourly rollups with 30-day raw retention
+- **V2 Normalized Architecture**: Domain-specific tables (sys, net, ldi) replace the legacy wide-table format, enabling better compression (~90% after 7 days) and targeted query performance
 
 ---
 

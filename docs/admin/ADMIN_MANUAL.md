@@ -95,6 +95,59 @@ curl -s http://localhost:9093/-/healthy
 
 ---
 
+## Pre-Production Security Checklist
+
+> **CRITICAL:** Before deploying to production, ALL default credentials MUST be changed. Failure to do so exposes the system to unauthorized access.
+
+| Credential | Default Value | Location | Action Required |
+|---|---|---|---|
+| `INGEST_API_KEY` | `ims-secret-key` | `.env` + `docker-compose.yaml` (`ims-node-red` env) | **CHANGE** — unauthorized users can inject spoofed telemetry via `POST /inject` |
+| `POSTGRES_PASSWORD` | `change-me-please` | `.env` | **CHANGE** — database superuser access |
+| `GRAFANA_ADMIN_PASSWORD` | `change-me-please` | `.env` | **CHANGE** — dashboard edit + datasource access |
+
+### How to Rotate
+
+```bash
+# 1. Generate new secrets
+NEW_API_KEY=$(python -c "import secrets; print(secrets.token_urlsafe(32))")
+NEW_DB_PASS=$(python -c "import secrets; print(secrets.token_urlsafe(24))")
+NEW_GRAFANA_PASS=$(python -c "import secrets; print(secrets.token_urlsafe(24))")
+
+# 2. Update .env
+sed -i "s/^INGEST_API_KEY=.*/INGEST_API_KEY=$NEW_API_KEY/" .env
+sed -i "s/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=$NEW_DB_PASS/" .env
+sed -i "s/^GRAFANA_ADMIN_PASSWORD=.*/GRAFANA_ADMIN_PASSWORD=$NEW_GRAFANA_PASS/" .env
+
+# 3. Update grafana_reader DB password
+docker compose exec -T timescaledb psql -U ims_admin -d ims \
+  -c "ALTER ROLE grafana_reader WITH PASSWORD '$NEW_DB_PASS';"
+
+# 4. Restart all services
+docker compose up -d
+
+# 5. Verify
+curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/health
+curl -s -X POST http://localhost:1880/inject \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $NEW_API_KEY" \
+  -d '{"machine_id":"TEST"}'
+```
+
+### Verification Commands
+
+```bash
+# Confirm INGEST_API_KEY is enforced (should return 401 without key)
+curl -s -w "\nHTTP: %{http_code}" -X POST http://localhost:1880/inject \
+  -H "Content-Type: application/json" -d '{"machine_id":"TEST"}'
+# Expected: HTTP 401
+
+# Confirm Grafana requires login
+curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/dashboards
+# Expected: 401 (not 200)
+```
+
+---
+
 ## 📱 Adding New Devices
 
 ### Step 1: Register in Database

@@ -967,7 +967,7 @@
           "maxDataPoints": 300
         }
       ],
-      "description": "Per-interface bandwidth from interface_metrics JSONB. Download positive, Upload mirrored via negative-Y axis.",
+      "description": "Per-interface bandwidth queried from per-interface rows in the net_metrics hypertable. Download positive, Upload mirrored via negative-Y axis.",
       "transparent": true,
       "links": [
         {
