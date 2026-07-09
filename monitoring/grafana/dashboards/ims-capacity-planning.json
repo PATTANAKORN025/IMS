@@ -10,7 +10,7 @@
   "schemaVersion": 39,
   "refresh": "5m",
   "time": {
-    "from": "now-30d",
+    "from": "now-6h",
     "to": "now"
   },
   "links": [
@@ -1681,8 +1681,8 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "legendFormat": "{{ machine_id }}",
-          "rawSql": "WITH stats AS (SELECT bucket, device_id, avg_cpu, AVG(avg_cpu) OVER w AS mu, COALESCE(NULLIF(STDDEV(avg_cpu) OVER w, 0), 1) AS sigma FROM public.sys_hourly WHERE device_id IN (${machine_id:sqlstring}) AND $__timeFilter(bucket) WINDOW w AS (PARTITION BY device_id ORDER BY bucket ROWS BETWEEN 60 PRECEDING AND 1 PRECEDING)) SELECT bucket AS time, device_id AS metric, ROUND(((avg_cpu - mu) / sigma)::NUMERIC, 2) AS \"Z-Score\" FROM stats ORDER BY 1",
+          "legendFormat": "Z-Score",
+          "rawSql": "WITH stats AS (SELECT avg(avg_cpu) as mu, stddev(avg_cpu) as sigma FROM public.sys_hourly WHERE device_id IN (${machine_id:sqlstring}) AND $__timeFilter(bucket)) SELECT bucket AS time, (avg_cpu - mu) / NULLIF(sigma, 0) AS \"Z-Score\" FROM public.sys_hourly, stats WHERE device_id IN (${machine_id:sqlstring}) AND $__timeFilter(bucket) ORDER BY time ASC",
           "format": "time_series",
           "maxDataPoints": 300
         }
@@ -1957,8 +1957,8 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "legendFormat": "{{ machine_id }}",
-          "rawSql": "WITH stats AS (SELECT bucket, device_id, max_temp, AVG(max_temp) OVER w AS mu, COALESCE(NULLIF(STDDEV(max_temp) OVER w, 0), 1) AS sigma FROM public.sys_hourly WHERE device_id IN (${machine_id:sqlstring}) AND max_temp > 0 AND $__timeFilter(bucket) WINDOW w AS (PARTITION BY device_id ORDER BY bucket ROWS BETWEEN 60 PRECEDING AND 1 PRECEDING)) SELECT bucket AS time, device_id AS metric, ROUND(((max_temp - mu) / sigma)::NUMERIC, 2) AS \"Z-Score\" FROM stats ORDER BY 1",
+          "legendFormat": "Z-Score",
+          "rawSql": "WITH stats AS (SELECT avg(max_temp) as mu, stddev(max_temp) as sigma FROM public.sys_hourly WHERE device_id IN (${machine_id:sqlstring}) AND max_temp > 0 AND $__timeFilter(bucket)) SELECT bucket AS time, (max_temp - mu) / NULLIF(sigma, 0) AS \"Z-Score\" FROM public.sys_hourly, stats WHERE device_id IN (${machine_id:sqlstring}) AND max_temp > 0 AND $__timeFilter(bucket) ORDER BY time ASC",
           "format": "time_series",
           "maxDataPoints": 300
         }
