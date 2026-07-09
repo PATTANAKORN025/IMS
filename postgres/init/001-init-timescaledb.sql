@@ -22,7 +22,6 @@ DROP TABLE IF EXISTS public.ldi_metrics CASCADE;
 DROP TABLE IF EXISTS public.devices CASCADE;
 DROP TABLE IF EXISTS public.alert_history CASCADE;
 DROP TABLE IF EXISTS public.alert_rules CASCADE;
-DROP TABLE IF EXISTS public.machines CASCADE;
 
 -- ══════════════════════════════════════════════════════════════
 -- V2 NORMALIZED SCHEMA
@@ -183,29 +182,11 @@ ALTER MATERIALIZED VIEW public.sys_hourly SET (timescaledb.materialized_only = f
 ALTER MATERIALIZED VIEW public.net_hourly SET (timescaledb.materialized_only = false);
 ALTER MATERIALIZED VIEW public.ldi_hourly SET (timescaledb.materialized_only = false);
 
--- Seed devices table with SNMP simulator targets
-INSERT INTO public.devices (device_id, hostname, ip_address, enabled) VALUES
-    ('ERP-MASTER-WINDOWS', 'ims-snmpsim', '192.168.1.10', true),
-    ('ERP-MASTER-UBUNTU',  'ims-snmpsim', '192.168.1.11', true)
+-- Seed devices table with SNMP simulator targets (unified registry)
+INSERT INTO public.devices (device_id, hostname, ip_address, snmp_community, snmp_port, enabled) VALUES
+    ('ERP-MASTER-WINDOWS', 'ims-snmpsim', '192.168.1.10', 'Netk@', 161, true),
+    ('ERP-MASTER-UBUNTU',  'ims-snmpsim', '192.168.1.11', 'Netk@', 161, true)
 ON CONFLICT (device_id) DO NOTHING;
-
--- ══════════════════════════════════════════════════════════════
--- LEGACY COMPATIBILITY (machines table for Grafana dropdowns)
--- ══════════════════════════════════════════════════════════════
-
-CREATE TABLE public.machines (
-    machine_id    TEXT PRIMARY KEY,
-    hostname      TEXT NOT NULL,
-    community     TEXT NOT NULL DEFAULT 'Netk@',
-    snmp_port     INT NOT NULL DEFAULT 161,
-    enabled       BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-INSERT INTO public.machines (machine_id, hostname, community, snmp_port) VALUES
-    ('ERP-MASTER-WINDOWS', 'ims-snmpsim', 'Netk@', 161),
-    ('ERP-MASTER-UBUNTU',  'ims-snmpsim', 'Netk@', 161)
-ON CONFLICT (machine_id) DO NOTHING;
 
 -- ══════════════════════════════════════════════════════════════
 -- VIEWS
