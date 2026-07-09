@@ -1,0 +1,98 @@
+# IMS SNMP Simulator — Windows Server Profile
+# Higher resource usage, warmer temps, more network errors
+# Purpose: Validate AIOps alerts (InterfaceDown, ServiceDown, ThermalWarning)
+
+# --- CPU Cores (smooth random walk, 10-95%) ---
+1.3.6.1.2.1.25.3.3.1.2.1|2:numeric|min=25,max=95,rate=1
+1.3.6.1.2.1.25.3.3.1.2.2|2:numeric|min=20,max=85,rate=1
+1.3.6.1.2.1.25.3.3.1.2.3|2:numeric|min=15,max=98,rate=1
+1.3.6.1.2.1.25.3.3.1.2.4|2:numeric|min=30,max=75,rate=1
+
+# --- Storage & RAM ---
+1.3.6.1.2.1.25.2.3.1.2.1|6|1.3.6.1.2.1.25.2.1.2
+1.3.6.1.2.1.25.2.3.1.2.2|6|1.3.6.1.2.1.25.2.1.4
+1.3.6.1.2.1.25.2.3.1.3.1|4|Physical Memory
+1.3.6.1.2.1.25.2.3.1.3.2|4|C:\ Label:System
+1.3.6.1.2.1.25.2.3.1.4.1|2|1024
+1.3.6.1.2.1.25.2.3.1.4.2|2|1000000
+1.3.6.1.2.1.25.2.3.1.5.1|2|33554432
+1.3.6.1.2.1.25.2.3.1.5.2|2|200000000
+1.3.6.1.2.1.25.2.3.1.6.1|2:numeric|min=4194304,max=15728640,rate=102400
+1.3.6.1.2.1.25.2.3.1.6.2|2:numeric|min=65536000,max=125000000,rate=50000
+
+# --- Interface Names ---
+1.3.6.1.2.1.2.2.1.2.1|4|eth0
+1.3.6.1.2.1.2.2.1.2.2|4|wlan0
+
+# --- Interface Speed ---
+1.3.6.1.2.1.2.2.1.5.1|65|10000000000
+1.3.6.1.2.1.2.2.1.5.2|65|1200000000
+
+# --- 64-BIT NETWORK COUNTERS (Enterprise Grade Fluctuation) ---
+# eth0 (Core Switch) - ~360 Mbps, saturates in ~6h
+1.3.6.1.2.1.31.1.1.1.6.1|65:numeric|min=100000000,max=1000000000000,rate=45000000
+1.3.6.1.2.1.31.1.1.1.10.1|65:numeric|min=50000000,max=500000000000,rate=15000000
+# wlan0 (IoT WiFi) - ~68 Mbps, saturates in ~6h
+1.3.6.1.2.1.31.1.1.1.6.2|65:numeric|min=10000000,max=200000000000,rate=8500000
+1.3.6.1.2.1.31.1.1.1.10.2|65:numeric|min=5000000,max=100000000000,rate=3500000
+
+# --- 32-bit Fallback Counters ---
+1.3.6.1.2.1.2.2.1.10.1|65:numeric|min=10000,max=4294967295,rate=1500000
+1.3.6.1.2.1.2.2.1.16.1|65:numeric|min=5000,max=4294967295,rate=800000
+1.3.6.1.2.1.2.2.1.10.2|65:numeric|min=1000,max=4294967295,rate=500000
+1.3.6.1.2.1.2.2.1.16.2|65:numeric|min=1000,max=4294967295,rate=200000
+
+# --- CHAOS: Network Errors (Cable Fault Simulation) ---
+1.3.6.1.2.1.2.2.1.14.1|65:numeric|min=0,max=5000,rate=80
+1.3.6.1.2.1.2.2.1.14.2|65:numeric|min=0,max=150,rate=5
+# --- CHAOS: Network Drops ---
+1.3.6.1.2.1.2.2.1.13.1|65:numeric|min=0,max=500,rate=15
+1.3.6.1.2.1.2.2.1.13.2|65:numeric|min=0,max=50,rate=3
+
+# --- CHAOS: Interface Status (eth0 flapping between UP/DOWN) ---
+1.3.6.1.2.1.2.2.1.8.1|2:numeric|min=1,max=2,rate=1
+1.3.6.1.2.1.2.2.1.8.2|2|1
+
+# --- Temperature (smooth thermal drift) ---
+1.3.6.1.4.1.2021.13.16.2.1.7.0|2|0
+1.3.6.1.4.1.2021.13.16.2.1.7.1|2:numeric|min=55,max=95,rate=1
+
+# ============================================================
+# LDI PRIVATE MIB — Enterprise .1.3.6.1.4.1.9999
+# Manufacturing Machine Telemetry (Dynamic Mock Data)
+# Rate tuned for realistic 10s polling (slow oscillation)
+# ============================================================
+
+# 1. Throughput (20-180 side/hr, slow sine wave ~30s cycle)
+1.3.6.1.4.1.9999.1.1.0|2:numeric|min=50,max=200,rate=1
+
+# 2. LDI Temperature (22.1 - 22.7 °C, scaled x100, slow drift)
+1.3.6.1.4.1.9999.1.2.0|2:numeric|min=2210,max=2270,rate=1
+
+# 3. LDI Humidity (53% - 60%, scaled x100, slow drift)
+1.3.6.1.4.1.9999.1.3.0|2:numeric|min=5300,max=6000,rate=1
+
+# 4. Position Error (PE2: -15.0 to -7.0 µm, PE5: +7.0 to +18.0 µm, scaled x100)
+1.3.6.1.4.1.9999.1.4.2|2:numeric|min=-1500,max=-700,rate=2
+1.3.6.1.4.1.9999.1.4.5|2:numeric|min=700,max=1800,rate=2
+
+# 5. Judgment Error (4.0 - 16.0 µm, scaled x100)
+1.3.6.1.4.1.9999.1.5.1|2:numeric|min=400,max=1600,rate=2
+
+# 6. Power Consumption (1200-3500W, slow drift)
+1.3.6.1.4.1.9999.1.6.1|2:numeric|min=1200,max=3500,rate=2
+
+# 7. Vibration (0.5-12.0 mm/s, scaled x100, slow drift)
+1.3.6.1.4.1.9999.1.7.1|2:numeric|min=50,max=1200,rate=2
+
+# ============================================================
+# WiFi SIGNAL QUALITY — Enterprise .1.3.6.1.4.1.9999.2.x
+# RSSI: -85 to -40 dBm (stronger = closer to 0)
+# SNR: 10-40 dB (>25 = excellent, <15 = poor)
+# ============================================================
+
+# 8. WiFi RSSI (Received Signal Strength Indicator)
+1.3.6.1.4.1.9999.2.1.0|2:numeric|min=-85,max=-40,rate=3
+
+# 9. WiFi SNR (Signal-to-Noise Ratio)
+1.3.6.1.4.1.9999.2.2.0|2:numeric|min=10,max=40,rate=2

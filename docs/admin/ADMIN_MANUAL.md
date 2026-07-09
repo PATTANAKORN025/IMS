@@ -100,12 +100,12 @@ curl -s http://localhost:9093/-/healthy
 ### Step 1: Register in Database
 
 ```sql
--- เพิ่มเครื่องใหม่ใน device registry
-INSERT INTO public.machines (machine_id, host, community, snmp_port)
-VALUES ('NEW-MACHINE-01', '192.168.1.100', 'public', 161);
+-- เพิ่มเครื่องใหม่ใน device registry (single source of truth)
+INSERT INTO public.devices (device_id, hostname, ip_address, snmp_community, snmp_port, enabled)
+VALUES ('NEW-MACHINE-01', '192.168.1.100', '192.168.1.100', 'public', 161, true);
 
 -- ตรวจสอบ
-SELECT * FROM public.machines;
+SELECT device_id, hostname, snmp_community, enabled FROM public.devices WHERE device_id = 'NEW-MACHINE-01';
 ```
 
 ### Step 2: Verify SNMP Connectivity
@@ -131,10 +131,10 @@ sleep 30
 
 # ตรวจสอบข้อมูล
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
-  "SELECT machine_id, COUNT(*) as rows, MAX(time) as latest
-   FROM public.machine_telemetry
-   WHERE machine_id = 'NEW-MACHINE-01'
-   GROUP BY machine_id;"
+  "SELECT device_id, COUNT(*) as rows, MAX(s.time) as latest
+   FROM public.sys_metrics s
+   WHERE device_id = 'NEW-MACHINE-01'
+   GROUP BY device_id;"
 ```
 
 ### Step 4: Add Dashboard Panel (Optional)
@@ -143,7 +143,7 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c \
 
 1. เปิด Grafana → Dashboard → Edit
 2. เพิ่ม panel ใหม่
-3. ใช้ query: `SELECT * FROM public.machine_telemetry WHERE machine_id = 'NEW-MACHINE-01'`
+3. ใช้ query: `SELECT time, cpu_load_percent FROM public.sys_metrics WHERE device_id IN (\${machine_id:sqlstring}) ORDER BY time DESC`
 4. บันทึก dashboard
 
 ---
@@ -216,7 +216,7 @@ docker compose exec prometheus promtool check rules /etc/prometheus/rules/ims-al
 | Alert ไม่ส่งไป LINE/Teams | Alertmanager Webhook ขาด | เช็ค Node-RED log ที่ `POST/alert-webhook` node |
 | กราฟ Bandwidth กระโดดเป็น Tbps | 32-bit Counter Wrap | Parser จัดการแล้ว แต่ถ้ายังเจอ เช็คว่าอุปกรณ์รองรับ 64-bit HC |
 | Node-RED ไม่เริ่มทำงาน | Syntax Error ใน Flow JSON | เช็ค log: `docker compose logs --tail=50 node-red` |
-| Continuous Aggregate ไม่มีข้อมูล | ต้อง refresh ด้วยมือ | `CALL refresh_continuous_aggregate('public.telemetry_minute_summary', NULL, NULL);` |
+| Continuous Aggregate ไม่มีข้อมูล | ต้อง refresh ด้วยมือ | `CALL refresh_continuous_aggregate('sys_hourly', NULL, NULL);` |
 | Container ไม่ขึ้น "Restarting" | Config ผิด หรือ port ชน | เช็ค log ของ container นั้นๆ |
 
 ### SRE Verification Protocol
@@ -233,15 +233,15 @@ docker compose ps
 
 # 4. ตรวจสอบข้อมูลไหล
 docker compose exec timescaledb psql -U ims_admin -d ims -c "
-SELECT machine_id, COUNT(*) as rows, MAX(time) as latest
-FROM public.machine_telemetry
-WHERE time > NOW() - INTERVAL '5 minutes'
-GROUP BY machine_id;"
+SELECT device_id, COUNT(*) as rows, MAX(s.time) as latest
+FROM public.sys_metrics s JOIN public.devices d ON d.device_id = s.device_id
+WHERE s.time > NOW() - INTERVAL '5 minutes'
+GROUP BY device_id;"
 
 # 5. ตรวจสอบ Continuous Aggregates
 docker compose exec timescaledb psql -U ims_admin -d ims -c "
-SELECT bucket, avg_cpu_load, avg_temp
-FROM public.telemetry_minute_summary
+SELECT bucket, avg_cpu, max_temp
+FROM public.sys_hourly
 ORDER BY bucket DESC LIMIT 4;"
 
 # 6. ตรวจสอบ Grafana
