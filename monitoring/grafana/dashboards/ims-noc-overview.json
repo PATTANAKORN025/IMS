@@ -858,7 +858,7 @@
         {
           "refId": "AVG",
           "legendFormat": "Fleet Average",
-          "rawSql": "SELECT bucket AS time, ROUND(AVG(avg_cpu)::NUMERIC,1) AS value FROM public.sys_hourly WHERE $__timeFilter(bucket) GROUP BY bucket ORDER BY 1 UNION ALL SELECT time, ROUND(AVG(cpu_load_percent)::NUMERIC,1) AS value FROM public.sys_metrics WHERE $__timeFilter(time) AND time > COALESCE((SELECT MAX(bucket) FROM public.sys_hourly), NOW() - INTERVAL '1 hour') GROUP BY time ORDER BY 1",
+          "rawSql": "SELECT bucket AS time, ROUND(AVG(avg_cpu)::NUMERIC,1) AS value FROM public.sys_hourly WHERE $__timeFilter(bucket) GROUP BY bucket UNION ALL SELECT time, ROUND(AVG(cpu_load_percent)::NUMERIC,1) AS value FROM public.sys_metrics WHERE $__timeFilter(time) AND time > COALESCE((SELECT MAX(bucket) FROM public.sys_hourly), NOW() - INTERVAL '1 hour') GROUP BY time ORDER BY 1",
           "format": "time_series",
           "datasource": {
             "uid": "timescaledb"
@@ -867,7 +867,7 @@
         {
           "refId": "MAX",
           "legendFormat": "Worst Machine",
-          "rawSql": "SELECT bucket AS time, ROUND(MAX(avg_cpu)::NUMERIC,1) AS value FROM public.sys_hourly WHERE $__timeFilter(bucket) GROUP BY bucket ORDER BY 1 UNION ALL SELECT time, ROUND(MAX(cpu_load_percent)::NUMERIC,1) AS value FROM public.sys_metrics WHERE $__timeFilter(time) AND time > COALESCE((SELECT MAX(bucket) FROM public.sys_hourly), NOW() - INTERVAL '1 hour') GROUP BY time ORDER BY 1",
+          "rawSql": "SELECT bucket AS time, ROUND(MAX(avg_cpu)::NUMERIC,1) AS value FROM public.sys_hourly WHERE $__timeFilter(bucket) GROUP BY bucket UNION ALL SELECT time, ROUND(MAX(cpu_load_percent)::NUMERIC,1) AS value FROM public.sys_metrics WHERE $__timeFilter(time) AND time > COALESCE((SELECT MAX(bucket) FROM public.sys_hourly), NOW() - INTERVAL '1 hour') GROUP BY time ORDER BY 1",
           "format": "time_series",
           "datasource": {
             "uid": "timescaledb"
@@ -1162,7 +1162,7 @@
         {
           "refId": "AVG",
           "legendFormat": "Fleet Average",
-          "rawSql": "SELECT bucket AS time, ROUND(AVG(max_temp)::NUMERIC,1) AS value FROM public.sys_hourly WHERE $__timeFilter(bucket) AND max_temp > 0 GROUP BY bucket ORDER BY 1 UNION ALL SELECT time, ROUND(AVG(temp_c)::NUMERIC,1) AS value FROM public.sys_metrics WHERE $__timeFilter(time) AND time > COALESCE((SELECT MAX(bucket) FROM public.sys_hourly), NOW() - INTERVAL '1 hour') AND temp_c > 0 GROUP BY time ORDER BY 1",
+          "rawSql": "SELECT bucket AS time, ROUND(AVG(max_temp)::NUMERIC,1) AS value FROM public.sys_hourly WHERE $__timeFilter(bucket) AND max_temp > 0 GROUP BY bucket UNION ALL SELECT time, ROUND(AVG(temp_c)::NUMERIC,1) AS value FROM public.sys_metrics WHERE $__timeFilter(time) AND time > COALESCE((SELECT MAX(bucket) FROM public.sys_hourly), NOW() - INTERVAL '1 hour') AND temp_c > 0 GROUP BY time ORDER BY 1",
           "format": "time_series",
           "datasource": {
             "uid": "timescaledb"
@@ -1171,7 +1171,7 @@
         {
           "refId": "MAX",
           "legendFormat": "Hottest Machine",
-          "rawSql": "SELECT bucket AS time, ROUND(MAX(max_temp)::NUMERIC,1) AS value FROM public.sys_hourly WHERE $__timeFilter(bucket) AND max_temp > 0 GROUP BY bucket ORDER BY 1 UNION ALL SELECT time, ROUND(MAX(temp_c)::NUMERIC,1) AS value FROM public.sys_metrics WHERE $__timeFilter(time) AND time > COALESCE((SELECT MAX(bucket) FROM public.sys_hourly), NOW() - INTERVAL '1 hour') AND temp_c > 0 GROUP BY time ORDER BY 1",
+          "rawSql": "SELECT bucket AS time, ROUND(MAX(max_temp)::NUMERIC,1) AS value FROM public.sys_hourly WHERE $__timeFilter(bucket) AND max_temp > 0 GROUP BY bucket UNION ALL SELECT time, ROUND(MAX(temp_c)::NUMERIC,1) AS value FROM public.sys_metrics WHERE $__timeFilter(time) AND time > COALESCE((SELECT MAX(bucket) FROM public.sys_hourly), NOW() - INTERVAL '1 hour') AND temp_c > 0 GROUP BY time ORDER BY 1",
           "format": "time_series",
           "datasource": {
             "uid": "timescaledb"
@@ -1613,7 +1613,7 @@
         {
           "refId": "AVG",
           "legendFormat": "Fleet Average",
-          "rawSql": "SELECT bucket AS time, ROUND(AVG(avg_ram_used / NULLIF(avg_ram_total, 0) * 100)::NUMERIC,1) AS value FROM public.sys_hourly WHERE $__timeFilter(bucket) GROUP BY bucket ORDER BY 1 UNION ALL SELECT time, ROUND(AVG(ram_used_mb / NULLIF(ram_total_mb, 0) * 100)::NUMERIC,1) AS value FROM public.sys_metrics WHERE $__timeFilter(time) AND time > COALESCE((SELECT MAX(bucket) FROM public.sys_hourly), NOW() - INTERVAL '1 hour') GROUP BY time ORDER BY 1",
+          "rawSql": "SELECT bucket AS time, ROUND(AVG(avg_ram_used / NULLIF(avg_ram_total, 0) * 100)::NUMERIC,1) AS value FROM public.sys_hourly WHERE $__timeFilter(bucket) GROUP BY bucket UNION ALL SELECT time, ROUND(AVG(ram_used_mb / NULLIF(ram_total_mb, 0) * 100)::NUMERIC,1) AS value FROM public.sys_metrics WHERE $__timeFilter(time) AND time > COALESCE((SELECT MAX(bucket) FROM public.sys_hourly), NOW() - INTERVAL '1 hour') GROUP BY time ORDER BY 1",
           "format": "time_series",
           "datasource": {
             "uid": "timescaledb"
@@ -1622,7 +1622,7 @@
         {
           "refId": "MAX",
           "legendFormat": "Worst Machine",
-          "rawSql": "SELECT bucket AS time, ROUND(MAX(avg_ram_used / NULLIF(avg_ram_total, 0) * 100)::NUMERIC,1) AS value FROM public.sys_hourly WHERE $__timeFilter(bucket) GROUP BY bucket ORDER BY 1 UNION ALL SELECT time, ROUND(MAX(ram_used_mb / NULLIF(ram_total_mb, 0) * 100)::NUMERIC,1) AS value FROM public.sys_metrics WHERE $__timeFilter(time) AND time > COALESCE((SELECT MAX(bucket) FROM public.sys_hourly), NOW() - INTERVAL '1 hour') GROUP BY time ORDER BY 1",
+          "rawSql": "SELECT bucket AS time, ROUND(MAX(avg_ram_used / NULLIF(avg_ram_total, 0) * 100)::NUMERIC,1) AS value FROM public.sys_hourly WHERE $__timeFilter(bucket) GROUP BY bucket UNION ALL SELECT time, ROUND(MAX(ram_used_mb / NULLIF(ram_total_mb, 0) * 100)::NUMERIC,1) AS value FROM public.sys_metrics WHERE $__timeFilter(time) AND time > COALESCE((SELECT MAX(bucket) FROM public.sys_hourly), NOW() - INTERVAL '1 hour') GROUP BY time ORDER BY 1",
           "format": "time_series",
           "datasource": {
             "uid": "timescaledb"
