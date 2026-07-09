@@ -15,9 +15,9 @@ docker logs ims-node-red 2>&1 | tail -5
 
 # 3. Telemetry flow (should show rows for each machine)
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
-  "SELECT machine_id, COUNT(*) as rows, MAX(time) as latest \
-   FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '5 minutes' \
-   GROUP BY machine_id;"
+  "SELECT device_id, COUNT(*) as rows, MAX(s.time) as latest \
+   FROM public.sys_metrics s JOIN public.devices d ON d.device_id = s.device_id \
+   WHERE s.time > NOW() - INTERVAL '5 minutes' GROUP BY device_id;"
 
 # 4. Prometheus targets (all should be UP)
 curl -s http://localhost:9090/api/v1/targets | python3 -c \
@@ -31,8 +31,8 @@ curl -s http://localhost:9090/api/v1/targets | python3 -c \
 | Symptom | Likely Cause | Diagnostic | Resolution |
 |---------|-------------|-----------|------------|
 | **Node-RED crash-looping** | DB connection failure or missing npm modules | `docker logs ims-node-red --tail=50` | Check PgBouncer: `docker logs ims-pgbouncer --tail=20`. Verify `.env` has `POSTGRES_PASSWORD`. Rebuild if missing modules: `docker compose build --no-cache node-red && docker compose up -d node-red` |
-| **Node-RED "Started flows" but no data** | SNMP target unreachable or wrong community string | `docker exec ims-node-red node -e "const s=require('net-snmp').createSession('ims-snmpsim','Netk@',{port:161,version:2});s.get(['1.3.6.1.2.1.1.3.0'],(e,v)=>{console.log(e||v);s.close()})"` | Verify snmpsim is running: `docker logs ims-snmpsim --tail=5`. Check community string matches `Netk@` |
-| **Grafana "No Data" on panels** | CAGG not refreshed yet or wrong time range | `docker compose exec timescaledb psql -U ims_admin -d ims -c "SELECT COUNT(*) FROM public.telemetry_minute_summary WHERE bucket > NOW() - INTERVAL '1 hour';"` | CAGGs take ~3 min to populate after restart. Wait and refresh. If count=0, check Node-RED logs for INSERT errors |
+| **Node-RED "Started flows" but no data** | SNMP target unreachable or wrong community string | `docker exec ims-node-red node -e "const s=require('net-snmp').createSession('ims-snmpsim','Netk@',{port:161,version:2});s.get(['1.3.6.1.2.1.1.3.0'],(e,v)=>{console.log(e||v);s.close()})"` | Verify snmpsim is running: `docker logs ims-snmpsim --tail=5`. Check community string matches profile (`ubuntu` or `windows`) |
+| **Grafana "No Data" on panels** | CAGG not refreshed yet or wrong time range | `docker compose exec timescaledb psql -U ims_admin -d ims -c "SELECT COUNT(*) FROM public.sys_hourly WHERE bucket > NOW() - INTERVAL '1 hour';"` | CAGGs take ~3 min to populate after restart. Wait and refresh. If count=0, check Node-RED logs for INSERT errors |
 | **Grafana "Panel plugin not found: clock"** | Plugin not installed or stale volume | `docker compose exec grafana grafana-cli plugins ls` | Wipe Grafana volume: `docker compose rm -fs grafana && docker volume rm ims_grafana_data && docker compose up -d grafana` |
 | **High CPU on TimescaleDB** | CAGG refresh storm or unoptimized queries | `docker compose exec timescaledb psql -U ims_admin -d ims -c "SELECT query, calls, mean_exec_time FROM pg_stat_statements ORDER BY mean_exec_time DESC LIMIT 5;"` | Check Grafana dashboard refresh rates. Capacity dashboard should be 5m, not 10s. Kill long queries: `SELECT pg_terminate_backend(pid);` |
 | **PgBouncer "server login has been failing"** | Stale auth cache after password change | `docker logs ims-pgbouncer --tail=20 \| grep -i "login\|error"` | Restart PgBouncer: `docker compose restart pgbouncer`. Verify `DATABASE_URL` env var matches TimescaleDB credentials |
@@ -58,12 +58,12 @@ make deploy-flows    # Merge split flows → POST to Admin API
 ```bash
 # Row count per machine (last 5 min)
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
-  "SELECT machine_id, COUNT(*) FROM public.machine_telemetry \
-   WHERE time > NOW() - INTERVAL '5 minutes' GROUP BY machine_id;"
+  "SELECT device_id, COUNT(*) FROM public.sys_metrics \
+   WHERE time > NOW() - INTERVAL '5 minutes' GROUP BY device_id;"
 
 # CAGG freshness
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
-  "SELECT MAX(bucket) as latest FROM public.telemetry_minute_summary;"
+  "SELECT MAX(bucket) as latest FROM public.sys_hourly;"
 ```
 
 ### Backup and restore
@@ -196,8 +196,8 @@ docker compose ps
 # 5. Check data flow (wait 25s for first poll cycle)
 sleep 25
 docker compose exec timescaledb psql -U ims_admin -d ims \
-  -c "SELECT machine_id, COUNT(*) FROM public.machine_telemetry
-       WHERE time > NOW() - INTERVAL '5 minutes' GROUP BY machine_id;"
+  -c "SELECT device_id, COUNT(*) FROM public.sys_metrics
+       WHERE time > NOW() - INTERVAL '5 minutes' GROUP BY device_id;"
 
 # 6. Check Prometheus targets
 curl -s http://localhost:9090/api/v1/targets | python -c "
@@ -240,12 +240,9 @@ docker compose down -v  # Destroys all data
 docker compose up -d
 sleep 40
 
-# Re-run migrations if needed
-docker compose exec -T timescaledb psql -U ims_admin -d ims < database/migrations/001-fix-ldi-types-add-disk-desc.sql
-
 # Verify data flow
 docker compose exec timescaledb psql -U ims_admin -d ims \
-  -c "SELECT machine_id, COUNT(*) FROM public.machine_telemetry GROUP BY machine_id;"
+  -c "SELECT device_id, COUNT(*) FROM public.sys_metrics GROUP BY device_id;"
 ```
 
 ### Playbook 4: Alertmanager Issues

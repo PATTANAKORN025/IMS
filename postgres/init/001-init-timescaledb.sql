@@ -184,8 +184,8 @@ ALTER MATERIALIZED VIEW public.ldi_hourly SET (timescaledb.materialized_only = f
 
 -- Seed devices table with SNMP simulator targets (unified registry)
 INSERT INTO public.devices (device_id, hostname, ip_address, snmp_community, snmp_port, enabled) VALUES
-    ('ERP-MASTER-WINDOWS', 'ims-snmpsim', '192.168.1.10', 'Netk@', 161, true),
-    ('ERP-MASTER-UBUNTU',  'ims-snmpsim', '192.168.1.11', 'Netk@', 161, true)
+    ('ERP-MASTER-WINDOWS', 'ims-snmpsim', '192.168.1.10', 'windows', 161, true),
+    ('ERP-MASTER-UBUNTU',  'ims-snmpsim', '192.168.1.11', 'ubuntu', 161, true)
 ON CONFLICT (device_id) DO NOTHING;
 
 -- ══════════════════════════════════════════════════════════════

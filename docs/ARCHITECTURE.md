@@ -29,7 +29,7 @@ IMS is a Docker-based monitoring stack that collects SNMP telemetry from IT infr
 
 ### Data Flow
 
-1. **Collection**: Node-RED polls 55 machines via SNMP v2c every 10 seconds using 5 parallel walker threads (CPU, Storage, Network, Temperature, LDI).
+1. **Collection**: Node-RED polls 1000+ devices via SNMP v2c every 30 seconds using 5 parallel walker threads (CPU, Storage, Network, Temperature, LDI). Device registry stored in `public.devices` table.
 2. **Processing**: The AIOps Parser aggregates raw OID values into structured metrics (CPU%, RAM MB, bandwidth Mbps, temperature, LDI manufacturing data).
 3. **Storage**: Metrics are inserted into TimescaleDB via PgBouncer (transaction pooling mode). Continuous Aggregates pre-compute 1-minute and 1-hour summaries.
 4. **Visualization**: Grafana renders 3 dashboards — NOC Overview (fleet health), Engineering Drill-Down (per-machine), and AIOps & Capacity (forecasting + anomaly detection).
@@ -60,7 +60,7 @@ IMS is a Docker-based monitoring stack that collects SNMP telemetry from IT infr
 
 **Rationale**:
 - **SQL standard**: Dashboard queries use standard PostgreSQL SQL with JOINs, CTEs, and window functions — no need to learn InfluxQL or Flux.
-- **Relational JOINs**: The system joins time-series data with relational tables (e.g., `machine_telemetry` JOIN `machines` for device registry, CAGG JOIN raw table for total capacity).
+- **Relational JOINs**: The system joins time-series data with relational tables (e.g., `sys_metrics` JOIN `devices` for device registry, CAGG JOIN raw table for total capacity).
 - **Continuous Aggregates**: Materialized views that auto-refresh, providing pre-computed 1-minute and 1-hour summaries without custom cron jobs.
 - **Compression**: 7-day auto-compression achieves ~90% storage reduction with transparent query decompression.
 - **Ecosystem**: Grafana's PostgreSQL datasource is mature and well-documented.
@@ -80,7 +80,7 @@ IMS is a Docker-based monitoring stack that collects SNMP telemetry from IT infr
 
 ### ADR-003: PgBouncer Connection Pooling
 
-**Context**: Grafana dashboards query TimescaleDB continuously (10s refresh), while Node-RED inserts every 10s for 55 machines. Without pooling, both could exhaust PostgreSQL's `max_connections=100`.
+**Context**: Grafana dashboards query TimescaleDB continuously (10s refresh), while Node-RED inserts every 30s for 1000+ devices. Without pooling, both could exhaust PostgreSQL's `max_connections=100`.
 
 **Decision**: PgBouncer in `transaction` pooling mode, sitting between all clients and TimescaleDB.
 
@@ -92,7 +92,7 @@ IMS is a Docker-based monitoring stack that collects SNMP telemetry from IT infr
 
 ### ADR-004: Per-Machine Join Correlation via msg.parts
 
-**Context**: Node-RED's join node must collect 5 walker responses (CPU, Storage, Network, Temp, LDI) per machine before parsing. With 55 machines polled concurrently, responses interleave unpredictably.
+**Context**: Node-RED's join node must collect 5 walker responses (CPU, Storage, Network, Temp, LDI) per device before parsing. With 1000+ devices polled concurrently, responses interleave unpredictably.
 
 **Decision**: Use `msg.parts` with machine-specific IDs for join correlation.
 
@@ -107,11 +107,11 @@ IMS is a Docker-based monitoring stack that collects SNMP telemetry from IT infr
 
 | CAGG | Source | Refresh Interval | Retention |
 |------|--------|-------------------|-----------|
-| `telemetry_minute_summary` | `machine_telemetry` | 1 minute | 90 days |
-| `telemetry_hourly_summary` | `telemetry_minute_summary` | 1 hour | 90 days |
-| `business_metrics_hourly` | `machine_telemetry` | 1 hour | 90 days |
+| `sys_hourly` | `sys_metrics` | 30 minutes | Indefinite |
+| `net_hourly` | `net_metrics` | 30 minutes | Indefinite |
+| `ldi_hourly` | `ldi_metrics` | 30 minutes | Indefinite |
 
-**Rule**: Any Grafana query spanning more than 1 hour MUST use a Continuous Aggregate, never the raw `machine_telemetry` table.
+**Rule**: Any Grafana query spanning more than 2 hours MUST use a Continuous Aggregate (CAGG), never the raw tables. Raw tables have 30-day retention; CAGGs are kept indefinitely.
 
 ## Alert Architecture
 
@@ -358,57 +358,66 @@ Parser function ทำหน้าที่:
 ### Stage 3: Storage (TimescaleDB)
 
 ```sql
--- Hypertable สำหรับ time-series data
-CREATE TABLE public.machine_telemetry (
-    time            TIMESTAMPTZ NOT NULL,
-    machine_id      TEXT NOT NULL,
-    cpu_cores       INTEGER,
-    cpu_load_percent DOUBLE PRECISION,
-    ram_total_mb    INTEGER,
-    ram_used_mb     INTEGER,
-    disk_total_gb   DOUBLE PRECISION,
-    disk_used_gb    DOUBLE PRECISION,
-    net_rx_bytes    BIGINT,
-    net_tx_bytes    BIGINT,
-    net_rx_errors   INTEGER,
-    net_rx_drops    INTEGER,
-    net_if_status   INTEGER,
-    temp_c          DOUBLE PRECISION,
-    interface_metrics JSONB,
-    -- LDI columns
-    ldi_throughput  DOUBLE PRECISION,
-    ldi_humidity    DOUBLE PRECISION,
-    ldi_pe          DOUBLE PRECISION,
-    ldi_je          DOUBLE PRECISION,
-    ldi_power       DOUBLE PRECISION,
-    ldi_vibration   DOUBLE PRECISION,
-    ldi_temp        DOUBLE PRECISION,
-    ldi_uptime      BIGINT,
-    -- WiFi
-    wifi_rssi       INTEGER,
-    wifi_snr        INTEGER
-);
+-- V2 Normalized Schema: 3 separate hypertables per domain
 
-SELECT create_hypertable('public.machine_telemetry', 'time');
+-- System metrics (CPU, RAM, Disk, Temp)
+CREATE TABLE public.sys_metrics (
+    "time"           TIMESTAMPTZ NOT NULL,
+    device_id        TEXT NOT NULL REFERENCES public.devices(device_id) ON DELETE CASCADE,
+    cpu_cores        INTEGER,
+    cpu_load_percent DOUBLE PRECISION,
+    ram_total_mb     DOUBLE PRECISION,
+    ram_used_mb      DOUBLE PRECISION,
+    disk_total_gb    DOUBLE PRECISION,
+    disk_used_gb     DOUBLE PRECISION,
+    temp_c           DOUBLE PRECISION
+);
+SELECT create_hypertable('public.sys_metrics', 'time');
+
+-- Network metrics (per-interface row)
+CREATE TABLE public.net_metrics (
+    "time"      TIMESTAMPTZ NOT NULL,
+    device_id   TEXT NOT NULL REFERENCES public.devices(device_id) ON DELETE CASCADE,
+    iface_name  TEXT NOT NULL,
+    rx_mbps     DOUBLE PRECISION DEFAULT 0,
+    tx_mbps     DOUBLE PRECISION DEFAULT 0,
+    rx_errors   BIGINT DEFAULT 0,
+    tx_errors   BIGINT DEFAULT 0,
+    rx_drops    BIGINT DEFAULT 0,
+    tx_drops    BIGINT DEFAULT 0,
+    status      TEXT DEFAULT 'UP'
+);
+SELECT create_hypertable('public.net_metrics', 'time');
+
+-- LDI manufacturing metrics
+CREATE TABLE public.ldi_metrics (
+    "time"          TIMESTAMPTZ NOT NULL,
+    device_id       TEXT NOT NULL REFERENCES public.devices(device_id) ON DELETE CASCADE,
+    throughput      DOUBLE PRECISION DEFAULT 0,
+    temperature     DOUBLE PRECISION DEFAULT 0,
+    humidity        DOUBLE PRECISION DEFAULT 0,
+    pressure        DOUBLE PRECISION DEFAULT 0,
+    joule_effect    DOUBLE PRECISION DEFAULT 0,
+    power_watt      DOUBLE PRECISION DEFAULT 0,
+    vibration       DOUBLE PRECISION DEFAULT 0,
+    wifi_rssi       INTEGER DEFAULT 0,
+    wifi_snr        INTEGER DEFAULT 0
+);
+SELECT create_hypertable('public.ldi_metrics', 'time');
 ```
 
-**Continuous Aggregates** (auto-refresh):
+**Continuous Aggregates** (auto-refresh every 30 min):
 
 ```sql
--- Minute-level summary
-CREATE MATERIALIZED VIEW public.telemetry_minute_summary
+-- Hourly system summary
+CREATE MATERIALIZED VIEW public.sys_hourly
 WITH (timescaledb.continuous) AS
-SELECT
-    time_bucket('1 minute', time) AS bucket,
-    machine_id,
-    AVG(cpu_load_percent) AS avg_cpu_load,
-    AVG(temp_c) AS avg_temp,
-    -- Per-interface bandwidth from JSONB
-    SUM((elem->>'rx_mbps')::DOUBLE PRECISION) AS avg_rx_mbps,
-    SUM((elem->>'tx_mbps')::DOUBLE PRECISION) AS avg_tx_mbps
-FROM public.machine_telemetry
-CROSS JOIN LATERAL jsonb_each(interface_metrics) AS elem
-GROUP BY bucket, machine_id;
+SELECT time_bucket('1 hour', "time") AS bucket, device_id,
+    AVG(cpu_load_percent) AS avg_cpu, MAX(cpu_load_percent) AS max_cpu,
+    AVG(ram_used_mb) AS avg_ram_used, AVG(ram_total_mb) AS avg_ram_total,
+    AVG(disk_used_gb) AS avg_disk_used, AVG(disk_total_gb) AS avg_disk_total,
+    MAX(temp_c) AS max_temp
+FROM public.sys_metrics GROUP BY bucket, device_id;
 ```
 
 ---
@@ -554,32 +563,73 @@ Body: message=<encoded alert text>
 
 ## 🗄️ Database Schema
 
-### Core Tables
+### Core Tables (V2 Normalized Schema)
 
 | Table | Type | Purpose |
 |---|---|---|
-| `machine_telemetry` | Hypertable | Raw time-series data per poll cycle |
-| `telemetry_minute_summary` | Continuous Aggregate | Minute-level rollup for dashboards |
-| `machines` | Regular Table | Device registry (host, community, port) |
-| `v_uptime_summary` | View | Uptime calculation per machine |
+| `devices` | Regular Table | Device registry (11 cols: device_id, hostname, ip_address, snmp_community, snmp_port, enabled, ...) |
+| `sys_metrics` | Hypertable | System metrics: CPU, RAM, Disk, Temperature per poll cycle |
+| `net_metrics` | Hypertable | Network metrics: per-interface RX/TX Mbps, errors, drops |
+| `ldi_metrics` | Hypertable | LDI manufacturing: throughput, PE, JE, humidity, power, vibration |
+| `sys_hourly` | Continuous Aggregate | Hourly rollup of sys_metrics |
+| `net_hourly` | Continuous Aggregate | Hourly rollup of net_metrics |
+| `ldi_hourly` | Continuous Aggregate | Hourly rollup of ldi_metrics |
+| `alert_rules` | Regular Table | Alert rule definitions |
+| `alert_history` | Regular Table | Alert event history |
+| `schema_migrations` | Regular Table | Migration tracking |
 
 ### Schema Relationships
 
-```
-machines (1) ──▶ (∞) machine_telemetry
-                        │
-                        ├──▶ telemetry_minute_summary (auto)
-                        └──▶ v_uptime_summary (view)
+```mermaid
+erDiagram
+    devices ||--o{ sys_metrics : "device_id"
+    devices ||--o{ net_metrics : "device_id"
+    devices ||--o{ ldi_metrics : "device_id"
+    sys_metrics ||--o{ sys_hourly : "time_bucket"
+    net_metrics ||--o{ net_hourly : "time_bucket"
+    ldi_metrics ||--o{ ldi_hourly : "time_bucket"
+
+    devices {
+        text device_id PK
+        text hostname
+        text ip_address
+        text snmp_community
+        int snmp_port
+        boolean enabled
+    }
+    sys_metrics {
+        timestamptz time
+        text device_id FK
+        double cpu_load_percent
+        double ram_used_mb
+        double disk_used_gb
+        double temp_c
+    }
+    net_metrics {
+        timestamptz time
+        text device_id FK
+        text iface_name
+        double rx_mbps
+        double tx_mbps
+    }
+    ldi_metrics {
+        timestamptz time
+        text device_id FK
+        double throughput
+        double temperature
+        double humidity
+        double power_watt
+    }
 ```
 
 ### Key Column Types
 
 | Column | Type | Notes |
 |---|---|---|
-| `time` | `TIMESTAMPTZ` | Partitioning key for hypertable |
-| `machine_id` | `TEXT` | Device identifier (e.g., "server-01") |
-| `interface_metrics` | `JSONB` | Per-interface data: `{eth0: {rx_mbps, tx_mbps, ...}}` |
-| `ldi_*` | `DOUBLE PRECISION` | LDI manufacturing metrics (÷100 from snmpsim) |
+| `time` | `TIMESTAMPTZ` | Partitioning key for hypertables (raw tables) |
+| `bucket` | `TIMESTAMPTZ` | Time bucket for CAGGs (Grafana aliases as `time`) |
+| `device_id` | `TEXT` | FK to `devices.device_id` (ON DELETE CASCADE) |
+| `iface_name` | `TEXT` | Network interface name (net_metrics only) |
 
 ---
 
@@ -591,7 +641,7 @@ machines (1) ──▶ (∞) machine_telemetry
 |---|---|
 | **Container Isolation** | Docker network bridge — services communicate via DNS |
 | **No Host Port Exposure** | Internal services (PgBouncer, snmpsim) only accessible within Docker network |
-| **SNMP Community** | File-based community string `Netk@` (not hardcoded) |
+| **SNMP Community** | Profile-based: `ubuntu` or `windows` snmprec files (not hardcoded) |
 | **Secrets Management** | Docker secrets (`secrets/` directory, gitignored) |
 | **Grafana Auth** | Basic auth with configurable admin password |
 
@@ -639,11 +689,11 @@ services:
     "overrides": [
       {
         "matcher": { "id": "byName", "options": "Download (Mbps)" },
-        "properties": [{ "id": "color", "value": { "fixedColor": "#1F60C4", "mode": "fixed" } }]
+        "properties": [{ "id": "color", "value": { "fixedColor": "#00F2FE", "mode": "fixed" } }]
       },
       {
         "matcher": { "id": "byName", "options": "Upload (Mbps)" },
-        "properties": [{ "id": "color", "value": { "fixedColor": "#5794F2", "mode": "fixed" } }]
+        "properties": [{ "id": "color", "value": { "fixedColor": "#00FF87", "mode": "fixed" } }]
       }
     ]
   }
@@ -653,10 +703,10 @@ services:
 **SQL Pattern สำหรับ Symmetrical Display:**
 ```sql
 -- Download (ค่าบวก)
-SELECT avg_rx_mbps AS "Download (Mbps)" FROM telemetry_minute_summary
+SELECT avg_rx_mbps AS "Download (Mbps)" FROM sys_hourly
 
 -- Upload (คูณด้วย -1 ให้ติดลบ)
-SELECT (avg_tx_mbps * -1) AS "Upload (Mbps)" FROM telemetry_minute_summary
+SELECT (avg_tx_mbps * -1) AS "Upload (Mbps)" FROM sys_hourly
 ```
 
 ### LDI Quality Tolerance Box (Scatter Plot)
@@ -692,15 +742,14 @@ Panel 506 แสดง PE vs JE ใน Scatter Plot พร้อม Tolerance Bo
 
 | Metric | Healthy | Warning | Critical |
 |---|---|---|---|
-| CPU | Yellow | Orange | Red |
-| RAM | Purple | Dark-orange | Red |
-| Disk | Cyan | Blue | Red |
-| Network RX | Dark Blue (#1F60C4) | — | Red |
-| Network TX | Light Blue (#5794F2) | — | Red |
-| wlan0 RX | Purple (#8E24AA) | — | Red |
-| wlan0 TX | Magenta (#E02F44) | — | Red |
-| Errors | — | — | Red (#C4162A) |
-| Drops | — | Orange (#FF9830) | Red |
+| CPU | Green (#00FF87) | Orange (#FF9100) | Red (#FF003C) |
+| RAM | Cyan (#00F2FE) | Orange (#FF9100) | Red (#FF003C) |
+| Disk | Green (#00FF87) | Orange (#FF9100) | Red (#FF003C) |
+| Network RX | Cyan (#00F2FE) | — | Red (#FF003C) |
+| Network TX | Pink (#FF007F) | — | Red (#FF003C) |
+| LDI | Purple (#7F00FF) | Orange (#FF9100) | Red (#FF003C) |
+| Errors | — | — | Red (#FF003C) |
+| Drops | — | Orange (#FF9100) | Red (#FF003C) |
 
 ---
 
@@ -710,7 +759,7 @@ Panel 506 แสดง PE vs JE ใน Scatter Plot พร้อม Tolerance Bo
 
 | Metric | Value |
 |---|---|
-| **Machines Monitored** | 1-5 (simulated) |
+| **Devices Monitored** | 1000+ (simulated) |
 | **Polling Interval** | 30 seconds |
 | **Data Points/Hour** | ~600 per machine |
 | **Storage/Hour** | ~50 KB per machine |
@@ -720,7 +769,7 @@ Panel 506 แสดง PE vs JE ใน Scatter Plot พร้อม Tolerance Bo
 
 | Phase | Machines | Changes Required |
 |---|---|---|
-| **Current** | 1-5 | Standalone Docker Compose |
+| **Current** | 1-1000+ | Standalone Docker Compose |
 | **Phase 2** | 5-50 | PgBouncer tuning, connection pooling |
 | **Phase 3** | 50-500 | Read replicas, continuous aggregate optimization |
 | **Phase 4** | 500-1000+ | Horizontal scaling, Kubernetes migration |
