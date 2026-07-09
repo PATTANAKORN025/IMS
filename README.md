@@ -112,7 +112,7 @@ open http://localhost:3000
 
 | Command | Description |
 |---------|-------------|
-| `make up` | Start all services (dev mode with SNMP simulator) |
+| `make up` | Start all services (dev mode with SNMP simulator — `ubuntu` + `windows` profiles) |
 | `make down` | Stop all services |
 | `make verify` | Full system health check |
 | `make test-unit` | Run unit tests (56 tests) |
