@@ -13,6 +13,7 @@ const retryQueueSize = new Counter('retry_queue_size');
 const httpErrors = new Counter('http_errors');
 
 const NODERED_URL = __ENV.NODERED_URL || 'http://127.0.0.1:1880';
+const INGEST_API_KEY = __ENV.INGEST_API_KEY || 'ims-secret-key';
 const TARGET_VUS = Number.parseInt(__ENV.TARGET_VUS || '100', 10);
 const TARGET_SERVERS = 50;
 
@@ -43,7 +44,7 @@ export default function () {
   const start = Date.now();
 
   const res = http.post(`${NODERED_URL}/inject`, payload, {
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'x-api-key': INGEST_API_KEY },
     tags: { name: 'inject_high_concurrency' },
     timeout: '10s',
   });

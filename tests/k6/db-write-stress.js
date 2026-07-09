@@ -13,6 +13,7 @@ const writeDuration = new Trend('db_write_duration', true);
 const successRate = new Rate('db_success_rate');
 
 const TARGET_URL = __ENV.TARGET_URL || 'http://localhost:1880/inject';
+const INGEST_API_KEY = __ENV.INGEST_API_KEY || 'ims-secret-key';
 const SERVER_COUNT = Number.parseInt(__ENV.SERVER_COUNT || '100', 10);
 const WRITE_INTERVAL = Number.parseInt(__ENV.WRITE_INTERVAL || '10', 10);
 
@@ -37,7 +38,7 @@ export default function () {
   const payload = JSON.stringify({ machine_id: machineId });
 
   const params = {
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'x-api-key': INGEST_API_KEY },
     tags: { name: 'db_write' },
   };
 

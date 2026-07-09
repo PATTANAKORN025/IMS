@@ -15,6 +15,7 @@ const pipelineErrors = new Counter('pipeline_errors');
 
 const NODERED_URL = __ENV.NODERED_URL || 'http://localhost:1880';
 const GRAFANA_URL = __ENV.GRAFANA_URL || 'http://localhost:3000';
+const INGEST_API_KEY = __ENV.INGEST_API_KEY || 'ims-secret-key';
 const TARGET_SERVERS = Number.parseInt(__ENV.TARGET_SERVERS || '100', 10);
 
 export const options = {
@@ -49,7 +50,7 @@ export default function () {
     `${NODERED_URL}/inject`,
     JSON.stringify(payload),
     {
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-api-key': INGEST_API_KEY },
       tags: { name: 'inject' },
       timeout: '10s',
     }
