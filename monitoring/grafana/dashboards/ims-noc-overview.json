@@ -40,7 +40,7 @@
       {
         "name": "machine_id",
         "type": "query",
-        "query": "SELECT machine_id AS __text FROM public.machines WHERE enabled = true ORDER BY machine_id ASC LIMIT 200;",
+        "query": "SELECT device_id AS __text FROM public.devices WHERE enabled = true ORDER BY device_id ASC LIMIT 200;",
         "datasource": {
           "uid": "timescaledb"
         },
