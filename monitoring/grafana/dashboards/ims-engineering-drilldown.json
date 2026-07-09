@@ -9,7 +9,7 @@
   "schemaVersion": 39,
   "refresh": "10s",
   "time": {
-    "from": "now-6h",
+    "from": "now-1h",
     "to": "now"
   },
   "links": [
@@ -1286,7 +1286,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "Z-Score (Anomaly)",
-          "rawSql": "WITH stats AS (SELECT bucket, max_temp, AVG(max_temp) OVER w AS mu, COALESCE(STDDEV(max_temp) OVER w, 0) AS sigma FROM public.sys_hourly WHERE device_id IN (${machine_id:sqlstring}) AND max_temp > 0 AND $__timeFilter(bucket) WINDOW w AS (PARTITION BY device_id ORDER BY bucket ROWS BETWEEN 60 PRECEDING AND 1 PRECEDING)) SELECT bucket AS time, CASE WHEN sigma > 0 THEN ROUND(((max_temp - mu) / sigma)::NUMERIC, 2) ELSE 0 END AS \"Z-Score\" FROM stats ORDER BY 1",
+          "rawSql": "WITH stats AS (SELECT avg(max_temp) as mu, stddev(max_temp) as sigma FROM public.sys_hourly WHERE device_id IN (${machine_id:sqlstring}) AND max_temp > 0 AND $__timeFilter(bucket)) SELECT bucket AS time, (max_temp - mu) / NULLIF(sigma, 0) AS \"Z-Score\" FROM public.sys_hourly, stats WHERE device_id IN (${machine_id:sqlstring}) AND max_temp > 0 AND $__timeFilter(bucket) ORDER BY time ASC",
           "format": "time_series"
         }
       ],
