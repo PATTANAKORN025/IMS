@@ -448,7 +448,7 @@
                     "options": {
                       "online": {
                         "color": "green",
-                        "text": "<span class=\"status-dot\"></span> online"
+                        "text": "online"
                       },
                       "stale": {
                         "color": "yellow",
@@ -456,7 +456,7 @@
                       },
                       "offline": {
                         "color": "red",
-                        "text": "<span style=\"color:#FF003C;font-weight:700\">&#9679;</span> offline"
+                        "text": "offline"
                       }
                     }
                   }
