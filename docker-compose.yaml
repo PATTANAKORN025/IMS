@@ -70,6 +70,8 @@ services:
       - effective_io_concurrency=200
       - -c
       - timezone=${TZ:-Asia/Bangkok}
+      - -c
+      - timescaledb.max_background_workers=16
     volumes:
       - timescaledb_data:/var/lib/postgresql/data
       - ./postgres/init:/docker-entrypoint-initdb.d:ro
