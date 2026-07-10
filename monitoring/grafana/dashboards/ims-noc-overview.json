@@ -42,6 +42,7 @@
         "type": "query",
         "query": "SELECT device_id AS __text FROM public.devices WHERE enabled = true ORDER BY device_id ASC;",
         "datasource": {
+          "type": "postgres",
           "uid": "timescaledb"
         },
         "refresh": 2,
@@ -55,6 +56,7 @@
         "type": "query",
         "query": "SELECT DISTINCT iface_name AS __text FROM public.net_metrics;",
         "datasource": {
+          "type": "postgres",
           "uid": "timescaledb"
         },
         "refresh": 2,
@@ -70,8 +72,8 @@
       {
         "builtIn": 1,
         "datasource": {
-          "type": "grafana",
-          "uid": "-- Grafana --"
+          "type": "postgres",
+          "uid": "timescaledb"
         },
         "enable": true,
         "hide": false,
@@ -182,6 +184,7 @@
       "title": "Fleet Health Score",
       "type": "stat",
       "datasource": {
+        "type": "postgres",
         "uid": "timescaledb"
       },
       "gridPos": {
@@ -239,6 +242,7 @@
         {
           "refId": "A",
           "datasource": {
+            "type": "postgres",
             "uid": "timescaledb"
           },
           "rawSql": "SELECT value FROM public.v_fleet_score",
@@ -260,6 +264,7 @@
       "title": "LDI Yield Risk (% Outside Tolerance)",
       "type": "stat",
       "datasource": {
+        "type": "postgres",
         "uid": "timescaledb"
       },
       "gridPos": {
@@ -314,9 +319,10 @@
         {
           "refId": "A",
           "datasource": {
+            "type": "postgres",
             "uid": "timescaledb"
           },
-          "rawSql": "WITH ldi AS (SELECT device_id, pressure, joule_effect FROM public.ldi_metrics WHERE time > NOW() - INTERVAL '1 hour' AND pressure IS NOT NULL) SELECT ROUND(100.0 * SUM(CASE WHEN ABS(pressure) > 10 OR ABS(joule_effect) > 10 THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0)::NUMERIC, 1) AS value FROM ldi",
+          "rawSql": "WITH ldi AS (SELECT device_id, pressure, joule_effect FROM public.ldi_metrics WHERE time > NOW() - INTERVAL '1 hour' AND pressure IS NOT NULL) SELECT ROUND(100.0 * SUM(CASE WHEN ABS(pressure) > 10 OR ABS(joule_effect) > 10 THEN 1 ELSE 0 END) / NULLIF(COUNT(*)::NUMERIC, 0)::NUMERIC, 1) AS value FROM ldi",
           "format": "table"
         }
       ],
@@ -335,6 +341,7 @@
       "title": "Power Cost Estimation (THB/day)",
       "type": "stat",
       "datasource": {
+        "type": "postgres",
         "uid": "timescaledb"
       },
       "gridPos": {
@@ -387,6 +394,7 @@
         {
           "refId": "A",
           "datasource": {
+            "type": "postgres",
             "uid": "timescaledb"
           },
           "rawSql": "WITH power_data AS (SELECT device_id, AVG(power_watt) AS avg_watts FROM public.ldi_metrics WHERE time > NOW() - INTERVAL '1 day' AND power_watt IS NOT NULL GROUP BY device_id) SELECT 'Fleet Power Cost' AS metric, ROUND(SUM(avg_watts * 24 * 4.5 / 1000)::NUMERIC, 0) AS value FROM power_data",
@@ -421,6 +429,7 @@
       "title": "TOP 10 CRITICAL NODES",
       "type": "table",
       "datasource": {
+        "type": "postgres",
         "uid": "timescaledb"
       },
       "gridPos": {
@@ -554,6 +563,7 @@
         {
           "refId": "A",
           "datasource": {
+            "type": "postgres",
             "uid": "timescaledb"
           },
           "rawSql": "SELECT device_id AS \"Server Name\", CASE WHEN MAX(time) > NOW() - INTERVAL '2 minutes' THEN 'online' WHEN MAX(time) > NOW() - INTERVAL '10 minutes' THEN 'stale' ELSE 'offline' END AS \"Status\", ROUND(AVG(cpu_load_percent)::NUMERIC, 1) AS \"CPU (%)\", ROUND(AVG(temp_c)::NUMERIC, 0) AS \"Temp (°C)\", COUNT(*)::TEXT AS \"Samples (10m)\" FROM public.sys_metrics WHERE time > NOW() - INTERVAL '10 minutes' GROUP BY device_id ORDER BY \"CPU (%)\" DESC LIMIT 10",
@@ -588,6 +598,7 @@
       "title": "CPU Load (Fleet Envelope)",
       "type": "timeseries",
       "datasource": {
+        "type": "postgres",
         "uid": "timescaledb"
       },
       "gridPos": {
@@ -861,6 +872,7 @@
           "rawSql": "SELECT bucket AS time, ROUND(AVG(avg_cpu)::NUMERIC,1) AS value FROM public.sys_hourly WHERE $__timeFilter(bucket) GROUP BY bucket UNION ALL SELECT time, ROUND(AVG(cpu_load_percent)::NUMERIC,1) AS value FROM public.sys_metrics WHERE $__timeFilter(time) AND time > COALESCE((SELECT MAX(bucket) FROM public.sys_hourly), NOW() - INTERVAL '1 hour') GROUP BY time ORDER BY 1",
           "format": "time_series",
           "datasource": {
+            "type": "postgres",
             "uid": "timescaledb"
           }
         },
@@ -870,6 +882,7 @@
           "rawSql": "SELECT bucket AS time, ROUND(MAX(avg_cpu)::NUMERIC,1) AS value FROM public.sys_hourly WHERE $__timeFilter(bucket) GROUP BY bucket UNION ALL SELECT time, ROUND(MAX(cpu_load_percent)::NUMERIC,1) AS value FROM public.sys_metrics WHERE $__timeFilter(time) AND time > COALESCE((SELECT MAX(bucket) FROM public.sys_hourly), NOW() - INTERVAL '1 hour') GROUP BY time ORDER BY 1",
           "format": "time_series",
           "datasource": {
+            "type": "postgres",
             "uid": "timescaledb"
           }
         }
@@ -894,6 +907,7 @@
       "title": "Temperature (Fleet Envelope)",
       "type": "timeseries",
       "datasource": {
+        "type": "postgres",
         "uid": "timescaledb"
       },
       "gridPos": {
@@ -1165,6 +1179,7 @@
           "rawSql": "SELECT bucket AS time, ROUND(AVG(max_temp)::NUMERIC,1) AS value FROM public.sys_hourly WHERE $__timeFilter(bucket) AND max_temp > 0 GROUP BY bucket UNION ALL SELECT time, ROUND(AVG(temp_c)::NUMERIC,1) AS value FROM public.sys_metrics WHERE $__timeFilter(time) AND time > COALESCE((SELECT MAX(bucket) FROM public.sys_hourly), NOW() - INTERVAL '1 hour') AND temp_c > 0 GROUP BY time ORDER BY 1",
           "format": "time_series",
           "datasource": {
+            "type": "postgres",
             "uid": "timescaledb"
           }
         },
@@ -1174,6 +1189,7 @@
           "rawSql": "SELECT bucket AS time, ROUND(MAX(max_temp)::NUMERIC,1) AS value FROM public.sys_hourly WHERE $__timeFilter(bucket) AND max_temp > 0 GROUP BY bucket UNION ALL SELECT time, ROUND(MAX(temp_c)::NUMERIC,1) AS value FROM public.sys_metrics WHERE $__timeFilter(time) AND time > COALESCE((SELECT MAX(bucket) FROM public.sys_hourly), NOW() - INTERVAL '1 hour') AND temp_c > 0 GROUP BY time ORDER BY 1",
           "format": "time_series",
           "datasource": {
+            "type": "postgres",
             "uid": "timescaledb"
           }
         }
@@ -1213,6 +1229,7 @@
       "title": "Network Throughput (All Machines)",
       "type": "barchart",
       "datasource": {
+        "type": "postgres",
         "uid": "timescaledb"
       },
       "gridPos": {
@@ -1305,6 +1322,7 @@
         {
           "refId": "A",
           "datasource": {
+            "type": "postgres",
             "uid": "timescaledb"
           },
           "legendFormat": "{{ machine_id }} RX",
@@ -1314,6 +1332,7 @@
         {
           "refId": "B",
           "datasource": {
+            "type": "postgres",
             "uid": "timescaledb"
           },
           "legendFormat": "{{ machine_id }} TX",
@@ -1343,6 +1362,7 @@
       "title": "RAM Saturation (Fleet Envelope)",
       "type": "timeseries",
       "datasource": {
+        "type": "postgres",
         "uid": "timescaledb"
       },
       "gridPos": {
@@ -1613,18 +1633,20 @@
         {
           "refId": "AVG",
           "legendFormat": "Fleet Average",
-          "rawSql": "SELECT bucket AS time, ROUND(AVG(avg_ram_used / NULLIF(avg_ram_total, 0) * 100)::NUMERIC,1) AS value FROM public.sys_hourly WHERE $__timeFilter(bucket) GROUP BY bucket UNION ALL SELECT time, ROUND(AVG(ram_used_mb / NULLIF(ram_total_mb, 0) * 100)::NUMERIC,1) AS value FROM public.sys_metrics WHERE $__timeFilter(time) AND time > COALESCE((SELECT MAX(bucket) FROM public.sys_hourly), NOW() - INTERVAL '1 hour') GROUP BY time ORDER BY 1",
+          "rawSql": "SELECT bucket AS time, ROUND(AVG(avg_ram_used / NULLIF(avg_ram_total::NUMERIC, 0) * 100)::NUMERIC,1) AS value FROM public.sys_hourly WHERE $__timeFilter(bucket) GROUP BY bucket UNION ALL SELECT time, ROUND(AVG(ram_used_mb / NULLIF(ram_total_mb::NUMERIC, 0) * 100)::NUMERIC,1) AS value FROM public.sys_metrics WHERE $__timeFilter(time) AND time > COALESCE((SELECT MAX(bucket) FROM public.sys_hourly), NOW() - INTERVAL '1 hour') GROUP BY time ORDER BY 1",
           "format": "time_series",
           "datasource": {
+            "type": "postgres",
             "uid": "timescaledb"
           }
         },
         {
           "refId": "MAX",
           "legendFormat": "Worst Machine",
-          "rawSql": "SELECT bucket AS time, ROUND(MAX(avg_ram_used / NULLIF(avg_ram_total, 0) * 100)::NUMERIC,1) AS value FROM public.sys_hourly WHERE $__timeFilter(bucket) GROUP BY bucket UNION ALL SELECT time, ROUND(MAX(ram_used_mb / NULLIF(ram_total_mb, 0) * 100)::NUMERIC,1) AS value FROM public.sys_metrics WHERE $__timeFilter(time) AND time > COALESCE((SELECT MAX(bucket) FROM public.sys_hourly), NOW() - INTERVAL '1 hour') GROUP BY time ORDER BY 1",
+          "rawSql": "SELECT bucket AS time, ROUND(MAX(avg_ram_used / NULLIF(avg_ram_total::NUMERIC, 0) * 100)::NUMERIC,1) AS value FROM public.sys_hourly WHERE $__timeFilter(bucket) GROUP BY bucket UNION ALL SELECT time, ROUND(MAX(ram_used_mb / NULLIF(ram_total_mb::NUMERIC, 0) * 100)::NUMERIC,1) AS value FROM public.sys_metrics WHERE $__timeFilter(time) AND time > COALESCE((SELECT MAX(bucket) FROM public.sys_hourly), NOW() - INTERVAL '1 hour') GROUP BY time ORDER BY 1",
           "format": "time_series",
           "datasource": {
+            "type": "postgres",
             "uid": "timescaledb"
           }
         }

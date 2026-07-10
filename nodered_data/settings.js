@@ -26,15 +26,19 @@ module.exports = {
         snmp: require('net-snmp'),
         pg: require('pg'),
         fs: require('fs'),
-        pgPool: new (require('pg').Pool)({
-            host: process.env.PGHOST || 'ims-timescaledb',
-            port: parseInt(process.env.PGPORT) || 5432,
-            database: process.env.PGDATABASE || 'ims',
-            user: process.env.PGUSER || 'ims_admin',
-            password: process.env.PGPASSWORD || 'change-me-please',
-            max: 2,
-            idleTimeoutMillis: 30000
-        }),
+        pgPool: (() => {
+            const pool = new (require('pg').Pool)({
+                host: process.env.PGHOST || 'ims-timescaledb',
+                port: parseInt(process.env.PGPORT) || 5432,
+                database: process.env.PGDATABASE || 'ims',
+                user: process.env.PGUSER || 'ims_admin',
+                password: process.env.PGPASSWORD || 'change-me-please',
+                max: 100,
+                idleTimeoutMillis: 30000
+            });
+            pool.on('error', (err) => console.error('Unexpected error on idle pg client', err));
+            return pool;
+        })(),
     },
     exportGlobalContextKeys: false,
     diagnostics: { enabled: true, ui: true },
