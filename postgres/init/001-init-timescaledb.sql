@@ -196,7 +196,7 @@ SELECT
     '10.0.0.' || (i + 1),
     CASE WHEN i % 2 = 0 THEN 'windows' ELSE 'ubuntu' END,
     161,
-    true,
+    false,
     'server'
 FROM generate_series(0, 999) AS i
 ON CONFLICT (device_id) DO NOTHING;
