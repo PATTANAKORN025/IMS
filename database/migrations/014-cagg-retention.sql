@@ -49,9 +49,7 @@ SELECT
     MAX(temperature)                AS max_temp,
     AVG(humidity)                   AS avg_humidity,
     AVG(power_watt)                 AS avg_power,
-    AVG(vibration)                  AS avg_vibration,
-    AVG(wifi_rssi)                  AS avg_rssi,
-    AVG(wifi_snr)                   AS avg_snr
+    AVG(vibration)                  AS avg_vibration
 FROM public.ldi_metrics
 GROUP BY bucket, device_id
 WITH NO DATA;
