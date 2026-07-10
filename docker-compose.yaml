@@ -98,6 +98,12 @@ services:
     <<: *default-restart
     init: true
     entrypoint: ["/bin/sh", "/etc/pgbouncer/entrypoint-wrapper.sh"]
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 5432 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@timescaledb:5432/${POSTGRES_DB}
       GRAFANA_DB_PASSWORD: ${GRAFANA_DB_PASSWORD:?GRAFANA_DB_PASSWORD required in .env}
@@ -330,7 +336,7 @@ services:
       timescaledb:
         condition: service_healthy
       pgbouncer:
-        condition: service_started
+        condition: service_healthy
       grafana:
         condition: service_started
     networks:
