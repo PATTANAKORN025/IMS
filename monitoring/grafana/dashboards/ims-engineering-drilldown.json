@@ -1,0 +1,2194 @@
+{
+  "uid": "ims-engineering",
+  "title": "IMS Engineering Drill-Down",
+  "tags": [
+    "ims",
+    "engineering"
+  ],
+  "timezone": "Asia/Bangkok",
+  "schemaVersion": 39,
+  "refresh": "10s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "links": [
+    {
+      "title": "TV Kiosk Mode",
+      "url": "/d/ims-engineering?orgId=1&kiosk=tv",
+      "type": "link",
+      "icon": "bolt",
+      "targetBlank": true
+    },
+    {
+      "title": "NOC Overview",
+      "url": "/d/ims-noc-overview",
+      "type": "link",
+      "icon": "external link",
+      "targetBlank": true
+    },
+    {
+      "title": "AIOps & Capacity",
+      "url": "/d/ims-capacity",
+      "type": "link",
+      "icon": "external link",
+      "targetBlank": true
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "machine_id",
+        "type": "query",
+        "query": "SELECT device_id AS __text FROM public.devices WHERE enabled = true ORDER BY device_id ASC;",
+        "datasource": {
+          "uid": "timescaledb"
+        },
+        "refresh": 2,
+        "multi": false,
+        "includeAll": false,
+        "sort": 1,
+        "label": "Machine"
+      },
+      {
+        "name": "interface",
+        "type": "query",
+        "query": "SELECT DISTINCT iface_name AS __text FROM public.net_metrics;",
+        "datasource": {
+          "uid": "timescaledb"
+        },
+        "refresh": 2,
+        "multi": false,
+        "includeAll": false,
+        "sort": 1,
+        "label": "Interface"
+      }
+    ]
+  },
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": false,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 0,
+      "type": "text",
+      "title": "",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 19,
+        "h": 3
+      },
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:rgba(12,18,30,0.8);border-bottom:1px solid rgba(0,242,254,0.2);font-family:Rajdhani,sans-serif\"><span style=\"font-family:Orbitron,sans-serif;font-size:16px;font-weight:700;letter-spacing:2px\">APEX <span style=\"color:#00F2FE\">COMMAND</span></span><span style=\"font-size:13px;letter-spacing:1px\"><a href=\"/d/ims-noc-overview\" style=\"color:#E2E8F0;text-decoration:none\">NOC OVERVIEW</a> &nbsp;|&nbsp; <a href=\"/d/ims-engineering\" style=\"color:#00FF87;font-weight:700;text-decoration:none\">ENG DRILL-DOWN</a> &nbsp;|&nbsp; <a href=\"/d/ims-capacity\" style=\"color:#E2E8F0;text-decoration:none\">CAPACITY FORECAST</a></span></div>\n<style>\n@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Orbitron:wght@400;700&display=swap');\n.dashboard-page { background: radial-gradient(circle at center, #0B0E14 0%, #030407 100%) !important; }\n.panel-container {\n  background: rgba(12, 18, 30, 0.6) !important;\n  border: 1px solid rgba(0, 242, 254, 0.15) !important;\n  border-radius: 8px !important;\n  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5) !important;\n  transition: all 0.3s ease;\n  animation: fadeUp 0.5s ease-out forwards;\n}\n.panel-container:hover {\n  border-color: rgba(0, 255, 135, 0.4) !important;\n  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(0, 255, 135, 0.05) !important;\n  backdrop-filter: blur(10px) !important;\n  -webkit-backdrop-filter: blur(10px) !important;\n  will-change: backdrop-filter;\n}\n.panel-title { font-weight: 700 !important; letter-spacing: 1px !important; color: #E2E8F0 !important; }\n.status-dot {\n  width: 8px; height: 8px; border-radius: 50%; background: #00FF87;\n  display: inline-block; margin-right: 8px;\n  animation: pulse 2s ease-in-out infinite;\n  box-shadow: 0 0 8px #00FF87;\n}\n@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.8); } }\n@keyframes fadeUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }\n</style>"
+      },
+      "datasource": null,
+      "transparent": true,
+      "description": "OS Taskbar navigation and CSS theme."
+    },
+    {
+      "id": 1001,
+      "type": "grafana-clock-panel",
+      "title": "",
+      "datasource": null,
+      "gridPos": {
+        "x": 19,
+        "y": 0,
+        "w": 5,
+        "h": 3
+      },
+      "options": {
+        "mode": "clock",
+        "clockType": "24hour",
+        "pendulum": false,
+        "showDate": true,
+        "dateSettings": {
+          "dateFormat": "YYYY-MM-DD",
+          "locale": "en",
+          "timeZone": "Asia/Bangkok"
+        },
+        "timeSettings": {
+          "showSeconds": true,
+          "showHour": true,
+          "showMinutes": true,
+          "timeFormat": "24"
+        },
+        "timezone": "Asia/Bangkok",
+        "bgColor": "transparent"
+      },
+      "description": "Current time and date (Asia/Bangkok timezone).",
+      "transparent": true
+    },
+    {
+      "id": 101,
+      "type": "row",
+      "title": "MACHINE SUMMARY",
+      "gridPos": {
+        "x": 0,
+        "y": 3,
+        "w": 24,
+        "h": 1
+      },
+      "collapsed": false,
+      "transparent": true
+    },
+    {
+      "id": 1,
+      "title": "CPU Load",
+      "type": "gauge",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 6,
+        "h": 4
+      },
+      "transparent": true,
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 80
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "noValue": "N/A"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT cpu_load_percent AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '2 minutes' AND device_id IN (${machine_id:sqlstring}) ORDER BY time DESC LIMIT 1",
+          "format": "table"
+        }
+      ],
+      "links": [
+        {
+          "title": "Capacity forecast →",
+          "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": true
+        },
+        {
+          "title": "Drill-down → Engineering",
+          "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": true
+        }
+      ],
+      "description": "Current CPU utilization (%) for the selected machine. Yellow >80%, Red >90%."
+    },
+    {
+      "id": 2,
+      "title": "RAM Usage",
+      "type": "gauge",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 4,
+        "w": 6,
+        "h": 4
+      },
+      "transparent": true,
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 85
+              },
+              {
+                "color": "red",
+                "value": 95
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "noValue": "N/A"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT ROUND((ram_used_mb / NULLIF(ram_total_mb, 0) * 100)::NUMERIC, 1) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '2 minutes' AND device_id IN (${machine_id:sqlstring}) ORDER BY time DESC LIMIT 1",
+          "format": "table"
+        }
+      ],
+      "links": [
+        {
+          "title": "Capacity forecast →",
+          "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": true
+        },
+        {
+          "title": "Drill-down → Engineering",
+          "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": true
+        }
+      ],
+      "description": "Current RAM utilization (%) for the selected machine. Yellow >85%, Red >95%."
+    },
+    {
+      "id": 3,
+      "title": "Storage Saturation",
+      "type": "gauge",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 4,
+        "w": 6,
+        "h": 4
+      },
+      "transparent": true,
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "noValue": "N/A"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT ROUND((disk_used_gb / NULLIF(disk_total_gb, 0) * 100)::NUMERIC, 1) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '2 minutes' AND device_id IN (${machine_id:sqlstring}) ORDER BY time DESC LIMIT 1",
+          "format": "table"
+        }
+      ],
+      "links": [
+        {
+          "title": "Capacity forecast →",
+          "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": true
+        },
+        {
+          "title": "Drill-down → Engineering",
+          "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": true
+        }
+      ],
+      "description": "Current disk utilization (%) for the selected machine. Yellow >70%, Red >90%."
+    },
+    {
+      "id": 4,
+      "title": "Temperature",
+      "type": "gauge",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 4,
+        "w": 6,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 45
+              },
+              {
+                "color": "red",
+                "value": 55
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "noValue": "N/A"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT temp_c AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '2 minutes' AND device_id IN (${machine_id:sqlstring}) AND temp_c > 0 ORDER BY time DESC LIMIT 1",
+          "format": "table"
+        }
+      ],
+      "description": "Current temperature (°C) for the selected machine. Yellow >70°C, Red >85°C.",
+      "transparent": true,
+      "links": [
+        {
+          "title": "Drill-down → Engineering",
+          "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": true
+        },
+        {
+          "title": "Drill-down → Engineering",
+          "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": true
+        }
+      ]
+    },
+    {
+      "id": 200,
+      "type": "row",
+      "title": "Time Series Analysis",
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 24,
+        "h": 1
+      },
+      "collapsed": false,
+      "transparent": true
+    },
+    {
+      "id": 501,
+      "title": "Memory Saturation",
+      "type": "timeseries",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 9,
+        "w": 24,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "custom": {
+            "fillOpacity": 0,
+            "lineWidth": 3,
+            "spanNulls": 60000,
+            "gradientMode": "opacity",
+            "drawStyle": "line",
+            "lineInterpolation": "smooth"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 85
+              },
+              {
+                "color": "red",
+                "value": 95
+              }
+            ]
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "fillOpacity": 5,
+          "lineWidth": 2,
+          "lineInterpolation": "smooth"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "^(?!.*TX|Upload).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00F2FE"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*[Uu][Bb][Uu][Nn][Tt][Uu].*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00FF87"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*[Ww][Ii][Nn][Dd][Oo][Ww][Ss].*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00F2FE"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*(FORECAST|forecast|REGRESSION|regression|LINEAR|linear).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#4A5568"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*(DB|db|TIMESCALE|timescale).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#7F00FF"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*[Uu][Bb][Uu][Nn][Tt][Uu].*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#00FF87",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*[Ww][Ii][Nn][Dd][Oo][Ww][Ss].*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#00F2FE",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*(DB|db|TIMESCALE|timescale|POSTGRES|postgres).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#7F00FF",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*(FORECAST|forecast|REGRESSION|regression).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#4A5568",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*[Mm][Aa][Xx].*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#FF003C",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 15
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max",
+            "lastNotNull"
+          ]
+        },
+        "connectNullPoints": true
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "legendFormat": "RAM %",
+          "rawSql": "SELECT bucket AS time, ROUND((avg_ram_used / NULLIF(avg_ram_total, 0) * 100)::NUMERIC, 1) AS \"RAM %\" FROM public.sys_hourly WHERE $__timeFilter(bucket) AND device_id IN (${machine_id:sqlstring}) ORDER BY 1",
+          "format": "time_series"
+        }
+      ],
+      "description": "RAM utilization for the selected machine. Yellow at 75%, Red at 90%. Gapfilled via LOCF.",
+      "transparent": true,
+      "links": [
+        {
+          "title": "Drill-down → Engineering",
+          "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": true
+        }
+      ]
+    },
+    {
+      "id": 502,
+      "title": "Network Bandwidth (Per-Interface)",
+      "type": "barchart",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 17,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bps",
+          "custom": {
+            "axisCenteredZero": true,
+            "fillOpacity": 0,
+            "lineWidth": 2,
+            "spanNulls": 60000,
+            "gradientMode": "opacity",
+            "drawStyle": "line",
+            "lineInterpolation": "smooth"
+          },
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "eth0 RX (bps)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#00F2FE",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "eth0 TX (bps)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#00FF87",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "wlan0 RX (bps)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#7F00FF",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "wlan0 TX (bps)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#FF007F",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*Upload.*"
+            },
+            "properties": [
+              {
+                "id": "custom.transform",
+                "value": "negative-Y"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*TX|Upload|Upload.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF007F"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*[Uu][Bb][Uu][Nn][Tt][Uu].*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00FF87"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*[Ww][Ii][Nn][Dd][Oo][Ww][Ss].*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00F2FE"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*(FORECAST|forecast|REGRESSION|regression|LINEAR|linear).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#4A5568"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*(DB|db|TIMESCALE|timescale).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#7F00FF"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*Download.*"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "RX"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*Upload.*"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "TX"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max",
+            "lastNotNull"
+          ]
+        },
+        "connectNullPoints": true,
+        "gradientMode": "opacity",
+        "orientation": "horizontal",
+        "showValue": "auto"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT time, device_id, iface_name,\n  rx_mbps AS \"Download (Mbps)\",\n  tx_mbps AS \"Upload (Mbps)\"\nFROM public.net_metrics\nWHERE $__timeFilter(time)\n  AND device_id IN (${machine_id:sqlstring})\n  AND iface_name IN (${interface:sqlstring})\nORDER BY time ASC",
+          "format": "time_series",
+          "maxDataPoints": 300
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT time, device_id, iface_name,\n  rx_mbps AS \"Download (Mbps)\",\n  tx_mbps AS \"Upload (Mbps)\"\nFROM public.net_metrics\nWHERE $__timeFilter(time)\n  AND device_id IN (${machine_id:sqlstring})\n  AND iface_name IN (${interface:sqlstring})\nORDER BY time ASC",
+          "format": "time_series",
+          "maxDataPoints": 300
+        }
+      ],
+      "description": "Per-interface bandwidth queried from per-interface rows in the net_metrics hypertable. Download positive, Upload mirrored via negative-Y axis.",
+      "transparent": true,
+      "links": [
+        {
+          "title": "Drill-down → Engineering",
+          "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": true
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "title": "Temperature Sensors",
+      "type": "timeseries",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 17,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "custom": {
+            "fillOpacity": 0,
+            "lineWidth": 3,
+            "spanNulls": 60000,
+            "thresholdsStyle": {
+              "mode": "dashed"
+            },
+            "gradientMode": "opacity",
+            "drawStyle": "line",
+            "lineInterpolation": "smooth"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": -3
+              },
+              {
+                "color": "transparent",
+                "value": -2
+              },
+              {
+                "color": "green",
+                "value": -1
+              },
+              {
+                "color": "green",
+                "value": 1
+              },
+              {
+                "color": "transparent",
+                "value": 2
+              },
+              {
+                "color": "red",
+                "value": 3
+              }
+            ]
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "fillOpacity": 5,
+          "lineWidth": 2,
+          "lineInterpolation": "smooth"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Z-Score (Anomaly)"
+            },
+            "properties": [
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "Z-Score"
+              },
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "rgba(255, 0, 0, 0.15)",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 30
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "bars"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "^Temperature"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF9100"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*[Uu][Bb][Uu][Nn][Tt][Uu].*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00FF87"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*[Ww][Ii][Nn][Dd][Oo][Ww][Ss].*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00F2FE"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*(FORECAST|forecast|REGRESSION|regression|LINEAR|linear).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#4A5568"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*(DB|db|TIMESCALE|timescale).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#7F00FF"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*[Uu][Bb][Uu][Nn][Tt][Uu].*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#00FF87",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*[Ww][Ii][Nn][Dd][Oo][Ww][Ss].*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#00F2FE",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*(DB|db|TIMESCALE|timescale|POSTGRES|postgres).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#7F00FF",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*(FORECAST|forecast|REGRESSION|regression).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#4A5568",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*[Mm][Aa][Xx].*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#FF003C",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 15
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max",
+            "lastNotNull"
+          ]
+        },
+        "connectNullPoints": true
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "legendFormat": "Temperature °C",
+          "rawSql": "SELECT bucket AS time, max_temp AS \"Temperature (°C)\" FROM public.sys_hourly WHERE $__timeFilter(bucket) AND device_id IN (${machine_id:sqlstring}) AND max_temp > 0 ORDER BY 1",
+          "format": "time_series"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "legendFormat": "Z-Score (Anomaly)",
+          "rawSql": "WITH stats AS (SELECT avg(max_temp) as mu, stddev(max_temp) as sigma FROM public.sys_hourly WHERE device_id IN (${machine_id:sqlstring}) AND max_temp > 0 AND $__timeFilter(bucket)) SELECT bucket AS time, (max_temp - mu) / NULLIF(sigma, 0) AS \"Z-Score\" FROM public.sys_hourly, stats WHERE device_id IN (${machine_id:sqlstring}) AND max_temp > 0 AND $__timeFilter(bucket) ORDER BY time ASC",
+          "format": "time_series"
+        }
+      ],
+      "description": "Temperature readings from sensor OIDs (UCD-SNMP lmSensors) for the selected machine.",
+      "transparent": true,
+      "links": [
+        {
+          "title": "Drill-down → Engineering",
+          "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": true
+        }
+      ]
+    },
+    {
+      "id": 507,
+      "type": "row",
+      "title": "LDI Manufacturing Telemetry",
+      "gridPos": {
+        "x": 0,
+        "y": 25,
+        "w": 24,
+        "h": 1
+      },
+      "collapsed": false,
+      "transparent": true
+    },
+    {
+      "id": 503,
+      "title": "LDI Throughput & Process Efficiency",
+      "type": "timeseries",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 26,
+        "w": 8,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "fillOpacity": 0,
+            "lineWidth": 2,
+            "spanNulls": 60000,
+            "gradientMode": "opacity",
+            "drawStyle": "line",
+            "lineInterpolation": "smooth"
+          },
+          "unit": "mbps",
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Throughput"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#00FF87",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "PE"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#FF9100",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "unit",
+                "value": "µm"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*TX|Upload|Upload.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF007F"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*[Uu][Bb][Uu][Nn][Tt][Uu].*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00FF87"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*[Ww][Ii][Nn][Dd][Oo][Ww][Ss].*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00F2FE"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*(FORECAST|forecast|REGRESSION|regression|LINEAR|linear).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#4A5568"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*(DB|db|TIMESCALE|timescale).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#7F00FF"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max",
+            "lastNotNull"
+          ]
+        },
+        "connectNullPoints": true
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "legendFormat": "Throughput",
+          "rawSql": "SELECT time, throughput AS \"Throughput\" FROM public.ldi_metrics WHERE $__timeFilter(time) AND device_id IN (${machine_id:sqlstring}) AND throughput > 0 ORDER BY 1",
+          "format": "time_series"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "legendFormat": "PE",
+          "rawSql": "SELECT time, pressure AS \"PE\" FROM public.ldi_metrics WHERE $__timeFilter(time) AND device_id IN (${machine_id:sqlstring}) AND pressure IS NOT NULL ORDER BY 1",
+          "format": "time_series"
+        }
+      ],
+      "links": [
+        {
+          "title": "OEE & Yield →",
+          "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": true
+        },
+        {
+          "title": "Drill-down → Engineering",
+          "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": true
+        }
+      ],
+      "description": "LDI manufacturing throughput (left axis, green) and Process Efficiency in µm (right axis, yellow). PE within ±10µm tolerance is normal.",
+      "transparent": true
+    },
+    {
+      "id": 504,
+      "title": "LDI Junction Efficiency & Humidity",
+      "type": "timeseries",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 26,
+        "w": 8,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "fillOpacity": 0,
+            "lineWidth": 2,
+            "spanNulls": 60000,
+            "gradientMode": "opacity",
+            "drawStyle": "line",
+            "lineInterpolation": "smooth"
+          },
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "JE"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#7F00FF",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "unit",
+                "value": "µm"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Humidity"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#00F2FE",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "unit",
+                "value": "percent"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF9100"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*[Uu][Bb][Uu][Nn][Tt][Uu].*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00FF87"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*[Ww][Ii][Nn][Dd][Oo][Ww][Ss].*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00F2FE"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*(FORECAST|forecast|REGRESSION|regression|LINEAR|linear).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#4A5568"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*(DB|db|TIMESCALE|timescale).*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#7F00FF"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max",
+            "lastNotNull"
+          ]
+        },
+        "connectNullPoints": true
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "legendFormat": "JE",
+          "rawSql": "SELECT time, joule_effect AS \"JE\" FROM public.ldi_metrics WHERE $__timeFilter(time) AND device_id IN (${machine_id:sqlstring}) AND joule_effect IS NOT NULL ORDER BY 1",
+          "format": "time_series"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "legendFormat": "Humidity",
+          "rawSql": "SELECT time, humidity AS \"Humidity\" FROM public.ldi_metrics WHERE $__timeFilter(time) AND device_id IN (${machine_id:sqlstring}) AND humidity > 0 ORDER BY 1",
+          "format": "time_series"
+        }
+      ],
+      "links": [
+        {
+          "title": "OEE & Yield →",
+          "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": true
+        },
+        {
+          "title": "Drill-down → Engineering",
+          "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": true
+        }
+      ],
+      "description": "Junction Efficiency in µm (purple) and Humidity % (blue, right axis). High humidity may affect LDI precision.",
+      "transparent": true
+    },
+    {
+      "id": 510,
+      "title": "LDI Quality Scatter",
+      "type": "timeseries",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 26,
+        "w": 8,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "fillOpacity": 0,
+            "lineWidth": 2,
+            "lineInterpolation": "smooth",
+            "gradientMode": "none",
+            "connectNullPoints": "always"
+          },
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "mean",
+            "lastNotNull"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "refId": "PE",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT time, pressure AS \"PE\" FROM public.ldi_metrics WHERE $__timeFilter(time) AND device_id IN (${machine_id:sqlstring}) AND pressure IS NOT NULL ORDER BY 1",
+          "format": "time_series"
+        },
+        {
+          "refId": "JE",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT time, joule_effect AS \"JE\" FROM public.ldi_metrics WHERE $__timeFilter(time) AND device_id IN (${machine_id:sqlstring}) AND joule_effect IS NOT NULL ORDER BY 1",
+          "format": "time_series"
+        }
+      ],
+      "description": "LDI quality scatter with ±10µm tolerance zone (green band). Points outside the zone indicate quality risk.",
+      "transparent": true
+    },
+    {
+      "id": 500,
+      "type": "row",
+      "title": "AIOps — ANOMALY DETECTION (3-Sigma Z-Score)",
+      "gridPos": {
+        "x": 0,
+        "y": 34,
+        "w": 24,
+        "h": 1
+      },
+      "collapsed": false,
+      "transparent": true
+    },
+    {
+      "id": 40,
+      "title": "CPU Anomaly Score (Z-Score)",
+      "type": "state-timeline",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 35,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "lineWidth": 0,
+            "fillOpacity": 100,
+            "alignValue": "left",
+            "mergeValues": true,
+            "rowHeight": 0.8,
+            "showValue": "never"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#00F2FE",
+                "value": null
+              },
+              {
+                "color": "#FF9100",
+                "value": 2
+              },
+              {
+                "color": "#FF003C",
+                "value": 3
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "showValue": "never",
+        "mergeValues": true,
+        "alignValue": "left",
+        "rowHeight": 0.8,
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "WITH stats AS (SELECT avg(avg_cpu) as mu, stddev(avg_cpu) as sigma FROM public.sys_hourly WHERE device_id IN (${machine_id:sqlstring}) AND $__timeFilter(bucket)) SELECT bucket AS time, (avg_cpu - mu) / NULLIF(sigma, 0) AS \"Z-Score\" FROM public.sys_hourly, stats WHERE device_id IN (${machine_id:sqlstring}) AND $__timeFilter(bucket) ORDER BY time ASC",
+          "format": "time_series",
+          "maxDataPoints": 300,
+          "legendFormat": "Z-Score"
+        }
+      ],
+      "description": "CPU Z-Score per machine. Cyan = normal, Amber >= 2 sigma, Red >= 3 sigma.",
+      "transparent": true,
+      "links": [
+        {
+          "title": "Drill-down → Engineering",
+          "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": true
+        }
+      ]
+    },
+    {
+      "id": 41,
+      "title": "Temperature Anomaly Score (Z-Score)",
+      "type": "state-timeline",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 35,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "lineWidth": 0,
+            "fillOpacity": 100,
+            "alignValue": "left",
+            "mergeValues": true,
+            "rowHeight": 0.8,
+            "showValue": "never"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#00F2FE",
+                "value": null
+              },
+              {
+                "color": "#FF9100",
+                "value": 2
+              },
+              {
+                "color": "#FF003C",
+                "value": 3
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "showValue": "never",
+        "mergeValues": true,
+        "alignValue": "left",
+        "rowHeight": 0.8,
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "WITH stats AS (SELECT avg(max_temp) as mu, stddev(max_temp) as sigma FROM public.sys_hourly WHERE device_id IN (${machine_id:sqlstring}) AND max_temp > 0 AND $__timeFilter(bucket)) SELECT bucket AS time, (max_temp - mu) / NULLIF(sigma, 0) AS \"Z-Score\" FROM public.sys_hourly, stats WHERE device_id IN (${machine_id:sqlstring}) AND max_temp > 0 AND $__timeFilter(bucket) ORDER BY time ASC",
+          "format": "time_series",
+          "legendFormat": "Z-Score"
+        }
+      ],
+      "description": "Temperature Z-Score per machine. Cyan = normal, Amber >= 2 sigma, Red >= 3 sigma.",
+      "transparent": true
+    },
+    {
+      "id": 1000,
+      "type": "row",
+      "title": "RESOURCE DISTRIBUTION",
+      "gridPos": {
+        "x": 0,
+        "y": 43,
+        "w": 24,
+        "h": 1
+      },
+      "collapsed": false,
+      "transparent": true
+    },
+    {
+      "id": 2001,
+      "title": "CPU / RAM / Storage Distribution",
+      "type": "piechart",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 44,
+        "w": 12,
+        "h": 8
+      },
+      "transparent": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "strokeWidth": 2
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "CPU Load %"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00FF87"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "RAM Used %"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00F2FE"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Disk Used %"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#7F00FF"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "pieType": "donut",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "right"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT 'CPU Load %' AS metric, AVG(cpu_load_percent) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '5 minutes'",
+          "format": "table"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT 'RAM Used %' AS metric, AVG(ram_used_mb / NULLIF(ram_total_mb, 0) * 100) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '5 minutes'",
+          "format": "table"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT 'Disk Used %' AS metric, AVG(disk_used_gb / NULLIF(disk_total_gb, 0) * 100) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '5 minutes'",
+          "format": "table"
+        }
+      ],
+      "description": "CPU/RAM/Storage usage distribution across selected machines"
+    },
+    {
+      "id": 1002,
+      "title": "Fleet Status Composition",
+      "type": "piechart",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 44,
+        "w": 12,
+        "h": 8
+      },
+      "transparent": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "strokeWidth": 2
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Healthy"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00FF87"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Warning"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF9100"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Critical"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF003C"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "pieType": "donut",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "right"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT 'Healthy' AS metric, COUNT(*) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '5 minutes' AND cpu_load_percent < 80 AND ram_used_mb / NULLIF(ram_total_mb, 0) * 100 < 85",
+          "format": "table"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT 'Warning' AS metric, COUNT(*) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '5 minutes' AND (cpu_load_percent BETWEEN 80 AND 90 OR ram_used_mb / NULLIF(ram_total_mb, 0) * 100 BETWEEN 85 AND 95)",
+          "format": "table"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT 'Critical' AS metric, COUNT(*) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '5 minutes' AND (cpu_load_percent > 90 OR ram_used_mb / NULLIF(ram_total_mb, 0) * 100 > 95)",
+          "format": "table"
+        }
+      ],
+      "description": "Machine fleet composition by status (Online/Warning/Critical)"
+    }
+  ],
+  "graphTooltip": 1
+}
