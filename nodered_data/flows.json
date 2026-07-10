@@ -1,10 +1,228 @@
 [
   {
+    "id": "ims-alert-tab",
+    "type": "tab",
+    "label": "IMS Alerting Pipeline",
+    "disabled": false,
+    "info": "Alertmanager webhook → LINE Messaging API / MS Teams"
+  },
+  {
     "id": "ims-tab-v5",
     "type": "tab",
     "label": "IMS Ingestion Pipeline",
     "disabled": false,
     "info": "SNMP walkers → Parser → TimescaleDB"
+  },
+  {
+    "id": "pg_config",
+    "type": "postgreSQLConfig",
+    "name": "IMS Database",
+    "host": "ims-pgbouncer",
+    "hostFieldType": "str",
+    "port": "5432",
+    "portFieldType": "num",
+    "database": "ims",
+    "databaseFieldType": "str",
+    "ssl": false,
+    "sslFieldType": "bool",
+    "max": 10,
+    "idle": 10000,
+    "connectionTimeout": 10000,
+    "user": "ims_admin",
+    "userFieldType": "str",
+    "password": "change-me-please",
+    "passwordFieldType": "str",
+    "passwordEnv": "PGPASSWORD"
+  },
+  {
+    "id": "alert_http_in",
+    "type": "http in",
+    "z": "ims-alert-tab",
+    "name": "POST /alert-webhook",
+    "url": "/alert-webhook",
+    "method": "post",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 160,
+    "y": 200,
+    "wires": [
+      [
+        "alert_respond",
+        "alert_format"
+      ]
+    ]
+  },
+  {
+    "id": "alert_respond",
+    "type": "http response",
+    "z": "ims-alert-tab",
+    "name": "200 OK",
+    "statusCode": "200",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "x": 400,
+    "y": 120,
+    "wires": []
+  },
+  {
+    "id": "alert_format",
+    "type": "function",
+    "z": "ims-alert-tab",
+    "name": "Format Alert Text",
+    "func": "const payload = msg.payload;\nif (!payload || !payload.alerts) return null;\n\nconst alerts = payload.alerts;\nlet msgText = '\\ud83d\\udd14 *IMS SYSTEM ALERT [' + (payload.status || 'unknown').toUpperCase() + ']* \\ud83d\\udd14\\n\\n';\n\nfor (let i = 0; i < alerts.length; i++) {\n    const a = alerts[i];\n    const labels = a.labels || {};\n    const annotations = a.annotations || {};\n    \n    let icon = '\\u26a0\\ufe0f';\n    if (labels.severity === 'critical') icon = '\\ud83d\\udd25';\n    if (payload.status === 'resolved') icon = '\\u2705';\n\n    msgText += icon + ' *' + (labels.alertname || 'Unknown Alert') + '*\\n';\n    msgText += '\\ud83d\\udda5\\ufe0f *Host:* ' + (labels.machine_id || labels.instance || 'System') + '\\n';\n    msgText += '\\ud83d\\udcdd *Detail:* ' + (annotations.summary || 'N/A') + '\\n';\n    if (annotations.description) msgText += '\\ud83d\\udca1 *Desc:* ' + annotations.description + '\\n';\n    \n    const startTime = a.startsAt ? new Date(a.startsAt).toLocaleString('th-TH') : 'Unknown';\n    msgText += '\\ud83d\\udd52 *Time:* ' + startTime + '\\n';\n    msgText += '-------------------\\n';\n}\n\nmsg.payload = msgText;\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 420,
+    "y": 240,
+    "wires": [
+      [
+        "alert_debug",
+        "alert_line_format",
+        "alert_teams_format"
+      ]
+    ]
+  },
+  {
+    "id": "alert_debug",
+    "type": "debug",
+    "z": "ims-alert-tab",
+    "name": "Alert Log",
+    "active": true,
+    "tosidebar": true,
+    "console": true,
+    "tostatus": true,
+    "complete": "payload",
+    "targetType": "msg",
+    "x": 1098,
+    "y": 240,
+    "wires": []
+  },
+  {
+    "id": "alert_line_format",
+    "type": "function",
+    "z": "ims-alert-tab",
+    "name": "Format LINE Messaging API",
+    "func": "const token = env.get('LINE_CHANNEL_ACCESS_TOKEN') || '';\nconst userId = env.get('LINE_USER_ID') || '';\n\nif (!token || !userId) {\n    node.warn('LINE Messaging API not configured — set LINE_CHANNEL_ACCESS_TOKEN and LINE_USER_ID env vars');\n    return null;\n}\n\nmsg.headers = {\n    'Authorization': 'Bearer ' + token,\n    'Content-Type': 'application/json'\n};\nmsg.payload = JSON.stringify({\n    to: userId,\n    messages: [{ type: 'text', text: msg.payload }]\n});\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 792,
+    "y": 192,
+    "wires": [
+      [
+        "alert_line_notify"
+      ]
+    ]
+  },
+  {
+    "id": "alert_line_notify",
+    "type": "http request",
+    "z": "ims-alert-tab",
+    "name": "LINE Messaging API",
+    "method": "POST",
+    "ret": "txt",
+    "paytoqs": "ignore",
+    "url": "https://api.line.me/v2/bot/message/push",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 1124,
+    "y": 192,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "alert_teams_format",
+    "type": "function",
+    "z": "ims-alert-tab",
+    "name": "Format Teams Webhook",
+    "func": "const url = env.get(\"TEAMS_WEBHOOK_URL\") || \"\";\n\nif (!url) {\n    node.warn(\"MS Teams webhook not configured — set TEAMS_WEBHOOK_URL env var\");\n    return null;\n}\n\nconst card = {\n    \"type\": \"message\",\n    \"attachments\": [{\n        \"contentType\": \"application/vnd.microsoft.card.adaptive\",\n        \"contentUrl\": null,\n        \"content\": {\n            \"$schema\": \"http://adaptivecards.io/schemas/adaptive-card.json\",\n            \"type\": \"AdaptiveCard\",\n            \"version\": \"1.4\",\n            \"body\": [{\n                \"type\": \"TextBlock\",\n                \"text\": \"IMS System Alert\",\n                \"weight\": \"bolder\",\n                \"size\": \"large\",\n                \"color\": \"attention\"\n            }, {\n                \"type\": \"TextBlock\",\n                \"text\": msg.payload,\n                \"wrap\": true,\n                \"spacing\": \"medium\"\n            }],\n            \"msteams\": {\n                \"entities\": []\n            }\n        }\n    }]\n};\nmsg.payload = JSON.stringify(card);\nmsg.headers = { \"Content-Type\": \"application/json\" };\nmsg.url = url;\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 782,
+    "y": 288,
+    "wires": [
+      [
+        "alert_teams_webhook"
+      ]
+    ]
+  },
+  {
+    "id": "alert_teams_webhook",
+    "type": "http request",
+    "z": "ims-alert-tab",
+    "name": "MS Teams Webhook",
+    "method": "POST",
+    "ret": "txt",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 1124,
+    "y": 288,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "alert_catch",
+    "type": "catch",
+    "z": "ims-alert-tab",
+    "name": "Catch Alert Errors",
+    "scope": [
+      "alert_format",
+      "alert_line_format",
+      "alert_line_notify",
+      "alert_teams_format",
+      "alert_teams_webhook"
+    ],
+    "uncaught": false,
+    "x": 154,
+    "y": 352,
+    "wires": [
+      [
+        "alert_error_debug"
+      ]
+    ]
+  },
+  {
+    "id": "alert_error_debug",
+    "type": "debug",
+    "z": "ims-alert-tab",
+    "name": "Alert Delivery Failure",
+    "active": true,
+    "tosidebar": true,
+    "console": true,
+    "tostatus": true,
+    "complete": "error",
+    "targetType": "msg",
+    "statusVal": "error.message",
+    "statusType": "msg",
+    "x": 1134,
+    "y": 352,
+    "wires": []
   },
   {
     "id": "inject_fleet",
@@ -70,27 +288,6 @@
         "resolve_device"
       ]
     ]
-  },
-  {
-    "id": "pg_config",
-    "type": "postgreSQLConfig",
-    "name": "IMS Database",
-    "host": "ims-pgbouncer",
-    "hostFieldType": "str",
-    "port": "5432",
-    "portFieldType": "num",
-    "database": "ims",
-    "databaseFieldType": "str",
-    "ssl": false,
-    "sslFieldType": "bool",
-    "max": 10,
-    "idle": 10000,
-    "connectionTimeout": 10000,
-    "user": "ims_admin",
-    "userFieldType": "str",
-    "password": "change-me-please",
-    "passwordFieldType": "str",
-    "passwordEnv": "PGPASSWORD"
   },
   {
     "id": "fork_5_ways",
@@ -520,203 +717,6 @@
     "headers": {},
     "x": 580,
     "y": 300,
-    "wires": []
-  },
-  {
-    "id": "ims-alert-tab",
-    "type": "tab",
-    "label": "IMS Alerting Pipeline",
-    "disabled": false,
-    "info": "Alertmanager webhook → LINE Messaging API / MS Teams"
-  },
-  {
-    "id": "alert_http_in",
-    "type": "http in",
-    "z": "ims-alert-tab",
-    "name": "POST /alert-webhook",
-    "url": "/alert-webhook",
-    "method": "post",
-    "upload": false,
-    "swaggerDoc": "",
-    "x": 160,
-    "y": 200,
-    "wires": [
-      [
-        "alert_respond",
-        "alert_format"
-      ]
-    ]
-  },
-  {
-    "id": "alert_respond",
-    "type": "http response",
-    "z": "ims-alert-tab",
-    "name": "200 OK",
-    "statusCode": "200",
-    "headers": {
-      "Content-Type": "application/json"
-    },
-    "x": 400,
-    "y": 120,
-    "wires": []
-  },
-  {
-    "id": "alert_format",
-    "type": "function",
-    "z": "ims-alert-tab",
-    "name": "Format Alert Text",
-    "func": "const payload = msg.payload;\nif (!payload || !payload.alerts) return null;\n\nconst alerts = payload.alerts;\nlet msgText = '\\ud83d\\udd14 *IMS SYSTEM ALERT [' + (payload.status || 'unknown').toUpperCase() + ']* \\ud83d\\udd14\\n\\n';\n\nfor (let i = 0; i < alerts.length; i++) {\n    const a = alerts[i];\n    const labels = a.labels || {};\n    const annotations = a.annotations || {};\n    \n    let icon = '\\u26a0\\ufe0f';\n    if (labels.severity === 'critical') icon = '\\ud83d\\udd25';\n    if (payload.status === 'resolved') icon = '\\u2705';\n\n    msgText += icon + ' *' + (labels.alertname || 'Unknown Alert') + '*\\n';\n    msgText += '\\ud83d\\udda5\\ufe0f *Host:* ' + (labels.machine_id || labels.instance || 'System') + '\\n';\n    msgText += '\\ud83d\\udcdd *Detail:* ' + (annotations.summary || 'N/A') + '\\n';\n    if (annotations.description) msgText += '\\ud83d\\udca1 *Desc:* ' + annotations.description + '\\n';\n    \n    const startTime = a.startsAt ? new Date(a.startsAt).toLocaleString('th-TH') : 'Unknown';\n    msgText += '\\ud83d\\udd52 *Time:* ' + startTime + '\\n';\n    msgText += '-------------------\\n';\n}\n\nmsg.payload = msgText;\nreturn msg;",
-    "outputs": 1,
-    "timeout": "",
-    "noerr": 0,
-    "initialize": "",
-    "finalize": "",
-    "libs": [],
-    "x": 420,
-    "y": 240,
-    "wires": [
-      [
-        "alert_debug",
-        "alert_line_format",
-        "alert_teams_format"
-      ]
-    ]
-  },
-  {
-    "id": "alert_debug",
-    "type": "debug",
-    "z": "ims-alert-tab",
-    "name": "Alert Log",
-    "active": true,
-    "tosidebar": true,
-    "console": true,
-    "tostatus": true,
-    "complete": "payload",
-    "targetType": "msg",
-    "x": 1098,
-    "y": 240,
-    "wires": []
-  },
-  {
-    "id": "alert_line_format",
-    "type": "function",
-    "z": "ims-alert-tab",
-    "name": "Format LINE Messaging API",
-    "func": "const token = env.get('LINE_CHANNEL_ACCESS_TOKEN') || '';\nconst userId = env.get('LINE_USER_ID') || '';\n\nif (!token || !userId) {\n    node.warn('LINE Messaging API not configured — set LINE_CHANNEL_ACCESS_TOKEN and LINE_USER_ID env vars');\n    return null;\n}\n\nmsg.headers = {\n    'Authorization': 'Bearer ' + token,\n    'Content-Type': 'application/json'\n};\nmsg.payload = JSON.stringify({\n    to: userId,\n    messages: [{ type: 'text', text: msg.payload }]\n});\nreturn msg;",
-    "outputs": 1,
-    "timeout": "",
-    "noerr": 0,
-    "initialize": "",
-    "finalize": "",
-    "libs": [],
-    "x": 792,
-    "y": 192,
-    "wires": [
-      [
-        "alert_line_notify"
-      ]
-    ]
-  },
-  {
-    "id": "alert_line_notify",
-    "type": "http request",
-    "z": "ims-alert-tab",
-    "name": "LINE Messaging API",
-    "method": "POST",
-    "ret": "txt",
-    "paytoqs": "ignore",
-    "url": "https://api.line.me/v2/bot/message/push",
-    "tls": "",
-    "persist": false,
-    "proxy": "",
-    "insecureHTTPParser": false,
-    "authType": "",
-    "senderr": false,
-    "headers": [],
-    "x": 1124,
-    "y": 192,
-    "wires": [
-      []
-    ]
-  },
-  {
-    "id": "alert_teams_format",
-    "type": "function",
-    "z": "ims-alert-tab",
-    "name": "Format Teams Webhook",
-    "func": "const url = env.get(\"TEAMS_WEBHOOK_URL\") || \"\";\n\nif (!url) {\n    node.warn(\"MS Teams webhook not configured — set TEAMS_WEBHOOK_URL env var\");\n    return null;\n}\n\nconst card = {\n    \"type\": \"message\",\n    \"attachments\": [{\n        \"contentType\": \"application/vnd.microsoft.card.adaptive\",\n        \"contentUrl\": null,\n        \"content\": {\n            \"$schema\": \"http://adaptivecards.io/schemas/adaptive-card.json\",\n            \"type\": \"AdaptiveCard\",\n            \"version\": \"1.4\",\n            \"body\": [{\n                \"type\": \"TextBlock\",\n                \"text\": \"IMS System Alert\",\n                \"weight\": \"bolder\",\n                \"size\": \"large\",\n                \"color\": \"attention\"\n            }, {\n                \"type\": \"TextBlock\",\n                \"text\": msg.payload,\n                \"wrap\": true,\n                \"spacing\": \"medium\"\n            }],\n            \"msteams\": {\n                \"entities\": []\n            }\n        }\n    }]\n};\nmsg.payload = JSON.stringify(card);\nmsg.headers = { \"Content-Type\": \"application/json\" };\nmsg.url = url;\nreturn msg;",
-    "outputs": 1,
-    "timeout": "",
-    "noerr": 0,
-    "initialize": "",
-    "finalize": "",
-    "libs": [],
-    "x": 782,
-    "y": 288,
-    "wires": [
-      [
-        "alert_teams_webhook"
-      ]
-    ]
-  },
-  {
-    "id": "alert_teams_webhook",
-    "type": "http request",
-    "z": "ims-alert-tab",
-    "name": "MS Teams Webhook",
-    "method": "POST",
-    "ret": "txt",
-    "paytoqs": "ignore",
-    "url": "",
-    "tls": "",
-    "persist": false,
-    "proxy": "",
-    "insecureHTTPParser": false,
-    "authType": "",
-    "senderr": false,
-    "headers": [],
-    "x": 1124,
-    "y": 288,
-    "wires": [
-      []
-    ]
-  },
-  {
-    "id": "alert_catch",
-    "type": "catch",
-    "z": "ims-alert-tab",
-    "name": "Catch Alert Errors",
-    "scope": [
-      "alert_format",
-      "alert_line_format",
-      "alert_line_notify",
-      "alert_teams_format",
-      "alert_teams_webhook"
-    ],
-    "uncaught": false,
-    "x": 154,
-    "y": 352,
-    "wires": [
-      [
-        "alert_error_debug"
-      ]
-    ]
-  },
-  {
-    "id": "alert_error_debug",
-    "type": "debug",
-    "z": "ims-alert-tab",
-    "name": "Alert Delivery Failure",
-    "active": true,
-    "tosidebar": true,
-    "console": true,
-    "tostatus": true,
-    "complete": "error",
-    "targetType": "msg",
-    "statusVal": "error.message",
-    "statusType": "msg",
-    "x": 1134,
-    "y": 352,
     "wires": []
   }
 ]
