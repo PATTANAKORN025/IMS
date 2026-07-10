@@ -36,7 +36,7 @@
     "type": "function",
     "z": "ims-tab-v5",
     "name": "Generate Fleet Targets",
-    "func": "const registry = global.get('deviceRegistry') || {};\nconst msgs = [];\nfor (const deviceId of Object.keys(registry)) {\n    msgs.push({ payload: { machine_id: deviceId } });\n}\nreturn [msgs];",
+    "func": "const registry = global.get('deviceRegistry') || {};\nconst msgs = [];\nfor (const deviceId of Object.keys(registry)) {\n    msgs.push({ machine_id: deviceId, topic: deviceId, payload: '' });\n}\nreturn [msgs];",
     "outputs": 1,
     "x": 380,
     "y": 120,
