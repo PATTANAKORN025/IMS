@@ -1,8 +1,0 @@
-{
-  "name": "ims-unit-tests",
-  "version": "1.0.0",
-  "description": "IMS Unit Tests",
-  "scripts": {
-    "test": "node parser.test.js && node v2-parser.test.js && node boundary-validation.test.js && node counter-wraparound.test.js"
-  }
-}
