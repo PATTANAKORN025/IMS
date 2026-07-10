@@ -188,6 +188,19 @@ INSERT INTO public.devices (device_id, hostname, ip_address, snmp_community, snm
     ('ERP-MASTER-UBUNTU',  'ims-snmpsim', '192.168.1.11', 'ubuntu', 161, true)
 ON CONFLICT (device_id) DO NOTHING;
 
+-- Seed 1000 simulated devices for K6 stress testing
+INSERT INTO public.devices (device_id, hostname, ip_address, snmp_community, snmp_port, enabled, device_type)
+SELECT
+    'E2E-SERVER-' || LPAD(i::text, 3, '0'),
+    'ims-snmpsim',
+    '10.0.0.' || (i + 1),
+    CASE WHEN i % 2 = 0 THEN 'windows' ELSE 'ubuntu' END,
+    161,
+    true,
+    'server'
+FROM generate_series(0, 999) AS i
+ON CONFLICT (device_id) DO NOTHING;
+
 -- ══════════════════════════════════════════════════════════════
 -- VIEWS
 -- ══════════════════════════════════════════════════════════════
