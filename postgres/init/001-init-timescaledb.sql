@@ -89,9 +89,7 @@ CREATE TABLE public.ldi_metrics (
     pressure            DOUBLE PRECISION DEFAULT 0,
     joule_effect        DOUBLE PRECISION DEFAULT 0,
     power_watt          DOUBLE PRECISION DEFAULT 0,
-    vibration           DOUBLE PRECISION DEFAULT 0,
-    wifi_rssi           INTEGER         DEFAULT 0,
-    wifi_snr            INTEGER         DEFAULT 0
+    vibration           DOUBLE PRECISION DEFAULT 0
 );
 SELECT create_hypertable('public.ldi_metrics', 'time', chunk_time_interval => INTERVAL '1 day', if_not_exists => TRUE);
 CREATE INDEX IF NOT EXISTS idx_ldi_device_time ON public.ldi_metrics (device_id, "time" DESC);
@@ -125,8 +123,7 @@ WITH (timescaledb.continuous) AS
 SELECT time_bucket('1 hour', "time") AS bucket, device_id,
     AVG(throughput) AS avg_throughput, MAX(temperature) AS max_temp,
     AVG(humidity) AS avg_humidity, AVG(power_watt) AS avg_power,
-    AVG(vibration) AS avg_vibration, AVG(wifi_rssi) AS avg_rssi,
-    AVG(wifi_snr) AS avg_snr
+    AVG(vibration) AS avg_vibration
 FROM public.ldi_metrics GROUP BY bucket, device_id WITH NO DATA;
 
 -- ── CAGG Refresh Policies (wrapped for safe boot) ───────
