@@ -8,6 +8,7 @@
 set -euo pipefail
 
 GREEN='\033[0;32m'
+CYAN='\033[0;36m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m'
@@ -51,7 +52,7 @@ for f in $(ls -1 "$MIGRATIONS_DIR"/*.sql 2>/dev/null | sort); do
     echo -ne "  ${YELLOW}${fname}...${NC} "
 
     # Apply migration
-    if docker exec -i "$CONTAINER" psql -U "$USER" -d "$DATABASE" -v ON_ERROR_STOP=0 -f - < "$f" > /dev/null 2>&1; then
+    if docker exec -i "$CONTAINER" psql -U "$USER" -d "$DATABASE" -v ON_ERROR_STOP=1 -f - < "$f" > /dev/null 2>&1; then
         # Record in tracking table
         docker exec -i "$CONTAINER" psql -U "$USER" -d "$DATABASE" -c \
             "INSERT INTO public.schema_migrations (version, filename) VALUES ('${version}', '${fname}');" > /dev/null 2>&1
