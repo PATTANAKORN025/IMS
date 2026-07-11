@@ -111,3 +111,26 @@ groups:
           severity: none
         annotations:
           summary: "IMS Watchdog - monitoring pipeline is alive"
+
+  # ── Pipeline Health (Node-RED /metrics) ──────────────────────────
+  - name: pipeline_health
+    rules:
+      - alert: PipelineDataStalled
+        expr: rate(ims_inserts_ok_total[5m]) == 0
+        for: 3m
+        labels:
+          severity: critical
+          service: node-red
+        annotations:
+          summary: "No successful DB inserts in 5 minutes — pipeline may be silently dead"
+          description: "ims_inserts_ok_total rate is 0 for 3+ minutes. Check Node-RED logs and /inject endpoint."
+
+      - alert: PipelineHighErrorRate
+        expr: rate(ims_inserts_failed_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: node-red
+        annotations:
+          summary: "High INSERT failure rate on Node-RED pipeline"
+          description: "{{ $value | humanize }} failures/sec over 5 minutes."
