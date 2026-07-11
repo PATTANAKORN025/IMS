@@ -61,7 +61,7 @@ jobs:
 
       - name: Validate Node-RED Flow JSON
         run: |
-          for f in node-red/flows/*.json; do
+          for f in nodered_data/flows/*.json; do
             echo "Checking $f"
             python3 -c "import json; f=json.load(open('$f')); print(f'VALID: {len(f)} nodes')"
           done
@@ -71,5 +71,8 @@ jobs:
           docker run --rm -v "${{ github.workspace }}:/repo" zricethezav/gitleaks:latest \
             detect --source=/repo --no-git --redact --verbose \
             --config=/repo/.gitleaks.toml --exit-code 1
+
+      - name: Run E2E Smoke Test
+        run: bash tests/smoke/db-write-check.sh
 
 
