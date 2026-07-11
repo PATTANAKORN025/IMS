@@ -75,6 +75,15 @@ scrape_configs:
       - target_label: __address__
         replacement: blackbox-exporter:9115
 
+  # ── Node-RED Pipeline Metrics ──────────────────────────────
+  - job_name: node-red-pipeline
+    metrics_path: /metrics
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    static_configs:
+      - targets:
+          - node-red:1880
+
   # ── Blackbox: ICMP Probes (Ping) ─────────────────────────
   - job_name: 'blackbox-icmp'
     metrics_path: /probe
