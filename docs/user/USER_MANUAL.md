@@ -478,10 +478,10 @@ docker compose ps --format "table {{.Name}}\t{{.Status}}"
 
 echo "=== Data Flow ==="
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
-  "SELECT machine_id, COUNT(*) as rows, MAX(time) as latest
-   FROM public.machine_telemetry
+  "SELECT device_id, COUNT(*) as rows, MAX(time) as latest
+   FROM public.sys_metrics
    WHERE time > NOW() - INTERVAL '5 minutes'
-   GROUP BY machine_id;"
+   GROUP BY device_id;"
 
 echo "=== Alerts ==="
 docker compose exec prometheus wget -qO- "http://localhost:9090/api/v1/alerts" 2>&1 | \
