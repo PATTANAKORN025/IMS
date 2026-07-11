@@ -98,7 +98,12 @@
       },
       "datasource": null,
       "transparent": true,
-      "description": "OS Taskbar navigation and CSS theme."
+      "description": "OS Taskbar navigation and CSS theme.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        }
+      }
     },
     {
       "id": 999,
@@ -131,7 +136,12 @@
         "bgColor": "transparent"
       },
       "description": "Current time and date (Asia/Bangkok timezone).",
-      "transparent": true
+      "transparent": true,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        }
+      }
     },
     {
       "id": 998,
@@ -177,7 +187,12 @@
         "h": 1
       },
       "collapsed": false,
-      "transparent": true
+      "transparent": true,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        }
+      }
     },
     {
       "id": 4,
@@ -425,7 +440,12 @@
         "h": 1
       },
       "collapsed": false,
-      "transparent": true
+      "transparent": true,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        }
+      }
     },
     {
       "id": 10,
@@ -597,7 +617,12 @@
         "h": 1
       },
       "collapsed": false,
-      "transparent": true
+      "transparent": true,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        }
+      }
     },
     {
       "id": 20,
@@ -1227,7 +1252,12 @@
         "h": 1
       },
       "collapsed": false,
-      "transparent": true
+      "transparent": true,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        }
+      }
     },
     {
       "id": 22,

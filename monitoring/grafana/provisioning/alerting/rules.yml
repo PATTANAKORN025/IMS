@@ -120,8 +120,8 @@ groups:
           summary: "Temperature above 80C on {{ $labels.metric }}"
           description: "Max temperature is {{ $values.A.Value }}°C"
 
-      - uid: ims-wifi-snr-low
-        title: Wi-Fi SNR Low
+      - uid: ims-high-error-rate
+        title: High Network Error Rate
         condition: A
         data:
           - refId: A
@@ -132,22 +132,23 @@ groups:
             model:
               rawSql: |
                 SELECT
-                  device_id AS metric,
-                  AVG(wifi_snr) AS value
-                FROM ldi_metrics
+                  device_id || ' - ' || iface_name AS metric,
+                  SUM(rx_errors) AS value
+                FROM net_metrics
                 WHERE time > NOW() - INTERVAL '5 minutes'
-                GROUP BY device_id
-                HAVING AVG(wifi_snr) < 20 AND AVG(wifi_snr) > 0
+                  AND device_id IN (SELECT device_id FROM devices WHERE enabled = true)
+                GROUP BY 1
+                HAVING SUM(rx_errors) > 100
               format: time_series
         noDataState: OK
         execErrState: Error
-        for: 5m
+        for: 2m
         labels:
           severity: warning
-          service: wifi
+          service: network
         annotations:
-          summary: "Wi-Fi SNR below 20 dB on {{ $labels.metric }}"
-          description: "Average SNR is {{ $values.A.Value }} dB (poor signal quality)"
+          summary: "High error rate on {{ $labels.metric }}"
+          description: "{{ $values.A.Value }} RX errors in the last 5 minutes."
 
       - uid: ims-bandwidth-saturation-forecast
         title: Bandwidth Saturation Forecast
@@ -162,11 +163,11 @@ groups:
               rawSql: |
                 SELECT
                   device_id AS metric,
-                  regr_slope(rx_mbps, EXTRACT(EPOCH FROM (time - NOW()))) * 3600
-                    + regr_intercept(rx_mbps, EXTRACT(EPOCH FROM (time - NOW()))) AS value
+                  ROUND(AVG(rx_mbps)::NUMERIC, 2) AS value
                 FROM net_metrics
-                WHERE time > NOW() - INTERVAL '30 minutes'
+                WHERE time > NOW() - INTERVAL '5 minutes'
                 GROUP BY device_id
+                HAVING AVG(rx_mbps) > 800
                 HAVING COUNT(*) >= 5
                    AND regr_slope(rx_mbps, EXTRACT(EPOCH FROM (time - NOW()))) > 0
                    AND regr_slope(rx_mbps, EXTRACT(EPOCH FROM (time - NOW()))) * 3600
@@ -199,7 +200,7 @@ groups:
                 FROM net_metrics
                 WHERE time > NOW() - INTERVAL '2 minutes'
                 GROUP BY device_id, iface_name
-                HAVING COUNT(*) FILTER (WHERE status = 'UP') = 0 AND COUNT(*) FILTER (WHERE status = 'DOWN') > 0
+                HAVING SUM(CASE WHEN status = 'DOWN' THEN 1 ELSE 0 END) > SUM(CASE WHEN status = 'UP' THEN 1 ELSE 0 END)
               format: time_series
         noDataState: OK
         execErrState: Error
