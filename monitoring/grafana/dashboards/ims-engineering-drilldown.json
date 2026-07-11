@@ -737,7 +737,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{metric}}",
-          "rawSql": "SELECT\n  bucket AS time,\n  device_id AS metric,\n  ROUND((avg_ram_used / NULLIF(avg_ram_total, 0) * 100)::NUMERIC, 1) AS \"RAM %\"\nFROM public.sys_hourly\nWHERE $__timeFilter(bucket) AND device_id IN (${machine_id:sqlstring})\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  bucket AS time,\n  device_id AS metric,\n  ROUND(AVG(avg_ram_used / NULLIF(avg_ram_total, 0) * 100)::NUMERIC, 1) AS \"RAM %\"\nFROM public.sys_hourly\nWHERE $__timeFilter(bucket) AND device_id IN (${machine_id:sqlstring})\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series"
         }
       ],
@@ -1317,7 +1317,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{metric}}",
-          "rawSql": "SELECT\n  bucket AS time,\n  device_id AS metric,\n  ROUND(max_temp::NUMERIC, 1) AS \"Temperature (°C)\"\nFROM public.sys_hourly\nWHERE $__timeFilter(bucket) AND device_id IN (${machine_id:sqlstring}) AND max_temp > 0\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  bucket AS time,\n  device_id AS metric,\n  ROUND(AVG(max_temp)::NUMERIC, 1) AS \"Temperature (°C)\"\nFROM public.sys_hourly\nWHERE $__timeFilter(bucket) AND device_id IN (${machine_id:sqlstring}) AND max_temp > 0\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series"
         },
         {
@@ -1326,7 +1326,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{metric}}",
-          "rawSql": "SELECT\n  bucket AS time,\n  device_id AS metric,\n  ROUND(max_temp::NUMERIC, 1) AS \"Temperature (°C)\"\nFROM public.sys_hourly\nWHERE $__timeFilter(bucket) AND device_id IN (${machine_id:sqlstring}) AND max_temp > 0\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  bucket AS time,\n  device_id AS metric,\n  ROUND(AVG(max_temp)::NUMERIC, 1) AS \"Temperature (°C)\"\nFROM public.sys_hourly\nWHERE $__timeFilter(bucket) AND device_id IN (${machine_id:sqlstring}) AND max_temp > 0\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series"
         }
       ],
