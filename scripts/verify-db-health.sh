@@ -45,11 +45,11 @@ fi
 
 # 4. Verify PgBouncer Connection (Pooling Layer)
 echo -n "[4] Checking PgBouncer Connection Pooler... "
-if docker compose exec -T prometheus wget -qO- "tcp://ims-pgbouncer:5432" > /dev/null 2>&1 || true; then
-    # We just check if the container is resolvable and answering on 5432
+if docker compose ps --format '{{.Name}} {{.Status}}' | grep -q '^ims-pgbouncer .*Up'; then
     echo "✅ PASS (PgBouncer is accessible internally)"
 else
-    echo "❌ FAIL (PgBouncer not responding on internal network)"
+    echo "❌ FAIL (PgBouncer container is not running)"
+    exit 1
 fi
 
 # 5. Check Disk Compression (TimescaleDB Compression)
