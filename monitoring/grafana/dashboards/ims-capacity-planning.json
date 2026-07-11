@@ -6,9 +6,9 @@
     "capacity",
     "aiops"
   ],
-  "timezone": "Asia/Bangkok",
+  "timezone": "browser",
   "schemaVersion": 39,
-  "refresh": "5m",
+  "refresh": "10s",
   "time": {
     "from": "now-6h",
     "to": "now"
@@ -168,7 +168,9 @@
                 "value": 90
               }
             ]
-          }
+          },
+          "custom": {},
+          "decimals": 2
         },
         "overrides": []
       },
@@ -187,7 +189,8 @@
             "uid": "timescaledb"
           },
           "rawSql": "SELECT 'Disk' AS metric, LEAST(CASE WHEN r.slope<=0 THEN 365 ELSE GREATEST(0,(t.disk_total_gb - r.intercept)/r.slope - EXTRACT(EPOCH FROM NOW())/86400) END, 365) AS \"Days Until Full\" FROM (SELECT device_id, COALESCE(regr_slope(avg_used, EXTRACT(EPOCH FROM day)),0) AS slope, COALESCE(regr_intercept(avg_used, EXTRACT(EPOCH FROM day)),0) AS intercept FROM (SELECT device_id, time_bucket('1 day', bucket) AS day, AVG(avg_disk_used) AS avg_used FROM public.sys_hourly WHERE bucket > NOW()-INTERVAL '30 days' GROUP BY 1,2) d GROUP BY device_id) r JOIN (SELECT DISTINCT ON (device_id) device_id, disk_total_gb FROM public.sys_metrics WHERE disk_total_gb>0 ORDER BY device_id, time DESC) t ON t.device_id=r.device_id ORDER BY 1 ASC LIMIT 1",
-          "format": "table"
+          "format": "table",
+          "legendFormat": "{{device_id}}"
         },
         {
           "refId": "B",
@@ -195,7 +198,8 @@
             "uid": "timescaledb"
           },
           "rawSql": "SELECT 'RAM' AS metric, LEAST(CASE WHEN r.slope<=0 THEN 365 ELSE GREATEST(0,(t.ram_total_mb - r.intercept)/r.slope - EXTRACT(EPOCH FROM NOW())/86400) END, 365) AS \"Days Until Full\" FROM (SELECT device_id, COALESCE(regr_slope(avg_used, EXTRACT(EPOCH FROM day)),0) AS slope, COALESCE(regr_intercept(avg_used, EXTRACT(EPOCH FROM day)),0) AS intercept FROM (SELECT device_id, time_bucket('1 day', bucket) AS day, AVG(avg_ram_used) AS avg_used FROM public.sys_hourly WHERE bucket > NOW()-INTERVAL '30 days' GROUP BY 1,2) d GROUP BY device_id) r JOIN (SELECT DISTINCT ON (device_id) device_id, ram_total_mb FROM public.sys_metrics WHERE ram_total_mb>0 ORDER BY device_id, time DESC) t ON t.device_id=r.device_id ORDER BY 1 ASC LIMIT 1",
-          "format": "table"
+          "format": "table",
+          "legendFormat": "{{device_id}}"
         },
         {
           "refId": "C",
@@ -203,7 +207,8 @@
             "uid": "timescaledb"
           },
           "rawSql": "SELECT 'CPU' AS metric, LEAST(CASE WHEN slope<=0 THEN 365 ELSE GREATEST(0,(100-intercept)/slope-EXTRACT(EPOCH FROM NOW())/86400) END, 365) AS \"Days Until Full\" FROM (SELECT device_id, COALESCE(regr_slope(avg_cpu, EXTRACT(EPOCH FROM day)),0) AS slope, COALESCE(regr_intercept(avg_cpu, EXTRACT(EPOCH FROM day)),0) AS intercept FROM (SELECT device_id, time_bucket('1 day', bucket) AS day, AVG(avg_cpu) AS avg_cpu FROM public.sys_hourly WHERE bucket > NOW()-INTERVAL '30 days' GROUP BY 1,2) d GROUP BY device_id) ORDER BY 2 ASC LIMIT 1",
-          "format": "table"
+          "format": "table",
+          "legendFormat": "{{device_id}}"
         }
       ],
       "description": "Days until resource saturation for CPU, RAM, and Disk using 30-day linear regression."
@@ -256,7 +261,10 @@
                 }
               }
             }
-          ]
+          ],
+          "custom": {},
+          "min": 0,
+          "decimals": 2
         },
         "overrides": []
       },
@@ -284,7 +292,8 @@
             "uid": "timescaledb"
           },
           "rawSql": "WITH daily_usage AS (  SELECT device_id, time_bucket('1 day', bucket) AS day,    AVG(avg_disk_used) AS avg_used  FROM public.sys_hourly  WHERE bucket > NOW() - INTERVAL '30 days'  GROUP BY 1, 2), totals AS (  SELECT DISTINCT ON (device_id) device_id, disk_total_gb  FROM public.sys_metrics  WHERE disk_total_gb > 0  ORDER BY device_id, time DESC), regression AS (  SELECT device_id,    COALESCE(regr_slope(avg_used, EXTRACT(EPOCH FROM day)), 0) AS slope,    COALESCE(regr_intercept(avg_used, EXTRACT(EPOCH FROM day)), 0) AS intercept  FROM daily_usage GROUP BY device_id) SELECT r.device_id AS metric,  CASE WHEN r.slope <= 0 THEN 9999    WHEN t.disk_total_gb <= 0 THEN 9999    ELSE GREATEST(0, (t.disk_total_gb - r.intercept) / r.slope - EXTRACT(EPOCH FROM NOW()) / 86400)  END AS value FROM regression r JOIN totals t ON t.device_id = r.device_id ORDER BY value ASC LIMIT 1",
-          "format": "table"
+          "format": "table",
+          "legendFormat": "{{device_id}}"
         }
       ],
       "description": "Days until disk saturation based on 30-day linear regression. Red < 30d, Orange < 90d, Green > 180d.",
@@ -345,7 +354,10 @@
                 }
               }
             }
-          ]
+          ],
+          "custom": {},
+          "min": 0,
+          "decimals": 2
         },
         "overrides": []
       },
@@ -373,7 +385,8 @@
             "uid": "timescaledb"
           },
           "rawSql": "WITH daily_usage AS (  SELECT device_id, time_bucket('1 day', bucket) AS day,    AVG(avg_ram_used) AS avg_used  FROM public.sys_hourly  WHERE bucket > NOW() - INTERVAL '30 days'  GROUP BY 1, 2), totals AS (  SELECT DISTINCT ON (device_id) device_id, ram_total_mb  FROM public.sys_metrics  WHERE ram_total_mb > 0  ORDER BY device_id, time DESC), regression AS (  SELECT device_id,    COALESCE(regr_slope(avg_used, EXTRACT(EPOCH FROM day)), 0) AS slope,    COALESCE(regr_intercept(avg_used, EXTRACT(EPOCH FROM day)), 0) AS intercept  FROM daily_usage GROUP BY device_id) SELECT r.device_id AS metric,  CASE WHEN r.slope <= 0 THEN 9999    WHEN t.ram_total_mb <= 0 THEN 9999    ELSE GREATEST(0, (t.ram_total_mb - r.intercept) / r.slope - EXTRACT(EPOCH FROM NOW()) / 86400)  END AS value FROM regression r JOIN totals t ON t.device_id = r.device_id ORDER BY value ASC LIMIT 1",
-          "format": "table"
+          "format": "table",
+          "legendFormat": "{{device_id}}"
         }
       ],
       "description": "Days until RAM saturation based on 30-day linear regression trend.",
@@ -434,7 +447,9 @@
                 }
               }
             }
-          ]
+          ],
+          "custom": {},
+          "decimals": 2
         },
         "overrides": []
       },
@@ -462,7 +477,8 @@
             "uid": "timescaledb"
           },
           "rawSql": "WITH daily_usage AS (SELECT device_id, time_bucket('1 day', bucket) AS day, AVG(avg_cpu) AS avg_cpu FROM public.sys_hourly WHERE bucket > NOW() - INTERVAL '30 days' GROUP BY 1, 2), regression AS (SELECT device_id, COALESCE(regr_slope(avg_cpu, EXTRACT(EPOCH FROM day)), 0) AS slope, COALESCE(regr_intercept(avg_cpu, EXTRACT(EPOCH FROM day)), 0) AS intercept FROM daily_usage GROUP BY device_id) SELECT device_id AS metric, CASE WHEN slope <= 0 THEN 9999 ELSE GREATEST(0, (100 - intercept) / slope - EXTRACT(EPOCH FROM NOW()) / 86400) END AS value FROM regression r ORDER BY value ASC LIMIT 1",
-          "format": "table"
+          "format": "table",
+          "legendFormat": "{{device_id}}"
         }
       ],
       "description": "Days until CPU reaches 100% saturation based on 30-day linear regression.",
@@ -509,7 +525,9 @@
                 "value": 90
               }
             ]
-          }
+          },
+          "custom": {},
+          "decimals": 2
         },
         "overrides": []
       },
@@ -589,7 +607,8 @@
             },
             "gradientMode": "opacity",
             "drawStyle": "line",
-            "lineInterpolation": "smooth"
+            "lineInterpolation": "smooth",
+            "showPoints": "never"
           },
           "thresholds": {
             "mode": "absolute",
@@ -613,7 +632,8 @@
           },
           "fillOpacity": 5,
           "lineWidth": 2,
-          "lineInterpolation": "smooth"
+          "lineInterpolation": "smooth",
+          "decimals": 2
         },
         "overrides": [
           {
@@ -908,7 +928,8 @@
             "spanNulls": 60000,
             "gradientMode": "opacity",
             "drawStyle": "line",
-            "lineInterpolation": "smooth"
+            "lineInterpolation": "smooth",
+            "showPoints": "never"
           },
           "thresholds": {
             "mode": "absolute",
@@ -932,7 +953,8 @@
           },
           "fillOpacity": 5,
           "lineWidth": 2,
-          "lineInterpolation": "smooth"
+          "lineInterpolation": "smooth",
+          "decimals": 2
         },
         "overrides": [
           {
@@ -1170,7 +1192,8 @@
             "spanNulls": 60000,
             "gradientMode": "opacity",
             "drawStyle": "line",
-            "lineInterpolation": "smooth"
+            "lineInterpolation": "smooth",
+            "showPoints": "never"
           },
           "thresholds": {
             "mode": "absolute",
@@ -1194,7 +1217,8 @@
           },
           "fillOpacity": 5,
           "lineWidth": 2,
-          "lineInterpolation": "smooth"
+          "lineInterpolation": "smooth",
+          "decimals": 2
         },
         "overrides": [
           {
@@ -1447,7 +1471,8 @@
             },
             "gradientMode": "opacity",
             "drawStyle": "line",
-            "lineInterpolation": "smooth"
+            "lineInterpolation": "smooth",
+            "showPoints": "never"
           },
           "thresholds": {
             "mode": "absolute",
@@ -1482,7 +1507,8 @@
             "mode": "palette-classic"
           },
           "fillOpacity": 5,
-          "lineWidth": 2
+          "lineWidth": 2,
+          "decimals": 2
         },
         "overrides": [
           {
@@ -1723,7 +1749,8 @@
             },
             "gradientMode": "opacity",
             "drawStyle": "line",
-            "lineInterpolation": "smooth"
+            "lineInterpolation": "smooth",
+            "showPoints": "never"
           },
           "thresholds": {
             "mode": "absolute",
@@ -1758,7 +1785,9 @@
             "mode": "palette-classic"
           },
           "fillOpacity": 5,
-          "lineWidth": 2
+          "lineWidth": 2,
+          "min": 0,
+          "decimals": 2
         },
         "overrides": [
           {
