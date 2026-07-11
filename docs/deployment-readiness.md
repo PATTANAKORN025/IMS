@@ -102,7 +102,7 @@ sudo systemctl start snmpd
 
 | # | Task | Status | Command |
 |---|---|---|---|
-| 1 | Update `public.machines` table | ⬜ | `INSERT INTO public.machines (machine_id, host, community) VALUES (...)` |
+| 1 | Update `public.devices` table | ⬜ | `INSERT INTO public.devices (device_id, hostname, ip_address, snmp_community, snmp_port, enabled) VALUES (...)` |
 | 2 | Test SNMP connectivity | ⬜ | `snmpwalk -v2c -c <community> <ip> 1.3.6.1.2.1.1` |
 | 3 | Verify data flow | ⬜ | Check Grafana dashboards |
 

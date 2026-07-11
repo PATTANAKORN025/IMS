@@ -174,7 +174,7 @@
 | **Migration Management** | Idempotent SQL, ALTER TABLE, cagg recreation | Intermediate |
 
 **Project Application:**
-- ออกแบบ hypertable schema สำหรับ machine_telemetry
+- ออกแบบ hypertable schema สำหรับ sys_metrics, net_metrics, ldi_metrics (V2 normalized)
 - สร้าง continuous aggregates สำหรับ minute-level rollup
 - ใช้ JSONB สำหรับ per-interface metrics (interface_metrics column)
 - สร้าง migration scripts สำหรับ schema changes
