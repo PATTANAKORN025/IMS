@@ -293,13 +293,18 @@ module.exports = {
 
 ```sql
 -- Drop raw data older than 90 days
-SELECT drop_chunks('public.machine_telemetry', INTERVAL '90 days');
+SELECT drop_chunks('public.sys_metrics', INTERVAL '30 days');
 
--- Drop minute aggregates older than 1 year
-SELECT drop_chunks('public.telemetry_minute_summary', INTERVAL '1 year');
+-- Drop raw data older than 30 days (net_metrics)
+SELECT drop_chunks('public.net_metrics', INTERVAL '30 days');
 
--- Automated retention policy
-SELECT add_retention_policy('public.machine_telemetry', INTERVAL '90 days');
+-- Drop raw data older than 30 days (ldi_metrics)
+SELECT drop_chunks('public.ldi_metrics', INTERVAL '30 days');
+
+-- Automated retention policies (set in 001-init-timescaledb.sql)
+SELECT add_retention_policy('public.sys_metrics', INTERVAL '30 days');
+SELECT add_retention_policy('public.net_metrics', INTERVAL '30 days');
+SELECT add_retention_policy('public.ldi_metrics', INTERVAL '30 days');
 ```
 
 ### Scaling Considerations

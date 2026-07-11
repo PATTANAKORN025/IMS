@@ -418,15 +418,15 @@ docker compose exec prometheus wget -qO- "http://localhost:9090/api/v1/alerts"
 ```bash
 # Recent telemetry (last 5 minutes)
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
-  "SELECT machine_id, time, cpu_load_percent, temp_c
-   FROM public.machine_telemetry
+  "SELECT device_id, time, cpu_load_percent, temp_c
+   FROM public.sys_metrics
    WHERE time > NOW() - INTERVAL '5 minutes'
    ORDER BY time DESC LIMIT 10;"
 
-# Check interface metrics (JSONB)
+# Check interface metrics
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
-  "SELECT machine_id, interface_metrics
-   FROM public.machine_telemetry
+  "SELECT device_id, iface_name, rx_mbps, tx_mbps
+   FROM public.net_metrics
    ORDER BY time DESC LIMIT 1;"
 ```
 
