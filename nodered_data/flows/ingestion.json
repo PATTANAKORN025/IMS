@@ -7,6 +7,53 @@
     "info": "SNMP walkers → Parser → TimescaleDB"
   },
   {
+    "id": "bc78ea85b252a09f",
+    "type": "group",
+    "z": "ims-tab-v5",
+    "style": {
+      "stroke": "#999999",
+      "stroke-opacity": "1",
+      "fill": "none",
+      "fill-opacity": "1",
+      "label": true,
+      "label-position": "nw",
+      "color": "#a4a4a4"
+    },
+    "nodes": [
+      "retry_timer",
+      "inject_fleet",
+      "generate_fleet_targets",
+      "pace_limiter",
+      "fork_5_ways",
+      "walk_cpu",
+      "walk_storage",
+      "walk_net_get",
+      "walk_temp",
+      "catch_walker",
+      "bypass_error",
+      "walk_ldi",
+      "sre_parser",
+      "db_insert",
+      "debug_ok",
+      "global_catch",
+      "debug_err",
+      "inject_registry",
+      "device_registry",
+      "resolve_device",
+      "catch_db_insert",
+      "retry_store",
+      "debug_retry",
+      "retry_rebuild",
+      "http_inject_in",
+      "http_inject_handler",
+      "http_inject_respond"
+    ],
+    "x": 18,
+    "y": 23,
+    "w": 2240,
+    "h": 514
+  },
+  {
     "id": "inject_fleet",
     "type": "inject",
     "z": "ims-tab-v5",
@@ -29,7 +76,8 @@
       [
         "generate_fleet_targets"
       ]
-    ]
+    ],
+    "g": "bc78ea85b252a09f"
   },
   {
     "id": "generate_fleet_targets",
@@ -44,7 +92,8 @@
       [
         "pace_limiter"
       ]
-    ]
+    ],
+    "g": "bc78ea85b252a09f"
   },
   {
     "id": "pace_limiter",
@@ -69,7 +118,8 @@
       [
         "resolve_device"
       ]
-    ]
+    ],
+    "g": "bc78ea85b252a09f"
   },
   {
     "id": "pg_config",
@@ -116,7 +166,8 @@
       [
         "walk_ldi"
       ]
-    ]
+    ],
+    "g": "bc78ea85b252a09f"
   },
   {
     "id": "walk_cpu",
@@ -132,7 +183,8 @@
       [
         "sre_parser"
       ]
-    ]
+    ],
+    "g": "bc78ea85b252a09f"
   },
   {
     "id": "walk_storage",
@@ -148,7 +200,8 @@
       [
         "sre_parser"
       ]
-    ]
+    ],
+    "g": "bc78ea85b252a09f"
   },
   {
     "id": "walk_net_get",
@@ -164,7 +217,8 @@
       [
         "sre_parser"
       ]
-    ]
+    ],
+    "g": "bc78ea85b252a09f"
   },
   {
     "id": "walk_temp",
@@ -180,7 +234,8 @@
       [
         "sre_parser"
       ]
-    ]
+    ],
+    "g": "bc78ea85b252a09f"
   },
   {
     "id": "catch_walker",
@@ -201,20 +256,22 @@
       [
         "bypass_error"
       ]
-    ]
+    ],
+    "g": "bc78ea85b252a09f"
   },
   {
     "id": "bypass_error",
     "type": "function",
     "z": "ims-tab-v5",
     "name": "Bypass Empty",
-    "func": "// Log error but do NOT send to join_sync — walker already sent empty payload on error.\n// Sending here would double-count and cause barrier drift.\nnode.warn('Walker error caught: ' + (msg.error ? msg.error.message : 'unknown'));\nreturn null;",
+    "func": "// Log error — walker already sent empty payload on error.\n// Do not re-send: would double-count.\nnode.warn('Walker error caught: ' + (msg.error ? msg.error.message : 'unknown'));\nreturn null;",
     "outputs": 1,
     "x": 560,
     "y": 360,
     "wires": [
       []
-    ]
+    ],
+    "g": "bc78ea85b252a09f"
   },
   {
     "id": "walk_ldi",
@@ -230,36 +287,8 @@
       [
         "sre_parser"
       ]
-    ]
-  },
-  {
-    "id": "join_sync",
-    "type": "join",
-    "z": "ims-tab-v5",
-    "name": "Barrier Sync (5)",
-    "mode": "auto",
-    "build": "array",
-    "property": "parts",
-    "propertyType": "msg",
-    "key": "topic",
-    "joiner": "\\n",
-    "joinerType": "str",
-    "useparts": true,
-    "accumulate": false,
-    "timeout": "25",
-    "count": "0",
-    "reduceRight": false,
-    "reduceExp": "",
-    "reduceInit": "",
-    "reduceInitType": "",
-    "reduceFixup": "",
-    "x": 790,
-    "y": 180,
-    "wires": [
-      [
-        "sre_parser"
-      ]
-    ]
+    ],
+    "g": "bc78ea85b252a09f"
   },
   {
     "id": "sre_parser",
@@ -277,7 +306,8 @@
         "db_insert",
         "debug_ok"
       ]
-    ]
+    ],
+    "g": "bc78ea85b252a09f"
   },
   {
     "id": "db_insert",
@@ -290,7 +320,8 @@
     "outputs": 0,
     "x": 1240,
     "y": 220,
-    "wires": []
+    "wires": [],
+    "g": "bc78ea85b252a09f"
   },
   {
     "id": "debug_ok",
@@ -302,7 +333,8 @@
     "targetType": "msg",
     "x": 1240,
     "y": 140,
-    "wires": []
+    "wires": [],
+    "g": "bc78ea85b252a09f"
   },
   {
     "id": "global_catch",
@@ -317,7 +349,8 @@
       [
         "debug_err"
       ]
-    ]
+    ],
+    "g": "bc78ea85b252a09f"
   },
   {
     "id": "debug_err",
@@ -332,7 +365,8 @@
     "targetType": "msg",
     "x": 380,
     "y": 420,
-    "wires": []
+    "wires": [],
+    "g": "bc78ea85b252a09f"
   },
   {
     "id": "inject_registry",
@@ -357,7 +391,8 @@
       [
         "device_registry"
       ]
-    ]
+    ],
+    "g": "bc78ea85b252a09f"
   },
   {
     "id": "device_registry",
@@ -373,7 +408,8 @@
     "libs": [],
     "x": 0,
     "y": 0,
-    "wires": []
+    "wires": [],
+    "g": "bc78ea85b252a09f"
   },
   {
     "id": "resolve_device",
@@ -393,7 +429,8 @@
       [
         "fork_5_ways"
       ]
-    ]
+    ],
+    "g": "bc78ea85b252a09f"
   },
   {
     "id": "catch_db_insert",
@@ -409,7 +446,8 @@
       [
         "retry_store"
       ]
-    ]
+    ],
+    "g": "bc78ea85b252a09f"
   },
   {
     "id": "retry_store",
@@ -429,7 +467,8 @@
       [
         "debug_retry"
       ]
-    ]
+    ],
+    "g": "bc78ea85b252a09f"
   },
   {
     "id": "debug_retry",
@@ -445,7 +484,8 @@
     "statusType": "auto",
     "x": 0,
     "y": 0,
-    "wires": []
+    "wires": [],
+    "g": "bc78ea85b252a09f"
   },
   {
     "id": "retry_timer",
@@ -470,7 +510,8 @@
       [
         "retry_rebuild"
       ]
-    ]
+    ],
+    "g": "bc78ea85b252a09f"
   },
   {
     "id": "retry_rebuild",
@@ -486,7 +527,8 @@
     "libs": [],
     "x": 0,
     "y": 0,
-    "wires": []
+    "wires": [],
+    "g": "bc78ea85b252a09f"
   },
   {
     "id": "http_inject_in",
@@ -503,7 +545,8 @@
       [
         "http_inject_handler"
       ]
-    ]
+    ],
+    "g": "bc78ea85b252a09f"
   },
   {
     "id": "http_inject_handler",
@@ -526,7 +569,8 @@
       [
         "http_inject_respond"
       ]
-    ]
+    ],
+    "g": "bc78ea85b252a09f"
   },
   {
     "id": "http_inject_respond",
@@ -537,6 +581,7 @@
     "headers": {},
     "x": 580,
     "y": 300,
-    "wires": []
+    "wires": [],
+    "g": "bc78ea85b252a09f"
   }
 ]
