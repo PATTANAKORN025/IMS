@@ -14,4 +14,4 @@
 /.github/                  @PATTANAKORN025
 
 # Node-RED flows (critical data pipeline)
-/node-red/flows/           @PATTANAKORN025
+/nodered_data/flows/       @PATTANAKORN025
