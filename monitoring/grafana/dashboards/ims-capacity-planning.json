@@ -86,7 +86,12 @@
       },
       "datasource": null,
       "transparent": true,
-      "description": "OS Taskbar navigation and CSS theme."
+      "description": "OS Taskbar navigation and CSS theme.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        }
+      }
     },
     {
       "id": 997,
@@ -119,7 +124,12 @@
         "bgColor": "transparent"
       },
       "description": "Current time and date (Asia/Bangkok timezone).",
-      "transparent": true
+      "transparent": true,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        }
+      }
     },
     {
       "id": 101,
@@ -131,6 +141,11 @@
         "y": 3,
         "w": 24,
         "h": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        }
       }
     },
     {
@@ -197,9 +212,9 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT 'RAM' AS metric, LEAST(CASE WHEN r.slope<=0 THEN 365 ELSE GREATEST(0,(t.ram_total_mb - r.intercept)/r.slope - EXTRACT(EPOCH FROM NOW())/86400) END, 365) AS \"Days Until Full\" FROM (SELECT device_id, COALESCE(regr_slope(avg_used, EXTRACT(EPOCH FROM day)),0) AS slope, COALESCE(regr_intercept(avg_used, EXTRACT(EPOCH FROM day)),0) AS intercept FROM (SELECT device_id, time_bucket('1 day', bucket) AS day, AVG(avg_ram_used) AS avg_used FROM public.sys_hourly WHERE bucket > NOW()-INTERVAL '30 days' GROUP BY 1,2) d GROUP BY device_id) r JOIN (SELECT DISTINCT ON (device_id) device_id, ram_total_mb FROM public.sys_metrics WHERE ram_total_mb>0 ORDER BY device_id, time DESC) t ON t.device_id=r.device_id ORDER BY 1 ASC LIMIT 1",
+          "rawSql": "WITH totals AS (\n  SELECT DISTINCT ON (device_id) device_id, ram_total_mb\n  FROM public.sys_metrics\n  WHERE ram_total_mb > 0\n  ORDER BY device_id, time DESC\n)\nSELECT\n  h.bucket AS time,\n  h.device_id AS metric,\n  ROUND(AVG(h.avg_ram_used / NULLIF(t.ram_total_mb, 0) * 100)::NUMERIC, 1) AS \"RAM Used %\"\nFROM public.sys_hourly h\nJOIN totals t ON t.device_id = h.device_id\nWHERE $__timeFilter(h.bucket) AND h.device_id IN (${machine_id:sqlstring})\nGROUP BY 1, 2, t.ram_total_mb\nORDER BY 1 ASC",
           "format": "table",
-          "legendFormat": "{{device_id}}"
+          "legendFormat": "{{metric}}"
         },
         {
           "refId": "C",
@@ -384,9 +399,9 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH daily_usage AS (  SELECT device_id, time_bucket('1 day', bucket) AS day,    AVG(avg_ram_used) AS avg_used  FROM public.sys_hourly  WHERE bucket > NOW() - INTERVAL '30 days'  GROUP BY 1, 2), totals AS (  SELECT DISTINCT ON (device_id) device_id, ram_total_mb  FROM public.sys_metrics  WHERE ram_total_mb > 0  ORDER BY device_id, time DESC), regression AS (  SELECT device_id,    COALESCE(regr_slope(avg_used, EXTRACT(EPOCH FROM day)), 0) AS slope,    COALESCE(regr_intercept(avg_used, EXTRACT(EPOCH FROM day)), 0) AS intercept  FROM daily_usage GROUP BY device_id) SELECT r.device_id AS metric,  CASE WHEN r.slope <= 0 THEN 9999    WHEN t.ram_total_mb <= 0 THEN 9999    ELSE GREATEST(0, (t.ram_total_mb - r.intercept) / r.slope - EXTRACT(EPOCH FROM NOW()) / 86400)  END AS value FROM regression r JOIN totals t ON t.device_id = r.device_id ORDER BY value ASC LIMIT 1",
+          "rawSql": "WITH totals AS (\n  SELECT DISTINCT ON (device_id) device_id, ram_total_mb\n  FROM public.sys_metrics\n  WHERE ram_total_mb > 0\n  ORDER BY device_id, time DESC\n)\nSELECT\n  h.bucket AS time,\n  h.device_id AS metric,\n  ROUND(AVG(h.avg_ram_used / NULLIF(t.ram_total_mb, 0) * 100)::NUMERIC, 1) AS \"RAM Used %\"\nFROM public.sys_hourly h\nJOIN totals t ON t.device_id = h.device_id\nWHERE $__timeFilter(h.bucket) AND h.device_id IN (${machine_id:sqlstring})\nGROUP BY 1, 2, t.ram_total_mb\nORDER BY 1 ASC",
           "format": "table",
-          "legendFormat": "{{device_id}}"
+          "legendFormat": "{{metric}}"
         }
       ],
       "description": "Days until RAM saturation based on 30-day linear regression trend.",
@@ -579,7 +594,12 @@
         "h": 1
       },
       "collapsed": false,
-      "transparent": true
+      "transparent": true,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        }
+      }
     },
     {
       "id": 10,
@@ -902,7 +922,12 @@
         "h": 1
       },
       "collapsed": false,
-      "transparent": true
+      "transparent": true,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        }
+      }
     },
     {
       "id": 20,
@@ -1418,7 +1443,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{metric}}",
-          "rawSql": "WITH totals AS (\n  SELECT DISTINCT ON (device_id) device_id, ram_total_mb\n  FROM public.sys_metrics\n  WHERE ram_total_mb > 0\n  ORDER BY device_id, time DESC\n)\nSELECT\n  h.bucket AS time,\n  h.device_id AS metric,\n  ROUND((h.avg_ram_used / NULLIF(t.ram_total_mb, 0) * 100)::NUMERIC, 1) AS \"RAM Used %\"\nFROM public.sys_hourly h\nJOIN totals t ON t.device_id = h.device_id\nWHERE $__timeFilter(h.bucket) AND h.device_id IN (${machine_id:sqlstring})\nGROUP BY 1, 2, t.ram_total_mb\nORDER BY 1 ASC",
+          "rawSql": "WITH totals AS (\n  SELECT DISTINCT ON (device_id) device_id, ram_total_mb\n  FROM public.sys_metrics\n  WHERE ram_total_mb > 0\n  ORDER BY device_id, time DESC\n)\nSELECT\n  h.bucket AS time,\n  h.device_id AS metric,\n  ROUND(AVG(h.avg_ram_used / NULLIF(t.ram_total_mb, 0) * 100)::NUMERIC, 1) AS \"RAM Used %\"\nFROM public.sys_hourly h\nJOIN totals t ON t.device_id = h.device_id\nWHERE $__timeFilter(h.bucket) AND h.device_id IN (${machine_id:sqlstring})\nGROUP BY 1, 2, t.ram_total_mb\nORDER BY 1 ASC",
           "format": "time_series"
         }
       ],
@@ -1443,7 +1468,12 @@
         "h": 1
       },
       "collapsed": false,
-      "transparent": true
+      "transparent": true,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        }
+      }
     },
     {
       "id": 601,
