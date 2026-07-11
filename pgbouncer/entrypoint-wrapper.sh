@@ -7,7 +7,7 @@ touch "${_AUTH_FILE}"
 
 # Add grafana_reader if missing
 if ! grep -q '"grafana_reader"' "${_AUTH_FILE}" 2>/dev/null; then
-  echo '"grafana_reader" "grafana_secure"' >> "${_AUTH_FILE}"
+  echo "\"grafana_reader\" \"${GRAFANA_DB_PASSWORD:-grafana_secure}\"" >> "${_AUTH_FILE}"
 fi
 
 # Run original entrypoint with the pgbouncer command as argument

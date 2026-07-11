@@ -17,13 +17,13 @@ echo ""
 # 3. Data flowing?
 echo "3. Data flow check (last 5 min):"
 docker compose exec -T timescaledb psql -U ims_admin -d ims -c \
-  "SELECT machine_id, COUNT(*) as rows, MAX(time) as latest FROM public.machine_telemetry WHERE time > NOW() - INTERVAL '5 minutes' GROUP BY machine_id;" 2>/dev/null
+  "SELECT device_id, COUNT(*) as rows, MAX(time) as latest FROM public.sys_metrics WHERE time > NOW() - INTERVAL '5 minutes' GROUP BY device_id;" 2>/dev/null
 echo ""
 
 # 4. Continuous aggregates populated?
 echo "4. Continuous aggregates:"
 docker compose exec -T timescaledb psql -U ims_admin -d ims -c \
-  "SELECT COUNT(*) as minute_rows FROM public.telemetry_minute_summary WHERE bucket > NOW() - INTERVAL '5 minutes';" 2>/dev/null
+  "SELECT COUNT(*) as hourly_rows FROM public.sys_hourly;" 2>/dev/null
 echo ""
 
 # 5. Prometheus targets

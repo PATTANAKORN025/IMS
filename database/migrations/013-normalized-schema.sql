@@ -17,10 +17,28 @@ CREATE TABLE IF NOT EXISTS public.devices (
     snmp_community  TEXT DEFAULT 'public',
     snmp_port       INTEGER DEFAULT 161,
     poll_interval   INTEGER DEFAULT 1,
-    is_active       BOOLEAN DEFAULT TRUE,
+    enabled         BOOLEAN DEFAULT TRUE,
     created_at      TIMESTAMPTZ DEFAULT NOW(),
     updated_at      TIMESTAMPTZ DEFAULT NOW()
 );
+
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'devices' AND column_name = 'is_active'
+    ) AND NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'devices' AND column_name = 'enabled'
+    ) THEN
+        ALTER TABLE public.devices RENAME COLUMN is_active TO enabled;
+    ELSIF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'devices' AND column_name = 'enabled'
+    ) THEN
+        ALTER TABLE public.devices ADD COLUMN enabled BOOLEAN DEFAULT TRUE;
+    END IF;
+END $$;
 
 -- ── 2. System Metrics (CPU, RAM, Disk, Temp) ───────────────────────────────
 -- ทุกเครื่องมีข้อมูลกลุ่มนี้ — ไม่มี NULL column
