@@ -863,11 +863,11 @@
         },
         {
           "refId": "B",
-          "legendFormat": "{{ machine_id }} — Total",
+          "legendFormat": "{{metric}}",
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, disk_total_gb AS \"Disk Total (GB)\" FROM public.sys_metrics WHERE $__timeFilter(time) AND device_id IN (${machine_id:sqlstring}) AND disk_total_gb > 0 ORDER BY 1",
+          "rawSql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id AS metric,\n  ROUND(AVG(disk_used_gb)::NUMERIC, 2) AS \"Disk Used (GB)\",\n  ROUND(AVG(disk_total_gb)::NUMERIC, 2) AS \"Disk Total (GB)\"\nFROM public.sys_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:sqlstring}) AND disk_total_gb > 0\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series"
         },
         {
@@ -1417,8 +1417,8 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "legendFormat": "{{ machine_id }}",
-          "rawSql": "WITH totals AS (\n  SELECT DISTINCT ON (device_id) device_id, ram_total_mb\n  FROM public.sys_metrics\n  WHERE ram_total_mb > 0\n  ORDER BY device_id, time DESC\n)\nSELECT h.bucket AS time, h.device_id,\n  ROUND((h.avg_ram_used / NULLIF(t.ram_total_mb, 0) * 100)::NUMERIC, 1) AS \"Avg RAM %\"\nFROM public.sys_hourly h\nJOIN totals t ON t.device_id = h.device_id\nWHERE h.bucket > NOW() - INTERVAL '30 days'\n  AND h.device_id IN (${machine_id:sqlstring})\nORDER BY 1",
+          "legendFormat": "{{metric}}",
+          "rawSql": "WITH totals AS (\n  SELECT DISTINCT ON (device_id) device_id, ram_total_mb\n  FROM public.sys_metrics\n  WHERE ram_total_mb > 0\n  ORDER BY device_id, time DESC\n)\nSELECT\n  h.bucket AS time,\n  h.device_id AS metric,\n  ROUND((h.avg_ram_used / NULLIF(t.ram_total_mb, 0) * 100)::NUMERIC, 1) AS \"RAM Used %\"\nFROM public.sys_hourly h\nJOIN totals t ON t.device_id = h.device_id\nWHERE $__timeFilter(h.bucket) AND h.device_id IN (${machine_id:sqlstring})\nGROUP BY 1, 2, t.ram_total_mb\nORDER BY 1 ASC",
           "format": "time_series"
         }
       ],

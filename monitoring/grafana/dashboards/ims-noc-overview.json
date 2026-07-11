@@ -322,7 +322,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH ldi AS (SELECT device_id, pressure, joule_effect FROM public.ldi_metrics WHERE time > NOW() - INTERVAL '1 hour' AND pressure IS NOT NULL) SELECT ROUND(100.0 * SUM(CASE WHEN ABS(pressure) > 10 OR ABS(joule_effect) > 10 THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0)::NUMERIC, 1) AS value FROM ldi",
+          "rawSql": "WITH ldi AS (\n  SELECT device_id, pressure, joule_effect\n  FROM public.ldi_metrics\n  WHERE time > NOW() - INTERVAL '1 hour'\n    AND pressure IS NOT NULL\n    AND device_id IN (${machine_id:sqlstring})\n)\nSELECT\n  ROUND(100.0 * SUM(CASE WHEN ABS(pressure) > 10 OR joule_effect > 15 THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0), 1) AS value\nFROM ldi",
           "format": "table",
           "legendFormat": "{{device_id}}"
         }
@@ -1329,8 +1329,8 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "legendFormat": "{{ machine_id }} RX",
-          "rawSql": "SELECT bucket AS time, device_id, avg_rx AS \"RX (Mbps)\" FROM public.net_hourly WHERE $__timeFilter(bucket) AND device_id IN (${machine_id:sqlstring}) ORDER BY 1",
+          "legendFormat": "{{metric}}",
+          "rawSql": "SELECT\n  bucket AS time,\n  device_id AS metric,\n  ROUND(AVG(avg_rx)::NUMERIC, 2) AS \"RX (Mbps)\"\nFROM public.net_hourly\nWHERE $__timeFilter(bucket) AND device_id IN (${machine_id:sqlstring})\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series"
         },
         {
@@ -1338,8 +1338,8 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "legendFormat": "{{ machine_id }} TX",
-          "rawSql": "SELECT bucket AS time, device_id, avg_tx AS \"TX (Mbps)\" FROM public.net_hourly WHERE $__timeFilter(bucket) AND device_id IN (${machine_id:sqlstring}) ORDER BY 1",
+          "legendFormat": "{{metric}}",
+          "rawSql": "SELECT\n  bucket AS time,\n  device_id AS metric,\n  ROUND(AVG(avg_tx)::NUMERIC, 2) AS \"TX (Mbps)\"\nFROM public.net_hourly\nWHERE $__timeFilter(bucket) AND device_id IN (${machine_id:sqlstring})\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series"
         }
       ],
