@@ -14,7 +14,7 @@ restart:
 
 deploy-flows:
 	@echo "Deploying split flows to Node-RED..."
-	curl -X POST http://127.0.0.1:1880/flows -H 'Content-Type: application/json' -d @<(jq -s 'add' node-red/flows/*.json)
+	curl -X POST http://127.0.0.1:1880/flows -H 'Content-Type: application/json' -d @<(jq -s 'add' nodered_data/flows/*.json)
 
 verify:
 ifeq ($(OS),Windows_NT)

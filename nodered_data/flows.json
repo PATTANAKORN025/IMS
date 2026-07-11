@@ -1,5 +1,12 @@
 [
     {
+        "id": "ims-alert-tab",
+        "type": "tab",
+        "label": "IMS Alerting Pipeline",
+        "disabled": false,
+        "info": "Alertmanager webhook → LINE Messaging API / MS Teams"
+    },
+    {
         "id": "ims-tab-v5",
         "type": "tab",
         "label": "IMS Ingestion Pipeline",
@@ -12,13 +19,6 @@
         "label": "Auto Discovery",
         "disabled": true,
         "info": "This flow scans a subnet for SNMP devices and automatically registers them into the database."
-    },
-    {
-        "id": "ims-alert-tab",
-        "type": "tab",
-        "label": "IMS Alerting Pipeline",
-        "disabled": false,
-        "info": "Alertmanager webhook → LINE Messaging API / MS Teams"
     },
     {
         "id": "pg_config",
@@ -51,11 +51,201 @@
         "env": []
     },
     {
+        "id": "alert_http_in",
+        "type": "http in",
+        "z": "ims-alert-tab",
+        "name": "POST /alert-webhook",
+        "url": "/alert-webhook",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 160,
+        "y": 200,
+        "wires": [
+            [
+                "alert_respond",
+                "alert_format"
+            ]
+        ]
+    },
+    {
+        "id": "alert_respond",
+        "type": "http response",
+        "z": "ims-alert-tab",
+        "name": "200 OK",
+        "statusCode": "200",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 400,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "alert_format",
+        "type": "function",
+        "z": "ims-alert-tab",
+        "name": "Format Alert Text",
+        "func": "const payload = msg.payload;\nif (!payload || !payload.alerts) return null;\n\nconst alerts = payload.alerts;\nlet msgText = '\\ud83d\\udd14 *IMS SYSTEM ALERT [' + (payload.status || 'unknown').toUpperCase() + ']* \\ud83d\\udd14\\n\\n';\n\nfor (let i = 0; i < alerts.length; i++) {\n    const a = alerts[i];\n    const labels = a.labels || {};\n    const annotations = a.annotations || {};\n    \n    let icon = '\\u26a0\\ufe0f';\n    if (labels.severity === 'critical') icon = '\\ud83d\\udd25';\n    if (payload.status === 'resolved') icon = '\\u2705';\n\n    msgText += icon + ' *' + (labels.alertname || 'Unknown Alert') + '*\\n';\n    msgText += '\\ud83d\\udda5\\ufe0f *Host:* ' + (labels.machine_id || labels.instance || 'System') + '\\n';\n    msgText += '\\ud83d\\udcdd *Detail:* ' + (annotations.summary || 'N/A') + '\\n';\n    if (annotations.description) msgText += '\\ud83d\\udca1 *Desc:* ' + annotations.description + '\\n';\n    \n    const startTime = a.startsAt ? new Date(a.startsAt).toLocaleString('th-TH') : 'Unknown';\n    msgText += '\\ud83d\\udd52 *Time:* ' + startTime + '\\n';\n    msgText += '-------------------\\n';\n}\n\n// Truncate if too long to prevent API 400 Bad Request during major outages\nif (msgText.length > 4000) {\n    msgText = msgText.substring(0, 4000) + '\\n\\n... [TRUNCATED: Too many alerts!]';\n}\nmsg.payload = msgText;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 420,
+        "y": 240,
+        "wires": [
+            [
+                "alert_debug",
+                "alert_line_format",
+                "alert_teams_format"
+            ]
+        ]
+    },
+    {
+        "id": "alert_debug",
+        "type": "debug",
+        "z": "ims-alert-tab",
+        "name": "Alert Log",
+        "active": true,
+        "tosidebar": true,
+        "console": true,
+        "tostatus": true,
+        "complete": "payload",
+        "targetType": "msg",
+        "x": 640,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "alert_line_format",
+        "type": "function",
+        "z": "ims-alert-tab",
+        "name": "Format LINE Messaging API",
+        "func": "const token = env.get('LINE_CHANNEL_ACCESS_TOKEN') || '';\nconst userId = env.get('LINE_USER_ID') || '';\n\nif (!token || !userId) {\n    node.warn('LINE Messaging API not configured — set LINE_CHANNEL_ACCESS_TOKEN and LINE_USER_ID env vars');\n    return null;\n}\n\nmsg.headers = {\n    'Authorization': 'Bearer ' + token,\n    'Content-Type': 'application/json'\n};\nmsg.payload = JSON.stringify({\n    to: userId,\n    messages: [{ type: 'text', text: msg.payload }]\n});\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 500,
+        "y": 200,
+        "wires": [
+            [
+                "alert_line_notify"
+            ]
+        ]
+    },
+    {
+        "id": "alert_line_notify",
+        "type": "http request",
+        "z": "ims-alert-tab",
+        "name": "LINE Messaging API",
+        "method": "POST",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "https://api.line.me/v2/bot/message/push",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 720,
+        "y": 200,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "alert_teams_format",
+        "type": "function",
+        "z": "ims-alert-tab",
+        "name": "Format Teams Webhook",
+        "func": "const url = env.get(\"TEAMS_WEBHOOK_URL\") || \"\";\n\nif (!url) {\n    node.warn(\"MS Teams webhook not configured — set TEAMS_WEBHOOK_URL env var\");\n    return null;\n}\n\nconst card = {\n    \"type\": \"message\",\n    \"attachments\": [{\n        \"contentType\": \"application/vnd.microsoft.card.adaptive\",\n        \"contentUrl\": null,\n        \"content\": {\n            \"$schema\": \"http://adaptivecards.io/schemas/adaptive-card.json\",\n            \"type\": \"AdaptiveCard\",\n            \"version\": \"1.4\",\n            \"body\": [{\n                \"type\": \"TextBlock\",\n                \"text\": \"IMS System Alert\",\n                \"weight\": \"bolder\",\n                \"size\": \"large\",\n                \"color\": \"attention\"\n            }, {\n                \"type\": \"TextBlock\",\n                \"text\": msg.payload,\n                \"wrap\": true,\n                \"spacing\": \"medium\"\n            }],\n            \"msteams\": {\n                \"entities\": []\n            }\n        }\n    }]\n};\nmsg.payload = JSON.stringify(card);\nmsg.headers = { \"Content-Type\": \"application/json\" };\nmsg.url = url;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 500,
+        "y": 260,
+        "wires": [
+            [
+                "alert_teams_webhook"
+            ]
+        ]
+    },
+    {
+        "id": "alert_teams_webhook",
+        "type": "http request",
+        "z": "ims-alert-tab",
+        "name": "MS Teams Webhook",
+        "method": "POST",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 720,
+        "y": 260,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "alert_catch",
+        "type": "catch",
+        "z": "ims-alert-tab",
+        "name": "Catch Alert Errors",
+        "scope": [
+            "alert_format",
+            "alert_line_format",
+            "alert_line_notify",
+            "alert_teams_format",
+            "alert_teams_webhook"
+        ],
+        "uncaught": false,
+        "x": 640,
+        "y": 360,
+        "wires": [
+            [
+                "alert_error_debug"
+            ]
+        ]
+    },
+    {
+        "id": "alert_error_debug",
+        "type": "debug",
+        "z": "ims-alert-tab",
+        "name": "Alert Delivery Failure",
+        "active": true,
+        "tosidebar": true,
+        "console": true,
+        "tostatus": true,
+        "complete": "error",
+        "targetType": "msg",
+        "statusVal": "error.message",
+        "statusType": "msg",
+        "x": 880,
+        "y": 360,
+        "wires": []
+    },
+    {
         "id": "d6ffcaf2f7033983",
         "type": "function",
         "z": "ims-tab-v5",
         "name": "Fork 5 Walker Threads",
-        "func": "const mid = msg.machine_id || msg.topic;\nconst host = msg.host;\nconst community = msg.community;\nconst port = msg.snmp_port;\n\nconst snmp = global.get('snmp');\nif (!snmp) return null;\n\nconst session = snmp.createSession(\n    host,\n    community || env.get('SNMP_COMMUNITY') || 'public',\n    { port: port || 161, version: snmp.Version2c, retries: 1, timeout: 2000 }\n);\n//ตรวจสอบ อุปกรณ์ทำงานอยู่?\nconst nodeRef = node;\nsession.get(['1.3.6.1.2.1.1.3.0'], function (error, varbinds) {\n    session.close();\n    if (error) {\n        nodeRef.warn(`Ping failed for ${host} (${mid}) - Skipping walkers`);\n    } else {\n        nodeRef.send([\n            { machine_id: mid, topic: mid, _walker: 'cpu', payload: '', host, community, snmp_port: port },\n            { machine_id: mid, topic: mid, _walker: 'storage', payload: '', host, community, snmp_port: port },\n            { machine_id: mid, topic: mid, _walker: 'network', payload: '', host, community, snmp_port: port },\n            { machine_id: mid, topic: mid, _walker: 'temp', payload: '', host, community, snmp_port: port },\n            { machine_id: mid, topic: mid, _walker: 'ldi', payload: '', host, community, snmp_port: port }\n        ]);\n    }\n});\nreturn null;",
+        "func": "const mid = msg.machine_id || msg.topic;\nconst host = msg.host;\nconst community = msg.community;\nconst port = msg.snmp_port;\n\nconst snmp = global.get('snmp');\nif (!snmp) return null;\n\nconst session = snmp.createSession(\n    host,\n    community || env.get('SNMP_COMMUNITY') || 'public',\n    { port: port || 161, version: snmp.Version2c, retries: 1, timeout: 2000 }\n);\n\nsession.on('error', function (err) {\n    node.error('SNMP session error (Ping): ' + err.message, msg);\n    session.close(); // CRITICAL FIX: Prevent UDP Port Leak\n});\n\n//ตรวจสอบ อุปกรณ์ทำงานอยู่?\nconst nodeRef = node;\nsession.get(['1.3.6.1.2.1.1.3.0'], function (error, varbinds) {\n    session.close();\n    if (error) {\n        nodeRef.warn(`Ping failed for ${host} (${mid}) - Skipping walkers`);\n    } else {\n        nodeRef.send([\n            { machine_id: mid, topic: mid, _walker: 'cpu', payload: '', host, community, snmp_port: port },\n            { machine_id: mid, topic: mid, _walker: 'storage', payload: '', host, community, snmp_port: port },\n            { machine_id: mid, topic: mid, _walker: 'network', payload: '', host, community, snmp_port: port },\n            { machine_id: mid, topic: mid, _walker: 'temp', payload: '', host, community, snmp_port: port },\n            { machine_id: mid, topic: mid, _walker: 'ldi', payload: '', host, community, snmp_port: port }\n        ]);\n    }\n});\nreturn null;",
         "outputs": 5,
         "timeout": "",
         "noerr": 0,
@@ -332,7 +522,7 @@
         "type": "function",
         "z": "ims-tab-v5",
         "name": "Bulletproof AIOps Parser v8",
-        "func": "const BATCH_INTERVAL_SEC = 30;\nconst BUFFER_MAX = 500; \n\ntry {\n    if (!msg.payload || !Array.isArray(msg.payload)) return null;\n    const deviceId = String(msg.topic || '').replace(/'/g, \"''\").trim();\n    if (!deviceId) return null;\n\n    // ── Phase 1 & 2: ประมวลผลข้อมูล ──────────────────────────────────────────\n    const parsed = Object.assign({}, ...msg.payload);\n\n    // ── Phase 3: เก็บลง GLOBAL Buffer (พร้อมระบบ Disk-Backed DLQ) ───────────\n    const now = Date.now();\n    const bufKey = `global_batch_buf`;\n    const dlqFile = '/data/dlq_backup.json';\n    const fs = global.get('fs');\n\n    let buffer = global.get(bufKey);\n    if (!buffer) {\n        // ตรวจสอบว่ามีไฟล์ DLQ ค้างอยู่จากตอน Server ล่มไหม?\n        if (fs && fs.existsSync(dlqFile)) {\n            try {\n                buffer = JSON.parse(fs.readFileSync(dlqFile, 'utf8'));\n                node.warn(' Loaded DLQ from Disk! Recovering data...');\n                fs.unlinkSync(dlqFile); // ลบทิ้งหลังโหลดเสร็จ\n            } catch(e) {\n                node.error('DLQ File corrupted, starting fresh');\n                buffer = { sys: [], net: [], ldi: [], lastFlush: now };\n            }\n        } else {\n            buffer = { sys: [], net: [], ldi: [], lastFlush: now };\n        }\n    }\n\n    const currentTime = new Date().toISOString();\n\n    if (parsed.cpu || parsed.disk || (parsed.temp !== null && parsed.temp !== undefined)) {\n        if(parsed.cpu && isNaN(parsed.cpu.load)) parsed.cpu.load = 0;\n        if(parsed.temp !== null && parsed.temp !== undefined && isNaN(parsed.temp)) parsed.temp = null;\n        buffer.sys.push({\n            time: currentTime, \n            device_id: deviceId,\n            cpu_cores: parsed.cpu ? parsed.cpu.cores : null,\n            cpu_load_percent: parsed.cpu ? parsed.cpu.load : null,\n            ram_total_mb: parsed.disk ? parsed.disk.ramTotal : null,\n            ram_used_mb: parsed.disk ? parsed.disk.ramUsed : null,\n            ram_free_mb: parsed.disk ? parsed.disk.ramFree : null,\n            disk_total_gb: parsed.disk ? parsed.disk.diskTotal : null,\n            disk_used_gb: parsed.disk ? parsed.disk.diskUsed : null,\n            disk_free_gb: parsed.disk ? parsed.disk.diskFree : null,\n            disk_description: parsed.disk ? JSON.stringify(parsed.disk.desc || {}) : '{}',\n            temp_c: (parsed.temp !== null && parsed.temp !== undefined) ? parsed.temp : null\n        });\n    }\n\n    if (parsed.interfaces && Array.isArray(parsed.interfaces)) {\n        parsed.interfaces.forEach(iface => {\n            buffer.net.push({\n                time: currentTime, \n                device_id: deviceId,\n                iface_name: iface.name,\n                rx_mbps: iface.received_MB || 0,\n                tx_mbps: iface.sent_MB || 0,\n                rx_errors: 0,\n                tx_errors: 0,\n                rx_drops: 0,\n                tx_drops: 0, \n                status: iface.status === 'ON' ? 'UP' : 'DOWN'\n            });\n        });\n    }\n\n    if (parsed.ldi) {\n        buffer.ldi.push({\n            time: currentTime, \n            device_id: deviceId,\n            throughput: parsed.ldi.throughput || 0,\n            temperature: parsed.ldi.temperature || 0,\n            humidity: parsed.ldi.humidity || 0,\n            pressure: parsed.ldi.pressure || 0,\n            joule_effect: parsed.ldi.joule_effect || 0,\n            power_watt: parsed.ldi.power_watt || 0,\n            vibration: parsed.ldi.vibration || 0,\n            wifi_rssi: parsed.ldi.wifi_rssi || 0,\n            wifi_snr: parsed.ldi.wifi_snr || 0\n        });\n    }\n\n    const DLQ_LIMIT = 5000;\n    // ── Phase 4: ตรวจสอบเงื่อนไขการส่งข้อมูล (Flush) ────────────────────────\n    const elapsedSec = (now - buffer.lastFlush) / 1000;\n    const totalItems = buffer.sys.length + buffer.net.length + buffer.ldi.length;\n    \n    if (elapsedSec < BATCH_INTERVAL_SEC && totalItems < BUFFER_MAX) {\n        global.set(bufKey, buffer);\n        return null;\n    }\n\n    const pool = global.get('pgPool');\n    if (!pool) {\n        node.error('pgPool is missing in global context!');\n        return null;\n    }\n\n    // ตัดข้อมูลเก่าทิ้งถ้า DB พังนานเกินไป (FIFO DLQ)\n    if (buffer.sys.length > DLQ_LIMIT) buffer.sys = buffer.sys.slice(-DLQ_LIMIT);\n    if (buffer.net.length > DLQ_LIMIT) buffer.net = buffer.net.slice(-DLQ_LIMIT);\n    if (buffer.ldi.length > DLQ_LIMIT) buffer.ldi = buffer.ldi.slice(-DLQ_LIMIT);\n\n    // Snapshot ข้อมูลที่จะส่งรอบนี้ และเคลียร์ Global รอรับรอบใหม่ทันที\n    const toInsert = { sys: [...buffer.sys], net: [...buffer.net], ldi: [...buffer.ldi] };\n    global.set(bufKey, { sys: [], net: [], ldi: [], lastFlush: Date.now() });\n\n    const queries = [\n        ...buildQueries('public.sys_metrics', ['\"time\"', 'device_id', 'cpu_cores', 'cpu_load_percent', 'ram_total_mb', 'ram_used_mb', 'ram_free_mb', 'disk_total_gb', 'disk_used_gb', 'disk_free_gb', 'disk_description', 'temp_c'], toInsert.sys),\n        ...buildQueries('public.net_metrics', ['\"time\"', 'device_id', 'iface_name', 'rx_mbps', 'tx_mbps', 'rx_errors', 'tx_errors', 'rx_drops', 'tx_drops', 'status'], toInsert.net),\n        ...buildQueries('public.ldi_metrics', ['\"time\"', 'device_id', 'throughput', 'temperature', 'humidity', 'pressure', 'joule_effect', 'power_watt', 'vibration', 'wifi_rssi', 'wifi_snr'], toInsert.ldi)\n    ];\n\n    if (queries.length === 0) return null;\n\n    Promise.allSettled(queries.map(q => pool.query(q.sql, q.params)))\n        .then(results => {\n            let failedSys = []; let failedNet = []; let failedLdi = [];\n            results.forEach((res, i) => {\n                if(res.status === 'rejected') {\n                    node.error('DB Chunk Error: ' + res.reason.message);\n                    // กู้คืนข้อมูลที่พังกลับเข้า DLQ\n                    // เนื่องจาก queries เรียงตาม Sys -> Net -> LDI \n                    // เราต้อง Map กลับไปให้ถูก (เพื่อความง่าย โยนทุกอย่างที่ไม่ผ่านเข้า Sys/Net/LDI Queue รวม)\n                    // (Implementation เบื้องต้น: โยน toInsert กลับไปทั้งหมดเพื่อป้องกันข้อมูลสูญหาย)\n                    failedSys = toInsert.sys;\n                    failedNet = toInsert.net;\n                    failedLdi = toInsert.ldi;\n                }\n            });\n            \n            if (failedSys.length > 0 || failedNet.length > 0 || failedLdi.length > 0) {\n                const currentBuffer = global.get(bufKey) || { sys: [], net: [], ldi: [], lastFlush: Date.now() };\n                currentBuffer.sys = [...failedSys, ...currentBuffer.sys].slice(-DLQ_LIMIT);\n                currentBuffer.net = [...failedNet, ...currentBuffer.net].slice(-DLQ_LIMIT);\n                currentBuffer.ldi = [...failedLdi, ...currentBuffer.ldi].slice(-DLQ_LIMIT);\n                global.set(bufKey, currentBuffer);\n                if (fs) {\n                    fs.writeFile(dlqFile, JSON.stringify(currentBuffer), () => {});\n                }\n            }\n        })\n        .catch(err => {\n            node.error(` DB Outage! Disk-Backed Retry Queue Activated: ${err.message}`);\n            // DLQ: เอาข้อมูลที่ส่งไม่ผ่าน กลับไปต่อท้ายคิวปัจจุบัน\n            const currentBuffer = global.get(bufKey) || { sys: [], net: [], ldi: [], lastFlush: Date.now() };\n            currentBuffer.sys = [...toInsert.sys, ...currentBuffer.sys];\n            currentBuffer.net = [...toInsert.net, ...currentBuffer.net];\n            currentBuffer.ldi = [...toInsert.ldi, ...currentBuffer.ldi];\n            global.set(bufKey, currentBuffer);\n            \n            // เขียนลง Harddisk (Backup) ป้องกัน Node-RED ดับระหว่าง DB ล่ม\n            if (fs) {\n                fs.writeFile(dlqFile, JSON.stringify(currentBuffer), (fsErr) => {\n                    if(fsErr) node.error('Failed to write DLQ to disk: ' + fsErr.message);\n                });\n            }\n        });\n    return null;\n\n} catch (err) {\n    node.error(`Parser Crash: ${err.message}`, msg);\n    return null;\n}\n\nfunction buildQueries(tableName, columns, rows) {\n    if (!rows || rows.length === 0) return [];\n    const CHUNK_SIZE = 500;\n    const results = [];\n    for (let i = 0; i < rows.length; i += CHUNK_SIZE) {\n        const chunk = rows.slice(i, i + CHUNK_SIZE);\n        const params = [];\n        const placeholders = chunk.map((row) => {\n            const tokens = columns.map((col) => {\n                const key = col.replace(/\"/g, '');\n                let val = row[key];\n                if (val === null) return 'NULL';\n                params.push(val);\n                const paramIndex = params.length;\n                return key === 'disk_description' ? `$${paramIndex}::jsonb` : `$${paramIndex}`;\n            });\n            return `(${tokens.join(',')})`;\n        }).join(',');\n        results.push({ sql: `INSERT INTO ${tableName} (${columns.join(',')}) VALUES ${placeholders}`, params });\n    }\n    return results;\n}",
+        "func": "const BATCH_INTERVAL_SEC = 30;\nconst BUFFER_MAX = 500; \n\ntry {\n    if (!msg.payload || !Array.isArray(msg.payload)) return null;\n    const deviceId = String(msg.topic || '').replace(/'/g, \"''\").trim();\n    if (!deviceId) return null;\n\n    // ── Phase 1 & 2: ประมวลผลข้อมูล ──────────────────────────────────────────\n    const parsed = Object.assign({}, ...msg.payload);\n\n    // ── Phase 3: เก็บลง GLOBAL Buffer (พร้อมระบบ Disk-Backed DLQ) ───────────\n    const now = Date.now();\n    const bufKey = `global_batch_buf`;\n    const dlqFile = '/data/dlq_backup.json';\n    const fs = global.get('fs');\n\n    let buffer = global.get(bufKey);\n    if (!buffer) {\n        // ตรวจสอบว่ามีไฟล์ DLQ ค้างอยู่จากตอน Server ล่มไหม?\n        if (fs && fs.existsSync(dlqFile)) {\n            try {\n                buffer = JSON.parse(fs.readFileSync(dlqFile, 'utf8'));\n                node.warn(' Loaded DLQ from Disk! Recovering data...');\n                fs.unlinkSync(dlqFile); // ลบทิ้งหลังโหลดเสร็จ\n            } catch(e) {\n                node.error('DLQ File corrupted, starting fresh');\n                buffer = { sys: [], net: [], ldi: [], lastFlush: now };\n            }\n        } else {\n            buffer = { sys: [], net: [], ldi: [], lastFlush: now };\n        }\n    }\n\n    const currentTime = new Date().toISOString();\n\n    if (parsed.cpu || parsed.disk || (parsed.temp !== null && parsed.temp !== undefined)) {\n        if(parsed.cpu && isNaN(parsed.cpu.load)) parsed.cpu.load = 0;\n        if(parsed.temp !== null && parsed.temp !== undefined && isNaN(parsed.temp)) parsed.temp = null;\n        buffer.sys.push({\n            time: currentTime, \n            device_id: deviceId,\n            cpu_cores: parsed.cpu ? parsed.cpu.cores : null,\n            cpu_load_percent: parsed.cpu ? parsed.cpu.load : null,\n            ram_total_mb: parsed.disk ? parsed.disk.ramTotal : null,\n            ram_used_mb: parsed.disk ? parsed.disk.ramUsed : null,\n            ram_free_mb: parsed.disk ? parsed.disk.ramFree : null,\n            disk_total_gb: parsed.disk ? parsed.disk.diskTotal : null,\n            disk_used_gb: parsed.disk ? parsed.disk.diskUsed : null,\n            disk_free_gb: parsed.disk ? parsed.disk.diskFree : null,\n            disk_description: parsed.disk ? JSON.stringify(parsed.disk.desc || {}) : '{}',\n            temp_c: (parsed.temp !== null && parsed.temp !== undefined) ? parsed.temp : null\n        });\n    }\n\n    if (parsed.interfaces && Array.isArray(parsed.interfaces)) {\n        parsed.interfaces.forEach(iface => {\n            buffer.net.push({\n                time: currentTime, \n                device_id: deviceId,\n                iface_name: iface.name,\n                rx_mbps: iface.received_MB || 0,\n                tx_mbps: iface.sent_MB || 0,\n                rx_errors: 0,\n                tx_errors: 0,\n                rx_drops: 0,\n                tx_drops: 0, \n                status: iface.status === 'ON' ? 'UP' : 'DOWN'\n            });\n        });\n    }\n\n    if (parsed.ldi) {\n        buffer.ldi.push({\n            time: currentTime, \n            device_id: deviceId,\n            throughput: parsed.ldi.throughput || 0,\n            temperature: parsed.ldi.temperature || 0,\n            humidity: parsed.ldi.humidity || 0,\n            pressure: parsed.ldi.pressure || 0,\n            joule_effect: parsed.ldi.joule_effect || 0,\n            power_watt: parsed.ldi.power_watt || 0,\n            vibration: parsed.ldi.vibration || 0,\n            wifi_rssi: parsed.ldi.wifi_rssi || 0,\n            wifi_snr: parsed.ldi.wifi_snr || 0\n        });\n    }\n\n    const DLQ_LIMIT = 100000;\n    // ── Phase 4: ตรวจสอบเงื่อนไขการส่งข้อมูล (Flush) ────────────────────────\n    const elapsedSec = (now - buffer.lastFlush) / 1000;\n    const totalItems = buffer.sys.length + buffer.net.length + buffer.ldi.length;\n    \n    if (elapsedSec < BATCH_INTERVAL_SEC && totalItems < BUFFER_MAX) {\n        global.set(bufKey, buffer);\n        return null;\n    }\n\n    const pool = global.get('pgPool');\n    if (!pool) {\n        node.error('pgPool is missing in global context!');\n        return null;\n    }\n\n    // ตัดข้อมูลเก่าทิ้งถ้า DB พังนานเกินไป (FIFO DLQ)\n    if (buffer.sys.length > DLQ_LIMIT) buffer.sys = buffer.sys.slice(-DLQ_LIMIT);\n    if (buffer.net.length > DLQ_LIMIT) buffer.net = buffer.net.slice(-DLQ_LIMIT);\n    if (buffer.ldi.length > DLQ_LIMIT) buffer.ldi = buffer.ldi.slice(-DLQ_LIMIT);\n\n    // Snapshot ข้อมูลที่จะส่งรอบนี้ และเคลียร์ Global รอรับรอบใหม่ทันที\n    const toInsert = { sys: [...buffer.sys], net: [...buffer.net], ldi: [...buffer.ldi] };\n    global.set(bufKey, { sys: [], net: [], ldi: [], lastFlush: Date.now() });\n\n    const queries = [\n        ...buildQueries('public.sys_metrics', ['\"time\"', 'device_id', 'cpu_cores', 'cpu_load_percent', 'ram_total_mb', 'ram_used_mb', 'ram_free_mb', 'disk_total_gb', 'disk_used_gb', 'disk_free_gb', 'disk_description', 'temp_c'], toInsert.sys),\n        ...buildQueries('public.net_metrics', ['\"time\"', 'device_id', 'iface_name', 'rx_mbps', 'tx_mbps', 'rx_errors', 'tx_errors', 'rx_drops', 'tx_drops', 'status'], toInsert.net),\n        ...buildQueries('public.ldi_metrics', ['\"time\"', 'device_id', 'throughput', 'temperature', 'humidity', 'pressure', 'joule_effect', 'power_watt', 'vibration', 'wifi_rssi', 'wifi_snr'], toInsert.ldi)\n    ];\n\n    if (queries.length === 0) return null;\n\n    (async () => {\n        const results = [];\n        for (const q of queries) {\n            try {\n                const res = await pool.query(q.sql, q.params);\n                results.push({ status: 'fulfilled', value: res });\n            } catch (err) {\n                results.push({ status: 'rejected', reason: err });\n            }\n        }\n        // Simulate .then block\n        (() => {\n            let failedSys = []; let failedNet = []; let failedLdi = [];\n            results.forEach((res, i) => {\n                if(res.status === 'rejected') {\n                    node.error('DB Chunk Error: ' + res.reason.message);\n                    // กู้คืนข้อมูลที่พังกลับเข้า DLQ\n                    // เนื่องจาก queries เรียงตาม Sys -> Net -> LDI \n                    // เราต้อง Map กลับไปให้ถูก (เพื่อความง่าย โยนทุกอย่างที่ไม่ผ่านเข้า Sys/Net/LDI Queue รวม)\n                    // (Implementation เบื้องต้น: โยน toInsert กลับไปทั้งหมดเพื่อป้องกันข้อมูลสูญหาย)\n                    failedSys = toInsert.sys;\n                    failedNet = toInsert.net;\n                    failedLdi = toInsert.ldi;\n                }\n            });\n            \n            if (failedSys.length > 0 || failedNet.length > 0 || failedLdi.length > 0) {\n                const currentBuffer = global.get(bufKey) || { sys: [], net: [], ldi: [], lastFlush: Date.now() };\n                currentBuffer.sys = [...failedSys, ...currentBuffer.sys].slice(-DLQ_LIMIT);\n                currentBuffer.net = [...failedNet, ...currentBuffer.net].slice(-DLQ_LIMIT);\n                currentBuffer.ldi = [...failedLdi, ...currentBuffer.ldi].slice(-DLQ_LIMIT);\n                global.set(bufKey, currentBuffer);\n                if (fs) {\n                    try { fs.writeFileSync(dlqFile, JSON.stringify(currentBuffer)); } catch(e) { node.error('DLQ sync write error: ' + e.message); }\n                }\n            }\n        })();\n    })().catch(err => {\n            node.error(` DB Outage! Disk-Backed Retry Queue Activated: ${err.message}`);\n            // DLQ: เอาข้อมูลที่ส่งไม่ผ่าน กลับไปต่อท้ายคิวปัจจุบัน\n            const currentBuffer = global.get(bufKey) || { sys: [], net: [], ldi: [], lastFlush: Date.now() };\n            currentBuffer.sys = [...toInsert.sys, ...currentBuffer.sys];\n            currentBuffer.net = [...toInsert.net, ...currentBuffer.net];\n            currentBuffer.ldi = [...toInsert.ldi, ...currentBuffer.ldi];\n            global.set(bufKey, currentBuffer);\n            \n            // เขียนลง Harddisk (Backup) ป้องกัน Node-RED ดับระหว่าง DB ล่ม\n            if (fs) {\n                try { fs.writeFileSync(dlqFile, JSON.stringify(currentBuffer)); } catch(fsErr) { node.error('Failed to write DLQ to disk: ' + fsErr.message); }\n            }\n        });\n    return null;\n\n} catch (err) {\n    node.error(`Parser Crash: ${err.message}`, msg);\n    return null;\n}\n\nfunction buildQueries(tableName, columns, rows) {\n    if (!rows || rows.length === 0) return [];\n    const CHUNK_SIZE = 500;\n    const results = [];\n    for (let i = 0; i < rows.length; i += CHUNK_SIZE) {\n        const chunk = rows.slice(i, i + CHUNK_SIZE);\n        const params = [];\n        const placeholders = chunk.map((row) => {\n            const tokens = columns.map((col) => {\n                const key = col.replace(/\"/g, '');\n                let val = row[key];\n                if (val === null) return 'NULL';\n                params.push(val);\n                const paramIndex = params.length;\n                return key === 'disk_description' ? `$${paramIndex}::jsonb` : `$${paramIndex}`;\n            });\n            return `(${tokens.join(',')})`;\n        }).join(',');\n        results.push({ sql: `INSERT INTO ${tableName} (${columns.join(',')}) VALUES ${placeholders}`, params });\n    }\n    return results;\n}",
         "outputs": 1,
         "timeout": "15",
         "noerr": 0,
@@ -481,7 +671,7 @@
         "type": "function",
         "z": "ims-tab-v5",
         "name": "Generate 254 IPs",
-        "func": "const os = global.get('os');\nconst msgs = [];\nconst communityString = msg.community || env.get('SNMP_COMMUNITY') || 'public';\nconst communities = communityString.split(',').map(c => c.trim());\nlet subnetsToScan = [];\n\nif (msg.subnet && msg.subnet !== 'AUTO') {\n    subnetsToScan.push(msg.subnet);\n} else {\n    const envSubnets = env.get('DISCOVERY_SUBNETS');\n    if (envSubnets) {\n        subnetsToScan = envSubnets.split(',').map(s => s.trim());\n    } else {\n        const nets = os.networkInterfaces();\n        for (const name of Object.keys(nets)) {\n            for (const net of nets[name]) {\n                // Ignore docker default bridge networks and localhost\n                if (net.family === 'IPv4' && !net.internal && !net.address.startsWith('172.')) {\n                    const parts = net.address.split('.');\n                    parts.pop();\n                    subnetsToScan.push(parts.join('.') + '.');\n                }\n            }\n        }\n        if (subnetsToScan.length === 0) {\n            subnetsToScan.push('192.168.1.'); // Safe fallback\n            node.warn(\"No physical interfaces found. Falling back to 192.168.1.x. Please set DISCOVERY_SUBNETS in .env\");\n        }\n    }\n}\n\nfor (const subnet of subnetsToScan) {\n    let prefix = subnet.endsWith('.') ? subnet : subnet + '.';\n    for (let i = 1; i <= 254; i++) {\n        let targetIp = prefix + i;\n        for (const comm of communities) {\n            msgs.push({ ip: targetIp, community: comm });\n        }\n    }\n}\n\nif (msgs.length > 5000) {\n    node.warn(\"IP count exceeded 5000. Truncating to prevent network flood.\");\n    msgs.length = 5000;\n}\nreturn [msgs];",
+        "func": "const os = global.get('os');\nconst msgs = [];\nconst communityString = msg.community || env.get('SNMP_COMMUNITY') || 'public';\nconst communities = communityString.split(',').map(c => c.trim());\nlet subnetsToScan = [];\n\nif (msg.subnet && msg.subnet !== 'AUTO') {\n    subnetsToScan.push(msg.subnet);\n} else {\n    const envSubnets = env.get('DISCOVERY_SUBNETS');\n    if (envSubnets) {\n        subnetsToScan = envSubnets.split(',').map(s => s.trim());\n    } else {\n        const nets = os.networkInterfaces();\n        for (const name of Object.keys(nets)) {\n            for (const net of nets[name]) {\n                // Ignore docker default bridge networks and localhost\n                if (net.family === 'IPv4' && !net.internal && !net.address.startsWith('172.')) {\n                    const parts = net.address.split('.');\n                    parts.pop();\n                    subnetsToScan.push(parts.join('.') + '.');\n                }\n            }\n        }\n        if (subnetsToScan.length === 0) {\n            node.error(\"FAIL LOUD: No physical interfaces found and DISCOVERY_SUBNETS not set. Aborting discovery.\");\n            return null;\n        }\n    }\n}\n\nfor (const subnet of subnetsToScan) {\n    let prefix = subnet.endsWith('.') ? subnet : subnet + '.';\n    for (let i = 1; i <= 254; i++) {\n        let targetIp = prefix + i;\n        for (const comm of communities) {\n            msgs.push({ ip: targetIp, community: comm });\n        }\n    }\n}\n\nnode.warn(\"Generated \" + msgs.length + \" IPs for discovery.\");\nreturn [msgs];",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
@@ -521,7 +711,7 @@
         "type": "function",
         "z": "ims-tab-v5",
         "name": "Register to Database",
-        "func": "const pool = global.get('pgPool');\nif (!pool) return null;\n\n// ใช้วิธีนำ IP มาต่อท้าย sysName ถ้ามี เพื่อป้องกันอุปกรณ์ชื่อซ้ำกันทับกันเองใน Database\nconst safeName = (msg.sysName && msg.sysName.trim() !== '') ? msg.sysName.trim().replace(/\\s+/g, '_') : 'AUTO';\nconst machineId = safeName + '_' + msg.ip.replace(/\\./g, '_');\nconst hostname = msg.ip;\nconst community = msg.community || 'public';\n\nconst sql = `\n    INSERT INTO public.devices (device_id, hostname, snmp_community, snmp_port, enabled)\n    VALUES ($1, $2, $3, 161, true)\n    ON CONFLICT (device_id) DO UPDATE\n    SET hostname = EXCLUDED.hostname,\n        snmp_community = EXCLUDED.snmp_community\n`; //, location, device_type\n\npool.query(sql, [machineId, hostname, community])\n    .then(result => {\n        node.warn(`✅ Upserted device: ${machineId} (${hostname})`);\n    })\n    .catch(err => {\n        node.error(`Failed to register ${hostname}: ${err.message}`);\n    });\n\nreturn null;",
+        "func": "const pool = global.get('pgPool');\nif (!pool) return null;\n\n// ใช้วิธีนำ IP มาต่อท้าย sysName ถ้ามี เพื่อป้องกันอุปกรณ์ชื่อซ้ำกันทับกันเองใน Database\nconst safeName = (msg.sysName && msg.sysName.trim() !== '') ? msg.sysName.trim().replace(/\\s+/g, '_') : 'AUTO';\nconst machineId = safeName + '_' + msg.ip.replace(/\\./g, '_');\nconst hostname = (msg.sysName && msg.sysName.trim() !== '') ? msg.sysName.trim() : msg.ip;\nconst ipAddress = msg.ip;\nconst community = msg.community || 'public';\n\nconst sql = `\n    INSERT INTO public.devices (device_id, hostname, ip_address, snmp_community, snmp_port, enabled)\n    VALUES ($1, $2, $3, $4, 161, true)\n    ON CONFLICT (device_id) DO UPDATE\n    SET hostname = EXCLUDED.hostname,\n        ip_address = EXCLUDED.ip_address,\n        snmp_community = EXCLUDED.snmp_community\n`; \n\npool.query(sql, [machineId, hostname, ipAddress, community])\n    .then(result => {\n        node.warn(`✅ Upserted device: ${machineId} (${hostname})`);\n    })\n    .catch(err => {\n        node.error(`Failed to register ${hostname}: ${err.message}`);\n    });\n\nreturn null;",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
@@ -567,12 +757,7 @@
         "props": [
             {
                 "p": "subnet",
-                "v": "AUTO",
-                "vt": "str"
-            },
-            {
-                "p": "subnet",
-                "v": "192.168.2.",
+                "v": "172.21.0.",
                 "vt": "str"
             }
         ],
@@ -594,7 +779,7 @@
         "type": "function",
         "z": "bab2d8a0c0cd8f61",
         "name": "Generate 254 IPs",
-        "func": "const os = global.get('os');\nconst msgs = [];\nconst communityString = msg.community || env.get('SNMP_COMMUNITY') || 'public';\nconst communities = communityString.split(',').map(c => c.trim());\nlet subnetsToScan = [];\n\nif (msg.subnet && msg.subnet !== 'AUTO') {\n    subnetsToScan.push(msg.subnet);\n} else {\n    const envSubnets = env.get('DISCOVERY_SUBNETS');\n    if (envSubnets) {\n        subnetsToScan = envSubnets.split(',').map(s => s.trim());\n    } else {\n        const nets = os.networkInterfaces();\n        for (const name of Object.keys(nets)) {\n            for (const net of nets[name]) {\n                // Ignore docker default bridge networks and localhost\n                if (net.family === 'IPv4' && !net.internal && !net.address.startsWith('172.')) {\n                    const parts = net.address.split('.');\n                    parts.pop();\n                    subnetsToScan.push(parts.join('.') + '.');\n                }\n            }\n        }\n        if (subnetsToScan.length === 0) {\n            subnetsToScan.push('192.168.1.'); // Safe fallback\n            node.warn(\"No physical interfaces found. Falling back to 192.168.1.x. Please set DISCOVERY_SUBNETS in .env\");\n        }\n    }\n}\n\nfor (const subnet of subnetsToScan) {\n    let prefix = subnet.endsWith('.') ? subnet : subnet + '.';\n    for (let i = 1; i <= 254; i++) {\n        let targetIp = prefix + i;\n        for (const comm of communities) {\n            msgs.push({ ip: targetIp, community: comm });\n        }\n    }\n}\n\nif (msgs.length > 5000) {\n    node.warn(\"IP count exceeded 5000. Truncating to prevent network flood.\");\n    msgs.length = 5000;\n}\nreturn [msgs];",
+        "func": "const os = global.get('os');\nconst msgs = [];\nconst communityString = msg.community || env.get('SNMP_COMMUNITY') || 'public';\nconst communities = communityString.split(',').map(c => c.trim());\nlet subnetsToScan = [];\n\nif (msg.subnet && msg.subnet !== 'AUTO') {\n    subnetsToScan.push(msg.subnet);\n} else {\n    const envSubnets = env.get('DISCOVERY_SUBNETS');\n    if (envSubnets) {\n        subnetsToScan = envSubnets.split(',').map(s => s.trim());\n    } else {\n        const nets = os.networkInterfaces();\n        for (const name of Object.keys(nets)) {\n            for (const net of nets[name]) {\n                // Ignore docker default bridge networks and localhost\n                if (net.family === 'IPv4' && !net.internal && !net.address.startsWith('172.')) {\n                    const parts = net.address.split('.');\n                    parts.pop();\n                    subnetsToScan.push(parts.join('.') + '.');\n                }\n            }\n        }\n        if (subnetsToScan.length === 0) {\n            node.error(\"FAIL LOUD: No physical interfaces found and DISCOVERY_SUBNETS not set. Aborting discovery.\");\n            return null;\n        }\n    }\n}\n\nfor (const subnet of subnetsToScan) {\n    let prefix = subnet.endsWith('.') ? subnet : subnet + '.';\n    for (let i = 1; i <= 254; i++) {\n        let targetIp = prefix + i;\n        for (const comm of communities) {\n            msgs.push({ ip: targetIp, community: comm });\n        }\n    }\n}\n\nnode.warn(\"Generated \" + msgs.length + \" IPs for discovery.\");\nreturn [msgs];",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
@@ -634,7 +819,7 @@
         "type": "function",
         "z": "bab2d8a0c0cd8f61",
         "name": "Register to Database",
-        "func": "const pool = global.get('pgPool');\nif (!pool) return null;\n\n// ใช้วิธีนำ IP มาต่อท้าย sysName ถ้ามี เพื่อป้องกันอุปกรณ์ชื่อซ้ำกันทับกันเองใน Database\nconst safeName = (msg.sysName && msg.sysName.trim() !== '') ? msg.sysName.trim().replace(/\\s+/g, '_') : 'AUTO';\nconst machineId = safeName + '_' + msg.ip.replace(/\\./g, '_');\nconst hostname = msg.ip;\nconst community = msg.community || 'public';\n\nconst sql = `\n    INSERT INTO public.devices (device_id, hostname, snmp_community, snmp_port, enabled)\n    VALUES ($1, $2, $3, 161, true)\n    ON CONFLICT (device_id) DO UPDATE\n    SET hostname = EXCLUDED.hostname,\n        snmp_community = EXCLUDED.snmp_community\n`; //, location, device_type\n\npool.query(sql, [machineId, hostname, community])\n    .then(result => {\n        node.warn(`✅ Upserted device: ${machineId} (${hostname})`);\n    })\n    .catch(err => {\n        node.error(`Failed to register ${hostname}: ${err.message}`);\n    });\n\nreturn null;",
+        "func": "const pool = global.get('pgPool');\nif (!pool) return null;\n\n// ใช้วิธีนำ IP มาต่อท้าย sysName ถ้ามี เพื่อป้องกันอุปกรณ์ชื่อซ้ำกันทับกันเองใน Database\nconst safeName = (msg.sysName && msg.sysName.trim() !== '') ? msg.sysName.trim().replace(/\\s+/g, '_') : 'AUTO';\nconst machineId = safeName + '_' + msg.ip.replace(/\\./g, '_');\nconst hostname = (msg.sysName && msg.sysName.trim() !== '') ? msg.sysName.trim() : msg.ip;\nconst ipAddress = msg.ip;\nconst community = msg.community || 'public';\n\nconst sql = `\n    INSERT INTO public.devices (device_id, hostname, ip_address, snmp_community, snmp_port, enabled)\n    VALUES ($1, $2, $3, $4, 161, true)\n    ON CONFLICT (device_id) DO UPDATE\n    SET hostname = EXCLUDED.hostname,\n        ip_address = EXCLUDED.ip_address,\n        snmp_community = EXCLUDED.snmp_community\n`; \n\npool.query(sql, [machineId, hostname, ipAddress, community])\n    .then(result => {\n        node.warn(`✅ Upserted device: ${machineId} (${hostname})`);\n    })\n    .catch(err => {\n        node.error(`Failed to register ${hostname}: ${err.message}`);\n    });\n\nreturn null;",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
@@ -701,197 +886,5 @@
                 "bc1d643486ea5ec8"
             ]
         ]
-    },
-    {
-        "id": "alert_http_in",
-        "type": "http in",
-        "z": "ims-alert-tab",
-        "name": "POST /alert-webhook",
-        "url": "/alert-webhook",
-        "method": "post",
-        "upload": false,
-        "swaggerDoc": "",
-        "x": 160,
-        "y": 200,
-        "wires": [
-            [
-                "alert_respond",
-                "alert_format"
-            ]
-        ]
-    },
-    {
-        "id": "alert_respond",
-        "type": "http response",
-        "z": "ims-alert-tab",
-        "name": "200 OK",
-        "statusCode": "200",
-        "headers": {
-            "Content-Type": "application/json"
-        },
-        "x": 400,
-        "y": 120,
-        "wires": []
-    },
-    {
-        "id": "alert_format",
-        "type": "function",
-        "z": "ims-alert-tab",
-        "name": "Format Alert Text",
-        "func": "const payload = msg.payload;\nif (!payload || !payload.alerts) return null;\n\nconst alerts = payload.alerts;\nlet msgText = '\\ud83d\\udd14 *IMS SYSTEM ALERT [' + (payload.status || 'unknown').toUpperCase() + ']* \\ud83d\\udd14\\n\\n';\n\nfor (let i = 0; i < alerts.length; i++) {\n    const a = alerts[i];\n    const labels = a.labels || {};\n    const annotations = a.annotations || {};\n    \n    let icon = '\\u26a0\\ufe0f';\n    if (labels.severity === 'critical') icon = '\\ud83d\\udd25';\n    if (payload.status === 'resolved') icon = '\\u2705';\n\n    msgText += icon + ' *' + (labels.alertname || 'Unknown Alert') + '*\\n';\n    msgText += '\\ud83d\\udda5\\ufe0f *Host:* ' + (labels.machine_id || labels.instance || 'System') + '\\n';\n    msgText += '\\ud83d\\udcdd *Detail:* ' + (annotations.summary || 'N/A') + '\\n';\n    if (annotations.description) msgText += '\\ud83d\\udca1 *Desc:* ' + annotations.description + '\\n';\n    \n    const startTime = a.startsAt ? new Date(a.startsAt).toLocaleString('th-TH') : 'Unknown';\n    msgText += '\\ud83d\\udd52 *Time:* ' + startTime + '\\n';\n    msgText += '-------------------\\n';\n}\n\n// Truncate if too long to prevent API 400 Bad Request during major outages\nif (msgText.length > 4000) {\n    msgText = msgText.substring(0, 4000) + '\\n\\n... [TRUNCATED: Too many alerts!]';\n}\nmsg.payload = msgText;\nreturn msg;",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 420,
-        "y": 240,
-        "wires": [
-            [
-                "alert_debug",
-                "alert_line_format",
-                "alert_teams_format"
-            ]
-        ]
-    },
-    {
-        "id": "alert_debug",
-        "type": "debug",
-        "z": "ims-alert-tab",
-        "name": "Alert Log",
-        "active": true,
-        "tosidebar": true,
-        "console": true,
-        "tostatus": true,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "payload",
-        "statusType": "auto",
-        "x": 790,
-        "y": 240,
-        "wires": []
-    },
-    {
-        "id": "alert_line_format",
-        "type": "function",
-        "z": "ims-alert-tab",
-        "name": "Format LINE Messaging API",
-        "func": "const token = env.get('LINE_CHANNEL_ACCESS_TOKEN') || '';\nconst userId = env.get('LINE_USER_ID') || '';\n\nif (!token || !userId) {\n    node.warn('LINE Messaging API not configured — set LINE_CHANNEL_ACCESS_TOKEN and LINE_USER_ID env vars');\n    return null;\n}\n\nmsg.headers = {\n    'Authorization': 'Bearer ' + token,\n    'Content-Type': 'application/json'\n};\nmsg.payload = JSON.stringify({\n    to: userId,\n    messages: [{ type: 'text', text: msg.payload }]\n});\nreturn msg;",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 500,
-        "y": 200,
-        "wires": [
-            [
-                "alert_line_notify"
-            ]
-        ]
-    },
-    {
-        "id": "alert_line_notify",
-        "type": "http request",
-        "z": "ims-alert-tab",
-        "name": "LINE Messaging API",
-        "method": "POST",
-        "ret": "txt",
-        "paytoqs": "ignore",
-        "url": "https://api.line.me/v2/bot/message/push",
-        "tls": "",
-        "persist": false,
-        "proxy": "",
-        "insecureHTTPParser": false,
-        "authType": "",
-        "senderr": false,
-        "headers": [],
-        "x": 920,
-        "y": 200,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "alert_teams_format",
-        "type": "function",
-        "z": "ims-alert-tab",
-        "name": "Format Teams Webhook",
-        "func": "const url = env.get(\"TEAMS_WEBHOOK_URL\") || \"\";\n\nif (!url) {\n    node.warn(\"MS Teams webhook not configured — set TEAMS_WEBHOOK_URL env var\");\n    return null;\n}\n\nconst card = {\n    \"type\": \"message\",\n    \"attachments\": [{\n        \"contentType\": \"application/vnd.microsoft.card.adaptive\",\n        \"contentUrl\": null,\n        \"content\": {\n            \"$schema\": \"http://adaptivecards.io/schemas/adaptive-card.json\",\n            \"type\": \"AdaptiveCard\",\n            \"version\": \"1.4\",\n            \"body\": [{\n                \"type\": \"TextBlock\",\n                \"text\": \"IMS System Alert\",\n                \"weight\": \"bolder\",\n                \"size\": \"large\",\n                \"color\": \"attention\"\n            }, {\n                \"type\": \"TextBlock\",\n                \"text\": msg.payload,\n                \"wrap\": true,\n                \"spacing\": \"medium\"\n            }],\n            \"msteams\": {\n                \"entities\": []\n            }\n        }\n    }]\n};\nmsg.payload = JSON.stringify(card);\nmsg.headers = { \"Content-Type\": \"application/json\" };\nmsg.url = url;\nreturn msg;",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 570,
-        "y": 300,
-        "wires": [
-            [
-                "alert_teams_webhook"
-            ]
-        ]
-    },
-    {
-        "id": "alert_teams_webhook",
-        "type": "http request",
-        "z": "ims-alert-tab",
-        "name": "MS Teams Webhook",
-        "method": "POST",
-        "ret": "txt",
-        "paytoqs": "ignore",
-        "url": "",
-        "tls": "",
-        "persist": false,
-        "proxy": "",
-        "insecureHTTPParser": false,
-        "authType": "",
-        "senderr": false,
-        "headers": [],
-        "x": 1020,
-        "y": 260,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "alert_catch",
-        "type": "catch",
-        "z": "ims-alert-tab",
-        "name": "Catch Alert Errors",
-        "scope": [
-            "alert_format",
-            "alert_line_format",
-            "alert_line_notify",
-            "alert_teams_format",
-            "alert_teams_webhook"
-        ],
-        "uncaught": false,
-        "x": 640,
-        "y": 360,
-        "wires": [
-            [
-                "alert_error_debug"
-            ]
-        ]
-    },
-    {
-        "id": "alert_error_debug",
-        "type": "debug",
-        "z": "ims-alert-tab",
-        "name": "Alert Delivery Failure",
-        "active": true,
-        "tosidebar": true,
-        "console": true,
-        "tostatus": true,
-        "complete": "error",
-        "targetType": "msg",
-        "statusVal": "error.message",
-        "statusType": "msg",
-        "x": 880,
-        "y": 360,
-        "wires": []
     }
 ]
