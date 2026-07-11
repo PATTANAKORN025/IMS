@@ -4,8 +4,9 @@
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 import http from 'k6/http';
-import { check, sleep, textSummary } from 'k6';
+import { check, sleep } from 'k6';
 import { Counter, Rate, Trend } from 'k6/metrics';
+import { textSummary } from 'https://jslib.k6.io/k6-summary/0.0.2/index.js';
 
 const querySuccess = new Rate('query_success');
 const queryDuration = new Trend('query_duration', true);
@@ -37,19 +38,19 @@ const QUERIES = [
   },
   {
     name: 'NOC_CPU_AllMachines',
-    sql: "SELECT time_bucket('1 minute', \"time\") AS \"time\", machine_id, AVG(cpu_load_percent) AS \"CPU\" FROM public.machine_telemetry WHERE \"time\" > NOW() - INTERVAL '1 hour' GROUP BY 1, 2 ORDER BY 1",
+    sql: "SELECT bucket AS \"time\", device_id, avg_cpu AS \"CPU\" FROM public.sys_hourly WHERE bucket > NOW() - INTERVAL '1 hour' ORDER BY 1",
   },
   {
     name: 'NOC_Temperature',
-    sql: "SELECT time_bucket('1 minute', \"time\") AS \"time\", machine_id, AVG(temp_c) AS \"Temp\" FROM public.machine_telemetry WHERE \"time\" > NOW() - INTERVAL '1 hour' AND temp_c > 0 GROUP BY 1, 2 ORDER BY 1",
+    sql: "SELECT bucket AS \"time\", device_id, max_temp AS \"Temp\" FROM public.sys_hourly WHERE bucket > NOW() - INTERVAL '1 hour' AND max_temp > 0 ORDER BY 1",
   },
   {
     name: 'Engineering_Detail',
-    sql: "SELECT \"time\", cpu_load_percent, ram_used_mb, disk_used_gb, temp_c, rx_mbps FROM public.machine_telemetry WHERE machine_id = 'ERP-MASTER-UBUNTU' AND \"time\" > NOW() - INTERVAL '1 hour' ORDER BY \"time\" DESC LIMIT 100",
+    sql: "SELECT s.\"time\", s.cpu_load_percent, s.ram_used_mb, s.disk_used_gb, s.temp_c, n.rx_mbps FROM public.sys_metrics s LEFT JOIN public.net_metrics n ON n.device_id = s.device_id AND n.\"time\" > NOW() - INTERVAL '1 hour' WHERE s.device_id = 'ERP-MASTER-UBUNTU' AND s.\"time\" > NOW() - INTERVAL '1 hour' ORDER BY s.\"time\" DESC LIMIT 100",
   },
   {
     name: 'Capacity_DiskTrend',
-    sql: "SELECT time_bucket('1 day', \"time\") AS \"time\", machine_id, AVG(disk_used_gb) AS \"Used\" FROM public.machine_telemetry WHERE \"time\" > NOW() - INTERVAL '30 days' GROUP BY 1, 2 ORDER BY 1",
+    sql: "SELECT time_bucket('1 day', bucket) AS \"time\", device_id, AVG(avg_disk_used) AS \"Used\" FROM public.sys_hourly WHERE bucket > NOW() - INTERVAL '30 days' GROUP BY 1, 2 ORDER BY 1",
   },
 ];
 

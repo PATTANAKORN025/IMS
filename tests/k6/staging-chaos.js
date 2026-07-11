@@ -20,7 +20,6 @@
 import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { Counter, Rate, Trend } from 'k6/metrics';
-import { exec } from 'k6/exec';
 
 const webhookSuccess = new Rate('webhook_success');
 const webhookDuration = new Trend('webhook_duration', true);
@@ -53,34 +52,8 @@ function injectFault() {
   if (now - lastChaosTime < CHAOS_INTERVAL) return;
   lastChaosTime = now;
 
-  try {
-    if (CHAOS_MODE === 'pgbouncer' || CHAOS_MODE === 'all') {
-      exec.run('docker compose kill pgbouncer');
-      chaosEvents.add(1);
-      console.log('[CHAOS] PgBouncer killed');
-      sleep(15);
-      exec.run('docker compose up -d pgbouncer');
-      console.log('[CHAOS] PgBouncer restored');
-    }
-    if (CHAOS_MODE === 'alertmanager' || CHAOS_MODE === 'all') {
-      exec.run('docker compose kill alertmanager');
-      chaosEvents.add(1);
-      console.log('[CHAOS] Alertmanager killed');
-      sleep(10);
-      exec.run('docker compose up -d alertmanager');
-      console.log('[CHAOS] Alertmanager restored');
-    }
-    if (CHAOS_MODE === 'network') {
-      exec.run('docker compose exec node-red tc qdisc add dev eth0 root netem delay 500ms');
-      chaosEvents.add(1);
-      console.log('[CHAOS] 500ms network delay injected');
-      sleep(20);
-      exec.run('docker compose exec node-red tc qdisc del dev eth0 root');
-      console.log('[CHAOS] Network delay removed');
-    }
-  } catch (e) {
-    console.log('[CHAOS] Fault injection error:', e.message);
-  }
+  chaosEvents.add(1);
+  console.log(`[CHAOS] ${CHAOS_MODE} marker emitted. Apply Docker/network faults externally while this test runs.`);
 }
 
 export default function () {

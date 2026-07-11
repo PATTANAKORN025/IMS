@@ -70,6 +70,7 @@ export default function () {
     pipelineSuccess.add(0);
   }
 
+  endToEndDuration.add(Date.now() - e2eStart);
   sleep(Math.random() * 3 + 1);
 }
 
