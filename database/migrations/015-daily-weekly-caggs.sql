@@ -60,3 +60,65 @@ END $$;
 ALTER MATERIALIZED VIEW public.sys_daily SET (timescaledb.materialized_only = false);
 ALTER MATERIALIZED VIEW public.net_daily SET (timescaledb.materialized_only = false);
 ALTER MATERIALIZED VIEW public.ldi_daily SET (timescaledb.materialized_only = false);
+
+
+-- ══════════════════════════════════════════════════════════════
+-- Weekly Continuous Aggregates (appended to 015)
+-- Built on daily CAGGs for 90d+ dashboards
+-- ══════════════════════════════════════════════════════════════
+
+-- ── sys_weekly ─────────────────────────────────────────
+CREATE MATERIALIZED VIEW IF NOT EXISTS public.sys_weekly
+WITH (timescaledb.continuous) AS
+SELECT time_bucket('1 week', bucket) AS bucket, device_id,
+    AVG(avg_cpu) AS avg_cpu, MAX(max_cpu) AS max_cpu,
+    AVG(avg_ram_used) AS avg_ram_used, AVG(avg_ram_total) AS avg_ram_total,
+    AVG(avg_disk_used) AS avg_disk_used, AVG(avg_disk_total) AS avg_disk_total,
+    MAX(max_temp) AS max_temp
+FROM public.sys_daily GROUP BY bucket, device_id WITH NO DATA;
+
+-- ── net_weekly ─────────────────────────────────────────
+CREATE MATERIALIZED VIEW IF NOT EXISTS public.net_weekly
+WITH (timescaledb.continuous) AS
+SELECT time_bucket('1 week', bucket) AS bucket, device_id, iface_name,
+    AVG(avg_rx) AS avg_rx, MAX(max_rx) AS max_rx,
+    AVG(avg_tx) AS avg_tx, MAX(max_tx) AS max_tx,
+    SUM(total_errors) AS total_errors, SUM(total_drops) AS total_drops
+FROM public.net_daily GROUP BY bucket, device_id, iface_name WITH NO DATA;
+
+-- ── ldi_weekly ─────────────────────────────────────────
+CREATE MATERIALIZED VIEW IF NOT EXISTS public.ldi_weekly
+WITH (timescaledb.continuous) AS
+SELECT time_bucket('1 week', bucket) AS bucket, device_id,
+    AVG(avg_throughput) AS avg_throughput, MAX(max_temp) AS max_temp,
+    AVG(avg_humidity) AS avg_humidity, AVG(avg_power) AS avg_power,
+    AVG(avg_vibration) AS avg_vibration
+FROM public.ldi_daily GROUP BY bucket, device_id WITH NO DATA;
+
+-- ── Weekly CAGG Refresh Policies ───────────────────────
+-- Refresh every 6 hours, covering last 10 days of daily data
+DO $$ BEGIN
+    PERFORM add_continuous_aggregate_policy('public.sys_weekly',
+        start_offset => INTERVAL '10 days', end_offset => INTERVAL '6 hours',
+        schedule_interval => INTERVAL '6 hours', if_not_exists => TRUE);
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+DO $$ BEGIN
+    PERFORM add_continuous_aggregate_policy('public.net_weekly',
+        start_offset => INTERVAL '10 days', end_offset => INTERVAL '6 hours',
+        schedule_interval => INTERVAL '6 hours', if_not_exists => TRUE);
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+DO $$ BEGIN
+    PERFORM add_continuous_aggregate_policy('public.ldi_weekly',
+        start_offset => INTERVAL '10 days', end_offset => INTERVAL '6 hours',
+        schedule_interval => INTERVAL '6 hours', if_not_exists => TRUE);
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+-- ── Enable real-time aggregation for weekly CAGGs ──────
+ALTER MATERIALIZED VIEW public.sys_weekly SET (timescaledb.materialized_only = false);
+ALTER MATERIALIZED VIEW public.net_weekly SET (timescaledb.materialized_only = false);
+ALTER MATERIALIZED VIEW public.ldi_weekly SET (timescaledb.materialized_only = false);
