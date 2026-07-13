@@ -46,3 +46,8 @@ DO $$ BEGIN PERFORM remove_compression_policy('public.net_metrics', if_exists =>
 DO $$ BEGIN PERFORM add_compression_policy('public.sys_metrics', INTERVAL '3 days', if_not_exists => TRUE); EXCEPTION WHEN OTHERS THEN NULL; END $$;
 DO $$ BEGIN PERFORM add_compression_policy('public.net_metrics', INTERVAL '3 days', if_not_exists => TRUE); EXCEPTION WHEN OTHERS THEN NULL; END $$;
 -- ldi_metrics: keep 7-day compression (low write volume)
+
+-- ── Weekly CAGGs: Retain forever (tiny footprint) ──────
+-- Rationale: Weekly data at 1000 devices = ~52K rows/year.
+-- Storage cost is negligible. Keep for long-term trend analysis.
+-- NOTE: No add_retention_policy call needed — default is no retention.
