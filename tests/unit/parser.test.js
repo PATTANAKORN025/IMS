@@ -55,6 +55,26 @@ test('handles empty payload', () => {
     assert.strictEqual(r.cpu.coreCount, 0);
 });
 
+test('parses Juniper EX4000 CPU OID', () => {
+    const items = [
+        { oid: '1.3.6.1.4.1.2636.3.1.13.1.8.9.1.0.0', value: 35 },
+    ];
+    const r = parseAll(items, 'cpu', { ...emptyState });
+    assert.strictEqual(r.cpu.coreCount, 1);
+    assert.strictEqual(r.cpu.loadPercent, 35);
+});
+
+test('mixes Linux and Juniper CPU OIDs', () => {
+    const items = [
+        { oid: '1.3.6.1.2.1.25.3.3.1.2.1', value: 50 },
+        { oid: '1.3.6.1.2.1.25.3.3.1.2.2', value: 70 },
+        { oid: '1.3.6.1.4.1.2636.3.1.13.1.8.9.1.0.0', value: 25 },
+    ];
+    const r = parseAll(items, 'cpu', { ...emptyState });
+    assert.strictEqual(r.cpu.coreCount, 3);
+    assert.strictEqual(r.cpu.loadPercent, 48.33);
+});
+
 console.log('\nparseAll - Temperature walker');
 test('finds maximum temperature', () => {
     const items = [
@@ -69,6 +89,23 @@ test('preserves existing max from state', () => {
     const items = [{ oid: '1.3.6.1.4.1.2021.13.16.2.1.7.1', value: 30 }];
     const r = parseAll(items, 'temp', { ...emptyState, temp: 55 });
     assert.strictEqual(r.temp.maxC, 55);
+});
+
+test('parses Juniper EX4000 Temperature OID', () => {
+    const items = [
+        { oid: '1.3.6.1.4.1.2636.3.1.13.1.7.9.1.0.0', value: 42 },
+    ];
+    const r = parseAll(items, 'temp', { ...emptyState });
+    assert.strictEqual(r.temp.maxC, 42);
+});
+
+test('mixes Linux and Juniper Temp OIDs', () => {
+    const items = [
+        { oid: '1.3.6.1.4.1.2021.13.16.2.1.7.0', value: 38 },
+        { oid: '1.3.6.1.4.1.2636.3.1.13.1.7.9.1.0.0', value: 52 },
+    ];
+    const r = parseAll(items, 'temp', { ...emptyState });
+    assert.strictEqual(r.temp.maxC, 52);
 });
 
 console.log('\nparseAll - LDI walker');
