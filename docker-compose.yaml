@@ -233,6 +233,12 @@ services:
         condition: service_started
       alertmanager:
         condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     networks:
       - ims-internal
       - ims-monitoring
@@ -329,7 +335,7 @@ services:
     healthcheck:
       test:
         - CMD-SHELL
-        - node -e "const http=require('http');const req=http.get('http://127.0.0.1:${NODE_RED_PORT:-1880}/',res=>process.exit(res.statusCode&&res.statusCode<500?0:1));req.on('error',()=>process.exit(1));req.setTimeout(3000,()=>{req.destroy();process.exit(1);});"
+        - node -e "const http=require('http');const req=http.get('http://127.0.0.1:${NODE_RED_PORT:-1880}/metrics',res=>{process.exit(res.statusCode===200?0:1)});req.on('error',()=>process.exit(1));req.setTimeout(3000,()=>{req.destroy();process.exit(1);});"
       <<: *healthcheck-defaults
       start_period: 45s
     depends_on:
