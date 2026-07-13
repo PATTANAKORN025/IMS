@@ -26,8 +26,6 @@ module.exports = {
         snmp: require('net-snmp'),
         pg: require('pg'),
         fs: require('fs'),
-        normalizeOid: require('./lib/snmp-normalize').normalizeOid,
-        circuitBreaker: require('./lib/circuit-breaker'),
         pgPool: new (require('pg').Pool)({
             host: process.env.PGHOST || 'ims-timescaledb',
             port: parseInt(process.env.PGPORT) || 5432,
