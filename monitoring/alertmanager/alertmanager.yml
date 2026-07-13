@@ -1,20 +1,27 @@
+# IMS Alertmanager Configuration — Phase 1: Alert Fatigue Mitigation
+# Grouping by device_id + device_type ensures all anomalies for a single
+# machine arrive as ONE notification, not N separate alerts.
+
 global:
   resolve_timeout: 5m
 
 route:
   receiver: 'ims-webhook-default'
-  group_by: ['alertname', 'cluster', 'job', 'severity']
-  group_wait: 30s
-  group_interval: 5m
-  repeat_interval: 3h
+  # Group by device identity so all alerts for one machine bundle together
+  group_by: ['alertname', 'device_id', 'device_type']
+  group_wait: 30s        # Wait 30s to collect initial burst before first notify
+  group_interval: 5m     # Don't re-notify same group more than once per 5m
+  repeat_interval: 4h    # Re-notify unresolved alerts every 4h (NOC shift handover)
   routes:
-    # Watchdog goes to null (deadman's switch)
+    # Watchdog deadman goes to null (standard Prometheus convention)
     - matchers:
         - alertname="Watchdog"
       receiver: 'null'
       group_wait: 0s
       group_interval: 1m
       repeat_interval: 1m
+
+    # Critical: page immediately, short repeat for awareness
     - matchers:
         - severity="critical"
       receiver: 'ims-slack-critical'
@@ -23,6 +30,7 @@ route:
       repeat_interval: 30m
       continue: true
 
+    # Warning: standard NOC notification
     - matchers:
         - severity="warning"
       receiver: 'ims-webhook-default'
@@ -30,6 +38,7 @@ route:
       group_interval: 10m
       repeat_interval: 2h
 
+    # Info: dashboard-only, minimal notification
     - matchers:
         - severity="info"
       receiver: 'ims-webhook-default'
@@ -38,6 +47,7 @@ route:
 
 receivers:
   - name: 'null'
+
   - name: 'ims-webhook-default'
     webhook_configs:
       - url: 'http://node-red:1880/alert-webhook'
@@ -55,7 +65,7 @@ receivers:
         title: '{{ if eq .Status "firing" }}:rotating_light: [CRITICAL]{{ else }}:white_check_mark: [RESOLVED]{{ end }} {{ .GroupLabels.alertname }}'
         text: >-
           {{ range .Alerts }}
-          *Machine:* {{ .Labels.machine_id }}
+          *Device:* {{ .Labels.device_id }} ({{ .Labels.device_type }})
           *Summary:* {{ .Annotations.summary }}
           *Description:* {{ .Annotations.description }}
           *Started:* {{ .StartsAt.Format "2006-01-02 15:04:05" }}
@@ -70,18 +80,23 @@ receivers:
         send_resolved: true
 
 inhibit_rules:
-  # A down service (blackbox probe_success==0) suppresses its own latency /
-  # SLA-risk warnings for the same instance — no point paging on slowness
-  # when the thing is already hard-down.
+  # A down service suppresses its own latency/SLA warnings
   - source_matchers:
       - alertname="ServiceDown"
     target_matchers:
       - alertname=~"ServiceHighLatency|SLABreachWarning"
     equal: ['instance']
 
-  # Any critical on an instance suppresses warnings on that same instance.
+  # Any critical on a device suppresses warnings on the same device
   - source_matchers:
       - severity="critical"
     target_matchers:
       - severity="warning"
-    equal: ['instance']
+    equal: ['device_id']
+
+  # Network-down suppresses bandwidth alerts on same device
+  - source_matchers:
+      - alertname="InterfaceDown"
+    target_matchers:
+      - alertname="BandwidthSaturation"
+    equal: ['device_id']
