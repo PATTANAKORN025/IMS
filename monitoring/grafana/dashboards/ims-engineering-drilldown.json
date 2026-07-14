@@ -226,12 +226,12 @@
       ],
       "links": [
         {
-          "title": "Capacity forecast →",
+          "title": "Capacity forecast \u2192",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         },
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -303,12 +303,12 @@
       ],
       "links": [
         {
-          "title": "Capacity forecast →",
+          "title": "Capacity forecast \u2192",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         },
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -380,12 +380,12 @@
       ],
       "links": [
         {
-          "title": "Capacity forecast →",
+          "title": "Capacity forecast \u2192",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         },
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -454,16 +454,16 @@
           "legendFormat": "{{device_id}}"
         }
       ],
-      "description": "Current temperature (°C) for the selected machine. Yellow >70°C, Red >85°C.",
+      "description": "Current temperature (\u00b0C) for the selected machine. Yellow >70\u00b0C, Red >85\u00b0C.",
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         },
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -745,7 +745,7 @@
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -1008,7 +1008,7 @@
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -1317,7 +1317,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{metric}}",
-          "rawSql": "SELECT\n  bucket AS time,\n  device_id AS metric,\n  ROUND(AVG(max_temp)::NUMERIC, 1) AS \"Temperature (°C)\"\nFROM public.sys_hourly\nWHERE $__timeFilter(bucket) AND device_id IN (${machine_id:sqlstring}) AND max_temp > 0\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  bucket AS time,\n  device_id AS metric,\n  ROUND(AVG(max_temp)::NUMERIC, 1) AS \"Temperature (\u00b0C)\"\nFROM public.sys_hourly\nWHERE $__timeFilter(bucket) AND device_id IN (${machine_id:sqlstring}) AND max_temp > 0\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series"
         },
         {
@@ -1326,7 +1326,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{metric}}",
-          "rawSql": "SELECT\n  bucket AS time,\n  device_id AS metric,\n  ROUND(AVG(max_temp)::NUMERIC, 1) AS \"Temperature (°C)\"\nFROM public.sys_hourly\nWHERE $__timeFilter(bucket) AND device_id IN (${machine_id:sqlstring}) AND max_temp > 0\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  bucket AS time,\n  device_id AS metric,\n  ROUND(AVG(max_temp)::NUMERIC, 1) AS \"Temperature (\u00b0C)\"\nFROM public.sys_hourly\nWHERE $__timeFilter(bucket) AND device_id IN (${machine_id:sqlstring}) AND max_temp > 0\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series"
         }
       ],
@@ -1334,7 +1334,7 @@
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -1428,7 +1428,7 @@
               },
               {
                 "id": "unit",
-                "value": "µm"
+                "value": "\u00b5m"
               }
             ]
           },
@@ -1553,17 +1553,17 @@
       ],
       "links": [
         {
-          "title": "OEE & Yield →",
+          "title": "OEE & Yield \u2192",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         },
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
       ],
-      "description": "LDI manufacturing throughput (left axis, green) and Process Efficiency in µm (right axis, yellow). PE within ±10µm tolerance is normal.",
+      "description": "LDI manufacturing throughput (left axis, green) and Process Efficiency in \u00b5m (right axis, yellow). PE within \u00b110\u00b5m tolerance is normal.",
       "transparent": true
     },
     {
@@ -1613,7 +1613,7 @@
               },
               {
                 "id": "unit",
-                "value": "µm"
+                "value": "\u00b5m"
               }
             ]
           },
@@ -1761,17 +1761,17 @@
       ],
       "links": [
         {
-          "title": "OEE & Yield →",
+          "title": "OEE & Yield \u2192",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         },
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
       ],
-      "description": "Junction Efficiency in µm (purple) and Humidity % (blue, right axis). High humidity may affect LDI precision.",
+      "description": "Junction Efficiency in \u00b5m (purple) and Humidity % (blue, right axis). High humidity may affect LDI precision.",
       "transparent": true
     },
     {
@@ -1841,13 +1841,165 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "description": "LDI quality scatter with ±10µm tolerance zone (green band). Points outside the zone indicate quality risk.",
+      "description": "LDI quality scatter with \u00b110\u00b5m tolerance zone (green band). Points outside the zone indicate quality risk.",
       "transparent": true
+    },
+    {
+      "type": "row",
+      "title": "Cost & Efficiency Analytics",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 35
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Estimated Daily Power Cost (THB)",
+      "datasource": {
+        "type": "postgres",
+        "uid": "${DS_TIMESCALEDB}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 36
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currency-thb",
+          "decimals": 2,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "steps": [
+              {
+                "color": "#00FF87",
+                "value": null
+              },
+              {
+                "color": "#FF9100",
+                "value": 1000
+              },
+              {
+                "color": "#FF003C",
+                "value": 5000
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "rawSql": "WITH hourly_power AS (\n  SELECT\n    device_id,\n    AVG(power_watt) AS avg_watts\n  FROM public.ldi_metrics\n  WHERE time > NOW() - INTERVAL '24 hours'\n    AND power_watt > 0\n  GROUP BY device_id\n)\nSELECT\n  device_id AS metric,\n  ROUND((avg_watts * 24 / 1000 * 4)::NUMERIC, 2) AS \"Daily Cost (THB)\"\nFROM hourly_power\nORDER BY \"Daily Cost (THB)\" DESC\nLIMIT 10",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Power Efficiency Ratio",
+      "datasource": {
+        "type": "postgres",
+        "uid": "${DS_TIMESCALEDB}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 36
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ratio",
+          "decimals": 2,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "steps": [
+              {
+                "color": "#FF003C",
+                "value": null
+              },
+              {
+                "color": "#FF9100",
+                "value": 0.5
+              },
+              {
+                "color": "#00FF87",
+                "value": 0.8
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "rawSql": "WITH efficiency AS (\n  SELECT\n    device_id,\n    AVG(throughput) AS avg_throughput,\n    AVG(power_watt) AS avg_power\n  FROM public.ldi_metrics\n  WHERE time > NOW() - INTERVAL '24 hours'\n    AND power_watt > 0\n  GROUP BY device_id\n)\nSELECT\n  device_id AS metric,\n  CASE\n    WHEN avg_power > 0 THEN ROUND((avg_throughput / avg_power)::NUMERIC, 4)\n    ELSE 0\n  END AS \"Efficiency (THB/W)\"\nFROM efficiency\nWHERE avg_power > 0\nORDER BY \"Efficiency (THB/W)\" DESC\nLIMIT 10",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Yield Risk Index",
+      "datasource": {
+        "type": "postgres",
+        "uid": "${DS_TIMESCALEDB}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 36
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "steps": [
+              {
+                "color": "#00FF87",
+                "value": null
+              },
+              {
+                "color": "#FF9100",
+                "value": 1
+              },
+              {
+                "color": "#FF003C",
+                "value": 3
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "rawSql": "WITH baseline AS (\n  SELECT\n    device_id,\n    AVG(throughput) AS avg_throughput,\n    STDDEV(throughput) AS sigma_throughput\n  FROM public.ldi_metrics\n  WHERE time > NOW() - INTERVAL '7 days'\n  GROUP BY device_id\n),\ncurrent AS (\n  SELECT\n    device_id,\n    AVG(throughput) AS current_throughput,\n    AVG(power_watt) AS current_power\n  FROM public.ldi_metrics\n  WHERE time > NOW() - INTERVAL '5 minutes'\n  GROUP BY device_id\n)\nSELECT\n  c.device_id AS metric,\n  CASE\n    WHEN b.sigma_throughput = 0 OR b.sigma_throughput IS NULL THEN 0\n    WHEN c.current_power > b.avg_throughput * 0.8 AND c.current_throughput < b.avg_throughput - (2 * b.sigma_throughput) THEN 3\n    WHEN c.current_throughput < b.avg_throughput - b.sigma_throughput THEN 1\n    ELSE 0\n  END AS \"Risk Level\"\nFROM current c\nJOIN baseline b ON b.device_id = c.device_id\nORDER BY \"Risk Level\" DESC\nLIMIT 10",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
     },
     {
       "id": 500,
       "type": "row",
-      "title": "AIOps — ANOMALY DETECTION (3-Sigma Z-Score)",
+      "title": "AIOps \u2014 ANOMALY DETECTION (3-Sigma Z-Score)",
       "gridPos": {
         "x": 0,
         "y": 34,
@@ -1939,7 +2091,7 @@
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
