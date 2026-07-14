@@ -82,7 +82,7 @@
       },
       "options": {
         "mode": "html",
-        "content": "<div style=\"display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:rgba(12,18,30,0.8);border-bottom:1px solid rgba(0,242,254,0.2);font-family:Rajdhani,sans-serif\"><span style=\"font-family:Orbitron,sans-serif;font-size:16px;font-weight:700;letter-spacing:2px\">APEX <span style=\"color:#00F2FE\">COMMAND</span></span><span style=\"font-size:13px;letter-spacing:1px\"><a href=\"/d/ims-noc-overview\" style=\"color:#E2E8F0;text-decoration:none\">NOC OVERVIEW</a> &nbsp;|&nbsp; <a href=\"/d/ims-engineering\" style=\"color:#E2E8F0;text-decoration:none\">ENG DRILL-DOWN</a> &nbsp;|&nbsp; <a href=\"/d/ims-capacity\" style=\"color:#00FF87;font-weight:700;text-decoration:none\">CAPACITY FORECAST</a></span></div>\n<style>\n@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Orbitron:wght@400;700&display=swap');\n.dashboard-page { background: radial-gradient(circle at center, #0B0E14 0%, #030407 100%) !important; }\n.panel-container {\n  background: rgba(12, 18, 30, 0.6) !important;\n  border: 1px solid rgba(0, 242, 254, 0.15) !important;\n  border-radius: 8px !important;\n  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5) !important;\n  transition: all 0.3s ease;\n  animation: fadeUp 0.5s ease-out forwards;\n}\n.panel-container:hover {\n  border-color: rgba(0, 255, 135, 0.4) !important;\n  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(0, 255, 135, 0.05) !important;\n  backdrop-filter: blur(10px) !important;\n  -webkit-backdrop-filter: blur(10px) !important;\n  will-change: backdrop-filter;\n}\n.panel-title { font-weight: 700 !important; letter-spacing: 1px !important; color: #E2E8F0 !important; }\n.status-dot {\n  width: 8px; height: 8px; border-radius: 50%; background: #00FF87;\n  display: inline-block; margin-right: 8px;\n  animation: pulse 2s ease-in-out infinite;\n  box-shadow: 0 0 8px #00FF87;\n}\n@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.8); } }\n@keyframes fadeUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }\n</style>"
+        "content": "<div style=\"display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:rgba(12,18,30,0.8);border-bottom:1px solid rgba(0,242,254,0.2);font-family:Rajdhani,sans-serif\"><span style=\"font-family:Orbitron,sans-serif;font-size:16px;font-weight:700;letter-spacing:2px\">APEX <span style=\"color:#00F2FE\">COMMAND</span></span><span style=\"font-size:13px;letter-spacing:1px\"><a href=\"/d/ims-noc-overview\" style=\"color:#E2E8F0;text-decoration:none\">NOC OVERVIEW</a> &nbsp;|&nbsp; <a href=\"/d/ims-engineering\" style=\"color:#E2E8F0;text-decoration:none\">ENG DRILL-DOWN</a> &nbsp;|&nbsp; <a href=\"/d/ims-capacity\" style=\"color:#2DFF8B;font-weight:700;text-decoration:none\">CAPACITY FORECAST</a></span></div>\n<style>\n@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Orbitron:wght@400;700&display=swap');\n.dashboard-page { background: radial-gradient(circle at center, #0B0E14 0%, #030407 100%) !important; }\n.panel-container {\n  background: rgba(12, 18, 30, 0.6) !important;\n  border: 1px solid rgba(0, 242, 254, 0.15) !important;\n  border-radius: 8px !important;\n  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5) !important;\n  transition: all 0.3s ease;\n  animation: fadeUp 0.5s ease-out forwards;\n}\n.panel-container:hover {\n  border-color: rgba(0, 255, 135, 0.4) !important;\n  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(0, 255, 135, 0.05) !important;\n  backdrop-filter: blur(10px) !important;\n  -webkit-backdrop-filter: blur(10px) !important;\n  will-change: backdrop-filter;\n}\n.panel-title { font-weight: 700 !important; letter-spacing: 1px !important; color: #E2E8F0 !important; }\n.status-dot {\n  width: 8px; height: 8px; border-radius: 50%; background: #2DFF8B;\n  display: inline-block; margin-right: 8px;\n  animation: pulse 2s ease-in-out infinite;\n  box-shadow: 0 0 8px #2DFF8B;\n}\n@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.8); } }\n@keyframes fadeUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }\n</style>"
       },
       "datasource": null,
       "transparent": true,
@@ -171,15 +171,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#FF4D4D",
                 "value": null
               },
               {
-                "color": "#FF9100",
+                "color": "#FFD93D",
                 "value": 30
               },
               {
-                "color": "#00FF87",
+                "color": "#2DFF8B",
                 "value": 90
               }
             ]
@@ -248,19 +248,19 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
+                "color": "#FF4D4D",
                 "value": null
               },
               {
-                "color": "orange",
+                "color": "#FFD93D",
                 "value": 30
               },
               {
-                "color": "yellow",
+                "color": "#FFD93D",
                 "value": 90
               },
               {
-                "color": "green",
+                "color": "#2DFF8B",
                 "value": 180
               }
             ]
@@ -271,7 +271,7 @@
               "options": {
                 "9999": {
                   "text": "\u221e",
-                  "color": "green",
+                  "color": "#2DFF8B",
                   "index": 0
                 }
               }
@@ -287,7 +287,7 @@
         "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "center",
-        "reduceOptions": {
+        "#FF4D4DuceOptions": {
           "calcs": [
             "lastNotNull"
           ],
@@ -341,19 +341,19 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
+                "color": "#FF4D4D",
                 "value": null
               },
               {
-                "color": "orange",
+                "color": "#FFD93D",
                 "value": 30
               },
               {
-                "color": "yellow",
+                "color": "#FFD93D",
                 "value": 90
               },
               {
-                "color": "green",
+                "color": "#2DFF8B",
                 "value": 180
               }
             ]
@@ -364,7 +364,7 @@
               "options": {
                 "9999": {
                   "text": "\u221e",
-                  "color": "green",
+                  "color": "#2DFF8B",
                   "index": 0
                 }
               }
@@ -380,7 +380,7 @@
         "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "center",
-        "reduceOptions": {
+        "#FF4D4DuceOptions": {
           "calcs": [
             "lastNotNull"
           ],
@@ -434,19 +434,19 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
+                "color": "#FF4D4D",
                 "value": null
               },
               {
-                "color": "orange",
+                "color": "#FFD93D",
                 "value": 30
               },
               {
-                "color": "yellow",
+                "color": "#FFD93D",
                 "value": 90
               },
               {
-                "color": "green",
+                "color": "#2DFF8B",
                 "value": 180
               }
             ]
@@ -457,7 +457,7 @@
               "options": {
                 "9999": {
                   "text": "\u221e",
-                  "color": "green",
+                  "color": "#2DFF8B",
                   "index": 0
                 }
               }
@@ -472,7 +472,7 @@
         "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "center",
-        "reduceOptions": {
+        "#FF4D4DuceOptions": {
           "calcs": [
             "lastNotNull"
           ],
@@ -528,15 +528,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
+                "color": "#FF4D4D",
                 "value": null
               },
               {
-                "color": "yellow",
+                "color": "#FFD93D",
                 "value": 70
               },
               {
-                "color": "green",
+                "color": "#2DFF8B",
                 "value": 90
               }
             ]
@@ -550,7 +550,7 @@
         "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "center",
-        "reduceOptions": {
+        "#FF4D4DuceOptions": {
           "calcs": [
             "lastNotNull"
           ],
@@ -634,15 +634,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "#2DFF8B",
                 "value": null
               },
               {
-                "color": "yellow",
+                "color": "#FFD93D",
                 "value": 80
               },
               {
-                "color": "red",
+                "color": "#FF4D4D",
                 "value": 95
               }
             ]
@@ -676,7 +676,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "red"
+                  "fixedColor": "#FF4D4D"
                 }
               }
             ]
@@ -706,7 +706,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#00FF87"
+                  "fixedColor": "#2DFF8B"
                 }
               }
             ]
@@ -771,7 +771,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#00FF87",
+                  "fixedColor": "#2DFF8B",
                   "mode": "fixed"
                 }
               }
@@ -837,7 +837,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#FF003C",
+                  "fixedColor": "#FF4D4D",
                   "mode": "fixed"
                 }
               },
@@ -901,7 +901,7 @@
           "maxDataPoints": 300
         }
       ],
-      "description": "Hourly disk usage trend with linear regression forecast (dashed orange, 30-day projection).",
+      "description": "Hourly disk usage trend with linear regression forecast (dashed #FFD93D, 30-day projection).",
       "transparent": true,
       "links": [
         {
@@ -960,15 +960,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "#2DFF8B",
                 "value": null
               },
               {
-                "color": "yellow",
+                "color": "#FFD93D",
                 "value": 80
               },
               {
-                "color": "red",
+                "color": "#FF4D4D",
                 "value": 90
               }
             ]
@@ -992,7 +992,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#00FF87"
+                  "fixedColor": "#2DFF8B"
                 }
               }
             ]
@@ -1007,7 +1007,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#00FF87"
+                  "fixedColor": "#2DFF8B"
                 }
               }
             ]
@@ -1072,7 +1072,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#00FF87",
+                  "fixedColor": "#2DFF8B",
                   "mode": "fixed"
                 }
               }
@@ -1138,7 +1138,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#FF003C",
+                  "fixedColor": "#FF4D4D",
                   "mode": "fixed"
                 }
               },
@@ -1224,15 +1224,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "#2DFF8B",
                 "value": null
               },
               {
-                "color": "yellow",
+                "color": "#FFD93D",
                 "value": 85
               },
               {
-                "color": "red",
+                "color": "#FF4D4D",
                 "value": 95
               }
             ]
@@ -1271,7 +1271,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#00FF87"
+                  "fixedColor": "#2DFF8B"
                 }
               }
             ]
@@ -1336,7 +1336,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#00FF87",
+                  "fixedColor": "#2DFF8B",
                   "mode": "fixed"
                 }
               }
@@ -1402,7 +1402,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#FF003C",
+                  "fixedColor": "#FF4D4D",
                   "mode": "fixed"
                 }
               },
@@ -1492,7 +1492,7 @@
         "defaults": {
           "unit": "none",
           "custom": {
-            "axisCenteredZero": true,
+            "axisCente#FF4D4DZero": true,
             "fillOpacity": 0,
             "lineWidth": 3,
             "spanNulls": 60000,
@@ -1508,7 +1508,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
+                "color": "#FF4D4D",
                 "value": -3
               },
               {
@@ -1516,11 +1516,11 @@
                 "value": -2
               },
               {
-                "color": "green",
+                "color": "#2DFF8B",
                 "value": -1
               },
               {
-                "color": "green",
+                "color": "#2DFF8B",
                 "value": 1
               },
               {
@@ -1528,7 +1528,7 @@
                 "value": 2
               },
               {
-                "color": "red",
+                "color": "#FF4D4D",
                 "value": 3
               }
             ]
@@ -1551,7 +1551,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#00FF87"
+                  "fixedColor": "#2DFF8B"
                 }
               }
             ]
@@ -1566,7 +1566,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#00FF87"
+                  "fixedColor": "#2DFF8B"
                 }
               }
             ]
@@ -1631,7 +1631,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#00FF87",
+                  "fixedColor": "#2DFF8B",
                   "mode": "fixed"
                 }
               }
@@ -1697,7 +1697,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#FF003C",
+                  "fixedColor": "#FF4D4D",
                   "mode": "fixed"
                 }
               },
@@ -1770,7 +1770,7 @@
         "defaults": {
           "unit": "none",
           "custom": {
-            "axisCenteredZero": true,
+            "axisCente#FF4D4DZero": true,
             "fillOpacity": 0,
             "lineWidth": 3,
             "spanNulls": 60000,
@@ -1786,7 +1786,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
+                "color": "#FF4D4D",
                 "value": -3
               },
               {
@@ -1794,11 +1794,11 @@
                 "value": -2
               },
               {
-                "color": "green",
+                "color": "#2DFF8B",
                 "value": -1
               },
               {
-                "color": "green",
+                "color": "#2DFF8B",
                 "value": 1
               },
               {
@@ -1806,7 +1806,7 @@
                 "value": 2
               },
               {
-                "color": "red",
+                "color": "#FF4D4D",
                 "value": 3
               }
             ]
@@ -1830,7 +1830,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#FF9100"
+                  "fixedColor": "#FFD93D"
                 }
               }
             ]
@@ -1845,7 +1845,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#00FF87"
+                  "fixedColor": "#2DFF8B"
                 }
               }
             ]
@@ -1910,7 +1910,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#00FF87",
+                  "fixedColor": "#2DFF8B",
                   "mode": "fixed"
                 }
               }
@@ -1976,7 +1976,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#FF003C",
+                  "fixedColor": "#FF4D4D",
                   "mode": "fixed"
                 }
               },

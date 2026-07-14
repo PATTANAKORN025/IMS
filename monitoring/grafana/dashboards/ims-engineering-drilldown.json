@@ -94,7 +94,7 @@
       },
       "options": {
         "mode": "html",
-        "content": "<div style=\"display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:rgba(12,18,30,0.8);border-bottom:1px solid rgba(0,242,254,0.2);font-family:Rajdhani,sans-serif\"><span style=\"font-family:Orbitron,sans-serif;font-size:16px;font-weight:700;letter-spacing:2px\">APEX <span style=\"color:#00F2FE\">COMMAND</span></span><span style=\"font-size:13px;letter-spacing:1px\"><a href=\"/d/ims-noc-overview\" style=\"color:#E2E8F0;text-decoration:none\">NOC OVERVIEW</a> &nbsp;|&nbsp; <a href=\"/d/ims-engineering\" style=\"color:#00FF87;font-weight:700;text-decoration:none\">ENG DRILL-DOWN</a> &nbsp;|&nbsp; <a href=\"/d/ims-capacity\" style=\"color:#E2E8F0;text-decoration:none\">CAPACITY FORECAST</a></span></div>\n<style>\n@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Orbitron:wght@400;700&display=swap');\n.dashboard-page { background: radial-gradient(circle at center, #0B0E14 0%, #030407 100%) !important; }\n.panel-container {\n  background: rgba(12, 18, 30, 0.6) !important;\n  border: 1px solid rgba(0, 242, 254, 0.15) !important;\n  border-radius: 8px !important;\n  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5) !important;\n  transition: all 0.3s ease;\n  animation: fadeUp 0.5s ease-out forwards;\n}\n.panel-container:hover {\n  border-color: rgba(0, 255, 135, 0.4) !important;\n  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(0, 255, 135, 0.05) !important;\n  backdrop-filter: blur(10px) !important;\n  -webkit-backdrop-filter: blur(10px) !important;\n  will-change: backdrop-filter;\n}\n.panel-title { font-weight: 700 !important; letter-spacing: 1px !important; color: #E2E8F0 !important; }\n.status-dot {\n  width: 8px; height: 8px; border-radius: 50%; background: #00FF87;\n  display: inline-block; margin-right: 8px;\n  animation: pulse 2s ease-in-out infinite;\n  box-shadow: 0 0 8px #00FF87;\n}\n@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.8); } }\n@keyframes fadeUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }\n</style>"
+        "content": "<div style=\"display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:rgba(12,18,30,0.8);border-bottom:1px solid rgba(0,242,254,0.2);font-family:Rajdhani,sans-serif\"><span style=\"font-family:Orbitron,sans-serif;font-size:16px;font-weight:700;letter-spacing:2px\">APEX <span style=\"color:#00F2FE\">COMMAND</span></span><span style=\"font-size:13px;letter-spacing:1px\"><a href=\"/d/ims-noc-overview\" style=\"color:#E2E8F0;text-decoration:none\">NOC OVERVIEW</a> &nbsp;|&nbsp; <a href=\"/d/ims-engineering\" style=\"color:#2DFF8B;font-weight:700;text-decoration:none\">ENG DRILL-DOWN</a> &nbsp;|&nbsp; <a href=\"/d/ims-capacity\" style=\"color:#E2E8F0;text-decoration:none\">CAPACITY FORECAST</a></span></div>\n<style>\n@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Orbitron:wght@400;700&display=swap');\n.dashboard-page { background: radial-gradient(circle at center, #0B0E14 0%, #030407 100%) !important; }\n.panel-container {\n  background: rgba(12, 18, 30, 0.6) !important;\n  border: 1px solid rgba(0, 242, 254, 0.15) !important;\n  border-radius: 8px !important;\n  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5) !important;\n  transition: all 0.3s ease;\n  animation: fadeUp 0.5s ease-out forwards;\n}\n.panel-container:hover {\n  border-color: rgba(0, 255, 135, 0.4) !important;\n  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(0, 255, 135, 0.05) !important;\n  backdrop-filter: blur(10px) !important;\n  -webkit-backdrop-filter: blur(10px) !important;\n  will-change: backdrop-filter;\n}\n.panel-title { font-weight: 700 !important; letter-spacing: 1px !important; color: #E2E8F0 !important; }\n.status-dot {\n  width: 8px; height: 8px; border-radius: 50%; background: #2DFF8B;\n  display: inline-block; margin-right: 8px;\n  animation: pulse 2s ease-in-out infinite;\n  box-shadow: 0 0 8px #2DFF8B;\n}\n@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.8); } }\n@keyframes fadeUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }\n</style>"
       },
       "datasource": null,
       "transparent": true,
@@ -184,15 +184,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "#2DFF8B",
                 "value": null
               },
               {
-                "color": "yellow",
+                "color": "#FFD93D",
                 "value": 80
               },
               {
-                "color": "red",
+                "color": "#FF4D4D",
                 "value": 90
               }
             ]
@@ -203,7 +203,7 @@
         "overrides": []
       },
       "options": {
-        "reduceOptions": {
+        "#FF4D4DuceOptions": {
           "calcs": [
             "lastNotNull"
           ],
@@ -261,15 +261,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "#2DFF8B",
                 "value": null
               },
               {
-                "color": "yellow",
+                "color": "#FFD93D",
                 "value": 85
               },
               {
-                "color": "red",
+                "color": "#FF4D4D",
                 "value": 95
               }
             ]
@@ -280,7 +280,7 @@
         "overrides": []
       },
       "options": {
-        "reduceOptions": {
+        "#FF4D4DuceOptions": {
           "calcs": [
             "lastNotNull"
           ],
@@ -338,15 +338,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "#2DFF8B",
                 "value": null
               },
               {
-                "color": "yellow",
+                "color": "#FFD93D",
                 "value": 70
               },
               {
-                "color": "red",
+                "color": "#FF4D4D",
                 "value": 90
               }
             ]
@@ -357,7 +357,7 @@
         "overrides": []
       },
       "options": {
-        "reduceOptions": {
+        "#FF4D4DuceOptions": {
           "calcs": [
             "lastNotNull"
           ],
@@ -414,15 +414,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "#2DFF8B",
                 "value": null
               },
               {
-                "color": "yellow",
+                "color": "#FFD93D",
                 "value": 45
               },
               {
-                "color": "red",
+                "color": "#FF4D4D",
                 "value": 55
               }
             ]
@@ -433,7 +433,7 @@
         "overrides": []
       },
       "options": {
-        "reduceOptions": {
+        "#FF4D4DuceOptions": {
           "calcs": [
             "lastNotNull"
           ],
@@ -518,15 +518,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "#2DFF8B",
                 "value": null
               },
               {
-                "color": "yellow",
+                "color": "#FFD93D",
                 "value": 85
               },
               {
-                "color": "red",
+                "color": "#FF4D4D",
                 "value": 95
               }
             ]
@@ -565,7 +565,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#00FF87"
+                  "fixedColor": "#2DFF8B"
                 }
               }
             ]
@@ -630,7 +630,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#00FF87",
+                  "fixedColor": "#2DFF8B",
                   "mode": "fixed"
                 }
               }
@@ -696,7 +696,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#FF003C",
+                  "fixedColor": "#FF4D4D",
                   "mode": "fixed"
                 }
               },
@@ -768,7 +768,7 @@
         "defaults": {
           "unit": "bps",
           "custom": {
-            "axisCenteredZero": true,
+            "axisCente#FF4D4DZero": true,
             "fillOpacity": 0,
             "lineWidth": 2,
             "spanNulls": 60000,
@@ -806,7 +806,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#00FF87",
+                  "fixedColor": "#2DFF8B",
                   "mode": "fixed"
                 }
               }
@@ -879,7 +879,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#00FF87"
+                  "fixedColor": "#2DFF8B"
                 }
               }
             ]
@@ -1004,7 +1004,7 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "description": "Per-interface bandwidth queried from per-interface rows in the net_metrics hypertable. Download positive, Upload mirrored via negative-Y axis.",
+      "description": "Per-interface bandwidth queried from per-interface rows in the net_metrics hypertable. Download positive, Upload mirro#FF4D4D via negative-Y axis.",
       "transparent": true,
       "links": [
         {
@@ -1046,7 +1046,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
+                "color": "#FF4D4D",
                 "value": -3
               },
               {
@@ -1054,11 +1054,11 @@
                 "value": -2
               },
               {
-                "color": "green",
+                "color": "#2DFF8B",
                 "value": -1
               },
               {
-                "color": "green",
+                "color": "#2DFF8B",
                 "value": 1
               },
               {
@@ -1066,7 +1066,7 @@
                 "value": 2
               },
               {
-                "color": "red",
+                "color": "#FF4D4D",
                 "value": 3
               }
             ]
@@ -1130,7 +1130,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#FF9100"
+                  "fixedColor": "#FFD93D"
                 }
               }
             ]
@@ -1145,7 +1145,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#00FF87"
+                  "fixedColor": "#2DFF8B"
                 }
               }
             ]
@@ -1210,7 +1210,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#00FF87",
+                  "fixedColor": "#2DFF8B",
                   "mode": "fixed"
                 }
               }
@@ -1276,7 +1276,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#FF003C",
+                  "fixedColor": "#FF4D4D",
                   "mode": "fixed"
                 }
               },
@@ -1399,7 +1399,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#00FF87",
+                  "fixedColor": "#2DFF8B",
                   "mode": "fixed"
                 }
               },
@@ -1418,7 +1418,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#FF9100",
+                  "fixedColor": "#FFD93D",
                   "mode": "fixed"
                 }
               },
@@ -1457,7 +1457,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#00FF87"
+                  "fixedColor": "#2DFF8B"
                 }
               }
             ]
@@ -1563,7 +1563,7 @@
           "targetBlank": true
         }
       ],
-      "description": "LDI manufacturing throughput (left axis, green) and Process Efficiency in \u00b5m (right axis, yellow). PE within \u00b110\u00b5m tolerance is normal.",
+      "description": "LDI manufacturing throughput (left axis, #2DFF8B) and Process Efficiency in \u00b5m (right axis, #FFD93D). PE within \u00b110\u00b5m tolerance is normal.",
       "transparent": true
     },
     {
@@ -1650,7 +1650,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#FF9100"
+                  "fixedColor": "#FFD93D"
                 }
               }
             ]
@@ -1665,7 +1665,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#00FF87"
+                  "fixedColor": "#2DFF8B"
                 }
               }
             ]
@@ -1841,7 +1841,7 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "description": "LDI quality scatter with \u00b110\u00b5m tolerance zone (green band). Points outside the zone indicate quality risk.",
+      "description": "LDI quality scatter with \u00b110\u00b5m tolerance zone (#2DFF8B band). Points outside the zone indicate quality risk.",
       "transparent": true
     },
     {
@@ -1878,15 +1878,15 @@
           "thresholds": {
             "steps": [
               {
-                "color": "#00FF87",
+                "color": "#2DFF8B",
                 "value": null
               },
               {
-                "color": "#FF9100",
+                "color": "#FFD93D",
                 "value": 1000
               },
               {
-                "color": "#FF003C",
+                "color": "#FF4D4D",
                 "value": 5000
               }
             ]
@@ -1925,15 +1925,15 @@
           "thresholds": {
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#FF4D4D",
                 "value": null
               },
               {
-                "color": "#FF9100",
+                "color": "#FFD93D",
                 "value": 0.5
               },
               {
-                "color": "#00FF87",
+                "color": "#2DFF8B",
                 "value": 0.8
               }
             ]
@@ -1972,15 +1972,15 @@
           "thresholds": {
             "steps": [
               {
-                "color": "#00FF87",
+                "color": "#2DFF8B",
                 "value": null
               },
               {
-                "color": "#FF9100",
+                "color": "#FFD93D",
                 "value": 1
               },
               {
-                "color": "#FF003C",
+                "color": "#FF4D4D",
                 "value": 3
               }
             ]
@@ -2046,11 +2046,11 @@
                 "value": null
               },
               {
-                "color": "#FF9100",
+                "color": "#FFD93D",
                 "value": 2
               },
               {
-                "color": "#FF003C",
+                "color": "#FF4D4D",
                 "value": 3
               }
             ]
@@ -2129,11 +2129,11 @@
                 "value": null
               },
               {
-                "color": "#FF9100",
+                "color": "#FFD93D",
                 "value": 2
               },
               {
-                "color": "#FF003C",
+                "color": "#FF4D4D",
                 "value": 3
               }
             ]
@@ -2228,7 +2228,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#00FF87"
+                  "fixedColor": "#2DFF8B"
                 }
               }
             ]
@@ -2341,7 +2341,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#00FF87"
+                  "fixedColor": "#2DFF8B"
                 }
               }
             ]
@@ -2356,7 +2356,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#FF9100"
+                  "fixedColor": "#FFD93D"
                 }
               }
             ]
@@ -2371,7 +2371,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#FF003C"
+                  "fixedColor": "#FF4D4D"
                 }
               }
             ]
