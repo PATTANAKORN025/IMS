@@ -1860,7 +1860,7 @@
       "title": "Estimated Daily Power Cost (THB)",
       "datasource": {
         "type": "postgres",
-        "uid": "${DS_TIMESCALEDB}"
+        "uid": "timescaledb"
       },
       "gridPos": {
         "h": 8,
@@ -1907,7 +1907,7 @@
       "title": "Power Efficiency Ratio",
       "datasource": {
         "type": "postgres",
-        "uid": "${DS_TIMESCALEDB}"
+        "uid": "timescaledb"
       },
       "gridPos": {
         "h": 8,
@@ -1954,7 +1954,7 @@
       "title": "Yield Risk Index",
       "datasource": {
         "type": "postgres",
-        "uid": "${DS_TIMESCALEDB}"
+        "uid": "timescaledb"
       },
       "gridPos": {
         "h": 8,

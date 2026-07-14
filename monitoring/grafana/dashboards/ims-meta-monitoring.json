@@ -25,7 +25,7 @@
       "title": "Inserts / sec",
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "gridPos": {
         "h": 8,
@@ -64,7 +64,7 @@
       "title": "Error Rate",
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "gridPos": {
         "h": 8,
@@ -102,7 +102,7 @@
       "title": "Last Flush",
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "gridPos": {
         "h": 8,
@@ -160,7 +160,7 @@
       "title": "Devices OPEN",
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "gridPos": {
         "h": 8,
@@ -207,7 +207,7 @@
       "title": "Devices HALF-OPEN",
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "gridPos": {
         "h": 8,
@@ -250,7 +250,7 @@
       "title": "Devices CLOSED",
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "gridPos": {
         "h": 8,
@@ -293,7 +293,7 @@
       "title": "Trip Rate (per device)",
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "gridPos": {
         "h": 8,
@@ -330,7 +330,7 @@
       "title": "Device Circuit Breaker State",
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "gridPos": {
         "h": 8,
@@ -442,7 +442,7 @@
       "title": "Unique Devices Polled (1h)",
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "gridPos": {
         "h": 8,
@@ -489,7 +489,7 @@
       "title": "Devices Polled / cycle",
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "gridPos": {
         "h": 8,
@@ -527,7 +527,7 @@
       "title": "Pipeline Success Rate",
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "gridPos": {
         "h": 8,
