@@ -312,7 +312,7 @@
         "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "center",
-        "#EF4444uceOptions": {
+        "reduceOptions": {
           "calcs": [
             "lastNotNull"
           ],
@@ -430,7 +430,7 @@
         "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "center",
-        "#EF4444uceOptions": {
+        "reduceOptions": {
           "calcs": [
             "lastNotNull"
           ],
@@ -547,7 +547,7 @@
         "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "center",
-        "#EF4444uceOptions": {
+        "reduceOptions": {
           "calcs": [
             "lastNotNull"
           ],
@@ -650,7 +650,7 @@
         "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "center",
-        "#EF4444uceOptions": {
+        "reduceOptions": {
           "calcs": [
             "lastNotNull"
           ],
@@ -728,7 +728,9 @@
             "gradientMode": "opacity",
             "drawStyle": "line",
             "lineInterpolation": "smooth",
-            "showPoints": "never"
+            "showPoints": "never",
+            "showGridLines": false,
+            "axisBorderShow": false
           },
           "thresholds": {
             "mode": "absolute",
@@ -1066,7 +1068,9 @@
             "gradientMode": "opacity",
             "drawStyle": "line",
             "lineInterpolation": "smooth",
-            "showPoints": "never"
+            "showPoints": "never",
+            "showGridLines": false,
+            "axisBorderShow": false
           },
           "thresholds": {
             "mode": "absolute",
@@ -1342,7 +1346,9 @@
             "gradientMode": "opacity",
             "drawStyle": "line",
             "lineInterpolation": "smooth",
-            "showPoints": "never"
+            "showPoints": "never",
+            "showGridLines": false,
+            "axisBorderShow": false
           },
           "thresholds": {
             "mode": "absolute",
@@ -1638,7 +1644,9 @@
             "gradientMode": "opacity",
             "drawStyle": "line",
             "lineInterpolation": "smooth",
-            "showPoints": "never"
+            "showPoints": "never",
+            "showGridLines": false,
+            "axisBorderShow": false
           },
           "thresholds": {
             "mode": "absolute",
@@ -1928,7 +1936,9 @@
             "gradientMode": "opacity",
             "drawStyle": "line",
             "lineInterpolation": "smooth",
-            "showPoints": "never"
+            "showPoints": "never",
+            "showGridLines": false,
+            "axisBorderShow": false
           },
           "thresholds": {
             "mode": "absolute",

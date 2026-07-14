@@ -228,7 +228,7 @@
         ]
       },
       "options": {
-        "#EF4444uceOptions": {
+        "reduceOptions": {
           "calcs": [
             "lastNotNull"
           ],
@@ -330,7 +330,7 @@
         ]
       },
       "options": {
-        "#EF4444uceOptions": {
+        "reduceOptions": {
           "calcs": [
             "lastNotNull"
           ],
@@ -432,7 +432,7 @@
         ]
       },
       "options": {
-        "#EF4444uceOptions": {
+        "reduceOptions": {
           "calcs": [
             "lastNotNull"
           ],
@@ -533,7 +533,7 @@
         ]
       },
       "options": {
-        "#EF4444uceOptions": {
+        "reduceOptions": {
           "calcs": [
             "lastNotNull"
           ],
@@ -612,7 +612,9 @@
             "gradientMode": "opacity",
             "drawStyle": "line",
             "lineInterpolation": "smooth",
-            "showPoints": "never"
+            "showPoints": "never",
+            "showGridLines": false,
+            "axisBorderShow": false
           },
           "thresholds": {
             "mode": "absolute",
@@ -886,7 +888,9 @@
             "spanNulls": 60000,
             "gradientMode": "opacity",
             "drawStyle": "line",
-            "lineInterpolation": "smooth"
+            "lineInterpolation": "smooth",
+            "showGridLines": false,
+            "axisBorderShow": false
           },
           "color": {
             "mode": "palette-classic"
@@ -1164,7 +1168,9 @@
             "gradientMode": "opacity",
             "drawStyle": "line",
             "lineInterpolation": "smooth",
-            "showPoints": "never"
+            "showPoints": "never",
+            "showGridLines": false,
+            "axisBorderShow": false
           },
           "thresholds": {
             "mode": "absolute",
@@ -1516,7 +1522,9 @@
             "gradientMode": "opacity",
             "drawStyle": "line",
             "lineInterpolation": "smooth",
-            "showPoints": "never"
+            "showPoints": "never",
+            "showGridLines": false,
+            "axisBorderShow": false
           },
           "unit": "Mbps",
           "color": {
@@ -1736,7 +1744,9 @@
             "gradientMode": "opacity",
             "drawStyle": "line",
             "lineInterpolation": "smooth",
-            "showPoints": "never"
+            "showPoints": "never",
+            "showGridLines": false,
+            "axisBorderShow": false
           },
           "color": {
             "mode": "palette-classic"

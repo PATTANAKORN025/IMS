@@ -46,7 +46,9 @@
             "fillOpacity": 10,
             "spanNulls": true,
             "showPoints": "auto",
-            "pointSize": 5
+            "pointSize": 5,
+            "showGridLines": false,
+            "axisBorderShow": false
           }
         },
         "overrides": [
@@ -98,7 +100,9 @@
             "drawStyle": "line",
             "lineWidth": 2,
             "fillOpacity": 15,
-            "spanNulls": true
+            "spanNulls": true,
+            "showGridLines": false,
+            "axisBorderShow": false
           }
         },
         "overrides": [
@@ -456,7 +460,9 @@
             "drawStyle": "bars",
             "lineWidth": 1,
             "fillOpacity": 50,
-            "spanNulls": true
+            "spanNulls": true,
+            "showGridLines": false,
+            "axisBorderShow": false
           }
         },
         "overrides": [
@@ -721,7 +727,9 @@
             "drawStyle": "line",
             "lineWidth": 2,
             "fillOpacity": 10,
-            "spanNulls": true
+            "spanNulls": true,
+            "showGridLines": false,
+            "axisBorderShow": false
           }
         },
         "overrides": [
