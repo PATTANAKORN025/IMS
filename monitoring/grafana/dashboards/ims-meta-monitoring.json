@@ -49,7 +49,20 @@
             "pointSize": 5
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          }
+        ]
       },
       "targets": [
         {
@@ -78,7 +91,7 @@
           "unit": "ops",
           "decimals": 2,
           "color": {
-            "fixedColor": "#FF4D4D",
+            "fixedColor": "#EF444D",
             "mode": "fixed"
           },
           "custom": {
@@ -88,7 +101,20 @@
             "spanNulls": true
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          }
+        ]
       },
       "targets": [
         {
@@ -122,21 +148,46 @@
           "thresholds": {
             "steps": [
               {
-                "color": "#FF4D4D",
+                "color": "#EF444D",
                 "value": null
               },
               {
-                "color": "#FFD93D",
+                "color": "#F59E0B",
                 "value": 120
               },
               {
-                "color": "#2DFF8B",
+                "color": "#10B981",
                 "value": 300
               }
             ]
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "custom.fontFamily",
+                "value": "'Roboto Mono', monospace"
+              }
+            ]
+          }
+        ]
       },
       "targets": [
         {
@@ -184,21 +235,46 @@
           "thresholds": {
             "steps": [
               {
-                "color": "#2DFF8B",
+                "color": "#10B981",
                 "value": null
               },
               {
-                "color": "#FFD93D",
+                "color": "#F59E0B",
                 "value": 1
               },
               {
-                "color": "#FF4D4D",
+                "color": "#EF444D",
                 "value": 5
               }
             ]
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "custom.fontFamily",
+                "value": "'Roboto Mono', monospace"
+              }
+            ]
+          }
+        ]
       },
       "targets": [
         {
@@ -235,17 +311,42 @@
           "thresholds": {
             "steps": [
               {
-                "color": "#2DFF8B",
+                "color": "#10B981",
                 "value": null
               },
               {
-                "color": "#7F00FF",
+                "color": "#3B82F6",
                 "value": 1
               }
             ]
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "custom.fontFamily",
+                "value": "'Roboto Mono', monospace"
+              }
+            ]
+          }
+        ]
       },
       "targets": [
         {
@@ -277,11 +378,36 @@
           "unit": "short",
           "decimals": 0,
           "color": {
-            "fixedColor": "#2DFF8B",
+            "fixedColor": "#10B981",
             "mode": "fixed"
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "custom.fontFamily",
+                "value": "'Roboto Mono', monospace"
+              }
+            ]
+          }
+        ]
       },
       "targets": [
         {
@@ -333,7 +459,20 @@
             "spanNulls": true
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          }
+        ]
       },
       "targets": [
         {
@@ -390,7 +529,7 @@
                     "options": {
                       "0": {
                         "text": "CLOSED",
-                        "color": "#2DFF8B"
+                        "color": "#10B981"
                       }
                     }
                   },
@@ -399,7 +538,7 @@
                     "options": {
                       "1": {
                         "text": "OPEN",
-                        "color": "#FF4D4D"
+                        "color": "#EF444D"
                       }
                     }
                   },
@@ -408,11 +547,35 @@
                     "options": {
                       "2": {
                         "text": "HALF-OPEN",
-                        "color": "#7F00FF"
+                        "color": "#3B82F6"
                       }
                     }
                   }
                 ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "custom.fontFamily",
+                "value": "'Roboto Mono', monospace"
               }
             ]
           }
@@ -480,21 +643,46 @@
           "thresholds": {
             "steps": [
               {
-                "color": "#FF4D4D",
+                "color": "#EF444D",
                 "value": null
               },
               {
-                "color": "#FFD93D",
+                "color": "#F59E0B",
                 "value": 1
               },
               {
-                "color": "#2DFF8B",
+                "color": "#10B981",
                 "value": 10
               }
             ]
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "custom.fontFamily",
+                "value": "'Roboto Mono', monospace"
+              }
+            ]
+          }
+        ]
       },
       "targets": [
         {
@@ -526,7 +714,7 @@
           "unit": "short",
           "decimals": 0,
           "color": {
-            "fixedColor": "#00F2FE",
+            "fixedColor": "#3B82F6",
             "mode": "fixed"
           },
           "custom": {
@@ -536,7 +724,20 @@
             "spanNulls": true
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          }
+        ]
       },
       "targets": [
         {
@@ -572,21 +773,46 @@
           "thresholds": {
             "steps": [
               {
-                "color": "#FF4D4D",
+                "color": "#EF444D",
                 "value": null
               },
               {
-                "color": "#FFD93D",
+                "color": "#F59E0B",
                 "value": 0.95
               },
               {
-                "color": "#2DFF8B",
+                "color": "#10B981",
                 "value": 0.99
               }
             ]
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "custom.fontFamily",
+                "value": "'Roboto Mono', monospace"
+              }
+            ]
+          }
+        ]
       },
       "targets": [
         {
