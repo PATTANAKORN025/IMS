@@ -1,20 +1,42 @@
-# ใช้ตอน production: docker compose -f docker-compose.yaml -f docker-compose.prod.yaml up -d
-services:
-  pgbouncer:
-    ports: []
+# IMS Production Overlay
+# Usage: docker compose -f docker-compose.yaml -f docker-compose.prod.yaml up -d
 
+services:
   node-red:
     environment:
       - NODE_ENV=production
-      - LINE_CHANNEL_ACCESS_TOKEN=${LINE_CHANNEL_ACCESS_TOKEN:-}
-      - LINE_USER_ID=${LINE_USER_ID:-}
-      - TEAMS_WEBHOOK_URL=${TEAMS_WEBHOOK_URL:-}
-      - TEAMS_WEBHOOK_TYPE=${TEAMS_WEBHOOK_TYPE:-AdaptiveCard}
-    # settings.js already supports adminAuth via NODE_RED_ADMIN_PASSWORD_HASH env var
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
 
   grafana:
-    ports:
-      - "127.0.0.1:3000:3000"  # bind localhost เท่านั้น ใส่ reverse proxy ด้านหน้าถ้าต้องเข้าถึงจากนอก
     environment:
-      - GF_PANELS_DISABLE_SANITIZE_HTML=true
-      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-piechart-panel
+      - GF_LOG_LEVEL=warn
+      - GF_PANELS_DISABLE_SANITIZE_HTML=false
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+
+  timescaledb:
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+
+  prometheus:
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M

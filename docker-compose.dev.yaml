@@ -1,0 +1,22 @@
+# IMS Development Overlay
+# Usage: docker compose -f docker-compose.yaml -f docker-compose.dev.yaml up -d
+
+services:
+  node-red:
+    environment:
+      - NODE_ENV=development
+      - WALKER_DEBUG=true
+      - PARSE_DEBUG=true
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "10"
+
+  grafana:
+    environment:
+      - GF_LOG_LEVEL=debug
+
+  snmpsim:
+    profiles:
+      - dev
