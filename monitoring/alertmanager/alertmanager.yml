@@ -4,6 +4,7 @@
 
 global:
   resolve_timeout: 5m
+  external_url: ${GRAFANA_ROOT_URL:-http://localhost:3000}
 
 route:
   receiver: 'ims-webhook-default'
@@ -65,11 +66,14 @@ receivers:
         title: '{{ if eq .Status "firing" }}:rotating_light: [CRITICAL]{{ else }}:white_check_mark: [RESOLVED]{{ end }} {{ .GroupLabels.alertname }}'
         text: >-
           {{ range .Alerts }}
+          *{{ if eq .Status "firing" }}🔴{{ else }}✅{{ end }} {{ .Labels.alertname }}*
           *Device:* {{ .Labels.device_id }} ({{ .Labels.device_type }})
+          *Severity:* {{ .Labels.severity }}
           *Summary:* {{ .Annotations.summary }}
-          *Description:* {{ .Annotations.description }}
-          *Started:* {{ .StartsAt.Format "2006-01-02 15:04:05" }}
+          {{ if .Annotations.description }}*Detail:* {{ .Annotations.description }}
+          {{ end }}*Started:* {{ .StartsAt.Format "2006-01-02 15:04:05" }}
           {{ if .EndsAt }}*Ended:* {{ .EndsAt.Format "2006-01-02 15:04:05" }}{{ end }}
+          {{ if .Annotations.runbook }}*Runbook:* {{ .Annotations.runbook }}{{ end }}
           {{ end }}
         color: '{{ if eq .Status "firing" }}danger{{ else }}good{{ end }}'
         send_resolved: true
