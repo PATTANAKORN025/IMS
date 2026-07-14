@@ -53,7 +53,10 @@
       {
         "name": "interface",
         "type": "query",
-        "query": "SELECT DISTINCT iface_name AS __text FROM public.net_metrics;",
+        "query": {
+          "rawSql": "SELECT DISTINCT iface_name FROM public.net_metrics WHERE time > NOW() - INTERVAL '24 hours' ORDER BY iface_name",
+          "format": "table"
+        },
         "datasource": {
           "uid": "timescaledb"
         },
@@ -61,7 +64,8 @@
         "multi": false,
         "includeAll": false,
         "sort": 1,
-        "label": "Interface"
+        "label": "Interface",
+        "allValue": "%"
       }
     ]
   },
@@ -1106,7 +1110,8 @@
         "connectNullPoints": true,
         "gradientMode": "opacity",
         "orientation": "horizontal",
-        "showValue": "auto"
+        "showValue": "auto",
+        "noValue": "0"
       },
       "targets": [
         {
@@ -1685,7 +1690,8 @@
             "lastNotNull"
           ]
         },
-        "connectNullPoints": true
+        "connectNullPoints": true,
+        "noValue": "0"
       },
       "targets": [
         {
