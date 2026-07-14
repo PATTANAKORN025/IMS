@@ -343,7 +343,7 @@
               },
               {
                 "color": "#FFD93D",
-                "value": 70
+                "value": 80
               },
               {
                 "color": "#FF4D4D",
@@ -1004,7 +1004,7 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "description": "Per-interface bandwidth queried from per-interface rows in the net_metrics hypertable. Download positive, Upload mirro#FF4D4D via negative-Y axis.",
+      "description": "Per-interface bandwidth queried from per-interface rows in the net_metrics hypertable. Download positive, Upload mirrored (negative-Y axis, #FF4D4D).",
       "transparent": true,
       "links": [
         {
