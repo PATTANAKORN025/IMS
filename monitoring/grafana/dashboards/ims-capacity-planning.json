@@ -171,7 +171,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#EF444D",
+                "color": "#EF4444",
                 "value": null
               },
               {
@@ -248,7 +248,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#EF444D",
+                "color": "#EF4444",
                 "value": null
               },
               {
@@ -312,7 +312,7 @@
         "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "center",
-        "#EF444DuceOptions": {
+        "#EF4444uceOptions": {
           "calcs": [
             "lastNotNull"
           ],
@@ -366,7 +366,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#EF444D",
+                "color": "#EF4444",
                 "value": null
               },
               {
@@ -430,7 +430,7 @@
         "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "center",
-        "#EF444DuceOptions": {
+        "#EF4444uceOptions": {
           "calcs": [
             "lastNotNull"
           ],
@@ -484,7 +484,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#EF444D",
+                "color": "#EF4444",
                 "value": null
               },
               {
@@ -547,7 +547,7 @@
         "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "center",
-        "#EF444DuceOptions": {
+        "#EF4444uceOptions": {
           "calcs": [
             "lastNotNull"
           ],
@@ -603,7 +603,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#EF444D",
+                "color": "#EF4444",
                 "value": null
               },
               {
@@ -650,7 +650,7 @@
         "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "center",
-        "#EF444DuceOptions": {
+        "#EF4444uceOptions": {
           "calcs": [
             "lastNotNull"
           ],
@@ -742,7 +742,7 @@
                 "value": 80
               },
               {
-                "color": "#EF444D",
+                "color": "#EF4444",
                 "value": 95
               }
             ]
@@ -776,7 +776,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#EF444D"
+                  "fixedColor": "#EF4444"
                 }
               }
             ]
@@ -937,7 +937,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#EF444D",
+                  "fixedColor": "#EF4444",
                   "mode": "fixed"
                 }
               },
@@ -1080,7 +1080,7 @@
                 "value": 80
               },
               {
-                "color": "#EF444D",
+                "color": "#EF4444",
                 "value": 90
               }
             ]
@@ -1250,7 +1250,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#EF444D",
+                  "fixedColor": "#EF4444",
                   "mode": "fixed"
                 }
               },
@@ -1356,7 +1356,7 @@
                 "value": 85
               },
               {
-                "color": "#EF444D",
+                "color": "#EF4444",
                 "value": 95
               }
             ]
@@ -1526,7 +1526,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#EF444D",
+                  "fixedColor": "#EF4444",
                   "mode": "fixed"
                 }
               },
@@ -1628,7 +1628,7 @@
         "defaults": {
           "unit": "none",
           "custom": {
-            "axisCente#EF444DZero": true,
+            "axisCente#EF4444Zero": true,
             "fillOpacity": 0,
             "lineWidth": 3,
             "spanNulls": 60000,
@@ -1644,7 +1644,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#EF444D",
+                "color": "#EF4444",
                 "value": -3
               },
               {
@@ -1664,7 +1664,7 @@
                 "value": 2
               },
               {
-                "color": "#EF444D",
+                "color": "#EF4444",
                 "value": 3
               }
             ]
@@ -1833,7 +1833,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#EF444D",
+                  "fixedColor": "#EF4444",
                   "mode": "fixed"
                 }
               },
@@ -1918,7 +1918,7 @@
         "defaults": {
           "unit": "none",
           "custom": {
-            "axisCente#EF444DZero": true,
+            "axisCente#EF4444Zero": true,
             "fillOpacity": 0,
             "lineWidth": 3,
             "spanNulls": 60000,
@@ -1934,7 +1934,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#EF444D",
+                "color": "#EF4444",
                 "value": -3
               },
               {
@@ -1954,7 +1954,7 @@
                 "value": 2
               },
               {
-                "color": "#EF444D",
+                "color": "#EF4444",
                 "value": 3
               }
             ]
@@ -2124,7 +2124,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#EF444D",
+                  "fixedColor": "#EF4444",
                   "mode": "fixed"
                 }
               },

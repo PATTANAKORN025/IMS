@@ -192,7 +192,7 @@
                 "value": 80
               },
               {
-                "color": "#EF444D",
+                "color": "#EF4444",
                 "value": 90
               }
             ]
@@ -228,7 +228,7 @@
         ]
       },
       "options": {
-        "#EF444DuceOptions": {
+        "#EF4444uceOptions": {
           "calcs": [
             "lastNotNull"
           ],
@@ -294,7 +294,7 @@
                 "value": 85
               },
               {
-                "color": "#EF444D",
+                "color": "#EF4444",
                 "value": 95
               }
             ]
@@ -330,7 +330,7 @@
         ]
       },
       "options": {
-        "#EF444DuceOptions": {
+        "#EF4444uceOptions": {
           "calcs": [
             "lastNotNull"
           ],
@@ -396,7 +396,7 @@
                 "value": 80
               },
               {
-                "color": "#EF444D",
+                "color": "#EF4444",
                 "value": 90
               }
             ]
@@ -432,7 +432,7 @@
         ]
       },
       "options": {
-        "#EF444DuceOptions": {
+        "#EF4444uceOptions": {
           "calcs": [
             "lastNotNull"
           ],
@@ -497,7 +497,7 @@
                 "value": 45
               },
               {
-                "color": "#EF444D",
+                "color": "#EF4444",
                 "value": 55
               }
             ]
@@ -533,7 +533,7 @@
         ]
       },
       "options": {
-        "#EF444DuceOptions": {
+        "#EF4444uceOptions": {
           "calcs": [
             "lastNotNull"
           ],
@@ -626,7 +626,7 @@
                 "value": 85
               },
               {
-                "color": "#EF444D",
+                "color": "#EF4444",
                 "value": 95
               }
             ]
@@ -796,7 +796,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#EF444D",
+                  "fixedColor": "#EF4444",
                   "mode": "fixed"
                 }
               },
@@ -880,7 +880,7 @@
         "defaults": {
           "unit": "bps",
           "custom": {
-            "axisCente#EF444DZero": true,
+            "axisCente#EF4444Zero": true,
             "fillOpacity": 0,
             "lineWidth": 2,
             "spanNulls": 60000,
@@ -1128,7 +1128,7 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "description": "Per-interface bandwidth queried from per-interface rows in the net_metrics hypertable. Download positive, Upload mirrored (negative-Y axis, #EF444D).",
+      "description": "Per-interface bandwidth queried from per-interface rows in the net_metrics hypertable. Download positive, Upload mirrored (negative-Y axis, #EF4444).",
       "transparent": true,
       "links": [
         {
@@ -1170,7 +1170,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#EF444D",
+                "color": "#EF4444",
                 "value": -3
               },
               {
@@ -1190,7 +1190,7 @@
                 "value": 2
               },
               {
-                "color": "#EF444D",
+                "color": "#EF4444",
                 "value": 3
               }
             ]
@@ -1400,7 +1400,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#EF444D",
+                  "fixedColor": "#EF4444",
                   "mode": "fixed"
                 }
               },
@@ -2059,7 +2059,7 @@
                 "value": 1000
               },
               {
-                "color": "#EF444D",
+                "color": "#EF4444",
                 "value": 5000
               }
             ]
@@ -2126,7 +2126,7 @@
           "thresholds": {
             "steps": [
               {
-                "color": "#EF444D",
+                "color": "#EF4444",
                 "value": null
               },
               {
@@ -2209,7 +2209,7 @@
                 "value": 1
               },
               {
-                "color": "#EF444D",
+                "color": "#EF4444",
                 "value": 3
               }
             ]
@@ -2307,7 +2307,7 @@
                 "value": 2
               },
               {
-                "color": "#EF444D",
+                "color": "#EF4444",
                 "value": 3
               }
             ]
@@ -2390,7 +2390,7 @@
                 "value": 2
               },
               {
-                "color": "#EF444D",
+                "color": "#EF4444",
                 "value": 3
               }
             ]
@@ -2628,7 +2628,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#EF444D"
+                  "fixedColor": "#EF4444"
                 }
               }
             ]
