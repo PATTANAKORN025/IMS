@@ -270,7 +270,7 @@
               "type": "value",
               "options": {
                 "9999": {
-                  "text": "∞",
+                  "text": "\u221e",
                   "color": "green",
                   "index": 0
                 }
@@ -315,7 +315,7 @@
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -363,7 +363,7 @@
               "type": "value",
               "options": {
                 "9999": {
-                  "text": "∞",
+                  "text": "\u221e",
                   "color": "green",
                   "index": 0
                 }
@@ -408,7 +408,7 @@
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -456,7 +456,7 @@
               "type": "value",
               "options": {
                 "9999": {
-                  "text": "∞",
+                  "text": "\u221e",
                   "color": "green",
                   "index": 0
                 }
@@ -500,7 +500,7 @@
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -577,7 +577,7 @@
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -874,11 +874,11 @@
       "targets": [
         {
           "refId": "A",
-          "legendFormat": "{{ machine_id }} — Used",
+          "legendFormat": "{{ machine_id }} \u2014 Used",
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('1 hour', bucket) AS \"time\", device_id, AVG(avg_disk_used) AS \"Disk Used (GB)\" FROM public.sys_hourly WHERE $__timeFilter(bucket) AND device_id IN (${machine_id:sqlstring}) GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT\n  bucket AS \"time\",\n  device_id,\n  AVG(avg_disk_used) AS \"Disk Used (GB)\"\nFROM public.sys_hourly\nWHERE $__timeFilter(bucket)\n  AND device_id IN (${machine_id:sqlstring})\n  AND avg_disk_used >= 0\n  AND avg_disk_used < 1048576\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series"
         },
         {
@@ -887,16 +887,16 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id AS metric,\n  ROUND(AVG(disk_used_gb)::NUMERIC, 2) AS \"Disk Used (GB)\",\n  ROUND(AVG(disk_total_gb)::NUMERIC, 2) AS \"Disk Total (GB)\"\nFROM public.sys_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:sqlstring}) AND disk_total_gb > 0\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  bucket AS \"time\",\n  device_id,\n  AVG(avg_disk_used) AS \"Disk Used (GB)\"\nFROM public.sys_hourly\nWHERE $__timeFilter(bucket)\n  AND device_id IN (${machine_id:sqlstring})\n  AND avg_disk_used >= 0\n  AND avg_disk_used < 1048576\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series"
         },
         {
           "refId": "C",
-          "legendFormat": "Forecast — {{ machine_id }}",
+          "legendFormat": "Forecast \u2014 {{ machine_id }}",
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH daily AS (SELECT device_id, time_bucket('1 day', bucket) AS day, AVG(avg_disk_used) AS used FROM public.sys_hourly WHERE bucket > NOW() - INTERVAL '30 days' AND device_id IN (${machine_id:sqlstring}) GROUP BY 1, 2), reg AS (SELECT device_id, COALESCE(regr_slope(used, EXTRACT(EPOCH FROM day)), 0) AS slope, COALESCE(regr_intercept(used, EXTRACT(EPOCH FROM day)), 0) AS intercept FROM daily GROUP BY device_id) SELECT generate_series AS time, r.device_id, GREATEST(0, r.slope * EXTRACT(EPOCH FROM generate_series) + r.intercept) AS \"Forecast (GB)\" FROM reg r, generate_series(NOW(), NOW() + INTERVAL '30 days', INTERVAL '1 day') WHERE r.slope > 0 ORDER BY 1, 2",
+          "rawSql": "SELECT\n  bucket AS \"time\",\n  device_id,\n  AVG(avg_disk_used) AS \"Disk Used (GB)\"\nFROM public.sys_hourly\nWHERE $__timeFilter(bucket)\n  AND device_id IN (${machine_id:sqlstring})\n  AND avg_disk_used >= 0\n  AND avg_disk_used < 1048576\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series",
           "maxDataPoints": 300
         }
@@ -905,7 +905,7 @@
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -1187,7 +1187,7 @@
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -1443,7 +1443,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{metric}}",
-          "rawSql": "WITH totals AS (\n  SELECT DISTINCT ON (device_id) device_id, ram_total_mb\n  FROM public.sys_metrics\n  WHERE ram_total_mb > 0\n  ORDER BY device_id, time DESC\n)\nSELECT\n  h.bucket AS time,\n  h.device_id AS metric,\n  ROUND(AVG(h.avg_ram_used / NULLIF(t.ram_total_mb, 0) * 100)::NUMERIC, 1) AS \"RAM Used %\"\nFROM public.sys_hourly h\nJOIN totals t ON t.device_id = h.device_id\nWHERE $__timeFilter(h.bucket) AND h.device_id IN (${machine_id:sqlstring})\nGROUP BY 1, 2, t.ram_total_mb\nORDER BY 1 ASC",
+          "rawSql": "WITH daily_ram AS (\n  SELECT\n    time_bucket('1 day', bucket) AS time,\n    device_id,\n    AVG(avg_ram_used) AS avg_used,\n    AVG(avg_ram_total) AS avg_total\n  FROM public.sys_hourly\n  WHERE bucket > NOW() - INTERVAL '30 days'\n    AND device_id IN (${machine_id:sqlstring})\n  GROUP BY 1, 2\n)\nSELECT\n  time,\n  device_id AS metric,\n  ROUND(\n    (avg_used / NULLIF(avg_total, 0) * 100)::NUMERIC,\n    2\n  ) AS \"RAM Usage %\"\nFROM daily_ram\nWHERE avg_total > 0\nORDER BY 1 ASC",
           "format": "time_series"
         }
       ],
@@ -1451,7 +1451,7 @@
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -1460,7 +1460,7 @@
     {
       "id": 500,
       "type": "row",
-      "title": "AIOps — ANOMALY DETECTION",
+      "title": "AIOps \u2014 ANOMALY DETECTION",
       "gridPos": {
         "x": 0,
         "y": 37,
@@ -1477,7 +1477,7 @@
     },
     {
       "id": 601,
-      "title": "CPU Z-Score Anomaly (3σ)",
+      "title": "CPU Z-Score Anomaly (3\u03c3)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -1743,11 +1743,11 @@
           "maxDataPoints": 300
         }
       ],
-      "description": "Fleet-wide CPU Z-Score anomaly detection using 60-minute rolling window. Red zones = ±3σ anomalies.",
+      "description": "Fleet-wide CPU Z-Score anomaly detection using 60-minute rolling window. Red zones = \u00b13\u03c3 anomalies.",
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -1755,7 +1755,7 @@
     },
     {
       "id": 602,
-      "title": "Temperature Z-Score Anomaly (3σ)",
+      "title": "Temperature Z-Score Anomaly (3\u03c3)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -2022,11 +2022,11 @@
           "maxDataPoints": 300
         }
       ],
-      "description": "Fleet-wide temperature Z-Score anomaly detection. Red zones indicate readings beyond ±3 standard deviations.",
+      "description": "Fleet-wide temperature Z-Score anomaly detection. Red zones indicate readings beyond \u00b13 standard deviations.",
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
