@@ -13,7 +13,7 @@
 // The caller must pass the flow context object from its function node scope.
 
 const CLOSED = 0, OPEN = 1, HALF_OPEN = 2;
-const FAILURE_THRESHOLD = 3;
+const FAILURE_THRESHOLD = 2;
 const COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
 
 function checkDevice(deviceId, flowCtx) {
