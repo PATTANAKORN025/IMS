@@ -57,7 +57,8 @@
           "legendFormat": "Inserts/sec",
           "refId": "A"
         }
-      ]
+      ],
+      "description": "Rate of successful database inserts per second from the pipeline."
     },
     {
       "type": "timeseries",
@@ -95,7 +96,8 @@
           "legendFormat": "Errors/sec",
           "refId": "A"
         }
-      ]
+      ],
+      "description": "Rate of failed database inserts per second. High values indicate pipeline instability."
     },
     {
       "type": "stat",
@@ -142,7 +144,11 @@
           "legendFormat": "",
           "refId": "A"
         }
-      ]
+      ],
+      "description": "Timestamp of the most recent successful batch flush to TimescaleDB.",
+      "options": {
+        "noValue": "No data"
+      }
     },
     {
       "type": "row",
@@ -200,7 +206,11 @@
           "legendFormat": "OPEN",
           "refId": "A"
         }
-      ]
+      ],
+      "description": "Number of devices with circuit breaker in OPEN state (unreachable).",
+      "options": {
+        "noValue": "0"
+      }
     },
     {
       "type": "stat",
@@ -243,7 +253,11 @@
           "legendFormat": "HALF-OPEN",
           "refId": "A"
         }
-      ]
+      ],
+      "description": "Number of devices with circuit breaker in HALF_OPEN state (testing connectivity).",
+      "options": {
+        "noValue": "0"
+      }
     },
     {
       "type": "stat",
@@ -275,7 +289,11 @@
           "legendFormat": "CLOSED",
           "refId": "A"
         }
-      ]
+      ],
+      "description": "Number of devices with circuit breaker in CLOSED state (healthy).",
+      "options": {
+        "noValue": "0"
+      }
     },
     {
       "type": "row",
@@ -323,7 +341,8 @@
           "legendFormat": "{{device_id}}",
           "refId": "A"
         }
-      ]
+      ],
+      "description": "Rate of circuit breaker trips per device. Indicates intermittent connectivity issues."
     },
     {
       "type": "table",
@@ -424,7 +443,8 @@
             }
           }
         }
-      ]
+      ],
+      "description": "Per-device circuit breaker state table (0=CLOSED, 1=OPEN, 2=HALF_OPEN)."
     },
     {
       "type": "row",
@@ -482,7 +502,11 @@
           "legendFormat": "",
           "refId": "A"
         }
-      ]
+      ],
+      "description": "Count of distinct devices successfully polled in the last hour.",
+      "options": {
+        "noValue": "0"
+      }
     },
     {
       "type": "timeseries",
@@ -520,7 +544,8 @@
           "legendFormat": "Devices",
           "refId": "A"
         }
-      ]
+      ],
+      "description": "Number of devices polled per injection cycle."
     },
     {
       "type": "gauge",
@@ -569,7 +594,11 @@
           "legendFormat": "",
           "refId": "A"
         }
-      ]
+      ],
+      "description": "Ratio of successful inserts to total inserts (success / (success + failure)).",
+      "options": {
+        "noValue": "N/A"
+      }
     }
   ],
   "refresh": "10s",

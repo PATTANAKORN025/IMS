@@ -337,7 +337,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH ldi AS (\n  SELECT device_id, pressure, joule_effect\n  FROM public.ldi_metrics\n  WHERE time > NOW() - INTERVAL '1 hour'\n    AND pressure IS NOT NULL\n    AND device_id IN (${machine_id:sqlstring})\n)\nSELECT\n  ROUND(100.0 * SUM(CASE WHEN ABS(pressure) > 10 OR joule_effect > 15 THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0), 1) AS value\nFROM ldi",
+          "rawSql": "WITH ldi AS (\n  SELECT device_id, pressure, joule_effect\n  FROM public.ldi_metrics\n  WHERE time > NOW() - INTERVAL '1 hour'\n    AND pressure IS NOT NULL\n    AND device_id IN (${machine_id:sqlstring})\n)\nSELECT\n  ROUND(100.0 * SUM(CASE WHEN ABS(pressure) > 10 OR ABS(joule_effect) > 10 THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0), 1) AS value\nFROM ldi",
           "format": "table",
           "legendFormat": "{{device_id}}"
         }
