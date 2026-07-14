@@ -438,6 +438,53 @@
       }
     },
     {
+      "type": "stat",
+      "title": "Unique Devices Polled (1h)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 28
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "steps": [
+              {
+                "color": "#FF003C",
+                "value": null
+              },
+              {
+                "color": "#FF9100",
+                "value": 1
+              },
+              {
+                "color": "#00FF87",
+                "value": 10
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "count(count by (device_id) (ims_pipeline_devices_polled_total))",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ]
+    },
+    {
       "type": "timeseries",
       "title": "Devices Polled / cycle",
       "datasource": {
@@ -446,8 +493,8 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 24,
-        "x": 0,
+        "w": 8,
+        "x": 8,
         "y": 28
       },
       "fieldConfig": {
@@ -471,6 +518,55 @@
         {
           "expr": "ims_pipeline_devices_polled_total",
           "legendFormat": "Devices",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "gauge",
+      "title": "Pipeline Success Rate",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 28
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "decimals": 2,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "steps": [
+              {
+                "color": "#FF003C",
+                "value": null
+              },
+              {
+                "color": "#FF9100",
+                "value": 0.95
+              },
+              {
+                "color": "#00FF87",
+                "value": 0.99
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "rate(ims_pipeline_inserts_total[5m]) / (rate(ims_pipeline_inserts_total[5m]) + rate(ims_pipeline_inserts_failed_total[5m]))",
+          "legendFormat": "",
           "refId": "A"
         }
       ]
