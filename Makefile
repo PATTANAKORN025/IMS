@@ -1,4 +1,4 @@
-.PHONY: up up-prod down restart build-flows deploy-flows verify backup restore test-unit test-load test-visual logs validate-flows snapshot-flows doctor
+.PHONY: up up-prod down restart build-flows deploy-flows verify backup restore test-unit test-load test-visual logs validate-flows validate-dashboards snapshot-flows doctor
 
 build-flows:
 	bash scripts/build-flows.sh
@@ -83,3 +83,10 @@ doctor:
 	@jq --version 2>NUL || (echo "WARN: jq not found (needed for build-flows)" && exit 1)
 	@echo "  jq: OK"
 	@echo "=== All checks passed ==="
+# ── IaC: Validate dashboards for corruption ─────────────
+validate-dashboards:
+	@echo "Checking dashboards for corrupted hex codes..."
+	@grep -rE '[a-zA-Z]+#[0-9a-fA-F]{6}' monitoring/grafana/dashboards/ && \
+	  (echo "FAIL: Corrupted hex code found in dashboard text" && exit 1) || \
+	  echo "  No corrupted hex codes found."
+	@echo "Dashboard validation passed."
