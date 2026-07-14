@@ -79,6 +79,19 @@ receivers:
       - url: 'http://node-red:1880/alert-webhook'
         send_resolved: true
 
+  # LINE Notify: Critical alerts pushed to LINE group
+  - name: 'line_notify'
+    webhook_configs:
+      - url: 'https://notify-api.line.me/api/notify'
+        send_resolved: true
+        http_config:
+          authorization:
+            type: Bearer
+            credentials_file: '/etc/alertmanager/line_token'
+          headers:
+            Content-Type: 'application/x-www-form-urlencoded'
+
+
 inhibit_rules:
   # A down service suppresses its own latency/SLA warnings
   - source_matchers:
