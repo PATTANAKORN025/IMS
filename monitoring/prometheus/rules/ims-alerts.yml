@@ -134,3 +134,33 @@ groups:
         annotations:
           summary: "High INSERT failure rate on Node-RED pipeline"
           description: "{{ $value | humanize }} failures/sec over 5 minutes."
+
+      # ── Degraded Detection: ingestion rate dropped >50% from 1h avg ──
+      # Catches partial failures (e.g., circuit breaker tripping devices)
+      # that don't fully stall the pipeline but reduce throughput.
+      - alert: PipelineDataDegraded
+        expr: |
+          (
+            rate(ims_inserts_ok_total[5m])
+            < (avg_over_time(rate(ims_inserts_ok_total[5m])[1h:5m]) * 0.5)
+          )
+          and
+          rate(ims_inserts_ok_total[5m]) > 0
+        for: 10m
+        labels:
+          severity: warning
+          service: node-red
+        annotations:
+          summary: "Pipeline ingestion degraded — rate dropped >50% from 1h average"
+          description: "Current rate: {{ $value | humanize }}/s. Possible circuit breaker trips or device failures reducing throughput."
+
+      # ── Circuit Breaker: devices stuck OPEN too long ──
+      - alert: CircuitBreakerOpen
+        expr: count(ims_circuit_breaker_state == 1) > 0
+        for: 15m
+        labels:
+          severity: warning
+          service: node-red
+        annotations:
+          summary: "{{ $value }} device(s) stuck in circuit breaker OPEN state"
+          description: "Devices have been unreachable for >15 minutes. Check network connectivity and device status."
