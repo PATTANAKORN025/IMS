@@ -216,7 +216,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#EF444D",
+                "color": "#EF4444",
                 "value": null
               },
               {
@@ -266,7 +266,7 @@
         "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "center",
-        "#EF444DuceOptions": {
+        "#EF4444uceOptions": {
           "calcs": [
             "lastNotNull"
           ],
@@ -329,7 +329,7 @@
                 "value": 5
               },
               {
-                "color": "#EF444D",
+                "color": "#EF4444",
                 "value": 15
               }
             ]
@@ -368,7 +368,7 @@
         "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "center",
-        "#EF444DuceOptions": {
+        "#EF4444uceOptions": {
           "calcs": [
             "lastNotNull"
           ],
@@ -430,7 +430,7 @@
                 "value": 500
               },
               {
-                "color": "#EF444D",
+                "color": "#EF4444",
                 "value": 1000
               }
             ]
@@ -470,7 +470,7 @@
         "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "center",
-        "#EF444DuceOptions": {
+        "#EF4444uceOptions": {
           "calcs": [
             "lastNotNull"
           ],
@@ -565,7 +565,7 @@
                         "text": "stale"
                       },
                       "offline": {
-                        "color": "#EF444D",
+                        "color": "#EF4444",
                         "text": "offline"
                       }
                     }
@@ -600,7 +600,7 @@
                       "value": 80
                     },
                     {
-                      "color": "#EF444D",
+                      "color": "#EF4444",
                       "value": 90
                     }
                   ]
@@ -634,7 +634,7 @@
                       "value": 45
                     },
                     {
-                      "color": "#EF444D",
+                      "color": "#EF4444",
                       "value": 55
                     }
                   ]
@@ -762,7 +762,7 @@
                 "value": 80
               },
               {
-                "color": "#EF444D",
+                "color": "#EF4444",
                 "value": 90
               }
             ]
@@ -806,7 +806,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#EF444D"
+                  "fixedColor": "#EF4444"
                 }
               },
               {
@@ -962,7 +962,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#EF444D",
+                  "fixedColor": "#EF4444",
                   "mode": "fixed"
                 }
               },
@@ -1040,7 +1040,7 @@
           "targetBlank": true
         }
       ],
-      "description": "Fleet-wide cpu load envelope: average (solid cyan) vs worst-case ceiling (dashed #EF444D).",
+      "description": "Fleet-wide cpu load envelope: average (solid cyan) vs worst-case ceiling (dashed #EF4444).",
       "transparent": true
     },
     {
@@ -1080,7 +1080,7 @@
                 "value": 45
               },
               {
-                "color": "#EF444D",
+                "color": "#EF4444",
                 "value": 55
               }
             ]
@@ -1125,7 +1125,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#EF444D"
+                  "fixedColor": "#EF4444"
                 }
               },
               {
@@ -1281,7 +1281,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#EF444D",
+                  "fixedColor": "#EF4444",
                   "mode": "fixed"
                 }
               },
@@ -1361,7 +1361,7 @@
           "targetBlank": true
         }
       ],
-      "description": "Fleet-wide temperature envelope: average (solid cyan) vs worst-case ceiling (dashed #EF444D).",
+      "description": "Fleet-wide temperature envelope: average (solid cyan) vs worst-case ceiling (dashed #EF4444).",
       "transparent": true
     },
     {
@@ -1402,7 +1402,7 @@
             "fillOpacity": 40,
             "lineWidth": 2,
             "gradientMode": "opacity",
-            "axisCente#EF444DZero": true,
+            "axisCente#EF4444Zero": true,
             "drawStyle": "bars",
             "barAlignment": 0,
             "showValue": "never"
@@ -1564,7 +1564,7 @@
                 "value": 85
               },
               {
-                "color": "#EF444D",
+                "color": "#EF4444",
                 "value": 95
               }
             ]
@@ -1608,7 +1608,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#EF444D"
+                  "fixedColor": "#EF4444"
                 }
               },
               {
@@ -1764,7 +1764,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#EF444D",
+                  "fixedColor": "#EF4444",
                   "mode": "fixed"
                 }
               },
@@ -1844,7 +1844,7 @@
           "targetBlank": true
         }
       ],
-      "description": "Fleet-wide ram saturation envelope: average (solid cyan) vs worst-case ceiling (dashed #EF444D).",
+      "description": "Fleet-wide ram saturation envelope: average (solid cyan) vs worst-case ceiling (dashed #EF4444).",
       "transparent": true
     }
   ],

@@ -91,7 +91,7 @@
           "unit": "ops",
           "decimals": 2,
           "color": {
-            "fixedColor": "#EF444D",
+            "fixedColor": "#EF4444",
             "mode": "fixed"
           },
           "custom": {
@@ -148,7 +148,7 @@
           "thresholds": {
             "steps": [
               {
-                "color": "#EF444D",
+                "color": "#EF4444",
                 "value": null
               },
               {
@@ -243,7 +243,7 @@
                 "value": 1
               },
               {
-                "color": "#EF444D",
+                "color": "#EF4444",
                 "value": 5
               }
             ]
@@ -538,7 +538,7 @@
                     "options": {
                       "1": {
                         "text": "OPEN",
-                        "color": "#EF444D"
+                        "color": "#EF4444"
                       }
                     }
                   },
@@ -643,7 +643,7 @@
           "thresholds": {
             "steps": [
               {
-                "color": "#EF444D",
+                "color": "#EF4444",
                 "value": null
               },
               {
@@ -773,7 +773,7 @@
           "thresholds": {
             "steps": [
               {
-                "color": "#EF444D",
+                "color": "#EF4444",
                 "value": null
               },
               {
