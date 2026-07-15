@@ -23,13 +23,7 @@ function parseAll(items, type, state) {
                 const [, p, i] = im;
                 if (!ifaces[i]) ifaces[i] = mkIface(i);
                 if (p === '2') {
-                    const name = String(val);
-                    ifaces[i].name = name;
-                    // Ghost Buster: filter non-physical interfaces
-                    if (!/^(ge-|xe-|et-|eth|em|ens|eno|enp|wlan)/.test(name)) {
-                        delete ifaces[i];
-                        continue;
-                    }
+                    ifaces[i].name = String(val);
                 }
                 if (p === '8') ifaces[i].status = Number(val);
                 if (p === '10') ifaces[i].rx32 = Number(val) || 0;
