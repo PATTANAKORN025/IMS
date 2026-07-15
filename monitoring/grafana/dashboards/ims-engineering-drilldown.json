@@ -53,7 +53,7 @@
       {
         "name": "interface",
         "type": "query",
-        "query": "SELECT DISTINCT iface_name FROM public.net_metrics WHERE device_id IN (${machine_id:sqlstring}) AND time > NOW() - INTERVAL '7 days' ORDER BY iface_name",
+        "query": "SELECT DISTINCT iface_name FROM public.net_metrics WHERE device_id IN (${machine_id:sqlstring}) AND time > NOW() - INTERVAL '24 hours' ORDER BY iface_name",
         "datasource": {
           "uid": "timescaledb"
         },
