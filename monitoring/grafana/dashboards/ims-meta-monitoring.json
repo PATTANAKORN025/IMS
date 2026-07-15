@@ -861,7 +861,7 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-15m",
     "to": "now"
   },
   "title": "IMS Pipeline Health & Meta-Monitoring",
