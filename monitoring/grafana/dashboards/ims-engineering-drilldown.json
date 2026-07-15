@@ -53,7 +53,7 @@
       {
         "name": "interface",
         "type": "query",
-        "query": "SELECT DISTINCT iface_name FROM public.net_metrics WHERE device_id IN (${machine_id:sqlstring}) AND time > NOW() - INTERVAL '24 hours' ORDER BY iface_name",
+        "query": "SELECT DISTINCT iface_name FROM public.net_metrics WHERE device_id IN (${machine_id:singlequote}) ORDER BY iface_name",
         "datasource": {
           "uid": "timescaledb"
         },
@@ -61,8 +61,7 @@
         "multi": false,
         "includeAll": false,
         "sort": 1,
-        "label": "Interface",
-        "allValue": "%"
+        "label": "Interface"
       }
     ]
   },
@@ -245,7 +244,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT cpu_load_percent AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '2 minutes' AND device_id IN (${machine_id:sqlstring}) ORDER BY time DESC LIMIT 1",
+          "rawSql": "SELECT cpu_load_percent AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '2 minutes' AND device_id IN (${machine_id:singlequote}) ORDER BY time DESC LIMIT 1",
           "format": "table",
           "legendFormat": "{{device_id}}"
         }
@@ -347,7 +346,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND((ram_used_mb / NULLIF(ram_total_mb, 0) * 100)::NUMERIC, 1) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '2 minutes' AND device_id IN (${machine_id:sqlstring}) ORDER BY time DESC LIMIT 1",
+          "rawSql": "SELECT ROUND((ram_used_mb / NULLIF(ram_total_mb, 0) * 100)::NUMERIC, 1) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '2 minutes' AND device_id IN (${machine_id:singlequote}) ORDER BY time DESC LIMIT 1",
           "format": "table",
           "legendFormat": "{{device_id}}"
         }
@@ -449,7 +448,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND((disk_used_gb / NULLIF(disk_total_gb, 0) * 100)::NUMERIC, 1) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '2 minutes' AND device_id IN (${machine_id:sqlstring}) ORDER BY time DESC LIMIT 1",
+          "rawSql": "SELECT ROUND((disk_used_gb / NULLIF(disk_total_gb, 0) * 100)::NUMERIC, 1) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '2 minutes' AND device_id IN (${machine_id:singlequote}) ORDER BY time DESC LIMIT 1",
           "format": "table",
           "legendFormat": "{{device_id}}"
         }
@@ -550,7 +549,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT temp_c AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '2 minutes' AND device_id IN (${machine_id:sqlstring}) AND temp_c > 0 ORDER BY time DESC LIMIT 1",
+          "rawSql": "SELECT temp_c AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '2 minutes' AND device_id IN (${machine_id:singlequote}) AND temp_c > 0 ORDER BY time DESC LIMIT 1",
           "format": "table",
           "legendFormat": "{{device_id}}"
         }
@@ -852,7 +851,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{metric}}",
-          "rawSql": "SELECT\n  bucket AS time,\n  device_id AS metric,\n  ROUND(AVG(avg_ram_used / NULLIF(avg_ram_total, 0) * 100)::NUMERIC, 1) AS \"RAM %\"\nFROM public.sys_hourly\nWHERE $__timeFilter(bucket) AND device_id IN (${machine_id:sqlstring})\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  bucket AS time,\n  device_id AS metric,\n  ROUND(AVG(avg_ram_used / NULLIF(avg_ram_total, 0) * 100)::NUMERIC, 1) AS \"RAM %\"\nFROM public.sys_hourly\nWHERE $__timeFilter(bucket) AND device_id IN (${machine_id:singlequote})\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series"
         }
       ],
@@ -1117,7 +1116,7 @@
             "type": "postgres",
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id || ' - ' || iface_name AS metric,\n  ROUND(AVG(rx_mbps)::NUMERIC, 2) AS \"Download (Mbps)\",\n  ROUND(AVG(tx_mbps)::NUMERIC, 2) AS \"Upload (Mbps)\"\nFROM public.net_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:sqlstring})\n  AND iface_name IN (${interface:sqlstring})\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id || ' - ' || iface_name AS metric,\n  ROUND(AVG(rx_mbps)::NUMERIC, 2) AS \"Download (Mbps)\",\n  ROUND(AVG(tx_mbps)::NUMERIC, 2) AS \"Upload (Mbps)\"\nFROM public.net_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:singlequote})\n  AND iface_name IN (${interface:singlequote})\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series",
           "maxDataPoints": 300,
           "legendFormat": "{{metric}}"
@@ -1128,7 +1127,7 @@
             "type": "postgres",
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id || ' - ' || iface_name AS metric,\n  ROUND(AVG(rx_mbps)::NUMERIC, 2) AS \"Download (Mbps)\",\n  ROUND(AVG(tx_mbps)::NUMERIC, 2) AS \"Upload (Mbps)\"\nFROM public.net_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:sqlstring})\n  AND iface_name IN (${interface:sqlstring})\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id || ' - ' || iface_name AS metric,\n  ROUND(AVG(rx_mbps)::NUMERIC, 2) AS \"Download (Mbps)\",\n  ROUND(AVG(tx_mbps)::NUMERIC, 2) AS \"Upload (Mbps)\"\nFROM public.net_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:singlequote})\n  AND iface_name IN (${interface:singlequote})\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series",
           "maxDataPoints": 300,
           "legendFormat": "{{metric}}"
@@ -1461,7 +1460,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{metric}}",
-          "rawSql": "SELECT\n  bucket AS time,\n  device_id AS metric,\n  ROUND(AVG(max_temp)::NUMERIC, 1) AS \"Temperature (\u00b0C)\"\nFROM public.sys_hourly\nWHERE $__timeFilter(bucket) AND device_id IN (${machine_id:sqlstring}) AND max_temp > 0\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  bucket AS time,\n  device_id AS metric,\n  ROUND(AVG(max_temp)::NUMERIC, 1) AS \"Temperature (\u00b0C)\"\nFROM public.sys_hourly\nWHERE $__timeFilter(bucket) AND device_id IN (${machine_id:singlequote}) AND max_temp > 0\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series"
         },
         {
@@ -1470,7 +1469,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{metric}}",
-          "rawSql": "SELECT\n  bucket AS time,\n  device_id AS metric,\n  ROUND(AVG(max_temp)::NUMERIC, 1) AS \"Temperature (\u00b0C)\"\nFROM public.sys_hourly\nWHERE $__timeFilter(bucket) AND device_id IN (${machine_id:sqlstring}) AND max_temp > 0\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  bucket AS time,\n  device_id AS metric,\n  ROUND(AVG(max_temp)::NUMERIC, 1) AS \"Temperature (\u00b0C)\"\nFROM public.sys_hourly\nWHERE $__timeFilter(bucket) AND device_id IN (${machine_id:singlequote}) AND max_temp > 0\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series"
         }
       ],
@@ -1697,7 +1696,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{metric}}",
-          "rawSql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id AS metric,\n  ROUND(AVG(throughput)::NUMERIC, 1) AS \"Throughput\"\nFROM public.ldi_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:sqlstring}) AND throughput > 0\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id AS metric,\n  ROUND(AVG(throughput)::NUMERIC, 1) AS \"Throughput\"\nFROM public.ldi_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:singlequote}) AND throughput > 0\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series"
         },
         {
@@ -1706,7 +1705,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{metric}}",
-          "rawSql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id AS metric,\n  ROUND(AVG(pressure)::NUMERIC, 1) AS \"PE\"\nFROM public.ldi_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:sqlstring}) AND pressure IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id AS metric,\n  ROUND(AVG(pressure)::NUMERIC, 1) AS \"PE\"\nFROM public.ldi_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:singlequote}) AND pressure IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series"
         }
       ],
@@ -1919,7 +1918,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{metric}}",
-          "rawSql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id AS metric,\n  ROUND(AVG(joule_effect)::NUMERIC, 1) AS \"JE\"\nFROM public.ldi_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:sqlstring}) AND joule_effect IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id AS metric,\n  ROUND(AVG(joule_effect)::NUMERIC, 1) AS \"JE\"\nFROM public.ldi_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:singlequote}) AND joule_effect IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series"
         },
         {
@@ -1928,7 +1927,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{metric}}",
-          "rawSql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id AS metric,\n  ROUND(AVG(humidity)::NUMERIC, 1) AS \"Humidity\"\nFROM public.ldi_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:sqlstring}) AND humidity > 0\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id AS metric,\n  ROUND(AVG(humidity)::NUMERIC, 1) AS \"Humidity\"\nFROM public.ldi_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:singlequote}) AND humidity > 0\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series"
         }
       ],
@@ -2013,7 +2012,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id AS metric,\n  ROUND(AVG(pressure)::NUMERIC, 1) AS \"PE\"\nFROM public.ldi_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:sqlstring}) AND pressure IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id AS metric,\n  ROUND(AVG(pressure)::NUMERIC, 1) AS \"PE\"\nFROM public.ldi_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:singlequote}) AND pressure IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         },
@@ -2022,7 +2021,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id AS metric,\n  ROUND(AVG(joule_effect)::NUMERIC, 1) AS \"JE\"\nFROM public.ldi_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:sqlstring}) AND joule_effect IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id AS metric,\n  ROUND(AVG(joule_effect)::NUMERIC, 1) AS \"JE\"\nFROM public.ldi_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:singlequote}) AND joule_effect IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
@@ -2351,7 +2350,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH stats AS (SELECT avg(avg_cpu) as mu, stddev(avg_cpu) as sigma FROM public.sys_hourly WHERE device_id IN (${machine_id:sqlstring}) AND $__timeFilter(bucket)) SELECT bucket AS time, (avg_cpu - mu) / NULLIF(sigma, 0) AS \"Z-Score\" FROM public.sys_hourly, stats WHERE device_id IN (${machine_id:sqlstring}) AND $__timeFilter(bucket) ORDER BY time ASC",
+          "rawSql": "WITH stats AS (SELECT avg(avg_cpu) as mu, stddev(avg_cpu) as sigma FROM public.sys_hourly WHERE device_id IN (${machine_id:singlequote}) AND $__timeFilter(bucket)) SELECT bucket AS time, (avg_cpu - mu) / NULLIF(sigma, 0) AS \"Z-Score\" FROM public.sys_hourly, stats WHERE device_id IN (${machine_id:singlequote}) AND $__timeFilter(bucket) ORDER BY time ASC",
           "format": "time_series",
           "maxDataPoints": 300,
           "legendFormat": "Z-Score"
@@ -2435,7 +2434,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH stats AS (SELECT avg(max_temp) as mu, stddev(max_temp) as sigma FROM public.sys_hourly WHERE device_id IN (${machine_id:sqlstring}) AND max_temp > 0 AND $__timeFilter(bucket)) SELECT bucket AS time, (max_temp - mu) / NULLIF(sigma, 0) AS \"Z-Score\" FROM public.sys_hourly, stats WHERE device_id IN (${machine_id:sqlstring}) AND max_temp > 0 AND $__timeFilter(bucket) ORDER BY time ASC",
+          "rawSql": "WITH stats AS (SELECT avg(max_temp) as mu, stddev(max_temp) as sigma FROM public.sys_hourly WHERE device_id IN (${machine_id:singlequote}) AND max_temp > 0 AND $__timeFilter(bucket)) SELECT bucket AS time, (max_temp - mu) / NULLIF(sigma, 0) AS \"Z-Score\" FROM public.sys_hourly, stats WHERE device_id IN (${machine_id:singlequote}) AND max_temp > 0 AND $__timeFilter(bucket) ORDER BY time ASC",
           "format": "time_series",
           "legendFormat": "Z-Score"
         }
