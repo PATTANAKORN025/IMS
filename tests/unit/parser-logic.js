@@ -18,7 +18,7 @@ function parseAll(items, type, state) {
         const oid = Array.isArray(item.oid) ? item.oid.join('.') : String(item.oid).replace(/,/g, '.');
         const val = item.value; const numVal = (typeof val === 'number') ? val : (Number(val) || 0);
         if (type === 'cpu' && (oid.startsWith('1.3.6.1.2.1.25.3.3.1.2.') || oid.match(/1\.3\.6\.1\.4\.1\.2636\.3\.1\.13\.1\.8\.(7|9)\./))) { if (Number.isFinite(numVal)) { cpu.total += numVal; cpu.count++; } continue; }
-        if (type === 'temp' && (oid.startsWith('1.3.6.1.4.1.2021.13.16.2.1.7.') || oid.startsWith('1.3.6.1.4.1.2636.3.1.13.1.7.'))) { if (numVal > maxTemp) maxTemp = numVal; continue; }
+        if (type === 'temp' && (oid.startsWith('1.3.6.1.4.1.2021.13.16.2.1.7.') || oid.match(/1\.3\.6\.1\.4\.1\.2636\.3\.1\.13\.1\.7\.(7|9)\./))) { if (numVal > maxTemp) maxTemp = numVal; continue; }
         if (type === 'storage') { if (oid.startsWith('1.3.6.1.4.1.2636.3.1.13.1.11.')) { ramTotalMb = 100; ramUsedMb = Number(numVal) || 0; continue; } const m = oid.match(STORAGE_ENTRY_RE); if (m) { const [, p, i] = m; if (!storageEntries[i]) storageEntries[i] = { type: '', au: 0, size: 0, used: 0 }; const raw = Buffer.isBuffer(val) ? val.toString('utf8') : val; if (p === '2') storageEntries[i].type = String(raw); if (p === '4') storageEntries[i].au = Number(raw) || 0; if (p === '5') storageEntries[i].size = Number(raw) || 0; if (p === '6') storageEntries[i].used = Number(raw) || 0; continue; } }
         if (type === 'net') {
             const im = oid.match(IFTABLE_OID_RE);
