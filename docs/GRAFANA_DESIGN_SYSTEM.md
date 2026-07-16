@@ -22,20 +22,19 @@
 
 | Token | Hex Code | ความหมาย | ใช้กับ |
 |---|---|---|---|
-| `neon.cyan` | `#00F2FE` | ข้อมูลหลัก / สถานะปกติ | RX (Download), Windows series, CPU normal |
-| `neon.green` | `#00FF87` | สถานะดี / Ubuntu | Ubuntu series, Healthy status, Throughput |
-| `neon.purple` | `#7F00FF` | Database / Backend | DB metrics, TimescaleDB, wlan0 RX |
-| `neon.red` | `#FF003C` | อันตราย ต้องแก้เดี๋ยวนี้ | threshold แดง, Max value alerts, Critical fire |
-| `neon.orange` | `#FF9100` | เฝ้าระวัง ยังไม่ฉุกเฉิน | threshold เหลือง/ส้ม, Temperature, PE metric |
-| `neon.pink` | `#FF007F` | TX (Upload) / ข้อมูลรอง | TX series, wlan0 TX, Upload mirrored axis |
-| `neutral.forecast` | `#4A5568` | เส้นคาดการณ์/Regression (เส้นประ) | Forecast, regression, trend projection |
-| `neutral.gap` | `text-secondary` @ 40% opacity | เส้นอ้างอิง / ข้อมูลจริง | Threshold reference lines, capacity ceiling |
+| `info` | `#00E5FF` | ข้อมูลหลัก / สถานะปกติ | RX (Download), Windows series, CPU normal |
+| `accent` | `#3B82F6` | สีเน้น / Active UI elements | Navigation highlights, interactive elements |
+| `healthy` | `#10B981` | สถานะดี / ปกติ | Healthy status, Ubuntu series, Throughput, Green thresholds |
+| `warning` | `#F59E0B` | เฝ้าระวัง ยังไม่ฉุกเฉิน | Warning thresholds, Temperature warnings, PE metric |
+| `critical` | `#EF4444` | อันตราย ต้องแก้เดี๋ยวนี้ | Critical thresholds, Max value alerts, Error states |
+| `forecast` | `#4A5568` | เส้นคาดการณ์/Regression (เส้นประ) | Forecast, regression, trend projection |
+| `gap` | `text-secondary` @ 40% opacity | เส้นอ้างอิง / ข้อมูลจริง | Threshold reference lines, capacity ceiling |
 
 **กฎเหล็ก:**
-- **ห้าม** ใช้สี Grafana default palette (เช่น สีเขียว standard, สีน้ำเงิน standard, สีม่วง standard, สีชมพู standard, สีเหลือง standard) — ใช้เฉพาะ Cyberpunk tokens ในตารางนี้เท่านั้น ห้ามใช้ hex code ใดๆ นอกเหนือจาก 6 โทนหลัก
-- **ห้าม** ผูกสี fixed เข้ากับชื่อเครื่อง/series เฉพาะเจาะจง (เช่น `E2E-SERVER-001 = แดง`) ยกเว้นกรณีเดียว: เครื่องจริงถาวรในโรงงานที่ต้องแยกด้วยสีคงที่ตลอดชีพของระบบ — และถ้าทำ ต้องประกาศ mapping ไว้ในภาคผนวก (ดูข้อ 8) ที่เดียว ห้ามตั้งซ้ำในแต่ละ dashboard
-- แดง (`#FF003C`) ต้องแปลว่า critical **เสมอ** — ห้ามใช้แดงเป็นสี series เฉยๆ (เช่น TX เป็นสีแดงเพราะ "สวยดี") เพราะจะไปแย่งความหมายกับ alert สี
-- Forecast / regression / threshold reference ใช้ `#4A5568` (neutral.forecast) เส้นประเสมอ ไม่ใช่สีสดที่แข่งกับข้อมูลจริง
+- **ห้าม** ใช้สี Grafana default palette — ใช้เฉพาะ tokens ในตารางนี้เท่านั้น (Healthy: `#10B981`, Warning: `#F59E0B`, Critical: `#EF4444`, Info: `#00E5FF`, Accent: `#3B82F6`)
+- **ห้าม** ผูกสี fixed เข้ากับชื่อเครื่อง/series เฉพาะเจาะจง ยกเว้นกรณีเดียว: เครื่องจริงถาวรในโรงงานที่ต้องแยกด้วยสีคงที่ — ต้องประกาศ mapping ในภาคผนวกที่เดียว
+- แดง (`#EF4444`) ต้องแปลว่า critical **เสมอ** — ห้ามใช้แดงเป็นสี series เฉยๆ เพราะจะไปแย่งความหมายกับ alert
+- Forecast / regression / threshold reference ใช้ `#4A5568` (forecast) เส้นประเสมอ ไม่ใช่สีสดที่แข่งกับข้อมูลจริง
 
 ### 2.2 Threshold Contract (ต้องตรงกันทุก panel ที่วัดค่าเดียวกัน)
 
