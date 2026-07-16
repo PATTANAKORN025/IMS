@@ -1,169 +1,140 @@
 <div align="center">
 
-# IMS — Infrastructure Monitoring System
+# IMS — Industrial Monitoring System
 
-### Enterprise-Grade NOC Monitoring for 1000+ Nodes
+### Enterprise NOC Infrastructure Monitoring for 1000+ Nodes
 
-[![Docker](https://img.shields.io/badge/Docker-24.0-blue?logo=docker&logoColor=white)](https://www.docker.com/)
-[![Grafana](https://img.shields.io/badge/Grafana-11.1-F46800?logo=grafana&logoColor=white)](https://grafana.com/)
-[![Node-RED](https://img.shields.io/badge/Node--RED-4.0-8F0000?logo=nodered&logoColor=white)](https://nodered.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-10B981?logo=opensourceinitiative&logoColor=white)](LICENSE)
+[![Docker: Ready](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
+[![Grafana: v11+](https://img.shields.io/badge/Grafana-v11-F46800?logo=grafana&logoColor=white)](https://grafana.com/)
+[![Node-RED: v4+](https://img.shields.io/badge/Node--RED-v4-8F0000?logo=nodered&logoColor=white)](https://nodered.org/)
 [![TimescaleDB](https://img.shields.io/badge/TimescaleDB-2.x-316192?logo=postgresql&logoColor=white)](https://www.timescale.com/)
-[![Prometheus](https://img.shields.io/badge/Prometheus-2.55-E6522C?logo=prometheus&logoColor=white)](https://prometheus.io/)
-[![K6](https://img.shields.io/badge/K6-Load--Testing-7B61FF?logo=k6&logoColor=white)](https://k6.io/)
-[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
+[![Tests: Passing](https://img.shields.io/badge/Tests-Passing-10B981?logo=jest&logoColor=white)](#quick-start)
+[![K6: Stress-Tested](https://img.shields.io/badge/K6-Stress--Tested-7B61FF?logo=k6&logoColor=white)](#quick-start)
 
-![Architecture](https://img.shields.io/badge/Architecture-Cyberpunk_HUD-3B82F6)
-![Uptime](https://img.shields.io/badge/Uptime-99.9%25-10B981)
-![Nodes](https://img.shields.io/badge/Scalable-1000%2B_Nodes-EF4444)
-
----
+<br/>
 
 **IMS** is a production-grade, real-time IT infrastructure monitoring system built for Enterprise NOC operations. It collects SNMP telemetry from 1000+ machines, processes it through an asynchronous Node-RED pipeline, stores it in TimescaleDB with continuous aggregates, and visualizes it via a cyberpunk-themed Grafana HUD — all orchestrated by Docker Compose.
 
+<br/>
+
 </div>
+
+---
+
+## Dashboard Showcase
+
+<p align="center">
+  <img src="assets/noc-overview.png" width="31%" alt="NOC Overview" />
+  <img src="assets/engineering-drilldown.png" width="31%" alt="Engineering Drill-Down" />
+  <img src="assets/capacity-planning.png" width="31%" alt="Capacity Planning" />
+</p>
+
+<p align="center">
+  <em>NOC Overview</em> &nbsp;&nbsp;&nbsp; <em>Engineering Drill-Down</em> &nbsp;&nbsp;&nbsp; <em>Capacity Planning</em>
+</p>
+
+<br/>
+
+---
+
+## Why IMS?
+
+| | Capability | What It Does |
+|:---:|---|---|
+| ⚡ | **Hyper-Parallel Ingestion** | Node-RED sequential async bulk SNMP walks with maxRepetitions:50. 78-port switches polled in <2s per cycle. Circuit breaker trips after 2 consecutive failures — zero log spam. |
+| 🧠 | **Predictive AIOps** | Z-Score anomaly detection (3σ from 24h rolling baseline), linear regression capacity forecasting (days until disk/RAM full), continuous fleet health scoring (0-100). |
+| 🛡️ | **Zero-Downtime Architecture** | Circuit breaker with HALF_OPEN probe, PgBouncer transaction pooling, retry queue with age-based eviction, offline heartbeat on device failure — the database ALWAYS records the exact moment of outage. |
+
+---
+
+## One-Minute Quickstart
+
+```bash
+# Clone and configure
+git clone https://github.com/PATTANAKORN025/IMS.git
+cd IMS
+cp .env.example .env
+
+# Launch the complete stack (7 services)
+make up          # or: docker compose up -d
+
+# Wait 40 seconds for full startup, then verify
+sleep 40 && make verify
+
+# Open Grafana (default: admin / admin)
+open http://localhost:3000
+```
+
+### Available Commands
+
+| Command | Description |
+|---------|-------------|
+| `make up` | Start all services (dev mode with SNMP simulator) |
+| `make down` | Stop all services |
+| `make verify` | Full system health check (containers, DB, pipeline, alerts) |
+| `make test-unit` | Run unit tests (18 parser + counter tests) |
+| `make test-load` | Run K6 pipeline stress test (50→200 VUs) |
+| `make test-visual` | Capture dashboard screenshots via Playwright |
+| `make validate-dashboards` | Lint all dashboard JSON for grid overlap + hex corruption |
+| `make backup` | Database backup |
 
 ---
 
 ## Architecture
 
 ```
-┌─────────────┐     ┌───────────┐     ┌─────────────┐     ┌────────────┐
-│  SNMP Poll   │────▶│  Node-RED  │────▶│ TimescaleDB  │────▶│   Grafana   │
-│  (5-thread)  │     │  Async I/O  │     │  CAGGs+Raw   │     │  Cyberpunk  │
-└─────────────┘     └───────────┘     └─────────────┘     └────────────┘
-                         │                      │
-                    ┌────▼────┐            ┌────▼────┐
-                    │  K6 Load │            │Prometheus│
-                    │  Testing │            │  +Alert  │
-                    └─────────┘            └─────────┘
+┌──────────────┐    SNMP v2c     ┌──────────────┐    SQL INSERT    ┌────────────┐
+│  SNMP Walk   │ ──────────────▸ │   Node-RED   │ ──────────────▸ │ PgBouncer  │
+│  (Sequential │    UDP/161      │  5-Thread    │   Batch 10s     │ (pooling)  │
+│  Async Bulk) │                 │  Stateful    │                 └─────┬──────┘
+└──────────────┘                 └──────────────┘                       │
+                                                          ┌────────────▼──────────┐
+                                                          │     TimescaleDB       │
+                                                          │  CAGGs + Hypertables  │
+                                                          └────────────┬──────────┘
+                                                          ┌────────────▼──────────┐
+                                            ┌─────────────┤     Prometheus        │
+                                            │             │   + Alertmanager      │
+                                     ┌──────▼──────┐     └───────────────────────┘
+                                     │   Grafana   │
+                                     │ 4 Dashboards│
+                                     └─────────────┘
 ```
 
-### Data Flow (Macro-to-Micro Paradigm)
+### Data Flow
 
-1. **SNMP Collection** — Node-RED forks 5 parallel walker threads (CPU, Storage, Network, Temperature, LDI) per machine every 10 seconds
-2. **Async Batch Parser** — Aggregates walker results, calculates per-interface Mbps deltas, and performs 30-column parameterized INSERT via `pg` module
-3. **TimescaleDB CAGG** — `telemetry_minute_summary` and `telemetry_hourly_summary` materialize fleet-wide aggregates for 1000x faster dashboard queries
-4. **Grafana HUD** — Fleet Envelope (AVG+MAX), Top-10 Critical Nodes, State-Timeline Z-Score anomaly detection, Donut resource distribution, Linear regression capacity forecasting
-5. **Prometheus + Alertmanager** — 12 scrape targets, inhibition rules, webhook integration (Line/Teams)
+1. **Collection** — Node-RED forks 4 walkers for network switches (CPU, Storage, Network, Temp) and 5 for servers (+LDI) every 10 seconds. Device registry loaded from `public.devices` every 5 minutes.
+2. **Walking** — Sequential async bulk walks (`session.subtree` with `maxRepetitions: 50`). Single UDP socket eliminates switch-level packet drops. Circuit breaker trips after 2 failures with automatic HALF_OPEN probe.
+3. **Parsing** — `sre_parser` maintains per-device state in flow context (`dev_state_<deviceId>`), buffers rows in `batch_buf_<deviceId>`. Offline heartbeat (`_walker: "offline"`) immediately zeros all metrics on device failure.
+4. **Storage** — Timer-gated independent flushing: each table type (sys/net/ldi) inserts only if its buffer has rows. Partial walker failures don't block unrelated data writes.
+5. **Continuous Aggregation** — Hourly CAGGs refresh every 30min. Daily/Weekly CAGGs aggregate from hourly. Retention: raw 14d, hourly 90d, daily 2yr, weekly forever.
+6. **Visualization** — 4 dashboards: NOC Overview (fleet envelope), Engineering Drill-Down (per-machine), AIOps & Capacity (forecasting), Meta-Monitoring (pipeline health).
+7. **Alerting** — Prometheus scrapes `/metrics`, Alertmanager routes to LINE Notify + Slack with runbook links. Z-Score anomalies via Grafana SQL over TimescaleDB.
 
-### Dashboard Architecture (3 Dashboards)
+### Dashboard Architecture
 
 | Dashboard | Panels | Purpose |
 |-----------|--------|---------|
-| **NOC Overview** | 16 | Executive fleet view: Fleet Envelope, Top-10 Critical Nodes, Network Throughput, LDI Yield Risk |
-| **Engineering Drill-Down** | 21 | Per-machine deep dive: Gauges, Memory/Temp timeseries, LDI manufacturing, Z-Score anomalies, Donut charts |
-| **Capacity Planning** | 16 | Forecasting: Days Until Full (bargauge), Disk/CPU/RAM trends, Z-Score anomaly detection |
+| **NOC Overview** | 15 | Fleet envelope (AVG+MAX), Fleet Health Score, Top-10 Critical Nodes, Network Bandwidth, LDI Yield Risk |
+| **Engineering Drill-Down** | 25 | Per-machine gauges, RAM/CPU/Temp timeseries, LDI manufacturing, Power analytics, Z-Score anomalies |
+| **Capacity Planning** | 16 | Disk/CPU/RAM forecast with linear regression, Days Until Full, Z-Score anomaly detection |
+| **Meta-Monitoring** | 15 | Pipeline throughput, deadman alerts, circuit breaker state, device poll rates |
 
-**Design System:** Cyberpunk HUD aesthetic — Rajdhani font, `#030407` background, Tailwind-based palette (`#10B981` Healthy, `#F59E0B` Warning, `#EF4444` Critical, `#3B82F6` Accent), glassmorphism panels with corner bracket accents, 2D overlap-free Grid-24 layout.
-
----
-
-## Dashboard Showcase
-
-> Screenshots captured automatically via `make test-visual` (Playwright + Kiosk TV mode)
-
-| NOC Overview | Engineering Drill-Down | Capacity Planning |
-|:---:|:---:|:---:|
-| ![NOC Overview](assets/noc-overview.png) | ![Engineering Drill-Down](assets/engineering-drilldown.png) | ![Capacity Planning](assets/capacity-planning.png) |
-
-
-
-## SRE & DevSecOps Triumphs
-
-### Principle of Least Privilege (PoLP)
-- `grafana_reader` role with read-only access to `public` schema — no admin credentials exposed
-- Direct `ims-timescaledb:5432` connection bypasses PgBouncer SCRAM auth issues
-
-### Automated 2D Overlap Prevention
-- Every dashboard panel passes rectangle collision detection before commit
-- Strict bottom-up Y-axis accumulation: `Next Y = Previous Y + Previous H`
-- Zero overlapping panels across all 3 dashboards (verified by automated scanner)
-
-### Technical Debt Eradication
-- Migration files sequenced `001`–`011` with zero duplicate prefixes
-- Node-RED context unified under `nodered_data/` (single source of truth)
-- Documentation consolidated into root-level SSOT guides
-- PgBouncer dead weight removed (direct DB connections)
-- AI prompt artifacts purged from repository
-
-### K6 Stress Testing
-- `db-write-stress.js` — 100-node write throughput via Node-RED `/inject`
-- `grafana-query-stress.js` — 50-user concurrent dashboard query stress
-- Automated results export to JSON for CI/CD integration
-
----
-
-## Quick Start
-
-```bash
-# Clone the repository
-git clone https://github.com/PATTANAKORN025/IMS.git
-cd IMS
-
-# Configure environment
-cp .env.example .env
-
-# Launch the complete stack (7 services)
-docker compose up -d
-
-# Wait 40 seconds for full startup
-sleep 40
-
-# Verify all services
-docker compose ps
-
-# Open Grafana
-open http://localhost:3000
-```
-
-**Default credentials:** `admin` / `admin` (change on first login)
-
-### Available Commands
-
-| Command | Description |
-|---------|-------------|
-| `make up` | Start all services (dev mode with SNMP simulator — `ubuntu` + `windows` profiles) |
-| `make down` | Stop all services |
-| `make verify` | Full system health check |
-| `make test-unit` | Run unit tests (56 tests) |
-| `make test-load` | Run K6 load tests |
-| `make backup` | Database backup |
-| `bash scripts/init-migrations.sh` | Apply all migrations to fresh DB |
-
----
-
-## Tech Stack
-
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| **Orchestration** | Docker Compose | 7-service container orchestration |
-| **Data Collection** | Node-RED + SNMP | Async 5-thread parallel walker pipeline |
-| **Database** | TimescaleDB (PostgreSQL) | Time-series optimized with Continuous Aggregates |
-| **Visualization** | Grafana 11.1 | Cyberpunk HUD dashboards with state-timeline anomalies |
-| **Alerting** | Prometheus + Alertmanager | Metric scraping, inhibition rules, webhook integration |
-| **Load Testing** | K6 | Database write and Grafana query stress testing |
-| **SLA Probing** | Blackbox Exporter | HTTP/TCP/ICMP endpoint monitoring |
-
----
-
-## Database Schema
-
-- **`devices`** — Device registry: `device_id`, `hostname`, `ip_address`, `snmp_community`, `snmp_port`, `enabled` (+ 5 metadata cols)
-- **`sys_metrics`** — TimescaleDB hypertable: CPU, RAM, Disk, Temperature per poll cycle (12 columns)
-- **`net_metrics`** — TimescaleDB hypertable: per-interface RX/TX Mbps, errors, drops (10 columns)
-- **`ldi_metrics`** — TimescaleDB hypertable: manufacturing throughput, PE, JE, humidity, power, vibration (11 columns)
-- **`sys_hourly` / `net_hourly` / `ldi_hourly`** — Continuous Aggregates: hourly rollups with 30-day raw retention
-- **V2 Normalized Architecture**: Domain-specific tables (sys, net, ldi) replace the legacy wide-table format, enabling better compression (~90% after 7 days) and targeted query performance
+**Design System:** Cyberpunk HUD — `#030407` background, Tailwind palette (`#10B981` Healthy, `#F59E0B` Warning, `#EF4444` Critical, `#3B82F6` Accent), Roboto Mono for stat values, glassmorphism panels, Grid-24 overlap-free layout.
 
 ---
 
 ## NOC Wall-Display (Kiosk Mode)
 
-IMS dashboards support Grafana's TV Kiosk mode for 24/7 NOC wall-displays.
+| Mode | URL | Use Case |
+|------|-----|----------|
+| **TV Kiosk** | `?kiosk=tv&autofitpanels` | NOC wall-display — hides all chrome, auto-fits panels |
+| **Clean** | `?kiosk` | Presentation mode — hides sidebar + topnav |
+| **Embedded** | `?kiosk=1` | iframe embedding — hides everything |
 
-### Quick Start
 ```bash
-# Create playlist (cycles every 30 seconds)
+# Create a playlist that cycles through all dashboards every 30 seconds
 export GRAFANA_API_KEY="your-admin-api-key"
 ./scripts/create-playlist.sh http://localhost:3000 "$GRAFANA_API_KEY" 30
 
@@ -171,22 +142,33 @@ export GRAFANA_API_KEY="your-admin-api-key"
 open "http://localhost:3000/playlists/play/1?kiosk=tv&autofitpanels"
 ```
 
-### Kiosk URL Patterns
+---
 
-| Mode | URL | Use Case |
-|------|-----|----------|
-| **TV Kiosk** | `?kiosk=tv&autofitpanels` | NOC wall-display — hides all chrome, auto-fits panels |
-| **Clean** | `?kiosk` | Presentation mode — hides sidebar + topnav, keeps controls |
-| **Embedded** | `?kiosk=1` | iframe embedding — hides everything |
+## Tech Stack
 
-### Playlist Rotation
-The `scripts/create-playlist.sh` script creates a Grafana Playlist that cycles through:
-1. **NOC Overview** — Fleet health envelope (30s)
-2. **Engineering Drill-Down** — Per-machine diagnostics (30s)
-3. **Capacity Planning** — Forecasting & trends (30s)
+| Layer | Technology | Purpose |
+|-------|-----------|---------|
+| **Orchestration** | Docker Compose | 7-service container stack with dev/prod overlays |
+| **Collection** | Node-RED + net-snmp | Sequential async bulk SNMP walks, 5-thread parallel walker |
+| **Database** | TimescaleDB (PostgreSQL) | Hypertables with CAGGs, 90% compression after 7d |
+| **Visualization** | Grafana 11 | 4 cyberpunk HUD dashboards, state-timeline anomalies |
+| **Alerting** | Prometheus + Alertmanager | Metric scraping, inhibition rules, LINE/Slack webhooks |
+| **Load Testing** | K6 | Pipeline stress (50→200 VUs), threshold p95<500ms |
+| **SLA Probing** | Blackbox Exporter | HTTP/TCP/ICMP endpoint monitoring |
 
-### Auto-Refresh
-All dashboards default to `10s` auto-refresh. Combined with `refresh=10s` in the playlist interval, the NOC display stays current without manual intervention.
+---
+
+## Database Schema
+
+| Table | Columns | Description |
+|-------|---------|-------------|
+| `devices` | 11 | Device registry (device_id, hostname, snmp_community, device_type, enabled) |
+| `sys_metrics` | 12 | CPU, RAM, Disk, Temperature per poll cycle (hypertable) |
+| `net_metrics` | 10 | Per-interface RX/TX Mbps, errors, drops, status (hypertable) |
+| `ldi_metrics` | 9 | Manufacturing throughput, PE, JE, humidity, power, vibration (hypertable) |
+| `sys_hourly` | — | Continuous Aggregate: hourly CPU/RAM/Disk/Temp rollup |
+| `net_hourly` | — | Continuous Aggregate: hourly network throughput rollup |
+| `ldi_hourly` | — | Continuous Aggregate: hourly LDI metrics rollup |
 
 ---
 
@@ -194,19 +176,28 @@ All dashboards default to `10s` auto-refresh. Combined with `refresh=10s` in the
 
 ```
 IMS/
-├── monitoring/grafana/          # Dashboards, datasources, provisioning
-│   ├── dashboards/              # 4 JSON dashboard files (source of truth)
-│   └── library-panels/          # Shared library panels (Fleet Health Score)
-├── nodered_data/                # Node-RED flows, settings, Dockerfile
-│   └── flows/                   # ingestion.json + alerting.json
-├── postgres/init/               # Database init SQL + readonly role
-├── database/migrations/         # Sequenced migration files
-├── tests/k6/                    # K6 stress & chaos test scripts
-├── tests/unit/                  # Parser & counter unit tests
-├── tests/playwright/            # Visual regression & screenshot capture
-├── scripts/                     # Utility scripts (playlist, discovery, etc.)
-├── assets/                      # Dashboard screenshots (auto-generated)
-└── docs/                        # Architecture, Troubleshooting, Design System
+├── monitoring/grafana/                # Grafana dashboards + provisioning
+│   ├── dashboards/                    #   4 JSON dashboard files (source of truth)
+│   └── library-panels/               #   Shared library panels (Fleet Health Score)
+├── nodered_data/                      # Node-RED pipeline engine
+│   ├── flows/                         #   ingestion.json + alerting.json (source)
+│   ├── lib/                           #   circuit-breaker.js, parser, units.js
+│   └── settings.js                    #   functionGlobalContext, auth config
+├── postgres/                          # Database initialization
+│   └── init/                          #   001-init-timescaledb.sql (schema + views)
+├── database/migrations/               #   5 sequenced migration files (013-017)
+├── tests/                             # Test suites
+│   ├── k6/                            #   K6 pipeline stress test
+│   ├── unit/                          #   Parser & counter unit tests
+│   └── playwright/                    #   Visual regression + screenshot capture
+├── scripts/                           # Operational scripts
+│   ├── create-playlist.sh             #   NOC wall-display playlist creator
+│   ├── generate-showcase.sh           #   Dashboard screenshot generator
+│   ├── snmp-discover.js               #   Enterprise SNMP OID discovery
+│   └── build-flows.sh                 #   Merge ingestion + alerting → flows.json
+├── assets/                            # Dashboard screenshots (auto-generated)
+├── docs/                              # Architecture, Design System, Troubleshooting
+└── .mimocode/skills/                  # 24 custom skills for DevOps automation
 ```
 
 ---
