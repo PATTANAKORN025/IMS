@@ -1,0 +1,12 @@
+apiVersion: 1
+
+providers:
+  - name: IMS Library Panels
+    orgId: 1
+    folder: 'IMS'
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /etc/grafana/provisioning/libraries
+      foldersFromFilesStructure: false
