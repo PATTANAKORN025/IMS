@@ -6,27 +6,43 @@
 
 IMS is a Docker-based monitoring stack that collects SNMP telemetry from IT infrastructure, processes it through a real-time pipeline, stores it in a time-series database, and visualizes it via Grafana dashboards with Prometheus-based alerting.
 
-```
-┌─────────────┐    SNMP v2c     ┌──────────────┐    JSON/SQL    ┌────────────┐
-│  Network     │ ──────────────▸ │  Node-RED    │ ────────────▸ │ PgBouncer  │
-│  Devices     │    UDP/161      │  5-Thread    │    INSERT     │ (pooling)  │
-│  (55 hosts)  │                 │  Walker      │               └─────┬──────┘
-└─────────────┘                 └──────────────┘                     │
-                                                                     │ TCP/5432
-                                                              ┌──────▼──────┐
-                                                              │ TimescaleDB │
-                                                              │ (PostgreSQL │
-                                                              │  + hypertable)│
-                                                              └──────┬──────┘
-                                                                     │
-                                              ┌──────────────────────┼──────────────┐
-                                              │                      │              │
-                                       ┌──────▼──────┐     ┌────────▼────┐  ┌───────▼──────┐
-                                       │   Grafana   │     │ Prometheus  │  │   Grafana    │
-                                       │ (3 dashboards)   │  + Alertmgr │  │  Dashboards  │
-                                       └─────────────┘     └─────────────┘  └──────────────┘
-```
+```mermaid
+flowchart LR
+    subgraph Devices ["🛰️ SNMP Devices"]
+        J[Juniper EX4000\n78 interfaces] 
+        S[Linux Servers\n1000+ nodes]
+    end
 
+    subgraph Pipeline ["⚙️ V10 Streaming Pipeline"]
+        J -->|SNMP v2c UDP/161| W[Node-RED\nSequential Async Bulk\nmaxRepetitions: 50]
+        S -->|SNMP v2c UDP/161| W
+        W -->|fork_5_ways| CPU[CPU Walker]
+        W -->|fork_5_ways| NET[Network Walker\nifTable + ifXTable]
+        W -->|fork_5_ways| STO[Storage Walker]
+        W -->|fork_5_ways| TMP[Temp Walker]
+        CPU --> P["sre_parser\nper-device state\nflow context"]
+        NET --> P
+        STO --> P
+        TMP --> P
+    end
+
+    subgraph Storage ["🗄️ TimescaleDB"]
+        P -->|Batch INSERT 10s| B[PgBouncer\nTransaction Pool]
+        B --> T["sys_metrics\nnet_metrics\nldi_metrics"]
+        T --> CAGG["CAGGs\nHourly → Daily → Weekly"]
+    end
+
+    subgraph Obs ["📊 Observation"]
+        T --> G["Grafana\n4 Dashboards\n10s refresh"]
+        T --> PR["Prometheus\n/metrics scrape"]
+        PR --> AM["Alertmanager\n→ LINE / Slack"]
+    end
+
+    style Devices fill:#1e293b,stroke:#3B82F6,color:#e2e8f0
+    style Pipeline fill:#1e293b,stroke:#F59E0B,color:#e2e8f0
+    style Storage fill:#1e293b,stroke:#10B981,color:#e2e8f0
+    style Obs fill:#1e293b,stroke:#8B5CF6,color:#e2e8f0
+```
 ### Data Flow
 
 1. **Collection**: Node-RED polls devices via SNMP v2c every 10 seconds. The `fork_5_ways` node dispatches 4 walkers for network switches (CPU, Storage, Network, Temp) and 5 for servers (+LDI). Device registry is loaded from `public.devices` every 5 minutes into `global.deviceRegistry`.
