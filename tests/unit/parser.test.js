@@ -218,9 +218,9 @@ test('handles null/undefined', () => {
 });
 
 console.log('\nmkIface');
-test('creates interface object with defaults', () => {
+test('creates interface object with defaults (empty name for unnamed ports)', () => {
     const iface = mkIface(1);
-    assert.strictEqual(iface.name, 'port_1');
+    assert.strictEqual(iface.name, '');
     assert.strictEqual(iface.status, 1);
     assert.strictEqual(iface.rx32, 0);
 });
