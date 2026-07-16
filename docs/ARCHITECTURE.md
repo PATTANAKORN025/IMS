@@ -29,11 +29,13 @@ IMS is a Docker-based monitoring stack that collects SNMP telemetry from IT infr
 
 ### Data Flow
 
-1. **Collection**: Node-RED polls 1000+ devices via SNMP v2c every 30 seconds using 5 parallel walker threads (CPU, Storage, Network, Temperature, LDI). Device registry stored in `public.devices` table.
-2. **Processing**: The AIOps Parser aggregates raw OID values into structured metrics (CPU%, RAM MB, bandwidth Mbps, temperature, LDI manufacturing data).
-3. **Storage**: Metrics are inserted into TimescaleDB via PgBouncer (transaction pooling mode). Continuous Aggregates pre-compute 1-minute and 1-hour summaries.
-4. **Visualization**: Grafana renders 3 dashboards — NOC Overview (fleet health), Engineering Drill-Down (per-machine), and AIOps & Capacity (forecasting + anomaly detection).
-5. **Alerting**: Prometheus scrapes Node-RED metrics and blackbox probes. Alertmanager routes firing alerts to Node-RED webhooks for LINE/Teams notification.
+1. **Collection**: Node-RED polls devices via SNMP v2c every 10 seconds. The `fork_5_ways` node dispatches 4 walkers for network switches (CPU, Storage, Network, Temp) and 5 for servers (+LDI). Device registry is loaded from `public.devices` every 5 minutes into `global.deviceRegistry`.
+2. **Walking**: Each walker executes independently. Network switches use sequential async bulk walks (`session.subtree` with `maxRepetitions: 50`) — first ifTable for names/status/counters, then ifXTable for 64-bit HC counters. Servers use targeted `session.get()` with known OIDs. All walkers include offline pass-through (`_walker: "offline"`).
+3. **Parsing**: The `sre_parser` node receives each walker response, maintains per-device state in flow context (`dev_state_<deviceId>`), and buffers rows in `batch_buf_<deviceId>`. Interface names are matched via OID prefix parsing (`oid.startsWith()`). Network rates are calculated from counter deltas with cold-start guards and wrap-around handling.
+4. **Storage**: On a 10-second timer, buffers are flushed independently to TimescaleDB via PgBouncer. Each table type (sys_metrics, net_metrics, ldi_metrics) inserts only if its buffer has rows — partial walker failures do not block unrelated data.
+5. **Continuous Aggregation**: CAGGs (`sys_hourly`, `net_hourly`, `ldi_hourly`) auto-refresh every 30 minutes. Daily and weekly CAGGs aggregate from hourly. Retention: raw 14d, hourly 90d, daily 2yr, weekly forever.
+6. **Visualization**: Grafana renders 4 dashboards — NOC Overview (fleet envelope), Engineering Drill-Down (per-machine with per-interface), AIOps & Capacity (forecasting + Z-Score anomaly detection), and Meta-Monitoring (pipeline health).
+7. **Alerting**: Prometheus scrapes Node-RED `/metrics` endpoint. Alertmanager routes firing alerts to LINE Notify and Slack with runbook links. Z-Score alerts detect anomalies via Grafana SQL over TimescaleDB.
 
 ### Container Architecture
 
@@ -65,18 +67,20 @@ IMS is a Docker-based monitoring stack that collects SNMP telemetry from IT infr
 - **Compression**: 7-day auto-compression achieves ~90% storage reduction with transparent query decompression.
 - **Ecosystem**: Grafana's PostgreSQL datasource is mature and well-documented.
 
-### ADR-002: Node-RED as Pipeline Engine
+### ADR-002: Node-RED as Pipeline Engine (V10 Streaming Architecture)
 
-**Context**: The system needed to poll SNMP devices, parse OID responses, calculate derived metrics (bandwidth from counters), and insert into PostgreSQL.
+**Context**: The system polls 1000+ devices via SNMP v2c every 10 seconds, parses raw OID responses into structured metrics, and inserts into TimescaleDB. Each device generates 5 walker responses (CPU, Storage, Network, Temp, LDI).
 
-**Decision**: Node-RED over custom Python/Go service.
+**Decision**: Node-RED with V10 Streaming Architecture — direct fan-in to a single stateful parser.
 
 **Rationale**:
-- **Event-driven architecture**: Async SNMP callbacks naturally map to Node-RED's message-passing model — no thread pool management needed.
-- **5-thread parallel walker**: Fork-join pattern with `msg.parts` correlation handles concurrent SNMP polls without blocking.
-- **Protocol translation**: Built-in HTTP nodes receive Alertmanager webhooks and translate to LINE/Teams API calls without custom HTTP server code.
-- **Flow visualization**: The pipeline is visible and editable in the Node-RED UI, making debugging and handoff straightforward.
-- **Ecosystem**: `net-snmp` and `pg` npm packages provide mature SNMP and PostgreSQL clients.
+- **Event-driven architecture**: Async SNMP callbacks map to Node-RED's message-passing model with zero thread pool management.
+- **Sequential async bulk walks**: For network switches (78+ ports), walkers use `session.subtree()` with `maxRepetitions: 50` in sequential `await` calls — first ifTable (names + status + counters), then ifXTable (64-bit HC counters). Single UDP socket eliminates switch-level packet drops. For servers, lightweight `session.get()` with known OIDs.
+- **Stateful parser**: The `sre_parser` node accumulates per-device state in flow context (`dev_state_<deviceId>`) and buffers rows in `batch_buf_<deviceId>`. Each walker fires independently and the parser handles it immediately — no join barrier required.
+- **Timer-gated independent flushing**: Buffer flushes on a 10-second timer. Each table type (sys/net/ldi) inserts independently — a network timeout does not block CPU/temp data writes.
+- **Offline heartbeat**: When the circuit breaker trips (device unreachable), the fork emits `_walker: "offline"` messages. The parser immediately zeros all metrics for that device and pushes zeroed rows to the database, ensuring outage timestamps are always recorded.
+- **Protocol translation**: Built-in HTTP nodes receive Alertmanager webhooks and translate to LINE/Teams API calls.
+- **Flow visualization**: The pipeline is visible and editable in the Node-RED UI for debugging and handoff.
 
 ### ADR-003: PgBouncer Connection Pooling
 
@@ -90,16 +94,17 @@ IMS is a Docker-based monitoring stack that collects SNMP telemetry from IT infr
 - **Failure isolation**: If Node-RED crashes, its connections are released without affecting Grafana queries.
 - **No host port**: PgBouncer listens only on the Docker internal network (`ims-pgbouncer:5432`), never exposed to the host.
 
-### ADR-004: Per-Machine Join Correlation via msg.parts
+### ADR-004: Direct Fan-In Parser (replaces Join Barrier)
 
-**Context**: Node-RED's join node must collect 5 walker responses (CPU, Storage, Network, Temp, LDI) per device before parsing. With 1000+ devices polled concurrently, responses interleave unpredictably.
+**Context**: With 1000+ devices polled concurrently, the previous join-barrier pattern (`msg.parts` correlation) was unreliable — dropped messages caused silent data loss, and the join node introduced unnecessary complexity.
 
-**Decision**: Use `msg.parts` with machine-specific IDs for join correlation.
+**Decision**: Direct fan-in — all walkers send messages directly to `sre_parser`. The parser uses `deviceId` (from `msg.machine_id`) to maintain per-device state.
 
 **Rationale**:
-- **Race condition prevention**: Each fork sets `msg.parts = { id: mid + "_" + timestamp, index: N, count: 5 }`. The join node groups by `msg.parts.id`, so responses from different machines never mix.
-- **Timeout safety net**: Join node uses `mode: "custom"` with `timeout: "15"` seconds. If a walker fails, the group expires after 15s instead of leaking memory forever.
-- **Dynamic count**: Empty `count` field causes Node-RED to read `msg.parts.count` from the message itself, supporting the 5-walker pattern without hardcoding.
+- **No correlation overhead**: Each message carries its own `machine_id` — the parser routes it to the correct device state via `flow.get('dev_state_' + deviceId)`.
+- **Resilience**: If one walker fails (timeout, crash), only that device's state is affected. Other devices continue unaffected.
+- **Simplified debugging**: Each walker message is self-contained — no need to trace join-group IDs.
+- **Safety timeout**: Function node timeout set to 15 seconds accommodates SNMP timeout (6s) + merge delay + DB insert.
 
 ---
 
@@ -257,18 +262,18 @@ graph TB
 │                   └────────────┴─────┬─────┴─────────┴───────┘         │
 │                                      ▼                                 │
 │                              ┌──────────────┐                          │
-│                              │Join Barrier   │                          │
-│                              │(count=5, 15s) │                          │
-│                              └──────┬───────┘                          │
-│                                     ▼                                  │
-│                              ┌──────────────┐                          │
 │                              │  SRE Parser  │                          │
-│                              │(try-catch)   │                          │
+│                              │(stateful,    │                          │
+│                              │ per-device)  │                          │
 │                              └──────┬───────┘                          │
 │                                     ▼                                  │
 │                              ┌──────────────┐                          │
-│                              │ PostgreSQL   │                          │
-│                              │ INSERT       │                          │
+│                              │ Batch INSERT │                          │
+│                              │ (10s timer)  │                          │
+│                              └──────┬───────┘                          │
+│                                     ▼                                  │
+│                              ┌──────────────┐                          │
+│                              │ TimescaleDB  │                          │
 │                              └──────────────┘                          │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
