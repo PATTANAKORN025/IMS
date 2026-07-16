@@ -104,7 +104,7 @@
             "uid": "timescaledb"
           },
           "format": "time_series",
-          "rawSql": "SELECT time, cpu_load_percent FROM sys_metrics WHERE device_id = '${device_id}' AND $__timeFilter(time) ORDER BY time DESC",
+          "rawSql": "SELECT time, cpu_load_percent FROM sys_metrics WHERE device_id IN (\$\{device_id:sqlstring\}) AND $__timeFilter(time) ORDER BY time DESC",
           "refId": "A"
         }
       ]
@@ -167,7 +167,7 @@
             "uid": "timescaledb"
           },
           "format": "time_series",
-          "rawSql": "SELECT time, (ram_used_mb / NULLIF(ram_total_mb, 0)) * 100 AS ram_percent FROM sys_metrics WHERE device_id = '${device_id}' AND $__timeFilter(time) ORDER BY time DESC",
+          "rawSql": "SELECT time, (ram_used_mb / NULLIF(ram_total_mb, 0)) * 100 AS ram_percent FROM sys_metrics WHERE device_id IN (\$\{device_id:sqlstring\}) AND $__timeFilter(time) ORDER BY time DESC",
           "refId": "A"
         }
       ]
@@ -228,7 +228,7 @@
             "uid": "timescaledb"
           },
           "format": "time_series",
-          "rawSql": "SELECT time, temperature/100.0 AS temp FROM ldi_metrics WHERE device_id = '${device_id}' AND $__timeFilter(time) ORDER BY time DESC",
+          "rawSql": "SELECT time, temperature/100.0 AS temp FROM ldi_metrics WHERE device_id IN (\$\{device_id:sqlstring\}) AND $__timeFilter(time) ORDER BY time DESC",
           "refId": "A"
         }
       ]
@@ -308,7 +308,7 @@
             "uid": "timescaledb"
           },
           "format": "time_series",
-          "rawSql": "SELECT time AS \"time\", cpu_load_percent AS \"CPU (%)\" FROM sys_metrics WHERE device_id = '${device_id}' AND $__timeFilter(time) ORDER BY time",
+          "rawSql": "SELECT time AS \"time\", cpu_load_percent AS \"CPU (%)\" FROM sys_metrics WHERE device_id IN (\$\{device_id:sqlstring\}) AND $__timeFilter(time) ORDER BY time",
           "refId": "A"
         },
         {
@@ -317,7 +317,7 @@
             "uid": "timescaledb"
           },
           "format": "time_series",
-          "rawSql": "SELECT time AS \"time\", (ram_used_mb / NULLIF(ram_total_mb, 0)) * 100 AS \"RAM (%)\" FROM sys_metrics WHERE device_id = '${device_id}' AND $__timeFilter(time) ORDER BY time",
+          "rawSql": "SELECT time AS \"time\", (ram_used_mb / NULLIF(ram_total_mb, 0)) * 100 AS \"RAM (%)\" FROM sys_metrics WHERE device_id IN (\$\{device_id:sqlstring\}) AND $__timeFilter(time) ORDER BY time",
           "refId": "B"
         }
       ]
@@ -397,7 +397,7 @@
             "uid": "timescaledb"
           },
           "format": "time_series",
-          "rawSql": "SELECT time AS \"time\", iface_name || ' (RX)' AS metric, rx_mbps AS value FROM net_metrics WHERE device_id = '${device_id}' AND $__timeFilter(time) \nUNION ALL \nSELECT time AS \"time\", iface_name || ' (TX)' AS metric, -tx_mbps AS value FROM net_metrics WHERE device_id = '${device_id}' AND $__timeFilter(time) \nORDER BY 1",
+          "rawSql": "SELECT time AS \"time\", iface_name || ' (RX)' AS metric, rx_mbps AS value FROM net_metrics WHERE device_id IN (\$\{device_id:sqlstring\}) AND $__timeFilter(time) \nUNION ALL \nSELECT time AS \"time\", iface_name || ' (TX)' AS metric, -tx_mbps AS value FROM net_metrics WHERE device_id IN (\$\{device_id:sqlstring\}) AND $__timeFilter(time) \nORDER BY 1",
           "refId": "A"
         }
       ]
@@ -456,7 +456,7 @@
             "uid": "timescaledb"
           },
           "format": "time_series",
-          "rawSql": "SELECT time, 'Used' AS metric, disk_used_gb AS value FROM sys_metrics WHERE device_id = '${device_id}' AND $__timeFilter(time) \nUNION ALL \nSELECT time, 'Free' AS metric, disk_free_gb AS value FROM sys_metrics WHERE device_id = '${device_id}' AND $__timeFilter(time) ORDER BY 1 DESC LIMIT 2",
+          "rawSql": "SELECT time, 'Used' AS metric, disk_used_gb AS value FROM sys_metrics WHERE device_id IN (\$\{device_id:sqlstring\}) AND $__timeFilter(time) \nUNION ALL \nSELECT time, 'Free' AS metric, disk_free_gb AS value FROM sys_metrics WHERE device_id IN (\$\{device_id:sqlstring\}) AND $__timeFilter(time) ORDER BY 1 DESC LIMIT 2",
           "refId": "A"
         }
       ]
@@ -533,7 +533,7 @@
             "uid": "timescaledb"
           },
           "format": "time_series",
-          "rawSql": "SELECT time AS \"time\", throughput AS \"Throughput\" FROM ldi_metrics WHERE device_id = '${device_id}' AND $__timeFilter(time) ORDER BY time",
+          "rawSql": "SELECT time AS \"time\", throughput AS \"Throughput\" FROM ldi_metrics WHERE device_id IN (\$\{device_id:sqlstring\}) AND $__timeFilter(time) ORDER BY time",
           "refId": "A"
         },
         {
@@ -542,7 +542,7 @@
             "uid": "timescaledb"
           },
           "format": "time_series",
-          "rawSql": "SELECT time AS \"time\", vibration/100.0 AS \"Vibration\" FROM ldi_metrics WHERE device_id = '${device_id}' AND $__timeFilter(time) ORDER BY time",
+          "rawSql": "SELECT time AS \"time\", vibration/100.0 AS \"Vibration\" FROM ldi_metrics WHERE device_id IN (\$\{device_id:sqlstring\}) AND $__timeFilter(time) ORDER BY time",
           "refId": "B"
         }
       ]
@@ -563,8 +563,8 @@
         },
         "definition": "SELECT device_id FROM devices WHERE enabled = true;",
         "hide": 0,
-        "includeAll": false,
-        "multi": false,
+        "includeAll": true,
+        "multi": true,
         "name": "device_id",
         "options": [],
         "query": "SELECT device_id FROM devices WHERE enabled = true;",

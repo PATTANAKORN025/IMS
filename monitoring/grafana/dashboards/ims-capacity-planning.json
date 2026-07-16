@@ -47,8 +47,8 @@
           "uid": "timescaledb"
         },
         "refresh": 2,
-        "multi": false,
-        "includeAll": false,
+        "multi": true,
+        "includeAll": true,
         "sort": 1,
         "label": "Machine"
       }
