@@ -7,13 +7,6 @@
         "info": "SNMP walkers → Parser → TimescaleDB"
     },
     {
-        "id": "ims-alert-tab",
-        "type": "tab",
-        "label": "IMS Alerting Pipeline",
-        "disabled": false,
-        "info": "Alertmanager webhook → LINE Messaging API / MS Teams"
-    },
-    {
         "id": "bc78ea85b252a09f",
         "type": "group",
         "z": "ims-tab-v5",
@@ -55,10 +48,78 @@
             "http_inject_handler",
             "http_inject_respond"
         ],
-        "x": 66,
-        "y": 103,
-        "w": 2396,
-        "h": 418
+        "x": 18,
+        "y": 23,
+        "w": 2240,
+        "h": 514
+    },
+    {
+        "id": "inject_fleet",
+        "type": "inject",
+        "z": "ims-tab-v5",
+        "name": "Poll Fleet (30s)",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "30",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 5,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 140,
+        "y": 120,
+        "wires": [
+            [
+                "generate_fleet_targets"
+            ]
+        ],
+        "g": "bc78ea85b252a09f"
+    },
+    {
+        "id": "generate_fleet_targets",
+        "type": "function",
+        "z": "ims-tab-v5",
+        "name": "Generate Fleet Targets",
+        "func": "const registry = global.get('deviceRegistry') || {};\nconst msgs = [];\nfor (const deviceId of Object.keys(registry)) {\n    msgs.push({ machine_id: deviceId, topic: deviceId, payload: '' });\n}\nreturn [msgs];",
+        "outputs": 1,
+        "x": 380,
+        "y": 120,
+        "wires": [
+            [
+                "pace_limiter"
+            ]
+        ],
+        "g": "bc78ea85b252a09f"
+    },
+    {
+        "id": "pace_limiter",
+        "type": "delay",
+        "z": "ims-tab-v5",
+        "name": "Pace 50/sec",
+        "pauseType": "rate",
+        "timeout": "5",
+        "timeoutUnits": "seconds",
+        "rate": "50",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": "",
+        "outputs": 1,
+        "x": 580,
+        "y": 120,
+        "wires": [
+            [
+                "resolve_device"
+            ]
+        ],
+        "g": "bc78ea85b252a09f"
     },
     {
         "id": "pg_config",
@@ -81,83 +142,14 @@
         "passwordFieldType": "str"
     },
     {
-        "id": "inject_fleet",
-        "type": "inject",
-        "z": "ims-tab-v5",
-        "g": "bc78ea85b252a09f",
-        "name": "Poll Fleet (5s)",
-        "props": [
-            {
-                "p": "payload"
-            }
-        ],
-        "repeat": "5",
-        "crontab": "",
-        "once": true,
-        "onceDelay": 5,
-        "topic": "",
-        "payload": "",
-        "payloadType": "date",
-        "x": 192,
-        "y": 240,
-        "wires": [
-            [
-                "generate_fleet_targets"
-            ]
-        ]
-    },
-    {
-        "id": "generate_fleet_targets",
-        "type": "function",
-        "z": "ims-tab-v5",
-        "g": "bc78ea85b252a09f",
-        "name": "Generate Fleet Targets",
-        "func": "const registry = global.get('deviceRegistry') || {};\nconst msgs = [];\nfor (const deviceId of Object.keys(registry)) {\n    msgs.push({ machine_id: deviceId, topic: deviceId, payload: '' });\n}\nreturn [msgs];",
-        "outputs": 1,
-        "x": 548,
-        "y": 240,
-        "wires": [
-            [
-                "pace_limiter"
-            ]
-        ]
-    },
-    {
-        "id": "pace_limiter",
-        "type": "delay",
-        "z": "ims-tab-v5",
-        "g": "bc78ea85b252a09f",
-        "name": "Pace 50/sec",
-        "pauseType": "rate",
-        "timeout": "5",
-        "timeoutUnits": "seconds",
-        "rate": "50",
-        "nbRateUnits": "1",
-        "rateUnits": "second",
-        "randomFirst": "1",
-        "randomLast": "5",
-        "randomUnits": "seconds",
-        "drop": false,
-        "allowrate": "",
-        "outputs": 1,
-        "x": 822,
-        "y": 240,
-        "wires": [
-            [
-                "resolve_device"
-            ]
-        ]
-    },
-    {
         "id": "fork_5_ways",
         "type": "function",
         "z": "ims-tab-v5",
-        "g": "bc78ea85b252a09f",
         "name": "Fork 5 Walker Threads",
         "func": "const cb = global.get('circuitBreaker');\nconst mid = msg.machine_id || msg.topic;\nconst base = { host: msg.host, community: msg.community, snmp_port: msg.snmp_port, device_type: msg.device_type || \"server\" };\nconst batchId = flow.get(\"batchId\") || \"batch_0\";\nconst devType = msg.device_type || \"server\";\nconst isSwitch = devType === \"network_switch\";\nconst walkerCount = isSwitch ? 4 : 5;\n\nif (cb && !cb.checkDevice(mid, flow)) {\n    const mk = () => ({ ...base, machine_id: mid, topic: mid, _walker: \"offline\", payload: [], parts: { id: batchId, index: 0, count: 1 } });\n    const msgs = [];\n    for (let i = 0; i < walkerCount; i++) msgs.push(mk());\n    return msgs;\n}\n\nlet idx = 0;\nconst msgs = [];\nconst add = (walker) => { msgs.push({ ...base, machine_id: mid, topic: mid, _walker: walker, payload: \"\", parts: { id: batchId, index: idx++, count: 99 } }); };\nadd(\"cpu\"); add(\"storage\"); add(\"net\"); add(\"temp\");\nif (!isSwitch) { add(\"ldi\"); }\nreturn msgs;",
         "outputs": 5,
-        "x": 1316,
-        "y": 240,
+        "x": 360,
+        "y": 160,
         "wires": [
             [
                 "walk_cpu"
@@ -174,81 +166,81 @@
             [
                 "walk_ldi"
             ]
-        ]
+        ],
+        "g": "bc78ea85b252a09f"
     },
     {
         "id": "walk_cpu",
         "type": "function",
         "z": "ims-tab-v5",
-        "g": "bc78ea85b252a09f",
         "name": "Walk CPU",
         "func": "const snmp = global.get(\"snmp\");\nconst normalizeOid = (raw) => Array.isArray(raw) ? raw.join(\".\") : String(raw).replace(/,/g, \".\");\nif (!snmp) { msg.payload = []; return msg; }\n\nconst devType = msg.device_type || \"server\";\nconst msgRef = msg;\nconst nodeRef = node;\n\nif (msg._walker === \"offline\") return msg;\n\nfunction mkSession() {\n    return snmp.createSession(msg.host || \"ims-snmpsim\", msg.community || \"Netk@\", {\n        port: msg.snmp_port || 161, version: snmp.Version2c, retries: 0, timeout: 5000\n    });\n}\n\nfunction pushIfValid(vb, out) {\n    if (vb.value === null || vb.value === undefined) return;\n    if (vb.type === 129 || vb.type === 128 || vb.type === 130) return;\n    out.push({ oid: normalizeOid(vb.oid), value: vb.value, type: vb.type });\n}\n\nif (devType === \"network_switch\") {\n    return (async function() {\n        const results = [];\n        let s;\n        try {\n            s = mkSession();\n            s.on(\"error\", function(err) { node.debug(\"CPU SNMP error: \" + err.message); });\n            const oids = [\"1.3.6.1.4.1.2636.3.1.13.1.8.9.1.0.0\"];\n            const varbinds = await new Promise(function(resolve) {\n                s.get(oids, function(err, vbs) { resolve(err ? [] : (vbs || [])); });\n            });\n            for (let i = 0; i < varbinds.length; i++) pushIfValid(varbinds[i], results);\n        } catch(e) {\n            node.debug(\"CPU walk exception: \" + e.message);\n        } finally {\n            try { if (s) s.close(); } catch(e) {}\n        }\n        msgRef.payload = results;\n        return msgRef;\n    })();\n}\n\nconst oids = [\n    \"1.3.6.1.2.1.25.3.3.1.2.1\", \"1.3.6.1.2.1.25.3.3.1.2.2\",\n    \"1.3.6.1.2.1.25.3.3.1.2.3\", \"1.3.6.1.2.1.25.3.3.1.2.4\"\n];\ntry {\n    const s = mkSession();\n    s.on(\"error\", function(err) { node.debug(\"CPU SNMP error: \" + err.message); });\n    s.get(oids, function(error, varbinds) {\n        try { s.close(); } catch(e) {}\n        const results = [];\n        if (!error && varbinds) {\n            for (let i = 0; i < varbinds.length; i++) pushIfValid(varbinds[i], results);\n        }\n        msgRef.payload = results;\n        nodeRef.send(msgRef);\n    });\n} catch(e) {\n    msgRef.payload = [];\n    nodeRef.send(msgRef);\n}\nreturn null;",
         "outputs": 1,
         "timeout": "15",
-        "x": 1622,
-        "y": 144,
+        "x": 580,
+        "y": 60,
         "wires": [
             [
                 "sre_parser"
             ]
-        ]
+        ],
+        "g": "bc78ea85b252a09f"
     },
     {
         "id": "walk_storage",
         "type": "function",
         "z": "ims-tab-v5",
-        "g": "bc78ea85b252a09f",
         "name": "Walk Storage",
         "func": "const snmp = global.get(\"snmp\");\nconst normalizeOid = (raw) => Array.isArray(raw) ? raw.join(\".\") : String(raw).replace(/,/g, \".\");\nif (!snmp) { msg.payload = []; return msg; }\n\nconst devType = msg.device_type || \"server\";\nconst msgRef = msg;\nconst nodeRef = node;\n\nif (msg._walker === \"offline\") return msg;\n\nfunction mkSession() {\n    return snmp.createSession(msg.host || \"ims-snmpsim\", msg.community || \"Netk@\", {\n        port: msg.snmp_port || 161, version: snmp.Version2c, retries: 0, timeout: 5000\n    });\n}\n\nfunction pushIfValid(vb, out) {\n    if (vb.value === null || vb.value === undefined) return;\n    if (vb.type === 129 || vb.type === 128 || vb.type === 130) return;\n    out.push({ oid: normalizeOid(vb.oid), value: vb.value, type: vb.type });\n}\n\nif (devType === \"network_switch\") {\n    return (async function() {\n        const results = [];\n        let s;\n        try {\n            s = mkSession();\n            s.on(\"error\", function(err) { node.debug(\"Storage SNMP error: \" + err.message); });\n            const oids = [\"1.3.6.1.4.1.2636.3.1.13.1.11.9.1.0.0\"];\n            const varbinds = await new Promise(function(resolve) {\n                s.get(oids, function(err, vbs) { resolve(err ? [] : (vbs || [])); });\n            });\n            for (let i = 0; i < varbinds.length; i++) pushIfValid(varbinds[i], results);\n        } catch(e) {\n            node.debug(\"Storage walk exception: \" + e.message);\n        } finally {\n            try { if (s) s.close(); } catch(e) {}\n        }\n        msgRef.payload = results;\n        return msgRef;\n    })();\n}\n\nconst oids = [\n    \"1.3.6.1.2.1.25.2.3.1.2.1\", \"1.3.6.1.2.1.25.2.3.1.2.2\",\n    \"1.3.6.1.2.1.25.2.3.1.3.1\", \"1.3.6.1.2.1.25.2.3.1.3.2\",\n    \"1.3.6.1.2.1.25.2.3.1.4.1\", \"1.3.6.1.2.1.25.2.3.1.4.2\",\n    \"1.3.6.1.2.1.25.2.3.1.5.1\", \"1.3.6.1.2.1.25.2.3.1.5.2\",\n    \"1.3.6.1.2.1.25.2.3.1.6.1\", \"1.3.6.1.2.1.25.2.3.1.6.2\"\n];\ntry {\n    const s = mkSession();\n    s.on(\"error\", function(err) { node.debug(\"Storage SNMP error: \" + err.message); });\n    s.get(oids, function(error, varbinds) {\n        try { s.close(); } catch(e) {}\n        const results = [];\n        if (!error && varbinds) {\n            for (let i = 0; i < varbinds.length; i++) pushIfValid(varbinds[i], results);\n        }\n        msgRef.payload = results;\n        nodeRef.send(msgRef);\n    });\n} catch(e) {\n    msgRef.payload = [];\n    nodeRef.send(msgRef);\n}\nreturn null;",
         "outputs": 1,
         "timeout": "15",
-        "x": 1632,
-        "y": 192,
+        "x": 580,
+        "y": 120,
         "wires": [
             [
                 "sre_parser"
             ]
-        ]
+        ],
+        "g": "bc78ea85b252a09f"
     },
     {
         "id": "walk_net_get",
         "type": "function",
         "z": "ims-tab-v5",
-        "g": "bc78ea85b252a09f",
         "name": "Walk Network (Dual-Engine)",
         "func": "const snmp = global.get(\"snmp\");\nconst normalizeOid = (raw) => Array.isArray(raw) ? raw.join(\".\") : String(raw).replace(/,/g, \".\");\nif (!snmp) { msg.payload = []; return msg; }\n\nconst devType = msg.device_type || \"server\";\nconst msgRef = msg;\nconst nodeRef = node;\n\nif (msg._walker === \"offline\") return msg;\n\nfunction mkSession() {\n    return snmp.createSession(msg.host || \"ims-snmpsim\", msg.community || \"Netk@\", {\n        port: msg.snmp_port || 161, version: snmp.Version2c, retries: 0, timeout: 6000\n    });\n}\n\nfunction subtreeWalk(session, oid, maxReps) {\n    return new Promise(function(resolve) {\n        const buf = [];\n        session.subtree(oid, maxReps,\n            function(vbs) { for (let i = 0; i < vbs.length; i++) buf.push(vbs[i]); },\n            function(err) { resolve(buf); }\n        );\n    });\n}\n\nfunction pushIfValid(vb, out) {\n    if (vb.value === null || vb.value === undefined) return;\n    if (vb.type === 129 || vb.type === 128 || vb.type === 130) return;\n    out.push({ oid: normalizeOid(vb.oid), value: vb.value, type: vb.type });\n}\n\nif (devType === \"network_switch\") {\n    return (async function() {\n        const results = [];\n        let s;\n        try {\n            s = mkSession();\n            s.on(\"error\", function(err) { node.debug(\"SNMP session error: \" + err.message); });\n            const table = await subtreeWalk(s, \"1.3.6.1.2.1.2.2.1\", 50);\n            for (let i = 0; i < table.length; i++) pushIfValid(table[i], results);\n            const xtable = await subtreeWalk(s, \"1.3.6.1.2.1.31.1.1.1\", 50);\n            for (let i = 0; i < xtable.length; i++) pushIfValid(xtable[i], results);\n        } catch(e) {\n            node.debug(\"Network walk exception: \" + e.message);\n        } finally {\n            try { if (s) s.close(); } catch(e) {}\n        }\n        node.debug(\"Net walk: \" + results.length + \" varbinds\");\n        msgRef.payload = results;\n        return msgRef;\n    })();\n}\n\nvar oids = [\n    \"1.3.6.1.2.1.2.2.1.2.1\",\"1.3.6.1.2.1.2.2.1.2.2\",\n    \"1.3.6.1.2.1.2.2.1.5.1\",\"1.3.6.1.2.1.2.2.1.5.2\",\n    \"1.3.6.1.2.1.2.2.1.10.1\",\"1.3.6.1.2.1.2.2.1.10.2\",\n    \"1.3.6.1.2.1.2.2.1.16.1\",\"1.3.6.1.2.1.2.2.1.16.2\",\n    \"1.3.6.1.2.1.2.2.1.14.1\",\"1.3.6.1.2.1.2.2.1.14.2\",\n    \"1.3.6.1.2.1.2.2.1.13.1\",\"1.3.6.1.2.1.2.2.1.13.2\",\n    \"1.3.6.1.2.1.2.2.1.8.1\",\"1.3.6.1.2.1.2.2.1.8.2\"\n];\ntry {\n    var s = mkSession();\n    s.on(\"error\", function(err) { node.debug(\"SNMP session error: \" + err.message); });\n    s.get(oids, function(error, varbinds) {\n        try { s.close(); } catch(e) {}\n        if (error) { msgRef.payload = []; nodeRef.send(msgRef); return; }\n        var results = [];\n        for (var i = 0; i < varbinds.length; i++) pushIfValid(varbinds[i], results);\n        msgRef.payload = results;\n        nodeRef.send(msgRef);\n    });\n} catch(e) {\n    msgRef.payload = [];\n    nodeRef.send(msgRef);\n}\nreturn null;",
         "outputs": 1,
         "timeout": "15",
-        "x": 1672,
-        "y": 240,
+        "x": 580,
+        "y": 210,
         "wires": [
             [
                 "sre_parser"
             ]
-        ]
+        ],
+        "g": "bc78ea85b252a09f"
     },
     {
         "id": "walk_temp",
         "type": "function",
         "z": "ims-tab-v5",
-        "g": "bc78ea85b252a09f",
         "name": "Walk Temperature",
         "func": "const snmp = global.get('snmp');\nif (!snmp) { msg.payload = []; return msg; }\nconst devType = msg.device_type || 'server';\nconst oids = devType === 'network_switch'\n    ? ['1.3.6.1.4.1.2636.3.1.13.1.7.9.1.0.0']\n    : ['1.3.6.1.4.1.2021.13.16.2.1.7.0', '1.3.6.1.4.1.2021.13.16.2.1.7.1'];\nconst session = snmp.createSession(msg.host || 'ims-snmpsim', msg.community || 'Netk@', {port: msg.snmp_port || 161, version: snmp.Version2c, retries:1, timeout:3000});\nsession.on('error', function(err) { node.error('SNMP session error: ' + err.message); });\nconst nodeRef = node; const msgRef = msg;\nsession.get(oids, function(error, varbinds) {\n    session.close();\n    if (error) { msgRef.payload = []; nodeRef.send(msgRef); return; }\n    const results = [];\n    varbinds.forEach(function(vb) { if (vb.value === null || vb.value === undefined) return; if (vb.type !== 129 && vb.type !== 128 && vb.type !== 130) results.push({oid:vb.oid,value:vb.value,type:vb.type}); });\n    msgRef.payload = results;\n    nodeRef.send(msgRef);\n});\nreturn null;",
         "outputs": 1,
         "timeout": "10",
-        "x": 1642,
-        "y": 288,
+        "x": 580,
+        "y": 300,
         "wires": [
             [
                 "sre_parser"
             ]
-        ]
+        ],
+        "g": "bc78ea85b252a09f"
     },
     {
         "id": "catch_walker",
         "type": "catch",
         "z": "ims-tab-v5",
-        "g": "bc78ea85b252a09f",
         "name": "Catch Walker Error",
         "scope": [
             "walk_cpu",
@@ -258,115 +250,112 @@
             "walk_ldi"
         ],
         "uncaught": false,
-        "x": 202,
-        "y": 384,
+        "x": 360,
+        "y": 360,
         "wires": [
             [
                 "bypass_error"
             ]
-        ]
+        ],
+        "g": "bc78ea85b252a09f"
     },
     {
         "id": "bypass_error",
         "type": "function",
         "z": "ims-tab-v5",
-        "g": "bc78ea85b252a09f",
         "name": "Bypass Empty",
         "func": "// Log error — walker already sent empty payload on error.\n// Do not re-send: would double-count.\nnode.warn('Walker error caught: ' + (msg.error ? msg.error.message : 'unknown'));\nreturn null;",
         "outputs": 1,
-        "x": 528,
-        "y": 384,
+        "x": 560,
+        "y": 360,
         "wires": [
             []
-        ]
+        ],
+        "g": "bc78ea85b252a09f"
     },
     {
         "id": "walk_ldi",
         "type": "function",
         "z": "ims-tab-v5",
-        "g": "bc78ea85b252a09f",
         "name": "Walk LDI (All 10 OIDs)",
         "func": "const snmp = global.get('snmp');\nif (!snmp) { msg.payload = []; return msg; }\nconst oids = [\n    '1.3.6.1.4.1.9999.1.1.0',\n    '1.3.6.1.4.1.9999.1.2.0',\n    '1.3.6.1.4.1.9999.1.3.0',\n    '1.3.6.1.4.1.9999.1.4.2',\n    '1.3.6.1.4.1.9999.1.4.5',\n    '1.3.6.1.4.1.9999.1.5.1',\n    '1.3.6.1.4.1.9999.1.6.1',\n    '1.3.6.1.4.1.9999.1.7.1',\n    '1.3.6.1.4.1.9999.2.1.0',\n    '1.3.6.1.4.1.9999.2.2.0'\n];\nconst session = snmp.createSession(msg.host || 'ims-snmpsim', msg.community || 'Netk@', {port: msg.snmp_port || 161, version: snmp.Version2c,retries:1,timeout:3000});\nsession.on('error', function(err) { node.error('SNMP session error: ' + err.message); });;\nconst nodeRef = node; const msgRef = msg;\nsession.get(oids, function(error, varbinds) {\n    session.close();\n    if (error) { msgRef.payload = []; nodeRef.send(msgRef); return; }\n    const results = [];\n    varbinds.forEach(function(vb) { if (vb.value === null || vb.value === undefined) return; if (vb.type !== 129 && vb.type !== 128 && vb.type !== 130) results.push({oid:vb.oid,value:vb.value,type:vb.type}); });\n    msgRef.payload = results;\n    nodeRef.send(msgRef);\n});\nreturn null;",
         "outputs": 1,
         "timeout": "10",
-        "x": 1652,
-        "y": 336,
+        "x": 580,
+        "y": 340,
         "wires": [
             [
                 "sre_parser"
             ]
-        ]
+        ],
+        "g": "bc78ea85b252a09f"
     },
     {
         "id": "sre_parser",
         "type": "function",
         "z": "ims-tab-v5",
-        "g": "bc78ea85b252a09f",
         "name": "SRE AIOps Parser v9 (Batch)",
         "func": "const BATCH_INTERVAL_SEC = 10;\nconst BUFFER_MAX = 200;\nconst IFTABLE_OID_RE = /1\\.3\\.6\\.1\\.2\\.1\\.2\\.2\\.1\\.(\\d+)\\.(\\d+)$/;\nconst IFXTABLE_OID_RE = /1\\.3\\.6\\.1\\.2\\.1\\.31\\.1\\.1\\.1\\.(\\d+)\\.(\\d+)$/;\nconst STORAGE_ENTRY_RE = /1\\.3\\.6\\.1\\.2\\.1\\.25\\.2\\.3\\.1\\.(\\d+)\\.(\\d+)$/;\n\ntry {\n    if (!msg.payload || !Array.isArray(msg.payload)) return null;\n    const deviceId = sanitize(msg.topic || msg.machine_id || '');\n    if (!deviceId) return null;\n    const walkerType = msg._walker || 'unknown';\n    const isEmpty = msg.payload.length === 0;\n    const isOffline = walkerType === 'offline';\n\n    const stateKey = 'dev_state_' + deviceId;\n    let state = flow.get(stateKey) || { cpu_cores: 0, cpu_load: 0, ram_total: 0, ram_used: 0, ram_free: 0, disk_total: 0, disk_used: 0, disk_free: 0, temp: 0, ifaces: {}, ldi: { throughput: 0, temp: 0, humidity: 0, pe: 0, je: 0, power: 0, vibration: 0 } };\n\n    if (isOffline) {\n        state.cpu_cores = 0; state.cpu_load = 0;\n        state.ram_total = 0; state.ram_used = 0; state.ram_free = 0;\n        state.disk_total = 0; state.disk_used = 0; state.disk_free = 0;\n        state.temp = 0;\n        const downIfaces = {};\n        for (const [idx, iface] of Object.entries(state.ifaces)) {\n            if (iface.name) downIfaces[idx] = { name: iface.name, rx64: 0, tx64: 0, rx32: 0, tx32: 0, err: 0, drop: 0, status: 0 };\n        }\n        state.ifaces = downIfaces;\n        state.ldi = { throughput: 0, temp: 0, humidity: 0, pe: 0, je: 0, power: 0, vibration: 0 };\n    } else if (isEmpty) {\n        if (walkerType === 'cpu') { state.cpu_cores = 0; state.cpu_load = 0; }\n        if (walkerType === 'storage') { state.ram_total = 0; state.ram_used = 0; state.ram_free = 0; state.disk_total = 0; state.disk_used = 0; state.disk_free = 0; }\n        if (walkerType === 'temp') { state.temp = 0; }\n        if (walkerType === 'net') {\n            const downIfaces = {};\n            for (const [idx, iface] of Object.entries(state.ifaces)) {\n                if (iface.name) downIfaces[idx] = { name: iface.name, rx64: 0, tx64: 0, rx32: 0, tx32: 0, err: 0, drop: 0, status: 0 };\n            }\n            state.ifaces = downIfaces;\n        }\n        if (walkerType === 'ldi') { state.ldi = { throughput: 0, temp: 0, humidity: 0, pe: 0, je: 0, power: 0, vibration: 0 }; }\n    } else {\n        const parsed = parseAll(msg.payload, walkerType, state);\n        if (walkerType === 'cpu') { state.cpu_cores = parsed.cpu.coreCount; state.cpu_load = parsed.cpu.loadPercent; }\n        if (walkerType === 'storage') { state.ram_total = parsed.disk.ramTotalMb; state.ram_used = parsed.disk.ramUsedMb; state.ram_free = parsed.disk.ramFreeMb; state.disk_total = parsed.disk.totalGb; state.disk_used = parsed.disk.usedGb; state.disk_free = parsed.disk.freeGb; }\n        if (walkerType === 'temp') { state.temp = parsed.temp.maxC; }\n        if (walkerType === 'net') { state.ifaces = calcNetRate(deviceId, parsed.ifaces).summary; }\n        if (walkerType === 'ldi') { state.ldi = parsed.ldi; }\n    }\n    flow.set(stateKey, state);\n\n    const now = Date.now();\n    const bufKey = 'batch_buf_' + deviceId;\n    let buffer = flow.get(bufKey) || { sys: [], net: [], ldi: [], lastFlush: now };\n\n    if (isOffline) {\n        buffer.sys.push({ device_id: deviceId, cpu_cores: 0, cpu_load_percent: 0, ram_total_mb: 0, ram_used_mb: 0, ram_free_mb: 0, disk_total_gb: 0, disk_used_gb: 0, disk_free_gb: 0, disk_description: '', temp_c: 0 });\n        for (const [name, iface] of Object.entries(state.ifaces)) {\n            buffer.net.push({ device_id: deviceId, iface_name: name, rx_mbps: 0, tx_mbps: 0, rx_errors: 0, tx_errors: 0, rx_drops: 0, tx_drops: 0, status: 'DOWN' });\n        }\n        buffer.ldi.push({ device_id: deviceId, throughput: 0, temperature: 0, humidity: 0, pressure: 0, joule_effect: 0, power_watt: 0, vibration: 0 });\n    } else {\n        if (walkerType === 'cpu' || walkerType === 'storage' || walkerType === 'temp') { buffer.sys.push({ device_id: deviceId, cpu_cores: state.cpu_cores, cpu_load_percent: state.cpu_load, ram_total_mb: state.ram_total, ram_used_mb: state.ram_used, ram_free_mb: state.ram_free, disk_total_gb: state.disk_total, disk_used_gb: state.disk_used, disk_free_gb: state.disk_free, disk_description: '', temp_c: state.temp }); }\n        if (walkerType === 'net') {\n            for (const [name, iface] of Object.entries(state.ifaces)) {\n                buffer.net.push({ device_id: deviceId, iface_name: name, rx_mbps: iface.rx_mbps, tx_mbps: iface.tx_mbps, rx_errors: iface.errors || 0, tx_errors: 0, rx_drops: iface.drops || 0, tx_drops: 0, status: iface.status });\n            }\n        }\n        if (walkerType === 'ldi') { buffer.ldi.push({ device_id: deviceId, throughput: state.ldi.throughput, temperature: state.ldi.temp, humidity: state.ldi.humidity, pressure: state.ldi.pe, joule_effect: state.ldi.je, power_watt: state.ldi.power, vibration: state.ldi.vibration }); }\n    }\n\n    const elapsed = (now - buffer.lastFlush) / 1000;\n    if (elapsed >= BATCH_INTERVAL_SEC) {\n        const pool = global.get('pgPool');\n        if (pool) {\n            const m = global.get('pipelineMetrics') || { inserts_ok: 0, inserts_failed: 0, last_flush: 0, devices_polled: 0 };\n            const queries = buildBatchQueries(buffer.sys, buffer.net, buffer.ldi);\n            for (const q of queries) {\n                pool.query(q.sql, q.params, function(err) {\n                    if (err) {\n                        node.error('Batch INSERT [' + q.name + '] failed: ' + err.message);\n                        m.inserts_failed += q.count;\n                        const cb = global.get('circuitBreaker');\n                        if (cb) cb.recordFailure(deviceId, flow);\n                    } else {\n                        node.log('Batch INSERT [' + q.name + '] ok: ' + q.count + ' rows');\n                        m.inserts_ok += q.count;\n                    }\n                    global.set('pipelineMetrics', m);\n                });\n            }\n            m.last_flush = Date.now();\n            m.devices_polled++;\n            const cb = global.get('circuitBreaker');\n            if (cb) cb.recordSuccess(deviceId, flow);\n            global.set('pipelineMetrics', m);\n        }\n        flow.set(bufKey, { sys: [], net: [], ldi: [], lastFlush: now });\n    } else {\n        flow.set(bufKey, buffer);\n    }\n    return null;\n} catch (err) {\n    node.error('Parser v10 crash: ' + err.message, msg);\n    return null;\n}\n\nfunction buildBatchQueries(sysRows, netRows, ldiRows) { sysRows = Array.isArray(sysRows) ? sysRows : []; netRows = Array.isArray(netRows) ? netRows : []; ldiRows = Array.isArray(ldiRows) ? ldiRows : [];\n    const queries = [];\n    if (sysRows.length > 0) { const ph = sysRows.map((_, i) => { const b = i * 11; return `(NOW(),$${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7},$${b+8},$${b+9},$${b+10},$${b+11})`; }).join(','); const params = []; for (const r of sysRows) { params.push(r.device_id, r.cpu_cores, r.cpu_load_percent, r.ram_total_mb, r.ram_used_mb, r.ram_free_mb, r.disk_total_gb, r.disk_used_gb, r.disk_free_gb, r.disk_description, r.temp_c); } queries.push({ name: 'sys', count: sysRows.length, sql: 'INSERT INTO public.sys_metrics (\"time\",device_id,cpu_cores,cpu_load_percent,ram_total_mb,ram_used_mb,ram_free_mb,disk_total_gb,disk_used_gb,disk_free_gb,disk_description,temp_c) VALUES ' + ph, params: params }); }\n    if (netRows.length > 0) { const ph = netRows.map((_, i) => { const b = i * 9; return `(NOW(),$${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7},$${b+8},$${b+9})`; }).join(','); const params = []; for (const r of netRows) { params.push(r.device_id, r.iface_name, r.rx_mbps, r.tx_mbps, r.rx_errors, r.tx_errors, r.rx_drops, r.tx_drops, r.status); } queries.push({ name: 'net', count: netRows.length, sql: 'INSERT INTO public.net_metrics (\"time\",device_id,iface_name,rx_mbps,tx_mbps,rx_errors,tx_errors,rx_drops,tx_drops,status) VALUES ' + ph, params: params }); }\n    if (ldiRows.length > 0) { const ph = ldiRows.map((_, i) => { const b = i * 8; return `(NOW(),$${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7},$${b+8})`; }).join(','); const params = []; for (const r of ldiRows) { params.push(r.device_id, r.throughput, r.temperature, r.humidity, r.pressure, r.joule_effect, r.power_watt, r.vibration); } queries.push({ name: 'ldi', count: ldiRows.length, sql: 'INSERT INTO public.ldi_metrics (\"time\",device_id,throughput,temperature,humidity,pressure,joule_effect,power_watt,vibration) VALUES ' + ph, params: params }); }\n    return queries;\n}\n\nfunction parseAll(items, type, state) {\n    const cpu = { total: 0, count: 0 }; let maxTemp = state.temp || 0; const storageEntries = {}; const ifaces = {};\n    const ldi = state.ldi || { throughput: 0, temp: 0, humidity: 0, pe: 0, je: 0, power: 0, vibration: 0 };\n    const LDI_MAP = { '1.3.6.1.4.1.9999.1.1.0': { key: 'throughput', div: 1 }, '1.3.6.1.4.1.9999.1.2.0': { key: 'temp', div: 100 }, '1.3.6.1.4.1.9999.1.3.0': { key: 'humidity', div: 100 }, '1.3.6.1.4.1.9999.1.4.2': { key: 'pe', div: 100 }, '1.3.6.1.4.1.9999.1.4.5': { key: 'pe', div: 100 }, '1.3.6.1.4.1.9999.1.5.1': { key: 'je', div: 100 }, '1.3.6.1.4.1.9999.1.6.1': { key: 'power', div: 1 }, '1.3.6.1.4.1.9999.1.7.1': { key: 'vibration', div: 100 } };\n    let ramTotalMb = state.ram_total || 0, ramUsedMb = state.ram_used || 0, diskTotalGb = state.disk_total || 0, diskUsedGb = state.disk_used || 0;\n    for (const item of items) {\n        if (!item || !item.oid) continue;\n        const oid = Array.isArray(item.oid) ? item.oid.join('.') : String(item.oid).replace(/,/g, '.');\n        const val = item.value; const numVal = (typeof val === 'number') ? val : (Number(val) || 0);\n        if (type === 'cpu' && (oid.startsWith('1.3.6.1.2.1.25.3.3.1.2.') || oid.startsWith('1.3.6.1.4.1.2636.3.1.13.1.8.'))) { if (Number.isFinite(numVal)) { cpu.total += numVal; cpu.count++; } continue; }\n        if (type === 'temp' && (oid.startsWith('1.3.6.1.4.1.2021.13.16.2.1.7.') || oid.startsWith('1.3.6.1.4.1.2636.3.1.13.1.7.'))) { if (numVal > maxTemp) maxTemp = numVal; continue; }\n        if (type === 'storage') { if (oid.startsWith('1.3.6.1.4.1.2636.3.1.13.1.11.')) { ramTotalMb = 100; ramUsedMb = Number(numVal) || 0; continue; } const m = oid.match(STORAGE_ENTRY_RE); if (m) { const [, p, i] = m; if (!storageEntries[i]) storageEntries[i] = { type: '', au: 0, size: 0, used: 0 }; const raw = Buffer.isBuffer(val) ? val.toString('utf8') : val; if (p === '2') storageEntries[i].type = String(raw); if (p === '4') storageEntries[i].au = Number(raw) || 0; if (p === '5') storageEntries[i].size = Number(raw) || 0; if (p === '6') storageEntries[i].used = Number(raw) || 0; continue; } }\n        if (type === 'net') {\n            const im = oid.match(IFTABLE_OID_RE);\n            if (im) { const [, p, i] = im; if (!ifaces[i]) ifaces[i] = mkIface(i); if (p === '2') ifaces[i].name = String(val); if (p === '8') ifaces[i].status = Number(val); if (p === '10') ifaces[i].rx32 = Number(val) || 0; if (p === '13') ifaces[i].drop += Number(val) || 0; if (p === '14') ifaces[i].err += Number(val) || 0; if (p === '16') ifaces[i].tx32 = Number(val) || 0; continue; }\n            const xm = oid.match(IFXTABLE_OID_RE);\n            if (xm) { const [, p, i] = xm; if (!ifaces[i]) ifaces[i] = mkIface(i); if (p === '10') ifaces[i].tx64 = Number(val) || 0; if (p === '6') ifaces[i].rx64 = Number(val) || 0; continue; }\n        }\n        if (type === 'ldi' && LDI_MAP[oid]) { const lm = LDI_MAP[oid]; const s = numVal / lm.div; if (lm.key === 'pe') { ldi.pe = ldi.pe ? (ldi.pe + s) / 2 : s; } else { ldi[lm.key] = Number(s.toFixed(2)); } continue; }\n    }\n    if (type === 'storage') { for (const e of Object.values(storageEntries)) { if (!e.size || !e.au) continue; const tb = e.size * e.au; const ub = e.used * e.au; if (/25\\.2\\.1\\.2/.test(e.type)) { ramTotalMb += tb / 1048576; ramUsedMb += ub / 1048576; } else if (/25\\.2\\.1\\.4/.test(e.type)) { diskTotalGb += tb / 1073741824; diskUsedGb += ub / 1073741824; } } ramUsedMb = Math.min(ramUsedMb, ramTotalMb); ramTotalMb = Math.min(ramTotalMb, 1048576); diskUsedGb = Math.min(diskUsedGb, diskTotalGb); diskTotalGb = Math.min(diskTotalGb, 1048576); }\n    const cpuLoad = cpu.count > 0 ? Number((cpu.total / cpu.count).toFixed(2)) : state.cpu_load || 0;\nreturn { cpu: { coreCount: cpu.count, loadPercent: Math.max(0, Math.min(100, cpuLoad)) }, temp: { maxC: Math.max(-40, Math.min(150, Number(maxTemp.toFixed(2)))) }, disk: { ramTotalMb: Math.max(0, Number(ramTotalMb.toFixed(2))), ramUsedMb: Math.max(0, Math.min(ramTotalMb, Number(ramUsedMb.toFixed(2)))), ramFreeMb: Math.max(0, Number((ramTotalMb - ramUsedMb).toFixed(2))), totalGb: Math.max(0, Math.min(1048576, Number(diskTotalGb.toFixed(2)))), usedGb: Math.max(0, Math.min(diskTotalGb, Number(diskUsedGb.toFixed(2)))), freeGb: Math.max(0, Number((diskTotalGb - diskUsedGb).toFixed(2))) }, ifaces, ldi };\n}\n\nfunction calcNetRate(deviceId, currentIfaces) {\n    const now = Date.now();\n    const prevKey = 'net_prev_' + deviceId;\n    const tsKey = 'net_ts_' + deviceId;\n    const prevIfaces = flow.get(prevKey) || {};\n    const prevTs = flow.get(tsKey) || (now - 10000);\n    const elapsedSec = (now - prevTs) / 1000;\n    const summary = {};\n    for (const [idx, curr] of Object.entries(currentIfaces)) {\n        if (!curr || !curr.name) continue;\n        const prev = prevIfaces[idx] || { rx64: 0, tx64: 0, rx32: 0, tx32: 0 };\n        let rxMbps = 0, txMbps = 0;\n        const prevHadData = (prev.rx64 > 0 || prev.rx32 > 0 || prev.tx64 > 0 || prev.tx32 > 0);\n        const isUp = curr.status === 1;\n        const hasElapsed = elapsedSec > 0.5;\n        if (isUp && prevHadData && hasElapsed) {\n            const rx = curr.rx64 || curr.rx32; const tx = curr.tx64 || curr.tx32;\n            const pRx = prev.rx64 || prev.rx32; const pTx = prev.tx64 || prev.tx32;\n            let rDiff = rx - pRx; let tDiff = tx - pTx;\n            if (rDiff < 0) rDiff += (Math.abs(rDiff) > 2147483648) ? 18446744073709552000 : 4294967296;\n            if (tDiff < 0) tDiff += (Math.abs(tDiff) > 2147483648) ? 18446744073709552000 : 4294967296;\n            rxMbps = Number(((rDiff * 8) / (elapsedSec * 1e6)).toFixed(2));\n            txMbps = Number(((tDiff * 8) / (elapsedSec * 1e6)).toFixed(2));\n            if (rxMbps > 40000 || rxMbps < 0) rxMbps = 0;\n            if (txMbps > 40000 || txMbps < 0) txMbps = 0;\n        }\n        summary[curr.name] = { rx_mbps: rxMbps, tx_mbps: txMbps, errors: curr.err, drops: curr.drop, status: isUp ? 'UP' : 'DOWN' };\n    }\n    flow.set(prevKey, JSON.parse(JSON.stringify(currentIfaces)));\n    flow.set(tsKey, now);\n    return { summary };\n}\n\nfunction sanitize(raw) { return String(raw || '').replace(/'/g, \"''\").trim(); }\nfunction mkIface(idx) { return { name: '', rx64: 0, tx64: 0, rx32: 0, tx32: 0, err: 0, drop: 0, status: 1 }; }",
         "outputs": 1,
         "timeout": "15",
         "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 2066,
-        "y": 240,
+        "x": 1020,
+        "y": 180,
         "wires": [
             [
                 "db_insert",
                 "debug_ok"
             ]
-        ]
+        ],
+        "g": "bc78ea85b252a09f"
     },
     {
         "id": "db_insert",
         "type": "postgresql",
         "z": "ims-tab-v5",
-        "g": "bc78ea85b252a09f",
         "name": "TimescaleDB",
         "query": "",
         "postgreSQLConfig": "pg_config",
         "split": false,
         "outputs": 0,
-        "x": 2326,
-        "y": 288,
-        "wires": []
+        "x": 1240,
+        "y": 220,
+        "wires": [],
+        "g": "bc78ea85b252a09f"
     },
     {
         "id": "debug_ok",
         "type": "debug",
         "z": "ims-tab-v5",
-        "g": "bc78ea85b252a09f",
         "name": "Telemetry OK",
         "active": true,
         "complete": "payload",
         "targetType": "msg",
-        "x": 2336,
-        "y": 192,
-        "wires": []
+        "x": 1240,
+        "y": 140,
+        "wires": [],
+        "g": "bc78ea85b252a09f"
     },
     {
         "id": "global_catch",
         "type": "catch",
         "z": "ims-tab-v5",
-        "g": "bc78ea85b252a09f",
         "name": "Global Catch",
         "scope": null,
         "uncaught": false,
-        "x": 182,
-        "y": 480,
+        "x": 140,
+        "y": 420,
         "wires": [
             [
                 "debug_err"
             ]
-        ]
+        ],
+        "g": "bc78ea85b252a09f"
     },
     {
         "id": "debug_err",
         "type": "debug",
         "z": "ims-tab-v5",
-        "g": "bc78ea85b252a09f",
         "name": "Pipeline Error",
         "active": true,
         "tosidebar": true,
@@ -374,41 +363,41 @@
         "tostatus": true,
         "complete": "error.message",
         "targetType": "msg",
-        "x": 2336,
-        "y": 480,
-        "wires": []
+        "x": 380,
+        "y": 420,
+        "wires": [],
+        "g": "bc78ea85b252a09f"
     },
     {
         "id": "inject_registry",
         "type": "inject",
         "z": "ims-tab-v5",
-        "g": "bc78ea85b252a09f",
-        "name": "Refresh Device Registry (1min)",
+        "name": "Refresh Device Registry (5min)",
         "props": [
             {
                 "p": "payload"
             }
         ],
-        "repeat": "60",
+        "repeat": 300,
         "crontab": "",
         "once": true,
         "onceDelay": 5,
         "topic": "",
         "payload": "",
         "payloadType": "date",
-        "x": 242,
-        "y": 144,
+        "x": 0,
+        "y": 0,
         "wires": [
             [
                 "device_registry"
             ]
-        ]
+        ],
+        "g": "bc78ea85b252a09f"
     },
     {
         "id": "device_registry",
         "type": "function",
         "z": "ims-tab-v5",
-        "g": "bc78ea85b252a09f",
         "name": "Load Device Registry",
         "func": "const pool = global.get('pgPool');\nif (!pool) { node.error('pgPool not available in global context'); return null; }\nconst sql = 'SELECT device_id AS machine_id, hostname, snmp_community AS community, snmp_port, device_type FROM public.devices WHERE enabled = true';\npool.query(sql, [], function(err, result) {\n    if (err) {\n        if (err.message && err.message.indexOf('does not exist') !== -1) {\n            node.warn('Device Registry: table not ready yet — retrying in 10s');\n        } else {\n            node.warn('Device Registry: ' + err.message + ' — using fallback defaults');\n        }\n        return;\n    }\n    const registry = {};\n    if (result && result.rows) {\n        result.rows.forEach(function(row) {\n            registry[row.machine_id] = {\n                hostname: row.hostname || row.machine_id,\n                community: row.community || 'public',\n                snmp_port: row.snmp_port || 161,\n                device_type: row.device_type || 'server'\n            };\n        });\n    }\n    flow.set('batchId', 'batch_' + Date.now());\n    global.set('deviceRegistry', registry);\n    node.log('Device registry loaded: ' + Object.keys(registry).length + ' devices');\n});\nreturn null;",
         "outputs": 0,
@@ -417,15 +406,15 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 548,
-        "y": 144,
-        "wires": []
+        "x": 0,
+        "y": 0,
+        "wires": [],
+        "g": "bc78ea85b252a09f"
     },
     {
         "id": "resolve_device",
         "type": "function",
         "z": "ims-tab-v5",
-        "g": "bc78ea85b252a09f",
         "name": "Resolve Device",
         "func": "const registry = global.get('deviceRegistry') || {};\nconst mid = msg.machine_id || msg.topic || '';\nconst device = registry[mid];\nif (!device) {\n    msg.host = msg.host || 'ims-snmpsim';\n    msg.community = msg.community || 'Netk@';\n    msg.snmp_port = msg.snmp_port || 161;\n    msg.device_type = msg.device_type || 'server';\n} else {\n    msg.host = device.hostname;\n    msg.community = device.community;\n    msg.snmp_port = device.snmp_port;\n    msg.device_type = device.device_type || 'server';\n}\nmsg.machine_id = mid;\nmsg.topic = mid;\nreturn msg;",
         "outputs": 1,
@@ -434,36 +423,36 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1072,
-        "y": 240,
+        "x": 0,
+        "y": 0,
         "wires": [
             [
                 "fork_5_ways"
             ]
-        ]
+        ],
+        "g": "bc78ea85b252a09f"
     },
     {
         "id": "catch_db_insert",
         "type": "catch",
         "z": "ims-tab-v5",
-        "g": "bc78ea85b252a09f",
         "name": "Catch DB Insert",
         "scope": [
             "db_insert"
         ],
-        "x": 192,
-        "y": 432,
+        "x": 0,
+        "y": 0,
         "wires": [
             [
                 "retry_store"
             ]
-        ]
+        ],
+        "g": "bc78ea85b252a09f"
     },
     {
         "id": "retry_store",
         "type": "function",
         "z": "ims-tab-v5",
-        "g": "bc78ea85b252a09f",
         "name": "Write to Retry Queue",
         "func": "const fs = global.get('fs');\nconst QUEUE_PATH = '/data/retry_queue.json';\nfs.readFile(QUEUE_PATH, 'utf8', function(readErr, data) {\n    let queue = [];\n    try { if (!readErr && data) queue = JSON.parse(data); } catch(e) { queue = []; }\n    const entry = {\n        timestamp: new Date().toISOString(),\n        retries: 0,\n        sql: msg.query || '',\n        params: msg.params || [],\n        count: msg.count || 0,\n        error: msg.error ? msg.error.message : 'unknown'\n    };\n    const oneHourAgo = Date.now() - 3600000;\n    queue = queue.filter(function(e) { return new Date(e.timestamp).getTime() > oneHourAgo; });\n    if (queue.length >= 500) queue = queue.slice(-499);\n    queue.push(entry);\n    fs.writeFile(QUEUE_PATH, JSON.stringify(queue), 'utf8', function(writeErr) {\n        if (writeErr) node.error('Retry queue write failed: ' + writeErr.message);\n        else node.warn('Retry: queued failed INSERT (#' + queue.length + ')');\n    });\n});\nreturn msg;",
         "outputs": 1,
@@ -472,19 +461,19 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 548,
-        "y": 432,
+        "x": 0,
+        "y": 0,
         "wires": [
             [
                 "debug_retry"
             ]
-        ]
+        ],
+        "g": "bc78ea85b252a09f"
     },
     {
         "id": "debug_retry",
         "type": "debug",
         "z": "ims-tab-v5",
-        "g": "bc78ea85b252a09f",
         "name": "Retry Queued",
         "active": true,
         "tosidebar": true,
@@ -493,41 +482,41 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 2336,
-        "y": 432,
-        "wires": []
+        "x": 0,
+        "y": 0,
+        "wires": [],
+        "g": "bc78ea85b252a09f"
     },
     {
         "id": "retry_timer",
         "type": "inject",
         "z": "ims-tab-v5",
-        "g": "bc78ea85b252a09f",
-        "name": "Retry Drain (10s)",
+        "name": "Retry Drain (30s)",
         "props": [
             {
                 "p": "payload"
             }
         ],
-        "repeat": "10",
+        "repeat": "30",
         "crontab": "",
         "once": true,
         "onceDelay": 10,
         "topic": "",
         "payload": "drain",
         "payloadType": "str",
-        "x": 202,
-        "y": 192,
+        "x": 0,
+        "y": 0,
         "wires": [
             [
                 "retry_rebuild"
             ]
-        ]
+        ],
+        "g": "bc78ea85b252a09f"
     },
     {
         "id": "retry_rebuild",
         "type": "function",
         "z": "ims-tab-v5",
-        "g": "bc78ea85b252a09f",
         "name": "Rebuild & Retry INSERT",
         "func": "const fs = global.get('fs');\nconst QUEUE_PATH = '/data/retry_queue.json';\nconst MAX_RETRIES = 5;\nconst pool = global.get('pgPool');\nif (msg.payload !== 'drain') return null;\nif (!pool) { node.warn('Retry: pgPool not available'); return null; }\nfs.readFile(QUEUE_PATH, 'utf8', function(readErr, data) {\n    if (readErr || !data) return;\n    let queue = [];\n    try { queue = JSON.parse(data); } catch(e) { return; }\n    if (queue.length === 0) return;\n    const entry = queue.shift();\n    entry.retries++;\n    if (entry.retries > MAX_RETRIES) {\n        node.warn('Retry: dropped after ' + MAX_RETRIES + ' attempts');\n        fs.writeFile(QUEUE_PATH, JSON.stringify(queue), 'utf8', function(){});\n        return;\n    }\n    if (entry.sql && entry.params) {\n        pool.query(entry.sql, entry.params, function(err) {\n            if (err) {\n                node.error('Retry [' + entry.retries + '/' + MAX_RETRIES + '] failed: ' + err.message);\n                queue.unshift(entry);\n            } else {\n                node.log('Retry [' + entry.retries + '/' + MAX_RETRIES + '] ok: ' + entry.count + ' rows');\n            }\n            fs.writeFile(QUEUE_PATH, JSON.stringify(queue), 'utf8', function(){});\n        });\n    } else {\n        node.warn('Retry: entry has no sql/params, skipping');\n        fs.writeFile(QUEUE_PATH, JSON.stringify(queue), 'utf8', function(){});\n    }\n});\nreturn null;",
         "outputs": 0,
@@ -536,33 +525,33 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 558,
-        "y": 192,
-        "wires": []
+        "x": 0,
+        "y": 0,
+        "wires": [],
+        "g": "bc78ea85b252a09f"
     },
     {
         "id": "http_inject_in",
         "type": "http in",
         "z": "ims-tab-v5",
-        "g": "bc78ea85b252a09f",
         "name": "POST /inject",
         "url": "/inject",
         "method": "post",
         "upload": false,
         "swaggerDoc": "",
-        "x": 182,
-        "y": 288,
+        "x": 140,
+        "y": 340,
         "wires": [
             [
                 "http_inject_handler"
             ]
-        ]
+        ],
+        "g": "bc78ea85b252a09f"
     },
     {
         "id": "http_inject_handler",
         "type": "function",
         "z": "ims-tab-v5",
-        "g": "bc78ea85b252a09f",
         "name": "Parse K6 Payload",
         "func": "var expectedKey = env.get('INGEST_API_KEY');\nvar providedKey = msg.req ? msg.req.headers['x-api-key'] : null;\n\n// 1. Auth Check (Send ORIGINAL msg to output 2)\nif (expectedKey && providedKey !== expectedKey) {\n    msg.statusCode = 401;\n    msg.payload = JSON.stringify({ error: 'Unauthorized' });\n    msg.headers = { 'Content-Type': 'application/json' };\n    return [null, msg];\n}\n\nvar body = msg.payload;\nif (typeof body === 'string') {\n    try { body = JSON.parse(body); } catch(e) { body = {}; }\n}\n\nvar machineId = body.machine_id || '';\nif (!machineId) {\n    machineId = 'E2E-SERVER-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0');\n}\nif (machineId.startsWith('K6-SERVER-')) machineId = machineId.replace('K6-SERVER-', 'E2E-SERVER-');\n\n// 2. Prepare Pipeline msg (Safely Clone to drop req/res and prevent memory leaks)\nvar pipelineMsg = RED.util.cloneMessage(msg);\npipelineMsg.machine_id = machineId;\npipelineMsg.topic = machineId;\npipelineMsg.payload = '';\n\n// 3. Prepare HTTP Response (Use ORIGINAL msg for output 2)\nmsg.statusCode = 200;\nmsg.payload = JSON.stringify({ ok: true, machine_id: machineId });\nmsg.headers = { 'Content-Type': 'application/json' };\n\nreturn [pipelineMsg, msg];",
         "outputs": 2,
@@ -571,8 +560,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 842,
-        "y": 288,
+        "x": 360,
+        "y": 340,
         "wires": [
             [
                 "resolve_device"
@@ -580,56 +569,64 @@
             [
                 "http_inject_respond"
             ]
-        ]
+        ],
+        "g": "bc78ea85b252a09f"
     },
     {
         "id": "http_inject_respond",
         "type": "http response",
         "z": "ims-tab-v5",
-        "g": "bc78ea85b252a09f",
         "name": "200 OK",
         "statusCode": "",
         "headers": {},
-        "x": 1052,
-        "y": 336,
-        "wires": []
+        "x": 580,
+        "y": 300,
+        "wires": [],
+        "g": "bc78ea85b252a09f"
     },
     {
         "id": "http_metrics_in",
         "type": "http in",
         "z": "ims-tab-v5",
-        "g": "bc78ea85b252a09f",
         "name": "GET /metrics",
         "url": "/metrics",
         "method": "get",
         "upload": false,
         "swaggerDoc": "",
-        "x": 182,
-        "y": 336,
+        "x": 0,
+        "y": 0,
         "wires": [
             [
                 "http_metrics_respond"
             ]
-        ]
+        ],
+        "g": "bc78ea85b252a09f"
     },
     {
         "id": "http_metrics_respond",
         "type": "function",
         "z": "ims-tab-v5",
-        "g": "bc78ea85b252a09f",
         "name": "Render Prometheus Metrics",
-        "func": "const metrics = global.get('pipelineMetrics') || { inserts_ok: 0, inserts_failed: 0, last_flush: 0, devices_polled: 0 };\nlet cb; try { cb = require('./lib/circuit-breaker'); } catch(e) {}\nconst lines = [\n    '# HELP ims_pipeline_inserts_total Total successful DB inserts',\n    '# TYPE ims_pipeline_inserts_total counter',\n    'ims_pipeline_inserts_total ' + metrics.inserts_ok,\n    '# HELP ims_pipeline_inserts_failed_total Total failed DB inserts',\n    '# TYPE ims_pipeline_inserts_failed_total counter',\n    'ims_pipeline_inserts_failed_total ' + metrics.inserts_failed,\n    '# HELP ims_pipeline_last_flush_timestamp_seconds Last successful flush epoch',\n    '# TYPE ims_pipeline_last_flush_timestamp_seconds gauge',\n    'ims_pipeline_last_flush_timestamp_seconds ' + Math.floor(metrics.last_flush / 1000),\n    '# HELP ims_pipeline_devices_polled_total Devices polled this cycle',\n    '# TYPE ims_pipeline_devices_polled_total gauge',\n    'ims_pipeline_devices_polled_total ' + metrics.devices_polled\n];\nif (cb) {\n    const cbMetrics = cb.renderMetrics(flow);\n    if (cbMetrics) lines.push(cbMetrics);\n}\nmsg.payload = lines.join('\\n') + '\\n';\nmsg.headers = { 'Content-Type': 'text/plain; version=0.0.4' };\nreturn msg;",
+        "func": "const metrics = global.get('pipelineMetrics') || { inserts_ok: 0, inserts_failed: 0, last_flush: 0, devices_polled: 0 };\nconst cb = global.get('circuitBreaker');\nconst lines = [\n    '# HELP ims_pipeline_inserts_total Total successful DB inserts',\n    '# TYPE ims_pipeline_inserts_total counter',\n    'ims_pipeline_inserts_total ' + metrics.inserts_ok,\n    '# HELP ims_pipeline_inserts_failed_total Total failed DB inserts',\n    '# TYPE ims_pipeline_inserts_failed_total counter',\n    'ims_pipeline_inserts_failed_total ' + metrics.inserts_failed,\n    '# HELP ims_pipeline_last_flush_timestamp_seconds Last successful flush epoch',\n    '# TYPE ims_pipeline_last_flush_timestamp_seconds gauge',\n    'ims_pipeline_last_flush_timestamp_seconds ' + Math.floor(metrics.last_flush / 1000),\n    '# HELP ims_pipeline_devices_polled_total Devices polled this cycle',\n    '# TYPE ims_pipeline_devices_polled_total gauge',\n    'ims_pipeline_devices_polled_total ' + metrics.devices_polled\n];\nif (cb) {\n    const cbMetrics = cb.renderMetrics(flow);\n    if (cbMetrics) lines.push(cbMetrics);\n}\nmsg.payload = lines.join('\\n') + '\\n';\nmsg.headers = { 'Content-Type': 'text/plain; version=0.0.4' };\nreturn msg;",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 568,
-        "y": 336,
+        "x": 250,
+        "y": 0,
         "wires": [
             []
-        ]
+        ],
+        "g": "bc78ea85b252a09f"
+    },
+    {
+        "id": "ims-alert-tab",
+        "type": "tab",
+        "label": "IMS Alerting Pipeline",
+        "disabled": false,
+        "info": "Alertmanager webhook → LINE Messaging API / MS Teams"
     },
     {
         "id": "alert_http_in",
