@@ -19,8 +19,7 @@
         "y": 200,
         "wires": [
             [
-                "alert_respond",
-                "alert_format"
+                "alert_auth_check"
             ]
         ]
     },
@@ -42,7 +41,7 @@
         "type": "function",
         "z": "ims-alert-tab",
         "name": "Format Alert Text",
-        "func": "const payload = msg.payload;\nif (!payload || !payload.alerts) return null;\n\nconst alerts = payload.alerts;\nlet msgText = '\\ud83d\\udd14 *IMS SYSTEM ALERT [' + (payload.status || 'unknown').toUpperCase() + ']* \\ud83d\\udd14\\n\\n';\n\nfor (let i = 0; i < alerts.length; i++) {\n    const a = alerts[i];\n    const labels = a.labels || {};\n    const annotations = a.annotations || {};\n    \n    let icon = '\\u26a0\\ufe0f';\n    if (labels.severity === 'critical') icon = '\\ud83d\\udd25';\n    if (payload.status === 'resolved') icon = '\\u2705';\n\n    msgText += icon + ' *' + (labels.alertname || 'Unknown Alert') + '*\\n';\n    msgText += '\\ud83d\\udda5\\ufe0f *Host:* ' + (labels.machine_id || labels.instance || 'System') + '\\n';\n    msgText += '\\ud83d\\udcdd *Detail:* ' + (annotations.summary || 'N/A') + '\\n';\n    if (annotations.description) msgText += '\\ud83d\\udca1 *Desc:* ' + annotations.description + '\\n';\n    \n    const startTime = a.startsAt ? new Date(a.startsAt).toLocaleString('th-TH') : 'Unknown';\n    msgText += '\\ud83d\\udd52 *Time:* ' + startTime + '\\n';\n    msgText += '-------------------\\n';\n}\n\n// Truncate if too long to prevent API 400 Bad Request during major outages\nif (msgText.length > 4000) {\n    msgText = msgText.substring(0, 4000) + '\\n\\n... [TRUNCATED: Too many alerts!]';\n}\nmsg.payload = msgText;\nreturn msg;",
+        "func": "const payload = msg.payload;\nif (!payload || !payload.alerts) return null;\n\nconst alerts = payload.alerts;\nlet msgText = `🔔 *IMS SYSTEM ALERT [${(payload.status || 'unknown').toUpperCase()}]* 🔔\\n\\n`;\n\nfor (let i = 0; i < alerts.length; i++) {\n    const a = alerts[i];\n    const labels = a.labels || {};\n    const annotations = a.annotations || {};\n    \n    let icon = '⚠️';\n    if (labels.severity === 'critical') icon = '🔥';\n    if (payload.status === 'resolved') icon = '✅';\n\n    const alertname = labels.alertname || 'Unknown Alert';\n    const host = labels.machine_id || labels.instance || 'System';\n    const summary = annotations.summary || 'N/A';\n    const desc = annotations.description ? `\\n💡 *Desc:* ${annotations.description}` : '';\n    const startTime = a.startsAt ? new Date(a.startsAt).toLocaleString('th-TH') : 'Unknown';\n\n    msgText += `${icon} *${alertname}*\\n🖥️ *Host:* ${host}\\n📝 *Detail:* ${summary}${desc}\\n🕒 *Time:* ${startTime}\\n-------------------\\n`;\n}\n\nif (msgText.length > 4000) {\n    msgText = msgText.substring(0, 4000) + '\\n\\n... [TRUNCATED: Too many alerts!]';\n}\nmsg.payload = msgText;\nreturn msg;",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
@@ -175,7 +174,7 @@
         "y": 360,
         "wires": [
             [
-                "alert_error_debug"
+                "alert_retry_logic"
             ]
         ]
     },
@@ -195,5 +194,77 @@
         "x": 880,
         "y": 360,
         "wires": []
+    },
+    {
+        "id": "alert_auth_check",
+        "type": "function",
+        "z": "ims-alert-tab",
+        "name": "Check API Key",
+        "func": "const apiKey = env.get('INGEST_API_KEY');\nconst reqApiKey = msg.req.get('x-api-key') || msg.req.query.key;\n\nif (apiKey && reqApiKey !== apiKey) {\n    return [null, msg];\n}\nreturn [msg, null];",
+        "outputs": 2,
+        "x": 300,
+        "y": 200,
+        "wires": [
+            [
+                "alert_respond",
+                "alert_format"
+            ],
+            [
+                "alert_auth_error"
+            ]
+        ]
+    },
+    {
+        "id": "alert_auth_error",
+        "type": "http response",
+        "z": "ims-alert-tab",
+        "name": "401 Unauthorized",
+        "statusCode": "401",
+        "headers": {},
+        "x": 310,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "alert_retry_logic",
+        "type": "function",
+        "z": "ims-alert-tab",
+        "name": "Retry Logic (Max 3)",
+        "func": "msg.retryCount = (msg.retryCount || 0) + 1;\nif (msg.retryCount <= 3) {\n    node.warn('Alert delivery failed, retrying ' + msg.retryCount + '/3...');\n    return [msg, null];\n} else {\n    node.error('Alert delivery failed permanently after 3 retries.');\n    return [null, msg];\n}",
+        "outputs": 2,
+        "x": 800,
+        "y": 420,
+        "wires": [
+            [
+                "alert_retry_delay"
+            ],
+            [
+                "alert_error_debug"
+            ]
+        ]
+    },
+    {
+        "id": "alert_retry_delay",
+        "type": "delay",
+        "z": "ims-alert-tab",
+        "name": "Wait 30s",
+        "pauseType": "delay",
+        "timeout": "30",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "x": 980,
+        "y": 420,
+        "wires": [
+            [
+                "alert_line_notify",
+                "alert_teams_webhook"
+            ]
+        ]
     }
 ]

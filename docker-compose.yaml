@@ -41,8 +41,10 @@ services:
       TZ: ${TZ:-Asia/Bangkok}
       POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
       POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
       PGDATA: /var/lib/postgresql/data/pgdata
+    secrets:
+      - postgres_password
     command:
       - postgres
       - -c
@@ -100,7 +102,8 @@ services:
     init: true
     entrypoint: ["/bin/sh", "/etc/pgbouncer/entrypoint-wrapper.sh"]
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@timescaledb:5432/${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
       POOL_MODE: transaction
       MAX_CLIENT_CONN: 500
       DEFAULT_POOL_SIZE: 100
@@ -110,7 +113,9 @@ services:
       CLIENT_IDLE_TIMEOUT: 30
       LOG_CONNECTIONS: "0"
       LOG_DISCONNECTIONS: "0"
-      AUTH_TYPE: plain
+      AUTH_TYPE: scram-sha-256
+    secrets:
+      - postgres_password
     volumes:
       - ./pgbouncer/entrypoint-wrapper.sh:/etc/pgbouncer/entrypoint-wrapper.sh:ro
     deploy:
@@ -292,6 +297,16 @@ services:
     <<: *default-restart
     init: true
     user: "1000:1000"
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        if [ -f /run/secrets/postgres_password ]; then
+          export PGPASSWORD=$$(cat /run/secrets/postgres_password)
+        fi
+        exec ./entrypoint.sh
+    secrets:
+      - postgres_password
     environment:
       TZ: ${TZ:-Asia/Bangkok}
       NODE_RED_ENABLE_PROJECTS: "false"
@@ -299,11 +314,11 @@ services:
       CREDENTIAL_SECRET: ${NODE_RED_CREDENTIAL_SECRET:?set NODE_RED_CREDENTIAL_SECRET in .env}
       NODE_RED_ADMIN_USER: ${NODE_RED_ADMIN_USER:-admin}
       NODE_RED_ADMIN_PASSWORD_HASH: ${NODE_RED_ADMIN_PASSWORD_HASH:-}
+      SNMP_COMMUNITY: ${SNMP_COMMUNITY}
       PGHOST: ims-pgbouncer
       PGPORT: "5432"
       PGDATABASE: ${POSTGRES_DB}
       PGUSER: ${POSTGRES_USER}
-      PGPASSWORD: ${POSTGRES_PASSWORD}
       LINE_CHANNEL_ACCESS_TOKEN: ${LINE_CHANNEL_ACCESS_TOKEN:-}
       LINE_USER_ID: ${LINE_USER_ID:-}
       TEAMS_WEBHOOK_URL: ${TEAMS_WEBHOOK_URL:-}
@@ -352,3 +367,7 @@ networks:
     driver: bridge
   ims-monitoring:
     driver: bridge
+
+secrets:
+  postgres_password:
+    file: ./secrets/postgres_password.txt

@@ -75,3 +75,4 @@ memory/
 backup_*.sql
 
 docker-compose.override.yaml
+secrets
