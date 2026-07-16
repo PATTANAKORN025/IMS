@@ -51,11 +51,12 @@ function calcNetRate(deviceId, currentIfaces) {
         if (isUp && prevHadData && hasElapsed) {
             const rx = curr.rx64 || curr.rx32; const tx = curr.tx64 || curr.tx32;
             const pRx = prev.rx64 || prev.rx32; const pTx = prev.tx64 || prev.tx32;
-            let rDiff = rx - pRx; let tDiff = tx - pTx;
-            if (rDiff < 0) rDiff += (Math.abs(rDiff) > 2147483648) ? 18446744073709552000 : 4294967296;
-            if (tDiff < 0) tDiff += (Math.abs(tDiff) > 2147483648) ? 18446744073709552000 : 4294967296;
-            rxMbps = Number(((rDiff * 8) / (elapsedSec * 1e6)).toFixed(2));
-            txMbps = Number(((tDiff * 8) / (elapsedSec * 1e6)).toFixed(2));
+            let rDiff = BigInt(rx) - BigInt(pRx); let tDiff = BigInt(tx) - BigInt(pTx);
+            if (rDiff < 0n) rDiff += 18446744073709551616n;
+            if (tDiff < 0n) tDiff += 18446744073709551616n;
+            const rDiffNum = Number(rDiff); const tDiffNum = Number(tDiff);
+            rxMbps = Number(((rDiffNum * 8) / (elapsedSec * 1e6)).toFixed(2));
+            txMbps = Number(((tDiffNum * 8) / (elapsedSec * 1e6)).toFixed(2));
             if (rxMbps > 40000 || rxMbps < 0) rxMbps = 0;
             if (txMbps > 40000 || txMbps < 0) txMbps = 0;
         }
