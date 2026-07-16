@@ -12,9 +12,9 @@
 [![K6](https://img.shields.io/badge/K6-Load--Testing-7B61FF?logo=k6&logoColor=white)](https://k6.io/)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
-![Architecture](https://img.shields.io/badge/Architecture-Cyberpunk_HUD-00F2FE)
-![Uptime](https://img.shields.io/badge/Uptime-99.9%25-00FF87)
-![Nodes](https://img.shields.io/badge/Scalable-1000%2B_Nodes-FF003C)
+![Architecture](https://img.shields.io/badge/Architecture-Cyberpunk_HUD-3B82F6)
+![Uptime](https://img.shields.io/badge/Uptime-99.9%25-10B981)
+![Nodes](https://img.shields.io/badge/Scalable-1000%2B_Nodes-EF4444)
 
 ---
 
@@ -54,9 +54,19 @@
 | **Engineering Drill-Down** | 21 | Per-machine deep dive: Gauges, Memory/Temp timeseries, LDI manufacturing, Z-Score anomalies, Donut charts |
 | **Capacity Planning** | 16 | Forecasting: Days Until Full (bargauge), Disk/CPU/RAM trends, Z-Score anomaly detection |
 
-**Design System:** Cyberpunk HUD aesthetic — Rajdhani font, `#030407` background, `#00F2FE`/`#00FF87`/`#FF003C` neon palette, glassmorphism panels with corner bracket accents, 2D overlap-free Grid-24 layout.
+**Design System:** Cyberpunk HUD aesthetic — Rajdhani font, `#030407` background, Tailwind-based palette (`#10B981` Healthy, `#F59E0B` Warning, `#EF4444` Critical, `#3B82F6` Accent), glassmorphism panels with corner bracket accents, 2D overlap-free Grid-24 layout.
 
 ---
+
+## Dashboard Showcase
+
+> Screenshots captured automatically via `make test-visual` (Playwright + Kiosk TV mode)
+
+| NOC Overview | Engineering Drill-Down | Capacity Planning |
+|:---:|:---:|:---:|
+| ![NOC Overview](assets/noc-overview.png) | ![Engineering Drill-Down](assets/engineering-drilldown.png) | ![Capacity Planning](assets/capacity-planning.png) |
+
+
 
 ## SRE & DevSecOps Triumphs
 
@@ -147,19 +157,55 @@ open http://localhost:3000
 
 ---
 
+## NOC Wall-Display (Kiosk Mode)
+
+IMS dashboards support Grafana's TV Kiosk mode for 24/7 NOC wall-displays.
+
+### Quick Start
+```bash
+# Create playlist (cycles every 30 seconds)
+export GRAFANA_API_KEY="your-admin-api-key"
+./scripts/create-playlist.sh http://localhost:3000 "$GRAFANA_API_KEY" 30
+
+# Open in kiosk mode on NOC display
+open "http://localhost:3000/playlists/play/1?kiosk=tv&autofitpanels"
+```
+
+### Kiosk URL Patterns
+
+| Mode | URL | Use Case |
+|------|-----|----------|
+| **TV Kiosk** | `?kiosk=tv&autofitpanels` | NOC wall-display — hides all chrome, auto-fits panels |
+| **Clean** | `?kiosk` | Presentation mode — hides sidebar + topnav, keeps controls |
+| **Embedded** | `?kiosk=1` | iframe embedding — hides everything |
+
+### Playlist Rotation
+The `scripts/create-playlist.sh` script creates a Grafana Playlist that cycles through:
+1. **NOC Overview** — Fleet health envelope (30s)
+2. **Engineering Drill-Down** — Per-machine diagnostics (30s)
+3. **Capacity Planning** — Forecasting & trends (30s)
+
+### Auto-Refresh
+All dashboards default to `10s` auto-refresh. Combined with `refresh=10s` in the playlist interval, the NOC display stays current without manual intervention.
+
+---
+
 ## Project Structure
 
 ```
 IMS/
 ├── monitoring/grafana/          # Dashboards, datasources, provisioning
-│   └── dashboards/              # 3 JSON dashboard files (source of truth)
+│   ├── dashboards/              # 4 JSON dashboard files (source of truth)
+│   └── library-panels/          # Shared library panels (Fleet Health Score)
 ├── nodered_data/                # Node-RED flows, settings, Dockerfile
 │   └── flows/                   # ingestion.json + alerting.json
 ├── postgres/init/               # Database init SQL + readonly role
-├── database/migrations/         # 11 sequenced migration files
+├── database/migrations/         # Sequenced migration files
 ├── tests/k6/                    # K6 stress & chaos test scripts
 ├── tests/unit/                  # Parser & counter unit tests
-├── scripts/                     # Utility scripts
+├── tests/playwright/            # Visual regression & screenshot capture
+├── scripts/                     # Utility scripts (playlist, discovery, etc.)
+├── assets/                      # Dashboard screenshots (auto-generated)
 └── docs/                        # Architecture, Troubleshooting, Design System
 ```
 

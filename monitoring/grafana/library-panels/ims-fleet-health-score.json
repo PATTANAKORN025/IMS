@@ -1,0 +1,65 @@
+{
+  "uid": "ims-fleet-health-score",
+  "name": "Fleet Health Score",
+  "version": 1,
+  "type": "stat",
+  "description": "Composite fleet health score (0-100%) calculated from v_fleet_health view. Uses continuous formula: GREATEST(0, 100 - cpu_penalty - ram_penalty - disk_penalty). Thresholds: red < 70, amber < 90, green >= 90.",
+  "datasource": {
+    "uid": "timescaledb"
+  },
+  "fieldConfig": {
+    "defaults": {
+      "unit": "percent",
+      "min": 0,
+      "max": 100,
+      "thresholds": {
+        "mode": "absolute",
+        "steps": [
+          { "color": "#EF4444", "value": null },
+          { "color": "#F59E0B", "value": 70 },
+          { "color": "#10B981", "value": 90 }
+        ]
+      },
+      "color": { "mode": "thresholds" },
+      "custom": {},
+      "decimals": 2
+    },
+    "overrides": [
+      {
+        "matcher": { "id": "byName", "options": "/.*/" },
+        "properties": [
+          { "id": "decimals", "value": 2 }
+        ]
+      },
+      {
+        "matcher": { "id": "byName", "options": "/.*/" },
+        "properties": [
+          { "id": "custom.fontFamily", "value": "'Roboto Mono', monospace" }
+        ]
+      }
+    ]
+  },
+  "options": {
+    "colorMode": "value",
+    "graphMode": "area",
+    "justifyMode": "center",
+    "reduceOptions": {
+      "calcs": ["lastNotNull"],
+      "values": false
+    },
+    "noValue": "N/A",
+    "textMode": "value",
+    "text": {
+      "valueSize": 48,
+      "titleSize": 14
+    }
+  },
+  "targets": [
+    {
+      "refId": "A",
+      "datasource": { "uid": "timescaledb" },
+      "rawSql": "SELECT value FROM public.v_fleet_score",
+      "format": "table"
+    }
+  ]
+}
