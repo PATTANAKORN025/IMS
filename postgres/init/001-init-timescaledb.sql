@@ -209,13 +209,11 @@ SELECT DISTINCT ON (d.device_id)
     ROUND((s.ram_used_mb / NULLIF(s.ram_total_mb, 0) * 100)::NUMERIC, 1) AS ram_pct,
     ROUND((s.disk_used_gb / NULLIF(s.disk_total_gb, 0) * 100)::NUMERIC, 1) AS disk_pct,
     ROUND(s.temp_c::NUMERIC, 0) AS temp_c,
-    CASE
-        WHEN s.cpu_load_percent > 90 OR s.ram_used_mb / NULLIF(s.ram_total_mb, 0) * 100 > 95
-             OR s.disk_used_gb / NULLIF(s.disk_total_gb, 0) * 100 > 90 THEN 0
-        WHEN s.cpu_load_percent > 80 OR s.ram_used_mb / NULLIF(s.ram_total_mb, 0) * 100 > 85
-             OR s.disk_used_gb / NULLIF(s.disk_total_gb, 0) * 100 > 80 THEN 50
-        ELSE 100
-    END AS health_score,
+    GREATEST(0, 100
+        - GREATEST(0, s.cpu_load_percent - 70) * 1.5
+        - GREATEST(0, (s.ram_used_mb / NULLIF(s.ram_total_mb, 0) * 100) - 75) * 2
+        - GREATEST(0, (s.disk_used_gb / NULLIF(s.disk_total_gb, 0) * 100) - 80) * 2
+    )::NUMERIC(5,1) AS health_score,
     s.time
 FROM public.sys_metrics s
 JOIN public.devices d ON d.device_id = s.device_id
