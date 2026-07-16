@@ -122,3 +122,30 @@ END $$;
 ALTER MATERIALIZED VIEW public.sys_weekly SET (timescaledb.materialized_only = false);
 ALTER MATERIALIZED VIEW public.net_weekly SET (timescaledb.materialized_only = false);
 ALTER MATERIALIZED VIEW public.ldi_weekly SET (timescaledb.materialized_only = false);
+
+-- ══════════════════════════════════════════════════════════════
+-- Hourly CAGG Refresh Policies
+-- Ensures sys_hourly, net_hourly, ldi_hourly auto-refresh
+-- start_offset=3h covers raw data lag, end_offset=1h avoids partial buckets
+-- ══════════════════════════════════════════════════════════════
+
+DO $$ BEGIN
+    PERFORM add_continuous_aggregate_policy('public.sys_hourly',
+        start_offset => INTERVAL '3 hours', end_offset => INTERVAL '1 hour',
+        schedule_interval => INTERVAL '1 hour', if_not_exists => TRUE);
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+DO $$ BEGIN
+    PERFORM add_continuous_aggregate_policy('public.net_hourly',
+        start_offset => INTERVAL '3 hours', end_offset => INTERVAL '1 hour',
+        schedule_interval => INTERVAL '1 hour', if_not_exists => TRUE);
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+DO $$ BEGIN
+    PERFORM add_continuous_aggregate_policy('public.ldi_hourly',
+        start_offset => INTERVAL '3 hours', end_offset => INTERVAL '1 hour',
+        schedule_interval => INTERVAL '1 hour', if_not_exists => TRUE);
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
