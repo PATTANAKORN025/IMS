@@ -28,7 +28,7 @@ x-resource-medium: &resource-medium
 
 x-resource-large: &resource-large
   cpus: '2.0'
-  memory: 2G
+  memory: 4G
 
 services:
   # ── TimescaleDB ───────────────────────────────────────────
@@ -56,9 +56,9 @@ services:
       - -c
       - timescaledb.max_background_workers=12
       - -c
-      - shared_buffers=256MB
+      - shared_buffers=1GB
       - -c
-      - effective_cache_size=768MB
+      - effective_cache_size=2GB
       - -c
       - work_mem=16MB
       - -c

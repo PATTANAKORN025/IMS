@@ -5,11 +5,11 @@
     "ims",
     "noc"
   ],
-  "timezone": "Asia/Bangkok",
+  "timezone": "browser",
   "schemaVersion": 39,
   "refresh": "10s",
   "time": {
-    "from": "now-1h",
+    "from": "now-15m",
     "to": "now"
   },
   "links": [
@@ -42,7 +42,6 @@
         "type": "query",
         "query": "SELECT device_id AS __text FROM public.devices WHERE enabled = true ORDER BY device_id ASC;",
         "datasource": {
-          "type": "postgres",
           "uid": "timescaledb"
         },
         "refresh": 2,
@@ -54,9 +53,8 @@
       {
         "name": "interface",
         "type": "query",
-        "query": "SELECT DISTINCT iface_name AS __text FROM public.net_metrics;",
+        "query": "SELECT DISTINCT iface_name FROM public.net_metrics WHERE device_id IN (${machine_id:singlequote}) ORDER BY iface_name",
         "datasource": {
-          "type": "postgres",
           "uid": "timescaledb"
         },
         "refresh": 2,
@@ -72,8 +70,8 @@
       {
         "builtIn": 1,
         "datasource": {
-          "type": "postgres",
-          "uid": "timescaledb"
+          "type": "grafana",
+          "uid": "-- Grafana --"
         },
         "enable": true,
         "hide": false,
@@ -96,11 +94,16 @@
       },
       "options": {
         "mode": "html",
-        "content": "<div style=\"display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:rgba(12,18,30,0.8);border-bottom:1px solid rgba(0,242,254,0.2);font-family:Rajdhani,sans-serif\"><span style=\"font-family:Orbitron,sans-serif;font-size:16px;font-weight:700;letter-spacing:2px\">APEX <span style=\"color:#00F2FE\">COMMAND</span></span><span style=\"font-size:13px;letter-spacing:1px\"><a href=\"/d/ims-noc-overview\" style=\"color:#00FF87;font-weight:700;text-decoration:none\">NOC OVERVIEW</a> &nbsp;|&nbsp; <a href=\"/d/ims-engineering\" style=\"color:#E2E8F0;text-decoration:none\">ENG DRILL-DOWN</a> &nbsp;|&nbsp; <a href=\"/d/ims-capacity\" style=\"color:#E2E8F0;text-decoration:none\">CAPACITY FORECAST</a></span></div>\n<style>\n@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Orbitron:wght@400;700&display=swap');\n.dashboard-page { background: radial-gradient(circle at center, #0B0E14 0%, #030407 100%) !important; }\n.panel-container {\n  background: rgba(12, 18, 30, 0.6) !important;\n  border: 1px solid rgba(0, 242, 254, 0.15) !important;\n  border-radius: 8px !important;\n  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5) !important;\n  transition: all 0.3s ease;\n  animation: fadeUp 0.5s ease-out forwards;\n}\n.panel-container:hover {\n  border-color: rgba(0, 255, 135, 0.4) !important;\n  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(0, 255, 135, 0.05) !important;\n  backdrop-filter: blur(10px) !important;\n  -webkit-backdrop-filter: blur(10px) !important;\n  will-change: backdrop-filter;\n}\n.panel-title { font-weight: 700 !important; letter-spacing: 1px !important; color: #E2E8F0 !important; }\n.status-dot {\n  width: 8px; height: 8px; border-radius: 50%; background: #00FF87;\n  display: inline-block; margin-right: 8px;\n  animation: pulse 2s ease-in-out infinite;\n  box-shadow: 0 0 8px #00FF87;\n}\n@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.8); } }\n@keyframes fadeUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }\n</style>"
+        "content": "<div style=\"display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:rgba(12,18,30,0.8);border-bottom:1px solid rgba(0,242,254,0.2);font-family:Rajdhani,sans-serif\"><span style=\"font-family:Orbitron,sans-serif;font-size:16px;font-weight:700;letter-spacing:2px\">APEX <span style=\"color:#3B82F6\">COMMAND</span></span><span style=\"font-size:13px;letter-spacing:1px\"><a href=\"/d/ims-noc-overview\" style=\"color:#10B981;font-weight:700;text-decoration:none\">NOC OVERVIEW</a> &nbsp;|&nbsp; <a href=\"/d/ims-engineering\" style=\"color:#E2E8F0;text-decoration:none\">ENG DRILL-DOWN</a> &nbsp;|&nbsp; <a href=\"/d/ims-capacity\" style=\"color:#E2E8F0;text-decoration:none\">CAPACITY FORECAST</a></span></div>\n<style>\n@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Orbitron:wght@400;700&display=swap');\n.dashboard-page { background: radial-gradient(circle at center, #0B0E14 0%, #030407 100%) !important; }\n.panel-container {\n  background: rgba(12, 18, 30, 0.6) !important;\n  border: 1px solid rgba(0, 242, 254, 0.15) !important;\n  border-radius: 8px !important;\n  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5) !important;\n  transition: all 0.3s ease;\n  animation: fadeUp 0.5s ease-out forwards;\n}\n.panel-container:hover {\n  border-color: rgba(0, 255, 135, 0.4) !important;\n  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(0, 255, 135, 0.05) !important;\n  backdrop-filter: blur(10px) !important;\n  -webkit-backdrop-filter: blur(10px) !important;\n  will-change: backdrop-filter;\n}\n.panel-title { font-weight: 700 !important; letter-spacing: 1px !important; color: #E2E8F0 !important; }\n.status-dot {\n  width: 8px; height: 8px; border-radius: 50%; background: #10B981;\n  display: inline-block; margin-right: 8px;\n  animation: pulse 2s ease-in-out infinite;\n  box-shadow: 0 0 8px #10B981;\n}\n@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.8); } }\n@keyframes fadeUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }\n</style>"
       },
       "datasource": null,
       "transparent": true,
-      "description": "OS Taskbar navigation and CSS theme."
+      "description": "OS Taskbar navigation and CSS theme.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        }
+      }
     },
     {
       "id": 999,
@@ -133,7 +136,12 @@
         "bgColor": "transparent"
       },
       "description": "Current time and date (Asia/Bangkok timezone).",
-      "transparent": true
+      "transparent": true,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        }
+      }
     },
     {
       "id": 998,
@@ -161,7 +169,9 @@
         "folder": null
       },
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "custom": {}
+        },
         "overrides": []
       },
       "transparent": true
@@ -177,14 +187,18 @@
         "h": 1
       },
       "collapsed": false,
-      "transparent": true
+      "transparent": true,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        }
+      }
     },
     {
       "id": 4,
       "title": "Fleet Health Score",
       "type": "stat",
       "datasource": {
-        "type": "postgres",
         "uid": "timescaledb"
       },
       "gridPos": {
@@ -202,24 +216,51 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
+                "color": "#EF4444",
                 "value": null
               },
               {
-                "color": "yellow",
+                "color": "#F59E0B",
                 "value": 70
               },
               {
-                "color": "green",
+                "color": "#10B981",
                 "value": 90
               }
             ]
           },
           "color": {
             "mode": "thresholds"
-          }
+          },
+          "custom": {},
+          "decimals": 2
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "custom.fontFamily",
+                "value": "'Roboto Mono', monospace"
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "colorMode": "value",
@@ -242,7 +283,6 @@
         {
           "refId": "A",
           "datasource": {
-            "type": "postgres",
             "uid": "timescaledb"
           },
           "rawSql": "SELECT value FROM public.v_fleet_score",
@@ -264,7 +304,6 @@
       "title": "LDI Yield Risk (% Outside Tolerance)",
       "type": "stat",
       "datasource": {
-        "type": "postgres",
         "uid": "timescaledb"
       },
       "gridPos": {
@@ -282,21 +321,48 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "#10B981",
                 "value": null
               },
               {
-                "color": "yellow",
+                "color": "#F59E0B",
                 "value": 5
               },
               {
-                "color": "red",
+                "color": "#EF4444",
                 "value": 15
               }
             ]
-          }
+          },
+          "custom": {},
+          "decimals": 2
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "custom.fontFamily",
+                "value": "'Roboto Mono', monospace"
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "colorMode": "value",
@@ -319,11 +385,11 @@
         {
           "refId": "A",
           "datasource": {
-            "type": "postgres",
             "uid": "timescaledb"
           },
-          "rawSql": "WITH ldi AS (SELECT device_id, pressure, joule_effect FROM public.ldi_metrics WHERE time > NOW() - INTERVAL '1 hour' AND pressure IS NOT NULL) SELECT ROUND(100.0 * SUM(CASE WHEN ABS(pressure) > 10 OR ABS(joule_effect) > 10 THEN 1 ELSE 0 END) / NULLIF(COUNT(*)::NUMERIC, 0)::NUMERIC, 1) AS value FROM ldi",
-          "format": "table"
+          "rawSql": "WITH ldi AS (\n  SELECT device_id, pressure, joule_effect\n  FROM public.ldi_metrics\n  WHERE time > NOW() - INTERVAL '1 hour'\n    AND pressure IS NOT NULL\n    AND device_id IN (${machine_id:singlequote})\n)\nSELECT\n  ROUND(100.0 * SUM(CASE WHEN ABS(pressure) > 10 OR ABS(joule_effect) > 10 THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0), 1) AS value\nFROM ldi",
+          "format": "table",
+          "legendFormat": "{{device_id}}"
         }
       ],
       "description": "Percentage of LDI readings exceeding ±10µm tolerance in the last hour. Green <5%, Yellow <15%, Red ≥15%.",
@@ -341,7 +407,6 @@
       "title": "Power Cost Estimation (THB/day)",
       "type": "stat",
       "datasource": {
-        "type": "postgres",
         "uid": "timescaledb"
       },
       "gridPos": {
@@ -357,21 +422,49 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "#10B981",
                 "value": null
               },
               {
-                "color": "yellow",
+                "color": "#F59E0B",
                 "value": 500
               },
               {
-                "color": "red",
+                "color": "#EF4444",
                 "value": 1000
               }
             ]
-          }
+          },
+          "custom": {},
+          "min": 0,
+          "decimals": 2
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "custom.fontFamily",
+                "value": "'Roboto Mono', monospace"
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "colorMode": "value",
@@ -394,11 +487,11 @@
         {
           "refId": "A",
           "datasource": {
-            "type": "postgres",
             "uid": "timescaledb"
           },
           "rawSql": "WITH power_data AS (SELECT device_id, AVG(power_watt) AS avg_watts FROM public.ldi_metrics WHERE time > NOW() - INTERVAL '1 day' AND power_watt IS NOT NULL GROUP BY device_id) SELECT 'Fleet Power Cost' AS metric, ROUND(SUM(avg_watts * 24 * 4.5 / 1000)::NUMERIC, 0) AS value FROM power_data",
-          "format": "table"
+          "format": "table",
+          "legendFormat": "{{device_id}}"
         }
       ],
       "description": "Estimated daily power cost in Thai Baht based on average LDI power consumption × 24 hours × 4.5 THB/kWh.",
@@ -422,14 +515,18 @@
         "h": 1
       },
       "collapsed": false,
-      "transparent": true
+      "transparent": true,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        }
+      }
     },
     {
       "id": 10,
       "title": "TOP 10 CRITICAL NODES",
       "type": "table",
       "datasource": {
-        "type": "postgres",
         "uid": "timescaledb"
       },
       "gridPos": {
@@ -440,7 +537,11 @@
       },
       "fieldConfig": {
         "defaults": {
-          "noValue": "AWAITING TELEMETRY"
+          "noValue": "AWAITING TELEMETRY",
+          "custom": {},
+          "unit": "percent",
+          "min": 0,
+          "max": 100
         },
         "overrides": [
           {
@@ -456,15 +557,15 @@
                     "type": "value",
                     "options": {
                       "online": {
-                        "color": "green",
+                        "color": "#10B981",
                         "text": "online"
                       },
                       "stale": {
-                        "color": "yellow",
+                        "color": "#F59E0B",
                         "text": "stale"
                       },
                       "offline": {
-                        "color": "red",
+                        "color": "#EF4444",
                         "text": "offline"
                       }
                     }
@@ -491,15 +592,15 @@
                   "mode": "absolute",
                   "steps": [
                     {
-                      "color": "green",
+                      "color": "#10B981",
                       "value": null
                     },
                     {
-                      "color": "orange",
+                      "color": "#F59E0B",
                       "value": 80
                     },
                     {
-                      "color": "red",
+                      "color": "#EF4444",
                       "value": 90
                     }
                   ]
@@ -525,15 +626,15 @@
                   "mode": "absolute",
                   "steps": [
                     {
-                      "color": "green",
+                      "color": "#10B981",
                       "value": null
                     },
                     {
-                      "color": "orange",
+                      "color": "#F59E0B",
                       "value": 45
                     },
                     {
-                      "color": "red",
+                      "color": "#EF4444",
                       "value": 55
                     }
                   ]
@@ -544,6 +645,30 @@
                 "value": {
                   "type": "color-text"
                 }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "custom.fontFamily",
+                "value": "'Roboto Mono', monospace"
               }
             ]
           }
@@ -563,11 +688,11 @@
         {
           "refId": "A",
           "datasource": {
-            "type": "postgres",
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT device_id AS \"Server Name\", CASE WHEN MAX(time) > NOW() - INTERVAL '2 minutes' THEN 'online' WHEN MAX(time) > NOW() - INTERVAL '10 minutes' THEN 'stale' ELSE 'offline' END AS \"Status\", ROUND(AVG(cpu_load_percent)::NUMERIC, 1) AS \"CPU (%)\", ROUND(AVG(temp_c)::NUMERIC, 0) AS \"Temp (°C)\", COUNT(*)::TEXT AS \"Samples (10m)\" FROM public.sys_metrics WHERE time > NOW() - INTERVAL '10 minutes' GROUP BY device_id ORDER BY \"CPU (%)\" DESC LIMIT 10",
-          "format": "table"
+          "rawSql": "WITH ranked AS (SELECT device_id, cpu_load_percent, temp_c, time, ROW_NUMBER() OVER (PARTITION BY device_id ORDER BY time DESC) AS rn FROM public.sys_metrics WHERE time > NOW() - INTERVAL '15 minutes') SELECT r.device_id AS \"Server Name\", CASE WHEN r.time > NOW() - INTERVAL '1 minute' THEN 'online' WHEN r.time > NOW() - INTERVAL '3 minutes' THEN 'stale' ELSE 'offline' END AS \"Status\", ROUND(r.cpu_load_percent::NUMERIC, 1) AS \"CPU (%)\", ROUND(r.temp_c::NUMERIC, 0) AS \"Temp (°C)\" FROM ranked r WHERE r.rn = 1 ORDER BY r.time DESC LIMIT 10",
+          "format": "table",
+          "legendFormat": "{{device_id}}"
         }
       ],
       "links": [
@@ -591,14 +716,18 @@
         "h": 1
       },
       "collapsed": false,
-      "transparent": true
+      "transparent": true,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        }
+      }
     },
     {
       "id": 20,
       "title": "CPU Load (Fleet Envelope)",
       "type": "timeseries",
       "datasource": {
-        "type": "postgres",
         "uid": "timescaledb"
       },
       "gridPos": {
@@ -618,21 +747,24 @@
             "spanNulls": 60000,
             "gradientMode": "opacity",
             "drawStyle": "line",
-            "lineInterpolation": "smooth"
+            "lineInterpolation": "smooth",
+            "showPoints": "never",
+            "showGridLines": false,
+            "axisBorderShow": false
           },
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "#10B981",
                 "value": null
               },
               {
-                "color": "yellow",
+                "color": "#F59E0B",
                 "value": 80
               },
               {
-                "color": "red",
+                "color": "#EF4444",
                 "value": 90
               }
             ]
@@ -643,7 +775,8 @@
           "fillOpacity": 0,
           "lineWidth": 2,
           "lineInterpolation": "smooth",
-          "noValue": "AWAITING TELEMETRY"
+          "noValue": "AWAITING TELEMETRY",
+          "decimals": 2
         },
         "overrides": [
           {
@@ -656,7 +789,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#00F2FE"
+                  "fixedColor": "#3B82F6"
                 }
               },
               {
@@ -675,7 +808,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#FF003C"
+                  "fixedColor": "#EF4444"
                 }
               },
               {
@@ -700,7 +833,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#00FF87"
+                  "fixedColor": "#10B981"
                 }
               }
             ]
@@ -715,7 +848,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#00F2FE"
+                  "fixedColor": "#3B82F6"
                 }
               }
             ]
@@ -730,7 +863,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#7F00FF"
+                  "fixedColor": "#3B82F6"
                 }
               }
             ]
@@ -765,7 +898,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#00FF87",
+                  "fixedColor": "#10B981",
                   "mode": "fixed"
                 }
               }
@@ -780,7 +913,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#00F2FE",
+                  "fixedColor": "#3B82F6",
                   "mode": "fixed"
                 }
               }
@@ -795,7 +928,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#7F00FF",
+                  "fixedColor": "#3B82F6",
                   "mode": "fixed"
                 }
               }
@@ -831,7 +964,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#FF003C",
+                  "fixedColor": "#EF4444",
                   "mode": "fixed"
                 }
               },
@@ -844,6 +977,18 @@
               {
                 "id": "custom.fillOpacity",
                 "value": 15
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
               }
             ]
           }
@@ -868,21 +1013,19 @@
       "targets": [
         {
           "refId": "AVG",
-          "legendFormat": "Fleet Average",
-          "rawSql": "SELECT bucket AS time, ROUND(AVG(avg_cpu)::NUMERIC,1) AS value FROM public.sys_hourly WHERE $__timeFilter(bucket) GROUP BY bucket UNION ALL SELECT time, ROUND(AVG(cpu_load_percent)::NUMERIC,1) AS value FROM public.sys_metrics WHERE $__timeFilter(time) AND time > COALESCE((SELECT MAX(bucket) FROM public.sys_hourly), NOW() - INTERVAL '1 hour') GROUP BY time ORDER BY 1",
+          "legendFormat": "{{metric}}",
+          "rawSql": "SELECT bucket AS time, 'Fleet Average' AS metric, ROUND(AVG(avg_cpu)::NUMERIC,1) AS value FROM public.sys_hourly WHERE $__timeFilter(bucket) GROUP BY bucket UNION ALL SELECT time, 'Fleet Average' AS metric, ROUND(AVG(cpu_load_percent)::NUMERIC,1) AS value FROM public.sys_metrics WHERE $__timeFilter(time) AND time > COALESCE((SELECT MAX(bucket) FROM public.sys_hourly), NOW() - INTERVAL '1 hour') GROUP BY time ORDER BY 1",
           "format": "time_series",
           "datasource": {
-            "type": "postgres",
             "uid": "timescaledb"
           }
         },
         {
           "refId": "MAX",
-          "legendFormat": "Worst Machine",
-          "rawSql": "SELECT bucket AS time, ROUND(MAX(avg_cpu)::NUMERIC,1) AS value FROM public.sys_hourly WHERE $__timeFilter(bucket) GROUP BY bucket UNION ALL SELECT time, ROUND(MAX(cpu_load_percent)::NUMERIC,1) AS value FROM public.sys_metrics WHERE $__timeFilter(time) AND time > COALESCE((SELECT MAX(bucket) FROM public.sys_hourly), NOW() - INTERVAL '1 hour') GROUP BY time ORDER BY 1",
+          "legendFormat": "{{metric}}",
+          "rawSql": "SELECT bucket AS time, 'Peak Machine' AS metric, ROUND(MAX(avg_cpu)::NUMERIC,1) AS value FROM public.sys_hourly WHERE $__timeFilter(bucket) GROUP BY bucket UNION ALL SELECT time, 'Peak Machine' AS metric, ROUND(MAX(cpu_load_percent)::NUMERIC,1) AS value FROM public.sys_metrics WHERE $__timeFilter(time) AND time > COALESCE((SELECT MAX(bucket) FROM public.sys_hourly), NOW() - INTERVAL '1 hour') GROUP BY time ORDER BY 1",
           "format": "time_series",
           "datasource": {
-            "type": "postgres",
             "uid": "timescaledb"
           }
         }
@@ -899,7 +1042,7 @@
           "targetBlank": true
         }
       ],
-      "description": "Fleet-wide cpu load envelope: average (solid cyan) vs worst-case ceiling (dashed red).",
+      "description": "Fleet-wide cpu load envelope: average (solid cyan) vs worst-case ceiling (dashed #EF4444).",
       "transparent": true
     },
     {
@@ -907,7 +1050,6 @@
       "title": "Temperature (Fleet Envelope)",
       "type": "timeseries",
       "datasource": {
-        "type": "postgres",
         "uid": "timescaledb"
       },
       "gridPos": {
@@ -925,21 +1067,24 @@
             "spanNulls": 60000,
             "gradientMode": "opacity",
             "drawStyle": "line",
-            "lineInterpolation": "smooth"
+            "lineInterpolation": "smooth",
+            "showPoints": "never",
+            "showGridLines": false,
+            "axisBorderShow": false
           },
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "#10B981",
                 "value": null
               },
               {
-                "color": "yellow",
+                "color": "#F59E0B",
                 "value": 45
               },
               {
-                "color": "red",
+                "color": "#EF4444",
                 "value": 55
               }
             ]
@@ -950,7 +1095,9 @@
           "fillOpacity": 0,
           "lineWidth": 2,
           "lineInterpolation": "smooth",
-          "noValue": "AWAITING TELEMETRY"
+          "noValue": "AWAITING TELEMETRY",
+          "min": 0,
+          "decimals": 2
         },
         "overrides": [
           {
@@ -963,7 +1110,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#FF9100"
+                  "fixedColor": "#F59E0B"
                 }
               },
               {
@@ -982,7 +1129,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#FF003C"
+                  "fixedColor": "#EF4444"
                 }
               },
               {
@@ -1007,7 +1154,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#00FF87"
+                  "fixedColor": "#10B981"
                 }
               }
             ]
@@ -1022,7 +1169,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#00F2FE"
+                  "fixedColor": "#3B82F6"
                 }
               }
             ]
@@ -1037,7 +1184,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#7F00FF"
+                  "fixedColor": "#3B82F6"
                 }
               }
             ]
@@ -1072,7 +1219,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#00FF87",
+                  "fixedColor": "#10B981",
                   "mode": "fixed"
                 }
               }
@@ -1087,7 +1234,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#00F2FE",
+                  "fixedColor": "#3B82F6",
                   "mode": "fixed"
                 }
               }
@@ -1102,7 +1249,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#7F00FF",
+                  "fixedColor": "#3B82F6",
                   "mode": "fixed"
                 }
               }
@@ -1138,7 +1285,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#FF003C",
+                  "fixedColor": "#EF4444",
                   "mode": "fixed"
                 }
               },
@@ -1151,6 +1298,18 @@
               {
                 "id": "custom.fillOpacity",
                 "value": 15
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
               }
             ]
           }
@@ -1175,21 +1334,19 @@
       "targets": [
         {
           "refId": "AVG",
-          "legendFormat": "Fleet Average",
-          "rawSql": "SELECT bucket AS time, ROUND(AVG(max_temp)::NUMERIC,1) AS value FROM public.sys_hourly WHERE $__timeFilter(bucket) AND max_temp > 0 GROUP BY bucket UNION ALL SELECT time, ROUND(AVG(temp_c)::NUMERIC,1) AS value FROM public.sys_metrics WHERE $__timeFilter(time) AND time > COALESCE((SELECT MAX(bucket) FROM public.sys_hourly), NOW() - INTERVAL '1 hour') AND temp_c > 0 GROUP BY time ORDER BY 1",
+          "legendFormat": "{{metric}}",
+          "rawSql": "SELECT bucket AS time, 'Fleet Average' AS metric, ROUND(AVG(max_temp)::NUMERIC,1) AS value FROM public.sys_hourly WHERE $__timeFilter(bucket) AND max_temp > 0 GROUP BY bucket UNION ALL SELECT time, 'Fleet Average' AS metric, ROUND(AVG(temp_c)::NUMERIC,1) AS value FROM public.sys_metrics WHERE $__timeFilter(time) AND time > COALESCE((SELECT MAX(bucket) FROM public.sys_hourly), NOW() - INTERVAL '1 hour') AND temp_c > 0 GROUP BY time ORDER BY 1",
           "format": "time_series",
           "datasource": {
-            "type": "postgres",
             "uid": "timescaledb"
           }
         },
         {
           "refId": "MAX",
-          "legendFormat": "Hottest Machine",
-          "rawSql": "SELECT bucket AS time, ROUND(MAX(max_temp)::NUMERIC,1) AS value FROM public.sys_hourly WHERE $__timeFilter(bucket) AND max_temp > 0 GROUP BY bucket UNION ALL SELECT time, ROUND(MAX(temp_c)::NUMERIC,1) AS value FROM public.sys_metrics WHERE $__timeFilter(time) AND time > COALESCE((SELECT MAX(bucket) FROM public.sys_hourly), NOW() - INTERVAL '1 hour') AND temp_c > 0 GROUP BY time ORDER BY 1",
+          "legendFormat": "{{metric}}",
+          "rawSql": "SELECT bucket AS time, 'Hottest Machine' AS metric, ROUND(MAX(max_temp)::NUMERIC,1) AS value FROM public.sys_hourly WHERE $__timeFilter(bucket) AND max_temp > 0 GROUP BY bucket UNION ALL SELECT time, 'Hottest Machine' AS metric, ROUND(MAX(temp_c)::NUMERIC,1) AS value FROM public.sys_metrics WHERE $__timeFilter(time) AND time > COALESCE((SELECT MAX(bucket) FROM public.sys_hourly), NOW() - INTERVAL '1 hour') AND temp_c > 0 GROUP BY time ORDER BY 1",
           "format": "time_series",
           "datasource": {
-            "type": "postgres",
             "uid": "timescaledb"
           }
         }
@@ -1208,7 +1365,7 @@
           "targetBlank": true
         }
       ],
-      "description": "Fleet-wide temperature envelope: average (solid cyan) vs worst-case ceiling (dashed red).",
+      "description": "Fleet-wide temperature envelope: average (solid cyan) vs worst-case ceiling (dashed #EF4444).",
       "transparent": true
     },
     {
@@ -1222,14 +1379,18 @@
         "h": 1
       },
       "collapsed": false,
-      "transparent": true
+      "transparent": true,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        }
+      }
     },
     {
       "id": 22,
       "title": "Network Throughput (All Machines)",
       "type": "barchart",
       "datasource": {
-        "type": "postgres",
         "uid": "timescaledb"
       },
       "gridPos": {
@@ -1240,12 +1401,12 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "mbps",
+          "unit": "Mbps",
           "custom": {
             "fillOpacity": 40,
             "lineWidth": 2,
             "gradientMode": "opacity",
-            "axisCenteredZero": true,
+            "axisCente#EF4444Zero": true,
             "drawStyle": "bars",
             "barAlignment": 0,
             "showValue": "never"
@@ -1259,7 +1420,8 @@
               }
             ]
           },
-          "noValue": "AWAITING TELEMETRY"
+          "noValue": "AWAITING TELEMETRY",
+          "min": 0
         },
         "overrides": [
           {
@@ -1295,6 +1457,18 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
           }
         ]
       },
@@ -1316,27 +1490,26 @@
         "tooltip": {
           "mode": "multi",
           "sort": "desc"
-        }
+        },
+        "noValue": "0"
       },
       "targets": [
         {
           "refId": "A",
           "datasource": {
-            "type": "postgres",
             "uid": "timescaledb"
           },
-          "legendFormat": "{{ machine_id }} RX",
-          "rawSql": "SELECT bucket AS time, device_id, avg_rx AS \"RX (Mbps)\" FROM public.net_hourly WHERE $__timeFilter(bucket) AND device_id IN (${machine_id:sqlstring}) ORDER BY 1",
+          "legendFormat": "{{metric}}",
+          "rawSql": "SELECT\n  bucket AS time,\n  device_id AS metric,\n  ROUND(AVG(avg_rx)::NUMERIC, 2) AS \"RX (Mbps)\"\nFROM public.net_hourly\nWHERE $__timeFilter(bucket) AND device_id IN (${machine_id:singlequote})\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series"
         },
         {
           "refId": "B",
           "datasource": {
-            "type": "postgres",
             "uid": "timescaledb"
           },
-          "legendFormat": "{{ machine_id }} TX",
-          "rawSql": "SELECT bucket AS time, device_id, avg_tx AS \"TX (Mbps)\" FROM public.net_hourly WHERE $__timeFilter(bucket) AND device_id IN (${machine_id:sqlstring}) ORDER BY 1",
+          "legendFormat": "{{metric}}",
+          "rawSql": "SELECT\n  bucket AS time,\n  device_id AS metric,\n  ROUND(AVG(avg_tx)::NUMERIC, 2) AS \"TX (Mbps)\"\nFROM public.net_hourly\nWHERE $__timeFilter(bucket) AND device_id IN (${machine_id:singlequote})\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series"
         }
       ],
@@ -1362,7 +1535,6 @@
       "title": "RAM Saturation (Fleet Envelope)",
       "type": "timeseries",
       "datasource": {
-        "type": "postgres",
         "uid": "timescaledb"
       },
       "gridPos": {
@@ -1382,21 +1554,24 @@
             "spanNulls": 60000,
             "gradientMode": "opacity",
             "drawStyle": "line",
-            "lineInterpolation": "smooth"
+            "lineInterpolation": "smooth",
+            "showPoints": "never",
+            "showGridLines": false,
+            "axisBorderShow": false
           },
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "#10B981",
                 "value": null
               },
               {
-                "color": "yellow",
+                "color": "#F59E0B",
                 "value": 85
               },
               {
-                "color": "red",
+                "color": "#EF4444",
                 "value": 95
               }
             ]
@@ -1407,7 +1582,8 @@
           "fillOpacity": 0,
           "lineWidth": 2,
           "lineInterpolation": "smooth",
-          "noValue": "AWAITING TELEMETRY"
+          "noValue": "AWAITING TELEMETRY",
+          "decimals": 2
         },
         "overrides": [
           {
@@ -1420,7 +1596,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#00F2FE"
+                  "fixedColor": "#3B82F6"
                 }
               },
               {
@@ -1439,7 +1615,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#FF003C"
+                  "fixedColor": "#EF4444"
                 }
               },
               {
@@ -1464,7 +1640,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#00FF87"
+                  "fixedColor": "#10B981"
                 }
               }
             ]
@@ -1479,7 +1655,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#00F2FE"
+                  "fixedColor": "#3B82F6"
                 }
               }
             ]
@@ -1494,7 +1670,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#7F00FF"
+                  "fixedColor": "#3B82F6"
                 }
               }
             ]
@@ -1529,7 +1705,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#00FF87",
+                  "fixedColor": "#10B981",
                   "mode": "fixed"
                 }
               }
@@ -1544,7 +1720,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#00F2FE",
+                  "fixedColor": "#3B82F6",
                   "mode": "fixed"
                 }
               }
@@ -1559,7 +1735,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#7F00FF",
+                  "fixedColor": "#3B82F6",
                   "mode": "fixed"
                 }
               }
@@ -1595,7 +1771,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#FF003C",
+                  "fixedColor": "#EF4444",
                   "mode": "fixed"
                 }
               },
@@ -1608,6 +1784,18 @@
               {
                 "id": "custom.fillOpacity",
                 "value": 15
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
               }
             ]
           }
@@ -1632,21 +1820,19 @@
       "targets": [
         {
           "refId": "AVG",
-          "legendFormat": "Fleet Average",
-          "rawSql": "SELECT bucket AS time, ROUND(AVG(avg_ram_used / NULLIF(avg_ram_total::NUMERIC, 0) * 100)::NUMERIC,1) AS value FROM public.sys_hourly WHERE $__timeFilter(bucket) GROUP BY bucket UNION ALL SELECT time, ROUND(AVG(ram_used_mb / NULLIF(ram_total_mb::NUMERIC, 0) * 100)::NUMERIC,1) AS value FROM public.sys_metrics WHERE $__timeFilter(time) AND time > COALESCE((SELECT MAX(bucket) FROM public.sys_hourly), NOW() - INTERVAL '1 hour') GROUP BY time ORDER BY 1",
+          "legendFormat": "{{metric}}",
+          "rawSql": "SELECT bucket AS time, 'Fleet Average' AS metric, ROUND(AVG(avg_ram_used / NULLIF(avg_ram_total, 0) * 100)::NUMERIC,1) AS value FROM public.sys_hourly WHERE $__timeFilter(bucket) GROUP BY bucket UNION ALL SELECT time, 'Fleet Average' AS metric, ROUND(AVG(ram_used_mb / NULLIF(ram_total_mb, 0) * 100)::NUMERIC,1) AS value FROM public.sys_metrics WHERE $__timeFilter(time) AND time > COALESCE((SELECT MAX(bucket) FROM public.sys_hourly), NOW() - INTERVAL '1 hour') GROUP BY time ORDER BY 1",
           "format": "time_series",
           "datasource": {
-            "type": "postgres",
             "uid": "timescaledb"
           }
         },
         {
           "refId": "MAX",
-          "legendFormat": "Worst Machine",
-          "rawSql": "SELECT bucket AS time, ROUND(MAX(avg_ram_used / NULLIF(avg_ram_total::NUMERIC, 0) * 100)::NUMERIC,1) AS value FROM public.sys_hourly WHERE $__timeFilter(bucket) GROUP BY bucket UNION ALL SELECT time, ROUND(MAX(ram_used_mb / NULLIF(ram_total_mb::NUMERIC, 0) * 100)::NUMERIC,1) AS value FROM public.sys_metrics WHERE $__timeFilter(time) AND time > COALESCE((SELECT MAX(bucket) FROM public.sys_hourly), NOW() - INTERVAL '1 hour') GROUP BY time ORDER BY 1",
+          "legendFormat": "{{metric}}",
+          "rawSql": "SELECT bucket AS time, 'Worst Machine' AS metric, ROUND(MAX(avg_ram_used / NULLIF(avg_ram_total, 0) * 100)::NUMERIC,1) AS value FROM public.sys_hourly WHERE $__timeFilter(bucket) GROUP BY bucket UNION ALL SELECT time, 'Worst Machine' AS metric, ROUND(MAX(ram_used_mb / NULLIF(ram_total_mb, 0) * 100)::NUMERIC,1) AS value FROM public.sys_metrics WHERE $__timeFilter(time) AND time > COALESCE((SELECT MAX(bucket) FROM public.sys_hourly), NOW() - INTERVAL '1 hour') GROUP BY time ORDER BY 1",
           "format": "time_series",
           "datasource": {
-            "type": "postgres",
             "uid": "timescaledb"
           }
         }
@@ -1665,7 +1851,7 @@
           "targetBlank": true
         }
       ],
-      "description": "Fleet-wide ram saturation envelope: average (solid cyan) vs worst-case ceiling (dashed red).",
+      "description": "Fleet-wide ram saturation envelope: average (solid cyan) vs worst-case ceiling (dashed #EF4444).",
       "transparent": true
     }
   ],

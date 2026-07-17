@@ -6,11 +6,11 @@
     "capacity",
     "aiops"
   ],
-  "timezone": "Asia/Bangkok",
+  "timezone": "browser",
   "schemaVersion": 39,
-  "refresh": "5m",
+  "refresh": "10s",
   "time": {
-    "from": "now-6h",
+    "from": "now-15m",
     "to": "now"
   },
   "links": [
@@ -43,12 +43,11 @@
         "type": "query",
         "query": "SELECT device_id AS __text FROM public.devices WHERE enabled = true ORDER BY device_id ASC;",
         "datasource": {
-          "type": "postgres",
           "uid": "timescaledb"
         },
         "refresh": 2,
-        "multi": true,
-        "includeAll": true,
+        "multi": false,
+        "includeAll": false,
         "sort": 1,
         "label": "Machine"
       }
@@ -59,8 +58,8 @@
       {
         "builtIn": 1,
         "datasource": {
-          "type": "postgres",
-          "uid": "timescaledb"
+          "type": "grafana",
+          "uid": "-- Grafana --"
         },
         "enable": true,
         "hide": true,
@@ -83,11 +82,16 @@
       },
       "options": {
         "mode": "html",
-        "content": "<div style=\"display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:rgba(12,18,30,0.8);border-bottom:1px solid rgba(0,242,254,0.2);font-family:Rajdhani,sans-serif\"><span style=\"font-family:Orbitron,sans-serif;font-size:16px;font-weight:700;letter-spacing:2px\">APEX <span style=\"color:#00F2FE\">COMMAND</span></span><span style=\"font-size:13px;letter-spacing:1px\"><a href=\"/d/ims-noc-overview\" style=\"color:#E2E8F0;text-decoration:none\">NOC OVERVIEW</a> &nbsp;|&nbsp; <a href=\"/d/ims-engineering\" style=\"color:#E2E8F0;text-decoration:none\">ENG DRILL-DOWN</a> &nbsp;|&nbsp; <a href=\"/d/ims-capacity\" style=\"color:#00FF87;font-weight:700;text-decoration:none\">CAPACITY FORECAST</a></span></div>\n<style>\n@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Orbitron:wght@400;700&display=swap');\n.dashboard-page { background: radial-gradient(circle at center, #0B0E14 0%, #030407 100%) !important; }\n.panel-container {\n  background: rgba(12, 18, 30, 0.6) !important;\n  border: 1px solid rgba(0, 242, 254, 0.15) !important;\n  border-radius: 8px !important;\n  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5) !important;\n  transition: all 0.3s ease;\n  animation: fadeUp 0.5s ease-out forwards;\n}\n.panel-container:hover {\n  border-color: rgba(0, 255, 135, 0.4) !important;\n  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(0, 255, 135, 0.05) !important;\n  backdrop-filter: blur(10px) !important;\n  -webkit-backdrop-filter: blur(10px) !important;\n  will-change: backdrop-filter;\n}\n.panel-title { font-weight: 700 !important; letter-spacing: 1px !important; color: #E2E8F0 !important; }\n.status-dot {\n  width: 8px; height: 8px; border-radius: 50%; background: #00FF87;\n  display: inline-block; margin-right: 8px;\n  animation: pulse 2s ease-in-out infinite;\n  box-shadow: 0 0 8px #00FF87;\n}\n@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.8); } }\n@keyframes fadeUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }\n</style>"
+        "content": "<div style=\"display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:rgba(12,18,30,0.8);border-bottom:1px solid rgba(0,242,254,0.2);font-family:Rajdhani,sans-serif\"><span style=\"font-family:Orbitron,sans-serif;font-size:16px;font-weight:700;letter-spacing:2px\">APEX <span style=\"color:#3B82F6\">COMMAND</span></span><span style=\"font-size:13px;letter-spacing:1px\"><a href=\"/d/ims-noc-overview\" style=\"color:#E2E8F0;text-decoration:none\">NOC OVERVIEW</a> &nbsp;|&nbsp; <a href=\"/d/ims-engineering\" style=\"color:#E2E8F0;text-decoration:none\">ENG DRILL-DOWN</a> &nbsp;|&nbsp; <a href=\"/d/ims-capacity\" style=\"color:#10B981;font-weight:700;text-decoration:none\">CAPACITY FORECAST</a></span></div>\n<style>\n@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Orbitron:wght@400;700&display=swap');\n.dashboard-page { background: radial-gradient(circle at center, #0B0E14 0%, #030407 100%) !important; }\n.panel-container {\n  background: rgba(12, 18, 30, 0.6) !important;\n  border: 1px solid rgba(0, 242, 254, 0.15) !important;\n  border-radius: 8px !important;\n  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5) !important;\n  transition: all 0.3s ease;\n  animation: fadeUp 0.5s ease-out forwards;\n}\n.panel-container:hover {\n  border-color: rgba(0, 255, 135, 0.4) !important;\n  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(0, 255, 135, 0.05) !important;\n  backdrop-filter: blur(10px) !important;\n  -webkit-backdrop-filter: blur(10px) !important;\n  will-change: backdrop-filter;\n}\n.panel-title { font-weight: 700 !important; letter-spacing: 1px !important; color: #E2E8F0 !important; }\n.status-dot {\n  width: 8px; height: 8px; border-radius: 50%; background: #10B981;\n  display: inline-block; margin-right: 8px;\n  animation: pulse 2s ease-in-out infinite;\n  box-shadow: 0 0 8px #10B981;\n}\n@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.8); } }\n@keyframes fadeUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }\n</style>"
       },
       "datasource": null,
       "transparent": true,
-      "description": "OS Taskbar navigation and CSS theme."
+      "description": "OS Taskbar navigation and CSS theme.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        }
+      }
     },
     {
       "id": 997,
@@ -120,7 +124,12 @@
         "bgColor": "transparent"
       },
       "description": "Current time and date (Asia/Bangkok timezone).",
-      "transparent": true
+      "transparent": true,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        }
+      }
     },
     {
       "id": 101,
@@ -132,6 +141,11 @@
         "y": 3,
         "w": 24,
         "h": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        }
       }
     },
     {
@@ -139,7 +153,6 @@
       "title": "Days Until Full (Resource Battery)",
       "type": "bargauge",
       "datasource": {
-        "type": "postgres",
         "uid": "timescaledb"
       },
       "gridPos": {
@@ -158,19 +171,21 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": null
               },
               {
-                "color": "#FF9100",
+                "color": "#F59E0B",
                 "value": 30
               },
               {
-                "color": "#00FF87",
+                "color": "#10B981",
                 "value": 90
               }
             ]
-          }
+          },
+          "custom": {},
+          "decimals": 2
         },
         "overrides": []
       },
@@ -186,29 +201,29 @@
         {
           "refId": "A",
           "datasource": {
-            "type": "postgres",
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT 'Disk' AS metric, LEAST(CASE WHEN r.slope<=0 THEN 365 ELSE GREATEST(0,(t.disk_total_gb - r.intercept)/r.slope - EXTRACT(EPOCH FROM NOW())/86400) END, 365) AS \"Days Until Full\" FROM (SELECT device_id, COALESCE(regr_slope(avg_used, EXTRACT(EPOCH FROM day)),0) AS slope, COALESCE(regr_intercept(avg_used, EXTRACT(EPOCH FROM day)),0) AS intercept FROM (SELECT device_id, time_bucket('1 day', bucket) AS day, AVG(avg_disk_used) AS avg_used FROM public.sys_hourly WHERE bucket > NOW()-INTERVAL '30 days' GROUP BY 1,2) d GROUP BY device_id) r JOIN (SELECT DISTINCT ON (device_id) device_id, disk_total_gb FROM public.sys_metrics WHERE disk_total_gb>0 ORDER BY device_id, time DESC) t ON t.device_id=r.device_id ORDER BY 1 ASC LIMIT 1",
-          "format": "table"
+          "rawSql": "SELECT 'Disk' AS metric,\n  LEAST(\n    CASE\n      WHEN r.slope <= 0 THEN 9999\n      WHEN t.disk_total_gb <= 0 THEN 9999\n      ELSE GREATEST(0, ROUND(\n        ((t.disk_total_gb - r.intercept) / r.slope - (extract(epoch FROM NOW()) / 86400))::numeric, 0\n      ))\n    END,\n    9999\n  ) AS \"Days Until Full\"\nFROM (\n  SELECT device_id,\n    COALESCE(regr_slope(avg_used, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_used, day_num), 0::double precision) AS intercept\n  FROM (\n    SELECT device_id,\n      AVG(avg_disk_used) AS avg_used,\n      extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n    FROM public.sys_hourly\n    WHERE bucket > NOW() - INTERVAL '30 days'\n    GROUP BY device_id, time_bucket('1 day', bucket)\n  ) d\n  GROUP BY device_id\n  HAVING COUNT(*) >= 7\n) r\nJOIN (\n  SELECT DISTINCT ON (device_id) device_id, disk_total_gb\n  FROM public.sys_metrics\n  WHERE disk_total_gb > 0\n  ORDER BY device_id, time DESC\n) t ON t.device_id = r.device_id\nORDER BY 1 ASC\nLIMIT 1",
+          "format": "table",
+          "legendFormat": "{{device_id}}"
         },
         {
           "refId": "B",
           "datasource": {
-            "type": "postgres",
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT 'RAM' AS metric, LEAST(CASE WHEN r.slope<=0 THEN 365 ELSE GREATEST(0,(t.ram_total_mb - r.intercept)/r.slope - EXTRACT(EPOCH FROM NOW())/86400) END, 365) AS \"Days Until Full\" FROM (SELECT device_id, COALESCE(regr_slope(avg_used, EXTRACT(EPOCH FROM day)),0) AS slope, COALESCE(regr_intercept(avg_used, EXTRACT(EPOCH FROM day)),0) AS intercept FROM (SELECT device_id, time_bucket('1 day', bucket) AS day, AVG(avg_ram_used) AS avg_used FROM public.sys_hourly WHERE bucket > NOW()-INTERVAL '30 days' GROUP BY 1,2) d GROUP BY device_id) r JOIN (SELECT DISTINCT ON (device_id) device_id, ram_total_mb FROM public.sys_metrics WHERE ram_total_mb>0 ORDER BY device_id, time DESC) t ON t.device_id=r.device_id ORDER BY 1 ASC LIMIT 1",
-          "format": "table"
+          "rawSql": "SELECT 'Disk' AS metric,\n  LEAST(\n    CASE\n      WHEN r.slope <= 0 THEN 9999\n      WHEN t.disk_total_gb <= 0 THEN 9999\n      ELSE GREATEST(0, ROUND(\n        ((t.disk_total_gb - r.intercept) / r.slope - (extract(epoch FROM NOW()) / 86400))::numeric, 0\n      ))\n    END,\n    9999\n  ) AS \"Days Until Full\"\nFROM (\n  SELECT device_id,\n    COALESCE(regr_slope(avg_used, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_used, day_num), 0::double precision) AS intercept\n  FROM (\n    SELECT device_id,\n      AVG(avg_disk_used) AS avg_used,\n      extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n    FROM public.sys_hourly\n    WHERE bucket > NOW() - INTERVAL '30 days'\n    GROUP BY device_id, time_bucket('1 day', bucket)\n  ) d\n  GROUP BY device_id\n  HAVING COUNT(*) >= 7\n) r\nJOIN (\n  SELECT DISTINCT ON (device_id) device_id, disk_total_gb\n  FROM public.sys_metrics\n  WHERE disk_total_gb > 0\n  ORDER BY device_id, time DESC\n) t ON t.device_id = r.device_id\nORDER BY 1 ASC\nLIMIT 1",
+          "format": "table",
+          "legendFormat": "{{metric}}"
         },
         {
           "refId": "C",
           "datasource": {
-            "type": "postgres",
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT 'CPU' AS metric, LEAST(CASE WHEN slope<=0 THEN 365 ELSE GREATEST(0,(100-intercept)/slope-EXTRACT(EPOCH FROM NOW())/86400) END, 365) AS \"Days Until Full\" FROM (SELECT device_id, COALESCE(regr_slope(avg_cpu, EXTRACT(EPOCH FROM day)),0) AS slope, COALESCE(regr_intercept(avg_cpu, EXTRACT(EPOCH FROM day)),0) AS intercept FROM (SELECT device_id, time_bucket('1 day', bucket) AS day, AVG(avg_cpu) AS avg_cpu FROM public.sys_hourly WHERE bucket > NOW()-INTERVAL '30 days' GROUP BY 1,2) d GROUP BY device_id) ORDER BY 2 ASC LIMIT 1",
-          "format": "table"
+          "rawSql": "SELECT 'Disk' AS metric,\n  LEAST(\n    CASE\n      WHEN r.slope <= 0 THEN 9999\n      WHEN t.disk_total_gb <= 0 THEN 9999\n      ELSE GREATEST(0, ROUND(\n        ((t.disk_total_gb - r.intercept) / r.slope - (extract(epoch FROM NOW()) / 86400))::numeric, 0\n      ))\n    END,\n    9999\n  ) AS \"Days Until Full\"\nFROM (\n  SELECT device_id,\n    COALESCE(regr_slope(avg_used, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_used, day_num), 0::double precision) AS intercept\n  FROM (\n    SELECT device_id,\n      AVG(avg_disk_used) AS avg_used,\n      extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n    FROM public.sys_hourly\n    WHERE bucket > NOW() - INTERVAL '30 days'\n    GROUP BY device_id, time_bucket('1 day', bucket)\n  ) d\n  GROUP BY device_id\n  HAVING COUNT(*) >= 7\n) r\nJOIN (\n  SELECT DISTINCT ON (device_id) device_id, disk_total_gb\n  FROM public.sys_metrics\n  WHERE disk_total_gb > 0\n  ORDER BY device_id, time DESC\n) t ON t.device_id = r.device_id\nORDER BY 1 ASC\nLIMIT 1",
+          "format": "table",
+          "legendFormat": "{{device_id}}"
         }
       ],
       "description": "Days until resource saturation for CPU, RAM, and Disk using 30-day linear regression."
@@ -218,7 +233,6 @@
       "title": "Disk: Days Until Full",
       "type": "stat",
       "datasource": {
-        "type": "postgres",
         "uid": "timescaledb"
       },
       "gridPos": {
@@ -234,19 +248,19 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
+                "color": "#EF4444",
                 "value": null
               },
               {
-                "color": "orange",
+                "color": "#F59E0B",
                 "value": 30
               },
               {
-                "color": "yellow",
+                "color": "#F59E0B",
                 "value": 90
               },
               {
-                "color": "green",
+                "color": "#10B981",
                 "value": 180
               }
             ]
@@ -256,15 +270,43 @@
               "type": "value",
               "options": {
                 "9999": {
-                  "text": "∞",
-                  "color": "green",
+                  "text": "\u221e",
+                  "color": "#10B981",
                   "index": 0
                 }
               }
             }
-          ]
+          ],
+          "custom": {},
+          "min": 0,
+          "decimals": 2
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "custom.fontFamily",
+                "value": "'Roboto Mono', monospace"
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "colorMode": "value",
@@ -287,18 +329,18 @@
         {
           "refId": "A",
           "datasource": {
-            "type": "postgres",
             "uid": "timescaledb"
           },
-          "rawSql": "WITH daily_usage AS (  SELECT device_id, time_bucket('1 day', bucket) AS day,    AVG(avg_disk_used) AS avg_used  FROM public.sys_hourly  WHERE bucket > NOW() - INTERVAL '30 days'  GROUP BY 1, 2), totals AS (  SELECT DISTINCT ON (device_id) device_id, disk_total_gb  FROM public.sys_metrics  WHERE disk_total_gb > 0  ORDER BY device_id, time DESC), regression AS (  SELECT device_id,    COALESCE(regr_slope(avg_used, EXTRACT(EPOCH FROM day)), 0) AS slope,    COALESCE(regr_intercept(avg_used, EXTRACT(EPOCH FROM day)), 0) AS intercept  FROM daily_usage GROUP BY device_id) SELECT r.device_id AS metric,  CASE WHEN r.slope <= 0 THEN 9999    WHEN t.disk_total_gb <= 0 THEN 9999    ELSE GREATEST(0, (t.disk_total_gb - r.intercept) / r.slope - EXTRACT(EPOCH FROM NOW()) / 86400)  END AS value FROM regression r JOIN totals t ON t.device_id = r.device_id ORDER BY value ASC LIMIT 1",
-          "format": "table"
+          "rawSql": "WITH daily_usage AS (\n  SELECT\n    device_id,\n    AVG(avg_disk_used) AS avg_used,\n    extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n  FROM public.sys_hourly\n  WHERE bucket > NOW() - INTERVAL '30 days'\n  GROUP BY device_id, time_bucket('1 day', bucket)\n),\nregression AS (\n  SELECT\n    device_id,\n    COALESCE(regr_slope(avg_used, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_used, day_num), 0::double precision) AS intercept,\n    COUNT(*) AS data_points\n  FROM daily_usage\n  GROUP BY device_id\n  HAVING COUNT(*) >= 7\n),\ntotals AS (\n  SELECT DISTINCT ON (device_id) device_id, disk_total_gb\n  FROM public.sys_metrics\n  WHERE disk_total_gb > 0\n  ORDER BY device_id, time DESC\n),\ncurrent_state AS (\n  SELECT\n    r.device_id,\n    r.slope,\n    r.intercept,\n    t.disk_total_gb,\n    extract(epoch FROM NOW()) / 86400 AS now_day\n  FROM regression r\n  JOIN totals t ON t.device_id = r.device_id\n)\nSELECT device_id AS metric,\n  CASE\n    WHEN slope <= 0 THEN 9999\n    WHEN disk_total_gb <= 0 THEN 9999\n    ELSE GREATEST(0, LEAST(\n      ROUND(((disk_total_gb - intercept) / slope - now_day)::numeric, 0),\n      9999\n    ))\n  END AS value\nFROM current_state\nORDER BY value ASC\nLIMIT 1",
+          "format": "table",
+          "legendFormat": "{{device_id}}"
         }
       ],
       "description": "Days until disk saturation based on 30-day linear regression. Red < 30d, Orange < 90d, Green > 180d.",
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -309,7 +351,6 @@
       "title": "RAM: Days Until Full",
       "type": "stat",
       "datasource": {
-        "type": "postgres",
         "uid": "timescaledb"
       },
       "gridPos": {
@@ -325,19 +366,19 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
+                "color": "#EF4444",
                 "value": null
               },
               {
-                "color": "orange",
+                "color": "#F59E0B",
                 "value": 30
               },
               {
-                "color": "yellow",
+                "color": "#F59E0B",
                 "value": 90
               },
               {
-                "color": "green",
+                "color": "#10B981",
                 "value": 180
               }
             ]
@@ -347,15 +388,43 @@
               "type": "value",
               "options": {
                 "9999": {
-                  "text": "∞",
-                  "color": "green",
+                  "text": "\u221e",
+                  "color": "#10B981",
                   "index": 0
                 }
               }
             }
-          ]
+          ],
+          "custom": {},
+          "min": 0,
+          "decimals": 2
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "custom.fontFamily",
+                "value": "'Roboto Mono', monospace"
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "colorMode": "value",
@@ -378,18 +447,18 @@
         {
           "refId": "A",
           "datasource": {
-            "type": "postgres",
             "uid": "timescaledb"
           },
-          "rawSql": "WITH daily_usage AS (  SELECT device_id, time_bucket('1 day', bucket) AS day,    AVG(avg_ram_used) AS avg_used  FROM public.sys_hourly  WHERE bucket > NOW() - INTERVAL '30 days'  GROUP BY 1, 2), totals AS (  SELECT DISTINCT ON (device_id) device_id, ram_total_mb  FROM public.sys_metrics  WHERE ram_total_mb > 0  ORDER BY device_id, time DESC), regression AS (  SELECT device_id,    COALESCE(regr_slope(avg_used, EXTRACT(EPOCH FROM day)), 0) AS slope,    COALESCE(regr_intercept(avg_used, EXTRACT(EPOCH FROM day)), 0) AS intercept  FROM daily_usage GROUP BY device_id) SELECT r.device_id AS metric,  CASE WHEN r.slope <= 0 THEN 9999    WHEN t.ram_total_mb <= 0 THEN 9999    ELSE GREATEST(0, (t.ram_total_mb - r.intercept) / r.slope - EXTRACT(EPOCH FROM NOW()) / 86400)  END AS value FROM regression r JOIN totals t ON t.device_id = r.device_id ORDER BY value ASC LIMIT 1",
-          "format": "table"
+          "rawSql": "WITH daily_ram AS (\n  SELECT\n    device_id,\n    AVG(avg_ram_used) AS avg_used,\n    extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n  FROM public.sys_hourly\n  WHERE bucket > NOW() - INTERVAL '30 days'\n  GROUP BY device_id, time_bucket('1 day', bucket)\n),\nregression AS (\n  SELECT\n    device_id,\n    COALESCE(regr_slope(avg_used, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_used, day_num), 0::double precision) AS intercept,\n    COUNT(*) AS data_points\n  FROM daily_ram\n  GROUP BY device_id\n  HAVING COUNT(*) >= 7\n),\ntotals AS (\n  SELECT DISTINCT ON (device_id) device_id, ram_total_mb\n  FROM public.sys_metrics\n  WHERE ram_total_mb > 0\n  ORDER BY device_id, time DESC\n),\ncurrent_state AS (\n  SELECT\n    r.device_id,\n    r.slope,\n    r.intercept,\n    t.ram_total_mb,\n    extract(epoch FROM NOW()) / 86400 AS now_day\n  FROM regression r\n  JOIN totals t ON t.device_id = r.device_id\n)\nSELECT device_id AS metric,\n  CASE\n    WHEN slope <= 0 THEN 9999\n    WHEN ram_total_mb <= 0 THEN 9999\n    ELSE GREATEST(0, LEAST(\n      ROUND(((ram_total_mb - intercept) / slope - now_day)::numeric, 0),\n      9999\n    ))\n  END AS value\nFROM current_state\nORDER BY value ASC\nLIMIT 1",
+          "format": "table",
+          "legendFormat": "{{metric}}"
         }
       ],
       "description": "Days until RAM saturation based on 30-day linear regression trend.",
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -400,7 +469,6 @@
       "title": "CPU: Days Until Saturation",
       "type": "stat",
       "datasource": {
-        "type": "postgres",
         "uid": "timescaledb"
       },
       "gridPos": {
@@ -416,19 +484,19 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
+                "color": "#EF4444",
                 "value": null
               },
               {
-                "color": "orange",
+                "color": "#F59E0B",
                 "value": 30
               },
               {
-                "color": "yellow",
+                "color": "#F59E0B",
                 "value": 90
               },
               {
-                "color": "green",
+                "color": "#10B981",
                 "value": 180
               }
             ]
@@ -438,15 +506,42 @@
               "type": "value",
               "options": {
                 "9999": {
-                  "text": "∞",
-                  "color": "green",
+                  "text": "\u221e",
+                  "color": "#10B981",
                   "index": 0
                 }
               }
             }
-          ]
+          ],
+          "custom": {},
+          "decimals": 2
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "custom.fontFamily",
+                "value": "'Roboto Mono', monospace"
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "colorMode": "value",
@@ -469,18 +564,18 @@
         {
           "refId": "A",
           "datasource": {
-            "type": "postgres",
             "uid": "timescaledb"
           },
-          "rawSql": "WITH daily_usage AS (SELECT device_id, time_bucket('1 day', bucket) AS day, AVG(avg_cpu) AS avg_cpu FROM public.sys_hourly WHERE bucket > NOW() - INTERVAL '30 days' GROUP BY 1, 2), regression AS (SELECT device_id, COALESCE(regr_slope(avg_cpu, EXTRACT(EPOCH FROM day)), 0) AS slope, COALESCE(regr_intercept(avg_cpu, EXTRACT(EPOCH FROM day)), 0) AS intercept FROM daily_usage GROUP BY device_id) SELECT device_id AS metric, CASE WHEN slope <= 0 THEN 9999 ELSE GREATEST(0, (100 - intercept) / slope - EXTRACT(EPOCH FROM NOW()) / 86400) END AS value FROM regression r ORDER BY value ASC LIMIT 1",
-          "format": "table"
+          "rawSql": "WITH daily_cpu AS (\n  SELECT\n    device_id,\n    AVG(avg_cpu) AS avg_cpu,\n    extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n  FROM public.sys_hourly\n  WHERE bucket > NOW() - INTERVAL '30 days'\n  GROUP BY device_id, time_bucket('1 day', bucket)\n),\nregression AS (\n  SELECT\n    device_id,\n    COALESCE(regr_slope(avg_cpu, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_cpu, day_num), 0::double precision) AS intercept,\n    COUNT(*) AS data_points\n  FROM daily_cpu\n  GROUP BY device_id\n  HAVING COUNT(*) >= 7\n),\ncurrent_state AS (\n  SELECT\n    device_id,\n    slope,\n    intercept,\n    extract(epoch FROM NOW()) / 86400 AS now_day\n  FROM regression\n)\nSELECT device_id AS metric,\n  CASE\n    WHEN slope <= 0 THEN 9999\n    WHEN intercept >= 100 THEN 0\n    ELSE GREATEST(0, LEAST(\n      ROUND(((100 - intercept) / slope - now_day)::numeric, 0),\n      9999\n    ))\n  END AS value\nFROM current_state\nORDER BY value ASC\nLIMIT 1",
+          "format": "table",
+          "legendFormat": "{{device_id}}"
         }
       ],
       "description": "Days until CPU reaches 100% saturation based on 30-day linear regression.",
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -491,7 +586,6 @@
       "title": "Fleet Health Score",
       "type": "stat",
       "datasource": {
-        "type": "postgres",
         "uid": "timescaledb"
       },
       "gridPos": {
@@ -509,21 +603,48 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
+                "color": "#EF4444",
                 "value": null
               },
               {
-                "color": "yellow",
+                "color": "#F59E0B",
                 "value": 70
               },
               {
-                "color": "green",
+                "color": "#10B981",
                 "value": 90
               }
             ]
-          }
+          },
+          "custom": {},
+          "decimals": 2
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "custom.fontFamily",
+                "value": "'Roboto Mono', monospace"
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "colorMode": "value",
@@ -546,7 +667,6 @@
         {
           "refId": "A",
           "datasource": {
-            "type": "postgres",
             "uid": "timescaledb"
           },
           "rawSql": "SELECT 'Fleet Score' AS metric, value FROM public.v_fleet_score",
@@ -557,7 +677,7 @@
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -574,14 +694,18 @@
         "h": 1
       },
       "collapsed": false,
-      "transparent": true
+      "transparent": true,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        }
+      }
     },
     {
       "id": 10,
       "title": "Disk Usage Trend + Linear Regression Forecast",
       "type": "timeseries",
       "datasource": {
-        "type": "postgres",
         "uid": "timescaledb"
       },
       "gridPos": {
@@ -603,21 +727,24 @@
             },
             "gradientMode": "opacity",
             "drawStyle": "line",
-            "lineInterpolation": "smooth"
+            "lineInterpolation": "smooth",
+            "showPoints": "never",
+            "showGridLines": false,
+            "axisBorderShow": false
           },
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "#10B981",
                 "value": null
               },
               {
-                "color": "yellow",
+                "color": "#F59E0B",
                 "value": 80
               },
               {
-                "color": "red",
+                "color": "#EF4444",
                 "value": 95
               }
             ]
@@ -627,7 +754,8 @@
           },
           "fillOpacity": 5,
           "lineWidth": 2,
-          "lineInterpolation": "smooth"
+          "lineInterpolation": "smooth",
+          "decimals": 2
         },
         "overrides": [
           {
@@ -650,7 +778,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "red"
+                  "fixedColor": "#EF4444"
                 }
               }
             ]
@@ -665,7 +793,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#7F00FF"
+                  "fixedColor": "#3B82F6"
                 }
               }
             ]
@@ -680,7 +808,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#00FF87"
+                  "fixedColor": "#10B981"
                 }
               }
             ]
@@ -695,7 +823,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#00F2FE"
+                  "fixedColor": "#3B82F6"
                 }
               }
             ]
@@ -731,7 +859,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#7F00FF"
+                  "fixedColor": "#3B82F6"
                 }
               }
             ]
@@ -745,7 +873,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#00FF87",
+                  "fixedColor": "#10B981",
                   "mode": "fixed"
                 }
               }
@@ -760,7 +888,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#00F2FE",
+                  "fixedColor": "#3B82F6",
                   "mode": "fixed"
                 }
               }
@@ -775,7 +903,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#7F00FF",
+                  "fixedColor": "#3B82F6",
                   "mode": "fixed"
                 }
               }
@@ -811,7 +939,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#FF003C",
+                  "fixedColor": "#EF4444",
                   "mode": "fixed"
                 }
               },
@@ -824,6 +952,18 @@
               {
                 "id": "custom.fillOpacity",
                 "value": 15
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
               }
             ]
           }
@@ -848,41 +988,38 @@
       "targets": [
         {
           "refId": "A",
-          "legendFormat": "{{ machine_id }} — Used",
+          "legendFormat": "{{ machine_id }} \u2014 Used",
           "datasource": {
-            "type": "postgres",
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('1 hour', bucket) AS \"time\", device_id, AVG(avg_disk_used) AS \"Disk Used (GB)\" FROM public.sys_hourly WHERE $__timeFilter(bucket) AND device_id IN (${machine_id:sqlstring}) GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "WITH historical AS (\n  SELECT\n    time_bucket('1 day', bucket) AS time,\n    device_id,\n    AVG(avg_disk_used) AS value,\n    'History' AS metric\n  FROM public.sys_hourly\n  WHERE $__timeFilter(bucket)\n    AND device_id IN (${machine_id:singlequote})\n    AND avg_disk_used >= 0\n  GROUP BY 1, 2\n),\nregression AS (\n  SELECT\n    device_id,\n    COALESCE(regr_slope(avg_used, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_used, day_num), 0::double precision) AS intercept\n  FROM (\n    SELECT device_id,\n      AVG(avg_disk_used) AS avg_used,\n      extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n    FROM public.sys_hourly\n    WHERE bucket > NOW() - INTERVAL '90 days'\n      AND device_id IN (${machine_id:singlequote})\n    GROUP BY device_id, time_bucket('1 day', bucket)\n  ) d\n  GROUP BY device_id\n  HAVING COUNT(*) >= 7\n),\nfuture_points AS (\n  SELECT\n    gs AS time,\n    r.device_id,\n    'Forecast' AS metric,\n    GREATEST(0, ROUND(\n      (r.slope * (extract(epoch FROM gs) / 86400) + r.intercept)::numeric, 2\n    )) AS value\n  FROM regression r\n  CROSS JOIN LATERAL generate_series(\n    (SELECT MAX(time) FROM historical) + INTERVAL '1 day',\n    (SELECT MAX(time) FROM historical) + INTERVAL '30 days',\n    INTERVAL '1 day'\n  ) gs\n  WHERE r.slope > 0\n)\nSELECT time, device_id, value, metric FROM historical\nUNION ALL\nSELECT time, device_id, value, metric FROM future_points\nORDER BY time ASC",
           "format": "time_series"
         },
         {
           "refId": "B",
-          "legendFormat": "{{ machine_id }} — Total",
+          "legendFormat": "{{metric}}",
           "datasource": {
-            "type": "postgres",
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, disk_total_gb AS \"Disk Total (GB)\" FROM public.sys_metrics WHERE $__timeFilter(time) AND device_id IN (${machine_id:sqlstring}) AND disk_total_gb > 0 ORDER BY 1",
+          "rawSql": "WITH historical AS (\n  SELECT\n    time_bucket('1 day', bucket) AS time,\n    device_id,\n    AVG(avg_disk_used) AS value,\n    'History' AS metric\n  FROM public.sys_hourly\n  WHERE $__timeFilter(bucket)\n    AND device_id IN (${machine_id:singlequote})\n    AND avg_disk_used >= 0\n  GROUP BY 1, 2\n),\nregression AS (\n  SELECT\n    device_id,\n    COALESCE(regr_slope(avg_used, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_used, day_num), 0::double precision) AS intercept\n  FROM (\n    SELECT device_id,\n      AVG(avg_disk_used) AS avg_used,\n      extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n    FROM public.sys_hourly\n    WHERE bucket > NOW() - INTERVAL '90 days'\n      AND device_id IN (${machine_id:singlequote})\n    GROUP BY device_id, time_bucket('1 day', bucket)\n  ) d\n  GROUP BY device_id\n  HAVING COUNT(*) >= 7\n),\nfuture_points AS (\n  SELECT\n    gs AS time,\n    r.device_id,\n    'Forecast' AS metric,\n    GREATEST(0, ROUND(\n      (r.slope * (extract(epoch FROM gs) / 86400) + r.intercept)::numeric, 2\n    )) AS value\n  FROM regression r\n  CROSS JOIN LATERAL generate_series(\n    (SELECT MAX(time) FROM historical) + INTERVAL '1 day',\n    (SELECT MAX(time) FROM historical) + INTERVAL '30 days',\n    INTERVAL '1 day'\n  ) gs\n  WHERE r.slope > 0\n)\nSELECT time, device_id, value, metric FROM historical\nUNION ALL\nSELECT time, device_id, value, metric FROM future_points\nORDER BY time ASC",
           "format": "time_series"
         },
         {
           "refId": "C",
-          "legendFormat": "Forecast — {{ machine_id }}",
+          "legendFormat": "Forecast \u2014 {{ machine_id }}",
           "datasource": {
-            "type": "postgres",
             "uid": "timescaledb"
           },
-          "rawSql": "WITH daily AS (SELECT device_id, time_bucket('1 day', bucket) AS day, AVG(avg_disk_used) AS used FROM public.sys_hourly WHERE bucket > NOW() - INTERVAL '30 days' AND device_id IN (${machine_id:sqlstring}) GROUP BY 1, 2), reg AS (SELECT device_id, COALESCE(regr_slope(used, EXTRACT(EPOCH FROM day)), 0) AS slope, COALESCE(regr_intercept(used, EXTRACT(EPOCH FROM day)), 0) AS intercept FROM daily GROUP BY device_id) SELECT generate_series AS time, r.device_id, GREATEST(0, r.slope * EXTRACT(EPOCH FROM generate_series) + r.intercept) AS \"Forecast (GB)\" FROM reg r, generate_series(NOW(), NOW() + INTERVAL '30 days', INTERVAL '1 day') WHERE r.slope > 0 ORDER BY 1, 2",
+          "rawSql": "WITH historical AS (\n  SELECT\n    time_bucket('1 day', bucket) AS time,\n    device_id,\n    AVG(avg_disk_used) AS value,\n    'History' AS metric\n  FROM public.sys_hourly\n  WHERE $__timeFilter(bucket)\n    AND device_id IN (${machine_id:singlequote})\n    AND avg_disk_used >= 0\n  GROUP BY 1, 2\n),\nregression AS (\n  SELECT\n    device_id,\n    COALESCE(regr_slope(avg_used, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_used, day_num), 0::double precision) AS intercept\n  FROM (\n    SELECT device_id,\n      AVG(avg_disk_used) AS avg_used,\n      extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n    FROM public.sys_hourly\n    WHERE bucket > NOW() - INTERVAL '90 days'\n      AND device_id IN (${machine_id:singlequote})\n    GROUP BY device_id, time_bucket('1 day', bucket)\n  ) d\n  GROUP BY device_id\n  HAVING COUNT(*) >= 7\n),\nfuture_points AS (\n  SELECT\n    gs AS time,\n    r.device_id,\n    'Forecast' AS metric,\n    GREATEST(0, ROUND(\n      (r.slope * (extract(epoch FROM gs) / 86400) + r.intercept)::numeric, 2\n    )) AS value\n  FROM regression r\n  CROSS JOIN LATERAL generate_series(\n    (SELECT MAX(time) FROM historical) + INTERVAL '1 day',\n    (SELECT MAX(time) FROM historical) + INTERVAL '30 days',\n    INTERVAL '1 day'\n  ) gs\n  WHERE r.slope > 0\n)\nSELECT time, device_id, value, metric FROM historical\nUNION ALL\nSELECT time, device_id, value, metric FROM future_points\nORDER BY time ASC",
           "format": "time_series",
           "maxDataPoints": 300
         }
       ],
-      "description": "Hourly disk usage trend with linear regression forecast (dashed orange, 30-day projection).",
+      "description": "Hourly disk usage trend with linear regression forecast (dashed #F59E0B, 30-day projection).",
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -899,14 +1036,18 @@
         "h": 1
       },
       "collapsed": false,
-      "transparent": true
+      "transparent": true,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        }
+      }
     },
     {
       "id": 20,
       "title": "CPU Load Trend (30-Day Average)",
       "type": "timeseries",
       "datasource": {
-        "type": "postgres",
         "uid": "timescaledb"
       },
       "gridPos": {
@@ -926,21 +1067,24 @@
             "spanNulls": 60000,
             "gradientMode": "opacity",
             "drawStyle": "line",
-            "lineInterpolation": "smooth"
+            "lineInterpolation": "smooth",
+            "showPoints": "never",
+            "showGridLines": false,
+            "axisBorderShow": false
           },
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "#10B981",
                 "value": null
               },
               {
-                "color": "yellow",
+                "color": "#F59E0B",
                 "value": 80
               },
               {
-                "color": "red",
+                "color": "#EF4444",
                 "value": 90
               }
             ]
@@ -950,7 +1094,8 @@
           },
           "fillOpacity": 5,
           "lineWidth": 2,
-          "lineInterpolation": "smooth"
+          "lineInterpolation": "smooth",
+          "decimals": 2
         },
         "overrides": [
           {
@@ -963,7 +1108,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#00FF87"
+                  "fixedColor": "#10B981"
                 }
               }
             ]
@@ -978,7 +1123,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#00FF87"
+                  "fixedColor": "#10B981"
                 }
               }
             ]
@@ -993,7 +1138,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#00F2FE"
+                  "fixedColor": "#3B82F6"
                 }
               }
             ]
@@ -1029,7 +1174,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#7F00FF"
+                  "fixedColor": "#3B82F6"
                 }
               }
             ]
@@ -1043,7 +1188,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#00FF87",
+                  "fixedColor": "#10B981",
                   "mode": "fixed"
                 }
               }
@@ -1058,7 +1203,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#00F2FE",
+                  "fixedColor": "#3B82F6",
                   "mode": "fixed"
                 }
               }
@@ -1073,7 +1218,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#7F00FF",
+                  "fixedColor": "#3B82F6",
                   "mode": "fixed"
                 }
               }
@@ -1109,7 +1254,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#FF003C",
+                  "fixedColor": "#EF4444",
                   "mode": "fixed"
                 }
               },
@@ -1122,6 +1267,18 @@
               {
                 "id": "custom.fillOpacity",
                 "value": 15
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
               }
             ]
           }
@@ -1147,11 +1304,10 @@
         {
           "refId": "A",
           "datasource": {
-            "type": "postgres",
             "uid": "timescaledb"
           },
           "legendFormat": "{{ machine_id }}",
-          "rawSql": "SELECT time_bucket('1 day', bucket) AS \"time\", device_id, AVG(avg_cpu) AS \"Avg CPU %\" FROM public.sys_hourly WHERE bucket > NOW() - INTERVAL '30 days' AND device_id IN (${machine_id:sqlstring}) GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('1 day', bucket) AS \"time\", device_id, AVG(avg_cpu) AS \"Avg CPU %\" FROM public.sys_hourly WHERE bucket > NOW() - INTERVAL '30 days' AND device_id IN (${machine_id:singlequote}) GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series"
         }
       ],
@@ -1159,7 +1315,7 @@
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -1170,7 +1326,6 @@
       "title": "RAM Usage Trend (30-Day Average)",
       "type": "timeseries",
       "datasource": {
-        "type": "postgres",
         "uid": "timescaledb"
       },
       "gridPos": {
@@ -1190,21 +1345,24 @@
             "spanNulls": 60000,
             "gradientMode": "opacity",
             "drawStyle": "line",
-            "lineInterpolation": "smooth"
+            "lineInterpolation": "smooth",
+            "showPoints": "never",
+            "showGridLines": false,
+            "axisBorderShow": false
           },
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "#10B981",
                 "value": null
               },
               {
-                "color": "yellow",
+                "color": "#F59E0B",
                 "value": 85
               },
               {
-                "color": "red",
+                "color": "#EF4444",
                 "value": 95
               }
             ]
@@ -1214,7 +1372,8 @@
           },
           "fillOpacity": 5,
           "lineWidth": 2,
-          "lineInterpolation": "smooth"
+          "lineInterpolation": "smooth",
+          "decimals": 2
         },
         "overrides": [
           {
@@ -1227,7 +1386,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#00F2FE"
+                  "fixedColor": "#3B82F6"
                 }
               }
             ]
@@ -1242,7 +1401,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#00FF87"
+                  "fixedColor": "#10B981"
                 }
               }
             ]
@@ -1257,7 +1416,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#00F2FE"
+                  "fixedColor": "#3B82F6"
                 }
               }
             ]
@@ -1293,7 +1452,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#7F00FF"
+                  "fixedColor": "#3B82F6"
                 }
               }
             ]
@@ -1307,7 +1466,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#00FF87",
+                  "fixedColor": "#10B981",
                   "mode": "fixed"
                 }
               }
@@ -1322,7 +1481,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#00F2FE",
+                  "fixedColor": "#3B82F6",
                   "mode": "fixed"
                 }
               }
@@ -1337,7 +1496,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#7F00FF",
+                  "fixedColor": "#3B82F6",
                   "mode": "fixed"
                 }
               }
@@ -1373,7 +1532,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#FF003C",
+                  "fixedColor": "#EF4444",
                   "mode": "fixed"
                 }
               },
@@ -1386,6 +1545,18 @@
               {
                 "id": "custom.fillOpacity",
                 "value": 15
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
               }
             ]
           }
@@ -1411,11 +1582,10 @@
         {
           "refId": "A",
           "datasource": {
-            "type": "postgres",
             "uid": "timescaledb"
           },
-          "legendFormat": "{{ machine_id }}",
-          "rawSql": "WITH totals AS (\n  SELECT DISTINCT ON (device_id) device_id, ram_total_mb\n  FROM public.sys_metrics\n  WHERE ram_total_mb > 0\n  ORDER BY device_id, time DESC\n)\nSELECT h.bucket AS time, h.device_id,\n  ROUND((h.avg_ram_used / NULLIF(t.ram_total_mb::NUMERIC, 0) * 100)::NUMERIC, 1) AS \"Avg RAM %\"\nFROM public.sys_hourly h\nJOIN totals t ON t.device_id = h.device_id\nWHERE h.bucket > NOW() - INTERVAL '30 days'\n  AND h.device_id IN (${machine_id:sqlstring})\nORDER BY 1",
+          "legendFormat": "{{metric}}",
+          "rawSql": "WITH daily_ram AS (\n  SELECT\n    time_bucket('1 day', bucket) AS time,\n    device_id,\n    AVG(avg_ram_used) AS avg_used,\n    AVG(avg_ram_total) AS avg_total\n  FROM public.sys_hourly\n  WHERE bucket > NOW() - INTERVAL '30 days'\n    AND device_id IN (${machine_id:singlequote})\n  GROUP BY 1, 2\n)\nSELECT\n  time,\n  device_id AS metric,\n  ROUND(\n    (avg_used / NULLIF(avg_total, 0) * 100)::NUMERIC,\n    2\n  ) AS \"RAM Usage %\"\nFROM daily_ram\nWHERE avg_total > 0\nORDER BY 1 ASC",
           "format": "time_series"
         }
       ],
@@ -1423,7 +1593,7 @@
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -1432,7 +1602,7 @@
     {
       "id": 500,
       "type": "row",
-      "title": "AIOps — ANOMALY DETECTION",
+      "title": "AIOps \u2014 ANOMALY DETECTION",
       "gridPos": {
         "x": 0,
         "y": 37,
@@ -1440,14 +1610,18 @@
         "h": 1
       },
       "collapsed": false,
-      "transparent": true
+      "transparent": true,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        }
+      }
     },
     {
       "id": 601,
-      "title": "CPU Z-Score Anomaly (3σ)",
+      "title": "CPU Z-Score Anomaly (3\u03c3)",
       "type": "timeseries",
       "datasource": {
-        "type": "postgres",
         "uid": "timescaledb"
       },
       "gridPos": {
@@ -1460,7 +1634,7 @@
         "defaults": {
           "unit": "none",
           "custom": {
-            "axisCenteredZero": true,
+            "axisCente#EF4444Zero": true,
             "fillOpacity": 0,
             "lineWidth": 3,
             "spanNulls": 60000,
@@ -1469,13 +1643,16 @@
             },
             "gradientMode": "opacity",
             "drawStyle": "line",
-            "lineInterpolation": "smooth"
+            "lineInterpolation": "smooth",
+            "showPoints": "never",
+            "showGridLines": false,
+            "axisBorderShow": false
           },
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
+                "color": "#EF4444",
                 "value": -3
               },
               {
@@ -1483,11 +1660,11 @@
                 "value": -2
               },
               {
-                "color": "green",
+                "color": "#10B981",
                 "value": -1
               },
               {
-                "color": "green",
+                "color": "#10B981",
                 "value": 1
               },
               {
@@ -1495,7 +1672,7 @@
                 "value": 2
               },
               {
-                "color": "red",
+                "color": "#EF4444",
                 "value": 3
               }
             ]
@@ -1504,7 +1681,8 @@
             "mode": "palette-classic"
           },
           "fillOpacity": 5,
-          "lineWidth": 2
+          "lineWidth": 2,
+          "decimals": 2
         },
         "overrides": [
           {
@@ -1517,7 +1695,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#00FF87"
+                  "fixedColor": "#10B981"
                 }
               }
             ]
@@ -1532,7 +1710,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#00FF87"
+                  "fixedColor": "#10B981"
                 }
               }
             ]
@@ -1547,7 +1725,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#00F2FE"
+                  "fixedColor": "#3B82F6"
                 }
               }
             ]
@@ -1583,7 +1761,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#7F00FF"
+                  "fixedColor": "#3B82F6"
                 }
               }
             ]
@@ -1597,7 +1775,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#00FF87",
+                  "fixedColor": "#10B981",
                   "mode": "fixed"
                 }
               }
@@ -1612,7 +1790,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#00F2FE",
+                  "fixedColor": "#3B82F6",
                   "mode": "fixed"
                 }
               }
@@ -1627,7 +1805,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#7F00FF",
+                  "fixedColor": "#3B82F6",
                   "mode": "fixed"
                 }
               }
@@ -1663,7 +1841,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#FF003C",
+                  "fixedColor": "#EF4444",
                   "mode": "fixed"
                 }
               },
@@ -1676,6 +1854,18 @@
               {
                 "id": "custom.fillOpacity",
                 "value": 15
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
               }
             ]
           }
@@ -1701,20 +1891,19 @@
         {
           "refId": "A",
           "datasource": {
-            "type": "postgres",
             "uid": "timescaledb"
           },
           "legendFormat": "Z-Score",
-          "rawSql": "WITH stats AS (SELECT avg(avg_cpu) as mu, stddev(avg_cpu) as sigma FROM public.sys_hourly WHERE device_id IN (${machine_id:sqlstring}) AND $__timeFilter(bucket)) SELECT bucket AS time, (avg_cpu - mu) / NULLIF(sigma, 0) AS \"Z-Score\" FROM public.sys_hourly, stats WHERE device_id IN (${machine_id:sqlstring}) AND $__timeFilter(bucket) ORDER BY time ASC",
+          "rawSql": "WITH stats AS (SELECT avg(avg_cpu) as mu, stddev(avg_cpu) as sigma FROM public.sys_hourly WHERE device_id IN (${machine_id:singlequote}) AND $__timeFilter(bucket)) SELECT bucket AS time, (avg_cpu - mu) / NULLIF(sigma, 0) AS \"Z-Score\" FROM public.sys_hourly, stats WHERE device_id IN (${machine_id:singlequote}) AND $__timeFilter(bucket) ORDER BY time ASC",
           "format": "time_series",
           "maxDataPoints": 300
         }
       ],
-      "description": "Fleet-wide CPU Z-Score anomaly detection using 60-minute rolling window. Red zones = ±3σ anomalies.",
+      "description": "Fleet-wide CPU Z-Score anomaly detection using 60-minute rolling window. Red zones = \u00b13\u03c3 anomalies.",
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -1722,10 +1911,9 @@
     },
     {
       "id": 602,
-      "title": "Temperature Z-Score Anomaly (3σ)",
+      "title": "Temperature Z-Score Anomaly (3\u03c3)",
       "type": "timeseries",
       "datasource": {
-        "type": "postgres",
         "uid": "timescaledb"
       },
       "gridPos": {
@@ -1738,7 +1926,7 @@
         "defaults": {
           "unit": "none",
           "custom": {
-            "axisCenteredZero": true,
+            "axisCente#EF4444Zero": true,
             "fillOpacity": 0,
             "lineWidth": 3,
             "spanNulls": 60000,
@@ -1747,13 +1935,16 @@
             },
             "gradientMode": "opacity",
             "drawStyle": "line",
-            "lineInterpolation": "smooth"
+            "lineInterpolation": "smooth",
+            "showPoints": "never",
+            "showGridLines": false,
+            "axisBorderShow": false
           },
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
+                "color": "#EF4444",
                 "value": -3
               },
               {
@@ -1761,11 +1952,11 @@
                 "value": -2
               },
               {
-                "color": "green",
+                "color": "#10B981",
                 "value": -1
               },
               {
-                "color": "green",
+                "color": "#10B981",
                 "value": 1
               },
               {
@@ -1773,7 +1964,7 @@
                 "value": 2
               },
               {
-                "color": "red",
+                "color": "#EF4444",
                 "value": 3
               }
             ]
@@ -1782,7 +1973,9 @@
             "mode": "palette-classic"
           },
           "fillOpacity": 5,
-          "lineWidth": 2
+          "lineWidth": 2,
+          "min": 0,
+          "decimals": 2
         },
         "overrides": [
           {
@@ -1795,7 +1988,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#FF9100"
+                  "fixedColor": "#F59E0B"
                 }
               }
             ]
@@ -1810,7 +2003,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#00FF87"
+                  "fixedColor": "#10B981"
                 }
               }
             ]
@@ -1825,7 +2018,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#00F2FE"
+                  "fixedColor": "#3B82F6"
                 }
               }
             ]
@@ -1861,7 +2054,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#7F00FF"
+                  "fixedColor": "#3B82F6"
                 }
               }
             ]
@@ -1875,7 +2068,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#00FF87",
+                  "fixedColor": "#10B981",
                   "mode": "fixed"
                 }
               }
@@ -1890,7 +2083,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#00F2FE",
+                  "fixedColor": "#3B82F6",
                   "mode": "fixed"
                 }
               }
@@ -1905,7 +2098,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#7F00FF",
+                  "fixedColor": "#3B82F6",
                   "mode": "fixed"
                 }
               }
@@ -1941,7 +2134,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#FF003C",
+                  "fixedColor": "#EF4444",
                   "mode": "fixed"
                 }
               },
@@ -1954,6 +2147,18 @@
               {
                 "id": "custom.fillOpacity",
                 "value": 15
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
               }
             ]
           }
@@ -1979,20 +2184,19 @@
         {
           "refId": "A",
           "datasource": {
-            "type": "postgres",
             "uid": "timescaledb"
           },
           "legendFormat": "Z-Score",
-          "rawSql": "WITH stats AS (SELECT avg(max_temp) as mu, stddev(max_temp) as sigma FROM public.sys_hourly WHERE device_id IN (${machine_id:sqlstring}) AND max_temp > 0 AND $__timeFilter(bucket)) SELECT bucket AS time, (max_temp - mu) / NULLIF(sigma, 0) AS \"Z-Score\" FROM public.sys_hourly, stats WHERE device_id IN (${machine_id:sqlstring}) AND max_temp > 0 AND $__timeFilter(bucket) ORDER BY time ASC",
+          "rawSql": "WITH stats AS (SELECT avg(max_temp) as mu, stddev(max_temp) as sigma FROM public.sys_hourly WHERE device_id IN (${machine_id:singlequote}) AND max_temp > 0 AND $__timeFilter(bucket)) SELECT bucket AS time, (max_temp - mu) / NULLIF(sigma, 0) AS \"Z-Score\" FROM public.sys_hourly, stats WHERE device_id IN (${machine_id:singlequote}) AND max_temp > 0 AND $__timeFilter(bucket) ORDER BY time ASC",
           "format": "time_series",
           "maxDataPoints": 300
         }
       ],
-      "description": "Fleet-wide temperature Z-Score anomaly detection. Red zones indicate readings beyond ±3 standard deviations.",
+      "description": "Fleet-wide temperature Z-Score anomaly detection. Red zones indicate readings beyond \u00b13 standard deviations.",
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
