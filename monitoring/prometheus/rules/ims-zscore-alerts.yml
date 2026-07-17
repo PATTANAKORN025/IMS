@@ -1,0 +1,60 @@
+# ══════════════════════════════════════════════════════════════
+# IMS Z-Score Anomaly Detection Rules
+# Detects statistical outliers in CPU and Temperature metrics
+# using a 24-hour rolling baseline with 3-sigma threshold
+# ══════════════════════════════════════════════════════════════
+
+groups:
+  - name: ims-zscore-anomalies
+    interval: 60s
+    rules:
+      # ── CPU Z-Score: Detect abnormal CPU spikes ──
+      - alert: CpuZScoreAnomaly
+        expr: |
+          (
+            avg_over_time(cpu_load_percent[24h])
+            /
+            stddev_over_time(cpu_load_percent[24h])
+          ) > 3
+        for: 5m
+        labels:
+          severity: warning
+          category: anomaly
+        annotations:
+          summary: "CPU Z-Score anomaly on {{ $labels.instance }}"
+          description: "CPU load is more than 3 standard deviations above the 24-hour rolling average. Current: {{ $value | printf "%.1f" }} sigma"
+          runbook: "https://github.com/PATTANAKORN025/IMS/blob/main/docs/TROUBLESHOOTING.md#z-score-anomaly"
+
+      # ── Temperature Z-Score: Detect thermal anomalies ──
+      - alert: TempZScoreAnomaly
+        expr: |
+          (
+            avg_over_time(temp_c[24h])
+            /
+            stddev_over_time(temp_c[24h])
+          ) > 3
+        for: 5m
+        labels:
+          severity: warning
+          category: anomaly
+        annotations:
+          summary: "Temperature Z-Score anomaly on {{ $labels.instance }}"
+          description: "Temperature is more than 3 standard deviations above the 24-hour rolling average. Current: {{ $value | printf "%.1f" }} sigma"
+          runbook: "https://github.com/PATTANAKORN025/IMS/blob/main/docs/TROUBLESHOOTING.md#z-score-anomaly"
+
+      # ── CPU Z-Score: Detect CPU drops (potential outage) ──
+      - alert: CpuZScoreDrop
+        expr: |
+          (
+            avg_over_time(cpu_load_percent[24h])
+            /
+            stddev_over_time(cpu_load_percent[24h])
+          ) < -3
+        for: 5m
+        labels:
+          severity: critical
+          category: anomaly
+        annotations:
+          summary: "CPU Z-Score drop (potential outage) on {{ $labels.instance }}"
+          description: "CPU load dropped more than 3 standard deviations below the 24-hour rolling average. Current: {{ $value | printf "%.1f" }} sigma"
+          runbook: "https://github.com/PATTANAKORN025/IMS/blob/main/docs/TROUBLESHOOTING.md#z-score-anomaly"
