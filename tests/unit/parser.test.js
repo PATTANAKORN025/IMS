@@ -153,31 +153,30 @@ test('calculates RAM and Disk from storage entries', () => {
     assert.ok(r.disk.totalGb > 0, 'totalGb should be > 0');
 });
 
-test('parses Juniper RAM percentage (fakes 100MB total)', () => {
+test('Juniper buffer OID is ignored — uses universal hrStorageTable', () => {
+    // Juniper jnxOperatingBuffer OID is no longer intercepted.
+    // Storage now uses HOST-RESOURCES-MIB hrStorageTable universally.
     const items = [
         { oid: '1.3.6.1.4.1.2636.3.1.13.1.11.9.1.0.0', value: 67 },
     ];
     const r = parseAll(items, 'storage', { ...emptyState });
-    assert.strictEqual(r.disk.ramTotalMb, 100);
-    assert.strictEqual(r.disk.ramUsedMb, 67);
-    assert.strictEqual(r.disk.ramFreeMb, 33);
+    assert.strictEqual(r.disk.ramTotalMb, 0, 'Juniper buffer OID no longer sets ramTotalMb');
+    assert.strictEqual(r.disk.ramUsedMb, 0);
+    assert.strictEqual(r.disk.ramFreeMb, 0);
 });
 
-test('does not mix Juniper RAM with Linux storage', () => {
+test('Juniper buffer OID ignored — Linux storage parsed via hrStorageTable', () => {
     const items = [
-        { oid: '1.3.6.1.4.1.2636.3.1.13.1.11.9.1.0.0', value: 45 },
+        { oid: '1.3.6.1.4.1.2636.3.1.13.1.11.9.1.0.0', value: 45 }, // ignored
         { oid: '1.3.6.1.2.1.25.2.3.1.2.1', value: Buffer.from('1.3.6.1.2.1.25.2.1.2') },
         { oid: '1.3.6.1.2.1.25.2.3.1.4.1', value: 4096 },
         { oid: '1.3.6.1.2.1.25.2.3.1.5.1', value: 8388608 },
         { oid: '1.3.6.1.2.1.25.2.3.1.6.1', value: 4194304 },
     ];
     const r = parseAll(items, 'storage', { ...emptyState });
-    // Juniper sets base ramTotalMb=100, ramUsedMb=45
-    // Linux RAM entry adds ~32768 MB on top
-    assert.ok(r.disk.ramTotalMb >= 100, 'ramTotalMb should include Juniper 100MB base');
-    assert.ok(r.disk.ramUsedMb >= 45, 'ramUsedMb should include Juniper value');
-    // No disk type entry, so totalGb stays 0
-    assert.strictEqual(r.disk.totalGb, 0);
+    // Juniper buffer OID is now ignored — only Linux hrStorageTable counts
+    assert.ok(r.disk.ramTotalMb > 0, 'ramTotalMb from Linux hrStorageTable');
+    assert.strictEqual(r.disk.totalGb, 0, 'No disk type entry, so totalGb stays 0');
 });
 
 console.log('\nparseAll - Network walker');
