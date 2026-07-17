@@ -141,10 +141,9 @@ test('32-bit wrap: small wrap (prev=100, curr=4294967200) calculates correctly',
     const ifaces = { '1': { name: 'ge-0/0/2', rx32: 4294967200, tx32: 4294967200, err: 0, drop: 0, status: 1 } };
     const r = calcNetRate('wrap32b', ifaces);
 
-    // diff = 4294967200 - 100 = 4294967100 (positive, no wrap needed)
-    // Rate = (4294967100 * 8) / (10 * 1e6) = 3435.97 Mbps
-    assert.strictEqual(r.summary['ge-0/0/2'].rx_mbps, 3435.97);
-    assert.strictEqual(r.summary['ge-0/0/2'].tx_mbps, 3435.97);
+    // rDiff = 4294967100 bytes, rate ≈ 3435.97 Mbps (allow timing tolerance)
+    assert.ok(Math.abs(r.summary['ge-0/0/2'].rx_mbps - 3435.97) < 1, 'rx_mbps ~3436');
+    assert.ok(Math.abs(r.summary['ge-0/0/2'].tx_mbps - 3435.97) < 1, 'tx_mbps ~3436');
     assert.strictEqual(r.summary['ge-0/0/2'].status, 'UP');
 });
 
