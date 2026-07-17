@@ -9,7 +9,7 @@ const IFXTABLE_OID_RE = /1\.3\.6\.1\.2\.1\.31\.1\.1\.1\.(\d+)\.(\d+)$/;
 const STORAGE_ENTRY_RE = /1\.3\.6\.1\.2\.1\.25\.2\.3\.1\.(\d+)\.(\d+)$/;
 
 function parseAll(items, type, state) {
-    const cpu = { total: 0, count: 0 }; let maxTemp = state.temp || 0; const storageEntries = {}; const ifaces = {};
+    const cpu = { total: 0, count: 0, cores: {} }; let maxTemp = state.temp || 0; const tempSensors = {}; const storageEntries = {}; const ifaces = {};
     const ldi = state.ldi || { throughput: 0, temp: 0, humidity: 0, pe: 0, je: 0, power: 0, vibration: 0 };
     const LDI_MAP = { '1.3.6.1.4.1.9999.1.1.0': { key: 'throughput', div: 1 }, '1.3.6.1.4.1.9999.1.2.0': { key: 'temp', div: 100 }, '1.3.6.1.4.1.9999.1.3.0': { key: 'humidity', div: 100 }, '1.3.6.1.4.1.9999.1.4.2': { key: 'pe', div: 100 }, '1.3.6.1.4.1.9999.1.4.5': { key: 'pe', div: 100 }, '1.3.6.1.4.1.9999.1.5.1': { key: 'je', div: 100 }, '1.3.6.1.4.1.9999.1.6.1': { key: 'power', div: 1 }, '1.3.6.1.4.1.9999.1.7.1': { key: 'vibration', div: 100 } };
     let ramTotalMb = state.ram_total || 0, ramUsedMb = state.ram_used || 0, diskTotalGb = state.disk_total || 0, diskUsedGb = state.disk_used || 0;
@@ -30,7 +30,7 @@ function parseAll(items, type, state) {
     }
     if (type === 'storage') { for (const e of Object.values(storageEntries)) { if (!e.size || !e.au) continue; const tb = e.size * e.au; const ub = e.used * e.au; if (/25\.2\.1\.2/.test(e.type)) { ramTotalMb += tb / 1048576; ramUsedMb += ub / 1048576; } else if (/25\.2\.1\.4/.test(e.type)) { diskTotalGb += tb / 1073741824; diskUsedGb += ub / 1073741824; } } ramUsedMb = Math.min(ramUsedMb, ramTotalMb); ramTotalMb = Math.min(ramTotalMb, 1048576); diskUsedGb = Math.min(diskUsedGb, diskTotalGb); diskTotalGb = Math.min(diskTotalGb, 1048576); }
     const cpuLoad = cpu.count > 0 ? Number((cpu.total / cpu.count).toFixed(2)) : state.cpu_load || 0;
-    return { cpu: { coreCount: cpu.count, loadPercent: Math.max(0, Math.min(100, cpuLoad)) }, temp: { maxC: Math.max(-40, Math.min(150, Number(maxTemp.toFixed(2)))) }, disk: { ramTotalMb: Math.max(0, Number(ramTotalMb.toFixed(2))), ramUsedMb: Math.max(0, Math.min(ramTotalMb, Number(ramUsedMb.toFixed(2)))), ramFreeMb: Math.max(0, Number((ramTotalMb - ramUsedMb).toFixed(2))), totalGb: Math.max(0, Math.min(1048576, Number(diskTotalGb.toFixed(2)))), usedGb: Math.max(0, Math.min(diskTotalGb, Number(diskUsedGb.toFixed(2)))), freeGb: Math.max(0, Number((diskTotalGb - diskUsedGb).toFixed(2))) }, ifaces, ldi };
+    return { cpu: { coreCount: cpu.count, loadPercent: Math.max(0, Math.min(100, cpuLoad)), cpuMetrics: cpu.cores }, temp: { maxC: Math.max(-40, Math.min(150, Number(maxTemp.toFixed(2)))), tempMetrics: tempSensors }, disk: { ramTotalMb: Math.max(0, Number(ramTotalMb.toFixed(2))), ramUsedMb: Math.max(0, Math.min(ramTotalMb, Number(ramUsedMb.toFixed(2)))), ramFreeMb: Math.max(0, Number((ramTotalMb - ramUsedMb).toFixed(2))), totalGb: Math.max(0, Math.min(1048576, Number(diskTotalGb.toFixed(2)))), usedGb: Math.max(0, Math.min(diskTotalGb, Number(diskUsedGb.toFixed(2)))), freeGb: Math.max(0, Number((diskTotalGb - diskUsedGb).toFixed(2))) }, ifaces, ldi };
 }
 
 function calcNetRate(deviceId, currentIfaces) {
