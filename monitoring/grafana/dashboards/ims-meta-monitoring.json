@@ -1,0 +1,871 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "type": "row",
+      "title": "Pipeline Health",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Inserts / sec",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "decimals": 2,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "spanNulls": true,
+            "showPoints": "auto",
+            "pointSize": 5,
+            "showGridLines": false,
+            "axisBorderShow": false
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "expr": "rate(ims_pipeline_inserts_total[5m])",
+          "legendFormat": "Inserts/sec",
+          "refId": "A"
+        }
+      ],
+      "description": "Rate of successful database inserts per second from the pipeline."
+    },
+    {
+      "type": "timeseries",
+      "title": "Error Rate",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "decimals": 2,
+          "color": {
+            "fixedColor": "#EF4444",
+            "mode": "fixed"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "spanNulls": true,
+            "showGridLines": false,
+            "axisBorderShow": false
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "expr": "rate(ims_pipeline_inserts_failed_total[5m])",
+          "legendFormat": "Errors/sec",
+          "refId": "A"
+        }
+      ],
+      "description": "Rate of failed database inserts per second. High values indicate pipeline instability."
+    },
+    {
+      "type": "stat",
+      "title": "Last Flush",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "dateTimeFromNow",
+          "decimals": 0,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "steps": [
+              {
+                "color": "#EF4444",
+                "value": null
+              },
+              {
+                "color": "#F59E0B",
+                "value": 120
+              },
+              {
+                "color": "#10B981",
+                "value": 300
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "custom.fontFamily",
+                "value": "'Roboto Mono', monospace"
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "expr": "ims_pipeline_last_flush_timestamp_seconds * 1000",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "description": "Timestamp of the most recent successful batch flush to TimescaleDB.",
+      "options": {
+        "noValue": "No data"
+      }
+    },
+    {
+      "type": "row",
+      "title": "Circuit Breaker",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 9
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Devices OPEN",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 10
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "steps": [
+              {
+                "color": "#10B981",
+                "value": null
+              },
+              {
+                "color": "#F59E0B",
+                "value": 1
+              },
+              {
+                "color": "#EF4444",
+                "value": 5
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "custom.fontFamily",
+                "value": "'Roboto Mono', monospace"
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "expr": "count(ims_circuit_breaker_state == 1)",
+          "legendFormat": "OPEN",
+          "refId": "A"
+        }
+      ],
+      "description": "Number of devices with circuit breaker in OPEN state (unreachable).",
+      "options": {
+        "noValue": "0"
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Devices HALF-OPEN",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 10
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "steps": [
+              {
+                "color": "#10B981",
+                "value": null
+              },
+              {
+                "color": "#3B82F6",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "custom.fontFamily",
+                "value": "'Roboto Mono', monospace"
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "expr": "count(ims_circuit_breaker_state == 2)",
+          "legendFormat": "HALF-OPEN",
+          "refId": "A"
+        }
+      ],
+      "description": "Number of devices with circuit breaker in HALF_OPEN state (testing connectivity).",
+      "options": {
+        "noValue": "0"
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Devices CLOSED",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 10
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "color": {
+            "fixedColor": "#10B981",
+            "mode": "fixed"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "custom.fontFamily",
+                "value": "'Roboto Mono', monospace"
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "expr": "count(ims_circuit_breaker_state == 0)",
+          "legendFormat": "CLOSED",
+          "refId": "A"
+        }
+      ],
+      "description": "Number of devices with circuit breaker in CLOSED state (healthy).",
+      "options": {
+        "noValue": "0"
+      }
+    },
+    {
+      "type": "row",
+      "title": "Circuit Breaker Trips",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 18
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Trip Rate (per device)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 19
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "decimals": 2,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "bars",
+            "lineWidth": 1,
+            "fillOpacity": 50,
+            "spanNulls": true,
+            "showGridLines": false,
+            "axisBorderShow": false
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "expr": "rate(ims_circuit_breaker_trips_total[5m])",
+          "legendFormat": "{{device_id}}",
+          "refId": "A"
+        }
+      ],
+      "description": "Rate of circuit breaker trips per device. Indicates intermittent connectivity issues."
+    },
+    {
+      "type": "table",
+      "title": "Device Circuit Breaker State",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 19
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "device_id"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 200
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 100
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": {
+                        "text": "CLOSED",
+                        "color": "#10B981"
+                      }
+                    }
+                  },
+                  {
+                    "type": "value",
+                    "options": {
+                      "1": {
+                        "text": "OPEN",
+                        "color": "#EF4444"
+                      }
+                    }
+                  },
+                  {
+                    "type": "value",
+                    "options": {
+                      "2": {
+                        "text": "HALF-OPEN",
+                        "color": "#3B82F6"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "custom.fontFamily",
+                "value": "'Roboto Mono', monospace"
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "expr": "ims_circuit_breaker_state",
+          "legendFormat": "{{device_id}}",
+          "refId": "A",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "instance": true,
+              "job": true
+            },
+            "renameByName": {
+              "device_id": "Device",
+              "Value": "State"
+            }
+          }
+        }
+      ],
+      "description": "Per-device circuit breaker state table (0=CLOSED, 1=OPEN, 2=HALF_OPEN)."
+    },
+    {
+      "type": "row",
+      "title": "Throughput",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 27
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Unique Devices Polled (1h)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 28
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "steps": [
+              {
+                "color": "#EF4444",
+                "value": null
+              },
+              {
+                "color": "#F59E0B",
+                "value": 1
+              },
+              {
+                "color": "#10B981",
+                "value": 10
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "custom.fontFamily",
+                "value": "'Roboto Mono', monospace"
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "expr": "count(count by (device_id) (ims_pipeline_devices_polled_total))",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "description": "Count of distinct devices successfully polled in the last hour.",
+      "options": {
+        "noValue": "0"
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Devices Polled / cycle",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 28
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "color": {
+            "fixedColor": "#3B82F6",
+            "mode": "fixed"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "spanNulls": true,
+            "showGridLines": false,
+            "axisBorderShow": false
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "expr": "ims_pipeline_devices_polled_total",
+          "legendFormat": "Devices",
+          "refId": "A"
+        }
+      ],
+      "description": "Number of devices polled per injection cycle."
+    },
+    {
+      "type": "gauge",
+      "title": "Pipeline Success Rate",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 28
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "decimals": 2,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "steps": [
+              {
+                "color": "#EF4444",
+                "value": null
+              },
+              {
+                "color": "#F59E0B",
+                "value": 0.95
+              },
+              {
+                "color": "#10B981",
+                "value": 0.99
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "/.*/"
+            },
+            "properties": [
+              {
+                "id": "custom.fontFamily",
+                "value": "'Roboto Mono', monospace"
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "expr": "rate(ims_pipeline_inserts_total[5m]) / (rate(ims_pipeline_inserts_total[5m]) + rate(ims_pipeline_inserts_failed_total[5m]))",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "description": "Ratio of successful inserts to total inserts (success / (success + failure)).",
+      "options": {
+        "noValue": "N/A"
+      }
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 39,
+  "tags": [
+    "ims",
+    "meta-monitoring",
+    "sre"
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "DS_PROMETHEUS",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "options": [],
+        "queryValue": "",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false
+      }
+    ]
+  },
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "title": "IMS Pipeline Health & Meta-Monitoring",
+  "uid": "ims-meta-monitoring",
+  "version": 1,
+  "timezone": "browser"
+}
