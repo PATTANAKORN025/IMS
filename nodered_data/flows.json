@@ -14,7 +14,7 @@
         "info": "Alertmanager webhook → LINE Messaging API / MS Teams"
     },
     {
-        "id": "cc8ebf35801566c3",
+        "id": "868a2c42d7dce724",
         "type": "tab",
         "label": "windows - subtree",
         "disabled": false,
@@ -74,6 +74,156 @@
         "user": "myuser",
         "userFieldType": "str",
         "password": "mypassword",
+        "passwordFieldType": "str"
+    },
+    {
+        "id": "d23aed98dba3f06a",
+        "type": "postgreSQLConfig",
+        "name": "myproject node-red",
+        "host": "127.0.0.1",
+        "hostFieldType": "str",
+        "port": "5433",
+        "portFieldType": "num",
+        "database": "mydatabase",
+        "databaseFieldType": "str",
+        "ssl": "false",
+        "sslFieldType": "bool",
+        "applicationName": "",
+        "applicationNameType": "str",
+        "max": "10",
+        "maxFieldType": "num",
+        "idle": "1000",
+        "idleFieldType": "num",
+        "connectionTimeout": "10000",
+        "connectionTimeoutFieldType": "num",
+        "user": "myuser",
+        "userFieldType": "str",
+        "password": "mypassword",
+        "passwordFieldType": "str"
+    },
+    {
+        "id": "d74a7920f71976b1",
+        "type": "postgreSQLConfig",
+        "name": "Monitoring DB",
+        "host": "127.0.0.1",
+        "hostFieldType": "str",
+        "port": "5432",
+        "portFieldType": "num",
+        "database": "monitoring_db",
+        "databaseFieldType": "str",
+        "ssl": "false",
+        "sslFieldType": "bool",
+        "applicationName": "",
+        "applicationNameType": "str",
+        "max": 10,
+        "maxFieldType": "num",
+        "idle": 1000,
+        "idleFieldType": "num",
+        "connectionTimeout": 10000,
+        "connectionTimeoutFieldType": "num",
+        "user": "postgres",
+        "userFieldType": "str",
+        "password": "yourpassword",
+        "passwordFieldType": "str"
+    },
+    {
+        "id": "a13d29d57fef4661",
+        "type": "postgreSQLConfig",
+        "name": "myproject node-red",
+        "host": "127.0.0.1",
+        "hostFieldType": "str",
+        "port": "5433",
+        "portFieldType": "num",
+        "database": "mydatabase",
+        "databaseFieldType": "str",
+        "ssl": "false",
+        "sslFieldType": "bool",
+        "applicationName": "",
+        "applicationNameType": "str",
+        "max": "10",
+        "maxFieldType": "num",
+        "idle": "1000",
+        "idleFieldType": "num",
+        "connectionTimeout": "10000",
+        "connectionTimeoutFieldType": "num",
+        "user": "myuser",
+        "userFieldType": "str",
+        "password": "mypassword",
+        "passwordFieldType": "str"
+    },
+    {
+        "id": "f38eabd4774c11d2",
+        "type": "postgreSQLConfig",
+        "name": "Monitoring DB",
+        "host": "127.0.0.1",
+        "hostFieldType": "str",
+        "port": "5432",
+        "portFieldType": "num",
+        "database": "monitoring_db",
+        "databaseFieldType": "str",
+        "ssl": "false",
+        "sslFieldType": "bool",
+        "applicationName": "",
+        "applicationNameType": "str",
+        "max": 10,
+        "maxFieldType": "num",
+        "idle": 1000,
+        "idleFieldType": "num",
+        "connectionTimeout": 10000,
+        "connectionTimeoutFieldType": "num",
+        "user": "postgres",
+        "userFieldType": "str",
+        "password": "yourpassword",
+        "passwordFieldType": "str"
+    },
+    {
+        "id": "32b89d80a2242cbb",
+        "type": "postgreSQLConfig",
+        "name": "myproject node-red",
+        "host": "127.0.0.1",
+        "hostFieldType": "str",
+        "port": "5433",
+        "portFieldType": "num",
+        "database": "mydatabase",
+        "databaseFieldType": "str",
+        "ssl": "false",
+        "sslFieldType": "bool",
+        "applicationName": "",
+        "applicationNameType": "str",
+        "max": "10",
+        "maxFieldType": "num",
+        "idle": "1000",
+        "idleFieldType": "num",
+        "connectionTimeout": "10000",
+        "connectionTimeoutFieldType": "num",
+        "user": "myuser",
+        "userFieldType": "str",
+        "password": "mypassword",
+        "passwordFieldType": "str"
+    },
+    {
+        "id": "d4a889a01192046d",
+        "type": "postgreSQLConfig",
+        "name": "Monitoring DB",
+        "host": "127.0.0.1",
+        "hostFieldType": "str",
+        "port": "5432",
+        "portFieldType": "num",
+        "database": "monitoring_db",
+        "databaseFieldType": "str",
+        "ssl": "false",
+        "sslFieldType": "bool",
+        "applicationName": "",
+        "applicationNameType": "str",
+        "max": 10,
+        "maxFieldType": "num",
+        "idle": 1000,
+        "idleFieldType": "num",
+        "connectionTimeout": 10000,
+        "connectionTimeoutFieldType": "num",
+        "user": "postgres",
+        "userFieldType": "str",
+        "password": "yourpassword",
         "passwordFieldType": "str"
     },
     {
@@ -814,9 +964,9 @@
         "wires": []
     },
     {
-        "id": "4198ad5c9b2a202d",
+        "id": "9920e9a07be4eb13",
         "type": "inject",
-        "z": "cc8ebf35801566c3",
+        "z": "868a2c42d7dce724",
         "name": "Poll Subtree Every 10s",
         "props": [
             {
@@ -830,23 +980,24 @@
         "topic": "",
         "payload": "",
         "payloadType": "date",
-        "x": 150,
+        "x": 110,
         "y": 300,
         "wires": [
             [
-                "a973f35143cf857d",
-                "a5ebf6b42e980b8c",
-                "c8a8e4c0ef2573a9",
-                "365dcb3f0daf5d6a",
-                "57ba0b0f5a8edc4e",
-                "3e1fc62b6bb2e50d"
+                "10ca6a32076e4c76",
+                "eb2d9aa54c48cd23",
+                "b80cf0c524f52908",
+                "ff7acbaf3c2d30d1",
+                "dee93d58fa58c86e",
+                "def6900d50c56adc",
+                "161eef48a06e0a88"
             ]
         ]
     },
     {
-        "id": "b9993ca9d5a4eea9",
+        "id": "2492922e01072bb8",
         "type": "snmp",
-        "z": "cc8ebf35801566c3",
+        "z": "868a2c42d7dce724",
         "host": "192.168.50.10",
         "version": "2c",
         "timeout": "5",
@@ -855,17 +1006,17 @@
         "oids": "1.3.6.1.2.1.1.5.0",
         "name": "System Name",
         "x": 400,
-        "y": 180,
+        "y": 140,
         "wires": [
             [
-                "f770be44c1a213c6"
+                "80abd2f9de864f8e"
             ]
         ]
     },
     {
-        "id": "f770be44c1a213c6",
+        "id": "80abd2f9de864f8e",
         "type": "function",
-        "z": "cc8ebf35801566c3",
+        "z": "868a2c42d7dce724",
         "name": "Parse System Name",
         "func": "const results = msg.payload;\nif (!Array.isArray(results) || results.length === 0) return null;\n\nlet val = results[0].value;\nif (Buffer.isBuffer(val)) val = val.toString('utf8');\n\n// ฝากชื่อเข้าไปflow อื่น\nflow.set(\"myServer\", val);\n\nmsg.payload = { \n    systemName: val \n    };\n//console.log(msg.payload.systemName);\nreturn msg;",
         "outputs": 1,
@@ -875,17 +1026,17 @@
         "finalize": "",
         "libs": [],
         "x": 640,
-        "y": 180,
+        "y": 140,
         "wires": [
             []
         ]
     },
     {
-        "id": "1f408c8a172565c6",
+        "id": "77040e1271e7b033",
         "type": "function",
-        "z": "cc8ebf35801566c3",
+        "z": "868a2c42d7dce724",
         "name": "Calc CPU",
-        "func": "// ดึงข้อมูล Payload ที่ได้จาก SNMP\nlet results = msg.payload;\nif (!Array.isArray(results) || results.length === 0) return null;\n\n// อาเรย์เก็บเปอร์เซ็นต์การใช้งานของ CPU แต่ละ Core\nlet cpuCores = [];\nresults.forEach(item => {\n    let oid = String(item.oid);\n    let val = (Buffer.isBuffer(item.value) ? item.value.toString('utf8') : item.value);\n\n    // กรองหาเฉพาะ OID ของ CPU \n    /*if (oid.includes(\"1.3.6.1.4.1.2636.3.1.13.1.8.\")) {\n        let num = Number(val);\n        if (!Number.isNaN(num) && num > 0) {\n            cpuCores.push(num);\n        }\n    }*/\n     if (oid.includes(\"1.3.6.1.2.1.25.3.3.1.2.\")) {\n        let num = Number(val);\n        if (!Number.isNaN(num) && num > 0) {\n            cpuCores.push(num);\n        }\n    }\n});\n\nif (cpuCores.length === 0) return null;\n\n// คำนวณหาค่าเฉลี่ยของทุก Core รวมกัน\nlet total = cpuCores.reduce((sum, val) => sum + val, 0);\nlet average = total / cpuCores.length;\n\nlet used_percent = Number(average.toFixed(2));\nlet free_percent = Number((100 - used_percent).toFixed(2));\n\n// ส่งโครงสร้างข้อมูลกราฟ CPU ออกไป\nmsg.payload = {\n    type: \"CPU\",\n    cores: cpuCores.length,\n    used_percent: used_percent,\n    free_percent: free_percent\n};\n\nreturn msg;",
+        "func": "// ดึงข้อมูล Payload ที่ได้จาก SNMP\nlet results = msg.payload;\nif (!Array.isArray(results) || results.length === 0) return null;\n//console.log(results);\n// อาเรย์เก็บเปอร์เซ็นต์การใช้งานของ CPU แต่ละ Core\nlet cpuCores = [];\nresults.forEach(item => {\n    let oid = String(item.oid);\n    let val = (Buffer.isBuffer(item.value) ? item.value.toString('utf8') : item.value);\n\n    // กรองหาเฉพาะ OID ของ CPU \n    /*if (oid.includes(\"1.3.6.1.4.1.2636.3.1.13.1.8.\")) {\n        let num = Number(val);\n        if (!Number.isNaN(num) && num > 0) {\n            cpuCores.push(num);\n        }\n    }*/\n     if (oid.includes(\"1.3.6.1.2.1.25.3.3.1.2.\")) {\n        let num = Number(val);\n        if (!Number.isNaN(num) && num > 0) {\n            cpuCores.push(num);\n        }\n    }\n});\n\nif (cpuCores.length === 0) return null;\n\n// คำนวณหาค่าเฉลี่ยของทุก Core รวมกัน\nlet total = cpuCores.reduce((sum, val) => sum + val, 0);\nlet average = total / cpuCores.length;\n\nlet used_percent = Number(average.toFixed(2));\nlet free_percent = Number((100 - used_percent).toFixed(2));\n\n// ส่งโครงสร้างข้อมูลกราฟ CPU ออกไป\nmsg.payload = {\n    type: \"CPU\",\n    cores: cpuCores.length,\n    used_percent: used_percent,\n    free_percent: free_percent\n};\n\nreturn msg;",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
@@ -896,17 +1047,16 @@
         "y": 300,
         "wires": [
             [
-                "cc6c99f8c0a1a315",
-                "ecd83f5c36ff794e"
+                "e76464403243eefe"
             ]
         ]
     },
     {
-        "id": "053586e47530117e",
+        "id": "96517780d9fc388a",
         "type": "function",
-        "z": "cc8ebf35801566c3",
+        "z": "868a2c42d7dce724",
         "name": "Calc RAM",
-        "func": "// ดึงข้อมูล Payload ที่ได้จาก SNMP\nlet results = msg.payload;\nif (!Array.isArray(results) || results.length === 0) return null;\n\n// ตัวแปรเก็บขนาด RAM รวมทั้งหมด\nlet totalRamMB = 0;\nlet components = {};\n\nresults.forEach(item => {\n    if (item.value == null || !item || !item.oid) return;\n    let oid = String(item.oid);\n    let val = (Buffer.isBuffer(item.value) ? item.value.toString(\"utf8\") : item.value);\n\n    // OID .15 คือขนาดรวมของ RAM ระบบ\n    if (oid.includes(\".13.1.15.\")) {\n        let num = Number(val);\n        if (!Number.isNaN(num) && num > totalRamMB) totalRamMB = num;\n    }\n\n    // แยกเอา Index ของแต่ละชิ้นส่วนเพื่อจับคู่ชื่อและค่าการใช้งาน\n    let match = oid.match(/\\.13\\.1\\.(5|11|12)\\.(.+)$/);\n    if (match) {\n        let type = match[1];\n        let idx = match[2];\n        if (!components[idx]) components[idx] = { buffer: 0, heap: 0, desc: \"\" };\n        \n        if (type === \"5\") components[idx].desc = String(val).toUpperCase();\n        if (type === \"11\") components[idx].buffer = Number(val);\n        if (type === \"12\") components[idx].heap = Number(val);\n    }\n});\n\nlet utilization = 0;\n\nfor (let idx in components) {\n    // เลือกเอาเฉพาะ RAM ของ ROUTING ENGINE มาใช้ (ถ้าเป็นรุ่นอื่นอาจจะต้องเปลี่ยนคำนี้)\n    if (components[idx].desc.includes(\"ROUTING ENGINE\")) {\n        utilization = Math.max(components[idx].buffer || 0, components[idx].heap || 0);\n        break; // Stop at the primary engine\n    }\n}\n\n// Fallback: If no routing engine found, take the highest pool\nif (utilization === 0) {\n    let allPools = Object.values(components).map(c => Math.max(c.buffer || 0, c.heap || 0));\n    if (allPools.length > 0) utilization = Math.max(...allPools);\n} console.log(utilization);\n\nif (utilization > 0) {\n    let total_gb = 0;\n    let used_gb = 0;\n    let free_gb = 0;\n\n    if (totalRamMB > 0) {\n        total_gb = Number((totalRamMB / 1024).toFixed(2));\n        used_gb = Number(((total_gb * utilization) / 100).toFixed(2));\n        free_gb = Number((total_gb - used_gb).toFixed(2));\n    }\n\n    // ส่งข้อมูล RAM ออกไปแสดงผลที่กราฟ\n    msg.payload = {\n        type: \"RAM\",\n        total_gb: total_gb,\n        used_gb: used_gb,\n        free_gb: free_gb,\n        utilization: utilization\n    };\n    return msg;\n}\n\nreturn null;",
+        "func": "// ดึงข้อมูล Payload ที่ได้จาก SNMP\nlet results = msg.payload;\nif (!Array.isArray(results) || results.length === 0) return null;\n\n// ตัวแปรเก็บขนาด RAM รวมทั้งหมด\nlet totalRamMB = 0;\nlet components = {};\n\nresults.forEach(item => {\n    if (item.value == null || !item || !item.oid) return;\n    let oid = String(item.oid);\n    let val = (Buffer.isBuffer(item.value) ? item.value.toString(\"utf8\") : item.value);\n\n    // OID .15 คือขนาดรวมของ RAM ระบบ\n    if (oid.includes(\".13.1.15.\")) {\n        let num = Number(val);\n        if (!Number.isNaN(num) && num > totalRamMB) totalRamMB = num;\n    }\n\n    // แยกเอา Index ของแต่ละชิ้นส่วนเพื่อจับคู่ชื่อและค่าการใช้งาน\n    let match = oid.match(/\\.13\\.1\\.(5|11|12)\\.(.+)$/);\n    if (match) {\n        let type = match[1];\n        let idx = match[2];\n        if (!components[idx]) components[idx] = { buffer: 0, heap: 0, desc: \"\" };\n        \n        if (type === \"5\") components[idx].desc = String(val).toUpperCase();\n        if (type === \"11\") components[idx].buffer = Number(val);\n        if (type === \"12\") components[idx].heap = Number(val);\n    }\n});\n\nlet utilization = 0;\n\nfor (let idx in components) {\n    // เลือกเอาเฉพาะ RAM ของ ROUTING ENGINE มาใช้ (ถ้าเป็นรุ่นอื่นอาจจะต้องเปลี่ยนคำนี้)\n    if (components[idx].desc.includes(\"ROUTING ENGINE\")) {\n        utilization = Math.max(components[idx].buffer || 0, components[idx].heap || 0);\n        break; // Stop at the primary engine\n    }\n}\n\n// Fallback: If no routing engine found, take the highest pool\nif (utilization === 0) {\n    let allPools = Object.values(components).map(c => Math.max(c.buffer || 0, c.heap || 0));\n    if (allPools.length > 0) utilization = Math.max(...allPools);\n} //console.log(utilization);\n\nif (utilization > 0) {\n    let total_gb = 0;\n    let used_gb = 0;\n    let free_gb = 0;\n\n    if (totalRamMB > 0) {\n        total_gb = Number((totalRamMB / 1024).toFixed(2));\n        used_gb = Number(((total_gb * utilization) / 100).toFixed(2));\n        free_gb = Number((total_gb - used_gb).toFixed(2));\n    }\n\n    // ส่งข้อมูล RAM ออกไปแสดงผลที่กราฟ\n    msg.payload = {\n        type: \"RAM\",\n        total_gb: total_gb,\n        used_gb: used_gb,\n        free_gb: free_gb,\n        utilization: utilization\n    };\n    return msg;\n}\n\nreturn null;",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
@@ -917,15 +1067,14 @@
         "y": 340,
         "wires": [
             [
-                "cb787353d6b26fe4",
-                "082044de18b04505"
+                "ab80991d2a1c9663"
             ]
         ]
     },
     {
-        "id": "e2f2f1befd929bd3",
+        "id": "9a6a7805db83b2b8",
         "type": "function",
-        "z": "cc8ebf35801566c3",
+        "z": "868a2c42d7dce724",
         "name": "Calc Disks",
         "func": "// ดึงข้อมูล Payload ที่ได้จาก SNMP\nlet results = msg.payload;\nif (!Array.isArray(results) || results.length === 0) return null;\n\nconst disks = {};\n\nresults.forEach(item => {\n    let oid = String(item.oid);\n    // ดึงเลข Index ประจำดิสก์\n    const match = oid.match(/\\.(\\d+)$/);\n    if (!match) return;\n    const index = match[1];\n    \n    if (!disks[index]) disks[index] = { index: index };\n\n    let val = (Buffer.isBuffer(item.value)) ? item.value.toString('utf8') : item.value;\n\n    if (oid.includes(\".25.2.3.1.3.\")) disks[index].descr = val;\n    if (oid.includes(\".25.2.3.1.4.\")) disks[index].allocUnit = Number(val);\n    if (oid.includes(\".25.2.3.1.5.\")) disks[index].sizeBlocks = Number(val);\n    if (oid.includes(\".25.2.3.1.6.\")) disks[index].usedBlocks = Number(val);\n});\n\nconst calculatedDisks = [];\n\nObject.entries(disks).forEach(([index, d]) => {\n\n    if (d.descr && d.sizeBlocks > 0 && d.allocUnit > 0) {\n        const descrUpper = String(d.descr).toUpperCase();\n\n        // ข้ามพวกที่เป็น RAM หรือ Virtual Memory (เราจะเอาแค่ดิสก์เก็บข้อมูลจริงๆ)\n        if (descrUpper.includes(\"MEMORY\") || descrUpper.includes(\"VIRTUAL\")) return;\n\n        // คำนวณขนาดเป็น Byte และแปลงเป็น GB\n        const totalBytes = d.sizeBlocks * d.allocUnit;\n        const usedBytes = d.usedBlocks * d.allocUnit;\n\n        const totalGB = (totalBytes / Math.pow(1024, 3)).toFixed(2);\n        const usedGB = (usedBytes / Math.pow(1024, 3)).toFixed(2);\n        const freeGB = ((totalBytes - usedBytes) / Math.pow(1024, 3)).toFixed(2);\n        \n        const utilPercent = ((d.usedBlocks / d.sizeBlocks) * 100).toFixed(1);\n\n        // จัดโครงสร้างข้อมูลดิสก์เตรียมส่งออก\n        calculatedDisks.push({\n            diskIndex: index,\n            name_disk: d.descr,\n            total_GB: Number(totalGB),\n            used_GB: Number(usedGB),\n            free_GB: Number(freeGB),\n            utilization_percent: Number(utilPercent)\n        });\n    }\n});\n\nmsg.payload = calculatedDisks;\nreturn msg;",
         "outputs": 1,
@@ -938,15 +1087,14 @@
         "y": 380,
         "wires": [
             [
-                "46e174833a091176",
-                "26aa139c9d77f576"
+                "b9fe92fe0a9dc77e"
             ]
         ]
     },
     {
-        "id": "c8a8e4c0ef2573a9",
+        "id": "ff7acbaf3c2d30d1",
         "type": "snmp subtree",
-        "z": "cc8ebf35801566c3",
+        "z": "868a2c42d7dce724",
         "host": "192.168.50.10",
         "version": "2c",
         "timeout": "5",
@@ -960,14 +1108,14 @@
         "y": 300,
         "wires": [
             [
-                "1f408c8a172565c6"
+                "77040e1271e7b033"
             ]
         ]
     },
     {
-        "id": "365dcb3f0daf5d6a",
+        "id": "dee93d58fa58c86e",
         "type": "snmp subtree",
-        "z": "cc8ebf35801566c3",
+        "z": "868a2c42d7dce724",
         "host": "192.168.50.10",
         "version": "2c",
         "timeout": "5",
@@ -981,14 +1129,14 @@
         "y": 340,
         "wires": [
             [
-                "053586e47530117e"
+                "96517780d9fc388a"
             ]
         ]
     },
     {
-        "id": "57ba0b0f5a8edc4e",
+        "id": "def6900d50c56adc",
         "type": "snmp subtree",
-        "z": "cc8ebf35801566c3",
+        "z": "868a2c42d7dce724",
         "host": "192.168.50.10",
         "version": "2c",
         "timeout": "20",
@@ -1002,14 +1150,14 @@
         "y": 380,
         "wires": [
             [
-                "e2f2f1befd929bd3"
+                "9a6a7805db83b2b8"
             ]
         ]
     },
     {
-        "id": "8fed99e233a67052",
+        "id": "21817121af51ae31",
         "type": "function",
-        "z": "cc8ebf35801566c3",
+        "z": "868a2c42d7dce724",
         "name": "check core",
         "func": "// ดึงข้อมูล Payload ที่ได้จาก SNMP\nlet results = msg.payload;\nif (!Array.isArray(results) || results.length === 0) return null;\n\n// อาเรย์เก็บเปอร์เซ็นต์การใช้งานของ CPU แต่ละ Core\nlet cpuCores = [];\nresults.forEach(item => {\n    let oid = String(item.oid);\n    let val = (Buffer.isBuffer(item.value) ? item.value.toString('utf8') : item.value);\n\n    // กรองหาเฉพาะ OID ของ CPU (ถ้าไม่ใช่ของ Juniper อาจจะต้องเปลี่ยนเลขนี้)\n    if (oid.includes(\".13.1.8.\")) {\n        let num = Number(val);\n        if (!Number.isNaN(num) && num > 0) {\n            cpuCores.push(num);\n        }\n    }\n});\n\nif (cpuCores.length === 0) return null;\n\n// คำนวณหาค่าเฉลี่ยของทุก Core รวมกัน\nlet total = cpuCores.reduce((sum, val) => sum + val, 0);\nlet average = total / cpuCores.length;\n\nlet used_percent = Number(average.toFixed(2));\nlet free_percent = Number((100 - used_percent).toFixed(2));\n\n// ส่งโครงสร้างข้อมูลกราฟ CPU ออกไป\nmsg.payload = {\n    type: \"CPU\",\n    cores: cpuCores.length,\n    used_percent: used_percent,\n    free_percent: free_percent\n};\n\nreturn msg;",
         "outputs": 1,
@@ -1025,9 +1173,9 @@
         ]
     },
     {
-        "id": "3e1fc62b6bb2e50d",
+        "id": "161eef48a06e0a88",
         "type": "snmp subtree",
-        "z": "cc8ebf35801566c3",
+        "z": "868a2c42d7dce724",
         "host": "192.168.50.10",
         "version": "2c",
         "timeout": "5",
@@ -1041,14 +1189,14 @@
         "y": 420,
         "wires": [
             [
-                "f6bccf25565decb9"
+                "857bb65d586fe18c"
             ]
         ]
     },
     {
-        "id": "f6bccf25565decb9",
+        "id": "857bb65d586fe18c",
         "type": "function",
-        "z": "cc8ebf35801566c3",
+        "z": "868a2c42d7dce724",
         "name": "Network",
         "func": "let results = msg.payload;\nif (!Array.isArray(results) || results.length === 0) {\n    node.warn(\"Network node received empty payload.\");\n    return null;\n}\n\nconst interfaces = {};\n\nresults.forEach(item => {\n    if (!item || !item.oid || item.value == null) return;\n    let oid = String(item.oid);\n    const match = oid.match(/\\.(\\d+)$/);\n    if (!match) return;\n    const index = match[1];\n    \n    if (!interfaces[index]) interfaces[index] = { index: index };\n\n    let val = Buffer.isBuffer(item.value) ? item.value.toString('utf8') : item.value;\n\n    if (oid.includes(\"1.3.6.1.2.1.2.2.1.2.\")) interfaces[index].name = val;\n    if (oid.includes(\"1.3.6.1.2.1.2.2.1.8.\")) interfaces[index].status = Number(val);\n    if (oid.includes(\"1.3.6.1.2.1.2.2.1.10.\")) interfaces[index].inBytes = BigInt(val);\n    if (oid.includes(\"1.3.6.1.2.1.2.2.1.16.\")) interfaces[index].outBytes = BigInt(val);\n});\n\nlet totalPhysical = 0;\nlet usedPhysical = 0;\nlet networkData = []; // เปลี่ยนเป็น Array ตามระบบใหม่\nconst now = Date.now();\nconst host = msg.host || \"old_system_host\";\nlet prevNet = global.get('old_net_' + host) || {};\nlet max32 = BigInt(\"4294967295\");\n\nObject.values(interfaces).forEach(interf => {\n    if (!interf.name) return;\n    \n    let nameStr = String(interf.name).toLowerCase();\n    \n    // เลือกเฉพาะพอร์ตสายแลนจริง (Physical Ports)\n    // ถ้าอยากได้พอร์ตทั้งหมด ให้ใส่คอมเมนต์ (//) หน้าคำว่า if ด้านล่างนี้ และเอาปีกกา { } ออก\n     if (nameStr.startsWith(\"ge-\") || nameStr.startsWith(\"xe-\") || nameStr.startsWith(\"et-\") || nameStr.startsWith(\"ae-\")) \n     {\n        totalPhysical++;\n        \n        let isUp = (interf.status === 1);\n        \n        // เลือกเฉพาะพอร์ตที่ UP ให้ใส่คอมเมนต์ (//) หน้าคำว่า if บรรทัดด้านล่างนี้ออก (ปัจจุบันเปิดให้ดูทั้งหมด)\n         if (isUp) \n         {\n            if (isUp) usedPhysical++;\n            \n            let rxMbps = 0; let txMbps = 0;\n            let inBytes = interf.inBytes || 0n; \n            let outBytes = interf.outBytes || 0n;\n            \n            if (prevNet[interf.index]) {\n                let prev = prevNet[interf.index];\n                let timeDiff = (now - prev.time) / 1000;\n                if (timeDiff > 0) {\n                    let prevIn = BigInt(prev.inBytes || \"0\");\n                    let prevOut = BigInt(prev.outBytes || \"0\");\n                    \n                    let rxDiff = Number(inBytes - prevIn);\n                    let txDiff = Number(outBytes - prevOut);\n                    \n                    if (rxDiff < 0) rxDiff = Number((max32 - prevIn) + inBytes);\n                    if (txDiff < 0) txDiff = Number((max32 - prevOut) + outBytes);\n                    \n                    if (rxDiff < 0) rxDiff = 0;\n                    if (txDiff < 0) txDiff = 0;\n                    \n                    rxMbps = (rxDiff * 8) / (1000000 * timeDiff);\n                    txMbps = (txDiff * 8) / (1000000 * timeDiff);\n                }\n            }\n            \n            prevNet[interf.index] = { time: now, inBytes: inBytes.toString(), outBytes: outBytes.toString() };\n            \n            networkData.push({\n                name: interf.name,\n                status: isUp ? \"ON\" : \"OFF\",\n                received_MB: parseFloat(rxMbps.toFixed(4)),\n                sent_MB: parseFloat(txMbps.toFixed(4))\n            });\n         } \n     } \n});\n\n// GC\nconst GC_TIMEOUT = 20 * 60 * 1000;\nObject.keys(prevNet).forEach(key => {\n    if (now - prevNet[key].time > GC_TIMEOUT) delete prevNet[key];\n});\nglobal.set('old_net_' + host, prevNet);\n\nmsg.summary = {\n    total_physical_ports: totalPhysical,\n    used_physical_ports: usedPhysical\n};\n\n//node.warn(\"Network Summary (Old System Upgraded): \" + usedPhysical + \" / \" + totalPhysical + \" ports are UP!\");\n\nmsg.payload = networkData;\nreturn msg;",
         "outputs": 1,
@@ -1061,17 +1209,16 @@
         "y": 420,
         "wires": [
             [
-                "081ad03bc6502625",
-                "2cc3fe7de3332c00"
+                "19c74ca308d497d8"
             ]
         ]
     },
     {
-        "id": "cc6c99f8c0a1a315",
+        "id": "e76464403243eefe",
         "type": "function",
-        "z": "cc8ebf35801566c3",
+        "z": "868a2c42d7dce724",
         "name": "save to databaes",
-        "func": "let nameServer = flow.get(\"myServer\") || \"Unknown\";\nlet ipServer = flow.get(\"myIP\"); \nlet maxTemp = flow.get(\"temp\");\n\nlet cpuUsed = msg.payload.used_percent; \nlet cpuFree = msg.payload.free_percent; \n\nif(cpuUsed == null || cpuFree == null) return null; \n\nmsg.query = `INSERT INTO cpu_db (name_server, ip_address, used_percent, free_percent, temperature) \nVALUES ($1, $2, $3, $4, $5)`;\nmsg.params = [nameServer, ipServer, cpuUsed, cpuFree, maxTemp];\n\nreturn msg;",
+        "func": "let nameServer = flow.get(\"myServer\") || \"Unknown\";\nlet ipServer = flow.get(\"myIP\"); \nlet maxTemp = flow.get(\"temp\");\nlet uptime = flow.get(\"uptime\");\n\nlet cpuUsed = msg.payload.used_percent; \nlet cpuFree = msg.payload.free_percent; \n\nif(cpuUsed == null || cpuFree == null) return null; \n\nmsg.query = `INSERT INTO cpu_db (name_server, ip_address, used_percent, free_percent, temperature,uptime) \nVALUES ($1, $2, $3, $4, $5, $6)`;\nmsg.params = [nameServer, ipServer, cpuUsed, cpuFree, maxTemp, uptime];\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -1082,17 +1229,17 @@
         "y": 300,
         "wires": [
             [
-                "c908999a1920881d"
+                "39f052146f34b39b"
             ]
         ]
     },
     {
-        "id": "c908999a1920881d",
+        "id": "39f052146f34b39b",
         "type": "postgresql",
-        "z": "cc8ebf35801566c3",
+        "z": "868a2c42d7dce724",
         "name": "123",
         "query": "",
-        "postgreSQLConfig": "875b4be92c99ca0a",
+        "postgreSQLConfig": "32b89d80a2242cbb",
         "split": true,
         "rowsPerMsg": 1,
         "outputs": 1,
@@ -1103,9 +1250,9 @@
         ]
     },
     {
-        "id": "a973f35143cf857d",
+        "id": "eb2d9aa54c48cd23",
         "type": "snmp subtree",
-        "z": "cc8ebf35801566c3",
+        "z": "868a2c42d7dce724",
         "host": "192.168.50.10",
         "version": "2c",
         "timeout": "5",
@@ -1116,17 +1263,17 @@
         "oids": "1.3.6.1.2.1.4.20.1.1",
         "name": "ip",
         "x": 430,
-        "y": 220,
+        "y": 180,
         "wires": [
             [
-                "46bb7c237930b9ed"
+                "37476785206d8db0"
             ]
         ]
     },
     {
-        "id": "46bb7c237930b9ed",
+        "id": "37476785206d8db0",
         "type": "function",
-        "z": "cc8ebf35801566c3",
+        "z": "868a2c42d7dce724",
         "name": "ipaddress",
         "func": "// ดึงข้อมูล Payload ที่ได้จาก SNMP\nconst results = msg.payload;\nif (!Array.isArray(results) || results.length === 0) return null;\n\nlet ipAddress = \"Unknown\";\n\nresults.forEach(item => {\n    \n    let ipOid = String(item.oid);\n    // หา OID ของตาราง IP Address\n    if (ipOid.includes(\"1.3.6.1.2.1.4.20.1.1.\")){\n        let cutIp = ipOid.split(\"1.3.6.1.2.1.4.20.1.1.\")[1];\n        // กรองเอา IP ที่ไม่เอา \n        if (cutIp && cutIp !== \"127.0.0.1\") {\n        ipAddress = cutIp;\n    //console.log(ipOid);\n    }\n}\n});\n//console.log(ipAddress);\n// บันทึก IP ลงใน Flow เพื่อส่งให้ Database ใช้\nflow.set(\"myIP\", ipAddress);\n\nmsg.payload = { \n    ip: ipAddress \n    };\n//console.log(msg.payload.ip);\nreturn msg;",
         "outputs": 1,
@@ -1136,15 +1283,15 @@
         "finalize": "",
         "libs": [],
         "x": 680,
-        "y": 220,
+        "y": 180,
         "wires": [
             []
         ]
     },
     {
-        "id": "cb787353d6b26fe4",
+        "id": "ab80991d2a1c9663",
         "type": "function",
-        "z": "cc8ebf35801566c3",
+        "z": "868a2c42d7dce724",
         "name": "save to databaes",
         "func": "// ดึงชื่อและ IP ของเซิร์ฟเวอร์จากที่บันทึกไว้ใน Flow\nlet nameServer = flow.get(\"myServer\") || \"Unknown\";\nlet ipServer = flow.get(\"myIP\");\n\nlet ramTotal = msg.payload.total_gb || 0; \nlet ramUsed = msg.payload.used_gb || 0; \nlet ramFree = msg.payload.free_gb || 0;\nlet ramUtilization = msg.payload.utilization;\n\nif (ramUtilization == null) return null ; \n\n// คำสั่ง SQL สำหรับบันทึกข้อมูลลงฐานข้อมูล\nmsg.query= `\n        INSERT INTO ram_db (name_server,ip_address,total_gb,used_gb,free_gb,utilization)\n        VALUES ($1,$2,$3,$4,$5,$6);\n    `;\nmsg.params = [nameServer, ipServer, ramTotal, ramUsed, ramFree, ramUtilization]\n\nreturn msg;",
         "outputs": 1,
@@ -1157,17 +1304,17 @@
         "y": 340,
         "wires": [
             [
-                "fbeb232e5c269660"
+                "39e80982aa923e72"
             ]
         ]
     },
     {
-        "id": "fbeb232e5c269660",
+        "id": "39e80982aa923e72",
         "type": "postgresql",
-        "z": "cc8ebf35801566c3",
+        "z": "868a2c42d7dce724",
         "name": "123",
         "query": "",
-        "postgreSQLConfig": "875b4be92c99ca0a",
+        "postgreSQLConfig": "32b89d80a2242cbb",
         "split": true,
         "rowsPerMsg": 1,
         "outputs": 1,
@@ -1178,12 +1325,12 @@
         ]
     },
     {
-        "id": "6d5c6194b9b6d6c4",
+        "id": "68181beab3200f31",
         "type": "postgresql",
-        "z": "cc8ebf35801566c3",
+        "z": "868a2c42d7dce724",
         "name": "123",
         "query": "",
-        "postgreSQLConfig": "875b4be92c99ca0a",
+        "postgreSQLConfig": "32b89d80a2242cbb",
         "split": true,
         "rowsPerMsg": 1,
         "outputs": 1,
@@ -1194,9 +1341,9 @@
         ]
     },
     {
-        "id": "46e174833a091176",
+        "id": "b9fe92fe0a9dc77e",
         "type": "function",
-        "z": "cc8ebf35801566c3",
+        "z": "868a2c42d7dce724",
         "name": "save to databaes",
         "func": "// ดึงชื่อและ IP ของเซิร์ฟเวอร์\nlet nameServer = flow.get(\"myServer\") || \"Unknown\";\nlet ipServer = flow.get(\"myIP\") || \"0.0.0.0\";\n\nlet diskList = msg.payload;\n\nif (!Array.isArray(diskList) || diskList.length === 0 ) return null;\n\nlet values = [];\nlet params = [];\nlet paramIndex = 1;\n\ndiskList.forEach(item => {\n    let diskIndex = Number(item.diskIndex);\n    let diskname = item.name_disk;\n    let diskTotal = Number(item.total_GB);\n    let diskUsed = Number(item.used_GB);\n    let diskFree = Number(item.free_GB);\n    let diskUtilization = item.utilization_percent;\n\n    if (diskIndex == null || diskname == null || diskTotal == null || diskUsed == null || diskFree == null || diskUtilization == null) return;\n\n    // สร้างชุดตัวแปร $1, $2 สำหรับทำ Batch Insert ทีละหลายๆ แถว\n    values.push(`($${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++})`);\n    params.push(nameServer, ipServer, diskIndex, diskname, diskTotal, diskUsed, diskFree, diskUtilization);\n    //console.log(item);\n});\n\nif (values.length === 0) return null;\n\n// คำสั่ง SQL สำหรับบันทึกข้อมูลดิสก์ทั้งหมดพร้อมกัน\nmsg.query = `INSERT INTO disks_db (name_server, ip_address, disksindex, disks_name, total_gb, used_gb, free_gb, utilization_disk) \n             VALUES ${values.join(', ')};`;\nmsg.params = params;\n\nreturn msg;",
         "outputs": 1,
@@ -1209,14 +1356,14 @@
         "y": 380,
         "wires": [
             [
-                "6d5c6194b9b6d6c4"
+                "68181beab3200f31"
             ]
         ]
     },
     {
-        "id": "081ad03bc6502625",
+        "id": "19c74ca308d497d8",
         "type": "function",
-        "z": "cc8ebf35801566c3",
+        "z": "868a2c42d7dce724",
         "name": "save to databaes",
         "func": "// ดึงชื่อและ IP ของเซิร์ฟเวอร์\nlet nameServer = flow.get(\"myServer\") || \"Unknown\";\nlet ipServer = flow.get(\"myIP\") || \"0.0.0.0\";\n\nlet networkList = Object.values(msg.payload);\nif (!Array.isArray(networkList) || networkList.length === 0) return null;\n\nlet values = [];\nlet params = [];\nlet paramIndex = 1;\n\nnetworkList.forEach(item => {\n    let netname = String(item.name || \"\").replace(/\\0/g, \"\").trim();\n    let netstatus = String(item.status || \"\").replace(/\\0/g, \"\").trim();\n    let netreceived = Number(item.received_MB);\n    let netsent = Number(item.sent_MB);\n\n    if (!netname || !netstatus || isNaN(netreceived) || isNaN(netsent)) return;\n    // กรองเอาเฉพาะการ์ดแลนที่สถานะเป็น ON (UP) ลงฐานข้อมูล\n    if(netstatus === \"ON\"){\n    values.push(`($${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++}, $${paramIndex++})`);\n    params.push(nameServer, ipServer, netname, netstatus, netreceived, netsent)\n    };\n});\n\nif (values.length === 0) return null;\n\n// คำสั่ง SQL สำหรับบันทึกข้อมูลเครือข่าย\nmsg.query = `INSERT INTO network_db (name_server, ip_address, network_name, status, received_mb, sent_mb)\n             VALUES ${values.join(', ')}`;\nmsg.params = params;\n\nreturn msg;",
         "outputs": 1,
@@ -1229,17 +1376,17 @@
         "y": 420,
         "wires": [
             [
-                "de2859ba5d363552"
+                "acbbacafbd944600"
             ]
         ]
     },
     {
-        "id": "de2859ba5d363552",
+        "id": "acbbacafbd944600",
         "type": "postgresql",
-        "z": "cc8ebf35801566c3",
+        "z": "868a2c42d7dce724",
         "name": "123",
         "query": "",
-        "postgreSQLConfig": "875b4be92c99ca0a",
+        "postgreSQLConfig": "32b89d80a2242cbb",
         "split": true,
         "rowsPerMsg": 1,
         "outputs": 1,
@@ -1250,9 +1397,9 @@
         ]
     },
     {
-        "id": "2cc3fe7de3332c00",
+        "id": "7ff563576027c4e6",
         "type": "debug",
-        "z": "cc8ebf35801566c3",
+        "z": "868a2c42d7dce724",
         "name": "debug 1",
         "active": true,
         "tosidebar": true,
@@ -1266,9 +1413,9 @@
         "wires": []
     },
     {
-        "id": "26aa139c9d77f576",
+        "id": "b10842077505fe5d",
         "type": "debug",
-        "z": "cc8ebf35801566c3",
+        "z": "868a2c42d7dce724",
         "name": "debug 2",
         "active": true,
         "tosidebar": true,
@@ -1282,9 +1429,9 @@
         "wires": []
     },
     {
-        "id": "082044de18b04505",
+        "id": "9b8119b6d7e450c9",
         "type": "debug",
-        "z": "cc8ebf35801566c3",
+        "z": "868a2c42d7dce724",
         "name": "debug 3",
         "active": true,
         "tosidebar": true,
@@ -1298,9 +1445,9 @@
         "wires": []
     },
     {
-        "id": "ecd83f5c36ff794e",
+        "id": "97752dfc21a40be7",
         "type": "debug",
-        "z": "cc8ebf35801566c3",
+        "z": "868a2c42d7dce724",
         "name": "debug 4",
         "active": true,
         "tosidebar": true,
@@ -1314,9 +1461,9 @@
         "wires": []
     },
     {
-        "id": "2b160de46e7f81fa",
+        "id": "a8703f2f9c5a5fe0",
         "type": "function",
-        "z": "cc8ebf35801566c3",
+        "z": "868a2c42d7dce724",
         "name": "Calc Temp",
         "func": "// ดึงข้อมูล Payload ที่ได้จาก SNMP\nlet results = msg.payload;\nif (!Array.isArray(results) || results.length === 0) return null;\n//console.log(results);\n\n// อาเรย์เก็บค่าอุณหภูมิที่อ่านได้ทั้งหมด\nlet temps = [];\nresults.forEach(item => {\n    let val = Buffer.isBuffer(item.value) ? item.value.toString('utf8') : item.value;\n    let num = Number(val);\n    if (!Number.isNaN(num) && num > 0) {\n        temps.push(num);\n    }\n});\n\nif (temps.length === 0) return null;\n\n// เลือกค่าอุณหภูมิที่\nlet maxTemp = temps[1];\n//console.log(maxTemp);\n\n// เก็บค่าความร้อนไว้ใน Flow เผื่อไปใช้ลง Database\nflow.set('temp',maxTemp);\nmsg.payload = {\n    type: \"Temperature\",\n    celsius: maxTemp\n};\n\n//console.log(maxTemp);\nreturn msg;",
         "outputs": 1,
@@ -1328,15 +1475,13 @@
         "x": 670,
         "y": 260,
         "wires": [
-            [
-                "ecd83f5c36ff794e"
-            ]
+            []
         ]
     },
     {
-        "id": "a5ebf6b42e980b8c",
+        "id": "b80cf0c524f52908",
         "type": "snmp subtree",
-        "z": "cc8ebf35801566c3",
+        "z": "868a2c42d7dce724",
         "host": "192.168.50.10",
         "version": "2c",
         "timeout": "30",
@@ -1350,8 +1495,47 @@
         "y": 260,
         "wires": [
             [
-                "2b160de46e7f81fa"
+                "a8703f2f9c5a5fe0"
             ]
+        ]
+    },
+    {
+        "id": "10ca6a32076e4c76",
+        "type": "snmp subtree",
+        "z": "868a2c42d7dce724",
+        "host": "192.168.50.10",
+        "version": "2c",
+        "timeout": 5,
+        "community": "NetK@",
+        "auth": "noAuthNoPriv",
+        "authprot": "MD5",
+        "privprot": "DES",
+        "oids": "1.3.6.1.2.1.1.3",
+        "name": "uptime",
+        "x": 430,
+        "y": 220,
+        "wires": [
+            [
+                "169a4740d9acc6f5"
+            ]
+        ]
+    },
+    {
+        "id": "169a4740d9acc6f5",
+        "type": "function",
+        "z": "868a2c42d7dce724",
+        "name": "uptime",
+        "func": "let results = msg.payload;\nif (!Array.isArray(results) || results.length === 0) return null;\n\n// ดึงค่า value จาก object ตัวแรกสุด\nlet time = Number(results[0].value);\nif (isNaN(time)) return null;\n\nlet totaltime = Math.floor(time / 100);\n//console.log(totaltime);\nlet day = Math.floor(totaltime / 86400);\nlet hours = Math.floor((totaltime % 86400) / 3600);\nlet minuter = Math.floor((totaltime % 3600) / 60); \nlet seconds = totaltime % 60;\n\nconst uptimetext = `${day} day ${hours} hours ${minuter} minuter ${seconds} seconds`;\n\nflow.set(\"uptime\", totaltime);\nmsg.payload = {\n    type: \"uptime\",\n    uptime:uptimetext\n};\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 690,
+        "y": 220,
+        "wires": [
+            []
         ]
     }
 ]
