@@ -64,9 +64,9 @@ test('Temperature: empty payload preserves previous max from state', () => {
 
 test('Storage: empty payload returns zeroed disk metrics', () => {
     const r = parseAll([], 'storage', { ...emptyState });
-    assert.strictEqual(r.disk.ramTotalMb, 0);
+    assert.ok(r.disk.ramTotalMb >= 1, 'ramTotalMb min 1 (div-by-zero protection)');
     assert.strictEqual(r.disk.ramUsedMb, 0);
-    assert.strictEqual(r.disk.totalGb, 0);
+    assert.ok(r.disk.totalGb >= 1, 'totalGb min 1 (div-by-zero protection)');
     assert.strictEqual(r.disk.usedGb, 0);
 });
 
