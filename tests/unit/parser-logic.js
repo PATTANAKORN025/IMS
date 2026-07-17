@@ -6,7 +6,6 @@
 
 const IFTABLE_OID_RE = /1\.3\.6\.1\.2\.1\.2\.2\.1\.(\d+)\.(\d+)$/;
 const IFXTABLE_OID_RE = /1\.3\.6\.1\.2\.1\.31\.1\.1\.1\.(\d+)\.(\d+)$/;
-const STORAGE_ENTRY_RE = /1\.3\.6\.1\.2\.1\.25\.2\.3\.1\.(\d+)\.(\d+)$/;
 
 function parseAll(items, type, state) {
     const cpu = { total: 0, count: 0, cores: {} }; let maxTemp = state.temp || 0; const tempSensors = {}; const storageEntries = {}; const ifaces = {};
@@ -19,7 +18,7 @@ function parseAll(items, type, state) {
         const val = item.value; const numVal = (typeof val === 'number') ? val : (Number(val) || 0);
         if (type === 'cpu' && oid.startsWith('1.3.6.1.2.1.25.3.3.1.2.')) { if (Number.isFinite(numVal) && numVal > 0) { cpu.total += numVal; cpu.count++; } continue; }
         if (type === 'temp' && (oid.startsWith('1.3.6.1.4.1.2021.13.16.2.1.7.') || oid.startsWith('1.3.6.1.4.1.2636.3.1.13.1.7.'))) { if (numVal > 0 && numVal > maxTemp) maxTemp = numVal; continue; }
-        if (type === 'storage') {  const m = oid.match(STORAGE_ENTRY_RE); if (m) { const [, p, i] = m; if (!storageEntries[i]) storageEntries[i] = { type: '', au: 0, size: 0, used: 0 }; const raw = Buffer.isBuffer(val) ? val.toString('utf8') : val; if (p === '2') storageEntries[i].type = String(raw); if (p === '4') storageEntries[i].au = Number(raw) || 0; if (p === '5') storageEntries[i].size = Number(raw) || 0; if (p === '6') storageEntries[i].used = Number(raw) || 0; continue; } }
+        if (type === 'storage' && oid.startsWith('1.3.6.1.2.1.25.2.3.1.')) { const parts = oid.split('.'); const p = parts[parts.length - 2]; const i = parts[parts.length - 1]; if (!storageEntries[i]) storageEntries[i] = { type: '', au: 0, size: 0, used: 0 }; const raw = Buffer.isBuffer(val) ? val.toString('utf8') : String(val); if (p === '2') storageEntries[i].type = raw; if (p === '4') storageEntries[i].au = Number(raw) || 0; if (p === '5') storageEntries[i].size = Number(raw) || 0; if (p === '6') storageEntries[i].used = Number(raw) || 0; continue; }
         if (type === 'net') {
             const im = oid.match(IFTABLE_OID_RE);
             if (im) { const [, p, i] = im; if (!ifaces[i]) ifaces[i] = mkIface(i); if (p === '2') ifaces[i].name = String(val); if (p === '8') ifaces[i].status = Number(val); if (p === '10') ifaces[i].rx32 = Number(val) || 0; if (p === '13') ifaces[i].drop += Number(val) || 0; if (p === '14') ifaces[i].err += Number(val) || 0; if (p === '16') ifaces[i].tx32 = Number(val) || 0; continue; }
@@ -28,7 +27,7 @@ function parseAll(items, type, state) {
         }
         if (type === 'ldi' && LDI_MAP[oid]) { const lm = LDI_MAP[oid]; const s = numVal / lm.div; if (lm.key === 'pe') { ldi.pe = ldi.pe ? (ldi.pe + s) / 2 : s; } else { ldi[lm.key] = Number(s.toFixed(2)); } continue; }
     }
-    if (type === 'storage') { for (const e of Object.values(storageEntries)) { if (!e.size || !e.au) continue; const tb = e.size * e.au; const ub = e.used * e.au; if (/25\.2\.1\.2/.test(e.type)) { ramTotalMb += tb / 1048576; ramUsedMb += ub / 1048576; } else if (/25\.2\.1\.4/.test(e.type)) { diskTotalGb += tb / 1073741824; diskUsedGb += ub / 1073741824; } } ramUsedMb = Math.min(ramUsedMb, ramTotalMb); ramTotalMb = Math.min(ramTotalMb, 1048576); diskUsedGb = Math.min(diskUsedGb, diskTotalGb); diskTotalGb = Math.min(diskTotalGb, 1048576); }
+    if (type === 'storage') { for (const e of Object.values(storageEntries)) { if (!e.size || !e.au) continue; const bytesTotal = e.size * e.au; const bytesUsed = e.used * e.au; const typeStr = (e.type || '').toLowerCase(); const isRam = /ram|virtual|memory|25\.2\.1\.2|25\.2\.1\.3/i.test(typeStr); const isDisk = /disk|flash|fixed|storage|25\.2\.1\.4/i.test(typeStr); if (isRam) { ramTotalMb += bytesTotal / 1048576; ramUsedMb += bytesUsed / 1048576; } else if (isDisk || (!isRam && bytesTotal > 1073741824)) { diskTotalGb += bytesTotal / 1073741824; diskUsedGb += bytesUsed / 1073741824; } } if (ramTotalMb === 0) ramTotalMb = 1; if (diskTotalGb === 0) diskTotalGb = 1; ramUsedMb = Math.min(ramUsedMb, ramTotalMb); ramTotalMb = Math.min(ramTotalMb, 1048576); diskUsedGb = Math.min(diskUsedGb, diskTotalGb); diskTotalGb = Math.min(diskTotalGb, 1048576); }
     const cpuLoad = cpu.count > 0 ? Number((cpu.total / cpu.count).toFixed(2)) : state.cpu_load || 0;
     return { cpu: { coreCount: cpu.count, loadPercent: Math.max(0, Math.min(100, cpuLoad)), cpuMetrics: cpu.cores }, temp: { maxC: Math.max(-40, Math.min(150, Number(maxTemp.toFixed(2)))), tempMetrics: tempSensors }, disk: { ramTotalMb: Math.max(0, Number(ramTotalMb.toFixed(2))), ramUsedMb: Math.max(0, Math.min(ramTotalMb, Number(ramUsedMb.toFixed(2)))), ramFreeMb: Math.max(0, Number((ramTotalMb - ramUsedMb).toFixed(2))), totalGb: Math.max(0, Math.min(1048576, Number(diskTotalGb.toFixed(2)))), usedGb: Math.max(0, Math.min(diskTotalGb, Number(diskUsedGb.toFixed(2)))), freeGb: Math.max(0, Number((diskTotalGb - diskUsedGb).toFixed(2))) }, ifaces, ldi };
 }

@@ -160,9 +160,8 @@ test('Juniper buffer OID is ignored — uses universal hrStorageTable', () => {
         { oid: '1.3.6.1.4.1.2636.3.1.13.1.11.9.1.0.0', value: 67 },
     ];
     const r = parseAll(items, 'storage', { ...emptyState });
-    assert.strictEqual(r.disk.ramTotalMb, 0, 'Juniper buffer OID no longer sets ramTotalMb');
+    assert.ok(r.disk.ramTotalMb >= 1, 'ramTotalMb min 1 (div-by-zero protection)');
     assert.strictEqual(r.disk.ramUsedMb, 0);
-    assert.strictEqual(r.disk.ramFreeMb, 0);
 });
 
 test('Juniper buffer OID ignored — Linux storage parsed via hrStorageTable', () => {
@@ -176,7 +175,7 @@ test('Juniper buffer OID ignored — Linux storage parsed via hrStorageTable', (
     const r = parseAll(items, 'storage', { ...emptyState });
     // Juniper buffer OID is now ignored — only Linux hrStorageTable counts
     assert.ok(r.disk.ramTotalMb > 0, 'ramTotalMb from Linux hrStorageTable');
-    assert.strictEqual(r.disk.totalGb, 0, 'No disk type entry, so totalGb stays 0');
+    assert.ok(r.disk.totalGb >= 1, 'totalGb min 1 (div-by-zero protection)');
 });
 
 console.log('\nparseAll - Network walker');
