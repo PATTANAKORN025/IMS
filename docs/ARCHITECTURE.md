@@ -92,7 +92,7 @@ flowchart LR
 **Rationale**:
 - **Event-driven architecture**: Async SNMP callbacks map to Node-RED's message-passing model with zero thread pool management.
 - **Sequential async bulk walks**: For network switches (78+ ports), walkers use `session.subtree()` with `maxRepetitions: 50` in sequential `await` calls — first ifTable (names + status + counters), then ifXTable (64-bit HC counters). Single UDP socket eliminates switch-level packet drops. For servers, lightweight `session.get()` with known OIDs.
-- **Stateful parser**: The `sre_parser` node accumulates per-device state in flow context (`dev_state_<deviceId>`) and buffers rows in `batch_buf_<deviceId>`. Each walker fires independently and the parser handles it immediately — no join barrier required.
+- **Stateful parser**: The `sre_parser` node accumulates per-device state in flow context (`dev_state_<deviceId>`) and buffers rows in `batch_buf_<deviceId>`. Each walker fires independently and the parser handles it immediately.
 - **Timer-gated independent flushing**: Buffer flushes on a 10-second timer. Each table type (sys/net/ldi) inserts independently — a network timeout does not block CPU/temp data writes.
 - **Offline heartbeat**: When the circuit breaker trips (device unreachable), the fork emits `_walker: "offline"` messages. The parser immediately zeros all metrics for that device and pushes zeroed rows to the database, ensuring outage timestamps are always recorded.
 - **Protocol translation**: Built-in HTTP nodes receive Alertmanager webhooks and translate to LINE/Teams API calls.
@@ -110,17 +110,18 @@ flowchart LR
 - **Failure isolation**: If Node-RED crashes, its connections are released without affecting Grafana queries.
 - **No host port**: PgBouncer listens only on the Docker internal network (`ims-pgbouncer:5432`), never exposed to the host.
 
-### ADR-004: Direct Fan-In Parser (replaces Join Barrier)
+### ADR-004: Stateful Streaming Parser (SRE AIOps Parser)
 
-**Context**: With 1000+ devices polled concurrently, the previous join-barrier pattern (`msg.parts` correlation) was unreliable — dropped messages caused silent data loss, and the join node introduced unnecessary complexity.
+**Context**: The ingestion pipeline must handle 1000+ devices polled concurrently, with each device generating 5 walker responses (CPU, Storage, Network, Temp, LDI). The parser must maintain per-device state, handle partial timeouts gracefully, and never lose data.
 
-**Decision**: Direct fan-in — all walkers send messages directly to `sre_parser`. The parser uses `deviceId` (from `msg.machine_id`) to maintain per-device state.
+**Decision**: All walkers send messages directly to `sre_parser` via Node-RED's message-passing model. The parser maintains per-device state in Node-RED's global flow context (`dev_state_<deviceId>`), accumulates rows in batch buffers (`batch_buf_<deviceId>`), and flushes independently on a 10-second timer.
 
-**Rationale**:
-- **No correlation overhead**: Each message carries its own `machine_id` — the parser routes it to the correct device state via `flow.get('dev_state_' + deviceId)`.
-- **Resilience**: If one walker fails (timeout, crash), only that device's state is affected. Other devices continue unaffected.
-- **Simplified debugging**: Each walker message is self-contained — no need to trace join-group IDs.
-- **Safety timeout**: Function node timeout set to 15 seconds accommodates SNMP timeout (6s) + merge delay + DB insert.
+**Architecture**:
+- **Direct fan-in**: No join node, no `msg.parts` correlation. Each walker message is self-contained with `machine_id`.
+- **Stateful per-device context**: `flow.get('dev_state_' + deviceId)` retains CPU, RAM, Disk, Temp, Network interface state across poll cycles. On timeout (empty payload), the parser zeros all metrics and forces interfaces to DOWN, ensuring outage timestamps are always recorded.
+- **Timer-gated independent flushing**: Each table type (sys_metrics, net_metrics, ldi_metrics) inserts only when its buffer has rows. Partial walker failures do not block unrelated data writes.
+- **Offline heartbeat**: When the circuit breaker trips (device unreachable), the fork emits `_walker: "offline"` messages. The parser immediately zeros all metrics and pushes zeroed rows to the database.
+- **Safety timeout**: Function node timeout set to 15 seconds accommodates SNMP timeout (6s) + parse delay + DB insert.
 
 ---
 
