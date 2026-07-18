@@ -11,7 +11,8 @@
  *   6. All timeseries panels have connectNullPoints: true
  *   7. Variable queries use sqlstring filter (not csv)
  *   8. All panels have descriptions (except rows and clock)
- *   9. JSON is valid
+ *   9. No 2D bounding box overlaps between panels
+ *  10. JSON is valid
  *
  * Usage: node tests/lint/dashboard-linter.js
  */
@@ -51,9 +52,17 @@ function lintDashboard(filePath) {
     }
   }
 
+  const panels = [];
+
   for (const panel of data.panels) {
     if (panel.type === 'row') continue;
     const pid = panel.id;
+    const gp = panel.gridPos || {};
+
+    // Collect panels for overlap check (Check 9)
+    if (gp.x !== undefined && gp.y !== undefined) {
+      panels.push({ id: pid, title: panel.title || '(untitled)', x: gp.x, y: gp.y, w: gp.w, h: gp.h });
+    }
 
     // Check 8: Panel descriptions
     if (panel.type !== 'clock' && !panel.description) {
@@ -97,6 +106,22 @@ function lintDashboard(filePath) {
       if (target.rawSql && ipRegex.test(target.rawSql)) {
         const match = target.rawSql.match(ipRegex);
         error(file, pid, `Hardcoded IP ${match[0]} found in rawSql`);
+      }
+    }
+  }
+
+  // ── Check 9: 2D Bounding Box Overlap Detection ──
+  for (let i = 0; i < panels.length; i++) {
+    const a = panels[i];
+    for (let j = i + 1; j < panels.length; j++) {
+      const b = panels[j];
+      // Overlap: A.x < B.x+B.w && A.x+A.w > B.x && A.y < B.y+B.h && A.y+A.h > B.y
+      if (a.x < b.x + b.w && a.x + a.w > b.x &&
+          a.y < b.y + b.h && a.y + a.h > b.y) {
+        error(file, `${a.id}:${a.title}`,
+          `OVERLAP with panel ${b.id}:${b.title} — ` +
+          `A[x=${a.x},y=${a.y},w=${a.w},h=${a.h}] ` +
+          `B[x=${b.x},y=${b.y},w=${b.w},h=${b.h}]`);
       }
     }
   }
