@@ -16,12 +16,6 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_column THEN NULL;
 END $$;
 
--- Add GIN index on cpu_metrics for efficient JSONB queries (per-core Grafana panels)
-CREATE INDEX IF NOT EXISTS idx_sys_cpu_metrics ON public.sys_metrics USING gin(cpu_metrics);
-
--- Add GIN index on temp_metrics for efficient JSONB queries (per-sensor Grafana panels)
-CREATE INDEX IF NOT EXISTS idx_sys_temp_metrics ON public.sys_metrics USING gin(temp_metrics);
-
 -- Backfill existing rows: populate cpu_metrics and temp_metrics from legacy columns
 -- This ensures historical data is queryable via JSONB from day one
 DO $$ BEGIN
