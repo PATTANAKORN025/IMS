@@ -57,7 +57,9 @@ CREATE TABLE public.sys_metrics (
     disk_used_gb        DOUBLE PRECISION,
     disk_free_gb        DOUBLE PRECISION,
     disk_description    TEXT            DEFAULT '',
-    temp_c              DOUBLE PRECISION DEFAULT 0
+    temp_c              DOUBLE PRECISION DEFAULT 0,
+    cpu_metrics         JSONB           DEFAULT '{}'::jsonb,
+    temp_metrics        JSONB           DEFAULT '{}'::jsonb
 );
 SELECT create_hypertable('public.sys_metrics', 'time', chunk_time_interval => INTERVAL '1 day', if_not_exists => TRUE);
 CREATE INDEX IF NOT EXISTS idx_sys_device_time ON public.sys_metrics (device_id, "time" DESC);
