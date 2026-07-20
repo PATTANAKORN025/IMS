@@ -180,7 +180,7 @@
             "uid": "timescaledb"
           },
           "rawSql": "SELECT temperature FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND temperature IS NOT NULL ORDER BY time DESC LIMIT 1",
-          "format": "time_series"
+          "format": "table"
         }
       ],
       "description": "Latest temperature. Target 22C. Green 20-24, Amber 19/24, Red <19/>25.",
@@ -254,7 +254,7 @@
             "uid": "timescaledb"
           },
           "rawSql": "SELECT humidity FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND humidity IS NOT NULL ORDER BY time DESC LIMIT 1",
-          "format": "time_series"
+          "format": "table"
         }
       ],
       "description": "Latest humidity. Target 55%. Green 50-60, Amber 45/60, Red <45/>65.",
