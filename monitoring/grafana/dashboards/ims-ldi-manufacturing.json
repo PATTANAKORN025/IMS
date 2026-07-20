@@ -1,7 +1,7 @@
 {
   "uid": "ldi-pcb-manufacturing",
   "title": "IMS LDI — Masterpiece Fleet Command Center",
-  "description": "3-Column Kiosk Mode for 1920x1080 TV. Left: Fleet Vitals (Gauges). Center: Production Matrix (Table + Compliance). Right: AIOps & Triage (Heatmap + Alarms).",
+  "description": "Single-Pane-of-Glass for 1920x1080. Executive HUD + Fleet Matrix + Production + Triage. Zero scrolling, zero variables.",
   "tags": [
     "ims",
     "ldi",
@@ -41,7 +41,7 @@
     {
       "id": 1,
       "title": "Fleet Uptime",
-      "type": "gauge",
+      "type": "stat",
       "datasource": {
         "uid": "timescaledb"
       },
@@ -49,13 +49,11 @@
         "x": 0,
         "y": 0,
         "w": 6,
-        "h": 5
+        "h": 4
       },
       "fieldConfig": {
         "defaults": {
           "unit": "percent",
-          "min": 0,
-          "max": 100,
           "decimals": 0,
           "thresholds": {
             "mode": "absolute",
@@ -65,12 +63,8 @@
                 "value": null
               },
               {
-                "color": "#F59E0B",
-                "value": 50
-              },
-              {
                 "color": "#10B981",
-                "value": 80
+                "value": 100
               }
             ]
           },
@@ -81,15 +75,19 @@
         "overrides": []
       },
       "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
           ],
           "values": false
         },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "noValue": "N/A"
+        "text": {
+          "valueSize": 48,
+          "titleSize": 14
+        }
       },
       "targets": [
         {
@@ -105,22 +103,20 @@
     },
     {
       "id": 2,
-      "title": "Avg Temperature",
-      "type": "gauge",
+      "title": "Avg Process Efficiency",
+      "type": "stat",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 0,
-        "y": 5,
+        "x": 6,
+        "y": 0,
         "w": 6,
-        "h": 5
+        "h": 4
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "celsius",
-          "min": 15,
-          "max": 35,
+          "unit": "percent",
           "decimals": 1,
           "thresholds": {
             "mode": "absolute",
@@ -131,19 +127,11 @@
               },
               {
                 "color": "#F59E0B",
-                "value": 19
+                "value": 80
               },
               {
                 "color": "#10B981",
-                "value": 20
-              },
-              {
-                "color": "#F59E0B",
-                "value": 24
-              },
-              {
-                "color": "#EF4444",
-                "value": 25
+                "value": 85
               }
             ]
           },
@@ -154,15 +142,19 @@
         "overrides": []
       },
       "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
           ],
           "values": false
         },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "noValue": "N/A"
+        "text": {
+          "valueSize": 48,
+          "titleSize": 14
+        }
       },
       "targets": [
         {
@@ -170,7 +162,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(AVG(temperature)::NUMERIC, 1) AS value FROM public.ldi_data WHERE $__timeFilter(time) AND temperature IS NOT NULL",
+          "rawSql": "SELECT ROUND(AVG(pe_1)::NUMERIC, 1) AS value FROM public.ldi_data WHERE $__timeFilter(time) AND pe_1 IS NOT NULL",
           "format": "table"
         }
       ],
@@ -178,23 +170,21 @@
     },
     {
       "id": 3,
-      "title": "Avg Humidity",
-      "type": "gauge",
+      "title": "Environmental Safety",
+      "type": "stat",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 0,
-        "y": 10,
+        "x": 12,
+        "y": 0,
         "w": 6,
-        "h": 5
+        "h": 4
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "humidity",
-          "min": 30,
-          "max": 80,
-          "decimals": 1,
+          "unit": "percent",
+          "decimals": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -204,19 +194,11 @@
               },
               {
                 "color": "#F59E0B",
-                "value": 45
-              },
-              {
-                "color": "#10B981",
                 "value": 50
               },
               {
-                "color": "#F59E0B",
-                "value": 60
-              },
-              {
-                "color": "#EF4444",
-                "value": 65
+                "color": "#10B981",
+                "value": 90
               }
             ]
           },
@@ -227,15 +209,19 @@
         "overrides": []
       },
       "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
           ],
           "values": false
         },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "noValue": "N/A"
+        "text": {
+          "valueSize": 48,
+          "titleSize": 14
+        }
       },
       "targets": [
         {
@@ -243,7 +229,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(AVG(humidity)::NUMERIC, 1) AS value FROM public.ldi_data WHERE $__timeFilter(time) AND humidity IS NOT NULL",
+          "rawSql": "SELECT ROUND(COUNT(*) FILTER (WHERE temperature BETWEEN 20 AND 24 AND humidity BETWEEN 50 AND 60) * 100.0 / NULLIF(COUNT(*), 0), 0) AS value FROM public.ldi_data WHERE $__timeFilter(time) AND temperature IS NOT NULL AND humidity IS NOT NULL",
           "format": "table"
         }
       ],
@@ -252,20 +238,18 @@
     {
       "id": 4,
       "title": "Active Alarms",
-      "type": "gauge",
+      "type": "stat",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 0,
-        "y": 15,
+        "x": 18,
+        "y": 0,
         "w": 6,
         "h": 4
       },
       "fieldConfig": {
         "defaults": {
-          "min": 0,
-          "max": 30,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -287,14 +271,19 @@
         "overrides": []
       },
       "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
           ],
           "values": false
         },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "text": {
+          "valueSize": 48,
+          "titleSize": 14
+        }
       },
       "targets": [
         {
@@ -302,7 +291,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT COUNT(*) AS value FROM public.ldi_alarm_log WHERE logdate > NOW() - INTERVAL '1 hour'",
+          "rawSql": "SELECT COUNT(*) AS value FROM public.ldi_alarm_log WHERE $__timeFilter(logdate)",
           "format": "table"
         }
       ],
@@ -310,26 +299,63 @@
     },
     {
       "id": 5,
-      "title": "Production Orders",
-      "type": "table",
+      "title": "Machine State",
+      "type": "state-timeline",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 6,
-        "y": 0,
-        "w": 10,
+        "x": 0,
+        "y": 4,
+        "w": 8,
         "h": 8
       },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "DOWN",
+                  "color": "#EF4444"
+                },
+                "1": {
+                  "text": "RUN",
+                  "color": "#10B981"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#EF4444",
+                "value": null
+              },
+              {
+                "color": "#10B981",
+                "value": 1
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
       "options": {
-        "showHeader": true,
-        "sortBy": [
-          {
-            "displayName": "Machine",
-            "desc": false
-          }
-        ],
-        "rowHeight": 0.7
+        "showValue": "auto",
+        "mergeValues": true,
+        "alignValue": "center",
+        "rowHeight": 0.85,
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
       },
       "targets": [
         {
@@ -337,8 +363,9 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT DISTINCT ON (eqp_id) eqp_id AS \"Machine\", mo AS \"MO (Job Order)\", fpn AS \"FPN\", layer_name AS \"Layer\", ROUND((total_time / NULLIF(total_board, 0))::NUMERIC, 1) AS \"Cycle Time\", (board_no::TEXT || '/' || total_board::TEXT) AS \"Progress\", time AS \"Last Update\" FROM public.ldi_data WHERE $__timeFilter(time) ORDER BY eqp_id, time DESC",
-          "format": "table"
+          "rawSql": "SELECT time, eqp_id AS metric, CASE WHEN state = true THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE $__timeFilter(time) ORDER BY time ASC",
+          "format": "time_series",
+          "legendFormat": "{{metric}}"
         }
       ],
       "transparent": true
@@ -351,10 +378,10 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 6,
-        "y": 8,
-        "w": 10,
-        "h": 6
+        "x": 8,
+        "y": 4,
+        "w": 8,
+        "h": 8
       },
       "fieldConfig": {
         "defaults": {
@@ -432,10 +459,10 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 6,
-        "y": 14,
-        "w": 10,
-        "h": 5
+        "x": 16,
+        "y": 4,
+        "w": 8,
+        "h": 8
       },
       "fieldConfig": {
         "defaults": {
@@ -507,16 +534,51 @@
     },
     {
       "id": 8,
-      "title": "Fault Frequency",
+      "title": "Active Production Sync",
+      "type": "table",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 12,
+        "w": 12,
+        "h": 6
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "Machine",
+            "desc": false
+          }
+        ],
+        "rowHeight": 0.7
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT DISTINCT ON (eqp_id) eqp_id AS \"Machine\", mo AS \"Job\", fpn AS \"Part\", layer_name AS \"Layer\", (board_no::TEXT || '/' || total_board::TEXT) AS \"Progress\" FROM public.ldi_data WHERE $__timeFilter(time) ORDER BY eqp_id, time DESC",
+          "format": "table"
+        }
+      ],
+      "transparent": true
+    },
+    {
+      "id": 9,
+      "title": "Fault Density",
       "type": "heatmap",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 16,
-        "y": 0,
-        "w": 8,
-        "h": 9
+        "x": 12,
+        "y": 12,
+        "w": 12,
+        "h": 6
       },
       "fieldConfig": {
         "defaults": {
@@ -553,24 +615,24 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('5 minute', logdate) AS time, equipmentid AS metric, COUNT(*) AS value FROM public.ldi_alarm_log WHERE logdate > NOW() - INTERVAL '24 hours' GROUP BY 1, 2 ORDER BY time ASC",
+          "rawSql": "SELECT time_bucket('5 minutes', logdate) AS time, equipmentid AS metric, COUNT(*) AS value FROM public.ldi_alarm_log WHERE $__timeFilter(logdate) GROUP BY 1, 2 ORDER BY time ASC",
           "format": "time_series"
         }
       ],
       "transparent": true
     },
     {
-      "id": 9,
-      "title": "Critical Alarms",
+      "id": 10,
+      "title": "Critical Alarm Log",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 16,
-        "y": 9,
-        "w": 8,
-        "h": 10
+        "x": 0,
+        "y": 18,
+        "w": 24,
+        "h": 6
       },
       "fieldConfig": {
         "defaults": {},
@@ -587,17 +649,17 @@
                   {
                     "type": "value",
                     "options": {
-                      "Error": {
+                      "Critical": {
                         "color": "#EF4444",
-                        "text": "Error"
+                        "text": "Critical"
                       },
                       "Warning": {
                         "color": "#F59E0B",
                         "text": "Warning"
                       },
-                      "UNK": {
-                        "color": "#6B7280",
-                        "text": "Unknown"
+                      "WARN": {
+                        "color": "#F59E0B",
+                        "text": "Warning"
                       }
                     }
                   }
@@ -621,7 +683,7 @@
             "desc": true
           }
         ],
-        "rowHeight": 0.5
+        "rowHeight": 0.6
       },
       "targets": [
         {
@@ -629,7 +691,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT a.logdate AS \"Time\", a.equipmentid AS \"Machine\", COALESCE(m.alarm_msg, a.errorcode::TEXT) AS \"Message\", COALESCE(m.alarm_type, 'UNK') AS \"Severity\" FROM public.ldi_alarm_log a LEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode = m.alarm_code WHERE a.logdate > NOW() - INTERVAL '24 hours' ORDER BY a.logdate DESC LIMIT 15",
+          "rawSql": "SELECT a.logdate AS \"Time\", a.equipmentid AS \"Machine\", COALESCE(m.alarm_msg, a.errorcode::TEXT) AS \"Message\", COALESCE(m.alarm_type, 'WARN') AS \"Severity\" FROM public.ldi_alarm_log a LEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode = m.alarm_code WHERE $__timeFilter(a.logdate) ORDER BY a.logdate DESC LIMIT 15",
           "format": "table"
         }
       ],
