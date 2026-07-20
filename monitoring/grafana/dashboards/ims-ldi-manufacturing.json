@@ -1,7 +1,7 @@
 {
   "uid": "ldi-pcb-manufacturing",
-  "title": "IMS LDI — Masterpiece Fleet Command Center",
-  "description": "Single-Pane-of-Glass for 1920x1080. Executive HUD + Fleet Matrix + Production + Triage. Zero scrolling, zero variables.",
+  "title": "IMS LDI — Executive Masterpiece Command Center",
+  "description": "Single-Pane-of-Glass 1920x1080 Kiosk. 10 panels, 4 rows, 24-grid. Zero scrolling, zero variables.",
   "tags": [
     "ims",
     "ldi",
@@ -162,7 +162,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(AVG(pe_1)::NUMERIC, 1) AS value FROM public.ldi_data WHERE $__timeFilter(time) AND pe_1 IS NOT NULL",
+          "rawSql": "SELECT ROUND(AVG((pe_1+pe_2+pe_3+pe_4+pe_5+pe_6)/6.0)::NUMERIC, 1) AS value FROM public.ldi_data WHERE $__timeFilter(time) AND pe_1 IS NOT NULL",
           "format": "table"
         }
       ],
