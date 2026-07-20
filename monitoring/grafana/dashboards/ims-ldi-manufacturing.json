@@ -428,7 +428,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT CASE WHEN state = true THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE eqp_id = '${machine_id}' AND $__timeFilter(time) ORDER BY time DESC LIMIT 1",
+          "rawSql": "SELECT CASE WHEN state = true THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE eqp_id = ${machine_id:singlequote} AND $__timeFilter(time) ORDER BY time DESC LIMIT 1",
           "format": "table"
         }
       ],
@@ -564,7 +564,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT 'Temperature' AS metric, temperature AS value FROM public.ldi_data WHERE eqp_id = '${machine_id}' AND $__timeFilter(time) AND temperature IS NOT NULL ORDER BY time DESC LIMIT 1",
+          "rawSql": "SELECT 'Temperature' AS metric, temperature AS value FROM public.ldi_data WHERE eqp_id = ${machine_id:singlequote} AND $__timeFilter(time) AND temperature IS NOT NULL ORDER BY time DESC LIMIT 1",
           "format": "table"
         },
         {
@@ -572,7 +572,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT 'Humidity' AS metric, humidity AS value FROM public.ldi_data WHERE eqp_id = '${machine_id}' AND $__timeFilter(time) AND humidity IS NOT NULL ORDER BY time DESC LIMIT 1",
+          "rawSql": "SELECT 'Humidity' AS metric, humidity AS value FROM public.ldi_data WHERE eqp_id = ${machine_id:singlequote} AND $__timeFilter(time) AND humidity IS NOT NULL ORDER BY time DESC LIMIT 1",
           "format": "table"
         }
       ],
@@ -656,7 +656,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, temperature AS \"Temperature\" FROM public.ldi_data WHERE eqp_id = '${machine_id}' AND $__timeFilter(time) AND temperature IS NOT NULL ORDER BY time ASC",
+          "rawSql": "SELECT time, temperature AS \"Temperature\" FROM public.ldi_data WHERE eqp_id = ${machine_id:singlequote} AND $__timeFilter(time) AND temperature IS NOT NULL ORDER BY time ASC",
           "format": "time_series",
           "legendFormat": "Temperature"
         }
@@ -741,7 +741,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, humidity AS \"Humidity\" FROM public.ldi_data WHERE eqp_id = '${machine_id}' AND $__timeFilter(time) AND humidity IS NOT NULL ORDER BY time ASC",
+          "rawSql": "SELECT time, humidity AS \"Humidity\" FROM public.ldi_data WHERE eqp_id = ${machine_id:singlequote} AND $__timeFilter(time) AND humidity IS NOT NULL ORDER BY time ASC",
           "format": "time_series",
           "legendFormat": "Humidity"
         }
@@ -858,7 +858,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, resist_dosage AS \"Resist Dosage\" FROM public.ldi_data WHERE eqp_id = '${machine_id}' AND $__timeFilter(time) AND resist_dosage IS NOT NULL ORDER BY time ASC",
+          "rawSql": "SELECT time, resist_dosage AS \"Resist Dosage\" FROM public.ldi_data WHERE eqp_id = ${machine_id:singlequote} AND $__timeFilter(time) AND resist_dosage IS NOT NULL ORDER BY time ASC",
           "format": "time_series",
           "legendFormat": "Resist Dosage"
         },
@@ -867,7 +867,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, scan_speed AS \"Scan Speed\" FROM public.ldi_data WHERE eqp_id = '${machine_id}' AND $__timeFilter(time) AND scan_speed IS NOT NULL ORDER BY time ASC",
+          "rawSql": "SELECT time, scan_speed AS \"Scan Speed\" FROM public.ldi_data WHERE eqp_id = ${machine_id:singlequote} AND $__timeFilter(time) AND scan_speed IS NOT NULL ORDER BY time ASC",
           "format": "time_series",
           "legendFormat": "Scan Speed"
         }
@@ -929,7 +929,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, scale_x AS \"Scale X\" FROM public.ldi_data WHERE eqp_id = '${machine_id}' AND $__timeFilter(time) AND scale_x IS NOT NULL ORDER BY time ASC",
+          "rawSql": "SELECT time, scale_x AS \"Scale X\" FROM public.ldi_data WHERE eqp_id = ${machine_id:singlequote} AND $__timeFilter(time) AND scale_x IS NOT NULL ORDER BY time ASC",
           "format": "time_series",
           "legendFormat": "Scale X"
         },
@@ -938,7 +938,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, scale_y AS \"Scale Y\" FROM public.ldi_data WHERE eqp_id = '${machine_id}' AND $__timeFilter(time) AND scale_y IS NOT NULL ORDER BY time ASC",
+          "rawSql": "SELECT time, scale_y AS \"Scale Y\" FROM public.ldi_data WHERE eqp_id = ${machine_id:singlequote} AND $__timeFilter(time) AND scale_y IS NOT NULL ORDER BY time ASC",
           "format": "time_series",
           "legendFormat": "Scale Y"
         }
@@ -1019,7 +1019,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH stats AS (SELECT AVG(temperature) AS mu, STDDEV(temperature) AS sigma FROM public.ldi_data WHERE eqp_id = '${machine_id}' AND time > NOW() - INTERVAL '24 hours') SELECT d.time, ROUND(((d.temperature - s.mu) / NULLIF(s.sigma, 0))::NUMERIC, 2) AS \"Z-Score\" FROM public.ldi_data d, stats s WHERE d.eqp_id = '${machine_id}' AND $__timeFilter(d.time) AND d.temperature IS NOT NULL ORDER BY d.time ASC",
+          "rawSql": "WITH stats AS (SELECT AVG(temperature) AS mu, STDDEV(temperature) AS sigma FROM public.ldi_data WHERE eqp_id = ${machine_id:singlequote} AND time > NOW() - INTERVAL '24 hours') SELECT d.time, ROUND(((d.temperature - s.mu) / NULLIF(s.sigma, 0))::NUMERIC, 2) AS \"Z-Score\" FROM public.ldi_data d, stats s WHERE d.eqp_id = ${machine_id:singlequote} AND $__timeFilter(d.time) AND d.temperature IS NOT NULL ORDER BY d.time ASC",
           "format": "time_series",
           "legendFormat": "Z-Score"
         }
