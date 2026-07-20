@@ -1,7 +1,7 @@
 {
   "uid": "ldi-pcb-manufacturing",
   "title": "IMS LDI — PCB Manufacturing Command Center",
-  "description": "15-panel Operator-First AIOps Dashboard for LDI fleet. 5 rows: Executive Summary, Operator HUD, Process Control, Engineering Drift, Maintenance Triage.",
+  "description": "Dual-Tier Executive & Operator Command Center. Plant Overview + Machine Drill-Down (repeated per machine) + AIOps.",
   "tags": [
     "ims",
     "ldi",
@@ -51,7 +51,7 @@
   "panels": [
     {
       "id": 1,
-      "title": "Plant Status",
+      "title": "Plant Safety Score",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -60,7 +60,7 @@
         "x": 0,
         "y": 0,
         "w": 4,
-        "h": 4
+        "h": 6
       },
       "fieldConfig": {
         "defaults": {
@@ -99,7 +99,7 @@
           "values": false
         },
         "text": {
-          "valueSize": 40,
+          "valueSize": 48,
           "titleSize": 14
         }
       },
@@ -109,16 +109,16 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT COUNT(DISTINCT eqp_id) AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND state = true",
+          "rawSql": "SELECT COUNT(DISTINCT eqp_id) AS value FROM public.ldi_data WHERE $__timeFilter(time) AND state = true AND temperature BETWEEN 20 AND 24 AND humidity BETWEEN 50 AND 60",
           "format": "table"
         }
       ],
-      "description": "Machines running (green >= 6, amber >= 3, red < 3).",
+      "description": "Machines with BOTH temperature 20-24C AND humidity 50-60%. Green >= 6, Amber >= 3, Red < 3.",
       "transparent": true
     },
     {
       "id": 2,
-      "title": "Fleet Machine States",
+      "title": "Fleet Live Status Matrix",
       "type": "state-timeline",
       "datasource": {
         "uid": "timescaledb"
@@ -126,8 +126,8 @@
       "gridPos": {
         "x": 4,
         "y": 0,
-        "w": 8,
-        "h": 4
+        "w": 20,
+        "h": 6
       },
       "fieldConfig": {
         "defaults": {
@@ -136,11 +136,11 @@
               "type": "value",
               "options": {
                 "0": {
-                  "text": "DOWN",
+                  "text": "CRITICAL",
                   "color": "#EF4444"
                 },
                 "1": {
-                  "text": "RUN",
+                  "text": "HEALTHY",
                   "color": "#10B981"
                 }
               }
@@ -170,7 +170,7 @@
         "showValue": "auto",
         "mergeValues": true,
         "alignValue": "center",
-        "rowHeight": 0.8,
+        "rowHeight": 0.7,
         "legend": {
           "displayMode": "list",
           "placement": "bottom"
@@ -182,184 +182,77 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, eqp_id AS metric, CASE WHEN state = true THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) ORDER BY time ASC",
+          "rawSql": "SELECT time, eqp_id AS metric, CASE WHEN temperature NOT BETWEEN 20 AND 24 THEN 0 WHEN humidity NOT BETWEEN 50 AND 60 THEN 0 ELSE 1 END AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) ORDER BY time ASC",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
       ],
-      "description": "Per-machine status timeline. Green = RUNNING, Red = DOWN.",
+      "description": "Per-machine health: GREEN if temp 20-24C AND humidity 50-60%, RED if either out of range.",
       "transparent": true
     },
     {
       "id": 3,
-      "title": "Fleet Avg Temperature",
-      "type": "gauge",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 12,
-        "y": 0,
-        "w": 6,
-        "h": 4
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "celsius",
-          "min": 15,
-          "max": 35,
-          "decimals": 1,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#EF4444",
-                "value": null
-              },
-              {
-                "color": "#F59E0B",
-                "value": 19
-              },
-              {
-                "color": "#10B981",
-                "value": 20
-              },
-              {
-                "color": "#F59E0B",
-                "value": 24
-              },
-              {
-                "color": "#EF4444",
-                "value": 25
-              }
-            ]
-          },
-          "color": {
-            "mode": "thresholds"
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "values": false
-        },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "noValue": "N/A"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT AVG(temperature) AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND temperature IS NOT NULL",
-          "format": "table"
-        }
-      ],
-      "description": "Fleet average temperature. Green 20-24C, Amber 19/24, Red <19/>25.",
-      "transparent": true
-    },
-    {
-      "id": 4,
-      "title": "Fleet Avg Humidity",
-      "type": "gauge",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 18,
-        "y": 0,
-        "w": 6,
-        "h": 4
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "humidity",
-          "min": 30,
-          "max": 80,
-          "decimals": 1,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#EF4444",
-                "value": null
-              },
-              {
-                "color": "#F59E0B",
-                "value": 45
-              },
-              {
-                "color": "#10B981",
-                "value": 50
-              },
-              {
-                "color": "#F59E0B",
-                "value": 60
-              },
-              {
-                "color": "#EF4444",
-                "value": 65
-              }
-            ]
-          },
-          "color": {
-            "mode": "thresholds"
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "values": false
-        },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "noValue": "N/A"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT AVG(humidity) AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND humidity IS NOT NULL",
-          "format": "table"
-        }
-      ],
-      "description": "Fleet average humidity. Green 50-60%, Amber 45/60, Red <45/>65.",
-      "transparent": true
-    },
-    {
-      "id": 5,
-      "title": "Active Production Orders",
+      "title": "Active Alarms (Fleet-Wide)",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 0,
-        "y": 4,
-        "w": 18,
-        "h": 4
+        "y": 6,
+        "w": 24,
+        "h": 6
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Severity"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "Error": {
+                        "color": "#EF4444",
+                        "text": "Error"
+                      },
+                      "Warning": {
+                        "color": "#F59E0B",
+                        "text": "Warning"
+                      },
+                      "UNK": {
+                        "color": "#6B7280",
+                        "text": "Unknown"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "showHeader": true,
         "sortBy": [
           {
-            "displayName": "Machine",
-            "desc": false
+            "displayName": "Time",
+            "desc": true
           }
         ],
-        "rowHeight": 0.6
+        "rowHeight": 0.5
       },
       "targets": [
         {
@@ -367,42 +260,67 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT DISTINCT ON (eqp_id) eqp_id AS \"Machine\", mo AS \"Job Order\", layer_name AS \"Layer\", board_no AS \"Board #\", total_board AS \"Total\" FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) ORDER BY eqp_id, time DESC",
+          "rawSql": "SELECT a.logdate AS \"Time\", a.equipmentid AS \"Machine\", COALESCE(m.alarm_msg, a.errorcode::TEXT) AS \"Message\", COALESCE(m.alarm_type, 'UNK') AS \"Severity\" FROM public.ldi_alarm_log a LEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode = m.alarm_code WHERE $__timeFilter(a.logdate) ORDER BY a.logdate DESC LIMIT 50",
           "format": "table"
         }
       ],
-      "description": "Latest production job per machine with board progress.",
+      "description": "Fleet-wide alarm stream. Error=red, Warning=amber, Unknown=gray.",
       "transparent": true
     },
     {
-      "id": 6,
-      "title": "Alarms (1h)",
+      "id": 200,
+      "type": "row",
+      "title": "Machine Drill-Down: ${machine_id}",
+      "repeat": "machine_id",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 12,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 4,
+      "title": "Status",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 18,
-        "y": 4,
-        "w": 6,
-        "h": 4
+        "x": 0,
+        "y": 13,
+        "w": 4,
+        "h": 8
       },
       "fieldConfig": {
         "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "STOPPED",
+                  "color": "#EF4444"
+                },
+                "1": {
+                  "text": "RUNNING",
+                  "color": "#10B981"
+                }
+              }
+            }
+          ],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "#10B981",
+                "color": "#EF4444",
                 "value": null
               },
               {
-                "color": "#F59E0B",
-                "value": 5
-              },
-              {
-                "color": "#EF4444",
-                "value": 15
+                "color": "#10B981",
+                "value": 1
               }
             ]
           },
@@ -415,7 +333,7 @@
       },
       "options": {
         "colorMode": "background",
-        "graphMode": "area",
+        "graphMode": "none",
         "justifyMode": "center",
         "reduceOptions": {
           "calcs": [
@@ -424,8 +342,8 @@
           "values": false
         },
         "text": {
-          "valueSize": 36,
-          "titleSize": 14
+          "valueSize": 32,
+          "titleSize": 16
         }
       },
       "targets": [
@@ -434,24 +352,168 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT COUNT(*) AS value FROM public.ldi_alarm_log WHERE $__timeFilter(logdate)",
+          "rawSql": "SELECT CASE WHEN state = true THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE eqp_id = '${machine_id}' AND $__timeFilter(time) ORDER BY time DESC LIMIT 1",
           "format": "table"
         }
       ],
-      "description": "Total alarms in time window. Green < 5, Amber 5-15, Red > 15.",
+      "description": "Machine operational status. Green=RUNNING, Red=STOPPED.",
       "transparent": true
     },
     {
-      "id": 7,
-      "title": "Cleanroom Temperature Matrix (22±2°C)",
+      "id": 5,
+      "title": "Live Temp & Humidity",
+      "type": "bargauge",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 4,
+        "y": 13,
+        "w": 6,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 1
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Temperature"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "celsius"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#EF4444",
+                      "value": null
+                    },
+                    {
+                      "color": "#F59E0B",
+                      "value": 19
+                    },
+                    {
+                      "color": "#10B981",
+                      "value": 20
+                    },
+                    {
+                      "color": "#F59E0B",
+                      "value": 24
+                    },
+                    {
+                      "color": "#EF4444",
+                      "value": 25
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Humidity"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "humidity"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#EF4444",
+                      "value": null
+                    },
+                    {
+                      "color": "#F59E0B",
+                      "value": 45
+                    },
+                    {
+                      "color": "#10B981",
+                      "value": 50
+                    },
+                    {
+                      "color": "#F59E0B",
+                      "value": 60
+                    },
+                    {
+                      "color": "#EF4444",
+                      "value": 65
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT 'Temperature' AS metric, temperature AS value FROM public.ldi_data WHERE eqp_id = '${machine_id}' AND $__timeFilter(time) AND temperature IS NOT NULL ORDER BY time DESC LIMIT 1",
+          "format": "table"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT 'Humidity' AS metric, humidity AS value FROM public.ldi_data WHERE eqp_id = '${machine_id}' AND $__timeFilter(time) AND humidity IS NOT NULL ORDER BY time DESC LIMIT 1",
+          "format": "table"
+        }
+      ],
+      "description": "Current temperature and humidity bars with per-metric thresholds.",
+      "transparent": true
+    },
+    {
+      "id": 6,
+      "title": "Temperature Audit",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 0,
-        "y": 8,
-        "w": 12,
+        "x": 10,
+        "y": 13,
+        "w": 7,
         "h": 8
       },
       "fieldConfig": {
@@ -504,16 +566,12 @@
       },
       "options": {
         "tooltip": {
-          "mode": "multi",
+          "mode": "single",
           "sort": "desc"
         },
         "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "mean",
-            "lastNotNull"
-          ]
+          "displayMode": "list",
+          "placement": "bottom"
         },
         "connectNullPoints": true
       },
@@ -523,25 +581,25 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, eqp_id AS metric, temperature FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND temperature IS NOT NULL ORDER BY time ASC",
+          "rawSql": "SELECT time, temperature AS \"Temperature\" FROM public.ldi_data WHERE eqp_id = '${machine_id}' AND $__timeFilter(time) AND temperature IS NOT NULL ORDER BY time ASC",
           "format": "time_series",
-          "legendFormat": "{{metric}}"
+          "legendFormat": "Temperature"
         }
       ],
-      "description": "Per-machine temperature with green band 20-24C and red/amber lines at boundaries.",
+      "description": "Temperature with green band 20-24C and red/amber lines at boundaries.",
       "transparent": true
     },
     {
-      "id": 8,
-      "title": "Cleanroom Humidity Matrix (55±5%)",
+      "id": 7,
+      "title": "Humidity Audit",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 12,
-        "y": 8,
-        "w": 12,
+        "x": 17,
+        "y": 13,
+        "w": 7,
         "h": 8
       },
       "fieldConfig": {
@@ -594,16 +652,12 @@
       },
       "options": {
         "tooltip": {
-          "mode": "multi",
+          "mode": "single",
           "sort": "desc"
         },
         "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "mean",
-            "lastNotNull"
-          ]
+          "displayMode": "list",
+          "placement": "bottom"
         },
         "connectNullPoints": true
       },
@@ -613,16 +667,16 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, eqp_id AS metric, humidity FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND humidity IS NOT NULL ORDER BY time ASC",
+          "rawSql": "SELECT time, humidity AS \"Humidity\" FROM public.ldi_data WHERE eqp_id = '${machine_id}' AND $__timeFilter(time) AND humidity IS NOT NULL ORDER BY time ASC",
           "format": "time_series",
-          "legendFormat": "{{metric}}"
+          "legendFormat": "Humidity"
         }
       ],
-      "description": "Per-machine humidity with green band 50-60% and red/amber lines at boundaries.",
+      "description": "Humidity with green band 50-60% and red/amber lines at boundaries.",
       "transparent": true
     },
     {
-      "id": 9,
+      "id": 8,
       "title": "Resist Dosage vs Scan Speed",
       "type": "timeseries",
       "datasource": {
@@ -630,9 +684,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 16,
-        "w": 6,
-        "h": 8
+        "y": 21,
+        "w": 12,
+        "h": 6
       },
       "fieldConfig": {
         "defaults": {
@@ -663,7 +717,7 @@
               },
               {
                 "id": "custom.axisLabel",
-                "value": "Speed"
+                "value": "Scan Speed"
               },
               {
                 "id": "custom.drawStyle",
@@ -730,190 +784,35 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, eqp_id || ' - Resist' AS metric, resist_dosage AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND resist_dosage IS NOT NULL ORDER BY time ASC",
+          "rawSql": "SELECT time, resist_dosage AS \"Resist Dosage\" FROM public.ldi_data WHERE eqp_id = '${machine_id}' AND $__timeFilter(time) AND resist_dosage IS NOT NULL ORDER BY time ASC",
           "format": "time_series",
-          "legendFormat": "{{metric}}"
+          "legendFormat": "Resist Dosage"
         },
         {
           "refId": "B",
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, eqp_id || ' - Speed' AS metric, scan_speed AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND scan_speed IS NOT NULL ORDER BY time ASC",
+          "rawSql": "SELECT time, scan_speed AS \"Scan Speed\" FROM public.ldi_data WHERE eqp_id = '${machine_id}' AND $__timeFilter(time) AND scan_speed IS NOT NULL ORDER BY time ASC",
           "format": "time_series",
-          "legendFormat": "{{metric}}"
+          "legendFormat": "Scan Speed"
         }
       ],
-      "description": "Resist dosage (bars, left Y) vs scan speed (line, right Y) per machine.",
+      "description": "Resist dosage (bars, left Y) vs scan speed (line, right Y) for this machine.",
       "transparent": true
     },
     {
-      "id": 10,
-      "title": "Alignment Scale Drift",
-      "type": "timeseries",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 6,
-        "y": 16,
-        "w": 6,
-        "h": 8
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "lengthmm",
-          "decimals": 4,
-          "custom": {
-            "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "fillOpacity": 15,
-            "lineWidth": 2,
-            "showPoints": "never",
-            "spanNulls": false,
-            "gradientMode": "opacity",
-            "connectNullPoints": true
-          },
-          "color": {
-            "mode": "palette-classic"
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        },
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "mean",
-            "lastNotNull"
-          ]
-        },
-        "connectNullPoints": true
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT time, eqp_id || ' - X' AS metric, scale_x AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND scale_x IS NOT NULL ORDER BY time ASC",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
-        },
-        {
-          "refId": "B",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT time, eqp_id || ' - Y' AS metric, scale_y AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND scale_y IS NOT NULL ORDER BY time ASC",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
-        }
-      ],
-      "description": "Scale X/Y drift per machine. Rising values = alignment risk.",
-      "transparent": true
-    },
-    {
-      "id": 11,
-      "title": "Process Efficiency (PE) vs Target",
+      "id": 9,
+      "title": "Thermal Z-Score Drift",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 12,
-        "y": 16,
-        "w": 6,
-        "h": 8
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "decimals": 1,
-          "custom": {
-            "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "fillOpacity": 20,
-            "lineWidth": 2,
-            "showPoints": "never",
-            "spanNulls": false,
-            "gradientMode": "opacity",
-            "connectNullPoints": true
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#EF4444",
-                "value": null
-              },
-              {
-                "color": "#F59E0B",
-                "value": 70
-              },
-              {
-                "color": "#10B981",
-                "value": 85
-              }
-            ]
-          },
-          "thresholdsStyle": {
-            "mode": "line"
-          },
-          "color": {
-            "mode": "palette-classic"
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        },
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "mean",
-            "lastNotNull"
-          ]
-        },
-        "connectNullPoints": true
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT time, eqp_id AS metric, ROUND(((COALESCE(pe_1,0)+COALESCE(pe_2,0)+COALESCE(pe_3,0)+COALESCE(pe_4,0)+COALESCE(pe_5,0)+COALESCE(pe_6,0))/NULLIF(CASE WHEN pe_1 IS NOT NULL THEN 1 ELSE 0 END+CASE WHEN pe_2 IS NOT NULL THEN 1 ELSE 0 END+CASE WHEN pe_3 IS NOT NULL THEN 1 ELSE 0 END+CASE WHEN pe_4 IS NOT NULL THEN 1 ELSE 0 END+CASE WHEN pe_5 IS NOT NULL THEN 1 ELSE 0 END+CASE WHEN pe_6 IS NOT NULL THEN 1 ELSE 0 END,0))::NUMERIC, 1) AS \"Avg PE\" FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND pe_1 IS NOT NULL ORDER BY time ASC",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
-        }
-      ],
-      "description": "Average PE per machine with horizontal threshold lines at 70/85%.",
-      "transparent": true
-    },
-    {
-      "id": 12,
-      "title": "Thermal Z-Score Anomaly (3σ)",
-      "type": "timeseries",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 18,
-        "y": 16,
-        "w": 6,
-        "h": 8
+        "y": 21,
+        "w": 12,
+        "h": 6
       },
       "fieldConfig": {
         "defaults": {
@@ -961,16 +860,12 @@
       },
       "options": {
         "tooltip": {
-          "mode": "multi",
+          "mode": "single",
           "sort": "desc"
         },
         "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "mean",
-            "lastNotNull"
-          ]
+          "displayMode": "list",
+          "placement": "bottom"
         },
         "connectNullPoints": true
       },
@@ -980,187 +875,12 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH stats AS (SELECT eqp_id, AVG(temperature) AS mu, STDDEV(temperature) AS sigma FROM public.ldi_data WHERE time > NOW() - INTERVAL '24 hours' GROUP BY eqp_id) SELECT d.time, d.eqp_id AS metric, ROUND(((d.temperature - s.mu) / NULLIF(s.sigma, 0))::NUMERIC, 2) AS \"Z-Score\" FROM public.ldi_data d JOIN stats s ON d.eqp_id = s.eqp_id WHERE $__timeFilter(d.time) AND d.eqp_id IN (${machine_id:singlequote}) ORDER BY d.time ASC",
+          "rawSql": "WITH stats AS (SELECT AVG(temperature) AS mu, STDDEV(temperature) AS sigma FROM public.ldi_data WHERE eqp_id = '${machine_id}' AND time > NOW() - INTERVAL '24 hours') SELECT d.time, ROUND(((d.temperature - s.mu) / NULLIF(s.sigma, 0))::NUMERIC, 2) AS \"Z-Score\" FROM public.ldi_data d, stats s WHERE d.eqp_id = '${machine_id}' AND $__timeFilter(d.time) AND d.temperature IS NOT NULL ORDER BY d.time ASC",
           "format": "time_series",
-          "legendFormat": "{{metric}}"
+          "legendFormat": "Z-Score"
         }
       ],
-      "description": "3-sigma Z-Score per machine. Green -2 to +2, Amber 2.5, Red 3+.",
-      "transparent": true
-    },
-    {
-      "id": 13,
-      "title": "Live Critical Alarm Stream",
-      "type": "table",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 24,
-        "w": 12,
-        "h": 8
-      },
-      "fieldConfig": {
-        "defaults": {},
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Severity"
-            },
-            "properties": [
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "type": "value",
-                    "options": {
-                      "Error": {
-                        "color": "#EF4444",
-                        "text": "Error"
-                      },
-                      "Warning": {
-                        "color": "#F59E0B",
-                        "text": "Warning"
-                      },
-                      "UNK": {
-                        "color": "#6B7280",
-                        "text": "Unknown"
-                      }
-                    }
-                  }
-                ]
-              },
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "color-background"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "options": {
-        "showHeader": true,
-        "sortBy": [
-          {
-            "displayName": "Time",
-            "desc": true
-          }
-        ],
-        "rowHeight": 0.45
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT a.logdate AS \"Time\", a.equipmentid AS \"Machine\", COALESCE(m.alarm_msg, a.errorcode::TEXT) AS \"Message\", COALESCE(m.alarm_type, 'UNK') AS \"Severity\" FROM public.ldi_alarm_log a LEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode = m.alarm_code WHERE $__timeFilter(a.logdate) ORDER BY a.logdate DESC LIMIT 50",
-          "format": "table"
-        }
-      ],
-      "description": "Latest 50 alarms. Color-coded: Error=red, Warning=amber, Unknown=gray.",
-      "transparent": true
-    },
-    {
-      "id": 14,
-      "title": "Top 5 Recurring Alarms",
-      "type": "piechart",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 12,
-        "y": 24,
-        "w": 4,
-        "h": 8
-      },
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "right",
-          "values": [
-            "value",
-            "percent"
-          ]
-        },
-        "pieType": "donut",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "values": false
-        }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT COALESCE(m.alarm_msg, a.errorcode::TEXT) AS metric, COUNT(*) AS value FROM public.ldi_alarm_log a LEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode = m.alarm_code WHERE $__timeFilter(a.logdate) GROUP BY 1 ORDER BY value DESC LIMIT 5",
-          "format": "table"
-        }
-      ],
-      "description": "Top 5 most frequent alarm messages. Pareto analysis.",
-      "transparent": true
-    },
-    {
-      "id": 15,
-      "title": "Equipment Fault Frequency",
-      "type": "heatmap",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 16,
-        "y": 24,
-        "w": 8,
-        "h": 8
-      },
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showCellBorders": true,
-            "stacking": {
-              "mode": "none"
-            },
-            "fillOpacity": 80,
-            "cellGap": 1
-          },
-          "color": {
-            "mode": "scheme",
-            "scheme": "Oranges"
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "tooltip": {
-          "mode": "single"
-        },
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT time_bucket('1h', logdate) AS time, equipmentid AS metric, COUNT(*) AS value FROM public.ldi_alarm_log WHERE $__timeFilter(logdate) GROUP BY 1, 2 ORDER BY time ASC",
-          "format": "time_series"
-        }
-      ],
-      "description": "Alarm heatmap: X=time (1h buckets), Y=equipment. Pinpoints chronic failures.",
+      "description": "3-sigma Z-Score for this machine. Green -2 to +2, Amber 2.5, Red 3+.",
       "transparent": true
     }
   ]
