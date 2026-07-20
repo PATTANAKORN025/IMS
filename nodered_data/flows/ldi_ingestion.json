@@ -1,0 +1,87 @@
+[
+  {
+    "id": "ldi-ingestion-tab",
+    "type": "tab",
+    "label": "IMS LDI Ingestion",
+    "disabled": false,
+    "info": "LDI Manufacturing data ingestion pipeline — POST /ldi-telemetry"
+  },
+  {
+    "id": "ldi_http_in",
+    "type": "http in",
+    "z": "ldi-ingestion-tab",
+    "name": "POST /ldi-telemetry",
+    "url": "/ldi-telemetry",
+    "method": "post",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 80,
+    "y": 200,
+    "wires": [
+      ["ldi_auth_check"]
+    ]
+  },
+  {
+    "id": "ldi_auth_check",
+    "type": "function",
+    "z": "ldi-ingestion-tab",
+    "name": "Auth & Validate",
+    "func": "const apiKey = global.get('INGEST_API_KEY') || 'ims-secret-key';\nconst incomingKey = msg.req?.headers?.['x-api-key'] || '';\nif (incomingKey !== apiKey) {\n    msg.res.statusCode = 401;\n    msg.res.end(JSON.stringify({ error: 'Unauthorized' }));\n    return null;\n}\n\nif (!msg.payload || !Array.isArray(msg.payload)) {\n    msg.res.statusCode = 400;\n    msg.res.end(JSON.stringify({ error: 'Payload must be a JSON array' }));\n    return null;\n}\n\nmsg._ldiBatch = [];\nfor (const item of msg.payload) {\n    if (!item || !item.eqp_id) continue;\n    msg._ldiBatch.push({\n        eqp_id: String(item.eqp_id),\n        factory: String(item.factory || ''),\n        process: String(item.process || ''),\n        mo: String(item.mo || ''),\n        fpn: String(item.fpn || ''),\n        layer_name: String(item.layer_name || ''),\n        resist_dosage: Number(item.resist_dosage) || null,\n        scale_x: Number(item.scale_x) || null,\n        scale_y: Number(item.scale_y) || null,\n        temperature: Number(item.temperature) || null,\n        humidity: Number(item.humidity) || null,\n        scan_speed: Number(item.scan_speed) || null,\n        air_vacuum: Number(item.air_vacuum) || null,\n        thickness: Number(item.thickness) || null,\n        board_no: parseInt(item.board_no) || null,\n        total_board: parseInt(item.total_board) || null,\n        total_time: Number(item.total_time) || null,\n        filmno: String(item.filmno || ''),\n        board_id: String(item.board_id || ''),\n        resist: Number(item.resist) || null,\n        state: item.state !== false,\n        scale_mode: String(item.scale_mode || ''),\n        pe_1: Number(item.pe_1) || null,\n        pe_2: Number(item.pe_2) || null,\n        pe_3: Number(item.pe_3) || null,\n        pe_4: Number(item.pe_4) || null,\n        pe_5: Number(item.pe_5) || null,\n        pe_6: Number(item.pe_6) || null,\n        je_1: Number(item.je_1) || null,\n        je_2: Number(item.je_2) || null,\n        je_3: Number(item.je_3) || null,\n        je_4: Number(item.je_4) || null,\n        pe_setting: Number(item.pe_setting) || null,\n        je_setting: Number(item.je_setting) || null,\n        log_id: parseInt(item.log_id) || null\n    });\n}\n\nreturn msg;",
+    "outputs": 1,
+    "timeout": "10",
+    "x": 320,
+    "y": 200,
+    "wires": [
+      ["ldi_db_insert"]
+    ]
+  },
+  {
+    "id": "ldi_db_insert",
+    "type": "postgresql",
+    "z": "ldi-ingestion-tab",
+    "name": "TimescaleDB",
+    "query": "",
+    "postgreSQLConfig": "pg_config",
+    "split": false,
+    "outputs": 0,
+    "x": 560,
+    "y": 200,
+    "wires": [
+      ["ldi_http_response"]
+    ]
+  },
+  {
+    "id": "ldi_http_response",
+    "type": "http response",
+    "z": "ldi-ingestion-tab",
+    "name": "Response",
+    "statusCode": "200",
+    "headers": {},
+    "x": 800,
+    "y": 200,
+    "wires": []
+  },
+  {
+    "id": "ldi_http_error",
+    "type": "catch",
+    "z": "ldi-ingestion-tab",
+    "name": "Catch LDI Errors",
+    "scope": ["ldi_db_insert"],
+    "x": 560,
+    "y": 300,
+    "wires": [
+      ["ldi_error_handler"]
+    ]
+  },
+  {
+    "id": "ldi_error_handler",
+    "type": "function",
+    "z": "ldi-ingestion-tab",
+    "name": "Error Handler",
+    "func": "const err = msg.error?.message || 'Unknown error';\nnode.error('LDI INSERT failed: ' + err);\nmsg.res.statusCode = 500;\nmsg.res.end(JSON.stringify({ error: err }));\nreturn null;",
+    "outputs": 1,
+    "x": 800,
+    "y": 300,
+    "wires": []
+  }
+]
