@@ -436,6 +436,48 @@ FULL OUTER JOIN pe_stats pe ON COALESCE(t.eqp_id, h.eqp_id) = pe.eqp_id
 ORDER BY stability_index DESC;
 
 -- ══════════════════════════════════════════════════════════════
+-- LDI NELSON RULES DETECTION (SPC Rule 1-3)
+-- ══════════════════════════════════════════════════════════════
+
+CREATE OR REPLACE VIEW public.v_ldi_nelson_rules_detection AS
+WITH raw_pe AS (
+    SELECT d."time", d.eqp_id,
+        GREATEST(ABS(COALESCE(d.pe_1,0)), ABS(COALESCE(d.pe_2,0)),
+                 ABS(COALESCE(d.pe_3,0)), ABS(COALESCE(d.pe_4,0)),
+                 ABS(COALESCE(d.pe_5,0)), ABS(COALESCE(d.pe_6,0))) AS max_pe
+    FROM public.ldi_data d WHERE d.pe_1 IS NOT NULL
+),
+rolling_stats AS (
+    SELECT rp."time", rp.eqp_id, rp.max_pe,
+        AVG(rp.max_pe) OVER w AS mu,
+        STDDEV(rp.max_pe) OVER w AS sigma
+    FROM raw_pe rp
+    WINDOW w AS (PARTITION BY rp.eqp_id ORDER BY rp."time" ROWS BETWEEN 29 PRECEDING AND CURRENT ROW)
+),
+with_sides AS (
+    SELECT rs."time", rs.eqp_id, rs.max_pe, rs.mu, rs.sigma,
+        CASE WHEN rs.max_pe > rs.mu THEN 1 WHEN rs.max_pe < rs.mu THEN -1 ELSE 0 END AS side,
+        rs.max_pe - LAG(rs.max_pe) OVER (PARTITION BY rs.eqp_id ORDER BY rs."time") AS delta
+    FROM rolling_stats rs
+)
+SELECT ws."time", ws.eqp_id, ROUND(ws.max_pe::NUMERIC, 4) AS avg_pe,
+    ROUND(ws.mu::NUMERIC, 4) AS mu, ROUND(ws.sigma::NUMERIC, 4) AS sigma,
+    ROUND((ws.mu + 3 * ws.sigma)::NUMERIC, 4) AS ucl,
+    ROUND((ws.mu - 3 * ws.sigma)::NUMERIC, 4) AS lcl,
+    CASE WHEN ws.sigma > 0 AND (ws.max_pe > ws.mu + 3 * ws.sigma OR ws.max_pe < ws.mu - 3 * ws.sigma) THEN 1 ELSE 0 END AS rule1_beyond_3sigma,
+    CASE WHEN SUM(CASE WHEN ws2.side != 0 THEN ws2.side ELSE 0 END)
+        OVER (PARTITION BY ws2.eqp_id ORDER BY ws2."time" ROWS BETWEEN 8 PRECEDING AND CURRENT ROW) IN (9, -9) THEN 1 ELSE 0 END AS rule2_nine_same_side,
+    CASE WHEN SUM(CASE WHEN ws2.delta > 0 THEN 1 WHEN ws2.delta < 0 THEN -1 ELSE 0 END)
+        OVER (PARTITION BY ws2.eqp_id ORDER BY ws2."time" ROWS BETWEEN 5 PRECEDING AND CURRENT ROW) IN (6, -6) THEN 1 ELSE 0 END AS rule3_six_trend,
+    CASE WHEN
+        (ws.sigma > 0 AND (ws.max_pe > ws.mu + 3 * ws.sigma OR ws.max_pe < ws.mu - 3 * ws.sigma))
+        OR SUM(CASE WHEN ws2.side != 0 THEN ws2.side ELSE 0 END) OVER (PARTITION BY ws2.eqp_id ORDER BY ws2."time" ROWS BETWEEN 8 PRECEDING AND CURRENT ROW) IN (9, -9)
+        OR SUM(CASE WHEN ws2.delta > 0 THEN 1 WHEN ws2.delta < 0 THEN -1 ELSE 0 END) OVER (PARTITION BY ws2.eqp_id ORDER BY ws2."time" ROWS BETWEEN 5 PRECEDING AND CURRENT ROW) IN (6, -6)
+    THEN 1 ELSE 0 END AS any_rule_triggered
+FROM with_sides ws LEFT JOIN with_sides ws2 ON ws."time" = ws2."time" AND ws.eqp_id = ws2.eqp_id
+ORDER BY ws.eqp_id, ws."time" DESC;
+
+-- ══════════════════════════════════════════════════════════════
 -- GRAFANA READ-ONLY ROLE
 -- ══════════════════════════════════════════════════════════════
 
