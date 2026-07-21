@@ -64,7 +64,7 @@
                 "value": null
               },
               {
-                "color": "#10B981",
+                "color": "#22C55E",
                 "value": 100
               }
             ]
@@ -96,7 +96,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(COUNT(DISTINCT eqp_id) FILTER (WHERE state = true) * 100.0 / NULLIF(COUNT(DISTINCT eqp_id), 0), 0) AS value FROM public.ldi_data WHERE $__timeFilter(time)",
+          "rawSql": "SELECT ROUND((COUNT(DISTINCT eqp_id) FILTER (WHERE state = true AND board_no > 0)::NUMERIC / NULLIF((SELECT COUNT(DISTINCT eqp_id) FROM public.ldi_data WHERE $__timeFilter(time)), 0)) * 100, 0) AS value FROM public.ldi_data WHERE $__timeFilter(time)",
           "format": "table"
         }
       ],
@@ -104,7 +104,7 @@
     },
     {
       "id": 2,
-      "title": "Avg Process Efficiency",
+      "title": "Avg Alignment Error",
       "type": "gauge",
       "datasource": {
         "uid": "timescaledb"
@@ -117,7 +117,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "percent",
+          "unit": "lengthmm",
           "min": 0,
           "max": 100,
           "decimals": 1,
@@ -125,16 +125,16 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#EF4444",
+                "color": "#22C55E",
                 "value": null
               },
               {
                 "color": "#FACC15",
-                "value": 70
+                "value": 10
               },
               {
-                "color": "#22C55E",
-                "value": 85
+                "color": "#EF4444",
+                "value": 20
               }
             ]
           },
@@ -161,7 +161,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(AVG((pe_1+pe_2+pe_3+pe_4+pe_5+pe_6)/6.0)::NUMERIC, 1) AS value FROM public.ldi_data WHERE $__timeFilter(time) AND pe_1 IS NOT NULL",
+          "rawSql": "WITH MaxPE AS (SELECT eqp_id, GREATEST(ABS(pe_1), ABS(pe_2), ABS(pe_3), ABS(pe_4), ABS(pe_5), ABS(pe_6)) AS max_error FROM public.ldi_data WHERE $__timeFilter(time) AND pe_1 IS NOT NULL) SELECT ROUND(AVG(max_error)::NUMERIC, 2) AS value FROM MaxPE",
           "format": "table"
         }
       ],
@@ -236,7 +236,7 @@
     },
     {
       "id": 4,
-      "title": "Active Alarms",
+      "title": "Active Critical Alarms",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -290,7 +290,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT COUNT(*) AS value FROM public.ldi_alarm_log WHERE $__timeFilter(logdate)",
+          "rawSql": "SELECT COUNT(*)::NUMERIC AS value FROM public.ldi_alarm_log WHERE logdate >= NOW() - INTERVAL '5 minutes'",
           "format": "table"
         }
       ],
@@ -495,7 +495,7 @@
     },
     {
       "id": 8,
-      "title": "Production Velocity",
+      "title": "Avg Cycle Time (s/board)",
       "type": "heatmap",
       "datasource": {
         "uid": "timescaledb"
@@ -521,7 +521,7 @@
           },
           "color": {
             "mode": "scheme",
-            "scheme": "Oranges"
+            "scheme": "Reds"
           }
         },
         "overrides": []
@@ -541,7 +541,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('5 minutes', time) AS time, eqp_id AS metric, COUNT(*) AS value FROM public.ldi_data WHERE $__timeFilter(time) AND total_board > 0 GROUP BY 1, 2 ORDER BY 1 ASC",
+          "rawSql": "SELECT time_bucket('5 minutes', time) AS time, eqp_id AS metric, ROUND(AVG(total_time / NULLIF(total_board, 0))::NUMERIC, 2) AS value FROM public.ldi_data WHERE $__timeFilter(time) AND total_board > 0 GROUP BY 1, 2 ORDER BY time",
           "format": "time_series"
         }
       ],
