@@ -1,13 +1,14 @@
 {
   "uid": "ldi-pcb-manufacturing",
-  "title": "IMS LDI — Executive Masterpiece Command Center",
-  "description": "Single-Pane-of-Glass 1920x1080 Kiosk. 10 panels, 4 rows, 24-grid. Zero scrolling, zero variables.",
+  "title": "IMS LDI — Apex Circuit Fleet Command Center",
+  "description": "1920x1080 Kiosk Mode. 10 panels, 24-grid, zero scrolling. Executive HUD + ERP Sync + Compliance Matrix + AIOps + Triage.",
   "tags": [
     "ims",
     "ldi",
     "manufacturing",
     "kiosk",
-    "masterpiece"
+    "isa101",
+    "eemua191"
   ],
   "timezone": "browser",
   "schemaVersion": 39,
@@ -104,7 +105,7 @@
     {
       "id": 2,
       "title": "Avg Process Efficiency",
-      "type": "stat",
+      "type": "gauge",
       "datasource": {
         "uid": "timescaledb"
       },
@@ -117,6 +118,8 @@
       "fieldConfig": {
         "defaults": {
           "unit": "percent",
+          "min": 0,
+          "max": 100,
           "decimals": 1,
           "thresholds": {
             "mode": "absolute",
@@ -126,11 +129,11 @@
                 "value": null
               },
               {
-                "color": "#F59E0B",
-                "value": 80
+                "color": "#FACC15",
+                "value": 70
               },
               {
-                "color": "#10B981",
+                "color": "#22C55E",
                 "value": 85
               }
             ]
@@ -142,19 +145,15 @@
         "overrides": []
       },
       "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "center",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
           ],
           "values": false
         },
-        "text": {
-          "valueSize": 48,
-          "titleSize": 14
-        }
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "noValue": "N/A"
       },
       "targets": [
         {
@@ -193,11 +192,11 @@
                 "value": null
               },
               {
-                "color": "#F59E0B",
+                "color": "#FACC15",
                 "value": 50
               },
               {
-                "color": "#10B981",
+                "color": "#22C55E",
                 "value": 90
               }
             ]
@@ -254,7 +253,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#10B981",
+                "color": "#22C55E",
                 "value": null
               },
               {
@@ -299,63 +298,26 @@
     },
     {
       "id": 5,
-      "title": "Machine State",
-      "type": "state-timeline",
+      "title": "Live Production Sync",
+      "type": "table",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 0,
         "y": 4,
-        "w": 8,
+        "w": 12,
         "h": 8
       },
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "0": {
-                  "text": "DOWN",
-                  "color": "#EF4444"
-                },
-                "1": {
-                  "text": "RUN",
-                  "color": "#10B981"
-                }
-              }
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#EF4444",
-                "value": null
-              },
-              {
-                "color": "#10B981",
-                "value": 1
-              }
-            ]
-          },
-          "color": {
-            "mode": "thresholds"
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
       "options": {
-        "showValue": "auto",
-        "mergeValues": true,
-        "alignValue": "center",
-        "rowHeight": 0.85,
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        }
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "Machine",
+            "desc": false
+          }
+        ],
+        "rowHeight": 0.65
       },
       "targets": [
         {
@@ -363,9 +325,8 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, eqp_id AS metric, CASE WHEN state = true THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE $__timeFilter(time) ORDER BY time ASC",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
+          "rawSql": "SELECT DISTINCT ON (eqp_id) eqp_id AS \"Machine\", mo AS \"Job (MO)\", fpn AS \"Part (FPN)\", layer_name AS \"Layer\", (board_no::TEXT || '/' || total_board::TEXT) AS \"Progress\" FROM public.ldi_data WHERE $__timeFilter(time) ORDER BY eqp_id, time DESC",
+          "format": "table"
         }
       ],
       "transparent": true
@@ -378,9 +339,9 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 8,
+        "x": 12,
         "y": 4,
-        "w": 8,
+        "w": 6,
         "h": 8
       },
       "fieldConfig": {
@@ -395,11 +356,11 @@
                 },
                 "1": {
                   "text": "WARN",
-                  "color": "#F59E0B"
+                  "color": "#FACC15"
                 },
                 "2": {
                   "text": "OK",
-                  "color": "#10B981"
+                  "color": "#22C55E"
                 }
               }
             }
@@ -412,11 +373,11 @@
                 "value": null
               },
               {
-                "color": "#F59E0B",
+                "color": "#FACC15",
                 "value": 1
               },
               {
-                "color": "#10B981",
+                "color": "#22C55E",
                 "value": 2
               }
             ]
@@ -459,9 +420,9 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 16,
+        "x": 18,
         "y": 4,
-        "w": 8,
+        "w": 6,
         "h": 8
       },
       "fieldConfig": {
@@ -476,11 +437,11 @@
                 },
                 "1": {
                   "text": "WARN",
-                  "color": "#F59E0B"
+                  "color": "#FACC15"
                 },
                 "2": {
                   "text": "OK",
-                  "color": "#10B981"
+                  "color": "#22C55E"
                 }
               }
             }
@@ -493,11 +454,11 @@
                 "value": null
               },
               {
-                "color": "#F59E0B",
+                "color": "#FACC15",
                 "value": 1
               },
               {
-                "color": "#10B981",
+                "color": "#22C55E",
                 "value": 2
               }
             ]
@@ -534,48 +495,13 @@
     },
     {
       "id": 8,
-      "title": "Active Production Sync",
-      "type": "table",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 12,
-        "w": 12,
-        "h": 6
-      },
-      "options": {
-        "showHeader": true,
-        "sortBy": [
-          {
-            "displayName": "Machine",
-            "desc": false
-          }
-        ],
-        "rowHeight": 0.7
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT DISTINCT ON (eqp_id) eqp_id AS \"Machine\", mo AS \"Job\", fpn AS \"Part\", layer_name AS \"Layer\", (board_no::TEXT || '/' || total_board::TEXT) AS \"Progress\" FROM public.ldi_data WHERE $__timeFilter(time) ORDER BY eqp_id, time DESC",
-          "format": "table"
-        }
-      ],
-      "transparent": true
-    },
-    {
-      "id": 9,
-      "title": "Fault Density",
+      "title": "Production Velocity",
       "type": "heatmap",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 12,
+        "x": 0,
         "y": 12,
         "w": 12,
         "h": 6
@@ -615,15 +541,100 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('5 minutes', logdate) AS time, equipmentid AS metric, COUNT(*) AS value FROM public.ldi_alarm_log WHERE $__timeFilter(logdate) GROUP BY 1, 2 ORDER BY time ASC",
+          "rawSql": "SELECT time_bucket('5 minutes', time) AS time, eqp_id AS metric, COUNT(*) AS value FROM public.ldi_data WHERE $__timeFilter(time) AND total_board > 0 GROUP BY 1, 2 ORDER BY 1 ASC",
           "format": "time_series"
         }
       ],
       "transparent": true
     },
     {
+      "id": 9,
+      "title": "Thermal Z-Score Anomaly",
+      "type": "timeseries",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 12,
+        "w": 12,
+        "h": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 2,
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 20,
+            "lineWidth": 2,
+            "showPoints": "never",
+            "spanNulls": false,
+            "gradientMode": "opacity",
+            "connectNullPoints": true
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#EF4444",
+                "value": null
+              },
+              {
+                "color": "#22C55E",
+                "value": -2
+              },
+              {
+                "color": "#FACC15",
+                "value": 2.5
+              },
+              {
+                "color": "#EF4444",
+                "value": 3
+              }
+            ]
+          },
+          "thresholdsStyle": {
+            "mode": "line+area"
+          },
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "lastNotNull"
+          ]
+        },
+        "connectNullPoints": true
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "WITH stats AS (SELECT eqp_id, AVG(temperature) AS mu, STDDEV(temperature) AS sigma FROM public.ldi_data WHERE time > NOW() - INTERVAL '24 hours' GROUP BY eqp_id) SELECT d.time, d.eqp_id AS metric, ROUND(((d.temperature - s.mu) / NULLIF(s.sigma, 0))::NUMERIC, 2) AS \"Z-Score\" FROM public.ldi_data d JOIN stats s ON d.eqp_id = s.eqp_id WHERE $__timeFilter(d.time) AND d.temperature IS NOT NULL AND s.sigma > 0 ORDER BY d.time ASC",
+          "format": "time_series",
+          "legendFormat": "{{metric}}"
+        }
+      ],
+      "transparent": true
+    },
+    {
       "id": 10,
-      "title": "Critical Alarm Log",
+      "title": "Unified Alarm Command Stream",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
@@ -654,11 +665,11 @@
                         "text": "Critical"
                       },
                       "Warning": {
-                        "color": "#F59E0B",
+                        "color": "#FACC15",
                         "text": "Warning"
                       },
                       "WARN": {
-                        "color": "#F59E0B",
+                        "color": "#FACC15",
                         "text": "Warning"
                       }
                     }
@@ -691,7 +702,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT a.logdate AS \"Time\", a.equipmentid AS \"Machine\", COALESCE(m.alarm_msg, a.errorcode::TEXT) AS \"Message\", COALESCE(m.alarm_type, 'WARN') AS \"Severity\" FROM public.ldi_alarm_log a LEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT WHERE $__timeFilter(a.logdate) ORDER BY a.logdate DESC LIMIT 15",
+          "rawSql": "SELECT a.logdate AS \"Time\", a.equipmentid AS \"Machine\", COALESCE(m.alarm_msg, a.errorcode::TEXT) AS \"Message\", COALESCE(m.alarm_type, 'WARN') AS \"Severity\" FROM public.ldi_alarm_log a LEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT WHERE $__timeFilter(a.logdate) ORDER BY a.logdate DESC LIMIT 20",
           "format": "table"
         }
       ],
