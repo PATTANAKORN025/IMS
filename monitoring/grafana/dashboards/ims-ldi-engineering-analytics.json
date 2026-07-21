@@ -648,6 +648,156 @@
       ],
       "description": "Z-Score of max PE deviation. Tracks if alignment error is statistically drifting beyond normal process variation.",
       "transparent": true
+    },
+    {
+      "id": 7,
+      "title": "Machine Cpk Ranking",
+      "type": "table",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 24,
+        "w": 12,
+        "h": 8
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "Cpk",
+            "desc": true
+          }
+        ],
+        "rowHeight": 0.7
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT eqp_id AS \"Machine\", sample_count AS \"Samples\", mean_pe AS \"Mean PE\", stddev_pe AS \"StdDev\", cp AS \"Cp\", cpk AS \"Cpk\", capability_class AS \"Capability\" FROM public.v_machine_spc_ranking ORDER BY cpk DESC",
+          "format": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Capability"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "World Class": {
+                        "color": "#22C55E",
+                        "text": "World Class"
+                      },
+                      "Excellent": {
+                        "color": "#22C55E",
+                        "text": "Excellent"
+                      },
+                      "Capable": {
+                        "color": "#FACC15",
+                        "text": "Capable"
+                      },
+                      "Marginally Capable": {
+                        "color": "#FACC15",
+                        "text": "Marginal"
+                      },
+                      "Not Capable": {
+                        "color": "#EF4444",
+                        "text": "Not Capable"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "description": "Machine ranking by Cpk (process capability index). Cpk >= 1.67 = Excellent, >= 1.33 = Capable, < 1.0 = Not Capable.",
+      "transparent": true
+    },
+    {
+      "id": 8,
+      "title": "Process Stability Index",
+      "type": "bargauge",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 24,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "max": 100,
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#EF4444",
+                "value": null
+              },
+              {
+                "color": "#FACC15",
+                "value": 40
+              },
+              {
+                "color": "#22C55E",
+                "value": 70
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT eqp_id AS metric, stability_index AS value FROM public.v_process_stability ORDER BY stability_index DESC",
+          "format": "table"
+        }
+      ],
+      "description": "Composite stability score (0-100) combining temperature, humidity, and PE stability. Green >= 70, Amber >= 40, Red < 40.",
+      "transparent": true
     }
   ],
   "fiscalYearStartMonth": 0
