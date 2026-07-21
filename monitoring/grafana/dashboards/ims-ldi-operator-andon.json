@@ -98,7 +98,8 @@
           "format": "table"
         }
       ],
-      "transparent": true
+      "transparent": true,
+      "description": "Fleet Availability: percentage of machines running and actively producing."
     },
     {
       "id": 2,
@@ -160,7 +161,8 @@
           "format": "table"
         }
       ],
-      "transparent": true
+      "transparent": true,
+      "description": "Active Alarms: count of unresolved alarms in the last 5 minutes."
     },
     {
       "id": 3,
@@ -226,7 +228,8 @@
           "format": "table"
         }
       ],
-      "transparent": true
+      "transparent": true,
+      "description": "Environmental Compliance: percentage of machines within safe temperature AND humidity."
     },
     {
       "id": 4,
@@ -303,7 +306,8 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "transparent": true
+      "transparent": true,
+      "description": "Machine Run State: per-machine green/red timeline showing RUNNING vs STOPPED."
     },
     {
       "id": 5,
@@ -384,7 +388,8 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "transparent": true
+      "transparent": true,
+      "description": "Temperature Compliance: per-machine 3-color matrix. Green=20-24°C, Amber=19-25°C, Red=outside."
     },
     {
       "id": 6,
@@ -465,7 +470,8 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "transparent": true
+      "transparent": true,
+      "description": "Humidity Compliance: per-machine 3-color matrix. Green=50-60%, Amber=45-65%, Red=outside."
     },
     {
       "id": 7,
@@ -500,7 +506,8 @@
           "format": "table"
         }
       ],
-      "transparent": true
+      "transparent": true,
+      "description": "Live Production: current MO, part, layer, and board progress per machine."
     },
     {
       "id": 8,
@@ -572,7 +579,8 @@
           "format": "table"
         }
       ],
-      "transparent": true
+      "transparent": true,
+      "description": "Alarm Stream: latest alarms with human-readable messages and color-coded severity."
     }
   ],
   "fiscalYearStartMonth": 0
