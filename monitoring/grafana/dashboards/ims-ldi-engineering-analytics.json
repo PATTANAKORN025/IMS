@@ -196,16 +196,14 @@
         }
       },
       "targets": [
-        [
-          {
-            "refId": "A",
-            "datasource": {
-              "uid": "timescaledb"
-            },
-            "rawSql": "SELECT GREATEST(ABS(COALESCE(pe_1,0)),ABS(COALESCE(pe_2,0)),ABS(COALESCE(pe_3,0)),ABS(COALESCE(pe_4,0)),ABS(COALESCE(pe_5,0)),ABS(COALESCE(pe_6,0)))::NUMERIC AS \"PE Deviation\" FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND pe_1 IS NOT NULL",
-            "format": "time_series"
-          }
-        ]
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT GREATEST(ABS(COALESCE(pe_1,0)),ABS(COALESCE(pe_2,0)),ABS(COALESCE(pe_3,0)),ABS(COALESCE(pe_4,0)),ABS(COALESCE(pe_5,0)),ABS(COALESCE(pe_6,0)))::NUMERIC AS \"PE Deviation\" FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND pe_1 IS NOT NULL",
+          "format": "table"
+        }
       ],
       "description": [
         "Histogram of max PE deviation across all 6 fiducials. Shows process centering and spread relative to ±25µm spec limits."
@@ -214,8 +212,8 @@
     },
     {
       "id": 3,
-      "title": "Correlation: Temperature vs Registration Error (Scatter)",
-      "type": "xychart",
+      "title": "Correlation: Temperature vs Registration Error",
+      "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
       },
@@ -227,39 +225,89 @@
       },
       "fieldConfig": {
         "defaults": {
+          "unit": "lengthum",
+          "decimals": 2,
+          "custom": {
+            "drawStyle": "points",
+            "pointSize": 6,
+            "lineWidth": 0,
+            "fillOpacity": 60,
+            "spanNulls": false,
+            "connectNullPoints": false,
+            "gradientMode": "opacity",
+            "showPoints": "auto"
+          },
           "color": {
             "mode": "palette-classic"
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Temperature"
+            },
+            "properties": [
+              {
+                "id": "custom.axisPlacement",
+                "value": "left"
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "Temperature (C)"
+              },
+              {
+                "id": "unit",
+                "value": "celsius"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*PE.*"
+            },
+            "properties": [
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "PE Deviation (um)"
+              },
+              {
+                "id": "unit",
+                "value": "lengthum"
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "tooltip": {
-          "mode": "single",
+          "mode": "multi",
           "sort": "desc"
         },
         "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean"
+          ]
         },
-        "showXAxis": true,
-        "showYAxis": true,
-        "xAxisLabel": "Temperature (°C)",
-        "yAxisLabel": "Max PE Deviation (µm)",
-        "pointSize": 5,
-        "lineWidth": 0
+        "connectNullPoints": true
       },
       "targets": [
-        [
-          {
-            "refId": "A",
-            "datasource": {
-              "uid": "timescaledb"
-            },
-            "rawSql": "SELECT temperature AS \"X\", GREATEST(ABS(COALESCE(pe_1,0)),ABS(COALESCE(pe_2,0)),ABS(COALESCE(pe_3,0)),ABS(COALESCE(pe_4,0)),ABS(COALESCE(pe_5,0)),ABS(COALESCE(pe_6,0)))::NUMERIC AS \"Y\" FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND pe_1 IS NOT NULL AND temperature IS NOT NULL",
-            "format": "time_series"
-          }
-        ]
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT temperature AS \"X\", GREATEST(ABS(COALESCE(pe_1,0)),ABS(COALESCE(pe_2,0)),ABS(COALESCE(pe_3,0)),ABS(COALESCE(pe_4,0)),ABS(COALESCE(pe_5,0)),ABS(COALESCE(pe_6,0)))::NUMERIC AS \"Y\" FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND pe_1 IS NOT NULL AND temperature IS NOT NULL",
+          "format": "time_series",
+          "legendFormat": "{{metric}}"
+        }
       ],
       "description": [
         "XY Scatter: Temperature (X-axis) vs Max PE Deviation (Y-axis). Shows whether thermal drift correlates with alignment error."
