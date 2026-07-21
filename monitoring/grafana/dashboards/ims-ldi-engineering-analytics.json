@@ -54,7 +54,7 @@
   "panels": [
     {
       "id": 1,
-      "title": "Registration Error (PE) — Max |Deviation| vs ±25µm Tolerance",
+      "title": "X-Bar Control Chart — Max PE Deviation",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -68,210 +68,7 @@
       "fieldConfig": {
         "defaults": {
           "unit": "lengthum",
-          "decimals": 1,
-          "custom": {
-            "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "fillOpacity": 25,
-            "lineWidth": 2,
-            "showPoints": "never",
-            "spanNulls": false,
-            "gradientMode": "opacity",
-            "connectNullPoints": true
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#22C55E",
-                "value": null
-              },
-              {
-                "color": "#FACC15",
-                "value": 15
-              },
-              {
-                "color": "#EF4444",
-                "value": 25
-              }
-            ]
-          },
-          "thresholdsStyle": {
-            "mode": "line+area"
-          },
-          "color": {
-            "mode": "palette-classic"
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        },
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "mean",
-            "max"
-          ]
-        },
-        "connectNullPoints": true
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT time, eqp_id AS metric, ROUND(GREATEST(ABS(pe_1), ABS(pe_2), ABS(pe_3), ABS(pe_4), ABS(pe_5), ABS(pe_6))::NUMERIC, 1) AS \"Max |PE| (µm)\" FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND pe_1 IS NOT NULL ORDER BY time ASC",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
-        }
-      ],
-      "description": "Max absolute PE deviation across 6 measurement points. Green < 15µm, Amber 15-25µm, Red > 25µm (breach). Horizontal threshold lines at 15µm and 25µm.",
-      "transparent": true
-    },
-    {
-      "id": 2,
-      "title": "PE Individual Points (6-Fiducial)",
-      "type": "timeseries",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 12,
-        "y": 0,
-        "w": 12,
-        "h": 8
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "lengthum",
-          "decimals": 1,
-          "custom": {
-            "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "fillOpacity": 0,
-            "lineWidth": 1,
-            "showPoints": "never",
-            "spanNulls": false,
-            "gradientMode": "opacity",
-            "connectNullPoints": true
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#22C55E",
-                "value": null
-              },
-              {
-                "color": "#EF4444",
-                "value": 25
-              }
-            ]
-          },
-          "thresholdsStyle": {
-            "mode": "line"
-          },
-          "color": {
-            "mode": "palette-classic"
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        },
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "mean",
-            "max"
-          ]
-        },
-        "connectNullPoints": true
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT time, eqp_id || ' - PE1' AS metric, pe_1 AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND pe_1 IS NOT NULL ORDER BY time ASC",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
-        },
-        {
-          "refId": "B",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT time, eqp_id || ' - PE2' AS metric, pe_2 AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND pe_2 IS NOT NULL ORDER BY time ASC",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
-        },
-        {
-          "refId": "C",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT time, eqp_id || ' - PE3' AS metric, pe_3 AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND pe_3 IS NOT NULL ORDER BY time ASC",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
-        },
-        {
-          "refId": "D",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT time, eqp_id || ' - PE4' AS metric, pe_4 AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND pe_4 IS NOT NULL ORDER BY time ASC",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
-        },
-        {
-          "refId": "E",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT time, eqp_id || ' - PE5' AS metric, pe_5 AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND pe_5 IS NOT NULL ORDER BY time ASC",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
-        },
-        {
-          "refId": "F",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT time, eqp_id || ' - PE6' AS metric, pe_6 AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND pe_6 IS NOT NULL ORDER BY time ASC",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
-        }
-      ],
-      "description": "Individual PE values at 6 fiducial points. ±25µm tolerance shown as horizontal threshold lines.",
-      "transparent": true
-    },
-    {
-      "id": 3,
-      "title": "Temperature vs Registration Error",
-      "type": "timeseries",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 8,
-        "w": 12,
-        "h": 8
-      },
-      "fieldConfig": {
-        "defaults": {
+          "decimals": 2,
           "custom": {
             "drawStyle": "line",
             "lineInterpolation": "smooth",
@@ -286,48 +83,7 @@
             "mode": "palette-classic"
           }
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": ".*PE.*"
-            },
-            "properties": [
-              {
-                "id": "custom.axisPlacement",
-                "value": "right"
-              },
-              {
-                "id": "custom.axisLabel",
-                "value": "PE (µm)"
-              },
-              {
-                "id": "unit",
-                "value": "lengthum"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": ".*Temp.*"
-            },
-            "properties": [
-              {
-                "id": "custom.axisPlacement",
-                "value": "left"
-              },
-              {
-                "id": "custom.axisLabel",
-                "value": "Temperature (°C)"
-              },
-              {
-                "id": "unit",
-                "value": "celsius"
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "options": {
         "tooltip": {
@@ -339,7 +95,7 @@
           "placement": "bottom",
           "calcs": [
             "mean",
-            "lastNotNull"
+            "max"
           ]
         },
         "connectNullPoints": true
@@ -350,21 +106,164 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, eqp_id || ' - Temp' AS metric, temperature AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND temperature IS NOT NULL ORDER BY time ASC",
+          "rawSql": "SELECT time_bucket('1 minute', time) AS time, eqp_id AS metric, ROUND(AVG(GREATEST(ABS(COALESCE(pe_1,0)),ABS(COALESCE(pe_2,0)),ABS(COALESCE(pe_3,0)),ABS(COALESCE(pe_4,0)),ABS(COALESCE(pe_5,0)),ABS(COALESCE(pe_6,0))))::NUMERIC, 2) AS \"X-Bar\" FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND pe_1 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
-          "legendFormat": "{{metric}}"
+          "legendFormat": "{{metric}} X-Bar"
         },
         {
           "refId": "B",
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, eqp_id || ' - Max PE' AS metric, ROUND(GREATEST(ABS(pe_1), ABS(pe_2), ABS(pe_3), ABS(pe_4), ABS(pe_5), ABS(pe_6))::NUMERIC, 1) AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND pe_1 IS NOT NULL ORDER BY time ASC",
+          "rawSql": "WITH raw_pe AS (SELECT time_bucket('1 minute', time) AS time, eqp_id, AVG(GREATEST(ABS(COALESCE(pe_1,0)),ABS(COALESCE(pe_2,0)),ABS(COALESCE(pe_3,0)),ABS(COALESCE(pe_4,0)),ABS(COALESCE(pe_5,0)),ABS(COALESCE(pe_6,0)))) AS max_pe FROM public.ldi_data WHERE pe_1 IS NOT NULL GROUP BY 1, 2) SELECT time, eqp_id AS metric, ROUND((AVG(max_pe) OVER (PARTITION BY eqp_id ORDER BY time ROWS BETWEEN 29 PRECEDING AND CURRENT ROW) + 3 * COALESCE(STDDEV(max_pe) OVER (PARTITION BY eqp_id ORDER BY time ROWS BETWEEN 29 PRECEDING AND CURRENT ROW), 0))::NUMERIC, 2) AS \"UCL\" FROM raw_pe WHERE eqp_id IN (${machine_id:singlequote}) ORDER BY time",
           "format": "time_series",
-          "legendFormat": "{{metric}}"
+          "legendFormat": "{{metric}} UCL"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "WITH raw_pe AS (SELECT time_bucket('1 minute', time) AS time, eqp_id, AVG(GREATEST(ABS(COALESCE(pe_1,0)),ABS(COALESCE(pe_2,0)),ABS(COALESCE(pe_3,0)),ABS(COALESCE(pe_4,0)),ABS(COALESCE(pe_5,0)),ABS(COALESCE(pe_6,0)))) AS max_pe FROM public.ldi_data WHERE pe_1 IS NOT NULL GROUP BY 1, 2) SELECT time, eqp_id AS metric, ROUND(AVG(max_pe) OVER (PARTITION BY eqp_id ORDER BY time ROWS BETWEEN 29 PRECEDING AND CURRENT ROW)::NUMERIC, 2) AS \"CL (μ)\" FROM raw_pe WHERE eqp_id IN (${machine_id:singlequote}) ORDER BY time",
+          "format": "time_series",
+          "legendFormat": "{{metric}} CL"
+        },
+        {
+          "refId": "D",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "WITH raw_pe AS (SELECT time_bucket('1 minute', time) AS time, eqp_id, AVG(GREATEST(ABS(COALESCE(pe_1,0)),ABS(COALESCE(pe_2,0)),ABS(COALESCE(pe_3,0)),ABS(COALESCE(pe_4,0)),ABS(COALESCE(pe_5,0)),ABS(COALESCE(pe_6,0)))) AS max_pe FROM public.ldi_data WHERE pe_1 IS NOT NULL GROUP BY 1, 2) SELECT time, eqp_id AS metric, ROUND((AVG(max_pe) OVER (PARTITION BY eqp_id ORDER BY time ROWS BETWEEN 29 PRECEDING AND CURRENT ROW) - 3 * COALESCE(STDDEV(max_pe) OVER (PARTITION BY eqp_id ORDER BY time ROWS BETWEEN 29 PRECEDING AND CURRENT ROW), 0))::NUMERIC, 2) AS \"LCL\" FROM raw_pe WHERE eqp_id IN (${machine_id:singlequote}) ORDER BY time",
+          "format": "time_series",
+          "legendFormat": "{{metric}} LCL"
         }
       ],
-      "description": "Dual Y-axis: Temperature (line, left) vs Max PE Deviation (line, right). Shows temporal correlation between thermal drift and alignment error.",
+      "description": "Max absolute PE deviation across 6 measurement points. Green < 15µm, Amber 15-25µm, Red > 25µm (breach). Horizontal threshold lines at 15µm and 25µm.",
+      "transparent": true
+    },
+    {
+      "id": 2,
+      "title": "Registration Error Distribution vs Spec Limits",
+      "type": "histogram",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "lengthum",
+          "custom": {
+            "fillOpacity": 60,
+            "lineWidth": 1
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#22C55E",
+                "value": null
+              },
+              {
+                "color": "#FACC15",
+                "value": 20
+              },
+              {
+                "color": "#EF4444",
+                "value": 25
+              }
+            ]
+          },
+          "thresholdsStyle": {
+            "mode": "line"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "bucketSize": 2,
+        "combine": true,
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        [
+          {
+            "refId": "A",
+            "datasource": {
+              "uid": "timescaledb"
+            },
+            "rawSql": "SELECT GREATEST(ABS(COALESCE(pe_1,0)),ABS(COALESCE(pe_2,0)),ABS(COALESCE(pe_3,0)),ABS(COALESCE(pe_4,0)),ABS(COALESCE(pe_5,0)),ABS(COALESCE(pe_6,0)))::NUMERIC AS \"PE Deviation\" FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND pe_1 IS NOT NULL",
+            "format": "time_series"
+          }
+        ]
+      ],
+      "description": [
+        "Histogram of max PE deviation across all 6 fiducials. Shows process centering and spread relative to ±25µm spec limits."
+      ],
+      "transparent": true
+    },
+    {
+      "id": 3,
+      "title": "Correlation: Temperature vs Registration Error (Scatter)",
+      "type": "xychart",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "single",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "showXAxis": true,
+        "showYAxis": true,
+        "xAxisLabel": "Temperature (°C)",
+        "yAxisLabel": "Max PE Deviation (µm)",
+        "pointSize": 5,
+        "lineWidth": 0
+      },
+      "targets": [
+        [
+          {
+            "refId": "A",
+            "datasource": {
+              "uid": "timescaledb"
+            },
+            "rawSql": "SELECT temperature AS \"X\", GREATEST(ABS(COALESCE(pe_1,0)),ABS(COALESCE(pe_2,0)),ABS(COALESCE(pe_3,0)),ABS(COALESCE(pe_4,0)),ABS(COALESCE(pe_5,0)),ABS(COALESCE(pe_6,0)))::NUMERIC AS \"Y\" FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND pe_1 IS NOT NULL AND temperature IS NOT NULL",
+            "format": "time_series"
+          }
+        ]
+      ],
+      "description": [
+        "XY Scatter: Temperature (X-axis) vs Max PE Deviation (Y-axis). Shows whether thermal drift correlates with alignment error."
+      ],
       "transparent": true
     },
     {
