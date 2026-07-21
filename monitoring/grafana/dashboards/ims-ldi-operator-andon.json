@@ -157,7 +157,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT COUNT(*) AS value FROM public.ldi_alarm_log WHERE $__timeFilter(logdate)",
+          "rawSql": "SELECT COUNT(*)::NUMERIC AS value FROM public.ldi_alarm_log a LEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT WHERE a.logdate >= NOW() - INTERVAL '5 minutes' AND m.alarm_type ILIKE '%Critical%'",
           "format": "table"
         }
       ],
