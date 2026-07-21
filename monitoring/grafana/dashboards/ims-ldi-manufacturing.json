@@ -96,16 +96,16 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND((COUNT(DISTINCT eqp_id) FILTER (WHERE state = true AND board_no > 0)::NUMERIC / NULLIF((SELECT COUNT(DISTINCT eqp_id) FROM public.ldi_data WHERE $__timeFilter(time)), 0)) * 100, 0) AS value FROM public.ldi_data WHERE $__timeFilter(time)",
+          "rawSql": "SELECT ROUND((COUNT(DISTINCT eqp_id) FILTER (WHERE state = true)::NUMERIC / NULLIF((SELECT COUNT(DISTINCT eqp_id) FROM public.ldi_data WHERE $__timeFilter(time)), 0)) * 100, 0) AS value FROM public.ldi_data WHERE $__timeFilter(time)",
           "format": "table"
         }
       ],
       "transparent": true,
-      "description": "Fleet Uptime: percentage of machines actively producing (state=true AND board_no>0). Green=100%, Red<100%."
+      "description": "Percentage of machines powered on and available for production."
     },
     {
       "id": 2,
-      "title": "Avg Alignment Error",
+      "title": "Avg Alignment Error (µm)",
       "type": "gauge",
       "datasource": {
         "uid": "timescaledb"
@@ -118,7 +118,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "lengthmm",
+          "unit": "lengthum",
           "min": 0,
           "max": 100,
           "decimals": 1,
@@ -293,7 +293,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT COUNT(*)::NUMERIC AS value FROM public.ldi_alarm_log WHERE logdate >= NOW() - INTERVAL '5 minutes'",
+          "rawSql": "SELECT COUNT(*)::NUMERIC AS value FROM public.ldi_alarm_log a LEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT WHERE a.logdate >= NOW() - INTERVAL '5 minutes' AND m.alarm_type ILIKE '%Critical%'",
           "format": "table"
         }
       ],
