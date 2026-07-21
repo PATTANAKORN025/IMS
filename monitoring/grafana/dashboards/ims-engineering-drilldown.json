@@ -2004,7 +2004,8 @@
             "mean",
             "lastNotNull"
           ]
-        }
+        },
+        "connectNullPoints": true
       },
       "targets": [
         {

@@ -48,7 +48,8 @@
             "showPoints": "auto",
             "pointSize": 5,
             "showGridLines": false,
-            "axisBorderShow": false
+            "axisBorderShow": false,
+            "gradientMode": "opacity"
           }
         },
         "overrides": [
@@ -73,7 +74,10 @@
           "refId": "A"
         }
       ],
-      "description": "Rate of successful database inserts per second from the pipeline."
+      "description": "Rate of successful database inserts per second from the pipeline.",
+      "options": {
+        "connectNullPoints": true
+      }
     },
     {
       "type": "timeseries",
@@ -102,7 +106,8 @@
             "fillOpacity": 15,
             "spanNulls": true,
             "showGridLines": false,
-            "axisBorderShow": false
+            "axisBorderShow": false,
+            "gradientMode": "opacity"
           }
         },
         "overrides": [
@@ -127,7 +132,10 @@
           "refId": "A"
         }
       ],
-      "description": "Rate of failed database inserts per second. High values indicate pipeline instability."
+      "description": "Rate of failed database inserts per second. High values indicate pipeline instability.",
+      "options": {
+        "connectNullPoints": true
+      }
     },
     {
       "type": "stat",
@@ -462,7 +470,8 @@
             "fillOpacity": 50,
             "spanNulls": true,
             "showGridLines": false,
-            "axisBorderShow": false
+            "axisBorderShow": false,
+            "gradientMode": "opacity"
           }
         },
         "overrides": [
@@ -487,7 +496,10 @@
           "refId": "A"
         }
       ],
-      "description": "Rate of circuit breaker trips per device. Indicates intermittent connectivity issues."
+      "description": "Rate of circuit breaker trips per device. Indicates intermittent connectivity issues.",
+      "options": {
+        "connectNullPoints": true
+      }
     },
     {
       "type": "table",
@@ -729,7 +741,8 @@
             "fillOpacity": 10,
             "spanNulls": true,
             "showGridLines": false,
-            "axisBorderShow": false
+            "axisBorderShow": false,
+            "gradientMode": "opacity"
           }
         },
         "overrides": [
@@ -754,7 +767,10 @@
           "refId": "A"
         }
       ],
-      "description": "Number of devices polled per injection cycle."
+      "description": "Number of devices polled per injection cycle.",
+      "options": {
+        "connectNullPoints": true
+      }
     },
     {
       "type": "gauge",
