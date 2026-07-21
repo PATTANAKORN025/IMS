@@ -202,7 +202,7 @@
             "uid": "timescaledb"
           },
           "rawSql": "SELECT GREATEST(ABS(COALESCE(pe_1,0)),ABS(COALESCE(pe_2,0)),ABS(COALESCE(pe_3,0)),ABS(COALESCE(pe_4,0)),ABS(COALESCE(pe_5,0)),ABS(COALESCE(pe_6,0)))::NUMERIC AS \"PE Deviation\" FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND pe_1 IS NOT NULL",
-          "format": "table"
+          "format": "time_series"
         }
       ],
       "description": [
@@ -228,14 +228,14 @@
           "unit": "lengthum",
           "decimals": 2,
           "custom": {
-            "drawStyle": "points",
-            "pointSize": 6,
-            "lineWidth": 0,
-            "fillOpacity": 60,
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "showPoints": "never",
             "spanNulls": false,
-            "connectNullPoints": false,
             "gradientMode": "opacity",
-            "showPoints": "auto"
+            "connectNullPoints": true
           },
           "color": {
             "mode": "palette-classic"
@@ -244,8 +244,8 @@
         "overrides": [
           {
             "matcher": {
-              "id": "byName",
-              "options": "Temperature"
+              "id": "byRegexp",
+              "options": ".*Temp.*"
             },
             "properties": [
               {
@@ -304,7 +304,16 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT temperature AS \"X\", GREATEST(ABS(COALESCE(pe_1,0)),ABS(COALESCE(pe_2,0)),ABS(COALESCE(pe_3,0)),ABS(COALESCE(pe_4,0)),ABS(COALESCE(pe_5,0)),ABS(COALESCE(pe_6,0)))::NUMERIC AS \"Y\" FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND pe_1 IS NOT NULL AND temperature IS NOT NULL",
+          "rawSql": "SELECT time, eqp_id || ' - Temperature' AS metric, temperature AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND temperature IS NOT NULL ORDER BY time ASC",
+          "format": "time_series",
+          "legendFormat": "{{metric}}"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT time, eqp_id || ' - Max PE' AS metric, ROUND(GREATEST(ABS(COALESCE(pe_1,0)),ABS(COALESCE(pe_2,0)),ABS(COALESCE(pe_3,0)),ABS(COALESCE(pe_4,0)),ABS(COALESCE(pe_5,0)),ABS(COALESCE(pe_6,0)))::NUMERIC, 2) AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND pe_1 IS NOT NULL ORDER BY time ASC",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
@@ -502,7 +511,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH stats AS (SELECT eqp_id, AVG(temperature) AS mu, STDDEV(temperature) AS sigma FROM public.ldi_data WHERE time > NOW() - INTERVAL '24 hours' AND eqp_id IN (${machine_id:singlequote}) GROUP BY eqp_id) SELECT d.time, d.eqp_id AS metric, ROUND(((d.temperature - s.mu) / NULLIF(s.sigma, 0))::NUMERIC, 2) AS \"Z-Score\" FROM public.ldi_data d JOIN stats s ON d.eqp_id = s.eqp_id WHERE $__timeFilter(d.time) AND d.eqp_id IN (${machine_id:singlequote}) AND d.temperature IS NOT NULL AND s.sigma > 0 ORDER BY d.time ASC",
+          "rawSql": "WITH stats AS (SELECT eqp_id, AVG(temperature) AS mu, STDDEV(temperature) AS sigma FROM public.ldi_data WHERE time > NOW() - INTERVAL '24 hours' AND eqp_id IN (${machine_id:singlequote}) GROUP BY eqp_id) SELECT d.time, d.eqp_id AS metric, ROUND(((d.temperature - s.mu) / NULLIF(s.sigma, 0))::NUMERIC, 2) AS \"Z-Score\" FROM public.ldi_data d JOIN stats s ON d.eqp_id = s.eqp_id WHERE d.time >= (SELECT $__timeFrom) AND d.time <= (SELECT $__timeTo) AND d.eqp_id IN (${machine_id:singlequote}) AND d.temperature IS NOT NULL ORDER BY d.time ASC",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
