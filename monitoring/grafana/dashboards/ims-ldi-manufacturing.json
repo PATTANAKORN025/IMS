@@ -100,7 +100,8 @@
           "format": "table"
         }
       ],
-      "transparent": true
+      "transparent": true,
+      "description": "Fleet Uptime: percentage of machines actively producing (state=true AND board_no>0). Green=100%, Red<100%."
     },
     {
       "id": 2,
@@ -165,7 +166,8 @@
           "format": "table"
         }
       ],
-      "transparent": true
+      "transparent": true,
+      "description": "Avg Alignment Error: mean of max absolute PE deviation across 6 fiducial points. Green <10µm, Amber 10-20µm, Red >20µm."
     },
     {
       "id": 3,
@@ -232,7 +234,8 @@
           "format": "table"
         }
       ],
-      "transparent": true
+      "transparent": true,
+      "description": "Environmental Safety: percentage of machines where temperature AND humidity are within safe bands."
     },
     {
       "id": 4,
@@ -294,7 +297,8 @@
           "format": "table"
         }
       ],
-      "transparent": true
+      "transparent": true,
+      "description": "Active Critical Alarms: count of alarms in the last 5 minutes only."
     },
     {
       "id": 5,
@@ -329,7 +333,8 @@
           "format": "table"
         }
       ],
-      "transparent": true
+      "transparent": true,
+      "description": "Machine Run State: per-machine RUNNING (green) / DOWN (red) timeline."
     },
     {
       "id": 6,
@@ -410,7 +415,8 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "transparent": true
+      "transparent": true,
+      "description": "Temperature Compliance: 3-color matrix — Green 20-24°C, Amber 19-25°C, Red outside."
     },
     {
       "id": 7,
@@ -491,7 +497,8 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "transparent": true
+      "transparent": true,
+      "description": "Humidity Compliance: 3-color matrix — Green 50-60%, Amber 45-65%, Red outside."
     },
     {
       "id": 8,
@@ -545,7 +552,8 @@
           "format": "time_series"
         }
       ],
-      "transparent": true
+      "transparent": true,
+      "description": "Avg Cycle Time: heatmap of seconds-per-board in 5-minute buckets. Hotter = slower."
     },
     {
       "id": 9,
@@ -630,7 +638,8 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "transparent": true
+      "transparent": true,
+      "description": "Thermal Z-Score: 3-sigma anomaly detection on temperature. Red if > 3σ."
     },
     {
       "id": 10,
@@ -706,7 +715,8 @@
           "format": "table"
         }
       ],
-      "transparent": true
+      "transparent": true,
+      "description": "Alarm Command Log: LEFT JOIN alarm_log with alarm codes. Color-coded severity."
     }
   ],
   "style": "dark"
