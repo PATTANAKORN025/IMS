@@ -86,7 +86,8 @@
         "text": {
           "valueSize": 48,
           "titleSize": 14
-        }
+        },
+        "noValue": "-"
       },
       "targets": [
         {
@@ -149,7 +150,8 @@
         "text": {
           "valueSize": 48,
           "titleSize": 14
-        }
+        },
+        "noValue": "-"
       },
       "targets": [
         {
@@ -216,7 +218,8 @@
         "text": {
           "valueSize": 48,
           "titleSize": 14
-        }
+        },
+        "noValue": "-"
       },
       "targets": [
         {

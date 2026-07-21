@@ -362,6 +362,80 @@ CREATE INDEX IF NOT EXISTS ldi_alarm_log_logdate_idx
     ON public.ldi_alarm_log (logdate DESC NULLS FIRST);
 
 -- ══════════════════════════════════════════════════════════════
+-- LDI SPC VIEWS (Process Capability & Stability)
+-- ══════════════════════════════════════════════════════════════
+
+-- Machine ranking by Cpk (process capability index)
+CREATE OR REPLACE VIEW public.v_machine_spc_ranking AS
+WITH base AS (
+    SELECT eqp_id,
+           GREATEST(ABS(COALESCE(pe_1,0)), ABS(COALESCE(pe_2,0)),
+                     ABS(COALESCE(pe_3,0)), ABS(COALESCE(pe_4,0)),
+                     ABS(COALESCE(pe_5,0)), ABS(COALESCE(pe_6,0))) AS max_pe,
+           COALESCE(pe_setting, 25.0) AS setting
+    FROM public.ldi_data
+    WHERE pe_1 IS NOT NULL
+      AND "time" > (SELECT MAX("time") - INTERVAL '2 hours' FROM public.ldi_data)
+),
+stats AS (
+    SELECT eqp_id, AVG(max_pe) AS mu, STDDEV(max_pe) AS sigma,
+           AVG(setting) AS setting_val, COUNT(*) AS sample_count
+    FROM base GROUP BY eqp_id
+)
+SELECT s.eqp_id, s.sample_count,
+       ROUND(s.mu::NUMERIC, 3) AS mean_pe,
+       ROUND(s.sigma::NUMERIC, 3) AS stddev_pe,
+       ROUND((s.setting_val * 2 / NULLIF(6 * s.sigma, 0))::NUMERIC, 3) AS cp,
+       ROUND(LEAST((s.setting_val - s.mu) / NULLIF(3 * s.sigma, 0), (s.mu - (-s.setting_val)) / NULLIF(3 * s.sigma, 0))::NUMERIC, 3) AS cpk,
+       CASE
+           WHEN LEAST((s.setting_val - s.mu) / NULLIF(3 * s.sigma, 0), (s.mu - (-s.setting_val)) / NULLIF(3 * s.sigma, 0)) >= 2.0 THEN 'World Class'
+           WHEN LEAST((s.setting_val - s.mu) / NULLIF(3 * s.sigma, 0), (s.mu - (-s.setting_val)) / NULLIF(3 * s.sigma, 0)) >= 1.67 THEN 'Excellent'
+           WHEN LEAST((s.setting_val - s.mu) / NULLIF(3 * s.sigma, 0), (s.mu - (-s.setting_val)) / NULLIF(3 * s.sigma, 0)) >= 1.33 THEN 'Capable'
+           WHEN LEAST((s.setting_val - s.mu) / NULLIF(3 * s.sigma, 0), (s.mu - (-s.setting_val)) / NULLIF(3 * s.sigma, 0)) >= 1.0 THEN 'Marginally Capable'
+           ELSE 'Not Capable'
+       END AS capability_class
+FROM stats s WHERE s.sigma > 0 ORDER BY cpk DESC;
+
+-- Process stability index (0-100 composite)
+CREATE OR REPLACE VIEW public.v_process_stability AS
+WITH time_range AS (
+    SELECT MAX("time") - INTERVAL '2 hours' AS cutoff FROM public.ldi_data
+),
+temp_stats AS (
+    SELECT eqp_id, AVG(temperature) AS temp_mu, STDDEV(temperature) AS temp_sigma
+    FROM public.ldi_data
+    WHERE "time" > (SELECT cutoff FROM time_range) AND temperature IS NOT NULL
+    GROUP BY eqp_id
+),
+hum_stats AS (
+    SELECT eqp_id, AVG(humidity) AS hum_mu, STDDEV(humidity) AS hum_sigma
+    FROM public.ldi_data
+    WHERE "time" > (SELECT cutoff FROM time_range) AND humidity IS NOT NULL
+    GROUP BY eqp_id
+),
+pe_stats AS (
+    SELECT eqp_id,
+           AVG(GREATEST(ABS(COALESCE(pe_1,0)), ABS(COALESCE(pe_2,0)),
+                        ABS(COALESCE(pe_3,0)), ABS(COALESCE(pe_4,0)),
+                        ABS(COALESCE(pe_5,0)), ABS(COALESCE(pe_6,0)))) AS pe_mu,
+           STDDEV(GREATEST(ABS(COALESCE(pe_1,0)), ABS(COALESCE(pe_2,0)),
+                           ABS(COALESCE(pe_3,0)), ABS(COALESCE(pe_4,0)),
+                           ABS(COALESCE(pe_5,0)), ABS(COALESCE(pe_6,0)))) AS pe_sigma
+    FROM public.ldi_data
+    WHERE "time" > (SELECT cutoff FROM time_range) AND pe_1 IS NOT NULL
+    GROUP BY eqp_id
+)
+SELECT COALESCE(t.eqp_id, h.eqp_id, pe.eqp_id) AS eqp_id,
+       GREATEST(0, 33 - COALESCE(t.temp_sigma, 99) * 10)::NUMERIC(5,1) AS temp_score,
+       GREATEST(0, 33 - COALESCE(h.hum_sigma, 99) * 10)::NUMERIC(5,1) AS hum_score,
+       GREATEST(0, 34 - COALESCE(pe.pe_sigma, 99) * 5 - COALESCE(pe.pe_mu, 99) * 2)::NUMERIC(5,1) AS pe_score,
+       GREATEST(0, GREATEST(0, 33 - COALESCE(t.temp_sigma, 99) * 10) + GREATEST(0, 33 - COALESCE(h.hum_sigma, 99) * 10) + GREATEST(0, 34 - COALESCE(pe.pe_sigma, 99) * 5 - COALESCE(pe.pe_mu, 99) * 2))::NUMERIC(5,1) AS stability_index
+FROM temp_stats t
+FULL OUTER JOIN hum_stats h ON t.eqp_id = h.eqp_id
+FULL OUTER JOIN pe_stats pe ON COALESCE(t.eqp_id, h.eqp_id) = pe.eqp_id
+ORDER BY stability_index DESC;
+
+-- ══════════════════════════════════════════════════════════════
 -- GRAFANA READ-ONLY ROLE
 -- ══════════════════════════════════════════════════════════════
 
