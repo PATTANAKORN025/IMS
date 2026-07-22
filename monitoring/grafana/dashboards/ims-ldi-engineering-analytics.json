@@ -81,7 +81,9 @@
           },
           "color": {
             "mode": "palette-classic"
-          }
+          },
+          "min": 0,
+          "max": 30
         },
         "overrides": []
       },
@@ -183,7 +185,9 @@
           },
           "thresholdsStyle": {
             "mode": "line"
-          }
+          },
+          "min": 0,
+          "max": 30
         },
         "overrides": []
       },
@@ -239,7 +243,9 @@
           },
           "color": {
             "mode": "palette-classic"
-          }
+          },
+          "min": 0,
+          "max": 30
         },
         "overrides": [
           {
