@@ -76,7 +76,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT DISTINCT ON (d.eqp_id) d.eqp_id AS \"Machine\", d.state AS \"State\", d.mo AS \"MO\", d.fpn AS \"FPN\", d.layer_name AS \"Layer\", (d.board_no::TEXT || '/' || d.total_board::TEXT) AS \"Board\", d.filmno AS \"Film\", d.resist AS \"Resist\", d.scale_mode AS \"Scale Mode\", TO_CHAR(d.\"time\", 'YYYY-MM-DD HH24:MI:SS.MS') AS \"Timestamp\" FROM public.ldi_data d WHERE $__timeFilter(d.time) AND d.eqp_id IN (${machine_id:singlequote}) ORDER BY d.eqp_id, d.\"time\" DESC",
+          "rawSql": "SELECT eqp_id AS \"Machine\", state AS \"State\", mo AS \"MO\", fpn AS \"FPN\", layer_name AS \"Layer\", (board_no::TEXT || '/' || total_board::TEXT) AS \"Board\", filmno AS \"Film\", resist AS \"Resist\", scale_mode AS \"Scale Mode\", TO_CHAR(\"time\", 'YYYY-MM-DD HH24:MI:SS.MS') AS \"Timestamp\" FROM public.v_ldi_machine_snapshot WHERE eqp_id IN (${machine_id:singlequote}) AND \"time\" >= (SELECT $__timeFrom::timestamptz) AND \"time\" <= (SELECT $__timeTo::timestamptz) ORDER BY \"time\" DESC LIMIT 1",
           "format": "table"
         }
       ],
@@ -178,7 +178,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT AVG(temperature)::NUMERIC AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote})",
+          "rawSql": "SELECT ROUND(temperature::NUMERIC, 2) AS value FROM public.v_ldi_machine_snapshot WHERE eqp_id IN (${machine_id:singlequote}) AND \"time\" >= (SELECT $__timeFrom::timestamptz) AND \"time\" <= (SELECT $__timeTo::timestamptz) ORDER BY \"time\" DESC LIMIT 1",
           "format": "table"
         }
       ],
@@ -243,7 +243,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT AVG(humidity)::NUMERIC AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote})",
+          "rawSql": "SELECT ROUND(humidity::NUMERIC, 2) AS value FROM public.v_ldi_machine_snapshot WHERE eqp_id IN (${machine_id:singlequote}) AND \"time\" >= (SELECT $__timeFrom::timestamptz) AND \"time\" <= (SELECT $__timeTo::timestamptz) ORDER BY \"time\" DESC LIMIT 1",
           "format": "table"
         }
       ],
@@ -308,7 +308,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT AVG(air_vacuum)::NUMERIC AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote})",
+          "rawSql": "SELECT ROUND(air_vacuum::NUMERIC, 2) AS value FROM public.v_ldi_machine_snapshot WHERE eqp_id IN (${machine_id:singlequote}) AND \"time\" >= (SELECT $__timeFrom::timestamptz) AND \"time\" <= (SELECT $__timeTo::timestamptz) ORDER BY \"time\" DESC LIMIT 1",
           "format": "table"
         }
       ],
@@ -373,7 +373,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT AVG(scan_speed)::NUMERIC AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote})",
+          "rawSql": "SELECT ROUND(scan_speed::NUMERIC, 2) AS value FROM public.v_ldi_machine_snapshot WHERE eqp_id IN (${machine_id:singlequote}) AND \"time\" >= (SELECT $__timeFrom::timestamptz) AND \"time\" <= (SELECT $__timeTo::timestamptz) ORDER BY \"time\" DESC LIMIT 1",
           "format": "table"
         }
       ],
@@ -438,7 +438,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT AVG(thickness)::NUMERIC AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote})",
+          "rawSql": "SELECT ROUND(thickness::NUMERIC, 2) AS value FROM public.v_ldi_machine_snapshot WHERE eqp_id IN (${machine_id:singlequote}) AND \"time\" >= (SELECT $__timeFrom::timestamptz) AND \"time\" <= (SELECT $__timeTo::timestamptz) ORDER BY \"time\" DESC LIMIT 1",
           "format": "table"
         }
       ],
@@ -503,7 +503,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT AVG(resist_dosage)::NUMERIC AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote})",
+          "rawSql": "SELECT ROUND(resist_dosage::NUMERIC, 2) AS value FROM public.v_ldi_machine_snapshot WHERE eqp_id IN (${machine_id:singlequote}) AND \"time\" >= (SELECT $__timeFrom::timestamptz) AND \"time\" <= (SELECT $__timeTo::timestamptz) ORDER BY \"time\" DESC LIMIT 1",
           "format": "table"
         }
       ],
@@ -533,7 +533,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(pe_1::NUMERIC, 3) AS \"pe_1\", ROUND(pe_2::NUMERIC, 3) AS \"pe_2\", ROUND(pe_3::NUMERIC, 3) AS \"pe_3\", ROUND(pe_4::NUMERIC, 3) AS \"pe_4\", ROUND(pe_5::NUMERIC, 3) AS \"pe_5\", ROUND(pe_6::NUMERIC, 3) AS \"pe_6\", ROUND(GREATEST(ABS(COALESCE(pe_1,0)), ABS(COALESCE(pe_2,0)), ABS(COALESCE(pe_3,0)), ABS(COALESCE(pe_4,0)), ABS(COALESCE(pe_5,0)), ABS(COALESCE(pe_6,0)))::NUMERIC, 3) AS \"MAX|PE|\", ROUND(pe_setting::NUMERIC, 1) AS \"pe_setting\" FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND pe_1 IS NOT NULL LIMIT 1",
+          "rawSql": "SELECT ROUND(pe_1::NUMERIC, 3) AS \"pe_1\", ROUND(pe_2::NUMERIC, 3) AS \"pe_2\", ROUND(pe_3::NUMERIC, 3) AS \"pe_3\", ROUND(pe_4::NUMERIC, 3) AS \"pe_4\", ROUND(pe_5::NUMERIC, 3) AS \"pe_5\", ROUND(pe_6::NUMERIC, 3) AS \"pe_6\", ROUND(GREATEST(ABS(COALESCE(pe_1,0)), ABS(COALESCE(pe_2,0)), ABS(COALESCE(pe_3,0)), ABS(COALESCE(pe_4,0)), ABS(COALESCE(pe_5,0)), ABS(COALESCE(pe_6,0)))::NUMERIC, 3) AS \"MAX|PE|\", ROUND(pe_setting::NUMERIC, 1) AS \"pe_setting\" FROM public.v_ldi_machine_snapshot WHERE eqp_id IN (${machine_id:singlequote}) AND \"time\" >= (SELECT $__timeFrom::timestamptz) AND \"time\" <= (SELECT $__timeTo::timestamptz) ORDER BY \"time\" DESC LIMIT 1",
           "format": "table"
         }
       ],
@@ -690,7 +690,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH snapshot_time AS (   SELECT MIN(\"time\") AS t FROM public.ldi_data   WHERE eqp_id IN (${machine_id:singlequote}) AND pe_1 IS NOT NULL ) SELECT al.logdate AS \"Time\", al.equipmentid AS \"Machine\", al.errorcode AS \"errorcode\", al.errortime AS \"errortime\", COALESCE(m.alarm_msg, al.errorcode::TEXT) AS \"Message\", COALESCE(m.alarm_type, 'WARN') AS \"Severity\" FROM public.ldi_alarm_log al LEFT JOIN public.ldi_alarm_ms_code m ON al.errorcode::TEXT = m.alarm_code::TEXT WHERE al.equipmentid IN (${machine_id:singlequote}) AND al.logdate >= (SELECT t - INTERVAL '5 minutes' FROM snapshot_time) AND al.logdate <= (SELECT t + INTERVAL '5 minutes' FROM snapshot_time) ORDER BY al.logdate DESC",
+          "rawSql": "WITH snapshot_time AS (   SELECT \"time\" FROM public.v_ldi_machine_snapshot   WHERE eqp_id IN (${machine_id:singlequote})   AND \"time\" >= (SELECT $__timeFrom::timestamptz)   AND \"time\" <= (SELECT $__timeTo::timestamptz)   ORDER BY \"time\" DESC LIMIT 1 ) SELECT al.logdate AS \"Time\", al.equipmentid AS \"Machine\", al.errorcode AS \"errorcode\", al.errortime AS \"errortime\", COALESCE(m.alarm_msg, al.errorcode::TEXT) AS \"Message\", COALESCE(m.alarm_type, 'WARN') AS \"Severity\" FROM public.ldi_alarm_log al LEFT JOIN public.ldi_alarm_ms_code m ON al.errorcode::TEXT = m.alarm_code::TEXT WHERE al.equipmentid IN (${machine_id:singlequote}) AND al.logdate >= (SELECT \"time\" - INTERVAL '5 minutes' FROM snapshot_time) AND al.logdate <= (SELECT \"time\" + INTERVAL '5 minutes' FROM snapshot_time) ORDER BY al.logdate DESC",
           "format": "table"
         }
       ],
@@ -737,6 +737,66 @@
           }
         ]
       }
+    },
+    {
+      "id": 11,
+      "title": "Raw Timestamp (precise)",
+      "type": "stat",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 15,
+        "w": 24,
+        "h": 2
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "dateTimeFromNow",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#22C55E",
+                "value": null
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "text": {
+          "valueSize": 32,
+          "titleSize": 14
+        },
+        "noValue": "No data"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT \"time\" AS value FROM public.v_ldi_machine_snapshot WHERE eqp_id IN (${machine_id:singlequote}) AND \"time\" >= (SELECT $__timeFrom::timestamptz) AND \"time\" <= (SELECT $__timeTo::timestamptz) ORDER BY \"time\" DESC LIMIT 1",
+          "format": "table"
+        }
+      ],
+      "transparent": true,
+      "description": "Precise raw timestamp from the database. Engineer can verify this matches the clicked point."
     }
   ],
   "style": "dark",
