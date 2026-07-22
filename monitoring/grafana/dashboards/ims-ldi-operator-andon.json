@@ -164,7 +164,7 @@
         }
       ],
       "transparent": true,
-      "description": "Active Alarms: count of unresolved alarms in the last 5 minutes."
+      "description": "Note: Alarm durations and MTTR are not calculated as the source EAP system currently does not broadcast explicit alarm-clear events. Only occurrence times are logged. Duration estimation requires EAP team confirmation of clear/reset event availability. Active Alarms: count of unresolved alarms in the last 5 minutes."
     },
     {
       "id": 3,
@@ -583,7 +583,7 @@
         }
       ],
       "transparent": true,
-      "description": "Alarm Stream: latest alarms with human-readable messages and color-coded severity."
+      "description": "Note: Alarm durations and MTTR are not calculated as the source EAP system currently does not broadcast explicit alarm-clear events. Only occurrence times are logged. Duration estimation requires EAP team confirmation of clear/reset event availability. Alarm Stream: latest alarms with human-readable messages and color-coded severity."
     }
   ],
   "fiscalYearStartMonth": 0

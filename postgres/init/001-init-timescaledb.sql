@@ -513,6 +513,44 @@ LEFT JOIN public.ldi_alarm_ms_code m
     ON a.errorcode::TEXT = m.alarm_code::TEXT;
 
 -- ══════════════════════════════════════════════════════════════
+-- v_ldi_event_timeline — Unified event sequence for RCA
+-- Combines state transitions + alarms into chronological stream.
+-- No MTTR/duration fabrication (no CLEAR events in EAP source).
+-- ══════════════════════════════════════════════════════════════
+
+CREATE OR REPLACE VIEW public.v_ldi_event_timeline AS
+WITH state_changes AS (
+    SELECT d."time" AS event_time, d.eqp_id,
+        CASE
+            WHEN d.state = false AND LAG(d.state) OVER (PARTITION BY d.eqp_id ORDER BY d."time") = true
+                THEN 'Machine Stop'
+            WHEN d.state = true AND LAG(d.state) OVER (PARTITION BY d.eqp_id ORDER BY d."time") = false
+                THEN 'Machine Start'
+        END AS event_type,
+        'ldi_data' AS source,
+        CASE
+            WHEN d.state = false AND LAG(d.state) OVER (PARTITION BY d.eqp_id ORDER BY d."time") = true
+                THEN 'state changed to DOWN'
+            WHEN d.state = true AND LAG(d.state) OVER (PARTITION BY d.eqp_id ORDER BY d."time") = false
+                THEN 'state changed to RUNNING'
+        END AS description
+    FROM public.ldi_data d
+),
+alarms AS (
+    SELECT al.logdate AS event_time, al.equipmentid AS eqp_id,
+        'Alarm' AS event_type, 'alarm_log' AS source,
+        COALESCE(m.alarm_msg, al.errorcode::TEXT) AS description
+    FROM public.ldi_alarm_log al
+    LEFT JOIN public.ldi_alarm_ms_code m ON al.errorcode::TEXT = m.alarm_code::TEXT
+)
+SELECT event_time, eqp_id, event_type, source, description
+FROM state_changes WHERE event_type IS NOT NULL
+UNION ALL
+SELECT event_time, eqp_id, event_type, source, description
+FROM alarms
+ORDER BY event_time DESC;
+
+-- ══════════════════════════════════════════════════════════════
 -- GRAFANA READ-ONLY ROLE
 -- ══════════════════════════════════════════════════════════════
 
