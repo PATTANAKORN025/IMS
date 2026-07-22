@@ -441,7 +441,26 @@
       "description": "Latest production context per machine: job info + live physical parameters (temperature, humidity, scan_speed, thickness, resist_dosage, state).",
       "fieldConfig": {
         "defaults": {},
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Machine"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Drill to Engineering Analytics",
+                    "url": "/d/ldi-engineering-analytics/ims-ldi-engineering-analytics?var-machine_id=${__value.text}&from=${__from}&to=${__to}",
+                    "targetBlank": false
+                  }
+                ]
+              }
+            ]
+          }
+        ]
       }
     },
     {
@@ -1137,5 +1156,34 @@
       }
     }
   ],
-  "style": "dark"
+  "style": "dark",
+  "links": [
+    {
+      "title": "Engineering Analytics & SPC",
+      "url": "/d/ldi-engineering-analytics/ims-ldi-engineering-analytics",
+      "type": "link",
+      "icon": "external link",
+      "targetBlank": false,
+      "keepTime": true,
+      "includeVars": true
+    },
+    {
+      "title": "Operator Andon Board",
+      "url": "/d/ldi-operator-andon/ims-ldi-operator-andon",
+      "type": "link",
+      "icon": "external link",
+      "targetBlank": false,
+      "keepTime": true,
+      "includeVars": true
+    },
+    {
+      "title": "Incident Snapshot",
+      "url": "/d/ldi-machine-snapshot/ims-ldi-machine-snapshot",
+      "type": "link",
+      "icon": "external link",
+      "targetBlank": false,
+      "keepTime": true,
+      "includeVars": true
+    }
+  ]
 }
