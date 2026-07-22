@@ -88,7 +88,7 @@
           "links": [
             {
               "title": "Incident Snapshot: ${__value.text}",
-              "url": "/d/ldi-machine-snapshot/ims-ldi-machine-snapshot?var-machine_id=${__value.text}",
+              "url": "/d/ldi-machine-snapshot/ims-ldi-machine-snapshot?var-machine_id=${__series.name}&from=${__value.time}&to=${__value.time}",
               "targetBlank": false
             }
           ]
@@ -158,7 +158,7 @@
           "links": [
             {
               "title": "Incident Snapshot: ${__value.text}",
-              "url": "/d/ldi-machine-snapshot/ims-ldi-machine-snapshot?var-machine_id=${__value.text}",
+              "url": "/d/ldi-machine-snapshot/ims-ldi-machine-snapshot?var-machine_id=${__series.name}&from=${__value.time}&to=${__value.time}",
               "targetBlank": false
             }
           ]
@@ -226,7 +226,7 @@
           "links": [
             {
               "title": "Incident Snapshot: ${__value.text}",
-              "url": "/d/ldi-machine-snapshot/ims-ldi-machine-snapshot?var-machine_id=${__value.text}",
+              "url": "/d/ldi-machine-snapshot/ims-ldi-machine-snapshot?var-machine_id=${__series.name}&from=${__value.time}&to=${__value.time}",
               "targetBlank": false
             }
           ]
@@ -294,7 +294,7 @@
           "links": [
             {
               "title": "Incident Snapshot: ${__value.text}",
-              "url": "/d/ldi-machine-snapshot/ims-ldi-machine-snapshot?var-machine_id=${__value.text}",
+              "url": "/d/ldi-machine-snapshot/ims-ldi-machine-snapshot?var-machine_id=${__series.name}&from=${__value.time}&to=${__value.time}",
               "targetBlank": false
             }
           ]
@@ -362,7 +362,7 @@
           "links": [
             {
               "title": "Incident Snapshot: ${__value.text}",
-              "url": "/d/ldi-machine-snapshot/ims-ldi-machine-snapshot?var-machine_id=${__value.text}",
+              "url": "/d/ldi-machine-snapshot/ims-ldi-machine-snapshot?var-machine_id=${__series.name}&from=${__value.time}&to=${__value.time}",
               "targetBlank": false
             }
           ]
@@ -430,7 +430,7 @@
           "links": [
             {
               "title": "Incident Snapshot: ${__value.text}",
-              "url": "/d/ldi-machine-snapshot/ims-ldi-machine-snapshot?var-machine_id=${__value.text}",
+              "url": "/d/ldi-machine-snapshot/ims-ldi-machine-snapshot?var-machine_id=${__series.name}&from=${__value.time}&to=${__value.time}",
               "targetBlank": false
             }
           ]
@@ -500,7 +500,7 @@
           "links": [
             {
               "title": "Incident Snapshot: ${__value.text}",
-              "url": "/d/ldi-machine-snapshot/ims-ldi-machine-snapshot?var-machine_id=${__value.text}",
+              "url": "/d/ldi-machine-snapshot/ims-ldi-machine-snapshot?var-machine_id=${__series.name}&from=${__value.time}&to=${__value.time}",
               "targetBlank": false
             }
           ]
@@ -615,7 +615,7 @@
           "links": [
             {
               "title": "Incident Snapshot: ${__value.text}",
-              "url": "/d/ldi-machine-snapshot/ims-ldi-machine-snapshot?var-machine_id=${__value.text}",
+              "url": "/d/ldi-machine-snapshot/ims-ldi-machine-snapshot?var-machine_id=${__series.name}&from=${__value.time}&to=${__value.time}",
               "targetBlank": false
             }
           ]
