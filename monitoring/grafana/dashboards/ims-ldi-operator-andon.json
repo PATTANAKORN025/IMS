@@ -559,6 +559,24 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Machine"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Incident Snapshot",
+                    "url": "/d/ldi-machine-snapshot/ims-ldi-machine-snapshot?var-machine_id=${__value.text}&from=${__from}&to=${__to}",
+                    "targetBlank": false
+                  }
+                ]
+              }
+            ]
           }
         ]
       },
@@ -586,5 +604,34 @@
       "description": "Note: Alarm durations and MTTR are not calculated as the source EAP system currently does not broadcast explicit alarm-clear events. Only occurrence times are logged. Duration estimation requires EAP team confirmation of clear/reset event availability. Alarm Stream: latest alarms with human-readable messages and color-coded severity."
     }
   ],
-  "fiscalYearStartMonth": 0
+  "fiscalYearStartMonth": 0,
+  "links": [
+    {
+      "title": "Apex Circuit Fleet Command Center",
+      "url": "/d/ldi-pcb-manufacturing/ims-ldi-manufacturing",
+      "type": "link",
+      "icon": "external link",
+      "targetBlank": false,
+      "keepTime": true,
+      "includeVars": true
+    },
+    {
+      "title": "Engineering Analytics & SPC",
+      "url": "/d/ldi-engineering-analytics/ims-ldi-engineering-analytics",
+      "type": "link",
+      "icon": "external link",
+      "targetBlank": false,
+      "keepTime": true,
+      "includeVars": true
+    },
+    {
+      "title": "Incident Snapshot",
+      "url": "/d/ldi-machine-snapshot/ims-ldi-machine-snapshot",
+      "type": "link",
+      "icon": "external link",
+      "targetBlank": false,
+      "keepTime": true,
+      "includeVars": true
+    }
+  ]
 }

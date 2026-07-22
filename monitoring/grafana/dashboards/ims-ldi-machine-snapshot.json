@@ -739,5 +739,34 @@
       }
     }
   ],
-  "style": "dark"
+  "style": "dark",
+  "links": [
+    {
+      "title": "Apex Circuit Fleet Command Center",
+      "url": "/d/ldi-pcb-manufacturing/ims-ldi-manufacturing",
+      "type": "link",
+      "icon": "external link",
+      "targetBlank": false,
+      "keepTime": true,
+      "includeVars": true
+    },
+    {
+      "title": "Engineering Analytics & SPC",
+      "url": "/d/ldi-engineering-analytics/ims-ldi-engineering-analytics",
+      "type": "link",
+      "icon": "external link",
+      "targetBlank": false,
+      "keepTime": true,
+      "includeVars": true
+    },
+    {
+      "title": "Operator Andon Board",
+      "url": "/d/ldi-operator-andon/ims-ldi-operator-andon",
+      "type": "link",
+      "icon": "external link",
+      "targetBlank": false,
+      "keepTime": true,
+      "includeVars": true
+    }
+  ]
 }
