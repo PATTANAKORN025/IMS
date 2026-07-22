@@ -1,0 +1,743 @@
+{
+  "uid": "ldi-machine-snapshot",
+  "title": "IMS LDI — Incident Snapshot",
+  "description": "360° machine snapshot at the exact millisecond clicked from Process Timeline. Shows job context, physical variables, PE alignment, Cpk, and alarm proximity.",
+  "tags": [
+    "ims",
+    "ldi",
+    "snapshot",
+    "rca",
+    "drilldown"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "refresh": "",
+  "time": {
+    "from": "now-5m",
+    "to": "now"
+  },
+  "fiscalYearStartMonth": 0,
+  "liveNow": false,
+  "graphTooltip": 0,
+  "templating": {
+    "list": [
+      {
+        "name": "machine_id",
+        "type": "query",
+        "query": "SELECT DISTINCT eqp_id AS __text, eqp_id AS __value FROM public.ldi_data ORDER BY eqp_id",
+        "datasource": {
+          "uid": "timescaledb"
+        },
+        "refresh": 2,
+        "multi": false,
+        "includeAll": false,
+        "sort": 1,
+        "label": "Machine"
+      }
+    ]
+  },
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": false,
+        "iconColor": "rgba(255, 96, 96, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Machine Context",
+      "type": "table",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 3
+      },
+      "options": {
+        "showHeader": true,
+        "rowHeight": 0.8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT DISTINCT ON (d.eqp_id) d.eqp_id AS \"Machine\", d.state AS \"State\", d.mo AS \"MO\", d.fpn AS \"FPN\", d.layer_name AS \"Layer\", (d.board_no::TEXT || '/' || d.total_board::TEXT) AS \"Board\", d.filmno AS \"Film\", d.resist AS \"Resist\", d.scale_mode AS \"Scale Mode\", TO_CHAR(d.\"time\", 'YYYY-MM-DD HH24:MI:SS.MS') AS \"Timestamp\" FROM public.ldi_data d WHERE $__timeFilter(d.time) AND d.eqp_id IN (${machine_id:singlequote}) ORDER BY d.eqp_id, d.\"time\" DESC",
+          "format": "table"
+        }
+      ],
+      "transparent": true,
+      "description": "Exact machine state at the clicked timestamp. Shows job context (MO, FPN, Layer, Board).",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "State"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "true": {
+                        "color": "#22C55E",
+                        "text": "RUNNING"
+                      },
+                      "false": {
+                        "color": "#EF4444",
+                        "text": "DOWN"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "title": "temperature (°C)",
+      "type": "stat",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 3,
+        "w": 4,
+        "h": 3
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#EF4444",
+                "value": null
+              },
+              {
+                "color": "#22C55E",
+                "value": 1
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "text": {
+          "valueSize": 28,
+          "titleSize": 12
+        },
+        "noValue": "—"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT AVG(temperature)::NUMERIC AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote})",
+          "format": "table"
+        }
+      ],
+      "transparent": true,
+      "description": "temperature at clicked moment"
+    },
+    {
+      "id": 3,
+      "title": "humidity (%RH)",
+      "type": "stat",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 4,
+        "y": 3,
+        "w": 4,
+        "h": 3
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "humidity",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#EF4444",
+                "value": null
+              },
+              {
+                "color": "#22C55E",
+                "value": 1
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "text": {
+          "valueSize": 28,
+          "titleSize": 12
+        },
+        "noValue": "—"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT AVG(humidity)::NUMERIC AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote})",
+          "format": "table"
+        }
+      ],
+      "transparent": true,
+      "description": "humidity at clicked moment"
+    },
+    {
+      "id": 4,
+      "title": "air_vacuum (kPa)",
+      "type": "stat",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 3,
+        "w": 4,
+        "h": 3
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "pressurekpa",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#EF4444",
+                "value": null
+              },
+              {
+                "color": "#22C55E",
+                "value": 1
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "text": {
+          "valueSize": 28,
+          "titleSize": 12
+        },
+        "noValue": "—"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT AVG(air_vacuum)::NUMERIC AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote})",
+          "format": "table"
+        }
+      ],
+      "transparent": true,
+      "description": "vacuum pressure at clicked moment"
+    },
+    {
+      "id": 5,
+      "title": "scan_speed (mm/s)",
+      "type": "stat",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 3,
+        "w": 4,
+        "h": 3
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#EF4444",
+                "value": null
+              },
+              {
+                "color": "#22C55E",
+                "value": 1
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "text": {
+          "valueSize": 28,
+          "titleSize": 12
+        },
+        "noValue": "—"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT AVG(scan_speed)::NUMERIC AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote})",
+          "format": "table"
+        }
+      ],
+      "transparent": true,
+      "description": "laser scan speed at clicked moment"
+    },
+    {
+      "id": 6,
+      "title": "thickness (mm)",
+      "type": "stat",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 3,
+        "w": 4,
+        "h": 3
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "lengthmm",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#EF4444",
+                "value": null
+              },
+              {
+                "color": "#22C55E",
+                "value": 1
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "text": {
+          "valueSize": 28,
+          "titleSize": 12
+        },
+        "noValue": "—"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT AVG(thickness)::NUMERIC AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote})",
+          "format": "table"
+        }
+      ],
+      "transparent": true,
+      "description": "film thickness at clicked moment"
+    },
+    {
+      "id": 7,
+      "title": "resist_dosage (mg/cm²)",
+      "type": "stat",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 20,
+        "y": 3,
+        "w": 4,
+        "h": 3
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#EF4444",
+                "value": null
+              },
+              {
+                "color": "#22C55E",
+                "value": 1
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "text": {
+          "valueSize": 28,
+          "titleSize": 12
+        },
+        "noValue": "—"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT AVG(resist_dosage)::NUMERIC AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote})",
+          "format": "table"
+        }
+      ],
+      "transparent": true,
+      "description": "resist dosage at clicked moment"
+    },
+    {
+      "id": 8,
+      "title": "Position Error (pe_1 ~ pe_6) + MAX|PE|",
+      "type": "table",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 6,
+        "w": 14,
+        "h": 5
+      },
+      "options": {
+        "showHeader": true,
+        "rowHeight": 0.8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT ROUND(pe_1::NUMERIC, 3) AS \"pe_1\", ROUND(pe_2::NUMERIC, 3) AS \"pe_2\", ROUND(pe_3::NUMERIC, 3) AS \"pe_3\", ROUND(pe_4::NUMERIC, 3) AS \"pe_4\", ROUND(pe_5::NUMERIC, 3) AS \"pe_5\", ROUND(pe_6::NUMERIC, 3) AS \"pe_6\", ROUND(GREATEST(ABS(COALESCE(pe_1,0)), ABS(COALESCE(pe_2,0)), ABS(COALESCE(pe_3,0)), ABS(COALESCE(pe_4,0)), ABS(COALESCE(pe_5,0)), ABS(COALESCE(pe_6,0)))::NUMERIC, 3) AS \"MAX|PE|\", ROUND(pe_setting::NUMERIC, 1) AS \"pe_setting\" FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND pe_1 IS NOT NULL LIMIT 1",
+          "format": "table"
+        }
+      ],
+      "transparent": true,
+      "description": "Individual PE values at the clicked moment. MAX|PE| = worst-case deviation across 6 fiducials.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "lengthum",
+          "decimals": 3
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "MAX|PE|"
+            },
+            "properties": [
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#22C55E",
+                      "value": null
+                    },
+                    {
+                      "color": "#FACC15",
+                      "value": 15
+                    },
+                    {
+                      "color": "#EF4444",
+                      "value": 25
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 9,
+      "title": "Process Capability (Cpk / Sigma)",
+      "type": "table",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 14,
+        "y": 6,
+        "w": 10,
+        "h": 5
+      },
+      "options": {
+        "showHeader": true,
+        "rowHeight": 0.8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT eqp_id AS \"Machine\", sample_count AS \"Samples\", ROUND(mean_pe::NUMERIC, 2) AS \"Mean PE\", ROUND(cp::NUMERIC, 2) AS \"Cp\", ROUND(cpk::NUMERIC, 2) AS \"Cpk\", ROUND((cpk * 3)::NUMERIC, 1) AS \"Sigma Level\", capability_class AS \"Capability\" FROM public.v_machine_spc_ranking WHERE eqp_id IN (${machine_id:singlequote})",
+          "format": "table"
+        }
+      ],
+      "transparent": true,
+      "description": "Process capability from v_machine_spc_ranking. Cpk >= 1.33 = Capable, Sigma Level = Cpk * 3.",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Capability"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "World Class": {
+                        "color": "#22C55E",
+                        "text": "World Class"
+                      },
+                      "Excellent": {
+                        "color": "#22C55E",
+                        "text": "Excellent"
+                      },
+                      "Capable": {
+                        "color": "#FACC15",
+                        "text": "Capable"
+                      },
+                      "Marginally Capable": {
+                        "color": "#FACC15",
+                        "text": "Marginal"
+                      },
+                      "Not Capable": {
+                        "color": "#EF4444",
+                        "text": "Not Capable"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 10,
+      "title": "Alarm Context (±5 min of clicked timestamp)",
+      "type": "table",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 11,
+        "w": 24,
+        "h": 4
+      },
+      "options": {
+        "showHeader": true,
+        "rowHeight": 0.6,
+        "sortBy": [
+          {
+            "displayName": "Time",
+            "desc": true
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "WITH snapshot_time AS (   SELECT MIN(\"time\") AS t FROM public.ldi_data   WHERE eqp_id IN (${machine_id:singlequote}) AND pe_1 IS NOT NULL ) SELECT al.logdate AS \"Time\", al.equipmentid AS \"Machine\", al.errorcode AS \"errorcode\", al.errortime AS \"errortime\", COALESCE(m.alarm_msg, al.errorcode::TEXT) AS \"Message\", COALESCE(m.alarm_type, 'WARN') AS \"Severity\" FROM public.ldi_alarm_log al LEFT JOIN public.ldi_alarm_ms_code m ON al.errorcode::TEXT = m.alarm_code::TEXT WHERE al.equipmentid IN (${machine_id:singlequote}) AND al.logdate >= (SELECT t - INTERVAL '5 minutes' FROM snapshot_time) AND al.logdate <= (SELECT t + INTERVAL '5 minutes' FROM snapshot_time) ORDER BY al.logdate DESC",
+          "format": "table"
+        }
+      ],
+      "transparent": true,
+      "description": "Alarms within ±5 minutes of the clicked timestamp. Proves causality: data drift → alarm.",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Severity"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "Critical": {
+                        "color": "#EF4444",
+                        "text": "Critical"
+                      },
+                      "Warning": {
+                        "color": "#FACC15",
+                        "text": "Warning"
+                      },
+                      "WARN": {
+                        "color": "#FACC15",
+                        "text": "Warning"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "style": "dark"
+}

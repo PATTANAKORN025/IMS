@@ -87,8 +87,8 @@
           "max": 28,
           "links": [
             {
-              "title": "Machine Snapshot: ${__value.text}",
-              "url": "/d/ldi-engineering-analytics/ims-ldi-engineering-analytics?var-machine_id=${__value.text}",
+              "title": "Incident Snapshot: ${__value.text}",
+              "url": "/d/ldi-machine-snapshot/ims-ldi-machine-snapshot?var-machine_id=${__value.text}",
               "targetBlank": false
             }
           ]
@@ -157,8 +157,8 @@
           "max": 70,
           "links": [
             {
-              "title": "Machine Snapshot: ${__value.text}",
-              "url": "/d/ldi-engineering-analytics/ims-ldi-engineering-analytics?var-machine_id=${__value.text}",
+              "title": "Incident Snapshot: ${__value.text}",
+              "url": "/d/ldi-machine-snapshot/ims-ldi-machine-snapshot?var-machine_id=${__value.text}",
               "targetBlank": false
             }
           ]
@@ -225,8 +225,8 @@
           },
           "links": [
             {
-              "title": "Machine Snapshot: ${__value.text}",
-              "url": "/d/ldi-engineering-analytics/ims-ldi-engineering-analytics?var-machine_id=${__value.text}",
+              "title": "Incident Snapshot: ${__value.text}",
+              "url": "/d/ldi-machine-snapshot/ims-ldi-machine-snapshot?var-machine_id=${__value.text}",
               "targetBlank": false
             }
           ]
@@ -293,8 +293,8 @@
           },
           "links": [
             {
-              "title": "Machine Snapshot: ${__value.text}",
-              "url": "/d/ldi-engineering-analytics/ims-ldi-engineering-analytics?var-machine_id=${__value.text}",
+              "title": "Incident Snapshot: ${__value.text}",
+              "url": "/d/ldi-machine-snapshot/ims-ldi-machine-snapshot?var-machine_id=${__value.text}",
               "targetBlank": false
             }
           ]
@@ -361,8 +361,8 @@
           },
           "links": [
             {
-              "title": "Machine Snapshot: ${__value.text}",
-              "url": "/d/ldi-engineering-analytics/ims-ldi-engineering-analytics?var-machine_id=${__value.text}",
+              "title": "Incident Snapshot: ${__value.text}",
+              "url": "/d/ldi-machine-snapshot/ims-ldi-machine-snapshot?var-machine_id=${__value.text}",
               "targetBlank": false
             }
           ]
@@ -429,8 +429,8 @@
           },
           "links": [
             {
-              "title": "Machine Snapshot: ${__value.text}",
-              "url": "/d/ldi-engineering-analytics/ims-ldi-engineering-analytics?var-machine_id=${__value.text}",
+              "title": "Incident Snapshot: ${__value.text}",
+              "url": "/d/ldi-machine-snapshot/ims-ldi-machine-snapshot?var-machine_id=${__value.text}",
               "targetBlank": false
             }
           ]
@@ -499,8 +499,8 @@
           "max": 30,
           "links": [
             {
-              "title": "Machine Snapshot: ${__value.text}",
-              "url": "/d/ldi-engineering-analytics/ims-ldi-engineering-analytics?var-machine_id=${__value.text}",
+              "title": "Incident Snapshot: ${__value.text}",
+              "url": "/d/ldi-machine-snapshot/ims-ldi-machine-snapshot?var-machine_id=${__value.text}",
               "targetBlank": false
             }
           ]
@@ -614,8 +614,8 @@
           "max": 30,
           "links": [
             {
-              "title": "Machine Snapshot: ${__value.text}",
-              "url": "/d/ldi-engineering-analytics/ims-ldi-engineering-analytics?var-machine_id=${__value.text}",
+              "title": "Incident Snapshot: ${__value.text}",
+              "url": "/d/ldi-machine-snapshot/ims-ldi-machine-snapshot?var-machine_id=${__value.text}",
               "targetBlank": false
             }
           ]
