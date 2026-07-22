@@ -402,7 +402,7 @@
         }
       ],
       "transparent": true,
-      "description": "Count of alarms with alarm_type='Critical' in the last 5 minutes."
+      "description": "Note: Alarm durations and MTTR are not calculated as the source EAP system currently does not broadcast explicit alarm-clear events. Only occurrence times are logged. Duration estimation requires EAP team confirmation of clear/reset event availability. Count of alarms with alarm_type='Critical' in the last 5 minutes."
     },
     {
       "id": 6,
@@ -1093,7 +1093,7 @@
         }
       ],
       "transparent": true,
-      "description": "Alarm stream with errorcode, errortime, message, and severity. LEFT JOIN on ldi_alarm_ms_code for alarm details.",
+      "description": "Note: Alarm durations and MTTR are not calculated as the source EAP system currently does not broadcast explicit alarm-clear events. Only occurrence times are logged. Duration estimation requires EAP team confirmation of clear/reset event availability. Alarm stream with errorcode, errortime, message, and severity. LEFT JOIN on ldi_alarm_ms_code for alarm details.",
       "fieldConfig": {
         "defaults": {},
         "overrides": [

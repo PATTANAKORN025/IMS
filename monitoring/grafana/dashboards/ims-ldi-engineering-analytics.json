@@ -84,7 +84,14 @@
             "mode": "palette-classic"
           },
           "min": 18,
-          "max": 28
+          "max": 28,
+          "links": [
+            {
+              "title": "Machine Snapshot: ${__value.text}",
+              "url": "/d/ldi-engineering-analytics/ims-ldi-engineering-analytics?var-machine_id=${__value.text}",
+              "targetBlank": false
+            }
+          ]
         },
         "overrides": []
       },
@@ -147,7 +154,14 @@
             "mode": "palette-classic"
           },
           "min": 40,
-          "max": 70
+          "max": 70,
+          "links": [
+            {
+              "title": "Machine Snapshot: ${__value.text}",
+              "url": "/d/ldi-engineering-analytics/ims-ldi-engineering-analytics?var-machine_id=${__value.text}",
+              "targetBlank": false
+            }
+          ]
         },
         "overrides": []
       },
@@ -208,7 +222,14 @@
           },
           "color": {
             "mode": "palette-classic"
-          }
+          },
+          "links": [
+            {
+              "title": "Machine Snapshot: ${__value.text}",
+              "url": "/d/ldi-engineering-analytics/ims-ldi-engineering-analytics?var-machine_id=${__value.text}",
+              "targetBlank": false
+            }
+          ]
         },
         "overrides": []
       },
@@ -269,7 +290,14 @@
           },
           "color": {
             "mode": "palette-classic"
-          }
+          },
+          "links": [
+            {
+              "title": "Machine Snapshot: ${__value.text}",
+              "url": "/d/ldi-engineering-analytics/ims-ldi-engineering-analytics?var-machine_id=${__value.text}",
+              "targetBlank": false
+            }
+          ]
         },
         "overrides": []
       },
@@ -330,7 +358,14 @@
           },
           "color": {
             "mode": "palette-classic"
-          }
+          },
+          "links": [
+            {
+              "title": "Machine Snapshot: ${__value.text}",
+              "url": "/d/ldi-engineering-analytics/ims-ldi-engineering-analytics?var-machine_id=${__value.text}",
+              "targetBlank": false
+            }
+          ]
         },
         "overrides": []
       },
@@ -391,7 +426,14 @@
           },
           "color": {
             "mode": "palette-classic"
-          }
+          },
+          "links": [
+            {
+              "title": "Machine Snapshot: ${__value.text}",
+              "url": "/d/ldi-engineering-analytics/ims-ldi-engineering-analytics?var-machine_id=${__value.text}",
+              "targetBlank": false
+            }
+          ]
         },
         "overrides": []
       },
@@ -454,7 +496,14 @@
             "mode": "palette-classic"
           },
           "min": -30,
-          "max": 30
+          "max": 30,
+          "links": [
+            {
+              "title": "Machine Snapshot: ${__value.text}",
+              "url": "/d/ldi-engineering-analytics/ims-ldi-engineering-analytics?var-machine_id=${__value.text}",
+              "targetBlank": false
+            }
+          ]
         },
         "overrides": []
       },
@@ -562,7 +611,14 @@
             "mode": "palette-classic"
           },
           "min": -30,
-          "max": 30
+          "max": 30,
+          "links": [
+            {
+              "title": "Machine Snapshot: ${__value.text}",
+              "url": "/d/ldi-engineering-analytics/ims-ldi-engineering-analytics?var-machine_id=${__value.text}",
+              "targetBlank": false
+            }
+          ]
         },
         "overrides": []
       },
