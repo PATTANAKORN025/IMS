@@ -206,7 +206,7 @@
             "uid": "timescaledb"
           },
           "rawSql": "SELECT GREATEST(ABS(COALESCE(pe_1,0)),ABS(COALESCE(pe_2,0)),ABS(COALESCE(pe_3,0)),ABS(COALESCE(pe_4,0)),ABS(COALESCE(pe_5,0)),ABS(COALESCE(pe_6,0)))::NUMERIC AS \"PE Deviation\" FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND pe_1 IS NOT NULL",
-          "format": "time_series"
+          "format": "table"
         }
       ],
       "description": [
