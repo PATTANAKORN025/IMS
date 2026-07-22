@@ -56,7 +56,7 @@
   "panels": [
     {
       "id": 1,
-      "title": "Running Machines (state = true)",
+      "title": "Machine State (state = true)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -121,7 +121,7 @@
     },
     {
       "id": 2,
-      "title": "Avg max|PE| (µm)",
+      "title": "Position Error Deviation (pe_1 ~ pe_6 µm)",
       "type": "gauge",
       "datasource": {
         "uid": "timescaledb"
@@ -187,7 +187,7 @@
     },
     {
       "id": 3,
-      "title": "Avg temperature (°C)",
+      "title": "temperature (°C)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -264,7 +264,7 @@
     },
     {
       "id": 4,
-      "title": "Avg humidity (%RH)",
+      "title": "humidity (%RH)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -406,7 +406,7 @@
     },
     {
       "id": 6,
-      "title": "Production Context Log",
+      "title": "Production & Process Table",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
