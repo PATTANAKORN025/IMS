@@ -426,7 +426,7 @@
     },
     {
       "id": 7,
-      "title": "pe_1 ~ pe_6 Individual Points",
+      "title": "pe_1 ~ pe_6 (µm)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -534,7 +534,7 @@
     },
     {
       "id": 8,
-      "title": "je_1 ~ je_4 Individual Points",
+      "title": "je_1 ~ je_4 (µm)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
