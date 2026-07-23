@@ -116,17 +116,17 @@ groups:
   - name: pipeline_health
     rules:
       - alert: PipelineDataStalled
-        expr: rate(ims_inserts_ok_total[5m]) == 0
+        expr: rate(ims_pipeline_inserts_total[5m]) == 0
         for: 3m
         labels:
           severity: critical
           service: node-red
         annotations:
           summary: "No successful DB inserts in 5 minutes — pipeline may be silently dead"
-          description: "ims_inserts_ok_total rate is 0 for 3+ minutes. Check Node-RED logs and /inject endpoint."
+          description: "ims_pipeline_inserts_total rate is 0 for 3+ minutes. Check Node-RED logs and /inject endpoint."
 
       - alert: PipelineHighErrorRate
-        expr: rate(ims_inserts_failed_total[5m]) > 0.1
+        expr: rate(ims_pipeline_inserts_failed_total[5m]) > 0.1
         for: 5m
         labels:
           severity: warning
@@ -141,11 +141,11 @@ groups:
       - alert: PipelineDataDegraded
         expr: |
           (
-            rate(ims_inserts_ok_total[5m])
-            < (avg_over_time(rate(ims_inserts_ok_total[5m])[1h:5m]) * 0.5)
+            rate(ims_pipeline_inserts_total[5m])
+            < (avg_over_time(rate(ims_pipeline_inserts_total[5m])[1h:5m]) * 0.5)
           )
           and
-          rate(ims_inserts_ok_total[5m]) > 0
+          rate(ims_pipeline_inserts_total[5m]) > 0
         for: 10m
         labels:
           severity: warning
