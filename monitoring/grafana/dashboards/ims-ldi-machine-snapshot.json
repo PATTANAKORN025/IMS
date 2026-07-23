@@ -939,6 +939,83 @@
       ],
       "transparent": true,
       "description": "Precise raw timestamp from the database. Engineer can verify this matches the clicked point."
+    },
+    {
+      "id": 12,
+      "title": "Event Timeline (state + alarms)",
+      "type": "table",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 17,
+        "w": 24,
+        "h": 6
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "Event Time",
+            "desc": true
+          }
+        ],
+        "rowHeight": 0.6
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT TO_CHAR(event_time, 'YYYY-MM-DD HH24:MI:SS.MS') AS \"Event Time\", eqp_id AS \"Machine\", event_type AS \"Event Type\", source AS \"Source\", description AS \"Description\" FROM public.v_ldi_event_timeline WHERE eqp_id IN (${machine_id:singlequote}) ORDER BY event_time DESC LIMIT 100",
+          "format": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Event Type"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "Machine Start": {
+                        "color": "#22C55E",
+                        "text": "START"
+                      },
+                      "Machine Stop": {
+                        "color": "#EF4444",
+                        "text": "STOP"
+                      },
+                      "Alarm": {
+                        "color": "#FACC15",
+                        "text": "ALARM"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "transparent": true,
+      "description": "Chronological event sequence: Machine Start/Stop + Alarms. Shows the narrative flow of failures."
     }
   ],
   "style": "dark",
