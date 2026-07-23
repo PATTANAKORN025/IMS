@@ -23,6 +23,32 @@
   "templating": {
     "list": [
       {
+        "name": "factory",
+        "type": "query",
+        "query": "SELECT DISTINCT factory FROM public.ldi_data ORDER BY factory",
+        "datasource": {
+          "uid": "timescaledb"
+        },
+        "refresh": 2,
+        "multi": true,
+        "includeAll": true,
+        "sort": 1,
+        "label": "Factory"
+      },
+      {
+        "name": "mo",
+        "type": "query",
+        "query": "SELECT DISTINCT mo FROM public.ldi_data WHERE factory IN ($factory) ORDER BY mo",
+        "datasource": {
+          "uid": "timescaledb"
+        },
+        "refresh": 2,
+        "multi": true,
+        "includeAll": true,
+        "sort": 1,
+        "label": "MO (Work Order)"
+      },
+      {
         "name": "machine_id",
         "type": "query",
         "query": "SELECT DISTINCT eqp_id AS __text, eqp_id AS __value FROM public.ldi_data ORDER BY eqp_id",
@@ -55,6 +81,213 @@
   },
   "panels": [
     {
+      "id": 15,
+      "title": "Estimated Yield (%)",
+      "type": "stat",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 8,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#EF4444",
+                "value": null
+              },
+              {
+                "color": "#FACC15",
+                "value": 90
+              },
+              {
+                "color": "#22C55E",
+                "value": 95
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "text": {
+          "valueSize": 48,
+          "titleSize": 14
+        },
+        "noValue": "-"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT ROUND((COUNT(*) FILTER (WHERE GREATEST(ABS(pe_1), ABS(pe_2), ABS(pe_3), ABS(pe_4), ABS(pe_5), ABS(pe_6)) <= pe_setting)::NUMERIC / NULLIF(COUNT(*) FILTER (WHERE pe_1 IS NOT NULL), 0)) * 100, 1) AS value FROM public.ldi_data WHERE $__timeFilter(time) AND factory IN ($factory)",
+          "format": "table"
+        }
+      ],
+      "transparent": true,
+      "description": "Estimated Yield: percentage of samples where max|PE| <= pe_setting (within tolerance)."
+    },
+    {
+      "id": 16,
+      "title": "Fleet Availability (%)",
+      "type": "stat",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 0,
+        "w": 8,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#EF4444",
+                "value": null
+              },
+              {
+                "color": "#FACC15",
+                "value": 80
+              },
+              {
+                "color": "#22C55E",
+                "value": 90
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "text": {
+          "valueSize": 48,
+          "titleSize": 14
+        },
+        "noValue": "-"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT ROUND((COUNT(*) FILTER (WHERE state = true)::NUMERIC / NULLIF(COUNT(*), 0)) * 100, 1) AS value FROM public.ldi_data WHERE $__timeFilter(time) AND factory IN ($factory)",
+          "format": "table"
+        }
+      ],
+      "transparent": true,
+      "description": "Fleet Availability: percentage of time state=true across all machines in selected interval."
+    },
+    {
+      "id": 17,
+      "title": "Avg Cpk (Fleet)",
+      "type": "stat",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 0,
+        "w": 8,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#EF4444",
+                "value": null
+              },
+              {
+                "color": "#FACC15",
+                "value": 1.0
+              },
+              {
+                "color": "#22C55E",
+                "value": 1.33
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "text": {
+          "valueSize": 48,
+          "titleSize": 14
+        },
+        "noValue": "-"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT ROUND(AVG(cpk)::NUMERIC, 2) AS value FROM public.v_machine_spc_ranking",
+          "format": "table"
+        }
+      ],
+      "transparent": true,
+      "description": "Fleet-wide average Cpk. >= 1.33 = Capable, >= 1.67 = Excellent, >= 2.0 = World Class."
+    },
+    {
       "id": 1,
       "title": "Machine State (state = true)",
       "type": "stat",
@@ -63,7 +296,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 0,
+        "y": 4,
         "w": 5,
         "h": 4
       },
@@ -112,7 +345,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT COUNT(DISTINCT eqp_id) FILTER (WHERE state = true) AS value FROM public.ldi_data WHERE $__timeFilter(time)",
+          "rawSql": "SELECT COUNT(DISTINCT eqp_id) FILTER (WHERE state = true) AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time)",
           "format": "table"
         }
       ],
@@ -128,7 +361,7 @@
       },
       "gridPos": {
         "x": 5,
-        "y": 0,
+        "y": 4,
         "w": 5,
         "h": 4
       },
@@ -178,7 +411,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH MaxPE AS (SELECT eqp_id, GREATEST(ABS(COALESCE(pe_1,0)),ABS(COALESCE(pe_2,0)),ABS(COALESCE(pe_3,0)),ABS(COALESCE(pe_4,0)),ABS(COALESCE(pe_5,0)),ABS(COALESCE(pe_6,0))) AS max_error FROM public.ldi_data WHERE $__timeFilter(time) AND pe_1 IS NOT NULL) SELECT ROUND(AVG(max_error)::NUMERIC, 2) AS value FROM MaxPE",
+          "rawSql": "WITH MaxPE AS (SELECT eqp_id, GREATEST(ABS(COALESCE(pe_1,0)),ABS(COALESCE(pe_2,0)),ABS(COALESCE(pe_3,0)),ABS(COALESCE(pe_4,0)),ABS(COALESCE(pe_5,0)),ABS(COALESCE(pe_6,0))) AS max_error FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND pe_1 IS NOT NULL) SELECT ROUND(AVG(max_error)::NUMERIC, 2) AS value FROM MaxPE",
           "format": "table"
         }
       ],
@@ -194,7 +427,7 @@
       },
       "gridPos": {
         "x": 10,
-        "y": 0,
+        "y": 4,
         "w": 5,
         "h": 4
       },
@@ -255,7 +488,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(AVG(temperature)::NUMERIC, 1) AS value FROM public.ldi_data WHERE $__timeFilter(time) AND temperature IS NOT NULL",
+          "rawSql": "SELECT ROUND(AVG(temperature)::NUMERIC, 1) AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND temperature IS NOT NULL",
           "format": "table"
         }
       ],
@@ -271,7 +504,7 @@
       },
       "gridPos": {
         "x": 15,
-        "y": 0,
+        "y": 4,
         "w": 5,
         "h": 4
       },
@@ -332,7 +565,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(AVG(humidity)::NUMERIC, 1) AS value FROM public.ldi_data WHERE $__timeFilter(time) AND humidity IS NOT NULL",
+          "rawSql": "SELECT ROUND(AVG(humidity)::NUMERIC, 1) AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND humidity IS NOT NULL",
           "format": "table"
         }
       ],
@@ -348,7 +581,7 @@
       },
       "gridPos": {
         "x": 20,
-        "y": 0,
+        "y": 4,
         "w": 4,
         "h": 4
       },
@@ -413,7 +646,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 4,
+        "y": 8,
         "w": 12,
         "h": 8
       },
@@ -433,7 +666,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT DISTINCT ON (eqp_id) eqp_id AS \"Machine\", mo AS \"Job (MO)\", fpn AS \"Part (FPN)\", layer_name AS \"Layer\", (board_no::TEXT || '/' || total_board::TEXT) AS \"Progress\", ROUND(temperature::NUMERIC, 1) AS \"temperature (°C)\", ROUND(humidity::NUMERIC, 1) AS \"humidity (%RH)\", ROUND(scan_speed::NUMERIC, 1) AS \"scan_speed (mm/s)\", ROUND(thickness::NUMERIC, 3) AS \"thickness (mm)\", ROUND(resist_dosage::NUMERIC, 1) AS \"resist_dosage\", state AS \"state\" FROM public.ldi_data WHERE $__timeFilter(time) ORDER BY eqp_id, time DESC LIMIT 50",
+          "rawSql": "SELECT DISTINCT ON (eqp_id) eqp_id AS \"Machine\", mo AS \"Job (MO)\", fpn AS \"Part (FPN)\", layer_name AS \"Layer\", (board_no::TEXT || '/' || total_board::TEXT) AS \"Progress\", ROUND(temperature::NUMERIC, 1) AS \"temperature (°C)\", ROUND(humidity::NUMERIC, 1) AS \"humidity (%RH)\", ROUND(scan_speed::NUMERIC, 1) AS \"scan_speed (mm/s)\", ROUND(thickness::NUMERIC, 3) AS \"thickness (mm)\", ROUND(resist_dosage::NUMERIC, 1) AS \"resist_dosage\", state AS \"state\" FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) ORDER BY eqp_id, time DESC LIMIT 50",
           "format": "table"
         }
       ],
@@ -504,7 +737,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 4,
+        "y": 8,
         "w": 6,
         "h": 8
       },
@@ -569,7 +802,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, eqp_id AS metric, CASE WHEN temperature BETWEEN 20 AND 24 THEN 2 WHEN temperature BETWEEN 19 AND 25 THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE $__timeFilter(time) AND temperature IS NOT NULL ORDER BY time ASC",
+          "rawSql": "SELECT time, eqp_id AS metric, CASE WHEN temperature BETWEEN 20 AND 24 THEN 2 WHEN temperature BETWEEN 19 AND 25 THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND temperature IS NOT NULL ORDER BY time ASC",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
@@ -586,7 +819,7 @@
       },
       "gridPos": {
         "x": 18,
-        "y": 4,
+        "y": 8,
         "w": 6,
         "h": 8
       },
@@ -651,7 +884,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, eqp_id AS metric, CASE WHEN humidity BETWEEN 50 AND 60 THEN 2 WHEN humidity BETWEEN 45 AND 65 THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE $__timeFilter(time) AND humidity IS NOT NULL ORDER BY time ASC",
+          "rawSql": "SELECT time, eqp_id AS metric, CASE WHEN humidity BETWEEN 50 AND 60 THEN 2 WHEN humidity BETWEEN 45 AND 65 THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND humidity IS NOT NULL ORDER BY time ASC",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
@@ -668,7 +901,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 12,
+        "y": 16,
         "w": 8,
         "h": 6
       },
@@ -753,7 +986,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, eqp_id || ' - scan_speed' AS metric, scan_speed AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND scan_speed IS NOT NULL ORDER BY time",
+          "rawSql": "SELECT time, eqp_id || ' - scan_speed' AS metric, scan_speed AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND scan_speed IS NOT NULL ORDER BY time",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         },
@@ -762,7 +995,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, eqp_id || ' - air_vacuum' AS metric, air_vacuum AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND air_vacuum IS NOT NULL ORDER BY time",
+          "rawSql": "SELECT time, eqp_id || ' - air_vacuum' AS metric, air_vacuum AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND air_vacuum IS NOT NULL ORDER BY time",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
@@ -779,7 +1012,7 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 12,
+        "y": 16,
         "w": 8,
         "h": 6
       },
@@ -864,7 +1097,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, eqp_id || ' - thickness' AS metric, thickness AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND thickness IS NOT NULL ORDER BY time",
+          "rawSql": "SELECT time, eqp_id || ' - thickness' AS metric, thickness AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND thickness IS NOT NULL ORDER BY time",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         },
@@ -873,7 +1106,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, eqp_id || ' - resist_dosage' AS metric, resist_dosage AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND resist_dosage IS NOT NULL ORDER BY time",
+          "rawSql": "SELECT time, eqp_id || ' - resist_dosage' AS metric, resist_dosage AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND resist_dosage IS NOT NULL ORDER BY time",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
@@ -890,7 +1123,7 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 12,
+        "y": 16,
         "w": 8,
         "h": 6
       },
@@ -975,7 +1208,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, eqp_id || ' - scale_x' AS metric, scale_x AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND scale_x IS NOT NULL ORDER BY time",
+          "rawSql": "SELECT time, eqp_id || ' - scale_x' AS metric, scale_x AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND scale_x IS NOT NULL ORDER BY time",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         },
@@ -984,7 +1217,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, eqp_id || ' - scale_y' AS metric, scale_y AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND scale_y IS NOT NULL ORDER BY time",
+          "rawSql": "SELECT time, eqp_id || ' - scale_y' AS metric, scale_y AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND scale_y IS NOT NULL ORDER BY time",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
@@ -1001,7 +1234,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 18,
+        "y": 22,
         "w": 12,
         "h": 6
       },
@@ -1040,7 +1273,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('5 minutes', time) AS time, eqp_id AS metric, ROUND(AVG(total_time / NULLIF(total_board, 0))::NUMERIC, 2) AS value FROM public.ldi_data WHERE $__timeFilter(time) AND total_board > 0 GROUP BY 1, 2 ORDER BY time",
+          "rawSql": "SELECT time_bucket('5 minutes', time) AS time, eqp_id AS metric, ROUND(AVG(total_time / NULLIF(total_board, 0))::NUMERIC, 2) AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND total_board > 0 GROUP BY 1, 2 ORDER BY time",
           "format": "time_series"
         }
       ],
@@ -1056,7 +1289,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 18,
+        "y": 22,
         "w": 12,
         "h": 6
       },
@@ -1102,7 +1335,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH stats AS (SELECT eqp_id, AVG(temperature) AS mu, STDDEV(temperature) AS sigma FROM public.ldi_data WHERE time > NOW() - INTERVAL '24 hours' GROUP BY eqp_id) SELECT d.time, d.eqp_id AS metric, ROUND(((d.temperature - s.mu) / NULLIF(s.sigma, 0))::NUMERIC, 2) AS \"Z-Score\" FROM public.ldi_data d JOIN stats s ON d.eqp_id = s.eqp_id WHERE $__timeFilter(time) AND d.temperature IS NOT NULL AND s.sigma > 0 ORDER BY d.time ASC",
+          "rawSql": "WITH stats AS (SELECT eqp_id, AVG(temperature) AS mu, STDDEV(temperature) AS sigma FROM public.ldi_data WHERE time > NOW() - INTERVAL '24 hours' GROUP BY eqp_id) SELECT d.time, d.eqp_id AS metric, ROUND(((d.temperature - s.mu) / NULLIF(s.sigma, 0))::NUMERIC, 2) AS \"Z-Score\" FROM public.ldi_data d JOIN stats s ON d.eqp_id = s.eqp_id WHERE factory IN ($factory) AND $__timeFilter(time) AND d.temperature IS NOT NULL AND s.sigma > 0 ORDER BY d.time ASC",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
@@ -1119,7 +1352,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 24,
+        "y": 28,
         "w": 24,
         "h": 6
       },
