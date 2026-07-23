@@ -522,7 +522,7 @@
             "properties": [
               {
                 "id": "unit",
-                "value": "dateTimeAsSystem"
+                "value": "dateTimeAsIso"
               },
               {
                 "id": "decimals",
@@ -538,7 +538,7 @@
             "properties": [
               {
                 "id": "unit",
-                "value": "dateTimeAsSystem"
+                "value": "dateTimeAsIso"
               },
               {
                 "id": "decimals",
@@ -623,7 +623,7 @@
             "properties": [
               {
                 "id": "unit",
-                "value": "dateTimeAsSystem"
+                "value": "dateTimeAsIso"
               },
               {
                 "id": "decimals",
@@ -639,7 +639,7 @@
             "properties": [
               {
                 "id": "unit",
-                "value": "dateTimeAsSystem"
+                "value": "dateTimeAsIso"
               },
               {
                 "id": "decimals",
