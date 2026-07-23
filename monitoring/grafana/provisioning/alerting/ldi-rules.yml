@@ -101,3 +101,134 @@ groups:
           severity: warning
           team: manufacturing
           category: spc
+
+      - uid: ldi-je-drift-003
+        title: "LDI Quality Drift — Max JE exceeds tolerance"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: timescaledb
+            model:
+              rawSql: |
+                WITH bucketed AS (
+                  SELECT time_bucket('5 minutes', time) AS bucket,
+                         eqp_id,
+                         MAX(GREATEST(ABS(je_1), ABS(je_2),
+                             ABS(je_3), ABS(je_4))) AS max_je,
+                         MAX(je_setting) AS je_setting
+                  FROM public.ldi_data
+                  WHERE time >= NOW() - INTERVAL '10 minutes'
+                    AND je_1 IS NOT NULL
+                  GROUP BY 1, 2
+                )
+                SELECT bucket AS time, eqp_id AS metric,
+                       max_je AS value
+                FROM bucketed
+                WHERE max_je > je_setting
+                ORDER BY 1
+              format: time_series
+              intervalMs: 300000
+              maxDataPoints: 100
+          - refId: C
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: count
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [0]
+        for: 5m
+        annotations:
+          summary: "Machine {{ $labels.eqp_id }} JE deviation ({{ $values.A }}) exceeds tolerance"
+          description: "Joining error exceeds je_setting threshold. Alignment check required."
+        labels:
+          severity: critical
+          team: manufacturing
+          category: quality
+
+      - uid: ldi-je-capability-004
+        title: "LDI JE Process Capability — Cpk below 1.33"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: timescaledb
+            model:
+              rawSql: |
+                SELECT NOW() AS time, eqp_id AS metric,
+                       cpk_je AS value
+                FROM public.v_machine_spc_ranking
+                WHERE cpk_je IS NOT NULL AND cpk_je < 1.33
+              format: time_series
+              intervalMs: 300000
+              maxDataPoints: 100
+          - refId: C
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: count
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [0]
+        for: 5m
+        annotations:
+          summary: "Machine {{ $labels.eqp_id }} JE Cpk={{ $values.A }} below capable threshold"
+          description: "JE process capability index has fallen below 1.33."
+        labels:
+          severity: warning
+          team: manufacturing
+          category: spc
+
+      - uid: ldi-machine-alarm-005
+        title: "LDI Machine Alarm — new alarm in database"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: timescaledb
+            model:
+              rawSql: |
+                SELECT logdate AS time, equipmentid AS metric, 1 AS value
+                FROM public.ldi_alarm_log
+                WHERE logdate >= NOW() - INTERVAL '5 minutes'
+              format: time_series
+              intervalMs: 300000
+              maxDataPoints: 100
+          - refId: C
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: count
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [0]
+        for: 0m
+        annotations:
+          summary: "Machine {{ $labels.eqp_id }} raised alarm in last 5 minutes"
+          description: "New alarm entry detected in ldi_alarm_log. Check machine status."
+        labels:
+          severity: warning
+          team: manufacturing
+          category: alarm

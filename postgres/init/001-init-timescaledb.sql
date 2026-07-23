@@ -372,29 +372,50 @@ WITH base AS (
            GREATEST(ABS(COALESCE(pe_1,0)), ABS(COALESCE(pe_2,0)),
                      ABS(COALESCE(pe_3,0)), ABS(COALESCE(pe_4,0)),
                      ABS(COALESCE(pe_5,0)), ABS(COALESCE(pe_6,0))) AS max_pe,
-           COALESCE(pe_setting, 25.0) AS setting
+           COALESCE(pe_setting, 25.0) AS pe_val,
+           GREATEST(ABS(COALESCE(je_1,0)), ABS(COALESCE(je_2,0)),
+                     ABS(COALESCE(je_3,0)), ABS(COALESCE(je_4,0))) AS max_je,
+           COALESCE(je_setting, 25.0) AS je_val
     FROM public.ldi_data
     WHERE pe_1 IS NOT NULL
       AND "time" > (SELECT MAX("time") - INTERVAL '2 hours' FROM public.ldi_data)
 ),
-stats AS (
+pe_stats AS (
     SELECT eqp_id, AVG(max_pe) AS mu, STDDEV(max_pe) AS sigma,
-           AVG(setting) AS setting_val, COUNT(*) AS sample_count
+           AVG(pe_val) AS setting_val, COUNT(*) AS sample_count
     FROM base GROUP BY eqp_id
+),
+je_stats AS (
+    SELECT eqp_id, AVG(max_je) AS mu, STDDEV(max_je) AS sigma,
+           AVG(je_val) AS setting_val
+    FROM base WHERE max_je > 0 GROUP BY eqp_id
 )
-SELECT s.eqp_id, s.sample_count,
-       ROUND(s.mu::NUMERIC, 3) AS mean_pe,
-       ROUND(s.sigma::NUMERIC, 3) AS stddev_pe,
-       ROUND((s.setting_val * 2 / NULLIF(6 * s.sigma, 0))::NUMERIC, 3) AS cp,
-       ROUND(LEAST((s.setting_val - s.mu) / NULLIF(3 * s.sigma, 0), (s.mu - (-s.setting_val)) / NULLIF(3 * s.sigma, 0))::NUMERIC, 3) AS cpk,
+SELECT p.eqp_id, p.sample_count,
+       ROUND(p.mu::NUMERIC, 3) AS mean_pe,
+       ROUND(p.sigma::NUMERIC, 3) AS stddev_pe,
+       ROUND((p.setting_val * 2 / NULLIF(6 * p.sigma, 0))::NUMERIC, 3) AS cp,
+       ROUND(LEAST((p.setting_val - p.mu) / NULLIF(3 * p.sigma, 0), (p.mu - (-p.setting_val)) / NULLIF(3 * p.sigma, 0))::NUMERIC, 3) AS cpk,
        CASE
-           WHEN LEAST((s.setting_val - s.mu) / NULLIF(3 * s.sigma, 0), (s.mu - (-s.setting_val)) / NULLIF(3 * s.sigma, 0)) >= 2.0 THEN 'World Class'
-           WHEN LEAST((s.setting_val - s.mu) / NULLIF(3 * s.sigma, 0), (s.mu - (-s.setting_val)) / NULLIF(3 * s.sigma, 0)) >= 1.67 THEN 'Excellent'
-           WHEN LEAST((s.setting_val - s.mu) / NULLIF(3 * s.sigma, 0), (s.mu - (-s.setting_val)) / NULLIF(3 * s.sigma, 0)) >= 1.33 THEN 'Capable'
-           WHEN LEAST((s.setting_val - s.mu) / NULLIF(3 * s.sigma, 0), (s.mu - (-s.setting_val)) / NULLIF(3 * s.sigma, 0)) >= 1.0 THEN 'Marginally Capable'
+           WHEN LEAST((p.setting_val - p.mu) / NULLIF(3 * p.sigma, 0), (p.mu - (-p.setting_val)) / NULLIF(3 * p.sigma, 0)) >= 2.0 THEN 'World Class'
+           WHEN LEAST((p.setting_val - p.mu) / NULLIF(3 * p.sigma, 0), (p.mu - (-p.setting_val)) / NULLIF(3 * p.sigma, 0)) >= 1.67 THEN 'Excellent'
+           WHEN LEAST((p.setting_val - p.mu) / NULLIF(3 * p.sigma, 0), (p.mu - (-p.setting_val)) / NULLIF(3 * p.sigma, 0)) >= 1.33 THEN 'Capable'
+           WHEN LEAST((p.setting_val - p.mu) / NULLIF(3 * p.sigma, 0), (p.mu - (-p.setting_val)) / NULLIF(3 * p.sigma, 0)) >= 1.0 THEN 'Marginally Capable'
            ELSE 'Not Capable'
-       END AS capability_class
-FROM stats s WHERE s.sigma > 0 ORDER BY cpk DESC;
+       END AS capability_class,
+       ROUND(j.mu::NUMERIC, 3) AS mean_je,
+       ROUND(j.sigma::NUMERIC, 3) AS stddev_je,
+       ROUND((j.setting_val * 2 / NULLIF(6 * j.sigma, 0))::NUMERIC, 3) AS cp_je,
+       ROUND(LEAST((j.setting_val - j.mu) / NULLIF(3 * j.sigma, 0), (j.mu - (-j.setting_val)) / NULLIF(3 * j.sigma, 0))::NUMERIC, 3) AS cpk_je,
+       CASE
+           WHEN LEAST((j.setting_val - j.mu) / NULLIF(3 * j.sigma, 0), (j.mu - (-j.setting_val)) / NULLIF(3 * j.sigma, 0)) >= 2.0 THEN 'World Class'
+           WHEN LEAST((j.setting_val - j.mu) / NULLIF(3 * j.sigma, 0), (j.mu - (-j.setting_val)) / NULLIF(3 * j.sigma, 0)) >= 1.67 THEN 'Excellent'
+           WHEN LEAST((j.setting_val - j.mu) / NULLIF(3 * j.sigma, 0), (j.mu - (-j.setting_val)) / NULLIF(3 * j.sigma, 0)) >= 1.33 THEN 'Capable'
+           WHEN LEAST((j.setting_val - j.mu) / NULLIF(3 * j.sigma, 0), (j.mu - (-j.setting_val)) / NULLIF(3 * j.sigma, 0)) >= 1.0 THEN 'Marginally Capable'
+           ELSE 'Not Capable'
+       END AS capability_class_je
+FROM pe_stats p
+LEFT JOIN je_stats j ON p.eqp_id = j.eqp_id
+WHERE p.sigma > 0 ORDER BY cpk DESC;
 
 -- Process stability index (0-100 composite)
 CREATE OR REPLACE VIEW public.v_process_stability AS
@@ -420,7 +441,11 @@ pe_stats AS (
                         ABS(COALESCE(pe_5,0)), ABS(COALESCE(pe_6,0)))) AS pe_mu,
            STDDEV(GREATEST(ABS(COALESCE(pe_1,0)), ABS(COALESCE(pe_2,0)),
                            ABS(COALESCE(pe_3,0)), ABS(COALESCE(pe_4,0)),
-                           ABS(COALESCE(pe_5,0)), ABS(COALESCE(pe_6,0)))) AS pe_sigma
+                           ABS(COALESCE(pe_5,0)), ABS(COALESCE(pe_6,0)))) AS pe_sigma,
+           AVG(GREATEST(ABS(COALESCE(je_1,0)), ABS(COALESCE(je_2,0)),
+                        ABS(COALESCE(je_3,0)), ABS(COALESCE(je_4,0)))) AS je_mu,
+           STDDEV(GREATEST(ABS(COALESCE(je_1,0)), ABS(COALESCE(je_2,0)),
+                           ABS(COALESCE(je_3,0)), ABS(COALESCE(je_4,0)))) AS je_sigma
     FROM public.ldi_data
     WHERE "time" > (SELECT cutoff FROM time_range) AND pe_1 IS NOT NULL
     GROUP BY eqp_id
@@ -429,7 +454,8 @@ SELECT COALESCE(t.eqp_id, h.eqp_id, pe.eqp_id) AS eqp_id,
        GREATEST(0, 33 - COALESCE(t.temp_sigma, 99) * 10)::NUMERIC(5,1) AS temp_score,
        GREATEST(0, 33 - COALESCE(h.hum_sigma, 99) * 10)::NUMERIC(5,1) AS hum_score,
        GREATEST(0, 34 - COALESCE(pe.pe_sigma, 99) * 5 - COALESCE(pe.pe_mu, 99) * 2)::NUMERIC(5,1) AS pe_score,
-       GREATEST(0, GREATEST(0, 33 - COALESCE(t.temp_sigma, 99) * 10) + GREATEST(0, 33 - COALESCE(h.hum_sigma, 99) * 10) + GREATEST(0, 34 - COALESCE(pe.pe_sigma, 99) * 5 - COALESCE(pe.pe_mu, 99) * 2))::NUMERIC(5,1) AS stability_index
+       GREATEST(0, 17 - COALESCE(pe.je_sigma, 99) * 5 - COALESCE(pe.je_mu, 99))::NUMERIC(5,1) AS je_score,
+       GREATEST(0, GREATEST(0, 33 - COALESCE(t.temp_sigma, 99) * 10) + GREATEST(0, 33 - COALESCE(h.hum_sigma, 99) * 10) + GREATEST(0, 34 - COALESCE(pe.pe_sigma, 99) * 5 - COALESCE(pe.pe_mu, 99) * 2) + GREATEST(0, 17 - COALESCE(pe.je_sigma, 99) * 5 - COALESCE(pe.je_mu, 99)))::NUMERIC(5,1) AS stability_index
 FROM temp_stats t
 FULL OUTER JOIN hum_stats h ON t.eqp_id = h.eqp_id
 FULL OUTER JOIN pe_stats pe ON COALESCE(t.eqp_id, h.eqp_id) = pe.eqp_id
