@@ -21,6 +21,8 @@ checkpoint.md
 
 # IDE
 .vs/
+# VS Code cache in node_modules
+node_modules/.vs/
 .vscode/
 .idea/
 *.swp
