@@ -139,7 +139,7 @@
             "properties": [
               {
                 "id": "unit",
-                "value": "dateTimeAsSystem"
+                "value": "dateTimeAsIso"
               },
               {
                 "id": "decimals",
@@ -155,7 +155,7 @@
             "properties": [
               {
                 "id": "unit",
-                "value": "dateTimeAsSystem"
+                "value": "dateTimeAsIso"
               },
               {
                 "id": "decimals",
@@ -633,7 +633,7 @@
             "properties": [
               {
                 "id": "unit",
-                "value": "dateTimeAsSystem"
+                "value": "dateTimeAsIso"
               },
               {
                 "id": "decimals",
@@ -649,7 +649,7 @@
             "properties": [
               {
                 "id": "unit",
-                "value": "dateTimeAsSystem"
+                "value": "dateTimeAsIso"
               },
               {
                 "id": "decimals",
@@ -744,7 +744,7 @@
             "properties": [
               {
                 "id": "unit",
-                "value": "dateTimeAsSystem"
+                "value": "dateTimeAsIso"
               },
               {
                 "id": "decimals",
@@ -760,7 +760,7 @@
             "properties": [
               {
                 "id": "unit",
-                "value": "dateTimeAsSystem"
+                "value": "dateTimeAsIso"
               },
               {
                 "id": "decimals",
@@ -853,7 +853,7 @@
             "properties": [
               {
                 "id": "unit",
-                "value": "dateTimeAsSystem"
+                "value": "dateTimeAsIso"
               },
               {
                 "id": "decimals",
@@ -869,7 +869,7 @@
             "properties": [
               {
                 "id": "unit",
-                "value": "dateTimeAsSystem"
+                "value": "dateTimeAsIso"
               },
               {
                 "id": "decimals",
@@ -895,7 +895,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "dateTimeFromNow",
+          "unit": "dateTimeAsIso",
           "thresholds": {
             "mode": "absolute",
             "steps": [
