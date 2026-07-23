@@ -110,10 +110,12 @@
     "authType": "",
     "senderr": false,
     "headers": [],
-    "x": 720,
+    "x": 560,
     "y": 200,
     "wires": [
-      []
+      [
+        "alert_status_line"
+      ]
     ]
   },
   {
@@ -152,10 +154,12 @@
     "authType": "",
     "senderr": false,
     "headers": [],
-    "x": 720,
+    "x": 560,
     "y": 260,
     "wires": [
-      []
+      [
+        "alert_status_teams"
+      ]
     ]
   },
   {
@@ -168,7 +172,9 @@
       "alert_line_format",
       "alert_line_notify",
       "alert_teams_format",
-      "alert_teams_webhook"
+      "alert_teams_webhook",
+      "alert_status_line",
+      "alert_status_teams"
     ],
     "uncaught": false,
     "x": 640,
@@ -195,5 +201,41 @@
     "x": 880,
     "y": 360,
     "wires": []
+  },
+  {
+    "id": "alert_status_line",
+    "type": "function",
+    "z": "ims-alert-tab",
+    "name": "Check LINE Status",
+    "func": "if (msg.statusCode && msg.statusCode >= 300) {\n    node.error('LINE delivery failed: HTTP ' + msg.statusCode, msg);\n}\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 720,
+    "y": 200,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "alert_status_teams",
+    "type": "function",
+    "z": "ims-alert-tab",
+    "name": "Check Teams Status",
+    "func": "if (msg.statusCode && msg.statusCode >= 300) {\n    node.error('Teams delivery failed: HTTP ' + msg.statusCode, msg);\n}\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 720,
+    "y": 260,
+    "wires": [
+      []
+    ]
   }
 ]
