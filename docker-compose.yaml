@@ -296,6 +296,27 @@ services:
       - ims-monitoring
     logging: *default-logging
 
+
+  # ── Database Migrations (one-shot init container) ──────────
+  db-migrate:
+    image: timescale/timescaledb:2.17.2-pg16
+    container_name: ims-db-migrate
+    restart: "no"
+    init: true
+    entrypoint: ["/bin/sh", "/scripts/migrate-entrypoint.sh"]
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+    volumes:
+      - ./database/migrations:/migrations:ro
+      - ./scripts/migrate-entrypoint.sh:/scripts/migrate-entrypoint.sh:ro
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    networks:
+      - ims-internal
+    logging: *default-logging
+
   # ── Node-RED ──────────────────────────────────────────────
   node-red:
     build:
@@ -346,6 +367,8 @@ services:
         condition: service_healthy
       grafana:
         condition: service_started
+      db-migrate:
+        condition: service_completed_successfully
     networks:
       - ims-internal
     logging: *default-logging
