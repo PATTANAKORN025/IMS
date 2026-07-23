@@ -744,7 +744,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('1 minute', time) AS time, eqp_id AS metric, CASE WHEN state THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('1 minute', time) AS time, eqp_id AS metric, MAX(CASE WHEN state THEN 1 ELSE 0 END) AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
