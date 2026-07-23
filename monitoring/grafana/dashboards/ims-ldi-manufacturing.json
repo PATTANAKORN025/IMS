@@ -7,12 +7,11 @@
     "ldi",
     "executive",
     "spc",
-    "kiosk",
     "rca"
   ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "refresh": "5s",
+  "refresh": "30s",
   "time": {
     "from": "now-1h",
     "to": "now"
@@ -1066,7 +1065,7 @@
               },
               {
                 "id": "custom.axisLabel",
-                "value": "resist_dosage (mg/cm²)"
+                "value": "resist_dosage (mJ/cm²)"
               },
               {
                 "id": "unit",
@@ -1112,7 +1111,7 @@
         }
       ],
       "transparent": true,
-      "description": "Dual Y-axis: thickness (left, mm) and resist_dosage (right, mg/cm²) per machine."
+      "description": "Dual Y-axis: thickness (left, mm) and resist_dosage (right, mJ/cm²) per machine."
     },
     {
       "id": 11,

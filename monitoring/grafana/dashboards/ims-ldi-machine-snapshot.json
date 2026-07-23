@@ -11,7 +11,7 @@
   ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "refresh": "",
+  "refresh": "off",
   "time": {
     "from": "now-5m",
     "to": "now"
@@ -493,7 +493,7 @@
     },
     {
       "id": 7,
-      "title": "resist_dosage (mg/cm²)",
+      "title": "resist_dosage (mJ/cm²)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"

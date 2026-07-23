@@ -15,6 +15,9 @@ groups:
         condition: C
         data:
           - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
             datasourceUid: timescaledb
             model:
               rawSql: |
@@ -38,6 +41,9 @@ groups:
               intervalMs: 300000
               maxDataPoints: 100
           - refId: C
+            relativeTimeRange:
+              from: 600
+              to: 0
             datasourceUid: __expr__
             model:
               type: reduce
@@ -61,6 +67,9 @@ groups:
         condition: C
         data:
           - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
             datasourceUid: timescaledb
             model:
               rawSql: |
@@ -72,6 +81,9 @@ groups:
               intervalMs: 300000
               maxDataPoints: 100
           - refId: C
+            relativeTimeRange:
+              from: 600
+              to: 0
             datasourceUid: __expr__
             model:
               type: reduce

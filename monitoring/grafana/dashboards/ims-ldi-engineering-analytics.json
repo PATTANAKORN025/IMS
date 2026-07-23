@@ -961,102 +961,6 @@
       "description": "Composite stability score (0-100) combining temperature, humidity, and PE stability. Green >= 70, Amber >= 40, Red < 40."
     },
     {
-      "id": 12,
-      "title": "Max PE Deviation (Transformed)",
-      "type": "timeseries",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 38,
-        "w": 12,
-        "h": 6
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "lengthum",
-          "decimals": 2,
-          "min": -30,
-          "max": 30,
-          "custom": {
-            "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "fillOpacity": 15,
-            "lineWidth": 2,
-            "showPoints": "never",
-            "spanNulls": false,
-            "gradientMode": "opacity",
-            "connectNullPoints": true
-          },
-          "color": {
-            "mode": "palette-classic"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#22C55E",
-                "value": null
-              },
-              {
-                "color": "#FACC15",
-                "value": 15
-              },
-              {
-                "color": "#EF4444",
-                "value": 25
-              }
-            ]
-          },
-          "thresholdsStyle": {
-            "mode": "line+area"
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        },
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "mean",
-            "max"
-          ]
-        },
-        "connectNullPoints": true
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT time, eqp_id AS metric, pe_1 AS \"pe_1\", pe_2 AS \"pe_2\", pe_3 AS \"pe_3\", pe_4 AS \"pe_4\", pe_5 AS \"pe_5\", pe_6 AS \"pe_6\" FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND pe_1 IS NOT NULL ORDER BY time",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
-        }
-      ],
-      "transformations": [
-        {
-          "id": "calculateField",
-          "options": {
-            "mode": "reduceRow",
-            "reduceExpression": "max",
-            "reduceWith": "max",
-            "alias": "Max Absolute Error",
-            "binaryOperations": []
-          }
-        }
-      ],
-      "transparent": true,
-      "description": "Max PE deviation computed via Grafana Transformations (no SQL GREATEST needed). Shows process stability."
-    },
-    {
       "id": 13,
       "title": "Alignment Error Distribution (PE Histogram)",
       "type": "histogram",
@@ -1064,9 +968,9 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 12,
+        "x": 0,
         "y": 38,
-        "w": 12,
+        "w": 24,
         "h": 6
       },
       "fieldConfig": {
@@ -1127,97 +1031,23 @@
       "description": "Statistical distribution of alignment errors. Shows skewness and process centering for SPC analysis."
     },
     {
-      "id": 14,
-      "title": "Machine Uptime Timeline",
-      "type": "state-timeline",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 44,
-        "w": 24,
-        "h": 4
-      },
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "0": {
-                  "text": "STOP",
-                  "color": "#EF4444"
-                },
-                "1": {
-                  "text": "RUN",
-                  "color": "#22C55E"
-                }
-              }
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#EF4444",
-                "value": null
-              },
-              {
-                "color": "#22C55E",
-                "value": 1
-              }
-            ]
-          },
-          "color": {
-            "mode": "thresholds"
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "options": {
-        "showValue": "auto",
-        "mergeValues": true,
-        "alignValue": "center",
-        "rowHeight": 0.85,
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT time_bucket('1 minute', time) AS time, eqp_id AS metric, MAX(CASE WHEN state THEN 1 ELSE 0 END) AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) GROUP BY 1, 2 ORDER BY 1",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
-        }
-      ],
-      "transparent": true,
-      "description": "Machine availability timeline. Green=RUN, Red=STOP. Shows downtime patterns at a glance."
-    },
-    {
       "id": 15,
-      "title": "Resist Dosage Live (mg/cm²)",
+      "title": "Resist Dosage Live (mJ/cm²)",
       "type": "bargauge",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 0,
-        "y": 48,
+        "y": 44,
         "w": 12,
         "h": 5
       },
       "fieldConfig": {
         "defaults": {
           "unit": "short",
-          "min": 450,
-          "max": 550,
+          "min": 0,
+          "max": 40,
           "decimals": 1,
           "thresholds": {
             "mode": "absolute",
@@ -1228,19 +1058,19 @@
               },
               {
                 "color": "#FACC15",
-                "value": 480
+                "value": 10
               },
               {
                 "color": "#22C55E",
-                "value": 490
+                "value": 14
               },
               {
                 "color": "#FACC15",
-                "value": 510
+                "value": 22
               },
               {
                 "color": "#EF4444",
-                "value": 520
+                "value": 30
               }
             ]
           },
@@ -1271,116 +1101,7 @@
         }
       ],
       "transparent": true,
-      "description": "Current resist dosage per machine. Green=490-510 (target), Yellow=480-520 (warning), Red=outside (critical)."
-    },
-    {
-      "id": 16,
-      "title": "thickness & resist_dosage",
-      "type": "timeseries",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 12,
-        "y": 48,
-        "w": 12,
-        "h": 5
-      },
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "fillOpacity": 15,
-            "lineWidth": 2,
-            "showPoints": "never",
-            "spanNulls": false,
-            "gradientMode": "opacity",
-            "connectNullPoints": true
-          },
-          "color": {
-            "mode": "palette-classic"
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": ".*thickness.*"
-            },
-            "properties": [
-              {
-                "id": "custom.axisPlacement",
-                "value": "left"
-              },
-              {
-                "id": "custom.axisLabel",
-                "value": "thickness (mm)"
-              },
-              {
-                "id": "unit",
-                "value": "lengthmm"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": ".*resist_dosage.*"
-            },
-            "properties": [
-              {
-                "id": "custom.axisPlacement",
-                "value": "right"
-              },
-              {
-                "id": "custom.axisLabel",
-                "value": "resist_dosage"
-              },
-              {
-                "id": "unit",
-                "value": "short"
-              }
-            ]
-          }
-        ]
-      },
-      "options": {
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        },
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "mean"
-          ]
-        },
-        "connectNullPoints": true
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT time, eqp_id AS metric, thickness AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND thickness IS NOT NULL ORDER BY time",
-          "format": "time_series",
-          "legendFormat": "{{metric}} - thickness"
-        },
-        {
-          "refId": "B",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT time, eqp_id AS metric, resist_dosage AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND resist_dosage IS NOT NULL ORDER BY time",
-          "format": "time_series",
-          "legendFormat": "{{metric}} - resist_dosage"
-        }
-      ],
-      "transparent": true,
-      "description": "Film thickness (left, mm) and resist dosage (right, mg/cm²) per machine."
+      "description": "Current resist dosage per machine. Green=14-22 mJ/cm² (target), Yellow=10-14 & 22-30 (warning), Red=outside (critical)."
     }
   ],
   "fiscalYearStartMonth": 0,
