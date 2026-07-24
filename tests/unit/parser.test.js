@@ -1,8 +1,9 @@
 /**
- * Unit tests for extracted parser functions (parseAll, calcNetRate)
+ * Unit tests for parser functions (parseAll, calcNetRate, sanitize, mkIface)
  *
- * These test the mirrored logic from the Node-RED embedded sre_parser v10.
- * The canonical source remains in nodered_data/flows.json.
+ * Tests the canonical parser module at nodered_data/lib/parser.js.
+ * This is the SINGLE source of truth — inline code in flows/ingestion.json
+ * must be synced manually (Node-RED sandbox doesn't support require()).
  *
  * Run: node tests/unit/parser.test.js
  */
@@ -16,7 +17,7 @@ global.flow = {
     set: (key, val) => { flowStore[key] = val; }
 };
 
-const { parseAll, calcNetRate, sanitize, mkIface } = require('./parser-logic');
+const { parseAll, calcNetRate, sanitize, mkIface } = require('../../nodered_data/lib/parser');
 
 const emptyState = {
     cpu_cores: 0, cpu_load: 0, ram_total: 0, ram_used: 0, ram_free: 0,
