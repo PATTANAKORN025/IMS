@@ -118,7 +118,14 @@
             "lineWidth": 2,
             "showPoints": "never",
             "spanNulls": false,
-            "gradientMode": "opacity"
+            "gradientMode": "opacity",
+            "dataLinks": [
+              {
+                "title": "Investigate Instant Snapshot",
+                "url": "/d/ldi-machine-snapshot/ims-ldi-incident-snapshot?var-machine_id=${__series.name}&from=${__value.time}&to=${__value.time}",
+                "targetBlank": false
+              }
+            ]
           },
           "color": {
             "mode": "palette-classic"
@@ -188,7 +195,14 @@
             "lineWidth": 2,
             "showPoints": "never",
             "spanNulls": false,
-            "gradientMode": "opacity"
+            "gradientMode": "opacity",
+            "dataLinks": [
+              {
+                "title": "Investigate Instant Snapshot",
+                "url": "/d/ldi-machine-snapshot/ims-ldi-incident-snapshot?var-machine_id=${__series.name}&from=${__value.time}&to=${__value.time}",
+                "targetBlank": false
+              }
+            ]
           },
           "color": {
             "mode": "palette-classic"
@@ -530,7 +544,14 @@
             "lineWidth": 2,
             "showPoints": "never",
             "spanNulls": false,
-            "gradientMode": "opacity"
+            "gradientMode": "opacity",
+            "dataLinks": [
+              {
+                "title": "Investigate Instant Snapshot",
+                "url": "/d/ldi-machine-snapshot/ims-ldi-incident-snapshot?var-machine_id=${__series.name}&from=${__value.time}&to=${__value.time}",
+                "targetBlank": false
+              }
+            ]
           },
           "color": {
             "mode": "palette-classic"
@@ -645,7 +666,14 @@
             "lineWidth": 2,
             "showPoints": "never",
             "spanNulls": false,
-            "gradientMode": "opacity"
+            "gradientMode": "opacity",
+            "dataLinks": [
+              {
+                "title": "Investigate Instant Snapshot",
+                "url": "/d/ldi-machine-snapshot/ims-ldi-incident-snapshot?var-machine_id=${__series.name}&from=${__value.time}&to=${__value.time}",
+                "targetBlank": false
+              }
+            ]
           },
           "color": {
             "mode": "palette-classic"
