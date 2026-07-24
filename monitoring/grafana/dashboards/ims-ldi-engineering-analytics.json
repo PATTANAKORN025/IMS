@@ -821,12 +821,12 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT eqp_id AS \"Machine\", sample_count AS \"Samples\", mean_pe AS \"Mean PE\", stddev_pe AS \"StdDev\", cp AS \"Cp\", cpk AS \"Cpk\", capability_class AS \"Capability\" FROM public.v_machine_spc_ranking ORDER BY cpk DESC",
+          "rawSql": "SELECT eqp_id AS \"Machine\", sample_count AS \"Samples\", mean_pe AS \"Mean PE\", cpk AS \"Cpk\", capability_class AS \"Capability\", mean_je AS \"Mean JE\", cpk_je AS \"Cpk (JE)\", capability_class_je AS \"JE Capability\" FROM public.v_machine_spc_ranking ORDER BY cpk DESC",
           "format": "table"
         }
       ],
       "transparent": true,
-      "description": "Source: v_machine_spc_ranking. Machine ranking by Cpk (process capability index). World Class >= 2.0, Excellent >= 1.67, Capable >= 1.33, Marginal >= 1.0, Not Capable < 1.0.",
+      "description": "Source: v_machine_spc_ranking. PE and JE process capability. Cpk >= 1.33 = Capable.",
       "fieldConfig": {
         "defaults": {},
         "overrides": [
