@@ -35,8 +35,28 @@ BEGIN;
 
 TRUNCATE TABLE public.ldi_data;
 TRUNCATE TABLE public.ldi_alarm_log;
+TRUNCATE TABLE public.ldi_alarm_ms_code;
 
 -- ─────────────────────────────────────────────────────────────────────────
+-- ALARM MASTER CODES
+-- ─────────────────────────────────────────────────────────────────────────
+-- ALARM MASTER CODES (synthetic, 5-digit format matching real EAP logs)
+-- A=Advisory 76%, W=Warning 21%, E=Emergency 3% (real proportions)
+-- ─────────────────────────────────────────────────────────────────────────
+INSERT INTO public.ldi_alarm_ms_code (alarm_id, alarm_type, alarm_code, alarm_msg, alarm_detail)
+SELECT code, type, code,
+       'Mock alarm ' || code || ' — ' || CASE type
+            WHEN 'E' THEN 'critical fault'
+            WHEN 'W' THEN 'warning condition'
+            ELSE 'advisory event' END,
+       'Synthetic detail for alarm ' || code || '. Check machine subsystem.'
+FROM (VALUES
+    ('02010','A'),('02020','A'),('02030','W'),('03010','A'),('03020','W'),
+    ('04010','E'),('04020','A'),('04030','W'),('05010','A'),('05020','E'),
+    ('06010','A'),('06020','W'),('07010','A'),('07020','A'),('08010','W'),
+    ('08020','A'),('09010','E'),('09020','A'),('10010','W'),('10020','A')
+) AS v(code, type);
+
 -- RECIPE PROFILE (สกัดจากข้อมูลจริง — mean/sd ต่อ process)
 -- ─────────────────────────────────────────────────────────────────────────
 -- process    share  resist_dosage   scan_speed   air_vacuum  thickness  pe_setting je_setting
@@ -120,12 +140,20 @@ SELECT
     CASE WHEN random() < 0.0002 THEN 0
          ELSE ROUND((1.000280 + z1 * 0.000099)::NUMERIC, 6) END              AS scale_y,
 
-    -- ── temperature: mean/sd ต่อ recipe + sensor dropout 0.02% เป็น 0 ──
+    -- ── temperature: mean/sd ต่อ recipe + sensor dropout 0.02% + excursion windows ──
     CASE WHEN random() < 0.0002 THEN 0
-         ELSE ROUND((CASE process
+         ELSE ROUND(((CASE process
               WHEN 'DF INNER' THEN 23.00 + z1 * 0.55
               WHEN 'DF OUTER' THEN 22.14 + z1 * 0.28
-              ELSE 22.33 + z1 * 0.18 END)::NUMERIC, 1) END                   AS temperature,
+              ELSE 22.33 + z1 * 0.18 END)
+              -- EXCURSION: MOCK-LDI-03 runs hot permanently (+3.6°C → 26.6°C)
+              + CASE WHEN eqp_id = 'MOCK-LDI-03' THEN 3.6
+                -- EXCURSION: MOCK-LDI-06 hot for 20 min window (2h–100min ago)
+                WHEN eqp_id = 'MOCK-LDI-06'
+                 AND ts BETWEEN NOW() - INTERVAL '2 hours'
+                            AND NOW() - INTERVAL '100 minutes'
+                THEN 2.5
+                ELSE 0 END)::NUMERIC, 1) END                               AS temperature,
 
     CASE WHEN random() < 0.0002 THEN 0
          ELSE ROUND((CASE process
@@ -168,11 +196,20 @@ SELECT
     (random() > 0.0002)                                                      AS state,
     scale_mode,
 
-    -- ══ PE: NULL ทั้งหมดบน DF INNER (ไม่ได้วัด) — ตรงกับระบบจริง ══
-    CASE WHEN process = 'DF INNER' THEN NULL ELSE ROUND((CASE process
-        WHEN 'DF OUTER' THEN -1.35 + z1 * 13.08 ELSE  0.42 + z1 *  3.82 END)::NUMERIC,3) END AS pe_1,
-    CASE WHEN process = 'DF INNER' THEN NULL ELSE ROUND((CASE process
-        WHEN 'DF OUTER' THEN  2.08 + z2 * 18.91 ELSE -9.74 + z2 *  7.91 END)::NUMERIC,3) END AS pe_2,
+    -- ══ PE: NULL ทั้งหมดบน DF INNER (ไม่ได้วัด) — ตรงกับระบบจริง + drift excursion ══
+    CASE WHEN process = 'DF INNER' THEN NULL ELSE ROUND(((CASE process
+        WHEN 'DF OUTER' THEN -1.35 + z1 * 13.08 ELSE  0.42 + z1 *  3.82 END)
+        -- EXCURSION: MOCK-LDI-02 PE drifts +20µm in 2h window (tests Cpk alert)
+        + CASE WHEN eqp_id = 'MOCK-LDI-02'
+            AND ts BETWEEN NOW() - INTERVAL '2 hours'
+                       AND NOW() - INTERVAL '100 minutes'
+            THEN 20.0 ELSE 0 END)::NUMERIC,3) END AS pe_1,
+    CASE WHEN process = 'DF INNER' THEN NULL ELSE ROUND(((CASE process
+        WHEN 'DF OUTER' THEN  2.08 + z2 * 18.91 ELSE -9.74 + z2 *  7.91 END)
+        + CASE WHEN eqp_id = 'MOCK-LDI-02'
+            AND ts BETWEEN NOW() - INTERVAL '2 hours'
+                       AND NOW() - INTERVAL '100 minutes'
+            THEN 15.0 ELSE 0 END)::NUMERIC,3) END AS pe_2,
     CASE WHEN process = 'DF INNER' THEN NULL ELSE ROUND((CASE process
         WHEN 'DF OUTER' THEN -5.94 + z1 * 21.82 ELSE -2.69 + z1 *  4.86 END)::NUMERIC,3) END AS pe_3,
     CASE WHEN process = 'DF INNER' THEN NULL ELSE ROUND((CASE process
@@ -234,9 +271,9 @@ FROM (
         i,
         NOW() - (random() * INTERVAL '6 hours') - (random() * INTERVAL '999 milliseconds') AS ts,
         -- power-law: code แรกๆ ถี่กว่ามาก เหมือนของจริง
-        (ARRAY['0201','0202','0203','0301','0302','0401','0402','0403',
-               '0501','0502','0601','0602','0701','0702','0801','0802',
-               '0901','0902','1001','1002'])[1 + LEAST(19, floor(-ln(GREATEST(random(),1e-9)) * 3.2)::INT)] AS code,
+        (ARRAY['02010','02020','02030','03010','03020','04010','04020','04030',
+               '05010','05020','06010','06020','07010','07020','08010','08020',
+               '09010','09020','10010','10020'])[1 + LEAST(19, floor(-ln(GREATEST(random(),1e-9)) * 3.2)::INT)] AS code,
         -- alarm เกิดแค่ 5 เครื่องจาก 10 (ตรงกับของจริง)
         (ARRAY['MOCK-LDI-01','MOCK-LDI-04','MOCK-LDI-05','MOCK-LDI-07','MOCK-LDI-09'])[1 + (i % 5)] AS eq
     FROM generate_series(1, 26) AS i        -- 6 ชม. × 4.3/ชม. ≈ 26 alarms
