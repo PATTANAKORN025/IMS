@@ -56,6 +56,7 @@ nodered_data/*
 nodered_data/flows/*
 !nodered_data/flows/ingestion.json
 !nodered_data/flows/alerting.json
+!nodered_data/lib/
 
 # Backups (created by scripts/backup-db.sh)
 backups/
