@@ -700,7 +700,7 @@
                   {
                     "title": "Analyze Process Trend",
                     "url": "/d/ldi-engineering-analytics/ims-ldi-engineering-analytics?var-machine_id=${__data.fields.Machine}&from=${__from}&to=${__to}",
-                    "targetBlank": true,
+                    "targetBlank": false,
                     "keepTime": true
                   }
                 ]
@@ -1499,7 +1499,7 @@
                   {
                     "title": "Analyze Process Trend",
                     "url": "/d/ldi-engineering-analytics/ims-ldi-engineering-analytics?var-machine_id=${__data.fields.Machine}&from=${__from}&to=${__to}",
-                    "targetBlank": true,
+                    "targetBlank": false,
                     "keepTime": true
                   }
                 ]
