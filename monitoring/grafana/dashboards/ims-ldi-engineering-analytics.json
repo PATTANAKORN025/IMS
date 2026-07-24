@@ -49,6 +49,20 @@
         "label": "MO (Work Order)"
       },
       {
+        "name": "process",
+        "type": "custom",
+        "query": "DF INNER,DF OUTER,SM",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "includeAll": true,
+        "multi": true,
+        "sort": 1,
+        "label": "Process"
+      },
+      {
         "name": "machine_id",
         "type": "query",
         "query": "SELECT DISTINCT eqp_id AS __text, eqp_id AS __value FROM public.ldi_data ORDER BY eqp_id",
@@ -142,7 +156,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('1 minute', time) AS time, eqp_id AS metric, AVG(temperature)::NUMERIC AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND temperature IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('1 minute', time) AS time, eqp_id AS metric, AVG(temperature)::NUMERIC AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND process IN ($process) AND eqp_id IN (${machine_id:singlequote}) AND temperature IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
@@ -212,7 +226,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('1 minute', time) AS time, eqp_id AS metric, AVG(humidity)::NUMERIC AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND humidity IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('1 minute', time) AS time, eqp_id AS metric, AVG(humidity)::NUMERIC AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND process IN ($process) AND eqp_id IN (${machine_id:singlequote}) AND humidity IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
@@ -280,7 +294,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('1 minute', time) AS time, eqp_id AS metric, AVG(scan_speed)::NUMERIC AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND scan_speed IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('1 minute', time) AS time, eqp_id AS metric, AVG(scan_speed)::NUMERIC AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND process IN ($process) AND eqp_id IN (${machine_id:singlequote}) AND scan_speed IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
@@ -348,7 +362,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('1 minute', time) AS time, eqp_id AS metric, AVG(air_vacuum)::NUMERIC AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND air_vacuum IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('1 minute', time) AS time, eqp_id AS metric, AVG(air_vacuum)::NUMERIC AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND process IN ($process) AND eqp_id IN (${machine_id:singlequote}) AND air_vacuum IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
@@ -416,7 +430,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('1 minute', time) AS time, eqp_id AS metric, AVG(scale_x)::NUMERIC AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND scale_x IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('1 minute', time) AS time, eqp_id AS metric, AVG(scale_x)::NUMERIC AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND process IN ($process) AND eqp_id IN (${machine_id:singlequote}) AND scale_x IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
@@ -484,7 +498,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('1 minute', time) AS time, eqp_id AS metric, AVG(scale_y)::NUMERIC AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND scale_y IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('1 minute', time) AS time, eqp_id AS metric, AVG(scale_y)::NUMERIC AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND process IN ($process) AND eqp_id IN (${machine_id:singlequote}) AND scale_y IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
@@ -521,8 +535,8 @@
           "color": {
             "mode": "palette-classic"
           },
-          "min": -30,
-          "max": 30,
+          "min": -80,
+          "max": 80,
           "links": [
             {
               "title": "Incident Snapshot (by log_id)",
@@ -554,7 +568,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('1 minute', time) AS time, eqp_id || ' - pe_1' AS metric, AVG(pe_1)::NUMERIC AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND pe_1 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('1 minute', time) AS time, eqp_id || ' - pe_1' AS metric, AVG(pe_1)::NUMERIC AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND process IN ($process) AND eqp_id IN (${machine_id:singlequote}) AND pe_1 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         },
@@ -563,7 +577,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('1 minute', time) AS time, eqp_id || ' - pe_2' AS metric, AVG(pe_2)::NUMERIC AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND pe_2 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('1 minute', time) AS time, eqp_id || ' - pe_2' AS metric, AVG(pe_2)::NUMERIC AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND process IN ($process) AND eqp_id IN (${machine_id:singlequote}) AND pe_2 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         },
@@ -572,7 +586,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('1 minute', time) AS time, eqp_id || ' - pe_3' AS metric, AVG(pe_3)::NUMERIC AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND pe_3 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('1 minute', time) AS time, eqp_id || ' - pe_3' AS metric, AVG(pe_3)::NUMERIC AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND process IN ($process) AND eqp_id IN (${machine_id:singlequote}) AND pe_3 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         },
@@ -581,7 +595,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('1 minute', time) AS time, eqp_id || ' - pe_4' AS metric, AVG(pe_4)::NUMERIC AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND pe_4 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('1 minute', time) AS time, eqp_id || ' - pe_4' AS metric, AVG(pe_4)::NUMERIC AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND process IN ($process) AND eqp_id IN (${machine_id:singlequote}) AND pe_4 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         },
@@ -590,7 +604,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('1 minute', time) AS time, eqp_id || ' - pe_5' AS metric, AVG(pe_5)::NUMERIC AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND pe_5 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('1 minute', time) AS time, eqp_id || ' - pe_5' AS metric, AVG(pe_5)::NUMERIC AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND process IN ($process) AND eqp_id IN (${machine_id:singlequote}) AND pe_5 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         },
@@ -599,7 +613,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('1 minute', time) AS time, eqp_id || ' - pe_6' AS metric, AVG(pe_6)::NUMERIC AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND pe_6 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('1 minute', time) AS time, eqp_id || ' - pe_6' AS metric, AVG(pe_6)::NUMERIC AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND process IN ($process) AND eqp_id IN (${machine_id:singlequote}) AND pe_6 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
@@ -636,8 +650,8 @@
           "color": {
             "mode": "palette-classic"
           },
-          "min": -30,
-          "max": 30,
+          "min": 0,
+          "max": 45,
           "links": [
             {
               "title": "Incident Snapshot (by log_id)",
@@ -669,7 +683,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('1 minute', time) AS time, eqp_id || ' - je_1' AS metric, AVG(je_1)::NUMERIC AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND je_1 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('1 minute', time) AS time, eqp_id || ' - je_1' AS metric, AVG(je_1)::NUMERIC AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND process IN ($process) AND eqp_id IN (${machine_id:singlequote}) AND je_1 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         },
@@ -678,7 +692,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('1 minute', time) AS time, eqp_id || ' - je_2' AS metric, AVG(je_2)::NUMERIC AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND je_2 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('1 minute', time) AS time, eqp_id || ' - je_2' AS metric, AVG(je_2)::NUMERIC AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND process IN ($process) AND eqp_id IN (${machine_id:singlequote}) AND je_2 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         },
@@ -687,7 +701,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('1 minute', time) AS time, eqp_id || ' - je_3' AS metric, AVG(je_3)::NUMERIC AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND je_3 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('1 minute', time) AS time, eqp_id || ' - je_3' AS metric, AVG(je_3)::NUMERIC AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND process IN ($process) AND eqp_id IN (${machine_id:singlequote}) AND je_3 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         },
@@ -696,7 +710,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('1 minute', time) AS time, eqp_id || ' - je_4' AS metric, AVG(je_4)::NUMERIC AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND je_4 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('1 minute', time) AS time, eqp_id || ' - je_4' AS metric, AVG(je_4)::NUMERIC AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND process IN ($process) AND eqp_id IN (${machine_id:singlequote}) AND je_4 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
@@ -770,7 +784,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('1 minute', time) AS time, eqp_id AS metric, MAX(CASE WHEN state THEN 1 ELSE 0 END) AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('1 minute', time) AS time, eqp_id AS metric, MAX(CASE WHEN state THEN 1 ELSE 0 END) AS value FROM public.ldi_data WHERE factory IN ($factory) AND $__timeFilter(time) AND process IN ($process) AND eqp_id IN (${machine_id:singlequote}) GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
@@ -780,7 +794,7 @@
     },
     {
       "id": 10,
-      "title": "v_machine_spc_ranking",
+      "title": "Machine SPC Ranking",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
@@ -812,7 +826,7 @@
         }
       ],
       "transparent": true,
-      "description": "Machine ranking by Cpk (process capability index). World Class >= 2.0, Excellent >= 1.67, Capable >= 1.33, Marginal >= 1.0, Not Capable < 1.0.",
+      "description": "Source: v_machine_spc_ranking. Machine ranking by Cpk (process capability index). World Class >= 2.0, Excellent >= 1.67, Capable >= 1.33, Marginal >= 1.0, Not Capable < 1.0.",
       "fieldConfig": {
         "defaults": {},
         "overrides": [
@@ -992,19 +1006,19 @@
               },
               {
                 "color": "#FACC15",
-                "value": 15
+                "value": 50
               },
               {
                 "color": "#EF4444",
-                "value": 25
+                "value": 70
               }
             ]
           },
           "thresholdsStyle": {
             "mode": "line"
           },
-          "min": -30,
-          "max": 30
+          "min": -80,
+          "max": 80
         },
         "overrides": []
       },
@@ -1022,7 +1036,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, eqp_id || ' - pe_1' AS metric, pe_1 AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND pe_1 IS NOT NULL UNION ALL SELECT time, eqp_id || ' - pe_2', pe_2 FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND pe_2 IS NOT NULL UNION ALL SELECT time, eqp_id || ' - pe_3', pe_3 FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND pe_3 IS NOT NULL UNION ALL SELECT time, eqp_id || ' - pe_4', pe_4 FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND pe_4 IS NOT NULL UNION ALL SELECT time, eqp_id || ' - pe_5', pe_5 FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND pe_5 IS NOT NULL UNION ALL SELECT time, eqp_id || ' - pe_6', pe_6 FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND pe_6 IS NOT NULL ORDER BY time",
+          "rawSql": "SELECT time, eqp_id || ' - pe_1' AS metric, pe_1 AS value FROM public.ldi_data WHERE $__timeFilter(time) AND process IN ($process) AND eqp_id IN (${machine_id:singlequote}) AND pe_1 IS NOT NULL UNION ALL SELECT time, eqp_id || ' - pe_2', pe_2 FROM public.ldi_data WHERE $__timeFilter(time) AND process IN ($process) AND eqp_id IN (${machine_id:singlequote}) AND pe_2 IS NOT NULL UNION ALL SELECT time, eqp_id || ' - pe_3', pe_3 FROM public.ldi_data WHERE $__timeFilter(time) AND process IN ($process) AND eqp_id IN (${machine_id:singlequote}) AND pe_3 IS NOT NULL UNION ALL SELECT time, eqp_id || ' - pe_4', pe_4 FROM public.ldi_data WHERE $__timeFilter(time) AND process IN ($process) AND eqp_id IN (${machine_id:singlequote}) AND pe_4 IS NOT NULL UNION ALL SELECT time, eqp_id || ' - pe_5', pe_5 FROM public.ldi_data WHERE $__timeFilter(time) AND process IN ($process) AND eqp_id IN (${machine_id:singlequote}) AND pe_5 IS NOT NULL UNION ALL SELECT time, eqp_id || ' - pe_6', pe_6 FROM public.ldi_data WHERE $__timeFilter(time) AND process IN ($process) AND eqp_id IN (${machine_id:singlequote}) AND pe_6 IS NOT NULL ORDER BY time",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
@@ -1032,7 +1046,7 @@
     },
     {
       "id": 15,
-      "title": "Resist Dosage Live (mJ/cm²)",
+      "title": "Resist Dosage (mJ/cm²)",
       "type": "bargauge",
       "datasource": {
         "uid": "timescaledb"
@@ -1047,7 +1061,7 @@
         "defaults": {
           "unit": "short",
           "min": 0,
-          "max": 40,
+          "max": 1200,
           "decimals": 1,
           "thresholds": {
             "mode": "absolute",
@@ -1058,19 +1072,19 @@
               },
               {
                 "color": "#FACC15",
-                "value": 10
+                "value": 500
               },
               {
                 "color": "#22C55E",
-                "value": 14
+                "value": 600
               },
               {
                 "color": "#FACC15",
-                "value": 22
+                "value": 700
               },
               {
                 "color": "#EF4444",
-                "value": 30
+                "value": 800
               }
             ]
           },
@@ -1096,12 +1110,12 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT eqp_id AS metric, ROUND(AVG(resist_dosage)::NUMERIC, 1) AS value FROM public.ldi_data WHERE $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND resist_dosage IS NOT NULL GROUP BY 1 ORDER BY 1",
+          "rawSql": "SELECT eqp_id AS metric, ROUND(AVG(resist_dosage)::NUMERIC, 1) AS value FROM public.ldi_data WHERE $__timeFilter(time) AND process IN ($process) AND eqp_id IN (${machine_id:singlequote}) AND resist_dosage IS NOT NULL GROUP BY 1 ORDER BY 1",
           "format": "table"
         }
       ],
       "transparent": true,
-      "description": "Current resist dosage per machine. Green=14-22 mJ/cm² (target), Yellow=10-14 & 22-30 (warning), Red=outside (critical)."
+      "description": "All 3 recipes: DF OUTER=15, DF INNER=71, SM=500-1200 mJ/cm²"
     }
   ],
   "fiscalYearStartMonth": 0,

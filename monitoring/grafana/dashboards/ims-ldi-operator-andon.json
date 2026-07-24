@@ -314,7 +314,7 @@
     },
     {
       "id": 5,
-      "title": "Temperature Compliance (22±2°C)",
+      "title": "Temperature Compliance (20-24°C)",
       "type": "state-timeline",
       "datasource": {
         "uid": "timescaledb"
