@@ -800,7 +800,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH target AS (  SELECT \"time\" FROM public.v_ldi_machine_snapshot   WHERE log_id = '${log_id}' LIMIT 1) SELECT al.logdate AS \"Time\", al.equipmentid AS \"Machine\", al.errorcode AS \"errorcode\", al.errortime AS \"errortime\", COALESCE(m.alarm_msg, al.errorcode::TEXT) AS \"Message\", COALESCE(m.alarm_type, 'WARN') AS \"Severity\" FROM public.ldi_alarm_log al LEFT JOIN public.ldi_alarm_ms_code m ON al.errorcode::TEXT = m.alarm_code::TEXT WHERE al.equipmentid IN (${machine_id:singlequote}) AND al.logdate >= (SELECT \"time\" - INTERVAL '5 minutes' FROM target) AND al.logdate <= (SELECT \"time\" + INTERVAL '5 minutes' FROM target) ORDER BY al.logdate DESC",
+          "rawSql": "WITH target AS (  SELECT \"time\" FROM public.v_ldi_machine_snapshot   WHERE log_id = '${log_id}' LIMIT 1) SELECT al.logdate AS \"Time\", al.equipmentid AS \"Machine\", al.errorcode AS \"errorcode\", al.errortime AS \"errortime\", COALESCE(m.alarm_msg, al.errorcode::TEXT) AS \"Message\", COALESCE(m.alarm_type, 'WARN') AS \"Severity\", COALESCE(m.alarm_detail, '') AS \"Details\" FROM public.ldi_alarm_log al LEFT JOIN public.ldi_alarm_ms_code m ON al.errorcode::TEXT = m.alarm_code::TEXT WHERE al.equipmentid IN (${machine_id:singlequote}) AND al.logdate >= (SELECT \"time\" - INTERVAL '5 minutes' FROM target) AND al.logdate <= (SELECT \"time\" + INTERVAL '5 minutes' FROM target) ORDER BY al.logdate DESC",
           "format": "table"
         }
       ],
