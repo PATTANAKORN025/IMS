@@ -33,20 +33,6 @@
         "includeAll": false,
         "sort": 1,
         "label": "Machine"
-      },
-      {
-        "name": "log_id",
-        "type": "custom",
-        "query": "",
-        "current": {
-          "selected": false,
-          "text": "",
-          "value": ""
-        },
-        "options": [],
-        "refresh": 0,
-        "hide": 0,
-        "label": "Log ID"
       }
     ]
   },
@@ -90,7 +76,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT eqp_id AS \"Machine\", state AS \"State\", mo AS \"MO\", fpn AS \"FPN\", layer_name AS \"Layer\", (board_no::TEXT || '/' || total_board::TEXT) AS \"Board\", filmno AS \"Film\", resist AS \"Resist\", scale_mode AS \"Scale Mode\", TO_CHAR(\"time\", 'YYYY-MM-DD HH24:MI:SS.MS') AS \"Timestamp\" FROM public.v_ldi_machine_snapshot WHERE log_id = '${log_id}' LIMIT 1",
+          "rawSql": "SELECT eqp_id AS \"Machine\", state AS \"State\", mo AS \"MO\", fpn AS \"FPN\", layer_name AS \"Layer\", (board_no::TEXT || '/' || total_board::TEXT) AS \"Board\", filmno AS \"Film\", resist AS \"Resist\", scale_mode AS \"Scale Mode\", TO_CHAR(\"time\", 'YYYY-MM-DD HH24:MI:SS.MS') AS \"Timestamp\"\nFROM public.ldi_data\nWHERE eqp_id = ${machine_id:singlequote}\n  AND $__timeFilter(time)\nORDER BY ABS(EXTRACT(EPOCH FROM time) - EXTRACT(EPOCH FROM ((($__to + $__from)::BIGINT / 2)::BIGINT::TIMESTAMP))) ASC\nLIMIT 1",
           "format": "table"
         }
       ],
@@ -224,7 +210,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(temperature::NUMERIC, 2) AS value FROM public.v_ldi_machine_snapshot WHERE log_id = '${log_id}' LIMIT 1",
+          "rawSql": "SELECT ROUND(temperature::NUMERIC, 2) AS value\nFROM public.ldi_data\nWHERE eqp_id = ${machine_id:singlequote}\n  AND $__timeFilter(time)\nORDER BY ABS(EXTRACT(EPOCH FROM time) - EXTRACT(EPOCH FROM ((($__to + $__from)::BIGINT / 2)::BIGINT::TIMESTAMP))) ASC\nLIMIT 1",
           "format": "table"
         }
       ],
@@ -289,7 +275,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(humidity::NUMERIC, 2) AS value FROM public.v_ldi_machine_snapshot WHERE log_id = '${log_id}' LIMIT 1",
+          "rawSql": "SELECT ROUND(humidity::NUMERIC, 2) AS value\nFROM public.ldi_data\nWHERE eqp_id = ${machine_id:singlequote}\n  AND $__timeFilter(time)\nORDER BY ABS(EXTRACT(EPOCH FROM time) - EXTRACT(EPOCH FROM ((($__to + $__from)::BIGINT / 2)::BIGINT::TIMESTAMP))) ASC\nLIMIT 1",
           "format": "table"
         }
       ],
@@ -354,7 +340,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(air_vacuum::NUMERIC, 2) AS value FROM public.v_ldi_machine_snapshot WHERE log_id = '${log_id}' LIMIT 1",
+          "rawSql": "SELECT ROUND(air_vacuum::NUMERIC, 2) AS value\nFROM public.ldi_data\nWHERE eqp_id = ${machine_id:singlequote}\n  AND $__timeFilter(time)\nORDER BY ABS(EXTRACT(EPOCH FROM time) - EXTRACT(EPOCH FROM ((($__to + $__from)::BIGINT / 2)::BIGINT::TIMESTAMP))) ASC\nLIMIT 1",
           "format": "table"
         }
       ],
@@ -419,7 +405,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(scan_speed::NUMERIC, 2) AS value FROM public.v_ldi_machine_snapshot WHERE log_id = '${log_id}' LIMIT 1",
+          "rawSql": "SELECT ROUND(scan_speed::NUMERIC, 2) AS value\nFROM public.ldi_data\nWHERE eqp_id = ${machine_id:singlequote}\n  AND $__timeFilter(time)\nORDER BY ABS(EXTRACT(EPOCH FROM time) - EXTRACT(EPOCH FROM ((($__to + $__from)::BIGINT / 2)::BIGINT::TIMESTAMP))) ASC\nLIMIT 1",
           "format": "table"
         }
       ],
@@ -484,7 +470,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(thickness::NUMERIC, 2) AS value FROM public.v_ldi_machine_snapshot WHERE log_id = '${log_id}' LIMIT 1",
+          "rawSql": "SELECT ROUND(thickness::NUMERIC, 3) AS value\nFROM public.ldi_data\nWHERE eqp_id = ${machine_id:singlequote}\n  AND $__timeFilter(time)\nORDER BY ABS(EXTRACT(EPOCH FROM time) - EXTRACT(EPOCH FROM ((($__to + $__from)::BIGINT / 2)::BIGINT::TIMESTAMP))) ASC\nLIMIT 1",
           "format": "table"
         }
       ],
@@ -549,7 +535,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(resist_dosage::NUMERIC, 2) AS value FROM public.v_ldi_machine_snapshot WHERE log_id = '${log_id}' LIMIT 1",
+          "rawSql": "SELECT ROUND(resist_dosage::NUMERIC, 2) AS value\nFROM public.ldi_data\nWHERE eqp_id = ${machine_id:singlequote}\n  AND $__timeFilter(time)\nORDER BY ABS(EXTRACT(EPOCH FROM time) - EXTRACT(EPOCH FROM ((($__to + $__from)::BIGINT / 2)::BIGINT::TIMESTAMP))) ASC\nLIMIT 1",
           "format": "table"
         }
       ],
@@ -579,7 +565,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(pe_1::NUMERIC, 3) AS \"pe_1\", ROUND(pe_2::NUMERIC, 3) AS \"pe_2\", ROUND(pe_3::NUMERIC, 3) AS \"pe_3\", ROUND(pe_4::NUMERIC, 3) AS \"pe_4\", ROUND(pe_5::NUMERIC, 3) AS \"pe_5\", ROUND(pe_6::NUMERIC, 3) AS \"pe_6\", ROUND(GREATEST(ABS(COALESCE(pe_1,0)), ABS(COALESCE(pe_2,0)), ABS(COALESCE(pe_3,0)), ABS(COALESCE(pe_4,0)), ABS(COALESCE(pe_5,0)), ABS(COALESCE(pe_6,0)))::NUMERIC, 3) AS \"MAX|PE|\", ROUND(pe_setting::NUMERIC, 1) AS \"pe_setting\" FROM public.v_ldi_machine_snapshot WHERE log_id = '${log_id}' LIMIT 1",
+          "rawSql": "SELECT ROUND(pe_1::NUMERIC, 3) AS \"pe_1\", ROUND(pe_2::NUMERIC, 3) AS \"pe_2\", ROUND(pe_3::NUMERIC, 3) AS \"pe_3\", ROUND(pe_4::NUMERIC, 3) AS \"pe_4\", ROUND(pe_5::NUMERIC, 3) AS \"pe_5\", ROUND(pe_6::NUMERIC, 3) AS \"pe_6\", ROUND(GREATEST(ABS(pe_1),ABS(pe_2),ABS(pe_3),ABS(pe_4),ABS(pe_5),ABS(pe_6))::NUMERIC, 3) AS \"MAX|PE|\", pe_setting AS \"PE Spec\"\nFROM public.ldi_data\nWHERE eqp_id = ${machine_id:singlequote}\n  AND $__timeFilter(time)\nORDER BY ABS(EXTRACT(EPOCH FROM time) - EXTRACT(EPOCH FROM ((($__to + $__from)::BIGINT / 2)::BIGINT::TIMESTAMP))) ASC\nLIMIT 1",
           "format": "table"
         }
       ],
@@ -683,7 +669,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT eqp_id AS \"Machine\", sample_count AS \"Samples\", ROUND(mean_pe::NUMERIC, 2) AS \"Mean PE\", ROUND(cp::NUMERIC, 2) AS \"Cp\", ROUND(cpk::NUMERIC, 2) AS \"Cpk\", ROUND((cpk * 3)::NUMERIC, 1) AS \"Sigma Level\", capability_class AS \"Capability\" FROM public.v_machine_spc_ranking WHERE eqp_id IN (${machine_id:singlequote})",
+          "rawSql": "SELECT eqp_id AS \"Machine\", sample_count AS \"Samples\", mean_pe AS \"Mean PE\", cpk AS \"Cpk\", capability_class AS \"Capability\", mean_je AS \"Mean JE\", cpk_je AS \"Cpk (JE)\", capability_class_je AS \"JE Capability\"\nFROM public.v_machine_spc_ranking\nWHERE eqp_id = ${machine_id:singlequote}",
           "format": "table"
         }
       ],
@@ -800,7 +786,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH target AS (  SELECT \"time\" FROM public.v_ldi_machine_snapshot   WHERE log_id = '${log_id}' LIMIT 1) SELECT al.logdate AS \"Time\", al.equipmentid AS \"Machine\", al.errorcode AS \"errorcode\", al.errortime AS \"errortime\", COALESCE(m.alarm_msg, al.errorcode::TEXT) AS \"Message\", COALESCE(m.alarm_type, 'WARN') AS \"Severity\", COALESCE(m.alarm_detail, '') AS \"Details\" FROM public.ldi_alarm_log al LEFT JOIN public.ldi_alarm_ms_code m ON al.errorcode::TEXT = m.alarm_code::TEXT WHERE al.equipmentid IN (${machine_id:singlequote}) AND al.logdate >= (SELECT \"time\" - INTERVAL '5 minutes' FROM target) AND al.logdate <= (SELECT \"time\" + INTERVAL '5 minutes' FROM target) ORDER BY al.logdate DESC",
+          "rawSql": "SELECT al.logdate AS \"Time\", al.equipmentid AS \"Machine\", al.errorcode AS \"Code\", al.errortime AS \"Error Time\", COALESCE(m.alarm_msg, al.errorcode::TEXT) AS \"Message\", COALESCE(m.alarm_type, 'WARN') AS \"Severity\", COALESCE(m.alarm_detail, '') AS \"Details\"\nFROM public.ldi_alarm_log al\nLEFT JOIN public.ldi_alarm_ms_code m ON al.errorcode::TEXT = m.alarm_code::TEXT\nWHERE al.equipmentid = ${machine_id:singlequote}\n  AND al.logdate >= ((($__to + $__from)::BIGINT / 2)::BIGINT::TIMESTAMP) - INTERVAL '5 minutes'\n  AND al.logdate <= ((($__to + $__from)::BIGINT / 2)::BIGINT::TIMESTAMP) + INTERVAL '5 minutes'\nORDER BY al.logdate DESC",
           "format": "table"
         }
       ],
@@ -933,7 +919,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT \"time\" AS value FROM public.v_ldi_machine_snapshot WHERE log_id = '${log_id}' LIMIT 1",
+          "rawSql": "SELECT \"time\" AS value\nFROM public.ldi_data\nWHERE eqp_id = ${machine_id:singlequote}\n  AND $__timeFilter(time)\nORDER BY ABS(EXTRACT(EPOCH FROM time) - EXTRACT(EPOCH FROM ((($__to + $__from)::BIGINT / 2)::BIGINT::TIMESTAMP))) ASC\nLIMIT 1",
           "format": "table"
         }
       ],
@@ -969,7 +955,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT TO_CHAR(event_time, 'YYYY-MM-DD HH24:MI:SS.MS') AS \"Event Time\", eqp_id AS \"Machine\", event_type AS \"Event Type\", source AS \"Source\", description AS \"Description\" FROM public.v_ldi_event_timeline WHERE eqp_id IN (${machine_id:singlequote}) ORDER BY event_time DESC LIMIT 100",
+          "rawSql": "SELECT TO_CHAR(event_time, 'YYYY-MM-DD HH24:MI:SS.MS') AS \"Event Time\", eqp_id AS \"Machine\", event_type AS \"Event Type\", source AS \"Source\", description AS \"Description\"\nFROM public.v_ldi_event_timeline\nWHERE eqp_id = ${machine_id:singlequote}\n  AND event_time >= ((($__to + $__from)::BIGINT / 2)::BIGINT::TIMESTAMP) - INTERVAL '5 minutes'\n  AND event_time <= ((($__to + $__from)::BIGINT / 2)::BIGINT::TIMESTAMP) + INTERVAL '5 minutes'\nORDER BY event_time DESC\nLIMIT 100",
           "format": "table"
         }
       ],
