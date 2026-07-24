@@ -90,7 +90,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT eqp_id AS \"Machine\", state AS \"State\", mo AS \"MO\", fpn AS \"FPN\", layer_name AS \"Layer\", (board_no::TEXT || '/' || total_board::TEXT) AS \"Board\", filmno AS \"Film\", resist AS \"Resist\", scale_mode AS \"Scale Mode\", board_id AS \"Board ID\", TO_CHAR(\"time\", 'YYYY-MM-DD HH24:MI:SS.MS') AS \"Timestamp\" FROM public.v_ldi_machine_snapshot WHERE log_id = '${log_id}' LIMIT 1",
+          "rawSql": "SELECT eqp_id AS \"Machine\", state AS \"State\", mo AS \"MO\", fpn AS \"FPN\", layer_name AS \"Layer\", (board_no::TEXT || '/' || total_board::TEXT) AS \"Board\", filmno AS \"Film\", resist AS \"Resist\", scale_mode AS \"Scale Mode\", TO_CHAR(\"time\", 'YYYY-MM-DD HH24:MI:SS.MS') AS \"Timestamp\" FROM public.v_ldi_machine_snapshot WHERE log_id = '${log_id}' LIMIT 1",
           "format": "table"
         }
       ],

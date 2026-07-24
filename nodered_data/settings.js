@@ -27,6 +27,7 @@ module.exports = {
         pg: require('pg'),
         fs: require('fs'),
         circuitBreaker: require('./lib/circuit-breaker'),
+        parser: require('./lib/parser'),
         pgPool: new (require('pg').Pool)({
             host: process.env.PGHOST || 'ims-timescaledb',
             port: parseInt(process.env.PGPORT) || 5432,
