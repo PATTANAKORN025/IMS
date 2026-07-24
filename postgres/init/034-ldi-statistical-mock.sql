@@ -70,8 +70,7 @@ base AS (
         CASE WHEN random() < 0.55 THEN 'DF INNER'
              WHEN random() < 0.756 THEN 'DF OUTER'
              ELSE 'SM' END                                                  AS process,
-        (SELECT eqp_id FROM machines
-          ORDER BY random() * weight DESC LIMIT 1)                          AS eqp_id,
+        (ARRAY['MOCK-LDI-01','MOCK-LDI-02','MOCK-LDI-03','MOCK-LDI-04','MOCK-LDI-05','MOCK-LDI-06','MOCK-LDI-07','MOCK-LDI-08','MOCK-LDI-09','MOCK-LDI-10'])[1 + (i % 10)] AS eqp_id,
         CASE WHEN random() < 0.75 THEN '2' ELSE '3' END                     AS factory,
         random() AS r1, random() AS r2, random() AS r3, random() AS r4
     FROM seq
