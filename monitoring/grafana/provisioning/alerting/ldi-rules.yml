@@ -1,6 +1,10 @@
 # LDI Alert Rules — Enterprise Manufacturing Intelligence
 # Rule 1: Quality Drift (max_pe > pe_setting)
 # Rule 2: Process Capability (Cpk < 1.33)
+# Rule 3: JE Quality Drift (max_je > je_setting)
+# Rule 4: JE Process Capability (cpk_je < 1.33)
+# Rule 5: Machine Alarm (new entry in ldi_alarm_log)
+# Rule 6: Temperature High (avg > 24°C for 5+ minutes)
 
 apiVersion: 1
 
@@ -234,3 +238,50 @@ groups:
           severity: warning
           team: manufacturing
           category: alarm
+
+      - uid: ldi-temp-high-006
+        title: "LDI Temperature High — above 24°C spec limit"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: timescaledb
+            model:
+              rawSql: |
+                SELECT time_bucket('5 minutes', time) AS time,
+                       eqp_id AS metric,
+                       AVG(temperature)::NUMERIC AS value
+                FROM public.ldi_data
+                WHERE time >= NOW() - INTERVAL '10 minutes'
+                  AND temperature > 24
+                  AND temperature IS NOT NULL
+                  AND temperature > 0
+                GROUP BY 1, 2
+                HAVING AVG(temperature) > 24
+                ORDER BY 1
+              format: time_series
+              intervalMs: 300000
+              maxDataPoints: 100
+          - refId: C
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: count
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [0]
+        for: 5m
+        annotations:
+          summary: "Machine {{ $labels.eqp_id }} temperature above 24°C for 5+ minutes"
+          description: "Average temperature exceeded 24°C spec limit. Check cleanroom HVAC and machine thermal state."
+        labels:
+          severity: warning
+          team: manufacturing
+          category: environment
