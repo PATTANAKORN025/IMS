@@ -698,9 +698,16 @@
                 "id": "links",
                 "value": [
                   {
-                    "title": "Drill to Engineering Analytics",
-                    "url": "/d/ldi-engineering-analytics/ims-ldi-engineering-analytics?var-machine_id=${__value.text}&from=${__from}&to=${__to}",
-                    "targetBlank": false
+                    "title": "Analyze Trend",
+                    "url": "/d/ldi-engineering-analytics/ims-ldi-engineering-analytics?var-machine_id=${__data.fields.Machine}&from=${__data.fields.time}&to=${__data.fields.time}",
+                    "targetBlank": true,
+                    "keepTime": false
+                  },
+                  {
+                    "title": "Latest Snapshot",
+                    "url": "/d/ldi-machine-snapshot/ims-ldi-incident-snapshot?var-machine_id=${__data.fields.Machine}&from=${__data.fields.time}&to=${__data.fields.time}",
+                    "targetBlank": true,
+                    "keepTime": false
                   }
                 ]
               }
@@ -1364,9 +1371,9 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 0,
+        "x": 12,
         "y": 28,
-        "w": 24,
+        "w": 12,
         "h": 6
       },
       "options": {
@@ -1464,6 +1471,124 @@
           }
         ]
       }
+    },
+    {
+      "id": 18,
+      "title": "Top 5 Alignment Excursions (Worst PE)",
+      "type": "table",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 28,
+        "w": 12,
+        "h": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "filterable": true
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Machine"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Analyze Trend",
+                    "url": "/d/ldi-engineering-analytics/ims-ldi-engineering-analytics?var-machine_id=${__data.fields.Machine}&from=${__data.fields.time}&to=${__data.fields.time}",
+                    "targetBlank": true
+                  },
+                  {
+                    "title": "Latest Snapshot",
+                    "url": "/d/ldi-machine-snapshot/ims-ldi-incident-snapshot?var-machine_id=${__data.fields.Machine}&from=${__data.fields.time}&to=${__data.fields.time}",
+                    "targetBlank": true
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Worst PE"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#22C55E",
+                      "value": null
+                    },
+                    {
+                      "color": "#FACC15",
+                      "value": 25
+                    },
+                    {
+                      "color": "#EF4444",
+                      "value": 50
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "unit",
+                "value": "lengthum"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Worst JE"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "lengthum"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "Worst PE",
+            "desc": true
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT time, eqp_id AS \"Machine\",\n       GREATEST(ABS(pe_1),ABS(pe_2),ABS(pe_3),ABS(pe_4),ABS(pe_5),ABS(pe_6)) AS \"Worst PE\",\n       GREATEST(ABS(je_1),ABS(je_2),ABS(je_3),ABS(je_4)) AS \"Worst JE\",\n       log_id\nFROM public.ldi_data\nWHERE $__timeFilter(time)\n  AND pe_1 IS NOT NULL\n  AND COALESCE(pe_setting, 0) > 2.0\nORDER BY \"Worst PE\" DESC NULLS LAST\nLIMIT 5",
+          "format": "table"
+        }
+      ],
+      "transparent": true,
+      "description": "Top 5 machines with worst PE alignment excursion in current time range. Click Machine to drill to Snapshot."
     }
   ],
   "style": "dark",
