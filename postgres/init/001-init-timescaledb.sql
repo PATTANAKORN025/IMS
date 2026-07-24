@@ -378,6 +378,7 @@ WITH base AS (
            COALESCE(je_setting, 25.0) AS je_val
     FROM public.ldi_data
     WHERE pe_1 IS NOT NULL
+      AND COALESCE(pe_setting, 0) > 2.0
       AND "time" > (SELECT MAX("time") - INTERVAL '2 hours' FROM public.ldi_data)
 ),
 pe_stats AS (

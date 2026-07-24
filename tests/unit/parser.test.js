@@ -56,15 +56,14 @@ test('handles empty payload', () => {
     assert.strictEqual(r.cpu.coreCount, 0);
 });
 
-test('Juniper jnxOperating CPU OIDs are ignored (HOST-RESOURCES only)', () => {
-    // CPU now uses HOST-RESOURCES-MIB only. Juniper enterprise CPU OIDs
-    // from jnxOperatingTable are NOT parsed — the walker doesn't fetch them.
+test('parses Juniper jnxOperating CPU OIDs alongside HOST-RESOURCES', () => {
+    // Production parser supports both HOST-RESOURCES-MIB and Juniper jnxOperatingTable.
     const items = [
         { oid: '1.3.6.1.4.1.2636.3.1.13.1.8.9.1.0.0', value: 35 },
     ];
     const r = parseAll(items, 'cpu', { ...emptyState });
-    assert.strictEqual(r.cpu.coreCount, 0, 'Juniper jnxOperating CPU should not be parsed');
-    assert.strictEqual(r.cpu.loadPercent, 0);
+    assert.strictEqual(r.cpu.coreCount, 1, 'Juniper jnxOperating CPU should be parsed');
+    assert.strictEqual(r.cpu.loadPercent, 35);
 });
 
 test('parses HOST-RESOURCES-MIB CPU OIDs (hrProcessorLoad)', () => {
@@ -76,15 +75,15 @@ test('parses HOST-RESOURCES-MIB CPU OIDs (hrProcessorLoad)', () => {
     assert.strictEqual(r.cpu.loadPercent, 18);
 });
 
-test('mixes Linux HOST-RESOURCES CPU OIDs', () => {
+test('mixes HOST-RESOURCES and Juniper CPU OIDs', () => {
     const items = [
         { oid: '1.3.6.1.2.1.25.3.3.1.2.1', value: 50 },
         { oid: '1.3.6.1.2.1.25.3.3.1.2.2', value: 70 },
         { oid: '1.3.6.1.4.1.2636.3.1.13.1.8.9.1.0.0', value: 25 },
     ];
     const r = parseAll(items, 'cpu', { ...emptyState });
-    assert.strictEqual(r.cpu.coreCount, 2, 'Only HOST-RESOURCES OIDs counted');
-    assert.strictEqual(r.cpu.loadPercent, 60);
+    assert.strictEqual(r.cpu.coreCount, 3, 'All 3 OIDs counted (2 HOST-RESOURCES + 1 Juniper)');
+    assert.strictEqual(r.cpu.loadPercent, 48.33);
 });
 
 console.log('\nparseAll - Temperature walker');

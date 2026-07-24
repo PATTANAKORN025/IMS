@@ -30,6 +30,7 @@ groups:
                   FROM public.ldi_data
                   WHERE time >= NOW() - INTERVAL '10 minutes'
                     AND pe_1 IS NOT NULL
+                    AND COALESCE(pe_setting, 0) > 2.0
                   GROUP BY 1, 2
                 )
                 SELECT bucket AS time, eqp_id AS metric,
@@ -122,6 +123,7 @@ groups:
                   FROM public.ldi_data
                   WHERE time >= NOW() - INTERVAL '10 minutes'
                     AND je_1 IS NOT NULL
+                    AND COALESCE(je_setting, 0) > 2.0
                   GROUP BY 1, 2
                 )
                 SELECT bucket AS time, eqp_id AS metric,

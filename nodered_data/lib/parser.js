@@ -1,8 +1,9 @@
-// Extracted parser functions from sre_parser v10 (flows.json)
-// These are mirrored from the Node-RED embedded code for unit testing.
-// The canonical source remains in nodered_data/flows/ingestion.json.
-// UPDATED: synced with production code (structuredClone→JSON.parse, empty name mkIface,
-//          boundary clamps, calcNetRate unnamed interface drop, offline handling)
+// IMS Parser Module — SINGLE SOURCE OF TRUTH
+// Canonical parser functions used by both Node-RED flow (via global.get)
+// and unit tests (via require). Extracted from inline ingestion.json code.
+//
+// Functions: parseAll, calcNetRate, sanitize, mkIface
+// Dependencies: flow.get/set (Node-RED sandbox) — mocked in tests
 
 const IFTABLE_OID_RE = /1\.3\.6\.1\.2\.1\.2\.2\.1\.(\d+)\.(\d+)$/;
 const IFXTABLE_OID_RE = /1\.3\.6\.1\.2\.1\.31\.1\.1\.1\.(\d+)\.(\d+)$/;
@@ -16,8 +17,8 @@ function parseAll(items, type, state) {
         if (!item || !item.oid) continue;
         const oid = Array.isArray(item.oid) ? item.oid.join('.') : String(item.oid).replace(/,/g, '.');
         const val = item.value; const numVal = (typeof val === 'number') ? val : (Number(val) || 0);
-        if (type === 'cpu' && oid.startsWith('1.3.6.1.2.1.25.3.3.1.2.')) { if (Number.isFinite(numVal) && numVal > 0) { cpu.total += numVal; cpu.count++; } continue; }
-        if (type === 'temp' && (oid.startsWith('1.3.6.1.4.1.2021.13.16.2.1.7.') || oid.startsWith('1.3.6.1.4.1.2636.3.1.13.1.7.'))) { if (numVal > 0 && numVal > maxTemp) maxTemp = numVal; continue; }
+        if (type === 'cpu' && (oid.startsWith('1.3.6.1.2.1.25.3.3.1.2.') || oid.startsWith('1.3.6.1.4.1.2636.3.1.13.1.8.'))) { if (Number.isFinite(numVal)) { cpu.total += numVal; cpu.count++; var coreIdx = oid.split('.').pop(); cpu.cores['core_' + coreIdx] = numVal; } continue; }
+        if (type === 'temp' && (oid.startsWith('1.3.6.1.4.1.2021.13.16.2.1.7.') || oid.startsWith('1.3.6.1.4.1.2636.3.1.13.1.7.'))) { if (numVal > 0 && numVal > maxTemp) { maxTemp = numVal; } if (numVal > 0) { var senIdx = oid.split('.').pop(); tempSensors['sensor_' + senIdx] = numVal; }  continue; }
         if (type === 'storage' && oid.startsWith('1.3.6.1.2.1.25.2.3.1.')) { const parts = oid.split('.'); const p = parts[parts.length - 2]; const i = parts[parts.length - 1]; if (!storageEntries[i]) storageEntries[i] = { type: '', au: 0, size: 0, used: 0 }; const raw = Buffer.isBuffer(val) ? val.toString('utf8') : String(val); if (p === '2') storageEntries[i].type = raw; if (p === '4') storageEntries[i].au = Number(raw) || 0; if (p === '5') storageEntries[i].size = Number(raw) || 0; if (p === '6') storageEntries[i].used = Number(raw) || 0; continue; }
         if (type === 'net') {
             const im = oid.match(IFTABLE_OID_RE);
@@ -48,12 +49,16 @@ function calcNetRate(deviceId, currentIfaces) {
         const isUp = curr.status === 1;
         const hasElapsed = elapsedSec > 0.5;
         if (isUp && prevHadData && hasElapsed) {
-            const rx = curr.rx64 || curr.rx32; const tx = curr.tx64 || curr.tx32;
-            const pRx = prev.rx64 || prev.rx32; const pTx = prev.tx64 || prev.tx32;
-            let rDiff = BigInt(rx) - BigInt(pRx); let tDiff = BigInt(tx) - BigInt(pTx);
+            const rx = curr.rx64 || curr.rx32;
+            const tx = curr.tx64 || curr.tx32;
+            const pRx = prev.rx64 || prev.rx32;
+            const pTx = prev.tx64 || prev.tx32;
+            let rDiff = BigInt(rx) - BigInt(pRx);
+            let tDiff = BigInt(tx) - BigInt(pTx);
             if (rDiff < 0n) rDiff += 18446744073709551616n;
             if (tDiff < 0n) tDiff += 18446744073709551616n;
-            const rDiffNum = Number(rDiff); const tDiffNum = Number(tDiff);
+            const rDiffNum = Number(rDiff);
+            const tDiffNum = Number(tDiff);
             rxMbps = Number(((rDiffNum * 8) / (elapsedSec * 1e6)).toFixed(2));
             txMbps = Number(((tDiffNum * 8) / (elapsedSec * 1e6)).toFixed(2));
             if (rxMbps > 40000 || rxMbps < 0) rxMbps = 0;
