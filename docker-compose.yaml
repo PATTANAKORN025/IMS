@@ -307,6 +307,9 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
       POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+      PGHOST: ims-timescaledb
+      PGPORT: "5432"
+      PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
     volumes:
       - ./database/migrations:/migrations:ro
       - ./scripts/migrate-entrypoint.sh:/scripts/migrate-entrypoint.sh:ro
@@ -330,6 +333,7 @@ services:
       TZ: ${TZ:-Asia/Bangkok}
       NODE_RED_ENABLE_PROJECTS: "false"
       NODE_OPTIONS: "--max-old-space-size=2048"
+      UV_THREADPOOL_SIZE: "16"
       CREDENTIAL_SECRET: ${NODE_RED_CREDENTIAL_SECRET:?set NODE_RED_CREDENTIAL_SECRET in .env}
       NODE_RED_ADMIN_USER: ${NODE_RED_ADMIN_USER:-admin}
       NODE_RED_ADMIN_PASSWORD_HASH: ${NODE_RED_ADMIN_PASSWORD_HASH:-}

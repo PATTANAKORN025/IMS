@@ -34,11 +34,12 @@ module.exports = {
             database: process.env.PGDATABASE || 'ims',
             user: process.env.PGUSER || 'ims_admin',
             password: process.env.PGPASSWORD || 'change-me-please',
-            max: 2,
+            max: 10,
             idleTimeoutMillis: 30000
         }),
     },
     exportGlobalContextKeys: false,
+    contextStorage: { default: { module: 'memory' } },
     diagnostics: { enabled: true, ui: true },
     runtimeState: { enabled: false, ui: false },
     logging: { console: { level: "info", metrics: false, audit: false } },
