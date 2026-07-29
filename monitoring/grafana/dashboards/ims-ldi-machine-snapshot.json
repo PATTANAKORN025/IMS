@@ -148,6 +148,126 @@
                 "value": 6
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Machine"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 110
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Layer"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 80
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "FPN"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Scale Mode"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 80
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Film"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 60
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "MO"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "State"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 70
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Timestamp"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 140
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Resist"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Board"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 70
+              }
+            ]
           }
         ]
       }
@@ -565,7 +685,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(pe_1::NUMERIC, 3) AS \"pe_1\", ROUND(pe_2::NUMERIC, 3) AS \"pe_2\", ROUND(pe_3::NUMERIC, 3) AS \"pe_3\", ROUND(pe_4::NUMERIC, 3) AS \"pe_4\", ROUND(pe_5::NUMERIC, 3) AS \"pe_5\", ROUND(pe_6::NUMERIC, 3) AS \"pe_6\", ROUND(GREATEST(ABS(pe_1),ABS(pe_2),ABS(pe_3),ABS(pe_4),ABS(pe_5),ABS(pe_6))::NUMERIC, 3) AS \"MAX|PE|\", pe_setting AS \"PE Spec\"\nFROM public.ldi_data\nWHERE eqp_id = ${machine_id:singlequote}\n  AND $__timeFilter(time)\nORDER BY ABS(EXTRACT(EPOCH FROM time) - EXTRACT(EPOCH FROM TO_TIMESTAMP(($__to + $__from) / 2000.0))) ASC\nLIMIT 1",
+          "rawSql": "SELECT ROUND(pe_1::NUMERIC, 3) AS \"pe_1\", ROUND(pe_2::NUMERIC, 3) AS \"pe_2\", ROUND(pe_3::NUMERIC, 3) AS \"pe_3\", ROUND(pe_4::NUMERIC, 3) AS \"pe_4\", ROUND(pe_5::NUMERIC, 3) AS \"pe_5\", ROUND(pe_6::NUMERIC, 3) AS \"pe_6\", ROUND(GREATEST(ABS(pe_1),ABS(pe_2),ABS(pe_3),ABS(pe_4),ABS(pe_5),ABS(pe_6))::NUMERIC, 3) AS \"MAX|PE|\", pe_setting AS \"PE Spec\", CASE WHEN pe_1 IS NULL THEN 'N/A' WHEN GREATEST(ABS(pe_1),ABS(pe_2),ABS(pe_3),ABS(pe_4),ABS(pe_5),ABS(pe_6)) <= pe_setting THEN 'PASS' ELSE 'OUT OF SPEC' END AS \"PE Status\"\nFROM public.ldi_data\nWHERE eqp_id = ${machine_id:singlequote}\n  AND $__timeFilter(time)\nORDER BY ABS(EXTRACT(EPOCH FROM time) - EXTRACT(EPOCH FROM TO_TIMESTAMP(($__to + $__from) / 2000.0))) ASC\nLIMIT 1",
           "format": "table"
         }
       ],
@@ -577,6 +697,42 @@
           "decimals": 3
         },
         "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "PE Status"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "PASS": {
+                        "color": "#22C55E",
+                        "text": "PASS"
+                      },
+                      "OUT OF SPEC": {
+                        "color": "#EF4444",
+                        "text": "OUT OF SPEC"
+                      },
+                      "N/A": {
+                        "color": "#6B7280",
+                        "text": "N/A"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              }
+            ]
+          },
           {
             "matcher": {
               "id": "byName",
@@ -640,6 +796,114 @@
               {
                 "id": "decimals",
                 "value": 6
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pe_1"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 80
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pe_2"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 80
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pe_3"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 80
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pe_4"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 80
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pe_5"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 80
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pe_6"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 80
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "MAX|PE|"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "PE Spec"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "PE Status"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 110
               }
             ]
           }
@@ -780,7 +1044,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(je_1::NUMERIC, 3) AS \"je_1\", ROUND(je_2::NUMERIC, 3) AS \"je_2\", ROUND(je_3::NUMERIC, 3) AS \"je_3\", ROUND(je_4::NUMERIC, 3) AS \"je_4\", ROUND(GREATEST(ABS(je_1),ABS(je_2),ABS(je_3),ABS(je_4))::NUMERIC, 3) AS \"MAX|JE|\", je_setting AS \"JE Spec\"\nFROM public.ldi_data\nWHERE eqp_id = ${machine_id:singlequote}\n  AND $__timeFilter(time)\nORDER BY ABS(EXTRACT(EPOCH FROM time) - EXTRACT(EPOCH FROM TO_TIMESTAMP(($__to + $__from) / 2000.0))) ASC\nLIMIT 1",
+          "rawSql": "SELECT ROUND(je_1::NUMERIC, 3) AS \"je_1\", ROUND(je_2::NUMERIC, 3) AS \"je_2\", ROUND(je_3::NUMERIC, 3) AS \"je_3\", ROUND(je_4::NUMERIC, 3) AS \"je_4\", ROUND(GREATEST(ABS(je_1),ABS(je_2),ABS(je_3),ABS(je_4))::NUMERIC, 3) AS \"MAX|JE|\", je_setting AS \"JE Spec\", CASE WHEN je_1 IS NULL THEN 'N/A' WHEN GREATEST(ABS(je_1),ABS(je_2),ABS(je_3),ABS(je_4)) <= je_setting THEN 'PASS' ELSE 'OUT OF SPEC' END AS \"JE Status\"\nFROM public.ldi_data\nWHERE eqp_id = ${machine_id:singlequote}\n  AND $__timeFilter(time)\nORDER BY ABS(EXTRACT(EPOCH FROM time) - EXTRACT(EPOCH FROM TO_TIMESTAMP(($__to + $__from) / 2000.0))) ASC\nLIMIT 1",
           "format": "table"
         }
       ],
@@ -792,6 +1056,42 @@
           "decimals": 3
         },
         "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "JE Status"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "PASS": {
+                        "color": "#22C55E",
+                        "text": "PASS"
+                      },
+                      "OUT OF SPEC": {
+                        "color": "#EF4444",
+                        "text": "OUT OF SPEC"
+                      },
+                      "N/A": {
+                        "color": "#6B7280",
+                        "text": "N/A"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              }
+            ]
+          },
           {
             "matcher": {
               "id": "byName",
@@ -855,6 +1155,90 @@
               {
                 "id": "decimals",
                 "value": 6
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "je_1"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "je_2"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "je_3"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "je_4"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "MAX|JE|"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "JE Spec"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "JE Status"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 110
               }
             ]
           }
