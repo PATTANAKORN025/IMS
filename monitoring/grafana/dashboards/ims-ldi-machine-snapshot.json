@@ -927,6 +927,98 @@
       "description": "Precise raw timestamp from the database. Engineer can verify this matches the clicked point."
     },
     {
+      "id": 13,
+      "title": "Judgment Error (je_1 ~ je_4) + MAX|JE|",
+      "type": "table",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 17,
+        "w": 24,
+        "h": 4
+      },
+      "options": {
+        "showHeader": true,
+        "rowHeight": 0.8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT ROUND(je_1::NUMERIC, 3) AS \"je_1\", ROUND(je_2::NUMERIC, 3) AS \"je_2\", ROUND(je_3::NUMERIC, 3) AS \"je_3\", ROUND(je_4::NUMERIC, 3) AS \"je_4\", ROUND(GREATEST(ABS(je_1),ABS(je_2),ABS(je_3),ABS(je_4))::NUMERIC, 3) AS \"MAX|JE|\", je_setting AS \"je_setting\", CASE WHEN GREATEST(ABS(je_1),ABS(je_2),ABS(je_3),ABS(je_4)) IS NULL THEN 'N/A' WHEN GREATEST(ABS(je_1),ABS(je_2),ABS(je_3),ABS(je_4)) <= je_setting THEN 'PASS' ELSE 'OUT OF SPEC' END AS \"JE Status\"\nFROM public.ldi_data\nWHERE eqp_id = ${machine_id:singlequote}\n  AND time >= TO_TIMESTAMP(($__to + $__from) / 2000.0) - INTERVAL '15 minutes'\n  AND time <= TO_TIMESTAMP(($__to + $__from) / 2000.0) + INTERVAL '15 minutes'\nORDER BY ABS(EXTRACT(EPOCH FROM time) - EXTRACT(EPOCH FROM TO_TIMESTAMP(($__to + $__from) / 2000.0))) ASC\nLIMIT 1",
+          "format": "table"
+        }
+      ],
+      "transparent": true,
+      "description": "Real JE values from the selected event with PASS/OUT OF SPEC evaluated against je_setting.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "lengthum",
+          "decimals": 3,
+          "noValue": "N/A"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "JE Status"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "PASS": { "color": "#22C55E", "text": "PASS" },
+                      "OUT OF SPEC": { "color": "#EF4444", "text": "OUT OF SPEC" },
+                      "N/A": { "color": "#6B7280", "text": "N/A" }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": { "type": "color-background" }
+              },
+              {
+                "id": "custom.width",
+                "value": 110
+              }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "je_1" },
+            "properties": [{ "id": "custom.width", "value": 90 }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "je_2" },
+            "properties": [{ "id": "custom.width", "value": 90 }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "je_3" },
+            "properties": [{ "id": "custom.width", "value": 90 }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "je_4" },
+            "properties": [{ "id": "custom.width", "value": 90 }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "MAX|JE|" },
+            "properties": [{ "id": "custom.width", "value": 100 }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "je_setting" },
+            "properties": [{ "id": "custom.width", "value": 100 }]
+          }
+        ]
+      }
+    },
+    {
       "id": 12,
       "title": "Event Timeline (state + alarms)",
       "type": "table",
@@ -935,7 +1027,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 17,
+        "y": 21,
         "w": 24,
         "h": 6
       },

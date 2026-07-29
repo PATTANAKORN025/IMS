@@ -1,75 +1,140 @@
 {
+  "id": null,
   "uid": "ldi-data-readiness",
-  "title": "IMS LDI — Data Readiness",
-  "description": "5th LDI dashboard. Answers 'can I trust the SPC/yield numbers on the other 4 dashboards right now?' — machine reporting freshness, sensor null-rates, unmapped alarm coverage, ingestion throughput.",
+  "title": "LDI Data Readiness & Integration Gaps",
+  "description": "Evidence-based readiness dashboard using only current PostgreSQL rows. No simulated data.",
   "tags": [
-    "ims",
-    "ldi",
+    "LDI",
     "data-quality",
-    "observability"
+    "readiness",
+    "real-data"
   ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "refresh": "30s",
-  "time": {
-    "from": "now-1h",
-    "to": "now"
-  },
+  "version": 3,
+  "editable": true,
+  "graphTooltip": 1,
   "fiscalYearStartMonth": 0,
-  "liveNow": true,
-  "style": "dark",
-  "graphTooltip": 2,
-  "templating": {
+  "liveNow": false,
+  "refresh": "10s",
+  "time": {
+    "from": "2026-07-19T21:00:00.000Z",
+    "to": "2026-07-20T03:00:00.000Z"
+  },
+  "timepicker": {},
+  "annotations": {
     "list": []
   },
-  "annotations": {
+  "links": [],
+  "templating": {
     "list": [
       {
-        "builtIn": 1,
+        "name": "factory",
+        "label": "Factory",
+        "type": "query",
         "datasource": {
-          "type": "grafana",
-          "uid": "-- Grafana --"
+          "type": "grafana-postgresql-datasource",
+          "uid": "timescaledb"
         },
-        "enable": true,
-        "hide": false,
-        "iconColor": "rgba(255, 96, 96, 1)",
-        "name": "Annotations & Alerts",
-        "type": "dashboard"
+        "query": "SELECT DISTINCT factory AS __text, factory AS __value FROM public.ldi_data ORDER BY factory",
+        "definition": "SELECT DISTINCT factory AS __text, factory AS __value FROM public.ldi_data ORDER BY factory",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "multi": true,
+        "includeAll": true,
+        "options": [],
+        "refresh": 1,
+        "sort": 1,
+        "hide": 0,
+        "regex": "",
+        "skipUrlSync": false
+      },
+      {
+        "name": "machine_id",
+        "label": "Machine",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "timescaledb"
+        },
+        "query": "SELECT DISTINCT eqp_id AS __text, eqp_id AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) ORDER BY eqp_id",
+        "definition": "SELECT DISTINCT eqp_id AS __text, eqp_id AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) ORDER BY eqp_id",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "multi": true,
+        "includeAll": true,
+        "options": [],
+        "refresh": 1,
+        "sort": 1,
+        "hide": 0,
+        "regex": "",
+        "skipUrlSync": false
       }
     ]
   },
   "panels": [
     {
       "id": 1,
-      "title": "Machines Reporting (Last 5m)",
+      "title": "Telemetry Age",
+      "description": "Hours since the latest real telemetry row. Green is under 1 hour; red is over 24 hours.",
       "type": "stat",
       "datasource": {
+        "type": "grafana-postgresql-datasource",
         "uid": "timescaledb"
       },
       "gridPos": {
+        "h": 5,
+        "w": 4,
         "x": 0,
-        "y": 0,
-        "w": 8,
-        "h": 4
+        "y": 0
       },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "timescaledb"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT ROUND(EXTRACT(EPOCH FROM (NOW() - MAX(\"time\"))) / 3600.0, 1) AS value\nFROM public.ldi_data\nWHERE factory IN (${factory:sqlstring})\n  AND eqp_id IN (${machine_id:sqlstring});",
+          "refId": "A",
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
       "fieldConfig": {
         "defaults": {
-          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "unit": "h",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "#EF4444",
+                "color": "green",
                 "value": null
               },
               {
-                "color": "#22C55E",
+                "color": "yellow",
                 "value": 1
+              },
+              {
+                "color": "red",
+                "value": 24
               }
             ]
-          },
-          "color": {
-            "mode": "thresholds"
           }
         },
         "overrides": []
@@ -77,393 +142,729 @@
       "options": {
         "colorMode": "background",
         "graphMode": "none",
-        "justifyMode": "center",
+        "justifyMode": "auto",
+        "orientation": "auto",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
           ],
+          "fields": "",
           "values": false
         },
-        "text": {
-          "valueSize": 48,
-          "titleSize": 14
-        },
-        "noValue": "-"
+        "showPercentChange": false,
+        "textMode": "auto",
+        "noValue": "N/A",
+        "wideLayout": true
       },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT COUNT(DISTINCT eqp_id) AS value FROM public.ldi_data WHERE time >= NOW() - INTERVAL '5 minutes'",
-          "format": "table"
-        }
-      ],
-      "transparent": true,
-      "description": "Distinct machines that have written at least one row of telemetry in the last 5 minutes."
+      "transparent": true
     },
     {
       "id": 2,
-      "title": "Fleet Data Completeness % (24h)",
+      "title": "Alarm Age",
+      "description": "Hours since the latest real alarm row for selected telemetry machines.",
       "type": "stat",
       "datasource": {
+        "type": "grafana-postgresql-datasource",
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 8,
-        "y": 0,
-        "w": 8,
-        "h": 4
+        "h": 5,
+        "w": 4,
+        "x": 4,
+        "y": 0
       },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "timescaledb"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT ROUND(EXTRACT(EPOCH FROM (NOW() - MAX(logdate))) / 3600.0, 1) AS value\nFROM public.ldi_alarm_log\nWHERE equipmentid IN (${machine_id:sqlstring});",
+          "refId": "A",
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
       "fieldConfig": {
         "defaults": {
-          "unit": "percent",
+          "color": {
+            "mode": "thresholds"
+          },
           "decimals": 1,
+          "unit": "h",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "#EF4444",
+                "color": "green",
                 "value": null
               },
               {
-                "color": "#FACC15",
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 24
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "noValue": "N/A",
+        "wideLayout": true
+      },
+      "transparent": true
+    },
+    {
+      "id": 3,
+      "title": "Machine ID Match",
+      "description": "Percent of selected telemetry machine IDs also found in alarm history.",
+      "type": "stat",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 8,
+        "y": 0
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "timescaledb"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH selected AS (\n  SELECT DISTINCT eqp_id\n  FROM public.ldi_data\n  WHERE factory IN (${factory:sqlstring})\n    AND eqp_id IN (${machine_id:sqlstring})\n)\nSELECT ROUND(100.0 * COUNT(*) FILTER (\n  WHERE EXISTS (SELECT 1 FROM public.ldi_alarm_log a WHERE a.equipmentid = s.eqp_id)\n) / NULLIF(COUNT(*), 0), 1) AS value\nFROM selected s;",
+          "refId": "A",
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
                 "value": 80
               },
               {
-                "color": "#22C55E",
+                "color": "green",
                 "value": 95
               }
             ]
           },
-          "color": {
-            "mode": "thresholds"
-          }
+          "custom": {},
+          "min": 0,
+          "max": 100
         },
         "overrides": []
       },
       "options": {
         "colorMode": "background",
         "graphMode": "none",
-        "justifyMode": "center",
+        "justifyMode": "auto",
+        "orientation": "auto",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
           ],
+          "fields": "",
           "values": false
         },
-        "text": {
-          "valueSize": 48,
-          "titleSize": 14
-        },
-        "noValue": "-"
+        "showPercentChange": false,
+        "textMode": "auto",
+        "noValue": "N/A",
+        "wideLayout": true
       },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT ROUND(COUNT(DISTINCT eqp_id) FILTER (WHERE time >= NOW() - INTERVAL '5 minutes') * 100.0 / NULLIF(COUNT(DISTINCT eqp_id), 0), 1) AS value FROM public.ldi_data WHERE time >= NOW() - INTERVAL '24 hours'",
-          "format": "table"
-        }
-      ],
-      "transparent": true,
-      "description": "Of the machines that have reported at all in the last 24h, the percentage still reporting in the last 5 minutes."
+      "transparent": true
     },
     {
-      "id": 3,
-      "title": "Unmapped Alarm Rate % (24h)",
+      "id": 4,
+      "title": "Alarm Master Match",
+      "description": "Percent of real alarm rows whose error code can be resolved by the current alarm master.",
       "type": "stat",
       "datasource": {
+        "type": "grafana-postgresql-datasource",
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 16,
-        "y": 0,
-        "w": 8,
-        "h": 4
+        "h": 5,
+        "w": 4,
+        "x": 12,
+        "y": 0
       },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "timescaledb"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE m.alarm_code IS NOT NULL) / NULLIF(COUNT(*), 0), 1) AS value\nFROM public.ldi_alarm_log a\nLEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\nWHERE a.equipmentid IN (${machine_id:sqlstring});",
+          "refId": "A",
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
       "fieldConfig": {
         "defaults": {
-          "unit": "percent",
+          "color": {
+            "mode": "thresholds"
+          },
           "decimals": 1,
+          "unit": "percent",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "#22C55E",
+                "color": "red",
                 "value": null
               },
               {
-                "color": "#FACC15",
-                "value": 5
+                "color": "yellow",
+                "value": 80
               },
               {
-                "color": "#EF4444",
-                "value": 20
+                "color": "green",
+                "value": 95
               }
             ]
           },
-          "color": {
-            "mode": "thresholds"
-          }
+          "custom": {},
+          "min": 0,
+          "max": 100
         },
         "overrides": []
       },
       "options": {
         "colorMode": "background",
         "graphMode": "none",
-        "justifyMode": "center",
+        "justifyMode": "auto",
+        "orientation": "auto",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
           ],
+          "fields": "",
           "values": false
         },
-        "text": {
-          "valueSize": 48,
-          "titleSize": 14
-        },
-        "noValue": "-"
+        "showPercentChange": false,
+        "textMode": "auto",
+        "noValue": "N/A",
+        "wideLayout": true
       },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT ROUND(COUNT(*) FILTER (WHERE m.alarm_code IS NULL) * 100.0 / NULLIF(COUNT(*), 0), 1) AS value FROM public.ldi_alarm_log a LEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT WHERE a.logdate >= NOW() - INTERVAL '24 hours'",
-          "format": "table"
-        }
-      ],
-      "transparent": true,
-      "description": "Percentage of alarm_log rows in the last 24h whose errorcode has no match in ldi_alarm_ms_code — these fall back to the COALESCE(...,'UNMAPPED') severity on the other LDI dashboards."
-    },
-    {
-      "id": 4,
-      "title": "Machine Last-Seen",
-      "type": "table",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 4,
-        "w": 24,
-        "h": 8
-      },
-      "fieldConfig": {
-        "defaults": {},
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Status"
-            },
-            "properties": [
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "type": "value",
-                    "options": {
-                      "LIVE": {
-                        "color": "#22C55E",
-                        "text": "LIVE"
-                      },
-                      "DELAYED": {
-                        "color": "#FACC15",
-                        "text": "DELAYED"
-                      },
-                      "STALE": {
-                        "color": "#EF4444",
-                        "text": "STALE"
-                      }
-                    }
-                  }
-                ]
-              },
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "color-background"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Last Seen"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "dateTimeAsIso"
-              }
-            ]
-          }
-        ]
-      },
-      "options": {
-        "showHeader": true,
-        "sortBy": [
-          {
-            "displayName": "Seconds Stale",
-            "desc": true
-          }
-        ],
-        "rowHeight": 0.7
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT eqp_id AS \"Machine\", MAX(time) AS \"Last Seen\", ROUND(EXTRACT(EPOCH FROM (NOW() - MAX(time)))::NUMERIC, 0) AS \"Seconds Stale\", CASE WHEN MAX(time) >= NOW() - INTERVAL '2 minutes' THEN 'LIVE' WHEN MAX(time) >= NOW() - INTERVAL '10 minutes' THEN 'DELAYED' ELSE 'STALE' END AS \"Status\" FROM public.ldi_data WHERE time >= NOW() - INTERVAL '24 hours' GROUP BY eqp_id ORDER BY MAX(time) ASC LIMIT 50",
-          "format": "table"
-        }
-      ],
-      "transparent": true,
-      "description": "Per-machine last telemetry timestamp and staleness classification, bounded to machines seen in the last 24h."
+      "transparent": true
     },
     {
       "id": 5,
-      "title": "Sensor Null-Rate by Machine",
-      "type": "table",
+      "title": "Board ID Completeness",
+      "description": "Percent of telemetry rows with a non-null board_id.",
+      "type": "stat",
       "datasource": {
+        "type": "grafana-postgresql-datasource",
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 0,
-        "y": 12,
-        "w": 24,
-        "h": 8
+        "h": 5,
+        "w": 4,
+        "x": 16,
+        "y": 0
       },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "timescaledb"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT ROUND(100.0 * COUNT(board_id) / NULLIF(COUNT(*), 0), 1) AS value\nFROM public.ldi_data\nWHERE factory IN (${factory:sqlstring})\n  AND eqp_id IN (${machine_id:sqlstring});",
+          "refId": "A",
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 80
+              },
+              {
+                "color": "green",
+                "value": 95
+              }
+            ]
+          },
+          "custom": {},
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "noValue": "N/A",
+        "wideLayout": true
+      },
+      "transparent": true
+    },
+    {
+      "id": 6,
+      "title": "PE / JE4 Coverage",
+      "description": "Row-level completeness of PE and JE4 for selected machines.",
+      "type": "stat",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 20,
+        "y": 0
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "timescaledb"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  ROUND(100.0 * COUNT(pe_1) / NULLIF(COUNT(*), 0), 1) AS \"PE\",\n  ROUND(100.0 * COUNT(je_4) / NULLIF(COUNT(*), 0), 1) AS \"JE4\"\nFROM public.ldi_data\nWHERE factory IN (${factory:sqlstring})\n  AND eqp_id IN (${machine_id:sqlstring});",
+          "refId": "A",
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 80
+              },
+              {
+                "color": "green",
+                "value": 95
+              }
+            ]
+          },
+          "custom": {},
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "noValue": "N/A",
+        "wideLayout": true
+      },
+      "transparent": true
+    },
+    {
+      "id": 7,
+      "title": "Telemetry Ingestion Rows by Machine",
+      "description": "Actual telemetry rows received in each five-minute bucket. Gaps indicate no stored rows, not simulated downtime.",
+      "type": "timeseries",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 5
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "timescaledb"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  date_bin('5 minutes', \"time\", TIMESTAMPTZ '2000-01-01') AS \"time\",\n  eqp_id AS metric,\n  COUNT(*)::NUMERIC AS value\nFROM public.ldi_data\nWHERE $__timeFilter(\"time\")\n  AND factory IN (${factory:sqlstring})\n  AND eqp_id IN (${machine_id:sqlstring})\nGROUP BY 1, 2\nORDER BY 1, 2;",
+          "refId": "A",
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "rows / 5 min",
+            "axisPlacement": "auto",
+            "drawStyle": "bars",
+            "gradientMode": "none",
+            "fillOpacity": 35,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 4,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "axisSoftMin": 0,
+            "axisSoftMax": 200
+          },
+          "unit": "suffix: rows/5m",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "connectNullPoints": true,
+        "legend": {
+          "calcs": [
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "transparent": true
+    },
+    {
+      "id": 8,
+      "title": "Machine Data Coverage Matrix",
+      "description": "Real row counts and field coverage per selected machine.",
+      "type": "table",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 5
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "timescaledb"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH alarm_counts AS (\n  SELECT equipmentid, COUNT(*) AS alarm_rows, MAX(logdate) AS last_alarm\n  FROM public.ldi_alarm_log\n  GROUP BY equipmentid\n)\nSELECT\n  d.eqp_id AS \"Machine\",\n  MIN(d.factory) AS \"Factory\",\n  MIN(d.process) AS \"Process\",\n  COUNT(*) AS \"Telemetry Rows\",\n  MAX(d.\"time\") AS \"Latest Telemetry\",\n  ROUND(100.0 * COUNT(d.pe_1) / COUNT(*), 1) AS \"PE %\",\n  ROUND(100.0 * COUNT(d.je_1) / COUNT(*), 1) AS \"JE1-3 %\",\n  ROUND(100.0 * COUNT(d.je_4) / COUNT(*), 1) AS \"JE4 %\",\n  COALESCE(MAX(a.alarm_rows), 0) AS \"Alarm Rows\",\n  MAX(a.last_alarm) AS \"Latest Alarm\"\nFROM public.ldi_data d\nLEFT JOIN alarm_counts a ON a.equipmentid = d.eqp_id\nWHERE d.factory IN (${factory:sqlstring})\n  AND d.eqp_id IN (${machine_id:sqlstring})\nGROUP BY d.eqp_id\nORDER BY d.eqp_id;",
+          "refId": "A",
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
       "fieldConfig": {
         "defaults": {},
         "overrides": []
       },
       "options": {
+        "cellHeight": "sm",
         "showHeader": true,
-        "sortBy": [
-          {
-            "displayName": "Machine",
-            "desc": false
-          }
-        ],
-        "rowHeight": 0.7
+        "sortBy": []
       },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT eqp_id AS \"Machine\", ROUND(COUNT(*) FILTER (WHERE temperature IS NULL) * 100.0 / NULLIF(COUNT(*), 0), 1) AS \"Temp Null %\", ROUND(COUNT(*) FILTER (WHERE humidity IS NULL) * 100.0 / NULLIF(COUNT(*), 0), 1) AS \"Humidity Null %\", ROUND(COUNT(*) FILTER (WHERE pe_1 IS NULL) * 100.0 / NULLIF(COUNT(*), 0), 1) AS \"PE Null %\", ROUND(COUNT(*) FILTER (WHERE je_1 IS NULL) * 100.0 / NULLIF(COUNT(*), 0), 1) AS \"JE Null %\" FROM public.ldi_data WHERE $__timeFilter(time) GROUP BY eqp_id ORDER BY eqp_id LIMIT 50",
-          "format": "table"
-        }
-      ],
-      "transparent": true,
-      "description": "Percentage of NULL readings per key sensor column, per machine, over the dashboard time range — high null-rate flags a dead sensor or wiring fault before it corrupts SPC/Cpk numbers."
+      "transparent": true
     },
     {
-      "id": 6,
-      "title": "Ingestion Row Count per Minute",
-      "type": "timeseries",
+      "id": 9,
+      "title": "Machine ID Mapping Gaps (Global)",
+      "description": "Global comparison of machine identifiers in telemetry and alarm sources. This intentionally ignores dashboard filters so unmatched IDs stay visible.",
+      "type": "table",
       "datasource": {
+        "type": "grafana-postgresql-datasource",
         "uid": "timescaledb"
       },
       "gridPos": {
+        "h": 9,
+        "w": 12,
         "x": 0,
-        "y": 20,
-        "w": 24,
-        "h": 6
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "custom": {
-            "drawStyle": "bars",
-            "fillOpacity": 40,
-            "pointSize": 4,
-            "gradientMode": "opacity"
-          },
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "#3B82F6"
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "mean",
-            "lastNotNull"
-          ]
-        },
-        "tooltip": {
-          "mode": "multi"
-        },
-        "connectNullPoints": true
+        "y": 13
       },
       "targets": [
         {
-          "refId": "A",
           "datasource": {
+            "type": "grafana-postgresql-datasource",
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('1 minute', time) AS time, COUNT(*)::NUMERIC AS value FROM public.ldi_data WHERE $__timeFilter(time) GROUP BY 1 ORDER BY 1",
-          "format": "time_series",
-          "legendFormat": "rows/min"
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH telemetry AS (\n  SELECT DISTINCT eqp_id FROM public.ldi_data\n), alarms AS (\n  SELECT DISTINCT equipmentid AS eqp_id FROM public.ldi_alarm_log\n), ids AS (\n  SELECT eqp_id FROM telemetry\n  UNION\n  SELECT eqp_id FROM alarms\n)\nSELECT\n  i.eqp_id AS \"Machine ID\",\n  (t.eqp_id IS NOT NULL) AS \"In Telemetry\",\n  (a.eqp_id IS NOT NULL) AS \"In Alarm\",\n  CASE\n    WHEN t.eqp_id IS NOT NULL AND a.eqp_id IS NOT NULL THEN 'MATCHED'\n    WHEN t.eqp_id IS NULL THEN 'ALARM ONLY'\n    ELSE 'TELEMETRY ONLY'\n  END AS \"Mapping Status\"\nFROM ids i\nLEFT JOIN telemetry t USING (eqp_id)\nLEFT JOIN alarms a USING (eqp_id)\nORDER BY \"Mapping Status\", i.eqp_id;",
+          "refId": "A",
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
         }
       ],
-      "transparent": true,
-      "description": "Raw ldi_data insert throughput — a sustained drop to zero means the ingestion pipeline stalled, not that the fleet actually stopped producing."
-    }
-  ],
-  "links": [
-    {
-      "title": "Apex Circuit Fleet Command Center",
-      "url": "/d/ldi-pcb-manufacturing/ims-ldi-manufacturing",
-      "type": "link",
-      "icon": "external link",
-      "targetBlank": false,
-      "keepTime": true,
-      "includeVars": true
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true,
+        "sortBy": []
+      },
+      "transparent": true
     },
     {
-      "title": "Engineering Analytics & SPC",
-      "url": "/d/ldi-engineering-analytics/ims-ldi-engineering-analytics",
-      "type": "link",
-      "icon": "external link",
-      "targetBlank": false,
-      "keepTime": true,
-      "includeVars": true
+      "id": 10,
+      "title": "Alarm Code Mapping Gaps (Global)",
+      "description": "Every distinct alarm code from the real log and whether it resolves against the supplied alarm master.",
+      "type": "table",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 13
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "timescaledb"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  a.errorcode::TEXT AS \"Alarm Code\",\n  COUNT(*) AS \"Rows\",\n  CASE WHEN m.alarm_code IS NULL THEN 'UNMAPPED' ELSE 'MATCHED' END AS \"Mapping\",\n  COALESCE(m.alarm_msg, '') AS \"Message\",\n  COALESCE(m.alarm_type, '') AS \"Severity\"\nFROM public.ldi_alarm_log a\nLEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\nGROUP BY a.errorcode, m.alarm_code, m.alarm_msg, m.alarm_type\nORDER BY \"Rows\" DESC;",
+          "refId": "A",
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true,
+        "sortBy": []
+      },
+      "transparent": true
     },
     {
-      "title": "Operator Andon Board",
-      "url": "/d/ldi-operator-andon/ims-ldi-operator-andon",
-      "type": "link",
-      "icon": "external link",
-      "targetBlank": false,
-      "keepTime": true,
-      "includeVars": true
+      "id": 11,
+      "title": "Board Event Data Quality",
+      "description": "Shows why telemetry rows cannot yet be treated as guaranteed board-completion events: board_id is missing and some MO + board_no keys repeat.",
+      "type": "table",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 22
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "timescaledb"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  eqp_id AS \"Machine\",\n  COUNT(*) AS \"Telemetry Rows\",\n  COUNT(DISTINCT (mo, board_no)) AS \"Unique MO + Board No\",\n  COUNT(*) - COUNT(DISTINCT (mo, board_no)) AS \"Duplicate Board Keys\",\n  ROUND(100.0 * COUNT(board_id) / COUNT(*), 1) AS \"Board ID %\",\n  COUNT(DISTINCT mo) AS \"Distinct MO\",\n  MIN(board_no) AS \"Min Board No\",\n  MAX(board_no) AS \"Max Board No\"\nFROM public.ldi_data\nWHERE factory IN (${factory:sqlstring})\n  AND eqp_id IN (${machine_id:sqlstring})\nGROUP BY eqp_id\nORDER BY \"Duplicate Board Keys\" DESC, eqp_id;",
+          "refId": "A",
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true,
+        "sortBy": []
+      },
+      "transparent": true
     },
     {
-      "title": "Incident Snapshot",
-      "url": "/d/ldi-machine-snapshot/ims-ldi-machine-snapshot",
-      "type": "link",
-      "icon": "external link",
-      "targetBlank": false,
-      "keepTime": true,
-      "includeVars": true
+      "id": 12,
+      "title": "Inferred Sensor / Source Capability",
+      "description": "Capability is inferred only from existing rows. ALL ZERO or CONSTANT means verify the machine specification; it is not automatically classified as a fault.",
+      "type": "table",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 22
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "timescaledb"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  d.eqp_id AS \"Machine\",\n  CASE WHEN COUNT(d.pe_1) > 0 THEN 'AVAILABLE' ELSE 'NO DATA' END AS \"PE1-6\",\n  CASE WHEN COUNT(d.je_1) > 0 THEN 'AVAILABLE' ELSE 'NO DATA' END AS \"JE1-3\",\n  CASE WHEN COUNT(d.je_4) > 0 THEN 'AVAILABLE' ELSE 'NO DATA' END AS \"JE4\",\n  CASE\n    WHEN COUNT(DISTINCT d.air_vacuum) > 1 THEN 'VARIABLE SIGNAL'\n    WHEN COUNT(d.air_vacuum) = 0 THEN 'NO DATA'\n    WHEN BOOL_AND(d.air_vacuum = 0) THEN 'ALL ZERO - VERIFY'\n    ELSE 'CONSTANT - VERIFY'\n  END AS \"Vacuum\",\n  CASE\n    WHEN COUNT(DISTINCT d.scan_speed) > 1 THEN 'VARIABLE SIGNAL'\n    WHEN COUNT(d.scan_speed) = 0 THEN 'NO DATA'\n    ELSE 'CONSTANT - VERIFY'\n  END AS \"Scan Speed\",\n  CASE WHEN MAX(a.equipmentid) IS NOT NULL THEN 'AVAILABLE' ELSE 'NO MATCHING ID' END AS \"Alarm Source\"\nFROM public.ldi_data d\nLEFT JOIN (SELECT DISTINCT equipmentid FROM public.ldi_alarm_log) a ON a.equipmentid = d.eqp_id\nWHERE d.factory IN (${factory:sqlstring})\n  AND d.eqp_id IN (${machine_id:sqlstring})\nGROUP BY d.eqp_id\nORDER BY d.eqp_id;",
+          "refId": "A",
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true,
+        "sortBy": []
+      },
+      "transparent": true
     }
   ]
 }

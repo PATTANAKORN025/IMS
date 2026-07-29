@@ -328,7 +328,7 @@
     },
     {
       "id": 1,
-      "title": "Machine State (state = true)",
+      "title": "Running",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -384,7 +384,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT COUNT(DISTINCT eqp_id) FILTER (WHERE state = true) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND process IN ($process) AND $__timeFilter(time)",
+          "rawSql": "WITH latest AS (SELECT DISTINCT ON (eqp_id) eqp_id, state FROM public.ldi_data WHERE $__timeFilter(time) AND factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND process IN ($process) ORDER BY eqp_id, time DESC) SELECT COUNT(*) FILTER (WHERE state = true) AS value FROM latest",
           "format": "table"
         }
       ],
