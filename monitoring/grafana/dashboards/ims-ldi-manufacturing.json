@@ -37,7 +37,7 @@
       {
         "name": "mo",
         "type": "query",
-        "query": "SELECT DISTINCT mo FROM public.ldi_data WHERE factory IN ($factory) ORDER BY mo",
+        "query": "SELECT DISTINCT mo FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) ORDER BY mo",
         "datasource": {
           "uid": "timescaledb"
         },
@@ -64,7 +64,7 @@
       {
         "name": "machine_id",
         "type": "query",
-        "query": "SELECT DISTINCT eqp_id AS __text, eqp_id AS __value FROM public.ldi_data ORDER BY eqp_id",
+        "query": "SELECT DISTINCT eqp_id AS __text, eqp_id AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) ORDER BY eqp_id",
         "datasource": {
           "uid": "timescaledb"
         },
@@ -73,6 +73,32 @@
         "includeAll": true,
         "sort": 1,
         "label": "Machine"
+      },
+      {
+        "name": "fpn",
+        "type": "query",
+        "query": "SELECT DISTINCT fpn FROM public.ldi_data WHERE eqp_id IN (${machine_id:sqlstring}) ORDER BY fpn",
+        "datasource": {
+          "uid": "timescaledb"
+        },
+        "refresh": 2,
+        "multi": true,
+        "includeAll": true,
+        "sort": 1,
+        "label": "FPN (Part)"
+      },
+      {
+        "name": "layer",
+        "type": "query",
+        "query": "SELECT DISTINCT layer_name FROM public.ldi_data WHERE eqp_id IN (${machine_id:sqlstring}) ORDER BY layer_name",
+        "datasource": {
+          "uid": "timescaledb"
+        },
+        "refresh": 2,
+        "multi": true,
+        "includeAll": true,
+        "sort": 1,
+        "label": "Layer"
       }
     ]
   },
@@ -155,7 +181,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND((COUNT(*) FILTER (WHERE GREATEST(ABS(pe_1), ABS(pe_2), ABS(pe_3), ABS(pe_4), ABS(pe_5), ABS(pe_6)) <= pe_setting)::NUMERIC / NULLIF(COUNT(*) FILTER (WHERE pe_1 IS NOT NULL), 0)) * 100, 1) AS value FROM public.ldi_data WHERE $__timeFilter(time) AND factory IN ($factory) AND process IN ($process)",
+          "rawSql": "SELECT ROUND((COUNT(*) FILTER (WHERE GREATEST(ABS(pe_1), ABS(pe_2), ABS(pe_3), ABS(pe_4), ABS(pe_5), ABS(pe_6)) <= pe_setting)::NUMERIC / NULLIF(COUNT(*) FILTER (WHERE pe_1 IS NOT NULL), 0)) * 100, 1) AS value FROM public.ldi_data WHERE $__timeFilter(time) AND factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND process IN ($process)",
           "format": "table"
         }
       ],
@@ -224,7 +250,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND((COUNT(*) FILTER (WHERE state = true)::NUMERIC / NULLIF(COUNT(*), 0)) * 100, 1) AS value FROM public.ldi_data WHERE $__timeFilter(time) AND factory IN ($factory) AND process IN ($process)",
+          "rawSql": "SELECT ROUND((COUNT(*) FILTER (WHERE state = true)::NUMERIC / NULLIF(COUNT(*), 0)) * 100, 1) AS value FROM public.ldi_data WHERE $__timeFilter(time) AND factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND process IN ($process)",
           "format": "table"
         }
       ],
@@ -293,7 +319,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(AVG(cpk)::NUMERIC, 2) AS value FROM public.v_machine_spc_ranking",
+          "rawSql": "SELECT ROUND(AVG(cpk)::NUMERIC, 2) AS value FROM public.v_machine_spc_ranking WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring})",
           "format": "table"
         }
       ],
@@ -358,7 +384,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT COUNT(DISTINCT eqp_id) FILTER (WHERE state = true) AS value FROM public.ldi_data WHERE factory IN ($factory) AND process IN ($process) AND $__timeFilter(time)",
+          "rawSql": "SELECT COUNT(DISTINCT eqp_id) FILTER (WHERE state = true) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND process IN ($process) AND $__timeFilter(time)",
           "format": "table"
         }
       ],
@@ -424,7 +450,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH MaxPE AS (SELECT eqp_id, GREATEST(ABS(COALESCE(pe_1,0)),ABS(COALESCE(pe_2,0)),ABS(COALESCE(pe_3,0)),ABS(COALESCE(pe_4,0)),ABS(COALESCE(pe_5,0)),ABS(COALESCE(pe_6,0))) AS max_error FROM public.ldi_data WHERE factory IN ($factory) AND process IN ($process) AND $__timeFilter(time) AND pe_1 IS NOT NULL) SELECT ROUND(AVG(max_error)::NUMERIC, 2) AS value FROM MaxPE",
+          "rawSql": "WITH MaxPE AS (SELECT eqp_id, GREATEST(ABS(COALESCE(pe_1,0)),ABS(COALESCE(pe_2,0)),ABS(COALESCE(pe_3,0)),ABS(COALESCE(pe_4,0)),ABS(COALESCE(pe_5,0)),ABS(COALESCE(pe_6,0))) AS max_error FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND process IN ($process) AND $__timeFilter(time) AND pe_1 IS NOT NULL) SELECT ROUND(AVG(max_error)::NUMERIC, 2) AS value FROM MaxPE",
           "format": "table"
         }
       ],
@@ -501,7 +527,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(AVG(temperature)::NUMERIC, 1) AS value FROM public.ldi_data WHERE factory IN ($factory) AND process IN ($process) AND $__timeFilter(time) AND temperature IS NOT NULL",
+          "rawSql": "SELECT ROUND(AVG(temperature)::NUMERIC, 1) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND process IN ($process) AND $__timeFilter(time) AND temperature IS NOT NULL",
           "format": "table"
         }
       ],
@@ -578,7 +604,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(AVG(humidity)::NUMERIC, 1) AS value FROM public.ldi_data WHERE factory IN ($factory) AND process IN ($process) AND $__timeFilter(time) AND humidity IS NOT NULL",
+          "rawSql": "SELECT ROUND(AVG(humidity)::NUMERIC, 1) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND process IN ($process) AND $__timeFilter(time) AND humidity IS NOT NULL",
           "format": "table"
         }
       ],
@@ -679,7 +705,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT DISTINCT ON (eqp_id) eqp_id AS \"Machine\", mo AS \"Job (MO)\", fpn AS \"Part (FPN)\", layer_name AS \"Layer\", (board_no::TEXT || '/' || total_board::TEXT) AS \"Progress\", ROUND(temperature::NUMERIC, 1) AS \"temperature (°C)\", ROUND(humidity::NUMERIC, 1) AS \"humidity (%RH)\", ROUND(scan_speed::NUMERIC, 1) AS \"scan_speed (mm/s)\", ROUND(thickness::NUMERIC, 3) AS \"thickness (mm)\", ROUND(resist_dosage::NUMERIC, 1) AS \"resist_dosage\", state AS \"state\" FROM public.ldi_data WHERE factory IN ($factory) AND process IN ($process) AND $__timeFilter(time) ORDER BY eqp_id, time DESC LIMIT 50",
+          "rawSql": "SELECT DISTINCT ON (eqp_id) eqp_id AS \"Machine\", mo AS \"Job (MO)\", fpn AS \"Part (FPN)\", layer_name AS \"Layer\", (board_no::TEXT || '/' || total_board::TEXT) AS \"Progress\", ROUND(temperature::NUMERIC, 1) AS \"temperature (°C)\", ROUND(humidity::NUMERIC, 1) AS \"humidity (%RH)\", ROUND(scan_speed::NUMERIC, 1) AS \"scan_speed (mm/s)\", ROUND(thickness::NUMERIC, 3) AS \"thickness (mm)\", ROUND(resist_dosage::NUMERIC, 1) AS \"resist_dosage\", state AS \"state\" FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND process IN ($process) AND $__timeFilter(time) ORDER BY eqp_id, time DESC LIMIT 50",
           "format": "table"
         }
       ],
@@ -816,7 +842,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, eqp_id AS metric, CASE WHEN temperature BETWEEN 20 AND 24 THEN 2 WHEN temperature BETWEEN 19 AND 25 THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE factory IN ($factory) AND process IN ($process) AND $__timeFilter(time) AND temperature IS NOT NULL ORDER BY time ASC",
+          "rawSql": "SELECT time, eqp_id AS metric, CASE WHEN temperature BETWEEN 20 AND 24 THEN 2 WHEN temperature BETWEEN 19 AND 25 THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND process IN ($process) AND $__timeFilter(time) AND temperature IS NOT NULL ORDER BY time ASC",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
@@ -898,7 +924,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, eqp_id AS metric, CASE WHEN humidity BETWEEN 50 AND 60 THEN 2 WHEN humidity BETWEEN 45 AND 65 THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE factory IN ($factory) AND process IN ($process) AND $__timeFilter(time) AND humidity IS NOT NULL ORDER BY time ASC",
+          "rawSql": "SELECT time, eqp_id AS metric, CASE WHEN humidity BETWEEN 50 AND 60 THEN 2 WHEN humidity BETWEEN 45 AND 65 THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND process IN ($process) AND $__timeFilter(time) AND humidity IS NOT NULL ORDER BY time ASC",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
@@ -1000,7 +1026,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, eqp_id || ' - scan_speed' AS metric, scan_speed AS value FROM public.ldi_data WHERE factory IN ($factory) AND process IN ($process) AND $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND scan_speed IS NOT NULL ORDER BY time",
+          "rawSql": "SELECT time, eqp_id || ' - scan_speed' AS metric, scan_speed AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND process IN ($process) AND $__timeFilter(time) AND scan_speed IS NOT NULL ORDER BY time",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         },
@@ -1009,7 +1035,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, eqp_id || ' - air_vacuum' AS metric, air_vacuum AS value FROM public.ldi_data WHERE factory IN ($factory) AND process IN ($process) AND $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND air_vacuum IS NOT NULL ORDER BY time",
+          "rawSql": "SELECT time, eqp_id || ' - air_vacuum' AS metric, air_vacuum AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND process IN ($process) AND $__timeFilter(time) AND air_vacuum IS NOT NULL ORDER BY time",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
@@ -1111,7 +1137,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, eqp_id || ' - thickness' AS metric, thickness AS value FROM public.ldi_data WHERE factory IN ($factory) AND process IN ($process) AND $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND thickness IS NOT NULL ORDER BY time",
+          "rawSql": "SELECT time, eqp_id || ' - thickness' AS metric, thickness AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND process IN ($process) AND $__timeFilter(time) AND thickness IS NOT NULL ORDER BY time",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         },
@@ -1120,7 +1146,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, eqp_id || ' - resist_dosage' AS metric, resist_dosage AS value FROM public.ldi_data WHERE factory IN ($factory) AND process IN ($process) AND $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND resist_dosage IS NOT NULL ORDER BY time",
+          "rawSql": "SELECT time, eqp_id || ' - resist_dosage' AS metric, resist_dosage AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND process IN ($process) AND $__timeFilter(time) AND resist_dosage IS NOT NULL ORDER BY time",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
@@ -1222,7 +1248,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, eqp_id || ' - scale_x' AS metric, scale_x AS value FROM public.ldi_data WHERE factory IN ($factory) AND process IN ($process) AND $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND scale_x IS NOT NULL ORDER BY time",
+          "rawSql": "SELECT time, eqp_id || ' - scale_x' AS metric, scale_x AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND process IN ($process) AND $__timeFilter(time) AND scale_x IS NOT NULL ORDER BY time",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         },
@@ -1231,7 +1257,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, eqp_id || ' - scale_y' AS metric, scale_y AS value FROM public.ldi_data WHERE factory IN ($factory) AND process IN ($process) AND $__timeFilter(time) AND eqp_id IN (${machine_id:singlequote}) AND scale_y IS NOT NULL ORDER BY time",
+          "rawSql": "SELECT time, eqp_id || ' - scale_y' AS metric, scale_y AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND process IN ($process) AND $__timeFilter(time) AND scale_y IS NOT NULL ORDER BY time",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
@@ -1287,7 +1313,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('5 minutes', time) AS time, eqp_id AS metric, ROUND(AVG(total_time / NULLIF(total_board, 0))::NUMERIC, 2) AS value FROM public.ldi_data WHERE factory IN ($factory) AND process IN ($process) AND $__timeFilter(time) AND total_board > 0 GROUP BY 1, 2 ORDER BY time",
+          "rawSql": "SELECT time_bucket('5 minutes', time) AS time, eqp_id AS metric, ROUND(AVG(total_time / NULLIF(total_board, 0))::NUMERIC, 2) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND process IN ($process) AND $__timeFilter(time) AND total_board > 0 GROUP BY 1, 2 ORDER BY time",
           "format": "time_series"
         }
       ],
@@ -1349,7 +1375,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH stats AS (SELECT eqp_id, AVG(temperature) AS mu, STDDEV(temperature) AS sigma FROM public.ldi_data WHERE time > NOW() - INTERVAL '24 hours' GROUP BY eqp_id) SELECT d.time, d.eqp_id AS metric, ROUND(((d.temperature - s.mu) / NULLIF(s.sigma, 0))::NUMERIC, 2) AS \"Z-Score\" FROM public.ldi_data d JOIN stats s ON d.eqp_id = s.eqp_id WHERE factory IN ($factory) AND process IN ($process) AND $__timeFilter(time) AND d.temperature IS NOT NULL AND s.sigma > 0 ORDER BY d.time ASC",
+          "rawSql": "WITH stats AS (SELECT eqp_id, AVG(temperature) AS mu, STDDEV(temperature) AS sigma FROM public.ldi_data WHERE time > NOW() - INTERVAL '24 hours' GROUP BY eqp_id) SELECT d.time, d.eqp_id AS metric, ROUND(((d.temperature - s.mu) / NULLIF(s.sigma, 0))::NUMERIC, 2) AS \"Z-Score\" FROM public.ldi_data d JOIN stats s ON d.eqp_id = s.eqp_id WHERE d.factory IN (${factory:sqlstring}) AND d.mo IN (${mo:sqlstring}) AND d.eqp_id IN (${machine_id:sqlstring}) AND d.fpn IN (${fpn:sqlstring}) AND d.layer_name IN (${layer:sqlstring}) AND process IN ($process) AND $__timeFilter(time) AND d.temperature IS NOT NULL AND s.sigma > 0 ORDER BY d.time ASC",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
@@ -1386,7 +1412,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT a.logdate AS \"Time\", a.equipmentid AS \"Machine\", a.errorcode AS \"errorcode\", a.errortime AS \"errortime\", COALESCE(m.alarm_msg, a.errorcode::TEXT) AS \"Message\", COALESCE(m.alarm_type, 'WARN') AS \"Severity\", COALESCE(m.alarm_detail, '') AS \"Details\" FROM public.ldi_alarm_log a LEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT WHERE $__timeFilter(a.logdate) ORDER BY a.logdate DESC LIMIT 30",
+          "rawSql": "SELECT a.logdate AS \"Time\", a.equipmentid AS \"Machine\", a.errorcode AS \"errorcode\", a.errortime AS \"errortime\", COALESCE(m.alarm_msg, a.errorcode::TEXT) AS \"Message\", COALESCE(m.alarm_type, 'UNMAPPED') AS \"Severity\", COALESCE(m.alarm_detail, '') AS \"Details\" FROM public.ldi_alarm_log a LEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT WHERE $__timeFilter(a.logdate) ORDER BY a.logdate DESC LIMIT 30",
           "format": "table"
         }
       ],
@@ -1573,7 +1599,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, eqp_id AS \"Machine\",\n       GREATEST(ABS(pe_1),ABS(pe_2),ABS(pe_3),ABS(pe_4),ABS(pe_5),ABS(pe_6)) AS \"Worst PE\",\n       GREATEST(ABS(je_1),ABS(je_2),ABS(je_3),ABS(je_4)) AS \"Worst JE\",\n       log_id\nFROM public.ldi_data\nWHERE $__timeFilter(time)\n  AND pe_1 IS NOT NULL\n  AND COALESCE(pe_setting, 0) > 2.0\nORDER BY \"Worst PE\" DESC NULLS LAST\nLIMIT 5",
+          "rawSql": "SELECT time, eqp_id AS \"Machine\",\n       GREATEST(ABS(pe_1),ABS(pe_2),ABS(pe_3),ABS(pe_4),ABS(pe_5),ABS(pe_6)) AS \"Worst PE\",\n       GREATEST(ABS(je_1),ABS(je_2),ABS(je_3),ABS(je_4)) AS \"Worst JE\",\n       log_id\nFROM public.ldi_data\nWHERE factory IN (${factory:sqlstring})\n  AND mo IN (${mo:sqlstring})\n  AND eqp_id IN (${machine_id:sqlstring})\n  AND fpn IN (${fpn:sqlstring})\n  AND layer_name IN (${layer:sqlstring})\n  AND $__timeFilter(time)\n  AND pe_1 IS NOT NULL\n  AND COALESCE(pe_setting, 0) > 2.0\nORDER BY \"Worst PE\" DESC NULLS LAST\nLIMIT 5",
           "format": "table"
         }
       ],
@@ -1604,6 +1630,15 @@
     {
       "title": "Incident Snapshot",
       "url": "/d/ldi-machine-snapshot/ims-ldi-machine-snapshot",
+      "type": "link",
+      "icon": "external link",
+      "targetBlank": false,
+      "keepTime": true,
+      "includeVars": true
+    },
+    {
+      "title": "Data Readiness",
+      "url": "/d/ldi-data-readiness/ims-ldi-data-readiness",
       "type": "link",
       "icon": "external link",
       "targetBlank": false,
