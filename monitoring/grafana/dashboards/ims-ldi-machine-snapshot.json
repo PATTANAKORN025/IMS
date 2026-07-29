@@ -758,6 +758,110 @@
       }
     },
     {
+      "id": 13,
+      "title": "Judgment Error (je_1 ~ je_4) + MAX|JE|",
+      "type": "table",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 11,
+        "w": 24,
+        "h": 4
+      },
+      "options": {
+        "showHeader": true,
+        "rowHeight": 0.8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT ROUND(je_1::NUMERIC, 3) AS \"je_1\", ROUND(je_2::NUMERIC, 3) AS \"je_2\", ROUND(je_3::NUMERIC, 3) AS \"je_3\", ROUND(je_4::NUMERIC, 3) AS \"je_4\", ROUND(GREATEST(ABS(je_1),ABS(je_2),ABS(je_3),ABS(je_4))::NUMERIC, 3) AS \"MAX|JE|\", je_setting AS \"JE Spec\"\nFROM public.ldi_data\nWHERE eqp_id = ${machine_id:singlequote}\n  AND $__timeFilter(time)\nORDER BY ABS(EXTRACT(EPOCH FROM time) - EXTRACT(EPOCH FROM TO_TIMESTAMP(($__to + $__from) / 2000.0))) ASC\nLIMIT 1",
+          "format": "table"
+        }
+      ],
+      "transparent": true,
+      "description": "Individual JE (judgment error) values at the clicked moment. MAX|JE| = worst-case deviation across 4 fiducials.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "lengthum",
+          "decimals": 3
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "MAX|JE|"
+            },
+            "properties": [
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#22C55E",
+                      "value": null
+                    },
+                    {
+                      "color": "#FACC15",
+                      "value": 15
+                    },
+                    {
+                      "color": "#EF4444",
+                      "value": 25
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Timestamp"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              },
+              {
+                "id": "decimals",
+                "value": 6
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Time"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              },
+              {
+                "id": "decimals",
+                "value": 6
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
       "id": 10,
       "title": "Alarm Context (±5 min of clicked timestamp)",
       "type": "table",
@@ -766,7 +870,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 11,
+        "y": 15,
         "w": 24,
         "h": 4
       },
@@ -875,7 +979,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 15,
+        "y": 19,
         "w": 24,
         "h": 2
       },
@@ -935,7 +1039,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 17,
+        "y": 21,
         "w": 24,
         "h": 6
       },
