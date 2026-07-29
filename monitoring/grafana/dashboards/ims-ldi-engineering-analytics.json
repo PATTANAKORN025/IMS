@@ -1,7 +1,7 @@
 {
   "uid": "ldi-engineering-analytics",
-  "title": "IMS LDI — Engineering Analytics & SPC",
-  "description": "Layer 3 Process Timeline: synchronized multi-parameter RCA. temperature → humidity → scan_speed → air_vacuum → scale_x/y → pe_1~6 → je_1~4 → state. Shared crosshair + tooltip. Fixed axis scaling.",
+  "title": "IMS LDI \u2014 Engineering Analytics & SPC",
+  "description": "Layer 3 Process Timeline: synchronized multi-parameter RCA. temperature \u2192 humidity \u2192 scan_speed \u2192 air_vacuum \u2192 scale_x/y \u2192 pe_1~6 \u2192 je_1~4 \u2192 state. Shared crosshair + tooltip. Fixed axis scaling.",
   "tags": [
     "ims",
     "ldi",
@@ -116,13 +116,31 @@
         "iconColor": "rgba(255, 96, 96, 1)",
         "name": "Annotations & Alerts",
         "type": "dashboard"
+      },
+      {
+        "datasource": {
+          "type": "postgres",
+          "uid": "timescaledb"
+        },
+        "enable": true,
+        "hide": false,
+        "iconColor": "red",
+        "name": "Machine Alarms",
+        "rawQuery": "SELECT logdate AS time, 'ALARM: ' || errorcode || ' - ' || process AS text, equipmentid AS tags FROM public.ldi_alarm_log WHERE $__timeFilter(logdate) AND equipmentid IN (${machine_id:singlequote})",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
+        "type": "dashboard"
       }
     ]
   },
   "panels": [
     {
       "id": 1,
-      "title": "temperature (°C)",
+      "title": "temperature (\u00b0C)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -195,7 +213,7 @@
         }
       ],
       "transparent": true,
-      "description": "temperature per machine. Fixed axis 18-28°C (target 22±2°C). Shared crosshair syncs with all panels below."
+      "description": "temperature per machine. Fixed axis 18-28\u00b0C (target 22\u00b12\u00b0C). Shared crosshair syncs with all panels below."
     },
     {
       "id": 2,
@@ -272,7 +290,7 @@
         }
       ],
       "transparent": true,
-      "description": "humidity per machine. Fixed axis 40-70%RH (target 55±5%RH). Shared crosshair syncs with all panels below."
+      "description": "humidity per machine. Fixed axis 40-70%RH (target 55\u00b15%RH). Shared crosshair syncs with all panels below."
     },
     {
       "id": 3,
@@ -548,7 +566,7 @@
     },
     {
       "id": 7,
-      "title": "pe_1 ~ pe_6 (µm)",
+      "title": "pe_1 ~ pe_6 (\u00b5m)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -666,11 +684,11 @@
         }
       ],
       "transparent": true,
-      "description": "Individual PE values (pe_1 through pe_6) per machine. Raw signed positional error in µm. Fixed axis ±30µm."
+      "description": "Individual PE values (pe_1 through pe_6) per machine. Raw signed positional error in \u00b5m. Fixed axis \u00b130\u00b5m."
     },
     {
       "id": 8,
-      "title": "je_1 ~ je_4 (µm)",
+      "title": "je_1 ~ je_4 (\u00b5m)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -770,7 +788,7 @@
         }
       ],
       "transparent": true,
-      "description": "Individual JE values (je_1 through je_4) per machine. Raw signed junction error in µm. Fixed axis ±30µm."
+      "description": "Individual JE values (je_1 through je_4) per machine. Raw signed junction error in \u00b5m. Fixed axis \u00b130\u00b5m."
     },
     {
       "id": 9,
@@ -1100,7 +1118,7 @@
     },
     {
       "id": 15,
-      "title": "Resist Dosage (mJ/cm²)",
+      "title": "Resist Dosage (mJ/cm\u00b2)",
       "type": "bargauge",
       "datasource": {
         "uid": "timescaledb"
@@ -1169,7 +1187,7 @@
         }
       ],
       "transparent": true,
-      "description": "All 3 recipes: DF OUTER=15, DF INNER=71, SM=500-1200 mJ/cm²"
+      "description": "All 3 recipes: DF OUTER=15, DF INNER=71, SM=500-1200 mJ/cm\u00b2"
     }
   ],
   "fiscalYearStartMonth": 0,

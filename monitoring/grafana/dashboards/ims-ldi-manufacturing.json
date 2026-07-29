@@ -1,6 +1,6 @@
 {
   "uid": "ldi-pcb-manufacturing",
-  "title": "IMS LDI — Apex Circuit Fleet Command Center",
+  "title": "IMS LDI \u2014 Apex Circuit Fleet Command Center",
   "description": "4-Layer RCA Dashboard: Executive HUD + Machine Telemetry + Production Context + Alarm Stream. Schema-driven naming. Shared crosshair. Fixed axis scaling.",
   "tags": [
     "ims",
@@ -114,6 +114,24 @@
         "hide": false,
         "iconColor": "rgba(255, 96, 96, 1)",
         "name": "Annotations & Alerts",
+        "type": "dashboard"
+      },
+      {
+        "datasource": {
+          "type": "postgres",
+          "uid": "timescaledb"
+        },
+        "enable": true,
+        "hide": false,
+        "iconColor": "red",
+        "name": "Machine Alarms",
+        "rawQuery": "SELECT logdate AS time, 'ALARM: ' || errorcode || ' - ' || process AS text, equipmentid AS tags FROM public.ldi_alarm_log WHERE $__timeFilter(logdate) AND equipmentid IN (${machine_id:singlequote})",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
         "type": "dashboard"
       }
     ]
@@ -393,7 +411,7 @@
     },
     {
       "id": 2,
-      "title": "Position Error Deviation (pe_1 ~ pe_6 µm)",
+      "title": "Position Error Deviation (pe_1 ~ pe_6 \u00b5m)",
       "type": "gauge",
       "datasource": {
         "uid": "timescaledb"
@@ -455,11 +473,11 @@
         }
       ],
       "transparent": true,
-      "description": "Mean of max absolute PE deviation across 6 fiducial points. Green < 10µm, Amber 10-20µm, Red > 20µm."
+      "description": "Mean of max absolute PE deviation across 6 fiducial points. Green < 10\u00b5m, Amber 10-20\u00b5m, Red > 20\u00b5m."
     },
     {
       "id": 3,
-      "title": "temperature (°C)",
+      "title": "temperature (\u00b0C)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -532,7 +550,7 @@
         }
       ],
       "transparent": true,
-      "description": "Fleet-wide average temperature. Target 22±2°C. Red outside 20-24°C, Amber 20-24°C, Green 22-24°C."
+      "description": "Fleet-wide average temperature. Target 22\u00b12\u00b0C. Red outside 20-24\u00b0C, Amber 20-24\u00b0C, Green 22-24\u00b0C."
     },
     {
       "id": 4,
@@ -609,7 +627,7 @@
         }
       ],
       "transparent": true,
-      "description": "Fleet-wide average humidity. Target 55±5%RH. Red outside 50-60%, Amber 50-60%, Green 55-60%."
+      "description": "Fleet-wide average humidity. Target 55\u00b15%RH. Red outside 50-60%, Amber 50-60%, Green 55-60%."
     },
     {
       "id": 5,
@@ -705,7 +723,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT DISTINCT ON (eqp_id) eqp_id AS \"Machine\", mo AS \"Job (MO)\", fpn AS \"Part (FPN)\", layer_name AS \"Layer\", (board_no::TEXT || '/' || total_board::TEXT) AS \"Progress\", ROUND(temperature::NUMERIC, 1) AS \"temperature (°C)\", ROUND(humidity::NUMERIC, 1) AS \"humidity (%RH)\", ROUND(scan_speed::NUMERIC, 1) AS \"scan_speed (mm/s)\", ROUND(thickness::NUMERIC, 3) AS \"thickness (mm)\", ROUND(resist_dosage::NUMERIC, 1) AS \"resist_dosage\", state AS \"state\" FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND process IN ($process) AND $__timeFilter(time) ORDER BY eqp_id, time DESC LIMIT 50",
+          "rawSql": "SELECT DISTINCT ON (eqp_id) eqp_id AS \"Machine\", mo AS \"Job (MO)\", fpn AS \"Part (FPN)\", layer_name AS \"Layer\", (board_no::TEXT || '/' || total_board::TEXT) AS \"Progress\", ROUND(temperature::NUMERIC, 1) AS \"temperature (\u00b0C)\", ROUND(humidity::NUMERIC, 1) AS \"humidity (%RH)\", ROUND(scan_speed::NUMERIC, 1) AS \"scan_speed (mm/s)\", ROUND(thickness::NUMERIC, 3) AS \"thickness (mm)\", ROUND(resist_dosage::NUMERIC, 1) AS \"resist_dosage\", state AS \"state\" FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND process IN ($process) AND $__timeFilter(time) ORDER BY eqp_id, time DESC LIMIT 50",
           "format": "table"
         }
       ],
@@ -770,7 +788,7 @@
     },
     {
       "id": 7,
-      "title": "temperature Compliance (20-24°C)",
+      "title": "temperature Compliance (20-24\u00b0C)",
       "type": "state-timeline",
       "datasource": {
         "uid": "timescaledb"
@@ -848,7 +866,7 @@
         }
       ],
       "transparent": true,
-      "description": "3-color compliance matrix per machine. Green 20-24°C, Amber 19-25°C, Red outside."
+      "description": "3-color compliance matrix per machine. Green 20-24\u00b0C, Amber 19-25\u00b0C, Red outside."
     },
     {
       "id": 8,
@@ -1106,7 +1124,7 @@
               },
               {
                 "id": "custom.axisLabel",
-                "value": "resist_dosage (mJ/cm²)"
+                "value": "resist_dosage (mJ/cm\u00b2)"
               },
               {
                 "id": "unit",
@@ -1152,7 +1170,7 @@
         }
       ],
       "transparent": true,
-      "description": "Dual Y-axis: thickness (left, mm) and resist_dosage (right, mJ/cm²) per machine."
+      "description": "Dual Y-axis: thickness (left, mm) and resist_dosage (right, mJ/cm\u00b2) per machine."
     },
     {
       "id": 11,
@@ -1381,7 +1399,7 @@
         }
       ],
       "transparent": true,
-      "description": "3-sigma Z-Score on temperature per machine. Green ±2 (normal), Amber 2.5 (watch), Red 3+ (anomaly)."
+      "description": "3-sigma Z-Score on temperature per machine. Green \u00b12 (normal), Amber 2.5 (watch), Red 3+ (anomaly)."
     },
     {
       "id": 14,
@@ -1412,7 +1430,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT a.logdate AS \"Time\", a.equipmentid AS \"Machine\", a.errorcode AS \"errorcode\", a.errortime AS \"errortime\", COALESCE(m.alarm_msg, a.errorcode::TEXT) AS \"Message\", COALESCE(m.alarm_type, 'UNMAPPED') AS \"Severity\", COALESCE(m.alarm_detail, '') AS \"Details\" FROM public.ldi_alarm_log a LEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT WHERE $__timeFilter(a.logdate) ORDER BY a.logdate DESC LIMIT 30",
+          "rawSql": "SELECT a.logdate AS \"Time\", a.equipmentid AS \"Machine\", (EXTRACT(EPOCH FROM a.logdate)*1000 - 900000)::bigint AS from_time, (EXTRACT(EPOCH FROM a.logdate)*1000 + 900000)::bigint AS to_time, a.errorcode AS \"errorcode\", a.errortime AS \"errortime\", COALESCE(m.alarm_msg, a.errorcode::TEXT) AS \"Message\", COALESCE(m.alarm_type, 'UNMAPPED') AS \"Severity\", COALESCE(m.alarm_detail, '') AS \"Details\" FROM public.ldi_alarm_log a LEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT WHERE $__timeFilter(a.logdate) ORDER BY a.logdate DESC LIMIT 30",
           "format": "table"
         }
       ],
@@ -1486,6 +1504,49 @@
               {
                 "id": "decimals",
                 "value": 6
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Machine"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Analyze Root Cause (Machine Snapshot)",
+                    "url": "/d/ldi-machine/ims-ldi-machine-snapshot?var-machine_id=${__data.fields.Machine}&from=${__data.fields.from_time}&to=${__data.fields.to_time}",
+                    "targetBlank": false,
+                    "keepTime": false
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "from_time"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "to_time"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
               }
             ]
           }

@@ -1,6 +1,6 @@
 {
   "uid": "ldi-operator-andon",
-  "title": "IMS LDI — Operator Andon Board",
+  "title": "IMS LDI \u2014 Operator Andon Board",
   "description": "Factory floor kiosk. ISA-101 compliant. Zero interaction, zero scrolling. 1920x1080.",
   "tags": [
     "ims",
@@ -24,10 +24,16 @@
         "name": "factory",
         "label": "Factory",
         "type": "query",
-        "datasource": { "uid": "timescaledb" },
+        "datasource": {
+          "uid": "timescaledb"
+        },
         "query": "SELECT DISTINCT factory AS __text, factory AS __value FROM public.ldi_data ORDER BY factory",
         "definition": "SELECT DISTINCT factory AS __text, factory AS __value FROM public.ldi_data ORDER BY factory",
-        "current": { "selected": true, "text": "All", "value": "$__all" },
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
         "multi": true,
         "includeAll": true,
         "options": [],
@@ -41,10 +47,16 @@
         "name": "mo",
         "label": "MO",
         "type": "query",
-        "datasource": { "uid": "timescaledb" },
+        "datasource": {
+          "uid": "timescaledb"
+        },
         "query": "SELECT DISTINCT mo AS __text, mo AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) ORDER BY mo",
         "definition": "SELECT DISTINCT mo AS __text, mo AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) ORDER BY mo",
-        "current": { "selected": true, "text": "All", "value": "$__all" },
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
         "multi": true,
         "includeAll": true,
         "options": [],
@@ -58,10 +70,16 @@
         "name": "machine_id",
         "label": "Machine",
         "type": "query",
-        "datasource": { "uid": "timescaledb" },
+        "datasource": {
+          "uid": "timescaledb"
+        },
         "query": "SELECT DISTINCT eqp_id AS __text, eqp_id AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) ORDER BY eqp_id",
         "definition": "SELECT DISTINCT eqp_id AS __text, eqp_id AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) ORDER BY eqp_id",
-        "current": { "selected": true, "text": "All", "value": "$__all" },
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
         "multi": true,
         "includeAll": true,
         "options": [],
@@ -85,6 +103,24 @@
         "hide": false,
         "iconColor": "rgba(255, 96, 96, 1)",
         "name": "Annotations & Alerts",
+        "type": "dashboard"
+      },
+      {
+        "datasource": {
+          "type": "postgres",
+          "uid": "timescaledb"
+        },
+        "enable": true,
+        "hide": false,
+        "iconColor": "red",
+        "name": "Machine Alarms",
+        "rawQuery": "SELECT logdate AS time, 'ALARM: ' || errorcode || ' - ' || process AS text, equipmentid AS tags FROM public.ldi_alarm_log WHERE $__timeFilter(logdate) AND equipmentid IN (${machine_id:singlequote})",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
         "type": "dashboard"
       }
     ]
@@ -366,7 +402,7 @@
     },
     {
       "id": 5,
-      "title": "Temperature Compliance (20-24°C)",
+      "title": "Temperature Compliance (20-24\u00b0C)",
       "type": "state-timeline",
       "datasource": {
         "uid": "timescaledb"
@@ -444,11 +480,11 @@
         }
       ],
       "transparent": true,
-      "description": "Temperature Compliance: per-machine 3-color matrix. Green=20-24°C, Amber=19-25°C, Red=outside."
+      "description": "Temperature Compliance: per-machine 3-color matrix. Green=20-24\u00b0C, Amber=19-25\u00b0C, Red=outside."
     },
     {
       "id": 6,
-      "title": "Humidity Compliance (55±5%)",
+      "title": "Humidity Compliance (55\u00b15%)",
       "type": "state-timeline",
       "datasource": {
         "uid": "timescaledb"
@@ -698,6 +734,30 @@
                 "value": 6
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "from_time"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "to_time"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
+              }
+            ]
           }
         ]
       },
@@ -717,7 +777,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT a.logdate AS \"Time\", a.equipmentid AS \"Machine\", COALESCE(m.alarm_msg, a.errorcode::TEXT) AS \"Message\", COALESCE(m.alarm_type, 'UNMAPPED') AS \"Severity\" FROM public.ldi_alarm_log a LEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT WHERE $__timeFilter(a.logdate) AND a.equipmentid IN (${machine_id:sqlstring}) ORDER BY a.logdate DESC LIMIT 20",
+          "rawSql": "SELECT a.logdate AS \"Time\", a.equipmentid AS \"Machine\", (EXTRACT(EPOCH FROM a.logdate)*1000 - 900000)::bigint AS from_time, (EXTRACT(EPOCH FROM a.logdate)*1000 + 900000)::bigint AS to_time, COALESCE(m.alarm_msg, a.errorcode::TEXT) AS \"Message\", COALESCE(m.alarm_type, 'UNMAPPED') AS \"Severity\" FROM public.ldi_alarm_log a LEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT WHERE $__timeFilter(a.logdate) AND a.equipmentid IN (${machine_id:sqlstring}) ORDER BY a.logdate DESC LIMIT 20",
           "format": "table"
         }
       ],

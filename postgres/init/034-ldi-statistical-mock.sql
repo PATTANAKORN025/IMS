@@ -133,7 +133,7 @@ SELECT
     process,
     eqp_id,
     -- identifier สังเคราะห์ทั้งหมด (ไม่ใช่ของจริง) — 51 MO / 24 FPN ตามจริง
-    'MO-' || LPAD(((i % 51) + 1)::TEXT, 5, '0')                             AS mo,
+    'MO-' || eqp_id                             AS mo,
     'PN-' || CHR(65 + (i % 24)) || LPAD(((i * 7) % 900)::TEXT, 3, '0')      AS fpn,
     (ARRAY['mk-inner-a','mk-inner-b','mk-inner-c','mk-inner-d',
            'mk-outer-a','mk-outer-b','mk-solder-a','mk-solder-b',

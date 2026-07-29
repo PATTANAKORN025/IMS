@@ -51,17 +51,17 @@ services:
       - -c
       - max_connections=100
       - -c
-      - shared_buffers=256MB
+      - shared_buffers=512MB
       - -c
-      - effective_cache_size=768MB
+      - effective_cache_size=1536MB
       - -c
-      - work_mem=16MB
+      - work_mem=32MB
       - -c
-      - maintenance_work_mem=128MB
+      - maintenance_work_mem=256MB
       - -c
       - wal_compression=on
       - -c
-      - max_wal_size=1GB
+      - max_wal_size=2GB
       - -c
       - checkpoint_completion_target=0.9
       - -c

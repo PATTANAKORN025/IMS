@@ -1,7 +1,7 @@
 {
   "uid": "ldi-machine-snapshot",
-  "title": "IMS LDI — Incident Snapshot",
-  "description": "360° machine snapshot at the exact millisecond clicked from Process Timeline. Shows job context, physical variables, PE alignment, Cpk, and alarm proximity.",
+  "title": "IMS LDI \u2014 Incident Snapshot",
+  "description": "360\u00b0 machine snapshot at the exact millisecond clicked from Process Timeline. Shows job context, physical variables, PE alignment, Cpk, and alarm proximity.",
   "tags": [
     "ims",
     "ldi",
@@ -48,6 +48,24 @@
         "hide": false,
         "iconColor": "rgba(255, 96, 96, 1)",
         "name": "Annotations & Alerts",
+        "type": "dashboard"
+      },
+      {
+        "datasource": {
+          "type": "postgres",
+          "uid": "timescaledb"
+        },
+        "enable": true,
+        "hide": false,
+        "iconColor": "red",
+        "name": "Machine Alarms",
+        "rawQuery": "SELECT logdate AS time, 'ALARM: ' || errorcode || ' - ' || process AS text, equipmentid AS tags FROM public.ldi_alarm_log WHERE $__timeFilter(logdate) AND equipmentid IN (${machine_id:singlequote})",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
         "type": "dashboard"
       }
     ]
@@ -154,7 +172,7 @@
     },
     {
       "id": 2,
-      "title": "temperature (°C)",
+      "title": "temperature (\u00b0C)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -202,7 +220,7 @@
           "valueSize": 28,
           "titleSize": 12
         },
-        "noValue": "—"
+        "noValue": "\u2014"
       },
       "targets": [
         {
@@ -267,7 +285,7 @@
           "valueSize": 28,
           "titleSize": 12
         },
-        "noValue": "—"
+        "noValue": "\u2014"
       },
       "targets": [
         {
@@ -332,7 +350,7 @@
           "valueSize": 28,
           "titleSize": 12
         },
-        "noValue": "—"
+        "noValue": "\u2014"
       },
       "targets": [
         {
@@ -397,7 +415,7 @@
           "valueSize": 28,
           "titleSize": 12
         },
-        "noValue": "—"
+        "noValue": "\u2014"
       },
       "targets": [
         {
@@ -462,7 +480,7 @@
           "valueSize": 28,
           "titleSize": 12
         },
-        "noValue": "—"
+        "noValue": "\u2014"
       },
       "targets": [
         {
@@ -479,7 +497,7 @@
     },
     {
       "id": 7,
-      "title": "resist_dosage (mJ/cm²)",
+      "title": "resist_dosage (mJ/cm\u00b2)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -527,7 +545,7 @@
           "valueSize": 28,
           "titleSize": 12
         },
-        "noValue": "—"
+        "noValue": "\u2014"
       },
       "targets": [
         {
@@ -759,7 +777,7 @@
     },
     {
       "id": 10,
-      "title": "Alarm Context (±5 min of clicked timestamp)",
+      "title": "Alarm Context (\u00b15 min of clicked timestamp)",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
@@ -791,7 +809,7 @@
         }
       ],
       "transparent": true,
-      "description": "Alarms within ±5 minutes of the clicked timestamp. Proves causality: data drift → alarm.",
+      "description": "Alarms within \u00b15 minutes of the clicked timestamp. Proves causality: data drift \u2192 alarm.",
       "fieldConfig": {
         "defaults": {},
         "overrides": [
@@ -974,16 +992,27 @@
                   {
                     "type": "value",
                     "options": {
-                      "PASS": { "color": "#22C55E", "text": "PASS" },
-                      "OUT OF SPEC": { "color": "#EF4444", "text": "OUT OF SPEC" },
-                      "N/A": { "color": "#6B7280", "text": "N/A" }
+                      "PASS": {
+                        "color": "#22C55E",
+                        "text": "PASS"
+                      },
+                      "OUT OF SPEC": {
+                        "color": "#EF4444",
+                        "text": "OUT OF SPEC"
+                      },
+                      "N/A": {
+                        "color": "#6B7280",
+                        "text": "N/A"
+                      }
                     }
                   }
                 ]
               },
               {
                 "id": "custom.cellOptions",
-                "value": { "type": "color-background" }
+                "value": {
+                  "type": "color-background"
+                }
               },
               {
                 "id": "custom.width",
@@ -992,28 +1021,76 @@
             ]
           },
           {
-            "matcher": { "id": "byName", "options": "je_1" },
-            "properties": [{ "id": "custom.width", "value": 90 }]
+            "matcher": {
+              "id": "byName",
+              "options": "je_1"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
           },
           {
-            "matcher": { "id": "byName", "options": "je_2" },
-            "properties": [{ "id": "custom.width", "value": 90 }]
+            "matcher": {
+              "id": "byName",
+              "options": "je_2"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
           },
           {
-            "matcher": { "id": "byName", "options": "je_3" },
-            "properties": [{ "id": "custom.width", "value": 90 }]
+            "matcher": {
+              "id": "byName",
+              "options": "je_3"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
           },
           {
-            "matcher": { "id": "byName", "options": "je_4" },
-            "properties": [{ "id": "custom.width", "value": 90 }]
+            "matcher": {
+              "id": "byName",
+              "options": "je_4"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
           },
           {
-            "matcher": { "id": "byName", "options": "MAX|JE|" },
-            "properties": [{ "id": "custom.width", "value": 100 }]
+            "matcher": {
+              "id": "byName",
+              "options": "MAX|JE|"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
           },
           {
-            "matcher": { "id": "byName", "options": "je_setting" },
-            "properties": [{ "id": "custom.width", "value": 100 }]
+            "matcher": {
+              "id": "byName",
+              "options": "je_setting"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
           }
         ]
       }

@@ -94,3 +94,4 @@ CREATE INDEX IF NOT EXISTS ldi_alarm_log_logdate_idx
     ON public.ldi_alarm_log (logdate DESC NULLS FIRST);
 
 GRANT SELECT ON public.ldi_alarm_log TO grafana_reader;
+CREATE INDEX IF NOT EXISTS idx_ldi_data_spc_dims ON public.ldi_data (eqp_id, mo, fpn, layer_name, "time" DESC);
