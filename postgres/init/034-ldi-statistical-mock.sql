@@ -66,9 +66,14 @@ FROM (VALUES
 -- ─────────────────────────────────────────────────────────────────────────
 
 WITH RECURSIVE
--- 10 เครื่อง synthetic (สัดส่วนแถวไม่เท่ากันเหมือนของจริง: 172–1717)
+-- 10 เครื่อง synthetic (สัดส่วนแถวไม่เท่ากันเหมือนของจริง: 172–1717).
+-- cum_weight = running total, used below for weighted sampling so these
+-- weights are actually consumed (previously dead: base picked eqp_id via
+-- (i % 10), giving every machine an identical, unrealistic 1200/1200 rows).
 machines AS (
-    SELECT * FROM (VALUES
+    SELECT eqp_id, weight,
+           SUM(weight) OVER (ORDER BY eqp_id ROWS UNBOUNDED PRECEDING) AS cum_weight
+    FROM (VALUES
         ('MOCK-LDI-01', 0.172), ('MOCK-LDI-02', 0.078), ('MOCK-LDI-03', 0.045),
         ('MOCK-LDI-04', 0.155), ('MOCK-LDI-05', 0.121), ('MOCK-LDI-06', 0.098),
         ('MOCK-LDI-07', 0.087), ('MOCK-LDI-08', 0.093), ('MOCK-LDI-09', 0.074),
@@ -90,14 +95,21 @@ base AS (
         CASE WHEN random() < 0.55 THEN 'DF INNER'
              WHEN random() < 0.756 THEN 'DF OUTER'
              ELSE 'SM' END                                                  AS process,
-        (ARRAY['MOCK-LDI-01','MOCK-LDI-02','MOCK-LDI-03','MOCK-LDI-04','MOCK-LDI-05','MOCK-LDI-06','MOCK-LDI-07','MOCK-LDI-08','MOCK-LDI-09','MOCK-LDI-10'])[1 + (i % 10)] AS eqp_id,
         CASE WHEN random() < 0.75 THEN '2' ELSE '3' END                     AS factory,
-        random() AS r1, random() AS r2, random() AS r3, random() AS r4
+        -- r5 picks the machine below (weighted by cum_weight). Must be a real
+        -- per-row column, not an uncorrelated subquery/LATERAL expression -
+        -- Postgres hoists those as a single init-plan since nothing in them
+        -- actually references the outer row, collapsing every row onto
+        -- whichever machine the one cached random() draw happened to satisfy
+        -- (verified: an uncorrelated `machines m WHERE cum_weight >= random()`
+        -- subquery assigned all 12000 rows to the same eqp_id).
+        random() AS r1, random() AS r2, random() AS r3, random() AS r4, random() AS r5
     FROM seq
 ),
 shaped AS (
     SELECT
         b.*,
+        (SELECT m.eqp_id FROM machines m WHERE m.cum_weight >= b.r5 ORDER BY m.cum_weight LIMIT 1) AS eqp_id,
         -- scale_mode ผูกกับ process แบบ 1:1 ตามข้อมูลจริง
         CASE process WHEN 'DF INNER' THEN 'FixedScale'
                      WHEN 'DF OUTER' THEN 'Fixed'
