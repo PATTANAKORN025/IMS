@@ -542,7 +542,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "pressurekpa",
+          "unit": "lengthum",
           "decimals": 2,
           "thresholds": {
             "mode": "absolute",
