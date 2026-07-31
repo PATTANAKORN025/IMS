@@ -759,7 +759,7 @@
     },
     {
       "id": 7,
-      "title": "temperature Compliance (20-24\u00b0C)",
+      "title": "temperature Compliance (22\u00b12\u00b0C)",
       "type": "state-timeline",
       "datasource": {
         "uid": "timescaledb"
@@ -841,7 +841,7 @@
     },
     {
       "id": 8,
-      "title": "humidity Compliance (50-60%RH)",
+      "title": "humidity Compliance (55\u00b15%)",
       "type": "state-timeline",
       "datasource": {
         "uid": "timescaledb"
