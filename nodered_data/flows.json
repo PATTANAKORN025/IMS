@@ -1,5 +1,244 @@
 [
     {
+        "id": "ims-alert-tab",
+        "type": "tab",
+        "label": "IMS Alerting Pipeline",
+        "disabled": false,
+        "info": "Alertmanager webhook → LINE Messaging API / MS Teams"
+    },
+    {
+        "id": "alert_http_in",
+        "type": "http in",
+        "z": "ims-alert-tab",
+        "name": "POST /alert-webhook",
+        "url": "/alert-webhook",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 160,
+        "y": 200,
+        "wires": [
+            [
+                "alert_respond",
+                "alert_format"
+            ]
+        ]
+    },
+    {
+        "id": "alert_respond",
+        "type": "http response",
+        "z": "ims-alert-tab",
+        "name": "200 OK",
+        "statusCode": "200",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 400,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "alert_format",
+        "type": "function",
+        "z": "ims-alert-tab",
+        "name": "Format Alert Text",
+        "func": "const payload = msg.payload;\nif (!payload || !payload.alerts) return null;\n\nconst alerts = payload.alerts;\nlet msgText = '\\ud83d\\udd14 *IMS SYSTEM ALERT [' + (payload.status || 'unknown').toUpperCase() + ']* \\ud83d\\udd14\\n\\n';\n\nfor (let i = 0; i < alerts.length; i++) {\n    const a = alerts[i];\n    const labels = a.labels || {};\n    const annotations = a.annotations || {};\n    \n    let icon = '\\u26a0\\ufe0f';\n    if (labels.severity === 'critical') icon = '\\ud83d\\udd25';\n    if (payload.status === 'resolved') icon = '\\u2705';\n\n    msgText += icon + ' *' + (labels.alertname || 'Unknown Alert') + '*\\n';\n    msgText += '\\ud83d\\udda5\\ufe0f *Host:* ' + (labels.machine_id || labels.instance || 'System') + '\\n';\n    msgText += '\\ud83d\\udcdd *Detail:* ' + (annotations.summary || 'N/A') + '\\n';\n    if (annotations.description) msgText += '\\ud83d\\udca1 *Desc:* ' + annotations.description + '\\n';\n    \n    const startTime = a.startsAt ? new Date(a.startsAt).toLocaleString('th-TH') : 'Unknown';\n    msgText += '\\ud83d\\udd52 *Time:* ' + startTime + '\\n';\n    msgText += '-------------------\\n';\n}\n\nmsg.payload = msgText;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 420,
+        "y": 240,
+        "wires": [
+            [
+                "alert_debug",
+                "alert_line_format",
+                "alert_teams_format"
+            ]
+        ]
+    },
+    {
+        "id": "alert_debug",
+        "type": "debug",
+        "z": "ims-alert-tab",
+        "name": "Alert Log",
+        "active": true,
+        "tosidebar": true,
+        "console": true,
+        "tostatus": true,
+        "complete": "payload",
+        "targetType": "msg",
+        "x": 640,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "alert_line_format",
+        "type": "function",
+        "z": "ims-alert-tab",
+        "name": "Format LINE Messaging API",
+        "func": "const token = env.get('LINE_CHANNEL_ACCESS_TOKEN') || '';\nconst userId = env.get('LINE_USER_ID') || '';\n\nif (!token || !userId) {\n    node.warn('LINE Messaging API not configured — set LINE_CHANNEL_ACCESS_TOKEN and LINE_USER_ID env vars');\n    return null;\n}\n\nmsg.headers = {\n    'Authorization': 'Bearer ' + token,\n    'Content-Type': 'application/json'\n};\nmsg.payload = JSON.stringify({\n    to: userId,\n    messages: [{ type: 'text', text: msg.payload }]\n});\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 500,
+        "y": 200,
+        "wires": [
+            [
+                "alert_line_notify"
+            ]
+        ]
+    },
+    {
+        "id": "alert_line_notify",
+        "type": "http request",
+        "z": "ims-alert-tab",
+        "name": "LINE Messaging API",
+        "method": "POST",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "https://api.line.me/v2/bot/message/push",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 560,
+        "y": 200,
+        "wires": [
+            [
+                "alert_status_line"
+            ]
+        ]
+    },
+    {
+        "id": "alert_teams_format",
+        "type": "function",
+        "z": "ims-alert-tab",
+        "name": "Format Teams Webhook",
+        "func": "const url = env.get(\"TEAMS_WEBHOOK_URL\") || \"\";\n\nif (!url) {\n    node.warn(\"MS Teams webhook not configured — set TEAMS_WEBHOOK_URL env var\");\n    return null;\n}\n\nconst card = {\n    \"type\": \"message\",\n    \"attachments\": [{\n        \"contentType\": \"application/vnd.microsoft.card.adaptive\",\n        \"contentUrl\": null,\n        \"content\": {\n            \"$schema\": \"http://adaptivecards.io/schemas/adaptive-card.json\",\n            \"type\": \"AdaptiveCard\",\n            \"version\": \"1.4\",\n            \"body\": [{\n                \"type\": \"TextBlock\",\n                \"text\": \"IMS System Alert\",\n                \"weight\": \"bolder\",\n                \"size\": \"large\",\n                \"color\": \"attention\"\n            }, {\n                \"type\": \"TextBlock\",\n                \"text\": msg.payload,\n                \"wrap\": true,\n                \"spacing\": \"medium\"\n            }],\n            \"msteams\": {\n                \"entities\": []\n            }\n        }\n    }]\n};\nmsg.payload = JSON.stringify(card);\nmsg.headers = { \"Content-Type\": \"application/json\" };\nmsg.url = url;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 500,
+        "y": 260,
+        "wires": [
+            [
+                "alert_teams_webhook"
+            ]
+        ]
+    },
+    {
+        "id": "alert_teams_webhook",
+        "type": "http request",
+        "z": "ims-alert-tab",
+        "name": "MS Teams Webhook",
+        "method": "POST",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 560,
+        "y": 260,
+        "wires": [
+            [
+                "alert_status_teams"
+            ]
+        ]
+    },
+    {
+        "id": "alert_catch",
+        "type": "catch",
+        "z": "ims-alert-tab",
+        "name": "Catch Alert Errors",
+        "scope": [
+            "alert_format",
+            "alert_line_format",
+            "alert_line_notify",
+            "alert_teams_format",
+            "alert_teams_webhook",
+            "alert_status_line",
+            "alert_status_teams"
+        ],
+        "uncaught": false,
+        "x": 640,
+        "y": 360,
+        "wires": [
+            [
+                "alert_error_debug"
+            ]
+        ]
+    },
+    {
+        "id": "alert_error_debug",
+        "type": "debug",
+        "z": "ims-alert-tab",
+        "name": "Alert Delivery Failure",
+        "active": true,
+        "tosidebar": true,
+        "console": true,
+        "tostatus": true,
+        "complete": "error",
+        "targetType": "msg",
+        "statusVal": "error.message",
+        "statusType": "msg",
+        "x": 880,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "alert_status_line",
+        "type": "function",
+        "z": "ims-alert-tab",
+        "name": "Check LINE Status",
+        "func": "if (msg.statusCode && msg.statusCode >= 300) {\n    node.error('LINE delivery failed: HTTP ' + msg.statusCode, msg);\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 720,
+        "y": 200,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "alert_status_teams",
+        "type": "function",
+        "z": "ims-alert-tab",
+        "name": "Check Teams Status",
+        "func": "if (msg.statusCode && msg.statusCode >= 300) {\n    node.error('Teams delivery failed: HTTP ' + msg.statusCode, msg);\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 720,
+        "y": 260,
+        "wires": [
+            []
+        ]
+    },
+    {
         "id": "ims-tab-v5",
         "type": "tab",
         "label": "IMS Ingestion Pipeline",
@@ -622,240 +861,248 @@
         "g": "bc78ea85b252a09f"
     },
     {
-        "id": "ims-alert-tab",
-        "type": "tab",
-        "label": "IMS Alerting Pipeline",
-        "disabled": false,
-        "info": "Alertmanager webhook → LINE Messaging API / MS Teams"
-    },
-    {
-        "id": "alert_http_in",
-        "type": "http in",
-        "z": "ims-alert-tab",
-        "name": "POST /alert-webhook",
-        "url": "/alert-webhook",
-        "method": "post",
-        "upload": false,
-        "swaggerDoc": "",
-        "x": 160,
+        "id": "alarm_sim_inject",
+        "type": "inject",
+        "z": "ldisim_tab",
+        "name": "Poisson Tick (10s)",
+        "props": [],
+        "repeat": "10",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 150,
         "y": 200,
         "wires": [
             [
-                "alert_respond",
-                "alert_format"
+                "alarm_sim_func"
             ]
         ]
     },
     {
-        "id": "alert_respond",
-        "type": "http response",
-        "z": "ims-alert-tab",
-        "name": "200 OK",
-        "statusCode": "200",
-        "headers": {
-            "Content-Type": "application/json"
-        },
-        "x": 400,
-        "y": 120,
-        "wires": []
-    },
-    {
-        "id": "alert_format",
+        "id": "alarm_sim_func",
         "type": "function",
-        "z": "ims-alert-tab",
-        "name": "Format Alert Text",
-        "func": "const payload = msg.payload;\nif (!payload || !payload.alerts) return null;\n\nconst alerts = payload.alerts;\nlet msgText = '\\ud83d\\udd14 *IMS SYSTEM ALERT [' + (payload.status || 'unknown').toUpperCase() + ']* \\ud83d\\udd14\\n\\n';\n\nfor (let i = 0; i < alerts.length; i++) {\n    const a = alerts[i];\n    const labels = a.labels || {};\n    const annotations = a.annotations || {};\n    \n    let icon = '\\u26a0\\ufe0f';\n    if (labels.severity === 'critical') icon = '\\ud83d\\udd25';\n    if (payload.status === 'resolved') icon = '\\u2705';\n\n    msgText += icon + ' *' + (labels.alertname || 'Unknown Alert') + '*\\n';\n    msgText += '\\ud83d\\udda5\\ufe0f *Host:* ' + (labels.machine_id || labels.instance || 'System') + '\\n';\n    msgText += '\\ud83d\\udcdd *Detail:* ' + (annotations.summary || 'N/A') + '\\n';\n    if (annotations.description) msgText += '\\ud83d\\udca1 *Desc:* ' + annotations.description + '\\n';\n    \n    const startTime = a.startsAt ? new Date(a.startsAt).toLocaleString('th-TH') : 'Unknown';\n    msgText += '\\ud83d\\udd52 *Time:* ' + startTime + '\\n';\n    msgText += '-------------------\\n';\n}\n\nmsg.payload = msgText;\nreturn msg;",
+        "z": "ldisim_tab",
+        "name": "Generate LDI Alarm",
+        "func": "const pool = global.get('pgPool');\nif (!pool) return null;\n\n// Poisson approximation: lambda = 0.05 alarms per 10s tick\nif (Math.random() > 0.05) return null;\n\nconst eqps = ['LDI-01','LDI-02','LDI-05','LDI-06','LDI-09','LDI-10'];\nconst eqp = eqps[Math.floor(Math.random() * eqps.length)];\nconst codes = ['1001', '2002', '3003', '4004', '5005']; // Integer alarm codes per schema\nconst code = codes[Math.floor(Math.random() * codes.length)];\nconst logid = 'ALM-' + Date.now();\nconst proc = 'DF INNER';\nconst factory = '1';\n\nconst sql = `INSERT INTO public.ldi_alarm_log (logid, logdate, errorcode, errortime, equipmentid, factory, process) VALUES ($1, NOW(), $2, $3, $4, $5, $6)`;\nconst params = [logid, code, new Date().toISOString(), eqp, factory, proc];\n\npool.query(sql, params, (err) => {\n    if (err) node.error(\"Alarm insert failed: \" + err.message);\n    else node.log(\"Simulated alarm inserted for \" + eqp);\n});\n\nreturn null;",
         "outputs": 1,
-        "timeout": "",
+        "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 420,
-        "y": 240,
-        "wires": [
-            [
-                "alert_debug",
-                "alert_line_format",
-                "alert_teams_format"
-            ]
-        ]
-    },
-    {
-        "id": "alert_debug",
-        "type": "debug",
-        "z": "ims-alert-tab",
-        "name": "Alert Log",
-        "active": true,
-        "tosidebar": true,
-        "console": true,
-        "tostatus": true,
-        "complete": "payload",
-        "targetType": "msg",
-        "x": 640,
-        "y": 240,
-        "wires": []
-    },
-    {
-        "id": "alert_line_format",
-        "type": "function",
-        "z": "ims-alert-tab",
-        "name": "Format LINE Messaging API",
-        "func": "const token = env.get('LINE_CHANNEL_ACCESS_TOKEN') || '';\nconst userId = env.get('LINE_USER_ID') || '';\n\nif (!token || !userId) {\n    node.warn('LINE Messaging API not configured — set LINE_CHANNEL_ACCESS_TOKEN and LINE_USER_ID env vars');\n    return null;\n}\n\nmsg.headers = {\n    'Authorization': 'Bearer ' + token,\n    'Content-Type': 'application/json'\n};\nmsg.payload = JSON.stringify({\n    to: userId,\n    messages: [{ type: 'text', text: msg.payload }]\n});\nreturn msg;",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 500,
-        "y": 200,
-        "wires": [
-            [
-                "alert_line_notify"
-            ]
-        ]
-    },
-    {
-        "id": "alert_line_notify",
-        "type": "http request",
-        "z": "ims-alert-tab",
-        "name": "LINE Messaging API",
-        "method": "POST",
-        "ret": "txt",
-        "paytoqs": "ignore",
-        "url": "https://api.line.me/v2/bot/message/push",
-        "tls": "",
-        "persist": false,
-        "proxy": "",
-        "insecureHTTPParser": false,
-        "authType": "",
-        "senderr": false,
-        "headers": [],
-        "x": 560,
-        "y": 200,
-        "wires": [
-            [
-                "alert_status_line"
-            ]
-        ]
-    },
-    {
-        "id": "alert_teams_format",
-        "type": "function",
-        "z": "ims-alert-tab",
-        "name": "Format Teams Webhook",
-        "func": "const url = env.get(\"TEAMS_WEBHOOK_URL\") || \"\";\n\nif (!url) {\n    node.warn(\"MS Teams webhook not configured — set TEAMS_WEBHOOK_URL env var\");\n    return null;\n}\n\nconst card = {\n    \"type\": \"message\",\n    \"attachments\": [{\n        \"contentType\": \"application/vnd.microsoft.card.adaptive\",\n        \"contentUrl\": null,\n        \"content\": {\n            \"$schema\": \"http://adaptivecards.io/schemas/adaptive-card.json\",\n            \"type\": \"AdaptiveCard\",\n            \"version\": \"1.4\",\n            \"body\": [{\n                \"type\": \"TextBlock\",\n                \"text\": \"IMS System Alert\",\n                \"weight\": \"bolder\",\n                \"size\": \"large\",\n                \"color\": \"attention\"\n            }, {\n                \"type\": \"TextBlock\",\n                \"text\": msg.payload,\n                \"wrap\": true,\n                \"spacing\": \"medium\"\n            }],\n            \"msteams\": {\n                \"entities\": []\n            }\n        }\n    }]\n};\nmsg.payload = JSON.stringify(card);\nmsg.headers = { \"Content-Type\": \"application/json\" };\nmsg.url = url;\nreturn msg;",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 500,
-        "y": 260,
-        "wires": [
-            [
-                "alert_teams_webhook"
-            ]
-        ]
-    },
-    {
-        "id": "alert_teams_webhook",
-        "type": "http request",
-        "z": "ims-alert-tab",
-        "name": "MS Teams Webhook",
-        "method": "POST",
-        "ret": "txt",
-        "paytoqs": "ignore",
-        "url": "",
-        "tls": "",
-        "persist": false,
-        "proxy": "",
-        "insecureHTTPParser": false,
-        "authType": "",
-        "senderr": false,
-        "headers": [],
-        "x": 560,
-        "y": 260,
-        "wires": [
-            [
-                "alert_status_teams"
-            ]
-        ]
-    },
-    {
-        "id": "alert_catch",
-        "type": "catch",
-        "z": "ims-alert-tab",
-        "name": "Catch Alert Errors",
-        "scope": [
-            "alert_format",
-            "alert_line_format",
-            "alert_line_notify",
-            "alert_teams_format",
-            "alert_teams_webhook",
-            "alert_status_line",
-            "alert_status_teams"
-        ],
-        "uncaught": false,
-        "x": 640,
-        "y": 360,
-        "wires": [
-            [
-                "alert_error_debug"
-            ]
-        ]
-    },
-    {
-        "id": "alert_error_debug",
-        "type": "debug",
-        "z": "ims-alert-tab",
-        "name": "Alert Delivery Failure",
-        "active": true,
-        "tosidebar": true,
-        "console": true,
-        "tostatus": true,
-        "complete": "error",
-        "targetType": "msg",
-        "statusVal": "error.message",
-        "statusType": "msg",
-        "x": 880,
-        "y": 360,
-        "wires": []
-    },
-    {
-        "id": "alert_status_line",
-        "type": "function",
-        "z": "ims-alert-tab",
-        "name": "Check LINE Status",
-        "func": "if (msg.statusCode && msg.statusCode >= 300) {\n    node.error('LINE delivery failed: HTTP ' + msg.statusCode, msg);\n}\nreturn msg;",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 720,
+        "x": 350,
         "y": 200,
         "wires": [
             []
         ]
     },
     {
-        "id": "alert_status_teams",
+        "id": "ldi-ingestion-tab",
+        "type": "tab",
+        "label": "IMS LDI Ingestion",
+        "disabled": false,
+        "info": "LDI Manufacturing data ingestion pipeline — POST /ldi-telemetry"
+    },
+    {
+        "id": "ldi_http_in",
+        "type": "http in",
+        "z": "ldi-ingestion-tab",
+        "name": "POST /ldi-telemetry",
+        "url": "/ldi-telemetry",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 80,
+        "y": 200,
+        "wires": [
+            [
+                "ldi_auth_check"
+            ]
+        ]
+    },
+    {
+        "id": "ldi_auth_check",
         "type": "function",
-        "z": "ims-alert-tab",
-        "name": "Check Teams Status",
-        "func": "if (msg.statusCode && msg.statusCode >= 300) {\n    node.error('Teams delivery failed: HTTP ' + msg.statusCode, msg);\n}\nreturn msg;",
+        "z": "ldi-ingestion-tab",
+        "name": "Auth & Validate",
+        "func": "const apiKey = global.get('INGEST_API_KEY') || 'ims-secret-key';\nconst incomingKey = msg.req?.headers?.['x-api-key'] || '';\nif (incomingKey !== apiKey) {\n    msg.res.statusCode = 401;\n    msg.res.end(JSON.stringify({ error: 'Unauthorized' }));\n    return null;\n}\n\nif (!msg.payload || !Array.isArray(msg.payload)) {\n    msg.res.statusCode = 400;\n    msg.res.end(JSON.stringify({ error: 'Payload must be a JSON array' }));\n    return null;\n}\n\nmsg._ldiBatch = [];\nconst num = v => (v === 0) ? 0 : (Number(v) || null);\nconst int = v => (v === 0) ? 0 : (parseInt(v) || null);\nfor (const item of msg.payload) {\n    if (!item || !item.eqp_id) continue;\n    msg._ldiBatch.push({\n        eqp_id: String(item.eqp_id),\n        factory: String(item.factory || ''),\n        process: String(item.process || ''),\n        mo: String(item.mo || ''),\n        fpn: String(item.fpn || ''),\n        layer_name: String(item.layer_name || ''),\n        resist_dosage: num(item.resist_dosage),\n        scale_x: num(item.scale_x),\n        scale_y: num(item.scale_y),\n        temperature: num(item.temperature),\n        humidity: num(item.humidity),\n        scan_speed: num(item.scan_speed),\n        air_vacuum: num(item.air_vacuum),\n        thickness: num(item.thickness),\n        board_no: int(item.board_no),\n        total_board: int(item.total_board),\n        total_time: num(item.total_time),\n        filmno: String(item.filmno || ''),\n        board_id: String(item.board_id || ''),\n        resist: item.resist ? String(item.resist) : null,\n        state: item.state !== false,\n        scale_mode: String(item.scale_mode || ''),\n        pe_1: num(item.pe_1),\n        pe_2: num(item.pe_2),\n        pe_3: num(item.pe_3),\n        pe_4: num(item.pe_4),\n        pe_5: num(item.pe_5),\n        pe_6: num(item.pe_6),\n        je_1: num(item.je_1),\n        je_2: num(item.je_2),\n        je_3: num(item.je_3),\n        je_4: num(item.je_4),\n        pe_setting: num(item.pe_setting),\n        je_setting: num(item.je_setting),\n        log_id: String(item.log_id || '')\n    });\n}\n\n\nif (msg._ldiBatch.length === 0) {\n    msg.res.statusCode = 200;\n    msg.res.end(JSON.stringify({ message: 'Empty batch' }));\n    return null;\n}\n\nconst cols = [\n    'factory', 'process', 'eqp_id', 'mo', 'fpn', 'layer_name', 'resist_dosage', 'scale_x', 'scale_y', \n    'temperature', 'humidity', 'scan_speed', 'air_vacuum', 'thickness', 'board_no', 'total_board', \n    'total_time', 'filmno', 'board_id', 'resist', 'state', 'scale_mode', \n    'pe_1', 'pe_2', 'pe_3', 'pe_4', 'pe_5', 'pe_6', \n    'je_1', 'je_2', 'je_3', 'je_4', 'pe_setting', 'je_setting', 'log_id'\n];\n\nlet params = [];\nconst placeholders = msg._ldiBatch.map((row, i) => {\n    const b = i * cols.length;\n    cols.forEach(col => params.push(row[col]));\n    const p = cols.map((_, j) => `$${b + j + 1}`).join(',');\n    return `(NOW(), ${p})`;\n}).join(',');\n\nmsg.query = `INSERT INTO public.ldi_data (\"time\", ${cols.join(',')}) VALUES ${placeholders} ON CONFLICT (log_id, \"time\") DO NOTHING;`;\nmsg.params = params;\n\n\nconst pool = global.get('pgPool');\nif (pool) {\n    pool.query(msg.query, msg.params, (err) => {\n        if (err) {\n            node.error('LDI INSERT failed: ' + err.message);\n        }\n    });\n}\n\nmsg.res.statusCode = 200;\nmsg.res.end(JSON.stringify({ message: \"LDI Batch received\" }));\nreturn null;\n",
         "outputs": 1,
-        "timeout": "",
+        "timeout": "10",
+        "x": 320,
+        "y": 200,
+        "wires": [
+            [
+                "ldi_db_insert"
+            ]
+        ]
+    },
+    {
+        "id": "ldi_db_insert",
+        "type": "postgresql",
+        "z": "ldi-ingestion-tab",
+        "name": "TimescaleDB",
+        "query": "",
+        "postgreSQLConfig": "pg_config",
+        "split": false,
+        "outputs": 0,
+        "x": 560,
+        "y": 200,
+        "wires": [
+            [
+                "ldi_http_response"
+            ]
+        ]
+    },
+    {
+        "id": "ldi_http_response",
+        "type": "http response",
+        "z": "ldi-ingestion-tab",
+        "name": "Response",
+        "statusCode": "200",
+        "headers": {},
+        "x": 800,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "ldi_http_error",
+        "type": "catch",
+        "z": "ldi-ingestion-tab",
+        "name": "Catch LDI Errors",
+        "scope": [
+            "ldi_db_insert"
+        ],
+        "x": 560,
+        "y": 300,
+        "wires": [
+            [
+                "ldi_error_handler"
+            ]
+        ]
+    },
+    {
+        "id": "ldi_error_handler",
+        "type": "function",
+        "z": "ldi-ingestion-tab",
+        "name": "Error Handler",
+        "func": "const err = msg.error?.message || 'Unknown error';\nnode.error('LDI INSERT failed: ' + err);\nmsg.res.statusCode = 500;\nmsg.res.end(JSON.stringify({ error: err }));\nreturn null;",
+        "outputs": 1,
+        "x": 800,
+        "y": 300,
+        "wires": []
+    },
+    {
+        "id": "ldisim_tab",
+        "type": "tab",
+        "label": "LDI Live Simulator",
+        "disabled": false,
+        "info": "จำลองข้อมูล LDI แบบเคลื่อนไหวต่อเนื่อง ส่งผ่าน POST /ldi-telemetry เหมือนเครื่องจริง\nปิดได้โดย disable tab นี้"
+    },
+    {
+        "id": "ldisim_tick",
+        "type": "inject",
+        "z": "ldisim_tab",
+        "name": "Tick 2s",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "2",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "15",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 140,
+        "y": 100,
+        "wires": [
+            [
+                "ldisim_gen"
+            ]
+        ]
+    },
+    {
+        "id": "ldisim_gen",
+        "type": "function",
+        "z": "ldisim_tab",
+        "name": "Generate LDI Batch (OU model)",
+        "func": "\n// ══════════════════════════════════════════════════════════════════\n// LDI LIVE SIMULATOR — Ornstein-Uhlenbeck mean-reverting sensor model\n// สร้างข้อมูลที่ \"เคลื่อนไหวต่อเนื่อง\" เหมือนเซ็นเซอร์จริง ไม่ใช่สุ่มอิสระ\n// ══════════════════════════════════════════════════════════════════\nconst P = {\"MOCK-LDI-01\": {\"process\": \"DF INNER\", \"share\": 0.166, \"temp_mu\": 21.19, \"temp_sd\": 0.13, \"rh_mu\": 56.23, \"rh_sd\": 1.63, \"dosage\": 69.591, \"scan\": 220.0, \"vac\": -16.08, \"thick_mu\": 0.529, \"thick_sd\": 0.365, \"pe_setting\": 1.79769313486232, \"je_setting\": 30.0, \"scale_mode\": \"FixedScale\", \"factory\": \"2\", \"pe\": null, \"je\": [[7.9, 2.22], [4.41, 2.29], [10.87, 3.01], null], \"layers\": [\"mk-inner-a\", \"mk-inner-b\", \"mk-inner-c\", \"mk-inner-d\"]}, \"MOCK-LDI-02\": {\"process\": \"DF INNER\", \"share\": 0.166, \"temp_mu\": 26.49, \"temp_sd\": 0.09, \"rh_mu\": 52.52, \"rh_sd\": 1.58, \"dosage\": 69.591, \"scan\": 220.0, \"vac\": -17.21, \"thick_mu\": 0.528, \"thick_sd\": 0.365, \"pe_setting\": 1.79769313486232, \"je_setting\": 30.0, \"scale_mode\": \"FixedScale\", \"factory\": \"2\", \"pe\": null, \"je\": [[2.23, 0.97], [1.63, 1.39], [2.25, 1.26], null], \"layers\": [\"mk-inner-a\", \"mk-inner-b\", \"mk-inner-c\", \"mk-inner-d\"]}, \"MOCK-LDI-03\": {\"process\": \"DF INNER\", \"share\": 0.109, \"temp_mu\": 20.92, \"temp_sd\": 0.08, \"rh_mu\": 56.7, \"rh_sd\": 0.36, \"dosage\": 75.708, \"scan\": 260.0, \"vac\": -19.15, \"thick_mu\": 0.264, \"thick_sd\": 0.0, \"pe_setting\": 30.0, \"je_setting\": 30.0, \"scale_mode\": \"FixedScale\", \"factory\": \"3\", \"pe\": null, \"je\": [[2.27, 0.28], [1.79, 0.31], [1.13, 0.36], null], \"layers\": [\"mk-inner-a\", \"mk-inner-b\", \"mk-inner-c\", \"mk-inner-d\"]}, \"MOCK-LDI-04\": {\"process\": \"DF INNER\", \"share\": 0.109, \"temp_mu\": 22.58, \"temp_sd\": 0.06, \"rh_mu\": 52.69, \"rh_sd\": 0.27, \"dosage\": 72.904, \"scan\": 270.0, \"vac\": -17.86, \"thick_mu\": 0.264, \"thick_sd\": 0.0, \"pe_setting\": 1.79769313486232, \"je_setting\": 40.0, \"scale_mode\": \"FixedScale\", \"factory\": \"3\", \"pe\": null, \"je\": [[5.94, 1.49], [17.46, 1.74], [11.94, 1.93], null], \"layers\": [\"mk-inner-a\", \"mk-inner-b\", \"mk-inner-c\", \"mk-inner-d\"]}, \"MOCK-LDI-05\": {\"process\": \"DF OUTER\", \"share\": 0.172, \"temp_mu\": 22.39, \"temp_sd\": 0.14, \"rh_mu\": 50.55, \"rh_sd\": 0.5, \"dosage\": 15.0, \"scan\": 435.0, \"vac\": 0.0, \"thick_mu\": 1.141, \"thick_sd\": 0.325, \"pe_setting\": 75.0, \"je_setting\": 50.0, \"scale_mode\": \"Fixed\", \"factory\": \"2\", \"pe\": [[-6.22, 12.26], [-5.35, 18.69], [-14.76, 21.32], [1.23, 21.44], [-3.21, 18.67], [-5.23, 10.92]], \"je\": [[12.63, 7.15], [10.72, 6.3], [10.27, 5.95], [12.01, 6.65]], \"layers\": [\"mk-outer-a\", \"mk-outer-b\"]}, \"MOCK-LDI-06\": {\"process\": \"DF OUTER\", \"share\": 0.171, \"temp_mu\": 21.88, \"temp_sd\": 0.1, \"rh_mu\": 52.56, \"rh_sd\": 0.45, \"dosage\": 15.0, \"scan\": 435.0, \"vac\": 0.0, \"thick_mu\": 1.139, \"thick_sd\": 0.325, \"pe_setting\": 75.0, \"je_setting\": 50.0, \"scale_mode\": \"Fixed\", \"factory\": \"2\", \"pe\": [[3.56, 12.01], [9.55, 15.94], [2.93, 18.46], [15.06, 18.61], [7.23, 16.86], [3.51, 10.32]], \"je\": [[9.43, 5.92], [11.35, 7.28], [11.1, 7.13], [9.26, 5.69]], \"layers\": [\"mk-outer-a\", \"mk-outer-b\"]}, \"MOCK-LDI-07\": {\"process\": \"SM\", \"share\": 0.037, \"temp_mu\": 22.33, \"temp_sd\": 0.08, \"rh_mu\": 55.83, \"rh_sd\": 0.44, \"dosage\": 568.0, \"scan\": 104.7, \"vac\": 0.0, \"thick_mu\": 0.986, \"thick_sd\": 0.335, \"pe_setting\": 50.0, \"je_setting\": 50.0, \"scale_mode\": \"Auto\", \"factory\": \"2\", \"pe\": [[0.37, 2.72], [-13.87, 6.56], [-5.44, 5.24], [5.91, 5.53], [14.22, 6.78], [-0.9, 2.66]], \"je\": [[9.22, 5.03], [9.9, 5.06], [5.92, 2.63], [5.37, 2.49]], \"layers\": [\"mk-solder-a\", \"mk-solder-b\", \"mk-comp-a\"]}, \"MOCK-LDI-08\": {\"process\": \"SM\", \"share\": 0.037, \"temp_mu\": 22.49, \"temp_sd\": 0.09, \"rh_mu\": 53.18, \"rh_sd\": 0.37, \"dosage\": 595.3, \"scan\": 101.8, \"vac\": 0.0, \"thick_mu\": 0.986, \"thick_sd\": 0.336, \"pe_setting\": 50.0, \"je_setting\": 50.0, \"scale_mode\": \"Auto\", \"factory\": \"2\", \"pe\": [[-0.1, 5.59], [-9.76, 9.65], [-3.48, 3.27], [3.16, 3.16], [9.52, 9.45], [0.46, 5.82]], \"je\": [[7.53, 5.73], [6.59, 3.75], [4.94, 2.79], [5.66, 5.31]], \"layers\": [\"mk-solder-a\", \"mk-solder-b\", \"mk-comp-a\"]}, \"MOCK-LDI-09\": {\"process\": \"SM\", \"share\": 0.017, \"temp_mu\": 21.98, \"temp_sd\": 0.04, \"rh_mu\": 55.63, \"rh_sd\": 0.07, \"dosage\": 500.0, \"scan\": 115.86, \"vac\": 0.0, \"thick_mu\": 1.174, \"thick_sd\": 0.05, \"pe_setting\": 25.0, \"je_setting\": 25.0, \"scale_mode\": \"Auto\", \"factory\": \"3\", \"pe\": [[1.37, 2.32], [-5.73, 4.63], [1.06, 3.69], [-1.07, 3.7], [5.73, 4.64], [-1.36, 2.38]], \"je\": [[3.2, 2.4], [3.7, 2.15], [4.08, 2.35], [3.72, 2.48]], \"layers\": [\"mk-solder-a\", \"mk-solder-b\", \"mk-comp-a\"]}, \"MOCK-LDI-10\": {\"process\": \"SM\", \"share\": 0.017, \"temp_mu\": 22.31, \"temp_sd\": 0.04, \"rh_mu\": 55.03, \"rh_sd\": 0.09, \"dosage\": 500.0, \"scan\": 115.86, \"vac\": 0.0, \"thick_mu\": 1.174, \"thick_sd\": 0.05, \"pe_setting\": 25.0, \"je_setting\": 25.0, \"scale_mode\": \"Auto\", \"factory\": \"3\", \"pe\": [[0.69, 1.55], [-4.98, 2.47], [1.03, 2.72], [-1.0, 2.72], [4.96, 2.46], [-0.74, 1.59]], \"je\": [[2.35, 1.36], [2.68, 1.53], [3.48, 1.3], [3.12, 1.33]], \"layers\": [\"mk-solder-a\", \"mk-solder-b\", \"mk-comp-a\"]}};\nconst SENTINEL = 1.79769313486232;\n\n// ── OU process: x[t+1] = x + theta*(mu - x)*dt + sigma*sqrt(dt)*N(0,1) ──\n// theta = ความเร็วที่ดึงกลับสู่ค่าเป้าหมาย (0.15 = ค่อยๆ กลับ ~7 ticks)\n// ผลลัพธ์: ค่าไหลลื่นต่อเนื่อง มี autocorrelation จริง ไม่กระโดดทุก tick\nconst THETA = 0.15, DT = 1.0;\nfunction gauss() {\n    let u = 0, v = 0;\n    while (u === 0) u = Math.random();\n    while (v === 0) v = Math.random();\n    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);\n}\nfunction ou(prev, mu, sigma) {\n    if (prev === undefined || prev === null) return mu + sigma * gauss();\n    return prev + THETA * (mu - prev) * DT + sigma * Math.sqrt(DT) * gauss();\n}\nfunction r(x, n) { const p = Math.pow(10, n); return Math.round(x * p) / p; }\n\nconst st = flow.get('sim_state') || {};\nconst now = Date.now();\nconst batch = [];\n\nfor (const id of Object.keys(P)) {\n    const p = P[id];\n    let s = st[id];\n    if (!s) {\n        s = { temp: p.temp_mu, rh: p.rh_mu, board: 1,\n              total: 120 + Math.floor(Math.random() * 120),\n              mo: 'MO-' + String(Math.floor(Math.random() * 90000) + 10000),\n              fpn: 'PN-' + String.fromCharCode(65 + Math.floor(Math.random() * 24)) +\n                   String(Math.floor(Math.random() * 900) + 100),\n              layer: p.layers[Math.floor(Math.random() * p.layers.length)],\n              resist: [\"RESIST-A18\", \"RESIST-A22\", \"RESIST-B15\", \"RESIST-B30\", \"RESIST-C12\"][Math.floor(Math.random()*5)],\n              acc: 0 };\n    }\n    // ── อัตราการผลิตต่อเครื่องตามสัดส่วนจริง (share) ──\n    // fleet รวม ~0.5 แถว/วินาที → เครื่อง share 0.17 ได้ ~0.085 แถว/วิ\n    s.acc += p.share * 2.0;              // tick ทุก 2 วิ\n    if (s.acc < 1) { st[id] = s; continue; }\n    s.acc -= 1;\n\n    // ── OU drift ของสภาพแวดล้อม ──\n    s.temp = ou(s.temp, p.temp_mu, p.temp_sd);\n    s.rh   = ou(s.rh,   p.rh_mu,   p.rh_sd);\n\n    // ── เหตุการณ์หายาก (อัตราตรงกับของจริง 0.02%) ──\n    const dropout = Math.random() < 0.0002;\n    const stopped = Math.random() < 0.0002;\n\n    // ── board cycle: นับขึ้นจนครบแล้วเริ่ม job ใหม่ ──\n    s.board += 1;\n    if (s.board > s.total) {\n        s.board = 1;\n        s.total = 120 + Math.floor(Math.random() * 120);\n        s.mo = 'MO-' + String(Math.floor(Math.random() * 90000) + 10000);\n        s.fpn = 'PN-' + String.fromCharCode(65 + Math.floor(Math.random() * 24)) +\n                String(Math.floor(Math.random() * 900) + 100);\n        s.layer = p.layers[Math.floor(Math.random() * p.layers.length)];\n    }\n\n    const rec = {\n        time: new Date(now).toISOString(),\n        eqp_id: id, factory: p.factory, process: p.process,\n        mo: s.mo, fpn: s.fpn, layer_name: s.layer,\n        resist_dosage: p.dosage,      // ← ค่าคงที่ต่อเครื่อง (sd=0 ในข้อมูลจริง)\n        scan_speed: p.scan,           // ← ค่าคงที่ต่อเครื่อง\n        air_vacuum: p.vac,            // ← DF OUTER/SM = 0 พอดี (ทดสอบบั๊ก zero-coercion)\n        scale_x: dropout ? 0 : r(1.000282 + gauss() * 0.000099, 6),\n        scale_y: dropout ? 0 : r(1.000280 + gauss() * 0.000099, 6),\n        temperature: dropout ? 0 : r(s.temp, 1),\n        humidity:    dropout ? 0 : r(s.rh, 1),\n        thickness: r(Math.max(0.26, p.thick_mu + gauss() * p.thick_sd), 3),\n        board_no: s.board, total_board: s.total,\n        total_time: r(Math.max(5, 7 + Math.abs(gauss()) * (p.process === 'SM' ? 18 : 3)), 3),\n        filmno: null, board_id: null,\n        resist: s.resist,             // ← สตริง ไม่ใช่ตัวเลข (ทดสอบบั๊ก type)\n        state: !stopped,\n        scale_mode: p.scale_mode,\n        pe_setting: p.pe_setting, je_setting: p.je_setting\n    };\n\n    // ── PE: วัดเฉพาะเครื่องที่มีสเปกจริง + จับคู่สมมาตร 1↔6, 2↔5, 3↔4 ──\n    if (p.pe) {\n        const base = [gauss(), gauss(), gauss()];   // สุ่ม 3 ค่า\n        const pairs = [[0, 5], [1, 4], [2, 3]];     // แล้วสะท้อนเป็น 6 จุด\n        const out = [0, 0, 0, 0, 0, 0];\n        for (let k = 0; k < 3; k++) {\n            const [a, b] = pairs[k];\n            const za = base[k], zb = -base[k] + gauss() * 0.15;   // สะท้อน + noise เล็กน้อย\n            out[a] = p.pe[a][0] + za * p.pe[a][1];\n            out[b] = p.pe[b][0] + zb * p.pe[b][1];\n        }\n        for (let k = 0; k < 6; k++) rec['pe_' + (k + 1)] = r(out[k], 3);\n    } else {\n        for (let k = 1; k <= 6; k++) rec['pe_' + k] = null;   // DF INNER ไม่วัด PE\n    }\n    // ── JE: je_4 เป็น NULL คู่กับ PE เสมอ ──\n    for (let k = 0; k < 4; k++) {\n        const j = p.je[k];\n        rec['je_' + (k + 1)] = j ? r(Math.max(0, j[0] + Math.abs(gauss()) * j[1]), 1) : null;\n    }\n    rec.log_id = 'SIM-' + id.slice(-2) + '-' + now + '-' + s.board;\n\n    batch.push(rec);\n    st[id] = s;\n}\n\nflow.set('sim_state', st);\nif (batch.length === 0) return null;\n\nmsg.payload = batch;\nmsg.headers = { 'Content-Type': 'application/json', 'x-api-key': env.get('INGEST_API_KEY') };\nnode.status({ fill: 'green', shape: 'dot', text: batch.length + ' rows @ ' + new Date().toLocaleTimeString() });\nreturn msg;\n",
+        "outputs": 1,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 720,
-        "y": 260,
+        "x": 390,
+        "y": 100,
+        "wires": [
+            [
+                "ldisim_post"
+            ]
+        ]
+    },
+    {
+        "id": "ldisim_post",
+        "type": "http request",
+        "z": "ldisim_tab",
+        "name": "POST /ldi-telemetry",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://127.0.0.1:1880/ldi-telemetry",
+        "persist": true,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 660,
+        "y": 100,
+        "wires": [
+            [
+                "ldisim_check"
+            ]
+        ]
+    },
+    {
+        "id": "ldisim_check",
+        "type": "function",
+        "z": "ldisim_tab",
+        "name": "Check Response",
+        "func": "if (msg.statusCode !== 200) {\n    node.error('Simulator ingest failed: HTTP ' + msg.statusCode +\n        ' ' + JSON.stringify(msg.payload), msg);\n    node.status({fill:'red',shape:'ring',text:'HTTP '+msg.statusCode});\n    return null;\n}\nnode.status({fill:'blue',shape:'dot',text:'ok '+(msg.payload && msg.payload.count)});\nreturn null;",
+        "outputs": 1,
+        "x": 900,
+        "y": 100,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "ldisim_catch",
+        "type": "catch",
+        "z": "ldisim_tab",
+        "name": "Catch Simulator Errors",
+        "scope": null,
+        "uncaught": false,
+        "x": 390,
+        "y": 190,
+        "wires": [
+            [
+                "ldisim_err"
+            ]
+        ]
+    },
+    {
+        "id": "ldisim_err",
+        "type": "function",
+        "z": "ldisim_tab",
+        "name": "Log Error",
+        "func": "node.error('LDI simulator: ' + (msg.error && msg.error.message));\nreturn null;",
+        "outputs": 1,
+        "x": 660,
+        "y": 190,
         "wires": [
             []
         ]
