@@ -56,21 +56,21 @@ WITH NO DATA;
 
 -- ── 4. Refresh Policies (auto-update CAGGs) ───────────────────────────────
 SELECT add_continuous_aggregate_policy('public.sys_hourly',
-    start_offset      => INTERVAL '2 hours',
+    start_offset      => INTERVAL '3 hours',
     end_offset        => INTERVAL '10 minutes',
     schedule_interval => INTERVAL '15 minutes',
     if_not_exists     => TRUE
 );
 
 SELECT add_continuous_aggregate_policy('public.net_hourly',
-    start_offset      => INTERVAL '2 hours',
+    start_offset      => INTERVAL '3 hours',
     end_offset        => INTERVAL '10 minutes',
     schedule_interval => INTERVAL '15 minutes',
     if_not_exists     => TRUE
 );
 
 SELECT add_continuous_aggregate_policy('public.ldi_hourly',
-    start_offset      => INTERVAL '2 hours',
+    start_offset      => INTERVAL '3 hours',
     end_offset        => INTERVAL '10 minutes',
     schedule_interval => INTERVAL '15 minutes',
     if_not_exists     => TRUE
