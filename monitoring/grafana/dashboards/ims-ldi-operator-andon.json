@@ -354,12 +354,20 @@
                 "value": null
               },
               {
-                "color": "#FACC15",
-                "value": 1
+                "color": "#FF9100",
+                "value": 19
               },
               {
-                "color": "#22C55E",
-                "value": 2
+                "color": "#00FF87",
+                "value": 20
+              },
+              {
+                "color": "#FF9100",
+                "value": 24
+              },
+              {
+                "color": "#EF4444",
+                "value": 25
               }
             ]
           },
@@ -436,12 +444,20 @@
                 "value": null
               },
               {
-                "color": "#FACC15",
-                "value": 1
+                "color": "#FF9100",
+                "value": 45
               },
               {
-                "color": "#22C55E",
-                "value": 2
+                "color": "#00FF87",
+                "value": 50
+              },
+              {
+                "color": "#FF9100",
+                "value": 60
+              },
+              {
+                "color": "#EF4444",
+                "value": 65
               }
             ]
           },

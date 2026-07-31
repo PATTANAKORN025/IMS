@@ -1,5 +1,5 @@
 {
-  "description": "Layer 3 Process Timeline: synchronized multi-parameter RCA. temperature → humidity → scan_speed → air_vacuum → scale_x/y → pe_1~6 → je_1~4 → state. Shared crosshair + tooltip. Fixed axis scaling.",
+  "description": "Layer 3 Process Timeline: synchronized multi-parameter RCA. temperature \u2192 humidity \u2192 scan_speed \u2192 air_vacuum \u2192 scale_x/y \u2192 pe_1~6 \u2192 je_1~4 \u2192 state. Shared crosshair + tooltip. Fixed axis scaling.",
   "schemaVersion": 39,
   "liveNow": true,
   "style": "dark",
@@ -165,7 +165,7 @@
   "panels": [
     {
       "id": 1,
-      "title": "temperature (°C)",
+      "title": "temperature (\u00b0C)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -201,7 +201,32 @@
             }
           ],
           "min": 18,
-          "max": 28
+          "max": 28,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#EF4444",
+                "value": null
+              },
+              {
+                "color": "#FF9100",
+                "value": 19
+              },
+              {
+                "color": "#00FF87",
+                "value": 20
+              },
+              {
+                "color": "#FF9100",
+                "value": 24
+              },
+              {
+                "color": "#EF4444",
+                "value": 25
+              }
+            ]
+          }
         },
         "overrides": []
       },
@@ -232,7 +257,7 @@
         }
       ],
       "transparent": true,
-      "description": "Temperature per machine on the operational scale 18-28°C. Invalid zero sensor rows are monitored separately in Data Readiness.",
+      "description": "Temperature per machine on the operational scale 18-28\u00b0C. Invalid zero sensor rows are monitored separately in Data Readiness.",
       "links": [
         {
           "title": "Open Machine Snapshot (select one Machine)",
@@ -289,7 +314,32 @@
             }
           ],
           "min": 40,
-          "max": 70
+          "max": 70,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#EF4444",
+                "value": null
+              },
+              {
+                "color": "#FF9100",
+                "value": 45
+              },
+              {
+                "color": "#00FF87",
+                "value": 50
+              },
+              {
+                "color": "#FF9100",
+                "value": 60
+              },
+              {
+                "color": "#EF4444",
+                "value": 65
+              }
+            ]
+          }
         },
         "overrides": []
       },
@@ -693,7 +743,7 @@
     },
     {
       "id": 7,
-      "title": "pe_1 ~ pe_6 (µm)",
+      "title": "pe_1 ~ pe_6 (\u00b5m)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -706,7 +756,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "suffix: µm",
+          "unit": "suffix: \u00b5m",
           "decimals": 2,
           "custom": {
             "drawStyle": "line",
@@ -805,7 +855,7 @@
         }
       ],
       "transparent": true,
-      "description": "Individual signed PE values. Soft scale covers the observed range (about -67 to +75 µm) without clipping future outliers.",
+      "description": "Individual signed PE values. Soft scale covers the observed range (about -67 to +75 \u00b5m) without clipping future outliers.",
       "links": [
         {
           "title": "Open Machine Snapshot (select one Machine)",
@@ -826,7 +876,7 @@
     },
     {
       "id": 8,
-      "title": "je_1 ~ je_4 (µm)",
+      "title": "je_1 ~ je_4 (\u00b5m)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -839,7 +889,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "suffix: µm",
+          "unit": "suffix: \u00b5m",
           "decimals": 2,
           "custom": {
             "drawStyle": "line",
@@ -920,7 +970,7 @@
         }
       ],
       "transparent": true,
-      "description": "Individual JE values. Soft scale covers the observed range (0 to about 43 µm) while retaining out-of-range visibility.",
+      "description": "Individual JE values. Soft scale covers the observed range (0 to about 43 \u00b5m) while retaining out-of-range visibility.",
       "links": [
         {
           "title": "Open Machine Snapshot (select one Machine)",
@@ -1201,7 +1251,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "suffix: µm",
+          "unit": "suffix: \u00b5m",
           "custom": {
             "fillOpacity": 60,
             "lineWidth": 1
@@ -1276,7 +1326,7 @@
     },
     {
       "id": 15,
-      "title": "Resist Dosage Live (mJ/cm²)",
+      "title": "Resist Dosage Live (mJ/cm\u00b2)",
       "type": "bargauge",
       "datasource": {
         "uid": "timescaledb"
@@ -1289,7 +1339,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "suffix: mJ/cm²",
+          "unit": "suffix: mJ/cm\u00b2",
           "min": 0,
           "decimals": 1,
           "thresholds": {
@@ -1345,7 +1395,7 @@
         }
       ],
       "transparent": true,
-      "description": "Latest resist dosage per selected machine. Auto-ranging is used because observed machine settings span 15 to 1,200 mJ/cm².",
+      "description": "Latest resist dosage per selected machine. Auto-ranging is used because observed machine settings span 15 to 1,200 mJ/cm\u00b2.",
       "links": [
         {
           "title": "Open Machine Snapshot (select one Machine)",

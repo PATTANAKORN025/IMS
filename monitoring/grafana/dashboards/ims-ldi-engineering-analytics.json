@@ -170,7 +170,32 @@
               "url": "/d/ldi-machine-snapshot/ims-ldi-machine-snapshot?var-machine_id=${__series.name}&var-log_id=${__data.fields.log_id}",
               "targetBlank": false
             }
-          ]
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#EF4444",
+                "value": null
+              },
+              {
+                "color": "#FF9100",
+                "value": 19
+              },
+              {
+                "color": "#00FF87",
+                "value": 20
+              },
+              {
+                "color": "#FF9100",
+                "value": 24
+              },
+              {
+                "color": "#EF4444",
+                "value": 25
+              }
+            ]
+          }
         },
         "overrides": []
       },
@@ -253,7 +278,32 @@
               "url": "/d/ldi-machine-snapshot/ims-ldi-machine-snapshot?var-machine_id=${__series.name}&var-log_id=${__data.fields.log_id}",
               "targetBlank": false
             }
-          ]
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#EF4444",
+                "value": null
+              },
+              {
+                "color": "#FF9100",
+                "value": 45
+              },
+              {
+                "color": "#00FF87",
+                "value": 50
+              },
+              {
+                "color": "#FF9100",
+                "value": 60
+              },
+              {
+                "color": "#EF4444",
+                "value": 65
+              }
+            ]
+          }
         },
         "overrides": []
       },
