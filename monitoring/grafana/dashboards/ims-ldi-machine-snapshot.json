@@ -157,7 +157,8 @@
         "cellHeight": "sm",
         "footer": {
           "show": false
-        }
+        },
+        "noValue": "-"
       },
       "targets": [
         {
@@ -817,7 +818,8 @@
         "cellHeight": "sm",
         "footer": {
           "show": false
-        }
+        },
+        "noValue": "-"
       },
       "targets": [
         {
@@ -1005,7 +1007,8 @@
         "cellHeight": "sm",
         "footer": {
           "show": false
-        }
+        },
+        "noValue": "-"
       },
       "targets": [
         {
@@ -1191,7 +1194,8 @@
         "cellHeight": "sm",
         "footer": {
           "show": false
-        }
+        },
+        "noValue": "-"
       },
       "targets": [
         {
@@ -1374,7 +1378,8 @@
         "cellHeight": "sm",
         "footer": {
           "show": false
-        }
+        },
+        "noValue": "-"
       },
       "targets": [
         {
@@ -1452,7 +1457,8 @@
         "cellHeight": "sm",
         "footer": {
           "show": false
-        }
+        },
+        "noValue": "-"
       },
       "targets": [
         {
@@ -1630,7 +1636,7 @@
   ],
   "id": null,
   "uid": "ims-ldi-machine-snapshot",
-  "title": "IMS LDI - Machine Snapshot (Set 2 Real DB)",
+  "title": "IMS LDI - Machine Snapshot",
   "version": 3,
   "time": {
     "from": "2026-07-19T21:00:00.000Z",

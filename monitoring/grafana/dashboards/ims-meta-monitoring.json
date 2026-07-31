@@ -708,7 +708,8 @@
         "cellHeight": "sm",
         "footer": {
           "show": false
-        }
+        },
+        "noValue": "-"
       }
     },
     {

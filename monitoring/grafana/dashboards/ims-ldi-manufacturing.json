@@ -702,7 +702,8 @@
         "cellHeight": "sm",
         "footer": {
           "show": false
-        }
+        },
+        "noValue": "-"
       },
       "targets": [
         {
@@ -1499,7 +1500,8 @@
         "cellHeight": "sm",
         "footer": {
           "show": false
-        }
+        },
+        "noValue": "-"
       },
       "targets": [
         {
@@ -1622,7 +1624,7 @@
   ],
   "id": null,
   "uid": "ims-ldi-manufacturing",
-  "title": "IMS LDI - Manufacturing Command Center (Set 2 Real DB)",
+  "title": "IMS LDI - Manufacturing Command Center",
   "version": 3,
   "time": {
     "from": "2026-07-19T21:00:00.000Z",

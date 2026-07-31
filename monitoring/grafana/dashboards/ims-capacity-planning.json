@@ -741,7 +741,7 @@
             "lineWidth": 2,
             "spanNulls": 60000,
             "thresholdsStyle": {
-              "mode": "line"
+              "mode": "line+area"
             },
             "gradientMode": "opacity",
             "drawStyle": "line",
@@ -1089,7 +1089,10 @@
             "lineInterpolation": "smooth",
             "showPoints": "never",
             "showGridLines": false,
-            "axisBorderShow": false
+            "axisBorderShow": false,
+            "thresholdsStyle": {
+              "mode": "line+area"
+            }
           },
           "thresholds": {
             "mode": "absolute",
@@ -1367,7 +1370,10 @@
             "lineInterpolation": "smooth",
             "showPoints": "never",
             "showGridLines": false,
-            "axisBorderShow": false
+            "axisBorderShow": false,
+            "thresholdsStyle": {
+              "mode": "line+area"
+            }
           },
           "thresholds": {
             "mode": "absolute",
@@ -1659,7 +1665,7 @@
             "lineWidth": 2,
             "spanNulls": 60000,
             "thresholdsStyle": {
-              "mode": "dashed"
+              "mode": "line+area"
             },
             "gradientMode": "opacity",
             "drawStyle": "line",
