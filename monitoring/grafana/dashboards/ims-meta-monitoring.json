@@ -18,7 +18,13 @@
         "w": 24,
         "x": 0,
         "y": 0
-      }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        }
+      },
+      "options": {}
     },
     {
       "type": "timeseries",
@@ -43,9 +49,9 @@
           "custom": {
             "drawStyle": "line",
             "lineWidth": 2,
-            "fillOpacity": 10,
+            "fillOpacity": 15,
             "spanNulls": true,
-            "showPoints": "auto",
+            "showPoints": "never",
             "pointSize": 5,
             "showGridLines": false,
             "axisBorderShow": false,
@@ -76,7 +82,14 @@
       ],
       "description": "Rate of successful database inserts per second from the pipeline.",
       "options": {
-        "connectNullPoints": true
+        "connectNullPoints": true,
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
       }
     },
     {
@@ -107,7 +120,8 @@
             "spanNulls": true,
             "showGridLines": false,
             "axisBorderShow": false,
-            "gradientMode": "opacity"
+            "gradientMode": "opacity",
+            "showPoints": "never"
           }
         },
         "overrides": [
@@ -134,7 +148,14 @@
       ],
       "description": "Rate of failed database inserts per second. High values indicate pipeline instability.",
       "options": {
-        "connectNullPoints": true
+        "connectNullPoints": true,
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
       }
     },
     {
@@ -155,7 +176,8 @@
           "unit": "dateTimeFromNow",
           "decimals": 0,
           "color": {
-            "mode": "thresholds"
+            "mode": "fixed",
+            "fixedColor": "#00F2FE"
           },
           "thresholds": {
             "steps": [
@@ -172,7 +194,8 @@
                 "value": 300
               }
             ]
-          }
+          },
+          "custom": {}
         },
         "overrides": [
           {
@@ -210,7 +233,14 @@
       ],
       "description": "Timestamp of the most recent successful batch flush to TimescaleDB.",
       "options": {
-        "noValue": "No data"
+        "noValue": "No data",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "text": {
+          "titleSize": 14,
+          "valueSize": 48
+        }
       }
     },
     {
@@ -222,7 +252,13 @@
         "w": 24,
         "x": 0,
         "y": 9
-      }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        }
+      },
+      "options": {}
     },
     {
       "type": "stat",
@@ -242,7 +278,8 @@
           "unit": "short",
           "decimals": 0,
           "color": {
-            "mode": "thresholds"
+            "mode": "fixed",
+            "fixedColor": "#00F2FE"
           },
           "thresholds": {
             "steps": [
@@ -259,7 +296,8 @@
                 "value": 5
               }
             ]
-          }
+          },
+          "custom": {}
         },
         "overrides": [
           {
@@ -297,7 +335,14 @@
       ],
       "description": "Number of devices with circuit breaker in OPEN state (unreachable).",
       "options": {
-        "noValue": "0"
+        "noValue": "0",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "text": {
+          "titleSize": 14,
+          "valueSize": 48
+        }
       }
     },
     {
@@ -318,7 +363,8 @@
           "unit": "short",
           "decimals": 0,
           "color": {
-            "mode": "thresholds"
+            "mode": "fixed",
+            "fixedColor": "#00F2FE"
           },
           "thresholds": {
             "steps": [
@@ -331,7 +377,8 @@
                 "value": 1
               }
             ]
-          }
+          },
+          "custom": {}
         },
         "overrides": [
           {
@@ -369,7 +416,14 @@
       ],
       "description": "Number of devices with circuit breaker in HALF_OPEN state (testing connectivity).",
       "options": {
-        "noValue": "0"
+        "noValue": "0",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "text": {
+          "titleSize": 14,
+          "valueSize": 48
+        }
       }
     },
     {
@@ -390,9 +444,10 @@
           "unit": "short",
           "decimals": 0,
           "color": {
-            "fixedColor": "#10B981",
-            "mode": "fixed"
-          }
+            "mode": "fixed",
+            "fixedColor": "#00F2FE"
+          },
+          "custom": {}
         },
         "overrides": [
           {
@@ -430,7 +485,14 @@
       ],
       "description": "Number of devices with circuit breaker in CLOSED state (healthy).",
       "options": {
-        "noValue": "0"
+        "noValue": "0",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "text": {
+          "titleSize": 14,
+          "valueSize": 48
+        }
       }
     },
     {
@@ -442,7 +504,13 @@
         "w": 24,
         "x": 0,
         "y": 18
-      }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        }
+      },
+      "options": {}
     },
     {
       "type": "timeseries",
@@ -465,13 +533,14 @@
             "mode": "palette-classic"
           },
           "custom": {
-            "drawStyle": "bars",
-            "lineWidth": 1,
-            "fillOpacity": 50,
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 15,
             "spanNulls": true,
             "showGridLines": false,
             "axisBorderShow": false,
-            "gradientMode": "opacity"
+            "gradientMode": "opacity",
+            "showPoints": "never"
           }
         },
         "overrides": [
@@ -498,7 +567,14 @@
       ],
       "description": "Rate of circuit breaker trips per device. Indicates intermittent connectivity issues.",
       "options": {
-        "connectNullPoints": true
+        "connectNullPoints": true,
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
       }
     },
     {
@@ -515,7 +591,9 @@
         "y": 19
       },
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "custom": {}
+        },
         "overrides": [
           {
             "matcher": {
@@ -625,7 +703,13 @@
           }
         }
       ],
-      "description": "Per-device circuit breaker state table (0=CLOSED, 1=OPEN, 2=HALF_OPEN)."
+      "description": "Per-device circuit breaker state table (0=CLOSED, 1=OPEN, 2=HALF_OPEN).",
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      }
     },
     {
       "type": "row",
@@ -636,7 +720,13 @@
         "w": 24,
         "x": 0,
         "y": 27
-      }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        }
+      },
+      "options": {}
     },
     {
       "type": "stat",
@@ -656,7 +746,8 @@
           "unit": "short",
           "decimals": 0,
           "color": {
-            "mode": "thresholds"
+            "mode": "fixed",
+            "fixedColor": "#00F2FE"
           },
           "thresholds": {
             "steps": [
@@ -673,7 +764,8 @@
                 "value": 10
               }
             ]
-          }
+          },
+          "custom": {}
         },
         "overrides": [
           {
@@ -711,7 +803,14 @@
       ],
       "description": "Count of distinct devices successfully polled in the last hour.",
       "options": {
-        "noValue": "0"
+        "noValue": "0",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "text": {
+          "titleSize": 14,
+          "valueSize": 48
+        }
       }
     },
     {
@@ -738,11 +837,12 @@
           "custom": {
             "drawStyle": "line",
             "lineWidth": 2,
-            "fillOpacity": 10,
+            "fillOpacity": 15,
             "spanNulls": true,
             "showGridLines": false,
             "axisBorderShow": false,
-            "gradientMode": "opacity"
+            "gradientMode": "opacity",
+            "showPoints": "never"
           }
         },
         "overrides": [
@@ -769,7 +869,14 @@
       ],
       "description": "Number of devices polled per injection cycle.",
       "options": {
-        "connectNullPoints": true
+        "connectNullPoints": true,
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
       }
     },
     {
@@ -809,7 +916,8 @@
                 "value": 0.99
               }
             ]
-          }
+          },
+          "custom": {}
         },
         "overrides": [
           {
@@ -847,7 +955,13 @@
       ],
       "description": "Ratio of successful inserts to total inserts (success / (success + failure)).",
       "options": {
-        "noValue": "N/A"
+        "noValue": "N/A",
+        "showThresholdLabels": true,
+        "showThresholdMarkers": true,
+        "text": {
+          "titleSize": 14,
+          "valueSize": 48
+        }
       }
     }
   ],

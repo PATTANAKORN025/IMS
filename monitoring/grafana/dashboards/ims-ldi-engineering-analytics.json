@@ -209,7 +209,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": null
               },
               {
@@ -225,7 +225,7 @@
                 "value": 24
               },
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": 25
               }
             ]
@@ -325,7 +325,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": null
               },
               {
@@ -341,7 +341,7 @@
                 "value": 60
               },
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": 65
               }
             ]
@@ -1067,7 +1067,8 @@
               "targetBlank": false,
               "oneClick": true
             }
-          ]
+          ],
+          "custom": {}
         },
         "overrides": []
       },
@@ -1163,7 +1164,8 @@
           },
           "decimals": 2,
           "min": 0,
-          "unit": "lengthum"
+          "unit": "lengthum",
+          "custom": {}
         },
         "overrides": []
       },
@@ -1206,7 +1208,8 @@
           },
           "decimals": 2,
           "min": 0,
-          "unit": "lengthum"
+          "unit": "lengthum",
+          "custom": {}
         },
         "overrides": []
       },

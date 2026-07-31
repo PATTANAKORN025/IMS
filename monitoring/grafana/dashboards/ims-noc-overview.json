@@ -192,7 +192,8 @@
         "defaults": {
           "custom": {}
         }
-      }
+      },
+      "options": {}
     },
     {
       "id": 4,
@@ -230,7 +231,8 @@
             ]
           },
           "color": {
-            "mode": "thresholds"
+            "mode": "fixed",
+            "fixedColor": "#00F2FE"
           },
           "custom": {},
           "decimals": 2
@@ -265,7 +267,7 @@
       "options": {
         "colorMode": "value",
         "graphMode": "area",
-        "justifyMode": "center",
+        "justifyMode": "auto",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -367,7 +369,7 @@
       "options": {
         "colorMode": "value",
         "graphMode": "area",
-        "justifyMode": "center",
+        "justifyMode": "auto",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -437,7 +439,11 @@
           },
           "custom": {},
           "min": 0,
-          "decimals": 2
+          "decimals": 2,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#00F2FE"
+          }
         },
         "overrides": [
           {
@@ -469,7 +475,7 @@
       "options": {
         "colorMode": "value",
         "graphMode": "area",
-        "justifyMode": "center",
+        "justifyMode": "auto",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -520,7 +526,8 @@
         "defaults": {
           "custom": {}
         }
-      }
+      },
+      "options": {}
     },
     {
       "id": 10,
@@ -682,7 +689,11 @@
             "desc": false
           }
         ],
-        "rowHeight": 0.4
+        "rowHeight": 0.4,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
       },
       "targets": [
         {
@@ -721,7 +732,8 @@
         "defaults": {
           "custom": {}
         }
-      }
+      },
+      "options": {}
     },
     {
       "id": 20,
@@ -743,7 +755,7 @@
           "max": 100,
           "custom": {
             "fillOpacity": 15,
-            "lineWidth": 3,
+            "lineWidth": 2,
             "spanNulls": 60000,
             "gradientMode": "opacity",
             "drawStyle": "line",
@@ -996,7 +1008,7 @@
       },
       "options": {
         "tooltip": {
-          "mode": "single",
+          "mode": "multi",
           "sort": "none"
         },
         "legend": {
@@ -1063,20 +1075,23 @@
           "unit": "celsius",
           "custom": {
             "fillOpacity": 15,
-            "lineWidth": 3,
+            "lineWidth": 2,
             "spanNulls": 60000,
             "gradientMode": "opacity",
             "drawStyle": "line",
             "lineInterpolation": "smooth",
             "showPoints": "never",
             "showGridLines": false,
-            "axisBorderShow": false
+            "axisBorderShow": false,
+            "thresholdsStyle": {
+              "mode": "line+area"
+            }
           },
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": null
               },
               {
@@ -1092,7 +1107,7 @@
                 "value": 24
               },
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": 25
               }
             ]
@@ -1326,7 +1341,7 @@
       },
       "options": {
         "tooltip": {
-          "mode": "single",
+          "mode": "multi",
           "sort": "none"
         },
         "legend": {
@@ -1393,7 +1408,8 @@
         "defaults": {
           "custom": {}
         }
-      }
+      },
+      "options": {}
     },
     {
       "id": 22,
@@ -1559,7 +1575,7 @@
           "max": 100,
           "custom": {
             "fillOpacity": 15,
-            "lineWidth": 3,
+            "lineWidth": 2,
             "spanNulls": 60000,
             "gradientMode": "opacity",
             "drawStyle": "line",
@@ -1812,7 +1828,7 @@
       },
       "options": {
         "tooltip": {
-          "mode": "single",
+          "mode": "multi",
           "sort": "none"
         },
         "legend": {

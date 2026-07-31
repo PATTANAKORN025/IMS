@@ -159,7 +159,8 @@
         "defaults": {
           "custom": {}
         }
-      }
+      },
+      "options": {}
     },
     {
       "id": 1,
@@ -234,9 +235,13 @@
           ],
           "values": false
         },
-        "showThresholdLabels": false,
+        "showThresholdLabels": true,
         "showThresholdMarkers": true,
-        "noValue": "N/A"
+        "noValue": "N/A",
+        "text": {
+          "titleSize": 14,
+          "valueSize": 48
+        }
       },
       "targets": [
         {
@@ -336,9 +341,13 @@
           ],
           "values": false
         },
-        "showThresholdLabels": false,
+        "showThresholdLabels": true,
         "showThresholdMarkers": true,
-        "noValue": "N/A"
+        "noValue": "N/A",
+        "text": {
+          "titleSize": 14,
+          "valueSize": 48
+        }
       },
       "targets": [
         {
@@ -438,9 +447,13 @@
           ],
           "values": false
         },
-        "showThresholdLabels": false,
+        "showThresholdLabels": true,
         "showThresholdMarkers": true,
-        "noValue": "N/A"
+        "noValue": "N/A",
+        "text": {
+          "titleSize": 14,
+          "valueSize": 48
+        }
       },
       "targets": [
         {
@@ -489,7 +502,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": null
               },
               {
@@ -505,7 +518,7 @@
                 "value": 24
               },
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": 25
               }
             ]
@@ -550,9 +563,13 @@
           ],
           "values": false
         },
-        "showThresholdLabels": false,
+        "showThresholdLabels": true,
         "showThresholdMarkers": true,
-        "noValue": "N/A"
+        "noValue": "N/A",
+        "text": {
+          "titleSize": 14,
+          "valueSize": 48
+        }
       },
       "targets": [
         {
@@ -596,7 +613,8 @@
         "defaults": {
           "custom": {}
         }
-      }
+      },
+      "options": {}
     },
     {
       "id": 501,
@@ -617,8 +635,8 @@
           "min": 0,
           "max": 100,
           "custom": {
-            "fillOpacity": 0,
-            "lineWidth": 3,
+            "fillOpacity": 15,
+            "lineWidth": 2,
             "spanNulls": 60000,
             "gradientMode": "opacity",
             "drawStyle": "line",
@@ -841,7 +859,7 @@
       },
       "options": {
         "tooltip": {
-          "mode": "single",
+          "mode": "multi",
           "sort": "none"
         },
         "legend": {
@@ -894,14 +912,15 @@
           "unit": "bps",
           "custom": {
             "axisCente#EF4444Zero": true,
-            "fillOpacity": 0,
+            "fillOpacity": 15,
             "lineWidth": 2,
             "spanNulls": false,
             "gradientMode": "opacity",
             "drawStyle": "line",
             "lineInterpolation": "smooth",
             "showGridLines": false,
-            "axisBorderShow": false
+            "axisBorderShow": false,
+            "showPoints": "never"
           },
           "color": {
             "mode": "palette-classic"
@@ -1102,7 +1121,7 @@
       },
       "options": {
         "tooltip": {
-          "mode": "single",
+          "mode": "multi",
           "sort": "none"
         },
         "legend": {
@@ -1171,11 +1190,11 @@
         "defaults": {
           "unit": "celsius",
           "custom": {
-            "fillOpacity": 0,
-            "lineWidth": 3,
+            "fillOpacity": 15,
+            "lineWidth": 2,
             "spanNulls": 60000,
             "thresholdsStyle": {
-              "mode": "dashed"
+              "mode": "line+area"
             },
             "gradientMode": "opacity",
             "drawStyle": "line",
@@ -1188,7 +1207,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": null
               },
               {
@@ -1204,7 +1223,7 @@
                 "value": 24
               },
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": 25
               }
             ]
@@ -1447,7 +1466,7 @@
       },
       "options": {
         "tooltip": {
-          "mode": "single",
+          "mode": "multi",
           "sort": "none"
         },
         "legend": {
@@ -1507,7 +1526,8 @@
         "defaults": {
           "custom": {}
         }
-      }
+      },
+      "options": {}
     },
     {
       "id": 503,
@@ -1525,7 +1545,7 @@
       "fieldConfig": {
         "defaults": {
           "custom": {
-            "fillOpacity": 0,
+            "fillOpacity": 15,
             "lineWidth": 2,
             "spanNulls": 60000,
             "gradientMode": "opacity",
@@ -1682,7 +1702,7 @@
       },
       "options": {
         "tooltip": {
-          "mode": "single",
+          "mode": "multi",
           "sort": "none"
         },
         "legend": {
@@ -1748,7 +1768,7 @@
       "fieldConfig": {
         "defaults": {
           "custom": {
-            "fillOpacity": 0,
+            "fillOpacity": 15,
             "lineWidth": 2,
             "spanNulls": 60000,
             "gradientMode": "opacity",
@@ -1756,7 +1776,10 @@
             "lineInterpolation": "smooth",
             "showPoints": "never",
             "showGridLines": false,
-            "axisBorderShow": false
+            "axisBorderShow": false,
+            "thresholdsStyle": {
+              "mode": "line+area"
+            }
           },
           "color": {
             "mode": "palette-classic"
@@ -1768,7 +1791,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": null
               },
               {
@@ -1784,7 +1807,7 @@
                 "value": 60
               },
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": 65
               }
             ]
@@ -1931,7 +1954,7 @@
       },
       "options": {
         "tooltip": {
-          "mode": "single",
+          "mode": "multi",
           "sort": "none"
         },
         "legend": {
@@ -1996,13 +2019,14 @@
       "fieldConfig": {
         "defaults": {
           "custom": {
-            "fillOpacity": 0,
+            "fillOpacity": 15,
             "lineWidth": 2,
             "lineInterpolation": "smooth",
-            "gradientMode": "none",
+            "gradientMode": "opacity",
             "connectNullPoints": "always",
             "spanNulls": true,
-            "showPoints": "never"
+            "showPoints": "never",
+            "drawStyle": "line"
           },
           "color": {
             "mode": "palette-classic"
@@ -2028,12 +2052,12 @@
       },
       "options": {
         "tooltip": {
-          "mode": "single",
+          "mode": "multi",
           "sort": "none"
         },
         "legend": {
           "displayMode": "table",
-          "placement": "right",
+          "placement": "bottom",
           "calcs": [
             "mean",
             "lastNotNull"
@@ -2073,7 +2097,13 @@
         "w": 24,
         "x": 0,
         "y": 43
-      }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        }
+      },
+      "options": {}
     },
     {
       "type": "stat",
@@ -2093,7 +2123,8 @@
           "unit": "currency-thb",
           "decimals": 2,
           "color": {
-            "mode": "thresholds"
+            "mode": "fixed",
+            "fixedColor": "#00F2FE"
           },
           "thresholds": {
             "steps": [
@@ -2110,7 +2141,8 @@
                 "value": 5000
               }
             ]
-          }
+          },
+          "custom": {}
         },
         "overrides": [
           {
@@ -2147,7 +2179,14 @@
         }
       ],
       "options": {
-        "noValue": "0"
+        "noValue": "0",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "text": {
+          "titleSize": 14,
+          "valueSize": 48
+        }
       },
       "description": "Estimated 24-hour electricity cost in Thai Baht. Calculated as: avg_watts x 24h / 1000 x 4 THB/kWh tariff. Based on rolling 1-hour average power consumption from LDI manufacturing metrics. Thresholds: green < 500 THB, yellow 500-1000 THB, red > 1000 THB.",
       "transparent": true
@@ -2170,7 +2209,8 @@
           "unit": "ratio",
           "decimals": 2,
           "color": {
-            "mode": "thresholds"
+            "mode": "fixed",
+            "fixedColor": "#00F2FE"
           },
           "thresholds": {
             "steps": [
@@ -2187,7 +2227,8 @@
                 "value": 0.8
               }
             ]
-          }
+          },
+          "custom": {}
         },
         "overrides": [
           {
@@ -2224,7 +2265,14 @@
         }
       ],
       "options": {
-        "noValue": "0"
+        "noValue": "0",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "text": {
+          "titleSize": 14,
+          "valueSize": 48
+        }
       },
       "description": "Manufacturing throughput per watt of power consumed. Higher is better. Calculated as: throughput_count / power_watt. Tracks how efficiently the LDI machine converts electrical energy into productive output. Below 1.0 indicates excessive idle power draw relative to production volume.",
       "transparent": true
@@ -2264,7 +2312,8 @@
                 "value": 3
               }
             ]
-          }
+          },
+          "custom": {}
         },
         "overrides": [
           {
@@ -2301,7 +2350,14 @@
         }
       ],
       "options": {
-        "noValue": "0"
+        "noValue": "0",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "text": {
+          "titleSize": 14,
+          "valueSize": 48
+        }
       },
       "description": "Composite risk score (0-100) indicating probability of yield loss. Triggered when throughput drops below baseline minus 2 standard deviations while power consumption remains above 80% of baseline — indicating the machine is drawing full power but producing substandard output. Score 0 = normal, 100 = critical yield loss suspected.",
       "transparent": true
@@ -2323,7 +2379,8 @@
           "custom": {},
           "decimals": 2
         }
-      }
+      },
+      "options": {}
     },
     {
       "id": 40,
@@ -2437,16 +2494,24 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#3B82F6",
+                "color": "#FF003C",
                 "value": null
               },
               {
-                "color": "#F59E0B",
-                "value": 2
+                "color": "#FF9100",
+                "value": 19
               },
               {
-                "color": "#EF4444",
-                "value": 3
+                "color": "#00FF87",
+                "value": 20
+              },
+              {
+                "color": "#FF9100",
+                "value": 24
+              },
+              {
+                "color": "#FF003C",
+                "value": 25
               }
             ]
           },
@@ -2503,7 +2568,8 @@
         "defaults": {
           "custom": {}
         }
-      }
+      },
+      "options": {}
     },
     {
       "id": 2001,

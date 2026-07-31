@@ -138,9 +138,9 @@
         "overrides": []
       },
       "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "center",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -201,7 +201,8 @@
             ]
           },
           "color": {
-            "mode": "thresholds"
+            "mode": "fixed",
+            "fixedColor": "#00F2FE"
           },
           "custom": {},
           "min": 0,
@@ -210,9 +211,9 @@
         "overrides": []
       },
       "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "center",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -273,7 +274,8 @@
             ]
           },
           "color": {
-            "mode": "thresholds"
+            "mode": "fixed",
+            "fixedColor": "#00F2FE"
           },
           "custom": {
             "axisSoftMin": 0,
@@ -283,9 +285,9 @@
         "overrides": []
       },
       "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "center",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -342,16 +344,17 @@
             ]
           },
           "color": {
-            "mode": "thresholds"
+            "mode": "fixed",
+            "fixedColor": "#00F2FE"
           },
           "custom": {}
         },
         "overrides": []
       },
       "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "center",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -427,9 +430,13 @@
           ],
           "values": false
         },
-        "showThresholdLabels": false,
+        "showThresholdLabels": true,
         "showThresholdMarkers": true,
-        "noValue": "N/A"
+        "noValue": "N/A",
+        "text": {
+          "titleSize": 14,
+          "valueSize": 48
+        }
       },
       "targets": [
         {
@@ -465,7 +472,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": null
               },
               {
@@ -481,7 +488,7 @@
                 "value": 24
               },
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": 25
               }
             ]
@@ -496,9 +503,9 @@
         "overrides": []
       },
       "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "center",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -545,7 +552,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": null
               },
               {
@@ -561,7 +568,7 @@
                 "value": 60
               },
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": 65
               }
             ]
@@ -576,9 +583,9 @@
         "overrides": []
       },
       "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "center",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -642,9 +649,9 @@
         "overrides": []
       },
       "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "center",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -691,7 +698,11 @@
             "displayName": "Machine",
             "desc": true
           }
-        ]
+        ],
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
       },
       "targets": [
         {
@@ -706,7 +717,9 @@
       "transparent": true,
       "description": "Latest production context per machine: job info + live physical parameters (temperature, humidity, scan_speed, thickness, resist_dosage, state).",
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "custom": {}
+        },
         "overrides": [
           {
             "matcher": {
@@ -799,7 +812,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": null
               },
               {
@@ -815,7 +828,7 @@
                 "value": 24
               },
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": 25
               }
             ]
@@ -826,7 +839,8 @@
           "unit": "celsius",
           "decimals": 1,
           "min": 18,
-          "max": 28
+          "max": 28,
+          "custom": {}
         },
         "overrides": []
       },
@@ -892,7 +906,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": null
               },
               {
@@ -908,7 +922,7 @@
                 "value": 60
               },
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": 65
               }
             ]
@@ -919,7 +933,8 @@
           "unit": "humidity",
           "decimals": 1,
           "min": 40,
-          "max": 70
+          "max": 70,
+          "custom": {}
         },
         "overrides": []
       },
@@ -1406,7 +1421,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": null
               },
               {
@@ -1422,7 +1437,7 @@
                 "value": 24
               },
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": 25
               }
             ]
@@ -1480,7 +1495,11 @@
             "displayName": "Time",
             "desc": true
           }
-        ]
+        ],
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
       },
       "targets": [
         {
@@ -1494,7 +1513,9 @@
       ],
       "transparent": true,
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "custom": {}
+        },
         "overrides": [
           {
             "matcher": {

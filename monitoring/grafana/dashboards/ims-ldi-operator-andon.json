@@ -122,7 +122,8 @@
             ]
           },
           "color": {
-            "mode": "thresholds"
+            "mode": "fixed",
+            "fixedColor": "#00F2FE"
           },
           "unit": "percent",
           "custom": {},
@@ -133,9 +134,9 @@
         "overrides": []
       },
       "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "center",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -192,14 +193,15 @@
           "color": {
             "mode": "thresholds"
           },
-          "unit": "short"
+          "unit": "short",
+          "custom": {}
         },
         "overrides": []
       },
       "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "center",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -258,7 +260,8 @@
             ]
           },
           "color": {
-            "mode": "thresholds"
+            "mode": "fixed",
+            "fixedColor": "#00F2FE"
           },
           "unit": "percent",
           "custom": {},
@@ -269,9 +272,9 @@
         "overrides": []
       },
       "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "center",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -347,7 +350,8 @@
           "color": {
             "mode": "thresholds"
           },
-          "unit": "short"
+          "unit": "short",
+          "custom": {}
         },
         "overrides": []
       },
@@ -413,7 +417,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": null
               },
               {
@@ -429,7 +433,7 @@
                 "value": 24
               },
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": 25
               }
             ]
@@ -440,7 +444,8 @@
           "unit": "celsius",
           "decimals": 1,
           "min": 18,
-          "max": 28
+          "max": 28,
+          "custom": {}
         },
         "overrides": []
       },
@@ -506,7 +511,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": null
               },
               {
@@ -522,7 +527,7 @@
                 "value": 60
               },
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": 65
               }
             ]
@@ -533,7 +538,8 @@
           "unit": "humidity",
           "decimals": 1,
           "min": 40,
-          "max": 70
+          "max": 70,
+          "custom": {}
         },
         "overrides": []
       },
@@ -582,7 +588,11 @@
             "desc": false
           }
         ],
-        "rowHeight": 0.7
+        "rowHeight": 0.7,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
       },
       "targets": [
         {
@@ -597,7 +607,9 @@
       "transparent": true,
       "description": "Live Production: current MO, part, layer, and board progress per machine.",
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "custom": {}
+        },
         "overrides": [
           {
             "matcher": {
@@ -648,7 +660,9 @@
         "h": 4
       },
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "custom": {}
+        },
         "overrides": [
           {
             "matcher": {
@@ -742,7 +756,11 @@
             "desc": true
           }
         ],
-        "rowHeight": 0.6
+        "rowHeight": 0.6,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
       },
       "targets": [
         {
