@@ -115,7 +115,8 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
+            "mode": "fixed",
+            "fixedColor": "#00F2FE"
           },
           "decimals": 1,
           "unit": "h",
@@ -135,13 +136,14 @@
                 "value": 24
               }
             ]
-          }
+          },
+          "custom": {}
         },
         "overrides": []
       },
       "options": {
-        "colorMode": "background",
-        "graphMode": "none",
+        "colorMode": "value",
+        "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
@@ -153,7 +155,11 @@
         },
         "showPercentChange": false,
         "textMode": "auto",
-        "wideLayout": true
+        "wideLayout": true,
+        "text": {
+          "titleSize": 14,
+          "valueSize": 48
+        }
       },
       "transparent": true
     },
@@ -213,13 +219,14 @@
                 "value": 24
               }
             ]
-          }
+          },
+          "custom": {}
         },
         "overrides": []
       },
       "options": {
-        "colorMode": "background",
-        "graphMode": "none",
+        "colorMode": "value",
+        "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
@@ -231,7 +238,11 @@
         },
         "showPercentChange": false,
         "textMode": "auto",
-        "wideLayout": true
+        "wideLayout": true,
+        "text": {
+          "titleSize": 14,
+          "valueSize": 48
+        }
       },
       "transparent": true
     },
@@ -271,7 +282,8 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
+            "mode": "fixed",
+            "fixedColor": "#00F2FE"
           },
           "decimals": 1,
           "unit": "percent",
@@ -299,8 +311,8 @@
         "overrides": []
       },
       "options": {
-        "colorMode": "background",
-        "graphMode": "none",
+        "colorMode": "value",
+        "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
@@ -312,7 +324,11 @@
         },
         "showPercentChange": false,
         "textMode": "auto",
-        "wideLayout": true
+        "wideLayout": true,
+        "text": {
+          "titleSize": 14,
+          "valueSize": 48
+        }
       },
       "transparent": true
     },
@@ -380,8 +396,8 @@
         "overrides": []
       },
       "options": {
-        "colorMode": "background",
-        "graphMode": "none",
+        "colorMode": "value",
+        "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
@@ -393,7 +409,11 @@
         },
         "showPercentChange": false,
         "textMode": "auto",
-        "wideLayout": true
+        "wideLayout": true,
+        "text": {
+          "titleSize": 14,
+          "valueSize": 48
+        }
       },
       "transparent": true
     },
@@ -433,7 +453,8 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
+            "mode": "fixed",
+            "fixedColor": "#00F2FE"
           },
           "decimals": 1,
           "unit": "percent",
@@ -461,8 +482,8 @@
         "overrides": []
       },
       "options": {
-        "colorMode": "background",
-        "graphMode": "none",
+        "colorMode": "value",
+        "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
@@ -474,7 +495,11 @@
         },
         "showPercentChange": false,
         "textMode": "auto",
-        "wideLayout": true
+        "wideLayout": true,
+        "text": {
+          "titleSize": 14,
+          "valueSize": 48
+        }
       },
       "transparent": true
     },
@@ -514,7 +539,8 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
+            "mode": "fixed",
+            "fixedColor": "#00F2FE"
           },
           "decimals": 2,
           "unit": "lengthum",
@@ -542,8 +568,8 @@
         "overrides": []
       },
       "options": {
-        "colorMode": "background",
-        "graphMode": "none",
+        "colorMode": "value",
+        "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
@@ -555,7 +581,11 @@
         },
         "showPercentChange": false,
         "textMode": "auto",
-        "wideLayout": true
+        "wideLayout": true,
+        "text": {
+          "titleSize": 14,
+          "valueSize": 48
+        }
       },
       "transparent": true
     },
@@ -603,10 +633,10 @@
             "axisColorMode": "text",
             "axisLabel": "rows / 5 min",
             "axisPlacement": "auto",
-            "drawStyle": "bars",
-            "fillOpacity": 35,
+            "drawStyle": "line",
+            "fillOpacity": 15,
             "lineInterpolation": "linear",
-            "lineWidth": 1,
+            "lineWidth": 2,
             "pointSize": 4,
             "showPoints": "never",
             "spanNulls": false,
@@ -615,7 +645,8 @@
               "mode": "none"
             },
             "axisSoftMin": 0,
-            "axisSoftMax": 200
+            "axisSoftMax": 200,
+            "gradientMode": "opacity"
           },
           "unit": "suffix: rows/5m",
           "decimals": 0
@@ -634,7 +665,8 @@
         "tooltip": {
           "mode": "multi",
           "sort": "desc"
-        }
+        },
+        "connectNullPoints": true
       },
       "transparent": true
     },
@@ -672,13 +704,18 @@
         }
       ],
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "custom": {}
+        },
         "overrides": []
       },
       "options": {
         "cellHeight": "sm",
         "showHeader": true,
-        "sortBy": []
+        "sortBy": [],
+        "footer": {
+          "show": false
+        }
       },
       "transparent": true
     },
@@ -716,13 +753,18 @@
         }
       ],
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "custom": {}
+        },
         "overrides": []
       },
       "options": {
         "cellHeight": "sm",
         "showHeader": true,
-        "sortBy": []
+        "sortBy": [],
+        "footer": {
+          "show": false
+        }
       },
       "transparent": true
     },
@@ -760,13 +802,18 @@
         }
       ],
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "custom": {}
+        },
         "overrides": []
       },
       "options": {
         "cellHeight": "sm",
         "showHeader": true,
-        "sortBy": []
+        "sortBy": [],
+        "footer": {
+          "show": false
+        }
       },
       "transparent": true
     },
@@ -804,13 +851,18 @@
         }
       ],
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "custom": {}
+        },
         "overrides": []
       },
       "options": {
         "cellHeight": "sm",
         "showHeader": true,
-        "sortBy": []
+        "sortBy": [],
+        "footer": {
+          "show": false
+        }
       },
       "transparent": true
     },
@@ -848,13 +900,18 @@
         }
       ],
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "custom": {}
+        },
         "overrides": []
       },
       "options": {
         "cellHeight": "sm",
         "showHeader": true,
-        "sortBy": []
+        "sortBy": [],
+        "footer": {
+          "show": false
+        }
       },
       "transparent": true
     }
