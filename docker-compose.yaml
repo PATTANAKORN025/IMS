@@ -33,7 +33,7 @@ x-resource-large: &resource-large
 services:
   # ── TimescaleDB ───────────────────────────────────────────
   timescaledb:
-    image: timescale/timescaledb:2.17.2-pg16
+    image: timescale/timescaledb:2.29.0-pg16
     container_name: ims-timescaledb
     <<: *default-restart
     init: true
@@ -136,7 +136,7 @@ services:
 
   # ── Prometheus ────────────────────────────────────────────
   prometheus:
-    image: prom/prometheus:v2.55.1
+    image: prom/prometheus:v3.13.1
     container_name: ims-prometheus
     <<: *default-restart
     init: true
@@ -169,7 +169,7 @@ services:
 
   # ── Alertmanager ──────────────────────────────────────────
   alertmanager:
-    image: prom/alertmanager:v0.27.0
+    image: prom/alertmanager:v0.33.1
     container_name: ims-alertmanager
     <<: *default-restart
     init: true
@@ -276,7 +276,7 @@ services:
 
   # ── Blackbox Exporter (Uptime/SLA Probes) ─────────────────
   blackbox-exporter:
-    image: prom/blackbox-exporter:v0.25.0
+    image: prom/blackbox-exporter:v0.28.0
     container_name: ims-blackbox
     <<: *default-restart
     init: true
@@ -303,7 +303,7 @@ services:
 
   # ── Database Migrations (one-shot init container) ──────────
   db-migrate:
-    image: timescale/timescaledb:2.17.2-pg16
+    image: timescale/timescaledb:2.29.0-pg16
     container_name: ims-db-migrate
     restart: "no"
     init: true

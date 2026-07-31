@@ -64,6 +64,34 @@ function lintDashboard(filePath) {
       panels.push({ id: pid, title: panel.title || '(untitled)', x: gp.x, y: gp.y, w: gp.w, h: gp.h });
     }
 
+    // Check 11: Panel Design Tokens (PANEL_TOKENS.md)
+    const title = (panel.title || '').toLowerCase();
+    const isTemp = title.includes('temp');
+    const isHumid = title.includes('humid');
+    const isPE = title.includes('pe ') || title.includes('dosage') || title.includes('scale') || title === 'pe';
+    const isZScore = title.includes('z-score');
+
+    if (panel.fieldConfig && panel.fieldConfig.defaults) {
+      const defs = panel.fieldConfig.defaults;
+      if (isTemp) {
+        if (defs.unit !== 'celsius') error(file, pid, `Token violation: Temp unit must be celsius (got ${defs.unit})`);
+        if (defs.decimals !== 1) error(file, pid, `Token violation: Temp decimals must be 1 (got ${defs.decimals})`);
+        if (defs.min !== 18) error(file, pid, `Token violation: Temp min must be 18 (got ${defs.min})`);
+        if (defs.max !== 28) error(file, pid, `Token violation: Temp max must be 28 (got ${defs.max})`);
+      } else if (isHumid) {
+        if (defs.unit !== 'humidity') error(file, pid, `Token violation: Humid unit must be humidity (got ${defs.unit})`);
+        if (defs.decimals !== 1) error(file, pid, `Token violation: Humid decimals must be 1 (got ${defs.decimals})`);
+        if (defs.min !== 40) error(file, pid, `Token violation: Humid min must be 40 (got ${defs.min})`);
+        if (defs.max !== 70) error(file, pid, `Token violation: Humid max must be 70 (got ${defs.max})`);
+      } else if (isPE) {
+        if (defs.unit !== 'lengthum') error(file, pid, `Token violation: PE/Dosage unit must be lengthum (got ${defs.unit})`);
+        if (defs.decimals !== 2) error(file, pid, `Token violation: PE/Dosage decimals must be 2 (got ${defs.decimals})`);
+      } else if (isZScore) {
+        if (defs.unit && defs.unit !== 'none') error(file, pid, `Token violation: Z-Score unit must be none (got ${defs.unit})`);
+        if (defs.decimals !== 2) error(file, pid, `Token violation: Z-Score decimals must be 2 (got ${defs.decimals})`);
+      }
+    }
+
     // Check 8: Panel descriptions
     if (panel.type !== 'clock' && !panel.description) {
       warn(file, pid, `Missing description`);

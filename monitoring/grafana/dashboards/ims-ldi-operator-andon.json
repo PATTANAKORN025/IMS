@@ -1,25 +1,80 @@
 {
-  "uid": "ldi-operator-andon",
-  "title": "IMS LDI — Operator Andon Board",
   "description": "Factory floor kiosk. ISA-101 compliant. Zero interaction, zero scrolling. 1920x1080.",
-  "tags": [
-    "ims",
-    "ldi",
-    "andon",
-    "isa101",
-    "kiosk"
-  ],
-  "timezone": "browser",
   "schemaVersion": 39,
-  "refresh": "5s",
-  "time": {
-    "from": "now-1h",
-    "to": "now"
-  },
   "liveNow": true,
   "style": "dark",
   "templating": {
-    "list": []
+    "list": [
+      {
+        "name": "factory",
+        "label": "Factory",
+        "type": "query",
+        "datasource": {
+          "uid": "timescaledb"
+        },
+        "query": "SELECT DISTINCT factory AS __text, factory AS __value FROM public.ldi_data ORDER BY factory",
+        "definition": "SELECT DISTINCT factory AS __text, factory AS __value FROM public.ldi_data ORDER BY factory",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "multi": true,
+        "includeAll": true,
+        "options": [],
+        "refresh": 1,
+        "sort": 1,
+        "hide": 0,
+        "regex": "",
+        "skipUrlSync": false
+      },
+      {
+        "name": "mo",
+        "label": "MO",
+        "type": "query",
+        "datasource": {
+          "uid": "timescaledb"
+        },
+        "query": "SELECT DISTINCT mo AS __text, mo AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) ORDER BY mo",
+        "definition": "SELECT DISTINCT mo AS __text, mo AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) ORDER BY mo",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "multi": true,
+        "includeAll": true,
+        "options": [],
+        "refresh": 1,
+        "sort": 1,
+        "hide": 0,
+        "regex": "",
+        "skipUrlSync": false
+      },
+      {
+        "name": "machine_id",
+        "label": "Machine",
+        "type": "query",
+        "datasource": {
+          "uid": "timescaledb"
+        },
+        "query": "SELECT DISTINCT eqp_id AS __text, eqp_id AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) ORDER BY eqp_id",
+        "definition": "SELECT DISTINCT eqp_id AS __text, eqp_id AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) ORDER BY eqp_id",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "multi": true,
+        "includeAll": true,
+        "options": [],
+        "refresh": 1,
+        "sort": 1,
+        "hide": 0,
+        "regex": "",
+        "skipUrlSync": false
+      }
+    ]
   },
   "annotations": {
     "list": [
@@ -49,7 +104,7 @@
         "x": 0,
         "y": 0,
         "w": 8,
-        "h": 4
+        "h": 3
       },
       "fieldConfig": {
         "defaults": {
@@ -69,7 +124,11 @@
           "color": {
             "mode": "thresholds"
           },
-          "unit": "short"
+          "unit": "percent",
+          "custom": {},
+          "decimals": 0,
+          "min": 0,
+          "max": 100
         },
         "overrides": []
       },
@@ -95,7 +154,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(COUNT(DISTINCT eqp_id) FILTER (WHERE state = true) * 100.0 / NULLIF(COUNT(DISTINCT eqp_id), 0), 0) AS value FROM public.ldi_data WHERE $__timeFilter(time)",
+          "rawSql": "SELECT ROUND(COUNT(DISTINCT eqp_id) FILTER (WHERE state = true) * 100.0 / NULLIF(COUNT(DISTINCT eqp_id), 0), 0) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time)",
           "format": "table"
         }
       ],
@@ -104,7 +163,7 @@
     },
     {
       "id": 2,
-      "title": "Active Alarms",
+      "title": "Critical Alarm Records (master-code matched)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -113,7 +172,7 @@
         "x": 8,
         "y": 0,
         "w": 8,
-        "h": 4
+        "h": 3
       },
       "fieldConfig": {
         "defaults": {
@@ -159,7 +218,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT COUNT(*)::NUMERIC AS value FROM public.ldi_alarm_log a LEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT WHERE a.logdate >= NOW() - INTERVAL '5 minutes' AND m.alarm_type ILIKE '%Critical%'",
+          "rawSql": "SELECT COUNT(*)::NUMERIC AS value FROM public.ldi_alarm_log a\nJOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT=m.alarm_code::TEXT\nWHERE a.equipmentid IN (${machine_id:sqlstring}) AND m.alarm_type ILIKE '%Critical%';",
           "format": "table"
         }
       ],
@@ -177,7 +236,7 @@
         "x": 16,
         "y": 0,
         "w": 8,
-        "h": 4
+        "h": 3
       },
       "fieldConfig": {
         "defaults": {
@@ -201,7 +260,11 @@
           "color": {
             "mode": "thresholds"
           },
-          "unit": "short"
+          "unit": "percent",
+          "custom": {},
+          "decimals": 0,
+          "min": 0,
+          "max": 100
         },
         "overrides": []
       },
@@ -227,7 +290,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(COUNT(DISTINCT eqp_id) FILTER (WHERE temperature BETWEEN 20 AND 24 AND humidity BETWEEN 50 AND 60) * 100.0 / NULLIF(COUNT(DISTINCT eqp_id), 0), 0) AS value FROM public.ldi_data WHERE $__timeFilter(time) AND temperature IS NOT NULL AND humidity IS NOT NULL",
+          "rawSql": "SELECT ROUND(COUNT(DISTINCT eqp_id) FILTER (WHERE temperature BETWEEN 20 AND 24 AND humidity BETWEEN 50 AND 60) * 100.0 / NULLIF(COUNT(DISTINCT eqp_id), 0), 0) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) AND temperature IS NOT NULL AND humidity IS NOT NULL",
           "format": "table"
         }
       ],
@@ -243,9 +306,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 4,
+        "y": 3,
         "w": 8,
-        "h": 8
+        "h": 6
       },
       "fieldConfig": {
         "defaults": {
@@ -304,7 +367,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, eqp_id AS metric, CASE WHEN state = true THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE $__timeFilter(time) ORDER BY time ASC",
+          "rawSql": "SELECT time, eqp_id AS metric, CASE WHEN state = true THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) ORDER BY time ASC",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
@@ -321,9 +384,9 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 4,
+        "y": 3,
         "w": 8,
-        "h": 8
+        "h": 6
       },
       "fieldConfig": {
         "defaults": {
@@ -374,7 +437,10 @@
           "color": {
             "mode": "thresholds"
           },
-          "unit": "short"
+          "unit": "celsius",
+          "decimals": 1,
+          "min": 18,
+          "max": 28
         },
         "overrides": []
       },
@@ -394,7 +460,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, eqp_id AS metric, CASE WHEN temperature BETWEEN 20 AND 24 THEN 2 WHEN temperature BETWEEN 19 AND 25 THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE $__timeFilter(time) AND temperature IS NOT NULL ORDER BY time ASC",
+          "rawSql": "SELECT time, eqp_id AS metric, CASE WHEN temperature BETWEEN 20 AND 24 THEN 2 WHEN temperature BETWEEN 19 AND 25 THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) AND temperature IS NOT NULL ORDER BY time ASC",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
@@ -411,9 +477,9 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 4,
+        "y": 3,
         "w": 8,
-        "h": 8
+        "h": 6
       },
       "fieldConfig": {
         "defaults": {
@@ -464,7 +530,10 @@
           "color": {
             "mode": "thresholds"
           },
-          "unit": "short"
+          "unit": "humidity",
+          "decimals": 1,
+          "min": 40,
+          "max": 70
         },
         "overrides": []
       },
@@ -484,7 +553,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, eqp_id AS metric, CASE WHEN humidity BETWEEN 50 AND 60 THEN 2 WHEN humidity BETWEEN 45 AND 65 THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE $__timeFilter(time) AND humidity IS NOT NULL ORDER BY time ASC",
+          "rawSql": "SELECT time, eqp_id AS metric, CASE WHEN humidity BETWEEN 50 AND 60 THEN 2 WHEN humidity BETWEEN 45 AND 65 THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) AND humidity IS NOT NULL ORDER BY time ASC",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
@@ -501,9 +570,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 12,
+        "y": 9,
         "w": 24,
-        "h": 6
+        "h": 5
       },
       "options": {
         "showHeader": true,
@@ -521,7 +590,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT DISTINCT ON (eqp_id) eqp_id AS \"Machine\", mo AS \"Job (MO)\", fpn AS \"Part (FPN)\", layer_name AS \"Layer\", (board_no::TEXT || '/' || total_board::TEXT) AS \"Progress\" FROM public.ldi_data WHERE $__timeFilter(time) ORDER BY eqp_id, time DESC LIMIT 50",
+          "rawSql": "SELECT DISTINCT ON (eqp_id) eqp_id AS \"Machine\", mo AS \"Job (MO)\", fpn AS \"Part (FPN)\", layer_name AS \"Layer\", (board_no::TEXT || '/' || total_board::TEXT) AS \"Progress\" FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) ORDER BY eqp_id, time DESC LIMIT 50",
           "format": "table"
         }
       ],
@@ -567,16 +636,16 @@
     },
     {
       "id": 8,
-      "title": "Alarm Stream",
+      "title": "Latest Alarm Records (Historical)",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 0,
-        "y": 18,
+        "y": 14,
         "w": 24,
-        "h": 6
+        "h": 4
       },
       "fieldConfig": {
         "defaults": {},
@@ -624,7 +693,7 @@
                 "value": [
                   {
                     "title": "Incident Snapshot",
-                    "url": "/d/ldi-machine-snapshot/ims-ldi-machine-snapshot?var-machine_id=${__value.text}&from=${__from}&to=${__to}",
+                    "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=${__value.text}&from=${__from}&to=${__to}",
                     "targetBlank": false
                   }
                 ]
@@ -681,7 +750,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT a.logdate AS \"Time\", a.equipmentid AS \"Machine\", COALESCE(m.alarm_msg, a.errorcode::TEXT) AS \"Message\", COALESCE(m.alarm_type, 'UNMAPPED') AS \"Severity\" FROM public.ldi_alarm_log a LEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT WHERE $__timeFilter(a.logdate) ORDER BY a.logdate DESC LIMIT 20",
+          "rawSql": "SELECT a.logdate AS \"Time\",a.equipmentid AS \"Machine\",a.errorcode AS \"errorcode\",\n COALESCE(m.alarm_msg,a.errorcode::TEXT) AS \"Message\",COALESCE(m.alarm_type,'UNMAPPED') AS \"Severity\"\nFROM public.ldi_alarm_log a LEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT=m.alarm_code::TEXT\nWHERE a.equipmentid IN (${machine_id:sqlstring}) ORDER BY a.logdate DESC LIMIT 20;",
           "format": "table"
         }
       ],
@@ -693,39 +762,47 @@
   "links": [
     {
       "title": "Apex Circuit Fleet Command Center",
-      "url": "/d/ldi-pcb-manufacturing/ims-ldi-manufacturing",
+      "url": "/d/ims-ldi-manufacturing/set2-manufacturing?from=${__from}&to=${__to}",
       "type": "link",
       "icon": "external link",
       "targetBlank": false,
-      "keepTime": true,
+      "keepTime": false,
       "includeVars": true
     },
     {
       "title": "Engineering Analytics & SPC",
-      "url": "/d/ldi-engineering-analytics/ims-ldi-engineering-analytics",
+      "url": "/d/ims-ldi-engineering-analytics/set2-engineering?from=${__from}&to=${__to}",
       "type": "link",
       "icon": "external link",
       "targetBlank": false,
-      "keepTime": true,
+      "keepTime": false,
       "includeVars": true
     },
     {
       "title": "Incident Snapshot",
-      "url": "/d/ldi-machine-snapshot/ims-ldi-machine-snapshot",
+      "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?from=${__from}&to=${__to}",
       "type": "link",
       "icon": "external link",
       "targetBlank": false,
-      "keepTime": true,
-      "includeVars": true
-    },
-    {
-      "title": "Data Readiness",
-      "url": "/d/ldi-data-readiness/ims-ldi-data-readiness",
-      "type": "link",
-      "icon": "external link",
-      "targetBlank": false,
-      "keepTime": true,
+      "keepTime": false,
       "includeVars": true
     }
+  ],
+  "id": null,
+  "uid": "ims-ldi-operator-andon",
+  "title": "IMS LDI - Operator Andon Board (Set 2 Real DB)",
+  "version": 3,
+  "time": {
+    "from": "2026-07-19T21:00:00.000Z",
+    "to": "2026-07-20T03:00:00.000Z"
+  },
+  "timezone": "browser",
+  "refresh": "10s",
+  "tags": [
+    "IMS",
+    "LDI",
+    "set-2",
+    "real-data",
+    "current-database"
   ]
 }

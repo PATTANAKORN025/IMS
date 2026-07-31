@@ -1,38 +1,123 @@
 {
-  "uid": "ldi-machine-snapshot",
-  "title": "IMS LDI — Incident Snapshot",
   "description": "360° machine snapshot at the exact millisecond clicked from Process Timeline. Shows job context, physical variables, PE alignment, Cpk, and alarm proximity.",
-  "tags": [
-    "ims",
-    "ldi",
-    "snapshot",
-    "rca",
-    "drilldown"
-  ],
-  "timezone": "browser",
   "schemaVersion": 39,
-  "refresh": "off",
-  "time": {
-    "from": "now-5m",
-    "to": "now"
-  },
   "fiscalYearStartMonth": 0,
   "liveNow": false,
   "graphTooltip": 0,
   "templating": {
     "list": [
       {
-        "name": "machine_id",
+        "name": "clicked_series",
+        "label": "clicked_series",
+        "type": "custom",
+        "query": "__none__",
+        "current": {
+          "selected": true,
+          "text": "__none__",
+          "value": "__none__"
+        },
+        "options": [
+          {
+            "selected": true,
+            "text": "__none__",
+            "value": "__none__"
+          }
+        ],
+        "multi": false,
+        "includeAll": false,
+        "hide": 2,
+        "skipUrlSync": false
+      },
+      {
+        "name": "event_time_ms",
+        "label": "event_time_ms",
+        "type": "custom",
+        "query": "0",
+        "current": {
+          "selected": true,
+          "text": "0",
+          "value": "0"
+        },
+        "options": [
+          {
+            "selected": true,
+            "text": "0",
+            "value": "0"
+          }
+        ],
+        "multi": false,
+        "includeAll": false,
+        "hide": 2,
+        "skipUrlSync": false
+      },
+      {
+        "name": "factory",
+        "label": "Factory",
         "type": "query",
-        "query": "SELECT DISTINCT eqp_id AS __text, eqp_id AS __value FROM public.ldi_data ORDER BY eqp_id",
         "datasource": {
           "uid": "timescaledb"
         },
-        "refresh": 2,
+        "query": "SELECT DISTINCT factory AS __text, factory AS __value FROM public.ldi_data ORDER BY factory",
+        "definition": "SELECT DISTINCT factory AS __text, factory AS __value FROM public.ldi_data ORDER BY factory",
+        "current": {
+          "selected": true,
+          "text": "2",
+          "value": "2"
+        },
         "multi": false,
         "includeAll": false,
+        "options": [],
+        "refresh": 1,
         "sort": 1,
-        "label": "Machine"
+        "hide": 0,
+        "regex": "",
+        "skipUrlSync": false
+      },
+      {
+        "name": "machine_id",
+        "label": "Machine",
+        "type": "query",
+        "datasource": {
+          "uid": "timescaledb"
+        },
+        "query": "SELECT DISTINCT eqp_id AS __text, eqp_id AS __value FROM public.ldi_data WHERE ((${clicked_series:sqlstring} <> '__none__' AND eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)) OR (${clicked_series:sqlstring} = '__none__' AND factory IN (${factory:sqlstring}))) ORDER BY eqp_id",
+        "definition": "SELECT DISTINCT eqp_id AS __text, eqp_id AS __value FROM public.ldi_data WHERE ((${clicked_series:sqlstring} <> '__none__' AND eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)) OR (${clicked_series:sqlstring} = '__none__' AND factory IN (${factory:sqlstring}))) ORDER BY eqp_id",
+        "current": {
+          "selected": true,
+          "text": "LDI-A03",
+          "value": "LDI-A03"
+        },
+        "multi": false,
+        "includeAll": false,
+        "options": [],
+        "refresh": 1,
+        "sort": 1,
+        "hide": 0,
+        "regex": "",
+        "skipUrlSync": false
+      },
+      {
+        "name": "log_id",
+        "label": "Event Log ID",
+        "type": "query",
+        "datasource": {
+          "uid": "timescaledb"
+        },
+        "query": "SELECT log_id AS __text, log_id AS __value FROM public.ldi_data WHERE eqp_id IN (${machine_id:sqlstring}) ORDER BY CASE WHEN ${event_time_ms:raw}::NUMERIC > 0 THEN ABS(EXTRACT(EPOCH FROM (\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))) ELSE 0 END, \"time\" DESC LIMIT CASE WHEN ${event_time_ms:raw}::NUMERIC > 0 THEN 1 ELSE 500 END",
+        "definition": "SELECT log_id AS __text, log_id AS __value FROM public.ldi_data WHERE eqp_id IN (${machine_id:sqlstring}) ORDER BY CASE WHEN ${event_time_ms:raw}::NUMERIC > 0 THEN ABS(EXTRACT(EPOCH FROM (\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))) ELSE 0 END, \"time\" DESC LIMIT CASE WHEN ${event_time_ms:raw}::NUMERIC > 0 THEN 1 ELSE 500 END",
+        "current": {
+          "selected": true,
+          "text": "D7B159AA-7962-4CA0-A083-88EE1D4470B5",
+          "value": "D7B159AA-7962-4CA0-A083-88EE1D4470B5"
+        },
+        "multi": false,
+        "includeAll": false,
+        "options": [],
+        "refresh": 1,
+        "sort": 1,
+        "hide": 0,
+        "regex": "",
+        "skipUrlSync": false
       }
     ]
   },
@@ -64,7 +149,7 @@
         "x": 0,
         "y": 0,
         "w": 24,
-        "h": 3
+        "h": 4
       },
       "options": {
         "showHeader": true,
@@ -76,14 +161,16 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT eqp_id AS \"Machine\", state AS \"State\", mo AS \"MO\", fpn AS \"FPN\", layer_name AS \"Layer\", (board_no::TEXT || '/' || total_board::TEXT) AS \"Board\", filmno AS \"Film\", resist AS \"Resist\", scale_mode AS \"Scale Mode\", TO_CHAR(\"time\", 'YYYY-MM-DD HH24:MI:SS.MS') AS \"Timestamp\"\nFROM public.ldi_data\nWHERE eqp_id = ${machine_id:singlequote}\n  AND $__timeFilter(time)\nORDER BY ABS(EXTRACT(EPOCH FROM time) - EXTRACT(EPOCH FROM TO_TIMESTAMP(($__to + $__from) / 2000.0))) ASC\nLIMIT 1",
+          "rawSql": "SELECT eqp_id AS \"Machine\", state AS \"State\", mo AS \"MO\", fpn AS \"FPN\", layer_name AS \"Layer\", (board_no::TEXT || '/' || total_board::TEXT) AS \"Board\", filmno AS \"Film\", resist AS \"Resist\", scale_mode AS \"Scale Mode\", \"time\" AS \"Timestamp\" FROM public.ldi_data WHERE log_id = (COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1",
           "format": "table"
         }
       ],
       "transparent": true,
       "description": "Exact machine state at the clicked timestamp. Shows job context (MO, FPN, Layer, Board).",
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "noValue": "N/A"
+        },
         "overrides": [
           {
             "matcher": {
@@ -148,6 +235,126 @@
                 "value": 6
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Machine"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 110
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Layer"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 80
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "FPN"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Scale Mode"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 80
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Film"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 60
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "MO"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "State"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 70
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Timestamp"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 140
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Resist"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Board"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 70
+              }
+            ]
           }
         ]
       }
@@ -161,14 +368,14 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 3,
-        "w": 4,
-        "h": 3
+        "y": 4,
+        "w": 8,
+        "h": 4
       },
       "fieldConfig": {
         "defaults": {
           "unit": "celsius",
-          "decimals": 2,
+          "decimals": 1,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -196,7 +403,11 @@
           },
           "color": {
             "mode": "thresholds"
-          }
+          },
+          "noValue": "N/A",
+          "custom": {},
+          "min": 18,
+          "max": 28
         },
         "overrides": []
       },
@@ -222,7 +433,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(temperature::NUMERIC, 2) AS value\nFROM public.ldi_data\nWHERE eqp_id = ${machine_id:singlequote}\n  AND $__timeFilter(time)\nORDER BY ABS(EXTRACT(EPOCH FROM time) - EXTRACT(EPOCH FROM TO_TIMESTAMP(($__to + $__from) / 2000.0))) ASC\nLIMIT 1",
+          "rawSql": "SELECT ROUND(temperature::NUMERIC, 2) AS value FROM public.ldi_data WHERE log_id = (COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1",
           "format": "table"
         }
       ],
@@ -237,15 +448,15 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 4,
-        "y": 3,
-        "w": 4,
-        "h": 3
+        "x": 8,
+        "y": 4,
+        "w": 8,
+        "h": 4
       },
       "fieldConfig": {
         "defaults": {
           "unit": "humidity",
-          "decimals": 2,
+          "decimals": 1,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -273,7 +484,11 @@
           },
           "color": {
             "mode": "thresholds"
-          }
+          },
+          "noValue": "N/A",
+          "custom": {},
+          "min": 40,
+          "max": 70
         },
         "overrides": []
       },
@@ -299,7 +514,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(humidity::NUMERIC, 2) AS value\nFROM public.ldi_data\nWHERE eqp_id = ${machine_id:singlequote}\n  AND $__timeFilter(time)\nORDER BY ABS(EXTRACT(EPOCH FROM time) - EXTRACT(EPOCH FROM TO_TIMESTAMP(($__to + $__from) / 2000.0))) ASC\nLIMIT 1",
+          "rawSql": "SELECT ROUND(humidity::NUMERIC, 2) AS value FROM public.ldi_data WHERE log_id = (COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1",
           "format": "table"
         }
       ],
@@ -314,10 +529,10 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 8,
-        "y": 3,
-        "w": 4,
-        "h": 3
+        "x": 16,
+        "y": 4,
+        "w": 8,
+        "h": 4
       },
       "fieldConfig": {
         "defaults": {
@@ -338,7 +553,9 @@
           },
           "color": {
             "mode": "thresholds"
-          }
+          },
+          "noValue": "N/A",
+          "custom": {}
         },
         "overrides": []
       },
@@ -364,7 +581,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(air_vacuum::NUMERIC, 2) AS value\nFROM public.ldi_data\nWHERE eqp_id = ${machine_id:singlequote}\n  AND $__timeFilter(time)\nORDER BY ABS(EXTRACT(EPOCH FROM time) - EXTRACT(EPOCH FROM TO_TIMESTAMP(($__to + $__from) / 2000.0))) ASC\nLIMIT 1",
+          "rawSql": "SELECT ROUND(air_vacuum::NUMERIC, 2) AS value FROM public.ldi_data WHERE log_id = (COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1",
           "format": "table"
         }
       ],
@@ -379,14 +596,14 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 12,
-        "y": 3,
-        "w": 4,
-        "h": 3
+        "x": 0,
+        "y": 8,
+        "w": 8,
+        "h": 4
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "short",
+          "unit": "suffix: mm/s",
           "decimals": 2,
           "thresholds": {
             "mode": "absolute",
@@ -403,7 +620,9 @@
           },
           "color": {
             "mode": "thresholds"
-          }
+          },
+          "noValue": "N/A",
+          "custom": {}
         },
         "overrides": []
       },
@@ -429,7 +648,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(scan_speed::NUMERIC, 2) AS value\nFROM public.ldi_data\nWHERE eqp_id = ${machine_id:singlequote}\n  AND $__timeFilter(time)\nORDER BY ABS(EXTRACT(EPOCH FROM time) - EXTRACT(EPOCH FROM TO_TIMESTAMP(($__to + $__from) / 2000.0))) ASC\nLIMIT 1",
+          "rawSql": "SELECT ROUND(scan_speed::NUMERIC, 2) AS value FROM public.ldi_data WHERE log_id = (COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1",
           "format": "table"
         }
       ],
@@ -444,15 +663,15 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 16,
-        "y": 3,
-        "w": 4,
-        "h": 3
+        "x": 8,
+        "y": 8,
+        "w": 8,
+        "h": 4
       },
       "fieldConfig": {
         "defaults": {
           "unit": "lengthmm",
-          "decimals": 2,
+          "decimals": 3,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -468,7 +687,9 @@
           },
           "color": {
             "mode": "thresholds"
-          }
+          },
+          "noValue": "N/A",
+          "custom": {}
         },
         "overrides": []
       },
@@ -494,7 +715,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(thickness::NUMERIC, 3) AS value\nFROM public.ldi_data\nWHERE eqp_id = ${machine_id:singlequote}\n  AND $__timeFilter(time)\nORDER BY ABS(EXTRACT(EPOCH FROM time) - EXTRACT(EPOCH FROM TO_TIMESTAMP(($__to + $__from) / 2000.0))) ASC\nLIMIT 1",
+          "rawSql": "SELECT ROUND(thickness::NUMERIC, 2) AS value FROM public.ldi_data WHERE log_id = (COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1",
           "format": "table"
         }
       ],
@@ -509,14 +730,14 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 20,
-        "y": 3,
-        "w": 4,
-        "h": 3
+        "x": 16,
+        "y": 8,
+        "w": 8,
+        "h": 4
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "short",
+          "unit": "lengthum",
           "decimals": 2,
           "thresholds": {
             "mode": "absolute",
@@ -533,7 +754,9 @@
           },
           "color": {
             "mode": "thresholds"
-          }
+          },
+          "noValue": "N/A",
+          "custom": {}
         },
         "overrides": []
       },
@@ -559,7 +782,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(resist_dosage::NUMERIC, 2) AS value\nFROM public.ldi_data\nWHERE eqp_id = ${machine_id:singlequote}\n  AND $__timeFilter(time)\nORDER BY ABS(EXTRACT(EPOCH FROM time) - EXTRACT(EPOCH FROM TO_TIMESTAMP(($__to + $__from) / 2000.0))) ASC\nLIMIT 1",
+          "rawSql": "SELECT ROUND(resist_dosage::NUMERIC, 2) AS value FROM public.ldi_data WHERE log_id = (COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1",
           "format": "table"
         }
       ],
@@ -568,16 +791,16 @@
     },
     {
       "id": 8,
-      "title": "Position Error (pe_1 ~ pe_6) + MAX|PE|",
+      "title": "Position Error (PE1-PE6) + MAX|PE|",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 0,
-        "y": 6,
-        "w": 14,
-        "h": 5
+        "y": 12,
+        "w": 24,
+        "h": 4
       },
       "options": {
         "showHeader": true,
@@ -589,43 +812,47 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(pe_1::NUMERIC, 3) AS \"pe_1\", ROUND(pe_2::NUMERIC, 3) AS \"pe_2\", ROUND(pe_3::NUMERIC, 3) AS \"pe_3\", ROUND(pe_4::NUMERIC, 3) AS \"pe_4\", ROUND(pe_5::NUMERIC, 3) AS \"pe_5\", ROUND(pe_6::NUMERIC, 3) AS \"pe_6\", ROUND(GREATEST(ABS(pe_1),ABS(pe_2),ABS(pe_3),ABS(pe_4),ABS(pe_5),ABS(pe_6))::NUMERIC, 3) AS \"MAX|PE|\", pe_setting AS \"PE Spec\"\nFROM public.ldi_data\nWHERE eqp_id = ${machine_id:singlequote}\n  AND $__timeFilter(time)\nORDER BY ABS(EXTRACT(EPOCH FROM time) - EXTRACT(EPOCH FROM TO_TIMESTAMP(($__to + $__from) / 2000.0))) ASC\nLIMIT 1",
+          "rawSql": "SELECT ROUND(pe_1::NUMERIC,3) AS \"pe_1\",ROUND(pe_2::NUMERIC,3) AS \"pe_2\",\n ROUND(pe_3::NUMERIC,3) AS \"pe_3\",ROUND(pe_4::NUMERIC,3) AS \"pe_4\",\n ROUND(pe_5::NUMERIC,3) AS \"pe_5\",ROUND(pe_6::NUMERIC,3) AS \"pe_6\",\n ROUND(max_pe::NUMERIC,3) AS \"MAX|PE|\",ROUND(pe_setting::NUMERIC,3) AS \"pe_setting\",\n CASE WHEN max_pe IS NULL THEN 'N/A' WHEN max_pe <= pe_setting THEN 'PASS' ELSE 'OUT OF SPEC' END AS \"PE Status\"\nFROM (\n SELECT d.*,GREATEST(ABS(pe_1),ABS(pe_2),ABS(pe_3),ABS(pe_4),ABS(pe_5),ABS(pe_6)) AS max_pe\n FROM public.ldi_data d WHERE log_id=(COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1\n) event_row;",
           "format": "table"
         }
       ],
       "transparent": true,
-      "description": "Individual PE values at the clicked moment. MAX|PE| = worst-case deviation across 6 fiducials.",
+      "description": "Real PE values from the selected event. N/A means this machine/event did not provide PE data.",
       "fieldConfig": {
         "defaults": {
-          "unit": "lengthum",
-          "decimals": 3
+          "unit": "suffix: µm",
+          "decimals": 3,
+          "noValue": "N/A",
+          "custom": {}
         },
         "overrides": [
           {
             "matcher": {
               "id": "byName",
-              "options": "MAX|PE|"
+              "options": "PE Status"
             },
             "properties": [
               {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "#22C55E",
-                      "value": null
-                    },
-                    {
-                      "color": "#FACC15",
-                      "value": 15
-                    },
-                    {
-                      "color": "#EF4444",
-                      "value": 25
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "PASS": {
+                        "color": "#22C55E",
+                        "text": "PASS"
+                      },
+                      "OUT OF SPEC": {
+                        "color": "#EF4444",
+                        "text": "OUT OF SPEC"
+                      },
+                      "N/A": {
+                        "color": "#6B7280",
+                        "text": "N/A"
+                      }
                     }
-                  ]
-                }
+                  }
+                ]
               },
               {
                 "id": "custom.cellOptions",
@@ -638,32 +865,108 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Timestamp"
+              "options": "PE Status"
             },
             "properties": [
               {
-                "id": "unit",
-                "value": "dateTimeAsIso"
-              },
-              {
-                "id": "decimals",
-                "value": 6
+                "id": "custom.width",
+                "value": 110
               }
             ]
           },
           {
             "matcher": {
               "id": "byName",
-              "options": "Time"
+              "options": "pe_2"
             },
             "properties": [
               {
-                "id": "unit",
-                "value": "dateTimeAsIso"
-              },
+                "id": "custom.width",
+                "value": 80
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "MAX|PE|"
+            },
+            "properties": [
               {
-                "id": "decimals",
-                "value": 6
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pe_1"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 80
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pe_6"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 80
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pe_setting"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pe_5"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 80
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pe_4"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 80
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pe_3"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 80
               }
             ]
           }
@@ -672,15 +975,15 @@
     },
     {
       "id": 9,
-      "title": "Process Capability (Cpk / Sigma)",
+      "title": "Process Capability from PE Samples",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 14,
-        "y": 6,
-        "w": 10,
+        "x": 0,
+        "y": 20,
+        "w": 12,
         "h": 5
       },
       "options": {
@@ -693,14 +996,18 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT eqp_id AS \"Machine\", sample_count AS \"Samples\", mean_pe AS \"Mean PE\", cpk AS \"Cpk\", capability_class AS \"Capability\", mean_je AS \"Mean JE\", cpk_je AS \"Cpk (JE)\", capability_class_je AS \"JE Capability\"\nFROM public.v_machine_spc_ranking\nWHERE eqp_id = ${machine_id:singlequote}",
+          "rawSql": "WITH selected_machines AS (\n  SELECT DISTINCT eqp_id FROM public.ldi_data\n  WHERE ((${event_time_ms:raw}::NUMERIC > 0 AND eqp_id=split_part(${clicked_series:sqlstring},' - ',1))\n    OR (${event_time_ms:raw}::NUMERIC <= 0 AND eqp_id IN (${machine_id:sqlstring})))\n), pe_samples AS (\n  SELECT d.eqp_id,d.pe_setting,p.pe FROM public.ldi_data d JOIN selected_machines sm ON sm.eqp_id=d.eqp_id\n  CROSS JOIN LATERAL (VALUES(d.pe_1),(d.pe_2),(d.pe_3),(d.pe_4),(d.pe_5),(d.pe_6)) p(pe)\n  WHERE $__timeFilter(d.\"time\") AND p.pe IS NOT NULL AND d.pe_setting IS NOT NULL\n), stats AS (\n  SELECT eqp_id,COUNT(*) sample_count,AVG(pe) mean_pe,STDDEV_SAMP(pe) stddev_pe,AVG(pe_setting) lim FROM pe_samples GROUP BY eqp_id\n)\nSELECT sm.eqp_id AS \"Machine\",COALESCE(stats.sample_count,0) AS \"Samples\",ROUND(stats.mean_pe::NUMERIC,2) AS \"Mean PE\",\n ROUND((lim/NULLIF(3*stddev_pe,0))::NUMERIC,2) AS \"Cp\",\n ROUND(LEAST((lim-mean_pe)/NULLIF(3*stddev_pe,0),(mean_pe+lim)/NULLIF(3*stddev_pe,0))::NUMERIC,2) AS \"Cpk\"\nFROM selected_machines sm LEFT JOIN stats ON stats.eqp_id=sm.eqp_id\nLIMIT 1000;",
           "format": "table"
         }
       ],
       "transparent": true,
       "description": "Process capability from v_machine_spc_ranking. Cpk >= 1.33 = Capable, Sigma Level = Cpk * 3.",
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "noValue": "N/A",
+          "unit": "lengthum",
+          "decimals": 2
+        },
         "overrides": [
           {
             "matcher": {
@@ -777,6 +1084,66 @@
                 "value": 6
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Mean PE"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 75
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Samples"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 75
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Cp"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 70
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Cpk"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 70
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Machine"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 120
+              }
+            ]
           }
         ]
       }
@@ -790,9 +1157,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 11,
+        "y": 25,
         "w": 24,
-        "h": 4
+        "h": 5
       },
       "options": {
         "showHeader": true,
@@ -810,14 +1177,15 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT al.logdate AS \"Time\", al.equipmentid AS \"Machine\", al.errorcode AS \"Code\", al.errortime AS \"Error Time\", COALESCE(m.alarm_msg, al.errorcode::TEXT) AS \"Message\", COALESCE(m.alarm_type, 'UNMAPPED') AS \"Severity\", COALESCE(m.alarm_detail, '') AS \"Details\"\nFROM public.ldi_alarm_log al\nLEFT JOIN public.ldi_alarm_ms_code m ON al.errorcode::TEXT = m.alarm_code::TEXT\nWHERE al.equipmentid = ${machine_id:singlequote}\n  AND al.logdate >= TO_TIMESTAMP(($__to + $__from) / 2000.0) - INTERVAL '5 minutes'\n  AND al.logdate <= TO_TIMESTAMP(($__to + $__from) / 2000.0) + INTERVAL '5 minutes'\nORDER BY al.logdate DESC",
+          "rawSql": "WITH target AS (SELECT \"time\" FROM public.ldi_data WHERE log_id=(COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1),\nselected_machine AS (\n SELECT CASE WHEN ${event_time_ms:raw}::NUMERIC > 0 THEN split_part(${clicked_series:sqlstring},' - ',1)\n             ELSE ${machine_id:sqlstring} END AS eqp_id\n), alarm_rows AS (\nSELECT al.logdate AS \"Time\",al.equipmentid AS \"Machine\",al.errorcode::TEXT AS \"errorcode\",al.errortime::TEXT AS \"errortime\",\n COALESCE(m.alarm_msg,al.errorcode::TEXT) AS \"Message\",COALESCE(m.alarm_type,'UNMAPPED') AS \"Severity\"\nFROM public.ldi_alarm_log al CROSS JOIN selected_machine sm\nLEFT JOIN public.ldi_alarm_ms_code m ON al.errorcode::TEXT=m.alarm_code::TEXT\nWHERE al.equipmentid=sm.eqp_id\n AND al.logdate BETWEEN (SELECT \"time\"-INTERVAL '5 minutes' FROM target) AND (SELECT \"time\"+INTERVAL '5 minutes' FROM target)\n)\nSELECT equipmentid, errorcode, logdate FROM alarm_rows\nUNION ALL\nSELECT target.\"time\",sm.eqp_id,NULL::TEXT,NULL::TEXT,'No alarm in +/-5 minutes (real data)','NONE'\nFROM target CROSS JOIN selected_machine sm WHERE NOT EXISTS (SELECT 1 FROM alarm_rows)\nORDER BY \"Time\" DESC;",
           "format": "table"
         }
       ],
       "transparent": true,
-      "description": "Alarms within ±5 minutes of the clicked timestamp. Proves causality: data drift → alarm.",
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "noValue": "N/A"
+        },
         "overrides": [
           {
             "matcher": {
@@ -842,6 +1210,10 @@
                       "WARN": {
                         "color": "#FACC15",
                         "text": "Warning"
+                      },
+                      "NONE": {
+                        "color": "#6B7280",
+                        "text": "NONE"
                       }
                     }
                   }
@@ -888,7 +1260,8 @@
             ]
           }
         ]
-      }
+      },
+      "description": "Real alarms within +/-5 minutes of the selected ldi_data.log_id event. No data is valid when alarm and telemetry exports do not overlap."
     },
     {
       "id": 11,
@@ -898,10 +1271,10 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 0,
-        "y": 15,
-        "w": 24,
-        "h": 2
+        "x": 12,
+        "y": 20,
+        "w": 12,
+        "h": 5
       },
       "fieldConfig": {
         "defaults": {
@@ -917,7 +1290,8 @@
           },
           "color": {
             "mode": "thresholds"
-          }
+          },
+          "noValue": "N/A"
         },
         "overrides": []
       },
@@ -943,7 +1317,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT \"time\" AS value\nFROM public.ldi_data\nWHERE eqp_id = ${machine_id:singlequote}\n  AND $__timeFilter(time)\nORDER BY ABS(EXTRACT(EPOCH FROM time) - EXTRACT(EPOCH FROM TO_TIMESTAMP(($__to + $__from) / 2000.0))) ASC\nLIMIT 1",
+          "rawSql": "SELECT (EXTRACT(EPOCH FROM \"time\") * 1000)::NUMERIC AS value FROM public.ldi_data WHERE log_id = (COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1",
           "format": "table"
         }
       ],
@@ -952,16 +1326,16 @@
     },
     {
       "id": 12,
-      "title": "Event Timeline (state + alarms)",
+      "title": "Event Timeline around Selected Log ID (+/-5 min)",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 0,
-        "y": 17,
+        "y": 30,
         "w": 24,
-        "h": 6
+        "h": 7
       },
       "options": {
         "showHeader": true,
@@ -979,12 +1353,14 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT TO_CHAR(event_time, 'YYYY-MM-DD HH24:MI:SS.MS') AS \"Event Time\", eqp_id AS \"Machine\", event_type AS \"Event Type\", source AS \"Source\", description AS \"Description\"\nFROM public.v_ldi_event_timeline\nWHERE eqp_id = ${machine_id:singlequote}\n  AND event_time >= TO_TIMESTAMP(($__to + $__from) / 2000.0) - INTERVAL '5 minutes'\n  AND event_time <= TO_TIMESTAMP(($__to + $__from) / 2000.0) + INTERVAL '5 minutes'\nORDER BY event_time DESC\nLIMIT 100",
+          "rawSql": "WITH target AS (SELECT \"time\" AS t FROM public.ldi_data WHERE log_id=(COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1), events AS (\n  SELECT d.\"time\" AS event_time,d.eqp_id,'STATE'::TEXT AS event_type,'ldi_data'::TEXT AS source,\n         CASE WHEN d.state THEN 'RUNNING' ELSE 'DOWN' END AS description\n  FROM public.ldi_data d,target\n  WHERE ((${event_time_ms:raw}::NUMERIC > 0 AND d.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)) OR (${event_time_ms:raw}::NUMERIC <= 0 AND d.eqp_id IN (${machine_id:sqlstring}))) AND d.\"time\" BETWEEN target.t-INTERVAL '5 minutes' AND target.t+INTERVAL '5 minutes'\n  UNION ALL\n  SELECT a.logdate,a.equipmentid,'ALARM','ldi_alarm_log',COALESCE(m.alarm_msg,a.errorcode::TEXT)\n  FROM public.ldi_alarm_log a LEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT=m.alarm_code::TEXT,target\n  WHERE ((${event_time_ms:raw}::NUMERIC > 0 AND a.equipmentid = split_part(${clicked_series:sqlstring}, ' - ', 1)) OR (${event_time_ms:raw}::NUMERIC <= 0 AND a.equipmentid IN (${machine_id:sqlstring}))) AND a.logdate BETWEEN target.t-INTERVAL '5 minutes' AND target.t+INTERVAL '5 minutes'\n)\nSELECT event_time AS \"Event Time\",eqp_id AS \"Machine\",event_type AS \"Event Type\",source AS \"Source\",description AS \"Description\"\nFROM events ORDER BY event_time DESC LIMIT 100;",
           "format": "table"
         }
       ],
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "noValue": "N/A"
+        },
         "overrides": [
           {
             "matcher": {
@@ -1025,46 +1401,214 @@
         ]
       },
       "transparent": true,
-      "description": "Chronological event sequence: Machine Start/Stop + Alarms. Shows the narrative flow of failures."
+      "description": "Inline real-data timeline replacing the missing v_ldi_event_timeline view."
+    },
+    {
+      "id": 16,
+      "title": "Judgment Error (JE1-JE4) + MAX|JE|",
+      "type": "table",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 24,
+        "h": 4
+      },
+      "options": {
+        "showHeader": true,
+        "rowHeight": 0.8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT ROUND(je_1::NUMERIC,3) AS \"je_1\",ROUND(je_2::NUMERIC,3) AS \"je_2\",\n ROUND(je_3::NUMERIC,3) AS \"je_3\",ROUND(je_4::NUMERIC,3) AS \"je_4\",\n ROUND(max_je::NUMERIC,3) AS \"MAX|JE|\",ROUND(je_setting::NUMERIC,3) AS \"je_setting\",\n CASE WHEN max_je IS NULL THEN 'N/A' WHEN max_je <= je_setting THEN 'PASS' ELSE 'OUT OF SPEC' END AS \"JE Status\"\nFROM (\n SELECT d.*,GREATEST(ABS(je_1),ABS(je_2),ABS(je_3),ABS(je_4)) AS max_je\n FROM public.ldi_data d WHERE log_id=(COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1\n) event_row;",
+          "format": "table"
+        }
+      ],
+      "transparent": true,
+      "description": "Real JE values from the selected event with PASS/OUT OF SPEC evaluated against je_setting.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "suffix: µm",
+          "decimals": 3,
+          "noValue": "N/A",
+          "custom": {}
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "JE Status"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "PASS": {
+                        "color": "#22C55E",
+                        "text": "PASS"
+                      },
+                      "OUT OF SPEC": {
+                        "color": "#EF4444",
+                        "text": "OUT OF SPEC"
+                      },
+                      "N/A": {
+                        "color": "#6B7280",
+                        "text": "N/A"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "je_1"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "je_4"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "MAX|JE|"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "je_3"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "je_setting"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "je_2"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "JE Status"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 110
+              }
+            ]
+          }
+        ]
+      }
     }
   ],
   "style": "dark",
   "links": [
     {
       "title": "Apex Circuit Fleet Command Center",
-      "url": "/d/ldi-pcb-manufacturing/ims-ldi-manufacturing",
+      "url": "/d/ims-ldi-manufacturing/set2-manufacturing?from=${__from}&to=${__to}",
       "type": "link",
       "icon": "external link",
       "targetBlank": false,
-      "keepTime": true,
+      "keepTime": false,
       "includeVars": true
     },
     {
       "title": "Engineering Analytics & SPC",
-      "url": "/d/ldi-engineering-analytics/ims-ldi-engineering-analytics",
+      "url": "/d/ims-ldi-engineering-analytics/set2-engineering?from=${__from}&to=${__to}",
       "type": "link",
       "icon": "external link",
       "targetBlank": false,
-      "keepTime": true,
+      "keepTime": false,
       "includeVars": true
     },
     {
       "title": "Operator Andon Board",
-      "url": "/d/ldi-operator-andon/ims-ldi-operator-andon",
+      "url": "/d/ims-ldi-operator-andon/set2-operator-andon?from=${__from}&to=${__to}",
       "type": "link",
       "icon": "external link",
       "targetBlank": false,
-      "keepTime": true,
-      "includeVars": true
-    },
-    {
-      "title": "Data Readiness",
-      "url": "/d/ldi-data-readiness/ims-ldi-data-readiness",
-      "type": "link",
-      "icon": "external link",
-      "targetBlank": false,
-      "keepTime": true,
+      "keepTime": false,
       "includeVars": true
     }
+  ],
+  "id": null,
+  "uid": "ims-ldi-machine-snapshot",
+  "title": "IMS LDI - Machine Snapshot (Set 2 Real DB)",
+  "version": 3,
+  "time": {
+    "from": "2026-07-19T21:00:00.000Z",
+    "to": "2026-07-20T03:00:00.000Z"
+  },
+  "timezone": "browser",
+  "refresh": "10s",
+  "tags": [
+    "IMS",
+    "LDI",
+    "set-2",
+    "real-data",
+    "current-database"
   ]
 }
