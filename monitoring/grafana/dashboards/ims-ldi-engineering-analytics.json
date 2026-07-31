@@ -1264,7 +1264,7 @@
       ]
     },
     {
-      "id": 13,
+      "id": 12,
       "title": "Alignment Error Distribution (PE Histogram)",
       "type": "histogram",
       "datasource": {
@@ -1352,7 +1352,7 @@
       ]
     },
     {
-      "id": 15,
+      "id": 13,
       "title": "Resist Dosage Live (mJ/cm²)",
       "type": "bargauge",
       "datasource": {
@@ -1440,6 +1440,75 @@
           "targetBlank": false
         }
       ]
+    },
+    {
+      "id": 14,
+      "title": "Alarm ↔ Process Correlation (RCA Truth Test)",
+      "type": "stat",
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 49
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "timescaledb"
+      },
+      "targets": [
+        {
+          "format": "table",
+          "rawSql": "SELECT 'THERMAL (81501)' AS \"Alarm Category\", ROUND(100.0*COUNT(*) FILTER (WHERE flag_temp_out_of_spec) / NULLIF(COUNT(*),0), 1) AS \"Correlation %\", COUNT(*) AS \"Event Count\" FROM v_ldi_alarm_context WHERE errorcode = '81501'\nUNION ALL\nSELECT 'VACUUM (81101/02)', ROUND(100.0*COUNT(*) FILTER (WHERE flag_vac_out_of_spec) / NULLIF(COUNT(*),0), 1), COUNT(*) FROM v_ldi_alarm_context WHERE errorcode IN ('81101','81102')\nUNION ALL\nSELECT 'ALIGNMENT (812xx)', ROUND(100.0*COUNT(*) FILTER (WHERE flag_pe_out_of_spec) / NULLIF(COUNT(*),0), 1), COUNT(*) FROM v_ldi_alarm_context WHERE errorcode IN ('81201','81203','81204')",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/^Correlation %$/",
+          "values": false
+        },
+        "textMode": "auto",
+        "noValue": "0"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {},
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#EF4444",
+                "value": null
+              },
+              {
+                "color": "#FF9100",
+                "value": 50
+              },
+              {
+                "color": "#00FF87",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "transparent": true,
+      "description": "Correlation between Alarm occurrences and actual Process anomalies out of spec (RCA Validation)"
     }
   ],
   "fiscalYearStartMonth": 0,
