@@ -33,12 +33,12 @@ function parseAll(items, type, state) {
     return { cpu: { coreCount: cpu.count, loadPercent: Math.max(0, Math.min(100, cpuLoad)), cpuMetrics: cpu.cores }, temp: { maxC: Math.max(-40, Math.min(150, Number(maxTemp.toFixed(2)))), tempMetrics: tempSensors }, disk: { ramTotalMb: Math.max(0, Number(ramTotalMb.toFixed(2))), ramUsedMb: Math.max(0, Math.min(ramTotalMb, Number(ramUsedMb.toFixed(2)))), ramFreeMb: Math.max(0, Number((ramTotalMb - ramUsedMb).toFixed(2))), totalGb: Math.max(0, Math.min(1048576, Number(diskTotalGb.toFixed(2)))), usedGb: Math.max(0, Math.min(diskTotalGb, Number(diskUsedGb.toFixed(2)))), freeGb: Math.max(0, Number((diskTotalGb - diskUsedGb).toFixed(2))) }, ifaces, ldi };
 }
 
-function calcNetRate(deviceId, currentIfaces) {
+function calcNetRate(deviceId, currentIfaces, flow) {
     const now = Date.now();
     const prevKey = 'net_prev_' + deviceId;
     const tsKey = 'net_ts_' + deviceId;
-    const prevIfaces = flow.get(prevKey) || {};
-    const prevTs = flow.get(tsKey) || (now - 10000);
+    const prevIfaces = flow ? (flow.get(prevKey) || {}) : {};
+    const prevTs = flow ? (flow.get(tsKey) || (now - 10000)) : (now - 10000);
     const elapsedSec = (now - prevTs) / 1000;
     const summary = {};
     for (const [idx, curr] of Object.entries(currentIfaces)) {
@@ -66,8 +66,8 @@ function calcNetRate(deviceId, currentIfaces) {
         }
         summary[curr.name] = { rx_mbps: rxMbps, tx_mbps: txMbps, errors: curr.err, drops: curr.drop, status: isUp ? 'UP' : 'DOWN' };
     }
-    flow.set(prevKey, JSON.parse(JSON.stringify(currentIfaces)));
-    flow.set(tsKey, now);
+    if(flow) { flow.set(prevKey, JSON.parse(JSON.stringify(currentIfaces))); }
+    if(flow) { flow.set(tsKey, now); }
     return { summary };
 }
 
