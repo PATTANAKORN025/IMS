@@ -246,16 +246,24 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": null
               },
               {
-                "color": "#FACC15",
-                "value": 50
+                "color": "#FF9100",
+                "value": 19
               },
               {
-                "color": "#22C55E",
-                "value": 80
+                "color": "#00FF87",
+                "value": 20
+              },
+              {
+                "color": "#FF9100",
+                "value": 24
+              },
+              {
+                "color": "#FF003C",
+                "value": 25
               }
             ]
           },

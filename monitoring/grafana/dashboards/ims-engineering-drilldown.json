@@ -635,7 +635,7 @@
           "min": 0,
           "max": 100,
           "custom": {
-            "fillOpacity": 15,
+            "fillOpacity": 20,
             "lineWidth": 2,
             "spanNulls": 60000,
             "gradientMode": "opacity",
@@ -915,7 +915,7 @@
           "unit": "bps",
           "custom": {
             "axisCente#EF4444Zero": true,
-            "fillOpacity": 15,
+            "fillOpacity": 20,
             "lineWidth": 2,
             "spanNulls": false,
             "gradientMode": "opacity",
@@ -1193,7 +1193,7 @@
         "defaults": {
           "unit": "celsius",
           "custom": {
-            "fillOpacity": 15,
+            "fillOpacity": 20,
             "lineWidth": 2,
             "spanNulls": 60000,
             "thresholdsStyle": {
@@ -1548,7 +1548,7 @@
       "fieldConfig": {
         "defaults": {
           "custom": {
-            "fillOpacity": 15,
+            "fillOpacity": 20,
             "lineWidth": 2,
             "spanNulls": 60000,
             "gradientMode": "opacity",
@@ -1771,7 +1771,7 @@
       "fieldConfig": {
         "defaults": {
           "custom": {
-            "fillOpacity": 15,
+            "fillOpacity": 20,
             "lineWidth": 2,
             "spanNulls": 60000,
             "gradientMode": "opacity",
@@ -2022,7 +2022,7 @@
       "fieldConfig": {
         "defaults": {
           "custom": {
-            "fillOpacity": 15,
+            "fillOpacity": 20,
             "lineWidth": 2,
             "lineInterpolation": "smooth",
             "gradientMode": "opacity",

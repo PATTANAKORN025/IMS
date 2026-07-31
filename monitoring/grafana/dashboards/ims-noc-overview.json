@@ -755,7 +755,7 @@
           "min": 0,
           "max": 100,
           "custom": {
-            "fillOpacity": 15,
+            "fillOpacity": 20,
             "lineWidth": 2,
             "spanNulls": 60000,
             "gradientMode": "opacity",
@@ -1078,7 +1078,7 @@
         "defaults": {
           "unit": "celsius",
           "custom": {
-            "fillOpacity": 15,
+            "fillOpacity": 20,
             "lineWidth": 2,
             "spanNulls": 60000,
             "gradientMode": "opacity",
@@ -1578,7 +1578,7 @@
           "min": 0,
           "max": 100,
           "custom": {
-            "fillOpacity": 15,
+            "fillOpacity": 20,
             "lineWidth": 2,
             "spanNulls": 60000,
             "gradientMode": "opacity",

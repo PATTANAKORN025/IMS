@@ -640,7 +640,7 @@
             "axisLabel": "rows / 5 min",
             "axisPlacement": "auto",
             "drawStyle": "line",
-            "fillOpacity": 15,
+            "fillOpacity": 20,
             "lineInterpolation": "linear",
             "lineWidth": 2,
             "pointSize": 4,
