@@ -1,0 +1,1415 @@
+{
+  "description": "Layer 3 Process Timeline: synchronized multi-parameter RCA. temperature → humidity → scan_speed → air_vacuum → scale_x/y → pe_1~6 → je_1~4 → state. Shared crosshair + tooltip. Fixed axis scaling.",
+  "schemaVersion": 39,
+  "liveNow": true,
+  "style": "dark",
+  "graphTooltip": 2,
+  "templating": {
+    "list": [
+      {
+        "name": "factory",
+        "label": "Factory",
+        "type": "query",
+        "datasource": {
+          "uid": "timescaledb"
+        },
+        "query": "SELECT DISTINCT factory AS __text, factory AS __value FROM public.ldi_data ORDER BY factory",
+        "definition": "SELECT DISTINCT factory AS __text, factory AS __value FROM public.ldi_data ORDER BY factory",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "multi": true,
+        "includeAll": true,
+        "options": [],
+        "refresh": 1,
+        "sort": 1,
+        "hide": 0,
+        "regex": "",
+        "skipUrlSync": false
+      },
+      {
+        "name": "process",
+        "label": "Process",
+        "type": "query",
+        "datasource": {
+          "uid": "timescaledb"
+        },
+        "query": "SELECT DISTINCT process AS __text, process AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) ORDER BY process",
+        "definition": "SELECT DISTINCT process AS __text, process AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) ORDER BY process",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "multi": true,
+        "includeAll": true,
+        "options": [],
+        "refresh": 1,
+        "sort": 1,
+        "hide": 0,
+        "regex": "",
+        "skipUrlSync": false
+      },
+      {
+        "name": "mo",
+        "label": "MO",
+        "type": "query",
+        "datasource": {
+          "uid": "timescaledb"
+        },
+        "query": "SELECT DISTINCT mo AS __text, mo AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) ORDER BY mo",
+        "definition": "SELECT DISTINCT mo AS __text, mo AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) ORDER BY mo",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "multi": true,
+        "includeAll": true,
+        "options": [],
+        "refresh": 1,
+        "sort": 1,
+        "hide": 0,
+        "regex": "",
+        "skipUrlSync": false
+      },
+      {
+        "name": "fpn",
+        "label": "FPN",
+        "type": "query",
+        "datasource": {
+          "uid": "timescaledb"
+        },
+        "query": "SELECT DISTINCT fpn AS __text, fpn AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) ORDER BY fpn",
+        "definition": "SELECT DISTINCT fpn AS __text, fpn AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) ORDER BY fpn",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "multi": true,
+        "includeAll": true,
+        "options": [],
+        "refresh": 1,
+        "sort": 1,
+        "hide": 0,
+        "regex": "",
+        "skipUrlSync": false
+      },
+      {
+        "name": "layer",
+        "label": "Layer",
+        "type": "query",
+        "datasource": {
+          "uid": "timescaledb"
+        },
+        "query": "SELECT DISTINCT layer_name AS __text, layer_name AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) ORDER BY layer_name",
+        "definition": "SELECT DISTINCT layer_name AS __text, layer_name AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) ORDER BY layer_name",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "multi": true,
+        "includeAll": true,
+        "options": [],
+        "refresh": 1,
+        "sort": 1,
+        "hide": 0,
+        "regex": "",
+        "skipUrlSync": false
+      },
+      {
+        "name": "machine_id",
+        "label": "Machine",
+        "type": "query",
+        "datasource": {
+          "uid": "timescaledb"
+        },
+        "query": "SELECT DISTINCT eqp_id AS __text, eqp_id AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) ORDER BY eqp_id",
+        "definition": "SELECT DISTINCT eqp_id AS __text, eqp_id AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) ORDER BY eqp_id",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "multi": true,
+        "includeAll": true,
+        "options": [],
+        "refresh": 1,
+        "sort": 1,
+        "hide": 0,
+        "regex": "",
+        "skipUrlSync": false
+      }
+    ]
+  },
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": false,
+        "iconColor": "rgba(255, 96, 96, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "temperature (°C)",
+      "type": "timeseries",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "decimals": 1,
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 15,
+            "lineWidth": 2,
+            "showPoints": "never",
+            "spanNulls": false,
+            "gradientMode": "opacity"
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "links": [
+            {
+              "title": "Open Snapshot at this point",
+              "url": "/d/ims-ldi-set2-machine-snapshot-real-db/set2-machine-snapshot?var-clicked_series=${__series.name}&var-event_time_ms=${__value.time}&var-machine_id=${__series.name}&var-log_id=__auto__&from=${__from}&to=${__to}",
+              "targetBlank": false,
+              "oneClick": true
+            }
+          ],
+          "min": 18,
+          "max": 28
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "lastNotNull"
+          ]
+        },
+        "connectNullPoints": true
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT date_bin('1 minute', time, TIMESTAMPTZ '2000-01-01') AS time, eqp_id AS metric, AVG(temperature)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND temperature IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "format": "time_series",
+          "legendFormat": "{{metric}}"
+        }
+      ],
+      "transparent": true,
+      "description": "Temperature per machine on the operational scale 18-28°C. Invalid zero sensor rows are monitored separately in Data Readiness.",
+      "links": [
+        {
+          "title": "Open Machine Snapshot (select one Machine)",
+          "url": "/d/ims-ldi-set2-machine-snapshot-real-db/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        },
+        {
+          "title": "Open Manufacturing Set 2",
+          "url": "/d/ims-ldi-set2-manufacturing-real-db/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        },
+        {
+          "title": "Open Data Readiness",
+          "url": "/d/ldi-data-readiness-real-db/ldi-data-readiness?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "humidity (%RH)",
+      "type": "timeseries",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "suffix: %RH",
+          "decimals": 1,
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 15,
+            "lineWidth": 2,
+            "showPoints": "never",
+            "spanNulls": false,
+            "gradientMode": "opacity"
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "links": [
+            {
+              "title": "Open Snapshot at this point",
+              "url": "/d/ims-ldi-set2-machine-snapshot-real-db/set2-machine-snapshot?var-clicked_series=${__series.name}&var-event_time_ms=${__value.time}&var-machine_id=${__series.name}&var-log_id=__auto__&from=${__from}&to=${__to}",
+              "targetBlank": false,
+              "oneClick": true
+            }
+          ],
+          "min": 40,
+          "max": 70
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "lastNotNull"
+          ]
+        },
+        "connectNullPoints": true
+      },
+      "targets": [
+        {
+          "refId": "B",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT date_bin('1 minute', time, TIMESTAMPTZ '2000-01-01') AS time, eqp_id AS metric, AVG(humidity)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND humidity IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "format": "time_series",
+          "legendFormat": "{{metric}}"
+        }
+      ],
+      "transparent": true,
+      "description": "Relative humidity per machine on the operational scale 40-70%RH. Invalid zero sensor rows are monitored separately in Data Readiness.",
+      "links": [
+        {
+          "title": "Open Machine Snapshot (select one Machine)",
+          "url": "/d/ims-ldi-set2-machine-snapshot-real-db/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        },
+        {
+          "title": "Open Manufacturing Set 2",
+          "url": "/d/ims-ldi-set2-manufacturing-real-db/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        },
+        {
+          "title": "Open Data Readiness",
+          "url": "/d/ldi-data-readiness-real-db/ldi-data-readiness?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "scan_speed (mm/s)",
+      "type": "timeseries",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 6,
+        "w": 12,
+        "h": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "suffix: mm/s",
+          "decimals": 1,
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 15,
+            "lineWidth": 2,
+            "showPoints": "never",
+            "spanNulls": false,
+            "gradientMode": "opacity",
+            "axisSoftMin": 0,
+            "axisSoftMax": 450
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "links": [
+            {
+              "title": "Open Snapshot at this point",
+              "url": "/d/ims-ldi-set2-machine-snapshot-real-db/set2-machine-snapshot?var-clicked_series=${__series.name}&var-event_time_ms=${__value.time}&var-machine_id=${__series.name}&var-log_id=__auto__&from=${__from}&to=${__to}",
+              "targetBlank": false,
+              "oneClick": true
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "lastNotNull"
+          ]
+        },
+        "connectNullPoints": true
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT date_bin('1 minute', time, TIMESTAMPTZ '2000-01-01') AS time, eqp_id AS metric, AVG(scan_speed)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND scan_speed IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "format": "time_series",
+          "legendFormat": "{{metric}}"
+        }
+      ],
+      "transparent": true,
+      "description": "Laser scan speed in mm/s. Monitor for scan speed drift that affects dose delivery.",
+      "links": [
+        {
+          "title": "Open Machine Snapshot (select one Machine)",
+          "url": "/d/ims-ldi-set2-machine-snapshot-real-db/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        },
+        {
+          "title": "Open Manufacturing Set 2",
+          "url": "/d/ims-ldi-set2-manufacturing-real-db/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        },
+        {
+          "title": "Open Data Readiness",
+          "url": "/d/ldi-data-readiness-real-db/ldi-data-readiness?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "air_vacuum (kPa)",
+      "type": "timeseries",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 6,
+        "w": 12,
+        "h": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "pressurekpa",
+          "decimals": 1,
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 15,
+            "lineWidth": 2,
+            "showPoints": "never",
+            "spanNulls": false,
+            "gradientMode": "opacity",
+            "axisSoftMin": -25,
+            "axisSoftMax": 5
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "links": [
+            {
+              "title": "Open Snapshot at this point",
+              "url": "/d/ims-ldi-set2-machine-snapshot-real-db/set2-machine-snapshot?var-clicked_series=${__series.name}&var-event_time_ms=${__value.time}&var-machine_id=${__series.name}&var-log_id=__auto__&from=${__from}&to=${__to}",
+              "targetBlank": false,
+              "oneClick": true
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "lastNotNull"
+          ]
+        },
+        "connectNullPoints": true
+      },
+      "targets": [
+        {
+          "refId": "B",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT date_bin('1 minute', time, TIMESTAMPTZ '2000-01-01') AS time, eqp_id AS metric, AVG(air_vacuum)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND air_vacuum IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "format": "time_series",
+          "legendFormat": "{{metric}}"
+        }
+      ],
+      "transparent": true,
+      "description": "Vacuum pressure in kPa. Abnormal vacuum indicates chuck seal failure.",
+      "links": [
+        {
+          "title": "Open Machine Snapshot (select one Machine)",
+          "url": "/d/ims-ldi-set2-machine-snapshot-real-db/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        },
+        {
+          "title": "Open Manufacturing Set 2",
+          "url": "/d/ims-ldi-set2-manufacturing-real-db/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        },
+        {
+          "title": "Open Data Readiness",
+          "url": "/d/ldi-data-readiness-real-db/ldi-data-readiness?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "scale_x",
+      "type": "timeseries",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 12,
+        "w": 12,
+        "h": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 6,
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 15,
+            "lineWidth": 2,
+            "showPoints": "never",
+            "spanNulls": false,
+            "gradientMode": "opacity"
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "links": [
+            {
+              "title": "Open Snapshot at this point",
+              "url": "/d/ims-ldi-set2-machine-snapshot-real-db/set2-machine-snapshot?var-clicked_series=${__series.name}&var-event_time_ms=${__value.time}&var-machine_id=${__series.name}&var-log_id=__auto__&from=${__from}&to=${__to}",
+              "targetBlank": false,
+              "oneClick": true
+            }
+          ],
+          "min": 0.9995,
+          "max": 1.0007
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "lastNotNull"
+          ]
+        },
+        "connectNullPoints": true
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT date_bin('1 minute', time, TIMESTAMPTZ '2000-01-01') AS time, eqp_id AS metric, AVG(scale_x)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND scale_x IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "format": "time_series",
+          "legendFormat": "{{metric}}"
+        }
+      ],
+      "transparent": true,
+      "description": "Scale factor near 1.000000. Fixed engineering range preserves drift detail; invalid zero rows are monitored in Data Readiness.",
+      "links": [
+        {
+          "title": "Open Machine Snapshot (select one Machine)",
+          "url": "/d/ims-ldi-set2-machine-snapshot-real-db/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        },
+        {
+          "title": "Open Manufacturing Set 2",
+          "url": "/d/ims-ldi-set2-manufacturing-real-db/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        },
+        {
+          "title": "Open Data Readiness",
+          "url": "/d/ldi-data-readiness-real-db/ldi-data-readiness?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "scale_y",
+      "type": "timeseries",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 12,
+        "w": 12,
+        "h": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 6,
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 15,
+            "lineWidth": 2,
+            "showPoints": "never",
+            "spanNulls": false,
+            "gradientMode": "opacity"
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "links": [
+            {
+              "title": "Open Snapshot at this point",
+              "url": "/d/ims-ldi-set2-machine-snapshot-real-db/set2-machine-snapshot?var-clicked_series=${__series.name}&var-event_time_ms=${__value.time}&var-machine_id=${__series.name}&var-log_id=__auto__&from=${__from}&to=${__to}",
+              "targetBlank": false,
+              "oneClick": true
+            }
+          ],
+          "min": 0.9995,
+          "max": 1.0007
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "lastNotNull"
+          ]
+        },
+        "connectNullPoints": true
+      },
+      "targets": [
+        {
+          "refId": "B",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT date_bin('1 minute', time, TIMESTAMPTZ '2000-01-01') AS time, eqp_id AS metric, AVG(scale_y)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND scale_y IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "format": "time_series",
+          "legendFormat": "{{metric}}"
+        }
+      ],
+      "transparent": true,
+      "description": "Scale factor near 1.000000. Fixed engineering range preserves drift detail; invalid zero rows are monitored in Data Readiness.",
+      "links": [
+        {
+          "title": "Open Machine Snapshot (select one Machine)",
+          "url": "/d/ims-ldi-set2-machine-snapshot-real-db/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        },
+        {
+          "title": "Open Manufacturing Set 2",
+          "url": "/d/ims-ldi-set2-manufacturing-real-db/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        },
+        {
+          "title": "Open Data Readiness",
+          "url": "/d/ldi-data-readiness-real-db/ldi-data-readiness?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "pe_1 ~ pe_6 (µm)",
+      "type": "timeseries",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 18,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "suffix: µm",
+          "decimals": 2,
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 15,
+            "lineWidth": 2,
+            "showPoints": "never",
+            "spanNulls": false,
+            "gradientMode": "opacity",
+            "axisSoftMin": -80,
+            "axisSoftMax": 80
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "links": [
+            {
+              "title": "Open Snapshot at this point",
+              "url": "/d/ims-ldi-set2-machine-snapshot-real-db/set2-machine-snapshot?var-clicked_series=${__series.name}&var-event_time_ms=${__value.time}&var-machine_id=${machine_id}&var-log_id=__auto__&from=${__from}&to=${__to}",
+              "targetBlank": false,
+              "oneClick": true
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "lastNotNull"
+          ]
+        },
+        "connectNullPoints": true
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT date_bin('1 minute', time, TIMESTAMPTZ '2000-01-01') AS time, eqp_id || ' - pe_1' AS metric, AVG(pe_1)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_1 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "format": "time_series",
+          "legendFormat": "{{metric}}"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT date_bin('1 minute', time, TIMESTAMPTZ '2000-01-01') AS time, eqp_id || ' - pe_2' AS metric, AVG(pe_2)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_2 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "format": "time_series",
+          "legendFormat": "{{metric}}"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT date_bin('1 minute', time, TIMESTAMPTZ '2000-01-01') AS time, eqp_id || ' - pe_3' AS metric, AVG(pe_3)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_3 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "format": "time_series",
+          "legendFormat": "{{metric}}"
+        },
+        {
+          "refId": "D",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT date_bin('1 minute', time, TIMESTAMPTZ '2000-01-01') AS time, eqp_id || ' - pe_4' AS metric, AVG(pe_4)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_4 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "format": "time_series",
+          "legendFormat": "{{metric}}"
+        },
+        {
+          "refId": "E",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT date_bin('1 minute', time, TIMESTAMPTZ '2000-01-01') AS time, eqp_id || ' - pe_5' AS metric, AVG(pe_5)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_5 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "format": "time_series",
+          "legendFormat": "{{metric}}"
+        },
+        {
+          "refId": "F",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT date_bin('1 minute', time, TIMESTAMPTZ '2000-01-01') AS time, eqp_id || ' - pe_6' AS metric, AVG(pe_6)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_6 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "format": "time_series",
+          "legendFormat": "{{metric}}"
+        }
+      ],
+      "transparent": true,
+      "description": "Individual signed PE values. Soft scale covers the observed range (about -67 to +75 µm) without clipping future outliers.",
+      "links": [
+        {
+          "title": "Open Machine Snapshot (select one Machine)",
+          "url": "/d/ims-ldi-set2-machine-snapshot-real-db/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        },
+        {
+          "title": "Open Manufacturing Set 2",
+          "url": "/d/ims-ldi-set2-manufacturing-real-db/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        },
+        {
+          "title": "Open Data Readiness",
+          "url": "/d/ldi-data-readiness-real-db/ldi-data-readiness?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "je_1 ~ je_4 (µm)",
+      "type": "timeseries",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 18,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "suffix: µm",
+          "decimals": 2,
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 15,
+            "lineWidth": 2,
+            "showPoints": "never",
+            "spanNulls": false,
+            "gradientMode": "opacity",
+            "axisSoftMin": -5,
+            "axisSoftMax": 50
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "links": [
+            {
+              "title": "Open Snapshot at this point",
+              "url": "/d/ims-ldi-set2-machine-snapshot-real-db/set2-machine-snapshot?var-clicked_series=${__series.name}&var-event_time_ms=${__value.time}&var-machine_id=${machine_id}&var-log_id=__auto__&from=${__from}&to=${__to}",
+              "targetBlank": false,
+              "oneClick": true
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "lastNotNull"
+          ]
+        },
+        "connectNullPoints": true
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT date_bin('1 minute', time, TIMESTAMPTZ '2000-01-01') AS time, eqp_id || ' - je_1' AS metric, AVG(je_1)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND je_1 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "format": "time_series",
+          "legendFormat": "{{metric}}"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT date_bin('1 minute', time, TIMESTAMPTZ '2000-01-01') AS time, eqp_id || ' - je_2' AS metric, AVG(je_2)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND je_2 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "format": "time_series",
+          "legendFormat": "{{metric}}"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT date_bin('1 minute', time, TIMESTAMPTZ '2000-01-01') AS time, eqp_id || ' - je_3' AS metric, AVG(je_3)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND je_3 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "format": "time_series",
+          "legendFormat": "{{metric}}"
+        },
+        {
+          "refId": "D",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT date_bin('1 minute', time, TIMESTAMPTZ '2000-01-01') AS time, eqp_id || ' - je_4' AS metric, AVG(je_4)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND je_4 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "format": "time_series",
+          "legendFormat": "{{metric}}"
+        }
+      ],
+      "transparent": true,
+      "description": "Individual JE values. Soft scale covers the observed range (0 to about 43 µm) while retaining out-of-range visibility.",
+      "links": [
+        {
+          "title": "Open Machine Snapshot (select one Machine)",
+          "url": "/d/ims-ldi-set2-machine-snapshot-real-db/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        },
+        {
+          "title": "Open Manufacturing Set 2",
+          "url": "/d/ims-ldi-set2-manufacturing-real-db/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        },
+        {
+          "title": "Open Data Readiness",
+          "url": "/d/ldi-data-readiness-real-db/ldi-data-readiness?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "title": "state",
+      "type": "state-timeline",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 26,
+        "w": 24,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "DOWN",
+                  "color": "#EF4444"
+                },
+                "1": {
+                  "text": "RUNNING",
+                  "color": "#22C55E"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#EF4444",
+                "value": null
+              },
+              {
+                "color": "#22C55E",
+                "value": 1
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "short",
+          "links": [
+            {
+              "title": "Open Snapshot at this point",
+              "url": "/d/ims-ldi-set2-machine-snapshot-real-db/set2-machine-snapshot?var-clicked_series=${__series.name}&var-event_time_ms=${__value.time}&var-machine_id=${__series.name}&var-log_id=__auto__&from=${__from}&to=${__to}",
+              "targetBlank": false,
+              "oneClick": true
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "showValue": "auto",
+        "mergeValues": true,
+        "alignValue": "center",
+        "rowHeight": 0.85,
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT date_bin('1 minute', time, TIMESTAMPTZ '2000-01-01') AS time, eqp_id AS metric, MAX(CASE WHEN state THEN 1 ELSE 0 END) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) GROUP BY 1, 2 ORDER BY 1",
+          "format": "time_series",
+          "legendFormat": "{{metric}}"
+        }
+      ],
+      "transparent": true,
+      "description": "Machine lifesign: GREEN = RUNNING (state=true), RED = DOWN (state=false). Full-width panel for instant visibility of machine availability.",
+      "links": [
+        {
+          "title": "Open Machine Snapshot (select one Machine)",
+          "url": "/d/ims-ldi-set2-machine-snapshot-real-db/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        },
+        {
+          "title": "Open Manufacturing Set 2",
+          "url": "/d/ims-ldi-set2-manufacturing-real-db/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        },
+        {
+          "title": "Open Data Readiness",
+          "url": "/d/ldi-data-readiness-real-db/ldi-data-readiness?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "title": "Machine PE Capability - Cp vs Cpk",
+      "type": "barchart",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 30,
+        "w": 12,
+        "h": 8
+      },
+      "options": {
+        "orientation": "horizontal",
+        "stacking": "none",
+        "showValue": "auto",
+        "groupWidth": 0.7,
+        "barWidth": 0.8,
+        "barRadius": 0,
+        "fullHighlight": false,
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0,
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "WITH pe_samples AS (\n  SELECT d.eqp_id, d.pe_setting, p.pe\n  FROM public.ldi_data d\n  CROSS JOIN LATERAL (VALUES (d.pe_1),(d.pe_2),(d.pe_3),(d.pe_4),(d.pe_5),(d.pe_6)) p(pe)\n  WHERE $__timeFilter(d.\"time\")\n    AND d.factory IN (${factory:sqlstring})\n    AND d.process IN (${process:sqlstring})\n    AND d.mo IN (${mo:sqlstring})\n    AND d.fpn IN (${fpn:sqlstring})\n    AND d.layer_name IN (${layer:sqlstring})\n    AND d.eqp_id IN (${machine_id:sqlstring})\n    AND p.pe IS NOT NULL AND d.pe_setting IS NOT NULL\n), stats AS (\n  SELECT eqp_id, AVG(pe) AS mean_pe, STDDEV_SAMP(pe) AS stddev_pe, AVG(pe_setting) AS pe_limit\n  FROM pe_samples GROUP BY eqp_id\n), capability AS (\n  SELECT *, pe_limit / NULLIF(3 * stddev_pe, 0) AS cp,\n    LEAST((pe_limit - mean_pe) / NULLIF(3 * stddev_pe, 0), (mean_pe + pe_limit) / NULLIF(3 * stddev_pe, 0)) AS cpk\n  FROM stats\n)\nSELECT eqp_id AS \"Machine\", ROUND(cp::NUMERIC, 3) AS \"Cp\", ROUND(cpk::NUMERIC, 3) AS \"Cpk\"\nFROM capability ORDER BY cpk DESC NULLS LAST;",
+          "format": "table"
+        }
+      ],
+      "transparent": true,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "decimals": 2,
+          "min": 0,
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "description": "Calculated from real PE1-PE6 samples in the selected time, Factory, MO and Machine filters. Assumes symmetric +/- pe_setting limits.",
+      "links": [
+        {
+          "title": "Open Machine Snapshot (select one Machine)",
+          "url": "/d/ims-ldi-set2-machine-snapshot-real-db/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        },
+        {
+          "title": "Open Manufacturing Set 2",
+          "url": "/d/ims-ldi-set2-manufacturing-real-db/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        },
+        {
+          "title": "Open Data Readiness",
+          "url": "/d/ldi-data-readiness-real-db/ldi-data-readiness?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "title": "PE Standard Deviation by Machine (Lower is Better)",
+      "type": "barchart",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 30,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "decimals": 2,
+          "min": 0,
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "stacking": "none",
+        "showValue": "auto",
+        "groupWidth": 0.7,
+        "barWidth": 0.8,
+        "barRadius": 0,
+        "fullHighlight": false,
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0,
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "WITH pe_samples AS (\n  SELECT d.eqp_id, p.pe\n  FROM public.ldi_data d\n  CROSS JOIN LATERAL (VALUES (d.pe_1),(d.pe_2),(d.pe_3),(d.pe_4),(d.pe_5),(d.pe_6)) p(pe)\n  WHERE $__timeFilter(d.\"time\")\n    AND d.factory IN (${factory:sqlstring})\n    AND d.process IN (${process:sqlstring})\n    AND d.mo IN (${mo:sqlstring})\n    AND d.fpn IN (${fpn:sqlstring})\n    AND d.layer_name IN (${layer:sqlstring})\n    AND d.eqp_id IN (${machine_id:sqlstring})\n    AND p.pe IS NOT NULL\n)\nSELECT eqp_id AS \"Machine\", ROUND(STDDEV_SAMP(pe)::NUMERIC, 3) AS \"StdDev\"\nFROM pe_samples GROUP BY eqp_id HAVING STDDEV_SAMP(pe) IS NOT NULL ORDER BY \"StdDev\" DESC;",
+          "format": "table"
+        }
+      ],
+      "transparent": true,
+      "description": "Real PE1-PE6 standard deviation for the selected filters. Replaces the missing v_process_stability view.",
+      "links": [
+        {
+          "title": "Open Machine Snapshot (select one Machine)",
+          "url": "/d/ims-ldi-set2-machine-snapshot-real-db/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        },
+        {
+          "title": "Open Manufacturing Set 2",
+          "url": "/d/ims-ldi-set2-manufacturing-real-db/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        },
+        {
+          "title": "Open Data Readiness",
+          "url": "/d/ldi-data-readiness-real-db/ldi-data-readiness?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "title": "Alignment Error Distribution (PE Histogram)",
+      "type": "histogram",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 38,
+        "w": 24,
+        "h": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "suffix: µm",
+          "custom": {
+            "fillOpacity": 60,
+            "lineWidth": 1
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#22C55E",
+                "value": null
+              },
+              {
+                "color": "#FACC15",
+                "value": 15
+              },
+              {
+                "color": "#EF4444",
+                "value": 25
+              }
+            ]
+          },
+          "thresholdsStyle": {
+            "mode": "line"
+          },
+          "min": -80,
+          "max": 80,
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "bucketSize": 2,
+        "combine": true,
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT time, eqp_id || ' - pe_1' AS metric, pe_1 AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_1 IS NOT NULL UNION ALL SELECT time, eqp_id || ' - pe_2', pe_2 FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_2 IS NOT NULL UNION ALL SELECT time, eqp_id || ' - pe_3', pe_3 FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_3 IS NOT NULL UNION ALL SELECT time, eqp_id || ' - pe_4', pe_4 FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_4 IS NOT NULL UNION ALL SELECT time, eqp_id || ' - pe_5', pe_5 FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_5 IS NOT NULL UNION ALL SELECT time, eqp_id || ' - pe_6', pe_6 FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_6 IS NOT NULL ORDER BY time",
+          "format": "time_series",
+          "legendFormat": "{{metric}}"
+        }
+      ],
+      "transparent": true,
+      "description": "Statistical distribution of alignment errors. Shows skewness and process centering for SPC analysis.",
+      "links": [
+        {
+          "title": "Open Machine Snapshot (select one Machine)",
+          "url": "/d/ims-ldi-set2-machine-snapshot-real-db/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        },
+        {
+          "title": "Open Manufacturing Set 2",
+          "url": "/d/ims-ldi-set2-manufacturing-real-db/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        },
+        {
+          "title": "Open Data Readiness",
+          "url": "/d/ldi-data-readiness-real-db/ldi-data-readiness?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "title": "Resist Dosage Live (mJ/cm²)",
+      "type": "bargauge",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 44,
+        "w": 24,
+        "h": 5
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "suffix: mJ/cm²",
+          "min": 0,
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#EF4444",
+                "value": null
+              },
+              {
+                "color": "#FACC15",
+                "value": 10
+              },
+              {
+                "color": "#22C55E",
+                "value": 14
+              },
+              {
+                "color": "#FACC15",
+                "value": 22
+              },
+              {
+                "color": "#EF4444",
+                "value": 30
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "lcd",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT eqp_id AS metric, ROUND(AVG(resist_dosage)::NUMERIC, 1) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND resist_dosage IS NOT NULL GROUP BY 1 ORDER BY 1",
+          "format": "table"
+        }
+      ],
+      "transparent": true,
+      "description": "Latest resist dosage per selected machine. Auto-ranging is used because observed machine settings span 15 to 1,200 mJ/cm².",
+      "links": [
+        {
+          "title": "Open Machine Snapshot (select one Machine)",
+          "url": "/d/ims-ldi-set2-machine-snapshot-real-db/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        },
+        {
+          "title": "Open Manufacturing Set 2",
+          "url": "/d/ims-ldi-set2-manufacturing-real-db/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        },
+        {
+          "title": "Open Data Readiness",
+          "url": "/d/ldi-data-readiness-real-db/ldi-data-readiness?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        }
+      ]
+    }
+  ],
+  "fiscalYearStartMonth": 0,
+  "links": [
+    {
+      "title": "Apex Circuit Fleet Command Center",
+      "url": "/d/ims-ldi-set2-manufacturing-real-db/set2-manufacturing?from=${__from}&to=${__to}",
+      "type": "link",
+      "icon": "external link",
+      "targetBlank": false,
+      "keepTime": false,
+      "includeVars": true
+    },
+    {
+      "title": "Operator Andon Board",
+      "url": "/d/ims-ldi-set2-operator-andon-real-db/set2-operator-andon?from=${__from}&to=${__to}",
+      "type": "link",
+      "icon": "external link",
+      "targetBlank": false,
+      "keepTime": false,
+      "includeVars": true
+    },
+    {
+      "title": "Incident Snapshot",
+      "url": "/d/ims-ldi-set2-machine-snapshot-real-db/set2-machine-snapshot?from=${__from}&to=${__to}",
+      "type": "link",
+      "icon": "external link",
+      "targetBlank": false,
+      "keepTime": false,
+      "includeVars": true
+    }
+  ],
+  "id": null,
+  "uid": "ims-ldi-set2-engineering-real-db",
+  "title": "IMS LDI - Engineering Analytics & SPC (Set 2 Real DB)",
+  "version": 3,
+  "time": {
+    "from": "2026-07-19T21:00:00.000Z",
+    "to": "2026-07-20T03:00:00.000Z"
+  },
+  "timezone": "browser",
+  "refresh": "10s",
+  "tags": [
+    "IMS",
+    "LDI",
+    "set-2",
+    "real-data",
+    "current-database"
+  ]
+}
