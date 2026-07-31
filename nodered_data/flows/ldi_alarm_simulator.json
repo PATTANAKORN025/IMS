@@ -1,0 +1,39 @@
+[
+    {
+        "id": "alarm_sim_inject",
+        "type": "inject",
+        "z": "ldisim_tab",
+        "name": "Poisson Tick (10s)",
+        "props": [],
+        "repeat": "10",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 150,
+        "y": 200,
+        "wires": [
+            [
+                "alarm_sim_func"
+            ]
+        ]
+    },
+    {
+        "id": "alarm_sim_func",
+        "type": "function",
+        "z": "ldisim_tab",
+        "name": "Generate LDI Alarm",
+        "func": "const pool = global.get('pgPool');\nif (!pool) return null;\n\n// Poisson approximation: lambda = 0.05 alarms per 10s tick\nif (Math.random() > 0.05) return null;\n\nconst eqps = ['LDI-01','LDI-02','LDI-05','LDI-06','LDI-09','LDI-10'];\nconst eqp = eqps[Math.floor(Math.random() * eqps.length)];\nconst codes = ['1001', '2002', '3003', '4004', '5005']; // Integer alarm codes per schema\nconst code = codes[Math.floor(Math.random() * codes.length)];\nconst logid = 'ALM-' + Date.now();\nconst proc = 'DF INNER';\nconst factory = '1';\n\nconst sql = `INSERT INTO public.ldi_alarm_log (logid, logdate, errorcode, errortime, equipmentid, factory, process) VALUES ($1, NOW(), $2, $3, $4, $5, $6)`;\nconst params = [logid, code, new Date().toISOString(), eqp, factory, proc];\n\npool.query(sql, params, (err) => {\n    if (err) node.error(\"Alarm insert failed: \" + err.message);\n    else node.log(\"Simulated alarm inserted for \" + eqp);\n});\n\nreturn null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 200,
+        "wires": [
+            []
+        ]
+    }
+]
