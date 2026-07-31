@@ -49,7 +49,7 @@
           "custom": {
             "drawStyle": "line",
             "lineWidth": 2,
-            "fillOpacity": 15,
+            "fillOpacity": 20,
             "spanNulls": true,
             "showPoints": "never",
             "pointSize": 5,
@@ -116,7 +116,7 @@
           "custom": {
             "drawStyle": "line",
             "lineWidth": 2,
-            "fillOpacity": 15,
+            "fillOpacity": 20,
             "spanNulls": true,
             "showGridLines": false,
             "axisBorderShow": false,
@@ -535,7 +535,7 @@
           "custom": {
             "drawStyle": "line",
             "lineWidth": 2,
-            "fillOpacity": 15,
+            "fillOpacity": 20,
             "spanNulls": true,
             "showGridLines": false,
             "axisBorderShow": false,
@@ -838,7 +838,7 @@
           "custom": {
             "drawStyle": "line",
             "lineWidth": 2,
-            "fillOpacity": 15,
+            "fillOpacity": 20,
             "spanNulls": true,
             "showGridLines": false,
             "axisBorderShow": false,

@@ -719,7 +719,32 @@
       "description": "Latest production context per machine: job info + live physical parameters (temperature, humidity, scan_speed, thickness, resist_dosage, state).",
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF003C",
+                "value": null
+              },
+              {
+                "color": "#FF9100",
+                "value": 19
+              },
+              {
+                "color": "#00FF87",
+                "value": 20
+              },
+              {
+                "color": "#FF9100",
+                "value": 24
+              },
+              {
+                "color": "#FF003C",
+                "value": 25
+              }
+            ]
+          }
         },
         "overrides": [
           {
@@ -983,7 +1008,7 @@
           "custom": {
             "drawStyle": "line",
             "lineInterpolation": "smooth",
-            "fillOpacity": 15,
+            "fillOpacity": 20,
             "lineWidth": 2,
             "showPoints": "never",
             "spanNulls": false,
@@ -1107,7 +1132,7 @@
           "custom": {
             "drawStyle": "line",
             "lineInterpolation": "smooth",
-            "fillOpacity": 15,
+            "fillOpacity": 20,
             "lineWidth": 2,
             "showPoints": "never",
             "spanNulls": false,
@@ -1231,7 +1256,7 @@
           "custom": {
             "drawStyle": "line",
             "lineInterpolation": "smooth",
-            "fillOpacity": 15,
+            "fillOpacity": 20,
             "lineWidth": 2,
             "showPoints": "never",
             "spanNulls": false,
@@ -1404,7 +1429,7 @@
           "custom": {
             "drawStyle": "line",
             "lineInterpolation": "smooth",
-            "fillOpacity": 15,
+            "fillOpacity": 20,
             "lineWidth": 2,
             "showPoints": "never",
             "spanNulls": false,

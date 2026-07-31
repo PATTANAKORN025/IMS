@@ -737,7 +737,7 @@
           "unit": "gbytes",
           "min": 0,
           "custom": {
-            "fillOpacity": 15,
+            "fillOpacity": 20,
             "lineWidth": 2,
             "spanNulls": 60000,
             "thresholdsStyle": {
@@ -1081,7 +1081,7 @@
           "min": 0,
           "max": 100,
           "custom": {
-            "fillOpacity": 15,
+            "fillOpacity": 20,
             "lineWidth": 2,
             "spanNulls": 60000,
             "gradientMode": "opacity",
@@ -1362,7 +1362,7 @@
           "min": 0,
           "max": 100,
           "custom": {
-            "fillOpacity": 15,
+            "fillOpacity": 20,
             "lineWidth": 2,
             "spanNulls": 60000,
             "gradientMode": "opacity",
@@ -1661,7 +1661,7 @@
           "unit": "none",
           "custom": {
             "axisCente#EF4444Zero": true,
-            "fillOpacity": 15,
+            "fillOpacity": 20,
             "lineWidth": 2,
             "spanNulls": 60000,
             "thresholdsStyle": {
@@ -1953,7 +1953,7 @@
           "unit": "celsius",
           "custom": {
             "axisCente#EF4444Zero": true,
-            "fillOpacity": 15,
+            "fillOpacity": 20,
             "lineWidth": 2,
             "spanNulls": 60000,
             "thresholdsStyle": {

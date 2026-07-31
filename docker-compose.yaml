@@ -222,7 +222,6 @@ services:
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./monitoring/grafana/grafana.ini:/etc/grafana/grafana.ini:ro
       - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
-      - ./monitoring/grafana/set2-dashboards:/var/lib/grafana/set2-dashboards:ro
     ports:
       - "${GRAFANA_PORT:-3000}:${GRAFANA_PORT:-3000}"
     deploy:
