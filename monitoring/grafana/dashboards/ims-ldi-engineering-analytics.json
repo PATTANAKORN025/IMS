@@ -268,7 +268,7 @@
           "targetBlank": false
         },
         {
-          "title": "Open Manufacturing Set 2",
+          "title": "Open Manufacturing",
           "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": false
         },
@@ -384,7 +384,7 @@
           "targetBlank": false
         },
         {
-          "title": "Open Manufacturing Set 2",
+          "title": "Open Manufacturing",
           "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": false
         },
@@ -475,7 +475,7 @@
           "targetBlank": false
         },
         {
-          "title": "Open Manufacturing Set 2",
+          "title": "Open Manufacturing",
           "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": false
         },
@@ -566,7 +566,7 @@
           "targetBlank": false
         },
         {
-          "title": "Open Manufacturing Set 2",
+          "title": "Open Manufacturing",
           "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": false
         },
@@ -657,7 +657,7 @@
           "targetBlank": false
         },
         {
-          "title": "Open Manufacturing Set 2",
+          "title": "Open Manufacturing",
           "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": false
         },
@@ -748,7 +748,7 @@
           "targetBlank": false
         },
         {
-          "title": "Open Manufacturing Set 2",
+          "title": "Open Manufacturing",
           "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": false
         },
@@ -884,7 +884,7 @@
           "targetBlank": false
         },
         {
-          "title": "Open Manufacturing Set 2",
+          "title": "Open Manufacturing",
           "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": false
         },
@@ -1002,7 +1002,7 @@
           "targetBlank": false
         },
         {
-          "title": "Open Manufacturing Set 2",
+          "title": "Open Manufacturing",
           "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": false
         },
@@ -1102,7 +1102,7 @@
           "targetBlank": false
         },
         {
-          "title": "Open Manufacturing Set 2",
+          "title": "Open Manufacturing",
           "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": false
         },
@@ -1177,7 +1177,7 @@
           "targetBlank": false
         },
         {
-          "title": "Open Manufacturing Set 2",
+          "title": "Open Manufacturing",
           "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": false
         },
@@ -1252,7 +1252,7 @@
           "targetBlank": false
         },
         {
-          "title": "Open Manufacturing Set 2",
+          "title": "Open Manufacturing",
           "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": false
         },
@@ -1340,7 +1340,7 @@
           "targetBlank": false
         },
         {
-          "title": "Open Manufacturing Set 2",
+          "title": "Open Manufacturing",
           "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": false
         },
@@ -1430,7 +1430,7 @@
           "targetBlank": false
         },
         {
-          "title": "Open Manufacturing Set 2",
+          "title": "Open Manufacturing",
           "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": false
         },
@@ -1474,7 +1474,7 @@
   ],
   "id": null,
   "uid": "ims-ldi-engineering-analytics",
-  "title": "IMS LDI - Engineering Analytics & SPC (Set 2 Real DB)",
+  "title": "IMS LDI - Engineering Analytics & SPC",
   "version": 3,
   "time": {
     "from": "2026-07-19T21:00:00.000Z",

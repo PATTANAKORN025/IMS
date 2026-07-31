@@ -643,7 +643,10 @@
             "lineInterpolation": "smooth",
             "showPoints": "never",
             "showGridLines": false,
-            "axisBorderShow": false
+            "axisBorderShow": false,
+            "thresholdsStyle": {
+              "mode": "line+area"
+            }
           },
           "thresholds": {
             "mode": "absolute",

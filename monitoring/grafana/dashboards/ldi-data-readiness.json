@@ -159,7 +159,8 @@
         "text": {
           "titleSize": 14,
           "valueSize": 48
-        }
+        },
+        "noValue": "-"
       },
       "transparent": true
     },
@@ -242,7 +243,8 @@
         "text": {
           "titleSize": 14,
           "valueSize": 48
-        }
+        },
+        "noValue": "-"
       },
       "transparent": true
     },
@@ -328,7 +330,8 @@
         "text": {
           "titleSize": 14,
           "valueSize": 48
-        }
+        },
+        "noValue": "-"
       },
       "transparent": true
     },
@@ -413,7 +416,8 @@
         "text": {
           "titleSize": 14,
           "valueSize": 48
-        }
+        },
+        "noValue": "-"
       },
       "transparent": true
     },
@@ -499,7 +503,8 @@
         "text": {
           "titleSize": 14,
           "valueSize": 48
-        }
+        },
+        "noValue": "-"
       },
       "transparent": true
     },
@@ -585,7 +590,8 @@
         "text": {
           "titleSize": 14,
           "valueSize": 48
-        }
+        },
+        "noValue": "-"
       },
       "transparent": true
     },
@@ -715,7 +721,8 @@
         "sortBy": [],
         "footer": {
           "show": false
-        }
+        },
+        "noValue": "-"
       },
       "transparent": true
     },
@@ -764,7 +771,8 @@
         "sortBy": [],
         "footer": {
           "show": false
-        }
+        },
+        "noValue": "-"
       },
       "transparent": true
     },
@@ -813,7 +821,8 @@
         "sortBy": [],
         "footer": {
           "show": false
-        }
+        },
+        "noValue": "-"
       },
       "transparent": true
     },
@@ -862,7 +871,8 @@
         "sortBy": [],
         "footer": {
           "show": false
-        }
+        },
+        "noValue": "-"
       },
       "transparent": true
     },
@@ -911,7 +921,8 @@
         "sortBy": [],
         "footer": {
           "show": false
-        }
+        },
+        "noValue": "-"
       },
       "transparent": true
     }
