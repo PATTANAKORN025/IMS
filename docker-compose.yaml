@@ -95,7 +95,7 @@ services:
 
   # ── PgBouncer (Connection Pooler) ─────────────────────────
   pgbouncer:
-    image: edoburu/pgbouncer:latest
+    image: edoburu/pgbouncer:v1.25.2-p0
     container_name: ims-pgbouncer
     <<: *default-restart
     init: true
@@ -196,7 +196,7 @@ services:
 
   # ── Grafana ───────────────────────────────────────────────
   grafana:
-    image: grafana/grafana-oss:11.1.0
+    image: grafana/grafana:13.1.1
     container_name: ims-grafana
     <<: *default-restart
     init: true
@@ -250,7 +250,7 @@ services:
 
   # ── SNMP Simulator ────────────────────────────────────────
   snmpsim:
-    image: tandrup/snmpsim:latest
+    image: tandrup/snmpsim:v0.4
     container_name: ims-snmpsim
     <<: *default-restart
     init: true
