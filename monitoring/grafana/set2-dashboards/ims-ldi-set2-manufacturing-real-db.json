@@ -520,7 +520,7 @@
         }
       ],
       "transparent": true,
-      "description": "Fleet-wide average temperature. Target 22±2°C. Red outside 20-24°C, Amber 20-24°C, Green 22-24°C."
+      "description": "Fleet-wide average temperature. Target 22\u00b12\u00b0C. Red outside 20-24\u00b0C, Amber 20-24\u00b0C, Green 22-24\u00b0C."
     },
     {
       "id": 4,
@@ -598,7 +598,7 @@
         }
       ],
       "transparent": true,
-      "description": "Fleet-wide average humidity. Target 55±5%RH. Red outside 50-60%, Amber 50-60%, Green 55-60%."
+      "description": "Fleet-wide average humidity. Target 55\u00b15%RH. Red outside 50-60%, Amber 50-60%, Green 55-60%."
     },
     {
       "id": 5,
@@ -677,7 +677,7 @@
         "x": 0,
         "y": 8,
         "w": 12,
-        "h": 8
+        "h": 10
       },
       "options": {
         "showHeader": true,
@@ -695,7 +695,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT DISTINCT ON (eqp_id) eqp_id AS \"Machine\", mo AS \"Job (MO)\", fpn AS \"Part (FPN)\", layer_name AS \"Layer\", (board_no::TEXT || '/' || total_board::TEXT) AS \"Progress\", ROUND(temperature::NUMERIC, 1) AS \"temperature (°C)\", ROUND(humidity::NUMERIC, 1) AS \"humidity (%RH)\", ROUND(scan_speed::NUMERIC, 1) AS \"scan_speed (mm/s)\", ROUND(thickness::NUMERIC, 3) AS \"thickness (mm)\", ROUND(resist_dosage::NUMERIC, 1) AS \"resist_dosage\", state AS \"state\" FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) ORDER BY eqp_id, time DESC LIMIT 50",
+          "rawSql": "SELECT DISTINCT ON (eqp_id) eqp_id AS \"Machine\", mo AS \"Job (MO)\", fpn AS \"Part (FPN)\", layer_name AS \"Layer\", (board_no::TEXT || '/' || total_board::TEXT) AS \"Progress\", ROUND(temperature::NUMERIC, 1) AS \"temperature (\u00b0C)\", ROUND(humidity::NUMERIC, 1) AS \"humidity (%RH)\", ROUND(scan_speed::NUMERIC, 1) AS \"scan_speed (mm/s)\", ROUND(thickness::NUMERIC, 3) AS \"thickness (mm)\", ROUND(resist_dosage::NUMERIC, 1) AS \"resist_dosage\", state AS \"state\" FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) ORDER BY eqp_id, time DESC LIMIT 50",
           "format": "table"
         }
       ],
@@ -759,7 +759,7 @@
     },
     {
       "id": 7,
-      "title": "temperature Compliance (20-24°C)",
+      "title": "temperature Compliance (20-24\u00b0C)",
       "type": "state-timeline",
       "datasource": {
         "uid": "timescaledb"
@@ -768,7 +768,7 @@
         "x": 12,
         "y": 8,
         "w": 6,
-        "h": 8
+        "h": 10
       },
       "fieldConfig": {
         "defaults": {
@@ -837,7 +837,7 @@
         }
       ],
       "transparent": true,
-      "description": "3-color compliance matrix per machine. Green 20-24°C, Amber 19-25°C, Red outside."
+      "description": "3-color compliance matrix per machine. Green 20-24\u00b0C, Amber 19-25\u00b0C, Red outside."
     },
     {
       "id": 8,
@@ -850,7 +850,7 @@
         "x": 18,
         "y": 8,
         "w": 6,
-        "h": 8
+        "h": 10
       },
       "fieldConfig": {
         "defaults": {
@@ -930,7 +930,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 16,
+        "y": 18,
         "w": 8,
         "h": 6
       },
@@ -1051,7 +1051,7 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 16,
+        "y": 18,
         "w": 8,
         "h": 6
       },
@@ -1103,7 +1103,7 @@
             "properties": [
               {
                 "id": "unit",
-                "value": "suffix: mJ/cm²"
+                "value": "suffix: mJ/cm\u00b2"
               },
               {
                 "id": "decimals",
@@ -1161,7 +1161,7 @@
         }
       ],
       "transparent": true,
-      "description": "Dual Y-axis: thickness (left, mm) and resist_dosage (right, mJ/cm²) per machine."
+      "description": "Dual Y-axis: thickness (left, mm) and resist_dosage (right, mJ/cm\u00b2) per machine."
     },
     {
       "id": 11,
@@ -1172,7 +1172,7 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 16,
+        "y": 18,
         "w": 8,
         "h": 6
       },
@@ -1285,7 +1285,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 22,
+        "y": 24,
         "w": 12,
         "h": 6
       },
@@ -1342,7 +1342,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 22,
+        "y": 24,
         "w": 12,
         "h": 6
       },
@@ -1394,7 +1394,7 @@
         }
       ],
       "transparent": true,
-      "description": "3-sigma Z-Score on temperature per machine. Green ±2 (normal), Amber 2.5 (watch), Red 3+ (anomaly)."
+      "description": "3-sigma Z-Score on temperature per machine. Green \u00b12 (normal), Amber 2.5 (watch), Red 3+ (anomaly)."
     },
     {
       "id": 14,
@@ -1405,7 +1405,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 28,
+        "y": 30,
         "w": 24,
         "h": 6
       },
