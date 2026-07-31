@@ -56,6 +56,9 @@ nodered_data/*
 nodered_data/flows/*
 !nodered_data/flows/ingestion.json
 !nodered_data/flows/alerting.json
+!nodered_data/flows/ldi_ingestion.json
+!nodered_data/flows/ldi_simulator.json
+!nodered_data/flows/ldi_alarm_simulator.json
 !nodered_data/lib/
 
 # Backups (created by scripts/backup-db.sh)
