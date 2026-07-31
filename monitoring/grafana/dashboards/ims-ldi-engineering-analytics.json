@@ -1,7 +1,7 @@
 {
   "uid": "ldi-engineering-analytics",
-  "title": "IMS LDI \u2014 Engineering Analytics & SPC",
-  "description": "Layer 3 Process Timeline: synchronized multi-parameter RCA. temperature \u2192 humidity \u2192 scan_speed \u2192 air_vacuum \u2192 scale_x/y \u2192 pe_1~6 \u2192 je_1~4 \u2192 state. Shared crosshair + tooltip. Fixed axis scaling.",
+  "title": "IMS LDI — Engineering Analytics & SPC",
+  "description": "Layer 3 Process Timeline: synchronized multi-parameter RCA. temperature → humidity → scan_speed → air_vacuum → scale_x/y → pe_1~6 → je_1~4 → state. Shared crosshair + tooltip. Fixed axis scaling.",
   "tags": [
     "ims",
     "ldi",
@@ -122,7 +122,7 @@
   "panels": [
     {
       "id": 1,
-      "title": "temperature (\u00b0C)",
+      "title": "temperature (°C)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -151,10 +151,13 @@
                 "url": "/d/ldi-machine-snapshot/ims-ldi-incident-snapshot?var-machine_id=${__series.name}&from=${__value.time}&to=${__value.time}",
                 "targetBlank": false
               }
-            ]
+            ],
+            "thresholdsStyle": {
+              "mode": "line+area"
+            }
           },
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
           },
           "min": 18,
           "max": 28,
@@ -226,7 +229,7 @@
         }
       ],
       "transparent": true,
-      "description": "temperature per machine. Fixed axis 18-28\u00b0C (target 22\u00b12\u00b0C). Shared crosshair syncs with all panels below."
+      "description": "temperature per machine. Fixed axis 18-28°C (target 22±2°C). Shared crosshair syncs with all panels below."
     },
     {
       "id": 2,
@@ -259,10 +262,13 @@
                 "url": "/d/ldi-machine-snapshot/ims-ldi-incident-snapshot?var-machine_id=${__series.name}&from=${__value.time}&to=${__value.time}",
                 "targetBlank": false
               }
-            ]
+            ],
+            "thresholdsStyle": {
+              "mode": "line+area"
+            }
           },
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
           },
           "min": 40,
           "max": 70,
@@ -334,7 +340,7 @@
         }
       ],
       "transparent": true,
-      "description": "humidity per machine. Fixed axis 40-70%RH (target 55\u00b15%RH). Shared crosshair syncs with all panels below."
+      "description": "humidity per machine. Fixed axis 40-70%RH (target 55±5%RH). Shared crosshair syncs with all panels below."
     },
     {
       "id": 3,
@@ -360,7 +366,10 @@
             "lineWidth": 2,
             "showPoints": "never",
             "spanNulls": false,
-            "gradientMode": "opacity"
+            "gradientMode": "opacity",
+            "thresholdsStyle": {
+              "mode": "line+area"
+            }
           },
           "color": {
             "mode": "palette-classic"
@@ -434,7 +443,10 @@
             "lineWidth": 2,
             "showPoints": "never",
             "spanNulls": false,
-            "gradientMode": "opacity"
+            "gradientMode": "opacity",
+            "thresholdsStyle": {
+              "mode": "line+area"
+            }
           },
           "color": {
             "mode": "palette-classic"
@@ -508,7 +520,10 @@
             "lineWidth": 2,
             "showPoints": "never",
             "spanNulls": false,
-            "gradientMode": "opacity"
+            "gradientMode": "opacity",
+            "thresholdsStyle": {
+              "mode": "line+area"
+            }
           },
           "color": {
             "mode": "palette-classic"
@@ -582,7 +597,10 @@
             "lineWidth": 2,
             "showPoints": "never",
             "spanNulls": false,
-            "gradientMode": "opacity"
+            "gradientMode": "opacity",
+            "thresholdsStyle": {
+              "mode": "line+area"
+            }
           },
           "color": {
             "mode": "palette-classic"
@@ -634,7 +652,7 @@
     },
     {
       "id": 7,
-      "title": "pe_1 ~ pe_6 (\u00b5m)",
+      "title": "pe_1 ~ pe_6 (µm)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -663,7 +681,10 @@
                 "url": "/d/ldi-machine-snapshot/ims-ldi-incident-snapshot?var-machine_id=${__series.name}&from=${__value.time}&to=${__value.time}",
                 "targetBlank": false
               }
-            ]
+            ],
+            "thresholdsStyle": {
+              "mode": "line+area"
+            }
           },
           "color": {
             "mode": "palette-classic"
@@ -758,11 +779,11 @@
         }
       ],
       "transparent": true,
-      "description": "Individual PE values (pe_1 through pe_6) per machine. Raw signed positional error in \u00b5m. Fixed axis \u00b130\u00b5m."
+      "description": "Individual PE values (pe_1 through pe_6) per machine. Raw signed positional error in µm. Fixed axis ±30µm."
     },
     {
       "id": 8,
-      "title": "je_1 ~ je_4 (\u00b5m)",
+      "title": "je_1 ~ je_4 (µm)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -791,7 +812,10 @@
                 "url": "/d/ldi-machine-snapshot/ims-ldi-incident-snapshot?var-machine_id=${__series.name}&from=${__value.time}&to=${__value.time}",
                 "targetBlank": false
               }
-            ]
+            ],
+            "thresholdsStyle": {
+              "mode": "line+area"
+            }
           },
           "color": {
             "mode": "palette-classic"
@@ -868,7 +892,7 @@
         }
       ],
       "transparent": true,
-      "description": "Individual JE values (je_1 through je_4) per machine. Raw signed junction error in \u00b5m. Fixed axis \u00b130\u00b5m."
+      "description": "Individual JE values (je_1 through je_4) per machine. Raw signed junction error in µm. Fixed axis ±30µm."
     },
     {
       "id": 9,
@@ -1206,7 +1230,7 @@
     },
     {
       "id": 15,
-      "title": "Resist Dosage (mJ/cm\u00b2)",
+      "title": "Resist Dosage (mJ/cm²)",
       "type": "bargauge",
       "datasource": {
         "uid": "timescaledb"
@@ -1275,7 +1299,7 @@
         }
       ],
       "transparent": true,
-      "description": "All 3 recipes: DF OUTER=15, DF INNER=71, SM=500-1200 mJ/cm\u00b2"
+      "description": "All 3 recipes: DF OUTER=15, DF INNER=71, SM=500-1200 mJ/cm²"
     }
   ],
   "fiscalYearStartMonth": 0,

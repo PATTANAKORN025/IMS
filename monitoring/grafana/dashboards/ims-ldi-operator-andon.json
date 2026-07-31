@@ -1,6 +1,6 @@
 {
   "uid": "ldi-operator-andon",
-  "title": "IMS LDI \u2014 Operator Andon Board",
+  "title": "IMS LDI — Operator Andon Board",
   "description": "Factory floor kiosk. ISA-101 compliant. Zero interaction, zero scrolling. 1920x1080.",
   "tags": [
     "ims",
@@ -314,7 +314,7 @@
     },
     {
       "id": 5,
-      "title": "Temperature Compliance (22\u00b12\u00b0C)",
+      "title": "Temperature Compliance (22±2°C)",
       "type": "state-timeline",
       "datasource": {
         "uid": "timescaledb"
@@ -400,11 +400,11 @@
         }
       ],
       "transparent": true,
-      "description": "Temperature Compliance: per-machine 3-color matrix. Green=20-24\u00b0C, Amber=19-25\u00b0C, Red=outside."
+      "description": "Temperature Compliance: per-machine 3-color matrix. Green=20-24°C, Amber=19-25°C, Red=outside."
     },
     {
       "id": 6,
-      "title": "Humidity Compliance (55\u00b15%)",
+      "title": "Humidity Compliance (55±5%)",
       "type": "state-timeline",
       "datasource": {
         "uid": "timescaledb"
