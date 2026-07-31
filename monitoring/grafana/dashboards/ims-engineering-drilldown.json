@@ -1736,7 +1736,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{metric}}",
-          "rawSql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id AS metric,\n  ROUND(AVG(pressure)::NUMERIC, 1) AS \"PE\"\nFROM public.ldi_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:singlequote}) AND pressure IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id AS metric,\n  ROUND(AVG(pe_1)::NUMERIC, 1) AS \"PE\"\nFROM public.ldi_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:singlequote}) AND pe_1 IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series"
         }
       ],
@@ -1978,7 +1978,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{metric}}",
-          "rawSql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id AS metric,\n  ROUND(AVG(joule_effect)::NUMERIC, 1) AS \"JE\"\nFROM public.ldi_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:singlequote}) AND joule_effect IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id AS metric,\n  ROUND(AVG(je_1)::NUMERIC, 1) AS \"JE\"\nFROM public.ldi_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:singlequote}) AND je_1 IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series"
         },
         {
@@ -2034,7 +2034,7 @@
           "color": {
             "mode": "palette-classic"
           },
-          "unit": "pressurehpa",
+          "unit": "lengthum",
           "min": 0,
           "decimals": 2
         },
@@ -2074,7 +2074,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id AS metric,\n  ROUND(AVG(pressure)::NUMERIC, 1) AS \"PE\"\nFROM public.ldi_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:singlequote}) AND pressure IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id AS metric,\n  ROUND(AVG(pe_1)::NUMERIC, 1) AS \"PE\"\nFROM public.ldi_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:singlequote}) AND pe_1 IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         },
@@ -2083,7 +2083,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id AS metric,\n  ROUND(AVG(joule_effect)::NUMERIC, 1) AS \"JE\"\nFROM public.ldi_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:singlequote}) AND joule_effect IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id AS metric,\n  ROUND(AVG(je_1)::NUMERIC, 1) AS \"JE\"\nFROM public.ldi_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:singlequote}) AND je_1 IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
