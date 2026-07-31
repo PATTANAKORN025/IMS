@@ -1,5 +1,5 @@
 {
-  "description": "Layer 3 Process Timeline: synchronized multi-parameter RCA. temperature → humidity → scan_speed → air_vacuum → scale_x/y → pe_1~6 → je_1~4 → state. Shared crosshair + tooltip. Fixed axis scaling.",
+  "description": "Layer 3 Process Timeline: synchronized multi-parameter RCA. temperature \u2192 humidity \u2192 scan_speed \u2192 air_vacuum \u2192 scale_x/y \u2192 pe_1~6 \u2192 je_1~4 \u2192 state. Shared crosshair + tooltip. Fixed axis scaling.",
   "schemaVersion": 39,
   "liveNow": true,
   "style": "dark",
@@ -165,7 +165,7 @@
   "panels": [
     {
       "id": 1,
-      "title": "temperature (°C)",
+      "title": "temperature (\u00b0C)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -260,7 +260,7 @@
         }
       ],
       "transparent": true,
-      "description": "Temperature per machine on the operational scale 18-28°C. Invalid zero sensor rows are monitored separately in Data Readiness.",
+      "description": "Temperature per machine on the operational scale 18-28\u00b0C. Invalid zero sensor rows are monitored separately in Data Readiness.",
       "links": [
         {
           "title": "Open Machine Snapshot (select one Machine)",
@@ -761,7 +761,7 @@
     },
     {
       "id": 7,
-      "title": "pe_1 ~ pe_6 (µm)",
+      "title": "pe_1 ~ pe_6 (\u00b5m)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -774,7 +774,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "suffix: µm",
+          "unit": "suffix: \u00b5m",
           "decimals": 2,
           "custom": {
             "drawStyle": "line",
@@ -876,7 +876,7 @@
         }
       ],
       "transparent": true,
-      "description": "Individual signed PE values. Soft scale covers the observed range (about -67 to +75 µm) without clipping future outliers.",
+      "description": "Individual signed PE values. Soft scale covers the observed range (about -67 to +75 \u00b5m) without clipping future outliers.",
       "links": [
         {
           "title": "Open Machine Snapshot (select one Machine)",
@@ -897,7 +897,7 @@
     },
     {
       "id": 8,
-      "title": "je_1 ~ je_4 (µm)",
+      "title": "je_1 ~ je_4 (\u00b5m)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -910,7 +910,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "suffix: µm",
+          "unit": "suffix: \u00b5m",
           "decimals": 2,
           "custom": {
             "drawStyle": "line",
@@ -994,7 +994,7 @@
         }
       ],
       "transparent": true,
-      "description": "Individual JE values. Soft scale covers the observed range (0 to about 43 µm) while retaining out-of-range visibility.",
+      "description": "Individual JE values. Soft scale covers the observed range (0 to about 43 \u00b5m) while retaining out-of-range visibility.",
       "links": [
         {
           "title": "Open Machine Snapshot (select one Machine)",
@@ -1152,7 +1152,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH pe_samples AS (\n  SELECT d.eqp_id, d.pe_setting, p.pe\n  FROM public.ldi_data d\n  CROSS JOIN LATERAL (VALUES (d.pe_1),(d.pe_2),(d.pe_3),(d.pe_4),(d.pe_5),(d.pe_6)) p(pe)\n  WHERE $__timeFilter(d.\"time\")\n    AND d.factory IN (${factory:sqlstring})\n    AND d.process IN (${process:sqlstring})\n    AND d.mo IN (${mo:sqlstring})\n    AND d.fpn IN (${fpn:sqlstring})\n    AND d.layer_name IN (${layer:sqlstring})\n    AND d.eqp_id IN (${machine_id:sqlstring})\n    AND p.pe IS NOT NULL AND d.pe_setting IS NOT NULL\n), stats AS (\n  SELECT eqp_id, AVG(pe) AS mean_pe, STDDEV_SAMP(pe) AS stddev_pe, AVG(pe_setting) AS pe_limit\n  FROM pe_samples GROUP BY eqp_id\n), capability AS (\n  SELECT eqp_id, avg_pe, stddev_pe, pe_limit / NULLIF(3 * stddev_pe, 0) AS cp,\n    LEAST((pe_limit - mean_pe) / NULLIF(3 * stddev_pe, 0), (mean_pe + pe_limit) / NULLIF(3 * stddev_pe, 0)) AS cpk\n  FROM stats\n)\nSELECT eqp_id AS \"Machine\", ROUND(cp::NUMERIC, 3) AS \"Cp\", ROUND(cpk::NUMERIC, 3) AS \"Cpk\"\nFROM capability ORDER BY cpk DESC NULLS LAST;",
+          "rawSql": "WITH pe_samples AS (\n  SELECT d.eqp_id, d.pe_setting, p.pe\n  FROM public.ldi_data d\n  CROSS JOIN LATERAL (VALUES (d.pe_1),(d.pe_2),(d.pe_3),(d.pe_4),(d.pe_5),(d.pe_6)) p(pe)\n  WHERE $__timeFilter(d.\"time\")\n    AND d.factory IN (${factory:sqlstring})\n    AND d.process IN (${process:sqlstring})\n    AND d.mo IN (${mo:sqlstring})\n    AND d.fpn IN (${fpn:sqlstring})\n    AND d.layer_name IN (${layer:sqlstring})\n    AND d.eqp_id IN (${machine_id:sqlstring})\n    AND p.pe IS NOT NULL AND d.pe_setting IS NOT NULL\n), stats AS (\n  SELECT eqp_id, AVG(pe) AS mean_pe, STDDEV_SAMP(pe) AS stddev_pe, AVG(pe_setting) AS pe_limit\n  FROM pe_samples GROUP BY eqp_id\n), capability AS (\n  SELECT eqp_id, mean_pe, stddev_pe, pe_limit / NULLIF(3 * stddev_pe, 0) AS cp,\n    LEAST((pe_limit - mean_pe) / NULLIF(3 * stddev_pe, 0), (mean_pe + pe_limit) / NULLIF(3 * stddev_pe, 0)) AS cpk\n  FROM stats\n)\nSELECT eqp_id AS \"Machine\", ROUND(cp::NUMERIC, 3) AS \"Cp\", ROUND(cpk::NUMERIC, 3) AS \"Cpk\"\nFROM capability ORDER BY cpk DESC NULLS LAST;",
           "format": "table"
         }
       ],
@@ -1353,7 +1353,7 @@
     },
     {
       "id": 13,
-      "title": "Resist Dosage Live (mJ/cm²)",
+      "title": "Resist Dosage Live (mJ/cm\u00b2)",
       "type": "bargauge",
       "datasource": {
         "uid": "timescaledb"
@@ -1422,7 +1422,7 @@
         }
       ],
       "transparent": true,
-      "description": "Latest resist dosage per selected machine. Auto-ranging is used because observed machine settings span 15 to 1,200 mJ/cm².",
+      "description": "Latest resist dosage per selected machine. Auto-ranging is used because observed machine settings span 15 to 1,200 mJ/cm\u00b2.",
       "links": [
         {
           "title": "Open Machine Snapshot (select one Machine)",
@@ -1443,7 +1443,7 @@
     },
     {
       "id": 14,
-      "title": "Alarm ↔ Process Correlation (RCA Truth Test)",
+      "title": "Alarm \u2194 Process Correlation (RCA Truth Test)",
       "type": "stat",
       "gridPos": {
         "h": 6,
