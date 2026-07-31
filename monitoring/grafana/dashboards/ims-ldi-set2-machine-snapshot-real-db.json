@@ -1,5 +1,5 @@
 {
-  "description": "360\u00b0 machine snapshot at the exact millisecond clicked from Process Timeline. Shows job context, physical variables, PE alignment, Cpk, and alarm proximity.",
+  "description": "360° machine snapshot at the exact millisecond clicked from Process Timeline. Shows job context, physical variables, PE alignment, Cpk, and alarm proximity.",
   "schemaVersion": 39,
   "fiscalYearStartMonth": 0,
   "liveNow": false,
@@ -361,7 +361,7 @@
     },
     {
       "id": 2,
-      "title": "temperature (\u00b0C)",
+      "title": "temperature (°C)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -423,7 +423,7 @@
           "valueSize": 28,
           "titleSize": 12
         },
-        "noValue": "\u2014"
+        "noValue": "—"
       },
       "targets": [
         {
@@ -502,7 +502,7 @@
           "valueSize": 28,
           "titleSize": 12
         },
-        "noValue": "\u2014"
+        "noValue": "—"
       },
       "targets": [
         {
@@ -569,7 +569,7 @@
           "valueSize": 28,
           "titleSize": 12
         },
-        "noValue": "\u2014"
+        "noValue": "—"
       },
       "targets": [
         {
@@ -636,7 +636,7 @@
           "valueSize": 28,
           "titleSize": 12
         },
-        "noValue": "\u2014"
+        "noValue": "—"
       },
       "targets": [
         {
@@ -703,7 +703,7 @@
           "valueSize": 28,
           "titleSize": 12
         },
-        "noValue": "\u2014"
+        "noValue": "—"
       },
       "targets": [
         {
@@ -720,7 +720,7 @@
     },
     {
       "id": 7,
-      "title": "resist_dosage (mJ/cm\u00b2)",
+      "title": "resist_dosage (mJ/cm²)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -733,7 +733,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "suffix: mJ/cm\u00b2",
+          "unit": "suffix: mJ/cm²",
           "decimals": 2,
           "thresholds": {
             "mode": "absolute",
@@ -770,7 +770,7 @@
           "valueSize": 28,
           "titleSize": 12
         },
-        "noValue": "\u2014"
+        "noValue": "—"
       },
       "targets": [
         {
@@ -816,7 +816,7 @@
       "description": "Real PE values from the selected event. N/A means this machine/event did not provide PE data.",
       "fieldConfig": {
         "defaults": {
-          "unit": "suffix: \u00b5m",
+          "unit": "suffix: µm",
           "decimals": 3,
           "noValue": "N/A",
           "custom": {}
@@ -1144,7 +1144,7 @@
     },
     {
       "id": 10,
-      "title": "Alarm Context (\u00b15 min of clicked timestamp)",
+      "title": "Alarm Context (±5 min of clicked timestamp)",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
@@ -1428,7 +1428,7 @@
       "description": "Real JE values from the selected event with PASS/OUT OF SPEC evaluated against je_setting.",
       "fieldConfig": {
         "defaults": {
-          "unit": "suffix: \u00b5m",
+          "unit": "suffix: µm",
           "decimals": 3,
           "noValue": "N/A",
           "custom": {}
