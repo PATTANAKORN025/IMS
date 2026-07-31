@@ -8,6 +8,7 @@
 -- blending every job a machine has touched in the trailing 2h window.
 -- Mirrors postgres/init/001-init-timescaledb.sql — keep in sync.
 
+DROP VIEW IF EXISTS public.v_machine_spc_ranking CASCADE;
 CREATE OR REPLACE VIEW public.v_machine_spc_ranking AS
 WITH base AS (
     SELECT eqp_id, factory, mo, fpn, layer_name,

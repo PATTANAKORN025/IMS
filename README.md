@@ -13,6 +13,7 @@
 [![TimescaleDB](https://img.shields.io/badge/TimescaleDB-2.x-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.timescale.com/)
 [![Tests Passing](https://img.shields.io/badge/Tests-Passing-10B981?style=for-the-badge&logo=jest&logoColor=white)](#quick-start)
 [![K6 Stress-Tested](https://img.shields.io/badge/K6-Stress--Tested-7B61FF?style=for-the-badge&logo=k6&logoColor=white)](#quick-start)
+[![Synthetic Data Engine](https://img.shields.io/badge/Data-Digital%20Twin-00C7B7?style=for-the-badge&logo=python&logoColor=white)](data-generators/)
 
 </div>
 

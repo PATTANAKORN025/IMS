@@ -220,7 +220,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT COUNT(*)::NUMERIC AS value FROM public.ldi_alarm_log a\nJOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT=m.alarm_code::TEXT\nWHERE a.equipmentid IN (${machine_id:sqlstring}) AND m.alarm_type ILIKE '%Critical%';",
+          "rawSql": "SELECT COUNT(*)::NUMERIC AS value FROM public.ldi_alarm_log a\nJOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT=m.alarm_code::TEXT\nWHERE a.eqp_id IN (${machine_id:sqlstring}) AND m.alarm_type ILIKE '%Critical%';",
           "format": "table"
         }
       ],
@@ -425,23 +425,23 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": null
               },
               {
-                "color": "#FF9100",
+                "color": "#F59E0B",
                 "value": 19
               },
               {
-                "color": "#00FF87",
+                "color": "#10B981",
                 "value": 20
               },
               {
-                "color": "#FF9100",
+                "color": "#F59E0B",
                 "value": 24
               },
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": 25
               }
             ]
@@ -519,23 +519,23 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": null
               },
               {
-                "color": "#FF9100",
+                "color": "#F59E0B",
                 "value": 45
               },
               {
-                "color": "#00FF87",
+                "color": "#10B981",
                 "value": 50
               },
               {
-                "color": "#FF9100",
+                "color": "#F59E0B",
                 "value": 60
               },
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": 65
               }
             ]
@@ -778,7 +778,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT a.logdate AS \"Time\",a.equipmentid AS \"Machine\",a.errorcode AS \"errorcode\",\n COALESCE(m.alarm_msg,a.errorcode::TEXT) AS \"Message\",COALESCE(m.alarm_type,'UNMAPPED') AS \"Severity\"\nFROM public.ldi_alarm_log a LEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT=m.alarm_code::TEXT\nWHERE a.equipmentid IN (${machine_id:sqlstring}) ORDER BY a.logdate DESC LIMIT 20;",
+          "rawSql": "SELECT a.logdate AS \"Time\",a.eqp_id AS \"Machine\",a.errorcode AS \"errorcode\",\n COALESCE(m.alarm_msg,a.errorcode::TEXT) AS \"Message\",COALESCE(m.alarm_type,'UNMAPPED') AS \"Severity\"\nFROM public.ldi_alarm_log a LEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT=m.alarm_code::TEXT\nWHERE a.eqp_id IN (${machine_id:sqlstring}) ORDER BY a.logdate DESC LIMIT 20;",
           "format": "table"
         }
       ],

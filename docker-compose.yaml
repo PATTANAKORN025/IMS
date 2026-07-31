@@ -310,6 +310,8 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
       POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      PGHOST: timescaledb
     volumes:
       - ./database/migrations:/migrations:ro
       - ./scripts/migrate-entrypoint.sh:/scripts/migrate-entrypoint.sh:ro

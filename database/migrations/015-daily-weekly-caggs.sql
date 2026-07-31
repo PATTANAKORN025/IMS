@@ -99,21 +99,21 @@ FROM public.ldi_daily GROUP BY bucket, device_id WITH NO DATA;
 -- Refresh every 6 hours, covering last 10 days of daily data
 DO $$ BEGIN
     PERFORM add_continuous_aggregate_policy('public.sys_weekly',
-        start_offset => INTERVAL '10 days', end_offset => INTERVAL '6 hours',
+        start_offset => INTERVAL '15 days', end_offset => INTERVAL '6 hours',
         schedule_interval => INTERVAL '6 hours', if_not_exists => TRUE);
 EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
 
 DO $$ BEGIN
     PERFORM add_continuous_aggregate_policy('public.net_weekly',
-        start_offset => INTERVAL '10 days', end_offset => INTERVAL '6 hours',
+        start_offset => INTERVAL '15 days', end_offset => INTERVAL '6 hours',
         schedule_interval => INTERVAL '6 hours', if_not_exists => TRUE);
 EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
 
 DO $$ BEGIN
     PERFORM add_continuous_aggregate_policy('public.ldi_weekly',
-        start_offset => INTERVAL '10 days', end_offset => INTERVAL '6 hours',
+        start_offset => INTERVAL '15 days', end_offset => INTERVAL '6 hours',
         schedule_interval => INTERVAL '6 hours', if_not_exists => TRUE);
 EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
