@@ -377,7 +377,7 @@
     },
     {
       "id": 5,
-      "title": "Temperature Compliance (22±2°C)",
+      "title": "Temperature Compliance (22\u00b12\u00b0C)",
       "type": "state-timeline",
       "datasource": {
         "uid": "timescaledb"
@@ -417,12 +417,20 @@
                 "value": null
               },
               {
-                "color": "#FACC15",
-                "value": 1
+                "color": "#FF9100",
+                "value": 19
               },
               {
-                "color": "#22C55E",
-                "value": 2
+                "color": "#00FF87",
+                "value": 20
+              },
+              {
+                "color": "#FF9100",
+                "value": 24
+              },
+              {
+                "color": "#EF4444",
+                "value": 25
               }
             ]
           },
@@ -455,11 +463,11 @@
         }
       ],
       "transparent": true,
-      "description": "Temperature Compliance: per-machine 3-color matrix. Green=20-24°C, Amber=19-25°C, Red=outside."
+      "description": "Temperature Compliance: per-machine 3-color matrix. Green=20-24\u00b0C, Amber=19-25\u00b0C, Red=outside."
     },
     {
       "id": 6,
-      "title": "Humidity Compliance (55±5%)",
+      "title": "Humidity Compliance (55\u00b15%)",
       "type": "state-timeline",
       "datasource": {
         "uid": "timescaledb"
@@ -499,12 +507,20 @@
                 "value": null
               },
               {
-                "color": "#FACC15",
-                "value": 1
+                "color": "#FF9100",
+                "value": 45
               },
               {
-                "color": "#22C55E",
-                "value": 2
+                "color": "#00FF87",
+                "value": 50
+              },
+              {
+                "color": "#FF9100",
+                "value": 60
+              },
+              {
+                "color": "#EF4444",
+                "value": 65
               }
             ]
           },
