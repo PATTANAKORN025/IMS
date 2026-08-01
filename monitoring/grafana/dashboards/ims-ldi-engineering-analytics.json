@@ -1479,9 +1479,9 @@
         }
       ],
       "options": {
-        "colorMode": "value",
+        "colorMode": "background",
         "graphMode": "area",
-        "justifyMode": "auto",
+        "justifyMode": "center",
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
@@ -1490,7 +1490,7 @@
           "fields": "/^Correlation %$/",
           "values": false
         },
-        "textMode": "auto",
+        "textMode": "valueAndName",
         "noValue": "0"
       },
       "fieldConfig": {
