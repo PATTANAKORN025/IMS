@@ -90,7 +90,7 @@
         "x": 0,
         "y": 0,
         "w": 19,
-        "h": 3
+        "h": 6
       },
       "options": {
         "mode": "html",
@@ -114,7 +114,7 @@
         "x": 19,
         "y": 0,
         "w": 5,
-        "h": 3
+        "h": 6
       },
       "options": {
         "mode": "clock",
@@ -150,9 +150,9 @@
       "description": "Currently firing alerts from Grafana unified alerting.",
       "gridPos": {
         "x": 0,
-        "y": 3,
+        "y": 6,
         "w": 24,
-        "h": 4
+        "h": 8
       },
       "options": {
         "showOptions": "current",
@@ -182,9 +182,9 @@
       "title": "FLEET KPIs",
       "gridPos": {
         "x": 0,
-        "y": 7,
+        "y": 14,
         "w": 24,
-        "h": 1
+        "h": 2
       },
       "collapsed": false,
       "transparent": true,
@@ -204,9 +204,9 @@
       },
       "gridPos": {
         "x": 6,
-        "y": 8,
+        "y": 16,
         "w": 12,
-        "h": 5
+        "h": 10
       },
       "fieldConfig": {
         "defaults": {
@@ -217,22 +217,22 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": null
               },
               {
-                "color": "#F59E0B",
+                "color": "#FF9100",
                 "value": 70
               },
               {
-                "color": "#10B981",
+                "color": "#00FF87",
                 "value": 90
               }
             ]
           },
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00F2FE"
+            "fixedColor": "#00f2fe"
           },
           "custom": {},
           "decimals": 2
@@ -279,6 +279,10 @@
         "text": {
           "valueSize": 48,
           "titleSize": 14
+        },
+        "textSizes": {
+          "titleSize": 24,
+          "valueSize": 80
         }
       },
       "targets": [
@@ -310,9 +314,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 8,
+        "y": 16,
         "w": 6,
-        "h": 5
+        "h": 10
       },
       "fieldConfig": {
         "defaults": {
@@ -323,15 +327,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#10B981",
+                "color": "#00FF87",
                 "value": null
               },
               {
-                "color": "#F59E0B",
+                "color": "#FF9100",
                 "value": 5
               },
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": 15
               }
             ]
@@ -381,6 +385,10 @@
         "text": {
           "valueSize": 48,
           "titleSize": 14
+        },
+        "textSizes": {
+          "titleSize": 24,
+          "valueSize": 80
         }
       },
       "targets": [
@@ -413,9 +421,9 @@
       },
       "gridPos": {
         "x": 18,
-        "y": 8,
+        "y": 16,
         "w": 6,
-        "h": 5
+        "h": 10
       },
       "fieldConfig": {
         "defaults": {
@@ -424,15 +432,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#10B981",
+                "color": "#00FF87",
                 "value": null
               },
               {
-                "color": "#F59E0B",
+                "color": "#FF9100",
                 "value": 500
               },
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": 1000
               }
             ]
@@ -442,7 +450,7 @@
           "decimals": 2,
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00F2FE"
+            "fixedColor": "#00f2fe"
           }
         },
         "overrides": [
@@ -487,6 +495,10 @@
         "text": {
           "valueSize": 48,
           "titleSize": 14
+        },
+        "textSizes": {
+          "titleSize": 24,
+          "valueSize": 80
         }
       },
       "targets": [
@@ -516,9 +528,9 @@
       "title": "FLEET STATUS TABLE",
       "gridPos": {
         "x": 0,
-        "y": 14,
+        "y": 28,
         "w": 24,
-        "h": 1
+        "h": 2
       },
       "collapsed": false,
       "transparent": true,
@@ -538,9 +550,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 15,
+        "y": 30,
         "w": 24,
-        "h": 7
+        "h": 14
       },
       "fieldConfig": {
         "defaults": {
@@ -723,9 +735,9 @@
       "title": "KEY METRICS (Real-Time)",
       "gridPos": {
         "x": 0,
-        "y": 22,
+        "y": 44,
         "w": 24,
-        "h": 1
+        "h": 2
       },
       "collapsed": false,
       "transparent": true,
@@ -745,9 +757,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 23,
+        "y": 46,
         "w": 12,
-        "h": 10
+        "h": 20
       },
       "fieldConfig": {
         "defaults": {
@@ -772,15 +784,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#10B981",
+                "color": "#00FF87",
                 "value": null
               },
               {
-                "color": "#F59E0B",
+                "color": "#FF9100",
                 "value": 80
               },
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": 90
               }
             ]
@@ -1070,9 +1082,9 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 23,
+        "y": 46,
         "w": 12,
-        "h": 10
+        "h": 20
       },
       "fieldConfig": {
         "defaults": {
@@ -1095,23 +1107,23 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#ff003c",
                 "value": null
               },
               {
-                "color": "#FF9100",
+                "color": "#ff9100",
                 "value": 19
               },
               {
-                "color": "#00FF87",
+                "color": "#00ff87",
                 "value": 20
               },
               {
-                "color": "#FF9100",
+                "color": "#ff9100",
                 "value": 24
               },
               {
-                "color": "#FF003C",
+                "color": "#ff003c",
                 "value": 25
               }
             ]
@@ -1402,9 +1414,9 @@
       "title": "NETWORK HEALTH",
       "gridPos": {
         "x": 0,
-        "y": 33,
+        "y": 66,
         "w": 24,
-        "h": 1
+        "h": 2
       },
       "collapsed": false,
       "transparent": true,
@@ -1424,9 +1436,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 34,
+        "y": 68,
         "w": 12,
-        "h": 10
+        "h": 20
       },
       "fieldConfig": {
         "defaults": {
@@ -1568,9 +1580,9 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 34,
+        "y": 68,
         "w": 12,
-        "h": 10
+        "h": 20
       },
       "fieldConfig": {
         "defaults": {
@@ -1595,15 +1607,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#10B981",
+                "color": "#00FF87",
                 "value": null
               },
               {
-                "color": "#F59E0B",
+                "color": "#FF9100",
                 "value": 85
               },
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": 95
               }
             ]
@@ -1885,6 +1897,22 @@
       ],
       "description": "Fleet-wide ram saturation envelope: average (solid cyan) vs worst-case ceiling (dashed #EF4444).",
       "transparent": true
+    },
+    {
+      "id": 9999,
+      "title": "Theme Injector",
+      "type": "text",
+      "transparent": true,
+      "gridPos": {
+        "h": 2,
+        "w": 24,
+        "x": 0,
+        "y": 90
+      },
+      "options": {
+        "content": "\n<style>\n@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');\n\n@keyframes gradientBG {\n    0% { background-position: 0% 50%; }\n    50% { background-position: 100% 50%; }\n    100% { background-position: 0% 50%; }\n}\n\n@keyframes edgeGlow {\n    0% { border-color: rgba(0, 242, 254, 0.3); }\n    50% { border-color: rgba(0, 255, 135, 0.6); box-shadow: 0 0 15px rgba(0, 255, 135, 0.2), inset 0 0 20px rgba(0, 255, 135, 0.05); }\n    100% { border-color: rgba(0, 242, 254, 0.3); }\n}\n\n/* Global Background */\n.main-view, .react-grid-layout, .dashboard-container, body {\n    background: linear-gradient(-45deg, #0b0f19, #141416, #090a0f, #1a1525) !important;\n    background-size: 400% 400% !important;\n    animation: gradientBG 15s ease infinite !important;\n}\n\n/* Panel Backgrounds (Ultra Glassmorphism) */\n.panel-container {\n    background: rgba(15, 15, 20, 0.6) !important;\n    border: 1px solid rgba(255, 255, 255, 0.08) !important;\n    border-radius: 16px !important;\n    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.02) !important;\n    backdrop-filter: blur(16px) saturate(180%);\n    -webkit-backdrop-filter: blur(16px) saturate(180%);\n    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);\n}\n\n/* Hover effect */\n.panel-container:hover {\n    transform: translateY(-4px) scale(1.01);\n    animation: edgeGlow 3s infinite !important;\n    z-index: 100;\n}\n\n/* Typography overriding */\n.panel-title-text, .grafana-tooltip, text, div {\n    font-family: 'Outfit', sans-serif !important;\n}\n\n/* Header colors */\n.panel-title-text {\n    font-weight: 600 !important;\n    letter-spacing: 1px !important;\n    font-size: 18px !important;\n    text-transform: uppercase;\n    background: -webkit-linear-gradient(45deg, #00F2FE, #00FF87);\n    -webkit-background-clip: text;\n    -webkit-text-fill-color: transparent;\n}\n\n/* Scrollbar hiding for clean look */\n::-webkit-scrollbar {\n    width: 8px;\n    height: 8px;\n}\n::-webkit-scrollbar-track {\n    background: rgba(0,0,0,0.2); \n}\n::-webkit-scrollbar-thumb {\n    background: linear-gradient(to bottom, #00F2FE, #7F00FF); \n    border-radius: 10px;\n}\n</style>\n",
+        "mode": "html"
+      }
     }
   ],
   "graphTooltip": 1,
