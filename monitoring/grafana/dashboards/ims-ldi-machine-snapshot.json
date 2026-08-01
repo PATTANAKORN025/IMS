@@ -361,6 +361,176 @@
                 "value": 70
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "eqp_id"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Machine"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "layer_name"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Layer"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "mo"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Work Order (MO)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "alarm_code"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Alarm Code"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "alarm_msg"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Alarm Message"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "severity"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Severity"
+              },
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "CRIT": {
+                        "color": "#FF003C",
+                        "index": 0,
+                        "text": "CRIT"
+                      },
+                      "CRITICAL": {
+                        "color": "#FF003C",
+                        "index": 0,
+                        "text": "CRITICAL"
+                      },
+                      "WARN": {
+                        "color": "#FF9100",
+                        "index": 1,
+                        "text": "WARN"
+                      },
+                      "WARNING": {
+                        "color": "#FF9100",
+                        "index": 1,
+                        "text": "WARNING"
+                      },
+                      "OK": {
+                        "color": "#00F2FE",
+                        "index": 2,
+                        "text": "OK"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Severity"
+            },
+            "properties": [
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "CRIT": {
+                        "color": "#FF003C",
+                        "index": 0,
+                        "text": "CRIT"
+                      },
+                      "CRITICAL": {
+                        "color": "#FF003C",
+                        "index": 0,
+                        "text": "CRITICAL"
+                      },
+                      "WARN": {
+                        "color": "#FF9100",
+                        "index": 1,
+                        "text": "WARN"
+                      },
+                      "WARNING": {
+                        "color": "#FF9100",
+                        "index": 1,
+                        "text": "WARNING"
+                      },
+                      "OK": {
+                        "color": "#00F2FE",
+                        "index": 2,
+                        "text": "OK"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "logdate"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
+              }
+            ]
           }
         ]
       }
@@ -1068,6 +1238,176 @@
                 "value": 80
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "eqp_id"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Machine"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "layer_name"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Layer"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "mo"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Work Order (MO)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "alarm_code"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Alarm Code"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "alarm_msg"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Alarm Message"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "severity"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Severity"
+              },
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "CRIT": {
+                        "color": "#FF003C",
+                        "index": 0,
+                        "text": "CRIT"
+                      },
+                      "CRITICAL": {
+                        "color": "#FF003C",
+                        "index": 0,
+                        "text": "CRITICAL"
+                      },
+                      "WARN": {
+                        "color": "#FF9100",
+                        "index": 1,
+                        "text": "WARN"
+                      },
+                      "WARNING": {
+                        "color": "#FF9100",
+                        "index": 1,
+                        "text": "WARNING"
+                      },
+                      "OK": {
+                        "color": "#00F2FE",
+                        "index": 2,
+                        "text": "OK"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Severity"
+            },
+            "properties": [
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "CRIT": {
+                        "color": "#FF003C",
+                        "index": 0,
+                        "text": "CRIT"
+                      },
+                      "CRITICAL": {
+                        "color": "#FF003C",
+                        "index": 0,
+                        "text": "CRITICAL"
+                      },
+                      "WARN": {
+                        "color": "#FF9100",
+                        "index": 1,
+                        "text": "WARN"
+                      },
+                      "WARNING": {
+                        "color": "#FF9100",
+                        "index": 1,
+                        "text": "WARNING"
+                      },
+                      "OK": {
+                        "color": "#00F2FE",
+                        "index": 2,
+                        "text": "OK"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "logdate"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
+              }
+            ]
           }
         ]
       }
@@ -1249,6 +1589,176 @@
                 "value": 120
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "eqp_id"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Machine"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "layer_name"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Layer"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "mo"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Work Order (MO)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "alarm_code"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Alarm Code"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "alarm_msg"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Alarm Message"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "severity"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Severity"
+              },
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "CRIT": {
+                        "color": "#FF003C",
+                        "index": 0,
+                        "text": "CRIT"
+                      },
+                      "CRITICAL": {
+                        "color": "#FF003C",
+                        "index": 0,
+                        "text": "CRITICAL"
+                      },
+                      "WARN": {
+                        "color": "#FF9100",
+                        "index": 1,
+                        "text": "WARN"
+                      },
+                      "WARNING": {
+                        "color": "#FF9100",
+                        "index": 1,
+                        "text": "WARNING"
+                      },
+                      "OK": {
+                        "color": "#00F2FE",
+                        "index": 2,
+                        "text": "OK"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Severity"
+            },
+            "properties": [
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "CRIT": {
+                        "color": "#FF003C",
+                        "index": 0,
+                        "text": "CRIT"
+                      },
+                      "CRITICAL": {
+                        "color": "#FF003C",
+                        "index": 0,
+                        "text": "CRITICAL"
+                      },
+                      "WARN": {
+                        "color": "#FF9100",
+                        "index": 1,
+                        "text": "WARN"
+                      },
+                      "WARNING": {
+                        "color": "#FF9100",
+                        "index": 1,
+                        "text": "WARNING"
+                      },
+                      "OK": {
+                        "color": "#00F2FE",
+                        "index": 2,
+                        "text": "OK"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "logdate"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
+              }
+            ]
           }
         ]
       }
@@ -1310,21 +1820,30 @@
                   {
                     "type": "value",
                     "options": {
-                      "Critical": {
-                        "color": "#EF4444",
-                        "text": "Critical"
+                      "CRIT": {
+                        "color": "#FF003C",
+                        "index": 0,
+                        "text": "CRIT"
                       },
-                      "Warning": {
-                        "color": "#FACC15",
-                        "text": "Warning"
+                      "CRITICAL": {
+                        "color": "#FF003C",
+                        "index": 0,
+                        "text": "CRITICAL"
                       },
                       "WARN": {
-                        "color": "#FACC15",
-                        "text": "Warning"
+                        "color": "#FF9100",
+                        "index": 1,
+                        "text": "WARN"
                       },
-                      "NONE": {
-                        "color": "#6B7280",
-                        "text": "NONE"
+                      "WARNING": {
+                        "color": "#FF9100",
+                        "index": 1,
+                        "text": "WARNING"
+                      },
+                      "OK": {
+                        "color": "#00F2FE",
+                        "index": 2,
+                        "text": "OK"
                       }
                     }
                   }
@@ -1335,6 +1854,10 @@
                 "value": {
                   "type": "color-background"
                 }
+              },
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
               }
             ]
           },
@@ -1367,6 +1890,129 @@
               {
                 "id": "decimals",
                 "value": 6
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "eqp_id"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Machine"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "layer_name"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Layer"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "mo"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Work Order (MO)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "alarm_code"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Alarm Code"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "alarm_msg"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Alarm Message"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "severity"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Severity"
+              },
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "CRIT": {
+                        "color": "#FF003C",
+                        "index": 0,
+                        "text": "CRIT"
+                      },
+                      "CRITICAL": {
+                        "color": "#FF003C",
+                        "index": 0,
+                        "text": "CRITICAL"
+                      },
+                      "WARN": {
+                        "color": "#FF9100",
+                        "index": 1,
+                        "text": "WARN"
+                      },
+                      "WARNING": {
+                        "color": "#FF9100",
+                        "index": 1,
+                        "text": "WARNING"
+                      },
+                      "OK": {
+                        "color": "#00F2FE",
+                        "index": 2,
+                        "text": "OK"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "logdate"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
               }
             ]
           }
@@ -1528,6 +2174,176 @@
                 "value": {
                   "type": "color-background"
                 }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "eqp_id"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Machine"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "layer_name"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Layer"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "mo"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Work Order (MO)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "alarm_code"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Alarm Code"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "alarm_msg"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Alarm Message"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "severity"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Severity"
+              },
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "CRIT": {
+                        "color": "#FF003C",
+                        "index": 0,
+                        "text": "CRIT"
+                      },
+                      "CRITICAL": {
+                        "color": "#FF003C",
+                        "index": 0,
+                        "text": "CRITICAL"
+                      },
+                      "WARN": {
+                        "color": "#FF9100",
+                        "index": 1,
+                        "text": "WARN"
+                      },
+                      "WARNING": {
+                        "color": "#FF9100",
+                        "index": 1,
+                        "text": "WARNING"
+                      },
+                      "OK": {
+                        "color": "#00F2FE",
+                        "index": 2,
+                        "text": "OK"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Severity"
+            },
+            "properties": [
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "CRIT": {
+                        "color": "#FF003C",
+                        "index": 0,
+                        "text": "CRIT"
+                      },
+                      "CRITICAL": {
+                        "color": "#FF003C",
+                        "index": 0,
+                        "text": "CRITICAL"
+                      },
+                      "WARN": {
+                        "color": "#FF9100",
+                        "index": 1,
+                        "text": "WARN"
+                      },
+                      "WARNING": {
+                        "color": "#FF9100",
+                        "index": 1,
+                        "text": "WARNING"
+                      },
+                      "OK": {
+                        "color": "#00F2FE",
+                        "index": 2,
+                        "text": "OK"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "logdate"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
               }
             ]
           }
@@ -1695,6 +2511,176 @@
               {
                 "id": "custom.width",
                 "value": 110
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "eqp_id"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Machine"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "layer_name"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Layer"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "mo"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Work Order (MO)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "alarm_code"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Alarm Code"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "alarm_msg"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Alarm Message"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "severity"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Severity"
+              },
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "CRIT": {
+                        "color": "#FF003C",
+                        "index": 0,
+                        "text": "CRIT"
+                      },
+                      "CRITICAL": {
+                        "color": "#FF003C",
+                        "index": 0,
+                        "text": "CRITICAL"
+                      },
+                      "WARN": {
+                        "color": "#FF9100",
+                        "index": 1,
+                        "text": "WARN"
+                      },
+                      "WARNING": {
+                        "color": "#FF9100",
+                        "index": 1,
+                        "text": "WARNING"
+                      },
+                      "OK": {
+                        "color": "#00F2FE",
+                        "index": 2,
+                        "text": "OK"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Severity"
+            },
+            "properties": [
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "CRIT": {
+                        "color": "#FF003C",
+                        "index": 0,
+                        "text": "CRIT"
+                      },
+                      "CRITICAL": {
+                        "color": "#FF003C",
+                        "index": 0,
+                        "text": "CRITICAL"
+                      },
+                      "WARN": {
+                        "color": "#FF9100",
+                        "index": 1,
+                        "text": "WARN"
+                      },
+                      "WARNING": {
+                        "color": "#FF9100",
+                        "index": 1,
+                        "text": "WARNING"
+                      },
+                      "OK": {
+                        "color": "#00F2FE",
+                        "index": 2,
+                        "text": "OK"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "logdate"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
               }
             ]
           }
