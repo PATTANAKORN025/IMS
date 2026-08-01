@@ -1049,12 +1049,19 @@
               "type": "value",
               "options": {
                 "0": {
-                  "text": "DOWN",
-                  "color": "#EF4444"
+                  "color": "#FF003C",
+                  "index": 0,
+                  "text": "CRIT"
                 },
                 "1": {
-                  "text": "RUNNING",
-                  "color": "#22C55E"
+                  "color": "#FF9100",
+                  "index": 1,
+                  "text": "WARN"
+                },
+                "2": {
+                  "color": "#00F2FE",
+                  "index": 2,
+                  "text": "OK"
                 }
               }
             }
@@ -1084,7 +1091,10 @@
               "oneClick": true
             }
           ],
-          "custom": {}
+          "custom": {
+            "lineWidth": 0,
+            "fillOpacity": 100
+          }
         },
         "overrides": []
       },
@@ -1092,7 +1102,7 @@
         "showValue": "auto",
         "mergeValues": true,
         "alignValue": "center",
-        "rowHeight": 0.85,
+        "rowHeight": 0.9,
         "legend": {
           "displayMode": "list",
           "placement": "bottom"
