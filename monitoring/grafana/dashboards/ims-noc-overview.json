@@ -94,7 +94,7 @@
       },
       "options": {
         "mode": "html",
-        "content": "<div style=\"display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:rgba(12,18,30,0.8);border-bottom:1px solid rgba(0,242,254,0.2);font-family:Rajdhani,sans-serif\"><span style=\"font-family:Orbitron,sans-serif;font-size:16px;font-weight:700;letter-spacing:2px\">APEX <span style=\"color:#3B82F6\">COMMAND</span></span><span style=\"font-size:13px;letter-spacing:1px\"><a href=\"/d/ims-noc-overview\" style=\"color:#10B981;font-weight:700;text-decoration:none\">NOC OVERVIEW</a> &nbsp;|&nbsp; <a href=\"/d/ims-engineering\" style=\"color:#E2E8F0;text-decoration:none\">ENG DRILL-DOWN</a> &nbsp;|&nbsp; <a href=\"/d/ims-capacity\" style=\"color:#E2E8F0;text-decoration:none\">CAPACITY FORECAST</a></span></div>\n<style>\n@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Orbitron:wght@400;700&display=swap');\n.dashboard-page { background: radial-gradient(circle at center, #0B0E14 0%, #030407 100%) !important; }\n.panel-container {\n  background: rgba(12, 18, 30, 0.6) !important;\n  border: 1px solid rgba(0, 242, 254, 0.15) !important;\n  border-radius: 8px !important;\n  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5) !important;\n  transition: all 0.3s ease;\n  animation: fadeUp 0.5s ease-out forwards;\n}\n.panel-container:hover {\n  border-color: rgba(0, 255, 135, 0.4) !important;\n  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(0, 255, 135, 0.05) !important;\n  backdrop-filter: blur(10px) !important;\n  -webkit-backdrop-filter: blur(10px) !important;\n  will-change: backdrop-filter;\n}\n.panel-title { font-weight: 700 !important; letter-spacing: 1px !important; color: #E2E8F0 !important; }\n.status-dot {\n  width: 8px; height: 8px; border-radius: 50%; background: #10B981;\n  display: inline-block; margin-right: 8px;\n  animation: pulse 2s ease-in-out infinite;\n  box-shadow: 0 0 8px #10B981;\n}\n@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.8); } }\n@keyframes fadeUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }\n</style>"
+        "content": "<style>\n[class*=\"-panel-container\"] {\n  border-radius: 14px !important;\n  background: #12161A !important;\n  border: 1px solid rgba(255,255,255,0.06) !important;\n  padding: 4px !important;\n}\n</style>"
       },
       "datasource": null,
       "transparent": true,
@@ -146,7 +146,7 @@
     {
       "id": 998,
       "type": "alertlist",
-      "title": "ALERTS & ACTIVE INCIDENTS",
+      "title": "◈ ALERTS & ACTIVE INCIDENTS",
       "description": "Currently firing alerts from Grafana unified alerting.",
       "gridPos": {
         "x": 0,
@@ -197,7 +197,7 @@
     },
     {
       "id": 4,
-      "title": "Fleet Health Score",
+      "title": "◉ Fleet Health Score",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -232,9 +232,14 @@
           },
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00f2fe"
+            "fixedColor": "#00E5FF"
           },
-          "custom": {},
+          "custom": {
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 25,
+            "lineWidth": 2
+          },
           "decimals": 2
         },
         "overrides": [
@@ -279,10 +284,6 @@
         "text": {
           "valueSize": 48,
           "titleSize": 14
-        },
-        "textSizes": {
-          "titleSize": 24,
-          "valueSize": 80
         }
       },
       "targets": [
@@ -307,7 +308,7 @@
     },
     {
       "id": 601,
-      "title": "LDI Yield Risk (% Outside Tolerance)",
+      "title": "◉ LDI Yield Risk (% Outside Tolerance)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -340,7 +341,12 @@
               }
             ]
           },
-          "custom": {},
+          "custom": {
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 25,
+            "lineWidth": 2
+          },
           "decimals": 2
         },
         "overrides": [
@@ -385,10 +391,6 @@
         "text": {
           "valueSize": 48,
           "titleSize": 14
-        },
-        "textSizes": {
-          "titleSize": 24,
-          "valueSize": 80
         }
       },
       "targets": [
@@ -414,7 +416,7 @@
     },
     {
       "id": 602,
-      "title": "Power Cost Estimation (THB/day)",
+      "title": "◉ Power Cost Estimation (THB/day)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -445,12 +447,17 @@
               }
             ]
           },
-          "custom": {},
+          "custom": {
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 25,
+            "lineWidth": 2
+          },
           "min": 0,
           "decimals": 2,
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00f2fe"
+            "fixedColor": "#00E5FF"
           }
         },
         "overrides": [
@@ -495,10 +502,6 @@
         "text": {
           "valueSize": 48,
           "titleSize": 14
-        },
-        "textSizes": {
-          "titleSize": 24,
-          "valueSize": 80
         }
       },
       "targets": [
@@ -543,7 +546,7 @@
     },
     {
       "id": 10,
-      "title": "TOP 10 CRITICAL NODES",
+      "title": "◈ TOP 10 CRITICAL NODES",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
@@ -750,7 +753,7 @@
     },
     {
       "id": 20,
-      "title": "CPU Load (Fleet Envelope)",
+      "title": "◈ CPU Load (Fleet Envelope)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -767,7 +770,7 @@
           "min": 0,
           "max": 100,
           "custom": {
-            "fillOpacity": 20,
+            "fillOpacity": 25,
             "lineWidth": 2,
             "spanNulls": 60000,
             "gradientMode": "opacity",
@@ -1075,7 +1078,7 @@
     },
     {
       "id": 21,
-      "title": "Temperature (Fleet Envelope)",
+      "title": "◈ Temperature (Fleet Envelope)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -1090,7 +1093,7 @@
         "defaults": {
           "unit": "celsius",
           "custom": {
-            "fillOpacity": 20,
+            "fillOpacity": 25,
             "lineWidth": 2,
             "spanNulls": 60000,
             "gradientMode": "opacity",
@@ -1429,7 +1432,7 @@
     },
     {
       "id": 22,
-      "title": "Network Throughput (All Machines)",
+      "title": "◈ Network Throughput (All Machines)",
       "type": "barchart",
       "datasource": {
         "uid": "timescaledb"
@@ -1573,7 +1576,7 @@
     },
     {
       "id": 23,
-      "title": "RAM Saturation (Fleet Envelope)",
+      "title": "◈ RAM Saturation (Fleet Envelope)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -1590,7 +1593,7 @@
           "min": 0,
           "max": 100,
           "custom": {
-            "fillOpacity": 20,
+            "fillOpacity": 25,
             "lineWidth": 2,
             "spanNulls": 60000,
             "gradientMode": "opacity",
@@ -1910,7 +1913,7 @@
         "y": 90
       },
       "options": {
-        "content": "\n<style>\n@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');\n\n@keyframes gradientBG {\n    0% { background-position: 0% 50%; }\n    50% { background-position: 100% 50%; }\n    100% { background-position: 0% 50%; }\n}\n\n@keyframes edgeGlow {\n    0% { border-color: rgba(0, 242, 254, 0.3); }\n    50% { border-color: rgba(0, 255, 135, 0.6); box-shadow: 0 0 15px rgba(0, 255, 135, 0.2), inset 0 0 20px rgba(0, 255, 135, 0.05); }\n    100% { border-color: rgba(0, 242, 254, 0.3); }\n}\n\n/* Global Background */\n.main-view, .react-grid-layout, .dashboard-container, body {\n    background: linear-gradient(-45deg, #0b0f19, #141416, #090a0f, #1a1525) !important;\n    background-size: 400% 400% !important;\n    animation: gradientBG 15s ease infinite !important;\n}\n\n/* Panel Backgrounds (Ultra Glassmorphism) */\n.panel-container {\n    background: rgba(15, 15, 20, 0.6) !important;\n    border: 1px solid rgba(255, 255, 255, 0.08) !important;\n    border-radius: 16px !important;\n    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.02) !important;\n    backdrop-filter: blur(16px) saturate(180%);\n    -webkit-backdrop-filter: blur(16px) saturate(180%);\n    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);\n}\n\n/* Hover effect */\n.panel-container:hover {\n    transform: translateY(-4px) scale(1.01);\n    animation: edgeGlow 3s infinite !important;\n    z-index: 100;\n}\n\n/* Typography overriding */\n.panel-title-text, .grafana-tooltip, text, div {\n    font-family: 'Outfit', sans-serif !important;\n}\n\n/* Header colors */\n.panel-title-text {\n    font-weight: 600 !important;\n    letter-spacing: 1px !important;\n    font-size: 18px !important;\n    text-transform: uppercase;\n    background: -webkit-linear-gradient(45deg, #00F2FE, #00FF87);\n    -webkit-background-clip: text;\n    -webkit-text-fill-color: transparent;\n}\n\n/* Scrollbar hiding for clean look */\n::-webkit-scrollbar {\n    width: 8px;\n    height: 8px;\n}\n::-webkit-scrollbar-track {\n    background: rgba(0,0,0,0.2); \n}\n::-webkit-scrollbar-thumb {\n    background: linear-gradient(to bottom, #00F2FE, #7F00FF); \n    border-radius: 10px;\n}\n\n/* Hide the injector panel itself */\ndiv[data-panelid=\"9999\"] { display: none !important; }\n</style>\n",
+        "content": "<!-- duplicate css removed -->",
         "mode": "html"
       }
     }

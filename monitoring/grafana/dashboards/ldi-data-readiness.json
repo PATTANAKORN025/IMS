@@ -81,7 +81,7 @@
   "panels": [
     {
       "id": 1,
-      "title": "Telemetry Age",
+      "title": "◉ Telemetry Age",
       "description": "Hours since the latest real telemetry row. Green is under 1 hour; red is over 24 hours.",
       "type": "stat",
       "datasource": {
@@ -116,7 +116,7 @@
         "defaults": {
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00f2fe"
+            "fixedColor": "#00E5FF"
           },
           "decimals": 1,
           "unit": "h",
@@ -128,7 +128,7 @@
                 "value": null
               },
               {
-                "color": "yellow",
+                "color": "#F0B429",
                 "value": 1
               },
               {
@@ -137,7 +137,12 @@
               }
             ]
           },
-          "custom": {}
+          "custom": {
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 25,
+            "lineWidth": 2
+          }
         },
         "overrides": []
       },
@@ -160,17 +165,13 @@
           "titleSize": 14,
           "valueSize": 48
         },
-        "noValue": "-",
-        "textSizes": {
-          "titleSize": 24,
-          "valueSize": 80
-        }
+        "noValue": "-"
       },
       "transparent": true
     },
     {
       "id": 2,
-      "title": "Alarm Age",
+      "title": "◉ Alarm Age",
       "description": "Hours since the latest real alarm row for selected telemetry machines.",
       "type": "stat",
       "datasource": {
@@ -216,7 +217,7 @@
                 "value": null
               },
               {
-                "color": "yellow",
+                "color": "#F0B429",
                 "value": 1
               },
               {
@@ -225,7 +226,12 @@
               }
             ]
           },
-          "custom": {}
+          "custom": {
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 25,
+            "lineWidth": 2
+          }
         },
         "overrides": []
       },
@@ -248,17 +254,13 @@
           "titleSize": 14,
           "valueSize": 48
         },
-        "noValue": "-",
-        "textSizes": {
-          "titleSize": 24,
-          "valueSize": 80
-        }
+        "noValue": "-"
       },
       "transparent": true
     },
     {
       "id": 3,
-      "title": "Machine ID Match",
+      "title": "◉ Machine ID Match",
       "description": "Percent of selected telemetry machine IDs also found in alarm history.",
       "type": "stat",
       "datasource": {
@@ -293,7 +295,7 @@
         "defaults": {
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00f2fe"
+            "fixedColor": "#00E5FF"
           },
           "decimals": 1,
           "unit": "percent",
@@ -305,7 +307,7 @@
                 "value": null
               },
               {
-                "color": "yellow",
+                "color": "#F0B429",
                 "value": 80
               },
               {
@@ -314,7 +316,12 @@
               }
             ]
           },
-          "custom": {},
+          "custom": {
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 25,
+            "lineWidth": 2
+          },
           "min": 0,
           "max": 100
         },
@@ -339,17 +346,13 @@
           "titleSize": 14,
           "valueSize": 48
         },
-        "noValue": "-",
-        "textSizes": {
-          "titleSize": 24,
-          "valueSize": 80
-        }
+        "noValue": "-"
       },
       "transparent": true
     },
     {
       "id": 4,
-      "title": "Alarm Master Match",
+      "title": "◉ Alarm Master Match",
       "description": "Percent of real alarm rows whose error code can be resolved by the current alarm master.",
       "type": "stat",
       "datasource": {
@@ -395,7 +398,7 @@
                 "value": null
               },
               {
-                "color": "yellow",
+                "color": "#F0B429",
                 "value": 80
               },
               {
@@ -404,7 +407,12 @@
               }
             ]
           },
-          "custom": {},
+          "custom": {
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 25,
+            "lineWidth": 2
+          },
           "min": 0,
           "max": 100
         },
@@ -429,17 +437,13 @@
           "titleSize": 14,
           "valueSize": 48
         },
-        "noValue": "-",
-        "textSizes": {
-          "titleSize": 24,
-          "valueSize": 80
-        }
+        "noValue": "-"
       },
       "transparent": true
     },
     {
       "id": 5,
-      "title": "Board ID Completeness",
+      "title": "◉ Board ID Completeness",
       "description": "Percent of telemetry rows with a non-null board_id.",
       "type": "stat",
       "datasource": {
@@ -474,7 +478,7 @@
         "defaults": {
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00f2fe"
+            "fixedColor": "#00E5FF"
           },
           "decimals": 1,
           "unit": "percent",
@@ -486,7 +490,7 @@
                 "value": null
               },
               {
-                "color": "yellow",
+                "color": "#F0B429",
                 "value": 80
               },
               {
@@ -495,7 +499,12 @@
               }
             ]
           },
-          "custom": {},
+          "custom": {
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 25,
+            "lineWidth": 2
+          },
           "min": 0,
           "max": 100
         },
@@ -520,17 +529,13 @@
           "titleSize": 14,
           "valueSize": 48
         },
-        "noValue": "-",
-        "textSizes": {
-          "titleSize": 24,
-          "valueSize": 80
-        }
+        "noValue": "-"
       },
       "transparent": true
     },
     {
       "id": 6,
-      "title": "PE / JE4 Coverage",
+      "title": "◉ PE / JE4 Coverage",
       "description": "Row-level completeness of PE and JE4 for selected machines.",
       "type": "stat",
       "datasource": {
@@ -565,7 +570,7 @@
         "defaults": {
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00f2fe"
+            "fixedColor": "#00E5FF"
           },
           "decimals": 2,
           "unit": "lengthum",
@@ -577,7 +582,7 @@
                 "value": null
               },
               {
-                "color": "yellow",
+                "color": "#F0B429",
                 "value": 80
               },
               {
@@ -586,7 +591,12 @@
               }
             ]
           },
-          "custom": {},
+          "custom": {
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 25,
+            "lineWidth": 2
+          },
           "min": 0,
           "max": 100
         },
@@ -611,17 +621,13 @@
           "titleSize": 14,
           "valueSize": 48
         },
-        "noValue": "-",
-        "textSizes": {
-          "titleSize": 24,
-          "valueSize": 80
-        }
+        "noValue": "-"
       },
       "transparent": true
     },
     {
       "id": 7,
-      "title": "Telemetry Ingestion Rows by Machine",
+      "title": "◈ Telemetry Ingestion Rows by Machine",
       "description": "Actual telemetry rows received in each five-minute bucket. Gaps indicate no stored rows, not simulated downtime.",
       "type": "timeseries",
       "datasource": {
@@ -664,8 +670,8 @@
             "axisLabel": "rows / 5 min",
             "axisPlacement": "auto",
             "drawStyle": "line",
-            "fillOpacity": 20,
-            "lineInterpolation": "linear",
+            "fillOpacity": 25,
+            "lineInterpolation": "smooth",
             "lineWidth": 2,
             "pointSize": 4,
             "showPoints": "never",
@@ -702,7 +708,7 @@
     },
     {
       "id": 8,
-      "title": "Machine Data Coverage Matrix",
+      "title": "◈ Machine Data Coverage Matrix",
       "description": "Real row counts and field coverage per selected machine.",
       "type": "table",
       "datasource": {
@@ -752,7 +758,7 @@
     },
     {
       "id": 9,
-      "title": "Machine ID Mapping Gaps (Global)",
+      "title": "◈ Machine ID Mapping Gaps (Global)",
       "description": "Global comparison of machine identifiers in telemetry and alarm sources. This intentionally ignores dashboard filters so unmatched IDs stay visible.",
       "type": "table",
       "datasource": {
@@ -802,7 +808,7 @@
     },
     {
       "id": 10,
-      "title": "Alarm Code Mapping Gaps (Global)",
+      "title": "◈ Alarm Code Mapping Gaps (Global)",
       "description": "Every distinct alarm code from the real log and whether it resolves against the supplied alarm master.",
       "type": "table",
       "datasource": {
@@ -852,7 +858,7 @@
     },
     {
       "id": 11,
-      "title": "Board Event Data Quality",
+      "title": "◈ Board Event Data Quality",
       "description": "Shows why telemetry rows cannot yet be treated as guaranteed board-completion events: board_id is missing and some MO + board_no keys repeat.",
       "type": "table",
       "datasource": {
@@ -902,7 +908,7 @@
     },
     {
       "id": 12,
-      "title": "Inferred Sensor / Source Capability",
+      "title": "◈ Inferred Sensor / Source Capability",
       "description": "Capability is inferred only from existing rows. ALL ZERO or CONSTANT means verify the machine specification; it is not automatically classified as a fault.",
       "type": "table",
       "datasource": {
@@ -962,7 +968,7 @@
         "y": 62
       },
       "options": {
-        "content": "\n<style>\n@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');\n\n@keyframes gradientBG {\n    0% { background-position: 0% 50%; }\n    50% { background-position: 100% 50%; }\n    100% { background-position: 0% 50%; }\n}\n\n@keyframes edgeGlow {\n    0% { border-color: rgba(0, 242, 254, 0.3); }\n    50% { border-color: rgba(0, 255, 135, 0.6); box-shadow: 0 0 15px rgba(0, 255, 135, 0.2), inset 0 0 20px rgba(0, 255, 135, 0.05); }\n    100% { border-color: rgba(0, 242, 254, 0.3); }\n}\n\n/* Global Background */\n.main-view, .react-grid-layout, .dashboard-container, body {\n    background: linear-gradient(-45deg, #0b0f19, #141416, #090a0f, #1a1525) !important;\n    background-size: 400% 400% !important;\n    animation: gradientBG 15s ease infinite !important;\n}\n\n/* Panel Backgrounds (Ultra Glassmorphism) */\n.panel-container {\n    background: rgba(15, 15, 20, 0.6) !important;\n    border: 1px solid rgba(255, 255, 255, 0.08) !important;\n    border-radius: 16px !important;\n    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.02) !important;\n    backdrop-filter: blur(16px) saturate(180%);\n    -webkit-backdrop-filter: blur(16px) saturate(180%);\n    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);\n}\n\n/* Hover effect */\n.panel-container:hover {\n    transform: translateY(-4px) scale(1.01);\n    animation: edgeGlow 3s infinite !important;\n    z-index: 100;\n}\n\n/* Typography overriding */\n.panel-title-text, .grafana-tooltip, text, div {\n    font-family: 'Outfit', sans-serif !important;\n}\n\n/* Header colors */\n.panel-title-text {\n    font-weight: 600 !important;\n    letter-spacing: 1px !important;\n    font-size: 18px !important;\n    text-transform: uppercase;\n    background: -webkit-linear-gradient(45deg, #00F2FE, #00FF87);\n    -webkit-background-clip: text;\n    -webkit-text-fill-color: transparent;\n}\n\n/* Scrollbar hiding for clean look */\n::-webkit-scrollbar {\n    width: 8px;\n    height: 8px;\n}\n::-webkit-scrollbar-track {\n    background: rgba(0,0,0,0.2); \n}\n::-webkit-scrollbar-thumb {\n    background: linear-gradient(to bottom, #00F2FE, #7F00FF); \n    border-radius: 10px;\n}\n\n/* Hide the injector panel itself */\ndiv[data-panelid=\"9999\"] { display: none !important; }\n</style>\n",
+        "content": "<style>\n[class*=\"-panel-container\"] {\n  border-radius: 14px !important;\n  background: #12161A !important;\n  border: 1px solid rgba(255,255,255,0.06) !important;\n  padding: 4px !important;\n}\n</style>",
         "mode": "html"
       }
     }

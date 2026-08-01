@@ -94,7 +94,7 @@
       },
       "options": {
         "mode": "html",
-        "content": "<div style=\"display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:rgba(12,18,30,0.8);border-bottom:1px solid rgba(0,242,254,0.2);font-family:Rajdhani,sans-serif\"><span style=\"font-family:Orbitron,sans-serif;font-size:16px;font-weight:700;letter-spacing:2px\">APEX <span style=\"color:#3B82F6\">COMMAND</span></span><span style=\"font-size:13px;letter-spacing:1px\"><a href=\"/d/ims-noc-overview\" style=\"color:#E2E8F0;text-decoration:none\">NOC OVERVIEW</a> &nbsp;|&nbsp; <a href=\"/d/ims-engineering\" style=\"color:#10B981;font-weight:700;text-decoration:none\">ENG DRILL-DOWN</a> &nbsp;|&nbsp; <a href=\"/d/ims-capacity\" style=\"color:#E2E8F0;text-decoration:none\">CAPACITY FORECAST</a></span></div>\n<style>\n@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Orbitron:wght@400;700&display=swap');\n.dashboard-page { background: radial-gradient(circle at center, #0B0E14 0%, #030407 100%) !important; }\n.panel-container {\n  background: rgba(12, 18, 30, 0.6) !important;\n  border: 1px solid rgba(0, 242, 254, 0.15) !important;\n  border-radius: 8px !important;\n  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5) !important;\n  transition: all 0.3s ease;\n  animation: fadeUp 0.5s ease-out forwards;\n}\n.panel-container:hover {\n  border-color: rgba(0, 255, 135, 0.4) !important;\n  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(0, 255, 135, 0.05) !important;\n  backdrop-filter: blur(10px) !important;\n  -webkit-backdrop-filter: blur(10px) !important;\n  will-change: backdrop-filter;\n}\n.panel-title { font-weight: 700 !important; letter-spacing: 1px !important; color: #E2E8F0 !important; }\n.status-dot {\n  width: 8px; height: 8px; border-radius: 50%; background: #10B981;\n  display: inline-block; margin-right: 8px;\n  animation: pulse 2s ease-in-out infinite;\n  box-shadow: 0 0 8px #10B981;\n}\n@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.8); } }\n@keyframes fadeUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }\n</style>"
+        "content": "<style>\n[class*=\"-panel-container\"] {\n  border-radius: 14px !important;\n  background: #12161A !important;\n  border: 1px solid rgba(255,255,255,0.06) !important;\n  padding: 4px !important;\n}\n</style>"
       },
       "datasource": null,
       "transparent": true,
@@ -164,7 +164,7 @@
     },
     {
       "id": 1,
-      "title": "CPU Load",
+      "title": "◈ CPU Load",
       "type": "gauge",
       "datasource": {
         "uid": "timescaledb"
@@ -241,10 +241,6 @@
         "text": {
           "titleSize": 14,
           "valueSize": 48
-        },
-        "textSizes": {
-          "titleSize": 24,
-          "valueSize": 80
         }
       },
       "targets": [
@@ -274,7 +270,7 @@
     },
     {
       "id": 2,
-      "title": "RAM Usage",
+      "title": "◈ RAM Usage",
       "type": "gauge",
       "datasource": {
         "uid": "timescaledb"
@@ -351,10 +347,6 @@
         "text": {
           "titleSize": 14,
           "valueSize": 48
-        },
-        "textSizes": {
-          "titleSize": 24,
-          "valueSize": 80
         }
       },
       "targets": [
@@ -384,7 +376,7 @@
     },
     {
       "id": 3,
-      "title": "Storage Saturation",
+      "title": "◈ Storage Saturation",
       "type": "gauge",
       "datasource": {
         "uid": "timescaledb"
@@ -461,10 +453,6 @@
         "text": {
           "titleSize": 14,
           "valueSize": 48
-        },
-        "textSizes": {
-          "titleSize": 24,
-          "valueSize": 80
         }
       },
       "targets": [
@@ -494,7 +482,7 @@
     },
     {
       "id": 4,
-      "title": "Temperature",
+      "title": "◈ Temperature",
       "type": "gauge",
       "datasource": {
         "uid": "timescaledb"
@@ -581,10 +569,6 @@
         "text": {
           "titleSize": 14,
           "valueSize": 48
-        },
-        "textSizes": {
-          "titleSize": 24,
-          "valueSize": 80
         }
       },
       "targets": [
@@ -634,7 +618,7 @@
     },
     {
       "id": 501,
-      "title": "Memory Saturation",
+      "title": "◈ Memory Saturation",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -651,7 +635,7 @@
           "min": 0,
           "max": 100,
           "custom": {
-            "fillOpacity": 20,
+            "fillOpacity": 25,
             "lineWidth": 2,
             "spanNulls": 60000,
             "gradientMode": "opacity",
@@ -915,7 +899,7 @@
     },
     {
       "id": 502,
-      "title": "Network Bandwidth (Per-Interface)",
+      "title": "◈ Network Bandwidth (Per-Interface)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -931,7 +915,7 @@
           "unit": "bps",
           "custom": {
             "axisCente#EF4444Zero": true,
-            "fillOpacity": 20,
+            "fillOpacity": 25,
             "lineWidth": 2,
             "spanNulls": false,
             "gradientMode": "opacity",
@@ -1194,7 +1178,7 @@
     },
     {
       "id": 21,
-      "title": "Temperature Sensors",
+      "title": "◈ Temperature Sensors",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -1209,7 +1193,7 @@
         "defaults": {
           "unit": "celsius",
           "custom": {
-            "fillOpacity": 20,
+            "fillOpacity": 25,
             "lineWidth": 2,
             "spanNulls": 60000,
             "thresholdsStyle": {
@@ -1550,7 +1534,7 @@
     },
     {
       "id": 503,
-      "title": "LDI Throughput & Process Efficiency",
+      "title": "◈ LDI Throughput & Process Efficiency",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -1564,7 +1548,7 @@
       "fieldConfig": {
         "defaults": {
           "custom": {
-            "fillOpacity": 20,
+            "fillOpacity": 25,
             "lineWidth": 2,
             "spanNulls": 60000,
             "gradientMode": "opacity",
@@ -1773,7 +1757,7 @@
     },
     {
       "id": 504,
-      "title": "LDI Junction Efficiency & Humidity",
+      "title": "◈ LDI Junction Efficiency & Humidity",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -1787,7 +1771,7 @@
       "fieldConfig": {
         "defaults": {
           "custom": {
-            "fillOpacity": 20,
+            "fillOpacity": 25,
             "lineWidth": 2,
             "spanNulls": 60000,
             "gradientMode": "opacity",
@@ -2024,7 +2008,7 @@
     },
     {
       "id": 510,
-      "title": "LDI Quality Scatter",
+      "title": "◈ LDI Quality Scatter",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -2038,7 +2022,7 @@
       "fieldConfig": {
         "defaults": {
           "custom": {
-            "fillOpacity": 20,
+            "fillOpacity": 25,
             "lineWidth": 2,
             "lineInterpolation": "smooth",
             "gradientMode": "opacity",
@@ -2127,7 +2111,7 @@
     },
     {
       "type": "stat",
-      "title": "Estimated Daily Power Cost (THB)",
+      "title": "◉ Estimated Daily Power Cost (THB)",
       "datasource": {
         "type": "postgres",
         "uid": "timescaledb"
@@ -2144,7 +2128,7 @@
           "decimals": 2,
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00f2fe"
+            "fixedColor": "#00E5FF"
           },
           "thresholds": {
             "steps": [
@@ -2162,7 +2146,12 @@
               }
             ]
           },
-          "custom": {}
+          "custom": {
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 25,
+            "lineWidth": 2
+          }
         },
         "overrides": [
           {
@@ -2206,10 +2195,6 @@
         "text": {
           "titleSize": 14,
           "valueSize": 48
-        },
-        "textSizes": {
-          "titleSize": 24,
-          "valueSize": 80
         }
       },
       "description": "Estimated 24-hour electricity cost in Thai Baht. Calculated as: avg_watts x 24h / 1000 x 4 THB/kWh tariff. Based on rolling 1-hour average power consumption from LDI manufacturing metrics. Thresholds: green < 500 THB, yellow 500-1000 THB, red > 1000 THB.",
@@ -2217,7 +2202,7 @@
     },
     {
       "type": "stat",
-      "title": "Power Efficiency Ratio",
+      "title": "◉ Power Efficiency Ratio",
       "datasource": {
         "type": "postgres",
         "uid": "timescaledb"
@@ -2234,7 +2219,7 @@
           "decimals": 2,
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00f2fe"
+            "fixedColor": "#00E5FF"
           },
           "thresholds": {
             "steps": [
@@ -2252,7 +2237,12 @@
               }
             ]
           },
-          "custom": {}
+          "custom": {
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 25,
+            "lineWidth": 2
+          }
         },
         "overrides": [
           {
@@ -2296,10 +2286,6 @@
         "text": {
           "titleSize": 14,
           "valueSize": 48
-        },
-        "textSizes": {
-          "titleSize": 24,
-          "valueSize": 80
         }
       },
       "description": "Manufacturing throughput per watt of power consumed. Higher is better. Calculated as: throughput_count / power_watt. Tracks how efficiently the LDI machine converts electrical energy into productive output. Below 1.0 indicates excessive idle power draw relative to production volume.",
@@ -2307,7 +2293,7 @@
     },
     {
       "type": "stat",
-      "title": "Yield Risk Index",
+      "title": "◉ Yield Risk Index",
       "datasource": {
         "type": "postgres",
         "uid": "timescaledb"
@@ -2341,7 +2327,12 @@
               }
             ]
           },
-          "custom": {}
+          "custom": {
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 25,
+            "lineWidth": 2
+          }
         },
         "overrides": [
           {
@@ -2385,10 +2376,6 @@
         "text": {
           "titleSize": 14,
           "valueSize": 48
-        },
-        "textSizes": {
-          "titleSize": 24,
-          "valueSize": 80
         }
       },
       "description": "Composite risk score (0-100) indicating probability of yield loss. Triggered when throughput drops below baseline minus 2 standard deviations while power consumption remains above 80% of baseline — indicating the machine is drawing full power but producing substandard output. Score 0 = normal, 100 = critical yield loss suspected.",
@@ -2416,7 +2403,7 @@
     },
     {
       "id": 40,
-      "title": "CPU Anomaly Score (Z-Score)",
+      "title": "◈ CPU Anomaly Score (Z-Score)",
       "type": "state-timeline",
       "datasource": {
         "uid": "timescaledb"
@@ -2500,7 +2487,7 @@
     },
     {
       "id": 41,
-      "title": "Temperature Anomaly Score (Z-Score)",
+      "title": "◈ Temperature Anomaly Score (Z-Score)",
       "type": "state-timeline",
       "datasource": {
         "uid": "timescaledb"
@@ -2605,7 +2592,7 @@
     },
     {
       "id": 2001,
-      "title": "CPU / RAM / Storage Distribution",
+      "title": "◈ CPU / RAM / Storage Distribution",
       "type": "piechart",
       "datasource": {
         "uid": "timescaledb"
@@ -2718,7 +2705,7 @@
     },
     {
       "id": 1002,
-      "title": "Fleet Status Composition",
+      "title": "◈ Fleet Status Composition",
       "type": "piechart",
       "datasource": {
         "uid": "timescaledb"
@@ -2841,7 +2828,7 @@
         "y": 124
       },
       "options": {
-        "content": "\n<style>\n@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');\n\n@keyframes gradientBG {\n    0% { background-position: 0% 50%; }\n    50% { background-position: 100% 50%; }\n    100% { background-position: 0% 50%; }\n}\n\n@keyframes edgeGlow {\n    0% { border-color: rgba(0, 242, 254, 0.3); }\n    50% { border-color: rgba(0, 255, 135, 0.6); box-shadow: 0 0 15px rgba(0, 255, 135, 0.2), inset 0 0 20px rgba(0, 255, 135, 0.05); }\n    100% { border-color: rgba(0, 242, 254, 0.3); }\n}\n\n/* Global Background */\n.main-view, .react-grid-layout, .dashboard-container, body {\n    background: linear-gradient(-45deg, #0b0f19, #141416, #090a0f, #1a1525) !important;\n    background-size: 400% 400% !important;\n    animation: gradientBG 15s ease infinite !important;\n}\n\n/* Panel Backgrounds (Ultra Glassmorphism) */\n.panel-container {\n    background: rgba(15, 15, 20, 0.6) !important;\n    border: 1px solid rgba(255, 255, 255, 0.08) !important;\n    border-radius: 16px !important;\n    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.02) !important;\n    backdrop-filter: blur(16px) saturate(180%);\n    -webkit-backdrop-filter: blur(16px) saturate(180%);\n    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);\n}\n\n/* Hover effect */\n.panel-container:hover {\n    transform: translateY(-4px) scale(1.01);\n    animation: edgeGlow 3s infinite !important;\n    z-index: 100;\n}\n\n/* Typography overriding */\n.panel-title-text, .grafana-tooltip, text, div {\n    font-family: 'Outfit', sans-serif !important;\n}\n\n/* Header colors */\n.panel-title-text {\n    font-weight: 600 !important;\n    letter-spacing: 1px !important;\n    font-size: 18px !important;\n    text-transform: uppercase;\n    background: -webkit-linear-gradient(45deg, #00F2FE, #00FF87);\n    -webkit-background-clip: text;\n    -webkit-text-fill-color: transparent;\n}\n\n/* Scrollbar hiding for clean look */\n::-webkit-scrollbar {\n    width: 8px;\n    height: 8px;\n}\n::-webkit-scrollbar-track {\n    background: rgba(0,0,0,0.2); \n}\n::-webkit-scrollbar-thumb {\n    background: linear-gradient(to bottom, #00F2FE, #7F00FF); \n    border-radius: 10px;\n}\n\n/* Hide the injector panel itself */\ndiv[data-panelid=\"9999\"] { display: none !important; }\n</style>\n",
+        "content": "<!-- duplicate css removed -->",
         "mode": "html"
       }
     }
