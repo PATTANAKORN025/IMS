@@ -1,0 +1,2 @@
+[ims-capacity-planning.json | RAM Usage Trend (30-Day Average)] ROUND() missing ::NUMERIC cast on division. PostgreSQL will fail.
+[ldi-data-readiness.json | Machine ID Match] ROUND() missing ::NUMERIC cast on division. PostgreSQL will fail.
