@@ -681,7 +681,7 @@
         "x": 0,
         "y": 28,
         "w": 24,
-        "h": 8
+        "h": 12
       },
       "fieldConfig": {
         "defaults": {
@@ -799,22 +799,6 @@
       ],
       "transparent": true,
       "description": "Note: Alarm durations and MTTR are not calculated as the source EAP system currently does not broadcast explicit alarm-clear events. Only occurrence times are logged. Duration estimation requires EAP team confirmation of clear/reset event availability. Alarm Stream: latest alarms with human-readable messages and color-coded severity."
-    },
-    {
-      "id": 9999,
-      "title": "",
-      "type": "text",
-      "transparent": true,
-      "gridPos": {
-        "h": 2,
-        "w": 24,
-        "x": 0,
-        "y": 38
-      },
-      "options": {
-        "content": "<style>\n[class*=\"-panel-container\"] {\n  border-radius: 14px !important;\n  background: #12161A !important;\n  border: 1px solid rgba(255,255,255,0.06) !important;\n  padding: 4px !important;\n}\n</style>",
-        "mode": "html"
-      }
     }
   ],
   "fiscalYearStartMonth": 0,

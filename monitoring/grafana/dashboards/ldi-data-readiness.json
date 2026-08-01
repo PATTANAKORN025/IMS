@@ -955,22 +955,6 @@
         "noValue": "-"
       },
       "transparent": true
-    },
-    {
-      "id": 9999,
-      "title": "",
-      "type": "text",
-      "transparent": true,
-      "gridPos": {
-        "h": 2,
-        "w": 24,
-        "x": 0,
-        "y": 62
-      },
-      "options": {
-        "content": "<style>\n[class*=\"-panel-container\"] {\n  border-radius: 14px !important;\n  background: #12161A !important;\n  border: 1px solid rgba(255,255,255,0.06) !important;\n  padding: 4px !important;\n}\n</style>",
-        "mode": "html"
-      }
     }
   ]
 }
