@@ -437,7 +437,15 @@
           "titleSize": 14
         },
         "noValue": "—",
-        "textMode": "valueAndName"
+        "textMode": "auto",
+        "textSizes": {
+          "titleSize": 14,
+          "valueSize": 48
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
       },
       "targets": [
         {
@@ -524,7 +532,15 @@
           "titleSize": 14
         },
         "noValue": "—",
-        "textMode": "valueAndName"
+        "textMode": "auto",
+        "textSizes": {
+          "titleSize": 14,
+          "valueSize": 48
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
       },
       "targets": [
         {
@@ -598,7 +614,15 @@
           "titleSize": 14
         },
         "noValue": "—",
-        "textMode": "valueAndName"
+        "textMode": "auto",
+        "textSizes": {
+          "titleSize": 14,
+          "valueSize": 48
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
       },
       "targets": [
         {
@@ -672,7 +696,15 @@
           "titleSize": 14
         },
         "noValue": "—",
-        "textMode": "valueAndName"
+        "textMode": "auto",
+        "textSizes": {
+          "titleSize": 14,
+          "valueSize": 48
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
       },
       "targets": [
         {
@@ -746,7 +778,15 @@
           "titleSize": 14
         },
         "noValue": "—",
-        "textMode": "valueAndName"
+        "textMode": "auto",
+        "textSizes": {
+          "titleSize": 14,
+          "valueSize": 48
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
       },
       "targets": [
         {
@@ -820,7 +860,15 @@
           "titleSize": 14
         },
         "noValue": "—",
-        "textMode": "valueAndName"
+        "textMode": "auto",
+        "textSizes": {
+          "titleSize": 14,
+          "valueSize": 48
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
       },
       "targets": [
         {
@@ -1380,7 +1428,15 @@
           "titleSize": 14
         },
         "noValue": "No data",
-        "textMode": "valueAndName"
+        "textMode": "auto",
+        "textSizes": {
+          "titleSize": 14,
+          "valueSize": 48
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
       },
       "targets": [
         {
