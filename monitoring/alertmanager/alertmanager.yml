@@ -4,7 +4,6 @@
 
 global:
   resolve_timeout: 5m
-  external_url: ${GRAFANA_ROOT_URL:-http://localhost:3000}
 
 route:
   receiver: 'ims-webhook-default'
@@ -92,8 +91,6 @@ receivers:
           authorization:
             type: Bearer
             credentials_file: '/etc/alertmanager/line_token'
-          headers:
-            Content-Type: 'application/x-www-form-urlencoded'
 
 
 inhibit_rules:

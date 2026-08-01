@@ -202,7 +202,7 @@ test('calculates Mbps from counter delta', () => {
     Object.keys(flowStore).forEach(k => delete flowStore[k]);
     flow.set('net_prev_test', { '1': { name: 'port_1', rx32: 1000000, tx32: 500000, status: 1 } });
     flow.set('net_ts_test', Date.now() - 10000);
-    const r = calcNetRate('test', { '1': { name: 'port_1', rx32: 2000000, tx32: 1000000, err: 0, drop: 0, status: 1 } });
+    const r = calcNetRate('test', { '1': { name: 'port_1', rx32: 2000000, tx32: 1000000, err: 0, drop: 0, status: 1 } }, flow);
     assert.ok(r.summary['port_1'].rx_mbps > 0, 'rx_mbps should be > 0');
     assert.ok(r.summary['port_1'].tx_mbps > 0, 'tx_mbps should be > 0');
     assert.strictEqual(r.summary['port_1'].status, 'UP');
@@ -212,7 +212,7 @@ test('returns zero Mbps when interface is down', () => {
     Object.keys(flowStore).forEach(k => delete flowStore[k]);
     flow.set('net_prev_down', { '1': { name: 'port_1', rx32: 1000, tx32: 500, status: 1 } });
     flow.set('net_ts_down', Date.now() - 5000);
-    const r = calcNetRate('down', { '1': { name: 'port_1', rx32: 2000, tx32: 1000, err: 0, drop: 0, status: 2 } });
+    const r = calcNetRate('down', { '1': { name: 'port_1', rx32: 2000, tx32: 1000, err: 0, drop: 0, status: 2 } }, flow);
     assert.strictEqual(r.summary['port_1'].rx_mbps, 0);
     assert.strictEqual(r.summary['port_1'].status, 'DOWN');
 });

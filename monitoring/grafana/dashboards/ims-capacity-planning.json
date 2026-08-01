@@ -71,12 +71,28 @@
   },
   "panels": [
     {
+      "id": 9999,
+      "type": "text",
+      "title": "",
+      "options": {
+        "content": "<style>\n[class*=\"-panel-container\"] {\n  background: rgba(10, 13, 16, 0.7) !important;\n  border: 1px solid rgba(0, 242, 254, 0.15) !important;\n  border-radius: 12px !important;\n  box-shadow: 0 4px 24px -4px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05) !important;\n  transition: all 0.2s ease-in-out !important;\n}\n[class*=\"-panel-container\"]:hover {\n  border-color: rgba(0, 242, 254, 0.5) !important;\n  box-shadow: 0 8px 32px 0 rgba(0, 242, 254, 0.15) !important;\n  backdrop-filter: blur(10px) !important;\n}\n[class*=\"-panel-title\"] {\n  color: #E8EDF2 !important;\n  font-weight: 600 !important;\n  text-transform: uppercase !important;\n  letter-spacing: 1px !important;\n  font-size: 11px !important;\n}\n</style>",
+        "mode": "html"
+      },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "transparent": true
+    },
+    {
       "id": 0,
       "type": "text",
       "title": "",
       "gridPos": {
         "x": 0,
-        "y": 0,
+        "y": 1,
         "w": 19,
         "h": 6
       },
@@ -100,7 +116,7 @@
       "datasource": null,
       "gridPos": {
         "x": 19,
-        "y": 0,
+        "y": 1,
         "w": 5,
         "h": 6
       },
@@ -138,7 +154,7 @@
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 6,
+        "y": 7,
         "w": 24,
         "h": 2
       },
@@ -159,7 +175,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 18,
+        "y": 19,
         "w": 24,
         "h": 10
       },
@@ -239,7 +255,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 8,
+        "y": 9,
         "w": 6,
         "h": 10
       },
@@ -366,7 +382,7 @@
       },
       "gridPos": {
         "x": 6,
-        "y": 8,
+        "y": 9,
         "w": 6,
         "h": 10
       },
@@ -493,7 +509,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 8,
+        "y": 9,
         "w": 6,
         "h": 10
       },
@@ -619,7 +635,7 @@
       },
       "gridPos": {
         "x": 18,
-        "y": 8,
+        "y": 9,
         "w": 6,
         "h": 10
       },
@@ -707,7 +723,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT 'Fleet Score' AS metric, value FROM public.v_fleet_score",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nSELECT 'Fleet Score' AS metric, value FROM public.v_fleet_score",
           "format": "table"
         }
       ],
@@ -727,7 +743,7 @@
       "title": "DISK CAPACITY FORECAST",
       "gridPos": {
         "x": 0,
-        "y": 28,
+        "y": 29,
         "w": 24,
         "h": 2
       },
@@ -749,7 +765,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 30,
+        "y": 31,
         "w": 24,
         "h": 20
       },
@@ -1031,7 +1047,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH historical AS (\n  SELECT\n    time_bucket('1 day', bucket) AS time,\n    device_id,\n    AVG(avg_disk_used) AS value,\n    'History' AS metric\n  FROM public.sys_hourly\n  WHERE $__timeFilter(bucket)\n    AND device_id IN (${machine_id:singlequote})\n    AND avg_disk_used >= 0\n  GROUP BY 1, 2\n),\nregression AS (\n  SELECT\n    device_id,\n    COALESCE(regr_slope(avg_used, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_used, day_num), 0::double precision) AS intercept\n  FROM (\n    SELECT device_id,\n      AVG(avg_disk_used) AS avg_used,\n      extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n    FROM public.sys_hourly\n    WHERE bucket > NOW() - INTERVAL '90 days'\n      AND device_id IN (${machine_id:singlequote})\n    GROUP BY device_id, time_bucket('1 day', bucket)\n  ) d\n  GROUP BY device_id\n  HAVING COUNT(*) >= 7\n),\nfuture_points AS (\n  SELECT\n    gs AS time,\n    r.device_id,\n    'Forecast' AS metric,\n    GREATEST(0, ROUND(\n      (r.slope * (extract(epoch FROM gs) / 86400) + r.intercept)::numeric, 2\n    )) AS value\n  FROM regression r\n  CROSS JOIN LATERAL generate_series(\n    (SELECT MAX(time) FROM historical) + INTERVAL '1 day',\n    (SELECT MAX(time) FROM historical) + INTERVAL '30 days',\n    INTERVAL '1 day'\n  ) gs\n  WHERE r.slope > 0\n)\nSELECT time, device_id, value, metric FROM historical\nUNION ALL\nSELECT time, device_id, value, metric FROM future_points\nORDER BY time ASC",
+          "rawSql": "WITH historical AS (\n  SELECT\n    time_bucket('1 day', bucket) AS time,\n    device_id,\n    AVG(avg_disk_used) AS value,\n    'History' AS metric\n  FROM public.sys_hourly\n  WHERE $__timeFilter(bucket)\n    AND device_id IN (${machine_id:singlequote})\n    AND avg_disk_used >= 0\n  GROUP BY 1, 2\n),\nregression AS (\n  SELECT\n    device_id,\n    COALESCE(regr_slope(avg_used, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_used, day_num), 0::double precision) AS intercept\n  FROM (\n    SELECT device_id,\n      AVG(avg_disk_used) AS avg_used,\n      extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n    FROM public.sys_hourly\n    WHERE bucket > NOW() - INTERVAL '90 days'\n      AND device_id IN (${machine_id:singlequote})\n    GROUP BY device_id, time_bucket('1 day', bucket)\n  ) d\n  GROUP BY device_id\n  HAVING COUNT(*) >= 7\n),\nfuture_points AS (\n  SELECT\n    gs AS time,\n    r.device_id,\n    'Forecast' AS metric,\n    GREATEST(0, ROUND(\n      (r.slope * (extract(epoch FROM gs) / 86400) + r.intercept)::numeric, 2\n    )) AS value\n  FROM regression r\n  CROSS JOIN LATERAL generate_series(\n    (SELECT MAX(time) FROM historical) + INTERVAL '1 day',\n    (SELECT MAX(time) FROM historical) + INTERVAL '30 days',\n    INTERVAL '1 day'\n  ) gs\n  WHERE r.slope > 0\n)\nSELECT time, device_id, value, metric FROM historical\nUNION ALL\nSELECT time, device_id, value, metric FROM future_points\nORDER BY time ASC, device_id ASC, metric ASC",
           "format": "time_series"
         },
         {
@@ -1040,7 +1056,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH historical AS (\n  SELECT\n    time_bucket('1 day', bucket) AS time,\n    device_id,\n    AVG(avg_disk_used) AS value,\n    'History' AS metric\n  FROM public.sys_hourly\n  WHERE $__timeFilter(bucket)\n    AND device_id IN (${machine_id:singlequote})\n    AND avg_disk_used >= 0\n  GROUP BY 1, 2\n),\nregression AS (\n  SELECT\n    device_id,\n    COALESCE(regr_slope(avg_used, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_used, day_num), 0::double precision) AS intercept\n  FROM (\n    SELECT device_id,\n      AVG(avg_disk_used) AS avg_used,\n      extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n    FROM public.sys_hourly\n    WHERE bucket > NOW() - INTERVAL '90 days'\n      AND device_id IN (${machine_id:singlequote})\n    GROUP BY device_id, time_bucket('1 day', bucket)\n  ) d\n  GROUP BY device_id\n  HAVING COUNT(*) >= 7\n),\nfuture_points AS (\n  SELECT\n    gs AS time,\n    r.device_id,\n    'Forecast' AS metric,\n    GREATEST(0, ROUND(\n      (r.slope * (extract(epoch FROM gs) / 86400) + r.intercept)::numeric, 2\n    )) AS value\n  FROM regression r\n  CROSS JOIN LATERAL generate_series(\n    (SELECT MAX(time) FROM historical) + INTERVAL '1 day',\n    (SELECT MAX(time) FROM historical) + INTERVAL '30 days',\n    INTERVAL '1 day'\n  ) gs\n  WHERE r.slope > 0\n)\nSELECT time, device_id, value, metric FROM historical\nUNION ALL\nSELECT time, device_id, value, metric FROM future_points\nORDER BY time ASC",
+          "rawSql": "WITH historical AS (\n  SELECT\n    time_bucket('1 day', bucket) AS time,\n    device_id,\n    AVG(avg_disk_used) AS value,\n    'History' AS metric\n  FROM public.sys_hourly\n  WHERE $__timeFilter(bucket)\n    AND device_id IN (${machine_id:singlequote})\n    AND avg_disk_used >= 0\n  GROUP BY 1, 2\n),\nregression AS (\n  SELECT\n    device_id,\n    COALESCE(regr_slope(avg_used, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_used, day_num), 0::double precision) AS intercept\n  FROM (\n    SELECT device_id,\n      AVG(avg_disk_used) AS avg_used,\n      extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n    FROM public.sys_hourly\n    WHERE bucket > NOW() - INTERVAL '90 days'\n      AND device_id IN (${machine_id:singlequote})\n    GROUP BY device_id, time_bucket('1 day', bucket)\n  ) d\n  GROUP BY device_id\n  HAVING COUNT(*) >= 7\n),\nfuture_points AS (\n  SELECT\n    gs AS time,\n    r.device_id,\n    'Forecast' AS metric,\n    GREATEST(0, ROUND(\n      (r.slope * (extract(epoch FROM gs) / 86400) + r.intercept)::numeric, 2\n    )) AS value\n  FROM regression r\n  CROSS JOIN LATERAL generate_series(\n    (SELECT MAX(time) FROM historical) + INTERVAL '1 day',\n    (SELECT MAX(time) FROM historical) + INTERVAL '30 days',\n    INTERVAL '1 day'\n  ) gs\n  WHERE r.slope > 0\n)\nSELECT time, device_id, value, metric FROM historical\nUNION ALL\nSELECT time, device_id, value, metric FROM future_points\nORDER BY time ASC, device_id ASC, metric ASC",
           "format": "time_series"
         },
         {
@@ -1049,7 +1065,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH historical AS (\n  SELECT\n    time_bucket('1 day', bucket) AS time,\n    device_id,\n    AVG(avg_disk_used) AS value,\n    'History' AS metric\n  FROM public.sys_hourly\n  WHERE $__timeFilter(bucket)\n    AND device_id IN (${machine_id:singlequote})\n    AND avg_disk_used >= 0\n  GROUP BY 1, 2\n),\nregression AS (\n  SELECT\n    device_id,\n    COALESCE(regr_slope(avg_used, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_used, day_num), 0::double precision) AS intercept\n  FROM (\n    SELECT device_id,\n      AVG(avg_disk_used) AS avg_used,\n      extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n    FROM public.sys_hourly\n    WHERE bucket > NOW() - INTERVAL '90 days'\n      AND device_id IN (${machine_id:singlequote})\n    GROUP BY device_id, time_bucket('1 day', bucket)\n  ) d\n  GROUP BY device_id\n  HAVING COUNT(*) >= 7\n),\nfuture_points AS (\n  SELECT\n    gs AS time,\n    r.device_id,\n    'Forecast' AS metric,\n    GREATEST(0, ROUND(\n      (r.slope * (extract(epoch FROM gs) / 86400) + r.intercept)::numeric, 2\n    )) AS value\n  FROM regression r\n  CROSS JOIN LATERAL generate_series(\n    (SELECT MAX(time) FROM historical) + INTERVAL '1 day',\n    (SELECT MAX(time) FROM historical) + INTERVAL '30 days',\n    INTERVAL '1 day'\n  ) gs\n  WHERE r.slope > 0\n)\nSELECT time, device_id, value, metric FROM historical\nUNION ALL\nSELECT time, device_id, value, metric FROM future_points\nORDER BY time ASC",
+          "rawSql": "WITH historical AS (\n  SELECT\n    time_bucket('1 day', bucket) AS time,\n    device_id,\n    AVG(avg_disk_used) AS value,\n    'History' AS metric\n  FROM public.sys_hourly\n  WHERE $__timeFilter(bucket)\n    AND device_id IN (${machine_id:singlequote})\n    AND avg_disk_used >= 0\n  GROUP BY 1, 2\n),\nregression AS (\n  SELECT\n    device_id,\n    COALESCE(regr_slope(avg_used, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_used, day_num), 0::double precision) AS intercept\n  FROM (\n    SELECT device_id,\n      AVG(avg_disk_used) AS avg_used,\n      extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n    FROM public.sys_hourly\n    WHERE bucket > NOW() - INTERVAL '90 days'\n      AND device_id IN (${machine_id:singlequote})\n    GROUP BY device_id, time_bucket('1 day', bucket)\n  ) d\n  GROUP BY device_id\n  HAVING COUNT(*) >= 7\n),\nfuture_points AS (\n  SELECT\n    gs AS time,\n    r.device_id,\n    'Forecast' AS metric,\n    GREATEST(0, ROUND(\n      (r.slope * (extract(epoch FROM gs) / 86400) + r.intercept)::numeric, 2\n    )) AS value\n  FROM regression r\n  CROSS JOIN LATERAL generate_series(\n    (SELECT MAX(time) FROM historical) + INTERVAL '1 day',\n    (SELECT MAX(time) FROM historical) + INTERVAL '30 days',\n    INTERVAL '1 day'\n  ) gs\n  WHERE r.slope > 0\n)\nSELECT time, device_id, value, metric FROM historical\nUNION ALL\nSELECT time, device_id, value, metric FROM future_points\nORDER BY time ASC, device_id ASC, metric ASC",
           "format": "time_series",
           "maxDataPoints": 300
         }
@@ -1070,7 +1086,7 @@
       "title": "RESOURCE CONSUMPTION TRENDS",
       "gridPos": {
         "x": 0,
-        "y": 50,
+        "y": 51,
         "w": 24,
         "h": 2
       },
@@ -1092,7 +1108,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 52,
+        "y": 53,
         "w": 12,
         "h": 20
       },
@@ -1373,7 +1389,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 52,
+        "y": 53,
         "w": 12,
         "h": 20
       },
@@ -1631,7 +1647,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{metric}}",
-          "rawSql": "WITH daily_ram AS (\n  SELECT\n    time_bucket('1 day', bucket) AS time,\n    device_id,\n    AVG(avg_ram_used) AS avg_used,\n    AVG(avg_ram_total) AS avg_total\n  FROM public.sys_hourly\n  WHERE bucket > NOW() - INTERVAL '30 days'\n    AND device_id IN (${machine_id:singlequote})\n  GROUP BY 1, 2\n)\nSELECT\n  time,\n  device_id AS metric,\n  ROUND(\n    (avg_used / NULLIF(avg_total, 0) * 100)::NUMERIC,\n    2\n  ) AS \"RAM Usage %\"\nFROM daily_ram\nWHERE avg_total > 0\nORDER BY 1 ASC",
+          "rawSql": "WITH daily_ram AS (\n  SELECT\n    time_bucket('1 day', bucket) AS time,\n    device_id,\n    AVG(avg_ram_used) AS avg_used,\n    AVG(avg_ram_total) AS avg_total\n  FROM public.sys_hourly\n  WHERE bucket > NOW() - INTERVAL '30 days'\n    AND device_id IN (${machine_id:singlequote})\n  GROUP BY 1, 2\n)\nSELECT bucket AS time,\n  device_id AS metric,\n  ROUND(\n    (avg_used / NULLIF(avg_total, 0) * 100)::NUMERIC,\n    2\n  ) AS \"RAM Usage %\"\nFROM daily_ram\nWHERE avg_total > 0\nORDER BY 1 ASC",
           "format": "time_series"
         }
       ],
@@ -1651,7 +1667,7 @@
       "title": "AIOps — ANOMALY DETECTION",
       "gridPos": {
         "x": 0,
-        "y": 72,
+        "y": 73,
         "w": 24,
         "h": 2
       },
@@ -1673,7 +1689,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 74,
+        "y": 75,
         "w": 12,
         "h": 20
       },
@@ -1941,7 +1957,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "Z-Score",
-          "rawSql": "WITH stats AS (SELECT avg(avg_cpu) as mu, stddev(avg_cpu) as sigma FROM public.sys_hourly WHERE device_id IN (${machine_id:singlequote}) AND $__timeFilter(bucket)) SELECT bucket AS time, (avg_cpu - mu) / NULLIF(sigma, 0) AS \"Z-Score\" FROM public.sys_hourly, stats WHERE device_id IN (${machine_id:singlequote}) AND $__timeFilter(bucket) ORDER BY time ASC",
+          "rawSql": "WITH stats AS (SELECT avg(avg_cpu) as mu, stddev(avg_cpu) as sigma FROM public.sys_hourly WHERE device_id IN (${machine_id:singlequote}) AND $__timeFilter(bucket)) SELECT time_bucket('1 hour', bucket) AS time, (avg_cpu - mu) / NULLIF(sigma, 0) AS \"Z-Score\" FROM public.sys_hourly, stats WHERE device_id IN (${machine_id:singlequote}) AND $__timeFilter(bucket) ORDER BY time ASC, device_id ASC, metric ASC",
           "format": "time_series",
           "maxDataPoints": 300
         }
@@ -1965,7 +1981,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 74,
+        "y": 75,
         "w": 12,
         "h": 20
       },
@@ -2231,7 +2247,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "Z-Score",
-          "rawSql": "WITH stats AS (SELECT avg(max_temp) as mu, stddev(max_temp) as sigma FROM public.sys_hourly WHERE device_id IN (${machine_id:singlequote}) AND max_temp > 0 AND $__timeFilter(bucket)) SELECT bucket AS time, (max_temp - mu) / NULLIF(sigma, 0) AS \"Z-Score\" FROM public.sys_hourly, stats WHERE device_id IN (${machine_id:singlequote}) AND max_temp > 0 AND $__timeFilter(bucket) ORDER BY time ASC",
+          "rawSql": "WITH stats AS (SELECT avg(max_temp) as mu, stddev(max_temp) as sigma FROM public.sys_hourly WHERE device_id IN (${machine_id:singlequote}) AND max_temp > 0 AND $__timeFilter(bucket)) SELECT time_bucket('1 hour', bucket) AS time, (max_temp - mu) / NULLIF(sigma, 0) AS \"Z-Score\" FROM public.sys_hourly, stats WHERE device_id IN (${machine_id:singlequote}) AND max_temp > 0 AND $__timeFilter(bucket) ORDER BY time ASC, device_id ASC, metric ASC",
           "format": "time_series",
           "maxDataPoints": 300
         }

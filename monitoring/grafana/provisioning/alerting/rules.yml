@@ -168,7 +168,7 @@ groups:
                 WHERE time > NOW() - INTERVAL '5 minutes'
                 GROUP BY device_id
                 HAVING AVG(rx_mbps) > 800
-                HAVING COUNT(*) >= 5
+                   AND COUNT(*) >= 5
                    AND regr_slope(rx_mbps, EXTRACT(EPOCH FROM (time - NOW()))) > 0
                    AND regr_slope(rx_mbps, EXTRACT(EPOCH FROM (time - NOW()))) * 3600
                        + regr_intercept(rx_mbps, EXTRACT(EPOCH FROM (time - NOW()))) > 1000

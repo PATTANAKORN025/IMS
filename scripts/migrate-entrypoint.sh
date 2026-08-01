@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS public.schema_migrations (
     filename TEXT NOT NULL,
     applied_at TIMESTAMPTZ DEFAULT NOW()
 );
-" > /dev/null 2>&1
+"
 
 for f in $(ls -1 "$MIGRATIONS_DIR"/*.sql 2>/dev/null | sort); do
     fname=$(basename "$f")
@@ -33,8 +33,8 @@ for f in $(ls -1 "$MIGRATIONS_DIR"/*.sql 2>/dev/null | sort); do
     PENDING=$((PENDING + 1))
     printf "  %s... " "$fname"
 
-    if psql -v ON_ERROR_STOP=1 --username "${POSTGRES_USER}" --dbname "${POSTGRES_DB}" -f "$f" > /dev/null 2>&1; then
-        psql -v ON_ERROR_STOP=1 --username "${POSTGRES_USER}" --dbname "${POSTGRES_DB}" -c             "INSERT INTO public.schema_migrations (version, filename) VALUES ('${version}', '${fname}');" > /dev/null 2>&1
+    if psql -v ON_ERROR_STOP=1 --username "${POSTGRES_USER}" --dbname "${POSTGRES_DB}" -f "$f"; then
+        psql -v ON_ERROR_STOP=1 --username "${POSTGRES_USER}" --dbname "${POSTGRES_DB}" -c             "INSERT INTO public.schema_migrations (version, filename) VALUES ('${version}', '${fname}');"
         echo "OK"
         APPLIED=$((APPLIED + 1))
     else

@@ -94,6 +94,22 @@
   },
   "panels": [
     {
+      "id": 9999,
+      "type": "text",
+      "title": "",
+      "options": {
+        "content": "<style>\n[class*=\"-panel-container\"] {\n  background: rgba(10, 13, 16, 0.7) !important;\n  border: 1px solid rgba(0, 242, 254, 0.15) !important;\n  border-radius: 12px !important;\n  box-shadow: 0 4px 24px -4px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05) !important;\n  transition: all 0.2s ease-in-out !important;\n}\n[class*=\"-panel-container\"]:hover {\n  border-color: rgba(0, 242, 254, 0.5) !important;\n  box-shadow: 0 8px 32px 0 rgba(0, 242, 254, 0.15) !important;\n  backdrop-filter: blur(10px) !important;\n}\n[class*=\"-panel-title\"] {\n  color: #E8EDF2 !important;\n  font-weight: 600 !important;\n  text-transform: uppercase !important;\n  letter-spacing: 1px !important;\n  font-size: 11px !important;\n}\n</style>",
+        "mode": "html"
+      },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "transparent": true
+    },
+    {
       "id": 10000,
       "type": "row",
       "title": "◈ FLEET KPIs & ALARMS",
@@ -101,7 +117,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 0
+        "y": 1
       },
       "collapsed": false,
       "panels": []
@@ -115,7 +131,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 1,
+        "y": 2,
         "w": 8,
         "h": 6
       },
@@ -167,10 +183,6 @@
         },
         "noValue": "-",
         "textMode": "auto",
-        "textSizes": {
-          "titleSize": 14,
-          "valueSize": 48
-        },
         "tooltip": {
           "mode": "single",
           "sort": "none"
@@ -182,7 +194,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(COUNT(DISTINCT eqp_id) FILTER (WHERE state = true) * 100.0 / NULLIF(COUNT(DISTINCT eqp_id), 0), 0) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time)",
+          "rawSql": "SELECT ROUND((COUNT(DISTINCT eqp_id) FILTER (WHERE state = true) * 100.0 / NULLIF(COUNT(DISTINCT eqp_id))::NUMERIC, 0), 0) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time)",
           "format": "table"
         }
       ],
@@ -198,7 +210,7 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 1,
+        "y": 2,
         "w": 8,
         "h": 6
       },
@@ -246,10 +258,6 @@
         },
         "noValue": "-",
         "textMode": "auto",
-        "textSizes": {
-          "titleSize": 14,
-          "valueSize": 48
-        },
         "tooltip": {
           "mode": "single",
           "sort": "none"
@@ -261,7 +269,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT COUNT(*)::NUMERIC AS value FROM public.ldi_alarm_log a\nJOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT=m.alarm_code::TEXT\nWHERE a.equipmentid IN (${machine_id:sqlstring}) AND m.alarm_type ILIKE '%Critical%';",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nSELECT COUNT(*)::NUMERIC AS value FROM public.ldi_alarm_log a\nJOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT=m.alarm_code::TEXT\nWHERE a.equipmentid IN (${machine_id:sqlstring}) AND m.alarm_type ILIKE '%Critical%';",
           "format": "table"
         }
       ],
@@ -277,7 +285,7 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 1,
+        "y": 2,
         "w": 8,
         "h": 6
       },
@@ -341,10 +349,6 @@
         },
         "noValue": "-",
         "textMode": "auto",
-        "textSizes": {
-          "titleSize": 14,
-          "valueSize": 48
-        },
         "tooltip": {
           "mode": "single",
           "sort": "none"
@@ -356,7 +360,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(COUNT(DISTINCT eqp_id) FILTER (WHERE temperature BETWEEN 20 AND 24 AND humidity BETWEEN 50 AND 60) * 100.0 / NULLIF(COUNT(DISTINCT eqp_id), 0), 0) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) AND temperature IS NOT NULL AND humidity IS NOT NULL",
+          "rawSql": "SELECT ROUND((COUNT(DISTINCT eqp_id) FILTER (WHERE temperature BETWEEN 20 AND 24 AND humidity BETWEEN 50 AND 60) * 100.0 / NULLIF(COUNT(DISTINCT eqp_id))::NUMERIC, 0), 0) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) AND temperature IS NOT NULL AND humidity IS NOT NULL",
           "format": "table"
         }
       ],
@@ -371,7 +375,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 7
+        "y": 8
       },
       "collapsed": false,
       "panels": []
@@ -385,7 +389,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 8,
+        "y": 9,
         "w": 8,
         "h": 12
       },
@@ -474,7 +478,7 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 8,
+        "y": 9,
         "w": 8,
         "h": 12
       },
@@ -574,7 +578,7 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 8,
+        "y": 9,
         "w": 8,
         "h": 12
       },
@@ -673,7 +677,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 20
+        "y": 21
       },
       "collapsed": false,
       "panels": []
@@ -687,7 +691,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 21,
+        "y": 22,
         "w": 24,
         "h": 10
       },
@@ -936,7 +940,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 31
+        "y": 32
       },
       "collapsed": false,
       "panels": []
@@ -950,7 +954,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 32,
+        "y": 33,
         "w": 24,
         "h": 12
       },
@@ -1208,7 +1212,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT a.logdate AS \"Time\",a.equipmentid AS \"Machine\",a.errorcode AS \"errorcode\",\n COALESCE(m.alarm_msg,a.errorcode::TEXT) AS \"Message\",COALESCE(m.alarm_type,'UNMAPPED') AS \"Severity\"\nFROM public.ldi_alarm_log a LEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT=m.alarm_code::TEXT\nWHERE a.equipmentid IN (${machine_id:sqlstring}) ORDER BY a.logdate DESC LIMIT 20;",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nSELECT a.logdate AS \"Time\",a.equipmentid AS \"Machine\",a.errorcode AS \"errorcode\",\n COALESCE(m.alarm_msg,a.errorcode::TEXT) AS \"Message\",COALESCE(m.alarm_type,'UNMAPPED') AS \"Severity\"\nFROM public.ldi_alarm_log a LEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT=m.alarm_code::TEXT\nWHERE a.equipmentid IN (${machine_id:sqlstring}) ORDER BY a.logdate DESC LIMIT 20;",
           "format": "table"
         }
       ],
