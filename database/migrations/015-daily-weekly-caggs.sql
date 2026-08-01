@@ -13,7 +13,7 @@ SELECT time_bucket('1 day', bucket) AS bucket, device_id,
     AVG(avg_ram_used) AS avg_ram_used, AVG(avg_ram_total) AS avg_ram_total,
     AVG(avg_disk_used) AS avg_disk_used, AVG(avg_disk_total) AS avg_disk_total,
     MAX(max_temp) AS max_temp
-FROM public.sys_hourly GROUP BY bucket, device_id WITH NO DATA;
+FROM public.sys_hourly GROUP BY 1, 2 WITH NO DATA;
 
 -- ── net_daily ───────────────────────────────────────────
 CREATE MATERIALIZED VIEW IF NOT EXISTS public.net_daily
@@ -22,7 +22,7 @@ SELECT time_bucket('1 day', bucket) AS bucket, device_id, iface_name,
     AVG(avg_rx) AS avg_rx, MAX(max_rx) AS max_rx,
     AVG(avg_tx) AS avg_tx, MAX(max_tx) AS max_tx,
     SUM(total_errors) AS total_errors, SUM(total_drops) AS total_drops
-FROM public.net_hourly GROUP BY bucket, device_id, iface_name WITH NO DATA;
+FROM public.net_hourly GROUP BY 1, 2, iface_name WITH NO DATA;
 
 -- ── ldi_daily ───────────────────────────────────────────
 CREATE MATERIALIZED VIEW IF NOT EXISTS public.ldi_daily
@@ -31,7 +31,7 @@ SELECT time_bucket('1 day', bucket) AS bucket, device_id,
     AVG(avg_throughput) AS avg_throughput, MAX(max_temp) AS max_temp,
     AVG(avg_humidity) AS avg_humidity, AVG(avg_power) AS avg_power,
     AVG(avg_vibration) AS avg_vibration
-FROM public.ldi_hourly GROUP BY bucket, device_id WITH NO DATA;
+FROM public.ldi_hourly GROUP BY 1, 2 WITH NO DATA;
 
 -- ── Daily CAGG Refresh Policies ────────────────────────
 -- Refresh every 2 hours, covering last 3 days of hourly data
@@ -75,7 +75,7 @@ SELECT time_bucket('1 week', bucket) AS bucket, device_id,
     AVG(avg_ram_used) AS avg_ram_used, AVG(avg_ram_total) AS avg_ram_total,
     AVG(avg_disk_used) AS avg_disk_used, AVG(avg_disk_total) AS avg_disk_total,
     MAX(max_temp) AS max_temp
-FROM public.sys_daily GROUP BY bucket, device_id WITH NO DATA;
+FROM public.sys_daily GROUP BY 1, 2 WITH NO DATA;
 
 -- ── net_weekly ─────────────────────────────────────────
 CREATE MATERIALIZED VIEW IF NOT EXISTS public.net_weekly
@@ -84,7 +84,7 @@ SELECT time_bucket('1 week', bucket) AS bucket, device_id, iface_name,
     AVG(avg_rx) AS avg_rx, MAX(max_rx) AS max_rx,
     AVG(avg_tx) AS avg_tx, MAX(max_tx) AS max_tx,
     SUM(total_errors) AS total_errors, SUM(total_drops) AS total_drops
-FROM public.net_daily GROUP BY bucket, device_id, iface_name WITH NO DATA;
+FROM public.net_daily GROUP BY 1, 2, iface_name WITH NO DATA;
 
 -- ── ldi_weekly ─────────────────────────────────────────
 CREATE MATERIALIZED VIEW IF NOT EXISTS public.ldi_weekly
@@ -93,7 +93,7 @@ SELECT time_bucket('1 week', bucket) AS bucket, device_id,
     AVG(avg_throughput) AS avg_throughput, MAX(max_temp) AS max_temp,
     AVG(avg_humidity) AS avg_humidity, AVG(avg_power) AS avg_power,
     AVG(avg_vibration) AS avg_vibration
-FROM public.ldi_daily GROUP BY bucket, device_id WITH NO DATA;
+FROM public.ldi_daily GROUP BY 1, 2 WITH NO DATA;
 
 -- ── Weekly CAGG Refresh Policies ───────────────────────
 -- Refresh every 6 hours, covering last 10 days of daily data

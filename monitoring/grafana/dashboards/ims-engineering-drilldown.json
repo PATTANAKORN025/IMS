@@ -83,12 +83,28 @@
   },
   "panels": [
     {
+      "id": 9999,
+      "type": "text",
+      "title": "",
+      "options": {
+        "content": "<style>\n[class*=\"-panel-container\"] {\n  background: rgba(10, 13, 16, 0.7) !important;\n  border: 1px solid rgba(0, 242, 254, 0.15) !important;\n  border-radius: 12px !important;\n  box-shadow: 0 4px 24px -4px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05) !important;\n  transition: all 0.2s ease-in-out !important;\n}\n[class*=\"-panel-container\"]:hover {\n  border-color: rgba(0, 242, 254, 0.5) !important;\n  box-shadow: 0 8px 32px 0 rgba(0, 242, 254, 0.15) !important;\n  backdrop-filter: blur(10px) !important;\n}\n[class*=\"-panel-title\"] {\n  color: #E8EDF2 !important;\n  font-weight: 600 !important;\n  text-transform: uppercase !important;\n  letter-spacing: 1px !important;\n  font-size: 11px !important;\n}\n</style>",
+        "mode": "html"
+      },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "transparent": true
+    },
+    {
       "id": 0,
       "type": "text",
       "title": "",
       "gridPos": {
         "x": 0,
-        "y": 0,
+        "y": 1,
         "w": 19,
         "h": 6
       },
@@ -112,7 +128,7 @@
       "datasource": null,
       "gridPos": {
         "x": 19,
-        "y": 0,
+        "y": 1,
         "w": 5,
         "h": 6
       },
@@ -149,7 +165,7 @@
       "title": "MACHINE SUMMARY",
       "gridPos": {
         "x": 0,
-        "y": 6,
+        "y": 7,
         "w": 24,
         "h": 2
       },
@@ -164,14 +180,14 @@
     },
     {
       "id": 1,
-      "title": "◈ CPU Load",
+      "title": "\u25c8 CPU Load",
       "type": "gauge",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 0,
-        "y": 8,
+        "y": 9,
         "w": 6,
         "h": 8
       },
@@ -256,12 +272,12 @@
       ],
       "links": [
         {
-          "title": "Capacity forecast →",
+          "title": "Capacity forecast \u2192",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         },
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -270,14 +286,14 @@
     },
     {
       "id": 2,
-      "title": "◈ RAM Usage",
+      "title": "\u25c8 RAM Usage",
       "type": "gauge",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 6,
-        "y": 8,
+        "y": 9,
         "w": 6,
         "h": 8
       },
@@ -355,19 +371,19 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND((ram_used_mb / NULLIF(ram_total_mb, 0) * 100)::NUMERIC, 1) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '2 minutes' AND device_id IN (${machine_id:singlequote}) ORDER BY time DESC LIMIT 1",
+          "rawSql": "SELECT ROUND(((ram_used_mb / NULLIF(ram_total_mb)::NUMERIC, 0) * 100)::NUMERIC, 1) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '2 minutes' AND device_id IN (${machine_id:singlequote}) ORDER BY time DESC LIMIT 1",
           "format": "table",
           "legendFormat": "{{device_id}}"
         }
       ],
       "links": [
         {
-          "title": "Capacity forecast →",
+          "title": "Capacity forecast \u2192",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         },
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -376,14 +392,14 @@
     },
     {
       "id": 3,
-      "title": "◈ Storage Saturation",
+      "title": "\u25c8 Storage Saturation",
       "type": "gauge",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 12,
-        "y": 8,
+        "y": 9,
         "w": 6,
         "h": 8
       },
@@ -461,19 +477,19 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND((disk_used_gb / NULLIF(disk_total_gb, 0) * 100)::NUMERIC, 1) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '2 minutes' AND device_id IN (${machine_id:singlequote}) ORDER BY time DESC LIMIT 1",
+          "rawSql": "SELECT ROUND(((disk_used_gb / NULLIF(disk_total_gb)::NUMERIC, 0) * 100)::NUMERIC, 1) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '2 minutes' AND device_id IN (${machine_id:singlequote}) ORDER BY time DESC LIMIT 1",
           "format": "table",
           "legendFormat": "{{device_id}}"
         }
       ],
       "links": [
         {
-          "title": "Capacity forecast →",
+          "title": "Capacity forecast \u2192",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         },
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -482,14 +498,14 @@
     },
     {
       "id": 4,
-      "title": "◈ Temperature",
+      "title": "\u25c8 Temperature",
       "type": "gauge",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 18,
-        "y": 8,
+        "y": 9,
         "w": 6,
         "h": 8
       },
@@ -582,16 +598,16 @@
           "legendFormat": "{{device_id}}"
         }
       ],
-      "description": "Current temperature (°C) for the selected machine. Yellow >70°C, Red >85°C.",
+      "description": "Current temperature (\u00b0C) for the selected machine. Yellow >70\u00b0C, Red >85\u00b0C.",
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         },
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -603,7 +619,7 @@
       "title": "Time Series Analysis",
       "gridPos": {
         "x": 0,
-        "y": 16,
+        "y": 17,
         "w": 24,
         "h": 2
       },
@@ -618,14 +634,14 @@
     },
     {
       "id": 501,
-      "title": "◈ Memory Saturation",
+      "title": "\u25c8 Memory Saturation",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 0,
-        "y": 18,
+        "y": 19,
         "w": 24,
         "h": 16
       },
@@ -883,7 +899,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{metric}}",
-          "rawSql": "SELECT\n  bucket AS time,\n  device_id AS metric,\n  ROUND(AVG(avg_ram_used / NULLIF(avg_ram_total, 0) * 100)::NUMERIC, 1) AS \"RAM %\"\nFROM public.sys_hourly\nWHERE $__timeFilter(bucket) AND device_id IN (${machine_id:singlequote})\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  time_bucket('1 hour', bucket) AS time,\n  device_id AS metric,\n  ROUND((AVG(avg_ram_used / NULLIF(avg_ram_total)::NUMERIC, 0) * 100)::NUMERIC, 1) AS \"RAM %\"\nFROM public.sys_hourly\nWHERE $__timeFilter(bucket) AND device_id IN (${machine_id:singlequote})\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series"
         }
       ],
@@ -891,7 +907,7 @@
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -899,14 +915,14 @@
     },
     {
       "id": 502,
-      "title": "◈ Network Bandwidth (Per-Interface)",
+      "title": "\u25c8 Network Bandwidth (Per-Interface)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 0,
-        "y": 34,
+        "y": 35,
         "w": 12,
         "h": 16
       },
@@ -1149,7 +1165,7 @@
             "type": "postgres",
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id || ' - ' || iface_name AS metric,\n  ROUND(AVG(rx_mbps)::NUMERIC, 2) AS \"Download (Mbps)\",\n  ROUND(AVG(tx_mbps)::NUMERIC, 2) AS \"Upload (Mbps)\"\nFROM public.net_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:singlequote})\n  AND iface_name IN (${interface:singlequote})\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  time_bucket('$__interval', time) AS time,\n  device_id || ' - ' || iface_name AS metric,\n  ROUND(AVG(rx_mbps)::NUMERIC, 2) AS \"Download (Mbps)\",\n  ROUND(AVG(tx_mbps)::NUMERIC, 2) AS \"Upload (Mbps)\"\nFROM public.net_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:singlequote})\n  AND iface_name IN (${interface:singlequote})\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series",
           "maxDataPoints": 300,
           "legendFormat": "{{metric}}"
@@ -1160,7 +1176,7 @@
             "type": "postgres",
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id || ' - ' || iface_name AS metric,\n  ROUND(AVG(rx_mbps)::NUMERIC, 2) AS \"Download (Mbps)\",\n  ROUND(AVG(tx_mbps)::NUMERIC, 2) AS \"Upload (Mbps)\"\nFROM public.net_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:singlequote})\n  AND iface_name IN (${interface:singlequote})\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  time_bucket('$__interval', time) AS time,\n  device_id || ' - ' || iface_name AS metric,\n  ROUND(AVG(rx_mbps)::NUMERIC, 2) AS \"Download (Mbps)\",\n  ROUND(AVG(tx_mbps)::NUMERIC, 2) AS \"Upload (Mbps)\"\nFROM public.net_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:singlequote})\n  AND iface_name IN (${interface:singlequote})\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series",
           "maxDataPoints": 300,
           "legendFormat": "{{metric}}"
@@ -1170,7 +1186,7 @@
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -1178,14 +1194,14 @@
     },
     {
       "id": 21,
-      "title": "◈ Temperature Sensors",
+      "title": "\u25c8 Temperature Sensors",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 12,
-        "y": 34,
+        "y": 35,
         "w": 12,
         "h": 16
       },
@@ -1490,7 +1506,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{metric}}",
-          "rawSql": "SELECT\n  bucket AS time,\n  device_id AS metric,\n  ROUND(AVG(max_temp)::NUMERIC, 1) AS \"Temperature (°C)\"\nFROM public.sys_hourly\nWHERE $__timeFilter(bucket) AND device_id IN (${machine_id:singlequote}) AND max_temp > 0\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  time_bucket('1 hour', bucket) AS time,\n  device_id AS metric,\n  ROUND(AVG(max_temp)::NUMERIC, 1) AS \"Temperature (\u00b0C)\"\nFROM public.sys_hourly\nWHERE $__timeFilter(bucket) AND device_id IN (${machine_id:singlequote}) AND max_temp > 0\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series"
         },
         {
@@ -1499,7 +1515,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{metric}}",
-          "rawSql": "SELECT\n  bucket AS time,\n  device_id AS metric,\n  ROUND(AVG(max_temp)::NUMERIC, 1) AS \"Temperature (°C)\"\nFROM public.sys_hourly\nWHERE $__timeFilter(bucket) AND device_id IN (${machine_id:singlequote}) AND max_temp > 0\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  time_bucket('1 hour', bucket) AS time,\n  device_id AS metric,\n  ROUND(AVG(max_temp)::NUMERIC, 1) AS \"Temperature (\u00b0C)\"\nFROM public.sys_hourly\nWHERE $__timeFilter(bucket) AND device_id IN (${machine_id:singlequote}) AND max_temp > 0\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series"
         }
       ],
@@ -1507,7 +1523,7 @@
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -1519,7 +1535,7 @@
       "title": "LDI Manufacturing Telemetry",
       "gridPos": {
         "x": 0,
-        "y": 50,
+        "y": 51,
         "w": 24,
         "h": 2
       },
@@ -1534,14 +1550,14 @@
     },
     {
       "id": 503,
-      "title": "◈ LDI Throughput & Process Efficiency",
+      "title": "\u25c8 LDI Throughput & Process Efficiency",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 0,
-        "y": 52,
+        "y": 53,
         "w": 8,
         "h": 16
       },
@@ -1604,7 +1620,7 @@
               },
               {
                 "id": "unit",
-                "value": "µm"
+                "value": "\u00b5m"
               }
             ]
           },
@@ -1727,7 +1743,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{metric}}",
-          "rawSql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id AS metric,\n  ROUND(AVG(throughput)::NUMERIC, 1) AS \"Throughput\"\nFROM public.ldi_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:singlequote}) AND throughput > 0\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  time_bucket('$__interval', time) AS time,\n  device_id AS metric,\n  ROUND(AVG(throughput)::NUMERIC, 1) AS \"Throughput\"\nFROM public.ldi_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:singlequote}) AND throughput > 0\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series"
         },
         {
@@ -1736,35 +1752,35 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{metric}}",
-          "rawSql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id AS metric,\n  ROUND(AVG(pe_1)::NUMERIC, 1) AS \"PE\"\nFROM public.ldi_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:singlequote}) AND pe_1 IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  time_bucket('$__interval', time) AS time,\n  device_id AS metric,\n  ROUND(AVG(pe_1)::NUMERIC, 1) AS \"PE\"\nFROM public.ldi_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:singlequote}) AND pe_1 IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series"
         }
       ],
       "links": [
         {
-          "title": "OEE & Yield →",
+          "title": "OEE & Yield \u2192",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         },
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
       ],
-      "description": "LDI manufacturing throughput (left axis, #10B981) and Process Efficiency in µm (right axis, #F59E0B). PE within ±10µm tolerance is normal.",
+      "description": "LDI manufacturing throughput (left axis, #10B981) and Process Efficiency in \u00b5m (right axis, #F59E0B). PE within \u00b110\u00b5m tolerance is normal.",
       "transparent": true
     },
     {
       "id": 504,
-      "title": "◈ LDI Junction Efficiency & Humidity",
+      "title": "\u25c8 LDI Junction Efficiency & Humidity",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 8,
-        "y": 52,
+        "y": 53,
         "w": 8,
         "h": 16
       },
@@ -1833,7 +1849,7 @@
               },
               {
                 "id": "unit",
-                "value": "µm"
+                "value": "\u00b5m"
               }
             ]
           },
@@ -1978,7 +1994,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{metric}}",
-          "rawSql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id AS metric,\n  ROUND(AVG(je_1)::NUMERIC, 1) AS \"JE\"\nFROM public.ldi_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:singlequote}) AND je_1 IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  time_bucket('$__interval', time) AS time,\n  device_id AS metric,\n  ROUND(AVG(je_1)::NUMERIC, 1) AS \"JE\"\nFROM public.ldi_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:singlequote}) AND je_1 IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series"
         },
         {
@@ -1987,35 +2003,35 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{metric}}",
-          "rawSql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id AS metric,\n  ROUND(AVG(humidity)::NUMERIC, 1) AS \"Humidity\"\nFROM public.ldi_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:singlequote}) AND humidity > 0\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  time_bucket('$__interval', time) AS time,\n  device_id AS metric,\n  ROUND(AVG(humidity)::NUMERIC, 1) AS \"Humidity\"\nFROM public.ldi_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:singlequote}) AND humidity > 0\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series"
         }
       ],
       "links": [
         {
-          "title": "OEE & Yield →",
+          "title": "OEE & Yield \u2192",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         },
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
       ],
-      "description": "Junction Efficiency in µm (purple) and Humidity % (blue, right axis). High humidity may affect LDI precision.",
+      "description": "Junction Efficiency in \u00b5m (purple) and Humidity % (blue, right axis). High humidity may affect LDI precision.",
       "transparent": true
     },
     {
       "id": 510,
-      "title": "◈ LDI Quality Scatter",
+      "title": "\u25c8 LDI Quality Scatter",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 16,
-        "y": 52,
+        "y": 53,
         "w": 8,
         "h": 16
       },
@@ -2074,7 +2090,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id AS metric,\n  ROUND(AVG(pe_1)::NUMERIC, 1) AS \"PE\"\nFROM public.ldi_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:singlequote}) AND pe_1 IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  time_bucket('$__interval', time) AS time,\n  device_id AS metric,\n  ROUND(AVG(pe_1)::NUMERIC, 1) AS \"PE\"\nFROM public.ldi_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:singlequote}) AND pe_1 IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         },
@@ -2083,12 +2099,12 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id AS metric,\n  ROUND(AVG(je_1)::NUMERIC, 1) AS \"JE\"\nFROM public.ldi_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:singlequote}) AND je_1 IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  time_bucket('$__interval', time) AS time,\n  device_id AS metric,\n  ROUND(AVG(je_1)::NUMERIC, 1) AS \"JE\"\nFROM public.ldi_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:singlequote}) AND je_1 IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
       ],
-      "description": "LDI quality scatter with ±10µm tolerance zone (#10B981 band). Points outside the zone indicate quality risk.",
+      "description": "LDI quality scatter with \u00b110\u00b5m tolerance zone (#10B981 band). Points outside the zone indicate quality risk.",
       "transparent": true
     },
     {
@@ -2099,7 +2115,7 @@
         "h": 2,
         "w": 24,
         "x": 0,
-        "y": 86
+        "y": 87
       },
       "fieldConfig": {
         "defaults": {
@@ -2111,7 +2127,7 @@
     },
     {
       "type": "stat",
-      "title": "◉ Estimated Daily Power Cost (THB)",
+      "title": "\u25c9 Estimated Daily Power Cost (THB)",
       "datasource": {
         "type": "postgres",
         "uid": "timescaledb"
@@ -2120,7 +2136,7 @@
         "h": 16,
         "w": 8,
         "x": 0,
-        "y": 88
+        "y": 89
       },
       "fieldConfig": {
         "defaults": {
@@ -2202,7 +2218,7 @@
     },
     {
       "type": "stat",
-      "title": "◉ Power Efficiency Ratio",
+      "title": "\u25c9 Power Efficiency Ratio",
       "datasource": {
         "type": "postgres",
         "uid": "timescaledb"
@@ -2211,7 +2227,7 @@
         "h": 16,
         "w": 8,
         "x": 8,
-        "y": 88
+        "y": 89
       },
       "fieldConfig": {
         "defaults": {
@@ -2293,7 +2309,7 @@
     },
     {
       "type": "stat",
-      "title": "◉ Yield Risk Index",
+      "title": "\u25c9 Yield Risk Index",
       "datasource": {
         "type": "postgres",
         "uid": "timescaledb"
@@ -2302,7 +2318,7 @@
         "h": 16,
         "w": 8,
         "x": 16,
-        "y": 88
+        "y": 89
       },
       "fieldConfig": {
         "defaults": {
@@ -2378,16 +2394,16 @@
           "valueSize": 48
         }
       },
-      "description": "Composite risk score (0-100) indicating probability of yield loss. Triggered when throughput drops below baseline minus 2 standard deviations while power consumption remains above 80% of baseline — indicating the machine is drawing full power but producing substandard output. Score 0 = normal, 100 = critical yield loss suspected.",
+      "description": "Composite risk score (0-100) indicating probability of yield loss. Triggered when throughput drops below baseline minus 2 standard deviations while power consumption remains above 80% of baseline \u2014 indicating the machine is drawing full power but producing substandard output. Score 0 = normal, 100 = critical yield loss suspected.",
       "transparent": true
     },
     {
       "id": 500,
       "type": "row",
-      "title": "AIOps — ANOMALY DETECTION (3-Sigma Z-Score)",
+      "title": "AIOps \u2014 ANOMALY DETECTION (3-Sigma Z-Score)",
       "gridPos": {
         "x": 0,
-        "y": 68,
+        "y": 69,
         "w": 24,
         "h": 2
       },
@@ -2403,14 +2419,14 @@
     },
     {
       "id": 40,
-      "title": "◈ CPU Anomaly Score (Z-Score)",
+      "title": "\u25c8 CPU Anomaly Score (Z-Score)",
       "type": "state-timeline",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 0,
-        "y": 70,
+        "y": 71,
         "w": 12,
         "h": 16
       },
@@ -2479,7 +2495,7 @@
       "transparent": true,
       "links": [
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -2487,14 +2503,14 @@
     },
     {
       "id": 41,
-      "title": "◈ Temperature Anomaly Score (Z-Score)",
+      "title": "\u25c8 Temperature Anomaly Score (Z-Score)",
       "type": "state-timeline",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 12,
-        "y": 70,
+        "y": 71,
         "w": 12,
         "h": 16
       },
@@ -2577,7 +2593,7 @@
       "title": "RESOURCE DISTRIBUTION",
       "gridPos": {
         "x": 0,
-        "y": 104,
+        "y": 105,
         "w": 24,
         "h": 2
       },
@@ -2592,14 +2608,14 @@
     },
     {
       "id": 2001,
-      "title": "◈ CPU / RAM / Storage Distribution",
+      "title": "\u25c8 CPU / RAM / Storage Distribution",
       "type": "piechart",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 0,
-        "y": 106,
+        "y": 107,
         "w": 12,
         "h": 16
       },
@@ -2705,14 +2721,14 @@
     },
     {
       "id": 1002,
-      "title": "◈ Fleet Status Composition",
+      "title": "\u25c8 Fleet Status Composition",
       "type": "piechart",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 12,
-        "y": 106,
+        "y": 107,
         "w": 12,
         "h": 16
       },

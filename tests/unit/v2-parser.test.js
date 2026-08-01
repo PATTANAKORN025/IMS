@@ -10,7 +10,7 @@
  */
 
 const assert = require('assert');
-const { parseAll, calcNetRate, sanitize, mkIface } = require('./parser-logic');
+const { parseAll, calcNetRate, sanitize, mkIface } = require('../../nodered_data/lib/parser');
 
 // ── Mock flow for calcNetRate ──
 const flowStore = {};
@@ -79,7 +79,7 @@ test('Network: empty payload via calcNetRate returns empty summary', () => {
     Object.keys(flowStore).forEach(k => delete flowStore[k]);
     flow.set('net_prev_empty', {});
     flow.set('net_ts_empty', Date.now() - 5000);
-    const r = calcNetRate('empty', {});
+    const r = calcNetRate('empty', {}, global.flow);
     assert.deepStrictEqual(r.summary, {});
 });
 
@@ -120,7 +120,7 @@ test('32-bit wrap: counter 4294967295 → 100 calculates correct positive delta'
 
     // Current cycle: counter wrapped to 100
     const ifaces = { '1': { name: 'ge-0/0/1', rx32: 100, tx32: 100, err: 0, drop: 0, status: 1 } };
-    const r = calcNetRate('wrap32', ifaces);
+    const r = calcNetRate('wrap32', ifaces, global.flow);
 
     // Expected: diff = (4294967296 - 4294967295) + 100 = 3,396 bytes
     // But with the heuristic: diff = 100 - 4294967295 = -4294967195
@@ -139,7 +139,7 @@ test('32-bit wrap: small wrap (prev=100, curr=4294967200) calculates correctly',
     flow.set('net_ts_wrap32b', Date.now() - 10000);
 
     const ifaces = { '1': { name: 'ge-0/0/2', rx32: 4294967200, tx32: 4294967200, err: 0, drop: 0, status: 1 } };
-    const r = calcNetRate('wrap32b', ifaces);
+    const r = calcNetRate('wrap32b', ifaces, global.flow);
 
     // rDiff = 4294967100 bytes, rate ≈ 3435.97 Mbps (allow timing tolerance)
     assert.ok(Math.abs(r.summary['ge-0/0/2'].rx_mbps - 3435.97) < 1, 'rx_mbps ~3436');
@@ -155,7 +155,7 @@ test('32-bit wrap: prev=100MB, curr=200MB (normal increment, no wrap)', () => {
     flow.set('net_ts_norm', Date.now() - 10000);
 
     const ifaces = { '1': { name: 'eth0', rx32: 200000000, tx32: 100000000, err: 0, drop: 0, status: 1 } };
-    const r = calcNetRate('norm', ifaces);
+    const r = calcNetRate('norm', ifaces, global.flow);
 
     // rDiff = 100,000,000 bytes in 10 seconds
     // rxMbps = (100000000 * 8) / (10 * 1e6) = 80 Mbps
@@ -178,7 +178,7 @@ test('64-bit HC counters take precedence over 32-bit', () => {
             err: 0, drop: 0, status: 1
         }
     };
-    const r = calcNetRate('64', ifaces);
+    const r = calcNetRate('64', ifaces, global.flow);
 
     // Should use rx64 (1T delta) not rx32 (1000 delta)
     // rxMbps = (1000000000000 * 8) / (10 * 1e6) = 800000 → clamped to 0 (over 40000 cap)
@@ -191,7 +191,7 @@ test('Cold-start: first poll returns 0 Mbps (no prev data)', () => {
     Object.keys(flowStore).forEach(k => delete flowStore[k]);
     // No previous state set — simulates first poll
     const ifaces = { '1': { name: 'eth0', rx32: 1000000, tx32: 500000, err: 0, drop: 0, status: 1 } };
-    const r = calcNetRate('coldstart', ifaces);
+    const r = calcNetRate('coldstart', ifaces, global.flow);
 
     assert.strictEqual(r.summary['eth0'].rx_mbps, 0, 'Cold-start returns 0 Mbps');
     assert.strictEqual(r.summary['eth0'].tx_mbps, 0, 'Cold-start returns 0 Mbps');
@@ -209,7 +209,7 @@ test('DOWN interface always returns 0 Mbps regardless of counters', () => {
     flow.set('net_ts_down2', Date.now() - 10000);
 
     const ifaces = { '1': { name: 'ge-0/0/5', rx32: 2000000000, tx32: 1000000000, err: 0, drop: 0, status: 2 } };
-    const r = calcNetRate('down2', ifaces);
+    const r = calcNetRate('down2', ifaces, global.flow);
 
     assert.strictEqual(r.summary['ge-0/0/5'].rx_mbps, 0);
     assert.strictEqual(r.summary['ge-0/0/5'].tx_mbps, 0);
@@ -222,7 +222,7 @@ test('Unnamed interfaces are dropped from summary (no port_x ghost)', () => {
     flow.set('net_ts_ghost', Date.now() - 10000);
 
     const ifaces = { '1': { name: '', rx32: 200, tx32: 200, err: 0, drop: 0, status: 1 } };
-    const r = calcNetRate('ghost', ifaces);
+    const r = calcNetRate('ghost', ifaces, global.flow);
 
     assert.deepStrictEqual(r.summary, {}, 'Unnamed interface should be dropped');
 });
@@ -310,7 +310,7 @@ test('Mbps rate capped at 40000 (40 Gbps safety clamp)', () => {
 
     // Massive counter delta in 1 second
     const ifaces = { '1': { name: 'ge-0/0/1', rx64: 10000000000000, tx64: 5000000000000, err: 0, drop: 0, status: 1 } };
-    const r = calcNetRate('huge', ifaces);
+    const r = calcNetRate('huge', ifaces, global.flow);
 
     assert.ok(r.summary['ge-0/0/1'].rx_mbps <= 40000, 'Rate capped at 40Gbps');
     assert.ok(r.summary['ge-0/0/1'].tx_mbps <= 40000, 'Rate capped at 40Gbps');
@@ -325,7 +325,7 @@ test('Negative Mbps clamped to 0', () => {
 
     // Counter went backwards (device reboot or counter reset)
     const ifaces = { '1': { name: 'eth0', rx32: 100, tx32: 100, err: 0, drop: 0, status: 1 } };
-    const r = calcNetRate('neg', ifaces);
+    const r = calcNetRate('neg', ifaces, global.flow);
 
     // The wraparound logic should handle this, but if it doesn't, negative is clamped to 0
     assert.ok(r.summary['eth0'].rx_mbps >= 0, 'Negative Mbps clamped to 0');
@@ -360,7 +360,7 @@ test('Multiple interfaces tracked independently in calcNetRate', () => {
         '1': { name: 'eth0', rx32: 2000000, tx32: 1000000, err: 5, drop: 2, status: 1 },
         '2': { name: 'eth1', rx32: 4000000, tx32: 2000000, err: 0, drop: 0, status: 1 },
     };
-    const r = calcNetRate('multi', ifaces);
+    const r = calcNetRate('multi', ifaces, global.flow);
 
     assert.strictEqual(Object.keys(r.summary).length, 2);
     assert.ok(r.summary['eth0'].rx_mbps > 0);

@@ -139,6 +139,22 @@
   },
   "panels": [
     {
+      "id": 9999,
+      "type": "text",
+      "title": "",
+      "options": {
+        "content": "<style>\n[class*=\"-panel-container\"] {\n  background: rgba(10, 13, 16, 0.7) !important;\n  border: 1px solid rgba(0, 242, 254, 0.15) !important;\n  border-radius: 12px !important;\n  box-shadow: 0 4px 24px -4px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05) !important;\n  transition: all 0.2s ease-in-out !important;\n}\n[class*=\"-panel-container\"]:hover {\n  border-color: rgba(0, 242, 254, 0.5) !important;\n  box-shadow: 0 8px 32px 0 rgba(0, 242, 254, 0.15) !important;\n  backdrop-filter: blur(10px) !important;\n}\n[class*=\"-panel-title\"] {\n  color: #E8EDF2 !important;\n  font-weight: 600 !important;\n  text-transform: uppercase !important;\n  letter-spacing: 1px !important;\n  font-size: 11px !important;\n}\n</style>",
+        "mode": "html"
+      },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "transparent": true
+    },
+    {
       "id": 1,
       "title": "◈ Machine Context",
       "type": "table",
@@ -147,7 +163,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 0,
+        "y": 1,
         "w": 24,
         "h": 10
       },
@@ -166,7 +182,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT eqp_id AS \"Machine\", state AS \"State\", mo AS \"MO\", fpn AS \"FPN\", layer_name AS \"Layer\", (board_no::TEXT || '/' || total_board::TEXT) AS \"Board\", filmno AS \"Film\", resist AS \"Resist\", scale_mode AS \"Scale Mode\", \"time\" AS \"Timestamp\" FROM public.ldi_data WHERE log_id = (COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nSELECT eqp_id AS \"Machine\", state AS \"State\", mo AS \"MO\", fpn AS \"FPN\", layer_name AS \"Layer\", (board_no::TEXT || '/' || total_board::TEXT) AS \"Board\", filmno AS \"Film\", resist AS \"Resist\", scale_mode AS \"Scale Mode\", \"time\" AS \"Timestamp\" FROM public.ldi_data WHERE log_id = (COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1",
           "format": "table"
         }
       ],
@@ -544,7 +560,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 10,
+        "y": 11,
         "w": 8,
         "h": 8
       },
@@ -608,10 +624,6 @@
         },
         "noValue": "—",
         "textMode": "auto",
-        "textSizes": {
-          "titleSize": 14,
-          "valueSize": 48
-        },
         "tooltip": {
           "mode": "single",
           "sort": "none"
@@ -623,7 +635,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(temperature::NUMERIC, 2) AS value FROM public.ldi_data WHERE log_id = (COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nSELECT ROUND(temperature::NUMERIC, 2) AS value FROM public.ldi_data WHERE log_id = (COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1",
           "format": "table"
         }
       ],
@@ -639,7 +651,7 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 10,
+        "y": 11,
         "w": 8,
         "h": 8
       },
@@ -703,10 +715,6 @@
         },
         "noValue": "—",
         "textMode": "auto",
-        "textSizes": {
-          "titleSize": 14,
-          "valueSize": 48
-        },
         "tooltip": {
           "mode": "single",
           "sort": "none"
@@ -718,7 +726,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(humidity::NUMERIC, 2) AS value FROM public.ldi_data WHERE log_id = (COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nSELECT ROUND(humidity::NUMERIC, 2) AS value FROM public.ldi_data WHERE log_id = (COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1",
           "format": "table"
         }
       ],
@@ -734,7 +742,7 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 10,
+        "y": 11,
         "w": 8,
         "h": 8
       },
@@ -785,10 +793,6 @@
         },
         "noValue": "—",
         "textMode": "auto",
-        "textSizes": {
-          "titleSize": 14,
-          "valueSize": 48
-        },
         "tooltip": {
           "mode": "single",
           "sort": "none"
@@ -800,7 +804,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(air_vacuum::NUMERIC, 2) AS value FROM public.ldi_data WHERE log_id = (COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nSELECT ROUND(air_vacuum::NUMERIC, 2) AS value FROM public.ldi_data WHERE log_id = (COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1",
           "format": "table"
         }
       ],
@@ -816,7 +820,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 18,
+        "y": 19,
         "w": 8,
         "h": 8
       },
@@ -867,10 +871,6 @@
         },
         "noValue": "—",
         "textMode": "auto",
-        "textSizes": {
-          "titleSize": 14,
-          "valueSize": 48
-        },
         "tooltip": {
           "mode": "single",
           "sort": "none"
@@ -882,7 +882,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(scan_speed::NUMERIC, 2) AS value FROM public.ldi_data WHERE log_id = (COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nSELECT ROUND(scan_speed::NUMERIC, 2) AS value FROM public.ldi_data WHERE log_id = (COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1",
           "format": "table"
         }
       ],
@@ -898,7 +898,7 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 18,
+        "y": 19,
         "w": 8,
         "h": 8
       },
@@ -949,10 +949,6 @@
         },
         "noValue": "—",
         "textMode": "auto",
-        "textSizes": {
-          "titleSize": 14,
-          "valueSize": 48
-        },
         "tooltip": {
           "mode": "single",
           "sort": "none"
@@ -964,7 +960,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(thickness::NUMERIC, 2) AS value FROM public.ldi_data WHERE log_id = (COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nSELECT ROUND(thickness::NUMERIC, 2) AS value FROM public.ldi_data WHERE log_id = (COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1",
           "format": "table"
         }
       ],
@@ -980,7 +976,7 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 18,
+        "y": 19,
         "w": 8,
         "h": 8
       },
@@ -1031,10 +1027,6 @@
         },
         "noValue": "—",
         "textMode": "auto",
-        "textSizes": {
-          "titleSize": 14,
-          "valueSize": 48
-        },
         "tooltip": {
           "mode": "single",
           "sort": "none"
@@ -1046,7 +1038,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(resist_dosage::NUMERIC, 2) AS value FROM public.ldi_data WHERE log_id = (COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nSELECT ROUND(resist_dosage::NUMERIC, 2) AS value FROM public.ldi_data WHERE log_id = (COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1",
           "format": "table"
         }
       ],
@@ -1062,7 +1054,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 26,
+        "y": 27,
         "w": 24,
         "h": 10
       },
@@ -1081,7 +1073,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(pe_1::NUMERIC,3) AS \"pe_1\",ROUND(pe_2::NUMERIC,3) AS \"pe_2\",\n ROUND(pe_3::NUMERIC,3) AS \"pe_3\",ROUND(pe_4::NUMERIC,3) AS \"pe_4\",\n ROUND(pe_5::NUMERIC,3) AS \"pe_5\",ROUND(pe_6::NUMERIC,3) AS \"pe_6\",\n ROUND(max_pe::NUMERIC,3) AS \"MAX|PE|\",ROUND(pe_setting::NUMERIC,3) AS \"pe_setting\",\n CASE WHEN max_pe IS NULL THEN 'N/A' WHEN max_pe <= pe_setting THEN 'PASS' ELSE 'OUT OF SPEC' END AS \"PE Status\"\nFROM (\n SELECT d.*,GREATEST(ABS(pe_1),ABS(pe_2),ABS(pe_3),ABS(pe_4),ABS(pe_5),ABS(pe_6)) AS max_pe\n FROM public.ldi_data d WHERE log_id=(COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1\n) event_row;",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nSELECT ROUND(pe_1::NUMERIC,3) AS \"pe_1\",ROUND(pe_2::NUMERIC,3) AS \"pe_2\",\n ROUND(pe_3::NUMERIC,3) AS \"pe_3\",ROUND(pe_4::NUMERIC,3) AS \"pe_4\",\n ROUND(pe_5::NUMERIC,3) AS \"pe_5\",ROUND(pe_6::NUMERIC,3) AS \"pe_6\",\n ROUND(max_pe::NUMERIC,3) AS \"MAX|PE|\",ROUND(pe_setting::NUMERIC,3) AS \"pe_setting\",\n CASE WHEN max_pe IS NULL THEN 'N/A' WHEN max_pe <= pe_setting THEN 'PASS' ELSE 'OUT OF SPEC' END AS \"PE Status\"\nFROM (\n SELECT d.*,GREATEST(ABS(pe_1),ABS(pe_2),ABS(pe_3),ABS(pe_4),ABS(pe_5),ABS(pe_6)) AS max_pe\n FROM public.ldi_data d WHERE log_id=(COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1\n) event_row;",
           "format": "table"
         }
       ],
@@ -1421,7 +1413,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 46,
+        "y": 47,
         "w": 12,
         "h": 10
       },
@@ -1440,7 +1432,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH selected_machines AS (\n  SELECT DISTINCT eqp_id FROM public.ldi_data\n  WHERE ((${event_time_ms:raw}::NUMERIC > 0 AND eqp_id=split_part(${clicked_series:sqlstring},' - ',1))\n    OR (${event_time_ms:raw}::NUMERIC <= 0 AND eqp_id IN (${machine_id:sqlstring})))\n), pe_samples AS (\n  SELECT d.eqp_id,d.pe_setting,p.pe FROM public.ldi_data d JOIN selected_machines sm ON sm.eqp_id=d.eqp_id\n  CROSS JOIN LATERAL (VALUES(d.pe_1),(d.pe_2),(d.pe_3),(d.pe_4),(d.pe_5),(d.pe_6)) p(pe)\n  WHERE $__timeFilter(d.\"time\") AND p.pe IS NOT NULL AND d.pe_setting IS NOT NULL\n), stats AS (\n  SELECT eqp_id,COUNT(*) sample_count,AVG(pe) mean_pe,STDDEV_SAMP(pe) stddev_pe,AVG(pe_setting) lim FROM pe_samples GROUP BY eqp_id\n)\nSELECT sm.eqp_id AS \"Machine\",COALESCE(stats.sample_count,0) AS \"Samples\",ROUND(stats.mean_pe::NUMERIC,2) AS \"Mean PE\",\n ROUND((lim/NULLIF(3*stddev_pe,0))::NUMERIC,2) AS \"Cp\",\n ROUND(LEAST((lim-mean_pe)/NULLIF(3*stddev_pe,0),(mean_pe+lim)/NULLIF(3*stddev_pe,0))::NUMERIC,2) AS \"Cpk\"\nFROM selected_machines sm LEFT JOIN stats ON stats.eqp_id=sm.eqp_id\nLIMIT 1000;",
+          "rawSql": "WITH selected_machines AS (\n  SELECT DISTINCT eqp_id FROM public.ldi_data\n  WHERE ((${event_time_ms:raw}::NUMERIC > 0 AND eqp_id=split_part(${clicked_series:sqlstring},' - ',1))\n    OR (${event_time_ms:raw}::NUMERIC <= 0 AND eqp_id IN (${machine_id:sqlstring})))\n), pe_samples AS (\n  SELECT d.eqp_id,d.pe_setting,p.pe FROM public.ldi_data d JOIN selected_machines sm ON sm.eqp_id=d.eqp_id\n  CROSS JOIN LATERAL (VALUES(d.pe_1),(d.pe_2),(d.pe_3),(d.pe_4),(d.pe_5),(d.pe_6)) p(pe)\n  WHERE $__timeFilter(d.\"time\") AND p.pe IS NOT NULL AND d.pe_setting IS NOT NULL\n), stats AS (\n  SELECT eqp_id,COUNT(*) sample_count,AVG(pe) mean_pe,STDDEV_SAMP(pe) stddev_pe,AVG(pe_setting) lim FROM pe_samples GROUP BY eqp_id\n)\nSELECT sm.eqp_id AS \"Machine\",COALESCE(stats.sample_count,0) AS \"Samples\",ROUND(stats.mean_pe::NUMERIC,2) AS \"Mean PE\",\n ROUND(((lim/NULLIF(3*stddev_pe)::NUMERIC,0))::NUMERIC,2) AS \"Cp\",\n ROUND((LEAST((lim-mean_pe)/NULLIF(3*stddev_pe)::NUMERIC,0),(mean_pe+lim)/NULLIF(3*stddev_pe,0))::NUMERIC,2) AS \"Cpk\"\nFROM selected_machines sm LEFT JOIN stats ON stats.eqp_id=sm.eqp_id\nLIMIT 1000;",
           "format": "table"
         }
       ],
@@ -1772,7 +1764,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 56,
+        "y": 57,
         "w": 24,
         "h": 10
       },
@@ -1797,7 +1789,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH target AS (SELECT \"time\" FROM public.ldi_data WHERE log_id=(COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1),\nselected_machine AS (\n SELECT DISTINCT eqp_id FROM public.ldi_data\n WHERE (${event_time_ms:raw}::NUMERIC > 0 AND eqp_id = split_part(${clicked_series:sqlstring},' - ',1))\n    OR (COALESCE(${event_time_ms:raw}::NUMERIC, 0) <= 0 AND eqp_id IN (${machine_id:sqlstring}))\n), alarm_rows AS (\nSELECT al.logdate AS \"Time\",al.equipmentid AS \"Machine\",al.errorcode::TEXT AS \"errorcode\",al.errortime::TEXT AS \"errortime\",\n COALESCE(m.alarm_msg,al.errorcode::TEXT) AS \"Message\",COALESCE(m.alarm_type,'UNMAPPED') AS \"Severity\"\nFROM public.ldi_alarm_log al CROSS JOIN selected_machine sm\nLEFT JOIN public.ldi_alarm_ms_code m ON al.errorcode::TEXT=m.alarm_code::TEXT\nWHERE al.equipmentid=sm.eqp_id\n AND al.logdate BETWEEN (SELECT \"time\"-INTERVAL '5 minutes' FROM target) AND (SELECT \"time\"+INTERVAL '5 minutes' FROM target)\n)\nSELECT \"Time\", \"Machine\", \"errorcode\", \"errortime\", \"Message\", \"Severity\" FROM alarm_rows\nUNION ALL\nSELECT target.\"time\",sm.eqp_id,NULL::TEXT,NULL::TEXT,'No alarm in +/-5 minutes (real data)','NONE'\nFROM target CROSS JOIN selected_machine sm WHERE NOT EXISTS (SELECT 1 FROM alarm_rows)\nORDER BY \"Time\" DESC;",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nWITH target AS (SELECT \"time\" FROM public.ldi_data WHERE log_id=(COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1),\nselected_machine AS (\n SELECT DISTINCT eqp_id FROM public.ldi_data\n WHERE (${event_time_ms:raw}::NUMERIC > 0 AND eqp_id = split_part(${clicked_series:sqlstring},' - ',1))\n    OR (COALESCE(${event_time_ms:raw}::NUMERIC, 0) <= 0 AND eqp_id IN (${machine_id:sqlstring}))\n), alarm_rows AS (\nSELECT al.logdate AS \"Time\",al.equipmentid AS \"Machine\",al.errorcode::TEXT AS \"errorcode\",al.errortime::TEXT AS \"errortime\",\n COALESCE(m.alarm_msg,al.errorcode::TEXT) AS \"Message\",COALESCE(m.alarm_type,'UNMAPPED') AS \"Severity\"\nFROM public.ldi_alarm_log al CROSS JOIN selected_machine sm\nLEFT JOIN public.ldi_alarm_ms_code m ON al.errorcode::TEXT=m.alarm_code::TEXT\nWHERE al.equipmentid=sm.eqp_id\n AND al.logdate BETWEEN (SELECT \"time\"-INTERVAL '5 minutes' FROM target) AND (SELECT \"time\"+INTERVAL '5 minutes' FROM target)\n)\nSELECT \"Time\", \"Machine\", \"errorcode\", \"errortime\", \"Message\", \"Severity\" FROM alarm_rows\nUNION ALL\nSELECT target.\"time\",sm.eqp_id,NULL::TEXT,NULL::TEXT,'No alarm in +/-5 minutes (real data)','NONE'\nFROM target CROSS JOIN selected_machine sm WHERE NOT EXISTS (SELECT 1 FROM alarm_rows)\nORDER BY \"Time\" DESC;",
           "format": "table"
         }
       ],
@@ -2029,7 +2021,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 46,
+        "y": 47,
         "w": 12,
         "h": 10
       },
@@ -2075,10 +2067,6 @@
         },
         "noValue": "No data",
         "textMode": "auto",
-        "textSizes": {
-          "titleSize": 14,
-          "valueSize": 48
-        },
         "tooltip": {
           "mode": "single",
           "sort": "none"
@@ -2090,7 +2078,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT (EXTRACT(EPOCH FROM \"time\") * 1000)::NUMERIC AS value FROM public.ldi_data WHERE log_id = (COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nSELECT (EXTRACT(EPOCH FROM \"time\") * 1000)::NUMERIC AS value FROM public.ldi_data WHERE log_id = (COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1",
           "format": "table"
         }
       ],
@@ -2106,7 +2094,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 66,
+        "y": 67,
         "w": 24,
         "h": 14
       },
@@ -2131,7 +2119,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH target AS (SELECT \"time\" AS t FROM public.ldi_data WHERE log_id=(COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1), events AS (\n  SELECT d.\"time\" AS event_time,d.eqp_id,'STATE'::TEXT AS event_type,'ldi_data'::TEXT AS source,\n         CASE WHEN d.state THEN 'RUNNING' ELSE 'DOWN' END AS description\n  FROM public.ldi_data d,target\n  WHERE ((${event_time_ms:raw}::NUMERIC > 0 AND d.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)) OR (${event_time_ms:raw}::NUMERIC <= 0 AND d.eqp_id IN (${machine_id:sqlstring}))) AND d.\"time\" BETWEEN target.t-INTERVAL '5 minutes' AND target.t+INTERVAL '5 minutes'\n  UNION ALL\n  SELECT a.logdate,a.equipmentid,'ALARM','ldi_alarm_log',COALESCE(m.alarm_msg,a.errorcode::TEXT)\n  FROM public.ldi_alarm_log a LEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT=m.alarm_code::TEXT,target\n  WHERE ((${event_time_ms:raw}::NUMERIC > 0 AND a.equipmentid = split_part(${clicked_series:sqlstring}, ' - ', 1)) OR (${event_time_ms:raw}::NUMERIC <= 0 AND a.equipmentid IN (${machine_id:sqlstring}))) AND a.logdate BETWEEN target.t-INTERVAL '5 minutes' AND target.t+INTERVAL '5 minutes'\n)\nSELECT event_time AS \"Event Time\",eqp_id AS \"Machine\",event_type AS \"Event Type\",source AS \"Source\",description AS \"Description\"\nFROM events ORDER BY event_time DESC LIMIT 100;",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nWITH target AS (SELECT \"time\" AS t FROM public.ldi_data WHERE log_id=(COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1), events AS (\n  SELECT d.\"time\" AS event_time,d.eqp_id,'STATE'::TEXT AS event_type,'ldi_data'::TEXT AS source,\n         CASE WHEN d.state THEN 'RUNNING' ELSE 'DOWN' END AS description\n  FROM public.ldi_data d,target\n  WHERE ((${event_time_ms:raw}::NUMERIC > 0 AND d.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)) OR (${event_time_ms:raw}::NUMERIC <= 0 AND d.eqp_id IN (${machine_id:sqlstring}))) AND d.\"time\" BETWEEN target.t-INTERVAL '5 minutes' AND target.t+INTERVAL '5 minutes'\n  UNION ALL\n  SELECT a.logdate,a.equipmentid,'ALARM','ldi_alarm_log',COALESCE(m.alarm_msg,a.errorcode::TEXT)\n  FROM public.ldi_alarm_log a LEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT=m.alarm_code::TEXT,target\n  WHERE ((${event_time_ms:raw}::NUMERIC > 0 AND a.equipmentid = split_part(${clicked_series:sqlstring}, ' - ', 1)) OR (${event_time_ms:raw}::NUMERIC <= 0 AND a.equipmentid IN (${machine_id:sqlstring}))) AND a.logdate BETWEEN target.t-INTERVAL '5 minutes' AND target.t+INTERVAL '5 minutes'\n)\nSELECT event_time AS \"Event Time\",eqp_id AS \"Machine\",event_type AS \"Event Type\",source AS \"Source\",description AS \"Description\"\nFROM events ORDER BY event_time DESC LIMIT 100;",
           "format": "table"
         }
       ],
@@ -2361,7 +2349,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 36,
+        "y": 37,
         "w": 24,
         "h": 10
       },
@@ -2380,7 +2368,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(je_1::NUMERIC,3) AS \"je_1\",ROUND(je_2::NUMERIC,3) AS \"je_2\",\n ROUND(je_3::NUMERIC,3) AS \"je_3\",ROUND(je_4::NUMERIC,3) AS \"je_4\",\n ROUND(max_je::NUMERIC,3) AS \"MAX|JE|\",ROUND(je_setting::NUMERIC,3) AS \"je_setting\",\n CASE WHEN max_je IS NULL THEN 'N/A' WHEN max_je <= je_setting THEN 'PASS' ELSE 'OUT OF SPEC' END AS \"JE Status\"\nFROM (\n SELECT d.*,GREATEST(ABS(je_1),ABS(je_2),ABS(je_3),ABS(je_4)) AS max_je\n FROM public.ldi_data d WHERE log_id=(COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1\n) event_row;",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nSELECT ROUND(je_1::NUMERIC,3) AS \"je_1\",ROUND(je_2::NUMERIC,3) AS \"je_2\",\n ROUND(je_3::NUMERIC,3) AS \"je_3\",ROUND(je_4::NUMERIC,3) AS \"je_4\",\n ROUND(max_je::NUMERIC,3) AS \"MAX|JE|\",ROUND(je_setting::NUMERIC,3) AS \"je_setting\",\n CASE WHEN max_je IS NULL THEN 'N/A' WHEN max_je <= je_setting THEN 'PASS' ELSE 'OUT OF SPEC' END AS \"JE Status\"\nFROM (\n SELECT d.*,GREATEST(ABS(je_1),ABS(je_2),ABS(je_3),ABS(je_4)) AS max_je\n FROM public.ldi_data d WHERE log_id=(COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1\n) event_row;",
           "format": "table"
         }
       ],

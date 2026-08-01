@@ -55,26 +55,26 @@ GROUP BY bucket, device_id
 WITH NO DATA;
 
 -- ── 4. Refresh Policies (auto-update CAGGs) ───────────────────────────────
-SELECT add_continuous_aggregate_policy('public.sys_hourly',
+DO $$ BEGIN PERFORM add_continuous_aggregate_policy('public.sys_hourly',
     start_offset      => INTERVAL '3 hours',
     end_offset        => INTERVAL '10 minutes',
     schedule_interval => INTERVAL '15 minutes',
     if_not_exists     => TRUE
-);
+); EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
-SELECT add_continuous_aggregate_policy('public.net_hourly',
+DO $$ BEGIN PERFORM add_continuous_aggregate_policy('public.net_hourly',
     start_offset      => INTERVAL '3 hours',
     end_offset        => INTERVAL '10 minutes',
     schedule_interval => INTERVAL '15 minutes',
     if_not_exists     => TRUE
-);
+); EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
-SELECT add_continuous_aggregate_policy('public.ldi_hourly',
+DO $$ BEGIN PERFORM add_continuous_aggregate_policy('public.ldi_hourly',
     start_offset      => INTERVAL '3 hours',
     end_offset        => INTERVAL '10 minutes',
     schedule_interval => INTERVAL '15 minutes',
     if_not_exists     => TRUE
-);
+); EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 -- ── 5. Compression (raw data → compress after 7 days) ─────────────────────
 

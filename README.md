@@ -146,7 +146,7 @@ flowchart LR
 3. **Parsing** — `sre_parser` maintains per-device state in flow context (`dev_state_<deviceId>`), buffers rows in `batch_buf_<deviceId>`. Offline heartbeat (`_walker: "offline"`) immediately zeros all metrics on device failure.
 4. **Storage** — Timer-gated independent flushing: each table type (sys/net/ldi) inserts only if its buffer has rows. Partial walker failures don't block unrelated data writes.
 5. **Continuous Aggregation** — Hourly CAGGs refresh every 30min. Daily/Weekly CAGGs aggregate from hourly. Retention: raw 14d, hourly 90d, daily 2yr, weekly forever.
-6. **Visualization** — 5 dashboards: NOC Overview (fleet envelope), Engineering Drill-Down (per-machine), AIOps & Capacity (forecasting), Meta-Monitoring (pipeline health), LDI Manufacturing (PCB fleet).
+6. **Visualization** — 9 dashboards: NOC Overview (fleet envelope), Engineering Drill-Down (per-machine), AIOps & Capacity (forecasting), Meta-Monitoring (pipeline health), LDI Manufacturing (PCB fleet).
 7. **Alerting** — Prometheus scrapes `/metrics`, Alertmanager routes to LINE Notify + Slack with runbook links. Z-Score anomalies via Grafana SQL over TimescaleDB.
 
 </details>
@@ -156,10 +156,15 @@ flowchart LR
 
 | Dashboard | Panels | Purpose |
 |-----------|--------|---------|
-| **NOC Overview** | 15 | Fleet envelope (AVG+MAX), Fleet Health Score, Top-10 Critical Nodes, Network Bandwidth, LDI Yield Risk |
-| **Engineering Drill-Down** | 25 | Per-machine gauges, RAM/CPU/Temp timeseries, LDI manufacturing, Power analytics, Z-Score anomalies |
-| **Capacity Planning** | 16 | Disk/CPU/RAM forecast with linear regression, Days Until Full, Z-Score anomaly detection |
-| **Meta-Monitoring** | 15 | Pipeline throughput, deadman alerts, circuit breaker state, device poll rates |
+| **NOC Overview** | 11 | Fleet envelope (AVG+MAX), Fleet Health Score, Top-10 Critical Nodes, Network Bandwidth, LDI Yield Risk |
+| **Engineering Drill-Down** | 19 | Per-machine gauges, RAM/CPU/Temp timeseries, LDI manufacturing, Power analytics, Z-Score anomalies |
+| **Capacity Planning** | 12 | Disk/CPU/RAM forecast with linear regression, Days Until Full, Z-Score anomaly detection |
+| **Meta-Monitoring** | 11 | Pipeline throughput, deadman alerts, circuit breaker state, device poll rates |
+| **LDI Engineering Analytics** | 14 | Deep dive analytics for LDI yield and machine performance |
+| **LDI Machine Snapshot** | 13 | Real-time state of an individual LDI machine (recipes, temperatures) |
+| **LDI Manufacturing** | 17 | Production metrics, output rates, and manufacturing floor status |
+| **LDI Operator Andon** | 8 | Simple visual alerts and call-for-help screens for operators |
+| **LDI Data Readiness** | 12 | Verification of data ingestion completeness and pipeline health |
 
 **Design System:** Cyberpunk HUD — `#030407` background, Tailwind palette (`#10B981` Healthy, `#F59E0B` Warning, `#EF4444` Critical, `#3B82F6` Accent), Roboto Mono for stat values, glassmorphism panels, Grid-24 overlap-free layout.
 
@@ -191,7 +196,7 @@ open "http://localhost:3000/playlists/play/1?kiosk=tv&autofitpanels"
 | **Orchestration** | Docker Compose | 7-service container stack with dev/prod overlays |
 | **Collection** | Node-RED + net-snmp | Sequential async bulk SNMP walks, 5-thread parallel walker |
 | **Database** | TimescaleDB (PostgreSQL) | Hypertables with CAGGs, 90% compression after 7d |
-| **Visualization** | Grafana 11 | 4 cyberpunk HUD dashboards, state-timeline anomalies |
+| **Visualization** | Grafana 13.1.1 | 9 cyberpunk HUD dashboards, state-timeline anomalies |
 | **Alerting** | Prometheus + Alertmanager | Metric scraping, inhibition rules, LINE/Slack webhooks |
 | **Load Testing** | K6 | Pipeline stress (50→200 VUs), threshold p95<500ms |
 | **SLA Probing** | Blackbox Exporter | HTTP/TCP/ICMP endpoint monitoring |
