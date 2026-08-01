@@ -402,7 +402,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\n-- Intentional full table scan for global readiness\nSELECT ROUND((100.0 * COUNT(*) FILTER (WHERE m.alarm_code IS NOT NULL) / NULLIF(COUNT(*))::NUMERIC, 0), 1) AS value\nFROM public.ldi_alarm_log a\nLEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\nWHERE a.equipmentid IN (${machine_id:sqlstring});",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\n-- Intentional full table scan for global readiness\nSELECT ROUND((100.0 * COUNT(*) FILTER (WHERE m.alarm_code IS NOT NULL) / NULLIF(COUNT(*), 0)::NUMERIC, 1) AS value\nFROM public.ldi_alarm_log a\nLEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\nWHERE a.equipmentid IN (${machine_id:sqlstring});",
           "refId": "A",
           "sql": {
             "columns": [],
@@ -497,7 +497,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\n-- Intentional full table scan for global readiness\nSELECT ROUND((100.0 * COUNT(board_id) / NULLIF(COUNT(*))::NUMERIC, 0), 1) AS value\nFROM public.ldi_data\nWHERE factory IN (${factory:sqlstring})\n  AND eqp_id IN (${machine_id:sqlstring});",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\n-- Intentional full table scan for global readiness\nSELECT ROUND((100.0 * COUNT(board_id) / NULLIF(COUNT(*), 0)::NUMERIC, 1) AS value\nFROM public.ldi_data\nWHERE factory IN (${factory:sqlstring})\n  AND eqp_id IN (${machine_id:sqlstring});",
           "refId": "A",
           "sql": {
             "columns": [],
@@ -593,7 +593,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\n-- Intentional full table scan for global readiness\nSELECT\n  ROUND((100.0 * COUNT(pe_1) / NULLIF(COUNT(*))::NUMERIC, 0), 1) AS \"PE\",\n  ROUND((100.0 * COUNT(je_4) / NULLIF(COUNT(*))::NUMERIC, 0), 1) AS \"JE4\"\nFROM public.ldi_data\nWHERE factory IN (${factory:sqlstring})\n  AND eqp_id IN (${machine_id:sqlstring});",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\n-- Intentional full table scan for global readiness\nSELECT\n  ROUND((100.0 * COUNT(pe_1) / NULLIF(COUNT(*), 0)::NUMERIC, 1) AS \"PE\",\n  ROUND((100.0 * COUNT(je_4) / NULLIF(COUNT(*), 0)::NUMERIC, 1) AS \"JE4\"\nFROM public.ldi_data\nWHERE factory IN (${factory:sqlstring})\n  AND eqp_id IN (${machine_id:sqlstring});",
           "refId": "A",
           "sql": {
             "columns": [],

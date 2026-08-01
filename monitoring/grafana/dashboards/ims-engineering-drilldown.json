@@ -371,7 +371,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(((ram_used_mb / NULLIF(ram_total_mb)::NUMERIC, 0) * 100)::NUMERIC, 1) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '2 minutes' AND device_id IN (${machine_id:singlequote}) ORDER BY time DESC LIMIT 1",
+          "rawSql": "SELECT ROUND(((ram_used_mb / NULLIF(ram_total_mb, 0) * 100)::NUMERIC, 1) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '2 minutes' AND device_id IN (${machine_id:singlequote}) ORDER BY time DESC LIMIT 1",
           "format": "table",
           "legendFormat": "{{device_id}}"
         }
@@ -477,7 +477,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(((disk_used_gb / NULLIF(disk_total_gb)::NUMERIC, 0) * 100)::NUMERIC, 1) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '2 minutes' AND device_id IN (${machine_id:singlequote}) ORDER BY time DESC LIMIT 1",
+          "rawSql": "SELECT ROUND((disk_used_gb / NULLIF(disk_total_gb, 0)::NUMERIC * 100), 1) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '2 minutes' AND device_id IN (${machine_id:singlequote}) ORDER BY time DESC LIMIT 1",
           "format": "table",
           "legendFormat": "{{device_id}}"
         }
@@ -899,7 +899,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{metric}}",
-          "rawSql": "SELECT\n  time_bucket('1 hour', bucket) AS time,\n  device_id AS metric,\n  ROUND((AVG(avg_ram_used / NULLIF(avg_ram_total)::NUMERIC, 0) * 100)::NUMERIC, 1) AS \"RAM %\"\nFROM public.sys_hourly\nWHERE $__timeFilter(bucket) AND device_id IN (${machine_id:singlequote})\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  time_bucket('1 hour', bucket) AS time,\n  device_id AS metric,\n  ROUND((AVG(avg_ram_used / NULLIF(avg_ram_total, 0) * 100)::NUMERIC, 1) AS \"RAM %\"\nFROM public.sys_hourly\nWHERE $__timeFilter(bucket) AND device_id IN (${machine_id:singlequote})\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series"
         }
       ],
