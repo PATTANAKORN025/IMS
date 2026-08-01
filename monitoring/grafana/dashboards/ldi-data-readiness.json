@@ -159,13 +159,21 @@
           "values": false
         },
         "showPercentChange": false,
-        "textMode": "auto",
+        "textMode": "value_and_name",
         "wideLayout": true,
         "text": {
           "titleSize": 14,
           "valueSize": 48
         },
-        "noValue": "-"
+        "noValue": "-",
+        "textSizes": {
+          "titleSize": 14,
+          "valueSize": 48
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
       },
       "transparent": true
     },
@@ -248,13 +256,21 @@
           "values": false
         },
         "showPercentChange": false,
-        "textMode": "auto",
+        "textMode": "value_and_name",
         "wideLayout": true,
         "text": {
           "titleSize": 14,
           "valueSize": 48
         },
-        "noValue": "-"
+        "noValue": "-",
+        "textSizes": {
+          "titleSize": 14,
+          "valueSize": 48
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
       },
       "transparent": true
     },
@@ -340,13 +356,21 @@
           "values": false
         },
         "showPercentChange": false,
-        "textMode": "auto",
+        "textMode": "value_and_name",
         "wideLayout": true,
         "text": {
           "titleSize": 14,
           "valueSize": 48
         },
-        "noValue": "-"
+        "noValue": "-",
+        "textSizes": {
+          "titleSize": 14,
+          "valueSize": 48
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
       },
       "transparent": true
     },
@@ -431,13 +455,21 @@
           "values": false
         },
         "showPercentChange": false,
-        "textMode": "auto",
+        "textMode": "value_and_name",
         "wideLayout": true,
         "text": {
           "titleSize": 14,
           "valueSize": 48
         },
-        "noValue": "-"
+        "noValue": "-",
+        "textSizes": {
+          "titleSize": 14,
+          "valueSize": 48
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
       },
       "transparent": true
     },
@@ -523,13 +555,21 @@
           "values": false
         },
         "showPercentChange": false,
-        "textMode": "auto",
+        "textMode": "value_and_name",
         "wideLayout": true,
         "text": {
           "titleSize": 14,
           "valueSize": 48
         },
-        "noValue": "-"
+        "noValue": "-",
+        "textSizes": {
+          "titleSize": 14,
+          "valueSize": 48
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
       },
       "transparent": true
     },
@@ -615,13 +655,21 @@
           "values": false
         },
         "showPercentChange": false,
-        "textMode": "auto",
+        "textMode": "value_and_name",
         "wideLayout": true,
         "text": {
           "titleSize": 14,
           "valueSize": 48
         },
-        "noValue": "-"
+        "noValue": "-",
+        "textSizes": {
+          "titleSize": 14,
+          "valueSize": 48
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
       },
       "transparent": true
     },

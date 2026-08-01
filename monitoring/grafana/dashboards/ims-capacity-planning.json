@@ -320,9 +320,9 @@
         ]
       },
       "options": {
-        "colorMode": "value",
+        "colorMode": "background",
         "graphMode": "area",
-        "justifyMode": "auto",
+        "justifyMode": "center",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -330,7 +330,7 @@
           "values": false
         },
         "noValue": "N/A",
-        "textMode": "value",
+        "textMode": "auto",
         "text": {
           "valueSize": 48,
           "titleSize": 14
@@ -447,9 +447,9 @@
         ]
       },
       "options": {
-        "colorMode": "value",
+        "colorMode": "background",
         "graphMode": "area",
-        "justifyMode": "auto",
+        "justifyMode": "center",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -457,7 +457,7 @@
           "values": false
         },
         "noValue": "N/A",
-        "textMode": "value",
+        "textMode": "auto",
         "text": {
           "valueSize": 48,
           "titleSize": 14
@@ -573,9 +573,9 @@
         ]
       },
       "options": {
-        "colorMode": "value",
+        "colorMode": "background",
         "graphMode": "area",
-        "justifyMode": "auto",
+        "justifyMode": "center",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -583,7 +583,7 @@
           "values": false
         },
         "noValue": "N/A",
-        "textMode": "value",
+        "textMode": "auto",
         "text": {
           "valueSize": 48,
           "titleSize": 14
@@ -685,9 +685,9 @@
         ]
       },
       "options": {
-        "colorMode": "value",
+        "colorMode": "background",
         "graphMode": "area",
-        "justifyMode": "auto",
+        "justifyMode": "center",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -695,7 +695,7 @@
           "values": false
         },
         "noValue": "N/A",
-        "textMode": "value",
+        "textMode": "auto",
         "text": {
           "valueSize": 48,
           "titleSize": 14

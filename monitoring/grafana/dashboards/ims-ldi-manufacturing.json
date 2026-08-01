@@ -117,7 +117,7 @@
       "gridPos": {
         "x": 0,
         "y": 1,
-        "w": 3,
+        "w": 6,
         "h": 6
       },
       "fieldConfig": {
@@ -205,7 +205,15 @@
           "titleSize": 14
         },
         "noValue": "-",
-        "textMode": "valueAndName"
+        "textMode": "auto",
+        "textSizes": {
+          "titleSize": 14,
+          "valueSize": 48
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
       },
       "targets": [
         {
@@ -228,9 +236,9 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 3,
+        "x": 6,
         "y": 1,
-        "w": 3,
+        "w": 6,
         "h": 6
       },
       "fieldConfig": {
@@ -319,7 +327,15 @@
           "titleSize": 14
         },
         "noValue": "-",
-        "textMode": "valueAndName"
+        "textMode": "auto",
+        "textSizes": {
+          "titleSize": 14,
+          "valueSize": 48
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
       },
       "targets": [
         {
@@ -342,9 +358,9 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 6,
+        "x": 12,
         "y": 1,
-        "w": 3,
+        "w": 6,
         "h": 6
       },
       "fieldConfig": {
@@ -433,7 +449,15 @@
           "titleSize": 14
         },
         "noValue": "-",
-        "textMode": "valueAndName"
+        "textMode": "auto",
+        "textSizes": {
+          "titleSize": 14,
+          "valueSize": 48
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
       },
       "targets": [
         {
@@ -449,6 +473,99 @@
       "description": "Average real Cpk across machines with PE data in the selected filters. Assumes symmetric +/- pe_setting limits."
     },
     {
+      "id": 5,
+      "title": "◉ Critical Alarms",
+      "type": "stat",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 1,
+        "w": 6,
+        "h": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#22c55e",
+                "value": null
+              },
+              {
+                "color": "#FF003C",
+                "value": 1
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 15,
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "text": {
+          "valueSize": 48,
+          "titleSize": 14
+        },
+        "noValue": "-",
+        "textMode": "auto",
+        "textSizes": {
+          "titleSize": 14,
+          "valueSize": 48
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT COUNT(*)::NUMERIC AS value\nFROM public.ldi_alarm_log a\nJOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\nWHERE a.equipmentid IN (${machine_id:sqlstring}) AND m.alarm_type ILIKE '%Critical%';",
+          "format": "table"
+        }
+      ],
+      "transparent": true,
+      "description": "Counts real alarm rows for selected machine IDs that match a Critical master code. Zero is valid because current log codes do not match the supplied master."
+    },
+    {
+      "id": 10005,
+      "type": "row",
+      "title": "◈ PROCESS STATE",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 7
+      },
+      "collapsed": false,
+      "panels": []
+    },
+    {
       "id": 1,
       "title": "◉ Running",
       "type": "stat",
@@ -456,10 +573,10 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 9,
-        "y": 1,
-        "w": 3,
-        "h": 6
+        "x": 0,
+        "y": 8,
+        "w": 6,
+        "h": 5
       },
       "fieldConfig": {
         "defaults": {
@@ -541,7 +658,15 @@
           "titleSize": 14
         },
         "noValue": "-",
-        "textMode": "valueAndName"
+        "textMode": "auto",
+        "textSizes": {
+          "titleSize": 14,
+          "valueSize": 48
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
       },
       "targets": [
         {
@@ -559,15 +684,15 @@
     {
       "id": 2,
       "title": "◈ PE Limit Used",
-      "type": "gauge",
+      "type": "stat",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 12,
-        "y": 1,
-        "w": 3,
-        "h": 6
+        "x": 6,
+        "y": 8,
+        "w": 6,
+        "h": 5
       },
       "fieldConfig": {
         "defaults": {
@@ -612,6 +737,18 @@
         "text": {
           "titleSize": 14,
           "valueSize": 48
+        },
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "textMode": "auto",
+        "textSizes": {
+          "titleSize": 14,
+          "valueSize": 48
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
         }
       },
       "targets": [
@@ -635,10 +772,10 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 15,
-        "y": 1,
-        "w": 3,
-        "h": 6
+        "x": 12,
+        "y": 8,
+        "w": 6,
+        "h": 5
       },
       "fieldConfig": {
         "defaults": {
@@ -733,7 +870,15 @@
           "titleSize": 14
         },
         "noValue": "-",
-        "textMode": "valueAndName"
+        "textMode": "auto",
+        "textSizes": {
+          "titleSize": 14,
+          "valueSize": 48
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
       },
       "targets": [
         {
@@ -757,9 +902,9 @@
       },
       "gridPos": {
         "x": 18,
-        "y": 1,
-        "w": 3,
-        "h": 6
+        "y": 8,
+        "w": 6,
+        "h": 5
       },
       "fieldConfig": {
         "defaults": {
@@ -854,7 +999,15 @@
           "titleSize": 14
         },
         "noValue": "-",
-        "textMode": "valueAndName"
+        "textMode": "auto",
+        "textSizes": {
+          "titleSize": 14,
+          "valueSize": 48
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
       },
       "targets": [
         {
@@ -870,78 +1023,6 @@
       "description": "Fleet-wide average humidity. Target 55±5%RH. Red outside 50-60%, Amber 50-60%, Green 55-60%."
     },
     {
-      "id": 5,
-      "title": "◉ Critical Alarms",
-      "type": "stat",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 21,
-        "y": 1,
-        "w": 3,
-        "h": 6
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "decimals": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#22c55e",
-                "value": null
-              },
-              {
-                "color": "#FF003C",
-                "value": 1
-              }
-            ]
-          },
-          "color": {
-            "mode": "thresholds"
-          },
-          "custom": {
-            "gradientMode": "opacity",
-            "lineInterpolation": "smooth",
-            "fillOpacity": 15,
-            "lineWidth": 2
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "center",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "values": false
-        },
-        "text": {
-          "valueSize": 48,
-          "titleSize": 14
-        },
-        "noValue": "-",
-        "textMode": "valueAndName"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT COUNT(*)::NUMERIC AS value\nFROM public.ldi_alarm_log a\nJOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\nWHERE a.equipmentid IN (${machine_id:sqlstring}) AND m.alarm_type ILIKE '%Critical%';",
-          "format": "table"
-        }
-      ],
-      "transparent": true,
-      "description": "Counts real alarm rows for selected machine IDs that match a Critical master code. Zero is valid because current log codes do not match the supplied master."
-    },
-    {
       "id": 10001,
       "type": "row",
       "title": "◈ PRODUCTION & COMPLIANCE",
@@ -949,7 +1030,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 7
+        "y": 13
       },
       "collapsed": false,
       "panels": []
@@ -963,7 +1044,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 8,
+        "y": 14,
         "w": 8,
         "h": 12
       },
@@ -1086,7 +1167,7 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 8,
+        "y": 14,
         "w": 8,
         "h": 12
       },
@@ -1180,7 +1261,7 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 8,
+        "y": 14,
         "w": 8,
         "h": 12
       },
@@ -1273,7 +1354,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 20
+        "y": 26
       },
       "collapsed": false,
       "panels": []
@@ -1287,7 +1368,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 21,
+        "y": 27,
         "w": 8,
         "h": 10
       },
@@ -1413,7 +1494,7 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 21,
+        "y": 27,
         "w": 8,
         "h": 10
       },
@@ -1539,7 +1620,7 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 21,
+        "y": 27,
         "w": 8,
         "h": 10
       },
@@ -1656,7 +1737,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 31
+        "y": 37
       },
       "collapsed": false,
       "panels": []
@@ -1670,7 +1751,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 32,
+        "y": 38,
         "w": 12,
         "h": 8
       },
@@ -1727,7 +1808,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 32,
+        "y": 38,
         "w": 12,
         "h": 8
       },
@@ -1819,7 +1900,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 40
+        "y": 46
       },
       "collapsed": false,
       "panels": []
@@ -1833,7 +1914,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 41,
+        "y": 47,
         "w": 24,
         "h": 12
       },

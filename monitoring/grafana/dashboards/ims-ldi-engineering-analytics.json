@@ -1490,8 +1490,16 @@
           "fields": "/^Correlation %$/",
           "values": false
         },
-        "textMode": "valueAndName",
-        "noValue": "0"
+        "textMode": "auto",
+        "noValue": "0",
+        "textSizes": {
+          "titleSize": 14,
+          "valueSize": 48
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
       },
       "fieldConfig": {
         "defaults": {
