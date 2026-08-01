@@ -29,7 +29,7 @@
     },
     {
       "type": "timeseries",
-      "title": "Inserts / sec",
+      "title": "◈ Inserts / sec",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -50,13 +50,14 @@
           "custom": {
             "drawStyle": "line",
             "lineWidth": 2,
-            "fillOpacity": 20,
+            "fillOpacity": 25,
             "spanNulls": true,
             "showPoints": "never",
             "pointSize": 5,
             "showGridLines": false,
             "axisBorderShow": false,
-            "gradientMode": "opacity"
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth"
           }
         },
         "overrides": [
@@ -96,7 +97,7 @@
     },
     {
       "type": "timeseries",
-      "title": "Error Rate",
+      "title": "◈ Error Rate",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -112,18 +113,19 @@
           "unit": "ops",
           "decimals": 2,
           "color": {
-            "fixedColor": "#FF003C",
+            "fixedColor": "#00E5FF",
             "mode": "fixed"
           },
           "custom": {
             "drawStyle": "line",
             "lineWidth": 2,
-            "fillOpacity": 20,
+            "fillOpacity": 25,
             "spanNulls": true,
             "showGridLines": false,
             "axisBorderShow": false,
             "gradientMode": "opacity",
-            "showPoints": "never"
+            "showPoints": "never",
+            "lineInterpolation": "smooth"
           }
         },
         "overrides": [
@@ -163,7 +165,7 @@
     },
     {
       "type": "stat",
-      "title": "Last Flush",
+      "title": "◉ Last Flush",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -180,7 +182,7 @@
           "decimals": 0,
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00f2fe"
+            "fixedColor": "#00E5FF"
           },
           "thresholds": {
             "steps": [
@@ -198,7 +200,12 @@
               }
             ]
           },
-          "custom": {}
+          "custom": {
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 25,
+            "lineWidth": 2
+          }
         },
         "overrides": [
           {
@@ -243,10 +250,6 @@
         "text": {
           "titleSize": 14,
           "valueSize": 48
-        },
-        "textSizes": {
-          "titleSize": 24,
-          "valueSize": 80
         }
       },
       "transparent": true
@@ -271,7 +274,7 @@
     },
     {
       "type": "stat",
-      "title": "Devices OPEN",
+      "title": "◉ Devices OPEN",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -288,7 +291,7 @@
           "decimals": 0,
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00f2fe"
+            "fixedColor": "#00E5FF"
           },
           "thresholds": {
             "steps": [
@@ -306,7 +309,12 @@
               }
             ]
           },
-          "custom": {}
+          "custom": {
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 25,
+            "lineWidth": 2
+          }
         },
         "overrides": [
           {
@@ -351,17 +359,13 @@
         "text": {
           "titleSize": 14,
           "valueSize": 48
-        },
-        "textSizes": {
-          "titleSize": 24,
-          "valueSize": 80
         }
       },
       "transparent": true
     },
     {
       "type": "stat",
-      "title": "Devices HALF-OPEN",
+      "title": "◉ Devices HALF-OPEN",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -378,7 +382,7 @@
           "decimals": 0,
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00f2fe"
+            "fixedColor": "#00E5FF"
           },
           "thresholds": {
             "steps": [
@@ -392,7 +396,12 @@
               }
             ]
           },
-          "custom": {}
+          "custom": {
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 25,
+            "lineWidth": 2
+          }
         },
         "overrides": [
           {
@@ -437,17 +446,13 @@
         "text": {
           "titleSize": 14,
           "valueSize": 48
-        },
-        "textSizes": {
-          "titleSize": 24,
-          "valueSize": 80
         }
       },
       "transparent": true
     },
     {
       "type": "stat",
-      "title": "Devices CLOSED",
+      "title": "◉ Devices CLOSED",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -464,9 +469,14 @@
           "decimals": 0,
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00f2fe"
+            "fixedColor": "#00E5FF"
           },
-          "custom": {}
+          "custom": {
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 25,
+            "lineWidth": 2
+          }
         },
         "overrides": [
           {
@@ -511,10 +521,6 @@
         "text": {
           "titleSize": 14,
           "valueSize": 48
-        },
-        "textSizes": {
-          "titleSize": 24,
-          "valueSize": 80
         }
       },
       "transparent": true
@@ -539,7 +545,7 @@
     },
     {
       "type": "timeseries",
-      "title": "Trip Rate (per device)",
+      "title": "◈ Trip Rate (per device)",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -560,12 +566,13 @@
           "custom": {
             "drawStyle": "line",
             "lineWidth": 2,
-            "fillOpacity": 20,
+            "fillOpacity": 25,
             "spanNulls": true,
             "showGridLines": false,
             "axisBorderShow": false,
             "gradientMode": "opacity",
-            "showPoints": "never"
+            "showPoints": "never",
+            "lineInterpolation": "smooth"
           }
         },
         "overrides": [
@@ -605,7 +612,7 @@
     },
     {
       "type": "table",
-      "title": "Device Circuit Breaker State",
+      "title": "◈ Device Circuit Breaker State",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -759,7 +766,7 @@
     },
     {
       "type": "stat",
-      "title": "Unique Devices Polled (1h)",
+      "title": "◉ Unique Devices Polled (1h)",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -776,7 +783,7 @@
           "decimals": 0,
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00f2fe"
+            "fixedColor": "#00E5FF"
           },
           "thresholds": {
             "steps": [
@@ -794,7 +801,12 @@
               }
             ]
           },
-          "custom": {}
+          "custom": {
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 25,
+            "lineWidth": 2
+          }
         },
         "overrides": [
           {
@@ -839,17 +851,13 @@
         "text": {
           "titleSize": 14,
           "valueSize": 48
-        },
-        "textSizes": {
-          "titleSize": 24,
-          "valueSize": 80
         }
       },
       "transparent": true
     },
     {
       "type": "timeseries",
-      "title": "Devices Polled / cycle",
+      "title": "◈ Devices Polled / cycle",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -865,18 +873,19 @@
           "unit": "short",
           "decimals": 0,
           "color": {
-            "fixedColor": "#00F2FE",
+            "fixedColor": "#00E5FF",
             "mode": "fixed"
           },
           "custom": {
             "drawStyle": "line",
             "lineWidth": 2,
-            "fillOpacity": 20,
+            "fillOpacity": 25,
             "spanNulls": true,
             "showGridLines": false,
             "axisBorderShow": false,
             "gradientMode": "opacity",
-            "showPoints": "never"
+            "showPoints": "never",
+            "lineInterpolation": "smooth"
           }
         },
         "overrides": [
@@ -916,7 +925,7 @@
     },
     {
       "type": "gauge",
-      "title": "Pipeline Success Rate",
+      "title": "◈ Pipeline Success Rate",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -996,10 +1005,6 @@
         "text": {
           "titleSize": 14,
           "valueSize": 48
-        },
-        "textSizes": {
-          "titleSize": 24,
-          "valueSize": 80
         }
       },
       "transparent": true
@@ -1016,7 +1021,7 @@
         "y": 74
       },
       "options": {
-        "content": "\n<style>\n@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');\n\n@keyframes gradientBG {\n    0% { background-position: 0% 50%; }\n    50% { background-position: 100% 50%; }\n    100% { background-position: 0% 50%; }\n}\n\n@keyframes edgeGlow {\n    0% { border-color: rgba(0, 242, 254, 0.3); }\n    50% { border-color: rgba(0, 255, 135, 0.6); box-shadow: 0 0 15px rgba(0, 255, 135, 0.2), inset 0 0 20px rgba(0, 255, 135, 0.05); }\n    100% { border-color: rgba(0, 242, 254, 0.3); }\n}\n\n/* Global Background */\n.main-view, .react-grid-layout, .dashboard-container, body {\n    background: linear-gradient(-45deg, #0b0f19, #141416, #090a0f, #1a1525) !important;\n    background-size: 400% 400% !important;\n    animation: gradientBG 15s ease infinite !important;\n}\n\n/* Panel Backgrounds (Ultra Glassmorphism) */\n.panel-container {\n    background: rgba(15, 15, 20, 0.6) !important;\n    border: 1px solid rgba(255, 255, 255, 0.08) !important;\n    border-radius: 16px !important;\n    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.02) !important;\n    backdrop-filter: blur(16px) saturate(180%);\n    -webkit-backdrop-filter: blur(16px) saturate(180%);\n    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);\n}\n\n/* Hover effect */\n.panel-container:hover {\n    transform: translateY(-4px) scale(1.01);\n    animation: edgeGlow 3s infinite !important;\n    z-index: 100;\n}\n\n/* Typography overriding */\n.panel-title-text, .grafana-tooltip, text, div {\n    font-family: 'Outfit', sans-serif !important;\n}\n\n/* Header colors */\n.panel-title-text {\n    font-weight: 600 !important;\n    letter-spacing: 1px !important;\n    font-size: 18px !important;\n    text-transform: uppercase;\n    background: -webkit-linear-gradient(45deg, #00F2FE, #00FF87);\n    -webkit-background-clip: text;\n    -webkit-text-fill-color: transparent;\n}\n\n/* Scrollbar hiding for clean look */\n::-webkit-scrollbar {\n    width: 8px;\n    height: 8px;\n}\n::-webkit-scrollbar-track {\n    background: rgba(0,0,0,0.2); \n}\n::-webkit-scrollbar-thumb {\n    background: linear-gradient(to bottom, #00F2FE, #7F00FF); \n    border-radius: 10px;\n}\n\n/* Hide the injector panel itself */\ndiv[data-panelid=\"9999\"] { display: none !important; }\n</style>\n",
+        "content": "<style>\n[class*=\"-panel-container\"] {\n  border-radius: 14px !important;\n  background: #12161A !important;\n  border: 1px solid rgba(255,255,255,0.06) !important;\n  padding: 4px !important;\n}\n</style>",
         "mode": "html"
       }
     }

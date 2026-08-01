@@ -140,7 +140,7 @@
   "panels": [
     {
       "id": 1,
-      "title": "Machine Context",
+      "title": "◈ Machine Context",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
@@ -367,7 +367,7 @@
     },
     {
       "id": 2,
-      "title": "temperature (°C)",
+      "title": "◉ temperature (°C)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -411,7 +411,12 @@
             "mode": "thresholds"
           },
           "noValue": "N/A",
-          "custom": {},
+          "custom": {
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 25,
+            "lineWidth": 2
+          },
           "min": 18,
           "max": 28
         },
@@ -431,11 +436,7 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "—",
-        "textSizes": {
-          "titleSize": 24,
-          "valueSize": 80
-        }
+        "noValue": "—"
       },
       "targets": [
         {
@@ -452,7 +453,7 @@
     },
     {
       "id": 3,
-      "title": "humidity (%RH)",
+      "title": "◉ humidity (%RH)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -496,7 +497,12 @@
             "mode": "thresholds"
           },
           "noValue": "N/A",
-          "custom": {},
+          "custom": {
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 25,
+            "lineWidth": 2
+          },
           "min": 40,
           "max": 70
         },
@@ -516,11 +522,7 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "—",
-        "textSizes": {
-          "titleSize": 24,
-          "valueSize": 80
-        }
+        "noValue": "—"
       },
       "targets": [
         {
@@ -537,7 +539,7 @@
     },
     {
       "id": 4,
-      "title": "air_vacuum (kPa)",
+      "title": "◉ air_vacuum (kPa)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -567,10 +569,15 @@
           },
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00f2fe"
+            "fixedColor": "#00E5FF"
           },
           "noValue": "N/A",
-          "custom": {}
+          "custom": {
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 25,
+            "lineWidth": 2
+          }
         },
         "overrides": []
       },
@@ -588,11 +595,7 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "—",
-        "textSizes": {
-          "titleSize": 24,
-          "valueSize": 80
-        }
+        "noValue": "—"
       },
       "targets": [
         {
@@ -609,7 +612,7 @@
     },
     {
       "id": 5,
-      "title": "scan_speed (mm/s)",
+      "title": "◉ scan_speed (mm/s)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -639,10 +642,15 @@
           },
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00f2fe"
+            "fixedColor": "#00E5FF"
           },
           "noValue": "N/A",
-          "custom": {}
+          "custom": {
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 25,
+            "lineWidth": 2
+          }
         },
         "overrides": []
       },
@@ -660,11 +668,7 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "—",
-        "textSizes": {
-          "titleSize": 24,
-          "valueSize": 80
-        }
+        "noValue": "—"
       },
       "targets": [
         {
@@ -681,7 +685,7 @@
     },
     {
       "id": 6,
-      "title": "thickness (mm)",
+      "title": "◉ thickness (mm)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -711,10 +715,15 @@
           },
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00f2fe"
+            "fixedColor": "#00E5FF"
           },
           "noValue": "N/A",
-          "custom": {}
+          "custom": {
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 25,
+            "lineWidth": 2
+          }
         },
         "overrides": []
       },
@@ -732,11 +741,7 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "—",
-        "textSizes": {
-          "titleSize": 24,
-          "valueSize": 80
-        }
+        "noValue": "—"
       },
       "targets": [
         {
@@ -753,7 +758,7 @@
     },
     {
       "id": 7,
-      "title": "resist_dosage (mJ/cm²)",
+      "title": "◉ resist_dosage (mJ/cm²)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -783,10 +788,15 @@
           },
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00f2fe"
+            "fixedColor": "#00E5FF"
           },
           "noValue": "N/A",
-          "custom": {}
+          "custom": {
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 25,
+            "lineWidth": 2
+          }
         },
         "overrides": []
       },
@@ -804,11 +814,7 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "—",
-        "textSizes": {
-          "titleSize": 24,
-          "valueSize": 80
-        }
+        "noValue": "—"
       },
       "targets": [
         {
@@ -825,7 +831,7 @@
     },
     {
       "id": 8,
-      "title": "Position Error (PE1-PE6) + MAX|PE|",
+      "title": "◈ Position Error (PE1-PE6) + MAX|PE|",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
@@ -1014,7 +1020,7 @@
     },
     {
       "id": 9,
-      "title": "Process Capability from PE Samples",
+      "title": "◈ Process Capability from PE Samples",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
@@ -1195,7 +1201,7 @@
     },
     {
       "id": 10,
-      "title": "Alarm Context (±5 min of clicked timestamp)",
+      "title": "◈ Alarm Context (±5 min of clicked timestamp)",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
@@ -1316,7 +1322,7 @@
     },
     {
       "id": 11,
-      "title": "Raw Timestamp (precise)",
+      "title": "◉ Raw Timestamp (precise)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -1341,10 +1347,15 @@
           },
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00f2fe"
+            "fixedColor": "#00E5FF"
           },
           "noValue": "N/A",
-          "custom": {}
+          "custom": {
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 25,
+            "lineWidth": 2
+          }
         },
         "overrides": []
       },
@@ -1362,11 +1373,7 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "No data",
-        "textSizes": {
-          "titleSize": 24,
-          "valueSize": 80
-        }
+        "noValue": "No data"
       },
       "targets": [
         {
@@ -1383,7 +1390,7 @@
     },
     {
       "id": 12,
-      "title": "Event Timeline around Selected Log ID (+/-5 min)",
+      "title": "◈ Event Timeline around Selected Log ID (+/-5 min)",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
@@ -1468,7 +1475,7 @@
     },
     {
       "id": 16,
-      "title": "Judgment Error (JE1-JE4) + MAX|JE|",
+      "title": "◈ Judgment Error (JE1-JE4) + MAX|JE|",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
@@ -1643,7 +1650,7 @@
         "y": 76
       },
       "options": {
-        "content": "\n<style>\n@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');\n\n@keyframes gradientBG {\n    0% { background-position: 0% 50%; }\n    50% { background-position: 100% 50%; }\n    100% { background-position: 0% 50%; }\n}\n\n@keyframes edgeGlow {\n    0% { border-color: rgba(0, 242, 254, 0.3); }\n    50% { border-color: rgba(0, 255, 135, 0.6); box-shadow: 0 0 15px rgba(0, 255, 135, 0.2), inset 0 0 20px rgba(0, 255, 135, 0.05); }\n    100% { border-color: rgba(0, 242, 254, 0.3); }\n}\n\n/* Global Background */\n.main-view, .react-grid-layout, .dashboard-container, body {\n    background: linear-gradient(-45deg, #0b0f19, #141416, #090a0f, #1a1525) !important;\n    background-size: 400% 400% !important;\n    animation: gradientBG 15s ease infinite !important;\n}\n\n/* Panel Backgrounds (Ultra Glassmorphism) */\n.panel-container {\n    background: rgba(15, 15, 20, 0.6) !important;\n    border: 1px solid rgba(255, 255, 255, 0.08) !important;\n    border-radius: 16px !important;\n    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.02) !important;\n    backdrop-filter: blur(16px) saturate(180%);\n    -webkit-backdrop-filter: blur(16px) saturate(180%);\n    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);\n}\n\n/* Hover effect */\n.panel-container:hover {\n    transform: translateY(-4px) scale(1.01);\n    animation: edgeGlow 3s infinite !important;\n    z-index: 100;\n}\n\n/* Typography overriding */\n.panel-title-text, .grafana-tooltip, text, div {\n    font-family: 'Outfit', sans-serif !important;\n}\n\n/* Header colors */\n.panel-title-text {\n    font-weight: 600 !important;\n    letter-spacing: 1px !important;\n    font-size: 18px !important;\n    text-transform: uppercase;\n    background: -webkit-linear-gradient(45deg, #00F2FE, #00FF87);\n    -webkit-background-clip: text;\n    -webkit-text-fill-color: transparent;\n}\n\n/* Scrollbar hiding for clean look */\n::-webkit-scrollbar {\n    width: 8px;\n    height: 8px;\n}\n::-webkit-scrollbar-track {\n    background: rgba(0,0,0,0.2); \n}\n::-webkit-scrollbar-thumb {\n    background: linear-gradient(to bottom, #00F2FE, #7F00FF); \n    border-radius: 10px;\n}\n\n/* Hide the injector panel itself */\ndiv[data-panelid=\"9999\"] { display: none !important; }\n</style>\n",
+        "content": "<style>\n[class*=\"-panel-container\"] {\n  border-radius: 14px !important;\n  background: #12161A !important;\n  border: 1px solid rgba(255,255,255,0.06) !important;\n  padding: 4px !important;\n}\n</style>",
         "mode": "html"
       }
     }
