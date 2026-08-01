@@ -40,12 +40,11 @@
           "custom": {}
         }
       },
-      "options": {},
-      "transparent": true
+      "options": {}
     },
     {
       "type": "timeseries",
-      "title": "◈ Inserts / sec",
+      "title": "\u25c8 Inserts / sec",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -108,12 +107,11 @@
         "tooltip": {
           "mode": "multi"
         }
-      },
-      "transparent": true
+      }
     },
     {
       "type": "timeseries",
-      "title": "◈ Error Rate",
+      "title": "\u25c8 Error Rate",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -176,12 +174,11 @@
         "tooltip": {
           "mode": "multi"
         }
-      },
-      "transparent": true
+      }
     },
     {
       "type": "stat",
-      "title": "◉ Last Flush",
+      "title": "\u25c9 Last Flush",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -267,8 +264,7 @@
           "titleSize": 14,
           "valueSize": 48
         }
-      },
-      "transparent": true
+      }
     },
     {
       "type": "row",
@@ -285,12 +281,11 @@
           "custom": {}
         }
       },
-      "options": {},
-      "transparent": true
+      "options": {}
     },
     {
       "type": "stat",
-      "title": "◉ Devices OPEN",
+      "title": "\u25c9 Devices OPEN",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -376,12 +371,11 @@
           "titleSize": 14,
           "valueSize": 48
         }
-      },
-      "transparent": true
+      }
     },
     {
       "type": "stat",
-      "title": "◉ Devices HALF-OPEN",
+      "title": "\u25c9 Devices HALF-OPEN",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -463,12 +457,11 @@
           "titleSize": 14,
           "valueSize": 48
         }
-      },
-      "transparent": true
+      }
     },
     {
       "type": "stat",
-      "title": "◉ Devices CLOSED",
+      "title": "\u25c9 Devices CLOSED",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -538,8 +531,7 @@
           "titleSize": 14,
           "valueSize": 48
         }
-      },
-      "transparent": true
+      }
     },
     {
       "type": "row",
@@ -556,12 +548,11 @@
           "custom": {}
         }
       },
-      "options": {},
-      "transparent": true
+      "options": {}
     },
     {
       "type": "timeseries",
-      "title": "◈ Trip Rate (per device)",
+      "title": "\u25c8 Trip Rate (per device)",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -623,12 +614,11 @@
         "tooltip": {
           "mode": "multi"
         }
-      },
-      "transparent": true
+      }
     },
     {
       "type": "table",
-      "title": "◈ Device Circuit Breaker State",
+      "title": "\u25c8 Device Circuit Breaker State",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -759,8 +749,7 @@
           "show": false
         },
         "noValue": "-"
-      },
-      "transparent": true
+      }
     },
     {
       "type": "row",
@@ -777,12 +766,11 @@
           "custom": {}
         }
       },
-      "options": {},
-      "transparent": true
+      "options": {}
     },
     {
       "type": "stat",
-      "title": "◉ Unique Devices Polled (1h)",
+      "title": "\u25c9 Unique Devices Polled (1h)",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -868,12 +856,11 @@
           "titleSize": 14,
           "valueSize": 48
         }
-      },
-      "transparent": true
+      }
     },
     {
       "type": "timeseries",
-      "title": "◈ Devices Polled / cycle",
+      "title": "\u25c8 Devices Polled / cycle",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -936,12 +923,11 @@
         "tooltip": {
           "mode": "multi"
         }
-      },
-      "transparent": true
+      }
     },
     {
       "type": "gauge",
-      "title": "◈ Pipeline Success Rate",
+      "title": "\u25c8 Pipeline Success Rate",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -1022,8 +1008,7 @@
           "titleSize": 14,
           "valueSize": 48
         }
-      },
-      "transparent": true
+      }
     }
   ],
   "refresh": "10s",

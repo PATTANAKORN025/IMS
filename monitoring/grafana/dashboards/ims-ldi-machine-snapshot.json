@@ -1,5 +1,5 @@
 {
-  "description": "360° machine snapshot at the exact millisecond clicked from Process Timeline. Shows job context, physical variables, PE alignment, Cpk, and alarm proximity.",
+  "description": "360\u00b0 machine snapshot at the exact millisecond clicked from Process Timeline. Shows job context, physical variables, PE alignment, Cpk, and alarm proximity.",
   "schemaVersion": 39,
   "fiscalYearStartMonth": 0,
   "liveNow": false,
@@ -156,7 +156,7 @@
     },
     {
       "id": 1,
-      "title": "◈ Machine Context",
+      "title": "\u25c8 Machine Context",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
@@ -186,7 +186,6 @@
           "format": "table"
         }
       ],
-      "transparent": true,
       "description": "Exact machine state at the clicked timestamp. Shows job context (MO, FPN, Layer, Board).",
       "fieldConfig": {
         "defaults": {
@@ -553,7 +552,7 @@
     },
     {
       "id": 2,
-      "title": "◉ temperature (°C)",
+      "title": "\u25c9 temperature (\u00b0C)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -622,7 +621,7 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "—",
+        "noValue": "\u2014",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -639,12 +638,11 @@
           "format": "table"
         }
       ],
-      "transparent": true,
       "description": "temperature at clicked moment"
     },
     {
       "id": 3,
-      "title": "◉ humidity (%RH)",
+      "title": "\u25c9 humidity (%RH)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -713,7 +711,7 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "—",
+        "noValue": "\u2014",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -730,12 +728,11 @@
           "format": "table"
         }
       ],
-      "transparent": true,
       "description": "humidity at clicked moment"
     },
     {
       "id": 4,
-      "title": "◉ air_vacuum (kPa)",
+      "title": "\u25c9 air_vacuum (kPa)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -791,7 +788,7 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "—",
+        "noValue": "\u2014",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -808,12 +805,11 @@
           "format": "table"
         }
       ],
-      "transparent": true,
       "description": "vacuum pressure at clicked moment"
     },
     {
       "id": 5,
-      "title": "◉ scan_speed (mm/s)",
+      "title": "\u25c9 scan_speed (mm/s)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -869,7 +865,7 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "—",
+        "noValue": "\u2014",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -886,12 +882,11 @@
           "format": "table"
         }
       ],
-      "transparent": true,
       "description": "laser scan speed at clicked moment"
     },
     {
       "id": 6,
-      "title": "◉ thickness (mm)",
+      "title": "\u25c9 thickness (mm)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -947,7 +942,7 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "—",
+        "noValue": "\u2014",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -964,12 +959,11 @@
           "format": "table"
         }
       ],
-      "transparent": true,
       "description": "film thickness at clicked moment"
     },
     {
       "id": 7,
-      "title": "◉ resist_dosage (mJ/cm²)",
+      "title": "\u25c9 resist_dosage (mJ/cm\u00b2)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -1025,7 +1019,7 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "—",
+        "noValue": "\u2014",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -1042,12 +1036,11 @@
           "format": "table"
         }
       ],
-      "transparent": true,
       "description": "resist dosage at clicked moment"
     },
     {
       "id": 8,
-      "title": "◈ Position Error (PE1-PE6) + MAX|PE|",
+      "title": "\u25c8 Position Error (PE1-PE6) + MAX|PE|",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
@@ -1077,11 +1070,10 @@
           "format": "table"
         }
       ],
-      "transparent": true,
       "description": "Real PE values from the selected event. N/A means this machine/event did not provide PE data.",
       "fieldConfig": {
         "defaults": {
-          "unit": "suffix: µm",
+          "unit": "suffix: \u00b5m",
           "decimals": 3,
           "noValue": "N/A",
           "custom": {}
@@ -1406,7 +1398,7 @@
     },
     {
       "id": 9,
-      "title": "◈ Process Capability from PE Samples",
+      "title": "\u25c8 Process Capability from PE Samples",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
@@ -1436,7 +1428,6 @@
           "format": "table"
         }
       ],
-      "transparent": true,
       "description": "Process capability from v_machine_spc_ranking. Cpk >= 1.33 = Capable, Sigma Level = Cpk * 3.",
       "fieldConfig": {
         "defaults": {
@@ -1757,7 +1748,7 @@
     },
     {
       "id": 10,
-      "title": "◈ Alarm Context (±5 min of clicked timestamp)",
+      "title": "\u25c8 Alarm Context (\u00b15 min of clicked timestamp)",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
@@ -1793,7 +1784,6 @@
           "format": "table"
         }
       ],
-      "transparent": true,
       "fieldConfig": {
         "defaults": {
           "noValue": "N/A",
@@ -2014,7 +2004,7 @@
     },
     {
       "id": 11,
-      "title": "◉ Raw Timestamp (precise)",
+      "title": "\u25c9 Raw Timestamp (precise)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -2082,12 +2072,11 @@
           "format": "table"
         }
       ],
-      "transparent": true,
       "description": "Precise raw timestamp from the database. Engineer can verify this matches the clicked point."
     },
     {
       "id": 12,
-      "title": "◈ Event Timeline around Selected Log ID (+/-5 min)",
+      "title": "\u25c8 Event Timeline around Selected Log ID (+/-5 min)",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
@@ -2337,12 +2326,11 @@
           }
         ]
       },
-      "transparent": true,
       "description": "Inline real-data timeline replacing the missing v_ldi_event_timeline view."
     },
     {
       "id": 16,
-      "title": "◈ Judgment Error (JE1-JE4) + MAX|JE|",
+      "title": "\u25c8 Judgment Error (JE1-JE4) + MAX|JE|",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
@@ -2372,11 +2360,10 @@
           "format": "table"
         }
       ],
-      "transparent": true,
       "description": "Real JE values from the selected event with PASS/OUT OF SPEC evaluated against je_setting.",
       "fieldConfig": {
         "defaults": {
-          "unit": "suffix: µm",
+          "unit": "suffix: \u00b5m",
           "decimals": 3,
           "noValue": "N/A",
           "custom": {}
