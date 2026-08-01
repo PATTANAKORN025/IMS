@@ -237,7 +237,6 @@
           "format": "table"
         }
       ],
-      "transparent": true,
       "description": "Estimated Yield: percentage of samples where max|PE| <= pe_setting (within tolerance)."
     },
     {
@@ -355,7 +354,6 @@
           "format": "table"
         }
       ],
-      "transparent": true,
       "description": "Percent of selected machines whose latest state in the selected time range is true."
     },
     {
@@ -473,7 +471,6 @@
           "format": "table"
         }
       ],
-      "transparent": true,
       "description": "Average real Cpk across machines with PE data in the selected filters. Assumes symmetric +/- pe_setting limits."
     },
     {
@@ -549,7 +546,6 @@
           "format": "table"
         }
       ],
-      "transparent": true,
       "description": "Counts real alarm rows for selected machine IDs that match a Critical master code. Zero is valid because current log codes do not match the supplied master."
     },
     {
@@ -674,7 +670,6 @@
           "format": "table"
         }
       ],
-      "transparent": true,
       "description": "Count of machines with state=true (powered on and available). Red < 8, Green >= 8 of 10."
     },
     {
@@ -758,7 +753,6 @@
           "format": "table"
         }
       ],
-      "transparent": true,
       "description": "Average MAX|PE| divided by the PE limit stored on each record. This normalized scale allows machines with different PE limits to be compared fairly."
     },
     {
@@ -883,7 +877,6 @@
           "format": "table"
         }
       ],
-      "transparent": true,
       "description": "Fleet-wide average temperature. Target 22\u00b12\u00b0C. Red outside 20-24\u00b0C, Amber 20-24\u00b0C, Green 22-24\u00b0C."
     },
     {
@@ -1008,7 +1001,6 @@
           "format": "table"
         }
       ],
-      "transparent": true,
       "description": "Fleet-wide average humidity. Target 55\u00b15%RH. Red outside 50-60%, Amber 50-60%, Green 55-60%."
     },
     {
@@ -1075,7 +1067,6 @@
           "format": "table"
         }
       ],
-      "transparent": true,
       "description": "Latest production context per machine: job info + live physical parameters (temperature, humidity, scan_speed, thickness, resist_dosage, state).",
       "fieldConfig": {
         "defaults": {
@@ -1427,7 +1418,6 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "transparent": true,
       "description": "3-color compliance matrix per machine. Green 20-24\u00b0C, Amber 19-25\u00b0C, Red outside."
     },
     {
@@ -1527,7 +1517,6 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "transparent": true,
       "description": "3-color compliance matrix per machine. Green 50-60%, Amber 45-65%, Red outside."
     },
     {
@@ -1666,7 +1655,6 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "transparent": true,
       "description": "Dual Y-axis: scan_speed (left, mm/s) and air_vacuum (right, kPa) per machine."
     },
     {
@@ -1792,7 +1780,6 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "transparent": true,
       "description": "Dual Y-axis: thickness (left, mm) and resist_dosage (right, mJ/cm\u00b2) per machine."
     },
     {
@@ -1910,7 +1897,6 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "transparent": true,
       "description": "XY calibration drift. High-precision (6 decimals) monitoring of scale_x and scale_y ratios. Drift from 1.0 indicates lens magnification error."
     },
     {
@@ -1980,7 +1966,6 @@
           "format": "time_series"
         }
       ],
-      "transparent": true,
       "description": "Calculated value from total_time divided by total_board. Confirm the source definition of total_time before treating this as authoritative cycle time."
     },
     {
@@ -2073,7 +2058,6 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "transparent": true,
       "description": "3-sigma Z-Score on temperature per machine. Green \u00b12 (normal), Amber 2.5 (watch), Red 3+ (anomaly)."
     },
     {
@@ -2127,7 +2111,6 @@
           "format": "table"
         }
       ],
-      "transparent": true,
       "fieldConfig": {
         "defaults": {
           "custom": {}

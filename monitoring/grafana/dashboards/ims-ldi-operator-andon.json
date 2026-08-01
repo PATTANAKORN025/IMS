@@ -112,7 +112,7 @@
     {
       "id": 10000,
       "type": "row",
-      "title": "◈ FLEET KPIs & ALARMS",
+      "title": "\u25c8 FLEET KPIs & ALARMS",
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -124,7 +124,7 @@
     },
     {
       "id": 1,
-      "title": "◉ Fleet Availability",
+      "title": "\u25c9 Fleet Availability",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -198,12 +198,11 @@
           "format": "table"
         }
       ],
-      "transparent": true,
       "description": "Fleet Availability: percentage of machines running and actively producing."
     },
     {
       "id": 2,
-      "title": "◉ Critical Alarm Records (master-code matched)",
+      "title": "\u25c9 Critical Alarm Records (master-code matched)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -273,12 +272,11 @@
           "format": "table"
         }
       ],
-      "transparent": true,
       "description": "Note: Alarm durations and MTTR are not calculated as the source EAP system currently does not broadcast explicit alarm-clear events. Only occurrence times are logged. Duration estimation requires EAP team confirmation of clear/reset event availability. Active Alarms: count of unresolved alarms in the last 5 minutes."
     },
     {
       "id": 3,
-      "title": "◉ Environmental Compliance",
+      "title": "\u25c9 Environmental Compliance",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -364,13 +362,12 @@
           "format": "table"
         }
       ],
-      "transparent": true,
       "description": "Environmental Compliance: percentage of machines within safe temperature AND humidity."
     },
     {
       "id": 10001,
       "type": "row",
-      "title": "◈ MACHINE RUN STATE & COMPLIANCE",
+      "title": "\u25c8 MACHINE RUN STATE & COMPLIANCE",
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -382,7 +379,7 @@
     },
     {
       "id": 4,
-      "title": "◈ Machine Run State",
+      "title": "\u25c8 Machine Run State",
       "type": "state-timeline",
       "datasource": {
         "uid": "timescaledb"
@@ -466,12 +463,11 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "transparent": true,
       "description": "Machine Run State: per-machine green/red timeline showing RUNNING vs STOPPED."
     },
     {
       "id": 5,
-      "title": "◈ Temperature Compliance (22±2°C)",
+      "title": "\u25c8 Temperature Compliance (22\u00b12\u00b0C)",
       "type": "state-timeline",
       "datasource": {
         "uid": "timescaledb"
@@ -566,12 +562,11 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "transparent": true,
-      "description": "Temperature Compliance: per-machine 3-color matrix. Green=20-24°C, Amber=19-25°C, Red=outside."
+      "description": "Temperature Compliance: per-machine 3-color matrix. Green=20-24\u00b0C, Amber=19-25\u00b0C, Red=outside."
     },
     {
       "id": 6,
-      "title": "◈ Humidity Compliance (55±5%)",
+      "title": "\u25c8 Humidity Compliance (55\u00b15%)",
       "type": "state-timeline",
       "datasource": {
         "uid": "timescaledb"
@@ -666,13 +661,12 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "transparent": true,
       "description": "Humidity Compliance: per-machine 3-color matrix. Green=50-60%, Amber=45-65%, Red=outside."
     },
     {
       "id": 10002,
       "type": "row",
-      "title": "◈ LIVE PRODUCTION BOARD",
+      "title": "\u25c8 LIVE PRODUCTION BOARD",
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -684,7 +678,7 @@
     },
     {
       "id": 7,
-      "title": "◈ Live Production",
+      "title": "\u25c8 Live Production",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
@@ -720,7 +714,6 @@
           "format": "table"
         }
       ],
-      "transparent": true,
       "description": "Live Production: current MO, part, layer, and board progress per machine.",
       "fieldConfig": {
         "defaults": {
@@ -935,7 +928,7 @@
     {
       "id": 10003,
       "type": "row",
-      "title": "◈ ALARM LOG",
+      "title": "\u25c8 ALARM LOG",
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -947,7 +940,7 @@
     },
     {
       "id": 8,
-      "title": "◈ Latest Alarm Records (Historical)",
+      "title": "\u25c8 Latest Alarm Records (Historical)",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
@@ -1216,7 +1209,6 @@
           "format": "table"
         }
       ],
-      "transparent": true,
       "description": "Note: Alarm durations and MTTR are not calculated as the source EAP system currently does not broadcast explicit alarm-clear events. Only occurrence times are logged. Duration estimation requires EAP team confirmation of clear/reset event availability. Alarm Stream: latest alarms with human-readable messages and color-coded severity."
     }
   ],

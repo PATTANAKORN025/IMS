@@ -101,7 +101,6 @@
         "content": "<style>\n[class*=\"-panel-container\"] {\n  border-radius: 14px !important;\n  background: #12161A !important;\n  border: 1px solid rgba(255,255,255,0.06) !important;\n  padding: 4px !important;\n}\n</style>"
       },
       "datasource": null,
-      "transparent": true,
       "description": "OS Taskbar navigation and CSS theme.",
       "fieldConfig": {
         "defaults": {
@@ -140,7 +139,6 @@
         "bgColor": "transparent"
       },
       "description": "Current time and date (Asia/Bangkok timezone).",
-      "transparent": true,
       "fieldConfig": {
         "defaults": {
           "custom": {}
@@ -163,12 +161,11 @@
           "custom": {}
         }
       },
-      "options": {},
-      "transparent": true
+      "options": {}
     },
     {
       "id": 50,
-      "title": "◈ Days Until Full (Resource Battery)",
+      "title": "\u25c8 Days Until Full (Resource Battery)",
       "type": "bargauge",
       "datasource": {
         "uid": "timescaledb"
@@ -179,7 +176,6 @@
         "w": 24,
         "h": 10
       },
-      "transparent": true,
       "fieldConfig": {
         "defaults": {
           "unit": "d",
@@ -248,7 +244,7 @@
     },
     {
       "id": 1,
-      "title": "◉ Disk: Days Until Full",
+      "title": "\u25c9 Disk: Days Until Full",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -288,7 +284,7 @@
               "type": "value",
               "options": {
                 "9999": {
-                  "text": "∞",
+                  "text": "\u221e",
                   "color": "#10B981",
                   "index": 0
                 }
@@ -364,10 +360,9 @@
         }
       ],
       "description": "Days until disk saturation based on 30-day linear regression. Red < 30d, Orange < 90d, Green > 180d.",
-      "transparent": true,
       "links": [
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -375,7 +370,7 @@
     },
     {
       "id": 2,
-      "title": "◉ RAM: Days Until Full",
+      "title": "\u25c9 RAM: Days Until Full",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -415,7 +410,7 @@
               "type": "value",
               "options": {
                 "9999": {
-                  "text": "∞",
+                  "text": "\u221e",
                   "color": "#10B981",
                   "index": 0
                 }
@@ -491,10 +486,9 @@
         }
       ],
       "description": "Days until RAM saturation based on 30-day linear regression trend.",
-      "transparent": true,
       "links": [
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -502,7 +496,7 @@
     },
     {
       "id": 3,
-      "title": "◉ CPU: Days Until Saturation",
+      "title": "\u25c9 CPU: Days Until Saturation",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -542,7 +536,7 @@
               "type": "value",
               "options": {
                 "9999": {
-                  "text": "∞",
+                  "text": "\u221e",
                   "color": "#10B981",
                   "index": 0
                 }
@@ -617,10 +611,9 @@
         }
       ],
       "description": "Days until CPU reaches 100% saturation based on 30-day linear regression.",
-      "transparent": true,
       "links": [
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -628,7 +621,7 @@
     },
     {
       "id": 4,
-      "title": "◉ Fleet Health Score",
+      "title": "\u25c9 Fleet Health Score",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -728,10 +721,9 @@
         }
       ],
       "description": "Composite fleet health score (0-100%) from v_fleet_health view.",
-      "transparent": true,
       "links": [
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -748,7 +740,6 @@
         "h": 2
       },
       "collapsed": false,
-      "transparent": true,
       "fieldConfig": {
         "defaults": {
           "custom": {}
@@ -758,7 +749,7 @@
     },
     {
       "id": 10,
-      "title": "◈ Disk Usage Trend + Linear Regression Forecast",
+      "title": "\u25c8 Disk Usage Trend + Linear Regression Forecast",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -1043,7 +1034,7 @@
       "targets": [
         {
           "refId": "A",
-          "legendFormat": "{{ machine_id }} — Used",
+          "legendFormat": "{{ machine_id }} \u2014 Used",
           "datasource": {
             "uid": "timescaledb"
           },
@@ -1061,7 +1052,7 @@
         },
         {
           "refId": "C",
-          "legendFormat": "Forecast — {{ machine_id }}",
+          "legendFormat": "Forecast \u2014 {{ machine_id }}",
           "datasource": {
             "uid": "timescaledb"
           },
@@ -1071,10 +1062,9 @@
         }
       ],
       "description": "Hourly disk usage trend with linear regression forecast (dashed #F59E0B, 30-day projection).",
-      "transparent": true,
       "links": [
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -1091,7 +1081,6 @@
         "h": 2
       },
       "collapsed": false,
-      "transparent": true,
       "fieldConfig": {
         "defaults": {
           "custom": {}
@@ -1101,7 +1090,7 @@
     },
     {
       "id": 20,
-      "title": "◈ CPU Load Trend (30-Day Average)",
+      "title": "\u25c8 CPU Load Trend (30-Day Average)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -1371,10 +1360,9 @@
         }
       ],
       "description": "30-day daily average CPU utilization per machine. Used for long-term capacity forecasting.",
-      "transparent": true,
       "links": [
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -1382,7 +1370,7 @@
     },
     {
       "id": 21,
-      "title": "◈ RAM Usage Trend (30-Day Average)",
+      "title": "\u25c8 RAM Usage Trend (30-Day Average)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -1652,10 +1640,9 @@
         }
       ],
       "description": "30-day daily average RAM utilization per machine. Used for long-term capacity forecasting.",
-      "transparent": true,
       "links": [
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -1664,7 +1651,7 @@
     {
       "id": 500,
       "type": "row",
-      "title": "AIOps — ANOMALY DETECTION",
+      "title": "AIOps \u2014 ANOMALY DETECTION",
       "gridPos": {
         "x": 0,
         "y": 73,
@@ -1672,7 +1659,6 @@
         "h": 2
       },
       "collapsed": false,
-      "transparent": true,
       "fieldConfig": {
         "defaults": {
           "custom": {}
@@ -1682,7 +1668,7 @@
     },
     {
       "id": 601,
-      "title": "◈ CPU Z-Score Anomaly (3σ)",
+      "title": "\u25c8 CPU Z-Score Anomaly (3\u03c3)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -1962,11 +1948,10 @@
           "maxDataPoints": 300
         }
       ],
-      "description": "Fleet-wide CPU Z-Score anomaly detection using 60-minute rolling window. Red zones = ±3σ anomalies.",
-      "transparent": true,
+      "description": "Fleet-wide CPU Z-Score anomaly detection using 60-minute rolling window. Red zones = \u00b13\u03c3 anomalies.",
       "links": [
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -1974,7 +1959,7 @@
     },
     {
       "id": 602,
-      "title": "◈ Temperature Z-Score Anomaly (3σ)",
+      "title": "\u25c8 Temperature Z-Score Anomaly (3\u03c3)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -2252,11 +2237,10 @@
           "maxDataPoints": 300
         }
       ],
-      "description": "Fleet-wide temperature Z-Score anomaly detection. Red zones indicate readings beyond ±3 standard deviations.",
-      "transparent": true,
+      "description": "Fleet-wide temperature Z-Score anomaly detection. Red zones indicate readings beyond \u00b13 standard deviations.",
       "links": [
         {
-          "title": "Drill-down → Engineering",
+          "title": "Drill-down \u2192 Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }

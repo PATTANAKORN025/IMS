@@ -277,7 +277,6 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "transparent": true,
       "description": "Temperature per machine on the operational scale 18-28\u00b0C. Invalid zero sensor rows are monitored separately in Data Readiness.",
       "links": [
         {
@@ -395,7 +394,6 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "transparent": true,
       "description": "Relative humidity per machine on the operational scale 40-70%RH. Invalid zero sensor rows are monitored separately in Data Readiness.",
       "links": [
         {
@@ -488,7 +486,6 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "transparent": true,
       "description": "Laser scan speed in mm/s. Monitor for scan speed drift that affects dose delivery.",
       "links": [
         {
@@ -581,7 +578,6 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "transparent": true,
       "description": "Vacuum pressure in kPa. Abnormal vacuum indicates chuck seal failure.",
       "links": [
         {
@@ -674,7 +670,6 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "transparent": true,
       "description": "Scale factor near 1.000000. Fixed engineering range preserves drift detail; invalid zero rows are monitored in Data Readiness.",
       "links": [
         {
@@ -767,7 +762,6 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "transparent": true,
       "description": "Scale factor near 1.000000. Fixed engineering range preserves drift detail; invalid zero rows are monitored in Data Readiness.",
       "links": [
         {
@@ -905,7 +899,6 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "transparent": true,
       "description": "Individual signed PE values. Soft scale covers the observed range (about -67 to +75 \u00b5m) without clipping future outliers.",
       "links": [
         {
@@ -1025,7 +1018,6 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "transparent": true,
       "description": "Individual JE values. Soft scale covers the observed range (0 to about 43 \u00b5m) while retaining out-of-range visibility.",
       "links": [
         {
@@ -1135,7 +1127,6 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "transparent": true,
       "description": "Machine lifesign: GREEN = RUNNING (state=true), RED = DOWN (state=false). Full-width panel for instant visibility of machine availability.",
       "links": [
         {
@@ -1198,7 +1189,6 @@
           "format": "table"
         }
       ],
-      "transparent": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1285,7 +1275,6 @@
           "format": "table"
         }
       ],
-      "transparent": true,
       "description": "Real PE1-PE6 standard deviation for the selected filters. Replaces the missing v_process_stability view.",
       "links": [
         {
@@ -1373,7 +1362,6 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "transparent": true,
       "description": "Statistical distribution of alignment errors. Shows skewness and process centering for SPC analysis.",
       "links": [
         {
@@ -1463,7 +1451,6 @@
           "format": "table"
         }
       ],
-      "transparent": true,
       "description": "Latest resist dosage per selected machine. Auto-ranging is used because observed machine settings span 15 to 1,200 mJ/cm\u00b2.",
       "links": [
         {
@@ -1558,7 +1545,6 @@
         },
         "overrides": []
       },
-      "transparent": true,
       "description": "Correlation between Alarm occurrences and actual Process anomalies out of spec (RCA Validation)"
     }
   ],

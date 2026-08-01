@@ -97,7 +97,7 @@
     },
     {
       "id": 1,
-      "title": "◉ Telemetry Age",
+      "title": "\u25c9 Telemetry Age",
       "description": "Hours since the latest real telemetry row. Green is under 1 hour; red is over 24 hours.",
       "type": "stat",
       "datasource": {
@@ -186,12 +186,11 @@
           "mode": "single",
           "sort": "none"
         }
-      },
-      "transparent": true
+      }
     },
     {
       "id": 2,
-      "title": "◉ Alarm Age",
+      "title": "\u25c9 Alarm Age",
       "description": "Hours since the latest real alarm row for selected telemetry machines.",
       "type": "stat",
       "datasource": {
@@ -279,12 +278,11 @@
           "mode": "single",
           "sort": "none"
         }
-      },
-      "transparent": true
+      }
     },
     {
       "id": 3,
-      "title": "◉ Machine ID Match",
+      "title": "\u25c9 Machine ID Match",
       "description": "Percent of selected telemetry machine IDs also found in alarm history.",
       "type": "stat",
       "datasource": {
@@ -375,12 +373,11 @@
           "mode": "single",
           "sort": "none"
         }
-      },
-      "transparent": true
+      }
     },
     {
       "id": 4,
-      "title": "◉ Alarm Master Match",
+      "title": "\u25c9 Alarm Master Match",
       "description": "Percent of real alarm rows whose error code can be resolved by the current alarm master.",
       "type": "stat",
       "datasource": {
@@ -470,12 +467,11 @@
           "mode": "single",
           "sort": "none"
         }
-      },
-      "transparent": true
+      }
     },
     {
       "id": 5,
-      "title": "◉ Board ID Completeness",
+      "title": "\u25c9 Board ID Completeness",
       "description": "Percent of telemetry rows with a non-null board_id.",
       "type": "stat",
       "datasource": {
@@ -566,12 +562,11 @@
           "mode": "single",
           "sort": "none"
         }
-      },
-      "transparent": true
+      }
     },
     {
       "id": 6,
-      "title": "◉ PE / JE4 Coverage",
+      "title": "\u25c9 PE / JE4 Coverage",
       "description": "Row-level completeness of PE and JE4 for selected machines.",
       "type": "stat",
       "datasource": {
@@ -662,12 +657,11 @@
           "mode": "single",
           "sort": "none"
         }
-      },
-      "transparent": true
+      }
     },
     {
       "id": 7,
-      "title": "◈ Telemetry Ingestion Rows by Machine",
+      "title": "\u25c8 Telemetry Ingestion Rows by Machine",
       "description": "Actual telemetry rows received in each five-minute bucket. Gaps indicate no stored rows, not simulated downtime.",
       "type": "timeseries",
       "datasource": {
@@ -743,12 +737,11 @@
           "sort": "desc"
         },
         "connectNullPoints": true
-      },
-      "transparent": true
+      }
     },
     {
       "id": 8,
-      "title": "◈ Machine Data Coverage Matrix",
+      "title": "\u25c8 Machine Data Coverage Matrix",
       "description": "Real row counts and field coverage per selected machine.",
       "type": "table",
       "datasource": {
@@ -793,12 +786,11 @@
           "show": false
         },
         "noValue": "-"
-      },
-      "transparent": true
+      }
     },
     {
       "id": 9,
-      "title": "◈ Machine ID Mapping Gaps (Global)",
+      "title": "\u25c8 Machine ID Mapping Gaps (Global)",
       "description": "Global comparison of machine identifiers in telemetry and alarm sources. This intentionally ignores dashboard filters so unmatched IDs stay visible.",
       "type": "table",
       "datasource": {
@@ -843,12 +835,11 @@
           "show": false
         },
         "noValue": "-"
-      },
-      "transparent": true
+      }
     },
     {
       "id": 10,
-      "title": "◈ Alarm Code Mapping Gaps (Global)",
+      "title": "\u25c8 Alarm Code Mapping Gaps (Global)",
       "description": "Every distinct alarm code from the real log and whether it resolves against the supplied alarm master.",
       "type": "table",
       "datasource": {
@@ -893,12 +884,11 @@
           "show": false
         },
         "noValue": "-"
-      },
-      "transparent": true
+      }
     },
     {
       "id": 11,
-      "title": "◈ Board Event Data Quality",
+      "title": "\u25c8 Board Event Data Quality",
       "description": "Shows why telemetry rows cannot yet be treated as guaranteed board-completion events: board_id is missing and some MO + board_no keys repeat.",
       "type": "table",
       "datasource": {
@@ -943,12 +933,11 @@
           "show": false
         },
         "noValue": "-"
-      },
-      "transparent": true
+      }
     },
     {
       "id": 12,
-      "title": "◈ Inferred Sensor / Source Capability",
+      "title": "\u25c8 Inferred Sensor / Source Capability",
       "description": "Capability is inferred only from existing rows. ALL ZERO or CONSTANT means verify the machine specification; it is not automatically classified as a fault.",
       "type": "table",
       "datasource": {
@@ -993,8 +982,7 @@
           "show": false
         },
         "noValue": "-"
-      },
-      "transparent": true
+      }
     }
   ]
 }

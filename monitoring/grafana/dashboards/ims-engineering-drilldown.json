@@ -113,7 +113,6 @@
         "content": "<style>\n[class*=\"-panel-container\"] {\n  border-radius: 14px !important;\n  background: #12161A !important;\n  border: 1px solid rgba(255,255,255,0.06) !important;\n  padding: 4px !important;\n}\n</style>"
       },
       "datasource": null,
-      "transparent": true,
       "description": "OS Taskbar navigation and CSS theme.",
       "fieldConfig": {
         "defaults": {
@@ -152,7 +151,6 @@
         "bgColor": "transparent"
       },
       "description": "Current time and date (Asia/Bangkok timezone).",
-      "transparent": true,
       "fieldConfig": {
         "defaults": {
           "custom": {}
@@ -170,7 +168,6 @@
         "h": 2
       },
       "collapsed": false,
-      "transparent": true,
       "fieldConfig": {
         "defaults": {
           "custom": {}
@@ -191,7 +188,6 @@
         "w": 6,
         "h": 8
       },
-      "transparent": true,
       "fieldConfig": {
         "defaults": {
           "unit": "percent",
@@ -297,7 +293,6 @@
         "w": 6,
         "h": 8
       },
-      "transparent": true,
       "fieldConfig": {
         "defaults": {
           "unit": "percent",
@@ -403,7 +398,6 @@
         "w": 6,
         "h": 8
       },
-      "transparent": true,
       "fieldConfig": {
         "defaults": {
           "unit": "percent",
@@ -599,7 +593,6 @@
         }
       ],
       "description": "Current temperature (\u00b0C) for the selected machine. Yellow >70\u00b0C, Red >85\u00b0C.",
-      "transparent": true,
       "links": [
         {
           "title": "Drill-down \u2192 Engineering",
@@ -624,7 +617,6 @@
         "h": 2
       },
       "collapsed": false,
-      "transparent": true,
       "fieldConfig": {
         "defaults": {
           "custom": {}
@@ -904,7 +896,6 @@
         }
       ],
       "description": "RAM utilization for the selected machine. Yellow at 75%, Red at 90%. Gapfilled via LOCF.",
-      "transparent": true,
       "links": [
         {
           "title": "Drill-down \u2192 Engineering",
@@ -1183,7 +1174,6 @@
         }
       ],
       "description": "Per-interface bandwidth queried from per-interface rows in the net_metrics hypertable. Download positive, Upload mirrored (negative-Y axis, #EF4444).",
-      "transparent": true,
       "links": [
         {
           "title": "Drill-down \u2192 Engineering",
@@ -1520,7 +1510,6 @@
         }
       ],
       "description": "Temperature readings from sensor OIDs (UCD-SNMP lmSensors) for the selected machine.",
-      "transparent": true,
       "links": [
         {
           "title": "Drill-down \u2192 Engineering",
@@ -1540,7 +1529,6 @@
         "h": 2
       },
       "collapsed": false,
-      "transparent": true,
       "fieldConfig": {
         "defaults": {
           "custom": {}
@@ -1768,8 +1756,7 @@
           "targetBlank": true
         }
       ],
-      "description": "LDI manufacturing throughput (left axis, #10B981) and Process Efficiency in \u00b5m (right axis, #F59E0B). PE within \u00b110\u00b5m tolerance is normal.",
-      "transparent": true
+      "description": "LDI manufacturing throughput (left axis, #10B981) and Process Efficiency in \u00b5m (right axis, #F59E0B). PE within \u00b110\u00b5m tolerance is normal."
     },
     {
       "id": 504,
@@ -2019,8 +2006,7 @@
           "targetBlank": true
         }
       ],
-      "description": "Junction Efficiency in \u00b5m (purple) and Humidity % (blue, right axis). High humidity may affect LDI precision.",
-      "transparent": true
+      "description": "Junction Efficiency in \u00b5m (purple) and Humidity % (blue, right axis). High humidity may affect LDI precision."
     },
     {
       "id": 510,
@@ -2104,8 +2090,7 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "description": "LDI quality scatter with \u00b110\u00b5m tolerance zone (#10B981 band). Points outside the zone indicate quality risk.",
-      "transparent": true
+      "description": "LDI quality scatter with \u00b110\u00b5m tolerance zone (#10B981 band). Points outside the zone indicate quality risk."
     },
     {
       "type": "row",
@@ -2122,8 +2107,7 @@
           "custom": {}
         }
       },
-      "options": {},
-      "transparent": true
+      "options": {}
     },
     {
       "type": "stat",
@@ -2213,8 +2197,7 @@
           "valueSize": 48
         }
       },
-      "description": "Estimated 24-hour electricity cost in Thai Baht. Calculated as: avg_watts x 24h / 1000 x 4 THB/kWh tariff. Based on rolling 1-hour average power consumption from LDI manufacturing metrics. Thresholds: green < 500 THB, yellow 500-1000 THB, red > 1000 THB.",
-      "transparent": true
+      "description": "Estimated 24-hour electricity cost in Thai Baht. Calculated as: avg_watts x 24h / 1000 x 4 THB/kWh tariff. Based on rolling 1-hour average power consumption from LDI manufacturing metrics. Thresholds: green < 500 THB, yellow 500-1000 THB, red > 1000 THB."
     },
     {
       "type": "stat",
@@ -2304,8 +2287,7 @@
           "valueSize": 48
         }
       },
-      "description": "Manufacturing throughput per watt of power consumed. Higher is better. Calculated as: throughput_count / power_watt. Tracks how efficiently the LDI machine converts electrical energy into productive output. Below 1.0 indicates excessive idle power draw relative to production volume.",
-      "transparent": true
+      "description": "Manufacturing throughput per watt of power consumed. Higher is better. Calculated as: throughput_count / power_watt. Tracks how efficiently the LDI machine converts electrical energy into productive output. Below 1.0 indicates excessive idle power draw relative to production volume."
     },
     {
       "type": "stat",
@@ -2394,8 +2376,7 @@
           "valueSize": 48
         }
       },
-      "description": "Composite risk score (0-100) indicating probability of yield loss. Triggered when throughput drops below baseline minus 2 standard deviations while power consumption remains above 80% of baseline \u2014 indicating the machine is drawing full power but producing substandard output. Score 0 = normal, 100 = critical yield loss suspected.",
-      "transparent": true
+      "description": "Composite risk score (0-100) indicating probability of yield loss. Triggered when throughput drops below baseline minus 2 standard deviations while power consumption remains above 80% of baseline \u2014 indicating the machine is drawing full power but producing substandard output. Score 0 = normal, 100 = critical yield loss suspected."
     },
     {
       "id": 500,
@@ -2408,7 +2389,6 @@
         "h": 2
       },
       "collapsed": false,
-      "transparent": true,
       "fieldConfig": {
         "defaults": {
           "custom": {},
@@ -2492,7 +2472,6 @@
         }
       ],
       "description": "CPU Z-Score per machine. Cyan = normal, Amber >= 2 sigma, Red >= 3 sigma.",
-      "transparent": true,
       "links": [
         {
           "title": "Drill-down \u2192 Engineering",
@@ -2584,8 +2563,7 @@
           "legendFormat": "Z-Score"
         }
       ],
-      "description": "Temperature Z-Score per machine. Cyan = normal, Amber >= 2 sigma, Red >= 3 sigma.",
-      "transparent": true
+      "description": "Temperature Z-Score per machine. Cyan = normal, Amber >= 2 sigma, Red >= 3 sigma."
     },
     {
       "id": 1000,
@@ -2598,7 +2576,6 @@
         "h": 2
       },
       "collapsed": false,
-      "transparent": true,
       "fieldConfig": {
         "defaults": {
           "custom": {}
@@ -2619,7 +2596,6 @@
         "w": 12,
         "h": 16
       },
-      "transparent": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2732,7 +2708,6 @@
         "w": 12,
         "h": 16
       },
-      "transparent": true,
       "fieldConfig": {
         "defaults": {
           "color": {

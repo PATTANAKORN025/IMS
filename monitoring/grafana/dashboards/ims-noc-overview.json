@@ -113,7 +113,6 @@
         "content": "<style>\n[class*=\"-panel-container\"] {\n  border-radius: 14px !important;\n  background: #12161A !important;\n  border: 1px solid rgba(255,255,255,0.06) !important;\n  padding: 4px !important;\n}\n</style>"
       },
       "datasource": null,
-      "transparent": true,
       "description": "OS Taskbar navigation and CSS theme.",
       "fieldConfig": {
         "defaults": {
@@ -152,7 +151,6 @@
         "bgColor": "transparent"
       },
       "description": "Current time and date (Asia/Bangkok timezone).",
-      "transparent": true,
       "fieldConfig": {
         "defaults": {
           "custom": {}
@@ -189,8 +187,7 @@
           "custom": {}
         },
         "overrides": []
-      },
-      "transparent": true
+      }
     },
     {
       "id": 101,
@@ -203,7 +200,6 @@
         "h": 2
       },
       "collapsed": false,
-      "transparent": true,
       "fieldConfig": {
         "defaults": {
           "custom": {}
@@ -313,7 +309,6 @@
         }
       ],
       "description": "Composite fleet health score (0-100%) from v_fleet_health view.",
-      "transparent": true,
       "links": [
         {
           "title": "Drill-down -> Engineering",
@@ -421,7 +416,6 @@
         }
       ],
       "description": "Percentage of LDI readings exceeding \u00b110\u00b5m tolerance in the last hour. Green <5%, Yellow <15%, Red \u226515%.",
-      "transparent": true,
       "links": [
         {
           "title": "Drill-down \u2192 Engineering",
@@ -532,7 +526,6 @@
         }
       ],
       "description": "Estimated daily power cost in Thai Baht based on average LDI power consumption \u00d7 24 hours \u00d7 4.5 THB/kWh.",
-      "transparent": true,
       "links": [
         {
           "title": "Drill-down \u2192 Engineering",
@@ -552,7 +545,6 @@
         "h": 2
       },
       "collapsed": false,
-      "transparent": true,
       "fieldConfig": {
         "defaults": {
           "custom": {}
@@ -745,8 +737,7 @@
           "targetBlank": true
         }
       ],
-      "description": "Real-time fleet status table showing each machine's CPU, RAM, disk, temperature, network, and LDI health. Click machine name to drill down.",
-      "transparent": true
+      "description": "Real-time fleet status table showing each machine's CPU, RAM, disk, temperature, network, and LDI health. Click machine name to drill down."
     },
     {
       "id": 300,
@@ -759,7 +750,6 @@
         "h": 2
       },
       "collapsed": false,
-      "transparent": true,
       "fieldConfig": {
         "defaults": {
           "custom": {}
@@ -1089,8 +1079,7 @@
           "targetBlank": true
         }
       ],
-      "description": "Fleet-wide cpu load envelope: average (solid cyan) vs worst-case ceiling (dashed #EF4444).",
-      "transparent": true
+      "description": "Fleet-wide cpu load envelope: average (solid cyan) vs worst-case ceiling (dashed #EF4444)."
     },
     {
       "id": 21,
@@ -1424,8 +1413,7 @@
           "targetBlank": true
         }
       ],
-      "description": "Fleet-wide temperature envelope: average (solid cyan) vs worst-case ceiling (dashed #EF4444).",
-      "transparent": true
+      "description": "Fleet-wide temperature envelope: average (solid cyan) vs worst-case ceiling (dashed #EF4444)."
     },
     {
       "id": 500,
@@ -1438,7 +1426,6 @@
         "h": 2
       },
       "collapsed": false,
-      "transparent": true,
       "fieldConfig": {
         "defaults": {
           "custom": {}
@@ -1587,8 +1574,7 @@
           "targetBlank": true
         }
       ],
-      "description": "Network throughput (Mbps) for all machines. Download (positive) and Upload (negative-Y axis) per interface.",
-      "transparent": true
+      "description": "Network throughput (Mbps) for all machines. Download (positive) and Upload (negative-Y axis) per interface."
     },
     {
       "id": 23,
@@ -1914,8 +1900,7 @@
           "targetBlank": true
         }
       ],
-      "description": "Fleet-wide ram saturation envelope: average (solid cyan) vs worst-case ceiling (dashed #EF4444).",
-      "transparent": true
+      "description": "Fleet-wide ram saturation envelope: average (solid cyan) vs worst-case ceiling (dashed #EF4444)."
     }
   ],
   "graphTooltip": 1,
