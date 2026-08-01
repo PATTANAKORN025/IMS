@@ -50,7 +50,7 @@
           "custom": {
             "drawStyle": "line",
             "lineWidth": 2,
-            "fillOpacity": 25,
+            "fillOpacity": 15,
             "spanNulls": true,
             "showPoints": "never",
             "pointSize": 5,
@@ -113,13 +113,13 @@
           "unit": "ops",
           "decimals": 2,
           "color": {
-            "fixedColor": "#00E5FF",
+            "fixedColor": "#00F2FE",
             "mode": "fixed"
           },
           "custom": {
             "drawStyle": "line",
             "lineWidth": 2,
-            "fillOpacity": 25,
+            "fillOpacity": 15,
             "spanNulls": true,
             "showGridLines": false,
             "axisBorderShow": false,
@@ -182,7 +182,7 @@
           "decimals": 0,
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00E5FF"
+            "fixedColor": "#00F2FE"
           },
           "thresholds": {
             "steps": [
@@ -203,7 +203,7 @@
           "custom": {
             "gradientMode": "opacity",
             "lineInterpolation": "smooth",
-            "fillOpacity": 25,
+            "fillOpacity": 15,
             "lineWidth": 2
           }
         },
@@ -291,7 +291,7 @@
           "decimals": 0,
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00E5FF"
+            "fixedColor": "#00F2FE"
           },
           "thresholds": {
             "steps": [
@@ -312,7 +312,7 @@
           "custom": {
             "gradientMode": "opacity",
             "lineInterpolation": "smooth",
-            "fillOpacity": 25,
+            "fillOpacity": 15,
             "lineWidth": 2
           }
         },
@@ -382,7 +382,7 @@
           "decimals": 0,
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00E5FF"
+            "fixedColor": "#00F2FE"
           },
           "thresholds": {
             "steps": [
@@ -399,7 +399,7 @@
           "custom": {
             "gradientMode": "opacity",
             "lineInterpolation": "smooth",
-            "fillOpacity": 25,
+            "fillOpacity": 15,
             "lineWidth": 2
           }
         },
@@ -469,12 +469,12 @@
           "decimals": 0,
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00E5FF"
+            "fixedColor": "#00F2FE"
           },
           "custom": {
             "gradientMode": "opacity",
             "lineInterpolation": "smooth",
-            "fillOpacity": 25,
+            "fillOpacity": 15,
             "lineWidth": 2
           }
         },
@@ -566,7 +566,7 @@
           "custom": {
             "drawStyle": "line",
             "lineWidth": 2,
-            "fillOpacity": 25,
+            "fillOpacity": 15,
             "spanNulls": true,
             "showGridLines": false,
             "axisBorderShow": false,
@@ -783,7 +783,7 @@
           "decimals": 0,
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00E5FF"
+            "fixedColor": "#00F2FE"
           },
           "thresholds": {
             "steps": [
@@ -804,7 +804,7 @@
           "custom": {
             "gradientMode": "opacity",
             "lineInterpolation": "smooth",
-            "fillOpacity": 25,
+            "fillOpacity": 15,
             "lineWidth": 2
           }
         },
@@ -873,13 +873,13 @@
           "unit": "short",
           "decimals": 0,
           "color": {
-            "fixedColor": "#00E5FF",
+            "fixedColor": "#00F2FE",
             "mode": "fixed"
           },
           "custom": {
             "drawStyle": "line",
             "lineWidth": 2,
-            "fillOpacity": 25,
+            "fillOpacity": 15,
             "spanNulls": true,
             "showGridLines": false,
             "axisBorderShow": false,

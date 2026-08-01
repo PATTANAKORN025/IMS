@@ -94,6 +94,19 @@
   },
   "panels": [
     {
+      "id": 10000,
+      "type": "row",
+      "title": "◈ FLEET KPIs & ALARMS",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "collapsed": false,
+      "panels": []
+    },
+    {
       "id": 1,
       "title": "◉ Fleet Availability",
       "type": "stat",
@@ -102,7 +115,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 0,
+        "y": 1,
         "w": 8,
         "h": 6
       },
@@ -123,13 +136,13 @@
           },
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00E5FF"
+            "fixedColor": "#00F2FE"
           },
           "unit": "percent",
           "custom": {
             "gradientMode": "opacity",
             "lineInterpolation": "smooth",
-            "fillOpacity": 25,
+            "fillOpacity": 15,
             "lineWidth": 2
           },
           "decimals": 0,
@@ -176,7 +189,7 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 0,
+        "y": 1,
         "w": 8,
         "h": 6
       },
@@ -202,7 +215,7 @@
           "custom": {
             "gradientMode": "opacity",
             "lineInterpolation": "smooth",
-            "fillOpacity": 25,
+            "fillOpacity": 15,
             "lineWidth": 2
           }
         },
@@ -246,7 +259,7 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 0,
+        "y": 1,
         "w": 8,
         "h": 6
       },
@@ -279,13 +292,13 @@
           },
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00E5FF"
+            "fixedColor": "#00F2FE"
           },
           "unit": "percent",
           "custom": {
             "gradientMode": "opacity",
             "lineInterpolation": "smooth",
-            "fillOpacity": 25,
+            "fillOpacity": 15,
             "lineWidth": 2
           },
           "decimals": 0,
@@ -324,6 +337,19 @@
       "description": "Environmental Compliance: percentage of machines within safe temperature AND humidity."
     },
     {
+      "id": 10001,
+      "type": "row",
+      "title": "◈ MACHINE RUN STATE & COMPLIANCE",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 7
+      },
+      "collapsed": false,
+      "panels": []
+    },
+    {
       "id": 4,
       "title": "◈ Machine Run State",
       "type": "state-timeline",
@@ -332,7 +358,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 6,
+        "y": 8,
         "w": 8,
         "h": 12
       },
@@ -411,7 +437,7 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 6,
+        "y": 8,
         "w": 8,
         "h": 12
       },
@@ -505,7 +531,7 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 6,
+        "y": 8,
         "w": 8,
         "h": 12
       },
@@ -591,6 +617,19 @@
       "description": "Humidity Compliance: per-machine 3-color matrix. Green=50-60%, Amber=45-65%, Red=outside."
     },
     {
+      "id": 10002,
+      "type": "row",
+      "title": "◈ LIVE PRODUCTION BOARD",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 20
+      },
+      "collapsed": false,
+      "panels": []
+    },
+    {
       "id": 7,
       "title": "◈ Live Production",
       "type": "table",
@@ -599,7 +638,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 18,
+        "y": 21,
         "w": 24,
         "h": 10
       },
@@ -671,6 +710,19 @@
       }
     },
     {
+      "id": 10003,
+      "type": "row",
+      "title": "◈ ALARM LOG",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 31
+      },
+      "collapsed": false,
+      "panels": []
+    },
+    {
       "id": 8,
       "title": "◈ Latest Alarm Records (Historical)",
       "type": "table",
@@ -679,7 +731,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 28,
+        "y": 32,
         "w": 24,
         "h": 12
       },

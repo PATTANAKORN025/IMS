@@ -95,6 +95,19 @@
   },
   "panels": [
     {
+      "id": 10000,
+      "type": "row",
+      "title": "◈ MANUFACTURING KPIs",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "collapsed": false,
+      "panels": []
+    },
+    {
       "id": 15,
       "title": "◉ Estimated Yield (%)",
       "type": "stat",
@@ -103,7 +116,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 0,
+        "y": 1,
         "w": 3,
         "h": 6
       },
@@ -134,7 +147,7 @@
           "custom": {
             "gradientMode": "opacity",
             "lineInterpolation": "smooth",
-            "fillOpacity": 25,
+            "fillOpacity": 15,
             "lineWidth": 2
           },
           "min": 0,
@@ -216,7 +229,7 @@
       },
       "gridPos": {
         "x": 3,
-        "y": 0,
+        "y": 1,
         "w": 3,
         "h": 6
       },
@@ -243,12 +256,12 @@
           },
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00E5FF"
+            "fixedColor": "#00F2FE"
           },
           "custom": {
             "gradientMode": "opacity",
             "lineInterpolation": "smooth",
-            "fillOpacity": 25,
+            "fillOpacity": 15,
             "lineWidth": 2
           },
           "min": 0,
@@ -330,7 +343,7 @@
       },
       "gridPos": {
         "x": 6,
-        "y": 0,
+        "y": 1,
         "w": 3,
         "h": 6
       },
@@ -357,14 +370,14 @@
           },
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00E5FF"
+            "fixedColor": "#00F2FE"
           },
           "custom": {
             "axisSoftMin": 0,
             "axisSoftMax": 2,
             "gradientMode": "opacity",
             "lineInterpolation": "smooth",
-            "fillOpacity": 25,
+            "fillOpacity": 15,
             "lineWidth": 2
           }
         },
@@ -444,7 +457,7 @@
       },
       "gridPos": {
         "x": 9,
-        "y": 0,
+        "y": 1,
         "w": 3,
         "h": 6
       },
@@ -467,12 +480,12 @@
           },
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00E5FF"
+            "fixedColor": "#00F2FE"
           },
           "custom": {
             "gradientMode": "opacity",
             "lineInterpolation": "smooth",
-            "fillOpacity": 25,
+            "fillOpacity": 15,
             "lineWidth": 2
           }
         },
@@ -552,7 +565,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 0,
+        "y": 1,
         "w": 3,
         "h": 6
       },
@@ -623,7 +636,7 @@
       },
       "gridPos": {
         "x": 15,
-        "y": 0,
+        "y": 1,
         "w": 3,
         "h": 6
       },
@@ -662,7 +675,7 @@
           "custom": {
             "gradientMode": "opacity",
             "lineInterpolation": "smooth",
-            "fillOpacity": 25,
+            "fillOpacity": 15,
             "lineWidth": 2
           },
           "min": 18,
@@ -744,7 +757,7 @@
       },
       "gridPos": {
         "x": 18,
-        "y": 0,
+        "y": 1,
         "w": 3,
         "h": 6
       },
@@ -783,7 +796,7 @@
           "custom": {
             "gradientMode": "opacity",
             "lineInterpolation": "smooth",
-            "fillOpacity": 25,
+            "fillOpacity": 15,
             "lineWidth": 2
           },
           "min": 40,
@@ -865,7 +878,7 @@
       },
       "gridPos": {
         "x": 21,
-        "y": 0,
+        "y": 1,
         "w": 3,
         "h": 6
       },
@@ -892,7 +905,7 @@
           "custom": {
             "gradientMode": "opacity",
             "lineInterpolation": "smooth",
-            "fillOpacity": 25,
+            "fillOpacity": 15,
             "lineWidth": 2
           }
         },
@@ -928,6 +941,19 @@
       "description": "Counts real alarm rows for selected machine IDs that match a Critical master code. Zero is valid because current log codes do not match the supplied master."
     },
     {
+      "id": 10001,
+      "type": "row",
+      "title": "◈ PRODUCTION & COMPLIANCE",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 7
+      },
+      "collapsed": false,
+      "panels": []
+    },
+    {
       "id": 6,
       "title": "◈ Production & Process Table",
       "type": "table",
@@ -936,7 +962,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 6,
+        "y": 8,
         "w": 8,
         "h": 12
       },
@@ -1059,7 +1085,7 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 6,
+        "y": 8,
         "w": 8,
         "h": 12
       },
@@ -1153,7 +1179,7 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 6,
+        "y": 8,
         "w": 8,
         "h": 12
       },
@@ -1239,6 +1265,19 @@
       "description": "3-color compliance matrix per machine. Green 50-60%, Amber 45-65%, Red outside."
     },
     {
+      "id": 10002,
+      "type": "row",
+      "title": "◈ PROCESS METRICS",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 20
+      },
+      "collapsed": false,
+      "panels": []
+    },
+    {
       "id": 9,
       "title": "◈ Scan Speed & Air Vacuum",
       "type": "timeseries",
@@ -1247,7 +1286,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 18,
+        "y": 21,
         "w": 8,
         "h": 10
       },
@@ -1258,7 +1297,7 @@
           "custom": {
             "drawStyle": "line",
             "lineInterpolation": "smooth",
-            "fillOpacity": 25,
+            "fillOpacity": 15,
             "lineWidth": 2,
             "showPoints": "never",
             "spanNulls": false,
@@ -1373,7 +1412,7 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 18,
+        "y": 21,
         "w": 8,
         "h": 10
       },
@@ -1384,7 +1423,7 @@
           "custom": {
             "drawStyle": "line",
             "lineInterpolation": "smooth",
-            "fillOpacity": 25,
+            "fillOpacity": 15,
             "lineWidth": 2,
             "showPoints": "never",
             "spanNulls": false,
@@ -1499,7 +1538,7 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 18,
+        "y": 21,
         "w": 8,
         "h": 10
       },
@@ -1510,7 +1549,7 @@
           "custom": {
             "drawStyle": "line",
             "lineInterpolation": "smooth",
-            "fillOpacity": 25,
+            "fillOpacity": 15,
             "lineWidth": 2,
             "showPoints": "never",
             "spanNulls": false,
@@ -1609,6 +1648,19 @@
       "description": "XY calibration drift. High-precision (6 decimals) monitoring of scale_x and scale_y ratios. Drift from 1.0 indicates lens magnification error."
     },
     {
+      "id": 10003,
+      "type": "row",
+      "title": "◈ ANALYTICS & SPC",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 31
+      },
+      "collapsed": false,
+      "panels": []
+    },
+    {
       "id": 12,
       "title": "◈ Calculated Time per Board",
       "type": "heatmap",
@@ -1617,7 +1669,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 28,
+        "y": 32,
         "w": 12,
         "h": 8
       },
@@ -1674,7 +1726,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 28,
+        "y": 32,
         "w": 12,
         "h": 8
       },
@@ -1685,7 +1737,7 @@
           "custom": {
             "drawStyle": "line",
             "lineInterpolation": "smooth",
-            "fillOpacity": 25,
+            "fillOpacity": 15,
             "lineWidth": 2,
             "showPoints": "never",
             "spanNulls": false,
@@ -1759,6 +1811,19 @@
       "description": "3-sigma Z-Score on temperature per machine. Green ±2 (normal), Amber 2.5 (watch), Red 3+ (anomaly)."
     },
     {
+      "id": 10004,
+      "type": "row",
+      "title": "◈ SYSTEM ALARMS",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 40
+      },
+      "collapsed": false,
+      "panels": []
+    },
+    {
       "id": 14,
       "title": "◈ Latest Alarm Records (Historical)",
       "type": "table",
@@ -1767,7 +1832,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 36,
+        "y": 41,
         "w": 24,
         "h": 12
       },

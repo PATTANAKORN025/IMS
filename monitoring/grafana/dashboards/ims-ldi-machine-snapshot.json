@@ -414,7 +414,7 @@
           "custom": {
             "gradientMode": "opacity",
             "lineInterpolation": "smooth",
-            "fillOpacity": 25,
+            "fillOpacity": 15,
             "lineWidth": 2
           },
           "min": 18,
@@ -500,7 +500,7 @@
           "custom": {
             "gradientMode": "opacity",
             "lineInterpolation": "smooth",
-            "fillOpacity": 25,
+            "fillOpacity": 15,
             "lineWidth": 2
           },
           "min": 40,
@@ -569,13 +569,13 @@
           },
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00E5FF"
+            "fixedColor": "#00F2FE"
           },
           "noValue": "N/A",
           "custom": {
             "gradientMode": "opacity",
             "lineInterpolation": "smooth",
-            "fillOpacity": 25,
+            "fillOpacity": 15,
             "lineWidth": 2
           }
         },
@@ -642,13 +642,13 @@
           },
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00E5FF"
+            "fixedColor": "#00F2FE"
           },
           "noValue": "N/A",
           "custom": {
             "gradientMode": "opacity",
             "lineInterpolation": "smooth",
-            "fillOpacity": 25,
+            "fillOpacity": 15,
             "lineWidth": 2
           }
         },
@@ -715,13 +715,13 @@
           },
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00E5FF"
+            "fixedColor": "#00F2FE"
           },
           "noValue": "N/A",
           "custom": {
             "gradientMode": "opacity",
             "lineInterpolation": "smooth",
-            "fillOpacity": 25,
+            "fillOpacity": 15,
             "lineWidth": 2
           }
         },
@@ -788,13 +788,13 @@
           },
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00E5FF"
+            "fixedColor": "#00F2FE"
           },
           "noValue": "N/A",
           "custom": {
             "gradientMode": "opacity",
             "lineInterpolation": "smooth",
-            "fillOpacity": 25,
+            "fillOpacity": 15,
             "lineWidth": 2
           }
         },
@@ -1347,13 +1347,13 @@
           },
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00E5FF"
+            "fixedColor": "#00F2FE"
           },
           "noValue": "N/A",
           "custom": {
             "gradientMode": "opacity",
             "lineInterpolation": "smooth",
-            "fillOpacity": 25,
+            "fillOpacity": 15,
             "lineWidth": 2
           }
         },
