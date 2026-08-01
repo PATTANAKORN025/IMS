@@ -89,7 +89,7 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "h": 5,
+        "h": 10,
         "w": 4,
         "x": 0,
         "y": 0
@@ -116,7 +116,7 @@
         "defaults": {
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00F2FE"
+            "fixedColor": "#00f2fe"
           },
           "decimals": 1,
           "unit": "h",
@@ -124,7 +124,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "#00FF87",
                 "value": null
               },
               {
@@ -132,7 +132,7 @@
                 "value": 1
               },
               {
-                "color": "red",
+                "color": "#FF003C",
                 "value": 24
               }
             ]
@@ -160,7 +160,11 @@
           "titleSize": 14,
           "valueSize": 48
         },
-        "noValue": "-"
+        "noValue": "-",
+        "textSizes": {
+          "titleSize": 24,
+          "valueSize": 80
+        }
       },
       "transparent": true
     },
@@ -174,7 +178,7 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "h": 5,
+        "h": 10,
         "w": 4,
         "x": 4,
         "y": 0
@@ -208,7 +212,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "#00FF87",
                 "value": null
               },
               {
@@ -216,7 +220,7 @@
                 "value": 1
               },
               {
-                "color": "red",
+                "color": "#FF003C",
                 "value": 24
               }
             ]
@@ -244,7 +248,11 @@
           "titleSize": 14,
           "valueSize": 48
         },
-        "noValue": "-"
+        "noValue": "-",
+        "textSizes": {
+          "titleSize": 24,
+          "valueSize": 80
+        }
       },
       "transparent": true
     },
@@ -258,7 +266,7 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "h": 5,
+        "h": 10,
         "w": 4,
         "x": 8,
         "y": 0
@@ -272,7 +280,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "-- Intentional full table scan for global readiness\nWITH selected AS (\n  SELECT DISTINCT eqp_id\n  FROM public.ldi_data\n  WHERE factory IN (${factory:sqlstring})\n    AND eqp_id IN (${machine_id:sqlstring})\n)\nSELECT ROUND(100.0 * COUNT(*) FILTER (\n  WHERE EXISTS (SELECT 1 FROM public.ldi_alarm_log a WHERE a.eqp_id = s.eqp_id)\n) / NULLIF(COUNT(*), 0), 1) AS value\nFROM selected s;",
+          "rawSql": "-- Intentional full table scan for global readiness\nWITH selected AS (\n  SELECT DISTINCT eqp_id\n  FROM public.ldi_data\n  WHERE factory IN (${factory:sqlstring})\n    AND eqp_id IN (${machine_id:sqlstring})\n)\nSELECT ROUND(100.0 * COUNT(*) FILTER (\n  WHERE EXISTS (SELECT 1 FROM public.ldi_alarm_log a WHERE a.equipmentid = s.eqp_id)\n) / NULLIF(COUNT(*), 0), 1) AS value\nFROM selected s;",
           "refId": "A",
           "sql": {
             "columns": [],
@@ -285,7 +293,7 @@
         "defaults": {
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00F2FE"
+            "fixedColor": "#00f2fe"
           },
           "decimals": 1,
           "unit": "percent",
@@ -293,7 +301,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
+                "color": "#FF003C",
                 "value": null
               },
               {
@@ -301,7 +309,7 @@
                 "value": 80
               },
               {
-                "color": "green",
+                "color": "#00FF87",
                 "value": 95
               }
             ]
@@ -331,7 +339,11 @@
           "titleSize": 14,
           "valueSize": 48
         },
-        "noValue": "-"
+        "noValue": "-",
+        "textSizes": {
+          "titleSize": 24,
+          "valueSize": 80
+        }
       },
       "transparent": true
     },
@@ -345,7 +357,7 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "h": 5,
+        "h": 10,
         "w": 4,
         "x": 12,
         "y": 0
@@ -359,7 +371,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "-- Intentional full table scan for global readiness\nSELECT ROUND(100.0 * COUNT(*) FILTER (WHERE m.alarm_code IS NOT NULL) / NULLIF(COUNT(*), 0), 1) AS value\nFROM public.ldi_alarm_log a\nLEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\nWHERE a.eqp_id IN (${machine_id:sqlstring});",
+          "rawSql": "-- Intentional full table scan for global readiness\nSELECT ROUND(100.0 * COUNT(*) FILTER (WHERE m.alarm_code IS NOT NULL) / NULLIF(COUNT(*), 0), 1) AS value\nFROM public.ldi_alarm_log a\nLEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\nWHERE a.equipmentid IN (${machine_id:sqlstring});",
           "refId": "A",
           "sql": {
             "columns": [],
@@ -379,7 +391,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
+                "color": "#FF003C",
                 "value": null
               },
               {
@@ -387,7 +399,7 @@
                 "value": 80
               },
               {
-                "color": "green",
+                "color": "#00FF87",
                 "value": 95
               }
             ]
@@ -417,7 +429,11 @@
           "titleSize": 14,
           "valueSize": 48
         },
-        "noValue": "-"
+        "noValue": "-",
+        "textSizes": {
+          "titleSize": 24,
+          "valueSize": 80
+        }
       },
       "transparent": true
     },
@@ -431,7 +447,7 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "h": 5,
+        "h": 10,
         "w": 4,
         "x": 16,
         "y": 0
@@ -458,7 +474,7 @@
         "defaults": {
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00F2FE"
+            "fixedColor": "#00f2fe"
           },
           "decimals": 1,
           "unit": "percent",
@@ -466,7 +482,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
+                "color": "#FF003C",
                 "value": null
               },
               {
@@ -474,7 +490,7 @@
                 "value": 80
               },
               {
-                "color": "green",
+                "color": "#00FF87",
                 "value": 95
               }
             ]
@@ -504,7 +520,11 @@
           "titleSize": 14,
           "valueSize": 48
         },
-        "noValue": "-"
+        "noValue": "-",
+        "textSizes": {
+          "titleSize": 24,
+          "valueSize": 80
+        }
       },
       "transparent": true
     },
@@ -518,7 +538,7 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "h": 5,
+        "h": 10,
         "w": 4,
         "x": 20,
         "y": 0
@@ -545,7 +565,7 @@
         "defaults": {
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00F2FE"
+            "fixedColor": "#00f2fe"
           },
           "decimals": 2,
           "unit": "lengthum",
@@ -553,7 +573,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
+                "color": "#FF003C",
                 "value": null
               },
               {
@@ -561,7 +581,7 @@
                 "value": 80
               },
               {
-                "color": "green",
+                "color": "#00FF87",
                 "value": 95
               }
             ]
@@ -591,7 +611,11 @@
           "titleSize": 14,
           "valueSize": 48
         },
-        "noValue": "-"
+        "noValue": "-",
+        "textSizes": {
+          "titleSize": 24,
+          "valueSize": 80
+        }
       },
       "transparent": true
     },
@@ -605,10 +629,10 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "h": 8,
+        "h": 16,
         "w": 12,
         "x": 0,
-        "y": 5
+        "y": 10
       },
       "targets": [
         {
@@ -686,10 +710,10 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "h": 8,
+        "h": 16,
         "w": 12,
         "x": 12,
-        "y": 5
+        "y": 10
       },
       "targets": [
         {
@@ -700,7 +724,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "-- Intentional full table scan for global readiness\nWITH alarm_counts AS (\n  SELECT eqp_id, COUNT(*) AS alarm_rows, MAX(logdate) AS last_alarm\n  FROM public.ldi_alarm_log\n  GROUP BY eqp_id\n)\nSELECT\n  d.eqp_id AS \"Machine\",\n  MIN(d.factory) AS \"Factory\",\n  MIN(d.process) AS \"Process\",\n  COUNT(*) AS \"Telemetry Rows\",\n  MAX(d.\"time\") AS \"Latest Telemetry\",\n  ROUND(100.0 * COUNT(d.pe_1) / COUNT(*), 1) AS \"PE %\",\n  ROUND(100.0 * COUNT(d.je_1) / COUNT(*), 1) AS \"JE1-3 %\",\n  ROUND(100.0 * COUNT(d.je_4) / COUNT(*), 1) AS \"JE4 %\",\n  COALESCE(MAX(a.alarm_rows), 0) AS \"Alarm Rows\",\n  MAX(a.last_alarm) AS \"Latest Alarm\"\nFROM public.ldi_data d\nLEFT JOIN alarm_counts a ON a.eqp_id = d.eqp_id\nWHERE d.factory IN (${factory:sqlstring})\n  AND d.eqp_id IN (${machine_id:sqlstring})\nGROUP BY d.eqp_id\nORDER BY d.eqp_id\nLIMIT 1000;",
+          "rawSql": "-- Intentional full table scan for global readiness\nWITH alarm_counts AS (\n  SELECT equipmentid AS eqp_id, COUNT(*) AS alarm_rows, MAX(logdate) AS last_alarm\n  FROM public.ldi_alarm_log\n  GROUP BY equipmentid\n)\nSELECT\n  d.eqp_id AS \"Machine\",\n  MIN(d.factory) AS \"Factory\",\n  MIN(d.process) AS \"Process\",\n  COUNT(*) AS \"Telemetry Rows\",\n  MAX(d.\"time\") AS \"Latest Telemetry\",\n  ROUND(100.0 * COUNT(d.pe_1) / COUNT(*), 1) AS \"PE %\",\n  ROUND(100.0 * COUNT(d.je_1) / COUNT(*), 1) AS \"JE1-3 %\",\n  ROUND(100.0 * COUNT(d.je_4) / COUNT(*), 1) AS \"JE4 %\",\n  COALESCE(MAX(a.alarm_rows), 0) AS \"Alarm Rows\",\n  MAX(a.last_alarm) AS \"Latest Alarm\"\nFROM public.ldi_data d\nLEFT JOIN alarm_counts a ON a.eqp_id = d.eqp_id\nWHERE d.factory IN (${factory:sqlstring})\n  AND d.eqp_id IN (${machine_id:sqlstring})\nGROUP BY d.eqp_id\nORDER BY d.eqp_id\nLIMIT 1000;",
           "refId": "A",
           "sql": {
             "columns": [],
@@ -736,10 +760,10 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "h": 9,
+        "h": 18,
         "w": 12,
         "x": 0,
-        "y": 13
+        "y": 26
       },
       "targets": [
         {
@@ -750,7 +774,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "-- Intentional full table scan for global readiness\nWITH telemetry AS (\n  SELECT DISTINCT eqp_id FROM public.ldi_data\n), alarms AS (\n  SELECT DISTINCT eqp_id AS eqp_id FROM public.ldi_alarm_log\n), ids AS (\n  SELECT eqp_id FROM telemetry\n  UNION\n  SELECT eqp_id FROM alarms\n)\nSELECT\n  i.eqp_id AS \"Machine ID\",\n  (t.eqp_id IS NOT NULL) AS \"In Telemetry\",\n  (a.eqp_id IS NOT NULL) AS \"In Alarm\",\n  CASE\n    WHEN t.eqp_id IS NOT NULL AND a.eqp_id IS NOT NULL THEN 'MATCHED'\n    WHEN t.eqp_id IS NULL THEN 'ALARM ONLY'\n    ELSE 'TELEMETRY ONLY'\n  END AS \"Mapping Status\"\nFROM ids i\nLEFT JOIN telemetry t USING (eqp_id)\nLEFT JOIN alarms a USING (eqp_id)\nORDER BY \"Mapping Status\", i.eqp_id\nLIMIT 1000;",
+          "rawSql": "-- Intentional full table scan for global readiness\nWITH telemetry AS (\n  SELECT DISTINCT eqp_id FROM public.ldi_data\n), alarms AS (\n  SELECT DISTINCT equipmentid AS eqp_id FROM public.ldi_alarm_log\n), ids AS (\n  SELECT eqp_id FROM telemetry\n  UNION\n  SELECT eqp_id FROM alarms\n)\nSELECT\n  i.eqp_id AS \"Machine ID\",\n  (t.eqp_id IS NOT NULL) AS \"In Telemetry\",\n  (a.eqp_id IS NOT NULL) AS \"In Alarm\",\n  CASE\n    WHEN t.eqp_id IS NOT NULL AND a.eqp_id IS NOT NULL THEN 'MATCHED'\n    WHEN t.eqp_id IS NULL THEN 'ALARM ONLY'\n    ELSE 'TELEMETRY ONLY'\n  END AS \"Mapping Status\"\nFROM ids i\nLEFT JOIN telemetry t USING (eqp_id)\nLEFT JOIN alarms a USING (eqp_id)\nORDER BY \"Mapping Status\", i.eqp_id\nLIMIT 1000;",
           "refId": "A",
           "sql": {
             "columns": [],
@@ -786,10 +810,10 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "h": 9,
+        "h": 18,
         "w": 12,
         "x": 12,
-        "y": 13
+        "y": 26
       },
       "targets": [
         {
@@ -836,10 +860,10 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "h": 8,
+        "h": 16,
         "w": 12,
         "x": 0,
-        "y": 22
+        "y": 44
       },
       "targets": [
         {
@@ -886,10 +910,10 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "h": 8,
+        "h": 16,
         "w": 12,
         "x": 12,
-        "y": 22
+        "y": 44
       },
       "targets": [
         {
@@ -900,7 +924,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "-- Intentional full table scan for global readiness\nSELECT\n  d.eqp_id AS \"Machine\",\n  CASE WHEN COUNT(d.pe_1) > 0 THEN 'AVAILABLE' ELSE 'NO DATA' END AS \"PE1-6\",\n  CASE WHEN COUNT(d.je_1) > 0 THEN 'AVAILABLE' ELSE 'NO DATA' END AS \"JE1-3\",\n  CASE WHEN COUNT(d.je_4) > 0 THEN 'AVAILABLE' ELSE 'NO DATA' END AS \"JE4\",\n  CASE\n    WHEN COUNT(DISTINCT d.air_vacuum) > 1 THEN 'VARIABLE SIGNAL'\n    WHEN COUNT(d.air_vacuum) = 0 THEN 'NO DATA'\n    WHEN BOOL_AND(d.air_vacuum = 0) THEN 'ALL ZERO - VERIFY'\n    ELSE 'CONSTANT - VERIFY'\n  END AS \"Vacuum\",\n  CASE\n    WHEN COUNT(DISTINCT d.scan_speed) > 1 THEN 'VARIABLE SIGNAL'\n    WHEN COUNT(d.scan_speed) = 0 THEN 'NO DATA'\n    ELSE 'CONSTANT - VERIFY'\n  END AS \"Scan Speed\",\n  CASE WHEN MAX(a.eqp_id) IS NOT NULL THEN 'AVAILABLE' ELSE 'NO MATCHING ID' END AS \"Alarm Source\"\nFROM public.ldi_data d\nLEFT JOIN (SELECT DISTINCT eqp_id FROM public.ldi_alarm_log) a ON a.eqp_id = d.eqp_id\nWHERE d.factory IN (${factory:sqlstring})\n  AND d.eqp_id IN (${machine_id:sqlstring})\nGROUP BY d.eqp_id\nORDER BY d.eqp_id\nLIMIT 1000;",
+          "rawSql": "-- Intentional full table scan for global readiness\nSELECT\n  d.eqp_id AS \"Machine\",\n  CASE WHEN COUNT(d.pe_1) > 0 THEN 'AVAILABLE' ELSE 'NO DATA' END AS \"PE1-6\",\n  CASE WHEN COUNT(d.je_1) > 0 THEN 'AVAILABLE' ELSE 'NO DATA' END AS \"JE1-3\",\n  CASE WHEN COUNT(d.je_4) > 0 THEN 'AVAILABLE' ELSE 'NO DATA' END AS \"JE4\",\n  CASE\n    WHEN COUNT(DISTINCT d.air_vacuum) > 1 THEN 'VARIABLE SIGNAL'\n    WHEN COUNT(d.air_vacuum) = 0 THEN 'NO DATA'\n    WHEN BOOL_AND(d.air_vacuum = 0) THEN 'ALL ZERO - VERIFY'\n    ELSE 'CONSTANT - VERIFY'\n  END AS \"Vacuum\",\n  CASE\n    WHEN COUNT(DISTINCT d.scan_speed) > 1 THEN 'VARIABLE SIGNAL'\n    WHEN COUNT(d.scan_speed) = 0 THEN 'NO DATA'\n    ELSE 'CONSTANT - VERIFY'\n  END AS \"Scan Speed\",\n  CASE WHEN MAX(a.eqp_id) IS NOT NULL THEN 'AVAILABLE' ELSE 'NO MATCHING ID' END AS \"Alarm Source\"\nFROM public.ldi_data d\nLEFT JOIN (SELECT DISTINCT equipmentid AS eqp_id FROM public.ldi_alarm_log) a ON a.eqp_id = d.eqp_id\nWHERE d.factory IN (${factory:sqlstring})\n  AND d.eqp_id IN (${machine_id:sqlstring})\nGROUP BY d.eqp_id\nORDER BY d.eqp_id\nLIMIT 1000;",
           "refId": "A",
           "sql": {
             "columns": [],
@@ -925,6 +949,22 @@
         "noValue": "-"
       },
       "transparent": true
+    },
+    {
+      "id": 9999,
+      "title": "Theme Injector",
+      "type": "text",
+      "transparent": true,
+      "gridPos": {
+        "h": 2,
+        "w": 24,
+        "x": 0,
+        "y": 62
+      },
+      "options": {
+        "content": "\n<style>\n@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');\n\n@keyframes gradientBG {\n    0% { background-position: 0% 50%; }\n    50% { background-position: 100% 50%; }\n    100% { background-position: 0% 50%; }\n}\n\n@keyframes edgeGlow {\n    0% { border-color: rgba(0, 242, 254, 0.3); }\n    50% { border-color: rgba(0, 255, 135, 0.6); box-shadow: 0 0 15px rgba(0, 255, 135, 0.2), inset 0 0 20px rgba(0, 255, 135, 0.05); }\n    100% { border-color: rgba(0, 242, 254, 0.3); }\n}\n\n/* Global Background */\n.main-view, .react-grid-layout, .dashboard-container, body {\n    background: linear-gradient(-45deg, #0b0f19, #141416, #090a0f, #1a1525) !important;\n    background-size: 400% 400% !important;\n    animation: gradientBG 15s ease infinite !important;\n}\n\n/* Panel Backgrounds (Ultra Glassmorphism) */\n.panel-container {\n    background: rgba(15, 15, 20, 0.6) !important;\n    border: 1px solid rgba(255, 255, 255, 0.08) !important;\n    border-radius: 16px !important;\n    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.02) !important;\n    backdrop-filter: blur(16px) saturate(180%);\n    -webkit-backdrop-filter: blur(16px) saturate(180%);\n    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);\n}\n\n/* Hover effect */\n.panel-container:hover {\n    transform: translateY(-4px) scale(1.01);\n    animation: edgeGlow 3s infinite !important;\n    z-index: 100;\n}\n\n/* Typography overriding */\n.panel-title-text, .grafana-tooltip, text, div {\n    font-family: 'Outfit', sans-serif !important;\n}\n\n/* Header colors */\n.panel-title-text {\n    font-weight: 600 !important;\n    letter-spacing: 1px !important;\n    font-size: 18px !important;\n    text-transform: uppercase;\n    background: -webkit-linear-gradient(45deg, #00F2FE, #00FF87);\n    -webkit-background-clip: text;\n    -webkit-text-fill-color: transparent;\n}\n\n/* Scrollbar hiding for clean look */\n::-webkit-scrollbar {\n    width: 8px;\n    height: 8px;\n}\n::-webkit-scrollbar-track {\n    background: rgba(0,0,0,0.2); \n}\n::-webkit-scrollbar-thumb {\n    background: linear-gradient(to bottom, #00F2FE, #7F00FF); \n    border-radius: 10px;\n}\n</style>\n",
+        "mode": "html"
+      }
     }
   ]
 }

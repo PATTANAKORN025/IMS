@@ -90,7 +90,7 @@
         "x": 0,
         "y": 0,
         "w": 19,
-        "h": 3
+        "h": 6
       },
       "options": {
         "mode": "html",
@@ -114,7 +114,7 @@
         "x": 19,
         "y": 0,
         "w": 5,
-        "h": 3
+        "h": 6
       },
       "options": {
         "mode": "clock",
@@ -149,9 +149,9 @@
       "title": "MACHINE SUMMARY",
       "gridPos": {
         "x": 0,
-        "y": 3,
+        "y": 6,
         "w": 24,
-        "h": 1
+        "h": 2
       },
       "collapsed": false,
       "transparent": true,
@@ -171,9 +171,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 4,
+        "y": 8,
         "w": 6,
-        "h": 4
+        "h": 8
       },
       "transparent": true,
       "fieldConfig": {
@@ -185,15 +185,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#10B981",
+                "color": "#00FF87",
                 "value": null
               },
               {
-                "color": "#F59E0B",
+                "color": "#FF9100",
                 "value": 80
               },
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": 90
               }
             ]
@@ -241,6 +241,10 @@
         "text": {
           "titleSize": 14,
           "valueSize": 48
+        },
+        "textSizes": {
+          "titleSize": 24,
+          "valueSize": 80
         }
       },
       "targets": [
@@ -277,9 +281,9 @@
       },
       "gridPos": {
         "x": 6,
-        "y": 4,
+        "y": 8,
         "w": 6,
-        "h": 4
+        "h": 8
       },
       "transparent": true,
       "fieldConfig": {
@@ -291,15 +295,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#10B981",
+                "color": "#00FF87",
                 "value": null
               },
               {
-                "color": "#F59E0B",
+                "color": "#FF9100",
                 "value": 85
               },
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": 95
               }
             ]
@@ -347,6 +351,10 @@
         "text": {
           "titleSize": 14,
           "valueSize": 48
+        },
+        "textSizes": {
+          "titleSize": 24,
+          "valueSize": 80
         }
       },
       "targets": [
@@ -383,9 +391,9 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 4,
+        "y": 8,
         "w": 6,
-        "h": 4
+        "h": 8
       },
       "transparent": true,
       "fieldConfig": {
@@ -397,15 +405,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#10B981",
+                "color": "#00FF87",
                 "value": null
               },
               {
-                "color": "#F59E0B",
+                "color": "#FF9100",
                 "value": 80
               },
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": 90
               }
             ]
@@ -453,6 +461,10 @@
         "text": {
           "titleSize": 14,
           "valueSize": 48
+        },
+        "textSizes": {
+          "titleSize": 24,
+          "valueSize": 80
         }
       },
       "targets": [
@@ -489,9 +501,9 @@
       },
       "gridPos": {
         "x": 18,
-        "y": 4,
+        "y": 8,
         "w": 6,
-        "h": 4
+        "h": 8
       },
       "fieldConfig": {
         "defaults": {
@@ -502,23 +514,23 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#ff003c",
                 "value": null
               },
               {
-                "color": "#FF9100",
+                "color": "#ff9100",
                 "value": 19
               },
               {
-                "color": "#00FF87",
+                "color": "#00ff87",
                 "value": 20
               },
               {
-                "color": "#FF9100",
+                "color": "#ff9100",
                 "value": 24
               },
               {
-                "color": "#FF003C",
+                "color": "#ff003c",
                 "value": 25
               }
             ]
@@ -569,6 +581,10 @@
         "text": {
           "titleSize": 14,
           "valueSize": 48
+        },
+        "textSizes": {
+          "titleSize": 24,
+          "valueSize": 80
         }
       },
       "targets": [
@@ -603,9 +619,9 @@
       "title": "Time Series Analysis",
       "gridPos": {
         "x": 0,
-        "y": 8,
+        "y": 16,
         "w": 24,
-        "h": 1
+        "h": 2
       },
       "collapsed": false,
       "transparent": true,
@@ -625,9 +641,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 9,
+        "y": 18,
         "w": 24,
-        "h": 8
+        "h": 16
       },
       "fieldConfig": {
         "defaults": {
@@ -652,15 +668,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#10B981",
+                "color": "#00FF87",
                 "value": null
               },
               {
-                "color": "#F59E0B",
+                "color": "#FF9100",
                 "value": 85
               },
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": 95
               }
             ]
@@ -906,9 +922,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 17,
+        "y": 34,
         "w": 12,
-        "h": 8
+        "h": 16
       },
       "fieldConfig": {
         "defaults": {
@@ -1185,9 +1201,9 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 17,
+        "y": 34,
         "w": 12,
-        "h": 8
+        "h": 16
       },
       "fieldConfig": {
         "defaults": {
@@ -1210,23 +1226,23 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#ff003c",
                 "value": null
               },
               {
-                "color": "#FF9100",
+                "color": "#ff9100",
                 "value": 19
               },
               {
-                "color": "#00FF87",
+                "color": "#00ff87",
                 "value": 20
               },
               {
-                "color": "#FF9100",
+                "color": "#ff9100",
                 "value": 24
               },
               {
-                "color": "#FF003C",
+                "color": "#ff003c",
                 "value": 25
               }
             ]
@@ -1519,9 +1535,9 @@
       "title": "LDI Manufacturing Telemetry",
       "gridPos": {
         "x": 0,
-        "y": 25,
+        "y": 50,
         "w": 24,
-        "h": 1
+        "h": 2
       },
       "collapsed": false,
       "transparent": true,
@@ -1541,9 +1557,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 26,
+        "y": 52,
         "w": 8,
-        "h": 8
+        "h": 16
       },
       "fieldConfig": {
         "defaults": {
@@ -1764,9 +1780,9 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 26,
+        "y": 52,
         "w": 8,
-        "h": 8
+        "h": 16
       },
       "fieldConfig": {
         "defaults": {
@@ -1794,23 +1810,23 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#ff003c",
                 "value": null
               },
               {
-                "color": "#FF9100",
+                "color": "#ff9100",
                 "value": 45
               },
               {
-                "color": "#00FF87",
+                "color": "#00ff87",
                 "value": 50
               },
               {
-                "color": "#FF9100",
+                "color": "#ff9100",
                 "value": 60
               },
               {
-                "color": "#FF003C",
+                "color": "#ff003c",
                 "value": 65
               }
             ]
@@ -2015,9 +2031,9 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 26,
+        "y": 52,
         "w": 8,
-        "h": 8
+        "h": 16
       },
       "fieldConfig": {
         "defaults": {
@@ -2096,17 +2112,18 @@
       "title": "Cost & Efficiency Analytics",
       "collapsed": false,
       "gridPos": {
-        "h": 1,
+        "h": 2,
         "w": 24,
         "x": 0,
-        "y": 43
+        "y": 86
       },
       "fieldConfig": {
         "defaults": {
           "custom": {}
         }
       },
-      "options": {}
+      "options": {},
+      "transparent": true
     },
     {
       "type": "stat",
@@ -2116,10 +2133,10 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "h": 8,
+        "h": 16,
         "w": 8,
         "x": 0,
-        "y": 44
+        "y": 88
       },
       "fieldConfig": {
         "defaults": {
@@ -2127,20 +2144,20 @@
           "decimals": 2,
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00F2FE"
+            "fixedColor": "#00f2fe"
           },
           "thresholds": {
             "steps": [
               {
-                "color": "#10B981",
+                "color": "#00FF87",
                 "value": null
               },
               {
-                "color": "#F59E0B",
+                "color": "#FF9100",
                 "value": 1000
               },
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": 5000
               }
             ]
@@ -2189,6 +2206,10 @@
         "text": {
           "titleSize": 14,
           "valueSize": 48
+        },
+        "textSizes": {
+          "titleSize": 24,
+          "valueSize": 80
         }
       },
       "description": "Estimated 24-hour electricity cost in Thai Baht. Calculated as: avg_watts x 24h / 1000 x 4 THB/kWh tariff. Based on rolling 1-hour average power consumption from LDI manufacturing metrics. Thresholds: green < 500 THB, yellow 500-1000 THB, red > 1000 THB.",
@@ -2202,10 +2223,10 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "h": 8,
+        "h": 16,
         "w": 8,
         "x": 8,
-        "y": 44
+        "y": 88
       },
       "fieldConfig": {
         "defaults": {
@@ -2213,20 +2234,20 @@
           "decimals": 2,
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00F2FE"
+            "fixedColor": "#00f2fe"
           },
           "thresholds": {
             "steps": [
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": null
               },
               {
-                "color": "#F59E0B",
+                "color": "#FF9100",
                 "value": 0.5
               },
               {
-                "color": "#10B981",
+                "color": "#00FF87",
                 "value": 0.8
               }
             ]
@@ -2275,6 +2296,10 @@
         "text": {
           "titleSize": 14,
           "valueSize": 48
+        },
+        "textSizes": {
+          "titleSize": 24,
+          "valueSize": 80
         }
       },
       "description": "Manufacturing throughput per watt of power consumed. Higher is better. Calculated as: throughput_count / power_watt. Tracks how efficiently the LDI machine converts electrical energy into productive output. Below 1.0 indicates excessive idle power draw relative to production volume.",
@@ -2288,10 +2313,10 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "h": 8,
+        "h": 16,
         "w": 8,
         "x": 16,
-        "y": 44
+        "y": 88
       },
       "fieldConfig": {
         "defaults": {
@@ -2303,15 +2328,15 @@
           "thresholds": {
             "steps": [
               {
-                "color": "#10B981",
+                "color": "#00FF87",
                 "value": null
               },
               {
-                "color": "#F59E0B",
+                "color": "#FF9100",
                 "value": 1
               },
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": 3
               }
             ]
@@ -2360,6 +2385,10 @@
         "text": {
           "titleSize": 14,
           "valueSize": 48
+        },
+        "textSizes": {
+          "titleSize": 24,
+          "valueSize": 80
         }
       },
       "description": "Composite risk score (0-100) indicating probability of yield loss. Triggered when throughput drops below baseline minus 2 standard deviations while power consumption remains above 80% of baseline — indicating the machine is drawing full power but producing substandard output. Score 0 = normal, 100 = critical yield loss suspected.",
@@ -2371,9 +2400,9 @@
       "title": "AIOps — ANOMALY DETECTION (3-Sigma Z-Score)",
       "gridPos": {
         "x": 0,
-        "y": 34,
+        "y": 68,
         "w": 24,
-        "h": 1
+        "h": 2
       },
       "collapsed": false,
       "transparent": true,
@@ -2394,9 +2423,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 35,
+        "y": 70,
         "w": 12,
-        "h": 8
+        "h": 16
       },
       "fieldConfig": {
         "defaults": {
@@ -2413,15 +2442,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#3B82F6",
+                "color": "#00F2FE",
                 "value": null
               },
               {
-                "color": "#F59E0B",
+                "color": "#FF9100",
                 "value": 2
               },
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": 3
               }
             ]
@@ -2478,9 +2507,9 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 35,
+        "y": 70,
         "w": 12,
-        "h": 8
+        "h": 16
       },
       "fieldConfig": {
         "defaults": {
@@ -2497,23 +2526,23 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#ff003c",
                 "value": null
               },
               {
-                "color": "#FF9100",
+                "color": "#ff9100",
                 "value": 19
               },
               {
-                "color": "#00FF87",
+                "color": "#00ff87",
                 "value": 20
               },
               {
-                "color": "#FF9100",
+                "color": "#ff9100",
                 "value": 24
               },
               {
-                "color": "#FF003C",
+                "color": "#ff003c",
                 "value": 25
               }
             ]
@@ -2561,9 +2590,9 @@
       "title": "RESOURCE DISTRIBUTION",
       "gridPos": {
         "x": 0,
-        "y": 52,
+        "y": 104,
         "w": 24,
-        "h": 1
+        "h": 2
       },
       "collapsed": false,
       "transparent": true,
@@ -2583,9 +2612,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 53,
+        "y": 106,
         "w": 12,
-        "h": 8
+        "h": 16
       },
       "transparent": true,
       "fieldConfig": {
@@ -2696,9 +2725,9 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 53,
+        "y": 106,
         "w": 12,
-        "h": 8
+        "h": 16
       },
       "transparent": true,
       "fieldConfig": {
@@ -2799,6 +2828,22 @@
         }
       ],
       "description": "Machine fleet composition by status (Online/Warning/Critical)"
+    },
+    {
+      "id": 9999,
+      "title": "Theme Injector",
+      "type": "text",
+      "transparent": true,
+      "gridPos": {
+        "h": 2,
+        "w": 24,
+        "x": 0,
+        "y": 124
+      },
+      "options": {
+        "content": "\n<style>\n@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');\n\n@keyframes gradientBG {\n    0% { background-position: 0% 50%; }\n    50% { background-position: 100% 50%; }\n    100% { background-position: 0% 50%; }\n}\n\n@keyframes edgeGlow {\n    0% { border-color: rgba(0, 242, 254, 0.3); }\n    50% { border-color: rgba(0, 255, 135, 0.6); box-shadow: 0 0 15px rgba(0, 255, 135, 0.2), inset 0 0 20px rgba(0, 255, 135, 0.05); }\n    100% { border-color: rgba(0, 242, 254, 0.3); }\n}\n\n/* Global Background */\n.main-view, .react-grid-layout, .dashboard-container, body {\n    background: linear-gradient(-45deg, #0b0f19, #141416, #090a0f, #1a1525) !important;\n    background-size: 400% 400% !important;\n    animation: gradientBG 15s ease infinite !important;\n}\n\n/* Panel Backgrounds (Ultra Glassmorphism) */\n.panel-container {\n    background: rgba(15, 15, 20, 0.6) !important;\n    border: 1px solid rgba(255, 255, 255, 0.08) !important;\n    border-radius: 16px !important;\n    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.02) !important;\n    backdrop-filter: blur(16px) saturate(180%);\n    -webkit-backdrop-filter: blur(16px) saturate(180%);\n    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);\n}\n\n/* Hover effect */\n.panel-container:hover {\n    transform: translateY(-4px) scale(1.01);\n    animation: edgeGlow 3s infinite !important;\n    z-index: 100;\n}\n\n/* Typography overriding */\n.panel-title-text, .grafana-tooltip, text, div {\n    font-family: 'Outfit', sans-serif !important;\n}\n\n/* Header colors */\n.panel-title-text {\n    font-weight: 600 !important;\n    letter-spacing: 1px !important;\n    font-size: 18px !important;\n    text-transform: uppercase;\n    background: -webkit-linear-gradient(45deg, #00F2FE, #00FF87);\n    -webkit-background-clip: text;\n    -webkit-text-fill-color: transparent;\n}\n\n/* Scrollbar hiding for clean look */\n::-webkit-scrollbar {\n    width: 8px;\n    height: 8px;\n}\n::-webkit-scrollbar-track {\n    background: rgba(0,0,0,0.2); \n}\n::-webkit-scrollbar-thumb {\n    background: linear-gradient(to bottom, #00F2FE, #7F00FF); \n    border-radius: 10px;\n}\n</style>\n",
+        "mode": "html"
+      }
     }
   ],
   "graphTooltip": 1

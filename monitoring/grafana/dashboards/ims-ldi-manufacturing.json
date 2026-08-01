@@ -105,7 +105,7 @@
         "x": 0,
         "y": 0,
         "w": 3,
-        "h": 3
+        "h": 6
       },
       "fieldConfig": {
         "defaults": {
@@ -115,15 +115,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": null
               },
               {
-                "color": "#FACC15",
+                "color": "#facc15",
                 "value": 90
               },
               {
-                "color": "#22C55E",
+                "color": "#22c55e",
                 "value": 95
               }
             ]
@@ -151,7 +151,11 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "-"
+        "noValue": "-",
+        "textSizes": {
+          "titleSize": 24,
+          "valueSize": 80
+        }
       },
       "targets": [
         {
@@ -177,7 +181,7 @@
         "x": 3,
         "y": 0,
         "w": 3,
-        "h": 3
+        "h": 6
       },
       "fieldConfig": {
         "defaults": {
@@ -187,22 +191,22 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": null
               },
               {
-                "color": "#FACC15",
+                "color": "#facc15",
                 "value": 80
               },
               {
-                "color": "#22C55E",
+                "color": "#22c55e",
                 "value": 90
               }
             ]
           },
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00F2FE"
+            "fixedColor": "#00f2fe"
           },
           "custom": {},
           "min": 0,
@@ -224,7 +228,11 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "-"
+        "noValue": "-",
+        "textSizes": {
+          "titleSize": 24,
+          "valueSize": 80
+        }
       },
       "targets": [
         {
@@ -250,7 +258,7 @@
         "x": 6,
         "y": 0,
         "w": 3,
-        "h": 3
+        "h": 6
       },
       "fieldConfig": {
         "defaults": {
@@ -260,22 +268,22 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": null
               },
               {
-                "color": "#FACC15",
+                "color": "#facc15",
                 "value": 1
               },
               {
-                "color": "#22C55E",
+                "color": "#22c55e",
                 "value": 1.33
               }
             ]
           },
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00F2FE"
+            "fixedColor": "#00f2fe"
           },
           "custom": {
             "axisSoftMin": 0,
@@ -298,7 +306,11 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "-"
+        "noValue": "-",
+        "textSizes": {
+          "titleSize": 24,
+          "valueSize": 80
+        }
       },
       "targets": [
         {
@@ -324,7 +336,7 @@
         "x": 9,
         "y": 0,
         "w": 3,
-        "h": 3
+        "h": 6
       },
       "fieldConfig": {
         "defaults": {
@@ -334,18 +346,18 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": null
               },
               {
-                "color": "#22C55E",
+                "color": "#22c55e",
                 "value": 8
               }
             ]
           },
           "color": {
             "mode": "fixed",
-            "fixedColor": "#00F2FE"
+            "fixedColor": "#00f2fe"
           },
           "custom": {}
         },
@@ -365,7 +377,11 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "-"
+        "noValue": "-",
+        "textSizes": {
+          "titleSize": 24,
+          "valueSize": 80
+        }
       },
       "targets": [
         {
@@ -391,7 +407,7 @@
         "x": 12,
         "y": 0,
         "w": 3,
-        "h": 3
+        "h": 6
       },
       "fieldConfig": {
         "defaults": {
@@ -403,15 +419,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#22C55E",
+                "color": "#22c55e",
                 "value": null
               },
               {
-                "color": "#FACC15",
+                "color": "#facc15",
                 "value": 80
               },
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": 100
               }
             ]
@@ -436,6 +452,10 @@
         "text": {
           "titleSize": 14,
           "valueSize": 48
+        },
+        "textSizes": {
+          "titleSize": 24,
+          "valueSize": 80
         }
       },
       "targets": [
@@ -462,7 +482,7 @@
         "x": 15,
         "y": 0,
         "w": 3,
-        "h": 3
+        "h": 6
       },
       "fieldConfig": {
         "defaults": {
@@ -472,23 +492,23 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": null
               },
               {
-                "color": "#F59E0B",
+                "color": "#FF9100",
                 "value": 19
               },
               {
-                "color": "#10B981",
+                "color": "#00FF87",
                 "value": 20
               },
               {
-                "color": "#F59E0B",
+                "color": "#FF9100",
                 "value": 24
               },
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": 25
               }
             ]
@@ -516,7 +536,11 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "-"
+        "noValue": "-",
+        "textSizes": {
+          "titleSize": 24,
+          "valueSize": 80
+        }
       },
       "targets": [
         {
@@ -542,7 +566,7 @@
         "x": 18,
         "y": 0,
         "w": 3,
-        "h": 3
+        "h": 6
       },
       "fieldConfig": {
         "defaults": {
@@ -552,23 +576,23 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": null
               },
               {
-                "color": "#F59E0B",
+                "color": "#FF9100",
                 "value": 45
               },
               {
-                "color": "#10B981",
+                "color": "#00FF87",
                 "value": 50
               },
               {
-                "color": "#F59E0B",
+                "color": "#FF9100",
                 "value": 60
               },
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": 65
               }
             ]
@@ -596,7 +620,11 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "-"
+        "noValue": "-",
+        "textSizes": {
+          "titleSize": 24,
+          "valueSize": 80
+        }
       },
       "targets": [
         {
@@ -622,7 +650,7 @@
         "x": 21,
         "y": 0,
         "w": 3,
-        "h": 3
+        "h": 6
       },
       "fieldConfig": {
         "defaults": {
@@ -632,11 +660,11 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#22C55E",
+                "color": "#22c55e",
                 "value": null
               },
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": 1
               }
             ]
@@ -662,7 +690,11 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "-"
+        "noValue": "-",
+        "textSizes": {
+          "titleSize": 24,
+          "valueSize": 80
+        }
       },
       "targets": [
         {
@@ -670,7 +702,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT COUNT(*)::NUMERIC AS value\nFROM public.ldi_alarm_log a\nJOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\nWHERE a.eqp_id IN (${machine_id:sqlstring}) AND m.alarm_type ILIKE '%Critical%';",
+          "rawSql": "SELECT COUNT(*)::NUMERIC AS value\nFROM public.ldi_alarm_log a\nJOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\nWHERE a.equipmentid IN (${machine_id:sqlstring}) AND m.alarm_type ILIKE '%Critical%';",
           "format": "table"
         }
       ],
@@ -686,9 +718,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 3,
+        "y": 6,
         "w": 8,
-        "h": 6
+        "h": 12
       },
       "options": {
         "showHeader": true,
@@ -724,23 +756,23 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#ff003c",
                 "value": null
               },
               {
-                "color": "#FF9100",
+                "color": "#ff9100",
                 "value": 19
               },
               {
-                "color": "#00FF87",
+                "color": "#00ff87",
                 "value": 20
               },
               {
-                "color": "#FF9100",
+                "color": "#ff9100",
                 "value": 24
               },
               {
-                "color": "#FF003C",
+                "color": "#ff003c",
                 "value": 25
               }
             ]
@@ -809,9 +841,9 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 3,
+        "y": 6,
         "w": 8,
-        "h": 6
+        "h": 12
       },
       "fieldConfig": {
         "defaults": {
@@ -838,23 +870,23 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": null
               },
               {
-                "color": "#F59E0B",
+                "color": "#FF9100",
                 "value": 19
               },
               {
-                "color": "#10B981",
+                "color": "#00FF87",
                 "value": 20
               },
               {
-                "color": "#F59E0B",
+                "color": "#FF9100",
                 "value": 24
               },
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": 25
               }
             ]
@@ -903,9 +935,9 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 3,
+        "y": 6,
         "w": 8,
-        "h": 6
+        "h": 12
       },
       "fieldConfig": {
         "defaults": {
@@ -932,23 +964,23 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": null
               },
               {
-                "color": "#F59E0B",
+                "color": "#FF9100",
                 "value": 45
               },
               {
-                "color": "#10B981",
+                "color": "#00FF87",
                 "value": 50
               },
               {
-                "color": "#F59E0B",
+                "color": "#FF9100",
                 "value": 60
               },
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": 65
               }
             ]
@@ -997,9 +1029,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 9,
+        "y": 18,
         "w": 8,
-        "h": 5
+        "h": 10
       },
       "fieldConfig": {
         "defaults": {
@@ -1123,9 +1155,9 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 9,
+        "y": 18,
         "w": 8,
-        "h": 5
+        "h": 10
       },
       "fieldConfig": {
         "defaults": {
@@ -1249,9 +1281,9 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 9,
+        "y": 18,
         "w": 8,
-        "h": 5
+        "h": 10
       },
       "fieldConfig": {
         "defaults": {
@@ -1367,9 +1399,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 14,
+        "y": 28,
         "w": 8,
-        "h": 4
+        "h": 8
       },
       "fieldConfig": {
         "defaults": {
@@ -1424,9 +1456,9 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 14,
+        "y": 28,
         "w": 8,
-        "h": 4
+        "h": 8
       },
       "fieldConfig": {
         "defaults": {
@@ -1453,23 +1485,23 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": null
               },
               {
-                "color": "#F59E0B",
+                "color": "#FF9100",
                 "value": 19
               },
               {
-                "color": "#10B981",
+                "color": "#00FF87",
                 "value": 20
               },
               {
-                "color": "#F59E0B",
+                "color": "#FF9100",
                 "value": 24
               },
               {
-                "color": "#EF4444",
+                "color": "#FF003C",
                 "value": 25
               }
             ]
@@ -1517,9 +1549,9 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 14,
+        "y": 28,
         "w": 8,
-        "h": 4
+        "h": 8
       },
       "options": {
         "showHeader": true,
@@ -1542,7 +1574,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT a.logdate AS \"Time\", a.eqp_id AS \"Machine\", a.errorcode AS \"errorcode\", a.errortime AS \"errortime\",\n       COALESCE(m.alarm_msg,a.errorcode::TEXT) AS \"Message\", COALESCE(m.alarm_type,'UNMAPPED') AS \"Severity\"\nFROM public.ldi_alarm_log a\nLEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT=m.alarm_code::TEXT\nWHERE a.eqp_id IN (${machine_id:sqlstring}) ORDER BY a.logdate DESC LIMIT 30;",
+          "rawSql": "SELECT a.logdate AS \"Time\", a.equipmentid AS \"Machine\", a.errorcode AS \"errorcode\", a.errortime AS \"errortime\",\n       COALESCE(m.alarm_msg,a.errorcode::TEXT) AS \"Message\", COALESCE(m.alarm_type,'UNMAPPED') AS \"Severity\"\nFROM public.ldi_alarm_log a\nLEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT=m.alarm_code::TEXT\nWHERE a.equipmentid IN (${machine_id:sqlstring}) ORDER BY a.logdate DESC LIMIT 30;",
           "format": "table"
         }
       ],
@@ -1623,6 +1655,22 @@
         ]
       },
       "description": "Latest real alarm rows for selected machine IDs, independent of telemetry time because the exports cover different dates."
+    },
+    {
+      "id": 9999,
+      "title": "Theme Injector",
+      "type": "text",
+      "transparent": true,
+      "gridPos": {
+        "h": 2,
+        "w": 24,
+        "x": 0,
+        "y": 38
+      },
+      "options": {
+        "content": "\n<style>\n@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');\n\n@keyframes gradientBG {\n    0% { background-position: 0% 50%; }\n    50% { background-position: 100% 50%; }\n    100% { background-position: 0% 50%; }\n}\n\n@keyframes edgeGlow {\n    0% { border-color: rgba(0, 242, 254, 0.3); }\n    50% { border-color: rgba(0, 255, 135, 0.6); box-shadow: 0 0 15px rgba(0, 255, 135, 0.2), inset 0 0 20px rgba(0, 255, 135, 0.05); }\n    100% { border-color: rgba(0, 242, 254, 0.3); }\n}\n\n/* Global Background */\n.main-view, .react-grid-layout, .dashboard-container, body {\n    background: linear-gradient(-45deg, #0b0f19, #141416, #090a0f, #1a1525) !important;\n    background-size: 400% 400% !important;\n    animation: gradientBG 15s ease infinite !important;\n}\n\n/* Panel Backgrounds (Ultra Glassmorphism) */\n.panel-container {\n    background: rgba(15, 15, 20, 0.6) !important;\n    border: 1px solid rgba(255, 255, 255, 0.08) !important;\n    border-radius: 16px !important;\n    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.02) !important;\n    backdrop-filter: blur(16px) saturate(180%);\n    -webkit-backdrop-filter: blur(16px) saturate(180%);\n    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);\n}\n\n/* Hover effect */\n.panel-container:hover {\n    transform: translateY(-4px) scale(1.01);\n    animation: edgeGlow 3s infinite !important;\n    z-index: 100;\n}\n\n/* Typography overriding */\n.panel-title-text, .grafana-tooltip, text, div {\n    font-family: 'Outfit', sans-serif !important;\n}\n\n/* Header colors */\n.panel-title-text {\n    font-weight: 600 !important;\n    letter-spacing: 1px !important;\n    font-size: 18px !important;\n    text-transform: uppercase;\n    background: -webkit-linear-gradient(45deg, #00F2FE, #00FF87);\n    -webkit-background-clip: text;\n    -webkit-text-fill-color: transparent;\n}\n\n/* Scrollbar hiding for clean look */\n::-webkit-scrollbar {\n    width: 8px;\n    height: 8px;\n}\n::-webkit-scrollbar-track {\n    background: rgba(0,0,0,0.2); \n}\n::-webkit-scrollbar-thumb {\n    background: linear-gradient(to bottom, #00F2FE, #7F00FF); \n    border-radius: 10px;\n}\n</style>\n",
+        "mode": "html"
+      }
     }
   ],
   "style": "dark",
