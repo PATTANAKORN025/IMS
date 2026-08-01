@@ -727,7 +727,7 @@
       "title": "DISK CAPACITY FORECAST",
       "gridPos": {
         "x": 0,
-        "y": 30,
+        "y": 28,
         "w": 24,
         "h": 2
       },
@@ -749,7 +749,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 32,
+        "y": 30,
         "w": 24,
         "h": 20
       },
@@ -1070,7 +1070,7 @@
       "title": "RESOURCE CONSUMPTION TRENDS",
       "gridPos": {
         "x": 0,
-        "y": 52,
+        "y": 50,
         "w": 24,
         "h": 2
       },
@@ -1092,7 +1092,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 54,
+        "y": 52,
         "w": 12,
         "h": 20
       },
@@ -1373,7 +1373,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 54,
+        "y": 52,
         "w": 12,
         "h": 20
       },
@@ -1651,7 +1651,7 @@
       "title": "AIOps — ANOMALY DETECTION",
       "gridPos": {
         "x": 0,
-        "y": 74,
+        "y": 72,
         "w": 24,
         "h": 2
       },
@@ -1673,7 +1673,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 76,
+        "y": 74,
         "w": 12,
         "h": 20
       },
@@ -1965,7 +1965,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 76,
+        "y": 74,
         "w": 12,
         "h": 20
       },
@@ -2245,22 +2245,6 @@
           "targetBlank": true
         }
       ]
-    },
-    {
-      "id": 9999,
-      "title": "",
-      "type": "text",
-      "transparent": true,
-      "gridPos": {
-        "h": 2,
-        "w": 24,
-        "x": 0,
-        "y": 98
-      },
-      "options": {
-        "content": "<!-- duplicate css removed -->",
-        "mode": "html"
-      }
     }
   ],
   "graphTooltip": 1

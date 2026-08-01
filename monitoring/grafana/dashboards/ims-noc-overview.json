@@ -531,7 +531,7 @@
       "title": "FLEET STATUS TABLE",
       "gridPos": {
         "x": 0,
-        "y": 28,
+        "y": 26,
         "w": 24,
         "h": 2
       },
@@ -553,7 +553,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 30,
+        "y": 28,
         "w": 24,
         "h": 14
       },
@@ -738,7 +738,7 @@
       "title": "KEY METRICS (Real-Time)",
       "gridPos": {
         "x": 0,
-        "y": 44,
+        "y": 42,
         "w": 24,
         "h": 2
       },
@@ -760,7 +760,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 46,
+        "y": 44,
         "w": 12,
         "h": 20
       },
@@ -1085,7 +1085,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 46,
+        "y": 44,
         "w": 12,
         "h": 20
       },
@@ -1417,7 +1417,7 @@
       "title": "NETWORK HEALTH",
       "gridPos": {
         "x": 0,
-        "y": 66,
+        "y": 64,
         "w": 24,
         "h": 2
       },
@@ -1439,7 +1439,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 68,
+        "y": 66,
         "w": 12,
         "h": 20
       },
@@ -1583,7 +1583,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 68,
+        "y": 66,
         "w": 12,
         "h": 20
       },
@@ -1900,22 +1900,6 @@
       ],
       "description": "Fleet-wide ram saturation envelope: average (solid cyan) vs worst-case ceiling (dashed #EF4444).",
       "transparent": true
-    },
-    {
-      "id": 9999,
-      "title": "",
-      "type": "text",
-      "transparent": true,
-      "gridPos": {
-        "h": 2,
-        "w": 24,
-        "x": 0,
-        "y": 90
-      },
-      "options": {
-        "content": "<!-- duplicate css removed -->",
-        "mode": "html"
-      }
     }
   ],
   "graphTooltip": 1,

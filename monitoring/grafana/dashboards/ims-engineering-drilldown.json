@@ -2815,22 +2815,6 @@
         }
       ],
       "description": "Machine fleet composition by status (Online/Warning/Critical)"
-    },
-    {
-      "id": 9999,
-      "title": "",
-      "type": "text",
-      "transparent": true,
-      "gridPos": {
-        "h": 2,
-        "w": 24,
-        "x": 0,
-        "y": 124
-      },
-      "options": {
-        "content": "<!-- duplicate css removed -->",
-        "mode": "html"
-      }
     }
   ],
   "graphTooltip": 1

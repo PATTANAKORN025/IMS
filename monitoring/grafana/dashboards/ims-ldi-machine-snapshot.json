@@ -149,7 +149,7 @@
         "x": 0,
         "y": 0,
         "w": 24,
-        "h": 8
+        "h": 10
       },
       "options": {
         "showHeader": true,
@@ -374,7 +374,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 8,
+        "y": 10,
         "w": 8,
         "h": 8
       },
@@ -460,7 +460,7 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 8,
+        "y": 10,
         "w": 8,
         "h": 8
       },
@@ -546,7 +546,7 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 8,
+        "y": 10,
         "w": 8,
         "h": 8
       },
@@ -619,7 +619,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 16,
+        "y": 18,
         "w": 8,
         "h": 8
       },
@@ -692,7 +692,7 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 16,
+        "y": 18,
         "w": 8,
         "h": 8
       },
@@ -765,7 +765,7 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 16,
+        "y": 18,
         "w": 8,
         "h": 8
       },
@@ -838,9 +838,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 24,
+        "y": 26,
         "w": 24,
-        "h": 8
+        "h": 10
       },
       "options": {
         "showHeader": true,
@@ -1027,7 +1027,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 40,
+        "y": 46,
         "w": 12,
         "h": 10
       },
@@ -1208,7 +1208,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 50,
+        "y": 56,
         "w": 24,
         "h": 10
       },
@@ -1329,7 +1329,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 40,
+        "y": 46,
         "w": 12,
         "h": 10
       },
@@ -1397,7 +1397,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 60,
+        "y": 66,
         "w": 24,
         "h": 14
       },
@@ -1482,9 +1482,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 32,
+        "y": 36,
         "w": 24,
-        "h": 8
+        "h": 10
       },
       "options": {
         "showHeader": true,
@@ -1636,22 +1636,6 @@
             ]
           }
         ]
-      }
-    },
-    {
-      "id": 9999,
-      "title": "",
-      "type": "text",
-      "transparent": true,
-      "gridPos": {
-        "h": 2,
-        "w": 24,
-        "x": 0,
-        "y": 76
-      },
-      "options": {
-        "content": "<style>\n[class*=\"-panel-container\"] {\n  border-radius: 14px !important;\n  background: #12161A !important;\n  border: 1px solid rgba(255,255,255,0.06) !important;\n  padding: 4px !important;\n}\n</style>",
-        "mode": "html"
       }
     }
   ],
