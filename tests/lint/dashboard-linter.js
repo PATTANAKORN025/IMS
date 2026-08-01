@@ -94,7 +94,11 @@ function lintDashboard(filePath) {
 
     // Check 8: Panel descriptions
     if (panel.type !== 'clock' && !panel.description) {
-      warn(file, pid, `Missing description`);
+      if (panel.type === 'text' && !panel.title && panel.gridPos?.h <= 1) {
+        // Skip CSS injector panels
+      } else {
+        warn(file, pid, `Missing description`);
+      }
     }
 
     // Check 5: noValue on stat/gauge
@@ -120,6 +124,13 @@ function lintDashboard(filePath) {
       // Check 6: connectNullPoints
       if (panel.options?.connectNullPoints !== true) {
         warn(file, pid, 'Missing connectNullPoints: true');
+      }
+
+      // Check 12: time_bucket in timeseries queries
+      for (const target of (panel.targets || [])) {
+        if (target.rawSql && !target.rawSql.includes('time_bucket') && !target.rawSql.includes('NO_TIMEFILTER_INTENTIONAL')) {
+          error(file, pid, 'timeseries panel missing time_bucket downsampling (add NO_TIMEFILTER_INTENTIONAL if intentional)');
+        }
       }
     }
 

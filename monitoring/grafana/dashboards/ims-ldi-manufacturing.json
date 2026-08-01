@@ -2068,7 +2068,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH stats AS (\n  SELECT eqp_id, AVG(temperature) AS mu, STDDEV_SAMP(temperature) AS sigma\n  FROM public.ldi_data\n  WHERE $__timeFilter(\"time\") AND factory IN (${factory:sqlstring})\n    AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND temperature IS NOT NULL\n  GROUP BY eqp_id\n)\nSELECT d.\"time\", d.eqp_id AS metric, ROUND(((d.temperature-s.mu)/NULLIF(s.sigma, 0))::NUMERIC,2) AS \"Z-Score\"\nFROM public.ldi_data d JOIN stats s ON d.eqp_id=s.eqp_id\nWHERE $__timeFilter(d.\"time\") AND d.factory IN (${factory:sqlstring})\n  AND d.mo IN (${mo:sqlstring}) AND d.eqp_id IN (${machine_id:sqlstring})\n  AND d.temperature IS NOT NULL AND s.sigma > 0 ORDER BY d.\"time\";",
+          "rawSql": "WITH stats AS (\n  SELECT eqp_id, AVG(temperature) AS mu, STDDEV_SAMP(temperature) AS sigma\n  FROM public.ldi_data\n  WHERE $__timeFilter(\"time\") AND factory IN (${factory:sqlstring})\n    AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND temperature IS NOT NULL\n  GROUP BY eqp_id\n)\nSELECT time_bucket('$__interval', d.\"time\") AS \"time\", d.eqp_id AS metric, ROUND(AVG((d.temperature-s.mu)/NULLIF(s.sigma, 0))::NUMERIC,2) AS \"Z-Score\"\nFROM public.ldi_data d JOIN stats s ON d.eqp_id=s.eqp_id\nWHERE $__timeFilter(d.\"time\") AND d.factory IN (${factory:sqlstring})\n  AND d.mo IN (${mo:sqlstring}) AND d.eqp_id IN (${machine_id:sqlstring})\n  AND d.temperature IS NOT NULL AND s.sigma > 0\nGROUP BY 1, 2\nORDER BY 1, 2;",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }

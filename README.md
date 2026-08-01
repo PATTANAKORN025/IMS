@@ -224,7 +224,7 @@ open "http://localhost:3000/playlists/play/1?kiosk=tv&autofitpanels"
 ```
 IMS/
 ├── monitoring/grafana/                # Grafana dashboards + provisioning
-│   ├── dashboards/                    #   4 JSON dashboard files (source of truth)
+│   ├── dashboards/                    #   9 JSON dashboard files (source of truth)
 │   └── library-panels/               #   Shared library panels (Fleet Health Score)
 ├── nodered_data/                      # Node-RED pipeline engine
 │   ├── flows/                         #   ingestion.json + alerting.json (source)
