@@ -183,7 +183,7 @@
           "custom": {
             "drawStyle": "line",
             "lineInterpolation": "smooth",
-            "fillOpacity": 25,
+            "fillOpacity": 15,
             "lineWidth": 2,
             "showPoints": "never",
             "spanNulls": false,
@@ -301,7 +301,7 @@
           "custom": {
             "drawStyle": "line",
             "lineInterpolation": "smooth",
-            "fillOpacity": 25,
+            "fillOpacity": 15,
             "lineWidth": 2,
             "showPoints": "never",
             "spanNulls": false,
@@ -419,7 +419,7 @@
           "custom": {
             "drawStyle": "line",
             "lineInterpolation": "smooth",
-            "fillOpacity": 25,
+            "fillOpacity": 15,
             "lineWidth": 2,
             "showPoints": "never",
             "spanNulls": false,
@@ -512,7 +512,7 @@
           "custom": {
             "drawStyle": "line",
             "lineInterpolation": "smooth",
-            "fillOpacity": 25,
+            "fillOpacity": 15,
             "lineWidth": 2,
             "showPoints": "never",
             "spanNulls": false,
@@ -605,7 +605,7 @@
           "custom": {
             "drawStyle": "line",
             "lineInterpolation": "smooth",
-            "fillOpacity": 25,
+            "fillOpacity": 15,
             "lineWidth": 2,
             "showPoints": "never",
             "spanNulls": false,
@@ -698,7 +698,7 @@
           "custom": {
             "drawStyle": "line",
             "lineInterpolation": "smooth",
-            "fillOpacity": 25,
+            "fillOpacity": 15,
             "lineWidth": 2,
             "showPoints": "never",
             "spanNulls": false,
@@ -791,7 +791,7 @@
           "custom": {
             "drawStyle": "line",
             "lineInterpolation": "smooth",
-            "fillOpacity": 25,
+            "fillOpacity": 15,
             "lineWidth": 2,
             "showPoints": "never",
             "spanNulls": false,
@@ -929,7 +929,7 @@
           "custom": {
             "drawStyle": "line",
             "lineInterpolation": "smooth",
-            "fillOpacity": 25,
+            "fillOpacity": 15,
             "lineWidth": 2,
             "showPoints": "never",
             "spanNulls": false,
@@ -1501,7 +1501,7 @@
           "custom": {
             "gradientMode": "opacity",
             "lineInterpolation": "smooth",
-            "fillOpacity": 25,
+            "fillOpacity": 15,
             "lineWidth": 2
           },
           "mappings": [],
