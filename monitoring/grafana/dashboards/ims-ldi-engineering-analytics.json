@@ -1478,7 +1478,7 @@
       "targets": [
         {
           "format": "table",
-          "rawSql": "SELECT 'THERMAL (81501)' AS \"Alarm Category\", ROUND((100.0*COUNT(*) FILTER (WHERE flag_temp_out_of_spec) / NULLIF(COUNT(*))::NUMERIC,0), 1) AS \"Correlation %\", COUNT(*) AS \"Event Count\" FROM v_ldi_alarm_context WHERE errorcode = '81501'\nUNION ALL\nSELECT 'VACUUM (81101/02)', ROUND((100.0*COUNT(*) FILTER (WHERE flag_vac_out_of_spec) / NULLIF(COUNT(*))::NUMERIC,0), 1), COUNT(*) FROM v_ldi_alarm_context WHERE errorcode IN ('81101','81102')\nUNION ALL\nSELECT 'ALIGNMENT (812xx)', ROUND((100.0*COUNT(*) FILTER (WHERE flag_pe_out_of_spec) / NULLIF(COUNT(*))::NUMERIC,0), 1), COUNT(*) FROM v_ldi_alarm_context WHERE errorcode IN ('81201','81203','81204')",
+          "rawSql": "SELECT 'THERMAL (81501)' AS \"Alarm Category\", ROUND(100.0*COUNT(*) FILTER (WHERE flag_temp_out_of_spec) / NULLIF(COUNT(*),0), 1) AS \"Correlation %\", COUNT(*) AS \"Event Count\" FROM v_ldi_alarm_context WHERE errorcode = '81501'\nUNION ALL\nSELECT 'VACUUM (81101/02)', ROUND(100.0*COUNT(*) FILTER (WHERE flag_vac_out_of_spec) / NULLIF(COUNT(*),0), 1), COUNT(*) FROM v_ldi_alarm_context WHERE errorcode IN ('81101','81102')\nUNION ALL\nSELECT 'ALIGNMENT (812xx)', ROUND(100.0*COUNT(*) FILTER (WHERE flag_pe_out_of_spec) / NULLIF(COUNT(*),0), 1), COUNT(*) FROM v_ldi_alarm_context WHERE errorcode IN ('81201','81203','81204')",
           "refId": "A"
         }
       ],

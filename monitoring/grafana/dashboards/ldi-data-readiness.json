@@ -103,7 +103,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "-- Intentional full table scan for global readiness\nSELECT ROUND((EXTRACT(EPOCH FROM (NOW() - MAX(\"time\"))) / 3600.0)::NUMERIC, 1) AS value\nFROM public.ldi_data\nWHERE factory IN (${factory:sqlstring})\n  AND eqp_id IN (${machine_id:sqlstring});",
+          "rawSql": "-- Intentional full table scan for global readiness\nSELECT ROUND(EXTRACT(EPOCH FROM (NOW() - MAX(\"time\"))) / 3600.0, 1) AS value\nFROM public.ldi_data\nWHERE factory IN (${factory:sqlstring})\n  AND eqp_id IN (${machine_id:sqlstring});",
           "refId": "A",
           "sql": {
             "columns": [],
@@ -192,7 +192,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "-- Intentional full table scan for global readiness\nSELECT ROUND((EXTRACT(EPOCH FROM (NOW() - MAX(logdate))) / 3600.0)::NUMERIC, 1) AS value\nFROM public.ldi_alarm_log\nWHERE eqp_id IN (${machine_id:sqlstring});",
+          "rawSql": "-- Intentional full table scan for global readiness\nSELECT ROUND(EXTRACT(EPOCH FROM (NOW() - MAX(logdate))) / 3600.0, 1) AS value\nFROM public.ldi_alarm_log\nWHERE eqp_id IN (${machine_id:sqlstring});",
           "refId": "A",
           "sql": {
             "columns": [],
@@ -371,7 +371,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "-- Intentional full table scan for global readiness\nSELECT ROUND((100.0 * COUNT(*) FILTER (WHERE m.alarm_code IS NOT NULL) / NULLIF(COUNT(*))::NUMERIC, 0), 1) AS value\nFROM public.ldi_alarm_log a\nLEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\nWHERE a.equipmentid IN (${machine_id:sqlstring});",
+          "rawSql": "-- Intentional full table scan for global readiness\nSELECT ROUND(100.0 * COUNT(*) FILTER (WHERE m.alarm_code IS NOT NULL) / NULLIF(COUNT(*), 0), 1) AS value\nFROM public.ldi_alarm_log a\nLEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\nWHERE a.equipmentid IN (${machine_id:sqlstring});",
           "refId": "A",
           "sql": {
             "columns": [],
@@ -461,7 +461,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "-- Intentional full table scan for global readiness\nSELECT ROUND((100.0 * COUNT(board_id) / NULLIF(COUNT(*))::NUMERIC, 0), 1) AS value\nFROM public.ldi_data\nWHERE factory IN (${factory:sqlstring})\n  AND eqp_id IN (${machine_id:sqlstring});",
+          "rawSql": "-- Intentional full table scan for global readiness\nSELECT ROUND(100.0 * COUNT(board_id) / NULLIF(COUNT(*), 0), 1) AS value\nFROM public.ldi_data\nWHERE factory IN (${factory:sqlstring})\n  AND eqp_id IN (${machine_id:sqlstring});",
           "refId": "A",
           "sql": {
             "columns": [],
@@ -552,7 +552,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "-- Intentional full table scan for global readiness\nSELECT\n  ROUND((100.0 * COUNT(pe_1) / NULLIF(COUNT(*))::NUMERIC, 0), 1) AS \"PE\",\n  ROUND((100.0 * COUNT(je_4) / NULLIF(COUNT(*))::NUMERIC, 0), 1) AS \"JE4\"\nFROM public.ldi_data\nWHERE factory IN (${factory:sqlstring})\n  AND eqp_id IN (${machine_id:sqlstring});",
+          "rawSql": "-- Intentional full table scan for global readiness\nSELECT\n  ROUND(100.0 * COUNT(pe_1) / NULLIF(COUNT(*), 0), 1) AS \"PE\",\n  ROUND(100.0 * COUNT(je_4) / NULLIF(COUNT(*), 0), 1) AS \"JE4\"\nFROM public.ldi_data\nWHERE factory IN (${factory:sqlstring})\n  AND eqp_id IN (${machine_id:sqlstring});",
           "refId": "A",
           "sql": {
             "columns": [],
@@ -724,7 +724,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "-- Intentional full table scan for global readiness\nWITH alarm_counts AS (\n  SELECT equipmentid AS eqp_id, COUNT(*) AS alarm_rows, MAX(logdate) AS last_alarm\n  FROM public.ldi_alarm_log\n  GROUP BY equipmentid\n)\nSELECT\n  d.eqp_id AS \"Machine\",\n  MIN(d.factory) AS \"Factory\",\n  MIN(d.process) AS \"Process\",\n  COUNT(*) AS \"Telemetry Rows\",\n  MAX(d.\"time\") AS \"Latest Telemetry\",\n  ROUND((100.0 * COUNT(d.pe_1) / COUNT(*))::NUMERIC, 1) AS \"PE %\",\n  ROUND((100.0 * COUNT(d.je_1) / COUNT(*))::NUMERIC, 1) AS \"JE1-3 %\",\n  ROUND((100.0 * COUNT(d.je_4) / COUNT(*))::NUMERIC, 1) AS \"JE4 %\",\n  COALESCE(MAX(a.alarm_rows), 0) AS \"Alarm Rows\",\n  MAX(a.last_alarm) AS \"Latest Alarm\"\nFROM public.ldi_data d\nLEFT JOIN alarm_counts a ON a.eqp_id = d.eqp_id\nWHERE d.factory IN (${factory:sqlstring})\n  AND d.eqp_id IN (${machine_id:sqlstring})\nGROUP BY d.eqp_id\nORDER BY d.eqp_id\nLIMIT 1000;",
+          "rawSql": "-- Intentional full table scan for global readiness\nWITH alarm_counts AS (\n  SELECT equipmentid AS eqp_id, COUNT(*) AS alarm_rows, MAX(logdate) AS last_alarm\n  FROM public.ldi_alarm_log\n  GROUP BY equipmentid\n)\nSELECT\n  d.eqp_id AS \"Machine\",\n  MIN(d.factory) AS \"Factory\",\n  MIN(d.process) AS \"Process\",\n  COUNT(*) AS \"Telemetry Rows\",\n  MAX(d.\"time\") AS \"Latest Telemetry\",\n  ROUND(100.0 * COUNT(d.pe_1) / COUNT(*), 1) AS \"PE %\",\n  ROUND(100.0 * COUNT(d.je_1) / COUNT(*), 1) AS \"JE1-3 %\",\n  ROUND(100.0 * COUNT(d.je_4) / COUNT(*), 1) AS \"JE4 %\",\n  COALESCE(MAX(a.alarm_rows), 0) AS \"Alarm Rows\",\n  MAX(a.last_alarm) AS \"Latest Alarm\"\nFROM public.ldi_data d\nLEFT JOIN alarm_counts a ON a.equipmentid = d.eqp_id\nWHERE d.factory IN (${factory:sqlstring})\n  AND d.eqp_id IN (${machine_id:sqlstring})\nGROUP BY d.eqp_id\nORDER BY d.eqp_id\nLIMIT 1000;",
           "refId": "A",
           "sql": {
             "columns": [],
@@ -774,7 +774,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "-- Intentional full table scan for global readiness\nWITH telemetry AS (\n  SELECT DISTINCT eqp_id FROM public.ldi_data\n), alarms AS (\n  SELECT DISTINCT equipmentid AS eqp_id FROM public.ldi_alarm_log\n), ids AS (\n  SELECT eqp_id FROM telemetry\n  UNION\n  SELECT eqp_id FROM alarms\n)\nSELECT\n  i.eqp_id AS \"Machine ID\",\n  (t.eqp_id IS NOT NULL) AS \"In Telemetry\",\n  (a.eqp_id IS NOT NULL) AS \"In Alarm\",\n  CASE\n    WHEN t.eqp_id IS NOT NULL AND a.eqp_id IS NOT NULL THEN 'MATCHED'\n    WHEN t.eqp_id IS NULL THEN 'ALARM ONLY'\n    ELSE 'TELEMETRY ONLY'\n  END AS \"Mapping Status\"\nFROM ids i\nLEFT JOIN telemetry t USING (eqp_id)\nLEFT JOIN alarms a USING (eqp_id)\nORDER BY \"Mapping Status\", i.eqp_id\nLIMIT 1000;",
+          "rawSql": "-- Intentional full table scan for global readiness\nWITH telemetry AS (\n  SELECT DISTINCT eqp_id FROM public.ldi_data\n), alarms AS (\n  SELECT DISTINCT equipmentid AS eqp_id FROM public.ldi_alarm_log\n), ids AS (\n  SELECT eqp_id FROM telemetry\n  UNION\n  SELECT eqp_id FROM alarms\n)\nSELECT\n  i.eqp_id AS \"Machine ID\",\n  (t.eqp_id IS NOT NULL) AS \"In Telemetry\",\n  (a.equipmentid IS NOT NULL) AS \"In Alarm\",\n  CASE\n    WHEN t.eqp_id IS NOT NULL AND a.equipmentid IS NOT NULL THEN 'MATCHED'\n    WHEN t.eqp_id IS NULL THEN 'ALARM ONLY'\n    ELSE 'TELEMETRY ONLY'\n  END AS \"Mapping Status\"\nFROM ids i\nLEFT JOIN telemetry t USING (eqp_id)\nLEFT JOIN alarms a USING (eqp_id)\nORDER BY \"Mapping Status\", i.eqp_id\nLIMIT 1000;",
           "refId": "A",
           "sql": {
             "columns": [],
@@ -874,7 +874,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "-- Intentional full table scan for global readiness\nSELECT\n  eqp_id AS \"Machine\",\n  COUNT(*) AS \"Telemetry Rows\",\n  COUNT(DISTINCT (mo, board_no)) AS \"Unique MO + Board No\",\n  COUNT(*) - COUNT(DISTINCT (mo, board_no)) AS \"Duplicate Board Keys\",\n  ROUND((100.0 * COUNT(board_id) / COUNT(*))::NUMERIC, 1) AS \"Board ID %\",\n  COUNT(DISTINCT mo) AS \"Distinct MO\",\n  MIN(board_no) AS \"Min Board No\",\n  MAX(board_no) AS \"Max Board No\"\nFROM public.ldi_data\nWHERE factory IN (${factory:sqlstring})\n  AND eqp_id IN (${machine_id:sqlstring})\nGROUP BY eqp_id\nORDER BY \"Duplicate Board Keys\" DESC, eqp_id\nLIMIT 1000;",
+          "rawSql": "-- Intentional full table scan for global readiness\nSELECT\n  eqp_id AS \"Machine\",\n  COUNT(*) AS \"Telemetry Rows\",\n  COUNT(DISTINCT (mo, board_no)) AS \"Unique MO + Board No\",\n  COUNT(*) - COUNT(DISTINCT (mo, board_no)) AS \"Duplicate Board Keys\",\n  ROUND(100.0 * COUNT(board_id) / COUNT(*), 1) AS \"Board ID %\",\n  COUNT(DISTINCT mo) AS \"Distinct MO\",\n  MIN(board_no) AS \"Min Board No\",\n  MAX(board_no) AS \"Max Board No\"\nFROM public.ldi_data\nWHERE factory IN (${factory:sqlstring})\n  AND eqp_id IN (${machine_id:sqlstring})\nGROUP BY eqp_id\nORDER BY \"Duplicate Board Keys\" DESC, eqp_id\nLIMIT 1000;",
           "refId": "A",
           "sql": {
             "columns": [],
@@ -924,7 +924,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "-- Intentional full table scan for global readiness\nSELECT\n  d.eqp_id AS \"Machine\",\n  CASE WHEN COUNT(d.pe_1) > 0 THEN 'AVAILABLE' ELSE 'NO DATA' END AS \"PE1-6\",\n  CASE WHEN COUNT(d.je_1) > 0 THEN 'AVAILABLE' ELSE 'NO DATA' END AS \"JE1-3\",\n  CASE WHEN COUNT(d.je_4) > 0 THEN 'AVAILABLE' ELSE 'NO DATA' END AS \"JE4\",\n  CASE\n    WHEN COUNT(DISTINCT d.air_vacuum) > 1 THEN 'VARIABLE SIGNAL'\n    WHEN COUNT(d.air_vacuum) = 0 THEN 'NO DATA'\n    WHEN BOOL_AND(d.air_vacuum = 0) THEN 'ALL ZERO - VERIFY'\n    ELSE 'CONSTANT - VERIFY'\n  END AS \"Vacuum\",\n  CASE\n    WHEN COUNT(DISTINCT d.scan_speed) > 1 THEN 'VARIABLE SIGNAL'\n    WHEN COUNT(d.scan_speed) = 0 THEN 'NO DATA'\n    ELSE 'CONSTANT - VERIFY'\n  END AS \"Scan Speed\",\n  CASE WHEN MAX(a.eqp_id) IS NOT NULL THEN 'AVAILABLE' ELSE 'NO MATCHING ID' END AS \"Alarm Source\"\nFROM public.ldi_data d\nLEFT JOIN (SELECT DISTINCT equipmentid AS eqp_id FROM public.ldi_alarm_log) a ON a.eqp_id = d.eqp_id\nWHERE d.factory IN (${factory:sqlstring})\n  AND d.eqp_id IN (${machine_id:sqlstring})\nGROUP BY d.eqp_id\nORDER BY d.eqp_id\nLIMIT 1000;",
+          "rawSql": "-- Intentional full table scan for global readiness\nSELECT\n  d.eqp_id AS \"Machine\",\n  CASE WHEN COUNT(d.pe_1) > 0 THEN 'AVAILABLE' ELSE 'NO DATA' END AS \"PE1-6\",\n  CASE WHEN COUNT(d.je_1) > 0 THEN 'AVAILABLE' ELSE 'NO DATA' END AS \"JE1-3\",\n  CASE WHEN COUNT(d.je_4) > 0 THEN 'AVAILABLE' ELSE 'NO DATA' END AS \"JE4\",\n  CASE\n    WHEN COUNT(DISTINCT d.air_vacuum) > 1 THEN 'VARIABLE SIGNAL'\n    WHEN COUNT(d.air_vacuum) = 0 THEN 'NO DATA'\n    WHEN BOOL_AND(d.air_vacuum = 0) THEN 'ALL ZERO - VERIFY'\n    ELSE 'CONSTANT - VERIFY'\n  END AS \"Vacuum\",\n  CASE\n    WHEN COUNT(DISTINCT d.scan_speed) > 1 THEN 'VARIABLE SIGNAL'\n    WHEN COUNT(d.scan_speed) = 0 THEN 'NO DATA'\n    ELSE 'CONSTANT - VERIFY'\n  END AS \"Scan Speed\",\n  CASE WHEN MAX(a.equipmentid) IS NOT NULL THEN 'AVAILABLE' ELSE 'NO MATCHING ID' END AS \"Alarm Source\"\nFROM public.ldi_data d\nLEFT JOIN (SELECT DISTINCT equipmentid AS eqp_id FROM public.ldi_alarm_log) a ON a.equipmentid = d.eqp_id\nWHERE d.factory IN (${factory:sqlstring})\n  AND d.eqp_id IN (${machine_id:sqlstring})\nGROUP BY d.eqp_id\nORDER BY d.eqp_id\nLIMIT 1000;",
           "refId": "A",
           "sql": {
             "columns": [],

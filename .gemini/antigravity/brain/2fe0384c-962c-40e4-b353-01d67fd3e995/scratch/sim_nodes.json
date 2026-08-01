@@ -1,0 +1,95 @@
+[
+    {
+        "id": "almsim_tab",
+        "type": "tab",
+        "label": "LDI Alarm Simulator",
+        "disabled": false,
+        "info": "\u0e08\u0e33\u0e25\u0e2d\u0e07 alarm \u0e14\u0e49\u0e27\u0e22\u0e23\u0e2b\u0e31\u0e2a\u0e41\u0e25\u0e30\u0e04\u0e27\u0e32\u0e21\u0e16\u0e35\u0e48\u0e08\u0e32\u0e01 production log \u0e08\u0e23\u0e34\u0e07 (20 \u0e23\u0e2b\u0e31\u0e2a)\n\u0e1b\u0e34\u0e14\u0e44\u0e14\u0e49\u0e42\u0e14\u0e22 disable tab \u0e19\u0e35\u0e49"
+    },
+    {
+        "id": "almsim_tick",
+        "type": "inject",
+        "z": "almsim_tab",
+        "name": "Tick 10s",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "10",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "25",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 140,
+        "y": 100,
+        "wires": [
+            [
+                "almsim_gen"
+            ]
+        ]
+    },
+    {
+        "id": "almsim_gen",
+        "type": "function",
+        "z": "almsim_tab",
+        "name": "Generate Alarm (real distribution)",
+        "func": "\n// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\n// LDI ALARM SIMULATOR \u2014 \u0e43\u0e0a\u0e49\u0e23\u0e2b\u0e31\u0e2a\u0e41\u0e25\u0e30\u0e04\u0e27\u0e32\u0e21\u0e16\u0e35\u0e48\u0e08\u0e32\u0e01 production log \u0e08\u0e23\u0e34\u0e07\n// Poisson process: 4.3 alarm/\u0e0a\u0e31\u0e48\u0e27\u0e42\u0e21\u0e07 \u0e17\u0e31\u0e49\u0e07 fleet (\u0e08\u0e32\u0e01 10,000 events/97 \u0e27\u0e31\u0e19)\n// \u0e01\u0e32\u0e23\u0e01\u0e23\u0e30\u0e08\u0e32\u0e22\u0e40\u0e04\u0e23\u0e37\u0e48\u0e2d\u0e07: 4 \u0e40\u0e04\u0e23\u0e37\u0e48\u0e2d\u0e07\u0e2b\u0e25\u0e31\u0e01 + 1 \u0e40\u0e04\u0e23\u0e37\u0e48\u0e2d\u0e07\u0e17\u0e35\u0e48\u0e41\u0e17\u0e1a\u0e44\u0e21\u0e48\u0e21\u0e35 alarm (\u0e15\u0e32\u0e21\u0e08\u0e23\u0e34\u0e07)\n// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\nconst CUM = [[\"81501\", 10.0], [\"81101\", 20.0], [\"81102\", 25.0], [\"81201\", 35.0], [\"81203\", 40.0], [\"81204\", 45.0], [\"91009\", 60.0], [\"90005\", 80.0], [\"90004\", 95.0], [\"93004\", 100.0]];\n// \u0e19\u0e49\u0e33\u0e2b\u0e19\u0e31\u0e01\u0e15\u0e48\u0e2d\u0e40\u0e04\u0e23\u0e37\u0e48\u0e2d\u0e07 (\u0e08\u0e32\u0e01\u0e2a\u0e31\u0e14\u0e2a\u0e48\u0e27\u0e19\u0e08\u0e23\u0e34\u0e07 3232/3130/2558/1063/17)\nconst MACHINES = [\n    [\"MOCK-LDI-01\", 32.3], [\"MOCK-LDI-04\", 63.6],\n    [\"MOCK-LDI-05\", 89.2], [\"MOCK-LDI-06\", 99.8], [\"MOCK-LDI-09\", 100.0]\n];\n// 4.3 alarm/\u0e0a\u0e21. = 0.001194 alarm/\u0e27\u0e34\u0e19\u0e32\u0e17\u0e35 \u2192 tick 10 \u0e27\u0e34 = 0.01194 \u0e15\u0e48\u0e2d tick\n// \u0e40\u0e23\u0e48\u0e07 20 \u0e40\u0e17\u0e48\u0e32\u0e40\u0e1e\u0e37\u0e48\u0e2d\u0e43\u0e2b\u0e49\u0e40\u0e2b\u0e47\u0e19\u0e04\u0e27\u0e32\u0e21\u0e40\u0e04\u0e25\u0e37\u0e48\u0e2d\u0e19\u0e44\u0e2b\u0e27\u0e1a\u0e19 dashboard \u0e15\u0e2d\u0e19 demo\nconst RATE_PER_TICK = 0.01194 * 20;\n\nfunction pick(table) {\n    const x = Math.random() * 100;\n    for (const [v, c] of table) if (x <= c) return v;\n    return table[table.length - 1][0];\n}\n\n// Poisson: \u0e08\u0e33\u0e19\u0e27\u0e19 alarm \u0e43\u0e19 tick \u0e19\u0e35\u0e49 (\u0e1b\u0e01\u0e15\u0e34 0 \u0e2b\u0e23\u0e37\u0e2d 1 \u0e1a\u0e32\u0e07\u0e04\u0e23\u0e31\u0e49\u0e07 2)\nlet n = 0, L = Math.exp(-RATE_PER_TICK), p = 1;\ndo { p *= Math.random(); n++; } while (p > L);\nn = n - 1;\nif (n === 0) { node.status({ fill: 'grey', shape: 'ring', text: 'no alarm' }); return null; }\n\nconst rows = [];\nconst now = Date.now();\nfor (let k = 0; k < n; k++) {\n    const ts = new Date(now - Math.floor(Math.random() * 9000));\n    const eq = pick(MACHINES);\n    const code = pick(CUM);\n    rows.push({\n        logid: 'SIM-ALM-' + now + '-' + k,\n        logdate: ts.toISOString(),\n        errorcode: code,\n        errortime: ts.toISOString().replace('T', ' ').substring(0, 19),\n        equipmentid: eq,\n        factory: Math.random() < 0.75 ? '2' : '3',\n        process: ['DF INNER', 'DF OUTER', 'SM'][Math.floor(Math.random() * 3)]\n    });\n}\nmsg.payload = rows;\nnode.status({ fill: 'yellow', shape: 'dot',\n    text: rows.length + ' alarm: ' + rows.map(r => r.errorcode).join(',') });\nreturn msg;\n",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 400,
+        "y": 100,
+        "wires": [
+            [
+                "almsim_db"
+            ]
+        ]
+    },
+    {
+        "id": "almsim_db",
+        "type": "function",
+        "z": "almsim_tab",
+        "name": "Insert to ldi_alarm_log",
+        "func": "\nconst pool = global.get('pgPool');\nconst rows = msg.payload || [];\nif (!pool || rows.length === 0) return null;\nconst cols = ['logid','logdate','errorcode','errortime','equipmentid','factory','process'];\nconst ph = rows.map((_, i) => '(' + cols.map((_, j) => '$' + (i * 7 + j + 1)).join(',') + ')').join(',');\nconst params = [];\nfor (const r of rows) for (const c of cols) params.push(r[c]);\nconst sql = 'INSERT INTO public.ldi_alarm_log (' + cols.join(',') + ') VALUES ' + ph +\n            ' ON CONFLICT (logdate, logid) DO NOTHING';\npool.query(sql, params, function (err) {\n    if (err) { node.error('Alarm sim INSERT failed: ' + err.message); return; }\n    node.log('Alarm sim: inserted ' + rows.length);\n});\nreturn null;\n",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 700,
+        "y": 100,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "almsim_catch",
+        "type": "catch",
+        "z": "almsim_tab",
+        "name": "Catch Alarm Sim Errors",
+        "scope": null,
+        "uncaught": false,
+        "x": 400,
+        "y": 190,
+        "wires": [
+            [
+                "almsim_err"
+            ]
+        ]
+    },
+    {
+        "id": "almsim_err",
+        "type": "function",
+        "z": "almsim_tab",
+        "name": "Log Error",
+        "func": "node.error('Alarm simulator: ' + (msg.error && msg.error.message));\nreturn null;",
+        "outputs": 1,
+        "x": 700,
+        "y": 190,
+        "wires": [
+            []
+        ]
+    }
+]

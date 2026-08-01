@@ -1,0 +1,637 @@
+[
+  {
+    "dashboard": "ims-capacity-planning.json",
+    "panel": "Days Until Full (Resource Battery)",
+    "sql": "SELECT 'Disk' AS metric,\n  LEAST(\n    CASE\n      WHEN r.slope <= 0 THEN 9999\n      WHEN t.disk_total_gb <= 0 THEN 9999\n      ELSE GREATEST(0, ROUND(\n        ((t.disk_total_gb - r.intercept) / r.slope - (extract(epoch FROM NOW()) / 86400))::numeric, 0\n      ))\n    END,\n    9999\n  ) AS \"Days Until Full\"\nFROM (\n  SELECT device_id,\n    COALESCE(regr_slope(avg_used, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_used, day_num), 0::double precision) AS intercept\n  FROM (\n    SELECT device_id,\n      AVG(avg_disk_used) AS avg_used,\n      extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n    FROM public.sys_hourly\n    WHERE bucket > NOW() - INTERVAL '30 days'\n    GROUP BY device_id, time_bucket('1 day', bucket)\n  ) d\n  GROUP BY device_id\n  HAVING COUNT(*) >= 7\n) r\nJOIN (\n  SELECT DISTINCT ON (device_id) device_id, disk_total_gb\n  FROM public.sys_metrics\n  WHERE disk_total_gb > 0\n  ORDER BY device_id, time DESC\n) t ON t.device_id = r.device_id\nORDER BY 1 ASC\nLIMIT 1"
+  },
+  {
+    "dashboard": "ims-capacity-planning.json",
+    "panel": "Days Until Full (Resource Battery)",
+    "sql": "SELECT 'Disk' AS metric,\n  LEAST(\n    CASE\n      WHEN r.slope <= 0 THEN 9999\n      WHEN t.disk_total_gb <= 0 THEN 9999\n      ELSE GREATEST(0, ROUND(\n        ((t.disk_total_gb - r.intercept) / r.slope - (extract(epoch FROM NOW()) / 86400))::numeric, 0\n      ))\n    END,\n    9999\n  ) AS \"Days Until Full\"\nFROM (\n  SELECT device_id,\n    COALESCE(regr_slope(avg_used, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_used, day_num), 0::double precision) AS intercept\n  FROM (\n    SELECT device_id,\n      AVG(avg_disk_used) AS avg_used,\n      extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n    FROM public.sys_hourly\n    WHERE bucket > NOW() - INTERVAL '30 days'\n    GROUP BY device_id, time_bucket('1 day', bucket)\n  ) d\n  GROUP BY device_id\n  HAVING COUNT(*) >= 7\n) r\nJOIN (\n  SELECT DISTINCT ON (device_id) device_id, disk_total_gb\n  FROM public.sys_metrics\n  WHERE disk_total_gb > 0\n  ORDER BY device_id, time DESC\n) t ON t.device_id = r.device_id\nORDER BY 1 ASC\nLIMIT 1"
+  },
+  {
+    "dashboard": "ims-capacity-planning.json",
+    "panel": "Days Until Full (Resource Battery)",
+    "sql": "SELECT 'Disk' AS metric,\n  LEAST(\n    CASE\n      WHEN r.slope <= 0 THEN 9999\n      WHEN t.disk_total_gb <= 0 THEN 9999\n      ELSE GREATEST(0, ROUND(\n        ((t.disk_total_gb - r.intercept) / r.slope - (extract(epoch FROM NOW()) / 86400))::numeric, 0\n      ))\n    END,\n    9999\n  ) AS \"Days Until Full\"\nFROM (\n  SELECT device_id,\n    COALESCE(regr_slope(avg_used, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_used, day_num), 0::double precision) AS intercept\n  FROM (\n    SELECT device_id,\n      AVG(avg_disk_used) AS avg_used,\n      extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n    FROM public.sys_hourly\n    WHERE bucket > NOW() - INTERVAL '30 days'\n    GROUP BY device_id, time_bucket('1 day', bucket)\n  ) d\n  GROUP BY device_id\n  HAVING COUNT(*) >= 7\n) r\nJOIN (\n  SELECT DISTINCT ON (device_id) device_id, disk_total_gb\n  FROM public.sys_metrics\n  WHERE disk_total_gb > 0\n  ORDER BY device_id, time DESC\n) t ON t.device_id = r.device_id\nORDER BY 1 ASC\nLIMIT 1"
+  },
+  {
+    "dashboard": "ims-capacity-planning.json",
+    "panel": "Disk: Days Until Full",
+    "sql": "WITH daily_usage AS (\n  SELECT\n    device_id,\n    AVG(avg_disk_used) AS avg_used,\n    extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n  FROM public.sys_hourly\n  WHERE bucket > NOW() - INTERVAL '30 days'\n  GROUP BY device_id, time_bucket('1 day', bucket)\n),\nregression AS (\n  SELECT\n    device_id,\n    COALESCE(regr_slope(avg_used, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_used, day_num), 0::double precision) AS intercept,\n    COUNT(*) AS data_points\n  FROM daily_usage\n  GROUP BY device_id\n  HAVING COUNT(*) >= 7\n),\ntotals AS (\n  SELECT DISTINCT ON (device_id) device_id, disk_total_gb\n  FROM public.sys_metrics\n  WHERE disk_total_gb > 0\n  ORDER BY device_id, time DESC\n),\ncurrent_state AS (\n  SELECT\n    r.device_id,\n    r.slope,\n    r.intercept,\n    t.disk_total_gb,\n    extract(epoch FROM NOW()) / 86400 AS now_day\n  FROM regression r\n  JOIN totals t ON t.device_id = r.device_id\n)\nSELECT device_id AS metric,\n  CASE\n    WHEN slope <= 0 THEN 9999\n    WHEN disk_total_gb <= 0 THEN 9999\n    ELSE GREATEST(0, LEAST(\n      ROUND(((disk_total_gb - intercept) / slope - now_day)::numeric, 0),\n      9999\n    ))\n  END AS value\nFROM current_state\nORDER BY value ASC\nLIMIT 1"
+  },
+  {
+    "dashboard": "ims-capacity-planning.json",
+    "panel": "RAM: Days Until Full",
+    "sql": "WITH daily_ram AS (\n  SELECT\n    device_id,\n    AVG(avg_ram_used) AS avg_used,\n    extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n  FROM public.sys_hourly\n  WHERE bucket > NOW() - INTERVAL '30 days'\n  GROUP BY device_id, time_bucket('1 day', bucket)\n),\nregression AS (\n  SELECT\n    device_id,\n    COALESCE(regr_slope(avg_used, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_used, day_num), 0::double precision) AS intercept,\n    COUNT(*) AS data_points\n  FROM daily_ram\n  GROUP BY device_id\n  HAVING COUNT(*) >= 7\n),\ntotals AS (\n  SELECT DISTINCT ON (device_id) device_id, ram_total_mb\n  FROM public.sys_metrics\n  WHERE ram_total_mb > 0\n  ORDER BY device_id, time DESC\n),\ncurrent_state AS (\n  SELECT\n    r.device_id,\n    r.slope,\n    r.intercept,\n    t.ram_total_mb,\n    extract(epoch FROM NOW()) / 86400 AS now_day\n  FROM regression r\n  JOIN totals t ON t.device_id = r.device_id\n)\nSELECT device_id AS metric,\n  CASE\n    WHEN slope <= 0 THEN 9999\n    WHEN ram_total_mb <= 0 THEN 9999\n    ELSE GREATEST(0, LEAST(\n      ROUND(((ram_total_mb - intercept) / slope - now_day)::numeric, 0),\n      9999\n    ))\n  END AS value\nFROM current_state\nORDER BY value ASC\nLIMIT 1"
+  },
+  {
+    "dashboard": "ims-capacity-planning.json",
+    "panel": "CPU: Days Until Saturation",
+    "sql": "WITH daily_cpu AS (\n  SELECT\n    device_id,\n    AVG(avg_cpu) AS avg_cpu,\n    extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n  FROM public.sys_hourly\n  WHERE bucket > NOW() - INTERVAL '30 days'\n  GROUP BY device_id, time_bucket('1 day', bucket)\n),\nregression AS (\n  SELECT\n    device_id,\n    COALESCE(regr_slope(avg_cpu, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_cpu, day_num), 0::double precision) AS intercept,\n    COUNT(*) AS data_points\n  FROM daily_cpu\n  GROUP BY device_id\n  HAVING COUNT(*) >= 7\n),\ncurrent_state AS (\n  SELECT\n    device_id,\n    slope,\n    intercept,\n    extract(epoch FROM NOW()) / 86400 AS now_day\n  FROM regression\n)\nSELECT device_id AS metric,\n  CASE\n    WHEN slope <= 0 THEN 9999\n    WHEN intercept >= 100 THEN 0\n    ELSE GREATEST(0, LEAST(\n      ROUND(((100 - intercept) / slope - now_day)::numeric, 0),\n      9999\n    ))\n  END AS value\nFROM current_state\nORDER BY value ASC\nLIMIT 1"
+  },
+  {
+    "dashboard": "ims-capacity-planning.json",
+    "panel": "Fleet Health Score",
+    "sql": "SELECT 'Fleet Score' AS metric, value FROM public.v_fleet_score"
+  },
+  {
+    "dashboard": "ims-capacity-planning.json",
+    "panel": "Disk Usage Trend + Linear Regression Forecast",
+    "sql": "WITH historical AS (\n  SELECT\n    time_bucket('1 day', bucket) AS time,\n    device_id,\n    AVG(avg_disk_used) AS value,\n    'History' AS metric\n  FROM public.sys_hourly\n  WHERE $__timeFilter(bucket)\n    AND device_id IN (${machine_id:singlequote})\n    AND avg_disk_used >= 0\n  GROUP BY 1, 2\n),\nregression AS (\n  SELECT\n    device_id,\n    COALESCE(regr_slope(avg_used, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_used, day_num), 0::double precision) AS intercept\n  FROM (\n    SELECT device_id,\n      AVG(avg_disk_used) AS avg_used,\n      extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n    FROM public.sys_hourly\n    WHERE bucket > NOW() - INTERVAL '90 days'\n      AND device_id IN (${machine_id:singlequote})\n    GROUP BY device_id, time_bucket('1 day', bucket)\n  ) d\n  GROUP BY device_id\n  HAVING COUNT(*) >= 7\n),\nfuture_points AS (\n  SELECT\n    gs AS time,\n    r.device_id,\n    'Forecast' AS metric,\n    GREATEST(0, ROUND(\n      (r.slope * (extract(epoch FROM gs) / 86400) + r.intercept)::numeric, 2\n    )) AS value\n  FROM regression r\n  CROSS JOIN LATERAL generate_series(\n    (SELECT MAX(time) FROM historical) + INTERVAL '1 day',\n    (SELECT MAX(time) FROM historical) + INTERVAL '30 days',\n    INTERVAL '1 day'\n  ) gs\n  WHERE r.slope > 0\n)\nSELECT bucket AS time, device_id, value, metric FROM historical\nUNION ALL\nSELECT bucket AS time, device_id, value, metric FROM future_points\nORDER BY time ASC"
+  },
+  {
+    "dashboard": "ims-capacity-planning.json",
+    "panel": "Disk Usage Trend + Linear Regression Forecast",
+    "sql": "WITH historical AS (\n  SELECT\n    time_bucket('1 day', bucket) AS time,\n    device_id,\n    AVG(avg_disk_used) AS value,\n    'History' AS metric\n  FROM public.sys_hourly\n  WHERE $__timeFilter(bucket)\n    AND device_id IN (${machine_id:singlequote})\n    AND avg_disk_used >= 0\n  GROUP BY 1, 2\n),\nregression AS (\n  SELECT\n    device_id,\n    COALESCE(regr_slope(avg_used, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_used, day_num), 0::double precision) AS intercept\n  FROM (\n    SELECT device_id,\n      AVG(avg_disk_used) AS avg_used,\n      extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n    FROM public.sys_hourly\n    WHERE bucket > NOW() - INTERVAL '90 days'\n      AND device_id IN (${machine_id:singlequote})\n    GROUP BY device_id, time_bucket('1 day', bucket)\n  ) d\n  GROUP BY device_id\n  HAVING COUNT(*) >= 7\n),\nfuture_points AS (\n  SELECT\n    gs AS time,\n    r.device_id,\n    'Forecast' AS metric,\n    GREATEST(0, ROUND(\n      (r.slope * (extract(epoch FROM gs) / 86400) + r.intercept)::numeric, 2\n    )) AS value\n  FROM regression r\n  CROSS JOIN LATERAL generate_series(\n    (SELECT MAX(time) FROM historical) + INTERVAL '1 day',\n    (SELECT MAX(time) FROM historical) + INTERVAL '30 days',\n    INTERVAL '1 day'\n  ) gs\n  WHERE r.slope > 0\n)\nSELECT bucket AS time, device_id, value, metric FROM historical\nUNION ALL\nSELECT bucket AS time, device_id, value, metric FROM future_points\nORDER BY time ASC"
+  },
+  {
+    "dashboard": "ims-capacity-planning.json",
+    "panel": "Disk Usage Trend + Linear Regression Forecast",
+    "sql": "WITH historical AS (\n  SELECT\n    time_bucket('1 day', bucket) AS time,\n    device_id,\n    AVG(avg_disk_used) AS value,\n    'History' AS metric\n  FROM public.sys_hourly\n  WHERE $__timeFilter(bucket)\n    AND device_id IN (${machine_id:singlequote})\n    AND avg_disk_used >= 0\n  GROUP BY 1, 2\n),\nregression AS (\n  SELECT\n    device_id,\n    COALESCE(regr_slope(avg_used, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_used, day_num), 0::double precision) AS intercept\n  FROM (\n    SELECT device_id,\n      AVG(avg_disk_used) AS avg_used,\n      extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n    FROM public.sys_hourly\n    WHERE bucket > NOW() - INTERVAL '90 days'\n      AND device_id IN (${machine_id:singlequote})\n    GROUP BY device_id, time_bucket('1 day', bucket)\n  ) d\n  GROUP BY device_id\n  HAVING COUNT(*) >= 7\n),\nfuture_points AS (\n  SELECT\n    gs AS time,\n    r.device_id,\n    'Forecast' AS metric,\n    GREATEST(0, ROUND(\n      (r.slope * (extract(epoch FROM gs) / 86400) + r.intercept)::numeric, 2\n    )) AS value\n  FROM regression r\n  CROSS JOIN LATERAL generate_series(\n    (SELECT MAX(time) FROM historical) + INTERVAL '1 day',\n    (SELECT MAX(time) FROM historical) + INTERVAL '30 days',\n    INTERVAL '1 day'\n  ) gs\n  WHERE r.slope > 0\n)\nSELECT bucket AS time, device_id, value, metric FROM historical\nUNION ALL\nSELECT bucket AS time, device_id, value, metric FROM future_points\nORDER BY time ASC"
+  },
+  {
+    "dashboard": "ims-capacity-planning.json",
+    "panel": "CPU Load Trend (30-Day Average)",
+    "sql": "SELECT time_bucket('1 day', bucket) AS \"time\", device_id, AVG(avg_cpu) AS \"Avg CPU %\" FROM public.sys_hourly WHERE bucket > NOW() - INTERVAL '30 days' AND device_id IN (${machine_id:singlequote}) GROUP BY 1, 2 ORDER BY 1"
+  },
+  {
+    "dashboard": "ims-capacity-planning.json",
+    "panel": "RAM Usage Trend (30-Day Average)",
+    "sql": "WITH daily_ram AS (\n  SELECT\n    time_bucket('1 day', bucket) AS time,\n    device_id,\n    AVG(avg_ram_used) AS avg_used,\n    AVG(avg_ram_total) AS avg_total\n  FROM public.sys_hourly\n  WHERE bucket > NOW() - INTERVAL '30 days'\n    AND device_id IN (${machine_id:singlequote})\n  GROUP BY 1, 2\n)\nSELECT bucket AS time,\n  device_id AS metric,\n  ROUND(\n    (avg_used / NULLIF(avg_total, 0) * 100)::NUMERIC,\n    2\n  ) AS \"RAM Usage %\"\nFROM daily_ram\nWHERE avg_total > 0\nORDER BY 1 ASC"
+  },
+  {
+    "dashboard": "ims-capacity-planning.json",
+    "panel": "CPU Z-Score Anomaly (3\u03c3)",
+    "sql": "WITH stats AS (SELECT avg(avg_cpu) as mu, stddev(avg_cpu) as sigma FROM public.sys_hourly WHERE device_id IN (${machine_id:singlequote}) AND $__timeFilter(bucket)) SELECT bucket AS time, (avg_cpu - mu) / NULLIF(sigma, 0) AS \"Z-Score\" FROM public.sys_hourly, stats WHERE device_id IN (${machine_id:singlequote}) AND $__timeFilter(bucket) ORDER BY time ASC"
+  },
+  {
+    "dashboard": "ims-capacity-planning.json",
+    "panel": "Temperature Z-Score Anomaly (3\u03c3)",
+    "sql": "WITH stats AS (SELECT avg(max_temp) as mu, stddev(max_temp) as sigma FROM public.sys_hourly WHERE device_id IN (${machine_id:singlequote}) AND max_temp > 0 AND $__timeFilter(bucket)) SELECT bucket AS time, (max_temp - mu) / NULLIF(sigma, 0) AS \"Z-Score\" FROM public.sys_hourly, stats WHERE device_id IN (${machine_id:singlequote}) AND max_temp > 0 AND $__timeFilter(bucket) ORDER BY time ASC"
+  },
+  {
+    "dashboard": "ims-engineering-drilldown.json",
+    "panel": "CPU Load",
+    "sql": "SELECT cpu_load_percent AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '2 minutes' AND device_id IN (${machine_id:singlequote}) ORDER BY time DESC LIMIT 1"
+  },
+  {
+    "dashboard": "ims-engineering-drilldown.json",
+    "panel": "RAM Usage",
+    "sql": "SELECT ROUND(((ram_used_mb / NULLIF(ram_total_mb)::NUMERIC, 0) * 100)::NUMERIC, 1) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '2 minutes' AND device_id IN (${machine_id:singlequote}) ORDER BY time DESC LIMIT 1"
+  },
+  {
+    "dashboard": "ims-engineering-drilldown.json",
+    "panel": "Storage Saturation",
+    "sql": "SELECT ROUND(((disk_used_gb / NULLIF(disk_total_gb)::NUMERIC, 0) * 100)::NUMERIC, 1) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '2 minutes' AND device_id IN (${machine_id:singlequote}) ORDER BY time DESC LIMIT 1"
+  },
+  {
+    "dashboard": "ims-engineering-drilldown.json",
+    "panel": "Temperature",
+    "sql": "SELECT temp_c AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '2 minutes' AND device_id IN (${machine_id:singlequote}) AND temp_c > 0 ORDER BY time DESC LIMIT 1"
+  },
+  {
+    "dashboard": "ims-engineering-drilldown.json",
+    "panel": "Memory Saturation",
+    "sql": "SELECT\n  bucket AS time,\n  device_id AS metric,\n  ROUND((AVG(avg_ram_used / NULLIF(avg_ram_total)::NUMERIC, 0) * 100)::NUMERIC, 1) AS \"RAM %\"\nFROM public.sys_hourly\nWHERE $__timeFilter(bucket) AND device_id IN (${machine_id:singlequote})\nGROUP BY 1, 2\nORDER BY 1 ASC"
+  },
+  {
+    "dashboard": "ims-engineering-drilldown.json",
+    "panel": "Network Bandwidth (Per-Interface)",
+    "sql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id || ' - ' || iface_name AS metric,\n  ROUND(AVG(rx_mbps)::NUMERIC, 2) AS \"Download (Mbps)\",\n  ROUND(AVG(tx_mbps)::NUMERIC, 2) AS \"Upload (Mbps)\"\nFROM public.net_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:singlequote})\n  AND iface_name IN (${interface:singlequote})\nGROUP BY 1, 2\nORDER BY 1 ASC"
+  },
+  {
+    "dashboard": "ims-engineering-drilldown.json",
+    "panel": "Network Bandwidth (Per-Interface)",
+    "sql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id || ' - ' || iface_name AS metric,\n  ROUND(AVG(rx_mbps)::NUMERIC, 2) AS \"Download (Mbps)\",\n  ROUND(AVG(tx_mbps)::NUMERIC, 2) AS \"Upload (Mbps)\"\nFROM public.net_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:singlequote})\n  AND iface_name IN (${interface:singlequote})\nGROUP BY 1, 2\nORDER BY 1 ASC"
+  },
+  {
+    "dashboard": "ims-engineering-drilldown.json",
+    "panel": "Temperature Sensors",
+    "sql": "SELECT\n  bucket AS time,\n  device_id AS metric,\n  ROUND(AVG(max_temp)::NUMERIC, 1) AS \"Temperature (\u00b0C)\"\nFROM public.sys_hourly\nWHERE $__timeFilter(bucket) AND device_id IN (${machine_id:singlequote}) AND max_temp > 0\nGROUP BY 1, 2\nORDER BY 1 ASC"
+  },
+  {
+    "dashboard": "ims-engineering-drilldown.json",
+    "panel": "Temperature Sensors",
+    "sql": "SELECT\n  bucket AS time,\n  device_id AS metric,\n  ROUND(AVG(max_temp)::NUMERIC, 1) AS \"Temperature (\u00b0C)\"\nFROM public.sys_hourly\nWHERE $__timeFilter(bucket) AND device_id IN (${machine_id:singlequote}) AND max_temp > 0\nGROUP BY 1, 2\nORDER BY 1 ASC"
+  },
+  {
+    "dashboard": "ims-engineering-drilldown.json",
+    "panel": "LDI Throughput & Process Efficiency",
+    "sql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id AS metric,\n  ROUND(AVG(throughput)::NUMERIC, 1) AS \"Throughput\"\nFROM public.ldi_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:singlequote}) AND throughput > 0\nGROUP BY 1, 2\nORDER BY 1 ASC"
+  },
+  {
+    "dashboard": "ims-engineering-drilldown.json",
+    "panel": "LDI Throughput & Process Efficiency",
+    "sql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id AS metric,\n  ROUND(AVG(pe_1)::NUMERIC, 1) AS \"PE\"\nFROM public.ldi_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:singlequote}) AND pe_1 IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1 ASC"
+  },
+  {
+    "dashboard": "ims-engineering-drilldown.json",
+    "panel": "LDI Junction Efficiency & Humidity",
+    "sql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id AS metric,\n  ROUND(AVG(je_1)::NUMERIC, 1) AS \"JE\"\nFROM public.ldi_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:singlequote}) AND je_1 IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1 ASC"
+  },
+  {
+    "dashboard": "ims-engineering-drilldown.json",
+    "panel": "LDI Junction Efficiency & Humidity",
+    "sql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id AS metric,\n  ROUND(AVG(humidity)::NUMERIC, 1) AS \"Humidity\"\nFROM public.ldi_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:singlequote}) AND humidity > 0\nGROUP BY 1, 2\nORDER BY 1 ASC"
+  },
+  {
+    "dashboard": "ims-engineering-drilldown.json",
+    "panel": "LDI Quality Scatter",
+    "sql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id AS metric,\n  ROUND(AVG(pe_1)::NUMERIC, 1) AS \"PE\"\nFROM public.ldi_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:singlequote}) AND pe_1 IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1 ASC"
+  },
+  {
+    "dashboard": "ims-engineering-drilldown.json",
+    "panel": "LDI Quality Scatter",
+    "sql": "SELECT\n  time_bucket('10 seconds', time) AS time,\n  device_id AS metric,\n  ROUND(AVG(je_1)::NUMERIC, 1) AS \"JE\"\nFROM public.ldi_metrics\nWHERE $__timeFilter(time) AND device_id IN (${machine_id:singlequote}) AND je_1 IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1 ASC"
+  },
+  {
+    "dashboard": "ims-engineering-drilldown.json",
+    "panel": "Estimated Daily Power Cost (THB)",
+    "sql": "WITH hourly_power AS (\n  SELECT\n    device_id,\n    AVG(power_watt) AS avg_watts\n  FROM public.ldi_metrics\n  WHERE time > NOW() - INTERVAL '24 hours'\n    AND power_watt > 0\n  GROUP BY device_id\n)\nSELECT\n  device_id AS metric,\n  ROUND((avg_watts * 24 / 1000 * 4)::NUMERIC, 2) AS \"Daily Cost (THB)\"\nFROM hourly_power\nORDER BY \"Daily Cost (THB)\" DESC\nLIMIT 10"
+  },
+  {
+    "dashboard": "ims-engineering-drilldown.json",
+    "panel": "Power Efficiency Ratio",
+    "sql": "WITH efficiency AS (\n  SELECT\n    device_id,\n    AVG(throughput) AS avg_throughput,\n    AVG(power_watt) AS avg_power\n  FROM public.ldi_metrics\n  WHERE time > NOW() - INTERVAL '24 hours'\n    AND power_watt > 0\n  GROUP BY device_id\n)\nSELECT\n  device_id AS metric,\n  CASE\n    WHEN avg_power > 0 THEN ROUND((avg_throughput / avg_power)::NUMERIC, 4)\n    ELSE 0\n  END AS \"Efficiency (THB/W)\"\nFROM efficiency\nWHERE avg_power > 0\nORDER BY \"Efficiency (THB/W)\" DESC\nLIMIT 10"
+  },
+  {
+    "dashboard": "ims-engineering-drilldown.json",
+    "panel": "Yield Risk Index",
+    "sql": "WITH baseline AS (\n  SELECT\n    device_id,\n    AVG(throughput) AS avg_throughput,\n    STDDEV(throughput) AS sigma_throughput\n  FROM public.ldi_metrics\n  WHERE time > NOW() - INTERVAL '7 days'\n  GROUP BY device_id\n),\ncurrent AS (\n  SELECT\n    device_id,\n    AVG(throughput) AS current_throughput,\n    AVG(power_watt) AS current_power\n  FROM public.ldi_metrics\n  WHERE time > NOW() - INTERVAL '5 minutes'\n  GROUP BY device_id\n)\nSELECT\n  c.device_id AS metric,\n  CASE\n    WHEN b.sigma_throughput = 0 OR b.sigma_throughput IS NULL THEN 0\n    WHEN c.current_power > b.avg_throughput * 0.8 AND c.current_throughput < b.avg_throughput - (2 * b.sigma_throughput) THEN 3\n    WHEN c.current_throughput < b.avg_throughput - b.sigma_throughput THEN 1\n    ELSE 0\n  END AS \"Risk Level\"\nFROM current c\nJOIN baseline b ON b.device_id = c.device_id\nORDER BY \"Risk Level\" DESC\nLIMIT 10"
+  },
+  {
+    "dashboard": "ims-engineering-drilldown.json",
+    "panel": "CPU Anomaly Score (Z-Score)",
+    "sql": "WITH stats AS (SELECT avg(avg_cpu) as mu, stddev(avg_cpu) as sigma FROM public.sys_hourly WHERE device_id IN (${machine_id:singlequote}) AND $__timeFilter(bucket)) SELECT bucket AS time, (avg_cpu - mu) / NULLIF(sigma, 0) AS \"Z-Score\" FROM public.sys_hourly, stats WHERE device_id IN (${machine_id:singlequote}) AND $__timeFilter(bucket) ORDER BY time ASC"
+  },
+  {
+    "dashboard": "ims-engineering-drilldown.json",
+    "panel": "Temperature Anomaly Score (Z-Score)",
+    "sql": "WITH stats AS (SELECT avg(max_temp) as mu, stddev(max_temp) as sigma FROM public.sys_hourly WHERE device_id IN (${machine_id:singlequote}) AND max_temp > 0 AND $__timeFilter(bucket)) SELECT bucket AS time, (max_temp - mu) / NULLIF(sigma, 0) AS \"Z-Score\" FROM public.sys_hourly, stats WHERE device_id IN (${machine_id:singlequote}) AND max_temp > 0 AND $__timeFilter(bucket) ORDER BY time ASC"
+  },
+  {
+    "dashboard": "ims-engineering-drilldown.json",
+    "panel": "CPU / RAM / Storage Distribution",
+    "sql": "SELECT 'CPU Load %' AS metric, AVG(cpu_load_percent) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '5 minutes'"
+  },
+  {
+    "dashboard": "ims-engineering-drilldown.json",
+    "panel": "CPU / RAM / Storage Distribution",
+    "sql": "SELECT 'RAM Used %' AS metric, AVG(ram_used_mb / NULLIF(ram_total_mb, 0) * 100) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '5 minutes'"
+  },
+  {
+    "dashboard": "ims-engineering-drilldown.json",
+    "panel": "CPU / RAM / Storage Distribution",
+    "sql": "SELECT 'Disk Used %' AS metric, AVG(disk_used_gb / NULLIF(disk_total_gb, 0) * 100) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '5 minutes'"
+  },
+  {
+    "dashboard": "ims-engineering-drilldown.json",
+    "panel": "Fleet Status Composition",
+    "sql": "SELECT 'Healthy' AS metric, COUNT(*) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '5 minutes' AND cpu_load_percent < 80 AND ram_used_mb / NULLIF(ram_total_mb, 0) * 100 < 85"
+  },
+  {
+    "dashboard": "ims-engineering-drilldown.json",
+    "panel": "Fleet Status Composition",
+    "sql": "SELECT 'Warning' AS metric, COUNT(*) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '5 minutes' AND (cpu_load_percent BETWEEN 80 AND 90 OR ram_used_mb / NULLIF(ram_total_mb, 0) * 100 BETWEEN 85 AND 95)"
+  },
+  {
+    "dashboard": "ims-engineering-drilldown.json",
+    "panel": "Fleet Status Composition",
+    "sql": "SELECT 'Critical' AS metric, COUNT(*) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '5 minutes' AND (cpu_load_percent > 90 OR ram_used_mb / NULLIF(ram_total_mb, 0) * 100 > 95)"
+  },
+  {
+    "dashboard": "ims-ldi-engineering-analytics.json",
+    "panel": "temperature (\u00b0C)",
+    "sql": "SELECT date_bin('1 minute', time, TIMESTAMPTZ '2000-01-01') AS time, eqp_id AS metric, AVG(temperature)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND temperature IS NOT NULL GROUP BY 1, 2 ORDER BY 1"
+  },
+  {
+    "dashboard": "ims-ldi-engineering-analytics.json",
+    "panel": "humidity (%RH)",
+    "sql": "SELECT date_bin('1 minute', time, TIMESTAMPTZ '2000-01-01') AS time, eqp_id AS metric, AVG(humidity)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND humidity IS NOT NULL GROUP BY 1, 2 ORDER BY 1"
+  },
+  {
+    "dashboard": "ims-ldi-engineering-analytics.json",
+    "panel": "scan_speed (mm/s)",
+    "sql": "SELECT date_bin('1 minute', time, TIMESTAMPTZ '2000-01-01') AS time, eqp_id AS metric, AVG(scan_speed)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND scan_speed IS NOT NULL GROUP BY 1, 2 ORDER BY 1"
+  },
+  {
+    "dashboard": "ims-ldi-engineering-analytics.json",
+    "panel": "air_vacuum (kPa)",
+    "sql": "SELECT date_bin('1 minute', time, TIMESTAMPTZ '2000-01-01') AS time, eqp_id AS metric, AVG(air_vacuum)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND air_vacuum IS NOT NULL GROUP BY 1, 2 ORDER BY 1"
+  },
+  {
+    "dashboard": "ims-ldi-engineering-analytics.json",
+    "panel": "scale_x",
+    "sql": "SELECT date_bin('1 minute', time, TIMESTAMPTZ '2000-01-01') AS time, eqp_id AS metric, AVG(scale_x)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND scale_x IS NOT NULL GROUP BY 1, 2 ORDER BY 1"
+  },
+  {
+    "dashboard": "ims-ldi-engineering-analytics.json",
+    "panel": "scale_y",
+    "sql": "SELECT date_bin('1 minute', time, TIMESTAMPTZ '2000-01-01') AS time, eqp_id AS metric, AVG(scale_y)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND scale_y IS NOT NULL GROUP BY 1, 2 ORDER BY 1"
+  },
+  {
+    "dashboard": "ims-ldi-engineering-analytics.json",
+    "panel": "pe_1 ~ pe_6 (\u00b5m)",
+    "sql": "SELECT date_bin('1 minute', time, TIMESTAMPTZ '2000-01-01') AS time, eqp_id || ' - pe_1' AS metric, AVG(pe_1)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_1 IS NOT NULL GROUP BY 1, 2 ORDER BY 1"
+  },
+  {
+    "dashboard": "ims-ldi-engineering-analytics.json",
+    "panel": "pe_1 ~ pe_6 (\u00b5m)",
+    "sql": "SELECT date_bin('1 minute', time, TIMESTAMPTZ '2000-01-01') AS time, eqp_id || ' - pe_2' AS metric, AVG(pe_2)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_2 IS NOT NULL GROUP BY 1, 2 ORDER BY 1"
+  },
+  {
+    "dashboard": "ims-ldi-engineering-analytics.json",
+    "panel": "pe_1 ~ pe_6 (\u00b5m)",
+    "sql": "SELECT date_bin('1 minute', time, TIMESTAMPTZ '2000-01-01') AS time, eqp_id || ' - pe_3' AS metric, AVG(pe_3)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_3 IS NOT NULL GROUP BY 1, 2 ORDER BY 1"
+  },
+  {
+    "dashboard": "ims-ldi-engineering-analytics.json",
+    "panel": "pe_1 ~ pe_6 (\u00b5m)",
+    "sql": "SELECT date_bin('1 minute', time, TIMESTAMPTZ '2000-01-01') AS time, eqp_id || ' - pe_4' AS metric, AVG(pe_4)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_4 IS NOT NULL GROUP BY 1, 2 ORDER BY 1"
+  },
+  {
+    "dashboard": "ims-ldi-engineering-analytics.json",
+    "panel": "pe_1 ~ pe_6 (\u00b5m)",
+    "sql": "SELECT date_bin('1 minute', time, TIMESTAMPTZ '2000-01-01') AS time, eqp_id || ' - pe_5' AS metric, AVG(pe_5)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_5 IS NOT NULL GROUP BY 1, 2 ORDER BY 1"
+  },
+  {
+    "dashboard": "ims-ldi-engineering-analytics.json",
+    "panel": "pe_1 ~ pe_6 (\u00b5m)",
+    "sql": "SELECT date_bin('1 minute', time, TIMESTAMPTZ '2000-01-01') AS time, eqp_id || ' - pe_6' AS metric, AVG(pe_6)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_6 IS NOT NULL GROUP BY 1, 2 ORDER BY 1"
+  },
+  {
+    "dashboard": "ims-ldi-engineering-analytics.json",
+    "panel": "je_1 ~ je_4 (\u00b5m)",
+    "sql": "SELECT date_bin('1 minute', time, TIMESTAMPTZ '2000-01-01') AS time, eqp_id || ' - je_1' AS metric, AVG(je_1)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND je_1 IS NOT NULL GROUP BY 1, 2 ORDER BY 1"
+  },
+  {
+    "dashboard": "ims-ldi-engineering-analytics.json",
+    "panel": "je_1 ~ je_4 (\u00b5m)",
+    "sql": "SELECT date_bin('1 minute', time, TIMESTAMPTZ '2000-01-01') AS time, eqp_id || ' - je_2' AS metric, AVG(je_2)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND je_2 IS NOT NULL GROUP BY 1, 2 ORDER BY 1"
+  },
+  {
+    "dashboard": "ims-ldi-engineering-analytics.json",
+    "panel": "je_1 ~ je_4 (\u00b5m)",
+    "sql": "SELECT date_bin('1 minute', time, TIMESTAMPTZ '2000-01-01') AS time, eqp_id || ' - je_3' AS metric, AVG(je_3)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND je_3 IS NOT NULL GROUP BY 1, 2 ORDER BY 1"
+  },
+  {
+    "dashboard": "ims-ldi-engineering-analytics.json",
+    "panel": "je_1 ~ je_4 (\u00b5m)",
+    "sql": "SELECT date_bin('1 minute', time, TIMESTAMPTZ '2000-01-01') AS time, eqp_id || ' - je_4' AS metric, AVG(je_4)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND je_4 IS NOT NULL GROUP BY 1, 2 ORDER BY 1"
+  },
+  {
+    "dashboard": "ims-ldi-engineering-analytics.json",
+    "panel": "state",
+    "sql": "SELECT date_bin('1 minute', time, TIMESTAMPTZ '2000-01-01') AS time, eqp_id AS metric, MAX(CASE WHEN state THEN 1 ELSE 0 END) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) GROUP BY 1, 2 ORDER BY 1"
+  },
+  {
+    "dashboard": "ims-ldi-engineering-analytics.json",
+    "panel": "Machine PE Capability - Cp vs Cpk",
+    "sql": "WITH pe_samples AS (\n  SELECT d.eqp_id, d.pe_setting, p.pe\n  FROM public.ldi_data d\n  CROSS JOIN LATERAL (VALUES (d.pe_1),(d.pe_2),(d.pe_3),(d.pe_4),(d.pe_5),(d.pe_6)) p(pe)\n  WHERE $__timeFilter(d.\"time\")\n    AND d.factory IN (${factory:sqlstring})\n    AND d.process IN (${process:sqlstring})\n    AND d.mo IN (${mo:sqlstring})\n    AND d.fpn IN (${fpn:sqlstring})\n    AND d.layer_name IN (${layer:sqlstring})\n    AND d.eqp_id IN (${machine_id:sqlstring})\n    AND p.pe IS NOT NULL AND d.pe_setting IS NOT NULL\n), stats AS (\n  SELECT eqp_id, AVG(pe) AS mean_pe, STDDEV_SAMP(pe) AS stddev_pe, AVG(pe_setting) AS pe_limit\n  FROM pe_samples GROUP BY eqp_id\n), capability AS (\n  SELECT eqp_id, mean_pe, stddev_pe, pe_limit / NULLIF(3 * stddev_pe, 0) AS cp,\n    LEAST((pe_limit - mean_pe) / NULLIF(3 * stddev_pe, 0), (mean_pe + pe_limit) / NULLIF(3 * stddev_pe, 0)) AS cpk\n  FROM stats\n)\nSELECT eqp_id AS \"Machine\", ROUND(cp::NUMERIC, 3) AS \"Cp\", ROUND(cpk::NUMERIC, 3) AS \"Cpk\"\nFROM capability ORDER BY cpk DESC NULLS LAST;"
+  },
+  {
+    "dashboard": "ims-ldi-engineering-analytics.json",
+    "panel": "PE Standard Deviation by Machine (Lower is Better)",
+    "sql": "WITH pe_samples AS (\n  SELECT d.eqp_id, p.pe\n  FROM public.ldi_data d\n  CROSS JOIN LATERAL (VALUES (d.pe_1),(d.pe_2),(d.pe_3),(d.pe_4),(d.pe_5),(d.pe_6)) p(pe)\n  WHERE $__timeFilter(d.\"time\")\n    AND d.factory IN (${factory:sqlstring})\n    AND d.process IN (${process:sqlstring})\n    AND d.mo IN (${mo:sqlstring})\n    AND d.fpn IN (${fpn:sqlstring})\n    AND d.layer_name IN (${layer:sqlstring})\n    AND d.eqp_id IN (${machine_id:sqlstring})\n    AND p.pe IS NOT NULL\n)\nSELECT eqp_id AS \"Machine\", ROUND(STDDEV_SAMP(pe)::NUMERIC, 3) AS \"StdDev\"\nFROM pe_samples GROUP BY eqp_id HAVING STDDEV_SAMP(pe) IS NOT NULL ORDER BY \"StdDev\" DESC;"
+  },
+  {
+    "dashboard": "ims-ldi-engineering-analytics.json",
+    "panel": "Alignment Error Distribution (PE Histogram)",
+    "sql": "SELECT time, eqp_id || ' - pe_1' AS metric, pe_1 AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_1 IS NOT NULL UNION ALL SELECT time, eqp_id || ' - pe_2', pe_2 FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_2 IS NOT NULL UNION ALL SELECT time, eqp_id || ' - pe_3', pe_3 FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_3 IS NOT NULL UNION ALL SELECT time, eqp_id || ' - pe_4', pe_4 FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_4 IS NOT NULL UNION ALL SELECT time, eqp_id || ' - pe_5', pe_5 FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_5 IS NOT NULL UNION ALL SELECT time, eqp_id || ' - pe_6', pe_6 FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_6 IS NOT NULL ORDER BY time"
+  },
+  {
+    "dashboard": "ims-ldi-engineering-analytics.json",
+    "panel": "Resist Dosage Live (mJ/cm\u00b2)",
+    "sql": "SELECT eqp_id AS metric, ROUND(AVG(resist_dosage)::NUMERIC, 1) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND resist_dosage IS NOT NULL GROUP BY 1 ORDER BY 1"
+  },
+  {
+    "dashboard": "ims-ldi-engineering-analytics.json",
+    "panel": "Alarm \u2194 Process Correlation (RCA Truth Test)",
+    "sql": "SELECT 'THERMAL (81501)' AS \"Alarm Category\", ROUND((100.0*COUNT(*) FILTER (WHERE flag_temp_out_of_spec) / NULLIF(COUNT(*))::NUMERIC,0), 1) AS \"Correlation %\", COUNT(*) AS \"Event Count\" FROM v_ldi_alarm_context WHERE errorcode = '81501'\nUNION ALL\nSELECT 'VACUUM (81101/02)', ROUND((100.0*COUNT(*) FILTER (WHERE flag_vac_out_of_spec) / NULLIF(COUNT(*))::NUMERIC,0), 1), COUNT(*) FROM v_ldi_alarm_context WHERE errorcode IN ('81101','81102')\nUNION ALL\nSELECT 'ALIGNMENT (812xx)', ROUND((100.0*COUNT(*) FILTER (WHERE flag_pe_out_of_spec) / NULLIF(COUNT(*))::NUMERIC,0), 1), COUNT(*) FROM v_ldi_alarm_context WHERE errorcode IN ('81201','81203','81204')"
+  },
+  {
+    "dashboard": "ims-ldi-machine-snapshot.json",
+    "panel": "Machine Context",
+    "sql": "SELECT eqp_id AS \"Machine\", state AS \"State\", mo AS \"MO\", fpn AS \"FPN\", layer_name AS \"Layer\", (board_no::TEXT || '/' || total_board::TEXT) AS \"Board\", filmno AS \"Film\", resist AS \"Resist\", scale_mode AS \"Scale Mode\", \"time\" AS \"Timestamp\" FROM public.ldi_data WHERE log_id = (COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1"
+  },
+  {
+    "dashboard": "ims-ldi-machine-snapshot.json",
+    "panel": "temperature (\u00b0C)",
+    "sql": "SELECT ROUND(temperature::NUMERIC, 2) AS value FROM public.ldi_data WHERE log_id = (COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1"
+  },
+  {
+    "dashboard": "ims-ldi-machine-snapshot.json",
+    "panel": "humidity (%RH)",
+    "sql": "SELECT ROUND(humidity::NUMERIC, 2) AS value FROM public.ldi_data WHERE log_id = (COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1"
+  },
+  {
+    "dashboard": "ims-ldi-machine-snapshot.json",
+    "panel": "air_vacuum (kPa)",
+    "sql": "SELECT ROUND(air_vacuum::NUMERIC, 2) AS value FROM public.ldi_data WHERE log_id = (COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1"
+  },
+  {
+    "dashboard": "ims-ldi-machine-snapshot.json",
+    "panel": "scan_speed (mm/s)",
+    "sql": "SELECT ROUND(scan_speed::NUMERIC, 2) AS value FROM public.ldi_data WHERE log_id = (COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1"
+  },
+  {
+    "dashboard": "ims-ldi-machine-snapshot.json",
+    "panel": "thickness (mm)",
+    "sql": "SELECT ROUND(thickness::NUMERIC, 2) AS value FROM public.ldi_data WHERE log_id = (COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1"
+  },
+  {
+    "dashboard": "ims-ldi-machine-snapshot.json",
+    "panel": "resist_dosage (mJ/cm\u00b2)",
+    "sql": "SELECT ROUND(resist_dosage::NUMERIC, 2) AS value FROM public.ldi_data WHERE log_id = (COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1"
+  },
+  {
+    "dashboard": "ims-ldi-machine-snapshot.json",
+    "panel": "Position Error (PE1-PE6) + MAX|PE|",
+    "sql": "SELECT ROUND(pe_1::NUMERIC,3) AS \"pe_1\",ROUND(pe_2::NUMERIC,3) AS \"pe_2\",\n ROUND(pe_3::NUMERIC,3) AS \"pe_3\",ROUND(pe_4::NUMERIC,3) AS \"pe_4\",\n ROUND(pe_5::NUMERIC,3) AS \"pe_5\",ROUND(pe_6::NUMERIC,3) AS \"pe_6\",\n ROUND(max_pe::NUMERIC,3) AS \"MAX|PE|\",ROUND(pe_setting::NUMERIC,3) AS \"pe_setting\",\n CASE WHEN max_pe IS NULL THEN 'N/A' WHEN max_pe <= pe_setting THEN 'PASS' ELSE 'OUT OF SPEC' END AS \"PE Status\"\nFROM (\n SELECT d.*,GREATEST(ABS(pe_1),ABS(pe_2),ABS(pe_3),ABS(pe_4),ABS(pe_5),ABS(pe_6)) AS max_pe\n FROM public.ldi_data d WHERE log_id=(COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1\n) event_row;"
+  },
+  {
+    "dashboard": "ims-ldi-machine-snapshot.json",
+    "panel": "Process Capability from PE Samples",
+    "sql": "WITH selected_machines AS (\n  SELECT DISTINCT eqp_id FROM public.ldi_data\n  WHERE ((${event_time_ms:raw}::NUMERIC > 0 AND eqp_id=split_part(${clicked_series:sqlstring},' - ',1))\n    OR (${event_time_ms:raw}::NUMERIC <= 0 AND eqp_id IN (${machine_id:sqlstring})))\n), pe_samples AS (\n  SELECT d.eqp_id,d.pe_setting,p.pe FROM public.ldi_data d JOIN selected_machines sm ON sm.eqp_id=d.eqp_id\n  CROSS JOIN LATERAL (VALUES(d.pe_1),(d.pe_2),(d.pe_3),(d.pe_4),(d.pe_5),(d.pe_6)) p(pe)\n  WHERE $__timeFilter(d.\"time\") AND p.pe IS NOT NULL AND d.pe_setting IS NOT NULL\n), stats AS (\n  SELECT eqp_id,COUNT(*) sample_count,AVG(pe) mean_pe,STDDEV_SAMP(pe) stddev_pe,AVG(pe_setting) lim FROM pe_samples GROUP BY eqp_id\n)\nSELECT sm.eqp_id AS \"Machine\",COALESCE(stats.sample_count,0) AS \"Samples\",ROUND(stats.mean_pe::NUMERIC,2) AS \"Mean PE\",\n ROUND(((lim/NULLIF(3*stddev_pe)::NUMERIC,0))::NUMERIC,2) AS \"Cp\",\n ROUND((LEAST((lim-mean_pe)/NULLIF(3*stddev_pe)::NUMERIC,0),(mean_pe+lim)/NULLIF(3*stddev_pe,0))::NUMERIC,2) AS \"Cpk\"\nFROM selected_machines sm LEFT JOIN stats ON stats.eqp_id=sm.eqp_id\nLIMIT 1000;"
+  },
+  {
+    "dashboard": "ims-ldi-machine-snapshot.json",
+    "panel": "Alarm Context (\u00b15 min of clicked timestamp)",
+    "sql": "WITH target AS (SELECT \"time\" FROM public.ldi_data WHERE log_id=(COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1),\nselected_machine AS (\n SELECT CASE WHEN ${event_time_ms:raw}::NUMERIC > 0 THEN split_part(${clicked_series:sqlstring},' - ',1)\n             ELSE ${machine_id:sqlstring} END AS eqp_id\n), alarm_rows AS (\nSELECT al.logdate AS \"Time\",al.equipmentid AS \"Machine\",al.errorcode::TEXT AS \"errorcode\",al.errortime::TEXT AS \"errortime\",\n COALESCE(m.alarm_msg,al.errorcode::TEXT) AS \"Message\",COALESCE(m.alarm_type,'UNMAPPED') AS \"Severity\"\nFROM public.ldi_alarm_log al CROSS JOIN selected_machine sm\nLEFT JOIN public.ldi_alarm_ms_code m ON al.errorcode::TEXT=m.alarm_code::TEXT\nWHERE al.equipmentid=sm.eqp_id\n AND al.logdate BETWEEN (SELECT \"time\"-INTERVAL '5 minutes' FROM target) AND (SELECT \"time\"+INTERVAL '5 minutes' FROM target)\n)\nSELECT \"Time\", \"Machine\", \"errorcode\", \"errortime\", \"Message\", \"Severity\" FROM alarm_rows\nUNION ALL\nSELECT target.\"time\",sm.eqp_id,NULL::TEXT,NULL::TEXT,'No alarm in +/-5 minutes (real data)','NONE'\nFROM target CROSS JOIN selected_machine sm WHERE NOT EXISTS (SELECT 1 FROM alarm_rows)\nORDER BY \"Time\" DESC;"
+  },
+  {
+    "dashboard": "ims-ldi-machine-snapshot.json",
+    "panel": "Raw Timestamp (precise)",
+    "sql": "SELECT (EXTRACT(EPOCH FROM \"time\") * 1000)::NUMERIC AS value FROM public.ldi_data WHERE log_id = (COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1"
+  },
+  {
+    "dashboard": "ims-ldi-machine-snapshot.json",
+    "panel": "Event Timeline around Selected Log ID (+/-5 min)",
+    "sql": "WITH target AS (SELECT \"time\" AS t FROM public.ldi_data WHERE log_id=(COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1), events AS (\n  SELECT d.\"time\" AS event_time,d.eqp_id,'STATE'::TEXT AS event_type,'ldi_data'::TEXT AS source,\n         CASE WHEN d.state THEN 'RUNNING' ELSE 'DOWN' END AS description\n  FROM public.ldi_data d,target\n  WHERE ((${event_time_ms:raw}::NUMERIC > 0 AND d.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)) OR (${event_time_ms:raw}::NUMERIC <= 0 AND d.eqp_id IN (${machine_id:sqlstring}))) AND d.\"time\" BETWEEN target.t-INTERVAL '5 minutes' AND target.t+INTERVAL '5 minutes'\n  UNION ALL\n  SELECT a.logdate,a.equipmentid,'ALARM','ldi_alarm_log',COALESCE(m.alarm_msg,a.errorcode::TEXT)\n  FROM public.ldi_alarm_log a LEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT=m.alarm_code::TEXT,target\n  WHERE ((${event_time_ms:raw}::NUMERIC > 0 AND a.equipmentid = split_part(${clicked_series:sqlstring}, ' - ', 1)) OR (${event_time_ms:raw}::NUMERIC <= 0 AND a.equipmentid IN (${machine_id:sqlstring}))) AND a.logdate BETWEEN target.t-INTERVAL '5 minutes' AND target.t+INTERVAL '5 minutes'\n)\nSELECT event_time AS \"Event Time\",eqp_id AS \"Machine\",event_type AS \"Event Type\",source AS \"Source\",description AS \"Description\"\nFROM events ORDER BY event_time DESC LIMIT 100;"
+  },
+  {
+    "dashboard": "ims-ldi-machine-snapshot.json",
+    "panel": "Judgment Error (JE1-JE4) + MAX|JE|",
+    "sql": "SELECT ROUND(je_1::NUMERIC,3) AS \"je_1\",ROUND(je_2::NUMERIC,3) AS \"je_2\",\n ROUND(je_3::NUMERIC,3) AS \"je_3\",ROUND(je_4::NUMERIC,3) AS \"je_4\",\n ROUND(max_je::NUMERIC,3) AS \"MAX|JE|\",ROUND(je_setting::NUMERIC,3) AS \"je_setting\",\n CASE WHEN max_je IS NULL THEN 'N/A' WHEN max_je <= je_setting THEN 'PASS' ELSE 'OUT OF SPEC' END AS \"JE Status\"\nFROM (\n SELECT d.*,GREATEST(ABS(je_1),ABS(je_2),ABS(je_3),ABS(je_4)) AS max_je\n FROM public.ldi_data d WHERE log_id=(COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1\n) event_row;"
+  },
+  {
+    "dashboard": "ims-ldi-manufacturing.json",
+    "panel": "Estimated Yield (%)",
+    "sql": "SELECT ROUND(100.0 * COUNT(*) FILTER (\n  WHERE GREATEST(ABS(pe_1),ABS(pe_2),ABS(pe_3),ABS(pe_4),ABS(pe_5),ABS(pe_6)) <= pe_setting\n) / NULLIF(COUNT(*) FILTER (WHERE pe_1 IS NOT NULL), 0), 1) AS value\nFROM public.ldi_data\nWHERE $__timeFilter(\"time\")\n  AND factory IN (${factory:sqlstring})\n  AND mo IN (${mo:sqlstring})\n  AND eqp_id IN (${machine_id:sqlstring});"
+  },
+  {
+    "dashboard": "ims-ldi-manufacturing.json",
+    "panel": "Fleet Availability (%)",
+    "sql": "WITH latest AS (\n  SELECT DISTINCT ON (eqp_id) eqp_id, state\n  FROM public.ldi_data\n  WHERE $__timeFilter(\"time\")\n    AND factory IN (${factory:sqlstring})\n    AND mo IN (${mo:sqlstring})\n    AND eqp_id IN (${machine_id:sqlstring})\n  ORDER BY eqp_id, \"time\" DESC\n)\nSELECT ROUND((100.0 * COUNT(*) FILTER (WHERE state = true) / NULLIF(COUNT(*))::NUMERIC, 0), 1) AS value FROM latest;"
+  },
+  {
+    "dashboard": "ims-ldi-manufacturing.json",
+    "panel": "Avg Cpk (Fleet)",
+    "sql": "WITH pe_samples AS (\n  SELECT d.eqp_id, d.pe_setting, p.pe\n  FROM public.ldi_data d\n  CROSS JOIN LATERAL (VALUES (d.pe_1),(d.pe_2),(d.pe_3),(d.pe_4),(d.pe_5),(d.pe_6)) p(pe)\n  WHERE $__timeFilter(d.\"time\")\n    AND d.factory IN (${factory:sqlstring})\n    AND d.mo IN (${mo:sqlstring})\n    AND d.eqp_id IN (${machine_id:sqlstring})\n    AND p.pe IS NOT NULL AND d.pe_setting IS NOT NULL\n), stats AS (\n  SELECT eqp_id, AVG(pe) AS mean_pe, STDDEV_SAMP(pe) AS sigma, AVG(pe_setting) AS lim\n  FROM pe_samples GROUP BY eqp_id\n), cpk AS (\n  SELECT LEAST((lim - mean_pe) / NULLIF(3*sigma,0), (mean_pe + lim) / NULLIF(3*sigma,0)) AS value FROM stats\n)\nSELECT ROUND(AVG(value)::NUMERIC, 2) AS value FROM cpk;"
+  },
+  {
+    "dashboard": "ims-ldi-manufacturing.json",
+    "panel": "Running",
+    "sql": "WITH latest AS (\n  SELECT DISTINCT ON (eqp_id) eqp_id, state\n  FROM public.ldi_data\n  WHERE $__timeFilter(\"time\") AND factory IN (${factory:sqlstring})\n    AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring})\n  ORDER BY eqp_id, \"time\" DESC\n)\nSELECT COUNT(*) FILTER (WHERE state = true)::NUMERIC AS value FROM latest;"
+  },
+  {
+    "dashboard": "ims-ldi-manufacturing.json",
+    "panel": "PE Limit Used",
+    "sql": "WITH pe_rows AS (\n  SELECT\n    GREATEST(\n      ABS(pe_1), ABS(pe_2), ABS(pe_3),\n      ABS(pe_4), ABS(pe_5), ABS(pe_6)\n    ) AS max_error,\n    pe_setting\n  FROM public.ldi_data\n  WHERE factory IN (${factory:sqlstring})\n    AND mo IN (${mo:sqlstring})\n    AND eqp_id IN (${machine_id:sqlstring})\n    AND $__timeFilter(time)\n    AND pe_1 IS NOT NULL\n    AND pe_setting > 0\n)\nSELECT ROUND(AVG(100.0 * max_error / pe_setting)::NUMERIC, 1) AS value\nFROM pe_rows"
+  },
+  {
+    "dashboard": "ims-ldi-manufacturing.json",
+    "panel": "Avg Temperature",
+    "sql": "SELECT ROUND(AVG(temperature)::NUMERIC, 1) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) AND temperature IS NOT NULL"
+  },
+  {
+    "dashboard": "ims-ldi-manufacturing.json",
+    "panel": "Avg Humidity",
+    "sql": "SELECT ROUND(AVG(humidity)::NUMERIC, 1) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) AND humidity IS NOT NULL"
+  },
+  {
+    "dashboard": "ims-ldi-manufacturing.json",
+    "panel": "Critical Alarms",
+    "sql": "SELECT COUNT(*)::NUMERIC AS value\nFROM public.ldi_alarm_log a\nJOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\nWHERE a.equipmentid IN (${machine_id:sqlstring}) AND m.alarm_type ILIKE '%Critical%';"
+  },
+  {
+    "dashboard": "ims-ldi-manufacturing.json",
+    "panel": "Production & Process Table",
+    "sql": "SELECT DISTINCT ON (eqp_id) eqp_id AS \"Machine\", mo AS \"Job (MO)\", fpn AS \"Part (FPN)\", layer_name AS \"Layer\", (board_no::TEXT || '/' || total_board::TEXT) AS \"Progress\", ROUND(temperature::NUMERIC, 1) AS \"temperature (\u00b0C)\", ROUND(humidity::NUMERIC, 1) AS \"humidity (%RH)\", ROUND(scan_speed::NUMERIC, 1) AS \"scan_speed (mm/s)\", ROUND(thickness::NUMERIC, 3) AS \"thickness (mm)\", ROUND(resist_dosage::NUMERIC, 1) AS \"resist_dosage\", state AS \"state\" FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) ORDER BY eqp_id, time DESC LIMIT 50"
+  },
+  {
+    "dashboard": "ims-ldi-manufacturing.json",
+    "panel": "temperature Compliance (22\u00b12\u00b0C)",
+    "sql": "SELECT time, eqp_id AS metric, CASE WHEN temperature BETWEEN 20 AND 24 THEN 2 WHEN temperature BETWEEN 19 AND 25 THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) AND temperature IS NOT NULL ORDER BY time ASC"
+  },
+  {
+    "dashboard": "ims-ldi-manufacturing.json",
+    "panel": "humidity Compliance (55\u00b15%)",
+    "sql": "SELECT time, eqp_id AS metric, CASE WHEN humidity BETWEEN 50 AND 60 THEN 2 WHEN humidity BETWEEN 45 AND 65 THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) AND humidity IS NOT NULL ORDER BY time ASC"
+  },
+  {
+    "dashboard": "ims-ldi-manufacturing.json",
+    "panel": "Scan Speed & Air Vacuum",
+    "sql": "SELECT time_bucket('1 minute', time) AS time, eqp_id || ' - scan_speed' AS metric, AVG(scan_speed) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND scan_speed IS NOT NULL GROUP BY 1, 2 ORDER BY 1"
+  },
+  {
+    "dashboard": "ims-ldi-manufacturing.json",
+    "panel": "Scan Speed & Air Vacuum",
+    "sql": "SELECT time_bucket('1 minute', time) AS time, eqp_id || ' - air_vacuum' AS metric, AVG(air_vacuum) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND air_vacuum IS NOT NULL GROUP BY 1, 2 ORDER BY 1"
+  },
+  {
+    "dashboard": "ims-ldi-manufacturing.json",
+    "panel": "Thickness & Resist Dosage",
+    "sql": "SELECT time_bucket('1 minute', time) AS time, eqp_id || ' - thickness' AS metric, AVG(thickness) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND thickness IS NOT NULL GROUP BY 1, 2 ORDER BY 1"
+  },
+  {
+    "dashboard": "ims-ldi-manufacturing.json",
+    "panel": "Thickness & Resist Dosage",
+    "sql": "SELECT time_bucket('1 minute', time) AS time, eqp_id || ' - resist_dosage' AS metric, AVG(resist_dosage) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND resist_dosage IS NOT NULL GROUP BY 1, 2 ORDER BY 1"
+  },
+  {
+    "dashboard": "ims-ldi-manufacturing.json",
+    "panel": "Scale X / Y",
+    "sql": "SELECT time_bucket('1 minute', time) AS time, eqp_id || ' - scale_x' AS metric, AVG(scale_x) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND scale_x IS NOT NULL GROUP BY 1, 2 ORDER BY 1"
+  },
+  {
+    "dashboard": "ims-ldi-manufacturing.json",
+    "panel": "Scale X / Y",
+    "sql": "SELECT time_bucket('1 minute', time) AS time, eqp_id || ' - scale_y' AS metric, AVG(scale_y) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND scale_y IS NOT NULL GROUP BY 1, 2 ORDER BY 1"
+  },
+  {
+    "dashboard": "ims-ldi-manufacturing.json",
+    "panel": "Calculated Time per Board",
+    "sql": "SELECT date_bin('5 minutes', \"time\", TIMESTAMPTZ '2000-01-01') AS \"time\", eqp_id AS metric,\n       ROUND((AVG(total_time / NULLIF(total_board)::NUMERIC,0))::NUMERIC,2) AS value\nFROM public.ldi_data\nWHERE $__timeFilter(\"time\") AND factory IN (${factory:sqlstring})\n  AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND total_board > 0\nGROUP BY 1,2 ORDER BY 1;"
+  },
+  {
+    "dashboard": "ims-ldi-manufacturing.json",
+    "panel": "Z-Score: temperature",
+    "sql": "WITH stats AS (\n  SELECT eqp_id, AVG(temperature) AS mu, STDDEV_SAMP(temperature) AS sigma\n  FROM public.ldi_data\n  WHERE $__timeFilter(\"time\") AND factory IN (${factory:sqlstring})\n    AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND temperature IS NOT NULL\n  GROUP BY eqp_id\n)\nSELECT d.\"time\", d.eqp_id AS metric, ROUND((((d.temperature-s.mu)/NULLIF(s.sigma)::NUMERIC,0))::NUMERIC,2) AS \"Z-Score\"\nFROM public.ldi_data d JOIN stats s ON d.eqp_id=s.eqp_id\nWHERE $__timeFilter(d.\"time\") AND d.factory IN (${factory:sqlstring})\n  AND d.mo IN (${mo:sqlstring}) AND d.eqp_id IN (${machine_id:sqlstring})\n  AND d.temperature IS NOT NULL AND s.sigma > 0 ORDER BY d.\"time\";"
+  },
+  {
+    "dashboard": "ims-ldi-manufacturing.json",
+    "panel": "Latest Alarm Records (Historical)",
+    "sql": "SELECT a.logdate AS \"Time\", a.equipmentid AS \"Machine\", a.errorcode AS \"errorcode\", a.errortime AS \"errortime\",\n       COALESCE(m.alarm_msg,a.errorcode::TEXT) AS \"Message\", COALESCE(m.alarm_type,'UNMAPPED') AS \"Severity\"\nFROM public.ldi_alarm_log a\nLEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT=m.alarm_code::TEXT\nWHERE a.equipmentid IN (${machine_id:sqlstring}) ORDER BY a.logdate DESC LIMIT 30;"
+  },
+  {
+    "dashboard": "ims-ldi-operator-andon.json",
+    "panel": "Fleet Availability",
+    "sql": "SELECT ROUND((COUNT(DISTINCT eqp_id) FILTER (WHERE state = true) * 100.0 / NULLIF(COUNT(DISTINCT eqp_id))::NUMERIC, 0), 0) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time)"
+  },
+  {
+    "dashboard": "ims-ldi-operator-andon.json",
+    "panel": "Critical Alarm Records (master-code matched)",
+    "sql": "SELECT COUNT(*)::NUMERIC AS value FROM public.ldi_alarm_log a\nJOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT=m.alarm_code::TEXT\nWHERE a.equipmentid IN (${machine_id:sqlstring}) AND m.alarm_type ILIKE '%Critical%';"
+  },
+  {
+    "dashboard": "ims-ldi-operator-andon.json",
+    "panel": "Environmental Compliance",
+    "sql": "SELECT ROUND((COUNT(DISTINCT eqp_id) FILTER (WHERE temperature BETWEEN 20 AND 24 AND humidity BETWEEN 50 AND 60) * 100.0 / NULLIF(COUNT(DISTINCT eqp_id))::NUMERIC, 0), 0) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) AND temperature IS NOT NULL AND humidity IS NOT NULL"
+  },
+  {
+    "dashboard": "ims-ldi-operator-andon.json",
+    "panel": "Machine Run State",
+    "sql": "SELECT time, eqp_id AS metric, CASE WHEN state = true THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) ORDER BY time ASC"
+  },
+  {
+    "dashboard": "ims-ldi-operator-andon.json",
+    "panel": "Temperature Compliance (22\u00b12\u00b0C)",
+    "sql": "SELECT time, eqp_id AS metric, CASE WHEN temperature BETWEEN 20 AND 24 THEN 2 WHEN temperature BETWEEN 19 AND 25 THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) AND temperature IS NOT NULL ORDER BY time ASC"
+  },
+  {
+    "dashboard": "ims-ldi-operator-andon.json",
+    "panel": "Humidity Compliance (55\u00b15%)",
+    "sql": "SELECT time, eqp_id AS metric, CASE WHEN humidity BETWEEN 50 AND 60 THEN 2 WHEN humidity BETWEEN 45 AND 65 THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) AND humidity IS NOT NULL ORDER BY time ASC"
+  },
+  {
+    "dashboard": "ims-ldi-operator-andon.json",
+    "panel": "Live Production",
+    "sql": "SELECT DISTINCT ON (eqp_id) eqp_id AS \"Machine\", mo AS \"Job (MO)\", fpn AS \"Part (FPN)\", layer_name AS \"Layer\", (board_no::TEXT || '/' || total_board::TEXT) AS \"Progress\" FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) ORDER BY eqp_id, time DESC LIMIT 50"
+  },
+  {
+    "dashboard": "ims-ldi-operator-andon.json",
+    "panel": "Latest Alarm Records (Historical)",
+    "sql": "SELECT a.logdate AS \"Time\",a.equipmentid AS \"Machine\",a.errorcode AS \"errorcode\",\n COALESCE(m.alarm_msg,a.errorcode::TEXT) AS \"Message\",COALESCE(m.alarm_type,'UNMAPPED') AS \"Severity\"\nFROM public.ldi_alarm_log a LEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT=m.alarm_code::TEXT\nWHERE a.equipmentid IN (${machine_id:sqlstring}) ORDER BY a.logdate DESC LIMIT 20;"
+  },
+  {
+    "dashboard": "ims-noc-overview.json",
+    "panel": "Fleet Health Score",
+    "sql": "SELECT value FROM public.v_fleet_score"
+  },
+  {
+    "dashboard": "ims-noc-overview.json",
+    "panel": "LDI Yield Risk (% Outside Tolerance)",
+    "sql": "WITH ldi AS (\n  SELECT device_id, pe_1, je_1\n  FROM public.ldi_metrics\n  WHERE time > NOW() - INTERVAL '1 hour'\n    AND pe_1 IS NOT NULL\n    AND device_id IN (${machine_id:singlequote})\n)\nSELECT\n  ROUND((100.0 * SUM(CASE WHEN ABS(pe_1) > 10 OR ABS(je_1) > 10 THEN 1 ELSE 0 END) / NULLIF(COUNT(*))::NUMERIC, 0), 1) AS value\nFROM ldi"
+  },
+  {
+    "dashboard": "ims-noc-overview.json",
+    "panel": "Power Cost Estimation (THB/day)",
+    "sql": "WITH power_data AS (SELECT device_id, AVG(power_watt) AS avg_watts FROM public.ldi_metrics WHERE time > NOW() - INTERVAL '1 day' AND power_watt IS NOT NULL GROUP BY device_id) SELECT 'Fleet Power Cost' AS metric, ROUND(SUM(avg_watts * 24 * 4.5 / 1000)::NUMERIC, 0) AS value FROM power_data"
+  },
+  {
+    "dashboard": "ims-noc-overview.json",
+    "panel": "TOP 10 CRITICAL NODES",
+    "sql": "WITH ranked AS (SELECT device_id, cpu_load_percent, temp_c, time, ROW_NUMBER() OVER (PARTITION BY device_id ORDER BY time DESC) AS rn FROM public.sys_metrics WHERE time > NOW() - INTERVAL '15 minutes') SELECT r.device_id AS \"Server Name\", CASE WHEN r.time > NOW() - INTERVAL '1 minute' THEN 'online' WHEN r.time > NOW() - INTERVAL '3 minutes' THEN 'stale' ELSE 'offline' END AS \"Status\", ROUND(r.cpu_load_percent::NUMERIC, 1) AS \"CPU (%)\", ROUND(r.temp_c::NUMERIC, 0) AS \"Temp (\u00b0C)\" FROM ranked r WHERE r.rn = 1 ORDER BY r.time DESC LIMIT 10"
+  },
+  {
+    "dashboard": "ims-noc-overview.json",
+    "panel": "CPU Load (Fleet Envelope)",
+    "sql": "SELECT bucket AS time, 'Fleet Average' AS metric, ROUND(AVG(avg_cpu)::NUMERIC,1) AS value FROM public.sys_hourly WHERE $__timeFilter(bucket) GROUP BY bucket UNION ALL SELECT bucket AS time, 'Fleet Average' AS metric, ROUND(AVG(cpu_load_percent)::NUMERIC,1) AS value FROM public.sys_metrics WHERE $__timeFilter(time) AND time > COALESCE((SELECT MAX(bucket) FROM public.sys_hourly), NOW() - INTERVAL '1 hour') GROUP BY time ORDER BY 1"
+  },
+  {
+    "dashboard": "ims-noc-overview.json",
+    "panel": "CPU Load (Fleet Envelope)",
+    "sql": "SELECT bucket AS time, 'Peak Machine' AS metric, ROUND(MAX(avg_cpu)::NUMERIC,1) AS value FROM public.sys_hourly WHERE $__timeFilter(bucket) GROUP BY bucket UNION ALL SELECT bucket AS time, 'Peak Machine' AS metric, ROUND(MAX(cpu_load_percent)::NUMERIC,1) AS value FROM public.sys_metrics WHERE $__timeFilter(time) AND time > COALESCE((SELECT MAX(bucket) FROM public.sys_hourly), NOW() - INTERVAL '1 hour') GROUP BY time ORDER BY 1"
+  },
+  {
+    "dashboard": "ims-noc-overview.json",
+    "panel": "Temperature (Fleet Envelope)",
+    "sql": "SELECT bucket AS time, 'Fleet Average' AS metric, ROUND(AVG(max_temp)::NUMERIC,1) AS value FROM public.sys_hourly WHERE $__timeFilter(bucket) AND max_temp > 0 GROUP BY bucket UNION ALL SELECT bucket AS time, 'Fleet Average' AS metric, ROUND(AVG(temp_c)::NUMERIC,1) AS value FROM public.sys_metrics WHERE $__timeFilter(time) AND time > COALESCE((SELECT MAX(bucket) FROM public.sys_hourly), NOW() - INTERVAL '1 hour') AND temp_c > 0 GROUP BY time ORDER BY 1"
+  },
+  {
+    "dashboard": "ims-noc-overview.json",
+    "panel": "Temperature (Fleet Envelope)",
+    "sql": "SELECT bucket AS time, 'Hottest Machine' AS metric, ROUND(MAX(max_temp)::NUMERIC,1) AS value FROM public.sys_hourly WHERE $__timeFilter(bucket) AND max_temp > 0 GROUP BY bucket UNION ALL SELECT bucket AS time, 'Hottest Machine' AS metric, ROUND(MAX(temp_c)::NUMERIC,1) AS value FROM public.sys_metrics WHERE $__timeFilter(time) AND time > COALESCE((SELECT MAX(bucket) FROM public.sys_hourly), NOW() - INTERVAL '1 hour') AND temp_c > 0 GROUP BY time ORDER BY 1"
+  },
+  {
+    "dashboard": "ims-noc-overview.json",
+    "panel": "Network Throughput (All Machines)",
+    "sql": "SELECT\n  bucket AS time,\n  device_id AS metric,\n  ROUND(AVG(avg_rx)::NUMERIC, 2) AS \"RX (Mbps)\"\nFROM public.net_hourly\nWHERE $__timeFilter(bucket) AND device_id IN (${machine_id:singlequote})\nGROUP BY 1, 2\nORDER BY 1 ASC"
+  },
+  {
+    "dashboard": "ims-noc-overview.json",
+    "panel": "Network Throughput (All Machines)",
+    "sql": "SELECT\n  bucket AS time,\n  device_id AS metric,\n  ROUND(AVG(avg_tx)::NUMERIC, 2) AS \"TX (Mbps)\"\nFROM public.net_hourly\nWHERE $__timeFilter(bucket) AND device_id IN (${machine_id:singlequote})\nGROUP BY 1, 2\nORDER BY 1 ASC"
+  },
+  {
+    "dashboard": "ims-noc-overview.json",
+    "panel": "RAM Saturation (Fleet Envelope)",
+    "sql": "SELECT bucket AS time, 'Fleet Average' AS metric, ROUND((AVG(avg_ram_used / NULLIF(avg_ram_total)::NUMERIC, 0) * 100)::NUMERIC,1) AS value FROM public.sys_hourly WHERE $__timeFilter(bucket) GROUP BY bucket UNION ALL SELECT bucket AS time, 'Fleet Average' AS metric, ROUND((AVG(ram_used_mb / NULLIF(ram_total_mb)::NUMERIC, 0) * 100)::NUMERIC,1) AS value FROM public.sys_metrics WHERE $__timeFilter(time) AND time > COALESCE((SELECT MAX(bucket) FROM public.sys_hourly), NOW() - INTERVAL '1 hour') GROUP BY time ORDER BY 1"
+  },
+  {
+    "dashboard": "ims-noc-overview.json",
+    "panel": "RAM Saturation (Fleet Envelope)",
+    "sql": "SELECT bucket AS time, 'Worst Machine' AS metric, ROUND((MAX(avg_ram_used / NULLIF(avg_ram_total)::NUMERIC, 0) * 100)::NUMERIC,1) AS value FROM public.sys_hourly WHERE $__timeFilter(bucket) GROUP BY bucket UNION ALL SELECT bucket AS time, 'Worst Machine' AS metric, ROUND((MAX(ram_used_mb / NULLIF(ram_total_mb)::NUMERIC, 0) * 100)::NUMERIC,1) AS value FROM public.sys_metrics WHERE $__timeFilter(time) AND time > COALESCE((SELECT MAX(bucket) FROM public.sys_hourly), NOW() - INTERVAL '1 hour') GROUP BY time ORDER BY 1"
+  },
+  {
+    "dashboard": "ldi-data-readiness.json",
+    "panel": "Telemetry Age",
+    "sql": "-- Intentional full table scan for global readiness\nSELECT ROUND((EXTRACT(EPOCH FROM (NOW() - MAX(\"time\"))) / 3600.0)::NUMERIC, 1) AS value\nFROM public.ldi_data\nWHERE factory IN (${factory:sqlstring})\n  AND eqp_id IN (${machine_id:sqlstring});"
+  },
+  {
+    "dashboard": "ldi-data-readiness.json",
+    "panel": "Alarm Age",
+    "sql": "-- Intentional full table scan for global readiness\nSELECT ROUND((EXTRACT(EPOCH FROM (NOW() - MAX(logdate))) / 3600.0)::NUMERIC, 1) AS value\nFROM public.ldi_alarm_log\nWHERE eqp_id IN (${machine_id:sqlstring});"
+  },
+  {
+    "dashboard": "ldi-data-readiness.json",
+    "panel": "Machine ID Match",
+    "sql": "-- Intentional full table scan for global readiness\nWITH selected AS (\n  SELECT DISTINCT eqp_id\n  FROM public.ldi_data\n  WHERE factory IN (${factory:sqlstring})\n    AND eqp_id IN (${machine_id:sqlstring})\n)\nSELECT ROUND(100.0 * COUNT(*) FILTER (\n  WHERE EXISTS (SELECT 1 FROM public.ldi_alarm_log a WHERE a.equipmentid = s.eqp_id)\n) / NULLIF(COUNT(*), 0), 1) AS value\nFROM selected s;"
+  },
+  {
+    "dashboard": "ldi-data-readiness.json",
+    "panel": "Alarm Master Match",
+    "sql": "-- Intentional full table scan for global readiness\nSELECT ROUND((100.0 * COUNT(*) FILTER (WHERE m.alarm_code IS NOT NULL) / NULLIF(COUNT(*))::NUMERIC, 0), 1) AS value\nFROM public.ldi_alarm_log a\nLEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\nWHERE a.equipmentid IN (${machine_id:sqlstring});"
+  },
+  {
+    "dashboard": "ldi-data-readiness.json",
+    "panel": "Board ID Completeness",
+    "sql": "-- Intentional full table scan for global readiness\nSELECT ROUND((100.0 * COUNT(board_id) / NULLIF(COUNT(*))::NUMERIC, 0), 1) AS value\nFROM public.ldi_data\nWHERE factory IN (${factory:sqlstring})\n  AND eqp_id IN (${machine_id:sqlstring});"
+  },
+  {
+    "dashboard": "ldi-data-readiness.json",
+    "panel": "PE / JE4 Coverage",
+    "sql": "-- Intentional full table scan for global readiness\nSELECT\n  ROUND((100.0 * COUNT(pe_1) / NULLIF(COUNT(*))::NUMERIC, 0), 1) AS \"PE\",\n  ROUND((100.0 * COUNT(je_4) / NULLIF(COUNT(*))::NUMERIC, 0), 1) AS \"JE4\"\nFROM public.ldi_data\nWHERE factory IN (${factory:sqlstring})\n  AND eqp_id IN (${machine_id:sqlstring});"
+  },
+  {
+    "dashboard": "ldi-data-readiness.json",
+    "panel": "Telemetry Ingestion Rows by Machine",
+    "sql": "SELECT\n  date_bin('5 minutes', \"time\", TIMESTAMPTZ '2000-01-01') AS \"time\",\n  eqp_id AS metric,\n  COUNT(*)::NUMERIC AS value\nFROM public.ldi_data\nWHERE $__timeFilter(\"time\")\n  AND factory IN (${factory:sqlstring})\n  AND eqp_id IN (${machine_id:sqlstring})\nGROUP BY 1, 2\nORDER BY 1, 2;"
+  },
+  {
+    "dashboard": "ldi-data-readiness.json",
+    "panel": "Machine Data Coverage Matrix",
+    "sql": "-- Intentional full table scan for global readiness\nWITH alarm_counts AS (\n  SELECT equipmentid AS eqp_id, COUNT(*) AS alarm_rows, MAX(logdate) AS last_alarm\n  FROM public.ldi_alarm_log\n  GROUP BY equipmentid\n)\nSELECT\n  d.eqp_id AS \"Machine\",\n  MIN(d.factory) AS \"Factory\",\n  MIN(d.process) AS \"Process\",\n  COUNT(*) AS \"Telemetry Rows\",\n  MAX(d.\"time\") AS \"Latest Telemetry\",\n  ROUND((100.0 * COUNT(d.pe_1) / COUNT(*))::NUMERIC, 1) AS \"PE %\",\n  ROUND((100.0 * COUNT(d.je_1) / COUNT(*))::NUMERIC, 1) AS \"JE1-3 %\",\n  ROUND((100.0 * COUNT(d.je_4) / COUNT(*))::NUMERIC, 1) AS \"JE4 %\",\n  COALESCE(MAX(a.alarm_rows), 0) AS \"Alarm Rows\",\n  MAX(a.last_alarm) AS \"Latest Alarm\"\nFROM public.ldi_data d\nLEFT JOIN alarm_counts a ON a.eqp_id = d.eqp_id\nWHERE d.factory IN (${factory:sqlstring})\n  AND d.eqp_id IN (${machine_id:sqlstring})\nGROUP BY d.eqp_id\nORDER BY d.eqp_id\nLIMIT 1000;"
+  },
+  {
+    "dashboard": "ldi-data-readiness.json",
+    "panel": "Machine ID Mapping Gaps (Global)",
+    "sql": "-- Intentional full table scan for global readiness\nWITH telemetry AS (\n  SELECT DISTINCT eqp_id FROM public.ldi_data\n), alarms AS (\n  SELECT DISTINCT equipmentid AS eqp_id FROM public.ldi_alarm_log\n), ids AS (\n  SELECT eqp_id FROM telemetry\n  UNION\n  SELECT eqp_id FROM alarms\n)\nSELECT\n  i.eqp_id AS \"Machine ID\",\n  (t.eqp_id IS NOT NULL) AS \"In Telemetry\",\n  (a.eqp_id IS NOT NULL) AS \"In Alarm\",\n  CASE\n    WHEN t.eqp_id IS NOT NULL AND a.eqp_id IS NOT NULL THEN 'MATCHED'\n    WHEN t.eqp_id IS NULL THEN 'ALARM ONLY'\n    ELSE 'TELEMETRY ONLY'\n  END AS \"Mapping Status\"\nFROM ids i\nLEFT JOIN telemetry t USING (eqp_id)\nLEFT JOIN alarms a USING (eqp_id)\nORDER BY \"Mapping Status\", i.eqp_id\nLIMIT 1000;"
+  },
+  {
+    "dashboard": "ldi-data-readiness.json",
+    "panel": "Alarm Code Mapping Gaps (Global)",
+    "sql": "-- Intentional full table scan for global readiness\nSELECT\n  a.errorcode::TEXT AS \"Alarm Code\",\n  COUNT(*) AS \"Rows\",\n  CASE WHEN m.alarm_code IS NULL THEN 'UNMAPPED' ELSE 'MATCHED' END AS \"Mapping\",\n  COALESCE(m.alarm_msg, '') AS \"Message\",\n  COALESCE(m.alarm_type, '') AS \"Severity\"\nFROM public.ldi_alarm_log a\nLEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\nGROUP BY a.errorcode, m.alarm_code, m.alarm_msg, m.alarm_type\nORDER BY \"Rows\" DESC\nLIMIT 1000;"
+  },
+  {
+    "dashboard": "ldi-data-readiness.json",
+    "panel": "Board Event Data Quality",
+    "sql": "-- Intentional full table scan for global readiness\nSELECT\n  eqp_id AS \"Machine\",\n  COUNT(*) AS \"Telemetry Rows\",\n  COUNT(DISTINCT (mo, board_no)) AS \"Unique MO + Board No\",\n  COUNT(*) - COUNT(DISTINCT (mo, board_no)) AS \"Duplicate Board Keys\",\n  ROUND((100.0 * COUNT(board_id) / COUNT(*))::NUMERIC, 1) AS \"Board ID %\",\n  COUNT(DISTINCT mo) AS \"Distinct MO\",\n  MIN(board_no) AS \"Min Board No\",\n  MAX(board_no) AS \"Max Board No\"\nFROM public.ldi_data\nWHERE factory IN (${factory:sqlstring})\n  AND eqp_id IN (${machine_id:sqlstring})\nGROUP BY eqp_id\nORDER BY \"Duplicate Board Keys\" DESC, eqp_id\nLIMIT 1000;"
+  },
+  {
+    "dashboard": "ldi-data-readiness.json",
+    "panel": "Inferred Sensor / Source Capability",
+    "sql": "-- Intentional full table scan for global readiness\nSELECT\n  d.eqp_id AS \"Machine\",\n  CASE WHEN COUNT(d.pe_1) > 0 THEN 'AVAILABLE' ELSE 'NO DATA' END AS \"PE1-6\",\n  CASE WHEN COUNT(d.je_1) > 0 THEN 'AVAILABLE' ELSE 'NO DATA' END AS \"JE1-3\",\n  CASE WHEN COUNT(d.je_4) > 0 THEN 'AVAILABLE' ELSE 'NO DATA' END AS \"JE4\",\n  CASE\n    WHEN COUNT(DISTINCT d.air_vacuum) > 1 THEN 'VARIABLE SIGNAL'\n    WHEN COUNT(d.air_vacuum) = 0 THEN 'NO DATA'\n    WHEN BOOL_AND(d.air_vacuum = 0) THEN 'ALL ZERO - VERIFY'\n    ELSE 'CONSTANT - VERIFY'\n  END AS \"Vacuum\",\n  CASE\n    WHEN COUNT(DISTINCT d.scan_speed) > 1 THEN 'VARIABLE SIGNAL'\n    WHEN COUNT(d.scan_speed) = 0 THEN 'NO DATA'\n    ELSE 'CONSTANT - VERIFY'\n  END AS \"Scan Speed\",\n  CASE WHEN MAX(a.eqp_id) IS NOT NULL THEN 'AVAILABLE' ELSE 'NO MATCHING ID' END AS \"Alarm Source\"\nFROM public.ldi_data d\nLEFT JOIN (SELECT DISTINCT equipmentid AS eqp_id FROM public.ldi_alarm_log) a ON a.eqp_id = d.eqp_id\nWHERE d.factory IN (${factory:sqlstring})\n  AND d.eqp_id IN (${machine_id:sqlstring})\nGROUP BY d.eqp_id\nORDER BY d.eqp_id\nLIMIT 1000;"
+  }
+]
