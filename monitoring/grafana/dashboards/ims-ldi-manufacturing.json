@@ -549,19 +549,6 @@
       "description": "Counts real alarm rows for selected machine IDs that match a Critical master code. Zero is valid because current log codes do not match the supplied master."
     },
     {
-      "id": 10005,
-      "type": "row",
-      "title": "\u25c8 PROCESS STATE",
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 2.0
-      },
-      "collapsed": false,
-      "panels": []
-    },
-    {
       "id": 1,
       "title": "\u25c9 Running",
       "type": "stat",
@@ -1011,7 +998,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 8
+        "y": 7.5
       },
       "collapsed": false,
       "panels": []
@@ -2362,7 +2349,7 @@
   "id": null,
   "uid": "ims-ldi-manufacturing",
   "title": "IMS LDI - Manufacturing Command Center",
-  "version": 3,
+  "version": 4,
   "time": {
     "from": "2026-07-19T21:00:00.000Z",
     "to": "2026-07-20T03:00:00.000Z"
