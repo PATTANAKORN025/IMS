@@ -13,6 +13,9 @@
  *   8. All panels have descriptions (except rows and clock)
  *   9. No 2D bounding box overlaps between panels
  *  10. JSON is valid
+ *  13. Panel gridPos.h uses the standard height system (warn — not all
+ *      dashboards have been migrated yet, see ALLOWED_HEIGHTS)
+ *  14. Kiosk dashboards (MAX_HEIGHT) don't exceed their no-scroll ceiling
  *
  * Usage: node tests/lint/dashboard-linter.js
  */
@@ -21,6 +24,19 @@ const fs = require('fs');
 const path = require('path');
 
 const DASHBOARD_DIR = path.join(process.cwd(), 'monitoring', 'grafana', 'dashboards');
+
+// Standard panel height system (Check 13). Only 4 sizes: KPI stat, normal
+// chart/table, deep-analysis panel, plus the h=1 row/CSS-injector sliver.
+// Warn-only for now — most dashboards predate this rule and haven't been
+// migrated (see design roadmap); flip to `error` once they have been.
+const ALLOWED_HEIGHTS = [1, 5, 8, 10, 16];
+
+// Per-dashboard total-height ceiling (Check 14), keyed by dashboard uid.
+// Only kiosk/wall displays get a hard ceiling — analysis dashboards are
+// meant to be scrolled and are intentionally left unconstrained.
+const MAX_HEIGHT = {
+  'ims-ldi-operator-andon': 22, // factory-floor kiosk, zero scroll, 1080p
+};
 
 let errors = 0;
 let warnings = 0;
@@ -101,6 +117,11 @@ function lintDashboard(filePath) {
       }
     }
 
+    // Check 13: standard height system
+    if (gp.h !== undefined && !ALLOWED_HEIGHTS.includes(gp.h)) {
+      warn(file, pid, `gridPos.h = ${gp.h} not in standard height system (allowed: ${ALLOWED_HEIGHTS.join(', ')})`);
+    }
+
     // Check 5: noValue on stat/gauge
     if (['stat', 'gauge'].includes(panel.type)) {
       if (!panel.options?.noValue) {
@@ -162,6 +183,15 @@ function lintDashboard(filePath) {
           `A[x=${a.x},y=${a.y},w=${a.w},h=${a.h}] ` +
           `B[x=${b.x},y=${b.y},w=${b.w},h=${b.h}]`);
       }
+    }
+  }
+
+  // ── Check 14: kiosk dashboard no-scroll ceiling ──
+  const ceiling = MAX_HEIGHT[data.uid];
+  if (ceiling !== undefined) {
+    const bottom = panels.reduce((max, p) => Math.max(max, p.y + p.h), 0);
+    if (bottom > ceiling) {
+      error(file, data.uid, `Dashboard total height ${bottom}u exceeds kiosk ceiling ${ceiling}u — must fit on screen without scrolling`);
     }
   }
 

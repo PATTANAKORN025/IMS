@@ -110,19 +110,6 @@
       "transparent": true
     },
     {
-      "id": 10000,
-      "type": "row",
-      "title": "\u25c8 FLEET KPIs & ALARMS",
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 1
-      },
-      "collapsed": false,
-      "panels": []
-    },
-    {
       "id": 1,
       "title": "\u25c9 Fleet Availability",
       "type": "stat",
@@ -131,9 +118,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 2,
-        "w": 8,
-        "h": 6
+        "y": 1,
+        "w": 6,
+        "h": 5
       },
       "fieldConfig": {
         "defaults": {
@@ -208,10 +195,10 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 8,
-        "y": 2,
-        "w": 8,
-        "h": 6
+        "x": 6,
+        "y": 1,
+        "w": 6,
+        "h": 5
       },
       "fieldConfig": {
         "defaults": {
@@ -282,10 +269,10 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 16,
-        "y": 2,
-        "w": 8,
-        "h": 6
+        "x": 12,
+        "y": 1,
+        "w": 6,
+        "h": 5
       },
       "fieldConfig": {
         "defaults": {
@@ -365,17 +352,80 @@
       "description": "Environmental Compliance: percentage of machines within safe temperature AND humidity."
     },
     {
-      "id": 10001,
-      "type": "row",
-      "title": "\u25c8 MACHINE RUN STATE & COMPLIANCE",
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 8
+      "id": 9,
+      "title": "\u25c9 Machines Running",
+      "type": "stat",
+      "datasource": {
+        "uid": "timescaledb"
       },
-      "collapsed": false,
-      "panels": []
+      "gridPos": {
+        "x": 18,
+        "y": 1,
+        "w": 6,
+        "h": 5
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF003C",
+                "value": null
+              },
+              {
+                "color": "#22c55e",
+                "value": 1
+              }
+            ]
+          },
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#00F2FE"
+          },
+          "unit": "short",
+          "custom": {
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 15,
+            "lineWidth": 2
+          },
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "text": {
+          "valueSize": 48,
+          "titleSize": 14
+        },
+        "noValue": "-",
+        "textMode": "auto",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "WITH latest AS (SELECT DISTINCT ON (eqp_id) eqp_id, state FROM public.ldi_data WHERE $__timeFilter(time) AND factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) ORDER BY eqp_id, time DESC) SELECT COUNT(*) FILTER (WHERE state = true) AS value FROM latest",
+          "format": "table"
+        }
+      ],
+      "description": "Machines Running: count of machines whose most recent reading in the window has state = true."
     },
     {
       "id": 4,
@@ -386,9 +436,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 9,
+        "y": 6,
         "w": 8,
-        "h": 12
+        "h": 8
       },
       "fieldConfig": {
         "defaults": {
@@ -474,9 +524,9 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 9,
+        "y": 6,
         "w": 8,
-        "h": 12
+        "h": 8
       },
       "fieldConfig": {
         "defaults": {
@@ -573,9 +623,9 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 9,
+        "y": 6,
         "w": 8,
-        "h": 12
+        "h": 8
       },
       "fieldConfig": {
         "defaults": {
@@ -664,19 +714,6 @@
       "description": "Humidity Compliance: per-machine 3-color matrix. Green=50-60%, Amber=45-65%, Red=outside."
     },
     {
-      "id": 10002,
-      "type": "row",
-      "title": "\u25c8 LIVE PRODUCTION BOARD",
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 21
-      },
-      "collapsed": false,
-      "panels": []
-    },
-    {
       "id": 7,
       "title": "\u25c8 Live Production",
       "type": "table",
@@ -685,9 +722,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 22,
+        "y": 14,
         "w": 24,
-        "h": 10
+        "h": 8
       },
       "options": {
         "showHeader": true,
@@ -924,292 +961,6 @@
           }
         ]
       }
-    },
-    {
-      "id": 10003,
-      "type": "row",
-      "title": "\u25c8 ALARM LOG",
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 32
-      },
-      "collapsed": false,
-      "panels": []
-    },
-    {
-      "id": 8,
-      "title": "\u25c8 Latest Alarm Records (Historical)",
-      "type": "table",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 33,
-        "w": 24,
-        "h": 12
-      },
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Severity"
-            },
-            "properties": [
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "type": "value",
-                    "options": {
-                      "CRIT": {
-                        "color": "#FF003C",
-                        "index": 0,
-                        "text": "CRIT"
-                      },
-                      "CRITICAL": {
-                        "color": "#FF003C",
-                        "index": 0,
-                        "text": "CRITICAL"
-                      },
-                      "WARN": {
-                        "color": "#FF9100",
-                        "index": 1,
-                        "text": "WARN"
-                      },
-                      "WARNING": {
-                        "color": "#FF9100",
-                        "index": 1,
-                        "text": "WARNING"
-                      },
-                      "OK": {
-                        "color": "#00F2FE",
-                        "index": 2,
-                        "text": "OK"
-                      }
-                    }
-                  }
-                ]
-              },
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "color-background"
-                }
-              },
-              {
-                "id": "custom.displayMode",
-                "value": "color-background"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Machine"
-            },
-            "properties": [
-              {
-                "id": "links",
-                "value": [
-                  {
-                    "title": "Incident Snapshot",
-                    "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=${__value.text}&from=${__from}&to=${__to}",
-                    "targetBlank": false
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Timestamp"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "dateTimeAsIso"
-              },
-              {
-                "id": "decimals",
-                "value": 6
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Time"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "dateTimeAsIso"
-              },
-              {
-                "id": "decimals",
-                "value": 6
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "eqp_id"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Machine"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "layer_name"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Layer"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "mo"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Work Order (MO)"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "alarm_code"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Alarm Code"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "alarm_msg"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Alarm Message"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "severity"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Severity"
-              },
-              {
-                "id": "custom.displayMode",
-                "value": "color-background"
-              },
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "type": "value",
-                    "options": {
-                      "CRIT": {
-                        "color": "#FF003C",
-                        "index": 0,
-                        "text": "CRIT"
-                      },
-                      "CRITICAL": {
-                        "color": "#FF003C",
-                        "index": 0,
-                        "text": "CRITICAL"
-                      },
-                      "WARN": {
-                        "color": "#FF9100",
-                        "index": 1,
-                        "text": "WARN"
-                      },
-                      "WARNING": {
-                        "color": "#FF9100",
-                        "index": 1,
-                        "text": "WARNING"
-                      },
-                      "OK": {
-                        "color": "#00F2FE",
-                        "index": 2,
-                        "text": "OK"
-                      }
-                    }
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "logdate"
-            },
-            "properties": [
-              {
-                "id": "custom.hidden",
-                "value": true
-              }
-            ]
-          }
-        ]
-      },
-      "options": {
-        "showHeader": true,
-        "sortBy": [
-          {
-            "displayName": "Time",
-            "desc": true
-          }
-        ],
-        "rowHeight": 0.6,
-        "cellHeight": "sm",
-        "footer": {
-          "show": false
-        },
-        "noValue": "-"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nSELECT a.logdate AS \"Time\",a.equipmentid AS \"Machine\",a.errorcode AS \"errorcode\",\n COALESCE(m.alarm_msg,a.errorcode::TEXT) AS \"Message\",COALESCE(m.alarm_type,'UNMAPPED') AS \"Severity\"\nFROM public.ldi_alarm_log a LEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT=m.alarm_code::TEXT\nWHERE a.equipmentid IN (${machine_id:sqlstring}) ORDER BY a.logdate DESC LIMIT 20;",
-          "format": "table"
-        }
-      ],
-      "description": "Note: Alarm durations and MTTR are not calculated as the source EAP system currently does not broadcast explicit alarm-clear events. Only occurrence times are logged. Duration estimation requires EAP team confirmation of clear/reset event availability. Alarm Stream: latest alarms with human-readable messages and color-coded severity."
     }
   ],
   "fiscalYearStartMonth": 0,
@@ -1245,7 +996,7 @@
   "id": null,
   "uid": "ims-ldi-operator-andon",
   "title": "IMS LDI - Operator Andon Board",
-  "version": 3,
+  "version": 4,
   "time": {
     "from": "2026-07-19T21:00:00.000Z",
     "to": "2026-07-20T03:00:00.000Z"
