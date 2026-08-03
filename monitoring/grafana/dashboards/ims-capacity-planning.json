@@ -1972,7 +1972,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "celsius",
+          "unit": "none",
           "custom": {
             "axisCente#EF4444Zero": true,
             "fillOpacity": 15,
@@ -1992,24 +1992,28 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#ff003c",
-                "value": null
+                "color": "#FF003C",
+                "value": -3
               },
               {
-                "color": "#ff9100",
-                "value": 19
+                "color": "transparent",
+                "value": -2
               },
               {
-                "color": "#00ff87",
-                "value": 20
+                "color": "#00FF87",
+                "value": -1
               },
               {
-                "color": "#ff9100",
-                "value": 24
+                "color": "#00FF87",
+                "value": 1
               },
               {
-                "color": "#ff003c",
-                "value": 25
+                "color": "transparent",
+                "value": 2
+              },
+              {
+                "color": "#FF003C",
+                "value": 3
               }
             ]
           },
@@ -2018,9 +2022,7 @@
           },
           "fillOpacity": 5,
           "lineWidth": 2,
-          "min": 18,
-          "decimals": 1,
-          "max": 28
+          "decimals": 2
         },
         "overrides": [
           {

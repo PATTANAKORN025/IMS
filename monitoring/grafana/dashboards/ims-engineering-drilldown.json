@@ -2036,7 +2036,7 @@
           "color": {
             "mode": "palette-classic"
           },
-          "unit": "lengthum",
+          "unit": "suffix: µm",
           "min": 0,
           "decimals": 2
         },
@@ -2495,7 +2495,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "celsius",
+          "unit": "none",
           "custom": {
             "lineWidth": 0,
             "fillOpacity": 100,
@@ -2508,33 +2508,23 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#ff003c",
+                "color": "#00F2FE",
                 "value": null
               },
               {
-                "color": "#ff9100",
-                "value": 19
+                "color": "#FF9100",
+                "value": 2
               },
               {
-                "color": "#00ff87",
-                "value": 20
-              },
-              {
-                "color": "#ff9100",
-                "value": 24
-              },
-              {
-                "color": "#ff003c",
-                "value": 25
+                "color": "#FF003C",
+                "value": 3
               }
             ]
           },
           "color": {
             "mode": "thresholds"
           },
-          "min": 18,
-          "decimals": 1,
-          "max": 28
+          "decimals": 2
         },
         "overrides": []
       },

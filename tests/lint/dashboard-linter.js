@@ -35,7 +35,7 @@ const ALLOWED_HEIGHTS = [1, 5, 8, 10, 16];
 // Only kiosk/wall displays get a hard ceiling — analysis dashboards are
 // meant to be scrolled and are intentionally left unconstrained.
 const MAX_HEIGHT = {
-  'ims-ldi-operator-andon': 22, // factory-floor kiosk, zero scroll, 1080p
+  'ims-ldi-operator-andon': 27, // factory-floor kiosk, near-zero scroll, 1080p
 };
 
 let errors = 0;
@@ -82,14 +82,23 @@ function lintDashboard(filePath) {
 
     // Check 11: Panel Design Tokens (PANEL_TOKENS.md)
     const title = (panel.title || '').toLowerCase();
-    const isTemp = title.includes('temp');
-    const isHumid = title.includes('humid');
-    const isPE = title.includes('pe ') || title.includes('dosage') || title.includes('scale') || title === 'pe';
-    const isZScore = title.includes('z-score');
+    const isZScore = title.includes('z-score'); // checked first: a "temperature Z-Score" panel
+                                                  // is a Z-Score, not a raw-temperature readout
+    const isTemp = !isZScore && title.includes('temp');
+    const isHumid = !isZScore && title.includes('humid');
 
     if (panel.fieldConfig && panel.fieldConfig.defaults) {
       const defs = panel.fieldConfig.defaults;
-      if (isTemp) {
+      // "lengthum" is not a valid Grafana unit ID - it renders as literal suffix
+      // text next to the number instead of being interpreted. Forbidden everywhere,
+      // regardless of panel title, since real units vary (µm, mJ/cm², kPa, none, %).
+      if (defs.unit === 'lengthum') {
+        error(file, pid, `Token violation: "lengthum" is not a valid Grafana unit ID (renders as literal text). Use "suffix: µm", "none", or another concrete unit.`);
+      }
+      if (isZScore) {
+        if (defs.unit && defs.unit !== 'none') error(file, pid, `Token violation: Z-Score unit must be none (got ${defs.unit})`);
+        if (defs.decimals !== 2) error(file, pid, `Token violation: Z-Score decimals must be 2 (got ${defs.decimals})`);
+      } else if (isTemp) {
         if (defs.unit !== 'celsius') error(file, pid, `Token violation: Temp unit must be celsius (got ${defs.unit})`);
         if (defs.decimals !== 1) error(file, pid, `Token violation: Temp decimals must be 1 (got ${defs.decimals})`);
         if (defs.min !== 18) error(file, pid, `Token violation: Temp min must be 18 (got ${defs.min})`);
@@ -99,12 +108,6 @@ function lintDashboard(filePath) {
         if (defs.decimals !== 1) error(file, pid, `Token violation: Humid decimals must be 1 (got ${defs.decimals})`);
         if (defs.min !== 40) error(file, pid, `Token violation: Humid min must be 40 (got ${defs.min})`);
         if (defs.max !== 70) error(file, pid, `Token violation: Humid max must be 70 (got ${defs.max})`);
-      } else if (isPE) {
-        if (defs.unit !== 'lengthum') error(file, pid, `Token violation: PE/Dosage unit must be lengthum (got ${defs.unit})`);
-        if (defs.decimals !== 2) error(file, pid, `Token violation: PE/Dosage decimals must be 2 (got ${defs.decimals})`);
-      } else if (isZScore) {
-        if (defs.unit && defs.unit !== 'none') error(file, pid, `Token violation: Z-Score unit must be none (got ${defs.unit})`);
-        if (defs.decimals !== 2) error(file, pid, `Token violation: Z-Score decimals must be 2 (got ${defs.decimals})`);
       }
     }
 

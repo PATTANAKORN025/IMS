@@ -165,7 +165,7 @@
         "x": 0,
         "y": 1,
         "w": 24,
-        "h": 10
+        "h": 5
       },
       "options": {
         "showHeader": true,
@@ -559,7 +559,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 11,
+        "y": 6,
         "w": 8,
         "h": 5
       },
@@ -649,7 +649,7 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 11,
+        "y": 6,
         "w": 8,
         "h": 5
       },
@@ -739,13 +739,13 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 11,
+        "y": 6,
         "w": 8,
         "h": 5
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "lengthum",
+          "unit": "suffix: kPa",
           "decimals": 2,
           "thresholds": {
             "mode": "absolute",
@@ -816,7 +816,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 16,
+        "y": 11,
         "w": 8,
         "h": 5
       },
@@ -893,7 +893,7 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 16,
+        "y": 11,
         "w": 8,
         "h": 5
       },
@@ -970,13 +970,13 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 16,
+        "y": 11,
         "w": 8,
         "h": 5
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "lengthum",
+          "unit": "suffix: mJ/cm\u00b2",
           "decimals": 2,
           "thresholds": {
             "mode": "absolute",
@@ -1047,9 +1047,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 21,
+        "y": 16,
         "w": 24,
-        "h": 10
+        "h": 5
       },
       "options": {
         "showHeader": true,
@@ -1405,7 +1405,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 41,
+        "y": 26,
         "w": 12,
         "h": 10
       },
@@ -1432,7 +1432,7 @@
       "fieldConfig": {
         "defaults": {
           "noValue": "N/A",
-          "unit": "lengthum",
+          "unit": "none",
           "decimals": 2,
           "custom": {}
         },
@@ -1755,7 +1755,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 51,
+        "y": 36,
         "w": 24,
         "h": 10
       },
@@ -2011,7 +2011,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 41,
+        "y": 26,
         "w": 12,
         "h": 10
       },
@@ -2083,7 +2083,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 61,
+        "y": 46,
         "w": 24,
         "h": 14
       },
@@ -2337,9 +2337,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 31,
+        "y": 21,
         "w": 24,
-        "h": 10
+        "h": 5
       },
       "options": {
         "showHeader": true,
@@ -2698,11 +2698,11 @@
   "title": "IMS LDI - Machine Snapshot",
   "version": 4,
   "time": {
-    "from": "2026-07-19T21:00:00.000Z",
-    "to": "2026-07-20T03:00:00.000Z"
+    "from": "now-6h",
+    "to": "now"
   },
   "timezone": "browser",
-  "refresh": "10s",
+  "refresh": "1m",
   "tags": [
     "IMS",
     "LDI",

@@ -16,10 +16,10 @@
   "graphTooltip": 1,
   "fiscalYearStartMonth": 0,
   "liveNow": false,
-  "refresh": "10s",
+  "refresh": "1m",
   "time": {
-    "from": "2026-07-19T21:00:00.000Z",
-    "to": "2026-07-20T03:00:00.000Z"
+    "from": "now-6h",
+    "to": "now"
   },
   "timepicker": {},
   "annotations": {
@@ -604,7 +604,7 @@
             "fixedColor": "#00F2FE"
           },
           "decimals": 2,
-          "unit": "lengthum",
+          "unit": "percent",
           "thresholds": {
             "mode": "absolute",
             "steps": [

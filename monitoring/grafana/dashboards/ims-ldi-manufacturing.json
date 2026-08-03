@@ -214,6 +214,7 @@
           "calcs": [
             "lastNotNull"
           ],
+          "fields": "/^value$/",
           "values": false
         },
         "text": {
@@ -331,6 +332,7 @@
           "calcs": [
             "lastNotNull"
           ],
+          "fields": "/^value$/",
           "values": false
         },
         "text": {
@@ -448,6 +450,7 @@
           "calcs": [
             "lastNotNull"
           ],
+          "fields": "/^value$/",
           "values": false
         },
         "text": {
@@ -523,6 +526,7 @@
           "calcs": [
             "lastNotNull"
           ],
+          "fields": "/^value$/",
           "values": false
         },
         "text": {
@@ -634,6 +638,7 @@
           "calcs": [
             "lastNotNull"
           ],
+          "fields": "/^value$/",
           "values": false
         },
         "text": {
@@ -674,7 +679,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "lengthum",
+          "unit": "suffix: µm",
           "min": 0,
           "max": 120,
           "decimals": 2,
@@ -712,6 +717,7 @@
           "calcs": [
             "lastNotNull"
           ],
+          "fields": "/^value$/",
           "values": false
         },
         "showThresholdLabels": true,
@@ -841,6 +847,7 @@
           "calcs": [
             "lastNotNull"
           ],
+          "fields": "/^value$/",
           "values": false
         },
         "text": {
@@ -965,6 +972,7 @@
           "calcs": [
             "lastNotNull"
           ],
+          "fields": "/^value$/",
           "values": false
         },
         "text": {
@@ -1354,19 +1362,11 @@
               },
               {
                 "color": "#FF9100",
-                "value": 19
+                "value": 1
               },
               {
-                "color": "#00FF87",
-                "value": 20
-              },
-              {
-                "color": "#FF9100",
-                "value": 24
-              },
-              {
-                "color": "#FF003C",
-                "value": 25
+                "color": "#00F2FE",
+                "value": 2
               }
             ]
           },
@@ -1453,19 +1453,11 @@
               },
               {
                 "color": "#FF9100",
-                "value": 45
+                "value": 1
               },
               {
-                "color": "#00FF87",
-                "value": 50
-              },
-              {
-                "color": "#FF9100",
-                "value": 60
-              },
-              {
-                "color": "#FF003C",
-                "value": 65
+                "color": "#00F2FE",
+                "value": 2
               }
             ]
           },
@@ -1659,7 +1651,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "lengthum",
+          "unit": "none",
           "decimals": 2,
           "custom": {
             "drawStyle": "line",
@@ -1784,7 +1776,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "lengthum",
+          "unit": "none",
           "decimals": 2,
           "custom": {
             "drawStyle": "line",
@@ -1970,8 +1962,8 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "celsius",
-          "decimals": 1,
+          "unit": "none",
+          "decimals": 2,
           "custom": {
             "drawStyle": "line",
             "lineInterpolation": "smooth",
@@ -1987,8 +1979,8 @@
           "color": {
             "mode": "thresholds"
           },
-          "min": 18,
-          "max": 28,
+          "min": -4,
+          "max": 4,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -1998,19 +1990,19 @@
               },
               {
                 "color": "#FF9100",
-                "value": 19
+                "value": -3
               },
               {
                 "color": "#00FF87",
-                "value": 20
+                "value": -2
               },
               {
                 "color": "#FF9100",
-                "value": 24
+                "value": 2
               },
               {
                 "color": "#FF003C",
-                "value": 25
+                "value": 3
               }
             ]
           }
@@ -2351,11 +2343,11 @@
   "title": "IMS LDI - Manufacturing Command Center",
   "version": 4,
   "time": {
-    "from": "2026-07-19T21:00:00.000Z",
-    "to": "2026-07-20T03:00:00.000Z"
+    "from": "now-6h",
+    "to": "now"
   },
   "timezone": "browser",
-  "refresh": "10s",
+  "refresh": "1m",
   "tags": [
     "IMS",
     "LDI",
