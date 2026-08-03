@@ -389,7 +389,7 @@
             "properties": [
               {
                 "id": "unit",
-                "value": "lengthum"
+                "value": "suffix: kPa"
               },
               {
                 "id": "custom.axisPlacement",
@@ -485,7 +485,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "lengthum",
+          "unit": "none",
           "decimals": 2,
           "custom": {
             "drawStyle": "line",
@@ -1006,7 +1006,7 @@
           },
           "decimals": 2,
           "min": 0,
-          "unit": "lengthum",
+          "unit": "none",
           "custom": {}
         },
         "overrides": []
@@ -1050,7 +1050,7 @@
           },
           "decimals": 2,
           "min": 0,
-          "unit": "lengthum",
+          "unit": "suffix: µm",
           "custom": {}
         },
         "overrides": []
@@ -1119,7 +1119,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "lengthum",
+          "unit": "suffix: µm",
           "custom": {
             "fillOpacity": 60,
             "lineWidth": 1
@@ -1206,7 +1206,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "lengthum",
+          "unit": "suffix: mJ/cm²",
           "min": 0,
           "decimals": 2,
           "thresholds": {
@@ -1393,11 +1393,11 @@
   "title": "IMS LDI - Engineering Analytics & SPC",
   "version": 5,
   "time": {
-    "from": "2026-07-19T21:00:00.000Z",
-    "to": "2026-07-20T03:00:00.000Z"
+    "from": "now-6h",
+    "to": "now"
   },
   "timezone": "browser",
-  "refresh": "10s",
+  "refresh": "1m",
   "tags": [
     "IMS",
     "LDI",

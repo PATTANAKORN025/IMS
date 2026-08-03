@@ -28,14 +28,24 @@ This file defines the canonical units, ranges, and thresholds for key metrics ac
   - `Amber`: `60`
   - `Red`: `> 65`
 
-## PE / Dosage / Scale (Micrometers)
-- **Metric Match**: `pe`, `dosage`, `scale` (case-insensitive)
-- **Unit**: `lengthum`
-- **Decimals**: `2`
-- **Note**: Auto-scales to `mm` if value exceeds 1000µm.
+## PE / Dosage / Scale
+`"lengthum"` is **not** a valid Grafana unit ID — Grafana can't resolve it, so it
+renders as literal suffix text (`"lengthum"`) next to the number instead of being
+interpreted. It must never appear as a `unit` value; the linter forbids it
+everywhere. There is no single correct unit for this metric family — pick the one
+that actually matches what the panel displays:
+- **Position Error (PE1-PE6, MAX|PE|, PE Std Dev, PE Histogram)**: `suffix: µm`
+- **Judgment Error (JE1-JE4, MAX|JE|)**: `suffix: µm`
+- **Resist Dosage**: `suffix: mJ/cm²`
+- **air_vacuum**: `suffix: kPa`
+- **Cp / Cpk / Sigma Level / scale_x / scale_y (dimensionless ratios)**: `none`
+- **Coverage / completeness percentages**: `percent`
 
 ## Z-Score
-- **Metric Match**: `z-score` (case-insensitive)
+- **Metric Match**: `z-score` (case-insensitive) — checked *before* the Temperature/
+  Humidity match, since a panel titled e.g. "Temperature Z-Score Anomaly" is a
+  Z-Score, not a raw-temperature readout, and must not inherit the Temperature
+  token's `celsius`/`18-28` range.
 - **Unit**: `none`
 - **Decimals**: `2`
 - **Thresholds**:
