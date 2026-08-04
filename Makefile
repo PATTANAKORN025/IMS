@@ -1,4 +1,4 @@
-.PHONY: up up-prod down restart build-flows deploy-flows verify backup restore test-unit test-load test-visual logs validate-flows validate-dashboards snapshot-flows doctor
+.PHONY: up up-prod down restart build-flows deploy-flows verify backup restore test-unit test-load test-visual test-visual-ldi logs validate-flows validate-dashboards snapshot-flows doctor
 
 build-flows:
 	bash scripts/build-flows.sh
@@ -44,6 +44,10 @@ test-load:
 test-visual:
 	npx playwright install chromium 2>/dev/null
 	node tests/playwright/dashboard-visual-regression.js
+
+test-visual-ldi:
+	npx playwright install chromium 2>/dev/null
+	GRAFANA_ADMIN_USER=$${GRAFANA_ADMIN_USER:-admin} GRAFANA_ADMIN_PASSWORD=$${GRAFANA_ADMIN_PASSWORD} node tests/playwright/ldi-responsive-regression.js
 
 logs:
 	docker compose logs -f node-red
