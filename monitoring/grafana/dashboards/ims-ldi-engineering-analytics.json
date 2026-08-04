@@ -1,5 +1,5 @@
 {
-  "description": "Layer 3 Process Timeline: synchronized multi-parameter RCA. temperature \u2192 humidity \u2192 scan_speed \u2192 air_vacuum \u2192 scale_x/y \u2192 pe_1~6 \u2192 je_1~4 \u2192 state. Shared crosshair + tooltip. Fixed axis scaling.",
+  "description": "Layer 3 Process Timeline: synchronized multi-parameter RCA. temperature → humidity → scan_speed → air_vacuum → scale_x/y → pe_1~6 → je_1~4 → state. Shared crosshair + tooltip. Fixed axis scaling.",
   "schemaVersion": 39,
   "liveNow": true,
   "style": "dark",
@@ -181,7 +181,7 @@
     },
     {
       "id": 1,
-      "title": "\u25c8 temperature (\u00b0C) vs humidity (%RH)",
+      "title": "◈ temperature (°C) vs humidity (%RH)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -318,7 +318,7 @@
           "legendFormat": "{{metric}} - humidity"
         }
       ],
-      "description": "Temperature per machine on the operational scale 18-28\u00b0C, overlaid with humidity (right axis, %RH) for at-a-glance correlation. Invalid zero sensor rows are monitored separately in Data Readiness.",
+      "description": "Temperature per machine on the operational scale 18-28°C, overlaid with humidity (right axis, %RH) for at-a-glance correlation. Invalid zero sensor rows are monitored separately in Data Readiness.",
       "links": [
         {
           "title": "Open Machine Snapshot (select one Machine)",
@@ -339,7 +339,7 @@
     },
     {
       "id": 3,
-      "title": "\u25c8 scan_speed (mm/s) vs air_vacuum (kPa)",
+      "title": "◈ scan_speed (mm/s) vs air_vacuum (kPa)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -472,7 +472,7 @@
     },
     {
       "id": 5,
-      "title": "\u25c8 scale_x vs scale_y",
+      "title": "◈ scale_x vs scale_y",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -593,7 +593,7 @@
     },
     {
       "id": 7,
-      "title": "\u25c8 pe_1 ~ pe_6 (\u00b5m)",
+      "title": "◈ pe_1 ~ pe_6 (µm)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -606,7 +606,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "suffix: \u00b5m",
+          "unit": "suffix: µm",
           "decimals": 2,
           "custom": {
             "drawStyle": "line",
@@ -634,7 +634,45 @@
             }
           ]
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/Spec Limit/"
+            },
+            "properties": [
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    10,
+                    10
+                  ]
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 1
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "custom.gradientMode",
+                "value": "none"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#EF4444"
+                }
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "tooltip": {
@@ -707,9 +745,27 @@
           "rawSql": "SELECT time_bucket('$__interval', time) AS time, eqp_id || ' - pe_6' AS metric, AVG(pe_6)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_6 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
+        },
+        {
+          "refId": "G",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT time_bucket('$__interval', time) AS time, eqp_id || ' - Spec Limit (+)' AS metric, AVG(pe_setting)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_1 IS NOT NULL AND pe_setting IS NOT NULL AND pe_setting < 1000 GROUP BY 1, 2 ORDER BY 1",
+          "format": "time_series",
+          "legendFormat": "{{metric}}"
+        },
+        {
+          "refId": "H",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT time_bucket('$__interval', time) AS time, eqp_id || ' - Spec Limit (-)' AS metric, AVG(-pe_setting)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_1 IS NOT NULL AND pe_setting IS NOT NULL AND pe_setting < 1000 GROUP BY 1, 2 ORDER BY 1",
+          "format": "time_series",
+          "legendFormat": "{{metric}}"
         }
       ],
-      "description": "Individual signed PE values. Soft scale covers the observed range (about -67 to +75 \u00b5m) without clipping future outliers.",
+      "description": "Individual signed PE values with per-machine +/- pe_setting spec-limit lines overlaid (dashed red). Soft scale covers the observed range (about -67 to +75 µm) without clipping future outliers.",
       "links": [
         {
           "title": "Open Machine Snapshot (select one Machine)",
@@ -730,7 +786,7 @@
     },
     {
       "id": 8,
-      "title": "\u25c8 je_1 ~ je_4 (\u00b5m)",
+      "title": "◈ je_1 ~ je_4 (µm)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -743,7 +799,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "suffix: \u00b5m",
+          "unit": "suffix: µm",
           "decimals": 2,
           "custom": {
             "drawStyle": "line",
@@ -771,7 +827,45 @@
             }
           ]
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/Spec Limit/"
+            },
+            "properties": [
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    10,
+                    10
+                  ]
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 1
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "custom.gradientMode",
+                "value": "none"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#EF4444"
+                }
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "tooltip": {
@@ -826,9 +920,18 @@
           "rawSql": "SELECT time_bucket('$__interval', time) AS time, eqp_id || ' - je_4' AS metric, AVG(je_4)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND je_4 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
+        },
+        {
+          "refId": "E",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT time_bucket('$__interval', time) AS time, eqp_id || ' - Spec Limit' AS metric, AVG(je_setting)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND je_setting IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "format": "time_series",
+          "legendFormat": "{{metric}}"
         }
       ],
-      "description": "Individual JE values. Soft scale covers the observed range (0 to about 43 \u00b5m) while retaining out-of-range visibility.",
+      "description": "Individual JE values with per-machine je_setting spec-limit line overlaid (dashed red). Soft scale covers the observed range (0 to about 43 µm) while retaining out-of-range visibility.",
       "links": [
         {
           "title": "Open Machine Snapshot (select one Machine)",
@@ -849,7 +952,7 @@
     },
     {
       "id": 9,
-      "title": "\u25c8 state",
+      "title": "◈ state",
       "type": "state-timeline",
       "datasource": {
         "uid": "timescaledb"
@@ -958,7 +1061,7 @@
     },
     {
       "id": 10,
-      "title": "\u25c8 Machine Capability Ranking",
+      "title": "◈ Machine Capability Ranking",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
@@ -1004,55 +1107,113 @@
         },
         "overrides": [
           {
-            "matcher": { "id": "byName", "options": "PE Samples" },
+            "matcher": {
+              "id": "byName",
+              "options": "PE Samples"
+            },
             "properties": [
-              { "id": "unit", "value": "none" },
-              { "id": "decimals", "value": 0 }
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
             ]
           },
           {
-            "matcher": { "id": "byName", "options": "JE Samples" },
+            "matcher": {
+              "id": "byName",
+              "options": "JE Samples"
+            },
             "properties": [
-              { "id": "unit", "value": "none" },
-              { "id": "decimals", "value": 0 }
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
             ]
           },
           {
-            "matcher": { "id": "byName", "options": "N (Worst)" },
+            "matcher": {
+              "id": "byName",
+              "options": "N (Worst)"
+            },
             "properties": [
-              { "id": "unit", "value": "none" },
-              { "id": "decimals", "value": 0 }
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
             ]
           },
           {
-            "matcher": { "id": "byName", "options": "Worst Cpk" },
+            "matcher": {
+              "id": "byName",
+              "options": "Worst Cpk"
+            },
             "properties": [
-              { "id": "custom.cellOptions", "value": { "type": "color-background" } },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
               {
                 "id": "thresholds",
                 "value": {
                   "mode": "absolute",
                   "steps": [
-                    { "color": "#FF003C", "value": null },
-                    { "color": "#ff9100", "value": 1.33 },
-                    { "color": "#00ff87", "value": 1.67 }
+                    {
+                      "color": "#FF003C",
+                      "value": null
+                    },
+                    {
+                      "color": "#ff9100",
+                      "value": 1.33
+                    },
+                    {
+                      "color": "#00ff87",
+                      "value": 1.67
+                    }
                   ]
                 }
               }
             ]
           },
           {
-            "matcher": { "id": "byName", "options": "Confidence" },
+            "matcher": {
+              "id": "byName",
+              "options": "Confidence"
+            },
             "properties": [
-              { "id": "custom.cellOptions", "value": { "type": "color-background" } },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
               {
                 "id": "mappings",
                 "value": [
                   {
                     "type": "value",
                     "options": {
-                      "OK": { "color": "#22C55E", "text": "OK" },
-                      "LOW SAMPLE (n<30)": { "color": "#EF4444", "text": "LOW SAMPLE (n<30)" }
+                      "OK": {
+                        "color": "#22C55E",
+                        "text": "OK"
+                      },
+                      "LOW SAMPLE (n<30)": {
+                        "color": "#EF4444",
+                        "text": "LOW SAMPLE (n<30)"
+                      }
                     }
                   }
                 ]
@@ -1061,7 +1222,7 @@
           }
         ]
       },
-      "description": "Ranked worst-first by Worst Cpk = LEAST(Cpk PE, Cpk JE) \u2014 a machine capable on PE but failing JE (or vice versa) is still a failing machine. Colored red (<1.33 Not Capable), amber (1.33\u20131.67 Capable/Excellent boundary), green (\u22651.67 Excellent+). Confidence flags machines where the worse of the two metrics is backed by fewer than 30 samples in the selected window \u2014 not yet statistically reliable. Calculated from real PE1-PE6/JE1-JE4 samples in the selected time, Factory, MO and Machine filters. Assumes symmetric +/- setting limits.",
+      "description": "Ranked worst-first by Worst Cpk = LEAST(Cpk PE, Cpk JE) — a machine capable on PE but failing JE (or vice versa) is still a failing machine. Colored red (<1.33 Not Capable), amber (1.33–1.67 Capable/Excellent boundary), green (≥1.67 Excellent+). Confidence flags machines where the worse of the two metrics is backed by fewer than 30 samples in the selected window — not yet statistically reliable. Calculated from real PE1-PE6/JE1-JE4 samples in the selected time, Factory, MO and Machine filters. Assumes symmetric +/- setting limits.",
       "links": [
         {
           "title": "Open Machine Snapshot (select one Machine)",
@@ -1082,7 +1243,7 @@
     },
     {
       "id": 11,
-      "title": "\u25c8 PE Standard Deviation by Machine (Lower is Better)",
+      "title": "◈ PE Standard Deviation by Machine (Lower is Better)",
       "type": "barchart",
       "datasource": {
         "uid": "timescaledb"
@@ -1155,15 +1316,89 @@
       ]
     },
     {
-      "id": 12,
-      "title": "\u25c8 Alignment Error Distribution (PE Histogram)",
-      "type": "histogram",
+      "id": 15,
+      "title": "◈ JE Standard Deviation by Machine (Lower is Better)",
+      "type": "barchart",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 0,
         "y": 65,
+        "w": 24,
+        "h": 16
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "decimals": 2,
+          "min": 0,
+          "unit": "suffix: µm",
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "stacking": "none",
+        "showValue": "auto",
+        "groupWidth": 0.7,
+        "barWidth": 0.8,
+        "barRadius": 0,
+        "fullHighlight": false,
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0,
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "WITH je_samples AS (\n  SELECT d.eqp_id, j.je\n  FROM public.ldi_data d\n  CROSS JOIN LATERAL (VALUES (d.je_1),(d.je_2),(d.je_3),(d.je_4)) j(je)\n  WHERE $__timeFilter(d.\"time\")\n    AND d.factory IN (${factory:sqlstring})\n    AND d.process IN (${process:sqlstring})\n    AND d.mo IN (${mo:sqlstring})\n    AND d.fpn IN (${fpn:sqlstring})\n    AND d.layer_name IN (${layer:sqlstring})\n    AND d.eqp_id IN (${machine_id:sqlstring})\n    AND j.je IS NOT NULL\n)\nSELECT eqp_id AS \"Machine\", ROUND(STDDEV_SAMP(je)::NUMERIC, 3) AS \"StdDev\"\nFROM je_samples GROUP BY eqp_id HAVING STDDEV_SAMP(je) IS NOT NULL ORDER BY \"StdDev\" DESC;",
+          "format": "table"
+        }
+      ],
+      "description": "Real JE1-JE4 standard deviation for the selected filters. Mirrors the PE Standard Deviation panel above for JE parity.",
+      "links": [
+        {
+          "title": "Open Machine Snapshot (select one Machine)",
+          "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        },
+        {
+          "title": "Open Manufacturing",
+          "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        },
+        {
+          "title": "Open Data Readiness",
+          "url": "/d/ldi-data-readiness/ldi-data-readiness?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "targetBlank": false
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "title": "◈ Alignment Error Distribution (PE vs JE Histogram)",
+      "type": "histogram",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 81,
         "w": 24,
         "h": 12
       },
@@ -1201,11 +1436,42 @@
           "max": 80,
           "decimals": 2
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "PE"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00F2FE"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "JE"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF9100"
+                }
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "bucketSize": 2,
-        "combine": true,
+        "combine": false,
         "legend": {
           "displayMode": "list",
           "placement": "bottom"
@@ -1217,12 +1483,21 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, eqp_id || ' - pe_1' AS metric, pe_1 AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_1 IS NOT NULL UNION ALL SELECT time, eqp_id || ' - pe_2', pe_2 FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_2 IS NOT NULL UNION ALL SELECT time, eqp_id || ' - pe_3', pe_3 FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_3 IS NOT NULL UNION ALL SELECT time, eqp_id || ' - pe_4', pe_4 FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_4 IS NOT NULL UNION ALL SELECT time, eqp_id || ' - pe_5', pe_5 FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_5 IS NOT NULL UNION ALL SELECT time, eqp_id || ' - pe_6', pe_6 FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_6 IS NOT NULL ORDER BY time",
+          "rawSql": "SELECT time, 'PE' AS metric, pe_1 AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_1 IS NOT NULL UNION ALL SELECT time, 'PE' AS metric, pe_2 AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_2 IS NOT NULL UNION ALL SELECT time, 'PE' AS metric, pe_3 AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_3 IS NOT NULL UNION ALL SELECT time, 'PE' AS metric, pe_4 AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_4 IS NOT NULL UNION ALL SELECT time, 'PE' AS metric, pe_5 AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_5 IS NOT NULL UNION ALL SELECT time, 'PE' AS metric, pe_6 AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_6 IS NOT NULL ORDER BY time",
+          "format": "time_series",
+          "legendFormat": "{{metric}}"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT time, 'JE' AS metric, je_1 AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND je_1 IS NOT NULL UNION ALL SELECT time, 'JE' AS metric, je_2 AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND je_2 IS NOT NULL UNION ALL SELECT time, 'JE' AS metric, je_3 AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND je_3 IS NOT NULL UNION ALL SELECT time, 'JE' AS metric, je_4 AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND je_4 IS NOT NULL ORDER BY time",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
       ],
-      "description": "Statistical distribution of alignment errors. Shows skewness and process centering for SPC analysis.",
+      "description": "Overlaid statistical distribution of PE (cyan) vs JE (amber) registration errors, sharing one axis for direct spread comparison. Shows skewness and process centering for SPC analysis.",
       "links": [
         {
           "title": "Open Machine Snapshot (select one Machine)",
@@ -1243,14 +1518,14 @@
     },
     {
       "id": 13,
-      "title": "\u25c8 Resist Dosage Live (mJ/cm\u00b2)",
+      "title": "◈ Resist Dosage Live (mJ/cm²)",
       "type": "bargauge",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 0,
-        "y": 77,
+        "y": 93,
         "w": 24,
         "h": 10
       },
@@ -1311,7 +1586,7 @@
           "format": "table"
         }
       ],
-      "description": "Latest resist dosage per selected machine. Auto-ranging is used because observed machine settings span 15 to 1,200 mJ/cm\u00b2.",
+      "description": "Latest resist dosage per selected machine. Auto-ranging is used because observed machine settings span 15 to 1,200 mJ/cm².",
       "links": [
         {
           "title": "Open Machine Snapshot (select one Machine)",
@@ -1332,13 +1607,13 @@
     },
     {
       "id": 14,
-      "title": "\u25c9 Alarm \u2194 Process Correlation (RCA Truth Test)",
+      "title": "◉ Alarm ↔ Process Correlation (RCA Truth Test)",
       "type": "table",
       "gridPos": {
         "h": 12,
         "w": 24,
         "x": 0,
-        "y": 87
+        "y": 103
       },
       "datasource": {
         "type": "postgres",
@@ -1381,7 +1656,10 @@
               "options": "Alarm-Window %"
             },
             "properties": [
-              { "id": "unit", "value": "percent" }
+              {
+                "id": "unit",
+                "value": "percent"
+              }
             ]
           },
           {
@@ -1390,7 +1668,10 @@
               "options": "Baseline %"
             },
             "properties": [
-              { "id": "unit", "value": "percent" }
+              {
+                "id": "unit",
+                "value": "percent"
+              }
             ]
           },
           {
@@ -1399,8 +1680,14 @@
               "options": "Event Count"
             },
             "properties": [
-              { "id": "unit", "value": "none" },
-              { "id": "decimals", "value": 0 }
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
             ]
           },
           {
@@ -1409,16 +1696,33 @@
               "options": "Lift"
             },
             "properties": [
-              { "id": "decimals", "value": 2 },
-              { "id": "custom.cellOptions", "value": { "type": "color-background" } },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
               {
                 "id": "thresholds",
                 "value": {
                   "mode": "absolute",
                   "steps": [
-                    { "color": "#FF003C", "value": null },
-                    { "color": "#ff9100", "value": 1 },
-                    { "color": "#00ff87", "value": 2 }
+                    {
+                      "color": "#FF003C",
+                      "value": null
+                    },
+                    {
+                      "color": "#ff9100",
+                      "value": 1
+                    },
+                    {
+                      "color": "#00ff87",
+                      "value": 2
+                    }
                   ]
                 }
               }
@@ -1430,15 +1734,26 @@
               "options": "Confidence"
             },
             "properties": [
-              { "id": "custom.cellOptions", "value": { "type": "color-background" } },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
               {
                 "id": "mappings",
                 "value": [
                   {
                     "type": "value",
                     "options": {
-                      "OK": { "color": "#22C55E", "text": "OK" },
-                      "LOW SAMPLE (n<30)": { "color": "#EF4444", "text": "LOW SAMPLE (n<30)" }
+                      "OK": {
+                        "color": "#22C55E",
+                        "text": "OK"
+                      },
+                      "LOW SAMPLE (n<30)": {
+                        "color": "#EF4444",
+                        "text": "LOW SAMPLE (n<30)"
+                      }
                     }
                   }
                 ]
@@ -1447,7 +1762,7 @@
           }
         ]
       },
-      "description": "RCA Truth Test: Alarm-Window % (rate of out-of-spec readings within 5min before this alarm) vs Baseline % (out-of-spec rate across all data, alarm or not). Lift = Alarm-Window % / Baseline % \u2014 lift > 2 means the alarm genuinely correlates with the process anomaly; lift \u2248 1 means no real relationship (threshold or sensor likely miscalibrated); lift < 1 means the correlation runs backwards and needs investigation. Confidence flags categories with fewer than 30 alarm events, where Lift is not statistically meaningful yet."
+      "description": "RCA Truth Test: Alarm-Window % (rate of out-of-spec readings within 5min before this alarm) vs Baseline % (out-of-spec rate across all data, alarm or not). Lift = Alarm-Window % / Baseline % — lift > 2 means the alarm genuinely correlates with the process anomaly; lift ≈ 1 means no real relationship (threshold or sensor likely miscalibrated); lift < 1 means the correlation runs backwards and needs investigation. Confidence flags categories with fewer than 30 alarm events, where Lift is not statistically meaningful yet."
     }
   ],
   "fiscalYearStartMonth": 0,
