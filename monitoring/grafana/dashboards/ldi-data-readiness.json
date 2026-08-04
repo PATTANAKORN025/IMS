@@ -158,7 +158,20 @@
             "lineInterpolation": "smooth",
             "fillOpacity": 15,
             "lineWidth": 2
-          }
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "#6B7280",
+                  "text": "NO_DATA",
+                  "index": 0
+                }
+              }
+            }
+          ]
         },
         "overrides": []
       },
@@ -250,7 +263,20 @@
             "lineInterpolation": "smooth",
             "fillOpacity": 15,
             "lineWidth": 2
-          }
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "#6B7280",
+                  "text": "NO_DATA",
+                  "index": 0
+                }
+              }
+            }
+          ]
         },
         "overrides": []
       },
@@ -345,7 +371,20 @@
             "lineWidth": 2
           },
           "min": 0,
-          "max": 100
+          "max": 100,
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "#6B7280",
+                  "text": "NO_DATA",
+                  "index": 0
+                }
+              }
+            }
+          ]
         },
         "overrides": []
       },
@@ -439,7 +478,20 @@
             "lineWidth": 2
           },
           "min": 0,
-          "max": 100
+          "max": 100,
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "#6B7280",
+                  "text": "NO_DATA",
+                  "index": 0
+                }
+              }
+            }
+          ]
         },
         "overrides": []
       },
@@ -534,7 +586,20 @@
             "lineWidth": 2
           },
           "min": 0,
-          "max": 100
+          "max": 100,
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "#6B7280",
+                  "text": "NO_DATA",
+                  "index": 0
+                }
+              }
+            }
+          ]
         },
         "overrides": []
       },
@@ -629,7 +694,20 @@
             "lineWidth": 2
           },
           "min": 0,
-          "max": 100
+          "max": 100,
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "#6B7280",
+                  "text": "NO_DATA",
+                  "index": 0
+                }
+              }
+            }
+          ]
         },
         "overrides": []
       },

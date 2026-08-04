@@ -150,7 +150,20 @@
           },
           "decimals": 0,
           "min": 0,
-          "max": 100
+          "max": 100,
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "#6B7280",
+                  "text": "NO_DATA",
+                  "index": 0
+                }
+              }
+            }
+          ]
         },
         "overrides": []
       },
@@ -224,7 +237,20 @@
             "lineInterpolation": "smooth",
             "fillOpacity": 15,
             "lineWidth": 2
-          }
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "#6B7280",
+                  "text": "NO_DATA",
+                  "index": 0
+                }
+              }
+            }
+          ]
         },
         "overrides": []
       },
@@ -306,7 +332,20 @@
           },
           "decimals": 0,
           "min": 0,
-          "max": 100
+          "max": 100,
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "#6B7280",
+                  "text": "NO_DATA",
+                  "index": 0
+                }
+              }
+            }
+          ]
         },
         "overrides": []
       },
@@ -382,7 +421,20 @@
             "fillOpacity": 15,
             "lineWidth": 2
           },
-          "decimals": 0
+          "decimals": 0,
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "#6B7280",
+                  "text": "NO_DATA",
+                  "index": 0
+                }
+              }
+            }
+          ]
         },
         "overrides": []
       },
@@ -449,7 +501,7 @@
                   "text": "WARN"
                 },
                 "2": {
-                  "color": "#00F2FE",
+                  "color": "#22c55e",
                   "index": 2,
                   "text": "OK"
                 }
@@ -540,7 +592,7 @@
                   "text": "WARN"
                 },
                 "2": {
-                  "color": "#00F2FE",
+                  "color": "#22c55e",
                   "index": 2,
                   "text": "OK"
                 }
@@ -778,7 +830,7 @@
                         "text": "WARNING"
                       },
                       "OK": {
-                        "color": "#00F2FE",
+                        "color": "#22c55e",
                         "index": 2,
                         "text": "OK"
                       }
@@ -825,7 +877,7 @@
                         "text": "WARNING"
                       },
                       "OK": {
-                        "color": "#00F2FE",
+                        "color": "#22c55e",
                         "index": 2,
                         "text": "OK"
                       }
@@ -942,7 +994,7 @@
               "type": "value",
               "options": {
                 "OK": {
-                  "color": "#00F2FE",
+                  "color": "#22c55e",
                   "text": "OK"
                 },
                 "IDLE": {
@@ -950,8 +1002,19 @@
                   "text": "IDLE"
                 },
                 "NO_DATA": {
-                  "color": "#FF003C",
+                  "color": "#6B7280",
                   "text": "NO_DATA"
+                }
+              }
+            },
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "#6B7280",
+                  "text": "NO_DATA",
+                  "index": 1
                 }
               }
             }

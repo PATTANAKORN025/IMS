@@ -42,14 +42,17 @@ LDI dashboards ใช้ cyberpunk theme ที่แยกจาก §2.1 ม�
 และมี semantic mapping เดียวกันกับ §2.1 แต่คนละ hex — **ห้ามผสมสองชุดในไฟล์เดียวกัน**
 ถ้าแก้ panel ใน 5 ไฟล์นี้ ใช้ตารางนี้ ไม่ใช่ §2.1:
 
+**5-token status system (locked as of the World-Class audit — do not add a 6th):**
+
 | Token | Hex Code | เทียบเท่า §2.1 | ใช้กับ |
 |---|---|---|---|
-| `info` / `healthy` | `#00F2FE` | `info` (`#00E5FF`) | OK state, healthy status, ปกติ |
-| `healthy-alt` | `#22c55e` | `healthy` (`#10B981`) | Capable/World Class thresholds, PASS |
+| `ok` | `#22c55e` | `healthy` (`#10B981`) | OK / healthy / running / PASS / Capable+ thresholds — any "this is fine" state |
 | `warning` | `#FF9100` / `facc15` | `warning` (`#F59E0B`) | IDLE state, Marginal, warning thresholds |
-| `critical` | `#FF003C` | `critical` (`#EF4444`) | NO_DATA state, OUT OF SPEC, critical thresholds |
-| `critical-muted` | `#E5484D` | (no §2.1 equivalent) | "Delta %" trend-direction indicators only — deliberately softer than `critical` so a KPI's period-over-period delta doesn't visually compete with an actual alert |
-| `neutral` | `#6B7280` | (no §2.1 equivalent) | Genuinely inapplicable states only (e.g. "N/A" on a table cell where no PE/JE data exists for that row) — not a substitute for `critical`/NO_DATA, which mean "expected data is missing"; `neutral` means "this field doesn't apply here" |
+| `critical` | `#FF003C` | `critical` (`#EF4444`) | OUT OF SPEC, critical thresholds, confirmed-bad states |
+| `info` | `#00F2FE` | `info` (`#00E5FF`) | Neutral informational readouts that aren't a status verdict (plain KPI numbers, machine-name labels, non-alerting stats) |
+| `no_data` | `#6B7280` | (no §2.1 equivalent) | NO_DATA state specifically — a genuine gap in reporting, which is a *different claim* than `critical` ("this is confirmed bad"). No_data means "we don't know," not "something is wrong." Every stat/gauge/bargauge panel with `noValue: "NO_DATA"` must also carry an explicit `type: "special", options.match: "null+nan"` mapping to this color — Grafana's threshold evaluation does not reliably fall back to a neutral color on its own. |
+
+**กฎที่แก้จาก draft แรก:** `ok` และ `info` เคยถูกรวมเป็นโทเค็นเดียว (`#00F2FE` ใช้ทั้งสถานะ "ปกติ" และ "ข้อมูลทั่วไป") — แยกออกจากกันแล้ว: `ok` คือคำตัดสิน (verdict) เกี่ยวกับสถานะ, `info` คือตัวเลข/label ที่ไม่ได้ตัดสินอะไร. เดิม NO_DATA ใช้สีเดียวกับ `critical` (แดง) — เปลี่ยนเป็น `no_data` (เทา) เพราะ "ไม่มีข้อมูล" ไม่เท่ากับ "ยืนยันว่าเสีย"; ใช้แดงกับทุกกรณี no-data ทำให้แยกไม่ออกระหว่าง alert จริงกับ pipeline gap เฉยๆ. `critical-muted`/`neutral` (draft เดิม) ถูกยุบเข้า `critical`/`no_data` ตามลำดับ เพื่อให้เหลือ 5 โทเค็นตามที่กำหนด — "Delta %" ใช้ `critical` เต็มสี (ไม่ muted อีกต่อไป), "N/A ที่ไม่มีข้อมูลจริง" ใช้ `no_data`.
 
 ตัวย่อ case: ใช้ตัวพิมพ์เล็กสำหรับ `#facc15`/`#22c55e` (ไม่ใช่ `#FACC15`/`#22C55E`) — ปนกันมาจากการ
 copy-paste ข้าม panel และแก้ให้ตรงกันแล้วใน Phase 2 (harmonized 33 stray instances of
