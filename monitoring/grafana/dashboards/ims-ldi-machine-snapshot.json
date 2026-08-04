@@ -206,11 +206,11 @@
                     "type": "value",
                     "options": {
                       "true": {
-                        "color": "#22C55E",
+                        "color": "#22c55e",
                         "text": "RUNNING"
                       },
                       "false": {
-                        "color": "#EF4444",
+                        "color": "#FF003C",
                         "text": "DOWN"
                       }
                     }
@@ -1092,11 +1092,11 @@
                     "type": "value",
                     "options": {
                       "PASS": {
-                        "color": "#22C55E",
+                        "color": "#22c55e",
                         "text": "PASS"
                       },
                       "OUT OF SPEC": {
-                        "color": "#EF4444",
+                        "color": "#FF003C",
                         "text": "OUT OF SPEC"
                       },
                       "N/A": {
@@ -1450,23 +1450,23 @@
                     "type": "value",
                     "options": {
                       "World Class": {
-                        "color": "#22C55E",
+                        "color": "#22c55e",
                         "text": "World Class"
                       },
                       "Excellent": {
-                        "color": "#22C55E",
+                        "color": "#22c55e",
                         "text": "Excellent"
                       },
                       "Capable": {
-                        "color": "#FACC15",
+                        "color": "#facc15",
                         "text": "Capable"
                       },
                       "Marginally Capable": {
-                        "color": "#FACC15",
+                        "color": "#facc15",
                         "text": "Marginal"
                       },
                       "Not Capable": {
-                        "color": "#EF4444",
+                        "color": "#FF003C",
                         "text": "Not Capable"
                       }
                     }
@@ -1800,23 +1800,23 @@
                     "type": "value",
                     "options": {
                       "World Class": {
-                        "color": "#22C55E",
+                        "color": "#22c55e",
                         "text": "World Class"
                       },
                       "Excellent": {
-                        "color": "#22C55E",
+                        "color": "#22c55e",
                         "text": "Excellent"
                       },
                       "Capable": {
-                        "color": "#FACC15",
+                        "color": "#facc15",
                         "text": "Capable"
                       },
                       "Marginally Capable": {
-                        "color": "#FACC15",
+                        "color": "#facc15",
                         "text": "Marginal"
                       },
                       "Not Capable": {
-                        "color": "#EF4444",
+                        "color": "#FF003C",
                         "text": "Not Capable"
                       }
                     }
@@ -2481,15 +2481,15 @@
                     "type": "value",
                     "options": {
                       "Machine Start": {
-                        "color": "#22C55E",
+                        "color": "#22c55e",
                         "text": "START"
                       },
                       "Machine Stop": {
-                        "color": "#EF4444",
+                        "color": "#FF003C",
                         "text": "STOP"
                       },
                       "Alarm": {
-                        "color": "#FACC15",
+                        "color": "#facc15",
                         "text": "ALARM"
                       }
                     }
@@ -2732,11 +2732,11 @@
                     "type": "value",
                     "options": {
                       "PASS": {
-                        "color": "#22C55E",
+                        "color": "#22c55e",
                         "text": "PASS"
                       },
                       "OUT OF SPEC": {
-                        "color": "#EF4444",
+                        "color": "#FF003C",
                         "text": "OUT OF SPEC"
                       },
                       "N/A": {

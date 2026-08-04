@@ -196,7 +196,7 @@
                       "value": null
                     },
                     {
-                      "color": "#00E5FF",
+                      "color": "#00F2FE",
                       "value": 0
                     }
                   ]
@@ -314,7 +314,7 @@
                       "value": null
                     },
                     {
-                      "color": "#00E5FF",
+                      "color": "#00F2FE",
                       "value": 0
                     }
                   ]
@@ -432,7 +432,7 @@
                       "value": null
                     },
                     {
-                      "color": "#00E5FF",
+                      "color": "#00F2FE",
                       "value": 0
                     }
                   ]
@@ -845,7 +845,7 @@
                       "value": null
                     },
                     {
-                      "color": "#00E5FF",
+                      "color": "#00F2FE",
                       "value": 0
                     }
                   ]
@@ -1054,7 +1054,7 @@
                       "value": null
                     },
                     {
-                      "color": "#00E5FF",
+                      "color": "#00F2FE",
                       "value": 0
                     }
                   ]
@@ -1179,7 +1179,7 @@
                       "value": null
                     },
                     {
-                      "color": "#00E5FF",
+                      "color": "#00F2FE",
                       "value": 0
                     }
                   ]
@@ -2687,11 +2687,11 @@
                     "type": "value",
                     "options": {
                       "OK": {
-                        "color": "#22C55E",
+                        "color": "#22c55e",
                         "text": "OK"
                       },
                       "LOW SAMPLE (n<30)": {
-                        "color": "#EF4444",
+                        "color": "#FF003C",
                         "text": "LOW SAMPLE (n<30)"
                       }
                     }

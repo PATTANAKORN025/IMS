@@ -667,7 +667,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#EF4444"
+                  "fixedColor": "#FF003C"
                 }
               }
             ]
@@ -860,7 +860,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#EF4444"
+                  "fixedColor": "#FF003C"
                 }
               }
             ]
@@ -1207,11 +1207,11 @@
                     "type": "value",
                     "options": {
                       "OK": {
-                        "color": "#22C55E",
+                        "color": "#22c55e",
                         "text": "OK"
                       },
                       "LOW SAMPLE (n<30)": {
-                        "color": "#EF4444",
+                        "color": "#FF003C",
                         "text": "LOW SAMPLE (n<30)"
                       }
                     }
@@ -1747,11 +1747,11 @@
                     "type": "value",
                     "options": {
                       "OK": {
-                        "color": "#22C55E",
+                        "color": "#22c55e",
                         "text": "OK"
                       },
                       "LOW SAMPLE (n<30)": {
-                        "color": "#EF4444",
+                        "color": "#FF003C",
                         "text": "LOW SAMPLE (n<30)"
                       }
                     }
