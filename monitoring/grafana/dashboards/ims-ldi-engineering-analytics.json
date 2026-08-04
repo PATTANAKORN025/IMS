@@ -304,7 +304,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('$__interval', time) AS time, eqp_id AS metric, AVG(temperature)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND temperature IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id AS metric, AVG(avg_temperature)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_temperature IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         },
@@ -313,7 +313,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('$__interval', time) AS time, eqp_id AS metric, AVG(humidity)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND humidity IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id AS metric, AVG(avg_humidity)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_humidity IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}} - humidity"
         }
@@ -437,7 +437,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('$__interval', time) AS time, eqp_id AS metric, AVG(scan_speed)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND scan_speed IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id AS metric, AVG(avg_scan_speed)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_scan_speed IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         },
@@ -446,7 +446,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('$__interval', time) AS time, eqp_id AS metric, AVG(air_vacuum)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND air_vacuum IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id AS metric, AVG(avg_air_vacuum)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_air_vacuum IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}} - air_vacuum"
         }
@@ -558,7 +558,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('$__interval', time) AS time, eqp_id AS metric, AVG(scale_x)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND scale_x IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id AS metric, AVG(avg_scale_x)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_scale_x IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         },
@@ -567,7 +567,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('$__interval', time) AS time, eqp_id AS metric, AVG(scale_y)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND scale_y IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id AS metric, AVG(avg_scale_y)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_scale_y IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}} - scale_y"
         }
@@ -697,7 +697,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('$__interval', time) AS time, eqp_id || ' - pe_1' AS metric, AVG(pe_1)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_1 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - pe_1' AS metric, AVG(avg_pe_1)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_pe_1 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         },
@@ -706,7 +706,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('$__interval', time) AS time, eqp_id || ' - pe_2' AS metric, AVG(pe_2)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_2 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - pe_2' AS metric, AVG(avg_pe_2)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_pe_2 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         },
@@ -715,7 +715,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('$__interval', time) AS time, eqp_id || ' - pe_3' AS metric, AVG(pe_3)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_3 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - pe_3' AS metric, AVG(avg_pe_3)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_pe_3 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         },
@@ -724,7 +724,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('$__interval', time) AS time, eqp_id || ' - pe_4' AS metric, AVG(pe_4)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_4 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - pe_4' AS metric, AVG(avg_pe_4)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_pe_4 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         },
@@ -733,7 +733,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('$__interval', time) AS time, eqp_id || ' - pe_5' AS metric, AVG(pe_5)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_5 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - pe_5' AS metric, AVG(avg_pe_5)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_pe_5 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         },
@@ -742,7 +742,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('$__interval', time) AS time, eqp_id || ' - pe_6' AS metric, AVG(pe_6)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_6 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - pe_6' AS metric, AVG(avg_pe_6)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_pe_6 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         },
@@ -751,7 +751,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('$__interval', time) AS time, eqp_id || ' - Spec Limit (+)' AS metric, AVG(pe_setting)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_1 IS NOT NULL AND pe_setting IS NOT NULL AND pe_setting < 1000 GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - Spec Limit (+)' AS metric, AVG(avg_pe_setting)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_pe_1 IS NOT NULL AND avg_pe_setting IS NOT NULL AND avg_pe_setting < 1000 GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         },
@@ -760,7 +760,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('$__interval', time) AS time, eqp_id || ' - Spec Limit (-)' AS metric, AVG(-pe_setting)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_1 IS NOT NULL AND pe_setting IS NOT NULL AND pe_setting < 1000 GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - Spec Limit (-)' AS metric, AVG(-avg_pe_setting)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_pe_1 IS NOT NULL AND avg_pe_setting IS NOT NULL AND avg_pe_setting < 1000 GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
@@ -890,7 +890,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('$__interval', time) AS time, eqp_id || ' - je_1' AS metric, AVG(je_1)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND je_1 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - je_1' AS metric, AVG(avg_je_1)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_je_1 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         },
@@ -899,7 +899,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('$__interval', time) AS time, eqp_id || ' - je_2' AS metric, AVG(je_2)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND je_2 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - je_2' AS metric, AVG(avg_je_2)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_je_2 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         },
@@ -908,7 +908,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('$__interval', time) AS time, eqp_id || ' - je_3' AS metric, AVG(je_3)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND je_3 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - je_3' AS metric, AVG(avg_je_3)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_je_3 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         },
@@ -917,7 +917,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('$__interval', time) AS time, eqp_id || ' - je_4' AS metric, AVG(je_4)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND je_4 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - je_4' AS metric, AVG(avg_je_4)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_je_4 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         },
@@ -926,7 +926,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('$__interval', time) AS time, eqp_id || ' - Spec Limit' AS metric, AVG(je_setting)::NUMERIC AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND je_setting IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - Spec Limit' AS metric, AVG(avg_je_setting)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_je_setting IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }

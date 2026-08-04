@@ -1845,7 +1845,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('$__interval', time) AS time, eqp_id || ' - scan_speed' AS metric, AVG(scan_speed) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND scan_speed IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - scan_speed' AS metric, AVG(avg_scan_speed) AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_scan_speed IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         },
@@ -1854,7 +1854,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('$__interval', time) AS time, eqp_id || ' - air_vacuum' AS metric, AVG(air_vacuum) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND air_vacuum IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - air_vacuum' AS metric, AVG(avg_air_vacuum) AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_air_vacuum IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
@@ -1970,7 +1970,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('$__interval', time) AS time, eqp_id || ' - thickness' AS metric, AVG(thickness) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND thickness IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - thickness' AS metric, AVG(avg_thickness) AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_thickness IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         },
@@ -1979,7 +1979,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('$__interval', time) AS time, eqp_id || ' - resist_dosage' AS metric, AVG(resist_dosage) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND resist_dosage IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - resist_dosage' AS metric, AVG(avg_resist_dosage) AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_resist_dosage IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
@@ -2087,7 +2087,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('$__interval', time) AS time, eqp_id || ' - scale_x' AS metric, AVG(scale_x) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND scale_x IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - scale_x' AS metric, AVG(avg_scale_x) AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_scale_x IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         },
@@ -2096,7 +2096,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('$__interval', time) AS time, eqp_id || ' - scale_y' AS metric, AVG(scale_y) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND scale_y IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - scale_y' AS metric, AVG(avg_scale_y) AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_scale_y IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
