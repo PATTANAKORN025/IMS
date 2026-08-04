@@ -81,7 +81,7 @@ groups:
                 SELECT NOW() AS time, eqp_id AS metric,
                        cpk AS value
                 FROM public.v_machine_spc_ranking
-                WHERE cpk < 1.33
+                WHERE cpk < 1.33 AND sample_count >= 30
               format: time_series
               intervalMs: 300000
               maxDataPoints: 100
@@ -174,7 +174,7 @@ groups:
                 SELECT NOW() AS time, eqp_id AS metric,
                        cpk_je AS value
                 FROM public.v_machine_spc_ranking
-                WHERE cpk_je IS NOT NULL AND cpk_je < 1.33
+                WHERE cpk_je IS NOT NULL AND cpk_je < 1.33 AND sample_count_je >= 30
               format: time_series
               intervalMs: 300000
               maxDataPoints: 100
