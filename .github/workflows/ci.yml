@@ -29,6 +29,9 @@ jobs:
       - name: Lint Grafana Dashboards
         run: node tests/lint/dashboard-linter.js
 
+      - name: Lint RCA Alarm-Category Coverage
+        run: node tests/lint/rca-mapping-coverage.js
+
       - name: Lint Prometheus Config
         run: |
           docker run --rm \
