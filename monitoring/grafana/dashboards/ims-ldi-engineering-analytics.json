@@ -958,8 +958,8 @@
     },
     {
       "id": 10,
-      "title": "\u25c8 Machine PE Capability - Cp vs Cpk",
-      "type": "barchart",
+      "title": "\u25c8 Machine Capability Ranking",
+      "type": "table",
       "datasource": {
         "uid": "timescaledb"
       },
@@ -970,24 +970,12 @@
         "h": 16
       },
       "options": {
-        "orientation": "horizontal",
-        "stacking": "none",
-        "showValue": "auto",
-        "groupWidth": 0.7,
-        "barWidth": 0.8,
-        "barRadius": 0,
-        "fullHighlight": false,
-        "xTickLabelRotation": 0,
-        "xTickLabelSpacing": 0,
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
         },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
+        "noValue": "-"
       },
       "targets": [
         {
@@ -995,23 +983,85 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH pe_samples AS (\n  SELECT d.eqp_id, d.pe_setting, p.pe\n  FROM public.ldi_data d\n  CROSS JOIN LATERAL (VALUES (d.pe_1),(d.pe_2),(d.pe_3),(d.pe_4),(d.pe_5),(d.pe_6)) p(pe)\n  WHERE $__timeFilter(d.\"time\")\n    AND d.factory IN (${factory:sqlstring})\n    AND d.process IN (${process:sqlstring})\n    AND d.mo IN (${mo:sqlstring})\n    AND d.fpn IN (${fpn:sqlstring})\n    AND d.layer_name IN (${layer:sqlstring})\n    AND d.eqp_id IN (${machine_id:sqlstring})\n    AND p.pe IS NOT NULL AND d.pe_setting IS NOT NULL\n), stats AS (\n  SELECT eqp_id, AVG(pe) AS mean_pe, STDDEV_SAMP(pe) AS stddev_pe, AVG(pe_setting) AS pe_limit\n  FROM pe_samples GROUP BY eqp_id\n), capability AS (\n  SELECT eqp_id, mean_pe, stddev_pe, pe_limit / NULLIF(3 * stddev_pe, 0) AS cp,\n    LEAST((pe_limit - mean_pe) / NULLIF(3 * stddev_pe, 0), (mean_pe + pe_limit) / NULLIF(3 * stddev_pe, 0)) AS cpk\n  FROM stats\n)\nSELECT eqp_id AS \"Machine\", ROUND(cp::NUMERIC, 3) AS \"Cp\", ROUND(cpk::NUMERIC, 3) AS \"Cpk\"\nFROM capability ORDER BY cpk DESC NULLS LAST;",
+          "rawSql": "WITH pe_samples AS (\n  SELECT d.eqp_id, d.pe_setting, p.pe\n  FROM public.ldi_data d\n  CROSS JOIN LATERAL (VALUES (d.pe_1),(d.pe_2),(d.pe_3),(d.pe_4),(d.pe_5),(d.pe_6)) p(pe)\n  WHERE $__timeFilter(d.\"time\")\n    AND d.factory IN (${factory:sqlstring})\n    AND d.process IN (${process:sqlstring})\n    AND d.mo IN (${mo:sqlstring})\n    AND d.fpn IN (${fpn:sqlstring})\n    AND d.layer_name IN (${layer:sqlstring})\n    AND d.eqp_id IN (${machine_id:sqlstring})\n    AND p.pe IS NOT NULL AND d.pe_setting IS NOT NULL\n),\npe_stats AS (\n  SELECT eqp_id, COUNT(*) AS n_pe, AVG(pe) AS mean_pe, STDDEV_SAMP(pe) AS stddev_pe, AVG(pe_setting) AS pe_limit\n  FROM pe_samples GROUP BY eqp_id\n),\npe_capability AS (\n  SELECT eqp_id, n_pe,\n    pe_limit / NULLIF(3 * stddev_pe, 0) AS cp_pe,\n    LEAST((pe_limit - mean_pe) / NULLIF(3 * stddev_pe, 0), (mean_pe + pe_limit) / NULLIF(3 * stddev_pe, 0)) AS cpk_pe\n  FROM pe_stats\n),\nje_samples AS (\n  SELECT d.eqp_id, d.je_setting, j.je\n  FROM public.ldi_data d\n  CROSS JOIN LATERAL (VALUES (d.je_1),(d.je_2),(d.je_3),(d.je_4)) j(je)\n  WHERE $__timeFilter(d.\"time\")\n    AND d.factory IN (${factory:sqlstring})\n    AND d.process IN (${process:sqlstring})\n    AND d.mo IN (${mo:sqlstring})\n    AND d.fpn IN (${fpn:sqlstring})\n    AND d.layer_name IN (${layer:sqlstring})\n    AND d.eqp_id IN (${machine_id:sqlstring})\n    AND j.je IS NOT NULL AND d.je_setting IS NOT NULL\n),\nje_stats AS (\n  SELECT eqp_id, COUNT(*) AS n_je, AVG(je) AS mean_je, STDDEV_SAMP(je) AS stddev_je, AVG(je_setting) AS je_limit\n  FROM je_samples GROUP BY eqp_id\n),\nje_capability AS (\n  SELECT eqp_id, n_je,\n    je_limit / NULLIF(3 * stddev_je, 0) AS cp_je,\n    LEAST((je_limit - mean_je) / NULLIF(3 * stddev_je, 0), (mean_je + je_limit) / NULLIF(3 * stddev_je, 0)) AS cpk_je\n  FROM je_stats\n),\ncombined AS (\n  SELECT COALESCE(p.eqp_id, j.eqp_id) AS eqp_id, p.n_pe, p.cp_pe, p.cpk_pe, j.n_je, j.cp_je, j.cpk_je\n  FROM pe_capability p FULL OUTER JOIN je_capability j ON p.eqp_id = j.eqp_id\n),\nworst AS (\n  SELECT *,\n    CASE WHEN cpk_pe IS NULL THEN cpk_je WHEN cpk_je IS NULL THEN cpk_pe ELSE LEAST(cpk_pe, cpk_je) END AS worst_cpk,\n    CASE WHEN cpk_pe IS NULL THEN n_je WHEN cpk_je IS NULL THEN n_pe WHEN cpk_pe <= cpk_je THEN n_pe ELSE n_je END AS worst_n\n  FROM combined\n)\nSELECT eqp_id AS \"Machine\",\n       n_pe AS \"PE Samples\", ROUND(cpk_pe::NUMERIC, 3) AS \"Cpk (PE)\",\n       n_je AS \"JE Samples\", ROUND(cpk_je::NUMERIC, 3) AS \"Cpk (JE)\",\n       ROUND(worst_cpk::NUMERIC, 3) AS \"Worst Cpk\",\n       worst_n AS \"N (Worst)\",\n       CASE WHEN COALESCE(worst_n, 0) < 30 THEN 'LOW SAMPLE (n<30)' ELSE 'OK' END AS \"Confidence\"\nFROM worst\nORDER BY worst_cpk ASC NULLS LAST;",
           "format": "table"
         }
       ],
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
           },
-          "decimals": 2,
-          "min": 0,
-          "unit": "none",
-          "custom": {}
+          "custom": {
+            "align": "center",
+            "cellOptions": {
+              "type": "auto"
+            }
+          },
+          "mappings": [],
+          "decimals": 3,
+          "unit": "none"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "PE Samples" },
+            "properties": [
+              { "id": "unit", "value": "none" },
+              { "id": "decimals", "value": 0 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "JE Samples" },
+            "properties": [
+              { "id": "unit", "value": "none" },
+              { "id": "decimals", "value": 0 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "N (Worst)" },
+            "properties": [
+              { "id": "unit", "value": "none" },
+              { "id": "decimals", "value": 0 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Worst Cpk" },
+            "properties": [
+              { "id": "custom.cellOptions", "value": { "type": "color-background" } },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "#FF003C", "value": null },
+                    { "color": "#ff9100", "value": 1.33 },
+                    { "color": "#00ff87", "value": 1.67 }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Confidence" },
+            "properties": [
+              { "id": "custom.cellOptions", "value": { "type": "color-background" } },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "OK": { "color": "#22C55E", "text": "OK" },
+                      "LOW SAMPLE (n<30)": { "color": "#EF4444", "text": "LOW SAMPLE (n<30)" }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
       },
-      "description": "Calculated from real PE1-PE6 samples in the selected time, Factory, MO and Machine filters. Assumes symmetric +/- pe_setting limits.",
+      "description": "Ranked worst-first by Worst Cpk = LEAST(Cpk PE, Cpk JE) \u2014 a machine capable on PE but failing JE (or vice versa) is still a failing machine. Colored red (<1.33 Not Capable), amber (1.33\u20131.67 Capable/Excellent boundary), green (\u22651.67 Excellent+). Confidence flags machines where the worse of the two metrics is backed by fewer than 30 samples in the selected window \u2014 not yet statistically reliable. Calculated from real PE1-PE6/JE1-JE4 samples in the selected time, Factory, MO and Machine filters. Assumes symmetric +/- setting limits.",
       "links": [
         {
           "title": "Open Machine Snapshot (select one Machine)",
