@@ -48,10 +48,13 @@ LDI dashboards ใช้ cyberpunk theme ที่แยกจาก §2.1 ม�
 | `healthy-alt` | `#22c55e` | `healthy` (`#10B981`) | Capable/World Class thresholds, PASS |
 | `warning` | `#FF9100` / `facc15` | `warning` (`#F59E0B`) | IDLE state, Marginal, warning thresholds |
 | `critical` | `#FF003C` | `critical` (`#EF4444`) | NO_DATA state, OUT OF SPEC, critical thresholds |
+| `critical-muted` | `#E5484D` | (no §2.1 equivalent) | "Delta %" trend-direction indicators only — deliberately softer than `critical` so a KPI's period-over-period delta doesn't visually compete with an actual alert |
+| `neutral` | `#6B7280` | (no §2.1 equivalent) | Genuinely inapplicable states only (e.g. "N/A" on a table cell where no PE/JE data exists for that row) — not a substitute for `critical`/NO_DATA, which mean "expected data is missing"; `neutral` means "this field doesn't apply here" |
 
 ตัวย่อ case: ใช้ตัวพิมพ์เล็กสำหรับ `#facc15`/`#22c55e` (ไม่ใช่ `#FACC15`/`#22C55E`) — ปนกันมาจากการ
 copy-paste ข้าม panel และแก้ให้ตรงกันแล้วใน Phase 2 (harmonized 33 stray instances of
-`#00E5FF`/`#EF4444`/`#FACC15`/`#22C55E` → the table above, ตรวจสอบด้วย `grep` ก่อน merge panel ใหม่)
+`#00E5FF`/`#EF4444`/`#FACC15`/`#22C55E`, plus 18 more of `#00FF87`/`#00ff87` found in
+Phase 3 acceptance testing — all → the table above, ตรวจสอบด้วย `grep` ก่อน merge panel ใหม่)
 
 ### 2.2 Threshold Contract (ต้องตรงกันทุก panel ที่วัดค่าเดียวกัน)
 

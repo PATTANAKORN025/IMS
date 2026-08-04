@@ -579,7 +579,7 @@
                 "value": 19
               },
               {
-                "color": "#00FF87",
+                "color": "#22c55e",
                 "value": 20
               },
               {
@@ -621,7 +621,7 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "—",
+        "noValue": "NO_DATA",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -669,7 +669,7 @@
                 "value": 45
               },
               {
-                "color": "#00FF87",
+                "color": "#22c55e",
                 "value": 50
               },
               {
@@ -711,7 +711,7 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "—",
+        "noValue": "NO_DATA",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -788,7 +788,7 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "—",
+        "noValue": "NO_DATA",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -865,7 +865,7 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "—",
+        "noValue": "NO_DATA",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -942,7 +942,7 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "—",
+        "noValue": "NO_DATA",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -1019,7 +1019,7 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "—",
+        "noValue": "NO_DATA",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -2405,7 +2405,7 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "No data",
+        "noValue": "NO_DATA",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
