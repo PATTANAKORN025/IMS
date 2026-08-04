@@ -221,7 +221,7 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "-",
+        "noValue": "NO_DATA",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -333,7 +333,7 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "-",
+        "noValue": "NO_DATA",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -396,7 +396,7 @@
           "valueSize": 40,
           "titleSize": 14
         },
-        "noValue": "-",
+        "noValue": "NO_DATA",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -527,7 +527,7 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "-",
+        "noValue": "NO_DATA",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -607,7 +607,7 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "-",
+        "noValue": "NO_DATA",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -689,7 +689,7 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "-",
+        "noValue": "NO_DATA",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -766,7 +766,7 @@
         },
         "showThresholdLabels": true,
         "showThresholdMarkers": true,
-        "noValue": "N/A",
+        "noValue": "NO_DATA",
         "text": {
           "titleSize": 14,
           "valueSize": 48
@@ -904,7 +904,7 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "-",
+        "noValue": "NO_DATA",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -980,7 +980,7 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "-",
+        "noValue": "NO_DATA",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -1028,7 +1028,7 @@
                 "value": 19
               },
               {
-                "color": "#00FF87",
+                "color": "#22c55e",
                 "value": 20
               },
               {
@@ -1105,7 +1105,7 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "-",
+        "noValue": "NO_DATA",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -1153,7 +1153,7 @@
                 "value": 45
               },
               {
-                "color": "#00FF87",
+                "color": "#22c55e",
                 "value": 50
               },
               {
@@ -1230,7 +1230,7 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "-",
+        "noValue": "NO_DATA",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -1308,23 +1308,23 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#ff003c",
+                "color": "#FF003C",
                 "value": null
               },
               {
-                "color": "#ff9100",
+                "color": "#FF9100",
                 "value": 19
               },
               {
-                "color": "#00ff87",
+                "color": "#22c55e",
                 "value": 20
               },
               {
-                "color": "#ff9100",
+                "color": "#FF9100",
                 "value": 24
               },
               {
-                "color": "#ff003c",
+                "color": "#FF003C",
                 "value": 25
               }
             ]
@@ -2231,7 +2231,7 @@
                 "value": -3
               },
               {
-                "color": "#00FF87",
+                "color": "#22c55e",
                 "value": -2
               },
               {
@@ -2669,11 +2669,11 @@
                       "value": null
                     },
                     {
-                      "color": "#ff9100",
+                      "color": "#FF9100",
                       "value": 1
                     },
                     {
-                      "color": "#00ff87",
+                      "color": "#22c55e",
                       "value": 2
                     }
                   ]

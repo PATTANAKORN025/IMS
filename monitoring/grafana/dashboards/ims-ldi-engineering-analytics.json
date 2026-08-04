@@ -233,7 +233,7 @@
                 "value": 19
               },
               {
-                "color": "#00FF87",
+                "color": "#22c55e",
                 "value": 20
               },
               {
@@ -1069,7 +1069,7 @@
       "gridPos": {
         "x": 0,
         "y": 49,
-        "w": 12,
+        "w": 24,
         "h": 16
       },
       "options": {
@@ -1176,11 +1176,11 @@
                       "value": null
                     },
                     {
-                      "color": "#ff9100",
+                      "color": "#FF9100",
                       "value": 1.33
                     },
                     {
-                      "color": "#00ff87",
+                      "color": "#22c55e",
                       "value": 1.67
                     }
                   ]
@@ -1219,6 +1219,102 @@
                 ]
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Machine"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 110
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "PE Samples"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Cpk (PE)"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "JE Samples"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Cpk (JE)"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Worst Cpk"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "N (Worst)"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Confidence"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 170
+              }
+            ]
           }
         ]
       },
@@ -1249,8 +1345,8 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 12,
-        "y": 49,
+        "x": 0,
+        "y": 65,
         "w": 12,
         "h": 16
       },
@@ -1323,9 +1419,9 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 0,
+        "x": 12,
         "y": 65,
-        "w": 24,
+        "w": 12,
         "h": 16
       },
       "fieldConfig": {
@@ -1716,11 +1812,11 @@
                       "value": null
                     },
                     {
-                      "color": "#ff9100",
+                      "color": "#FF9100",
                       "value": 1
                     },
                     {
-                      "color": "#00ff87",
+                      "color": "#22c55e",
                       "value": 2
                     }
                   ]

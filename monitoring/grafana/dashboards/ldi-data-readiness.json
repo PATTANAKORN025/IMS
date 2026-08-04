@@ -140,7 +140,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#00FF87",
+                "color": "#22c55e",
                 "value": null
               },
               {
@@ -181,7 +181,7 @@
           "titleSize": 14,
           "valueSize": 48
         },
-        "noValue": "-",
+        "noValue": "NO_DATA",
         "tooltip": {
           "mode": "single",
           "sort": "none"
@@ -232,7 +232,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#00FF87",
+                "color": "#22c55e",
                 "value": null
               },
               {
@@ -273,7 +273,7 @@
           "titleSize": 14,
           "valueSize": 48
         },
-        "noValue": "-",
+        "noValue": "NO_DATA",
         "tooltip": {
           "mode": "single",
           "sort": "none"
@@ -333,7 +333,7 @@
                 "value": 80
               },
               {
-                "color": "#00FF87",
+                "color": "#22c55e",
                 "value": 95
               }
             ]
@@ -368,7 +368,7 @@
           "titleSize": 14,
           "valueSize": 48
         },
-        "noValue": "-",
+        "noValue": "NO_DATA",
         "tooltip": {
           "mode": "single",
           "sort": "none"
@@ -427,7 +427,7 @@
                 "value": 80
               },
               {
-                "color": "#00FF87",
+                "color": "#22c55e",
                 "value": 95
               }
             ]
@@ -462,7 +462,7 @@
           "titleSize": 14,
           "valueSize": 48
         },
-        "noValue": "-",
+        "noValue": "NO_DATA",
         "tooltip": {
           "mode": "single",
           "sort": "none"
@@ -522,7 +522,7 @@
                 "value": 80
               },
               {
-                "color": "#00FF87",
+                "color": "#22c55e",
                 "value": 95
               }
             ]
@@ -557,7 +557,7 @@
           "titleSize": 14,
           "valueSize": 48
         },
-        "noValue": "-",
+        "noValue": "NO_DATA",
         "tooltip": {
           "mode": "single",
           "sort": "none"
@@ -617,7 +617,7 @@
                 "value": 80
               },
               {
-                "color": "#00FF87",
+                "color": "#22c55e",
                 "value": 95
               }
             ]
@@ -652,7 +652,7 @@
           "titleSize": 14,
           "valueSize": 48
         },
-        "noValue": "-",
+        "noValue": "NO_DATA",
         "tooltip": {
           "mode": "single",
           "sort": "none"
