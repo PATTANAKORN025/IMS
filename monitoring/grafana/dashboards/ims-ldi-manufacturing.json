@@ -167,7 +167,20 @@
             "lineWidth": 2
           },
           "min": 0,
-          "max": 100
+          "max": 100,
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "#6B7280",
+                  "text": "NO_DATA",
+                  "index": 0
+                }
+              }
+            }
+          ]
         },
         "overrides": [
           {
@@ -221,7 +234,7 @@
           "valueSize": 28,
           "titleSize": 12
         },
-        "noValue": "NO PRODUCTION",
+        "noValue": "NO_DATA",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -279,7 +292,20 @@
             "lineInterpolation": "smooth",
             "fillOpacity": 15,
             "lineWidth": 2
-          }
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "#6B7280",
+                  "text": "NO_DATA",
+                  "index": 0
+                }
+              }
+            }
+          ]
         },
         "overrides": [
           {
@@ -333,7 +359,7 @@
           "valueSize": 28,
           "titleSize": 12
         },
-        "noValue": "NO STATUS",
+        "noValue": "NO_DATA",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -377,7 +403,20 @@
             "lineInterpolation": "smooth",
             "fillOpacity": 15,
             "lineWidth": 2
-          }
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "#6B7280",
+                  "text": "NO_DATA",
+                  "index": 0
+                }
+              }
+            }
+          ]
         },
         "overrides": []
       },
@@ -396,7 +435,7 @@
           "valueSize": 36,
           "titleSize": 14
         },
-        "noValue": "NO DATA",
+        "noValue": "NO_DATA",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -473,7 +512,20 @@
             "lineInterpolation": "smooth",
             "fillOpacity": 15,
             "lineWidth": 2
-          }
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "#6B7280",
+                  "text": "NO_DATA",
+                  "index": 0
+                }
+              }
+            }
+          ]
         },
         "overrides": [
           {
@@ -527,7 +579,7 @@
           "valueSize": 28,
           "titleSize": 12
         },
-        "noValue": "NO PRODUCTION",
+        "noValue": "NO_DATA",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -720,7 +772,20 @@
             "lineInterpolation": "smooth",
             "fillOpacity": 15,
             "lineWidth": 2
-          }
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "#6B7280",
+                  "text": "NO_DATA",
+                  "index": 0
+                }
+              }
+            }
+          ]
         },
         "overrides": []
       },
@@ -739,7 +804,7 @@
           "valueSize": 28,
           "titleSize": 12
         },
-        "noValue": "NO PRODUCTION",
+        "noValue": "NO_DATA",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -802,7 +867,20 @@
             "lineInterpolation": "smooth",
             "fillOpacity": 15,
             "lineWidth": 2
-          }
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "#6B7280",
+                  "text": "NO_DATA",
+                  "index": 0
+                }
+              }
+            }
+          ]
         },
         "overrides": []
       },
@@ -816,7 +894,7 @@
         },
         "showThresholdLabels": true,
         "showThresholdMarkers": true,
-        "noValue": "NO DATA",
+        "noValue": "NO_DATA",
         "text": {
           "titleSize": 12,
           "valueSize": 28
@@ -900,7 +978,20 @@
             "lineWidth": 2
           },
           "min": 0,
-          "max": 100
+          "max": 100,
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "#6B7280",
+                  "text": "NO_DATA",
+                  "index": 0
+                }
+              }
+            }
+          ]
         },
         "overrides": [
           {
@@ -954,7 +1045,7 @@
           "valueSize": 28,
           "titleSize": 12
         },
-        "noValue": "NO STATUS",
+        "noValue": "NO_DATA",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -1101,7 +1192,20 @@
             "lineWidth": 2
           },
           "min": 18,
-          "max": 28
+          "max": 28,
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "#6B7280",
+                  "text": "NO_DATA",
+                  "index": 0
+                }
+              }
+            }
+          ]
         },
         "overrides": [
           {
@@ -1155,7 +1259,7 @@
           "valueSize": 28,
           "titleSize": 12
         },
-        "noValue": "NO TELEMETRY",
+        "noValue": "NO_DATA",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -1226,7 +1330,20 @@
             "lineWidth": 2
           },
           "min": 40,
-          "max": 70
+          "max": 70,
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "#6B7280",
+                  "text": "NO_DATA",
+                  "index": 0
+                }
+              }
+            }
+          ]
         },
         "overrides": [
           {
@@ -1280,7 +1397,7 @@
           "valueSize": 28,
           "titleSize": 12
         },
-        "noValue": "NO TELEMETRY",
+        "noValue": "NO_DATA",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -1538,7 +1655,7 @@
                         "text": "WARNING"
                       },
                       "OK": {
-                        "color": "#00F2FE",
+                        "color": "#22c55e",
                         "index": 2,
                         "text": "OK"
                       }
@@ -1585,7 +1702,7 @@
                         "text": "WARNING"
                       },
                       "OK": {
-                        "color": "#00F2FE",
+                        "color": "#22c55e",
                         "index": 2,
                         "text": "OK"
                       }
@@ -2544,7 +2661,7 @@
                         "text": "WARNING"
                       },
                       "OK": {
-                        "color": "#00F2FE",
+                        "color": "#22c55e",
                         "index": 2,
                         "text": "OK"
                       }
@@ -2697,7 +2814,7 @@
                         "text": "WARNING"
                       },
                       "OK": {
-                        "color": "#00F2FE",
+                        "color": "#22c55e",
                         "index": 2,
                         "text": "OK"
                       }
