@@ -1476,7 +1476,7 @@
     },
     {
       "id": 9,
-      "title": "◈ Process Capability from PE Samples",
+      "title": "◈ Process Capability (PE & JE) — Worst Cpk",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
@@ -1484,359 +1484,10 @@
       "gridPos": {
         "x": 0,
         "y": 26,
-        "w": 12,
-        "h": 10
-      },
-      "options": {
-        "showHeader": true,
-        "rowHeight": 0.8,
-        "cellHeight": "sm",
-        "footer": {
-          "show": false
-        },
-        "noValue": "-"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "WITH selected_machines AS (\n  SELECT DISTINCT eqp_id FROM public.ldi_data\n  WHERE ((${event_time_ms:sqlstring}::NUMERIC > 0 AND eqp_id=split_part(${clicked_series:sqlstring},' - ',1))\n    OR (${event_time_ms:sqlstring}::NUMERIC <= 0 AND eqp_id IN (${machine_id:sqlstring})))\n), pe_samples AS (\n  SELECT d.eqp_id,d.pe_setting,p.pe FROM public.ldi_data d JOIN selected_machines sm ON sm.eqp_id=d.eqp_id\n  CROSS JOIN LATERAL (VALUES(d.pe_1),(d.pe_2),(d.pe_3),(d.pe_4),(d.pe_5),(d.pe_6)) p(pe)\n  WHERE $__timeFilter(d.\"time\") AND p.pe IS NOT NULL AND d.pe_setting IS NOT NULL\n), stats AS (\n  SELECT eqp_id,COUNT(*) sample_count,AVG(pe) mean_pe,STDDEV_SAMP(pe) stddev_pe,AVG(pe_setting) lim FROM pe_samples GROUP BY eqp_id\n)\nSELECT sm.eqp_id AS \"Machine\",COALESCE(stats.sample_count,0) AS \"Samples\",ROUND(stats.mean_pe::NUMERIC,2) AS \"Mean PE\",\n ROUND((lim/NULLIF(3*stddev_pe, 0))::NUMERIC,2) AS \"Cp\",\n ROUND(LEAST((lim-mean_pe)/NULLIF(3*stddev_pe, 0),(mean_pe+lim)/NULLIF(3*stddev_pe,0))::NUMERIC,2) AS \"Cpk\"\nFROM selected_machines sm LEFT JOIN stats ON stats.eqp_id=sm.eqp_id\nLIMIT 1000;",
-          "format": "table"
-        }
-      ],
-      "description": "Process capability from v_machine_spc_ranking. Cpk >= 1.33 = Capable, Sigma Level = Cpk * 3.",
-      "fieldConfig": {
-        "defaults": {
-          "noValue": "N/A",
-          "unit": "none",
-          "decimals": 2,
-          "custom": {}
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Capability"
-            },
-            "properties": [
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "type": "value",
-                    "options": {
-                      "World Class": {
-                        "color": "#22c55e",
-                        "text": "World Class"
-                      },
-                      "Excellent": {
-                        "color": "#22c55e",
-                        "text": "Excellent"
-                      },
-                      "Capable": {
-                        "color": "#facc15",
-                        "text": "Capable"
-                      },
-                      "Marginally Capable": {
-                        "color": "#facc15",
-                        "text": "Marginal"
-                      },
-                      "Not Capable": {
-                        "color": "#FF003C",
-                        "text": "Not Capable"
-                      }
-                    }
-                  }
-                ]
-              },
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "color-background"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Timestamp"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "dateTimeAsIso"
-              },
-              {
-                "id": "decimals",
-                "value": 6
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Time"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "dateTimeAsIso"
-              },
-              {
-                "id": "decimals",
-                "value": 6
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Mean PE"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 75
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Samples"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 75
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Cp"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 70
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Cpk"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 70
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Machine"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 120
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "eqp_id"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Machine"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "layer_name"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Layer"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "mo"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Work Order (MO)"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "alarm_code"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Alarm Code"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "alarm_msg"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Alarm Message"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "severity"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Severity"
-              },
-              {
-                "id": "custom.displayMode",
-                "value": "color-background"
-              },
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "type": "value",
-                    "options": {
-                      "CRIT": {
-                        "color": "#FF003C",
-                        "index": 0,
-                        "text": "CRIT"
-                      },
-                      "CRITICAL": {
-                        "color": "#FF003C",
-                        "index": 0,
-                        "text": "CRITICAL"
-                      },
-                      "WARN": {
-                        "color": "#FF9100",
-                        "index": 1,
-                        "text": "WARN"
-                      },
-                      "WARNING": {
-                        "color": "#FF9100",
-                        "index": 1,
-                        "text": "WARNING"
-                      },
-                      "OK": {
-                        "color": "#22c55e",
-                        "index": 2,
-                        "text": "OK"
-                      }
-                    }
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Severity"
-            },
-            "properties": [
-              {
-                "id": "custom.displayMode",
-                "value": "color-background"
-              },
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "type": "value",
-                    "options": {
-                      "CRIT": {
-                        "color": "#FF003C",
-                        "index": 0,
-                        "text": "CRIT"
-                      },
-                      "CRITICAL": {
-                        "color": "#FF003C",
-                        "index": 0,
-                        "text": "CRITICAL"
-                      },
-                      "WARN": {
-                        "color": "#FF9100",
-                        "index": 1,
-                        "text": "WARN"
-                      },
-                      "WARNING": {
-                        "color": "#FF9100",
-                        "index": 1,
-                        "text": "WARNING"
-                      },
-                      "OK": {
-                        "color": "#22c55e",
-                        "index": 2,
-                        "text": "OK"
-                      }
-                    }
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "logdate"
-            },
-            "properties": [
-              {
-                "id": "custom.hidden",
-                "value": true
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
-      "id": 17,
-      "title": "◈ Process Capability from JE Samples",
-      "type": "table",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 36,
         "w": 24,
         "h": 10
       },
+      "description": "Combined PE + JE process capability for the selected machine(s)/event. Worst Cpk = LEAST(Cpk PE, Cpk JE); Confidence flags LOW SAMPLE when the deciding sample count is below 30, NO_DATA when neither PE nor JE produced samples.",
       "options": {
         "showHeader": true,
         "rowHeight": 0.8,
@@ -1852,143 +1503,28 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH selected_machines AS (\n  SELECT DISTINCT eqp_id FROM public.ldi_data\n  WHERE ((${event_time_ms:sqlstring}::NUMERIC > 0 AND eqp_id=split_part(${clicked_series:sqlstring},' - ',1))\n    OR (${event_time_ms:sqlstring}::NUMERIC <= 0 AND eqp_id IN (${machine_id:sqlstring})))\n), je_samples AS (\n  SELECT d.eqp_id,d.je_setting,j.je FROM public.ldi_data d JOIN selected_machines sm ON sm.eqp_id=d.eqp_id\n  CROSS JOIN LATERAL (VALUES(d.je_1),(d.je_2),(d.je_3),(d.je_4)) j(je)\n  WHERE $__timeFilter(d.\"time\") AND j.je IS NOT NULL AND d.je_setting IS NOT NULL\n), stats AS (\n  SELECT eqp_id,COUNT(*) sample_count,AVG(je) mean_je,STDDEV_SAMP(je) stddev_je,AVG(je_setting) lim FROM je_samples GROUP BY eqp_id\n)\nSELECT sm.eqp_id AS \"Machine\",COALESCE(stats.sample_count,0) AS \"Samples\",ROUND(stats.mean_je::NUMERIC,2) AS \"Mean JE\",\n ROUND((lim/NULLIF(3*stddev_je, 0))::NUMERIC,2) AS \"Cp\",\n ROUND(LEAST((lim-mean_je)/NULLIF(3*stddev_je, 0),(mean_je+lim)/NULLIF(3*stddev_je,0))::NUMERIC,2) AS \"Cpk\"\nFROM selected_machines sm LEFT JOIN stats ON stats.eqp_id=sm.eqp_id\nLIMIT 1000;",
+          "rawSql": "WITH selected_machines AS (\n  SELECT DISTINCT eqp_id FROM public.ldi_data\n  WHERE ((${event_time_ms:sqlstring}::NUMERIC > 0 AND eqp_id=split_part(${clicked_series:sqlstring},' - ',1))\n    OR (${event_time_ms:sqlstring}::NUMERIC <= 0 AND eqp_id IN (${machine_id:sqlstring})))\n), pe_samples AS (\n  SELECT d.eqp_id,d.pe_setting,p.pe FROM public.ldi_data d JOIN selected_machines sm ON sm.eqp_id=d.eqp_id\n  CROSS JOIN LATERAL (VALUES(d.pe_1),(d.pe_2),(d.pe_3),(d.pe_4),(d.pe_5),(d.pe_6)) p(pe)\n  WHERE $__timeFilter(d.\"time\") AND p.pe IS NOT NULL AND d.pe_setting IS NOT NULL\n), pe_stats AS (\n  SELECT eqp_id,COUNT(*) n_pe,AVG(pe) mean_pe,STDDEV_SAMP(pe) stddev_pe,AVG(pe_setting) pe_lim FROM pe_samples GROUP BY eqp_id\n), pe_capability AS (\n  SELECT eqp_id, n_pe,\n    pe_lim/NULLIF(3*stddev_pe,0) AS cp_pe,\n    LEAST((pe_lim-mean_pe)/NULLIF(3*stddev_pe,0),(mean_pe+pe_lim)/NULLIF(3*stddev_pe,0)) AS cpk_pe\n  FROM pe_stats\n), je_samples AS (\n  SELECT d.eqp_id,d.je_setting,j.je FROM public.ldi_data d JOIN selected_machines sm ON sm.eqp_id=d.eqp_id\n  CROSS JOIN LATERAL (VALUES(d.je_1),(d.je_2),(d.je_3),(d.je_4)) j(je)\n  WHERE $__timeFilter(d.\"time\") AND j.je IS NOT NULL AND d.je_setting IS NOT NULL\n), je_stats AS (\n  SELECT eqp_id,COUNT(*) n_je,AVG(je) mean_je,STDDEV_SAMP(je) stddev_je,AVG(je_setting) je_lim FROM je_samples GROUP BY eqp_id\n), je_capability AS (\n  SELECT eqp_id, n_je,\n    je_lim/NULLIF(3*stddev_je,0) AS cp_je,\n    LEAST((je_lim-mean_je)/NULLIF(3*stddev_je,0),(mean_je+je_lim)/NULLIF(3*stddev_je,0)) AS cpk_je\n  FROM je_stats\n), combined AS (\n  SELECT sm.eqp_id, p.n_pe, p.cpk_pe, j.n_je, j.cpk_je\n  FROM selected_machines sm\n  LEFT JOIN pe_capability p ON p.eqp_id=sm.eqp_id\n  LEFT JOIN je_capability j ON j.eqp_id=sm.eqp_id\n), worst AS (\n  SELECT *,\n    CASE WHEN cpk_pe IS NULL THEN cpk_je WHEN cpk_je IS NULL THEN cpk_pe ELSE LEAST(cpk_pe,cpk_je) END AS worst_cpk,\n    CASE WHEN cpk_pe IS NULL THEN n_je WHEN cpk_je IS NULL THEN n_pe WHEN cpk_pe<=cpk_je THEN n_pe ELSE n_je END AS worst_n\n  FROM combined\n)\nSELECT eqp_id AS \"Machine\",\n  n_pe AS \"PE Samples\", ROUND(cpk_pe::NUMERIC,2) AS \"Cpk (PE)\",\n  n_je AS \"JE Samples\", ROUND(cpk_je::NUMERIC,2) AS \"Cpk (JE)\",\n  ROUND(worst_cpk::NUMERIC,2) AS \"Worst Cpk\",\n  worst_n AS \"N (Worst)\",\n  CASE WHEN worst_cpk IS NULL THEN 'NO_DATA' WHEN COALESCE(worst_n,0)<30 THEN 'LOW SAMPLE (n<30)' ELSE 'OK' END AS \"Confidence\"\nFROM worst\nORDER BY worst_cpk ASC NULLS LAST\nLIMIT 1000;",
           "format": "table"
         }
       ],
-      "description": "Process capability from real JE1-JE4 samples for the selected machine(s)/event. Mirrors the PE Process Capability table above for JE parity. Cpk >= 1.33 = Capable.",
       "fieldConfig": {
         "defaults": {
           "noValue": "N/A",
           "unit": "none",
           "decimals": 2,
-          "custom": {}
+          "custom": {
+            "align": "center",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": true
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": []
         },
         "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Capability"
-            },
-            "properties": [
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "type": "value",
-                    "options": {
-                      "World Class": {
-                        "color": "#22c55e",
-                        "text": "World Class"
-                      },
-                      "Excellent": {
-                        "color": "#22c55e",
-                        "text": "Excellent"
-                      },
-                      "Capable": {
-                        "color": "#facc15",
-                        "text": "Capable"
-                      },
-                      "Marginally Capable": {
-                        "color": "#facc15",
-                        "text": "Marginal"
-                      },
-                      "Not Capable": {
-                        "color": "#FF003C",
-                        "text": "Not Capable"
-                      }
-                    }
-                  }
-                ]
-              },
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "color-background"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Timestamp"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "dateTimeAsIso"
-              },
-              {
-                "id": "decimals",
-                "value": 6
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Time"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "dateTimeAsIso"
-              },
-              {
-                "id": "decimals",
-                "value": 6
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Mean JE"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 75
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Samples"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 75
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Cp"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 70
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Cpk"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 70
-              }
-            ]
-          },
           {
             "matcher": {
               "id": "byName",
@@ -1998,113 +1534,105 @@
               {
                 "id": "custom.width",
                 "value": 120
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "eqp_id"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Machine"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "layer_name"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Layer"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "mo"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Work Order (MO)"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "alarm_code"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Alarm Code"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "alarm_msg"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Alarm Message"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "severity"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Severity"
               },
               {
-                "id": "custom.displayMode",
-                "value": "color-background"
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00F2FE"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "PE Samples"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "JE Samples"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "N (Worst)"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Cpk (PE)"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#FF003C",
+                      "value": null
+                    },
+                    {
+                      "color": "#FF9100",
+                      "value": 1.33
+                    },
+                    {
+                      "color": "#22C55E",
+                      "value": 1.67
+                    }
+                  ]
+                }
               },
               {
                 "id": "mappings",
                 "value": [
                   {
-                    "type": "value",
+                    "type": "special",
                     "options": {
-                      "CRIT": {
-                        "color": "#FF003C",
-                        "index": 0,
-                        "text": "CRIT"
-                      },
-                      "CRITICAL": {
-                        "color": "#FF003C",
-                        "index": 0,
-                        "text": "CRITICAL"
-                      },
-                      "WARN": {
-                        "color": "#FF9100",
-                        "index": 1,
-                        "text": "WARN"
-                      },
-                      "WARNING": {
-                        "color": "#FF9100",
-                        "index": 1,
-                        "text": "WARNING"
-                      },
-                      "OK": {
-                        "color": "#22c55e",
-                        "index": 2,
-                        "text": "OK"
+                      "match": "null+nan",
+                      "result": {
+                        "color": "#6B7280",
+                        "text": "N/A",
+                        "index": 0
                       }
                     }
                   }
@@ -2115,43 +1643,50 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Severity"
+              "options": "Cpk (JE)"
             },
             "properties": [
               {
-                "id": "custom.displayMode",
-                "value": "color-background"
+                "id": "custom.width",
+                "value": 90
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#FF003C",
+                      "value": null
+                    },
+                    {
+                      "color": "#FF9100",
+                      "value": 1.33
+                    },
+                    {
+                      "color": "#22C55E",
+                      "value": 1.67
+                    }
+                  ]
+                }
               },
               {
                 "id": "mappings",
                 "value": [
                   {
-                    "type": "value",
+                    "type": "special",
                     "options": {
-                      "CRIT": {
-                        "color": "#FF003C",
-                        "index": 0,
-                        "text": "CRIT"
-                      },
-                      "CRITICAL": {
-                        "color": "#FF003C",
-                        "index": 0,
-                        "text": "CRITICAL"
-                      },
-                      "WARN": {
-                        "color": "#FF9100",
-                        "index": 1,
-                        "text": "WARN"
-                      },
-                      "WARNING": {
-                        "color": "#FF9100",
-                        "index": 1,
-                        "text": "WARNING"
-                      },
-                      "OK": {
-                        "color": "#22c55e",
-                        "index": 2,
-                        "text": "OK"
+                      "match": "null+nan",
+                      "result": {
+                        "color": "#6B7280",
+                        "text": "N/A",
+                        "index": 0
                       }
                     }
                   }
@@ -2162,12 +1697,97 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "logdate"
+              "options": "Worst Cpk"
             },
             "properties": [
               {
-                "id": "custom.hidden",
-                "value": true
+                "id": "custom.width",
+                "value": 100
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#FF003C",
+                      "value": null
+                    },
+                    {
+                      "color": "#FF9100",
+                      "value": 1.33
+                    },
+                    {
+                      "color": "#22C55E",
+                      "value": 1.67
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "special",
+                    "options": {
+                      "match": "null+nan",
+                      "result": {
+                        "color": "#6B7280",
+                        "text": "N/A",
+                        "index": 0
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Confidence"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 150
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "OK": {
+                        "color": "#22c55e",
+                        "index": 0,
+                        "text": "OK"
+                      },
+                      "LOW SAMPLE (n<30)": {
+                        "color": "#FF9100",
+                        "index": 1,
+                        "text": "LOW SAMPLE (n<30)"
+                      },
+                      "NO_DATA": {
+                        "color": "#6B7280",
+                        "index": 2,
+                        "text": "NO_DATA"
+                      }
+                    }
+                  }
+                ]
               }
             ]
           }
@@ -2183,7 +1803,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 46,
+        "y": 41,
         "w": 24,
         "h": 10
       },
@@ -2438,10 +2058,10 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 12,
-        "y": 26,
-        "w": 12,
-        "h": 10
+        "x": 0,
+        "y": 36,
+        "w": 6,
+        "h": 5
       },
       "fieldConfig": {
         "defaults": {
@@ -2524,7 +2144,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 56,
+        "y": 51,
         "w": 24,
         "h": 14
       },
