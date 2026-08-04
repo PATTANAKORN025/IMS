@@ -124,6 +124,22 @@
       "panels": []
     },
     {
+      "id": 8888,
+      "type": "text",
+      "title": "",
+      "options": {
+        "content": "<div style=\"text-align:center;padding:2px 0;\"><span style=\"background:#1E3A5F;color:#38BDF8;padding:3px 12px;border-radius:12px;font-size:11px;font-weight:600;letter-spacing:0.5px;\">⚡ FLEET KPI — 24h Rolling Window</span></div>",
+        "mode": "html"
+      },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 1
+      },
+      "transparent": true
+    },
+    {
       "id": 15,
       "title": "◉ Estimated Yield (%)",
       "type": "stat",
@@ -132,7 +148,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 2,
+        "y": 3,
         "w": 8,
         "h": 4
       },
@@ -144,15 +160,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": null
               },
               {
-                "color": "#facc15",
+                "color": "#F59E0B",
                 "value": 90
               },
               {
-                "color": "#22c55e",
+                "color": "#22C55E",
                 "value": 95
               }
             ]
@@ -218,10 +234,10 @@
           "values": false
         },
         "text": {
-          "valueSize": 48,
-          "titleSize": 14
+          "valueSize": 28,
+          "titleSize": 12
         },
-        "noValue": "NO_DATA",
+        "noValue": "NO PRODUCTION",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -234,11 +250,11 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH now_val AS (\nSELECT ROUND(100.0 * COUNT(*) FILTER (\n  WHERE GREATEST(ABS(pe_1),ABS(pe_2),ABS(pe_3),ABS(pe_4),ABS(pe_5),ABS(pe_6)) <= pe_setting\n) / NULLIF(COUNT(*) FILTER (WHERE pe_1 IS NOT NULL), 0)::NUMERIC, 1) AS value\nFROM public.ldi_data\nWHERE \"time\" > NOW() - INTERVAL '1 hour'\n  AND factory IN (${factory:sqlstring})\n  AND mo IN (${mo:sqlstring})\n  AND eqp_id IN (${machine_id:sqlstring})\n),\nprev_val AS (\nSELECT ROUND(100.0 * COUNT(*) FILTER (\n  WHERE GREATEST(ABS(pe_1),ABS(pe_2),ABS(pe_3),ABS(pe_4),ABS(pe_5),ABS(pe_6)) <= pe_setting\n) / NULLIF(COUNT(*) FILTER (WHERE pe_1 IS NOT NULL), 0)::NUMERIC, 1) AS value\nFROM public.ldi_data\nWHERE \"time\" BETWEEN NOW() - INTERVAL '2 hours' AND NOW() - INTERVAL '1 hour'\n  AND factory IN (${factory:sqlstring})\n  AND mo IN (${mo:sqlstring})\n  AND eqp_id IN (${machine_id:sqlstring})\n)\nSELECT n.value, ROUND((((n.value - p.value)/NULLIF(p.value, 0)::NUMERIC) * 100)::NUMERIC, 1) AS \"Delta %\"\nFROM now_val n, prev_val p",
+          "rawSql": "WITH pe_yield AS (\n  SELECT ROUND(100.0 * COUNT(*) FILTER (\n    WHERE GREATEST(ABS(pe_1),ABS(pe_2),ABS(pe_3),ABS(pe_4),ABS(pe_5),ABS(pe_6)) <= pe_setting\n  ) / NULLIF(COUNT(*) FILTER (WHERE pe_1 IS NOT NULL), 0)::NUMERIC, 1) AS value\n  FROM public.ldi_data\n  WHERE \"time\" > NOW() - INTERVAL '1 hour'\n    AND factory IN (${factory:sqlstring})\n    AND mo IN (${mo:sqlstring})\n    AND eqp_id IN (${machine_id:sqlstring})\n),\nje_yield AS (\n  SELECT ROUND(100.0 * COUNT(*) FILTER (\n    WHERE GREATEST(ABS(je_1),ABS(je_2),ABS(je_3),ABS(je_4)) <= je_setting\n  ) / NULLIF(COUNT(*) FILTER (WHERE je_1 IS NOT NULL), 0)::NUMERIC, 1) AS value\n  FROM public.ldi_data\n  WHERE \"time\" > NOW() - INTERVAL '1 hour'\n    AND factory IN (${factory:sqlstring})\n    AND mo IN (${mo:sqlstring})\n    AND eqp_id IN (${machine_id:sqlstring})\n),\npe_prev AS (\n  SELECT ROUND(100.0 * COUNT(*) FILTER (\n    WHERE GREATEST(ABS(pe_1),ABS(pe_2),ABS(pe_3),ABS(pe_4),ABS(pe_5),ABS(pe_6)) <= pe_setting\n  ) / NULLIF(COUNT(*) FILTER (WHERE pe_1 IS NOT NULL), 0)::NUMERIC, 1) AS value\n  FROM public.ldi_data\n  WHERE \"time\" BETWEEN NOW() - INTERVAL '2 hours' AND NOW() - INTERVAL '1 hour'\n    AND factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring})\n),\nje_prev AS (\n  SELECT ROUND(100.0 * COUNT(*) FILTER (\n    WHERE GREATEST(ABS(je_1),ABS(je_2),ABS(je_3),ABS(je_4)) <= je_setting\n  ) / NULLIF(COUNT(*) FILTER (WHERE je_1 IS NOT NULL), 0)::NUMERIC, 1) AS value\n  FROM public.ldi_data\n  WHERE \"time\" BETWEEN NOW() - INTERVAL '2 hours' AND NOW() - INTERVAL '1 hour'\n    AND factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring})\n)\nSELECT\n  COALESCE(LEAST(py.value, jy.value), py.value, jy.value) AS value,\n  ROUND(\n    ((COALESCE(LEAST(py.value, jy.value), py.value, jy.value)\n      - COALESCE(LEAST(pp.value, jp.value), pp.value, jp.value))\n     / NULLIF(COALESCE(LEAST(pp.value, jp.value), pp.value, jp.value), 0)::NUMERIC\n     * 100)::NUMERIC, 1\n  ) AS \"Delta %\"\nFROM pe_yield py, je_yield jy, pe_prev pp, je_prev jp",
           "format": "table"
         }
       ],
-      "description": "Estimated Yield: percentage of samples where max|PE| <= pe_setting (within tolerance)."
+      "description": "Fleet-wide yield: percent of samples passing both PE and JE limits (worst-case). Higher is better. 24h rolling fleet KPI."
     },
     {
       "id": 1,
@@ -249,7 +265,7 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 2,
+        "y": 3,
         "w": 8,
         "h": 4
       },
@@ -261,11 +277,11 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": null
               },
               {
-                "color": "#22c55e",
+                "color": "#22C55E",
                 "value": 8
               }
             ]
@@ -330,10 +346,10 @@
           "values": false
         },
         "text": {
-          "valueSize": 48,
-          "titleSize": 14
+          "valueSize": 28,
+          "titleSize": 12
         },
-        "noValue": "NO_DATA",
+        "noValue": "NO STATUS",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -350,18 +366,18 @@
           "format": "table"
         }
       ],
-      "description": "Count of machines with state=true (powered on and available). Red < 8, Green >= 8 of 10."
+      "description": "Machines currently powered on and producing. Higher is better. Red below 8 of 10."
     },
     {
       "id": 20,
-      "title": "◉ Machine Count (Fleet)",
+      "title": "◉ Fleet Status",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 16,
-        "y": 2,
+        "y": 3,
         "w": 8,
         "h": 4
       },
@@ -393,10 +409,10 @@
           "values": false
         },
         "text": {
-          "valueSize": 40,
+          "valueSize": 36,
           "titleSize": 14
         },
-        "noValue": "NO_DATA",
+        "noValue": "NO DATA",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -409,11 +425,11 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT (COUNT(*) FILTER (WHERE COALESCE(n_pe, 0) + COALESCE(n_je, 0) > 0))::TEXT || ' / ' || COUNT(*)::TEXT AS value FROM public.v_machine_spc_fleet;",
+          "rawSql": "SELECT\n  (SELECT COUNT(*)::INT FROM public.devices WHERE device_type='ldi' AND enabled)::TEXT\n  || ' reg / '\n  || (SELECT COUNT(*) FILTER (WHERE COALESCE(n_pe,0)+COALESCE(n_je,0)>0)::INT FROM public.v_machine_spc_fleet)::TEXT\n  || ' rpt' AS value",
           "format": "table"
         }
       ],
-      "description": "Reporting / Total registered+enabled LDI machines (public.devices, device_type='ldi'). \"Reporting\" = at least one PE or JE sample in the trailing 24h. The denominator is always the full fleet, so a machine that goes silent shows up as a gap here instead of disappearing from the dashboard. Backed by v_machine_spc_fleet (migration 042)."
+      "description": "Registered machines (full fleet) vs machines reporting data in last 24h. A gap indicates silent/offline equipment."
     },
     {
       "id": 10011,
@@ -437,7 +453,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 7,
+        "y": 8,
         "w": 6,
         "h": 4
       },
@@ -449,15 +465,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": null
               },
               {
-                "color": "#facc15",
+                "color": "#F59E0B",
                 "value": 1
               },
               {
-                "color": "#22c55e",
+                "color": "#22C55E",
                 "value": 1.33
               }
             ]
@@ -524,10 +540,10 @@
           "values": false
         },
         "text": {
-          "valueSize": 48,
-          "titleSize": 14
+          "valueSize": 28,
+          "titleSize": 12
         },
-        "noValue": "NO_DATA",
+        "noValue": "NO PRODUCTION",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -544,7 +560,7 @@
           "format": "table"
         }
       ],
-      "description": "Average real Cpk across machines with PE data in the selected filters. Assumes symmetric +/- pe_setting limits."
+      "description": "Average process capability index (Cpk) across all machines with PE data. Higher is better. Target: >= 1.33."
     },
     {
       "id": 18,
@@ -555,7 +571,7 @@
       },
       "gridPos": {
         "x": 6,
-        "y": 7,
+        "y": 8,
         "w": 6,
         "h": 4
       },
@@ -570,7 +586,8 @@
             "align": "center",
             "cellOptions": {
               "type": "auto"
-            }
+            },
+            "filterable": true
           },
           "mappings": []
         },
@@ -614,19 +631,42 @@
                   "mode": "absolute",
                   "steps": [
                     {
-                      "color": "#FF003C",
+                      "color": "#EF4444",
                       "value": null
                     },
                     {
-                      "color": "#facc15",
+                      "color": "#F59E0B",
                       "value": 1.33
                     },
                     {
-                      "color": "#22c55e",
+                      "color": "#22C55E",
                       "value": 1.67
                     }
                   ]
                 }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Machine"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Open Machine Snapshot for ${__value.text}",
+                    "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=${__value.text}&from=${__from}&to=${__to}",
+                    "targetBlank": false
+                  },
+                  {
+                    "title": "View RCA correlation (Engineering Analytics)",
+                    "url": "/d/ims-ldi-engineering-analytics/set2-engineering-analytics?var-machine_id=${__value.text}&from=${__from}&to=${__to}",
+                    "targetBlank": false
+                  }
+                ]
               }
             ]
           }
@@ -634,7 +674,7 @@
       },
       "options": {
         "showHeader": true,
-        "cellHeight": "lg",
+        "cellHeight": "sm",
         "footer": {
           "show": false
         },
@@ -650,7 +690,7 @@
           "format": "table"
         }
       ],
-      "description": "The single worst-performing machine fleet-wide (Worst Cpk = LEAST(Cpk PE, Cpk JE)) in the trailing 24h, shown by name so an executive can identify WHICH machine within 3 seconds without scrolling to the full ranking table on Engineering Analytics. Always reflects all enabled machines regardless of the Factory/MO/Machine filters above. Backed by v_machine_spc_fleet (migration 042)."
+      "description": "Single worst-performing machine fleet-wide by Cpk. Identify and remediate within 3 seconds. 24h rolling fleet KPI."
     },
     {
       "id": 19,
@@ -661,7 +701,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 7,
+        "y": 8,
         "w": 6,
         "h": 4
       },
@@ -675,15 +715,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": null
               },
               {
-                "color": "#facc15",
+                "color": "#F59E0B",
                 "value": 90
               },
               {
-                "color": "#22c55e",
+                "color": "#22C55E",
                 "value": 98
               }
             ]
@@ -712,10 +752,10 @@
           "values": false
         },
         "text": {
-          "valueSize": 48,
-          "titleSize": 14
+          "valueSize": 28,
+          "titleSize": 12
         },
-        "noValue": "NO_DATA",
+        "noValue": "NO PRODUCTION",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -732,7 +772,7 @@
           "format": "table"
         }
       ],
-      "description": "Fleet-wide JE pass rate over the trailing 24h: percent of individual je_1..je_4 samples within +/- je_setting, weighted by sample count across all machines (not an average of per-machine percentages). Backed by v_machine_spc_fleet (migration 042)."
+      "description": "Weighted JE pass rate across all machines. Higher is better. Target: >= 98%."
     },
     {
       "id": 2,
@@ -743,7 +783,7 @@
       },
       "gridPos": {
         "x": 18,
-        "y": 7,
+        "y": 8,
         "w": 6,
         "h": 4
       },
@@ -757,15 +797,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#22c55e",
+                "color": "#22C55E",
                 "value": null
               },
               {
-                "color": "#facc15",
+                "color": "#F59E0B",
                 "value": 80
               },
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": 100
               }
             ]
@@ -792,10 +832,10 @@
         },
         "showThresholdLabels": true,
         "showThresholdMarkers": true,
-        "noValue": "NO_DATA",
+        "noValue": "NO DATA",
         "text": {
-          "titleSize": 14,
-          "valueSize": 48
+          "titleSize": 12,
+          "valueSize": 28
         },
         "colorMode": "background",
         "graphMode": "area",
@@ -840,7 +880,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 12,
+        "y": 13,
         "w": 6,
         "h": 4
       },
@@ -852,15 +892,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": null
               },
               {
-                "color": "#facc15",
+                "color": "#F59E0B",
                 "value": 80
               },
               {
-                "color": "#22c55e",
+                "color": "#22C55E",
                 "value": 90
               }
             ]
@@ -927,10 +967,10 @@
           "values": false
         },
         "text": {
-          "valueSize": 48,
-          "titleSize": 14
+          "valueSize": 28,
+          "titleSize": 12
         },
-        "noValue": "NO_DATA",
+        "noValue": "NO STATUS",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -947,7 +987,7 @@
           "format": "table"
         }
       ],
-      "description": "Percent of the selected registered+enabled LDI fleet whose latest state in the last hour is true. Denominator is always the full selected machine registry (public.devices), not just machines that happened to report -- a silent machine now correctly counts against availability instead of disappearing from the ratio."
+      "description": "Percent of registered fleet currently online. Higher is better. Target: >= 90%."
     },
     {
       "id": 5,
@@ -958,7 +998,7 @@
       },
       "gridPos": {
         "x": 6,
-        "y": 12,
+        "y": 13,
         "w": 6,
         "h": 4
       },
@@ -970,11 +1010,11 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#22c55e",
+                "color": "#22C55E",
                 "value": null
               },
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": 1
               }
             ]
@@ -1003,10 +1043,10 @@
           "values": false
         },
         "text": {
-          "valueSize": 48,
-          "titleSize": 14
+          "valueSize": 28,
+          "titleSize": 12
         },
-        "noValue": "NO_DATA",
+        "noValue": "0",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -1023,7 +1063,7 @@
           "format": "table"
         }
       ],
-      "description": "Counts real alarm rows for selected machine IDs that match a Critical master code. Zero is valid because current log codes do not match the supplied master."
+      "description": "Count of Critical-class alarms in the alarm log. Lower is better. Zero is the goal."
     },
     {
       "id": 3,
@@ -1034,7 +1074,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 12,
+        "y": 13,
         "w": 6,
         "h": 4
       },
@@ -1046,23 +1086,23 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": null
               },
               {
-                "color": "#FF9100",
+                "color": "#F59E0B",
                 "value": 19
               },
               {
-                "color": "#22c55e",
+                "color": "#22C55E",
                 "value": 20
               },
               {
-                "color": "#FF9100",
+                "color": "#F59E0B",
                 "value": 24
               },
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": 25
               }
             ]
@@ -1128,10 +1168,10 @@
           "values": false
         },
         "text": {
-          "valueSize": 48,
-          "titleSize": 14
+          "valueSize": 28,
+          "titleSize": 12
         },
-        "noValue": "NO_DATA",
+        "noValue": "NO TELEMETRY",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -1148,7 +1188,7 @@
           "format": "table"
         }
       ],
-      "description": "Fleet-wide average temperature. Target 22±2°C. Red outside 20-24°C, Amber 20-24°C, Green 22-24°C."
+      "description": "Fleet average temperature. Target: 22 +/- 2 deg C. Lower is better outside range."
     },
     {
       "id": 4,
@@ -1159,7 +1199,7 @@
       },
       "gridPos": {
         "x": 18,
-        "y": 12,
+        "y": 13,
         "w": 6,
         "h": 4
       },
@@ -1171,23 +1211,23 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": null
               },
               {
-                "color": "#FF9100",
+                "color": "#F59E0B",
                 "value": 45
               },
               {
-                "color": "#22c55e",
+                "color": "#22C55E",
                 "value": 50
               },
               {
-                "color": "#FF9100",
+                "color": "#F59E0B",
                 "value": 60
               },
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": 65
               }
             ]
@@ -1253,10 +1293,10 @@
           "values": false
         },
         "text": {
-          "valueSize": 48,
-          "titleSize": 14
+          "valueSize": 28,
+          "titleSize": 12
         },
-        "noValue": "NO_DATA",
+        "noValue": "NO TELEMETRY",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -1273,7 +1313,7 @@
           "format": "table"
         }
       ],
-      "description": "Fleet-wide average humidity. Target 55±5%RH. Red outside 50-60%, Amber 50-60%, Green 55-60%."
+      "description": "Fleet average humidity. Target: 55 +/- 5% RH. Lower is better outside range."
     },
     {
       "id": 10001,
@@ -1297,7 +1337,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 17,
+        "y": 18,
         "w": 8,
         "h": 12
       },
@@ -1329,28 +1369,30 @@
       "description": "Latest production context per machine: job info + live physical parameters (temperature, humidity, scan_speed, thickness, resist_dosage, state).",
       "fieldConfig": {
         "defaults": {
-          "custom": {},
+          "custom": {
+            "filterable": true
+          },
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": null
               },
               {
-                "color": "#FF9100",
+                "color": "#F59E0B",
                 "value": 19
               },
               {
-                "color": "#22c55e",
+                "color": "#22C55E",
                 "value": 20
               },
               {
-                "color": "#FF9100",
+                "color": "#F59E0B",
                 "value": 24
               },
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": 25
               }
             ]
@@ -1372,6 +1414,10 @@
                     "targetBlank": false
                   }
                 ]
+              },
+              {
+                "id": "custom.width",
+                "value": 110
               }
             ]
           },
@@ -1488,22 +1534,22 @@
                     "type": "value",
                     "options": {
                       "CRIT": {
-                        "color": "#FF003C",
+                        "color": "#EF4444",
                         "index": 0,
                         "text": "CRIT"
                       },
                       "CRITICAL": {
-                        "color": "#FF003C",
+                        "color": "#EF4444",
                         "index": 0,
                         "text": "CRITICAL"
                       },
                       "WARN": {
-                        "color": "#FF9100",
+                        "color": "#F59E0B",
                         "index": 1,
                         "text": "WARN"
                       },
                       "WARNING": {
-                        "color": "#FF9100",
+                        "color": "#F59E0B",
                         "index": 1,
                         "text": "WARNING"
                       },
@@ -1535,22 +1581,22 @@
                     "type": "value",
                     "options": {
                       "CRIT": {
-                        "color": "#FF003C",
+                        "color": "#EF4444",
                         "index": 0,
                         "text": "CRIT"
                       },
                       "CRITICAL": {
-                        "color": "#FF003C",
+                        "color": "#EF4444",
                         "index": 0,
                         "text": "CRITICAL"
                       },
                       "WARN": {
-                        "color": "#FF9100",
+                        "color": "#F59E0B",
                         "index": 1,
                         "text": "WARN"
                       },
                       "WARNING": {
-                        "color": "#FF9100",
+                        "color": "#F59E0B",
                         "index": 1,
                         "text": "WARNING"
                       },
@@ -1576,20 +1622,140 @@
                 "value": true
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Job (MO)"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 120
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Part (FPN)"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Layer"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 120
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Progress"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 70
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "temperature (°C)"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "humidity (%RH)"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "scan_speed (mm/s)"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "thickness (mm)"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 80
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "resist_dosage"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 80
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "state"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 70
+              }
+            ]
           }
         ]
       }
     },
     {
       "id": 7,
-      "title": "◈ temperature Compliance (22±2°C)",
+      "title": "◈ Temperature Compliance (22±2°C)",
       "type": "state-timeline",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 8,
-        "y": 17,
+        "y": 18,
         "w": 8,
         "h": 12
       },
@@ -1600,17 +1766,17 @@
               "type": "value",
               "options": {
                 "0": {
-                  "color": "#FF003C",
+                  "color": "#EF4444",
                   "index": 0,
                   "text": "CRIT"
                 },
                 "1": {
-                  "color": "#FF9100",
+                  "color": "#F59E0B",
                   "index": 1,
                   "text": "WARN"
                 },
                 "2": {
-                  "color": "#00F2FE",
+                  "color": "#22C55E",
                   "index": 2,
                   "text": "OK"
                 }
@@ -1621,15 +1787,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": null
               },
               {
-                "color": "#FF9100",
+                "color": "#F59E0B",
                 "value": 1
               },
               {
-                "color": "#00F2FE",
+                "color": "#22C55E",
                 "value": 2
               }
             ]
@@ -1669,18 +1835,18 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "description": "3-color compliance matrix per machine. Green 20-24°C, Amber 19-25°C, Red outside."
+      "description": "Per-machine temperature compliance over time. Green = in spec (20-24C). No scrolling needed at 720p."
     },
     {
       "id": 8,
-      "title": "◈ humidity Compliance (55±5%)",
+      "title": "◈ Humidity Compliance (55±5%)",
       "type": "state-timeline",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 16,
-        "y": 17,
+        "y": 18,
         "w": 8,
         "h": 12
       },
@@ -1691,17 +1857,17 @@
               "type": "value",
               "options": {
                 "0": {
-                  "color": "#FF003C",
+                  "color": "#EF4444",
                   "index": 0,
                   "text": "CRIT"
                 },
                 "1": {
-                  "color": "#FF9100",
+                  "color": "#F59E0B",
                   "index": 1,
                   "text": "WARN"
                 },
                 "2": {
-                  "color": "#00F2FE",
+                  "color": "#22C55E",
                   "index": 2,
                   "text": "OK"
                 }
@@ -1712,15 +1878,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": null
               },
               {
-                "color": "#FF9100",
+                "color": "#F59E0B",
                 "value": 1
               },
               {
-                "color": "#00F2FE",
+                "color": "#22C55E",
                 "value": 2
               }
             ]
@@ -1760,7 +1926,7 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "description": "3-color compliance matrix per machine. Green 50-60%, Amber 45-65%, Red outside."
+      "description": "Per-machine humidity compliance over time. Green = in spec (50-60% RH). No scrolling needed at 720p."
     },
     {
       "id": 10002,
@@ -1784,7 +1950,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 30,
+        "y": 31,
         "w": 8,
         "h": 10
       },
@@ -1898,7 +2064,7 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "description": "Dual Y-axis: scan_speed (left, mm/s) and air_vacuum (right, kPa) per machine."
+      "description": "Scan speed (left axis) and air vacuum (right axis) per machine. Outliers indicate process drift."
     },
     {
       "id": 10,
@@ -1909,7 +2075,7 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 30,
+        "y": 31,
         "w": 8,
         "h": 10
       },
@@ -2023,7 +2189,7 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "description": "Dual Y-axis: thickness (left, mm) and resist_dosage (right, mJ/cm²) per machine."
+      "description": "Resist thickness and dosage per machine. Outliers indicate coating issues."
     },
     {
       "id": 11,
@@ -2034,7 +2200,7 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 30,
+        "y": 31,
         "w": 8,
         "h": 10
       },
@@ -2140,7 +2306,7 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "description": "XY calibration drift. High-precision (6 decimals) monitoring of scale_x and scale_y ratios. Drift from 1.0 indicates lens magnification error."
+      "description": "Scale X and Y alignment per machine. Outliers indicate mechanical drift."
     },
     {
       "id": 10003,
@@ -2164,7 +2330,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 41,
+        "y": 42,
         "w": 12,
         "h": 8
       },
@@ -2209,7 +2375,7 @@
           "format": "time_series"
         }
       ],
-      "description": "Calculated value from total_time divided by total_board. Confirm the source definition of total_time before treating this as authoritative cycle time."
+      "description": "Distribution of calculated processing time per board. Clusters indicate consistent throughput."
     },
     {
       "id": 13,
@@ -2220,7 +2386,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 41,
+        "y": 42,
         "w": 12,
         "h": 8
       },
@@ -2249,23 +2415,23 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": null
               },
               {
-                "color": "#FF9100",
+                "color": "#F59E0B",
                 "value": -3
               },
               {
-                "color": "#22c55e",
+                "color": "#22C55E",
                 "value": -2
               },
               {
-                "color": "#FF9100",
+                "color": "#F59E0B",
                 "value": 2
               },
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": 3
               }
             ]
@@ -2301,7 +2467,7 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "description": "3-sigma Z-Score on temperature per machine. Green ±2 (normal), Amber 2.5 (watch), Red 3+ (anomaly)."
+      "description": "Temperature Z-score per machine. Values > 2 or < -2 indicate statistically significant deviation."
     },
     {
       "id": 10004,
@@ -2325,7 +2491,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 50,
+        "y": 51,
         "w": 24,
         "h": 12
       },
@@ -2356,7 +2522,9 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "custom": {
+            "filterable": true
+          }
         },
         "overrides": [
           {
@@ -2372,22 +2540,22 @@
                     "type": "value",
                     "options": {
                       "CRIT": {
-                        "color": "#FF003C",
+                        "color": "#EF4444",
                         "index": 0,
                         "text": "CRIT"
                       },
                       "CRITICAL": {
-                        "color": "#FF003C",
+                        "color": "#EF4444",
                         "index": 0,
                         "text": "CRITICAL"
                       },
                       "WARN": {
-                        "color": "#FF9100",
+                        "color": "#F59E0B",
                         "index": 1,
                         "text": "WARN"
                       },
                       "WARNING": {
-                        "color": "#FF9100",
+                        "color": "#F59E0B",
                         "index": 1,
                         "text": "WARNING"
                       },
@@ -2525,22 +2693,22 @@
                     "type": "value",
                     "options": {
                       "CRIT": {
-                        "color": "#FF003C",
+                        "color": "#EF4444",
                         "index": 0,
                         "text": "CRIT"
                       },
                       "CRITICAL": {
-                        "color": "#FF003C",
+                        "color": "#EF4444",
                         "index": 0,
                         "text": "CRITICAL"
                       },
                       "WARN": {
-                        "color": "#FF9100",
+                        "color": "#F59E0B",
                         "index": 1,
                         "text": "WARN"
                       },
                       "WARNING": {
-                        "color": "#FF9100",
+                        "color": "#F59E0B",
                         "index": 1,
                         "text": "WARNING"
                       },
@@ -2569,7 +2737,7 @@
           }
         ]
       },
-      "description": "Latest real alarm rows for selected machine IDs, independent of telemetry time because the exports cover different dates."
+      "description": "Full alarm history for selected machines and time range. Sort by date to find root causes."
     },
     {
       "id": 10006,
@@ -2594,7 +2762,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 63,
+        "y": 64,
         "w": 24,
         "h": 8
       },
@@ -2622,7 +2790,8 @@
             "align": "center",
             "cellOptions": {
               "type": "auto"
-            }
+            },
+            "filterable": true
           },
           "mappings": [],
           "unit": "none",
@@ -2691,15 +2860,15 @@
                   "mode": "absolute",
                   "steps": [
                     {
-                      "color": "#FF003C",
+                      "color": "#EF4444",
                       "value": null
                     },
                     {
-                      "color": "#FF9100",
+                      "color": "#F59E0B",
                       "value": 1
                     },
                     {
-                      "color": "#22c55e",
+                      "color": "#22C55E",
                       "value": 2
                     }
                   ]
@@ -2730,7 +2899,7 @@
                         "text": "OK"
                       },
                       "LOW SAMPLE (n<30)": {
-                        "color": "#FF003C",
+                        "color": "#EF4444",
                         "text": "LOW SAMPLE (n<30)"
                       }
                     }
@@ -2741,7 +2910,7 @@
           }
         ]
       },
-      "description": "Fleet-wide RCA lift summary, rolling 24h, using v_ldi_alarm_category (migration 036) and the extended v_ldi_alarm_context flags (migration 045: split thermal/humidity, added MOTION). Same lift methodology as Engineering Analytics. EXPOSURE not shown (no matching alarm code exists yet). MOTION reads 0% on current mock data (scan_speed is constant per machine, no real overspeed events)."
+      "description": "Alarms correlated with production deviations. Higher lift = stronger causal signal. Hide rows with sample < 30."
     }
   ],
   "style": "dark",
