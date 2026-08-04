@@ -365,61 +365,108 @@ CREATE INDEX IF NOT EXISTS ldi_alarm_log_logdate_idx
 -- LDI SPC VIEWS (Process Capability & Stability)
 -- ══════════════════════════════════════════════════════════════
 
--- Machine ranking by Cpk (process capability index)
+-- Machine ranking by Cpk (process capability index).
+-- pe_base/je_base are independent (each filtered on its own setting
+-- column) and FULL OUTER JOINed, so PE-only, JE-only, and PE+JE machines
+-- all surface — a shared base filtered on pe_1 previously starved
+-- JE-only machines of any quality metric. mu/sigma come from the signed,
+-- unpivoted pe_1..pe_6 / je_1..je_4 samples (not GREATEST(ABS(...))),
+-- so the two-sided LEAST() Cpk formula below is a real two-sided Cpk
+-- rather than always resolving to one-sided Cpu. See migration 041.
 CREATE OR REPLACE VIEW public.v_machine_spc_ranking AS
-WITH base AS (
+WITH pe_base AS (
     SELECT eqp_id, factory, mo, fpn, layer_name,
-           GREATEST(ABS(COALESCE(pe_1,0)), ABS(COALESCE(pe_2,0)),
-                     ABS(COALESCE(pe_3,0)), ABS(COALESCE(pe_4,0)),
-                     ABS(COALESCE(pe_5,0)), ABS(COALESCE(pe_6,0))) AS max_pe,
-           COALESCE(pe_setting, 25.0) AS pe_val,
-           GREATEST(ABS(COALESCE(je_1,0)), ABS(COALESCE(je_2,0)),
-                     ABS(COALESCE(je_3,0)), ABS(COALESCE(je_4,0))) AS max_je,
-           COALESCE(je_setting, 25.0) AS je_val
+           pe_1, pe_2, pe_3, pe_4, pe_5, pe_6,
+           COALESCE(pe_setting, 25.0) AS pe_val
     FROM public.ldi_data
     WHERE pe_1 IS NOT NULL
       AND COALESCE(pe_setting, 0) > 2.0
       AND "time" > (SELECT MAX("time") - INTERVAL '2 hours' FROM public.ldi_data)
 ),
+pe_samples AS (
+    SELECT eqp_id, factory, mo, fpn, layer_name, pe_val, v.pe
+    FROM pe_base
+    CROSS JOIN LATERAL (VALUES (pe_1),(pe_2),(pe_3),(pe_4),(pe_5),(pe_6)) v(pe)
+    WHERE v.pe IS NOT NULL
+),
 pe_stats AS (
     SELECT eqp_id, factory, mo, fpn, layer_name,
-           AVG(max_pe) AS mu, STDDEV(max_pe) AS sigma,
+           AVG(pe) AS mu, STDDEV(pe) AS sigma,
            AVG(pe_val) AS setting_val, COUNT(*) AS sample_count
-    FROM base GROUP BY eqp_id, factory, mo, fpn, layer_name
+    FROM pe_samples GROUP BY eqp_id, factory, mo, fpn, layer_name
+),
+pe_capability AS (
+    SELECT *,
+           setting_val / NULLIF(3 * sigma, 0) AS cp,
+           LEAST((setting_val - mu) / NULLIF(3 * sigma, 0),
+                 (mu + setting_val) / NULLIF(3 * sigma, 0)) AS cpk
+    FROM pe_stats
+),
+je_base AS (
+    SELECT eqp_id, factory, mo, fpn, layer_name,
+           je_1, je_2, je_3, je_4,
+           COALESCE(je_setting, 25.0) AS je_val
+    FROM public.ldi_data
+    WHERE je_1 IS NOT NULL
+      AND COALESCE(je_setting, 0) > 2.0
+      AND "time" > (SELECT MAX("time") - INTERVAL '2 hours' FROM public.ldi_data)
+),
+je_samples AS (
+    SELECT eqp_id, factory, mo, fpn, layer_name, je_val, v.je
+    FROM je_base
+    CROSS JOIN LATERAL (VALUES (je_1),(je_2),(je_3),(je_4)) v(je)
+    WHERE v.je IS NOT NULL
 ),
 je_stats AS (
     SELECT eqp_id, factory, mo, fpn, layer_name,
-           AVG(max_je) AS mu, STDDEV(max_je) AS sigma,
-           AVG(je_val) AS setting_val
-    FROM base WHERE max_je > 0 GROUP BY eqp_id, factory, mo, fpn, layer_name
+           AVG(je) AS mu, STDDEV(je) AS sigma,
+           AVG(je_val) AS setting_val, COUNT(*) AS sample_count
+    FROM je_samples GROUP BY eqp_id, factory, mo, fpn, layer_name
+),
+je_capability AS (
+    SELECT *,
+           setting_val / NULLIF(3 * sigma, 0) AS cp,
+           LEAST((setting_val - mu) / NULLIF(3 * sigma, 0),
+                 (mu + setting_val) / NULLIF(3 * sigma, 0)) AS cpk
+    FROM je_stats
 )
-SELECT p.eqp_id, p.factory, p.mo, p.fpn, p.layer_name, p.sample_count,
+SELECT COALESCE(p.eqp_id, j.eqp_id) AS eqp_id,
+       COALESCE(p.factory, j.factory) AS factory,
+       COALESCE(p.mo, j.mo) AS mo,
+       COALESCE(p.fpn, j.fpn) AS fpn,
+       COALESCE(p.layer_name, j.layer_name) AS layer_name,
+       p.sample_count,
        ROUND(p.mu::NUMERIC, 3) AS mean_pe,
        ROUND(p.sigma::NUMERIC, 3) AS stddev_pe,
-       ROUND((p.setting_val * 2 / NULLIF(6 * p.sigma, 0))::NUMERIC, 3) AS cp,
-       ROUND(LEAST((p.setting_val - p.mu) / NULLIF(3 * p.sigma, 0), (p.mu - (-p.setting_val)) / NULLIF(3 * p.sigma, 0))::NUMERIC, 3) AS cpk,
+       ROUND(p.cp::NUMERIC, 3) AS cp,
+       ROUND(p.cpk::NUMERIC, 3) AS cpk,
        CASE
-           WHEN LEAST((p.setting_val - p.mu) / NULLIF(3 * p.sigma, 0), (p.mu - (-p.setting_val)) / NULLIF(3 * p.sigma, 0)) >= 2.0 THEN 'World Class'
-           WHEN LEAST((p.setting_val - p.mu) / NULLIF(3 * p.sigma, 0), (p.mu - (-p.setting_val)) / NULLIF(3 * p.sigma, 0)) >= 1.67 THEN 'Excellent'
-           WHEN LEAST((p.setting_val - p.mu) / NULLIF(3 * p.sigma, 0), (p.mu - (-p.setting_val)) / NULLIF(3 * p.sigma, 0)) >= 1.33 THEN 'Capable'
-           WHEN LEAST((p.setting_val - p.mu) / NULLIF(3 * p.sigma, 0), (p.mu - (-p.setting_val)) / NULLIF(3 * p.sigma, 0)) >= 1.0 THEN 'Marginally Capable'
+           WHEN p.cpk IS NULL THEN NULL
+           WHEN p.cpk >= 2.0 THEN 'World Class'
+           WHEN p.cpk >= 1.67 THEN 'Excellent'
+           WHEN p.cpk >= 1.33 THEN 'Capable'
+           WHEN p.cpk >= 1.0 THEN 'Marginally Capable'
            ELSE 'Not Capable'
        END AS capability_class,
+       j.sample_count AS sample_count_je,
        ROUND(j.mu::NUMERIC, 3) AS mean_je,
        ROUND(j.sigma::NUMERIC, 3) AS stddev_je,
-       ROUND((j.setting_val * 2 / NULLIF(6 * j.sigma, 0))::NUMERIC, 3) AS cp_je,
-       ROUND(LEAST((j.setting_val - j.mu) / NULLIF(3 * j.sigma, 0), (j.mu - (-j.setting_val)) / NULLIF(3 * j.sigma, 0))::NUMERIC, 3) AS cpk_je,
+       ROUND(j.cp::NUMERIC, 3) AS cp_je,
+       ROUND(j.cpk::NUMERIC, 3) AS cpk_je,
        CASE
-           WHEN LEAST((j.setting_val - j.mu) / NULLIF(3 * j.sigma, 0), (j.mu - (-j.setting_val)) / NULLIF(3 * j.sigma, 0)) >= 2.0 THEN 'World Class'
-           WHEN LEAST((j.setting_val - j.mu) / NULLIF(3 * j.sigma, 0), (j.mu - (-j.setting_val)) / NULLIF(3 * j.sigma, 0)) >= 1.67 THEN 'Excellent'
-           WHEN LEAST((j.setting_val - j.mu) / NULLIF(3 * j.sigma, 0), (j.mu - (-j.setting_val)) / NULLIF(3 * j.sigma, 0)) >= 1.33 THEN 'Capable'
-           WHEN LEAST((j.setting_val - j.mu) / NULLIF(3 * j.sigma, 0), (j.mu - (-j.setting_val)) / NULLIF(3 * j.sigma, 0)) >= 1.0 THEN 'Marginally Capable'
+           WHEN j.cpk IS NULL THEN NULL
+           WHEN j.cpk >= 2.0 THEN 'World Class'
+           WHEN j.cpk >= 1.67 THEN 'Excellent'
+           WHEN j.cpk >= 1.33 THEN 'Capable'
+           WHEN j.cpk >= 1.0 THEN 'Marginally Capable'
            ELSE 'Not Capable'
        END AS capability_class_je
-FROM pe_stats p
-LEFT JOIN je_stats j ON p.eqp_id = j.eqp_id AND p.factory = j.factory AND p.mo = j.mo
-    AND p.fpn = j.fpn AND p.layer_name = j.layer_name
-WHERE p.sigma > 0 ORDER BY cpk DESC;
+FROM pe_capability p
+FULL OUTER JOIN je_capability j
+    ON p.eqp_id = j.eqp_id AND p.factory = j.factory AND p.mo = j.mo
+   AND p.fpn = j.fpn AND p.layer_name = j.layer_name
+WHERE COALESCE(p.sigma, j.sigma) > 0
+ORDER BY cpk DESC NULLS LAST;
 
 -- Process stability index (0-100 composite)
 CREATE OR REPLACE VIEW public.v_process_stability AS

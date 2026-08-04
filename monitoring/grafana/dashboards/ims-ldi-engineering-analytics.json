@@ -1283,7 +1283,7 @@
     {
       "id": 14,
       "title": "\u25c9 Alarm \u2194 Process Correlation (RCA Truth Test)",
-      "type": "stat",
+      "type": "table",
       "gridPos": {
         "h": 12,
         "w": 24,
@@ -1297,28 +1297,17 @@
       "targets": [
         {
           "format": "table",
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nSELECT 'THERMAL (81501)' AS \"Alarm Category\", ROUND((100.0*COUNT(*) FILTER (WHERE flag_temp_out_of_spec) / NULLIF(COUNT(*), 0))::NUMERIC, 1) AS \"Correlation %\", COUNT(*) AS \"Event Count\" FROM v_ldi_alarm_context WHERE errorcode = '81501'\nUNION ALL\nSELECT 'VACUUM (81101/02)', ROUND((100.0*COUNT(*) FILTER (WHERE flag_vac_out_of_spec) / NULLIF(COUNT(*), 0))::NUMERIC, 1) AS \"Correlation %\", COUNT(*) AS \"Event Count\" FROM v_ldi_alarm_context WHERE errorcode IN ('81101','81102')\nUNION ALL\nSELECT 'ALIGNMENT (812xx)', ROUND((100.0*COUNT(*) FILTER (WHERE flag_pe_out_of_spec) / NULLIF(COUNT(*), 0))::NUMERIC, 1) AS \"Correlation %\", COUNT(*) AS \"Event Count\" FROM v_ldi_alarm_context WHERE errorcode IN ('81201','81203','81204')",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nWITH alarm_ctx AS (\n  SELECT * FROM v_ldi_alarm_context\n),\nbaseline AS (\n  SELECT\n    ROUND((100.0*COUNT(*) FILTER (WHERE temperature < 20 OR temperature > 24 OR humidity < 50 OR humidity > 60) / NULLIF(COUNT(*), 0))::NUMERIC, 1) AS temp_pct,\n    ROUND((100.0*COUNT(*) FILTER (WHERE air_vacuum > -50 OR air_vacuum < -95) / NULLIF(COUNT(*), 0))::NUMERIC, 1) AS vac_pct,\n    ROUND((100.0*COUNT(*) FILTER (WHERE ABS(pe_1) > 10 OR ABS(je_1) > 10) / NULLIF(COUNT(*), 0))::NUMERIC, 1) AS pe_pct\n  FROM public.ldi_data\n),\ncats AS (\n  SELECT 'THERMAL (81501)' AS cat, ROUND((100.0*COUNT(*) FILTER (WHERE flag_temp_out_of_spec) / NULLIF(COUNT(*), 0))::NUMERIC, 1) AS alarm_pct, COUNT(*) AS n FROM alarm_ctx WHERE errorcode = '81501'\n  UNION ALL\n  SELECT 'VACUUM (81101/02)', ROUND((100.0*COUNT(*) FILTER (WHERE flag_vac_out_of_spec) / NULLIF(COUNT(*), 0))::NUMERIC, 1), COUNT(*) FROM alarm_ctx WHERE errorcode IN ('81101','81102')\n  UNION ALL\n  SELECT 'ALIGNMENT (812xx)', ROUND((100.0*COUNT(*) FILTER (WHERE flag_pe_out_of_spec) / NULLIF(COUNT(*), 0))::NUMERIC, 1), COUNT(*) FROM alarm_ctx WHERE errorcode IN ('81201','81203','81204')\n)\nSELECT c.cat AS \"Alarm Category\",\n       c.alarm_pct AS \"Alarm-Window %\",\n       CASE c.cat WHEN 'THERMAL (81501)' THEN b.temp_pct WHEN 'VACUUM (81101/02)' THEN b.vac_pct ELSE b.pe_pct END AS \"Baseline %\",\n       ROUND((c.alarm_pct / NULLIF(CASE c.cat WHEN 'THERMAL (81501)' THEN b.temp_pct WHEN 'VACUUM (81101/02)' THEN b.vac_pct ELSE b.pe_pct END, 0))::NUMERIC, 2) AS \"Lift\",\n       c.n AS \"Event Count\",\n       CASE WHEN c.n < 30 THEN 'LOW SAMPLE (n<30)' ELSE 'OK' END AS \"Confidence\"\nFROM cats c CROSS JOIN baseline b\nORDER BY \"Lift\" DESC NULLS LAST",
           "refId": "A"
         }
       ],
       "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "center",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "/^Correlation %$/",
-          "values": false
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
         },
-        "textMode": "auto",
-        "noValue": "0",
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
+        "noValue": "-"
       },
       "fieldConfig": {
         "defaults": {
@@ -1326,36 +1315,89 @@
             "mode": "thresholds"
           },
           "custom": {
-            "gradientMode": "opacity",
-            "lineInterpolation": "smooth",
-            "fillOpacity": 15,
-            "lineWidth": 2
+            "align": "center",
+            "cellOptions": {
+              "type": "auto"
+            }
           },
           "mappings": [],
-          "max": 100,
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
+          "unit": "none",
+          "decimals": 1
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Alarm-Window %"
+            },
+            "properties": [
+              { "id": "unit", "value": "percent" }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Baseline %"
+            },
+            "properties": [
+              { "id": "unit", "value": "percent" }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Event Count"
+            },
+            "properties": [
+              { "id": "unit", "value": "none" },
+              { "id": "decimals", "value": 0 }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Lift"
+            },
+            "properties": [
+              { "id": "decimals", "value": 2 },
+              { "id": "custom.cellOptions", "value": { "type": "color-background" } },
               {
-                "color": "#FF003C",
-                "value": null
-              },
-              {
-                "color": "#ff9100",
-                "value": 50
-              },
-              {
-                "color": "#00ff87",
-                "value": 80
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "#FF003C", "value": null },
+                    { "color": "#ff9100", "value": 1 },
+                    { "color": "#00ff87", "value": 2 }
+                  ]
+                }
               }
             ]
           },
-          "unit": "percent"
-        },
-        "overrides": []
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Confidence"
+            },
+            "properties": [
+              { "id": "custom.cellOptions", "value": { "type": "color-background" } },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "OK": { "color": "#22C55E", "text": "OK" },
+                      "LOW SAMPLE (n<30)": { "color": "#EF4444", "text": "LOW SAMPLE (n<30)" }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
       },
-      "description": "Correlation between Alarm occurrences and actual Process anomalies out of spec (RCA Validation)"
+      "description": "RCA Truth Test: Alarm-Window % (rate of out-of-spec readings within 5min before this alarm) vs Baseline % (out-of-spec rate across all data, alarm or not). Lift = Alarm-Window % / Baseline % \u2014 lift > 2 means the alarm genuinely correlates with the process anomaly; lift \u2248 1 means no real relationship (threshold or sensor likely miscalibrated); lift < 1 means the correlation runs backwards and needs investigation. Confidence flags categories with fewer than 30 alarm events, where Lift is not statistically meaningful yet."
     }
   ],
   "fiscalYearStartMonth": 0,
