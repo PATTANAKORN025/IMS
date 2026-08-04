@@ -3000,7 +3000,7 @@
                         "text": "OK"
                       },
                       "LOW SAMPLE (n<30)": {
-                        "color": "#FF003C",
+                        "color": "#FF9100",
                         "text": "LOW SAMPLE (n<30)"
                       }
                     }
