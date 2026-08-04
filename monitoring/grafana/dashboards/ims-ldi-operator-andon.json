@@ -430,7 +430,7 @@
         "x": 0,
         "y": 8,
         "w": 12,
-        "h": 3
+        "h": 6
       },
       "fieldConfig": {
         "defaults": {
@@ -521,7 +521,7 @@
         "x": 12,
         "y": 8,
         "w": 12,
-        "h": 3
+        "h": 6
       },
       "fieldConfig": {
         "defaults": {
@@ -610,9 +610,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 11,
+        "y": 14,
         "w": 24,
-        "h": 2
+        "h": 1
       },
       "options": {
         "showHeader": true,
@@ -635,11 +635,11 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT DISTINCT ON (eqp_id) eqp_id AS \"Machine\", mo AS \"Job (MO)\", fpn AS \"Part (FPN)\", layer_name AS \"Layer\", (board_no::TEXT || '/' || total_board::TEXT) AS \"Progress\" FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) ORDER BY eqp_id, time DESC LIMIT 50",
+          "rawSql": "WITH machines AS (\n  SELECT device_id AS eqp_id FROM public.devices\n  WHERE device_type='ldi' AND enabled AND device_id IN (${machine_id:sqlstring})\n),\nlatest AS (\n  SELECT DISTINCT ON (eqp_id) eqp_id, mo, fpn, layer_name, board_no, total_board\n  FROM public.ldi_data\n  WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND $__timeFilter(time)\n  ORDER BY eqp_id, time DESC\n)\nSELECT m.eqp_id AS \"Machine\", l.mo AS \"Job (MO)\", l.fpn AS \"Part (FPN)\", l.layer_name AS \"Layer\",\n       CASE WHEN l.eqp_id IS NULL THEN 'NO_DATA' ELSE (l.board_no::TEXT || '/' || l.total_board::TEXT) END AS \"Progress\"\nFROM machines m LEFT JOIN latest l ON l.eqp_id = m.eqp_id\nORDER BY m.eqp_id",
           "format": "table"
         }
       ],
-      "description": "Live Production: current MO, part, layer, and board progress per machine.",
+      "description": "Every registered+enabled LDI machine, LEFT JOINed from public.devices, so a machine with zero data in the selected window still shows a row (Progress = NO_DATA) instead of silently disappearing.",
       "fieldConfig": {
         "defaults": {
           "custom": {}
@@ -859,9 +859,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 13,
+        "y": 15,
         "w": 24,
-        "h": 3
+        "h": 1
       },
       "fieldConfig": {
         "defaults": {
