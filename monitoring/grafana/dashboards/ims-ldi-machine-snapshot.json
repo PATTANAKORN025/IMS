@@ -1,5 +1,5 @@
 {
-  "description": "360\u00b0 machine snapshot at the exact millisecond clicked from Process Timeline. Shows job context, physical variables, PE alignment, Cpk, and alarm proximity.",
+  "description": "360° machine snapshot at the exact millisecond clicked from Process Timeline. Shows job context, physical variables, PE alignment, Cpk, and alarm proximity.",
   "schemaVersion": 39,
   "fiscalYearStartMonth": 0,
   "liveNow": false,
@@ -156,7 +156,7 @@
     },
     {
       "id": 1,
-      "title": "\u25c8 Machine Context",
+      "title": "◈ Machine Context",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
@@ -552,7 +552,7 @@
     },
     {
       "id": 2,
-      "title": "\u25c9 temperature (\u00b0C)",
+      "title": "◉ temperature (°C)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -621,7 +621,7 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "\u2014",
+        "noValue": "—",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -642,7 +642,7 @@
     },
     {
       "id": 3,
-      "title": "\u25c9 humidity (%RH)",
+      "title": "◉ humidity (%RH)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -711,7 +711,7 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "\u2014",
+        "noValue": "—",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -732,7 +732,7 @@
     },
     {
       "id": 4,
-      "title": "\u25c9 air_vacuum (kPa)",
+      "title": "◉ air_vacuum (kPa)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -788,7 +788,7 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "\u2014",
+        "noValue": "—",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -809,7 +809,7 @@
     },
     {
       "id": 5,
-      "title": "\u25c9 scan_speed (mm/s)",
+      "title": "◉ scan_speed (mm/s)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -865,7 +865,7 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "\u2014",
+        "noValue": "—",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -886,7 +886,7 @@
     },
     {
       "id": 6,
-      "title": "\u25c9 thickness (mm)",
+      "title": "◉ thickness (mm)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -942,7 +942,7 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "\u2014",
+        "noValue": "—",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -963,7 +963,7 @@
     },
     {
       "id": 7,
-      "title": "\u25c9 resist_dosage (mJ/cm\u00b2)",
+      "title": "◉ resist_dosage (mJ/cm²)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -976,7 +976,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "suffix: mJ/cm\u00b2",
+          "unit": "suffix: mJ/cm²",
           "decimals": 2,
           "thresholds": {
             "mode": "absolute",
@@ -1019,7 +1019,7 @@
           "valueSize": 48,
           "titleSize": 14
         },
-        "noValue": "\u2014",
+        "noValue": "—",
         "textMode": "auto",
         "tooltip": {
           "mode": "single",
@@ -1040,7 +1040,7 @@
     },
     {
       "id": 8,
-      "title": "\u25c8 Position Error (PE1-PE6) + MAX|PE|",
+      "title": "◈ Position Error (PE1-PE6) + MAX|PE|",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
@@ -1073,7 +1073,7 @@
       "description": "Real PE values from the selected event. N/A means this machine/event did not provide PE data.",
       "fieldConfig": {
         "defaults": {
-          "unit": "suffix: \u00b5m",
+          "unit": "suffix: µm",
           "decimals": 3,
           "noValue": "N/A",
           "custom": {}
@@ -1398,7 +1398,7 @@
     },
     {
       "id": 9,
-      "title": "\u25c8 Process Capability from PE Samples",
+      "title": "◈ Process Capability from PE Samples",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
@@ -1747,8 +1747,8 @@
       }
     },
     {
-      "id": 10,
-      "title": "\u25c8 Alarm Context (\u00b15 min of clicked timestamp)",
+      "id": 17,
+      "title": "◈ Process Capability from JE Samples",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
@@ -1756,6 +1756,356 @@
       "gridPos": {
         "x": 0,
         "y": 36,
+        "w": 24,
+        "h": 10
+      },
+      "options": {
+        "showHeader": true,
+        "rowHeight": 0.8,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        },
+        "noValue": "-"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "WITH selected_machines AS (\n  SELECT DISTINCT eqp_id FROM public.ldi_data\n  WHERE ((${event_time_ms:sqlstring}::NUMERIC > 0 AND eqp_id=split_part(${clicked_series:sqlstring},' - ',1))\n    OR (${event_time_ms:sqlstring}::NUMERIC <= 0 AND eqp_id IN (${machine_id:sqlstring})))\n), je_samples AS (\n  SELECT d.eqp_id,d.je_setting,j.je FROM public.ldi_data d JOIN selected_machines sm ON sm.eqp_id=d.eqp_id\n  CROSS JOIN LATERAL (VALUES(d.je_1),(d.je_2),(d.je_3),(d.je_4)) j(je)\n  WHERE $__timeFilter(d.\"time\") AND j.je IS NOT NULL AND d.je_setting IS NOT NULL\n), stats AS (\n  SELECT eqp_id,COUNT(*) sample_count,AVG(je) mean_je,STDDEV_SAMP(je) stddev_je,AVG(je_setting) lim FROM je_samples GROUP BY eqp_id\n)\nSELECT sm.eqp_id AS \"Machine\",COALESCE(stats.sample_count,0) AS \"Samples\",ROUND(stats.mean_je::NUMERIC,2) AS \"Mean JE\",\n ROUND((lim/NULLIF(3*stddev_je, 0))::NUMERIC,2) AS \"Cp\",\n ROUND(LEAST((lim-mean_je)/NULLIF(3*stddev_je, 0),(mean_je+lim)/NULLIF(3*stddev_je,0))::NUMERIC,2) AS \"Cpk\"\nFROM selected_machines sm LEFT JOIN stats ON stats.eqp_id=sm.eqp_id\nLIMIT 1000;",
+          "format": "table"
+        }
+      ],
+      "description": "Process capability from real JE1-JE4 samples for the selected machine(s)/event. Mirrors the PE Process Capability table above for JE parity. Cpk >= 1.33 = Capable.",
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "N/A",
+          "unit": "none",
+          "decimals": 2,
+          "custom": {}
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Capability"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "World Class": {
+                        "color": "#22C55E",
+                        "text": "World Class"
+                      },
+                      "Excellent": {
+                        "color": "#22C55E",
+                        "text": "Excellent"
+                      },
+                      "Capable": {
+                        "color": "#FACC15",
+                        "text": "Capable"
+                      },
+                      "Marginally Capable": {
+                        "color": "#FACC15",
+                        "text": "Marginal"
+                      },
+                      "Not Capable": {
+                        "color": "#EF4444",
+                        "text": "Not Capable"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Timestamp"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              },
+              {
+                "id": "decimals",
+                "value": 6
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Time"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              },
+              {
+                "id": "decimals",
+                "value": 6
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Mean JE"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 75
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Samples"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 75
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Cp"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 70
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Cpk"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 70
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Machine"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 120
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "eqp_id"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Machine"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "layer_name"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Layer"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "mo"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Work Order (MO)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "alarm_code"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Alarm Code"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "alarm_msg"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Alarm Message"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "severity"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Severity"
+              },
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "CRIT": {
+                        "color": "#FF003C",
+                        "index": 0,
+                        "text": "CRIT"
+                      },
+                      "CRITICAL": {
+                        "color": "#FF003C",
+                        "index": 0,
+                        "text": "CRITICAL"
+                      },
+                      "WARN": {
+                        "color": "#FF9100",
+                        "index": 1,
+                        "text": "WARN"
+                      },
+                      "WARNING": {
+                        "color": "#FF9100",
+                        "index": 1,
+                        "text": "WARNING"
+                      },
+                      "OK": {
+                        "color": "#00F2FE",
+                        "index": 2,
+                        "text": "OK"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Severity"
+            },
+            "properties": [
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "CRIT": {
+                        "color": "#FF003C",
+                        "index": 0,
+                        "text": "CRIT"
+                      },
+                      "CRITICAL": {
+                        "color": "#FF003C",
+                        "index": 0,
+                        "text": "CRITICAL"
+                      },
+                      "WARN": {
+                        "color": "#FF9100",
+                        "index": 1,
+                        "text": "WARN"
+                      },
+                      "WARNING": {
+                        "color": "#FF9100",
+                        "index": 1,
+                        "text": "WARNING"
+                      },
+                      "OK": {
+                        "color": "#00F2FE",
+                        "index": 2,
+                        "text": "OK"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "logdate"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 10,
+      "title": "◈ Alarm Context (±5 min of clicked timestamp)",
+      "type": "table",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 46,
         "w": 24,
         "h": 10
       },
@@ -2004,7 +2354,7 @@
     },
     {
       "id": 11,
-      "title": "\u25c9 Raw Timestamp (precise)",
+      "title": "◉ Raw Timestamp (precise)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -2076,14 +2426,14 @@
     },
     {
       "id": 12,
-      "title": "\u25c8 Event Timeline around Selected Log ID (+/-5 min)",
+      "title": "◈ Event Timeline around Selected Log ID (+/-5 min)",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 0,
-        "y": 46,
+        "y": 56,
         "w": 24,
         "h": 14
       },
@@ -2330,7 +2680,7 @@
     },
     {
       "id": 16,
-      "title": "\u25c8 Judgment Error (JE1-JE4) + MAX|JE|",
+      "title": "◈ Judgment Error (JE1-JE4) + MAX|JE|",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
@@ -2363,7 +2713,7 @@
       "description": "Real JE values from the selected event with PASS/OUT OF SPEC evaluated against je_setting.",
       "fieldConfig": {
         "defaults": {
-          "unit": "suffix: \u00b5m",
+          "unit": "suffix: µm",
           "decimals": 3,
           "noValue": "N/A",
           "custom": {}
