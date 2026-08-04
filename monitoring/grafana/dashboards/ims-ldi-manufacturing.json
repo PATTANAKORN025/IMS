@@ -549,7 +549,7 @@
     {
       "id": 18,
       "title": "◉ Worst Cpk (Fleet, 24h)",
-      "type": "stat",
+      "type": "table",
       "datasource": {
         "uid": "timescaledb"
       },
@@ -563,56 +563,82 @@
         "defaults": {
           "unit": "short",
           "decimals": 2,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#FF003C",
-                "value": null
-              },
-              {
-                "color": "#facc15",
-                "value": 1.33
-              },
-              {
-                "color": "#22c55e",
-                "value": 1.67
-              }
-            ]
-          },
           "color": {
             "mode": "thresholds"
           },
           "custom": {
-            "gradientMode": "opacity",
-            "lineInterpolation": "smooth",
-            "fillOpacity": 15,
-            "lineWidth": 2
-          }
+            "align": "center",
+            "cellOptions": {
+              "type": "auto"
+            }
+          },
+          "mappings": []
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Machine"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#00F2FE"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Worst Cpk"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#FF003C",
+                      "value": null
+                    },
+                    {
+                      "color": "#facc15",
+                      "value": 1.33
+                    },
+                    {
+                      "color": "#22c55e",
+                      "value": 1.67
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
       },
       "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "center",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "/^value$/",
-          "values": false
+        "showHeader": true,
+        "cellHeight": "lg",
+        "footer": {
+          "show": false
         },
-        "text": {
-          "valueSize": 48,
-          "titleSize": 14
-        },
-        "noValue": "NO_DATA",
-        "textMode": "auto",
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
+        "noValue": "NO_DATA"
       },
       "targets": [
         {
@@ -620,11 +646,11 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(MIN(worst_cpk)::NUMERIC, 3) AS value FROM public.v_machine_spc_fleet WHERE worst_cpk IS NOT NULL;",
+          "rawSql": "SELECT eqp_id AS \"Machine\", ROUND(worst_cpk::NUMERIC, 2) AS \"Worst Cpk\"\nFROM public.v_machine_spc_fleet\nWHERE worst_cpk IS NOT NULL\nORDER BY worst_cpk ASC\nLIMIT 1;",
           "format": "table"
         }
       ],
-      "description": "Worst Cpk across the entire registered LDI fleet in the trailing 24h, where Worst Cpk per machine = LEAST(Cpk PE, Cpk JE). Always reflects all enabled machines regardless of the Factory/MO/Machine filters above — this is a fleet-wide floor, not a filtered view. Backed by v_machine_spc_fleet (migration 042)."
+      "description": "The single worst-performing machine fleet-wide (Worst Cpk = LEAST(Cpk PE, Cpk JE)) in the trailing 24h, shown by name so an executive can identify WHICH machine within 3 seconds without scrolling to the full ranking table on Engineering Analytics. Always reflects all enabled machines regardless of the Factory/MO/Machine filters above. Backed by v_machine_spc_fleet (migration 042)."
     },
     {
       "id": 19,
