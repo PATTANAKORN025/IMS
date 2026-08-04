@@ -1185,6 +1185,22 @@
                     }
                   ]
                 }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "special",
+                    "options": {
+                      "match": "null+nan",
+                      "result": {
+                        "color": "#6B7280",
+                        "text": "N/A",
+                        "index": 0
+                      }
+                    }
+                  }
+                ]
               }
             ]
           },
@@ -1211,8 +1227,12 @@
                         "text": "OK"
                       },
                       "LOW SAMPLE (n<30)": {
-                        "color": "#FF003C",
+                        "color": "#FF9100",
                         "text": "LOW SAMPLE (n<30)"
+                      },
+                      "NO_DATA": {
+                        "color": "#6B7280",
+                        "text": "NO_DATA"
                       }
                     }
                   }
@@ -1253,6 +1273,22 @@
               {
                 "id": "custom.width",
                 "value": 100
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "special",
+                    "options": {
+                      "match": "null+nan",
+                      "result": {
+                        "color": "#6B7280",
+                        "text": "N/A",
+                        "index": 0
+                      }
+                    }
+                  }
+                ]
               }
             ]
           },
@@ -1277,6 +1313,22 @@
               {
                 "id": "custom.width",
                 "value": 100
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "special",
+                    "options": {
+                      "match": "null+nan",
+                      "result": {
+                        "color": "#6B7280",
+                        "text": "N/A",
+                        "index": 0
+                      }
+                    }
+                  }
+                ]
               }
             ]
           },
@@ -1870,7 +1922,7 @@
                         "text": "OK"
                       },
                       "LOW SAMPLE (n<30)": {
-                        "color": "#FF003C",
+                        "color": "#FF9100",
                         "text": "LOW SAMPLE (n<30)"
                       }
                     }
