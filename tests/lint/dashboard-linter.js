@@ -31,13 +31,13 @@ const DASHBOARD_DIR = path.join(process.cwd(), 'monitoring', 'grafana', 'dashboa
 // h=5 is kept for pre-existing panels that predate that doc section.
 // Warn-only for now — most dashboards predate this rule and haven't been
 // migrated (see design roadmap); flip to `error` once they have been.
-const ALLOWED_HEIGHTS = [1, 4, 5, 8, 10, 16];
+const ALLOWED_HEIGHTS = [1, 4, 5, 6, 8, 10, 16];
 
 // Per-dashboard total-height ceiling (Check 14), keyed by dashboard uid.
 // Only kiosk/wall displays get a hard ceiling — analysis dashboards are
 // meant to be scrolled and are intentionally left unconstrained.
 const MAX_HEIGHT = {
-  'ims-ldi-operator-andon': 27, // factory-floor kiosk, near-zero scroll, 1080p
+  'ims-ldi-operator-andon': 20, // factory-floor kiosk, zero scroll at 720p (Phase 2 tile redesign)
 };
 
 let errors = 0;

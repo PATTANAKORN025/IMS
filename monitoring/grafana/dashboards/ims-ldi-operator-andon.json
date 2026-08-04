@@ -120,7 +120,7 @@
         "x": 0,
         "y": 1,
         "w": 6,
-        "h": 5
+        "h": 4
       },
       "fieldConfig": {
         "defaults": {
@@ -198,7 +198,7 @@
         "x": 6,
         "y": 1,
         "w": 6,
-        "h": 5
+        "h": 4
       },
       "fieldConfig": {
         "defaults": {
@@ -272,7 +272,7 @@
         "x": 12,
         "y": 1,
         "w": 6,
-        "h": 5
+        "h": 4
       },
       "fieldConfig": {
         "defaults": {
@@ -354,7 +354,7 @@
         "x": 18,
         "y": 1,
         "w": 6,
-        "h": 5
+        "h": 4
       },
       "fieldConfig": {
         "defaults": {
@@ -428,9 +428,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 6,
+        "y": 5,
         "w": 8,
-        "h": 8
+        "h": 4
       },
       "fieldConfig": {
         "defaults": {
@@ -464,11 +464,11 @@
                 "value": null
               },
               {
-                "color": "#facc15",
+                "color": "#FF9100",
                 "value": 1
               },
               {
-                "color": "#22c55e",
+                "color": "#00F2FE",
                 "value": 2
               }
             ]
@@ -500,7 +500,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH machines AS (\n  SELECT device_id AS eqp_id FROM public.devices WHERE device_type='ldi' AND enabled AND device_id IN (${machine_id:sqlstring})\n),\nbuckets AS (\n  SELECT generate_series(time_bucket('5 minutes', $__timeFrom()), time_bucket('5 minutes', $__timeTo()), INTERVAL '5 minutes') AS bucket_time\n),\ngrid AS (\n  SELECT m.eqp_id, b.bucket_time FROM machines m CROSS JOIN buckets b\n),\nactual AS (\n  SELECT eqp_id, time_bucket('5 minutes', time) AS bucket_time, BOOL_OR(state) AS any_running, COUNT(*) AS n\n  FROM public.ldi_data\n  WHERE $__timeFilter(time) AND factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring})\n  GROUP BY 1, 2\n)\nSELECT g.bucket_time AS time, g.eqp_id AS metric,\n  CASE WHEN a.n IS NULL OR a.n = 0 THEN 0\n       WHEN a.any_running THEN 2\n       ELSE 1 END AS value\nFROM grid g LEFT JOIN actual a ON a.eqp_id = g.eqp_id AND a.bucket_time = g.bucket_time\nORDER BY g.bucket_time ASC",
+          "rawSql": "WITH machines AS (\n  SELECT device_id AS eqp_id FROM public.devices WHERE device_type='ldi' AND enabled AND device_id IN (${machine_id:sqlstring})\n),\nbuckets AS (\n  SELECT generate_series(time_bucket('5 minutes', NOW() - INTERVAL '2 hours'), time_bucket('5 minutes', NOW()), INTERVAL '5 minutes') AS bucket_time\n),\ngrid AS (\n  SELECT m.eqp_id, b.bucket_time FROM machines m CROSS JOIN buckets b\n),\nactual AS (\n  SELECT eqp_id, time_bucket('5 minutes', time) AS bucket_time, BOOL_OR(state) AS any_running, COUNT(*) AS n\n  FROM public.ldi_data\n  WHERE $__timeFilter(time) AND factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring})\n  GROUP BY 1, 2\n)\nSELECT g.bucket_time AS time, g.eqp_id AS metric,\n  CASE WHEN a.n IS NULL OR a.n = 0 THEN 0\n       WHEN a.any_running THEN 2\n       ELSE 1 END AS value\nFROM grid g LEFT JOIN actual a ON a.eqp_id = g.eqp_id AND a.bucket_time = g.bucket_time\nORDER BY g.bucket_time ASC",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
@@ -516,9 +516,9 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 6,
+        "y": 5,
         "w": 8,
-        "h": 8
+        "h": 4
       },
       "fieldConfig": {
         "defaults": {
@@ -607,9 +607,9 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 6,
+        "y": 5,
         "w": 8,
-        "h": 8
+        "h": 4
       },
       "fieldConfig": {
         "defaults": {
@@ -698,9 +698,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 14,
+        "y": 9,
         "w": 24,
-        "h": 8
+        "h": 3
       },
       "options": {
         "showHeader": true,
@@ -947,9 +947,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 22,
+        "y": 12,
         "w": 24,
-        "h": 5
+        "h": 3
       },
       "fieldConfig": {
         "defaults": {
