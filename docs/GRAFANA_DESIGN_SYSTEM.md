@@ -1,6 +1,6 @@
 # IMS Grafana Design System
 
-> **เป้าหมาย:** ทำให้ dashboard ทั้งหมดของ IMS (NOC Overview, Engineering Drill-Down, Capacity Planning) มีมาตรฐานเดียวกัน แก้ที่นี่ที่เดียว ไม่ drift ข้ามไฟล์ และดูเป็นระบบ "ชุดเดียวกัน" ทันทีที่สลับหน้า
+> **เป้าหมาย:** ทำให้ dashboard ทั้งหมดของ IMS (NOC Overview, Engineering Drill-Down, Capacity Planning, และตั้งแต่ Phase 2 เป็นต้นไป — LDI Manufacturing, LDI Engineering Analytics & SPC, LDI Machine Snapshot, LDI Operator Andon Board, LDI Data Readiness) มีมาตรฐานเดียวกัน แก้ที่นี่ที่เดียว ไม่ drift ข้ามไฟล์ และดูเป็นระบบ "ชุดเดียวกัน" ทันทีที่สลับหน้า
 >
 > เอกสารนี้คือ **contract** ไม่ใช่คำแนะนำ — panel ใหม่ทุกตัวต้องผ่านกฎในนี้ก่อน merge
 
@@ -35,6 +35,23 @@
 - **ห้าม** ผูกสี fixed เข้ากับชื่อเครื่อง/series เฉพาะเจาะจง ยกเว้นกรณีเดียว: เครื่องจริงถาวรในโรงงานที่ต้องแยกด้วยสีคงที่ — ต้องประกาศ mapping ในภาคผนวกที่เดียว
 - แดง (`#EF4444`) ต้องแปลว่า critical **เสมอ** — ห้ามใช้แดงเป็นสี series เฉยๆ เพราะจะไปแย่งความหมายกับ alert
 - Forecast / regression / threshold reference ใช้ `#4A5568` (forecast) เส้นประเสมอ ไม่ใช่สีสดที่แข่งกับข้อมูลจริง
+
+### 2.1a LDI Kiosk Palette (ใช้เฉพาะ 5 LDI dashboards — Manufacturing, Engineering Analytics, Machine Snapshot, Operator Andon, Data Readiness)
+
+LDI dashboards ใช้ cyberpunk theme ที่แยกจาก §2.1 มาแต่แรก (พื้นหลัง `#030407`, Roboto Mono)
+และมี semantic mapping เดียวกันกับ §2.1 แต่คนละ hex — **ห้ามผสมสองชุดในไฟล์เดียวกัน**
+ถ้าแก้ panel ใน 5 ไฟล์นี้ ใช้ตารางนี้ ไม่ใช่ §2.1:
+
+| Token | Hex Code | เทียบเท่า §2.1 | ใช้กับ |
+|---|---|---|---|
+| `info` / `healthy` | `#00F2FE` | `info` (`#00E5FF`) | OK state, healthy status, ปกติ |
+| `healthy-alt` | `#22c55e` | `healthy` (`#10B981`) | Capable/World Class thresholds, PASS |
+| `warning` | `#FF9100` / `facc15` | `warning` (`#F59E0B`) | IDLE state, Marginal, warning thresholds |
+| `critical` | `#FF003C` | `critical` (`#EF4444`) | NO_DATA state, OUT OF SPEC, critical thresholds |
+
+ตัวย่อ case: ใช้ตัวพิมพ์เล็กสำหรับ `#facc15`/`#22c55e` (ไม่ใช่ `#FACC15`/`#22C55E`) — ปนกันมาจากการ
+copy-paste ข้าม panel และแก้ให้ตรงกันแล้วใน Phase 2 (harmonized 33 stray instances of
+`#00E5FF`/`#EF4444`/`#FACC15`/`#22C55E` → the table above, ตรวจสอบด้วย `grep` ก่อน merge panel ใหม่)
 
 ### 2.2 Threshold Contract (ต้องตรงกันทุก panel ที่วัดค่าเดียวกัน)
 
