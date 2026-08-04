@@ -113,7 +113,7 @@
     {
       "id": 10000,
       "type": "row",
-      "title": "\u25c8 MANUFACTURING KPIs",
+      "title": "◈ MANUFACTURING KPIs",
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -125,7 +125,7 @@
     },
     {
       "id": 15,
-      "title": "\u25c9 Estimated Yield (%)",
+      "title": "◉ Estimated Yield (%)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -242,7 +242,7 @@
     },
     {
       "id": 16,
-      "title": "\u25c9 Fleet Availability (%)",
+      "title": "◉ Fleet Availability (%)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -360,7 +360,7 @@
     },
     {
       "id": 17,
-      "title": "\u25c9 Avg Cpk (Fleet)",
+      "title": "◉ Avg Cpk (Fleet)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -478,7 +478,7 @@
     },
     {
       "id": 5,
-      "title": "\u25c9 Critical Alarms",
+      "title": "◉ Critical Alarms",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -553,8 +553,8 @@
       "description": "Counts real alarm rows for selected machine IDs that match a Critical master code. Zero is valid because current log codes do not match the supplied master."
     },
     {
-      "id": 1,
-      "title": "\u25c9 Running",
+      "id": 18,
+      "title": "◉ Worst Cpk (Fleet, 24h)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -562,6 +562,231 @@
       "gridPos": {
         "x": 0,
         "y": 7.5,
+        "w": 8,
+        "h": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF003C",
+                "value": null
+              },
+              {
+                "color": "#facc15",
+                "value": 1.33
+              },
+              {
+                "color": "#22c55e",
+                "value": 1.67
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 15,
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/^value$/",
+          "values": false
+        },
+        "text": {
+          "valueSize": 48,
+          "titleSize": 14
+        },
+        "noValue": "-",
+        "textMode": "auto",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT ROUND(MIN(worst_cpk)::NUMERIC, 3) AS value FROM public.v_machine_spc_fleet WHERE worst_cpk IS NOT NULL;",
+          "format": "table"
+        }
+      ],
+      "description": "Worst Cpk across the entire registered LDI fleet in the trailing 24h, where Worst Cpk per machine = LEAST(Cpk PE, Cpk JE). Always reflects all enabled machines regardless of the Factory/MO/Machine filters above — this is a fleet-wide floor, not a filtered view. Backed by v_machine_spc_fleet (migration 042)."
+    },
+    {
+      "id": 19,
+      "title": "◉ JE Pass Rate (Fleet, 24h)",
+      "type": "stat",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 7.5,
+        "w": 8,
+        "h": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 1,
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF003C",
+                "value": null
+              },
+              {
+                "color": "#facc15",
+                "value": 90
+              },
+              {
+                "color": "#22c55e",
+                "value": 98
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 15,
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/^value$/",
+          "values": false
+        },
+        "text": {
+          "valueSize": 48,
+          "titleSize": 14
+        },
+        "noValue": "-",
+        "textMode": "auto",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT ROUND((100.0 * SUM(n_je * je_pass_rate / 100.0) / NULLIF(SUM(n_je), 0))::NUMERIC, 1) AS value FROM public.v_machine_spc_fleet;",
+          "format": "table"
+        }
+      ],
+      "description": "Fleet-wide JE pass rate over the trailing 24h: percent of individual je_1..je_4 samples within +/- je_setting, weighted by sample count across all machines (not an average of per-machine percentages). Backed by v_machine_spc_fleet (migration 042)."
+    },
+    {
+      "id": 20,
+      "title": "◉ Machine Count (Fleet)",
+      "type": "stat",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 7.5,
+        "w": 8,
+        "h": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#00F2FE"
+          },
+          "custom": {
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 15,
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/^value$/",
+          "values": false
+        },
+        "text": {
+          "valueSize": 40,
+          "titleSize": 14
+        },
+        "noValue": "-",
+        "textMode": "auto",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT (COUNT(*) FILTER (WHERE COALESCE(n_pe, 0) + COALESCE(n_je, 0) > 0))::TEXT || ' / ' || COUNT(*)::TEXT AS value FROM public.v_machine_spc_fleet;",
+          "format": "table"
+        }
+      ],
+      "description": "Reporting / Total registered+enabled LDI machines (public.devices, device_type='ldi'). \"Reporting\" = at least one PE or JE sample in the trailing 24h. The denominator is always the full fleet, so a machine that goes silent shows up as a gap here instead of disappearing from the dashboard. Backed by v_machine_spc_fleet (migration 042)."
+    },
+    {
+      "id": 1,
+      "title": "◉ Running",
+      "type": "stat",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 13.5,
         "w": 6,
         "h": 5
       },
@@ -666,14 +891,14 @@
     },
     {
       "id": 2,
-      "title": "\u25c8 PE Limit Used",
+      "title": "◈ PE Limit Used",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 6,
-        "y": 7.5,
+        "y": 13.5,
         "w": 6,
         "h": 5
       },
@@ -750,14 +975,14 @@
     },
     {
       "id": 3,
-      "title": "\u25c9 Avg Temperature",
+      "title": "◉ Avg Temperature",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 12,
-        "y": 7.5,
+        "y": 13.5,
         "w": 6,
         "h": 5
       },
@@ -871,18 +1096,18 @@
           "format": "table"
         }
       ],
-      "description": "Fleet-wide average temperature. Target 22\u00b12\u00b0C. Red outside 20-24\u00b0C, Amber 20-24\u00b0C, Green 22-24\u00b0C."
+      "description": "Fleet-wide average temperature. Target 22±2°C. Red outside 20-24°C, Amber 20-24°C, Green 22-24°C."
     },
     {
       "id": 4,
-      "title": "\u25c9 Avg Humidity",
+      "title": "◉ Avg Humidity",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 18,
-        "y": 7.5,
+        "y": 13.5,
         "w": 6,
         "h": 5
       },
@@ -996,17 +1221,17 @@
           "format": "table"
         }
       ],
-      "description": "Fleet-wide average humidity. Target 55\u00b15%RH. Red outside 50-60%, Amber 50-60%, Green 55-60%."
+      "description": "Fleet-wide average humidity. Target 55±5%RH. Red outside 50-60%, Amber 50-60%, Green 55-60%."
     },
     {
       "id": 10005,
       "type": "row",
-      "title": "\u25c8 PROCESS STATE",
+      "title": "◈ PROCESS STATE",
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 7.5
+        "y": 13.5
       },
       "collapsed": false,
       "panels": []
@@ -1014,26 +1239,26 @@
     {
       "id": 10001,
       "type": "row",
-      "title": "\u25c8 PRODUCTION & COMPLIANCE",
+      "title": "◈ PRODUCTION & COMPLIANCE",
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 14
+        "y": 20
       },
       "collapsed": false,
       "panels": []
     },
     {
       "id": 6,
-      "title": "\u25c8 Production & Process Table",
+      "title": "◈ Production & Process Table",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 0,
-        "y": 15,
+        "y": 21,
         "w": 8,
         "h": 12
       },
@@ -1058,7 +1283,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT DISTINCT ON (eqp_id) eqp_id AS \"Machine\", mo AS \"Job (MO)\", fpn AS \"Part (FPN)\", layer_name AS \"Layer\", (board_no::TEXT || '/' || total_board::TEXT) AS \"Progress\", ROUND(temperature::NUMERIC, 1) AS \"temperature (\u00b0C)\", ROUND(humidity::NUMERIC, 1) AS \"humidity (%RH)\", ROUND(scan_speed::NUMERIC, 1) AS \"scan_speed (mm/s)\", ROUND(thickness::NUMERIC, 3) AS \"thickness (mm)\", ROUND(resist_dosage::NUMERIC, 1) AS \"resist_dosage\", state AS \"state\" FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) ORDER BY eqp_id, time DESC LIMIT 50",
+          "rawSql": "SELECT DISTINCT ON (eqp_id) eqp_id AS \"Machine\", mo AS \"Job (MO)\", fpn AS \"Part (FPN)\", layer_name AS \"Layer\", (board_no::TEXT || '/' || total_board::TEXT) AS \"Progress\", ROUND(temperature::NUMERIC, 1) AS \"temperature (°C)\", ROUND(humidity::NUMERIC, 1) AS \"humidity (%RH)\", ROUND(scan_speed::NUMERIC, 1) AS \"scan_speed (mm/s)\", ROUND(thickness::NUMERIC, 3) AS \"thickness (mm)\", ROUND(resist_dosage::NUMERIC, 1) AS \"resist_dosage\", state AS \"state\" FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) ORDER BY eqp_id, time DESC LIMIT 50",
           "format": "table"
         }
       ],
@@ -1318,14 +1543,14 @@
     },
     {
       "id": 7,
-      "title": "\u25c8 temperature Compliance (22\u00b12\u00b0C)",
+      "title": "◈ temperature Compliance (22±2°C)",
       "type": "state-timeline",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 8,
-        "y": 15,
+        "y": 21,
         "w": 8,
         "h": 12
       },
@@ -1405,18 +1630,18 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "description": "3-color compliance matrix per machine. Green 20-24\u00b0C, Amber 19-25\u00b0C, Red outside."
+      "description": "3-color compliance matrix per machine. Green 20-24°C, Amber 19-25°C, Red outside."
     },
     {
       "id": 8,
-      "title": "\u25c8 humidity Compliance (55\u00b15%)",
+      "title": "◈ humidity Compliance (55±5%)",
       "type": "state-timeline",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 16,
-        "y": 15,
+        "y": 21,
         "w": 8,
         "h": 12
       },
@@ -1501,26 +1726,26 @@
     {
       "id": 10002,
       "type": "row",
-      "title": "\u25c8 PROCESS METRICS",
+      "title": "◈ PROCESS METRICS",
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 27
+        "y": 33
       },
       "collapsed": false,
       "panels": []
     },
     {
       "id": 9,
-      "title": "\u25c8 Scan Speed & Air Vacuum",
+      "title": "◈ Scan Speed & Air Vacuum",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 0,
-        "y": 28,
+        "y": 34,
         "w": 8,
         "h": 10
       },
@@ -1638,14 +1863,14 @@
     },
     {
       "id": 10,
-      "title": "\u25c8 Thickness & Resist Dosage",
+      "title": "◈ Thickness & Resist Dosage",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 8,
-        "y": 28,
+        "y": 34,
         "w": 8,
         "h": 10
       },
@@ -1700,7 +1925,7 @@
             "properties": [
               {
                 "id": "unit",
-                "value": "suffix: mJ/cm\u00b2"
+                "value": "suffix: mJ/cm²"
               },
               {
                 "id": "decimals",
@@ -1759,18 +1984,18 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "description": "Dual Y-axis: thickness (left, mm) and resist_dosage (right, mJ/cm\u00b2) per machine."
+      "description": "Dual Y-axis: thickness (left, mm) and resist_dosage (right, mJ/cm²) per machine."
     },
     {
       "id": 11,
-      "title": "\u25c8 Scale X / Y",
+      "title": "◈ Scale X / Y",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 16,
-        "y": 28,
+        "y": 34,
         "w": 8,
         "h": 10
       },
@@ -1881,26 +2106,26 @@
     {
       "id": 10003,
       "type": "row",
-      "title": "\u25c8 ANALYTICS & SPC",
+      "title": "◈ ANALYTICS & SPC",
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 38
+        "y": 44
       },
       "collapsed": false,
       "panels": []
     },
     {
       "id": 12,
-      "title": "\u25c8 Calculated Time per Board",
+      "title": "◈ Calculated Time per Board",
       "type": "heatmap",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 0,
-        "y": 39,
+        "y": 45,
         "w": 12,
         "h": 8
       },
@@ -1949,14 +2174,14 @@
     },
     {
       "id": 13,
-      "title": "\u25c8 Z-Score: temperature",
+      "title": "◈ Z-Score: temperature",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 12,
-        "y": 39,
+        "y": 45,
         "w": 12,
         "h": 8
       },
@@ -2037,31 +2262,31 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "description": "3-sigma Z-Score on temperature per machine. Green \u00b12 (normal), Amber 2.5 (watch), Red 3+ (anomaly)."
+      "description": "3-sigma Z-Score on temperature per machine. Green ±2 (normal), Amber 2.5 (watch), Red 3+ (anomaly)."
     },
     {
       "id": 10004,
       "type": "row",
-      "title": "\u25c8 SYSTEM ALARMS",
+      "title": "◈ SYSTEM ALARMS",
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 47
+        "y": 53
       },
       "collapsed": false,
       "panels": []
     },
     {
       "id": 14,
-      "title": "\u25c8 Latest Alarm Records (Historical)",
+      "title": "◈ Latest Alarm Records (Historical)",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 0,
-        "y": 48,
+        "y": 54,
         "w": 24,
         "h": 12
       },
@@ -2306,6 +2531,178 @@
         ]
       },
       "description": "Latest real alarm rows for selected machine IDs, independent of telemetry time because the exports cover different dates."
+    },
+    {
+      "id": 10006,
+      "title": "◈ RCA FLEET SUMMARY",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 66,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 21,
+      "title": "◉ Top Correlated Alarms (24h)",
+      "type": "table",
+      "datasource": {
+        "type": "postgres",
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 67,
+        "w": 24,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: query defines its own rolling 24h window */\nWITH alarm_ctx AS (\n  SELECT * FROM v_ldi_alarm_context WHERE alarm_time > NOW() - INTERVAL '24 hours'\n),\nbaseline AS (\n  SELECT\n    ROUND((100.0*COUNT(*) FILTER (WHERE temperature < 20 OR temperature > 24 OR humidity < 50 OR humidity > 60) / NULLIF(COUNT(*), 0))::NUMERIC, 1) AS temp_pct,\n    ROUND((100.0*COUNT(*) FILTER (WHERE air_vacuum > -50 OR air_vacuum < -95) / NULLIF(COUNT(*), 0))::NUMERIC, 1) AS vac_pct,\n    ROUND((100.0*COUNT(*) FILTER (WHERE ABS(pe_1) > 10 OR ABS(je_1) > 10) / NULLIF(COUNT(*), 0))::NUMERIC, 1) AS pe_pct\n  FROM public.ldi_data WHERE \"time\" > NOW() - INTERVAL '24 hours'\n),\ncats AS (\n  SELECT 'THERMAL (81501)' AS cat, ROUND((100.0*COUNT(*) FILTER (WHERE flag_temp_out_of_spec) / NULLIF(COUNT(*), 0))::NUMERIC, 1) AS alarm_pct, COUNT(*) AS n FROM alarm_ctx WHERE errorcode = '81501'\n  UNION ALL\n  SELECT 'VACUUM (81101/02)', ROUND((100.0*COUNT(*) FILTER (WHERE flag_vac_out_of_spec) / NULLIF(COUNT(*), 0))::NUMERIC, 1), COUNT(*) FROM alarm_ctx WHERE errorcode IN ('81101','81102')\n  UNION ALL\n  SELECT 'ALIGNMENT (812xx)', ROUND((100.0*COUNT(*) FILTER (WHERE flag_pe_out_of_spec) / NULLIF(COUNT(*), 0))::NUMERIC, 1), COUNT(*) FROM alarm_ctx WHERE errorcode IN ('81201','81203','81204')\n)\nSELECT c.cat AS \"Alarm Category\",\n       c.alarm_pct AS \"Alarm-Window %\",\n       CASE c.cat WHEN 'THERMAL (81501)' THEN b.temp_pct WHEN 'VACUUM (81101/02)' THEN b.vac_pct ELSE b.pe_pct END AS \"Baseline %\",\n       ROUND((c.alarm_pct / NULLIF(CASE c.cat WHEN 'THERMAL (81501)' THEN b.temp_pct WHEN 'VACUUM (81101/02)' THEN b.vac_pct ELSE b.pe_pct END, 0))::NUMERIC, 2) AS \"Lift\",\n       c.n AS \"Event Count\",\n       CASE WHEN c.n < 30 THEN 'LOW SAMPLE (n<30)' ELSE 'OK' END AS \"Confidence\"\nFROM cats c CROSS JOIN baseline b\nORDER BY \"Lift\" DESC NULLS LAST"
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        },
+        "noValue": "-"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "center",
+            "cellOptions": {
+              "type": "auto"
+            }
+          },
+          "mappings": [],
+          "unit": "none",
+          "decimals": 1
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Alarm-Window %"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Baseline %"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Event Count"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Lift"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#FF003C",
+                      "value": null
+                    },
+                    {
+                      "color": "#ff9100",
+                      "value": 1
+                    },
+                    {
+                      "color": "#00ff87",
+                      "value": 2
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Confidence"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "OK": {
+                        "color": "#22C55E",
+                        "text": "OK"
+                      },
+                      "LOW SAMPLE (n<30)": {
+                        "color": "#EF4444",
+                        "text": "LOW SAMPLE (n<30)"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "description": "Fleet-wide RCA lift summary, rolling 24h (vs. the full-dataset historical version on the Engineering Analytics dashboard). Same lift methodology: Alarm-Window % (out-of-spec rate near this alarm) vs Baseline % (out-of-spec rate across all 24h data) vs Lift = Alarm-Window % / Baseline %. Ranked top-correlated-first. Confidence flags categories under 30 alarm events in the window."
     }
   ],
   "style": "dark",
