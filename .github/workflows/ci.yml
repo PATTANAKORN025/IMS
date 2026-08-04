@@ -32,6 +32,9 @@ jobs:
       - name: Lint RCA Alarm-Category Coverage
         run: node tests/lint/rca-mapping-coverage.js
 
+      - name: Lint Query Budget (tiering contract)
+        run: node tests/lint/query-budget-linter.js
+
       - name: Lint Prometheus Config
         run: |
           docker run --rm \
@@ -118,6 +121,9 @@ jobs:
 
       - name: Run E2E Smoke Test
         run: bash tests/smoke/db-write-check.sh
+
+      - name: Run Query Budget Check
+        run: bash tests/smoke/query-budget-check.sh
 
       - name: Run Chaos Stress Test (K6)
         run: |
