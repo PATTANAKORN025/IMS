@@ -111,7 +111,7 @@
     },
     {
       "id": 1,
-      "title": "\u25c9 Fleet Availability",
+      "title": "◉ Fleet Availability",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -181,15 +181,15 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND((COUNT(DISTINCT eqp_id) FILTER (WHERE state = true) * 100.0 / NULLIF(COUNT(DISTINCT eqp_id), 0))::NUMERIC, 0) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time)",
+          "rawSql": "WITH machines AS (\n  SELECT device_id AS eqp_id FROM public.devices WHERE device_type='ldi' AND enabled AND device_id IN (${machine_id:sqlstring})\n),\nlatest AS (\n  SELECT DISTINCT ON (eqp_id) eqp_id, state\n  FROM public.ldi_data\n  WHERE $__timeFilter(time) AND factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring})\n  ORDER BY eqp_id, time DESC\n)\nSELECT ROUND((COUNT(*) FILTER (WHERE l.state = true) * 100.0 / NULLIF(COUNT(*), 0))::NUMERIC, 0) AS value\nFROM machines m LEFT JOIN latest l ON l.eqp_id = m.eqp_id",
           "format": "table"
         }
       ],
-      "description": "Fleet Availability: percentage of machines running and actively producing."
+      "description": "Percent of the SELECTED registered+enabled LDI fleet (machine_id filter) currently OK (reporting AND running). Denominator is always the full selected machine registry, not just machines that happened to report -- a machine that goes completely silent now correctly drags this down instead of silently disappearing from both sides of the ratio."
     },
     {
       "id": 2,
-      "title": "\u25c9 Critical Alarm Records (master-code matched)",
+      "title": "◉ Critical Alarm Records (master-code matched)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -263,7 +263,7 @@
     },
     {
       "id": 3,
-      "title": "\u25c9 Environmental Compliance",
+      "title": "◉ Environmental Compliance",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -345,7 +345,7 @@
     },
     {
       "id": 9,
-      "title": "\u25c9 Machines Running",
+      "title": "◉ Machines Running",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -413,15 +413,15 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH latest AS (SELECT DISTINCT ON (eqp_id) eqp_id, state FROM public.ldi_data WHERE $__timeFilter(time) AND factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) ORDER BY eqp_id, time DESC) SELECT COUNT(*) FILTER (WHERE state = true) AS value FROM latest",
+          "rawSql": "WITH machines AS (\n  SELECT device_id AS eqp_id FROM public.devices WHERE device_type='ldi' AND enabled AND device_id IN (${machine_id:sqlstring})\n),\nlatest AS (\n  SELECT DISTINCT ON (eqp_id) eqp_id, state\n  FROM public.ldi_data\n  WHERE $__timeFilter(time) AND factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring})\n  ORDER BY eqp_id, time DESC\n)\nSELECT COUNT(*) FILTER (WHERE l.state = true) AS value\nFROM machines m LEFT JOIN latest l ON l.eqp_id = m.eqp_id",
           "format": "table"
         }
       ],
-      "description": "Machines Running: count of machines whose most recent reading in the window has state = true."
+      "description": "Count of machines currently OK (reporting AND running), out of the selected registered fleet. A silent machine is NOT counted, same fix as Fleet Availability."
     },
     {
       "id": 4,
-      "title": "\u25c8 Machine Run State",
+      "title": "◈ Machine Run State",
       "type": "state-timeline",
       "datasource": {
         "uid": "timescaledb"
@@ -441,12 +441,12 @@
                 "0": {
                   "color": "#FF003C",
                   "index": 0,
-                  "text": "CRIT"
+                  "text": "NO_DATA"
                 },
                 "1": {
                   "color": "#FF9100",
                   "index": 1,
-                  "text": "WARN"
+                  "text": "IDLE"
                 },
                 "2": {
                   "color": "#00F2FE",
@@ -500,16 +500,16 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, eqp_id AS metric, CASE WHEN state = true THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) ORDER BY time ASC",
+          "rawSql": "WITH machines AS (\n  SELECT device_id AS eqp_id FROM public.devices WHERE device_type='ldi' AND enabled AND device_id IN (${machine_id:sqlstring})\n),\nbuckets AS (\n  SELECT generate_series(time_bucket('5 minutes', $__timeFrom()), time_bucket('5 minutes', $__timeTo()), INTERVAL '5 minutes') AS bucket_time\n),\ngrid AS (\n  SELECT m.eqp_id, b.bucket_time FROM machines m CROSS JOIN buckets b\n),\nactual AS (\n  SELECT eqp_id, time_bucket('5 minutes', time) AS bucket_time, BOOL_OR(state) AS any_running, COUNT(*) AS n\n  FROM public.ldi_data\n  WHERE $__timeFilter(time) AND factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring})\n  GROUP BY 1, 2\n)\nSELECT g.bucket_time AS time, g.eqp_id AS metric,\n  CASE WHEN a.n IS NULL OR a.n = 0 THEN 0\n       WHEN a.any_running THEN 2\n       ELSE 1 END AS value\nFROM grid g LEFT JOIN actual a ON a.eqp_id = g.eqp_id AND a.bucket_time = g.bucket_time\nORDER BY g.bucket_time ASC",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
       ],
-      "description": "Machine Run State: per-machine green/red timeline showing RUNNING vs STOPPED."
+      "description": "Per-machine state on a 5-minute grid (5min chosen because the slowest-reporting machine's average gap is ~3.7min -- 1-minute buckets would falsely flag healthy-but-infrequent machines as NO_DATA). OK = reporting and running; IDLE = reporting but state=false (not currently producing); NO_DATA = zero rows in that 5-minute window for this machine -- a real gap in the pipeline, not just \"stopped\", and now visually distinct from OK/IDLE instead of silently blank."
     },
     {
       "id": 5,
-      "title": "\u25c8 Temperature Compliance (22\u00b12\u00b0C)",
+      "title": "◈ Temperature Compliance (22±2°C)",
       "type": "state-timeline",
       "datasource": {
         "uid": "timescaledb"
@@ -596,11 +596,11 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "description": "Temperature Compliance: per-machine 3-color matrix. Green=20-24\u00b0C, Amber=19-25\u00b0C, Red=outside."
+      "description": "Temperature Compliance: per-machine 3-color matrix. Green=20-24°C, Amber=19-25°C, Red=outside."
     },
     {
       "id": 6,
-      "title": "\u25c8 Humidity Compliance (55\u00b15%)",
+      "title": "◈ Humidity Compliance (55±5%)",
       "type": "state-timeline",
       "datasource": {
         "uid": "timescaledb"
@@ -691,7 +691,7 @@
     },
     {
       "id": 7,
-      "title": "\u25c8 Live Production",
+      "title": "◈ Live Production",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
@@ -940,7 +940,7 @@
     },
     {
       "id": 10,
-      "title": "\u25c9 PE vs Spec Limit (per machine)",
+      "title": "◉ PE vs Spec Limit (per machine)",
       "type": "bargauge",
       "datasource": {
         "uid": "timescaledb"
