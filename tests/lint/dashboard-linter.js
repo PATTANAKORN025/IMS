@@ -25,11 +25,13 @@ const path = require('path');
 
 const DASHBOARD_DIR = path.join(process.cwd(), 'monitoring', 'grafana', 'dashboards');
 
-// Standard panel height system (Check 13). Only 4 sizes: KPI stat, normal
-// chart/table, deep-analysis panel, plus the h=1 row/CSS-injector sliver.
+// Standard panel height system (Check 13). KPI stat, normal chart/table,
+// deep-analysis panel, plus the h=1 row/CSS-injector sliver. h=4 is the
+// GRAFANA_DESIGN_SYSTEM.md §5.2 canonical KPI stat height (added Phase 2);
+// h=5 is kept for pre-existing panels that predate that doc section.
 // Warn-only for now — most dashboards predate this rule and haven't been
 // migrated (see design roadmap); flip to `error` once they have been.
-const ALLOWED_HEIGHTS = [1, 5, 8, 10, 16];
+const ALLOWED_HEIGHTS = [1, 4, 5, 8, 10, 16];
 
 // Per-dashboard total-height ceiling (Check 14), keyed by dashboard uid.
 // Only kiosk/wall displays get a hard ceiling — analysis dashboards are

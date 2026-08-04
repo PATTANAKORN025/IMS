@@ -111,16 +111,16 @@
       "transparent": true
     },
     {
-      "id": 10000,
+      "id": 10010,
+      "title": "◈ PRODUCTION",
       "type": "row",
-      "title": "◈ MANUFACTURING KPIs",
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 1
-      },
       "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 1,
+        "w": 24,
+        "h": 1
+      },
       "panels": []
     },
     {
@@ -132,9 +132,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 1.5,
-        "w": 6,
-        "h": 6
+        "y": 2,
+        "w": 8,
+        "h": 4
       },
       "fieldConfig": {
         "defaults": {
@@ -241,22 +241,22 @@
       "description": "Estimated Yield: percentage of samples where max|PE| <= pe_setting (within tolerance)."
     },
     {
-      "id": 16,
-      "title": "◉ Fleet Availability (%)",
+      "id": 1,
+      "title": "◉ Running",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 6,
-        "y": 1.5,
-        "w": 6,
-        "h": 6
+        "x": 8,
+        "y": 2,
+        "w": 8,
+        "h": 4
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "percent",
-          "decimals": 1,
+          "unit": "short",
+          "decimals": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -265,12 +265,8 @@
                 "value": null
               },
               {
-                "color": "#facc15",
-                "value": 80
-              },
-              {
                 "color": "#22c55e",
-                "value": 90
+                "value": 8
               }
             ]
           },
@@ -283,9 +279,7 @@
             "lineInterpolation": "smooth",
             "fillOpacity": 15,
             "lineWidth": 2
-          },
-          "min": 0,
-          "max": 100
+          }
         },
         "overrides": [
           {
@@ -352,11 +346,87 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH now_val AS (\nWITH machines AS (\n  SELECT device_id AS eqp_id FROM public.devices WHERE device_type='ldi' AND enabled AND device_id IN (${machine_id:sqlstring})\n),\nlatest AS (\n  SELECT DISTINCT ON (eqp_id) eqp_id, state\n  FROM public.ldi_data\n  WHERE \"time\" > NOW() - INTERVAL '1 hour' AND factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring})\n  ORDER BY eqp_id, \"time\" DESC\n)\nSELECT ROUND((COUNT(*) FILTER (WHERE l.state = true) * 100.0 / NULLIF(COUNT(*), 0))::NUMERIC, 1) AS value\nFROM machines m LEFT JOIN latest l ON l.eqp_id = m.eqp_id\n),\nprev_val AS (\nWITH machines AS (\n  SELECT device_id AS eqp_id FROM public.devices WHERE device_type='ldi' AND enabled AND device_id IN (${machine_id:sqlstring})\n),\nlatest AS (\n  SELECT DISTINCT ON (eqp_id) eqp_id, state\n  FROM public.ldi_data\n  WHERE \"time\" BETWEEN NOW() - INTERVAL '2 hours' AND NOW() - INTERVAL '1 hour' AND factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring})\n  ORDER BY eqp_id, \"time\" DESC\n)\nSELECT ROUND((COUNT(*) FILTER (WHERE l.state = true) * 100.0 / NULLIF(COUNT(*), 0))::NUMERIC, 1) AS value\nFROM machines m LEFT JOIN latest l ON l.eqp_id = m.eqp_id\n)\nSELECT n.value, ROUND((((n.value - p.value)/NULLIF(p.value, 0)::NUMERIC) * 100)::NUMERIC, 1) AS \"Delta %\"\nFROM now_val n, prev_val p",
+          "rawSql": "WITH now_val AS (\nWITH latest AS (\n  SELECT DISTINCT ON (eqp_id) eqp_id, state\n  FROM public.ldi_data\n  WHERE \"time\" > NOW() - INTERVAL '1 hour' AND factory IN (${factory:sqlstring})\n    AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring})\n  ORDER BY eqp_id, \"time\" DESC\n)\nSELECT COUNT(*) FILTER (WHERE state = true)::NUMERIC AS value FROM latest\n),\nprev_val AS (\nWITH latest AS (\n  SELECT DISTINCT ON (eqp_id) eqp_id, state\n  FROM public.ldi_data\n  WHERE \"time\" BETWEEN NOW() - INTERVAL '2 hours' AND NOW() - INTERVAL '1 hour' AND factory IN (${factory:sqlstring})\n    AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring})\n  ORDER BY eqp_id, \"time\" DESC\n)\nSELECT COUNT(*) FILTER (WHERE state = true)::NUMERIC AS value FROM latest\n)\nSELECT n.value, ROUND((((n.value - p.value)/NULLIF(p.value, 0)::NUMERIC) * 100)::NUMERIC, 1) AS \"Delta %\"\nFROM now_val n, prev_val p",
           "format": "table"
         }
       ],
-      "description": "Percent of the selected registered+enabled LDI fleet whose latest state in the last hour is true. Denominator is always the full selected machine registry (public.devices), not just machines that happened to report -- a silent machine now correctly counts against availability instead of disappearing from the ratio."
+      "description": "Count of machines with state=true (powered on and available). Red < 8, Green >= 8 of 10."
+    },
+    {
+      "id": 20,
+      "title": "◉ Machine Count (Fleet)",
+      "type": "stat",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 2,
+        "w": 8,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#00F2FE"
+          },
+          "custom": {
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 15,
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/^value$/",
+          "values": false
+        },
+        "text": {
+          "valueSize": 40,
+          "titleSize": 14
+        },
+        "noValue": "-",
+        "textMode": "auto",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT (COUNT(*) FILTER (WHERE COALESCE(n_pe, 0) + COALESCE(n_je, 0) > 0))::TEXT || ' / ' || COUNT(*)::TEXT AS value FROM public.v_machine_spc_fleet;",
+          "format": "table"
+        }
+      ],
+      "description": "Reporting / Total registered+enabled LDI machines (public.devices, device_type='ldi'). \"Reporting\" = at least one PE or JE sample in the trailing 24h. The denominator is always the full fleet, so a machine that goes silent shows up as a gap here instead of disappearing from the dashboard. Backed by v_machine_spc_fleet (migration 042)."
+    },
+    {
+      "id": 10011,
+      "title": "◈ QUALITY",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 6,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
     },
     {
       "id": 17,
@@ -366,10 +436,10 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 12,
-        "y": 1.5,
+        "x": 0,
+        "y": 7,
         "w": 6,
-        "h": 6
+        "h": 4
       },
       "fieldConfig": {
         "defaults": {
@@ -477,82 +547,6 @@
       "description": "Average real Cpk across machines with PE data in the selected filters. Assumes symmetric +/- pe_setting limits."
     },
     {
-      "id": 5,
-      "title": "◉ Critical Alarms",
-      "type": "stat",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 18,
-        "y": 1.5,
-        "w": 6,
-        "h": 6
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "decimals": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#22c55e",
-                "value": null
-              },
-              {
-                "color": "#FF003C",
-                "value": 1
-              }
-            ]
-          },
-          "color": {
-            "mode": "thresholds"
-          },
-          "custom": {
-            "gradientMode": "opacity",
-            "lineInterpolation": "smooth",
-            "fillOpacity": 15,
-            "lineWidth": 2
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "center",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "/^value$/",
-          "values": false
-        },
-        "text": {
-          "valueSize": 48,
-          "titleSize": 14
-        },
-        "noValue": "-",
-        "textMode": "auto",
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nSELECT COUNT(*)::NUMERIC AS value\nFROM public.ldi_alarm_log a\nJOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\nWHERE a.equipmentid IN (${machine_id:sqlstring}) AND m.alarm_type ILIKE '%Critical%';",
-          "format": "table"
-        }
-      ],
-      "description": "Counts real alarm rows for selected machine IDs that match a Critical master code. Zero is valid because current log codes do not match the supplied master."
-    },
-    {
       "id": 18,
       "title": "◉ Worst Cpk (Fleet, 24h)",
       "type": "stat",
@@ -560,10 +554,10 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 0,
-        "y": 7.5,
-        "w": 8,
-        "h": 6
+        "x": 6,
+        "y": 7,
+        "w": 6,
+        "h": 4
       },
       "fieldConfig": {
         "defaults": {
@@ -640,10 +634,10 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 8,
-        "y": 7.5,
-        "w": 8,
-        "h": 6
+        "x": 12,
+        "y": 7,
+        "w": 6,
+        "h": 4
       },
       "fieldConfig": {
         "defaults": {
@@ -715,181 +709,6 @@
       "description": "Fleet-wide JE pass rate over the trailing 24h: percent of individual je_1..je_4 samples within +/- je_setting, weighted by sample count across all machines (not an average of per-machine percentages). Backed by v_machine_spc_fleet (migration 042)."
     },
     {
-      "id": 20,
-      "title": "◉ Machine Count (Fleet)",
-      "type": "stat",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 16,
-        "y": 7.5,
-        "w": 8,
-        "h": 6
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "none",
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "#00F2FE"
-          },
-          "custom": {
-            "gradientMode": "opacity",
-            "lineInterpolation": "smooth",
-            "fillOpacity": 15,
-            "lineWidth": 2
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "center",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "/^value$/",
-          "values": false
-        },
-        "text": {
-          "valueSize": 40,
-          "titleSize": 14
-        },
-        "noValue": "-",
-        "textMode": "auto",
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT (COUNT(*) FILTER (WHERE COALESCE(n_pe, 0) + COALESCE(n_je, 0) > 0))::TEXT || ' / ' || COUNT(*)::TEXT AS value FROM public.v_machine_spc_fleet;",
-          "format": "table"
-        }
-      ],
-      "description": "Reporting / Total registered+enabled LDI machines (public.devices, device_type='ldi'). \"Reporting\" = at least one PE or JE sample in the trailing 24h. The denominator is always the full fleet, so a machine that goes silent shows up as a gap here instead of disappearing from the dashboard. Backed by v_machine_spc_fleet (migration 042)."
-    },
-    {
-      "id": 1,
-      "title": "◉ Running",
-      "type": "stat",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 13.5,
-        "w": 6,
-        "h": 5
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "decimals": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#FF003C",
-                "value": null
-              },
-              {
-                "color": "#22c55e",
-                "value": 8
-              }
-            ]
-          },
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "#00F2FE"
-          },
-          "custom": {
-            "gradientMode": "opacity",
-            "lineInterpolation": "smooth",
-            "fillOpacity": 15,
-            "lineWidth": 2
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Delta %"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "percent"
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "thresholds"
-                }
-              },
-              {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "#E5484D",
-                      "value": null
-                    },
-                    {
-                      "color": "#00F2FE",
-                      "value": 0
-                    }
-                  ]
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "center",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "/^value$/",
-          "values": false
-        },
-        "text": {
-          "valueSize": 48,
-          "titleSize": 14
-        },
-        "noValue": "-",
-        "textMode": "auto",
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "WITH now_val AS (\nWITH latest AS (\n  SELECT DISTINCT ON (eqp_id) eqp_id, state\n  FROM public.ldi_data\n  WHERE \"time\" > NOW() - INTERVAL '1 hour' AND factory IN (${factory:sqlstring})\n    AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring})\n  ORDER BY eqp_id, \"time\" DESC\n)\nSELECT COUNT(*) FILTER (WHERE state = true)::NUMERIC AS value FROM latest\n),\nprev_val AS (\nWITH latest AS (\n  SELECT DISTINCT ON (eqp_id) eqp_id, state\n  FROM public.ldi_data\n  WHERE \"time\" BETWEEN NOW() - INTERVAL '2 hours' AND NOW() - INTERVAL '1 hour' AND factory IN (${factory:sqlstring})\n    AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring})\n  ORDER BY eqp_id, \"time\" DESC\n)\nSELECT COUNT(*) FILTER (WHERE state = true)::NUMERIC AS value FROM latest\n)\nSELECT n.value, ROUND((((n.value - p.value)/NULLIF(p.value, 0)::NUMERIC) * 100)::NUMERIC, 1) AS \"Delta %\"\nFROM now_val n, prev_val p",
-          "format": "table"
-        }
-      ],
-      "description": "Count of machines with state=true (powered on and available). Red < 8, Green >= 8 of 10."
-    },
-    {
       "id": 2,
       "title": "◈ PE Limit Used",
       "type": "stat",
@@ -897,10 +716,10 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 6,
-        "y": 13.5,
+        "x": 18,
+        "y": 7,
         "w": 6,
-        "h": 5
+        "h": 4
       },
       "fieldConfig": {
         "defaults": {
@@ -974,6 +793,213 @@
       "description": "Average MAX|PE| divided by the PE limit stored on each record. This normalized scale allows machines with different PE limits to be compared fairly."
     },
     {
+      "id": 10012,
+      "title": "◈ RISK",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 11,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 16,
+      "title": "◉ Fleet Availability (%)",
+      "type": "stat",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 12,
+        "w": 6,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF003C",
+                "value": null
+              },
+              {
+                "color": "#facc15",
+                "value": 80
+              },
+              {
+                "color": "#22c55e",
+                "value": 90
+              }
+            ]
+          },
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#00F2FE"
+          },
+          "custom": {
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 15,
+            "lineWidth": 2
+          },
+          "min": 0,
+          "max": 100
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Delta %"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#E5484D",
+                      "value": null
+                    },
+                    {
+                      "color": "#00F2FE",
+                      "value": 0
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/^value$/",
+          "values": false
+        },
+        "text": {
+          "valueSize": 48,
+          "titleSize": 14
+        },
+        "noValue": "-",
+        "textMode": "auto",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "WITH now_val AS (\nWITH machines AS (\n  SELECT device_id AS eqp_id FROM public.devices WHERE device_type='ldi' AND enabled AND device_id IN (${machine_id:sqlstring})\n),\nlatest AS (\n  SELECT DISTINCT ON (eqp_id) eqp_id, state\n  FROM public.ldi_data\n  WHERE \"time\" > NOW() - INTERVAL '1 hour' AND factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring})\n  ORDER BY eqp_id, \"time\" DESC\n)\nSELECT ROUND((COUNT(*) FILTER (WHERE l.state = true) * 100.0 / NULLIF(COUNT(*), 0))::NUMERIC, 1) AS value\nFROM machines m LEFT JOIN latest l ON l.eqp_id = m.eqp_id\n),\nprev_val AS (\nWITH machines AS (\n  SELECT device_id AS eqp_id FROM public.devices WHERE device_type='ldi' AND enabled AND device_id IN (${machine_id:sqlstring})\n),\nlatest AS (\n  SELECT DISTINCT ON (eqp_id) eqp_id, state\n  FROM public.ldi_data\n  WHERE \"time\" BETWEEN NOW() - INTERVAL '2 hours' AND NOW() - INTERVAL '1 hour' AND factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring})\n  ORDER BY eqp_id, \"time\" DESC\n)\nSELECT ROUND((COUNT(*) FILTER (WHERE l.state = true) * 100.0 / NULLIF(COUNT(*), 0))::NUMERIC, 1) AS value\nFROM machines m LEFT JOIN latest l ON l.eqp_id = m.eqp_id\n)\nSELECT n.value, ROUND((((n.value - p.value)/NULLIF(p.value, 0)::NUMERIC) * 100)::NUMERIC, 1) AS \"Delta %\"\nFROM now_val n, prev_val p",
+          "format": "table"
+        }
+      ],
+      "description": "Percent of the selected registered+enabled LDI fleet whose latest state in the last hour is true. Denominator is always the full selected machine registry (public.devices), not just machines that happened to report -- a silent machine now correctly counts against availability instead of disappearing from the ratio."
+    },
+    {
+      "id": 5,
+      "title": "◉ Critical Alarms",
+      "type": "stat",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 12,
+        "w": 6,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#22c55e",
+                "value": null
+              },
+              {
+                "color": "#FF003C",
+                "value": 1
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 15,
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/^value$/",
+          "values": false
+        },
+        "text": {
+          "valueSize": 48,
+          "titleSize": 14
+        },
+        "noValue": "-",
+        "textMode": "auto",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nSELECT COUNT(*)::NUMERIC AS value\nFROM public.ldi_alarm_log a\nJOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\nWHERE a.equipmentid IN (${machine_id:sqlstring}) AND m.alarm_type ILIKE '%Critical%';",
+          "format": "table"
+        }
+      ],
+      "description": "Counts real alarm rows for selected machine IDs that match a Critical master code. Zero is valid because current log codes do not match the supplied master."
+    },
+    {
       "id": 3,
       "title": "◉ Avg Temperature",
       "type": "stat",
@@ -982,9 +1008,9 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 13.5,
+        "y": 12,
         "w": 6,
-        "h": 5
+        "h": 4
       },
       "fieldConfig": {
         "defaults": {
@@ -1107,9 +1133,9 @@
       },
       "gridPos": {
         "x": 18,
-        "y": 13.5,
+        "y": 12,
         "w": 6,
-        "h": 5
+        "h": 4
       },
       "fieldConfig": {
         "defaults": {
@@ -1224,27 +1250,14 @@
       "description": "Fleet-wide average humidity. Target 55±5%RH. Red outside 50-60%, Amber 50-60%, Green 55-60%."
     },
     {
-      "id": 10005,
-      "type": "row",
-      "title": "◈ PROCESS STATE",
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 13.5
-      },
-      "collapsed": false,
-      "panels": []
-    },
-    {
       "id": 10001,
       "type": "row",
       "title": "◈ PRODUCTION & COMPLIANCE",
       "gridPos": {
-        "h": 1,
-        "w": 24,
         "x": 0,
-        "y": 20
+        "y": 16,
+        "w": 24,
+        "h": 1
       },
       "collapsed": false,
       "panels": []
@@ -1258,7 +1271,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 21,
+        "y": 17,
         "w": 8,
         "h": 12
       },
@@ -1550,7 +1563,7 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 21,
+        "y": 17,
         "w": 8,
         "h": 12
       },
@@ -1641,7 +1654,7 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 21,
+        "y": 17,
         "w": 8,
         "h": 12
       },
@@ -1728,10 +1741,10 @@
       "type": "row",
       "title": "◈ PROCESS METRICS",
       "gridPos": {
-        "h": 1,
-        "w": 24,
         "x": 0,
-        "y": 33
+        "y": 29,
+        "w": 24,
+        "h": 1
       },
       "collapsed": false,
       "panels": []
@@ -1745,7 +1758,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 34,
+        "y": 30,
         "w": 8,
         "h": 10
       },
@@ -1870,7 +1883,7 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 34,
+        "y": 30,
         "w": 8,
         "h": 10
       },
@@ -1995,7 +2008,7 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 34,
+        "y": 30,
         "w": 8,
         "h": 10
       },
@@ -2108,10 +2121,10 @@
       "type": "row",
       "title": "◈ ANALYTICS & SPC",
       "gridPos": {
-        "h": 1,
-        "w": 24,
         "x": 0,
-        "y": 44
+        "y": 40,
+        "w": 24,
+        "h": 1
       },
       "collapsed": false,
       "panels": []
@@ -2125,7 +2138,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 45,
+        "y": 41,
         "w": 12,
         "h": 8
       },
@@ -2181,7 +2194,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 45,
+        "y": 41,
         "w": 12,
         "h": 8
       },
@@ -2269,10 +2282,10 @@
       "type": "row",
       "title": "◈ SYSTEM ALARMS",
       "gridPos": {
-        "h": 1,
-        "w": 24,
         "x": 0,
-        "y": 53
+        "y": 49,
+        "w": 24,
+        "h": 1
       },
       "collapsed": false,
       "panels": []
@@ -2286,7 +2299,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 54,
+        "y": 50,
         "w": 24,
         "h": 12
       },
@@ -2539,7 +2552,7 @@
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 66,
+        "y": 62,
         "w": 24,
         "h": 1
       },
@@ -2555,7 +2568,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 67,
+        "y": 63,
         "w": 24,
         "h": 8
       },
