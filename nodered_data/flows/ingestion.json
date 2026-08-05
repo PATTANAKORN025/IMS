@@ -4,7 +4,7 @@
     "type": "tab",
     "label": "IMS Ingestion Pipeline",
     "disabled": false,
-    "info": "SNMP walkers → Parser → TimescaleDB"
+    "info": "SNMP walkers \u2192 Parser \u2192 TimescaleDB"
   },
   {
     "id": "bc78ea85b252a09f",
@@ -174,7 +174,7 @@
     "type": "function",
     "z": "ims-tab-v5",
     "name": "Walk CPU",
-    "func": "const snmp = global.get(\"snmp\");\nconst normalizeOid = (raw) => Array.isArray(raw) ? raw.join(\".\") : String(raw).replace(/,/g, \".\");\nif (!snmp) { msg.payload = []; return msg; }\n\nconst devType = msg.device_type || \"server\";\nconst msgRef = msg;\nconst nodeRef = node;\n\nif (msg._walker === \"offline\") return msg;\n\nfunction mkSession() {\n    return snmp.createSession(msg.host || \"ims-snmpsim\", msg.community || \"apex_mock\", {\n        port: msg.snmp_port || 161, version: snmp.Version2c, retries: 0, timeout: 6000\n    });\n}\n\nfunction pushIfValid(vb, out) {\n    if (vb.value === null || vb.value === undefined) return;\n    if (vb.type === 129 || vb.type === 128 || vb.type === 130) return;\n    out.push({ oid: normalizeOid(vb.oid), value: vb.value, type: vb.type });\n}\n\n// HOST-RESOURCES-MIB: hrProcessorLoad — works on both Linux and Juniper\nconst oids = [\n    \"1.3.6.1.2.1.25.3.3.1.2.1\",\n    \"1.3.6.1.2.1.25.3.3.1.2.2\",\n    \"1.3.6.1.2.1.25.3.3.1.2.3\",\n    \"1.3.6.1.2.1.25.3.3.1.2.4\"\n];\ntry {\n    var s = mkSession();\n    s.on(\"error\", function(err) { node.debug(\"CPU SNMP error: \" + err.message); });\n    s.get(oids, function(error, varbinds) {\n        try { s.close(); } catch(e) {}\n        var results = [];\n        if (!error && varbinds) {\n            for (var i = 0; i < varbinds.length; i++) pushIfValid(varbinds[i], results);\n        }\n        msgRef.payload = results;\n        nodeRef.send(msgRef);\n    });\n} catch(e) {\n    msgRef.payload = [];\n    nodeRef.send(msgRef);\n}\nreturn null;",
+    "func": "const snmp = global.get(\"snmp\");\nconst normalizeOid = (raw) => Array.isArray(raw) ? raw.join(\".\") : String(raw).replace(/,/g, \".\");\nif (!snmp) { msg.payload = []; return msg; }\n\nconst devType = msg.device_type || \"server\";\nconst msgRef = msg;\nconst nodeRef = node;\n\nif (msg._walker === \"offline\") return msg;\n\nfunction mkSession() {\n    return snmp.createSession(msg.host || \"ims-snmpsim\", msg.community || \"apex_mock\", {\n        port: msg.snmp_port || 161, version: snmp.Version2c, retries: 0, timeout: 6000\n    });\n}\n\nfunction pushIfValid(vb, out) {\n    if (vb.value === null || vb.value === undefined) return;\n    if (vb.type === 129 || vb.type === 128 || vb.type === 130) return;\n    out.push({ oid: normalizeOid(vb.oid), value: vb.value, type: vb.type });\n}\n\n// HOST-RESOURCES-MIB: hrProcessorLoad \u2014 works on both Linux and Juniper\nconst oids = [\n    \"1.3.6.1.2.1.25.3.3.1.2.1\",\n    \"1.3.6.1.2.1.25.3.3.1.2.2\",\n    \"1.3.6.1.2.1.25.3.3.1.2.3\",\n    \"1.3.6.1.2.1.25.3.3.1.2.4\"\n];\ntry {\n    var s = mkSession();\n    s.on(\"error\", function(err) { node.debug(\"CPU SNMP error: \" + err.message); });\n    s.get(oids, function(error, varbinds) {\n        try { s.close(); } catch(e) {}\n        var results = [];\n        if (!error && varbinds) {\n            for (var i = 0; i < varbinds.length; i++) pushIfValid(varbinds[i], results);\n        }\n        msgRef.payload = results;\n        nodeRef.send(msgRef);\n    });\n} catch(e) {\n    msgRef.payload = [];\n    nodeRef.send(msgRef);\n}\nreturn null;",
     "outputs": 1,
     "timeout": "15",
     "x": 580,
@@ -264,7 +264,7 @@
     "type": "function",
     "z": "ims-tab-v5",
     "name": "Bypass Empty",
-    "func": "// Log error — walker already sent empty payload on error.\n// Do not re-send: would double-count.\nnode.warn('Walker error caught: ' + (msg.error ? msg.error.message : 'unknown'));\nreturn null;",
+    "func": "// Log error \u2014 walker already sent empty payload on error.\n// Do not re-send: would double-count.\nnode.warn('Walker error caught: ' + (msg.error ? msg.error.message : 'unknown'));\nreturn null;",
     "outputs": 1,
     "x": 560,
     "y": 360,
@@ -399,7 +399,7 @@
     "type": "function",
     "z": "ims-tab-v5",
     "name": "Load Device Registry",
-    "func": "const pool = global.get('pgPool');\nif (!pool) { node.error('pgPool not available in global context'); return null; }\nconst sql = 'SELECT device_id AS machine_id, hostname, snmp_community AS community, snmp_port, device_type FROM public.devices WHERE enabled = true';\npool.query(sql, [], function(err, result) {\n    if (err) {\n        if (err.message && err.message.indexOf('does not exist') !== -1) {\n            node.warn('Device Registry: table not ready yet — retrying in 10s');\n        } else {\n            node.warn('Device Registry: ' + err.message + ' — using fallback defaults');\n        }\n        return;\n    }\n    const registry = {};\n    if (result && result.rows) {\n        result.rows.forEach(function(row) {\n            registry[row.machine_id] = {\n                hostname: row.hostname || row.machine_id,\n                community: row.community || 'public',\n                snmp_port: row.snmp_port || 161,\n                device_type: row.device_type || 'server'\n            };\n        });\n    }\n    flow.set('batchId', 'batch_' + Date.now());\n    global.set('deviceRegistry', registry);\n    node.log('Device registry loaded: ' + Object.keys(registry).length + ' devices');\n});\nreturn null;",
+    "func": "const pool = global.get('pgPool');\nif (!pool) { node.error('pgPool not available in global context'); return null; }\nconst sql = 'SELECT device_id AS machine_id, hostname, snmp_community AS community, snmp_port, device_type FROM public.devices WHERE enabled = true';\npool.query(sql, [], function(err, result) {\n    if (err) {\n        if (err.message && err.message.indexOf('does not exist') !== -1) {\n            node.warn('Device Registry: table not ready yet \u2014 retrying in 10s');\n        } else {\n            node.warn('Device Registry: ' + err.message + ' \u2014 using fallback defaults');\n        }\n        return;\n    }\n    const registry = {};\n    if (result && result.rows) {\n        result.rows.forEach(function(row) {\n            registry[row.machine_id] = {\n                hostname: row.hostname || row.machine_id,\n                community: row.community || 'public',\n                snmp_port: row.snmp_port || 161,\n                device_type: row.device_type || 'server'\n            };\n        });\n    }\n    flow.set('batchId', 'batch_' + Date.now());\n    global.set('deviceRegistry', registry);\n    node.log('Device registry loaded: ' + Object.keys(registry).length + ' devices');\n});\nreturn null;",
     "outputs": 0,
     "timeout": "",
     "noerr": 0,
@@ -553,7 +553,7 @@
     "type": "function",
     "z": "ims-tab-v5",
     "name": "Parse K6 Payload",
-    "func": "var expectedKey = env.get('INGEST_API_KEY');\nvar providedKey = msg.req ? msg.req.headers['x-api-key'] : null;\n\n// 1. Auth Check (Send ORIGINAL msg to output 2)\nif (expectedKey && providedKey !== expectedKey) {\n    msg.statusCode = 401;\n    msg.payload = JSON.stringify({ error: 'Unauthorized' });\n    msg.headers = { 'Content-Type': 'application/json' };\n    return [null, msg];\n}\n\nvar body = msg.payload;\nif (typeof body === 'string') {\n    try { body = JSON.parse(body); } catch(e) { body = {}; }\n}\n\nvar machineId = body.machine_id || '';\nif (!machineId) {\n    machineId = 'E2E-SERVER-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0');\n}\nif (machineId.startsWith('K6-SERVER-')) machineId = machineId.replace('K6-SERVER-', 'E2E-SERVER-');\n\n// 2. Prepare Pipeline msg (Safely Clone to drop req/res and prevent memory leaks)\nvar pipelineMsg = RED.util.cloneMessage(msg);\npipelineMsg.machine_id = machineId;\npipelineMsg.topic = machineId;\npipelineMsg.payload = '';\n\n// 3. Prepare HTTP Response (Use ORIGINAL msg for output 2)\nmsg.statusCode = 200;\nmsg.payload = JSON.stringify({ ok: true, machine_id: machineId });\nmsg.headers = { 'Content-Type': 'application/json' };\n\nreturn [pipelineMsg, msg];",
+    "func": "var expectedKey = env.get('INGEST_API_KEY');\nvar providedKey = msg.req ? msg.req.headers['x-api-key'] : null;\n\n// 1. Auth Check (Send ORIGINAL msg to output 2)\nif (expectedKey && providedKey !== expectedKey) {\n    msg.statusCode = 401;\n    msg.payload = JSON.stringify({ error: 'Unauthorized' });\n    msg.headers = { 'Content-Type': 'application/json' };\n    return [null, msg];\n}\n\nvar body = msg.payload;\nif (typeof body === 'string') {\n    try { body = JSON.parse(body); } catch(e) { body = {}; }\n}\n\nvar machineId = body.machine_id || '';\nif (!machineId) {\n    machineId = 'E2E-SERVER-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0');\n}\nif (machineId.startsWith('K6-SERVER-')) machineId = machineId.replace('K6-SERVER-', 'E2E-SERVER-');\n\n// 2. Prepare Pipeline msg (Safely Clone to drop req/res and prevent memory leaks)\nvar pipelineMsg = {}; // Fix memory leak (no cloneMessage)\npipelineMsg.machine_id = machineId;\npipelineMsg.topic = machineId;\npipelineMsg.payload = '';\n\n// 3. Prepare HTTP Response (Use ORIGINAL msg for output 2)\nmsg.statusCode = 200;\nmsg.payload = JSON.stringify({ ok: true, machine_id: machineId });\nmsg.headers = { 'Content-Type': 'application/json' };\n\nreturn [pipelineMsg, msg];",
     "outputs": 2,
     "timeout": "",
     "noerr": 0,
@@ -617,8 +617,22 @@
     "x": 250,
     "y": 0,
     "wires": [
-      []
+      [
+        "http_metrics_out"
+      ]
     ],
+    "g": "bc78ea85b252a09f"
+  },
+  {
+    "id": "http_metrics_out",
+    "type": "http response",
+    "z": "ims-tab-v5",
+    "name": "200 OK (metrics)",
+    "statusCode": "",
+    "headers": {},
+    "x": 480,
+    "y": 0,
+    "wires": [],
     "g": "bc78ea85b252a09f"
   }
 ]
