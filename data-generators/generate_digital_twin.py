@@ -177,7 +177,7 @@ def generate():
             rh_state = p["rh_mu"]
             board = 1
             total_board = random.randint(120, 240)
-            mo = f"MO-{random.randint(10000, 99999)}"
+            mo = f"MO-{random.randint(100000, 999999)}"
             fpn = f"PN-{chr(65 + random.randint(0, 23))}{random.randint(100, 999)}"
             layer = random.choice(p["layers"])
             resist = random.choice(RESIST_TYPES)
@@ -228,7 +228,7 @@ def generate():
                 if board > total_board:
                     board = 1
                     total_board = random.randint(120, 240)
-                    mo = f"MO-{random.randint(10000, 99999)}"
+                    mo = f"MO-{random.randint(100000, 999999)}"
                     fpn = f"PN-{chr(65 + random.randint(0, 23))}{random.randint(100, 999)}"
                     layer = random.choice(p["layers"])
 
