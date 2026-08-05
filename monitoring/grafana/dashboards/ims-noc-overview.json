@@ -215,9 +215,9 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 6,
+        "x": 0,
         "y": 17,
-        "w": 12,
+        "w": 18,
         "h": 10
       },
       "fieldConfig": {
@@ -312,125 +312,6 @@
       "links": [
         {
           "title": "Drill-down -> Engineering",
-          "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
-          "targetBlank": true
-        }
-      ]
-    },
-    {
-      "id": 601,
-      "title": "◉ LDI Yield (%)",
-      "type": "stat",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 17,
-        "w": 6,
-        "h": 10
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#FF003C",
-                "value": null
-              },
-              {
-                "color": "#FF9100",
-                "value": 90
-              },
-              {
-                "color": "#22C55E",
-                "value": 95
-              }
-            ]
-          },
-          "custom": {
-            "gradientMode": "opacity",
-            "lineInterpolation": "smooth",
-            "fillOpacity": 15,
-            "lineWidth": 2
-          },
-          "decimals": 2,
-          "mappings": [
-            {
-              "type": "special",
-              "options": {
-                "match": "null+nan",
-                "result": {
-                  "color": "#6B7280",
-                  "text": "NO_DATA",
-                  "index": 0
-                }
-              }
-            }
-          ]
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "/.*/"
-            },
-            "properties": [
-              {
-                "id": "decimals",
-                "value": 2
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "/.*/"
-            },
-            "properties": [
-              {
-                "id": "custom.fontFamily",
-                "value": "'Roboto Mono', monospace"
-              }
-            ]
-          }
-        ]
-      },
-      "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "center",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "values": false
-        },
-        "noValue": "NO_DATA",
-        "textMode": "auto",
-        "text": {
-          "valueSize": 48,
-          "titleSize": 14
-        }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT public.f_ldi_yield_pct(\n  (ARRAY[${machine_id:sqlstring}])::text[],\n  NOW() - INTERVAL '1 hour', NOW()\n) AS value",
-          "format": "table"
-        }
-      ],
-      "description": "Fleet-wide yield: worst-case of PE-pass-rate and JE-pass-rate vs pe_setting/je_setting, via public.f_ldi_yield_pct() (migration 046) -- same function Manufacturing's Estimated Yield panel calls, so the two dashboards can never disagree on this number again. Higher is better.",
-      "links": [
-        {
-          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -737,7 +618,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH ranked AS (SELECT device_id, cpu_load_percent, temp_c, time, ROW_NUMBER() OVER (PARTITION BY device_id ORDER BY time DESC) AS rn FROM public.sys_metrics WHERE time > NOW() - INTERVAL '15 minutes' AND device_id IN (SELECT device_id FROM public.devices WHERE device_type='server' AND enabled=true)) SELECT r.device_id AS \"Server Name\", CASE WHEN r.time > NOW() - INTERVAL '1 minute' THEN 'online' WHEN r.time > NOW() - INTERVAL '3 minutes' THEN 'stale' ELSE 'offline' END AS \"Status\", ROUND(r.cpu_load_percent::NUMERIC, 1) AS \"CPU (%)\", ROUND(r.temp_c::NUMERIC, 0) AS \"Temp (°C)\" FROM ranked r WHERE r.rn = 1 ORDER BY r.time DESC LIMIT 10",
+          "rawSql": "WITH ranked AS (SELECT device_id, cpu_load_percent, temp_c, time, ROW_NUMBER() OVER (PARTITION BY device_id ORDER BY time DESC) AS rn FROM public.sys_metrics WHERE time > NOW() - INTERVAL '15 minutes' AND device_id IN (SELECT device_id FROM public.devices WHERE device_type='server' AND enabled=true)) SELECT r.device_id AS \"Server Name\", CASE WHEN r.time > NOW() - INTERVAL '2.5 minutes' THEN 'online' WHEN r.time > NOW() - INTERVAL '5 minutes' THEN 'stale' ELSE 'offline' END AS \"Status\", ROUND(r.cpu_load_percent::NUMERIC, 1) AS \"CPU (%)\", ROUND(r.temp_c::NUMERIC, 0) AS \"Temp (°C)\" FROM ranked r WHERE r.rn = 1 ORDER BY r.time DESC LIMIT 10",
           "format": "table",
           "legendFormat": "{{device_id}}"
         }
@@ -1916,5 +1797,6 @@
     }
   ],
   "graphTooltip": 1,
-  "fiscalYearStartMonth": 0
+  "fiscalYearStartMonth": 0,
+  "description": "Infrastructure-only (servers) -- LDI process/quality metrics live on the Manufacturing and Machine Snapshot dashboards."
 }
