@@ -8,7 +8,7 @@
   ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "refresh": "10s",
+  "refresh": "5m",
   "time": {
     "from": "now-15m",
     "to": "now"
@@ -165,7 +165,7 @@
     },
     {
       "id": 50,
-      "title": "\u25c8 Days Until Full (Resource Battery)",
+      "title": "◈ Days Until Full (Resource Battery)",
       "type": "bargauge",
       "datasource": {
         "uid": "timescaledb"
@@ -217,7 +217,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT 'Disk' AS metric,\n  LEAST(\n    CASE\n      WHEN r.slope <= 0 THEN 9999\n      WHEN t.disk_total_gb <= 0 THEN 9999\n      ELSE GREATEST(0, ROUND(\n        ((t.disk_total_gb - r.intercept) / r.slope - (extract(epoch FROM NOW()) / 86400))::numeric, 0\n      ))\n    END,\n    9999\n  ) AS \"Days Until Full\"\nFROM (\n  SELECT device_id,\n    COALESCE(regr_slope(avg_used, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_used, day_num), 0::double precision) AS intercept\n  FROM (\n    SELECT device_id,\n      AVG(avg_disk_used) AS avg_used,\n      extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n    FROM public.sys_hourly\n    WHERE bucket > NOW() - INTERVAL '30 days'\n    GROUP BY device_id, time_bucket('1 day', bucket)\n  ) d\n  GROUP BY device_id\n  HAVING COUNT(*) >= 7\n) r\nJOIN (\n  SELECT DISTINCT ON (device_id) device_id, disk_total_gb\n  FROM public.sys_metrics\n  WHERE disk_total_gb > 0\n  ORDER BY device_id, time DESC\n) t ON t.device_id = r.device_id\nORDER BY 1 ASC\nLIMIT 1",
+          "rawSql": "SELECT 'Disk' AS metric,\n  LEAST(\n    CASE\n      WHEN r.slope <= 0 THEN 9999\n      WHEN t.disk_total_gb <= 0 THEN 9999\n      ELSE GREATEST(0, ROUND(\n        ((t.disk_total_gb - r.intercept) / r.slope - (extract(epoch FROM NOW()) / 86400))::numeric, 0\n      ))\n    END,\n    9999\n  ) AS \"Days Until Full\"\nFROM (\n  SELECT device_id,\n    COALESCE(regr_slope(avg_used, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_used, day_num), 0::double precision) AS intercept\n  FROM (\n    SELECT device_id,\n      AVG(avg_disk_used) AS avg_used,\n      extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n    FROM public.sys_hourly\n    WHERE bucket > NOW() - INTERVAL '30 days'\n    GROUP BY device_id, time_bucket('1 day', bucket)\n  ) d\n  GROUP BY device_id\n  HAVING COUNT(*) >= 3\n) r\nJOIN (\n  SELECT DISTINCT ON (device_id) device_id, disk_total_gb\n  FROM public.sys_metrics\n  WHERE disk_total_gb > 0\n  ORDER BY device_id, time DESC\n) t ON t.device_id = r.device_id\nORDER BY 1 ASC\nLIMIT 1",
           "format": "table",
           "legendFormat": "{{device_id}}"
         },
@@ -226,7 +226,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT 'Disk' AS metric,\n  LEAST(\n    CASE\n      WHEN r.slope <= 0 THEN 9999\n      WHEN t.disk_total_gb <= 0 THEN 9999\n      ELSE GREATEST(0, ROUND(\n        ((t.disk_total_gb - r.intercept) / r.slope - (extract(epoch FROM NOW()) / 86400))::numeric, 0\n      ))\n    END,\n    9999\n  ) AS \"Days Until Full\"\nFROM (\n  SELECT device_id,\n    COALESCE(regr_slope(avg_used, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_used, day_num), 0::double precision) AS intercept\n  FROM (\n    SELECT device_id,\n      AVG(avg_disk_used) AS avg_used,\n      extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n    FROM public.sys_hourly\n    WHERE bucket > NOW() - INTERVAL '30 days'\n    GROUP BY device_id, time_bucket('1 day', bucket)\n  ) d\n  GROUP BY device_id\n  HAVING COUNT(*) >= 7\n) r\nJOIN (\n  SELECT DISTINCT ON (device_id) device_id, disk_total_gb\n  FROM public.sys_metrics\n  WHERE disk_total_gb > 0\n  ORDER BY device_id, time DESC\n) t ON t.device_id = r.device_id\nORDER BY 1 ASC\nLIMIT 1",
+          "rawSql": "SELECT 'RAM' AS metric,\n  LEAST(\n    CASE\n      WHEN r.slope <= 0 THEN 9999\n      WHEN t.ram_total_mb <= 0 THEN 9999\n      ELSE GREATEST(0, ROUND(\n        ((t.ram_total_mb - r.intercept) / r.slope - (extract(epoch FROM NOW()) / 86400))::numeric, 0\n      ))\n    END,\n    9999\n  ) AS \"Days Until Full\"\nFROM (\n  SELECT device_id,\n    COALESCE(regr_slope(avg_used, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_used, day_num), 0::double precision) AS intercept\n  FROM (\n    SELECT device_id,\n      AVG(avg_ram_used) AS avg_used,\n      extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n    FROM public.sys_hourly\n    WHERE bucket > NOW() - INTERVAL '30 days'\n    GROUP BY device_id, time_bucket('1 day', bucket)\n  ) d\n  GROUP BY device_id\n  HAVING COUNT(*) >= 3\n) r\nJOIN (\n  SELECT DISTINCT ON (device_id) device_id, ram_total_mb\n  FROM public.sys_metrics\n  WHERE ram_total_mb > 0\n  ORDER BY device_id, time DESC\n) t ON t.device_id = r.device_id\nORDER BY 1 ASC\nLIMIT 1",
           "format": "table",
           "legendFormat": "{{metric}}"
         },
@@ -235,7 +235,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT 'Disk' AS metric,\n  LEAST(\n    CASE\n      WHEN r.slope <= 0 THEN 9999\n      WHEN t.disk_total_gb <= 0 THEN 9999\n      ELSE GREATEST(0, ROUND(\n        ((t.disk_total_gb - r.intercept) / r.slope - (extract(epoch FROM NOW()) / 86400))::numeric, 0\n      ))\n    END,\n    9999\n  ) AS \"Days Until Full\"\nFROM (\n  SELECT device_id,\n    COALESCE(regr_slope(avg_used, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_used, day_num), 0::double precision) AS intercept\n  FROM (\n    SELECT device_id,\n      AVG(avg_disk_used) AS avg_used,\n      extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n    FROM public.sys_hourly\n    WHERE bucket > NOW() - INTERVAL '30 days'\n    GROUP BY device_id, time_bucket('1 day', bucket)\n  ) d\n  GROUP BY device_id\n  HAVING COUNT(*) >= 7\n) r\nJOIN (\n  SELECT DISTINCT ON (device_id) device_id, disk_total_gb\n  FROM public.sys_metrics\n  WHERE disk_total_gb > 0\n  ORDER BY device_id, time DESC\n) t ON t.device_id = r.device_id\nORDER BY 1 ASC\nLIMIT 1",
+          "rawSql": "SELECT 'CPU' AS metric,\n  CASE\n    WHEN r.slope <= 0 THEN 9999\n    WHEN r.intercept >= 100 THEN 0\n    ELSE GREATEST(0, LEAST(\n      ROUND(((100 - r.intercept) / r.slope - (extract(epoch FROM NOW()) / 86400))::numeric, 0),\n      9999\n    ))\n  END AS \"Days Until Full\"\nFROM (\n  SELECT device_id,\n    COALESCE(regr_slope(avg_cpu, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_cpu, day_num), 0::double precision) AS intercept\n  FROM (\n    SELECT device_id,\n      AVG(avg_cpu) AS avg_cpu,\n      extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n    FROM public.sys_hourly\n    WHERE bucket > NOW() - INTERVAL '30 days'\n    GROUP BY device_id, time_bucket('1 day', bucket)\n  ) d\n  GROUP BY device_id\n  HAVING COUNT(*) >= 3\n) r\nORDER BY 1 ASC\nLIMIT 1",
           "format": "table",
           "legendFormat": "{{device_id}}"
         }
@@ -244,7 +244,7 @@
     },
     {
       "id": 1,
-      "title": "\u25c9 Disk: Days Until Full",
+      "title": "◉ Disk: Days Until Full",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -284,7 +284,7 @@
               "type": "value",
               "options": {
                 "9999": {
-                  "text": "\u221e",
+                  "text": "∞",
                   "color": "#10B981",
                   "index": 0
                 }
@@ -354,7 +354,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH daily_usage AS (\n  SELECT\n    device_id,\n    AVG(avg_disk_used) AS avg_used,\n    extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n  FROM public.sys_hourly\n  WHERE bucket > NOW() - INTERVAL '30 days'\n  GROUP BY device_id, time_bucket('1 day', bucket)\n),\nregression AS (\n  SELECT\n    device_id,\n    COALESCE(regr_slope(avg_used, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_used, day_num), 0::double precision) AS intercept,\n    COUNT(*) AS data_points\n  FROM daily_usage\n  GROUP BY device_id\n  HAVING COUNT(*) >= 7\n),\ntotals AS (\n  SELECT DISTINCT ON (device_id) device_id, disk_total_gb\n  FROM public.sys_metrics\n  WHERE disk_total_gb > 0\n  ORDER BY device_id, time DESC\n),\ncurrent_state AS (\n  SELECT\n    r.device_id,\n    r.slope,\n    r.intercept,\n    t.disk_total_gb,\n    extract(epoch FROM NOW()) / 86400 AS now_day\n  FROM regression r\n  JOIN totals t ON t.device_id = r.device_id\n)\nSELECT device_id AS metric,\n  CASE\n    WHEN slope <= 0 THEN 9999\n    WHEN disk_total_gb <= 0 THEN 9999\n    ELSE GREATEST(0, LEAST(\n      ROUND(((disk_total_gb - intercept) / slope - now_day)::numeric, 0),\n      9999\n    ))\n  END AS value\nFROM current_state\nORDER BY value ASC\nLIMIT 1",
+          "rawSql": "WITH daily_usage AS (\n  SELECT\n    device_id,\n    AVG(avg_disk_used) AS avg_used,\n    extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n  FROM public.sys_hourly\n  WHERE bucket > NOW() - INTERVAL '30 days'\n  GROUP BY device_id, time_bucket('1 day', bucket)\n),\nregression AS (\n  SELECT\n    device_id,\n    COALESCE(regr_slope(avg_used, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_used, day_num), 0::double precision) AS intercept,\n    COUNT(*) AS data_points\n  FROM daily_usage\n  GROUP BY device_id\n  HAVING COUNT(*) >= 3\n),\ntotals AS (\n  SELECT DISTINCT ON (device_id) device_id, disk_total_gb\n  FROM public.sys_metrics\n  WHERE disk_total_gb > 0\n  ORDER BY device_id, time DESC\n),\ncurrent_state AS (\n  SELECT\n    r.device_id,\n    r.slope,\n    r.intercept,\n    t.disk_total_gb,\n    extract(epoch FROM NOW()) / 86400 AS now_day\n  FROM regression r\n  JOIN totals t ON t.device_id = r.device_id\n)\nSELECT device_id AS metric,\n  CASE\n    WHEN slope <= 0 THEN 9999\n    WHEN disk_total_gb <= 0 THEN 9999\n    ELSE GREATEST(0, LEAST(\n      ROUND(((disk_total_gb - intercept) / slope - now_day)::numeric, 0),\n      9999\n    ))\n  END AS value\nFROM current_state\nORDER BY value ASC\nLIMIT 1",
           "format": "table",
           "legendFormat": "{{device_id}}"
         }
@@ -362,7 +362,7 @@
       "description": "Days until disk saturation based on 30-day linear regression. Red < 30d, Orange < 90d, Green > 180d.",
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -370,7 +370,7 @@
     },
     {
       "id": 2,
-      "title": "\u25c9 RAM: Days Until Full",
+      "title": "◉ RAM: Days Until Full",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -410,7 +410,7 @@
               "type": "value",
               "options": {
                 "9999": {
-                  "text": "\u221e",
+                  "text": "∞",
                   "color": "#10B981",
                   "index": 0
                 }
@@ -480,7 +480,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH daily_ram AS (\n  SELECT\n    device_id,\n    AVG(avg_ram_used) AS avg_used,\n    extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n  FROM public.sys_hourly\n  WHERE bucket > NOW() - INTERVAL '30 days'\n  GROUP BY device_id, time_bucket('1 day', bucket)\n),\nregression AS (\n  SELECT\n    device_id,\n    COALESCE(regr_slope(avg_used, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_used, day_num), 0::double precision) AS intercept,\n    COUNT(*) AS data_points\n  FROM daily_ram\n  GROUP BY device_id\n  HAVING COUNT(*) >= 7\n),\ntotals AS (\n  SELECT DISTINCT ON (device_id) device_id, ram_total_mb\n  FROM public.sys_metrics\n  WHERE ram_total_mb > 0\n  ORDER BY device_id, time DESC\n),\ncurrent_state AS (\n  SELECT\n    r.device_id,\n    r.slope,\n    r.intercept,\n    t.ram_total_mb,\n    extract(epoch FROM NOW()) / 86400 AS now_day\n  FROM regression r\n  JOIN totals t ON t.device_id = r.device_id\n)\nSELECT device_id AS metric,\n  CASE\n    WHEN slope <= 0 THEN 9999\n    WHEN ram_total_mb <= 0 THEN 9999\n    ELSE GREATEST(0, LEAST(\n      ROUND(((ram_total_mb - intercept) / slope - now_day)::numeric, 0),\n      9999\n    ))\n  END AS value\nFROM current_state\nORDER BY value ASC\nLIMIT 1",
+          "rawSql": "WITH daily_ram AS (\n  SELECT\n    device_id,\n    AVG(avg_ram_used) AS avg_used,\n    extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n  FROM public.sys_hourly\n  WHERE bucket > NOW() - INTERVAL '30 days'\n  GROUP BY device_id, time_bucket('1 day', bucket)\n),\nregression AS (\n  SELECT\n    device_id,\n    COALESCE(regr_slope(avg_used, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_used, day_num), 0::double precision) AS intercept,\n    COUNT(*) AS data_points\n  FROM daily_ram\n  GROUP BY device_id\n  HAVING COUNT(*) >= 3\n),\ntotals AS (\n  SELECT DISTINCT ON (device_id) device_id, ram_total_mb\n  FROM public.sys_metrics\n  WHERE ram_total_mb > 0\n  ORDER BY device_id, time DESC\n),\ncurrent_state AS (\n  SELECT\n    r.device_id,\n    r.slope,\n    r.intercept,\n    t.ram_total_mb,\n    extract(epoch FROM NOW()) / 86400 AS now_day\n  FROM regression r\n  JOIN totals t ON t.device_id = r.device_id\n)\nSELECT device_id AS metric,\n  CASE\n    WHEN slope <= 0 THEN 9999\n    WHEN ram_total_mb <= 0 THEN 9999\n    ELSE GREATEST(0, LEAST(\n      ROUND(((ram_total_mb - intercept) / slope - now_day)::numeric, 0),\n      9999\n    ))\n  END AS value\nFROM current_state\nORDER BY value ASC\nLIMIT 1",
           "format": "table",
           "legendFormat": "{{metric}}"
         }
@@ -488,7 +488,7 @@
       "description": "Days until RAM saturation based on 30-day linear regression trend.",
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -496,7 +496,7 @@
     },
     {
       "id": 3,
-      "title": "\u25c9 CPU: Days Until Saturation",
+      "title": "◉ CPU: Days Until Saturation",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -536,7 +536,7 @@
               "type": "value",
               "options": {
                 "9999": {
-                  "text": "\u221e",
+                  "text": "∞",
                   "color": "#10B981",
                   "index": 0
                 }
@@ -605,7 +605,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH daily_cpu AS (\n  SELECT\n    device_id,\n    AVG(avg_cpu) AS avg_cpu,\n    extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n  FROM public.sys_hourly\n  WHERE bucket > NOW() - INTERVAL '30 days'\n  GROUP BY device_id, time_bucket('1 day', bucket)\n),\nregression AS (\n  SELECT\n    device_id,\n    COALESCE(regr_slope(avg_cpu, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_cpu, day_num), 0::double precision) AS intercept,\n    COUNT(*) AS data_points\n  FROM daily_cpu\n  GROUP BY device_id\n  HAVING COUNT(*) >= 7\n),\ncurrent_state AS (\n  SELECT\n    device_id,\n    slope,\n    intercept,\n    extract(epoch FROM NOW()) / 86400 AS now_day\n  FROM regression\n)\nSELECT device_id AS metric,\n  CASE\n    WHEN slope <= 0 THEN 9999\n    WHEN intercept >= 100 THEN 0\n    ELSE GREATEST(0, LEAST(\n      ROUND(((100 - intercept) / slope - now_day)::numeric, 0),\n      9999\n    ))\n  END AS value\nFROM current_state\nORDER BY value ASC\nLIMIT 1",
+          "rawSql": "WITH daily_cpu AS (\n  SELECT\n    device_id,\n    AVG(avg_cpu) AS avg_cpu,\n    extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n  FROM public.sys_hourly\n  WHERE bucket > NOW() - INTERVAL '30 days'\n  GROUP BY device_id, time_bucket('1 day', bucket)\n),\nregression AS (\n  SELECT\n    device_id,\n    COALESCE(regr_slope(avg_cpu, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_cpu, day_num), 0::double precision) AS intercept,\n    COUNT(*) AS data_points\n  FROM daily_cpu\n  GROUP BY device_id\n  HAVING COUNT(*) >= 3\n),\ncurrent_state AS (\n  SELECT\n    device_id,\n    slope,\n    intercept,\n    extract(epoch FROM NOW()) / 86400 AS now_day\n  FROM regression\n)\nSELECT device_id AS metric,\n  CASE\n    WHEN slope <= 0 THEN 9999\n    WHEN intercept >= 100 THEN 0\n    ELSE GREATEST(0, LEAST(\n      ROUND(((100 - intercept) / slope - now_day)::numeric, 0),\n      9999\n    ))\n  END AS value\nFROM current_state\nORDER BY value ASC\nLIMIT 1",
           "format": "table",
           "legendFormat": "{{device_id}}"
         }
@@ -613,7 +613,7 @@
       "description": "Days until CPU reaches 100% saturation based on 30-day linear regression.",
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -621,7 +621,7 @@
     },
     {
       "id": 4,
-      "title": "\u25c9 Fleet Health Score",
+      "title": "◉ Fleet Health Score",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -723,7 +723,7 @@
       "description": "Composite fleet health score (0-100%) from v_fleet_health view.",
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -749,7 +749,7 @@
     },
     {
       "id": 10,
-      "title": "\u25c8 Disk Usage Trend + Linear Regression Forecast",
+      "title": "◈ Disk Usage Trend + Linear Regression Forecast",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -1034,11 +1034,11 @@
       "targets": [
         {
           "refId": "A",
-          "legendFormat": "{{ machine_id }} \u2014 Used",
+          "legendFormat": "{{ machine_id }} — Used",
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH historical AS (\n  SELECT\n    time_bucket('1 day', bucket) AS time,\n    device_id,\n    AVG(avg_disk_used) AS value,\n    'History' AS metric\n  FROM public.sys_hourly\n  WHERE $__timeFilter(bucket)\n    AND device_id IN (${machine_id:singlequote})\n    AND avg_disk_used >= 0\n  GROUP BY 1, 2\n),\nregression AS (\n  SELECT\n    device_id,\n    COALESCE(regr_slope(avg_used, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_used, day_num), 0::double precision) AS intercept\n  FROM (\n    SELECT device_id,\n      AVG(avg_disk_used) AS avg_used,\n      extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n    FROM public.sys_hourly\n    WHERE bucket > NOW() - INTERVAL '90 days'\n      AND device_id IN (${machine_id:singlequote})\n    GROUP BY device_id, time_bucket('1 day', bucket)\n  ) d\n  GROUP BY device_id\n  HAVING COUNT(*) >= 7\n),\nfuture_points AS (\n  SELECT\n    gs AS time,\n    r.device_id,\n    'Forecast' AS metric,\n    GREATEST(0, ROUND(\n      (r.slope * (extract(epoch FROM gs) / 86400) + r.intercept)::numeric, 2\n    )) AS value\n  FROM regression r\n  CROSS JOIN LATERAL generate_series(\n    (SELECT MAX(time) FROM historical) + INTERVAL '1 day',\n    (SELECT MAX(time) FROM historical) + INTERVAL '30 days',\n    INTERVAL '1 day'\n  ) gs\n  WHERE r.slope > 0\n)\nSELECT time, device_id, value, metric FROM historical\nUNION ALL\nSELECT time, device_id, value, metric FROM future_points\nORDER BY time ASC",
+          "rawSql": "WITH historical AS (\n  SELECT\n    time_bucket('1 day', bucket) AS time,\n    device_id,\n    AVG(avg_disk_used) AS value,\n    'History' AS metric\n  FROM public.sys_hourly\n  WHERE $__timeFilter(bucket)\n    AND device_id IN (${machine_id:singlequote})\n    AND avg_disk_used >= 0\n  GROUP BY 1, 2\n),\nregression AS (\n  SELECT\n    device_id,\n    COALESCE(regr_slope(avg_used, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_used, day_num), 0::double precision) AS intercept\n  FROM (\n    SELECT device_id,\n      AVG(avg_disk_used) AS avg_used,\n      extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n    FROM public.sys_hourly\n    WHERE bucket > NOW() - INTERVAL '90 days'\n      AND device_id IN (${machine_id:singlequote})\n    GROUP BY device_id, time_bucket('1 day', bucket)\n  ) d\n  GROUP BY device_id\n  HAVING COUNT(*) >= 3\n),\nfuture_points AS (\n  SELECT\n    gs AS time,\n    r.device_id,\n    'Forecast' AS metric,\n    GREATEST(0, ROUND(\n      (r.slope * (extract(epoch FROM gs) / 86400) + r.intercept)::numeric, 2\n    )) AS value\n  FROM regression r\n  CROSS JOIN LATERAL generate_series(\n    (SELECT MAX(time) FROM historical) + INTERVAL '1 day',\n    (SELECT MAX(time) FROM historical) + INTERVAL '30 days',\n    INTERVAL '1 day'\n  ) gs\n  WHERE r.slope > 0\n)\nSELECT time, device_id, value, metric FROM historical\nUNION ALL\nSELECT time, device_id, value, metric FROM future_points\nORDER BY time ASC",
           "format": "time_series"
         },
         {
@@ -1047,16 +1047,16 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH historical AS (\n  SELECT\n    time_bucket('1 day', bucket) AS time,\n    device_id,\n    AVG(avg_disk_used) AS value,\n    'History' AS metric\n  FROM public.sys_hourly\n  WHERE $__timeFilter(bucket)\n    AND device_id IN (${machine_id:singlequote})\n    AND avg_disk_used >= 0\n  GROUP BY 1, 2\n),\nregression AS (\n  SELECT\n    device_id,\n    COALESCE(regr_slope(avg_used, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_used, day_num), 0::double precision) AS intercept\n  FROM (\n    SELECT device_id,\n      AVG(avg_disk_used) AS avg_used,\n      extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n    FROM public.sys_hourly\n    WHERE bucket > NOW() - INTERVAL '90 days'\n      AND device_id IN (${machine_id:singlequote})\n    GROUP BY device_id, time_bucket('1 day', bucket)\n  ) d\n  GROUP BY device_id\n  HAVING COUNT(*) >= 7\n),\nfuture_points AS (\n  SELECT\n    gs AS time,\n    r.device_id,\n    'Forecast' AS metric,\n    GREATEST(0, ROUND(\n      (r.slope * (extract(epoch FROM gs) / 86400) + r.intercept)::numeric, 2\n    )) AS value\n  FROM regression r\n  CROSS JOIN LATERAL generate_series(\n    (SELECT MAX(time) FROM historical) + INTERVAL '1 day',\n    (SELECT MAX(time) FROM historical) + INTERVAL '30 days',\n    INTERVAL '1 day'\n  ) gs\n  WHERE r.slope > 0\n)\nSELECT time, device_id, value, metric FROM historical\nUNION ALL\nSELECT time, device_id, value, metric FROM future_points\nORDER BY time ASC",
+          "rawSql": "WITH historical AS (\n  SELECT\n    time_bucket('1 day', bucket) AS time,\n    device_id,\n    AVG(avg_disk_used) AS value,\n    'History' AS metric\n  FROM public.sys_hourly\n  WHERE $__timeFilter(bucket)\n    AND device_id IN (${machine_id:singlequote})\n    AND avg_disk_used >= 0\n  GROUP BY 1, 2\n),\nregression AS (\n  SELECT\n    device_id,\n    COALESCE(regr_slope(avg_used, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_used, day_num), 0::double precision) AS intercept\n  FROM (\n    SELECT device_id,\n      AVG(avg_disk_used) AS avg_used,\n      extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n    FROM public.sys_hourly\n    WHERE bucket > NOW() - INTERVAL '90 days'\n      AND device_id IN (${machine_id:singlequote})\n    GROUP BY device_id, time_bucket('1 day', bucket)\n  ) d\n  GROUP BY device_id\n  HAVING COUNT(*) >= 3\n),\nfuture_points AS (\n  SELECT\n    gs AS time,\n    r.device_id,\n    'Forecast' AS metric,\n    GREATEST(0, ROUND(\n      (r.slope * (extract(epoch FROM gs) / 86400) + r.intercept)::numeric, 2\n    )) AS value\n  FROM regression r\n  CROSS JOIN LATERAL generate_series(\n    (SELECT MAX(time) FROM historical) + INTERVAL '1 day',\n    (SELECT MAX(time) FROM historical) + INTERVAL '30 days',\n    INTERVAL '1 day'\n  ) gs\n  WHERE r.slope > 0\n)\nSELECT time, device_id, value, metric FROM historical\nUNION ALL\nSELECT time, device_id, value, metric FROM future_points\nORDER BY time ASC",
           "format": "time_series"
         },
         {
           "refId": "C",
-          "legendFormat": "Forecast \u2014 {{ machine_id }}",
+          "legendFormat": "Forecast — {{ machine_id }}",
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH historical AS (\n  SELECT\n    time_bucket('1 day', bucket) AS time,\n    device_id,\n    AVG(avg_disk_used) AS value,\n    'History' AS metric\n  FROM public.sys_hourly\n  WHERE $__timeFilter(bucket)\n    AND device_id IN (${machine_id:singlequote})\n    AND avg_disk_used >= 0\n  GROUP BY 1, 2\n),\nregression AS (\n  SELECT\n    device_id,\n    COALESCE(regr_slope(avg_used, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_used, day_num), 0::double precision) AS intercept\n  FROM (\n    SELECT device_id,\n      AVG(avg_disk_used) AS avg_used,\n      extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n    FROM public.sys_hourly\n    WHERE bucket > NOW() - INTERVAL '90 days'\n      AND device_id IN (${machine_id:singlequote})\n    GROUP BY device_id, time_bucket('1 day', bucket)\n  ) d\n  GROUP BY device_id\n  HAVING COUNT(*) >= 7\n),\nfuture_points AS (\n  SELECT\n    gs AS time,\n    r.device_id,\n    'Forecast' AS metric,\n    GREATEST(0, ROUND(\n      (r.slope * (extract(epoch FROM gs) / 86400) + r.intercept)::numeric, 2\n    )) AS value\n  FROM regression r\n  CROSS JOIN LATERAL generate_series(\n    (SELECT MAX(time) FROM historical) + INTERVAL '1 day',\n    (SELECT MAX(time) FROM historical) + INTERVAL '30 days',\n    INTERVAL '1 day'\n  ) gs\n  WHERE r.slope > 0\n)\nSELECT time, device_id, value, metric FROM historical\nUNION ALL\nSELECT time, device_id, value, metric FROM future_points\nORDER BY time ASC",
+          "rawSql": "WITH historical AS (\n  SELECT\n    time_bucket('1 day', bucket) AS time,\n    device_id,\n    AVG(avg_disk_used) AS value,\n    'History' AS metric\n  FROM public.sys_hourly\n  WHERE $__timeFilter(bucket)\n    AND device_id IN (${machine_id:singlequote})\n    AND avg_disk_used >= 0\n  GROUP BY 1, 2\n),\nregression AS (\n  SELECT\n    device_id,\n    COALESCE(regr_slope(avg_used, day_num), 0::double precision) AS slope,\n    COALESCE(regr_intercept(avg_used, day_num), 0::double precision) AS intercept\n  FROM (\n    SELECT device_id,\n      AVG(avg_disk_used) AS avg_used,\n      extract(epoch FROM time_bucket('1 day', bucket)) / 86400 AS day_num\n    FROM public.sys_hourly\n    WHERE bucket > NOW() - INTERVAL '90 days'\n      AND device_id IN (${machine_id:singlequote})\n    GROUP BY device_id, time_bucket('1 day', bucket)\n  ) d\n  GROUP BY device_id\n  HAVING COUNT(*) >= 3\n),\nfuture_points AS (\n  SELECT\n    gs AS time,\n    r.device_id,\n    'Forecast' AS metric,\n    GREATEST(0, ROUND(\n      (r.slope * (extract(epoch FROM gs) / 86400) + r.intercept)::numeric, 2\n    )) AS value\n  FROM regression r\n  CROSS JOIN LATERAL generate_series(\n    (SELECT MAX(time) FROM historical) + INTERVAL '1 day',\n    (SELECT MAX(time) FROM historical) + INTERVAL '30 days',\n    INTERVAL '1 day'\n  ) gs\n  WHERE r.slope > 0\n)\nSELECT time, device_id, value, metric FROM historical\nUNION ALL\nSELECT time, device_id, value, metric FROM future_points\nORDER BY time ASC",
           "format": "time_series",
           "maxDataPoints": 300
         }
@@ -1064,7 +1064,7 @@
       "description": "Hourly disk usage trend with linear regression forecast (dashed #F59E0B, 30-day projection).",
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -1090,7 +1090,7 @@
     },
     {
       "id": 20,
-      "title": "\u25c8 CPU Load Trend (30-Day Average)",
+      "title": "◈ CPU Load Trend (30-Day Average)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -1362,7 +1362,7 @@
       "description": "30-day daily average CPU utilization per machine. Used for long-term capacity forecasting.",
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -1370,7 +1370,7 @@
     },
     {
       "id": 21,
-      "title": "\u25c8 RAM Usage Trend (30-Day Average)",
+      "title": "◈ RAM Usage Trend (30-Day Average)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -1642,7 +1642,7 @@
       "description": "30-day daily average RAM utilization per machine. Used for long-term capacity forecasting.",
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -1651,7 +1651,7 @@
     {
       "id": 500,
       "type": "row",
-      "title": "AIOps \u2014 ANOMALY DETECTION",
+      "title": "AIOps — ANOMALY DETECTION",
       "gridPos": {
         "x": 0,
         "y": 73,
@@ -1668,7 +1668,7 @@
     },
     {
       "id": 601,
-      "title": "\u25c8 CPU Z-Score Anomaly (3\u03c3)",
+      "title": "◈ CPU Z-Score Anomaly (3σ)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -1948,10 +1948,10 @@
           "maxDataPoints": 300
         }
       ],
-      "description": "Fleet-wide CPU Z-Score anomaly detection using 60-minute rolling window. Red zones = \u00b13\u03c3 anomalies.",
+      "description": "Fleet-wide CPU Z-Score anomaly detection using 60-minute rolling window. Red zones = ±3σ anomalies.",
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -1959,7 +1959,7 @@
     },
     {
       "id": 602,
-      "title": "\u25c8 Temperature Z-Score Anomaly (3\u03c3)",
+      "title": "◈ Temperature Z-Score Anomaly (3σ)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -2239,10 +2239,10 @@
           "maxDataPoints": 300
         }
       ],
-      "description": "Fleet-wide temperature Z-Score anomaly detection. Red zones indicate readings beyond \u00b13 standard deviations.",
+      "description": "Fleet-wide temperature Z-Score anomaly detection. Red zones indicate readings beyond ±3 standard deviations.",
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }

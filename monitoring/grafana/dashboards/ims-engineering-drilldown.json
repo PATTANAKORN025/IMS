@@ -7,9 +7,9 @@
   ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "refresh": "10s",
+  "refresh": "5m",
   "time": {
-    "from": "now-15m",
+    "from": "now-6h",
     "to": "now"
   },
   "links": [
@@ -40,7 +40,7 @@
       {
         "name": "machine_id",
         "type": "query",
-        "query": "SELECT eqp_id AS __text FROM public.devices WHERE enabled = true ORDER BY eqp_id ASC;",
+        "query": "SELECT device_id AS __text FROM public.sys_metrics WHERE time > NOW() - INTERVAL '1 hour' GROUP BY device_id HAVING max(cpu_load_percent) > 0 OR max(ram_total_mb) > 0 OR max(disk_total_gb) > 0 ORDER BY device_id ASC;",
         "datasource": {
           "uid": "timescaledb"
         },
@@ -48,12 +48,13 @@
         "multi": false,
         "includeAll": false,
         "sort": 1,
-        "label": "Machine"
+        "label": "Machine",
+        "definition": "SELECT device_id AS __text FROM public.sys_metrics WHERE time > NOW() - INTERVAL '1 hour' GROUP BY device_id HAVING max(cpu_load_percent) > 0 OR max(ram_total_mb) > 0 OR max(disk_total_gb) > 0 ORDER BY device_id ASC;"
       },
       {
         "name": "interface",
         "type": "query",
-        "query": "SELECT DISTINCT iface_name FROM public.net_metrics WHERE eqp_id IN (${machine_id:singlequote}) ORDER BY iface_name",
+        "query": "SELECT DISTINCT iface_name FROM public.net_metrics WHERE device_id IN (${machine_id:singlequote}) ORDER BY iface_name",
         "datasource": {
           "uid": "timescaledb"
         },
@@ -61,7 +62,22 @@
         "multi": false,
         "includeAll": false,
         "sort": 1,
-        "label": "Interface"
+        "label": "Interface",
+        "definition": "SELECT DISTINCT iface_name FROM public.net_metrics WHERE device_id IN (${machine_id:singlequote}) ORDER BY iface_name"
+      },
+      {
+        "name": "ldi_machine_id",
+        "type": "query",
+        "query": "SELECT eqp_id AS __text FROM public.ldi_data WHERE time > NOW() - INTERVAL '1 hour' GROUP BY eqp_id ORDER BY count(pe_1) DESC, eqp_id ASC",
+        "datasource": {
+          "uid": "timescaledb"
+        },
+        "refresh": 2,
+        "multi": false,
+        "includeAll": false,
+        "sort": 1,
+        "label": "LDI Machine",
+        "definition": "SELECT eqp_id AS __text FROM public.ldi_data WHERE time > NOW() - INTERVAL '1 hour' GROUP BY eqp_id ORDER BY count(pe_1) DESC, eqp_id ASC"
       }
     ]
   },
@@ -1731,7 +1747,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{metric}}",
-          "rawSql": "SELECT\n  time_bucket('$__interval', \"time\") AS time,\n  device_id AS metric,\n  ROUND(AVG(throughput)::NUMERIC, 1) AS \"Throughput\"\nFROM public.ldi_metrics\nWHERE $__timeFilter(\"time\") AND device_id IN (${machine_id:singlequote}) AND throughput > 0\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  time_bucket('$__interval', \"time\") AS time,\n  device_id AS metric,\n  ROUND(AVG(throughput)::NUMERIC, 1) AS \"Throughput\"\nFROM public.ldi_metrics\nWHERE $__timeFilter(\"time\") AND device_id IN (${ldi_machine_id:singlequote}) AND throughput > 0\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series"
         },
         {
@@ -1740,7 +1756,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{metric}}",
-          "rawSql": "SELECT\n  time_bucket('$__interval', bucket) AS time,\n  eqp_id AS metric,\n  ROUND(AVG(avg_pe_1)::NUMERIC, 1) AS \"PE\"\nFROM public.ldi_data_1m\nWHERE $__timeFilter(bucket) AND eqp_id IN (${machine_id:singlequote}) AND avg_pe_1 IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  time_bucket('$__interval', bucket) AS time,\n  eqp_id AS metric,\n  ROUND(AVG(avg_pe_1)::NUMERIC, 1) AS \"PE\"\nFROM public.ldi_data_1m\nWHERE $__timeFilter(bucket) AND eqp_id IN (${ldi_machine_id:singlequote}) AND avg_pe_1 IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series"
         }
       ],
@@ -1981,7 +1997,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{metric}}",
-          "rawSql": "SELECT\n  time_bucket('$__interval', bucket) AS time,\n  eqp_id AS metric,\n  ROUND(AVG(avg_je_1)::NUMERIC, 1) AS \"JE\"\nFROM public.ldi_data_1m\nWHERE $__timeFilter(bucket) AND eqp_id IN (${machine_id:singlequote}) AND avg_je_1 IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  time_bucket('$__interval', bucket) AS time,\n  eqp_id AS metric,\n  ROUND(AVG(avg_je_1)::NUMERIC, 1) AS \"JE\"\nFROM public.ldi_data_1m\nWHERE $__timeFilter(bucket) AND eqp_id IN (${ldi_machine_id:singlequote}) AND avg_je_1 IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series"
         },
         {
@@ -1990,7 +2006,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{metric}}",
-          "rawSql": "SELECT\n  time_bucket('$__interval', bucket) AS time,\n  eqp_id AS metric,\n  ROUND(AVG(avg_humidity)::NUMERIC, 1) AS \"Humidity\"\nFROM public.ldi_data_1m\nWHERE $__timeFilter(bucket) AND eqp_id IN (${machine_id:singlequote}) AND avg_humidity > 0\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  time_bucket('$__interval', bucket) AS time,\n  eqp_id AS metric,\n  ROUND(AVG(avg_humidity)::NUMERIC, 1) AS \"Humidity\"\nFROM public.ldi_data_1m\nWHERE $__timeFilter(bucket) AND eqp_id IN (${ldi_machine_id:singlequote}) AND avg_humidity > 0\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series"
         }
       ],
@@ -2076,7 +2092,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT\n  time_bucket('$__interval', bucket) AS time,\n  eqp_id AS metric,\n  ROUND(AVG(avg_pe_1)::NUMERIC, 1) AS \"PE\"\nFROM public.ldi_data_1m\nWHERE $__timeFilter(bucket) AND eqp_id IN (${machine_id:singlequote}) AND avg_pe_1 IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  time_bucket('$__interval', bucket) AS time,\n  eqp_id AS metric,\n  ROUND(AVG(avg_pe_1)::NUMERIC, 1) AS \"PE\"\nFROM public.ldi_data_1m\nWHERE $__timeFilter(bucket) AND eqp_id IN (${ldi_machine_id:singlequote}) AND avg_pe_1 IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         },
@@ -2085,7 +2101,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT\n  time_bucket('$__interval', bucket) AS time,\n  eqp_id AS metric,\n  ROUND(AVG(avg_je_1)::NUMERIC, 1) AS \"JE\"\nFROM public.ldi_data_1m\nWHERE $__timeFilter(bucket) AND eqp_id IN (${machine_id:singlequote}) AND avg_je_1 IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  time_bucket('$__interval', bucket) AS time,\n  eqp_id AS metric,\n  ROUND(AVG(avg_je_1)::NUMERIC, 1) AS \"JE\"\nFROM public.ldi_data_1m\nWHERE $__timeFilter(bucket) AND eqp_id IN (${ldi_machine_id:singlequote}) AND avg_je_1 IS NOT NULL\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
@@ -2124,7 +2140,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "currency-thb",
+          "unit": " THB",
           "decimals": 2,
           "color": {
             "mode": "fixed",
@@ -2663,27 +2679,11 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT 'CPU Load %' AS metric, AVG(cpu_load_percent) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '5 minutes'",
-          "format": "table"
-        },
-        {
-          "refId": "B",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT 'RAM Used %' AS metric, AVG(ram_used_mb / NULLIF(ram_total_mb, 0) * 100) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '5 minutes'",
-          "format": "table"
-        },
-        {
-          "refId": "C",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT 'Disk Used %' AS metric, AVG(disk_used_gb / NULLIF(disk_total_gb, 0) * 100) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '5 minutes'",
+          "rawSql": "SELECT 'CPU Load %' AS metric, AVG(cpu_load_percent) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '5 minutes'\nUNION ALL\nSELECT 'RAM Used %' AS metric, AVG(ram_used_mb / NULLIF(ram_total_mb, 0) * 100) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '5 minutes'\nUNION ALL\nSELECT 'Disk Used %' AS metric, AVG(disk_used_gb / NULLIF(disk_total_gb, 0) * 100) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '5 minutes'",
           "format": "table"
         }
       ],
-      "description": "CPU/RAM/Storage usage distribution across selected machines"
+      "description": "CPU/RAM/Storage usage distribution across selected machines. Single UNION ALL query (metric, value) -- piechart's legend keys off the value-field name per target, so 3 separate single-row targets all named \"value\" rendered the legend as \"value value value\" instead of the metric text; one query returning 3 labeled rows is the shape piechart reads correctly."
     },
     {
       "id": 1002,
@@ -2775,27 +2775,11 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT 'Healthy' AS metric, COUNT(*) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '5 minutes' AND cpu_load_percent < 80 AND ram_used_mb / NULLIF(ram_total_mb, 0) * 100 < 85",
-          "format": "table"
-        },
-        {
-          "refId": "B",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT 'Warning' AS metric, COUNT(*) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '5 minutes' AND (cpu_load_percent BETWEEN 80 AND 90 OR ram_used_mb / NULLIF(ram_total_mb, 0) * 100 BETWEEN 85 AND 95)",
-          "format": "table"
-        },
-        {
-          "refId": "C",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT 'Critical' AS metric, COUNT(*) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '5 minutes' AND (cpu_load_percent > 90 OR ram_used_mb / NULLIF(ram_total_mb, 0) * 100 > 95)",
+          "rawSql": "SELECT 'Healthy' AS metric, COUNT(*) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '5 minutes' AND cpu_load_percent < 80 AND ram_used_mb / NULLIF(ram_total_mb, 0) * 100 < 85\nUNION ALL\nSELECT 'Warning' AS metric, COUNT(*) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '5 minutes' AND (cpu_load_percent BETWEEN 80 AND 90 OR ram_used_mb / NULLIF(ram_total_mb, 0) * 100 BETWEEN 85 AND 95)\nUNION ALL\nSELECT 'Critical' AS metric, COUNT(*) AS value FROM public.sys_metrics WHERE time > NOW() - INTERVAL '5 minutes' AND (cpu_load_percent > 90 OR ram_used_mb / NULLIF(ram_total_mb, 0) * 100 > 95)",
           "format": "table"
         }
       ],
-      "description": "Machine fleet composition by status (Online/Warning/Critical)"
+      "description": "Machine fleet composition by status (Online/Warning/Critical). Single UNION ALL query (metric, value) -- see CPU/RAM/Storage Distribution panel's note on why this shape (not 3 separate targets) is required for piechart to label its legend by the metric text instead of the literal string \"value\"."
     }
   ],
   "graphTooltip": 1
