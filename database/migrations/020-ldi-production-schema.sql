@@ -1,12 +1,17 @@
 -- ══════════════════════════════════════════════════════════════
--- 020: LDI Production Schema (DROP + CREATE only, no data)
--- Run by: docker compose up (via 001-init) or manually for existing DBs
+-- 020: LDI Production Schema (idempotent create-or-tune, never destroys data)
 -- ══════════════════════════════════════════════════════════════
-
--- 1. DROP EXISTING TABLES (idempotent)
-DROP TABLE IF EXISTS public.ldi_data CASCADE;
-DROP TABLE IF EXISTS public.ldi_alarm_log CASCADE;
-DROP TABLE IF EXISTS public.ldi_alarm_ms_code CASCADE;
+-- Originally written as an unconditional DROP TABLE ... CASCADE on all 3
+-- tables below, then CREATE -- safe only during early development before
+-- this project had any real accumulated data. Found still marked
+-- "pre-seeded" in schema_migrations (i.e. never actually executed)
+-- against a live database holding 284k+ real ldi_data rows and several
+-- dependent views (world-class audit P1-1) -- a literal run at this point
+-- would have silently destroyed all of it via CASCADE. Rewritten to only
+-- CREATE what's missing and to TUNE an already-existing table in place
+-- (ALTER COLUMN TYPE, set_chunk_time_interval) instead of dropping it.
+-- Mirrors postgres/init/001-init-timescaledb.sql, which defines this same
+-- tuned shape for genuinely fresh deployments -- keep both in sync.
 
 -- 2a. ldi_alarm_ms_code (reference table)
 CREATE TABLE IF NOT EXISTS public.ldi_alarm_ms_code (
@@ -62,6 +67,35 @@ CREATE TABLE IF NOT EXISTS public.ldi_data (
 SELECT create_hypertable('public.ldi_data', 'time',
     chunk_time_interval => INTERVAL '1 hour',
     if_not_exists => TRUE);
+
+-- Tune an already-existing table (e.g. one created back when this schema
+-- used DOUBLE PRECISION / 1-day chunks) in place. ALTER COLUMN ... TYPE to
+-- an already-matching type, and set_chunk_time_interval to an
+-- already-matching interval, are both no-ops -- safe to re-run.
+ALTER TABLE public.ldi_data
+    ALTER COLUMN resist_dosage TYPE REAL,
+    ALTER COLUMN scale_x       TYPE REAL,
+    ALTER COLUMN scale_y       TYPE REAL,
+    ALTER COLUMN temperature   TYPE REAL,
+    ALTER COLUMN humidity      TYPE REAL,
+    ALTER COLUMN scan_speed    TYPE REAL,
+    ALTER COLUMN air_vacuum    TYPE REAL,
+    ALTER COLUMN thickness     TYPE REAL,
+    ALTER COLUMN total_time    TYPE REAL,
+    ALTER COLUMN pe_1          TYPE REAL,
+    ALTER COLUMN pe_2          TYPE REAL,
+    ALTER COLUMN pe_3          TYPE REAL,
+    ALTER COLUMN pe_4          TYPE REAL,
+    ALTER COLUMN pe_5          TYPE REAL,
+    ALTER COLUMN pe_6          TYPE REAL,
+    ALTER COLUMN je_1          TYPE REAL,
+    ALTER COLUMN je_2          TYPE REAL,
+    ALTER COLUMN je_3          TYPE REAL,
+    ALTER COLUMN je_4          TYPE REAL,
+    ALTER COLUMN pe_setting    TYPE REAL,
+    ALTER COLUMN je_setting    TYPE REAL;
+
+SELECT set_chunk_time_interval('public.ldi_data', INTERVAL '1 hour');
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_logid
     ON public.ldi_data (log_id ASC NULLS LAST, "time" DESC NULLS FIRST);
