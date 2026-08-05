@@ -26,10 +26,14 @@ SELECT add_continuous_aggregate_policy('public.ldi_data_hourly',
     schedule_interval => INTERVAL '1 hour',
     if_not_exists => true);
 
+-- Add retention policy for the Continuous Aggregate
+SELECT add_retention_policy('public.ldi_data_hourly', INTERVAL '2 years', if_not_exists => true);
+
 -- 2. Compression: compress segments older than 7 days by eqp_id
 ALTER TABLE public.ldi_data SET (
     timescaledb.compress,
-    timescaledb.compress_segmentby = 'eqp_id'
+    timescaledb.compress_segmentby = 'eqp_id, factory, mo, fpn, layer_name',
+    timescaledb.compress_orderby = 'time DESC'
 );
 SELECT add_compression_policy('public.ldi_data', INTERVAL '7 days', if_not_exists => true);
 
@@ -39,7 +43,8 @@ SELECT add_retention_policy('public.ldi_data', INTERVAL '180 days', if_not_exist
 -- 4. Also set compression on ldi_alarm_log
 ALTER TABLE public.ldi_alarm_log SET (
     timescaledb.compress,
-    timescaledb.compress_segmentby = 'equipmentid'
+    timescaledb.compress_segmentby = 'equipmentid',
+    timescaledb.compress_orderby = 'logdate DESC'
 );
 SELECT add_compression_policy('public.ldi_alarm_log', INTERVAL '7 days', if_not_exists => true);
 SELECT add_retention_policy('public.ldi_alarm_log', INTERVAL '365 days', if_not_exists => true);
