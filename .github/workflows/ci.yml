@@ -135,6 +135,13 @@ jobs:
         # budget). Run with STRICT_DATA_CHECK=1 against a dev/staging DB with
         # real accumulated history to enforce the zero-rows check for real.
 
+      - name: Run Golden-Dataset SPC Validation
+        run: node tests/e2e/golden-dataset-spc.js
+        # Unlike the panel data check above, this needs no accumulated
+        # history -- it inserts its own known dataset in a transaction and
+        # rolls back unconditionally, so it's fully deterministic and safe
+        # to run as a hard failure gate even on a freshly-started CI stack.
+
       - name: Run Chaos Stress Test (K6)
         run: |
           docker run --rm \
