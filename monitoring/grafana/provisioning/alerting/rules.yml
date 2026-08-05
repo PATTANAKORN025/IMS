@@ -243,6 +243,16 @@ groups:
 
       - uid: ims-ldi-vibration-critical
         title: LDI Vibration Critical
+        # PAUSED: ldi_metrics.vibration is exactly 0 for 100% of rows across
+        # all 10 LDI machines (confirmed live, world-class audit P1-3) --
+        # the k6-synthetic ldi_metrics ingestion pipeline never populates
+        # this field for LDI-class devices (same gap already known for
+        # throughput/power_watt). A "critical" bearing-failure alert that
+        # can structurally never fire is worse than no alert: it implies
+        # vibration is monitored when it isn't. Paused rather than deleted
+        # so it stays visible/discoverable and can be unpaused the moment
+        # real vibration telemetry exists for LDI devices.
+        isPaused: true
         condition: A
         data:
           - refId: A

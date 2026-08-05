@@ -214,6 +214,7 @@ groups:
                 SELECT logdate AS time, equipmentid AS metric, 1 AS value
                 FROM public.ldi_alarm_log
                 WHERE logdate >= NOW() - INTERVAL '5 minutes'
+                ORDER BY logdate ASC
               format: time_series
               intervalMs: 300000
               maxDataPoints: 100
