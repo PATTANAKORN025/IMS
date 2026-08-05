@@ -9,7 +9,7 @@
 
 ![Security](https://img.shields.io/badge/Security-Policy-red)
 ![Status](https://img.shields.io/badge/Status-Staging-yellow)
-![Updated](https://img.shields.io/badge/Updated-2026--06--29-blue)
+![Updated](https://img.shields.io/badge/Updated-2026--08--04-brightgreen)
 
 </div>
 
@@ -23,6 +23,7 @@
 | 2 | Node-RED Admin UI has no auth | 🔴 High | Known | Add `adminAuth` in settings.js before production |
 | 3 | SNMP community string in plain text | ⚠️ Medium | Known | Move to environment variable |
 | 4 | PgBouncer uses AUTH_TYPE: plain | ⚠️ Medium | Known (trade-off) | Consider password hashing at source |
+| 5 | GitHub PAT hardcoded in `.mimocode/mimocode.json` (AI tool config) | 🔴 High | Known | Revoke token at GitHub; replace with `${GITHUB_PERSONAL_ACCESS_TOKEN}` env placeholder |
 
 ---
 
@@ -70,7 +71,7 @@
 | **SQL Injection Prevention** | `safeStr()` escaping on all user inputs |
 | **Credential Rotation** | Manual rotation required for stale `flows_cred.json` |
 | **CI/CD Security** | Gitleaks scanning, stub secrets for validation |
-| **Plugin Policy** | Only open-source plugins/MCP (MIT/ISC/BSD/Apache-2.0) |
+| **Plugin Policy** | Only open-source plugins/MCP/skills (MIT/ISC/BSD/Apache-2.0) — verified against current inventory below |
 
 ### Data Security
 
@@ -79,6 +80,30 @@
 | **Database Access** | PgBouncer connection pooling with authentication |
 | **Backup Encryption** | Database dumps should be encrypted before storage |
 | **Log Sanitization** | No secrets logged in Docker container logs |
+
+---
+
+## 🤖 AI Tooling Security (MCP / Skills / Plugins)
+
+### Agent Supply Chain Inventory
+
+All AI tooling is open-source (MIT / Apache-2.0), per the Plugin Policy. Install locations: `.agents/skills/` (universal), `.mimocode/` (MiMo Code), `.claude/skills/` + `.github/skills/` (Claude Code / Copilot symlinks).
+
+| Item | Inventory | Sources |
+|---|---|---|
+| **MCP servers (12)** | context7, playwright, puppeteer, github, filesystem, everything, sequential-thinking, memory, fetch, postgres, git, time — mirrored in `.mimocode/mimocode.json`, `.mcp.json`, `.opencode/opencode.json`, `.vscode/settings.json` | modelcontextprotocol/servers, PyPI (`mcp-server-fetch/time/git`), npm (`@modelcontextprotocol/server-*`) |
+| **Skills (90)** | 26 local (IMS-specific) + 41 mattpocock/skills + 9 vercel-labs/agent-skills + 14 obra/superpowers | github.com/mattpocock/skills, vercel-labs/agent-skills, obra/superpowers (all MIT) |
+| **Plugins (8)** | `superpowers@git+…` entries in `.mimocode/mimocode.json` (obra, mattpocock, vercel-labs, garrytan/gstack, addyosmani, wshobson/agents, affaan-m/ECC, pcvelz) | All MIT, open-source |
+
+### Secrets in AI Tooling Configs
+
+- `.mimocode/mimocode.json` and `.vscode/settings.json` are **gitignored** — local tokens may live here, but still treat them as secrets and rotate if shared.
+- `.mcp.json` and `.opencode/opencode.json` are **tracked by git** — MUST use `${VAR}` placeholders (e.g. `${GITHUB_PERSONAL_ACCESS_TOKEN}`, `${POSTGRES_PASSWORD}`), never literal credentials.
+- MCP Python servers require **pinned `mcp==X.Y.Z` SDK versions** in the launch args (see `knowledge.md`) — pinning prevents supply-chain drift from breaking or hijacking the toolchain.
+
+### ⚠️ Typosquat / Canary Packages — NEVER Install
+
+npm packages `mcp-server-fetch` and `mcp-server-git` are **security-research canaries** (`node-canaries` / `npx-canary`) masquerading as real MCP servers. Do NOT install them under any circumstances — use the official PyPI (`uvx mcp-server-*`) or `@modelcontextprotocol/server-*` npm packages instead. Always verify a package's maintainer + repository before adding to any AI config.
 
 ---
 

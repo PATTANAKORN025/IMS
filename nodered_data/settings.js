@@ -1,17 +1,18 @@
-// adminAuth protects the Node-RED editor + admin API. It activates only when a
-// bcrypt hash is provided (generate: `npx node-red-admin hash-pw`), so it never
-// blocks first boot, but SHOULD be set in production via NODE_RED_ADMIN_PASSWORD_HASH.
+// adminAuth protects the Node-RED editor + admin API. NODE_RED_ADMIN_PASSWORD_HASH
+// is required (generate: `npx node-red-admin hash-pw`) - the process refuses to
+// start without it, so it must be set in .env before first boot.
 const adminPasswordHash = process.env.NODE_RED_ADMIN_PASSWORD_HASH;
-const adminAuth = adminPasswordHash
-    ? {
-        type: 'credentials',
-        users: [{
-            username: process.env.NODE_RED_ADMIN_USER || 'admin',
-            password: adminPasswordHash,
-            permissions: '*',
-        }],
-    }
-    : undefined;
+if (!adminPasswordHash) {
+    throw new Error("FATAL: NODE_RED_ADMIN_PASSWORD_HASH is not set. Refusing to start without authentication.");
+}
+const adminAuth = {
+    type: 'credentials',
+    users: [{
+        username: process.env.NODE_RED_ADMIN_USER || 'admin',
+        password: adminPasswordHash,
+        permissions: '*',
+    }],
+};
 
 module.exports = {
     flowFile: 'flows.json',
@@ -33,8 +34,8 @@ module.exports = {
             port: parseInt(process.env.PGPORT) || 5432,
             database: process.env.PGDATABASE || 'ims',
             user: process.env.PGUSER || 'ims_admin',
-            password: process.env.PGPASSWORD || 'change-me-please',
-            max: 2,
+            password: process.env.PGPASSWORD || (() => { throw new Error("PGPASSWORD is required"); })(),
+            max: 50,
             idleTimeoutMillis: 30000
         }),
     },
