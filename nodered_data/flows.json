@@ -7,158 +7,6 @@
         "info": "Alertmanager webhook → LINE Messaging API / MS Teams"
     },
     {
-        "id": "ims-tab-v5",
-        "type": "tab",
-        "label": "IMS Ingestion Pipeline",
-        "disabled": false,
-        "info": "SNMP walkers → Parser → TimescaleDB"
-    },
-    {
-        "id": "almsim_tab",
-        "type": "tab",
-        "label": "LDI Alarm Simulator",
-        "disabled": false,
-        "info": "จำลอง alarm ด้วยรหัสและความถี่จาก production log จริง (20 รหัส)\nปิดได้โดย disable tab นี้"
-    },
-    {
-        "id": "ldi-ingestion-tab",
-        "type": "tab",
-        "label": "IMS LDI Ingestion",
-        "disabled": false,
-        "info": "LDI Manufacturing data ingestion pipeline — POST /ldi-telemetry"
-    },
-    {
-        "id": "ldisim_tab",
-        "type": "tab",
-        "label": "LDI Live Simulator",
-        "disabled": false,
-        "info": "จำลองข้อมูล LDI แบบเคลื่อนไหวต่อเนื่อง ส่งผ่าน POST /ldi-telemetry เหมือนเครื่องจริง\nปิดได้โดย disable tab นี้"
-    },
-    {
-        "id": "bc78ea85b252a09f",
-        "type": "group",
-        "z": "ims-tab-v5",
-        "style": {
-            "stroke": "#999999",
-            "stroke-opacity": "1",
-            "fill": "none",
-            "fill-opacity": "1",
-            "label": true,
-            "label-position": "nw",
-            "color": "#a4a4a4"
-        },
-        "nodes": [
-            "retry_timer",
-            "inject_fleet",
-            "generate_fleet_targets",
-            "pace_limiter",
-            "fork_5_ways",
-            "walk_cpu",
-            "walk_storage",
-            "walk_net_get",
-            "walk_temp",
-            "catch_walker",
-            "bypass_error",
-            "walk_ldi",
-            "sre_parser",
-            "db_insert",
-            "debug_ok",
-            "global_catch",
-            "debug_err",
-            "inject_registry",
-            "device_registry",
-            "resolve_device",
-            "catch_db_insert",
-            "retry_store",
-            "debug_retry",
-            "retry_rebuild",
-            "http_inject_in",
-            "http_inject_handler",
-            "http_inject_respond"
-        ],
-        "x": 50,
-        "y": 55,
-        "w": 2540,
-        "h": 418
-    },
-    {
-        "id": "67fcac2d032db9d1",
-        "type": "group",
-        "z": "ldi-ingestion-tab",
-        "style": {
-            "stroke": "#999999",
-            "stroke-opacity": "1",
-            "fill": "none",
-            "fill-opacity": "1",
-            "label": true,
-            "label-position": "nw",
-            "color": "#a4a4a4"
-        },
-        "nodes": [
-            "ldi_http_in",
-            "ldi_auth_check",
-            "ldi_db_insert",
-            "ldi_http_response",
-            "ldi_http_error",
-            "ldi_error_handler"
-        ],
-        "x": 34,
-        "y": 39,
-        "w": 1168,
-        "h": 130
-    },
-    {
-        "id": "57cf447a44c91c05",
-        "type": "group",
-        "z": "ldisim_tab",
-        "style": {
-            "stroke": "#999999",
-            "stroke-opacity": "1",
-            "fill": "none",
-            "fill-opacity": "1",
-            "label": true,
-            "label-position": "nw",
-            "color": "#a4a4a4"
-        },
-        "nodes": [
-            "ldisim_tick",
-            "ldisim_gen",
-            "ldisim_post",
-            "ldisim_check",
-            "ldisim_catch",
-            "ldisim_err"
-        ],
-        "x": 34,
-        "y": 55,
-        "w": 1180,
-        "h": 130
-    },
-    {
-        "id": "ccae533aefb8eced",
-        "type": "group",
-        "z": "almsim_tab",
-        "style": {
-            "stroke": "#999999",
-            "stroke-opacity": "1",
-            "fill": "none",
-            "fill-opacity": "1",
-            "label": true,
-            "label-position": "nw",
-            "color": "#a4a4a4"
-        },
-        "nodes": [
-            "almsim_tick",
-            "almsim_gen",
-            "almsim_db",
-            "almsim_catch",
-            "almsim_err"
-        ],
-        "x": 34,
-        "y": 39,
-        "w": 1024,
-        "h": 130
-    },
-    {
         "id": "22d255c35801cf0d",
         "type": "group",
         "z": "ims-alert-tab",
@@ -189,26 +37,6 @@
         "y": 55,
         "w": 1476,
         "h": 322
-    },
-    {
-        "id": "pg_config",
-        "type": "postgreSQLConfig",
-        "name": "IMS Database",
-        "host": "ims-pgbouncer",
-        "hostFieldType": "str",
-        "port": "5432",
-        "portFieldType": "num",
-        "database": "ims",
-        "databaseFieldType": "str",
-        "ssl": false,
-        "sslFieldType": "bool",
-        "max": 10,
-        "idle": 10000,
-        "connectionTimeout": 10000,
-        "user": "ims_admin",
-        "userFieldType": "str",
-        "password": "change-me-please",
-        "passwordFieldType": "str"
     },
     {
         "id": "alert_http_in",
@@ -288,7 +116,7 @@
         "z": "ims-alert-tab",
         "g": "22d255c35801cf0d",
         "name": "Format LINE Messaging API",
-        "func": "const token = env.get('LINE_CHANNEL_ACCESS_TOKEN') || '';\nconst userId = env.get('LINE_USER_ID') || '';\n\nif (!token || !userId) {\n    node.warn('LINE Messaging API not configured — set LINE_CHANNEL_ACCESS_TOKEN and LINE_USER_ID env vars');\n    return null;\n}\n\nmsg.headers = {\n    'Authorization': 'Bearer ' + token,\n    'Content-Type': 'application/json'\n};\nmsg.payload = JSON.stringify({\n    to: userId,\n    messages: [{ type: 'text', text: msg.payload }]\n});\nreturn msg;",
+        "func": "const token = env.get('LINE_CHANNEL_ACCESS_TOKEN') || '';\nconst userId = env.get('LINE_USER_ID') || '';\n\nif (!token || !userId) {\n    node.status({ fill: 'red', shape: 'ring', text: 'NOT CONFIGURED' });\n    node.error('LINE Messaging API not configured — set LINE_CHANNEL_ACCESS_TOKEN and LINE_USER_ID env vars. Alert was NOT delivered.', msg);\n    return null;\n}\nnode.status({});\n\nmsg.headers = {\n    'Authorization': 'Bearer ' + token,\n    'Content-Type': 'application/json'\n};\nmsg.payload = JSON.stringify({\n    to: userId,\n    messages: [{ type: 'text', text: msg.payload }]\n});\nreturn msg;",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
@@ -334,7 +162,7 @@
         "z": "ims-alert-tab",
         "g": "22d255c35801cf0d",
         "name": "Format Teams Webhook",
-        "func": "const url = env.get(\"TEAMS_WEBHOOK_URL\") || \"\";\n\nif (!url) {\n    node.warn(\"MS Teams webhook not configured — set TEAMS_WEBHOOK_URL env var\");\n    return null;\n}\n\nconst card = {\n    \"type\": \"message\",\n    \"attachments\": [{\n        \"contentType\": \"application/vnd.microsoft.card.adaptive\",\n        \"contentUrl\": null,\n        \"content\": {\n            \"$schema\": \"http://adaptivecards.io/schemas/adaptive-card.json\",\n            \"type\": \"AdaptiveCard\",\n            \"version\": \"1.4\",\n            \"body\": [{\n                \"type\": \"TextBlock\",\n                \"text\": \"IMS System Alert\",\n                \"weight\": \"bolder\",\n                \"size\": \"large\",\n                \"color\": \"attention\"\n            }, {\n                \"type\": \"TextBlock\",\n                \"text\": msg.payload,\n                \"wrap\": true,\n                \"spacing\": \"medium\"\n            }],\n            \"msteams\": {\n                \"entities\": []\n            }\n        }\n    }]\n};\nmsg.payload = JSON.stringify(card);\nmsg.headers = { \"Content-Type\": \"application/json\" };\nmsg.url = url;\nreturn msg;",
+        "func": "const url = env.get(\"TEAMS_WEBHOOK_URL\") || \"\";\n\nif (!url) {\n    node.status({ fill: \"red\", shape: \"ring\", text: \"NOT CONFIGURED\" });\n    node.error(\"MS Teams webhook not configured — set TEAMS_WEBHOOK_URL env var. Alert was NOT delivered.\", msg);\n    return null;\n}\nnode.status({});\n\nconst card = {\n    \"type\": \"message\",\n    \"attachments\": [{\n        \"contentType\": \"application/vnd.microsoft.card.adaptive\",\n        \"contentUrl\": null,\n        \"content\": {\n            \"$schema\": \"http://adaptivecards.io/schemas/adaptive-card.json\",\n            \"type\": \"AdaptiveCard\",\n            \"version\": \"1.4\",\n            \"body\": [{\n                \"type\": \"TextBlock\",\n                \"text\": \"IMS System Alert\",\n                \"weight\": \"bolder\",\n                \"size\": \"large\",\n                \"color\": \"attention\"\n            }, {\n                \"type\": \"TextBlock\",\n                \"text\": msg.payload,\n                \"wrap\": true,\n                \"spacing\": \"medium\"\n            }],\n            \"msteams\": {\n                \"entities\": []\n            }\n        }\n    }]\n};\nmsg.payload = JSON.stringify(card);\nmsg.headers = { \"Content-Type\": \"application/json\" };\nmsg.url = url;\nreturn msg;",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
@@ -453,6 +281,60 @@
         "wires": [
             []
         ]
+    },
+    {
+        "id": "ims-tab-v5",
+        "type": "tab",
+        "label": "IMS Ingestion Pipeline",
+        "disabled": false,
+        "info": "SNMP walkers → Parser → TimescaleDB"
+    },
+    {
+        "id": "bc78ea85b252a09f",
+        "type": "group",
+        "z": "ims-tab-v5",
+        "style": {
+            "stroke": "#999999",
+            "stroke-opacity": "1",
+            "fill": "none",
+            "fill-opacity": "1",
+            "label": true,
+            "label-position": "nw",
+            "color": "#a4a4a4"
+        },
+        "nodes": [
+            "retry_timer",
+            "inject_fleet",
+            "generate_fleet_targets",
+            "pace_limiter",
+            "fork_5_ways",
+            "walk_cpu",
+            "walk_storage",
+            "walk_net_get",
+            "walk_temp",
+            "catch_walker",
+            "bypass_error",
+            "walk_ldi",
+            "sre_parser",
+            "db_insert",
+            "debug_ok",
+            "global_catch",
+            "debug_err",
+            "inject_registry",
+            "device_registry",
+            "resolve_device",
+            "catch_db_insert",
+            "retry_store",
+            "debug_retry",
+            "retry_rebuild",
+            "http_inject_in",
+            "http_inject_handler",
+            "http_inject_respond"
+        ],
+        "x": 50,
+        "y": 55,
+        "w": 2540,
+        "h": 418
     },
     {
         "id": "inject_fleet",
@@ -1017,6 +899,58 @@
         "wires": []
     },
     {
+        "id": "pg_config",
+        "type": "postgreSQLConfig",
+        "name": "IMS Database",
+        "host": "ims-pgbouncer",
+        "hostFieldType": "str",
+        "port": "5432",
+        "portFieldType": "num",
+        "database": "ims",
+        "databaseFieldType": "str",
+        "ssl": false,
+        "sslFieldType": "bool",
+        "max": 10,
+        "idle": 10000,
+        "connectionTimeout": 10000,
+        "user": "ims_admin",
+        "userFieldType": "str",
+        "password": "change-me-please",
+        "passwordFieldType": "str"
+    },
+    {
+        "id": "almsim_tab",
+        "type": "tab",
+        "label": "LDI Alarm Simulator",
+        "disabled": false,
+        "info": "จำลอง alarm ด้วยรหัสและความถี่จาก production log จริง (20 รหัส)\nปิดได้โดย disable tab นี้"
+    },
+    {
+        "id": "ccae533aefb8eced",
+        "type": "group",
+        "z": "almsim_tab",
+        "style": {
+            "stroke": "#999999",
+            "stroke-opacity": "1",
+            "fill": "none",
+            "fill-opacity": "1",
+            "label": true,
+            "label-position": "nw",
+            "color": "#a4a4a4"
+        },
+        "nodes": [
+            "almsim_tick",
+            "almsim_gen",
+            "almsim_db",
+            "almsim_catch",
+            "almsim_err"
+        ],
+        "x": 34,
+        "y": 39,
+        "w": 1024,
+        "h": 130
+    },
+    {
         "id": "almsim_tick",
         "type": "inject",
         "z": "almsim_tab",
@@ -1106,6 +1040,39 @@
         "wires": [
             []
         ]
+    },
+    {
+        "id": "ldi-ingestion-tab",
+        "type": "tab",
+        "label": "IMS LDI Ingestion",
+        "disabled": false,
+        "info": "LDI Manufacturing data ingestion pipeline — POST /ldi-telemetry"
+    },
+    {
+        "id": "67fcac2d032db9d1",
+        "type": "group",
+        "z": "ldi-ingestion-tab",
+        "style": {
+            "stroke": "#999999",
+            "stroke-opacity": "1",
+            "fill": "none",
+            "fill-opacity": "1",
+            "label": true,
+            "label-position": "nw",
+            "color": "#a4a4a4"
+        },
+        "nodes": [
+            "ldi_http_in",
+            "ldi_auth_check",
+            "ldi_db_insert",
+            "ldi_http_response",
+            "ldi_http_error",
+            "ldi_error_handler"
+        ],
+        "x": 34,
+        "y": 39,
+        "w": 1168,
+        "h": 130
     },
     {
         "id": "ldi_http_in",
@@ -1200,6 +1167,39 @@
                 "ldi_http_response"
             ]
         ]
+    },
+    {
+        "id": "ldisim_tab",
+        "type": "tab",
+        "label": "LDI Live Simulator",
+        "disabled": false,
+        "info": "จำลองข้อมูล LDI แบบเคลื่อนไหวต่อเนื่อง ส่งผ่าน POST /ldi-telemetry เหมือนเครื่องจริง\nปิดได้โดย disable tab นี้"
+    },
+    {
+        "id": "57cf447a44c91c05",
+        "type": "group",
+        "z": "ldisim_tab",
+        "style": {
+            "stroke": "#999999",
+            "stroke-opacity": "1",
+            "fill": "none",
+            "fill-opacity": "1",
+            "label": true,
+            "label-position": "nw",
+            "color": "#a4a4a4"
+        },
+        "nodes": [
+            "ldisim_tick",
+            "ldisim_gen",
+            "ldisim_post",
+            "ldisim_check",
+            "ldisim_catch",
+            "ldisim_err"
+        ],
+        "x": 34,
+        "y": 55,
+        "w": 1180,
+        "h": 130
     },
     {
         "id": "ldisim_tick",
