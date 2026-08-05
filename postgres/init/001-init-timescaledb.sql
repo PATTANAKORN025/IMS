@@ -220,6 +220,8 @@ SELECT DISTINCT ON (d.device_id)
 FROM public.sys_metrics s
 JOIN public.devices d ON d.device_id = s.device_id
 WHERE s.time > NOW() - INTERVAL '5 minutes'
+  AND d.device_type = 'server'
+  AND d.enabled = true
 ORDER BY d.device_id, s.time DESC;
 
 CREATE OR REPLACE VIEW public.v_fleet_score AS
