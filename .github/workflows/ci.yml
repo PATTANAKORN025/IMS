@@ -125,6 +125,16 @@ jobs:
       - name: Run Query Budget Check
         run: bash tests/smoke/query-budget-check.sh
 
+      - name: Run Panel Data Check (layer C — actual query results, not just syntax)
+        run: node tests/e2e/panel-data-check.js
+        # Default (non-strict) mode: SQL errors still fail the build, but
+        # zero-rows/missing-time-column are warnings only here -- this stage's
+        # DB has had the simulator running for all of ~30s, nowhere near
+        # enough history for every panel's window to have data yet (same
+        # reasoning tests/smoke/query-budget-check.sh documents for its own
+        # budget). Run with STRICT_DATA_CHECK=1 against a dev/staging DB with
+        # real accumulated history to enforce the zero-rows check for real.
+
       - name: Run Chaos Stress Test (K6)
         run: |
           docker run --rm \
