@@ -102,10 +102,10 @@
         "mode": "html"
       },
       "gridPos": {
-        "h": 1,
-        "w": 24,
         "x": 0,
-        "y": 0
+        "y": 0,
+        "w": 24,
+        "h": 1
       },
       "transparent": true
     },
@@ -120,7 +120,7 @@
         "x": 0,
         "y": 1,
         "w": 6,
-        "h": 4
+        "h": 3
       },
       "fieldConfig": {
         "defaults": {
@@ -211,7 +211,7 @@
         "x": 6,
         "y": 1,
         "w": 6,
-        "h": 4
+        "h": 3
       },
       "fieldConfig": {
         "defaults": {
@@ -298,7 +298,7 @@
         "x": 12,
         "y": 1,
         "w": 6,
-        "h": 4
+        "h": 3
       },
       "fieldConfig": {
         "defaults": {
@@ -393,7 +393,7 @@
         "x": 18,
         "y": 1,
         "w": 6,
-        "h": 4
+        "h": 3
       },
       "fieldConfig": {
         "defaults": {
@@ -480,9 +480,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 8,
+        "y": 7,
         "w": 12,
-        "h": 6
+        "h": 3
       },
       "fieldConfig": {
         "defaults": {
@@ -571,9 +571,9 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 8,
+        "y": 7,
         "w": 12,
-        "h": 6
+        "h": 3
       },
       "fieldConfig": {
         "defaults": {
@@ -662,9 +662,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 14,
+        "y": 10,
         "w": 24,
-        "h": 1
+        "h": 3
       },
       "options": {
         "showHeader": true,
@@ -911,9 +911,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 15,
+        "y": 13,
         "w": 24,
-        "h": 1
+        "h": 3
       },
       "fieldConfig": {
         "defaults": {
@@ -983,7 +983,7 @@
       "maxPerRow": 10,
       "gridPos": {
         "x": 0,
-        "y": 5,
+        "y": 4,
         "w": 2,
         "h": 3
       },
