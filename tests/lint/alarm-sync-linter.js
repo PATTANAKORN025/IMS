@@ -31,13 +31,22 @@ try {
 
   // 2. Extract Simulator Codes
   const simData = JSON.parse(fs.readFileSync(SIMULATOR_PATH, 'utf8'));
-  const alarmNode = simData.find(n => n.type === 'function' && n.name === 'Generate Alarm (real distribution)');
-  
+  // Looked up by node id, not name -- the node's name describes what it does
+  // (e.g. "real distribution" vs "correlated + noise") and is expected to
+  // change as the generation strategy evolves; the id is the stable handle.
+  const alarmNode = simData.find(n => n.type === 'function' && n.id === 'almsim_gen');
+
   if (!alarmNode || !alarmNode.func) {
-    throw new Error('Failed to find "Generate Alarm (real distribution)" node in simulator JSON.');
+    throw new Error('Failed to find the almsim_gen alarm-generator node in simulator JSON.');
   }
 
-  const simCodeRegex = /\["(\d{5})",/g;
+  // Matches a quoted 5-digit code wherever it appears -- as a [code, weight]
+  // CUM-table tuple, a bare array-of-codes literal, or a single-quoted
+  // literal passed directly to a function call. Deliberately shape-agnostic:
+  // the simulator's generation strategy (weighted tables, condition-driven
+  // emission, etc.) is expected to keep evolving, and this check's only job
+  // is "does it reference exactly the master code list," not how.
+  const simCodeRegex = /["'](\d{5})["']/g;
   const simCodes = new Set();
   while ((match = simCodeRegex.exec(alarmNode.func)) !== null) {
     simCodes.add(match[1]);
