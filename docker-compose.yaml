@@ -212,6 +212,9 @@ services:
       GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:-http://localhost:3000}
       GF_SERVER_ENABLE_GZIP: "true"
       GF_INSTALL_PLUGINS: "grafana-clock-panel,grafana-piechart-panel"
+      GF_RENDERING_SERVER_URL: http://renderer:8081/render
+      GF_RENDERING_CALLBACK_URL: http://grafana:${GRAFANA_PORT:-3000}/
+      GF_RENDERING_RENDERER_TOKEN: ${GRAFANA_RENDERER_TOKEN:?set GRAFANA_RENDERER_TOKEN in .env}
       GF_PANELS_DISABLE_SANITIZE_HTML: "true"
       GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/ims-noc-overview.json
       GF_SECURITY_COOKIE_SECURE: "false"
@@ -237,6 +240,8 @@ services:
         condition: service_started
       alertmanager:
         condition: service_started
+      renderer:
+        condition: service_started
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
       interval: 15s
@@ -246,6 +251,25 @@ services:
     networks:
       - ims-internal
       - ims-monitoring
+    logging: *default-logging
+
+  # ── Grafana Image Renderer ───────────────────────────────
+  renderer:
+    image: grafana/grafana-image-renderer:latest
+    container_name: ims-grafana-renderer
+    <<: *default-restart
+    environment:
+      TZ: ${TZ:-Asia/Bangkok}
+      ENABLE_METRICS: "false"
+      AUTH_TOKEN: ${GRAFANA_RENDERER_TOKEN:?set GRAFANA_RENDERER_TOKEN in .env}
+    deploy:
+      resources:
+        limits: *resource-medium
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    networks:
+      - ims-internal
     logging: *default-logging
 
   # ── SNMP Simulator ────────────────────────────────────────
