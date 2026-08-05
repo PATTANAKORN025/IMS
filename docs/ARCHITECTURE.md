@@ -1,817 +1,157 @@
 # IMS System Architecture
 
-> Architecture Decision Records and system context for the Industrial NOC Monitoring System.
+> Single source of truth for system topology, data flow, and operational architecture. Rewritten 2026-08-05 after the previous version was found to be two different, self-contradictory architecture docs concatenated together, describing a dashboard count and ingestion path that no longer matched the live system (see `IMS-WORLD-CLASS-AUDIT-REPORT.md` P1-2). Every claim below was verified directly against the running system or the tracked source files, not carried over from the prior doc.
+
+---
 
 ## System Context
 
-IMS is a Docker-based monitoring stack that collects SNMP telemetry from IT infrastructure, processes it through a real-time pipeline, stores it in a time-series database, and visualizes it via Grafana dashboards with Prometheus-based alerting.
+IMS is a Docker Compose stack with **two independent telemetry pipelines** feeding one shared TimescaleDB, visualized across **9 Grafana dashboards** with alerting through both Grafana's native alert engine and Prometheus/Alertmanager.
 
 ```mermaid
-flowchart LR
-    subgraph Devices ["🛰️ SNMP Devices"]
-        J[Juniper EX4000\n78 interfaces] 
-        S[Linux Servers\n1000+ nodes]
+flowchart TB
+    subgraph LDI ["LDI Manufacturing Pipeline (primary, real)"]
+        SIM["ldi_simulator.json\nOrnstein-Uhlenbeck live simulator\n2s tick, 10 machines"] -->|"HTTP POST /ldi-telemetry"| ING["ldi_ingestion.json\nauth check -> INSERT"]
+        ING --> LDIDATA[("public.ldi_data\nhypertable, 1h chunks")]
+        ALMSIM["ldi_alarm_simulator.json\ncondition-driven + noise\n10s tick"] --> ALARMLOG[("public.ldi_alarm_log")]
     end
 
-    subgraph Pipeline ["⚙️ V10 Streaming Pipeline"]
-        J -->|SNMP v2c UDP/161| W[Node-RED\nSequential Async Bulk\nmaxRepetitions: 50]
-        S -->|SNMP v2c UDP/161| W
-        W -->|fork_5_ways| CPU[CPU Walker]
-        W -->|fork_5_ways| NET[Network Walker\nifTable + ifXTable]
-        W -->|fork_5_ways| STO[Storage Walker]
-        W -->|fork_5_ways| TMP[Temp Walker]
-        CPU --> P["sre_parser\nper-device state\nflow context"]
-        NET --> P
-        STO --> P
-        TMP --> P
+    subgraph LEGACY ["Legacy SNMP / Infra Pipeline"]
+        DEV["2 real servers\n+ SNMP simulator"] -->|"SNMP v2c, 30s poll"| NR["ingestion.json\nfork_5_ways walkers -> sre_parser"]
+        NR --> SYSMETRICS[("public.sys_metrics\npublic.net_metrics\npublic.ldi_metrics")]
     end
 
-    subgraph Storage ["🗄️ TimescaleDB"]
-        P -->|Batch INSERT 10s| B[PgBouncer\nTransaction Pool]
-        B --> T["sys_metrics\nnet_metrics\nldi_metrics"]
-        T --> CAGG["CAGGs\nHourly → Daily → Weekly"]
-    end
+    LDIDATA --> GRAFANA["Grafana\n9 dashboards"]
+    ALARMLOG --> GRAFANA
+    SYSMETRICS --> GRAFANA
+    SYSMETRICS --> PROM["Prometheus"]
+    GRAFANA -->|"native alert rules"| NRWEBHOOK["Node-RED /alert-webhook"]
+    PROM --> AM["Alertmanager"] --> NRWEBHOOK
+    NRWEBHOOK --> LINE["LINE Messaging API"]
+    NRWEBHOOK --> TEAMS["MS Teams webhook"]
 
-    subgraph Obs ["📊 Observation"]
-        T --> G["Grafana\n4 Dashboards\n10s refresh"]
-        T --> PR["Prometheus\n/metrics scrape"]
-        PR --> AM["Alertmanager\n→ LINE / Slack"]
-    end
-
-    style Devices fill:#1e293b,stroke:#3B82F6,color:#e2e8f0
-    style Pipeline fill:#1e293b,stroke:#F59E0B,color:#e2e8f0
-    style Storage fill:#1e293b,stroke:#10B981,color:#e2e8f0
-    style Obs fill:#1e293b,stroke:#8B5CF6,color:#e2e8f0
+    style LDI fill:#1e293b,stroke:#10B981,color:#e2e8f0
+    style LEGACY fill:#1e293b,stroke:#F59E0B,color:#e2e8f0
 ```
-### Data Flow
 
-1. **Collection**: Node-RED polls devices via SNMP v2c every 10 seconds. The `fork_5_ways` node dispatches 4 walkers for network switches (CPU, Storage, Network, Temp) and 5 for servers (+LDI). Device registry is loaded from `public.devices` every 5 minutes into `global.deviceRegistry`.
-2. **Walking**: Each walker executes independently. Network switches use sequential async bulk walks (`session.subtree` with `maxRepetitions: 50`) — first ifTable for names/status/counters, then ifXTable for 64-bit HC counters. Servers use targeted `session.get()` with known OIDs. All walkers include offline pass-through (`_walker: "offline"`).
-3. **Parsing**: The `sre_parser` node receives each walker response, maintains per-device state in flow context (`dev_state_<deviceId>`), and buffers rows in `batch_buf_<deviceId>`. Interface names are matched via OID prefix parsing (`oid.startsWith()`). Network rates are calculated from counter deltas with cold-start guards and wrap-around handling.
-4. **Storage**: On a 10-second timer, buffers are flushed independently to TimescaleDB via PgBouncer. Each table type (sys_metrics, net_metrics, ldi_metrics) inserts only if its buffer has rows — partial walker failures do not block unrelated data.
-5. **Continuous Aggregation**: CAGGs (`sys_hourly`, `net_hourly`, `ldi_hourly`) auto-refresh every 30 minutes. Daily and weekly CAGGs aggregate from hourly. Retention: raw 14d, hourly 90d, daily 2yr, weekly forever.
-6. **Visualization**: Grafana renders 4 dashboards — NOC Overview (fleet envelope), Engineering Drill-Down (per-machine with per-interface), AIOps & Capacity (forecasting + Z-Score anomaly detection), and Meta-Monitoring (pipeline health).
-7. **Alerting**: Prometheus scrapes Node-RED `/metrics` endpoint. Alertmanager routes firing alerts to LINE Notify and Slack with runbook links. Z-Score alerts detect anomalies via Grafana SQL over TimescaleDB.
-
-### Container Architecture
-
-| Service | Port | Purpose |
-|---------|------|---------|
-| TimescaleDB | 5432 (internal) | Time-series storage with compression and retention |
-| PgBouncer | 5432 (internal) | Connection pooling — all DB access routes through here |
-| Node-RED | 127.0.0.1:1880 | SNMP polling pipeline and alerting webhook receiver |
-| Grafana | 127.0.0.1:3000 | Dashboard visualization (3 provisioned dashboards) |
-| Prometheus | 127.0.0.1:9090 | Metrics scraping and alert rule evaluation |
-| Alertmanager | 127.0.0.1:9093 | Alert routing with inhibition rules |
-| Blackbox Exporter | 127.0.0.1:9115 | HTTP/TCP/ICMP SLA probes |
-| SNMP Simulator | 161 (internal) | Simulated telemetry for development |
+**Why two pipelines exist:** the legacy SNMP pipeline (`ingestion.json`) was the system's original design — poll SNMP-speaking devices, parse via a stateful `sre_parser`, insert into `sys_metrics`/`net_metrics`/`ldi_metrics`. LDI manufacturing telemetry was later given its own, higher-fidelity pipeline (`ldi_data`, fed by HTTP POST rather than SNMP) because the manufacturing dashboards need per-sample PE/JE/Cpk precision that the k6-synthetic `ldi_metrics` table was never designed to carry. **All 9 Grafana dashboards' LDI/manufacturing content reads from `ldi_data`, not `ldi_metrics`.** `ldi_metrics` still exists and is still written to (via `ingestion.json`'s SRE parser), but several of its LDI-specific columns (`throughput`, `power_watt`, `vibration`) are confirmed to always be `0` for LDI-class devices — a known gap in that pipeline, not in `ldi_data`. See "Known Gaps" below.
 
 ---
 
-## Architecture Decision Records (ADRs)
+## Container Inventory
 
-### ADR-001: TimescaleDB over InfluxDB
-
-**Context**: The system needed a time-series database capable of handling 55 machines polled every 10 seconds (~330 rows/minute raw, ~59k rows/day).
-
-**Decision**: TimescaleDB (PostgreSQL extension) over InfluxDB.
-
-**Rationale**:
-- **SQL standard**: Dashboard queries use standard PostgreSQL SQL with JOINs, CTEs, and window functions — no need to learn InfluxQL or Flux.
-- **Relational JOINs**: The system joins time-series data with relational tables (e.g., `sys_metrics` JOIN `devices` for device registry, CAGG JOIN raw table for total capacity).
-- **Continuous Aggregates**: Materialized views that auto-refresh, providing pre-computed 1-minute and 1-hour summaries without custom cron jobs.
-- **Compression**: 7-day auto-compression achieves ~90% storage reduction with transparent query decompression.
-- **Ecosystem**: Grafana's PostgreSQL datasource is mature and well-documented.
-
-### ADR-002: Node-RED as Pipeline Engine (V10 Streaming Architecture)
-
-**Context**: The system polls 1000+ devices via SNMP v2c every 10 seconds, parses raw OID responses into structured metrics, and inserts into TimescaleDB. Each device generates 5 walker responses (CPU, Storage, Network, Temp, LDI).
-
-**Decision**: Node-RED with V10 Streaming Architecture — direct fan-in to a single stateful parser.
-
-**Rationale**:
-- **Event-driven architecture**: Async SNMP callbacks map to Node-RED's message-passing model with zero thread pool management.
-- **Sequential async bulk walks**: For network switches (78+ ports), walkers use `session.subtree()` with `maxRepetitions: 50` in sequential `await` calls — first ifTable (names + status + counters), then ifXTable (64-bit HC counters). Single UDP socket eliminates switch-level packet drops. For servers, lightweight `session.get()` with known OIDs.
-- **Stateful parser**: The `sre_parser` node accumulates per-device state in flow context (`dev_state_<deviceId>`) and buffers rows in `batch_buf_<deviceId>`. Each walker fires independently and the parser handles it immediately.
-- **Timer-gated independent flushing**: Buffer flushes on a 10-second timer. Each table type (sys/net/ldi) inserts independently — a network timeout does not block CPU/temp data writes.
-- **Offline heartbeat**: When the circuit breaker trips (device unreachable), the fork emits `_walker: "offline"` messages. The parser immediately zeros all metrics for that device and pushes zeroed rows to the database, ensuring outage timestamps are always recorded.
-- **Protocol translation**: Built-in HTTP nodes receive Alertmanager webhooks and translate to LINE/Teams API calls.
-- **Flow visualization**: The pipeline is visible and editable in the Node-RED UI for debugging and handoff.
-
-### ADR-003: PgBouncer Connection Pooling
-
-**Context**: Grafana dashboards query TimescaleDB continuously (10s refresh), while Node-RED inserts every 30s for 1000+ devices. Without pooling, both could exhaust PostgreSQL's `max_connections=100`.
-
-**Decision**: PgBouncer in `transaction` pooling mode, sitting between all clients and TimescaleDB.
-
-**Rationale**:
-- **Transaction mode**: Each SQL transaction gets a fresh server connection, then returns it to the pool. This works because the pipeline uses simple INSERT statements (no prepared statements).
-- **Connection reuse**: Reduces connection overhead — 200 client connections map to 20 server connections.
-- **Failure isolation**: If Node-RED crashes, its connections are released without affecting Grafana queries.
-- **No host port**: PgBouncer listens only on the Docker internal network (`ims-pgbouncer:5432`), never exposed to the host.
-
-### ADR-004: Stateful Streaming Parser (SRE AIOps Parser)
-
-**Context**: The ingestion pipeline must handle 1000+ devices polled concurrently, with each device generating 5 walker responses (CPU, Storage, Network, Temp, LDI). The parser must maintain per-device state, handle partial timeouts gracefully, and never lose data.
-
-**Decision**: All walkers send messages directly to `sre_parser` via Node-RED's message-passing model. The parser maintains per-device state in Node-RED's global flow context (`dev_state_<deviceId>`), accumulates rows in batch buffers (`batch_buf_<deviceId>`), and flushes independently on a 10-second timer.
-
-**Architecture**:
-- **Direct fan-in**: No join node, no `msg.parts` correlation. Each walker message is self-contained with `machine_id`.
-- **Stateful per-device context**: `flow.get('dev_state_' + deviceId)` retains CPU, RAM, Disk, Temp, Network interface state across poll cycles. On timeout (empty payload), the parser zeros all metrics and forces interfaces to DOWN, ensuring outage timestamps are always recorded.
-- **Timer-gated independent flushing**: Each table type (sys_metrics, net_metrics, ldi_metrics) inserts only when its buffer has rows. Partial walker failures do not block unrelated data writes.
-- **Offline heartbeat**: When the circuit breaker trips (device unreachable), the fork emits `_walker: "offline"` messages. The parser immediately zeros all metrics and pushes zeroed rows to the database.
-- **Safety timeout**: Function node timeout set to 15 seconds accommodates SNMP timeout (6s) + parse delay + DB insert.
-
----
-
-## Continuous Aggregate Strategy
-
-| CAGG | Source | Refresh Interval | Retention |
-|------|--------|-------------------|-----------|
-| `sys_hourly` | `sys_metrics` | 30 minutes | Indefinite |
-| `net_hourly` | `net_metrics` | 30 minutes | Indefinite |
-| `ldi_hourly` | `ldi_metrics` | 30 minutes | Indefinite |
-
-**Rule**: Any Grafana query spanning more than 2 hours MUST use a Continuous Aggregate (CAGG), never the raw tables. Raw tables have 30-day retention; CAGGs are kept indefinitely.
-
-## Alert Architecture
-
-```
-Prometheus ──scrape──▸ Node-RED metrics
-                    ──scrape──▸ Blackbox Exporter (HTTP/TCP/ICMP probes)
-                          │
-                          ▼
-                    Alert Rules (ims-alerts.yml)
-                          │
-                          ▼
-                    Alertmanager
-                    ├── Inhibition: Critical suppresses Warning on same machine
-                    ├── Route: Default → ims-node-red-webhook
-                    └── Webhook → Node-RED /alert-webhook
-                                    ├── LINE Messaging API
-                                    └── MS Teams Adaptive Card
-```
-
-
----
-
-# Detailed System Architecture
-
-# 🏗️ IMS — System Architecture Document
-
-> **เอกสารทางเทคนิคสำหรับ Engineers และ SREs**
-> อธิบาย topology, data flow, monitoring strategy, และ alerting pipeline ของระบบ IMS
-
----
-
-<div align="center">
-
-![Architecture](https://img.shields.io/badge/Architecture-Enterprise%20Grade-blue)
-![Monitoring](https://img.shields.io/badge/Monitoring-Real--time-brightgreen)
-![Alerting](https://img.shields.io/badge/Alerting-Multi--channel-orange)
-
-</div>
-
----
-
-## 📑 Table of Contents
-
-1. [System Topology](#-system-topology)
-2. [Data Flow Pipeline](#-data-flow-pipeline)
-3. [Monitoring Strategy](#-monitoring-strategy)
-4. [Alerting Pipeline](#-alerting-pipeline)
-5. [Database Schema](#-database-schema)
-6. [Security Architecture](#-security-architecture)
-7. [Scalability Considerations](#-scalability-considerations)
-
----
-
-## 🌐 System Topology
-
-### High-Level Architecture
-
-```mermaid
-graph TB
-    subgraph "Data Collection Layer"
-        S1["Server 1<br/>SNMP Agent"]
-        S2["Server 2<br/>SNMP Agent"]
-        S3["Server N<br/>SNMP Agent"]
-        SIM["ims-snmpsim<br/>Dev Simulator"]
-    end
-
-    subgraph "Pipeline Layer"
-        NR["ims-node-red<br/>5-Thread Parallel Walker"]
-        P["ims-pgbouncer<br/>Connection Pooler<br/>Transaction Mode"]
-    end
-
-    subgraph "Storage Layer"
-        TS[("ims-timescaledb<br/>PostgreSQL + TimescaleDB<br/>Hypertable + CAGG")]
-    end
-
-    subgraph "Visualization Layer"
-        GR["ims-grafana<br/>3 Dashboards<br/>NOC / Engineering / Capacity"]
-    end
-
-    subgraph "Alerting Layer"
-        PR["ims-prometheus<br/>Metrics Scraping"]
-        AM["ims-alertmanager<br/>Route & Inhibit"]
-    end
-
-    subgraph "SLA Probing"
-        BB["ims-blackbox<br/>HTTP/TCP/ICMP Probes"]
-    end
-
-    S1 -->|SNMP v2c| NR
-    S2 -->|SNMP v2c| NR
-    S3 -->|SNMP v2c| NR
-    SIM -->|SNMP v2c| NR
-    NR -->|Parameterized INSERT| P
-    P -->|Transaction Pool| TS
-    TS -->|Read| GR
-    TS -->|Scrape| PR
-    PR --> AM
-    BB --> PR
-
-    style TS fill:#f3e5f5,stroke:#7b1fa2
-    style GR fill:#e8f5e9,stroke:#2e7d32
-    style NR fill:#e3f2fd,stroke:#1565c0
-    style AM fill:#fff3e0,stroke:#e65100
-```
-
-### Component Inventory
-
-| Component | Container | Port (Internal) | Port (External) | Purpose |
-|---|---|---|---|---|
-| **TimescaleDB** | `ims-timescaledb` | 5432 | — | Time-series database engine |
-| **PgBouncer** | `ims-pgbouncer` | 5432 | — | Connection pooler for DB scalability |
-| **Node-RED** | `ims-node-red` | 1880 | 1880 | Data pipeline & SNMP collection |
-| **Grafana** | `ims-grafana` | 3000 | 3000 | Dashboard visualization |
-| **Prometheus** | `ims-prometheus` | 9090 | 9090 | Metrics scraping & alerting rules |
-| **Alertmanager** | `ims-alertmanager` | 9093 | 9093 | Alert routing & notification |
-| **Blackbox Exporter** | `ims-blackbox` | 9115 | 9115 | HTTP/TCP/ICMP probes for SLA |
-| **SNMP Simulator** | `ims-snmpsim` | 161/udp | — | Simulated server metrics for dev |
-
-> **หมายเหตุ**: ภายใน Docker network ใช้ service name ในการเชื่อมต่อ เช่น `ims-pgbouncer:5432` ไม่ใช่ port ที่ map ไว้บน host
-
----
-
-## 🔄 Data Flow Pipeline
-
-### Stage 1: SNMP Data Collection
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│  Node-RED 5-Thread Parallel Walker Architecture                         │
-│                                                                         │
-│  ┌─────────────┐                                                        │
-│  │   Inject     │ ──▶ Resolve Device Registry ──▶ ┌──────────────────┐ │
-│  │  (30s cycle) │     (host, community, port)     │     Fork         │ │
-│  └─────────────┘                                  │  (5 outputs)     │ │
-│                                                   └──────┬───────────┘ │
-│                     ┌────────────┬──────────┬─────────┬──┴──┐          │
-│                     ▼            ▼          ▼         ▼     ▼          │
-│              ┌──────────┐ ┌──────────┐ ┌────────┐ ┌─────┐ ┌─────┐     │
-│              │CPU Walker│ │Storage   │ │Network │ │Temp │ │LDI  │     │
-│              │(4 OIDs)  │ │(10 OIDs)│ │(18 OID)│ │(2)  │ │(8)  │     │
-│              └────┬─────┘ └────┬─────┘ └───┬────┘ └──┬──┘ └──┬──┘     │
-│                   │            │           │         │       │         │
-│                   └────────────┴─────┬─────┴─────────┴───────┘         │
-│                                      ▼                                 │
-│                              ┌──────────────┐                          │
-│                              │  SRE Parser  │                          │
-│                              │(stateful,    │                          │
-│                              │ per-device)  │                          │
-│                              └──────┬───────┘                          │
-│                                     ▼                                  │
-│                              ┌──────────────┐                          │
-│                              │ Batch INSERT │                          │
-│                              │ (10s timer)  │                          │
-│                              └──────┬───────┘                          │
-│                                     ▼                                  │
-│                              ┌──────────────┐                          │
-│                              │ TimescaleDB  │                          │
-│                              └──────────────┘                          │
-└─────────────────────────────────────────────────────────────────────────┘
-```
-
-**Dual-Engine SNMP Walker:**
-
-ระบบใช้ Dual-Engine สำหรับ SNMP data collection:
-
-| Mode | Trigger | Method | Performance |
-|---|---|---|---|
-| **Development** | `NODE_ENV != production` | `session.get()` (individual OID queries) | ง่ายต่อการ debug |
-| **Production** | `NODE_ENV = production` | `session.subtree()` (bulk walk) | เร็วกว่า 80% สำหรับ OID จำนวนมาก |
-
-```javascript
-// Dual-Engine Pattern
-const prodMode = (typeof env !== 'undefined' && env.get && env.get('NODE_ENV') === 'production');
-
-if (prodMode) {
-    session.subtree('1.3.6.1.2.1.25.2.3.1', 20, onFeed, onComplete);  // Bulk walk
-} else {
-    session.get(oids, callback);  // Individual GET
-}
-```
-
-**Walker Details:**
-
-| Walker | OIDs | Data Collected | Interval |
-|---|---|---|---|
-| **CPU Walker** | `.1.3.6.1.2.1.25.3.3.1.2.{1-4}` | CPU load per core (%) | 30s |
-| **Storage Walker** | `.1.3.6.1.2.1.25.2.3.1.*` | Disk description, total, used, type | 30s |
-| **Network Walker** | `.1.3.6.1.2.1.31.1.1.1.*` + sysUpTime | RX/TX bytes, errors, drops, status (64-bit counters) | 30s |
-| **Temperature Walker** | `.1.3.6.1.4.1.2021.13.16.2.1.7.1` | CPU temperature (°C) | 30s |
-| **LDI Walker** | `.1.3.6.1.4.1.9999.1.*` + WiFi `.9999.2.*` | Manufacturing telemetry (throughput, PE, JE, humidity, power, vibration, WiFi RSSI/SNR) | 30s |
-
-**Counter Wrap Handling:**
-
-ระบบจัดการ 32-bit และ 64-bit counter overflow อัตโนมัติ:
-
-```javascript
-// Counter wraparound detection
-function calcDelta(curr, prev) {
-    let diff = curr - prev;
-    if (diff < 0) {
-        diff += (Math.abs(diff) > 2147483648) ? 18446744073709552000 : 4294967296;
-    }
-    return diff;
-}
-
-// HardCap 40 Gbps prevents unrealistic values
-function calcMbps(diffBytes, elapsedSec) {
-    if (elapsedSec <= 0) return 0;
-    const mbps = Number(((diffBytes * 8) / (elapsedSec * 1000000)).toFixed(2));
-    if (mbps > 40000 || mbps < 0) return 0;  // Cap at 40 Gbps
-    return mbps;
-}
-```
-
-**Zero-Data Loss Mechanism:**
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│  Node-RED Retry Buffer Architecture                                  │
-│                                                                      │
-│  db_insert ──▶ catch_db_insert ──▶ retry_store (max 5)              │
-│       ▲              │                    │                          │
-│       │              ▼                    ▼                          │
-│       │         retry_delay (5s) ──▶ retry_rebuild                  │
-│       │                                                     │        │
-│       └─────────────────────────────────────────────────────┘        │
-│                                                                      │
-│  Flow Context: db_retry_queue stores pending retries                 │
-│  Guarantees: Zero data loss on transient DB failures                 │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
-### Stage 2: Data Processing (Parser)
-
-Parser function ทำหน้าที่:
-
-1. **Fail-safe identity**: `safeStr()` ป้องกัน SQL injection
-2. **Two-pass parsing**: อ่านชื่อ column ก่อน แล้ว map ค่า (แก้ race condition)
-3. **Per-interface Mbps calculation**: `delta bytes × 8 / (elapsedSec × 1000000)`
-4. **LDI ÷100 precision**: แปลง centidegrees/centipercent เป็นค่าจริง
-5. **HardCap 40 Gbps**: ป้องกัน counter overflow → drop to 0
-6. **Memory cleanup**: `msg.payload = null` + `flatData.length = 0`
-
-### Stage 3: Storage (TimescaleDB)
-
-```sql
--- V2 Normalized Schema: 3 separate hypertables per domain
-
--- System metrics (CPU, RAM, Disk, Temp)
-CREATE TABLE public.sys_metrics (
-    "time"           TIMESTAMPTZ NOT NULL,
-    device_id        TEXT NOT NULL REFERENCES public.devices(device_id) ON DELETE CASCADE,
-    cpu_cores        INTEGER,
-    cpu_load_percent DOUBLE PRECISION,
-    ram_total_mb     DOUBLE PRECISION,
-    ram_used_mb      DOUBLE PRECISION,
-    disk_total_gb    DOUBLE PRECISION,
-    disk_used_gb     DOUBLE PRECISION,
-    temp_c           DOUBLE PRECISION
-);
-SELECT create_hypertable('public.sys_metrics', 'time');
-
--- Network metrics (per-interface row)
-CREATE TABLE public.net_metrics (
-    "time"      TIMESTAMPTZ NOT NULL,
-    device_id   TEXT NOT NULL REFERENCES public.devices(device_id) ON DELETE CASCADE,
-    iface_name  TEXT NOT NULL,
-    rx_mbps     DOUBLE PRECISION DEFAULT 0,
-    tx_mbps     DOUBLE PRECISION DEFAULT 0,
-    rx_errors   BIGINT DEFAULT 0,
-    tx_errors   BIGINT DEFAULT 0,
-    rx_drops    BIGINT DEFAULT 0,
-    tx_drops    BIGINT DEFAULT 0,
-    status      TEXT DEFAULT 'UP'
-);
-SELECT create_hypertable('public.net_metrics', 'time');
-
--- LDI manufacturing metrics
-CREATE TABLE public.ldi_metrics (
-    "time"          TIMESTAMPTZ NOT NULL,
-    device_id       TEXT NOT NULL REFERENCES public.devices(device_id) ON DELETE CASCADE,
-    throughput      DOUBLE PRECISION DEFAULT 0,
-    temperature     DOUBLE PRECISION DEFAULT 0,
-    humidity        DOUBLE PRECISION DEFAULT 0,
-    pressure        DOUBLE PRECISION DEFAULT 0,
-    joule_effect    DOUBLE PRECISION DEFAULT 0,
-    power_watt      DOUBLE PRECISION DEFAULT 0,
-    vibration       DOUBLE PRECISION DEFAULT 0,
-    wifi_rssi       INTEGER DEFAULT 0,
-    wifi_snr        INTEGER DEFAULT 0
-);
-SELECT create_hypertable('public.ldi_metrics', 'time');
-```
-
-**Continuous Aggregates** (auto-refresh every 30 min):
-
-```sql
--- Hourly system summary
-CREATE MATERIALIZED VIEW public.sys_hourly
-WITH (timescaledb.continuous) AS
-SELECT time_bucket('1 hour', "time") AS bucket, device_id,
-    AVG(cpu_load_percent) AS avg_cpu, MAX(cpu_load_percent) AS max_cpu,
-    AVG(ram_used_mb) AS avg_ram_used, AVG(ram_total_mb) AS avg_ram_total,
-    AVG(disk_used_gb) AS avg_disk_used, AVG(disk_total_gb) AS avg_disk_total,
-    MAX(temp_c) AS max_temp
-FROM public.sys_metrics GROUP BY bucket, device_id;
-```
-
----
-
-## 📈 Monitoring Strategy
-
-### What We Monitor
-
-| Category | Metrics | Threshold | Alert Severity |
-|---|---|---|---|
-| **CPU** | `cpu_load_percent` | Warning > 80%, Critical > 95% | Warning/Critical |
-| **Memory** | `ram_used_mb / ram_total_mb` | Warning > 85%, Critical > 95% | Warning/Critical |
-| **Disk** | `disk_used_gb / disk_total_gb` | Warning > 80%, Critical > 95% | Warning/Critical |
-| **Network** | `net_rx_errors`, `net_rx_drops` | Any errors/drops | Warning |
-| **Interface** | `net_if_status` (1=UP, 2=DOWN) | Status = DOWN | Critical |
-| **Temperature** | `temp_c` | Warning > 80°C, Critical > 90°C | Warning/Critical |
-| **Throughput** | `ldi_throughput` | Z-Score > 2σ Warning, > 3σ Critical | Warning/Critical |
-| **Vibration** | `ldi_vibration` | Z-Score > 2σ Warning, > 3σ Critical | Warning/Critical |
-| **SLA** | Blackbox HTTP/TCP probes | Any probe DOWN | Critical |
-
-### Monitoring Intervals
-
-| Component | Interval | Timeout | Retries |
-|---|---|---|---|
-| **SNMP Polling** | 30 seconds | 10 seconds | 2 |
-| **Prometheus Scrape** | 30 seconds | 10 seconds | — |
-| **Blackbox Probes** | 30 seconds | 10 seconds | 2 |
-| **Continuous Aggregate Refresh** | 1 minute | — | — |
-| **Alert Evaluation** | 15 seconds | — | — |
-
-### Health Check Endpoints
-
-```bash
-# Database
-docker compose exec timescaledb pg_isready -U ims_admin -d ims
-
-# Node-RED
-curl -s http://localhost:1880/
-
-# Grafana
-curl -s http://localhost:3000/api/health
-
-# Prometheus
-curl -s http://localhost:9090/-/healthy
-
-# Alertmanager
-curl -s http://localhost:9093/-/healthy
-
-# Blackbox Exporter
-curl -s http://localhost:9115/probe
-```
-
----
-
-## 🚨 Alerting Pipeline
-
-### Alert Flow
-
-```
-┌──────────────┐     ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│  Prometheus   │────▶│ Alert Rules  │────▶│ Alertmanager │────▶│  Webhooks    │
-│  (Evaluator)  │     │  (IMS YAML)  │     │   (Router)   │     │  (LINE/Teams)│
-└──────────────┘     └──────────────┘     └──────┬───────┘     └──────────────┘
-                                                  │
-                                          ┌───────▼───────┐
-                                          │   Inhibition   │
-                                          │    Rules       │
-                                          └───────────────┘
-```
-
-### Alert Rules Summary
-
-| Rule | Condition | Severity | Inhibition |
-|---|---|---|---|
-| **HighCPUUsage** | `avg_cpu_load > 80%` for 5m | Warning | Suppressed by InterfaceDown |
-| **CriticalCPUUsage** | `avg_cpu_load > 95%` for 2m | Critical | Suppresses Warning |
-| **HighMemoryUsage** | `ram_usage > 85%` for 5m | Warning | Suppressed by InterfaceDown |
-| **DiskSpaceLow** | `disk_usage > 80%` for 10m | Warning | — |
-| **DiskSpaceCritical** | `disk_usage > 95%` for 5m | Critical | Suppresses Warning |
-| **InterfaceDown** | `net_if_status == 2` for 1m | Critical | Suppresses all network warnings + CPU/RAM/Thermal warnings |
-| **HighTemperature** | `temp_c > 80°C` for 5m | Warning | Suppressed by InterfaceDown |
-| **CriticalTemperature** | `temp_c > 90°C` for 2m | Critical | Suppresses Warning |
-| **ServiceDown** | Blackbox probe fails | Critical | Suppresses all warnings on same machine |
-| **NodeREDDown** | Node-RED health fails | Critical | Suppresses TelemetryGap |
-| **TelemetryGap** | No data for 3 minutes | Warning | Suppressed by NodeREDDown |
-| **LDIThroughputCritical** | Z-Score > 3σ | Critical | — |
-| **LDIVibrationCritical** | Z-Score > 3σ | Critical | — |
-| **PredictiveDiskFull** | Linear regression → full in 7 days | Warning | — |
-
-### Inhibition Rules (Alertmanager)
-
-Critical alerts suppress lower-severity alerts เพื่อลบ noise:
-
-```yaml
-# Alertmanager v0.27.0 syntax
-inhibit_rules:
-  - target_matchers:
-      - alertname = InterfaceDown
-    source_matchers:
-      - severity =~ "Warning|Info"
-    equal: [machine]
-
-  - target_matchers:
-      - alertname = ServiceDown
-    source_matchers:
-      - severity =~ "Warning|Info"
-    equal: [machine]
-
-  - target_matchers:
-      - severity = Critical
-    source_matchers:
-      - severity =~ "Warning|Info"
-    equal: [alertname, machine]
-```
-
-### Notification Channels
-
-| Channel | Format | Use Case |
+| Service | Container | Purpose |
 |---|---|---|
-| **LINE Notify** | `application/x-www-form-urlencoded` | Mobile notification for on-call team |
-| **MS Teams** | MessageCard JSON | Team channel notification |
-| **Debug** | Console output | Development troubleshooting |
+| `timescaledb` | `ims-timescaledb` | PostgreSQL + TimescaleDB — all persistent storage |
+| `pgbouncer` | `ims-pgbouncer` | Transaction-mode connection pooler in front of TimescaleDB |
+| `node-red` | `ims-node-red` | Both telemetry pipelines (simulators + ingestion) and the alert-delivery flow |
+| `grafana` | `ims-grafana` | Dashboards, provisioned alert rules, native alerting |
+| `renderer` | `ims-grafana-renderer` | External `grafana-image-renderer` service (PNG export for alerts/reports) |
+| `prometheus` | `ims-prometheus` | Scrapes `sys_metrics`-adjacent exporters and Node-RED health; evaluates its own alert rules |
+| `alertmanager` | `ims-alertmanager` | Routes Prometheus alerts to Node-RED's `/alert-webhook` |
+| `blackbox-exporter` | (blackbox) | HTTP/TCP/ICMP probes for SLA monitoring |
+| `snmpsim` | (snmpsim) | Simulated SNMP agent for the legacy pipeline's dev/test targets |
+| `db-migrate` | `ims-db-migrate` | One-shot migration runner (`scripts/migrate-entrypoint.sh`), gates `node-red` startup |
 
-**LINE Notify Format:**
-```
-POST https://notify-api.line.me/api/notify
-Headers: Authorization: Bearer <token>
-Body: message=<encoded alert text>
-```
-
-**MS Teams Format:**
-```json
-{
-  "@type": "MessageCard",
-  "themeColor": "FF0000",
-  "sections": [{
-    "text": "🚨 **Alert: InterfaceDown**\nMachine: server-01\nSeverity: Critical"
-  }]
-}
-```
+Internal-only services (PgBouncer, SNMP simulator, blackbox exporter) are never exposed to the host; only Grafana (3000), Node-RED (1880), Prometheus (9090), and Alertmanager (127.0.0.1:9093, loopback-only) publish ports.
 
 ---
 
-## 🗄️ Database Schema
+## LDI Manufacturing Pipeline (the one every dashboard actually uses)
 
-### Core Tables (V2 Normalized Schema)
+1. **`ldi_simulator.json`** ("LDI Live Simulator" tab) runs an Ornstein-Uhlenbeck mean-reverting process per machine (10 simulated LDI machines across 3 processes: DF INNER, DF OUTER, SM) on a 2-second tick, and POSTs batches to `/ldi-telemetry`.
+2. **`ldi_ingestion.json`** ("IMS LDI Ingestion" tab) receives the POST, checks the `x-api-key` header against `INGEST_API_KEY`, and inserts into `public.ldi_data`.
+3. **`ldi_alarm_simulator.json`** ("LDI Alarm Simulator" tab) runs on a 10-second tick. Alarm codes with a known real-world parameter link (thermal/humidity, PE/JE registration error, scan-speed) are condition-driven — they only fire when the corresponding telemetry is actually out of spec on a fresh read, using the same thresholds `v_ldi_alarm_context` (migration 045) evaluates RCA against. Codes with no known parameter link (calibration faults, imaging device faults, etc.) are drawn from a weighted-random noise pool matching real historical frequency. `VACUUM` (alarm code `91009`) is deliberately noise-only: the recipe-constant `air_vacuum` values for every machine already sit inside `flag_vac_out_of_spec`'s "out of spec" range regardless of timing, so no alarm-timing strategy can produce a real correlation signal for it — a flag-threshold/recipe mismatch, not something to fake a fix for in the simulator.
+4. Both feed `public.ldi_data` / `public.ldi_alarm_log`, which every LDI Grafana dashboard and the RCA Truth Test panel read from.
 
-| Table | Type | Purpose |
-|---|---|---|
-| `devices` | Regular Table | Device registry (11 cols: device_id, hostname, ip_address, snmp_community, snmp_port, enabled, ...) |
-| `sys_metrics` | Hypertable | System metrics: CPU, RAM, Disk, Temperature per poll cycle |
-| `net_metrics` | Hypertable | Network metrics: per-interface RX/TX Mbps, errors, drops |
-| `ldi_metrics` | Hypertable | LDI manufacturing: throughput, PE, JE, humidity, power, vibration |
-| `sys_hourly` | Continuous Aggregate | Hourly rollup of sys_metrics |
-| `net_hourly` | Continuous Aggregate | Hourly rollup of net_metrics |
-| `ldi_hourly` | Continuous Aggregate | Hourly rollup of ldi_metrics |
-| `alert_rules` | Regular Table | Alert rule definitions |
-| `alert_history` | Regular Table | Alert event history |
-| `schema_migrations` | Regular Table | Migration tracking |
+**Yield**, specifically, has a single source of truth: `public.f_ldi_yield_pct()` (migration 046) — worst-case of PE-pass-rate and JE-pass-rate against each row's own `pe_setting`/`je_setting` (not a hardcoded threshold). Both NOC Overview and Manufacturing call this same function, so they cannot structurally disagree on the number.
 
-### Schema Relationships
-
-```mermaid
-erDiagram
-    devices ||--o{ sys_metrics : "device_id"
-    devices ||--o{ net_metrics : "device_id"
-    devices ||--o{ ldi_metrics : "device_id"
-    sys_metrics ||--o{ sys_hourly : "time_bucket"
-    net_metrics ||--o{ net_hourly : "time_bucket"
-    ldi_metrics ||--o{ ldi_hourly : "time_bucket"
-
-    devices {
-        text device_id PK
-        text hostname
-        text ip_address
-        text snmp_community
-        int snmp_port
-        boolean enabled
-    }
-    sys_metrics {
-        timestamptz time
-        text device_id FK
-        double cpu_load_percent
-        double ram_used_mb
-        double disk_used_gb
-        double temp_c
-    }
-    net_metrics {
-        timestamptz time
-        text device_id FK
-        text iface_name
-        double rx_mbps
-        double tx_mbps
-    }
-    ldi_metrics {
-        timestamptz time
-        text device_id FK
-        double throughput
-        double temperature
-        double humidity
-        double power_watt
-    }
-```
-
-### Key Column Types
-
-| Column | Type | Notes |
-|---|---|---|
-| `time` | `TIMESTAMPTZ` | Partitioning key for hypertables (raw tables) |
-| `bucket` | `TIMESTAMPTZ` | Time bucket for CAGGs (Grafana aliases as `time`) |
-| `device_id` | `TEXT` | FK to `devices.device_id` (ON DELETE CASCADE) |
-| `iface_name` | `TEXT` | Network interface name (net_metrics only) |
+**Cpk**, the process-capability formula (`LEAST((limit-mean)/(3*sigma), (mean+limit)/(3*sigma))`, sample stddev), is independently implemented in 5 places (3 dashboard panels + `v_machine_spc_fleet` + `v_machine_spc_ranking`) rather than shared — `tests/e2e/golden-dataset-spc.js` runs a hand-computed synthetic dataset through all 5 and asserts they agree, as a standing CI gate against this drifting apart again.
 
 ---
 
-## 🔒 Security Architecture
+## Legacy SNMP / Infrastructure Pipeline
 
-### Network Security
+`ingestion.json` ("IMS Ingestion Pipeline" tab) polls registered devices via SNMP v2c every 30 seconds:
 
-| Control | Implementation |
-|---|---|
-| **Container Isolation** | Docker network bridge — services communicate via DNS |
-| **No Host Port Exposure** | Internal services (PgBouncer, snmpsim) only accessible within Docker network |
-| **SNMP Community** | Profile-based: `ubuntu` or `windows` snmprec files (not hardcoded) |
-| **Secrets Management** | Docker secrets (`secrets/` directory, gitignored) |
-| **Grafana Auth** | Basic auth with configurable admin password |
+- Device registry loads from `public.devices` into `global.deviceRegistry` (refreshed every 5 minutes).
+- `fork_5_ways` dispatches parallel walkers (CPU, Storage, Network, Temperature, LDI) per device.
+- `sre_parser` ("SRE AIOps Parser v9 Batch") maintains per-device state in flow context, buffers rows, and batch-inserts into `sys_metrics` / `net_metrics` / `ldi_metrics` independently per table (a partial walker failure doesn't block unrelated data).
+- A k6-style synthetic load simulator (`inject_fleet` -> `generate_fleet_targets` -> `pace_limiter` -> the same fork/parser path) also feeds this same pipeline for load-testing purposes.
 
-### Application Security
-
-| Control | Implementation |
-|---|---|
-| **SQL Injection Prevention** | `safeStr()` escaping on all user inputs |
-| **XSS Prevention** | Grafana handles output encoding |
-| **Credential Rotation** | Stale `flows_cred.json` must be manually deleted after rotation |
-| **CI/CD Security** | Gitleaks scanning, stub secrets for validation |
-
-### Production Hardening
-
-```yaml
-# docker-compose.prod.yaml additions
-services:
-  grafana:
-    environment:
-      - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s/grafana/
-      - GF_AUTH_DISABLE_LOGIN_FORM=false
-    ports: []  # No external port — use reverse proxy
-
-  pgbouncer:
-    environment:
-      - AUTH_TYPE=plain  # scram-sha-256 fails with plain-text passwords
-```
+This pipeline is what actually powers NOC Overview's infrastructure panels (CPU/RAM/Disk/Temperature of the 2 real servers, `ERP-MASTER-UBUNTU` / `ERP-MASTER-WINDOWS`) and the AIOps & Capacity Forecast dashboard. It is **not** what powers any LDI process/quality panel — see the pipeline split above.
 
 ---
 
-## 🎨 Dashboard Design Standards
+## Database Schema (as of migration 047)
 
-### Symmetrical Network Graphs (Butterfly Charts)
-
-กราฟ Network ใช้ `axisCenteredZero: true` เพื่อแสดง RX/TX ในลักษณะ "ปีกผีเสื้อ":
-
-```json
-{
-  "fieldConfig": {
-    "defaults": {
-      "custom": {
-        "axisCenteredZero": true
-      }
-    },
-    "overrides": [
-      {
-        "matcher": { "id": "byName", "options": "Download (Mbps)" },
-        "properties": [{ "id": "color", "value": { "fixedColor": "#00F2FE", "mode": "fixed" } }]
-      },
-      {
-        "matcher": { "id": "byName", "options": "Upload (Mbps)" },
-        "properties": [{ "id": "color", "value": { "fixedColor": "#00FF87", "mode": "fixed" } }]
-      }
-    ]
-  }
-}
-```
-
-**SQL Pattern สำหรับ Symmetrical Display:**
-```sql
--- Download (ค่าบวก)
-SELECT avg_rx_mbps AS "Download (Mbps)" FROM sys_hourly
-
--- Upload (คูณด้วย -1 ให้ติดลบ)
-SELECT (avg_tx_mbps * -1) AS "Upload (Mbps)" FROM sys_hourly
-```
-
-### LDI Quality Tolerance Box (Scatter Plot)
-
-Panel 506 แสดง PE vs JE ใน Scatter Plot พร้อม Tolerance Box ±10µm:
-
-```json
-{
-  "id": 506,
-  "title": "LDI Quality Scatter (PE vs JE)",
-  "type": "xychart",
-  "fieldConfig": {
-    "defaults": {
-      "thresholds": {
-        "steps": [
-          { "color": "red", "value": null },
-          { "color": "green", "value": -10 },
-          { "color": "green", "value": 10 },
-          { "color": "red", "value": null }
-        ]
-      },
-      "thresholdsStyle": { "mode": "dashed+area" }
-    },
-    "overrides": [
-      { "matcher": { "id": "byName", "options": "PE" }, "properties": [{ "id": "min", "value": -15 }, { "id": "max", "value": 15 }] },
-      { "matcher": { "id": "byName", "options": "JE" }, "properties": [{ "id": "min", "value": -15 }, { "id": "max", "value": 15 }] }
-    ]
-  }
-}
-```
-
-### SRE Color Convention
-
-| Metric | Healthy | Warning | Critical |
+| Table | Type | Fed by | Purpose |
 |---|---|---|---|
-| CPU | Green (#00FF87) | Orange (#FF9100) | Red (#FF003C) |
-| RAM | Cyan (#00F2FE) | Orange (#FF9100) | Red (#FF003C) |
-| Disk | Green (#00FF87) | Orange (#FF9100) | Red (#FF003C) |
-| Network RX | Cyan (#00F2FE) | — | Red (#FF003C) |
-| Network TX | Pink (#FF007F) | — | Red (#FF003C) |
-| LDI | Purple (#7F00FF) | Orange (#FF9100) | Red (#FF003C) |
-| Errors | — | — | Red (#FF003C) |
-| Drops | — | Orange (#FF9100) | Red (#FF003C) |
+| `devices` | Table | manual/seed | Registry of every monitored entity (`device_type`: `ldi` or `server`) |
+| `ldi_data` | Hypertable, 1h chunks | `ldi_ingestion.json` | Real LDI process telemetry — PE/JE, temperature, humidity, vacuum, scan speed, per-sample. Source for every LDI dashboard panel. |
+| `ldi_alarm_log` | Hypertable, 7d chunks | `ldi_alarm_simulator.json` | Per-alarm-event rows, condition-correlated as of this session's simulator fix |
+| `ldi_alarm_ms_code` | Table | migration 036 (mock seed) | Master alarm code reference (20 real production codes, functional descriptions only — not the vendor catalog) |
+| `sys_metrics` / `net_metrics` / `ldi_metrics` | Hypertables, 1d chunks | `ingestion.json` (legacy pipeline) | Infra telemetry + the k6-synthetic LDI metrics table with known gaps (see below) |
+| `schema_migrations` | Table | `scripts/migrate-entrypoint.sh` | Migration tracking — `(version, filename, applied_at)`, no `checksum` column in the canonical shape |
+
+**Views worth knowing:** `v_ldi_alarm_context` (migration 045, joins alarms to the telemetry reading within 5 minutes prior — this is what the RCA Truth Test correlates against), `v_machine_spc_fleet` / `v_machine_spc_ranking` (Cpk, fleet-wide vs. per-selection), `v_fleet_health` / `v_fleet_score` (migration 047, scoped to `device_type='server'` only — this previously included LDI machines' permanently-zero stub rows, diluting the infra health score).
 
 ---
 
-## 📈 Scalability Considerations
+## Migration Governance
 
-### Current Capacity
+**One canonical migration runner**: `scripts/migrate-entrypoint.sh`. Docker Compose's one-shot `db-migrate` service runs it automatically (`node-red` depends on `db-migrate: condition: service_completed_successfully`); `scripts/migrate.sh` is a thin wrapper (`docker compose run --rm db-migrate`) for a manual re-run without bringing up the rest of the stack.
 
-| Metric | Value |
-|---|---|
-| **Devices Monitored** | 1000+ (simulated) |
-| **Polling Interval** | 30 seconds |
-| **Data Points/Hour** | ~600 per machine |
-| **Storage/Hour** | ~50 KB per machine |
-| **Storage/Day** | ~1.2 MB per machine |
+This repo previously had 3 independent migration runners with different tracking behavior (`migrate.sh` had its own loop with an unused `checksum` column, `migrate-entrypoint.sh` had none, `init-migrations.sh` had no tracking table at all and guessed via error-text matching) — whichever ran first on a given database silently determined that database's actual `schema_migrations` shape. This was the root cause of at least one confirmed tracking-drift incident (migration 038, found live-applied with its tracking row still unmarked). `init-migrations.sh` has been removed; there is now exactly one runner and one tracking shape.
 
-### Scaling Roadmap
+All migrations should be idempotent (`CREATE ... IF NOT EXISTS`, `DO $$ ... IF EXISTS ...` guards for renames, etc.) so a re-run against an already-migrated database is always a safe no-op. **Migration 020 is a cautionary example**: it originally began with an unconditional `DROP TABLE ldi_data CASCADE`, safe only during early development before this project had real data — found still marked as applied-but-never-run against a database holding 284k+ real rows. Rewritten to create-if-missing and tune-in-place instead of dropping.
 
-| Phase | Machines | Changes Required |
+---
+
+## Alerting
+
+Two independent alert-evaluation engines both funnel into the same Node-RED delivery flow:
+
+1. **Grafana native alerting** (`monitoring/grafana/provisioning/alerting/*.yml`) — LDI-specific rules (machine alarm-in-database, process capability below 1.33, vibration critical, Z-score anomalies) evaluated directly against TimescaleDB via Grafana's own scheduler.
+2. **Prometheus + Alertmanager** — infra-focused rules (CPU/RAM/disk/temperature thresholds, service-down, interface-down) evaluated by Prometheus, routed by Alertmanager (`monitoring/alertmanager/alertmanager.yml`) with severity-based grouping and inhibition rules (critical suppresses warning on the same device).
+
+**Both paths converge on `nodered_data/flows/alerting.json`** ("IMS Alerting Pipeline" tab), which receives Alertmanager's webhook at `POST /alert-webhook`, formats the alert, and fans out to:
+- **LINE Messaging API** (not LINE Notify — that API was discontinued by LINE in 2025 and is not used here) via `LINE_CHANNEL_ACCESS_TOKEN` + `LINE_USER_ID`.
+- **MS Teams** via `TEAMS_WEBHOOK_URL`, as an Adaptive Card.
+
+If either credential is unset, the corresponding delivery function calls `node.error()` (visible in the flow's "Alert Delivery Failure" debug node and via a persistent red status indicator on the node itself) rather than silently dropping the alert — but delivery still doesn't happen until real credentials are configured in `.env`. Grafana's own `ims-slack-critical` route also forwards to this same webhook; a previous direct-to-Slack config pointing at a placeholder URL was removed rather than left failing on every critical alert.
+
+---
+
+## Dashboard Inventory
+
+| UID | Title | Scope |
 |---|---|---|
-| **Current** | 1-1000+ | Standalone Docker Compose |
-| **Phase 2** | 5-50 | PgBouncer tuning, connection pooling |
-| **Phase 3** | 50-500 | Read replicas, continuous aggregate optimization |
-| **Phase 4** | 500-1000+ | Horizontal scaling, Kubernetes migration |
+| `ims-noc-overview` | IMS NOC Overview | Infrastructure only (2 real servers + network) — LDI process content lives elsewhere, see below |
+| `ims-ldi-manufacturing` | IMS LDI - Manufacturing Command Center | Full 4-layer RCA dashboard: executive KPIs, machine telemetry, production context, alarm stream |
+| `ims-ldi-operator-andon` | IMS LDI - Operator Andon Board | Factory-floor kiosk, 1280x720 no-scroll budget |
+| `ims-ldi-engineering-analytics` | IMS LDI - Engineering Analytics & SPC | Cpk/SPC ranking, RCA Truth Test, PE/JE distributions |
+| `ims-ldi-machine-snapshot` | IMS LDI - Machine Snapshot | Per-event drill-down (click an alarm/log to inspect) |
+| `ldi-data-readiness` | LDI Data Readiness & Integration Gaps | Self-auditing data-quality dashboard (board-key duplication, coverage %, alarm-master match rate) |
+| `ims-engineering` | IMS Engineering Drill-Down | Infra-focused: CPU/RAM/storage/network per server, LDI throughput/quality (legacy pipeline) |
+| `ims-capacity` | IMS AIOps & Capacity Forecast | Days-until-full/saturation regression forecasts (infra) |
+| `ims-meta-monitoring` | IMS Pipeline Health & Meta-Monitoring | Ingestion pipeline's own health (rows/sec, batch success rate, retry queue depth) |
 
-### Performance Tuning
-
-```sql
--- Increase shared_buffers for larger datasets
-ALTER SYSTEM SET shared_buffers = '2GB';
-
--- Optimize work_mem for complex queries
-ALTER SYSTEM SET work_mem = '256MB';
-
--- Enable parallel query execution
-ALTER SYSTEM SET max_parallel_workers_per_gather = 4;
-```
+NOC Overview was split from LDI/manufacturing content this session (it previously duplicated Manufacturing's Yield panel) — infrastructure and manufacturing concerns are deliberately kept on separate dashboards now, not blended on one "overview" page.
 
 ---
 
-## 📚 References
+## Known Gaps
+
+Documented here rather than silently left for the next person to rediscover:
+
+- **`ldi_metrics.throughput` / `.power_watt` / `.vibration` are always `0` for every LDI device** (confirmed across ~2,300+ rows, all 10 machines). The k6-synthetic ingestion pipeline that feeds this table was never wired to populate these fields for LDI-class devices. The `ims-ldi-vibration-critical` alert rule is paused for this reason rather than left silently unable to fire. This does **not** affect any dashboard reading from `ldi_data` (the real pipeline) — only the legacy `ldi_metrics` table and anything querying it directly.
+- **Migration 020's `REAL` column-type conversion is defined but not yet applied to the live `ldi_data` table** — blocked by TimescaleDB not permitting `ALTER COLUMN TYPE` while any chunk is compressed (11 of 18 chunks are, under the 7-day compression policy). Applying it requires decompressing those chunks first, a larger operation deliberately left as an explicit decision rather than done unprompted. The safe parts of that migration (indexes, future chunk interval) are already applied.
+- **Board-key duplication on LDI-01/LDI-04** (157 / 121 duplicate `(mo, board_no)` pairs respectively, 0 on the other 8 machines) is root-caused: random `MO-NNNNN` string collisions across separate job cycles (birthday paradox, given only ~90,000 possible 5-digit values and 175-257 draws per machine over the dataset's history) — not a real double-counted board. The random ID space was widened 10x (6 digits) in both the live simulator and the historical batch generator to make this far less likely going forward.
+
+---
+
+## References
 
 | Resource | Link |
 |---|---|
@@ -820,13 +160,6 @@ ALTER SYSTEM SET max_parallel_workers_per_gather = 4;
 | Grafana Documentation | https://grafana.com/docs/ |
 | Prometheus Documentation | https://prometheus.io/docs/ |
 | Alertmanager Documentation | https://prometheus.io/docs/alerting/latest/configuration/ |
+| LINE Messaging API | https://developers.line.biz/en/docs/messaging-api/ |
 
----
-
-<div align="center">
-
-**IMS System Architecture — Version 1.0**
-
-*Designed for Enterprise-Grade Infrastructure Monitoring*
-
-</div>
+Related docs in this repo: `docs/GRAFANA_DESIGN_SYSTEM.md` (color/token conventions), `docs/TROUBLESHOOTING.md`, `IMS-WORLD-CLASS-AUDIT-REPORT.md` (the audit that prompted this rewrite).
