@@ -1,7 +1,7 @@
 .PHONY: up up-prod down restart build-flows deploy-flows verify backup restore test-unit test-load test-visual test-visual-ldi logs validate-flows validate-dashboards snapshot-flows doctor
 
 build-flows:
-	bash scripts/build-flows.sh
+	node scripts/build-flows.js
 
 up: build-flows
 	docker compose -f docker-compose.yaml up -d
@@ -84,8 +84,6 @@ doctor:
 	@echo "  Docker Compose: OK"
 	@node --version 2>NUL || (echo "FAIL: Node.js not found" && exit 1)
 	@echo "  Node.js: OK"
-	@jq --version 2>NUL || (echo "WARN: jq not found (needed for build-flows)" && exit 1)
-	@echo "  jq: OK"
 	@echo "=== All checks passed ==="
 # ── IaC: Validate dashboards for corruption ─────────────
 validate-dashboards:

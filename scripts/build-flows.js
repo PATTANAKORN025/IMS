@@ -4,7 +4,7 @@ const path = require('path');
 const flowsDir = path.join(__dirname, '..', 'nodered_data', 'flows');
 const outputFile = path.join(__dirname, '..', 'nodered_data', 'flows.json');
 
-const files = fs.readdirSync(flowsDir).filter(f => f.endsWith('.json'));
+const files = fs.readdirSync(flowsDir).filter(f => f.endsWith('.json')).sort();
 let allFlows = [];
 let tabs = new Set();
 let ids = new Set();
@@ -29,7 +29,7 @@ for (const file of files) {
     }
 }
 
-fs.writeFileSync(outputFile, JSON.stringify(allFlows, null, 2), 'utf-8');
+fs.writeFileSync(outputFile, JSON.stringify(allFlows, null, 4) + '\n', 'utf-8');
 
 console.log(`Merged ${files.length} files into flows.json (${allFlows.length} nodes)`);
 console.log(`tabs: ${Array.from(tabs).join(', ')}   ✅`);

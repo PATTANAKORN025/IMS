@@ -241,7 +241,7 @@ IMS/
 │   ├── create-playlist.sh             #   NOC wall-display playlist creator
 │   ├── generate-showcase.sh           #   Dashboard screenshot generator
 │   ├── snmp-discover.js               #   Enterprise SNMP OID discovery
-│   └── build-flows.sh                 #   Merge ingestion + alerting → flows.json
+│   └── build-flows.js                 #   Merge nodered_data/flows/*.json → flows.json (also used by CI)
 ├── assets/                            # Dashboard screenshots (auto-generated)
 ├── docs/                              # Architecture, Design System, Troubleshooting
 └── .mimocode/skills/                  # 24 custom skills for DevOps automation
