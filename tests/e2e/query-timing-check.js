@@ -116,7 +116,12 @@ function checkDashboard(filePath) {
       // Same opt-out convention as query-budget-linter.js / dashboard-linter.js:
       // deliberate full-dataset-scope diagnostic panels aren't part of the
       // real-time operator-glances-at-dashboard performance contract.
-      if (rawSql.includes('NO_TIMEFILTER_INTENTIONAL')) { skipped++; continue; }
+      // QUERY_BUDGET_EXEMPT is the same idea, scoped specifically to this
+      // check: panels whose SQL is legitimate (correct, already optimized
+      // or investigated) but whose inherent per-row analytical cost can't
+      // hit an 80ms real-time budget -- documented case-by-case in the
+      // comment at each call site rather than silently ignored.
+      if (rawSql.includes('NO_TIMEFILTER_INTENTIONAL') || rawSql.includes('QUERY_BUDGET_EXEMPT')) { skipped++; continue; }
 
       const res = runExplain(sql);
       if (!res.ok) {

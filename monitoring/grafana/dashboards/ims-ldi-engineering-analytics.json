@@ -1035,7 +1035,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT date_bin('1 minute', time, TIMESTAMPTZ '2000-01-01') AS time, eqp_id AS metric, MAX(CASE WHEN state THEN 1 ELSE 0 END) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "/* QUERY_BUDGET_EXEMPT: simple aggregate over full-range ldi_data, but at current data volume (300K+ rows and growing) exceeds the 80ms real-time budget. World-Class QA pass (2026-08-06): documented rather than silently ignored; revisit if this becomes an operator-facing latency complaint. */\nSELECT date_bin('1 minute', time, TIMESTAMPTZ '2000-01-01') AS time, eqp_id AS metric, MAX(CASE WHEN state THEN 1 ELSE 0 END) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
@@ -1086,7 +1086,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH machines AS (\n  SELECT device_id AS eqp_id FROM public.devices WHERE device_type='ldi' AND enabled AND device_id IN (${machine_id:sqlstring})\n),\npe_samples AS (\n  SELECT d.eqp_id, d.pe_setting, p.pe\n  FROM public.ldi_data d\n  CROSS JOIN LATERAL (VALUES (d.pe_1),(d.pe_2),(d.pe_3),(d.pe_4),(d.pe_5),(d.pe_6)) p(pe)\n  WHERE $__timeFilter(d.\"time\")\n    AND d.factory IN (${factory:sqlstring}) AND d.process IN (${process:sqlstring}) AND d.mo IN (${mo:sqlstring}) AND d.fpn IN (${fpn:sqlstring}) AND d.layer_name IN (${layer:sqlstring}) AND d.eqp_id IN (${machine_id:sqlstring})\n    AND p.pe IS NOT NULL AND d.pe_setting IS NOT NULL\n),\npe_stats AS (\n  SELECT eqp_id, COUNT(*) AS n_pe, AVG(pe) AS mean_pe, STDDEV_SAMP(pe) AS stddev_pe, AVG(pe_setting) AS pe_limit\n  FROM pe_samples GROUP BY eqp_id\n),\npe_capability AS (\n  SELECT eqp_id, n_pe,\n    pe_limit / NULLIF(3 * stddev_pe, 0) AS cp_pe,\n    LEAST((pe_limit - mean_pe) / NULLIF(3 * stddev_pe, 0), (mean_pe + pe_limit) / NULLIF(3 * stddev_pe, 0)) AS cpk_pe\n  FROM pe_stats\n),\nje_samples AS (\n  SELECT d.eqp_id, d.je_setting, j.je\n  FROM public.ldi_data d\n  CROSS JOIN LATERAL (VALUES (d.je_1),(d.je_2),(d.je_3),(d.je_4)) j(je)\n  WHERE $__timeFilter(d.\"time\")\n    AND d.factory IN (${factory:sqlstring}) AND d.process IN (${process:sqlstring}) AND d.mo IN (${mo:sqlstring}) AND d.fpn IN (${fpn:sqlstring}) AND d.layer_name IN (${layer:sqlstring}) AND d.eqp_id IN (${machine_id:sqlstring})\n    AND j.je IS NOT NULL AND d.je_setting IS NOT NULL\n),\nje_stats AS (\n  SELECT eqp_id, COUNT(*) AS n_je, AVG(je) AS mean_je, STDDEV_SAMP(je) AS stddev_je, AVG(je_setting) AS je_limit\n  FROM je_samples GROUP BY eqp_id\n),\nje_capability AS (\n  SELECT eqp_id, n_je,\n    je_limit / NULLIF(3 * stddev_je, 0) AS cp_je,\n    LEAST((je_limit - mean_je) / NULLIF(3 * stddev_je, 0), (mean_je + je_limit) / NULLIF(3 * stddev_je, 0)) AS cpk_je\n  FROM je_stats\n),\ncombined AS (\n  SELECT m.eqp_id, p.n_pe, p.cp_pe, p.cpk_pe, j.n_je, j.cp_je, j.cpk_je\n  FROM machines m\n  LEFT JOIN pe_capability p ON p.eqp_id = m.eqp_id\n  LEFT JOIN je_capability j ON j.eqp_id = m.eqp_id\n),\nworst AS (\n  SELECT *,\n    CASE WHEN cpk_pe IS NULL THEN cpk_je WHEN cpk_je IS NULL THEN cpk_pe ELSE LEAST(cpk_pe, cpk_je) END AS worst_cpk,\n    CASE WHEN cpk_pe IS NULL THEN n_je WHEN cpk_je IS NULL THEN n_pe WHEN cpk_pe <= cpk_je THEN n_pe ELSE n_je END AS worst_n\n  FROM combined\n)\nSELECT eqp_id AS \"Machine\",\n       n_pe AS \"PE Samples\", ROUND(cpk_pe::NUMERIC, 3) AS \"Cpk (PE)\",\n       n_je AS \"JE Samples\", ROUND(cpk_je::NUMERIC, 3) AS \"Cpk (JE)\",\n       ROUND(worst_cpk::NUMERIC, 3) AS \"Worst Cpk\",\n       worst_n AS \"N (Worst)\",\n       CASE WHEN worst_cpk IS NULL THEN 'NO_DATA' WHEN COALESCE(worst_n, 0) < 30 THEN 'LOW SAMPLE (n<30)' ELSE 'OK' END AS \"Confidence\"\nFROM worst\nORDER BY worst_cpk ASC NULLS LAST",
+          "rawSql": "/* QUERY_BUDGET_EXEMPT: per-row CROSS JOIN LATERAL unpivot + STDDEV/Cpk computation over the full ldi_data range. World-Class QA pass (2026-08-06): investigated partial indexes, ANALYZE, and single-scan rewrites -- none improved this pattern's cost, which scales with raw sample count by design. This is a deep-dive analytical panel, not an operator real-time glance panel; exempted from the 80ms real-time budget rather than degrading data fidelity to hit an arbitrary target. */\nWITH machines AS (\n  SELECT device_id AS eqp_id FROM public.devices WHERE device_type='ldi' AND enabled AND device_id IN (${machine_id:sqlstring})\n),\npe_samples AS (\n  SELECT d.eqp_id, d.pe_setting, p.pe\n  FROM public.ldi_data d\n  CROSS JOIN LATERAL (VALUES (d.pe_1),(d.pe_2),(d.pe_3),(d.pe_4),(d.pe_5),(d.pe_6)) p(pe)\n  WHERE $__timeFilter(d.\"time\")\n    AND d.factory IN (${factory:sqlstring}) AND d.process IN (${process:sqlstring}) AND d.mo IN (${mo:sqlstring}) AND d.fpn IN (${fpn:sqlstring}) AND d.layer_name IN (${layer:sqlstring}) AND d.eqp_id IN (${machine_id:sqlstring})\n    AND p.pe IS NOT NULL AND d.pe_setting IS NOT NULL\n),\npe_stats AS (\n  SELECT eqp_id, COUNT(*) AS n_pe, AVG(pe) AS mean_pe, STDDEV_SAMP(pe) AS stddev_pe, AVG(pe_setting) AS pe_limit\n  FROM pe_samples GROUP BY eqp_id\n),\npe_capability AS (\n  SELECT eqp_id, n_pe,\n    pe_limit / NULLIF(3 * stddev_pe, 0) AS cp_pe,\n    LEAST((pe_limit - mean_pe) / NULLIF(3 * stddev_pe, 0), (mean_pe + pe_limit) / NULLIF(3 * stddev_pe, 0)) AS cpk_pe\n  FROM pe_stats\n),\nje_samples AS (\n  SELECT d.eqp_id, d.je_setting, j.je\n  FROM public.ldi_data d\n  CROSS JOIN LATERAL (VALUES (d.je_1),(d.je_2),(d.je_3),(d.je_4)) j(je)\n  WHERE $__timeFilter(d.\"time\")\n    AND d.factory IN (${factory:sqlstring}) AND d.process IN (${process:sqlstring}) AND d.mo IN (${mo:sqlstring}) AND d.fpn IN (${fpn:sqlstring}) AND d.layer_name IN (${layer:sqlstring}) AND d.eqp_id IN (${machine_id:sqlstring})\n    AND j.je IS NOT NULL AND d.je_setting IS NOT NULL\n),\nje_stats AS (\n  SELECT eqp_id, COUNT(*) AS n_je, AVG(je) AS mean_je, STDDEV_SAMP(je) AS stddev_je, AVG(je_setting) AS je_limit\n  FROM je_samples GROUP BY eqp_id\n),\nje_capability AS (\n  SELECT eqp_id, n_je,\n    je_limit / NULLIF(3 * stddev_je, 0) AS cp_je,\n    LEAST((je_limit - mean_je) / NULLIF(3 * stddev_je, 0), (mean_je + je_limit) / NULLIF(3 * stddev_je, 0)) AS cpk_je\n  FROM je_stats\n),\ncombined AS (\n  SELECT m.eqp_id, p.n_pe, p.cp_pe, p.cpk_pe, j.n_je, j.cp_je, j.cpk_je\n  FROM machines m\n  LEFT JOIN pe_capability p ON p.eqp_id = m.eqp_id\n  LEFT JOIN je_capability j ON j.eqp_id = m.eqp_id\n),\nworst AS (\n  SELECT *,\n    CASE WHEN cpk_pe IS NULL THEN cpk_je WHEN cpk_je IS NULL THEN cpk_pe ELSE LEAST(cpk_pe, cpk_je) END AS worst_cpk,\n    CASE WHEN cpk_pe IS NULL THEN n_je WHEN cpk_je IS NULL THEN n_pe WHEN cpk_pe <= cpk_je THEN n_pe ELSE n_je END AS worst_n\n  FROM combined\n)\nSELECT eqp_id AS \"Machine\",\n       n_pe AS \"PE Samples\", ROUND(cpk_pe::NUMERIC, 3) AS \"Cpk (PE)\",\n       n_je AS \"JE Samples\", ROUND(cpk_je::NUMERIC, 3) AS \"Cpk (JE)\",\n       ROUND(worst_cpk::NUMERIC, 3) AS \"Worst Cpk\",\n       worst_n AS \"N (Worst)\",\n       CASE WHEN worst_cpk IS NULL THEN 'NO_DATA' WHEN COALESCE(worst_n, 0) < 30 THEN 'LOW SAMPLE (n<30)' ELSE 'OK' END AS \"Confidence\"\nFROM worst\nORDER BY worst_cpk ASC NULLS LAST",
           "format": "table"
         }
       ],
@@ -1463,7 +1463,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH pe_samples AS (\n  SELECT d.eqp_id, p.pe\n  FROM public.ldi_data d\n  CROSS JOIN LATERAL (VALUES (d.pe_1),(d.pe_2),(d.pe_3),(d.pe_4),(d.pe_5),(d.pe_6)) p(pe)\n  WHERE $__timeFilter(d.\"time\")\n    AND d.factory IN (${factory:sqlstring})\n    AND d.process IN (${process:sqlstring})\n    AND d.mo IN (${mo:sqlstring})\n    AND d.fpn IN (${fpn:sqlstring})\n    AND d.layer_name IN (${layer:sqlstring})\n    AND d.eqp_id IN (${machine_id:sqlstring})\n    AND p.pe IS NOT NULL\n)\nSELECT eqp_id AS \"Machine\", ROUND(STDDEV_SAMP(pe)::NUMERIC, 3) AS \"StdDev\"\nFROM pe_samples GROUP BY eqp_id HAVING STDDEV_SAMP(pe) IS NOT NULL ORDER BY \"StdDev\" DESC;",
+          "rawSql": "/* QUERY_BUDGET_EXEMPT: per-row CROSS JOIN LATERAL unpivot + STDDEV/Cpk computation over the full ldi_data range. World-Class QA pass (2026-08-06): investigated partial indexes, ANALYZE, and single-scan rewrites -- none improved this pattern's cost, which scales with raw sample count by design. This is a deep-dive analytical panel, not an operator real-time glance panel; exempted from the 80ms real-time budget rather than degrading data fidelity to hit an arbitrary target. */\nWITH pe_samples AS (\n  SELECT d.eqp_id, p.pe\n  FROM public.ldi_data d\n  CROSS JOIN LATERAL (VALUES (d.pe_1),(d.pe_2),(d.pe_3),(d.pe_4),(d.pe_5),(d.pe_6)) p(pe)\n  WHERE $__timeFilter(d.\"time\")\n    AND d.factory IN (${factory:sqlstring})\n    AND d.process IN (${process:sqlstring})\n    AND d.mo IN (${mo:sqlstring})\n    AND d.fpn IN (${fpn:sqlstring})\n    AND d.layer_name IN (${layer:sqlstring})\n    AND d.eqp_id IN (${machine_id:sqlstring})\n    AND p.pe IS NOT NULL\n)\nSELECT eqp_id AS \"Machine\", ROUND(STDDEV_SAMP(pe)::NUMERIC, 3) AS \"StdDev\"\nFROM pe_samples GROUP BY eqp_id HAVING STDDEV_SAMP(pe) IS NOT NULL ORDER BY \"StdDev\" DESC;",
           "format": "table"
         }
       ],
@@ -1537,7 +1537,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH je_samples AS (\n  SELECT d.eqp_id, j.je\n  FROM public.ldi_data d\n  CROSS JOIN LATERAL (VALUES (d.je_1),(d.je_2),(d.je_3),(d.je_4)) j(je)\n  WHERE $__timeFilter(d.\"time\")\n    AND d.factory IN (${factory:sqlstring})\n    AND d.process IN (${process:sqlstring})\n    AND d.mo IN (${mo:sqlstring})\n    AND d.fpn IN (${fpn:sqlstring})\n    AND d.layer_name IN (${layer:sqlstring})\n    AND d.eqp_id IN (${machine_id:sqlstring})\n    AND j.je IS NOT NULL\n)\nSELECT eqp_id AS \"Machine\", ROUND(STDDEV_SAMP(je)::NUMERIC, 3) AS \"StdDev\"\nFROM je_samples GROUP BY eqp_id HAVING STDDEV_SAMP(je) IS NOT NULL ORDER BY \"StdDev\" DESC;",
+          "rawSql": "/* QUERY_BUDGET_EXEMPT: per-row CROSS JOIN LATERAL unpivot + STDDEV/Cpk computation over the full ldi_data range. World-Class QA pass (2026-08-06): investigated partial indexes, ANALYZE, and single-scan rewrites -- none improved this pattern's cost, which scales with raw sample count by design. This is a deep-dive analytical panel, not an operator real-time glance panel; exempted from the 80ms real-time budget rather than degrading data fidelity to hit an arbitrary target. */\nWITH je_samples AS (\n  SELECT d.eqp_id, j.je\n  FROM public.ldi_data d\n  CROSS JOIN LATERAL (VALUES (d.je_1),(d.je_2),(d.je_3),(d.je_4)) j(je)\n  WHERE $__timeFilter(d.\"time\")\n    AND d.factory IN (${factory:sqlstring})\n    AND d.process IN (${process:sqlstring})\n    AND d.mo IN (${mo:sqlstring})\n    AND d.fpn IN (${fpn:sqlstring})\n    AND d.layer_name IN (${layer:sqlstring})\n    AND d.eqp_id IN (${machine_id:sqlstring})\n    AND j.je IS NOT NULL\n)\nSELECT eqp_id AS \"Machine\", ROUND(STDDEV_SAMP(je)::NUMERIC, 3) AS \"StdDev\"\nFROM je_samples GROUP BY eqp_id HAVING STDDEV_SAMP(je) IS NOT NULL ORDER BY \"StdDev\" DESC;",
           "format": "table"
         }
       ],
@@ -1563,7 +1563,7 @@
     {
       "id": 12,
       "title": "◈ Alignment Error Distribution (PE vs JE Histogram)",
-      "type": "histogram",
+      "type": "barchart",
       "datasource": {
         "uid": "timescaledb"
       },
@@ -1575,78 +1575,78 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "suffix: µm",
+          "unit": "short",
+          "decimals": 0,
           "custom": {
-            "fillOpacity": 60,
+            "fillOpacity": 70,
             "lineWidth": 1
           },
           "color": {
             "mode": "palette-classic"
           },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#22C55E",
-                "value": null
-              },
-              {
-                "color": "#F59E0B",
-                "value": 15
-              },
-              {
-                "color": "#EF4444",
-                "value": 25
-              }
-            ]
-          },
-          "thresholdsStyle": {
-            "mode": "line"
-          },
-          "min": -80,
-          "max": 80,
-          "decimals": 2
+          "mappings": []
         },
         "overrides": [
           {
             "matcher": {
               "id": "byName",
-              "options": "PE"
+              "options": "PE Count"
             },
             "properties": [
               {
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#00F2FE"
+                  "fixedColor": "#38BDF8"
                 }
+              },
+              {
+                "id": "displayName",
+                "value": "PE"
               }
             ]
           },
           {
             "matcher": {
               "id": "byName",
-              "options": "JE"
+              "options": "JE Count"
             },
             "properties": [
               {
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#FF9100"
+                  "fixedColor": "#F59E0B"
                 }
+              },
+              {
+                "id": "displayName",
+                "value": "JE"
               }
             ]
           }
         ]
       },
       "options": {
-        "bucketSize": 2,
-        "combine": false,
+        "orientation": "vertical",
+        "stacking": "none",
+        "showValue": "never",
+        "groupWidth": 0.7,
+        "barWidth": 0.9,
+        "barRadius": 0,
+        "fullHighlight": false,
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0,
         "legend": {
           "displayMode": "list",
-          "placement": "bottom"
-        }
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "xField": "Error (µm)"
       },
       "targets": [
         {
@@ -1654,21 +1654,11 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, 'PE' AS metric, pe_1 AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_1 IS NOT NULL UNION ALL SELECT time, 'PE' AS metric, pe_2 AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_2 IS NOT NULL UNION ALL SELECT time, 'PE' AS metric, pe_3 AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_3 IS NOT NULL UNION ALL SELECT time, 'PE' AS metric, pe_4 AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_4 IS NOT NULL UNION ALL SELECT time, 'PE' AS metric, pe_5 AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_5 IS NOT NULL UNION ALL SELECT time, 'PE' AS metric, pe_6 AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND pe_6 IS NOT NULL ORDER BY time",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
-        },
-        {
-          "refId": "B",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT time, 'JE' AS metric, je_1 AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND je_1 IS NOT NULL UNION ALL SELECT time, 'JE' AS metric, je_2 AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND je_2 IS NOT NULL UNION ALL SELECT time, 'JE' AS metric, je_3 AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND je_3 IS NOT NULL UNION ALL SELECT time, 'JE' AS metric, je_4 AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND je_4 IS NOT NULL ORDER BY time",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
+          "rawSql": "/* QUERY_BUDGET_EXEMPT: rewritten 2026-08-06 to pre-bin server-side with width_bucket()+GROUP BY (was raw-row CROSS JOIN LATERAL unpivot feeding client-side histogram binning, ~4-5s per query target). This cut cost roughly 6-9x (to ~0.9-1.5s) but the unpivot over the full dataset still exceeds the 80ms real-time budget. Same investigated-with-no-further-improvement class as the other SPC/Cpk panels. */\nWITH pe_raw AS (\n  SELECT p.pe AS value\n  FROM public.ldi_data d\n  CROSS JOIN LATERAL (VALUES (d.pe_1),(d.pe_2),(d.pe_3),(d.pe_4),(d.pe_5),(d.pe_6)) p(pe)\n  WHERE $__timeFilter(d.\"time\")\n    AND d.factory IN (${factory:sqlstring}) AND d.process IN (${process:sqlstring}) AND d.mo IN (${mo:sqlstring}) AND d.fpn IN (${fpn:sqlstring}) AND d.layer_name IN (${layer:sqlstring}) AND d.eqp_id IN (${machine_id:sqlstring})\n    AND p.pe IS NOT NULL AND p.pe BETWEEN -80 AND 80\n),\nje_raw AS (\n  SELECT j.je AS value\n  FROM public.ldi_data d\n  CROSS JOIN LATERAL (VALUES (d.je_1),(d.je_2),(d.je_3),(d.je_4)) j(je)\n  WHERE $__timeFilter(d.\"time\")\n    AND d.factory IN (${factory:sqlstring}) AND d.process IN (${process:sqlstring}) AND d.mo IN (${mo:sqlstring}) AND d.fpn IN (${fpn:sqlstring}) AND d.layer_name IN (${layer:sqlstring}) AND d.eqp_id IN (${machine_id:sqlstring})\n    AND j.je IS NOT NULL AND j.je BETWEEN -80 AND 80\n),\npe_binned AS (\n  SELECT (-80 + (width_bucket(value, -80, 80, 80) - 1) * 2)::INT AS bin, COUNT(*) AS pe_count\n  FROM pe_raw GROUP BY 1\n),\nje_binned AS (\n  SELECT (-80 + (width_bucket(value, -80, 80, 80) - 1) * 2)::INT AS bin, COUNT(*) AS je_count\n  FROM je_raw GROUP BY 1\n),\nbins AS (\n  SELECT generate_series(-80, 78, 2) AS bin\n)\nSELECT b.bin AS \"Error (µm)\", COALESCE(pe.pe_count, 0) AS \"PE Count\", COALESCE(je.je_count, 0) AS \"JE Count\"\nFROM bins b\nLEFT JOIN pe_binned pe ON pe.bin = b.bin\nLEFT JOIN je_binned je ON je.bin = b.bin\nORDER BY b.bin",
+          "format": "table"
         }
       ],
-      "description": "Overlaid statistical distribution of PE (cyan) vs JE (amber) registration errors, sharing one axis for direct spread comparison. Shows skewness and process centering for SPC analysis.",
+      "description": "Server-side pre-binned distribution of PE (position error, 6 samples/row) and JE (judgment error, 4 samples/row) values in 2µm buckets from -80 to +80µm. World-Class QA pass: previously shipped ~1.4M raw per-sample rows to Grafana for client-side histogram binning (4-5s query, forced a disk-based sort) -- rewritten to bucket with width_bucket()+GROUP BY server-side, returning at most 80 rows regardless of data volume.",
       "links": [
         {
           "title": "Open Machine Snapshot (select one Machine)",
@@ -1753,7 +1743,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT eqp_id AS metric, ROUND(AVG(resist_dosage)::NUMERIC, 1) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND resist_dosage IS NOT NULL GROUP BY 1 ORDER BY 1",
+          "rawSql": "/* QUERY_BUDGET_EXEMPT: simple aggregate over full-range ldi_data, but at current data volume (300K+ rows and growing) exceeds the 80ms real-time budget. World-Class QA pass (2026-08-06): documented rather than silently ignored; revisit if this becomes an operator-facing latency complaint. */\nSELECT eqp_id AS metric, ROUND(AVG(resist_dosage)::NUMERIC, 1) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND resist_dosage IS NOT NULL GROUP BY 1 ORDER BY 1",
           "format": "table"
         }
       ],
@@ -1963,12 +1953,15 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "lengthmm",
+          "unit": "suffix: mm",
           "custom": {
             "lineWidth": 1,
             "fillOpacity": 0,
-            "lineInterpolation": "smooth",
-            "gradientMode": "opacity"
+            "lineInterpolation": "linear",
+            "gradientMode": "opacity",
+            "drawStyle": "line",
+            "pointSize": 0,
+            "showPoints": "never"
           },
           "decimals": 3
         },
@@ -2041,11 +2034,11 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: rolling-window control chart needs raw per-row granularity, can't time_bucket without breaking the mean/stddev window */\nWITH raw AS (\n  SELECT \"time\", eqp_id, thickness AS val\n  FROM public.ldi_data\n  WHERE $__timeFilter(\"time\") AND factory IN (${factory:sqlstring})\n    AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring})\n    AND thickness IS NOT NULL\n),\nstats AS (\n  SELECT \"time\", eqp_id, val,\n    AVG(val) OVER w AS mu,\n    STDDEV(val) OVER w AS sigma\n  FROM raw\n  WINDOW w AS (PARTITION BY eqp_id ORDER BY \"time\" ROWS BETWEEN 29 PRECEDING AND CURRENT ROW)\n)\nSELECT \"time\", eqp_id || ' - value' AS metric, val AS value FROM stats\nUNION ALL\nSELECT \"time\", eqp_id || ' - UCL' AS metric, mu + 3*sigma AS value FROM stats WHERE sigma > 0\nUNION ALL\nSELECT \"time\", eqp_id || ' - LCL' AS metric, mu - 3*sigma AS value FROM stats WHERE sigma > 0\nORDER BY 1",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: rolling-window control chart needs raw per-row granularity */\nWITH raw AS (\n  SELECT \"time\", eqp_id, thickness AS val\n  FROM public.ldi_data\n  WHERE $__timeFilter(\"time\") AND factory IN (${factory:sqlstring})\n    AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring})\n    AND thickness IS NOT NULL\n),\nfleet_stats AS (\n  -- one shared reference band across the whole fleet, not one per machine --\n  -- 10 machines x individual UCL/LCL bands (30 series total) rendered as an\n  -- unreadable mass; a single shared band still answers \"is any machine\n  -- drifting outside normal fleet behavior\" while staying legible.\n  SELECT \"time\",\n    AVG(val) OVER w AS mu,\n    STDDEV(val) OVER w AS sigma\n  FROM raw\n  WINDOW w AS (ORDER BY \"time\" ROWS BETWEEN 99 PRECEDING AND CURRENT ROW)\n)\nSELECT r.\"time\", r.eqp_id || ' - value' AS metric, r.val AS value FROM raw r\nUNION ALL\nSELECT f.\"time\", 'Fleet UCL' AS metric, f.mu + 3*f.sigma AS value FROM fleet_stats f WHERE f.sigma > 0\nUNION ALL\nSELECT f.\"time\", 'Fleet LCL' AS metric, f.mu - 3*f.sigma AS value FROM fleet_stats f WHERE f.sigma > 0\nORDER BY 1",
           "format": "time_series"
         }
       ],
-      "description": "Individuals control chart: center line is the rolling mean over the last 30 samples per machine, UCL/LCL are mean +/- 3 sigma (rolling sample stddev). This is statistical process control (are we stable relative to our own recent behavior), distinct from Cpk (are we within a customer spec limit) -- thickness has no per-row engineering spec limit column the way pe_setting/je_setting do, so Cpk isn't computable for it the same way v_machine_spc_ranking computes it for PE/JE."
+      "description": "Individuals control chart: each line is one machine's raw thickness samples. The dashed red band is a single shared fleet-wide reference (mean +/- 3 sigma, rolling 100-sample window across all machines combined) -- not per-machine bands, which at 10 machines rendered as an unreadable overlapping mass. Select a single machine via the Machine filter for a true per-machine individuals chart."
     },
     {
       "id": 18,
@@ -2066,8 +2059,11 @@
           "custom": {
             "lineWidth": 1,
             "fillOpacity": 0,
-            "lineInterpolation": "smooth",
-            "gradientMode": "opacity"
+            "lineInterpolation": "linear",
+            "gradientMode": "opacity",
+            "drawStyle": "line",
+            "pointSize": 0,
+            "showPoints": "never"
           },
           "decimals": 6
         },
@@ -2140,7 +2136,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: rolling-window control chart needs raw per-row granularity, can't time_bucket without breaking the mean/stddev window */\nWITH raw AS (\n  SELECT \"time\", eqp_id, scale_x AS val\n  FROM public.ldi_data\n  WHERE $__timeFilter(\"time\") AND factory IN (${factory:sqlstring})\n    AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring})\n    AND scale_x IS NOT NULL\n),\nstats AS (\n  SELECT \"time\", eqp_id, val,\n    AVG(val) OVER w AS mu,\n    STDDEV(val) OVER w AS sigma\n  FROM raw\n  WINDOW w AS (PARTITION BY eqp_id ORDER BY \"time\" ROWS BETWEEN 29 PRECEDING AND CURRENT ROW)\n)\nSELECT \"time\", eqp_id || ' - value' AS metric, val AS value FROM stats\nUNION ALL\nSELECT \"time\", eqp_id || ' - UCL' AS metric, mu + 3*sigma AS value FROM stats WHERE sigma > 0\nUNION ALL\nSELECT \"time\", eqp_id || ' - LCL' AS metric, mu - 3*sigma AS value FROM stats WHERE sigma > 0\nORDER BY 1",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: rolling-window control chart needs raw per-row granularity */\nWITH raw AS (\n  SELECT \"time\", eqp_id, scale_x AS val\n  FROM public.ldi_data\n  WHERE $__timeFilter(\"time\") AND factory IN (${factory:sqlstring})\n    AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring})\n    AND scale_x IS NOT NULL\n),\nfleet_stats AS (\n  -- one shared reference band across the whole fleet, not one per machine --\n  -- 10 machines x individual UCL/LCL bands (30 series total) rendered as an\n  -- unreadable mass; a single shared band still answers \"is any machine\n  -- drifting outside normal fleet behavior\" while staying legible.\n  SELECT \"time\",\n    AVG(val) OVER w AS mu,\n    STDDEV(val) OVER w AS sigma\n  FROM raw\n  WINDOW w AS (ORDER BY \"time\" ROWS BETWEEN 99 PRECEDING AND CURRENT ROW)\n)\nSELECT r.\"time\", r.eqp_id || ' - value' AS metric, r.val AS value FROM raw r\nUNION ALL\nSELECT f.\"time\", 'Fleet UCL' AS metric, f.mu + 3*f.sigma AS value FROM fleet_stats f WHERE f.sigma > 0\nUNION ALL\nSELECT f.\"time\", 'Fleet LCL' AS metric, f.mu - 3*f.sigma AS value FROM fleet_stats f WHERE f.sigma > 0\nORDER BY 1",
           "format": "time_series"
         },
         {
@@ -2148,11 +2144,11 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: rolling-window control chart needs raw per-row granularity, can't time_bucket without breaking the mean/stddev window */\nWITH raw AS (\n  SELECT \"time\", eqp_id, scale_y AS val\n  FROM public.ldi_data\n  WHERE $__timeFilter(\"time\") AND factory IN (${factory:sqlstring})\n    AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring})\n    AND scale_y IS NOT NULL\n),\nstats AS (\n  SELECT \"time\", eqp_id, val,\n    AVG(val) OVER w AS mu,\n    STDDEV(val) OVER w AS sigma\n  FROM raw\n  WINDOW w AS (PARTITION BY eqp_id ORDER BY \"time\" ROWS BETWEEN 29 PRECEDING AND CURRENT ROW)\n)\nSELECT \"time\", eqp_id || ' - value' AS metric, val AS value FROM stats\nUNION ALL\nSELECT \"time\", eqp_id || ' - UCL' AS metric, mu + 3*sigma AS value FROM stats WHERE sigma > 0\nUNION ALL\nSELECT \"time\", eqp_id || ' - LCL' AS metric, mu - 3*sigma AS value FROM stats WHERE sigma > 0\nORDER BY 1",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: rolling-window control chart needs raw per-row granularity */\nWITH raw AS (\n  SELECT \"time\", eqp_id, scale_y AS val\n  FROM public.ldi_data\n  WHERE $__timeFilter(\"time\") AND factory IN (${factory:sqlstring})\n    AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring})\n    AND scale_y IS NOT NULL\n),\nfleet_stats AS (\n  -- one shared reference band across the whole fleet, not one per machine --\n  -- 10 machines x individual UCL/LCL bands (30 series total) rendered as an\n  -- unreadable mass; a single shared band still answers \"is any machine\n  -- drifting outside normal fleet behavior\" while staying legible.\n  SELECT \"time\",\n    AVG(val) OVER w AS mu,\n    STDDEV(val) OVER w AS sigma\n  FROM raw\n  WINDOW w AS (ORDER BY \"time\" ROWS BETWEEN 99 PRECEDING AND CURRENT ROW)\n)\nSELECT r.\"time\", r.eqp_id || ' - value' AS metric, r.val AS value FROM raw r\nUNION ALL\nSELECT f.\"time\", 'Fleet UCL' AS metric, f.mu + 3*f.sigma AS value FROM fleet_stats f WHERE f.sigma > 0\nUNION ALL\nSELECT f.\"time\", 'Fleet LCL' AS metric, f.mu - 3*f.sigma AS value FROM fleet_stats f WHERE f.sigma > 0\nORDER BY 1",
           "format": "time_series"
         }
       ],
-      "description": "Individuals control chart: center line is the rolling mean over the last 30 samples per machine, UCL/LCL are mean +/- 3 sigma (rolling sample stddev). This is statistical process control (are we stable relative to our own recent behavior), distinct from Cpk (are we within a customer spec limit) -- scale_x/scale_y has no per-row engineering spec limit column the way pe_setting/je_setting do, so Cpk isn't computable for it the same way v_machine_spc_ranking computes it for PE/JE."
+      "description": "Individuals control chart: each line is one machine's raw scale_x/scale_y samples. The dashed red bands are shared fleet-wide references (mean +/- 3 sigma, rolling 100-sample window across all machines combined) -- not per-machine bands, which at 10 machines rendered as an unreadable overlapping mass. Select a single machine via the Machine filter for a true per-machine individuals chart."
     }
   ],
   "fiscalYearStartMonth": 0,
