@@ -2472,11 +2472,11 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT date_bin('5 minutes', \"time\", TIMESTAMPTZ '2000-01-01') AS \"time\", eqp_id AS metric,\n       ROUND(AVG(total_time / NULLIF(total_board, 0))::NUMERIC,2) AS value\nFROM public.ldi_data\nWHERE $__timeFilter(\"time\") AND factory IN (${factory:sqlstring})\n  AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND total_board > 0\nGROUP BY 1,2 ORDER BY 1;",
+          "rawSql": "SELECT date_bin('5 minutes', \"time\", TIMESTAMPTZ '2000-01-01') AS \"time\", eqp_id AS metric,\n       ROUND(AVG(total_time)::NUMERIC, 2) AS value\nFROM public.ldi_data\nWHERE $__timeFilter(\"time\") AND factory IN (${factory:sqlstring})\n  AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND total_time IS NOT NULL\nGROUP BY 1,2 ORDER BY 1;",
           "format": "time_series"
         }
       ],
-      "description": "Distribution of calculated processing time per board. Clusters indicate consistent throughput."
+      "description": "total_time is already the per-board cycle time (confirmed against the simulator, ~7-10s/board) -- previously divided by total_board again, producing a meaningless ~0.03s figure."
     },
     {
       "id": 13,
@@ -3012,6 +3012,139 @@
         ]
       },
       "description": "Alarms correlated with production deviations. Higher lift = stronger causal signal. Hide rows with sample < 30."
+    },
+    {
+      "id": 10013,
+      "type": "row",
+      "title": "◈ CYCLE TIME & TRACEABILITY",
+      "gridPos": {
+        "x": 0,
+        "y": 71,
+        "w": 24,
+        "h": 1
+      },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 22,
+      "title": "◉ Avg Cycle Time (Fleet)",
+      "type": "stat",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 72,
+        "w": 6,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": 2,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#22C55E",
+                "value": null
+              },
+              {
+                "color": "#F59E0B",
+                "value": 12
+              },
+              {
+                "color": "#EF4444",
+                "value": 18
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "#64748B",
+                  "text": "NO_DATA",
+                  "index": 0
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "noValue": "NO_DATA",
+        "textMode": "auto",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT ROUND(AVG(total_time)::NUMERIC, 2) AS value\nFROM public.ldi_data\nWHERE $__timeFilter(time) AND factory IN (${factory:sqlstring})\n  AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND total_time IS NOT NULL",
+          "format": "table"
+        }
+      ],
+      "description": "Average per-board cycle time (ldi_data.total_time) across the selected fleet/window. Thresholds: >12s warning, >18s critical (SM process boards run structurally longer -- ~7-25s -- than DF INNER/OUTER's ~7-10s, so this is a fleet-wide average, not a per-process spec limit)."
+    },
+    {
+      "id": 23,
+      "title": "◈ Board Traceability",
+      "type": "table",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 72,
+        "w": 18,
+        "h": 10
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "sortBy": [
+          {
+            "displayName": "Time",
+            "desc": true
+          }
+        ],
+        "footer": {
+          "show": false
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT \"time\" AS \"Time\", eqp_id AS \"Machine\", mo AS \"Job (MO)\", fpn AS \"Part (FPN)\",\n       layer_name AS \"Layer\", (board_no::TEXT || '/' || total_board::TEXT) AS \"Board\",\n       board_id AS \"Board ID\", log_id AS \"Log ID\",\n       ROUND(total_time::NUMERIC, 2) AS \"Cycle Time (s)\",\n       ROUND(GREATEST(ABS(pe_1),ABS(pe_2),ABS(pe_3),ABS(pe_4),ABS(pe_5),ABS(pe_6))::NUMERIC, 2) AS \"Max |PE|\",\n       ROUND(GREATEST(ABS(je_1),ABS(je_2),ABS(je_3),ABS(je_4))::NUMERIC, 2) AS \"Max |JE|\",\n       ROUND(thickness::NUMERIC, 3) AS \"Thickness (mm)\"\nFROM public.ldi_data\nWHERE $__timeFilter(time) AND factory IN (${factory:sqlstring})\n  AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring})\nORDER BY \"time\" DESC LIMIT 200",
+          "format": "table"
+        }
+      ],
+      "description": "One row per board processed (ldi_data has exactly one row per (eqp_id, mo, board_no) -- confirmed). \"Board ID\" and \"Log ID\" are the two candidate traceability keys; Board ID is currently always NULL (the simulator never populates it -- a known data gap), so Log ID is the reliable per-board identifier today."
     }
   ],
   "style": "dark",

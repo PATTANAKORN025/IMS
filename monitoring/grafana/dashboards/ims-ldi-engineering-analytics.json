@@ -1934,6 +1934,225 @@
         ]
       },
       "description": "RCA Truth Test using the real alarm code taxonomy from v_ldi_alarm_category (migration 036) and per-parameter out-of-spec flags from v_ldi_alarm_context (migration 045, split thermal/humidity, added MOTION/scan_speed). Alarm-Window % (rate of out-of-spec readings within 5min before this alarm) vs Baseline % (out-of-spec rate across all data) vs Lift = Alarm-Window % / Baseline %. Lift > 2 = genuine correlation; ~1 = no relationship; < 1 = backwards, investigate. Confidence flags categories under 30 events. EXPOSURE (resist_dosage) has a flag but no matching alarm code exists in ldi_alarm_ms_code yet, so it's not shown here -- would always read zero events. MOTION's baseline is a provisional fixed ceiling (scan_speed has no _setting column and is constant per machine in current data, so it reads 0% in both alarm-window and baseline on this dataset -- not a bug, just no real overspeed events in the mock data yet)."
+    },
+    {
+      "id": 16,
+      "type": "row",
+      "title": "◈ SPC CONTROL CHARTS",
+      "gridPos": {
+        "x": 0,
+        "y": 115,
+        "w": 24,
+        "h": 1
+      },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 17,
+      "title": "◈ Thickness Control Chart (mean ± 3σ)",
+      "type": "timeseries",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 116,
+        "w": 12,
+        "h": 10
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "lengthmm",
+          "custom": {
+            "lineWidth": 1,
+            "fillOpacity": 0,
+            "lineInterpolation": "smooth",
+            "gradientMode": "opacity"
+          },
+          "decimals": 3
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*UCL.*"
+            },
+            "properties": [
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#EF4444"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*LCL.*"
+            },
+            "properties": [
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#EF4444"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "connectNullPoints": true
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: rolling-window control chart needs raw per-row granularity, can't time_bucket without breaking the mean/stddev window */\nWITH raw AS (\n  SELECT \"time\", eqp_id, thickness AS val\n  FROM public.ldi_data\n  WHERE $__timeFilter(\"time\") AND factory IN (${factory:sqlstring})\n    AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring})\n    AND thickness IS NOT NULL\n),\nstats AS (\n  SELECT \"time\", eqp_id, val,\n    AVG(val) OVER w AS mu,\n    STDDEV(val) OVER w AS sigma\n  FROM raw\n  WINDOW w AS (PARTITION BY eqp_id ORDER BY \"time\" ROWS BETWEEN 29 PRECEDING AND CURRENT ROW)\n)\nSELECT \"time\", eqp_id || ' - value' AS metric, val AS value FROM stats\nUNION ALL\nSELECT \"time\", eqp_id || ' - UCL' AS metric, mu + 3*sigma AS value FROM stats WHERE sigma > 0\nUNION ALL\nSELECT \"time\", eqp_id || ' - LCL' AS metric, mu - 3*sigma AS value FROM stats WHERE sigma > 0\nORDER BY 1",
+          "format": "time_series"
+        }
+      ],
+      "description": "Individuals control chart: center line is the rolling mean over the last 30 samples per machine, UCL/LCL are mean +/- 3 sigma (rolling sample stddev). This is statistical process control (are we stable relative to our own recent behavior), distinct from Cpk (are we within a customer spec limit) -- thickness has no per-row engineering spec limit column the way pe_setting/je_setting do, so Cpk isn't computable for it the same way v_machine_spc_ranking computes it for PE/JE."
+    },
+    {
+      "id": 18,
+      "title": "◈ Scale X/Y Control Chart (mean ± 3σ)",
+      "type": "timeseries",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 116,
+        "w": 12,
+        "h": 10
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "lineWidth": 1,
+            "fillOpacity": 0,
+            "lineInterpolation": "smooth",
+            "gradientMode": "opacity"
+          },
+          "decimals": 6
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*UCL.*"
+            },
+            "properties": [
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#EF4444"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*LCL.*"
+            },
+            "properties": [
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#EF4444"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "connectNullPoints": true
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: rolling-window control chart needs raw per-row granularity, can't time_bucket without breaking the mean/stddev window */\nWITH raw AS (\n  SELECT \"time\", eqp_id, scale_x AS val\n  FROM public.ldi_data\n  WHERE $__timeFilter(\"time\") AND factory IN (${factory:sqlstring})\n    AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring})\n    AND scale_x IS NOT NULL\n),\nstats AS (\n  SELECT \"time\", eqp_id, val,\n    AVG(val) OVER w AS mu,\n    STDDEV(val) OVER w AS sigma\n  FROM raw\n  WINDOW w AS (PARTITION BY eqp_id ORDER BY \"time\" ROWS BETWEEN 29 PRECEDING AND CURRENT ROW)\n)\nSELECT \"time\", eqp_id || ' - value' AS metric, val AS value FROM stats\nUNION ALL\nSELECT \"time\", eqp_id || ' - UCL' AS metric, mu + 3*sigma AS value FROM stats WHERE sigma > 0\nUNION ALL\nSELECT \"time\", eqp_id || ' - LCL' AS metric, mu - 3*sigma AS value FROM stats WHERE sigma > 0\nORDER BY 1",
+          "format": "time_series"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: rolling-window control chart needs raw per-row granularity, can't time_bucket without breaking the mean/stddev window */\nWITH raw AS (\n  SELECT \"time\", eqp_id, scale_y AS val\n  FROM public.ldi_data\n  WHERE $__timeFilter(\"time\") AND factory IN (${factory:sqlstring})\n    AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring})\n    AND scale_y IS NOT NULL\n),\nstats AS (\n  SELECT \"time\", eqp_id, val,\n    AVG(val) OVER w AS mu,\n    STDDEV(val) OVER w AS sigma\n  FROM raw\n  WINDOW w AS (PARTITION BY eqp_id ORDER BY \"time\" ROWS BETWEEN 29 PRECEDING AND CURRENT ROW)\n)\nSELECT \"time\", eqp_id || ' - value' AS metric, val AS value FROM stats\nUNION ALL\nSELECT \"time\", eqp_id || ' - UCL' AS metric, mu + 3*sigma AS value FROM stats WHERE sigma > 0\nUNION ALL\nSELECT \"time\", eqp_id || ' - LCL' AS metric, mu - 3*sigma AS value FROM stats WHERE sigma > 0\nORDER BY 1",
+          "format": "time_series"
+        }
+      ],
+      "description": "Individuals control chart: center line is the rolling mean over the last 30 samples per machine, UCL/LCL are mean +/- 3 sigma (rolling sample stddev). This is statistical process control (are we stable relative to our own recent behavior), distinct from Cpk (are we within a customer spec limit) -- scale_x/scale_y has no per-row engineering spec limit column the way pe_setting/je_setting do, so Cpk isn't computable for it the same way v_machine_spc_ranking computes it for PE/JE."
     }
   ],
   "fiscalYearStartMonth": 0,
