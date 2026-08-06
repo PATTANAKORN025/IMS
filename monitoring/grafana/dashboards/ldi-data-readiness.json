@@ -140,15 +140,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#22c55e",
+                "color": "#22C55E",
                 "value": null
               },
               {
-                "color": "#FF9100",
+                "color": "#F59E0B",
                 "value": 1
               },
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": 24
               }
             ]
@@ -165,7 +165,7 @@
               "options": {
                 "match": "null+nan",
                 "result": {
-                  "color": "#6B7280",
+                  "color": "#64748B",
                   "text": "NO_DATA",
                   "index": 0
                 }
@@ -245,15 +245,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#22c55e",
+                "color": "#22C55E",
                 "value": null
               },
               {
-                "color": "#FF9100",
+                "color": "#F59E0B",
                 "value": 1
               },
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": 24
               }
             ]
@@ -270,7 +270,7 @@
               "options": {
                 "match": "null+nan",
                 "result": {
-                  "color": "#6B7280",
+                  "color": "#64748B",
                   "text": "NO_DATA",
                   "index": 0
                 }
@@ -351,15 +351,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": null
               },
               {
-                "color": "#FF9100",
+                "color": "#F59E0B",
                 "value": 80
               },
               {
-                "color": "#22c55e",
+                "color": "#22C55E",
                 "value": 95
               }
             ]
@@ -378,7 +378,7 @@
               "options": {
                 "match": "null+nan",
                 "result": {
-                  "color": "#6B7280",
+                  "color": "#64748B",
                   "text": "NO_DATA",
                   "index": 0
                 }
@@ -458,15 +458,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": null
               },
               {
-                "color": "#FF9100",
+                "color": "#F59E0B",
                 "value": 80
               },
               {
-                "color": "#22c55e",
+                "color": "#22C55E",
                 "value": 95
               }
             ]
@@ -485,7 +485,7 @@
               "options": {
                 "match": "null+nan",
                 "result": {
-                  "color": "#6B7280",
+                  "color": "#64748B",
                   "text": "NO_DATA",
                   "index": 0
                 }
@@ -566,15 +566,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": null
               },
               {
-                "color": "#FF9100",
+                "color": "#F59E0B",
                 "value": 80
               },
               {
-                "color": "#22c55e",
+                "color": "#22C55E",
                 "value": 95
               }
             ]
@@ -593,7 +593,7 @@
               "options": {
                 "match": "null+nan",
                 "result": {
-                  "color": "#6B7280",
+                  "color": "#64748B",
                   "text": "NO_DATA",
                   "index": 0
                 }
@@ -674,15 +674,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": null
               },
               {
-                "color": "#FF9100",
+                "color": "#F59E0B",
                 "value": 80
               },
               {
-                "color": "#22c55e",
+                "color": "#22C55E",
                 "value": 95
               }
             ]
@@ -701,7 +701,7 @@
               "options": {
                 "match": "null+nan",
                 "result": {
-                  "color": "#6B7280",
+                  "color": "#64748B",
                   "text": "NO_DATA",
                   "index": 0
                 }

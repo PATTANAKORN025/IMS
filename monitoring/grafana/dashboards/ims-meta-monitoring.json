@@ -44,7 +44,7 @@
     },
     {
       "type": "timeseries",
-      "title": "\u25c8 Inserts / sec",
+      "title": "◈ Inserts / sec",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -111,7 +111,7 @@
     },
     {
       "type": "timeseries",
-      "title": "\u25c8 Error Rate",
+      "title": "◈ Error Rate",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -178,7 +178,7 @@
     },
     {
       "type": "stat",
-      "title": "\u25c9 Last Flush",
+      "title": "◉ Last Flush",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -200,15 +200,15 @@
           "thresholds": {
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": null
               },
               {
-                "color": "#FF9100",
+                "color": "#F59E0B",
                 "value": 120
               },
               {
-                "color": "#00FF87",
+                "color": "#22C55E",
                 "value": 300
               }
             ]
@@ -285,7 +285,7 @@
     },
     {
       "type": "stat",
-      "title": "\u25c9 Devices OPEN",
+      "title": "◉ Devices OPEN",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -307,15 +307,15 @@
           "thresholds": {
             "steps": [
               {
-                "color": "#00FF87",
+                "color": "#22C55E",
                 "value": null
               },
               {
-                "color": "#FF9100",
+                "color": "#F59E0B",
                 "value": 1
               },
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": 5
               }
             ]
@@ -375,7 +375,7 @@
     },
     {
       "type": "stat",
-      "title": "\u25c9 Devices HALF-OPEN",
+      "title": "◉ Devices HALF-OPEN",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -397,11 +397,11 @@
           "thresholds": {
             "steps": [
               {
-                "color": "#00FF87",
+                "color": "#22C55E",
                 "value": null
               },
               {
-                "color": "#00F2FE",
+                "color": "#2563EB",
                 "value": 1
               }
             ]
@@ -461,7 +461,7 @@
     },
     {
       "type": "stat",
-      "title": "\u25c9 Devices CLOSED",
+      "title": "◉ Devices CLOSED",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -552,7 +552,7 @@
     },
     {
       "type": "timeseries",
-      "title": "\u25c8 Trip Rate (per device)",
+      "title": "◈ Trip Rate (per device)",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -618,7 +618,7 @@
     },
     {
       "type": "table",
-      "title": "\u25c8 Device Circuit Breaker State",
+      "title": "◈ Device Circuit Breaker State",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -664,7 +664,7 @@
                     "options": {
                       "0": {
                         "text": "CLOSED",
-                        "color": "#10B981"
+                        "color": "#22C55E"
                       }
                     }
                   },
@@ -770,7 +770,7 @@
     },
     {
       "type": "stat",
-      "title": "\u25c9 Unique Devices Polled (1h)",
+      "title": "◉ Unique Devices Polled (1h)",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -792,15 +792,15 @@
           "thresholds": {
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": null
               },
               {
-                "color": "#FF9100",
+                "color": "#F59E0B",
                 "value": 1
               },
               {
-                "color": "#00FF87",
+                "color": "#22C55E",
                 "value": 10
               }
             ]
@@ -860,7 +860,7 @@
     },
     {
       "type": "timeseries",
-      "title": "\u25c8 Devices Polled / cycle",
+      "title": "◈ Devices Polled / cycle",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -927,7 +927,7 @@
     },
     {
       "type": "gauge",
-      "title": "\u25c8 Pipeline Success Rate",
+      "title": "◈ Pipeline Success Rate",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -950,15 +950,15 @@
           "thresholds": {
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": null
               },
               {
-                "color": "#FF9100",
+                "color": "#F59E0B",
                 "value": 0.95
               },
               {
-                "color": "#00FF87",
+                "color": "#22C55E",
                 "value": 0.99
               }
             ]

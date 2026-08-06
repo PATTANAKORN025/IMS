@@ -225,23 +225,23 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": null
               },
               {
-                "color": "#FF9100",
+                "color": "#F59E0B",
                 "value": 19
               },
               {
-                "color": "#22c55e",
+                "color": "#22C55E",
                 "value": 20
               },
               {
-                "color": "#FF9100",
+                "color": "#F59E0B",
                 "value": 24
               },
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": 25
               }
             ]
@@ -970,17 +970,17 @@
               "type": "value",
               "options": {
                 "0": {
-                  "color": "#FF003C",
+                  "color": "#EF4444",
                   "index": 0,
                   "text": "CRIT"
                 },
                 "1": {
-                  "color": "#FF9100",
+                  "color": "#F59E0B",
                   "index": 1,
                   "text": "WARN"
                 },
                 "2": {
-                  "color": "#22c55e",
+                  "color": "#22C55E",
                   "index": 2,
                   "text": "OK"
                 }
@@ -991,11 +991,11 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": null
               },
               {
-                "color": "#22c55e",
+                "color": "#22C55E",
                 "value": 1
               }
             ]
@@ -1172,15 +1172,15 @@
                   "mode": "absolute",
                   "steps": [
                     {
-                      "color": "#FF003C",
+                      "color": "#EF4444",
                       "value": null
                     },
                     {
-                      "color": "#FF9100",
+                      "color": "#F59E0B",
                       "value": 1.33
                     },
                     {
-                      "color": "#22c55e",
+                      "color": "#22C55E",
                       "value": 1.67
                     }
                   ]
@@ -1194,7 +1194,7 @@
                     "options": {
                       "match": "null+nan",
                       "result": {
-                        "color": "#6B7280",
+                        "color": "#64748B",
                         "text": "N/A",
                         "index": 0
                       }
@@ -1223,15 +1223,15 @@
                     "type": "value",
                     "options": {
                       "OK": {
-                        "color": "#22c55e",
+                        "color": "#22C55E",
                         "text": "OK"
                       },
                       "LOW SAMPLE (n<30)": {
-                        "color": "#FF9100",
+                        "color": "#F59E0B",
                         "text": "LOW SAMPLE (n<30)"
                       },
                       "NO_DATA": {
-                        "color": "#6B7280",
+                        "color": "#64748B",
                         "text": "NO_DATA"
                       }
                     }
@@ -1282,7 +1282,7 @@
                     "options": {
                       "match": "null+nan",
                       "result": {
-                        "color": "#6B7280",
+                        "color": "#64748B",
                         "text": "N/A",
                         "index": 0
                       }
@@ -1322,7 +1322,7 @@
                     "options": {
                       "match": "null+nan",
                       "result": {
-                        "color": "#6B7280",
+                        "color": "#64748B",
                         "text": "N/A",
                         "index": 0
                       }
@@ -1587,15 +1587,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#22c55e",
+                "color": "#22C55E",
                 "value": null
               },
               {
-                "color": "#facc15",
+                "color": "#F59E0B",
                 "value": 15
               },
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": 25
               }
             ]
@@ -1709,23 +1709,23 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": null
               },
               {
-                "color": "#facc15",
+                "color": "#F59E0B",
                 "value": 10
               },
               {
-                "color": "#22c55e",
+                "color": "#22C55E",
                 "value": 14
               },
               {
-                "color": "#facc15",
+                "color": "#F59E0B",
                 "value": 22
               },
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": 30
               }
             ]
@@ -1883,15 +1883,15 @@
                   "mode": "absolute",
                   "steps": [
                     {
-                      "color": "#FF003C",
+                      "color": "#EF4444",
                       "value": null
                     },
                     {
-                      "color": "#FF9100",
+                      "color": "#F59E0B",
                       "value": 1
                     },
                     {
-                      "color": "#22c55e",
+                      "color": "#22C55E",
                       "value": 2
                     }
                   ]
@@ -1918,11 +1918,11 @@
                     "type": "value",
                     "options": {
                       "OK": {
-                        "color": "#22c55e",
+                        "color": "#22C55E",
                         "text": "OK"
                       },
                       "LOW SAMPLE (n<30)": {
-                        "color": "#FF9100",
+                        "color": "#F59E0B",
                         "text": "LOW SAMPLE (n<30)"
                       }
                     }
