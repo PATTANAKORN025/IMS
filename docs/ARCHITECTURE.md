@@ -106,6 +106,8 @@ This repo previously had 3 independent migration runners with different tracking
 
 All migrations should be idempotent (`CREATE ... IF NOT EXISTS`, `DO $$ ... IF EXISTS ...` guards for renames, etc.) so a re-run against an already-migrated database is always a safe no-op. **Migration 020 is a cautionary example**: it originally began with an unconditional `DROP TABLE ldi_data CASCADE`, safe only during early development before this project had real data — found still marked as applied-but-never-run against a database holding 284k+ real rows. Rewritten to create-if-missing and tune-in-place instead of dropping.
 
+Migration 048 completes what 020 started: `ldi_data`'s `DOUBLE PRECISION` → `REAL` conversion, which silently no-op'd on compressed chunks. It decompresses, drops/rebuilds the dependent continuous-aggregate chain (`ldi_data_1m` → `15m` → `1h`, plus `ldi_data_hourly`) and 7 dependent plain views, converts the columns, and refreshes every CAGG from raw data — guarded so it's a no-op if the columns are already `REAL` (true on any fresh deployment via `postgres/init/001`). Migration 049 drops the dead `alert_rules`/`alert_history` tables (see Known Gaps). Migration 050 promotes the RCA Lift/Confidence logic to a real shared view, `v_ldi_rca_recent_window`.
+
 ---
 
 ## Alerting
@@ -146,8 +148,31 @@ NOC Overview was split from LDI/manufacturing content this session (it previousl
 Documented here rather than silently left for the next person to rediscover:
 
 - **`ldi_metrics.throughput` / `.power_watt` / `.vibration` are always `0` for every LDI device** (confirmed across ~2,300+ rows, all 10 machines). The k6-synthetic ingestion pipeline that feeds this table was never wired to populate these fields for LDI-class devices. The `ims-ldi-vibration-critical` alert rule is paused for this reason rather than left silently unable to fire. This does **not** affect any dashboard reading from `ldi_data` (the real pipeline) — only the legacy `ldi_metrics` table and anything querying it directly.
-- **Migration 020's `REAL` column-type conversion is defined but not yet applied to the live `ldi_data` table** — blocked by TimescaleDB not permitting `ALTER COLUMN TYPE` while any chunk is compressed (11 of 18 chunks are, under the 7-day compression policy). Applying it requires decompressing those chunks first, a larger operation deliberately left as an explicit decision rather than done unprompted. The safe parts of that migration (indexes, future chunk interval) are already applied.
 - **Board-key duplication on LDI-01/LDI-04** (157 / 121 duplicate `(mo, board_no)` pairs respectively, 0 on the other 8 machines) is root-caused: random `MO-NNNNN` string collisions across separate job cycles (birthday paradox, given only ~90,000 possible 5-digit values and 175-257 draws per machine over the dataset's history) — not a real double-counted board. The random ID space was widened 10x (6 digits) in both the live simulator and the historical batch generator to make this far less likely going forward.
+- **Real alert delivery (Slack/LINE/Teams) requires credentials this repo cannot ship** — `LINE_CHANNEL_ACCESS_TOKEN`, `LINE_USER_ID`, `TEAMS_WEBHOOK_URL` in `.env` are all empty by default. The pipeline is provably correct end-to-end and loud-on-failure (`node.error()` + a persistent red status), but nothing actually reaches a human until real credentials are configured.
+- **VACUUM (91009) is deliberately excluded from `v_ldi_rca_recent_window`'s RCA categories** — the flag's threshold (`air_vacuum > -50`) is saturated at ~100% baseline for both DF INNER's recipe constant (~-16 to -19) and DF OUTER/SM's "not applicable" `0.0` sentinel, so no alarm-timing correlation can raise its Lift above ~1. This is a flag-threshold/recipe mismatch that needs the real vendor vacuum spec to fix properly, not a code bug (documented in `nodered_data/flows/ldi_alarm_simulator.json`).
+- **MOTION (70004) has a very strong signal (Lift 333x) but usually falls short of the n≥30 confidence floor** in `v_ldi_rca_recent_window` — scan-speed excursions are correctly correlated, just statistically rarer than thermal/humidity/alignment events in the current recipe distribution. Not a bug; the category will earn "OK" confidence once enough events accumulate in a given 24h window.
+
+---
+
+## Governance / CI Gates
+
+Five automated gates run in CI (`.github/workflows/ci.yml`), each catching a different failure class a human reviewer would otherwise have to check by hand:
+
+| Gate | Script | What it proves |
+|---|---|---|
+| Dashboard structure | `tests/lint/dashboard-linter.js` | Grid alignment, standard panel heights, kiosk no-scroll ceilings (per-dashboard, e.g. `ims-ldi-operator-andon`: 20 grid units) |
+| RCA category coverage | `tests/lint/rca-mapping-coverage.js` | ≥70% of master alarm codes are mapped to an RCA category, and every dashboard reference is valid |
+| Query budget (structural) | `tests/lint/query-budget-linter.js` | No panel range-scans raw `ldi_data` instead of the `_1m`/`_15m`/`_1h` CAGG tiers |
+| Query budget (real timing) | `tests/e2e/query-timing-check.js` | Real server-side `EXPLAIN ANALYZE` timing, P95 < 80ms, against the live DB |
+| Panel data correctness | `tests/e2e/panel-data-check.js` | Every panel's *actually-resolved* SQL runs against a live DB and returns real rows with a proper `time` column |
+| Schema drift | `scripts/migrate.sh` (asserted `Pending: 0`) | The migrations directory and the live `schema_migrations` table agree |
+| Orphan objects | `tests/lint/orphan-object-linter.js` | Every live DB table/view is referenced by at least one dashboard, alert rule, flow, or migration — not silently unused |
+| Golden-dataset SPC | `tests/e2e/golden-dataset-spc.js` | All 5 independent Cpk/Cp implementations agree with the textbook formula on a known synthetic dataset |
+
+Color tokens (`docs/GRAFANA_DESIGN_SYSTEM.md`): every threshold step and value-mapping color that conveys machine/alarm status uses one of 5 tokens — OK `#22C55E`, Warning `#F59E0B`, Critical `#EF4444`, No Data `#64748B`, Info `#2563EB`. Decorative colors (graph-series differentiation, backgrounds, borders, brand accents) are intentionally exempt — a dashboard can't be built from 5 saturated colors alone.
+
+Not yet a CI gate: true visual/screenshot regression (baseline-image diffing). `tests/playwright/dashboard-visual-regression.js` captures screenshots of 4 dashboards for documentation purposes but has no baseline comparison or pass/fail assertion — a real regression gate would need committed baseline images, a pixel-diff tool, and Grafana running as a CI service, none of which exist yet.
 
 ---
 

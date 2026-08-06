@@ -135,6 +135,22 @@ jobs:
         # budget). Run with STRICT_DATA_CHECK=1 against a dev/staging DB with
         # real accumulated history to enforce the zero-rows check for real.
 
+      - name: Run Query Timing Check (World-Class Audit Phase 4/7)
+        run: node tests/e2e/query-timing-check.js
+        # Real server-side EXPLAIN ANALYZE timing, P95 < 80ms budget. Low
+        # data volume this early in a fresh CI run only makes queries
+        # faster, not slower, so this is safe as a hard gate here even
+        # though it won't validate at-scale performance.
+
+      - name: Run Schema Drift Check (World-Class Audit Phase 1/7)
+        run: |
+          OUT=$(bash scripts/migrate.sh 2>&1)
+          echo "$OUT"
+          echo "$OUT" | grep -q "Pending: 0  Applied: 0  Failed: 0" || (echo "Schema drift detected -- migrations directory doesn't match schema_migrations"; exit 1)
+
+      - name: Run Orphan Object Check (World-Class Audit Phase 2/7)
+        run: node tests/lint/orphan-object-linter.js
+
       - name: Run Golden-Dataset SPC Validation
         run: node tests/e2e/golden-dataset-spc.js
         # Unlike the panel data check above, this needs no accumulated
