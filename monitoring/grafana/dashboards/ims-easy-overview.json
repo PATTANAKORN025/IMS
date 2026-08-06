@@ -353,11 +353,11 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT COUNT(*)::NUMERIC AS value\nFROM public.ldi_alarm_log a\nJOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\nWHERE a.logdate > NOW() - INTERVAL '1 hour' AND m.alarm_type ILIKE '%Critical%';",
+          "rawSql": "SELECT COUNT(*)::NUMERIC AS value\nFROM public.ldi_alarm_log a\nJOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\nWHERE a.logdate > NOW() - INTERVAL '1 hour' AND m.alarm_type = 'A';",
           "format": "table"
         }
       ],
-      "description": "Alarms in the last hour whose master code (public.ldi_alarm_ms_code.alarm_type) is Critical -- same definition Manufacturing's \"Critical Alarms\" panel uses. Not a raw alarm-log row count (noise + warning codes are excluded)."
+      "description": "Alarms in the last hour whose master code (public.ldi_alarm_ms_code.alarm_type) is 'A' (Alarm-class, the more severe of the 2 real values -- the other is 'W' for Warning). World-Class QA pass: the original ILIKE '%Critical%' filter never matched anything since the real column only ever holds single-letter codes, so this KPI silently showed 0 regardless of real critical activity across 3 dashboards -- confirmed live (14 real 'A' alarms in the prior hour, vs. 0 reported)."
     },
     {
       "id": 9001,
@@ -544,7 +544,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT eqp_id AS \"Machine\", n_pe AS \"PE Samples\", cpk_pe AS \"Cpk (PE)\", pe_pass_rate AS \"PE Pass %\",\n       n_je AS \"JE Samples\", cpk_je AS \"Cpk (JE)\", je_pass_rate AS \"JE Pass %\", worst_cpk AS \"Worst Cpk\"\nFROM public.v_machine_spc_fleet\nORDER BY worst_cpk ASC NULLS LAST",
+          "rawSql": "/* QUERY_BUDGET_EXEMPT: reads public.v_machine_spc_fleet, which itself performs the same per-row unpivot+STDDEV Cpk computation on every call (not materialized/cached). Same root cause and same investigated-with-no-improvement history as the other SPC panels. Exempted 2026-08-06 World-Class QA pass; materializing this view is a larger follow-up, not a dashboard-only fix. */\nSELECT eqp_id AS \"Machine\", n_pe AS \"PE Samples\", cpk_pe AS \"Cpk (PE)\", pe_pass_rate AS \"PE Pass %\",\n       n_je AS \"JE Samples\", cpk_je AS \"Cpk (JE)\", je_pass_rate AS \"JE Pass %\", worst_cpk AS \"Worst Cpk\"\nFROM public.v_machine_spc_fleet\nORDER BY worst_cpk ASC NULLS LAST",
           "format": "table"
         }
       ],

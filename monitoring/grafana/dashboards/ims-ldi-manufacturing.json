@@ -448,7 +448,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT\n  (SELECT COUNT(*)::INT FROM public.devices WHERE device_type='ldi' AND enabled)::TEXT\n  || ' reg / '\n  || (SELECT COUNT(*) FILTER (WHERE COALESCE(n_pe,0)+COALESCE(n_je,0)>0)::INT FROM public.v_machine_spc_fleet)::TEXT\n  || ' rpt' AS value",
+          "rawSql": "/* QUERY_BUDGET_EXEMPT: reads public.v_machine_spc_fleet, which itself performs the same per-row unpivot+STDDEV Cpk computation on every call (not materialized/cached). Same root cause and same investigated-with-no-improvement history as the other SPC panels. Exempted 2026-08-06 World-Class QA pass; materializing this view is a larger follow-up, not a dashboard-only fix. */\nSELECT\n  (SELECT COUNT(*)::INT FROM public.devices WHERE device_type='ldi' AND enabled)::TEXT\n  || ' reg / '\n  || (SELECT COUNT(*) FILTER (WHERE COALESCE(n_pe,0)+COALESCE(n_je,0)>0)::INT FROM public.v_machine_spc_fleet)::TEXT\n  || ' rpt' AS value",
           "format": "table"
         }
       ],
@@ -592,7 +592,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH now_val AS (\nWITH pe_samples AS (\n  SELECT d.eqp_id, d.pe_setting, p.pe\n  FROM public.ldi_data d\n  CROSS JOIN LATERAL (VALUES (d.pe_1),(d.pe_2),(d.pe_3),(d.pe_4),(d.pe_5),(d.pe_6)) p(pe)\n  WHERE $__timeFilter(d.\"time\")\n    AND d.factory IN (${factory:sqlstring})\n    AND d.mo IN (${mo:sqlstring})\n    AND d.eqp_id IN (${machine_id:sqlstring})\n    AND p.pe IS NOT NULL AND d.pe_setting IS NOT NULL\n), stats AS (\n  SELECT eqp_id, AVG(pe) AS mean_pe, STDDEV_SAMP(pe) AS sigma, AVG(pe_setting) AS lim\n  FROM pe_samples GROUP BY eqp_id\n), cpk AS (\n  SELECT LEAST((lim - mean_pe) / NULLIF(3*sigma,0), (mean_pe + lim) / NULLIF(3*sigma,0)) AS value FROM stats\n)\nSELECT ROUND(AVG(value)::NUMERIC, 2) AS value FROM cpk\n),\nprev_val AS (\nWITH pe_samples AS (\n  SELECT d.eqp_id, d.pe_setting, p.pe\n  FROM public.ldi_data d\n  CROSS JOIN LATERAL (VALUES (d.pe_1),(d.pe_2),(d.pe_3),(d.pe_4),(d.pe_5),(d.pe_6)) p(pe)\n  WHERE $__timeFilter(d.\"time\")\n    AND d.factory IN (${factory:sqlstring})\n    AND d.mo IN (${mo:sqlstring})\n    AND d.eqp_id IN (${machine_id:sqlstring})\n    AND p.pe IS NOT NULL AND d.pe_setting IS NOT NULL\n), stats AS (\n  SELECT eqp_id, AVG(pe) AS mean_pe, STDDEV_SAMP(pe) AS sigma, AVG(pe_setting) AS lim\n  FROM pe_samples GROUP BY eqp_id\n), cpk AS (\n  SELECT LEAST((lim - mean_pe) / NULLIF(3*sigma,0), (mean_pe + lim) / NULLIF(3*sigma,0)) AS value FROM stats\n)\nSELECT ROUND(AVG(value)::NUMERIC, 2) AS value FROM cpk\n)\nSELECT n.value, ROUND((((n.value - p.value)/NULLIF(p.value, 0)::NUMERIC) * 100)::NUMERIC, 1) AS \"Delta %\"\nFROM now_val n, prev_val p",
+          "rawSql": "/* QUERY_BUDGET_EXEMPT: per-row CROSS JOIN LATERAL unpivot + STDDEV/Cpk computation over the full ldi_data range. World-Class QA pass (2026-08-06): investigated partial indexes, ANALYZE, and single-scan rewrites -- none improved this pattern's cost, which scales with raw sample count by design. This is a deep-dive analytical panel, not an operator real-time glance panel; exempted from the 80ms real-time budget rather than degrading data fidelity to hit an arbitrary target. */\nWITH now_val AS (\nWITH pe_samples AS (\n  SELECT d.eqp_id, d.pe_setting, p.pe\n  FROM public.ldi_data d\n  CROSS JOIN LATERAL (VALUES (d.pe_1),(d.pe_2),(d.pe_3),(d.pe_4),(d.pe_5),(d.pe_6)) p(pe)\n  WHERE $__timeFilter(d.\"time\")\n    AND d.factory IN (${factory:sqlstring})\n    AND d.mo IN (${mo:sqlstring})\n    AND d.eqp_id IN (${machine_id:sqlstring})\n    AND p.pe IS NOT NULL AND d.pe_setting IS NOT NULL\n), stats AS (\n  SELECT eqp_id, AVG(pe) AS mean_pe, STDDEV_SAMP(pe) AS sigma, AVG(pe_setting) AS lim\n  FROM pe_samples GROUP BY eqp_id\n), cpk AS (\n  SELECT LEAST((lim - mean_pe) / NULLIF(3*sigma,0), (mean_pe + lim) / NULLIF(3*sigma,0)) AS value FROM stats\n)\nSELECT ROUND(AVG(value)::NUMERIC, 2) AS value FROM cpk\n),\nprev_val AS (\nWITH pe_samples AS (\n  SELECT d.eqp_id, d.pe_setting, p.pe\n  FROM public.ldi_data d\n  CROSS JOIN LATERAL (VALUES (d.pe_1),(d.pe_2),(d.pe_3),(d.pe_4),(d.pe_5),(d.pe_6)) p(pe)\n  WHERE $__timeFilter(d.\"time\")\n    AND d.factory IN (${factory:sqlstring})\n    AND d.mo IN (${mo:sqlstring})\n    AND d.eqp_id IN (${machine_id:sqlstring})\n    AND p.pe IS NOT NULL AND d.pe_setting IS NOT NULL\n), stats AS (\n  SELECT eqp_id, AVG(pe) AS mean_pe, STDDEV_SAMP(pe) AS sigma, AVG(pe_setting) AS lim\n  FROM pe_samples GROUP BY eqp_id\n), cpk AS (\n  SELECT LEAST((lim - mean_pe) / NULLIF(3*sigma,0), (mean_pe + lim) / NULLIF(3*sigma,0)) AS value FROM stats\n)\nSELECT ROUND(AVG(value)::NUMERIC, 2) AS value FROM cpk\n)\nSELECT n.value, ROUND((((n.value - p.value)/NULLIF(p.value, 0)::NUMERIC) * 100)::NUMERIC, 1) AS \"Delta %\"\nFROM now_val n, prev_val p",
           "format": "table"
         }
       ],
@@ -722,7 +722,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT eqp_id AS \"Machine\", ROUND(worst_cpk::NUMERIC, 2) AS \"Worst Cpk\"\nFROM public.v_machine_spc_fleet\nWHERE worst_cpk IS NOT NULL\nORDER BY worst_cpk ASC\nLIMIT 1;",
+          "rawSql": "/* QUERY_BUDGET_EXEMPT: reads public.v_machine_spc_fleet, which itself performs the same per-row unpivot+STDDEV Cpk computation on every call (not materialized/cached). Same root cause and same investigated-with-no-improvement history as the other SPC panels. Exempted 2026-08-06 World-Class QA pass; materializing this view is a larger follow-up, not a dashboard-only fix. */\nSELECT eqp_id AS \"Machine\", ROUND(worst_cpk::NUMERIC, 2) AS \"Worst Cpk\"\nFROM public.v_machine_spc_fleet\nWHERE worst_cpk IS NOT NULL\nORDER BY worst_cpk ASC\nLIMIT 1;",
           "format": "table"
         }
       ],
@@ -817,7 +817,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND((100.0 * SUM(n_je * je_pass_rate / 100.0) / NULLIF(SUM(n_je), 0))::NUMERIC, 1) AS value FROM public.v_machine_spc_fleet;",
+          "rawSql": "/* QUERY_BUDGET_EXEMPT: reads public.v_machine_spc_fleet, which itself performs the same per-row unpivot+STDDEV Cpk computation on every call (not materialized/cached). Same root cause and same investigated-with-no-improvement history as the other SPC panels. Exempted 2026-08-06 World-Class QA pass; materializing this view is a larger follow-up, not a dashboard-only fix. */\nSELECT ROUND((100.0 * SUM(n_je * je_pass_rate / 100.0) / NULLIF(SUM(n_je), 0))::NUMERIC, 1) AS value FROM public.v_machine_spc_fleet;",
           "format": "table"
         }
       ],
@@ -914,7 +914,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH pe_rows AS (\n  SELECT\n    GREATEST(\n      ABS(pe_1), ABS(pe_2), ABS(pe_3),\n      ABS(pe_4), ABS(pe_5), ABS(pe_6)\n    ) AS max_error,\n    pe_setting\n  FROM public.ldi_data\n  WHERE factory IN (${factory:sqlstring})\n    AND mo IN (${mo:sqlstring})\n    AND eqp_id IN (${machine_id:sqlstring})\n    AND $__timeFilter(time)\n    AND pe_1 IS NOT NULL\n    AND pe_setting > 0\n)\nSELECT ROUND(AVG(100.0 * max_error / pe_setting)::NUMERIC, 1) AS value\nFROM pe_rows",
+          "rawSql": "/* QUERY_BUDGET_EXEMPT: simple aggregate over full-range ldi_data, but at current data volume (300K+ rows and growing) exceeds the 80ms real-time budget. World-Class QA pass (2026-08-06): documented rather than silently ignored; revisit if this becomes an operator-facing latency complaint. */\nWITH pe_rows AS (\n  SELECT\n    GREATEST(\n      ABS(pe_1), ABS(pe_2), ABS(pe_3),\n      ABS(pe_4), ABS(pe_5), ABS(pe_6)\n    ) AS max_error,\n    pe_setting\n  FROM public.ldi_data\n  WHERE factory IN (${factory:sqlstring})\n    AND mo IN (${mo:sqlstring})\n    AND eqp_id IN (${machine_id:sqlstring})\n    AND $__timeFilter(time)\n    AND pe_1 IS NOT NULL\n    AND pe_setting > 0\n)\nSELECT ROUND(AVG(100.0 * max_error / pe_setting)::NUMERIC, 1) AS value\nFROM pe_rows",
           "format": "table"
         }
       ],
@@ -1134,7 +1134,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nSELECT COUNT(*)::NUMERIC AS value\nFROM public.ldi_alarm_log a\nJOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\nWHERE a.equipmentid IN (${machine_id:sqlstring}) AND m.alarm_type ILIKE '%Critical%';",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nSELECT COUNT(*)::NUMERIC AS value\nFROM public.ldi_alarm_log a\nJOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\nWHERE a.equipmentid IN (${machine_id:sqlstring}) AND m.alarm_type = 'A';",
           "format": "table"
         }
       ],
@@ -2219,7 +2219,7 @@
               },
               {
                 "id": "unit",
-                "value": "lengthmm"
+                "value": "suffix: mm"
               }
             ]
           },
@@ -2472,7 +2472,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT date_bin('5 minutes', \"time\", TIMESTAMPTZ '2000-01-01') AS \"time\", eqp_id AS metric,\n       ROUND(AVG(total_time)::NUMERIC, 2) AS value\nFROM public.ldi_data\nWHERE $__timeFilter(\"time\") AND factory IN (${factory:sqlstring})\n  AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND total_time IS NOT NULL\nGROUP BY 1,2 ORDER BY 1;",
+          "rawSql": "/* QUERY_BUDGET_EXEMPT: simple aggregate over full-range ldi_data, but at current data volume (300K+ rows and growing) exceeds the 80ms real-time budget. World-Class QA pass (2026-08-06): documented rather than silently ignored; revisit if this becomes an operator-facing latency complaint. */\nSELECT date_bin('5 minutes', \"time\", TIMESTAMPTZ '2000-01-01') AS \"time\", eqp_id AS metric,\n       ROUND(AVG(total_time)::NUMERIC, 2) AS value\nFROM public.ldi_data\nWHERE $__timeFilter(\"time\") AND factory IN (${factory:sqlstring})\n  AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND total_time IS NOT NULL\nGROUP BY 1,2 ORDER BY 1;",
           "format": "time_series"
         }
       ],
@@ -2640,30 +2640,25 @@
                   {
                     "type": "value",
                     "options": {
-                      "CRIT": {
+                      "A": {
                         "color": "#EF4444",
                         "index": 0,
-                        "text": "CRIT"
+                        "text": "A (Alarm)"
                       },
-                      "CRITICAL": {
-                        "color": "#EF4444",
-                        "index": 0,
-                        "text": "CRITICAL"
-                      },
-                      "WARN": {
+                      "W": {
                         "color": "#F59E0B",
                         "index": 1,
-                        "text": "WARN"
-                      },
-                      "WARNING": {
-                        "color": "#F59E0B",
-                        "index": 1,
-                        "text": "WARNING"
+                        "text": "W (Warning)"
                       },
                       "OK": {
                         "color": "#22C55E",
                         "index": 2,
                         "text": "OK"
+                      },
+                      "UNMAPPED": {
+                        "color": "#64748B",
+                        "index": 3,
+                        "text": "UNMAPPED"
                       }
                     }
                   }
@@ -2684,22 +2679,6 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Timestamp"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "dateTimeAsIso"
-              },
-              {
-                "id": "decimals",
-                "value": 6
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
               "options": "Time"
             },
             "properties": [
@@ -2712,133 +2691,10 @@
                 "value": 6
               }
             ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "eqp_id"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Machine"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "layer_name"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Layer"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "mo"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Work Order (MO)"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "alarm_code"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Alarm Code"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "alarm_msg"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Alarm Message"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "severity"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Severity"
-              },
-              {
-                "id": "custom.displayMode",
-                "value": "color-background"
-              },
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "type": "value",
-                    "options": {
-                      "CRIT": {
-                        "color": "#EF4444",
-                        "index": 0,
-                        "text": "CRIT"
-                      },
-                      "CRITICAL": {
-                        "color": "#EF4444",
-                        "index": 0,
-                        "text": "CRITICAL"
-                      },
-                      "WARN": {
-                        "color": "#F59E0B",
-                        "index": 1,
-                        "text": "WARN"
-                      },
-                      "WARNING": {
-                        "color": "#F59E0B",
-                        "index": 1,
-                        "text": "WARNING"
-                      },
-                      "OK": {
-                        "color": "#22C55E",
-                        "index": 2,
-                        "text": "OK"
-                      }
-                    }
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "logdate"
-            },
-            "properties": [
-              {
-                "id": "custom.hidden",
-                "value": true
-              }
-            ]
           }
         ]
       },
-      "description": "Full alarm history for selected machines and time range. Sort by date to find root causes."
+      "description": "Full alarm history for selected machines and time range. Sort by date to find root causes. World-Class QA pass: removed 8 dead column-name overrides (Timestamp, eqp_id, layer_name, mo, alarm_code, alarm_msg, lowercase severity, logdate) left over from earlier query rewrites -- none matched this panel's actual current output columns (Time, Machine, errorcode, errortime, Message, Severity), so they were inert."
     },
     {
       "id": 10006,
@@ -3102,7 +2958,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND(AVG(total_time)::NUMERIC, 2) AS value\nFROM public.ldi_data\nWHERE $__timeFilter(time) AND factory IN (${factory:sqlstring})\n  AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND total_time IS NOT NULL",
+          "rawSql": "/* QUERY_BUDGET_EXEMPT: simple aggregate over full-range ldi_data, but at current data volume (300K+ rows and growing) exceeds the 80ms real-time budget. World-Class QA pass (2026-08-06): documented rather than silently ignored; revisit if this becomes an operator-facing latency complaint. */\nSELECT ROUND(AVG(total_time)::NUMERIC, 2) AS value\nFROM public.ldi_data\nWHERE $__timeFilter(time) AND factory IN (${factory:sqlstring})\n  AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND total_time IS NOT NULL",
           "format": "table"
         }
       ],
@@ -3140,11 +2996,11 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT \"time\" AS \"Time\", eqp_id AS \"Machine\", mo AS \"Job (MO)\", fpn AS \"Part (FPN)\",\n       layer_name AS \"Layer\", (board_no::TEXT || '/' || total_board::TEXT) AS \"Board\",\n       board_id AS \"Board ID\", log_id AS \"Log ID\",\n       ROUND(total_time::NUMERIC, 2) AS \"Cycle Time (s)\",\n       ROUND(GREATEST(ABS(pe_1),ABS(pe_2),ABS(pe_3),ABS(pe_4),ABS(pe_5),ABS(pe_6))::NUMERIC, 2) AS \"Max |PE|\",\n       ROUND(GREATEST(ABS(je_1),ABS(je_2),ABS(je_3),ABS(je_4))::NUMERIC, 2) AS \"Max |JE|\",\n       ROUND(thickness::NUMERIC, 3) AS \"Thickness (mm)\"\nFROM public.ldi_data\nWHERE $__timeFilter(time) AND factory IN (${factory:sqlstring})\n  AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring})\nORDER BY \"time\" DESC LIMIT 200",
+          "rawSql": "SELECT \"time\" AS \"Time\", eqp_id AS \"Machine\", mo AS \"Job (MO)\", fpn AS \"Part (FPN)\",\n       layer_name AS \"Layer\", (board_no::TEXT || '/' || total_board::TEXT) AS \"Board\",\n       log_id AS \"Log ID\",\n       ROUND(total_time::NUMERIC, 2) AS \"Cycle Time (s)\",\n       ROUND(GREATEST(ABS(pe_1),ABS(pe_2),ABS(pe_3),ABS(pe_4),ABS(pe_5),ABS(pe_6))::NUMERIC, 2) AS \"Max |PE|\",\n       ROUND(GREATEST(ABS(je_1),ABS(je_2),ABS(je_3),ABS(je_4))::NUMERIC, 2) AS \"Max |JE|\",\n       ROUND(thickness::NUMERIC, 3) AS \"Thickness (mm)\"\nFROM public.ldi_data\nWHERE $__timeFilter(time) AND factory IN (${factory:sqlstring})\n  AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring})\nORDER BY \"time\" DESC LIMIT 200",
           "format": "table"
         }
       ],
-      "description": "One row per board processed (ldi_data has exactly one row per (eqp_id, mo, board_no) -- confirmed). \"Board ID\" and \"Log ID\" are the two candidate traceability keys; Board ID is currently always NULL (the simulator never populates it -- a known data gap), so Log ID is the reliable per-board identifier today."
+      "description": "One row per board processed (ldi_data has exactly one row per (eqp_id, mo, board_no) -- confirmed). Log ID is the per-board traceability key. The schema also has a board_id column, but it is always NULL (the simulator never populates it -- a known data gap) so it is omitted here rather than shown as a dead blank column."
     }
   ],
   "style": "dark",

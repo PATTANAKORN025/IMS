@@ -457,30 +457,30 @@
                   {
                     "type": "value",
                     "options": {
-                      "CRIT": {
+                      "A": {
                         "color": "#EF4444",
                         "index": 0,
-                        "text": "CRIT"
+                        "text": "A (Alarm)"
                       },
-                      "CRITICAL": {
-                        "color": "#EF4444",
-                        "index": 0,
-                        "text": "CRITICAL"
-                      },
-                      "WARN": {
+                      "W": {
                         "color": "#F59E0B",
                         "index": 1,
-                        "text": "WARN"
-                      },
-                      "WARNING": {
-                        "color": "#F59E0B",
-                        "index": 1,
-                        "text": "WARNING"
+                        "text": "W (Warning)"
                       },
                       "OK": {
                         "color": "#22C55E",
                         "index": 2,
                         "text": "OK"
+                      },
+                      "UNMAPPED": {
+                        "color": "#64748B",
+                        "index": 3,
+                        "text": "UNMAPPED"
+                      },
+                      "NONE": {
+                        "color": "#64748B",
+                        "index": 4,
+                        "text": "No alarm"
                       }
                     }
                   }
@@ -504,30 +504,30 @@
                   {
                     "type": "value",
                     "options": {
-                      "CRIT": {
+                      "A": {
                         "color": "#EF4444",
                         "index": 0,
-                        "text": "CRIT"
+                        "text": "A (Alarm)"
                       },
-                      "CRITICAL": {
-                        "color": "#EF4444",
-                        "index": 0,
-                        "text": "CRITICAL"
-                      },
-                      "WARN": {
+                      "W": {
                         "color": "#F59E0B",
                         "index": 1,
-                        "text": "WARN"
-                      },
-                      "WARNING": {
-                        "color": "#F59E0B",
-                        "index": 1,
-                        "text": "WARNING"
+                        "text": "W (Warning)"
                       },
                       "OK": {
                         "color": "#22C55E",
                         "index": 2,
                         "text": "OK"
+                      },
+                      "UNMAPPED": {
+                        "color": "#64748B",
+                        "index": 3,
+                        "text": "UNMAPPED"
+                      },
+                      "NONE": {
+                        "color": "#64748B",
+                        "index": 4,
+                        "text": "No alarm"
                       }
                     }
                   }
@@ -951,7 +951,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "lengthmm",
+          "unit": "suffix: mm",
           "decimals": 3,
           "thresholds": {
             "mode": "absolute",
@@ -1381,30 +1381,30 @@
                   {
                     "type": "value",
                     "options": {
-                      "CRIT": {
+                      "A": {
                         "color": "#EF4444",
                         "index": 0,
-                        "text": "CRIT"
+                        "text": "A (Alarm)"
                       },
-                      "CRITICAL": {
-                        "color": "#EF4444",
-                        "index": 0,
-                        "text": "CRITICAL"
-                      },
-                      "WARN": {
+                      "W": {
                         "color": "#F59E0B",
                         "index": 1,
-                        "text": "WARN"
-                      },
-                      "WARNING": {
-                        "color": "#F59E0B",
-                        "index": 1,
-                        "text": "WARNING"
+                        "text": "W (Warning)"
                       },
                       "OK": {
                         "color": "#22C55E",
                         "index": 2,
                         "text": "OK"
+                      },
+                      "UNMAPPED": {
+                        "color": "#64748B",
+                        "index": 3,
+                        "text": "UNMAPPED"
+                      },
+                      "NONE": {
+                        "color": "#64748B",
+                        "index": 4,
+                        "text": "No alarm"
                       }
                     }
                   }
@@ -1428,30 +1428,30 @@
                   {
                     "type": "value",
                     "options": {
-                      "CRIT": {
+                      "A": {
                         "color": "#EF4444",
                         "index": 0,
-                        "text": "CRIT"
+                        "text": "A (Alarm)"
                       },
-                      "CRITICAL": {
-                        "color": "#EF4444",
-                        "index": 0,
-                        "text": "CRITICAL"
-                      },
-                      "WARN": {
+                      "W": {
                         "color": "#F59E0B",
                         "index": 1,
-                        "text": "WARN"
-                      },
-                      "WARNING": {
-                        "color": "#F59E0B",
-                        "index": 1,
-                        "text": "WARNING"
+                        "text": "W (Warning)"
                       },
                       "OK": {
                         "color": "#22C55E",
                         "index": 2,
                         "text": "OK"
+                      },
+                      "UNMAPPED": {
+                        "color": "#64748B",
+                        "index": 3,
+                        "text": "UNMAPPED"
+                      },
+                      "NONE": {
+                        "color": "#64748B",
+                        "index": 4,
+                        "text": "No alarm"
                       }
                     }
                   }
@@ -1850,30 +1850,30 @@
                   {
                     "type": "value",
                     "options": {
-                      "CRIT": {
+                      "A": {
                         "color": "#EF4444",
                         "index": 0,
-                        "text": "CRIT"
+                        "text": "A (Alarm)"
                       },
-                      "CRITICAL": {
-                        "color": "#EF4444",
-                        "index": 0,
-                        "text": "CRITICAL"
-                      },
-                      "WARN": {
+                      "W": {
                         "color": "#F59E0B",
                         "index": 1,
-                        "text": "WARN"
-                      },
-                      "WARNING": {
-                        "color": "#F59E0B",
-                        "index": 1,
-                        "text": "WARNING"
+                        "text": "W (Warning)"
                       },
                       "OK": {
                         "color": "#22C55E",
                         "index": 2,
                         "text": "OK"
+                      },
+                      "UNMAPPED": {
+                        "color": "#64748B",
+                        "index": 3,
+                        "text": "UNMAPPED"
+                      },
+                      "NONE": {
+                        "color": "#64748B",
+                        "index": 4,
+                        "text": "No alarm"
                       }
                     }
                   }
@@ -2003,30 +2003,30 @@
                   {
                     "type": "value",
                     "options": {
-                      "CRIT": {
+                      "A": {
                         "color": "#EF4444",
                         "index": 0,
-                        "text": "CRIT"
+                        "text": "A (Alarm)"
                       },
-                      "CRITICAL": {
-                        "color": "#EF4444",
-                        "index": 0,
-                        "text": "CRITICAL"
-                      },
-                      "WARN": {
+                      "W": {
                         "color": "#F59E0B",
                         "index": 1,
-                        "text": "WARN"
-                      },
-                      "WARNING": {
-                        "color": "#F59E0B",
-                        "index": 1,
-                        "text": "WARNING"
+                        "text": "W (Warning)"
                       },
                       "OK": {
                         "color": "#22C55E",
                         "index": 2,
                         "text": "OK"
+                      },
+                      "UNMAPPED": {
+                        "color": "#64748B",
+                        "index": 3,
+                        "text": "UNMAPPED"
+                      },
+                      "NONE": {
+                        "color": "#64748B",
+                        "index": 4,
+                        "text": "No alarm"
                       }
                     }
                   }
@@ -2295,30 +2295,30 @@
                   {
                     "type": "value",
                     "options": {
-                      "CRIT": {
+                      "A": {
                         "color": "#EF4444",
                         "index": 0,
-                        "text": "CRIT"
+                        "text": "A (Alarm)"
                       },
-                      "CRITICAL": {
-                        "color": "#EF4444",
-                        "index": 0,
-                        "text": "CRITICAL"
-                      },
-                      "WARN": {
+                      "W": {
                         "color": "#F59E0B",
                         "index": 1,
-                        "text": "WARN"
-                      },
-                      "WARNING": {
-                        "color": "#F59E0B",
-                        "index": 1,
-                        "text": "WARNING"
+                        "text": "W (Warning)"
                       },
                       "OK": {
                         "color": "#22C55E",
                         "index": 2,
                         "text": "OK"
+                      },
+                      "UNMAPPED": {
+                        "color": "#64748B",
+                        "index": 3,
+                        "text": "UNMAPPED"
+                      },
+                      "NONE": {
+                        "color": "#64748B",
+                        "index": 4,
+                        "text": "No alarm"
                       }
                     }
                   }
@@ -2342,30 +2342,30 @@
                   {
                     "type": "value",
                     "options": {
-                      "CRIT": {
+                      "A": {
                         "color": "#EF4444",
                         "index": 0,
-                        "text": "CRIT"
+                        "text": "A (Alarm)"
                       },
-                      "CRITICAL": {
-                        "color": "#EF4444",
-                        "index": 0,
-                        "text": "CRITICAL"
-                      },
-                      "WARN": {
+                      "W": {
                         "color": "#F59E0B",
                         "index": 1,
-                        "text": "WARN"
-                      },
-                      "WARNING": {
-                        "color": "#F59E0B",
-                        "index": 1,
-                        "text": "WARNING"
+                        "text": "W (Warning)"
                       },
                       "OK": {
                         "color": "#22C55E",
                         "index": 2,
                         "text": "OK"
+                      },
+                      "UNMAPPED": {
+                        "color": "#64748B",
+                        "index": 3,
+                        "text": "UNMAPPED"
+                      },
+                      "NONE": {
+                        "color": "#64748B",
+                        "index": 4,
+                        "text": "No alarm"
                       }
                     }
                   }
@@ -2630,30 +2630,30 @@
                   {
                     "type": "value",
                     "options": {
-                      "CRIT": {
+                      "A": {
                         "color": "#EF4444",
                         "index": 0,
-                        "text": "CRIT"
+                        "text": "A (Alarm)"
                       },
-                      "CRITICAL": {
-                        "color": "#EF4444",
-                        "index": 0,
-                        "text": "CRITICAL"
-                      },
-                      "WARN": {
+                      "W": {
                         "color": "#F59E0B",
                         "index": 1,
-                        "text": "WARN"
-                      },
-                      "WARNING": {
-                        "color": "#F59E0B",
-                        "index": 1,
-                        "text": "WARNING"
+                        "text": "W (Warning)"
                       },
                       "OK": {
                         "color": "#22C55E",
                         "index": 2,
                         "text": "OK"
+                      },
+                      "UNMAPPED": {
+                        "color": "#64748B",
+                        "index": 3,
+                        "text": "UNMAPPED"
+                      },
+                      "NONE": {
+                        "color": "#64748B",
+                        "index": 4,
+                        "text": "No alarm"
                       }
                     }
                   }
@@ -2677,30 +2677,30 @@
                   {
                     "type": "value",
                     "options": {
-                      "CRIT": {
+                      "A": {
                         "color": "#EF4444",
                         "index": 0,
-                        "text": "CRIT"
+                        "text": "A (Alarm)"
                       },
-                      "CRITICAL": {
-                        "color": "#EF4444",
-                        "index": 0,
-                        "text": "CRITICAL"
-                      },
-                      "WARN": {
+                      "W": {
                         "color": "#F59E0B",
                         "index": 1,
-                        "text": "WARN"
-                      },
-                      "WARNING": {
-                        "color": "#F59E0B",
-                        "index": 1,
-                        "text": "WARNING"
+                        "text": "W (Warning)"
                       },
                       "OK": {
                         "color": "#22C55E",
                         "index": 2,
                         "text": "OK"
+                      },
+                      "UNMAPPED": {
+                        "color": "#64748B",
+                        "index": 3,
+                        "text": "UNMAPPED"
+                      },
+                      "NONE": {
+                        "color": "#64748B",
+                        "index": 4,
+                        "text": "No alarm"
                       }
                     }
                   }

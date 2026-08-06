@@ -281,7 +281,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nSELECT COUNT(*)::NUMERIC AS value FROM public.ldi_alarm_log a\nJOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT=m.alarm_code::TEXT\nWHERE a.equipmentid IN (${machine_id:sqlstring}) AND m.alarm_type ILIKE '%Critical%';",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nSELECT COUNT(*)::NUMERIC AS value FROM public.ldi_alarm_log a\nJOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT=m.alarm_code::TEXT\nWHERE a.equipmentid IN (${machine_id:sqlstring}) AND m.alarm_type = 'A';",
           "format": "table"
         }
       ],
