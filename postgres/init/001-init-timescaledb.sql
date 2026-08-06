@@ -245,41 +245,12 @@ GROUP BY s.device_id;
 -- ══════════════════════════════════════════════════════════════
 -- ALERTING
 -- ══════════════════════════════════════════════════════════════
-
-CREATE TABLE public.alert_rules (
-    rule_id       SERIAL PRIMARY KEY,
-    machine_id    TEXT,
-    metric_name   TEXT NOT NULL,
-    operator      TEXT NOT NULL,
-    threshold     DOUBLE PRECISION NOT NULL,
-    severity      TEXT NOT NULL DEFAULT 'warning',
-    enabled       BOOLEAN NOT NULL DEFAULT TRUE,
-    cooldown_mins INT NOT NULL DEFAULT 5,
-    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-INSERT INTO public.alert_rules (machine_id, metric_name, operator, threshold, severity) VALUES
-    (NULL, 'cpu_load_percent',  '>', 90, 'critical'),
-    (NULL, 'cpu_load_percent',  '>', 75, 'warning'),
-    (NULL, 'temp_c',            '>', 85, 'critical'),
-    (NULL, 'temp_c',            '>', 70, 'warning'),
-    (NULL, 'rx_errors',         '>', 100, 'warning'),
-    (NULL, 'rx_drops',          '>', 50, 'warning'),
-    (NULL, 'status',            '=', 0, 'critical')
-ON CONFLICT DO NOTHING;
-
-CREATE TABLE public.alert_history (
-    alert_id      SERIAL PRIMARY KEY,
-    rule_id       INT REFERENCES public.alert_rules(rule_id),
-    machine_id    TEXT NOT NULL,
-    metric_name   TEXT NOT NULL,
-    current_value DOUBLE PRECISION,
-    threshold     DOUBLE PRECISION,
-    severity      TEXT NOT NULL,
-    message       TEXT,
-    resolved_at   TIMESTAMPTZ,
-    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+-- alert_rules / alert_history intentionally not created here (migration
+-- 049): dead legacy tables predating the Grafana-native +
+-- Prometheus/Alertmanager alerting architecture -- zero producers, zero
+-- live consumers. Real alerting lives entirely in
+-- monitoring/grafana/provisioning/alerting/ and
+-- monitoring/prometheus/rules/ + monitoring/alertmanager/.
 
 -- ══════════════════════════════════════════════════════════════
 -- LDI MANUFACTURING SCHEMA (Production DDL)
