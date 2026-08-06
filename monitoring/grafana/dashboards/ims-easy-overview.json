@@ -1,0 +1,602 @@
+{
+  "description": "The easiest way to see the whole LDI fleet at once: no template variables to set, no filters to configure, just open it. Built entirely from this repo's shared views/functions (v_ldi_machine_latest_full, v_ldi_alarm_context, f_ldi_yield_pct, v_machine_spc_fleet) -- every number here traces back to one governed source, not a one-off query. For deeper drill-down (per-machine SPC ranking, board traceability, event timelines), use the Manufacturing, Engineering Analytics, or Machine Snapshot dashboards instead.",
+  "schemaVersion": 39,
+  "fiscalYearStartMonth": 0,
+  "liveNow": true,
+  "graphTooltip": 0,
+  "templating": {
+    "list": []
+  },
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": false,
+        "iconColor": "rgba(255, 96, 96, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 9000,
+      "type": "row",
+      "title": "◈ FLEET AT A GLANCE",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 1
+      },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 1,
+      "title": "◉ Fleet Availability",
+      "type": "stat",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 1,
+        "w": 6,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 0,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#EF4444",
+                "value": null
+              },
+              {
+                "color": "#F59E0B",
+                "value": 70
+              },
+              {
+                "color": "#22C55E",
+                "value": 90
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "#64748B",
+                  "text": "NO_DATA",
+                  "index": 0
+                }
+              }
+            }
+          ],
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "noValue": "NO_DATA",
+        "textMode": "auto",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT ROUND((COUNT(*) FILTER (WHERE state = true) * 100.0 / NULLIF(COUNT(*), 0))::NUMERIC, 0) AS value\nFROM public.v_ldi_machine_latest_full",
+          "format": "table"
+        }
+      ],
+      "description": "Percent of the registered LDI fleet currently running (public.v_ldi_machine_latest_full, migration 052 -- the shared latest-snapshot view)."
+    },
+    {
+      "id": 2,
+      "title": "◉ Machines Running",
+      "type": "stat",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 1,
+        "w": 6,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#22C55E",
+                "value": null
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "#64748B",
+                  "text": "NO_DATA",
+                  "index": 0
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "noValue": "NO_DATA",
+        "textMode": "auto",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT COUNT(*) FILTER (WHERE state = true) AS value FROM public.v_ldi_machine_latest_full",
+          "format": "table"
+        }
+      ],
+      "description": "Live count from public.v_ldi_machine_latest_full."
+    },
+    {
+      "id": 3,
+      "title": "◉ Estimated Yield (1h)",
+      "type": "stat",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 1,
+        "w": 6,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 1,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#EF4444",
+                "value": null
+              },
+              {
+                "color": "#F59E0B",
+                "value": 80
+              },
+              {
+                "color": "#22C55E",
+                "value": 95
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "#64748B",
+                  "text": "NO_DATA",
+                  "index": 0
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "noValue": "NO_DATA",
+        "textMode": "auto",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT public.f_ldi_yield_pct() AS value",
+          "format": "table"
+        }
+      ],
+      "description": "Fleet-wide PE/JE yield over the last hour (public.f_ldi_yield_pct(), the shared yield function)."
+    },
+    {
+      "id": 4,
+      "title": "◉ Critical Alarms (1h)",
+      "type": "stat",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 1,
+        "w": 6,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#22C55E",
+                "value": null
+              },
+              {
+                "color": "#F59E0B",
+                "value": 1
+              },
+              {
+                "color": "#EF4444",
+                "value": 20
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "#64748B",
+                  "text": "NO_DATA",
+                  "index": 0
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "noValue": "NO_DATA",
+        "textMode": "auto",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT COUNT(*)::NUMERIC AS value\nFROM public.ldi_alarm_log a\nJOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\nWHERE a.logdate > NOW() - INTERVAL '1 hour' AND m.alarm_type ILIKE '%Critical%';",
+          "format": "table"
+        }
+      ],
+      "description": "Alarms in the last hour whose master code (public.ldi_alarm_ms_code.alarm_type) is Critical -- same definition Manufacturing's \"Critical Alarms\" panel uses. Not a raw alarm-log row count (noise + warning codes are excluded)."
+    },
+    {
+      "id": 9001,
+      "type": "row",
+      "title": "◈ PER-MACHINE STATUS",
+      "gridPos": {
+        "x": 0,
+        "y": 5,
+        "w": 24,
+        "h": 1
+      },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 5,
+      "title": "◈ Machine Status",
+      "type": "table",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 6,
+        "w": 24,
+        "h": 8
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        },
+        "sortBy": []
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT eqp_id AS \"Machine\", CASE WHEN state THEN 'RUNNING' ELSE 'IDLE' END AS \"State\",\n       mo AS \"Job (MO)\", fpn AS \"Part (FPN)\", layer_name AS \"Layer\",\n       CASE WHEN log_id IS NULL THEN NULL ELSE (board_no::TEXT || '/' || total_board::TEXT) END AS \"Board Progress\",\n       ROUND(temperature::NUMERIC, 1) AS \"Temp (°C)\", ROUND(humidity::NUMERIC, 1) AS \"Humidity (%RH)\",\n       ROUND(thickness::NUMERIC, 3) AS \"Thickness (mm)\",\n       CASE WHEN is_stale THEN 'STALE (>5min)' ELSE 'live' END AS \"Freshness\"\nFROM public.v_ldi_machine_latest_full\nORDER BY eqp_id",
+          "format": "table"
+        }
+      ],
+      "description": "One row per registered machine, always -- straight from public.v_ldi_machine_latest_full (migration 052). No filters to set up."
+    },
+    {
+      "id": 9002,
+      "type": "row",
+      "title": "◈ RECENT ALARMS",
+      "gridPos": {
+        "x": 0,
+        "y": 14,
+        "w": 24,
+        "h": 1
+      },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 6,
+      "title": "◈ Recent Alarms (last 50)",
+      "type": "table",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 15,
+        "w": 24,
+        "h": 10
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        },
+        "sortBy": []
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT alarm_time AS \"Time\", eqp_id AS \"Machine\", errorcode AS \"Code\", alarm_msg AS \"Message\",\n       ROUND(temperature::NUMERIC, 1) AS \"Temp (°C)\", ROUND(humidity::NUMERIC, 1) AS \"Humidity (%RH)\",\n       match_type AS \"Match\"\nFROM public.v_ldi_alarm_context\nORDER BY alarm_time DESC LIMIT 50",
+          "format": "table"
+        }
+      ],
+      "description": "Last 50 alarms fleet-wide, straight from public.v_ldi_alarm_context (migration 053, exact-event-linked). \"Match\" shows exact (authored by the machine at write-time) vs nearest (inferred)."
+    },
+    {
+      "id": 9003,
+      "type": "row",
+      "title": "◈ QUALITY / SPC",
+      "gridPos": {
+        "x": 0,
+        "y": 25,
+        "w": 24,
+        "h": 1
+      },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 7,
+      "title": "◈ Process Capability by Machine",
+      "type": "table",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 26,
+        "w": 24,
+        "h": 8
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        },
+        "sortBy": []
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Worst Cpk"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#EF4444",
+                      "value": null
+                    },
+                    {
+                      "color": "#F59E0B",
+                      "value": 1.0
+                    },
+                    {
+                      "color": "#22C55E",
+                      "value": 1.33
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT eqp_id AS \"Machine\", n_pe AS \"PE Samples\", cpk_pe AS \"Cpk (PE)\", pe_pass_rate AS \"PE Pass %\",\n       n_je AS \"JE Samples\", cpk_je AS \"Cpk (JE)\", je_pass_rate AS \"JE Pass %\", worst_cpk AS \"Worst Cpk\"\nFROM public.v_machine_spc_fleet\nORDER BY worst_cpk ASC NULLS LAST",
+          "format": "table"
+        }
+      ],
+      "description": "24h rolling process capability per machine, from public.v_machine_spc_fleet (migrations 041/042). Sorted worst-first so the machine needing attention is always at the top."
+    }
+  ],
+  "style": "dark",
+  "links": [
+    {
+      "title": "Manufacturing Command Center",
+      "url": "/d/ims-ldi-manufacturing/set2-manufacturing",
+      "type": "link",
+      "icon": "external link",
+      "targetBlank": false,
+      "keepTime": false,
+      "includeVars": false
+    },
+    {
+      "title": "Operator Andon Board",
+      "url": "/d/ims-ldi-operator-andon/set2-operator-andon",
+      "type": "link",
+      "icon": "external link",
+      "targetBlank": false,
+      "keepTime": false,
+      "includeVars": false
+    },
+    {
+      "title": "Engineering Analytics & SPC",
+      "url": "/d/ims-ldi-engineering-analytics/set2-engineering",
+      "type": "link",
+      "icon": "external link",
+      "targetBlank": false,
+      "keepTime": false,
+      "includeVars": false
+    }
+  ],
+  "id": null,
+  "uid": "ims-easy-overview",
+  "title": "IMS Easy Overview",
+  "version": 1,
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timezone": "browser",
+  "refresh": "1m",
+  "tags": [
+    "IMS",
+    "LDI",
+    "easy",
+    "overview",
+    "real-data",
+    "current-database"
+  ]
+}
