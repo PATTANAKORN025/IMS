@@ -505,7 +505,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH machines AS (\n  SELECT device_id AS eqp_id FROM public.devices\n  WHERE device_type='ldi' AND enabled AND device_id IN (${machine_id:sqlstring})\n),\nlatest AS (\n  SELECT DISTINCT ON (eqp_id) eqp_id, mo, fpn, layer_name, board_no, total_board\n  FROM public.ldi_data\n  WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND $__timeFilter(time)\n  ORDER BY eqp_id, time DESC\n)\nSELECT m.eqp_id AS \"Machine\", l.mo AS \"Job (MO)\", l.fpn AS \"Part (FPN)\", l.layer_name AS \"Layer\",\n       CASE WHEN l.eqp_id IS NULL THEN 'NO_DATA' ELSE (l.board_no::TEXT || '/' || l.total_board::TEXT) END AS \"Progress\"\nFROM machines m LEFT JOIN latest l ON l.eqp_id = m.eqp_id\nORDER BY m.eqp_id",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: always the true latest row per machine -- see v_ldi_machine_latest_full (migration 052) */\nSELECT dev.device_id AS \"Machine\", v.mo AS \"Job (MO)\", v.fpn AS \"Part (FPN)\", v.layer_name AS \"Layer\",\n       CASE WHEN v.log_id IS NULL THEN 'NO_DATA' ELSE (v.board_no::TEXT || '/' || v.total_board::TEXT) END AS \"Progress\"\nFROM public.devices dev\nLEFT JOIN public.v_ldi_machine_latest_full v\n  ON v.eqp_id = dev.device_id AND v.factory IN (${factory:sqlstring}) AND v.mo IN (${mo:sqlstring})\nWHERE dev.device_type = 'ldi' AND dev.enabled AND dev.device_id IN (${machine_id:sqlstring})\nORDER BY dev.device_id",
           "format": "table"
         }
       ],

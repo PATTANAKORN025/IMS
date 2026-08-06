@@ -1463,11 +1463,11 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT DISTINCT ON (eqp_id) eqp_id AS \"Machine\", mo AS \"Job (MO)\", fpn AS \"Part (FPN)\", layer_name AS \"Layer\", (board_no::TEXT || '/' || total_board::TEXT) AS \"Progress\", ROUND(temperature::NUMERIC, 1) AS \"temperature (°C)\", ROUND(humidity::NUMERIC, 1) AS \"humidity (%RH)\", ROUND(scan_speed::NUMERIC, 1) AS \"scan_speed (mm/s)\", ROUND(thickness::NUMERIC, 3) AS \"thickness (mm)\", ROUND(resist_dosage::NUMERIC, 1) AS \"resist_dosage\", state AS \"state\" FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) ORDER BY eqp_id, time DESC LIMIT 50",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: always the true latest row per machine, not bounded by the dashboard time range -- see v_ldi_machine_latest_full (migration 052) */\nSELECT dev.device_id AS \"Machine\", v.mo AS \"Job (MO)\", v.fpn AS \"Part (FPN)\", v.layer_name AS \"Layer\",\n       CASE WHEN v.log_id IS NULL THEN 'NO_DATA' ELSE (v.board_no::TEXT || '/' || v.total_board::TEXT) END AS \"Progress\",\n       ROUND(v.temperature::NUMERIC, 1) AS \"temperature (°C)\",\n       ROUND(v.humidity::NUMERIC, 1) AS \"humidity (%RH)\",\n       ROUND(v.scan_speed::NUMERIC, 1) AS \"scan_speed (mm/s)\",\n       ROUND(v.thickness::NUMERIC, 3) AS \"thickness (mm)\",\n       ROUND(v.resist_dosage::NUMERIC, 1) AS \"resist_dosage\",\n       v.state AS \"state\",\n       v.is_stale AS \"stale (>5min)\"\nFROM public.devices dev\nLEFT JOIN public.v_ldi_machine_latest_full v\n  ON v.eqp_id = dev.device_id AND v.factory IN (${factory:sqlstring}) AND v.mo IN (${mo:sqlstring})\nWHERE dev.device_type = 'ldi' AND dev.enabled AND dev.device_id IN (${machine_id:sqlstring})\nORDER BY dev.device_id",
           "format": "table"
         }
       ],
-      "description": "Latest production context per machine: job info + live physical parameters (temperature, humidity, scan_speed, thickness, resist_dosage, state).",
+      "description": "Latest production context per machine (migration 052's v_ldi_machine_latest_full, World-Class Audit Priority 2): job info + live physical parameters (temperature, humidity, scan_speed, thickness, resist_dosage, state). Always the true latest row regardless of the dashboard time range -- a silent machine still shows a row (Progress = NO_DATA) instead of disappearing.",
       "fieldConfig": {
         "defaults": {
           "custom": {
