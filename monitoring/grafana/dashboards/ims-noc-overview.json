@@ -139,7 +139,7 @@
         "dateSettings": {
           "dateFormat": "YYYY-MM-DD",
           "locale": "en",
-          "timeZone": "Asia/Bangkok"
+          "timeZone": "UTC"
         },
         "timeSettings": {
           "showSeconds": true,
@@ -147,10 +147,10 @@
           "showMinutes": true,
           "timeFormat": "24"
         },
-        "timezone": "Asia/Bangkok",
+        "timezone": "UTC",
         "bgColor": "transparent"
       },
-      "description": "Current time and date (Asia/Bangkok timezone).",
+      "description": "Current time and date (UTC).",
       "fieldConfig": {
         "defaults": {
           "custom": {}
