@@ -206,11 +206,11 @@
                     "type": "value",
                     "options": {
                       "true": {
-                        "color": "#22c55e",
+                        "color": "#22C55E",
                         "text": "RUNNING"
                       },
                       "false": {
-                        "color": "#FF003C",
+                        "color": "#EF4444",
                         "text": "DOWN"
                       }
                     }
@@ -458,27 +458,27 @@
                     "type": "value",
                     "options": {
                       "CRIT": {
-                        "color": "#FF003C",
+                        "color": "#EF4444",
                         "index": 0,
                         "text": "CRIT"
                       },
                       "CRITICAL": {
-                        "color": "#FF003C",
+                        "color": "#EF4444",
                         "index": 0,
                         "text": "CRITICAL"
                       },
                       "WARN": {
-                        "color": "#FF9100",
+                        "color": "#F59E0B",
                         "index": 1,
                         "text": "WARN"
                       },
                       "WARNING": {
-                        "color": "#FF9100",
+                        "color": "#F59E0B",
                         "index": 1,
                         "text": "WARNING"
                       },
                       "OK": {
-                        "color": "#22c55e",
+                        "color": "#22C55E",
                         "index": 2,
                         "text": "OK"
                       }
@@ -505,27 +505,27 @@
                     "type": "value",
                     "options": {
                       "CRIT": {
-                        "color": "#FF003C",
+                        "color": "#EF4444",
                         "index": 0,
                         "text": "CRIT"
                       },
                       "CRITICAL": {
-                        "color": "#FF003C",
+                        "color": "#EF4444",
                         "index": 0,
                         "text": "CRITICAL"
                       },
                       "WARN": {
-                        "color": "#FF9100",
+                        "color": "#F59E0B",
                         "index": 1,
                         "text": "WARN"
                       },
                       "WARNING": {
-                        "color": "#FF9100",
+                        "color": "#F59E0B",
                         "index": 1,
                         "text": "WARNING"
                       },
                       "OK": {
-                        "color": "#22c55e",
+                        "color": "#22C55E",
                         "index": 2,
                         "text": "OK"
                       }
@@ -571,23 +571,23 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": null
               },
               {
-                "color": "#FF9100",
+                "color": "#F59E0B",
                 "value": 19
               },
               {
-                "color": "#22c55e",
+                "color": "#22C55E",
                 "value": 20
               },
               {
-                "color": "#FF9100",
+                "color": "#F59E0B",
                 "value": 24
               },
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": 25
               }
             ]
@@ -610,7 +610,7 @@
               "options": {
                 "match": "null+nan",
                 "result": {
-                  "color": "#6B7280",
+                  "color": "#64748B",
                   "text": "NO_DATA",
                   "index": 0
                 }
@@ -674,23 +674,23 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": null
               },
               {
-                "color": "#FF9100",
+                "color": "#F59E0B",
                 "value": 45
               },
               {
-                "color": "#22c55e",
+                "color": "#22C55E",
                 "value": 50
               },
               {
-                "color": "#FF9100",
+                "color": "#F59E0B",
                 "value": 60
               },
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": 65
               }
             ]
@@ -713,7 +713,7 @@
               "options": {
                 "match": "null+nan",
                 "result": {
-                  "color": "#6B7280",
+                  "color": "#64748B",
                   "text": "NO_DATA",
                   "index": 0
                 }
@@ -777,11 +777,11 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": null
               },
               {
-                "color": "#22c55e",
+                "color": "#22C55E",
                 "value": 1
               }
             ]
@@ -803,7 +803,7 @@
               "options": {
                 "match": "null+nan",
                 "result": {
-                  "color": "#6B7280",
+                  "color": "#64748B",
                   "text": "NO_DATA",
                   "index": 0
                 }
@@ -867,11 +867,11 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": null
               },
               {
-                "color": "#22c55e",
+                "color": "#22C55E",
                 "value": 1
               }
             ]
@@ -893,7 +893,7 @@
               "options": {
                 "match": "null+nan",
                 "result": {
-                  "color": "#6B7280",
+                  "color": "#64748B",
                   "text": "NO_DATA",
                   "index": 0
                 }
@@ -957,11 +957,11 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": null
               },
               {
-                "color": "#22c55e",
+                "color": "#22C55E",
                 "value": 1
               }
             ]
@@ -983,7 +983,7 @@
               "options": {
                 "match": "null+nan",
                 "result": {
-                  "color": "#6B7280",
+                  "color": "#64748B",
                   "text": "NO_DATA",
                   "index": 0
                 }
@@ -1047,11 +1047,11 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": null
               },
               {
-                "color": "#22c55e",
+                "color": "#22C55E",
                 "value": 1
               }
             ]
@@ -1073,7 +1073,7 @@
               "options": {
                 "match": "null+nan",
                 "result": {
-                  "color": "#6B7280",
+                  "color": "#64748B",
                   "text": "NO_DATA",
                   "index": 0
                 }
@@ -1170,15 +1170,15 @@
                     "type": "value",
                     "options": {
                       "PASS": {
-                        "color": "#22c55e",
+                        "color": "#22C55E",
                         "text": "PASS"
                       },
                       "OUT OF SPEC": {
-                        "color": "#FF003C",
+                        "color": "#EF4444",
                         "text": "OUT OF SPEC"
                       },
                       "N/A": {
-                        "color": "#6B7280",
+                        "color": "#64748B",
                         "text": "N/A"
                       }
                     }
@@ -1382,27 +1382,27 @@
                     "type": "value",
                     "options": {
                       "CRIT": {
-                        "color": "#FF003C",
+                        "color": "#EF4444",
                         "index": 0,
                         "text": "CRIT"
                       },
                       "CRITICAL": {
-                        "color": "#FF003C",
+                        "color": "#EF4444",
                         "index": 0,
                         "text": "CRITICAL"
                       },
                       "WARN": {
-                        "color": "#FF9100",
+                        "color": "#F59E0B",
                         "index": 1,
                         "text": "WARN"
                       },
                       "WARNING": {
-                        "color": "#FF9100",
+                        "color": "#F59E0B",
                         "index": 1,
                         "text": "WARNING"
                       },
                       "OK": {
-                        "color": "#22c55e",
+                        "color": "#22C55E",
                         "index": 2,
                         "text": "OK"
                       }
@@ -1429,27 +1429,27 @@
                     "type": "value",
                     "options": {
                       "CRIT": {
-                        "color": "#FF003C",
+                        "color": "#EF4444",
                         "index": 0,
                         "text": "CRIT"
                       },
                       "CRITICAL": {
-                        "color": "#FF003C",
+                        "color": "#EF4444",
                         "index": 0,
                         "text": "CRITICAL"
                       },
                       "WARN": {
-                        "color": "#FF9100",
+                        "color": "#F59E0B",
                         "index": 1,
                         "text": "WARN"
                       },
                       "WARNING": {
-                        "color": "#FF9100",
+                        "color": "#F59E0B",
                         "index": 1,
                         "text": "WARNING"
                       },
                       "OK": {
-                        "color": "#22c55e",
+                        "color": "#22C55E",
                         "index": 2,
                         "text": "OK"
                       }
@@ -1608,11 +1608,11 @@
                   "mode": "absolute",
                   "steps": [
                     {
-                      "color": "#FF003C",
+                      "color": "#EF4444",
                       "value": null
                     },
                     {
-                      "color": "#FF9100",
+                      "color": "#F59E0B",
                       "value": 1.33
                     },
                     {
@@ -1630,7 +1630,7 @@
                     "options": {
                       "match": "null+nan",
                       "result": {
-                        "color": "#6B7280",
+                        "color": "#64748B",
                         "text": "N/A",
                         "index": 0
                       }
@@ -1662,11 +1662,11 @@
                   "mode": "absolute",
                   "steps": [
                     {
-                      "color": "#FF003C",
+                      "color": "#EF4444",
                       "value": null
                     },
                     {
-                      "color": "#FF9100",
+                      "color": "#F59E0B",
                       "value": 1.33
                     },
                     {
@@ -1684,7 +1684,7 @@
                     "options": {
                       "match": "null+nan",
                       "result": {
-                        "color": "#6B7280",
+                        "color": "#64748B",
                         "text": "N/A",
                         "index": 0
                       }
@@ -1716,11 +1716,11 @@
                   "mode": "absolute",
                   "steps": [
                     {
-                      "color": "#FF003C",
+                      "color": "#EF4444",
                       "value": null
                     },
                     {
-                      "color": "#FF9100",
+                      "color": "#F59E0B",
                       "value": 1.33
                     },
                     {
@@ -1738,7 +1738,7 @@
                     "options": {
                       "match": "null+nan",
                       "result": {
-                        "color": "#6B7280",
+                        "color": "#64748B",
                         "text": "N/A",
                         "index": 0
                       }
@@ -1771,17 +1771,17 @@
                     "type": "value",
                     "options": {
                       "OK": {
-                        "color": "#22c55e",
+                        "color": "#22C55E",
                         "index": 0,
                         "text": "OK"
                       },
                       "LOW SAMPLE (n<30)": {
-                        "color": "#FF9100",
+                        "color": "#F59E0B",
                         "index": 1,
                         "text": "LOW SAMPLE (n<30)"
                       },
                       "NO_DATA": {
-                        "color": "#6B7280",
+                        "color": "#64748B",
                         "index": 2,
                         "text": "NO_DATA"
                       }
@@ -1851,27 +1851,27 @@
                     "type": "value",
                     "options": {
                       "CRIT": {
-                        "color": "#FF003C",
+                        "color": "#EF4444",
                         "index": 0,
                         "text": "CRIT"
                       },
                       "CRITICAL": {
-                        "color": "#FF003C",
+                        "color": "#EF4444",
                         "index": 0,
                         "text": "CRITICAL"
                       },
                       "WARN": {
-                        "color": "#FF9100",
+                        "color": "#F59E0B",
                         "index": 1,
                         "text": "WARN"
                       },
                       "WARNING": {
-                        "color": "#FF9100",
+                        "color": "#F59E0B",
                         "index": 1,
                         "text": "WARNING"
                       },
                       "OK": {
-                        "color": "#22c55e",
+                        "color": "#22C55E",
                         "index": 2,
                         "text": "OK"
                       }
@@ -2004,27 +2004,27 @@
                     "type": "value",
                     "options": {
                       "CRIT": {
-                        "color": "#FF003C",
+                        "color": "#EF4444",
                         "index": 0,
                         "text": "CRIT"
                       },
                       "CRITICAL": {
-                        "color": "#FF003C",
+                        "color": "#EF4444",
                         "index": 0,
                         "text": "CRITICAL"
                       },
                       "WARN": {
-                        "color": "#FF9100",
+                        "color": "#F59E0B",
                         "index": 1,
                         "text": "WARN"
                       },
                       "WARNING": {
-                        "color": "#FF9100",
+                        "color": "#F59E0B",
                         "index": 1,
                         "text": "WARNING"
                       },
                       "OK": {
-                        "color": "#22c55e",
+                        "color": "#22C55E",
                         "index": 2,
                         "text": "OK"
                       }
@@ -2070,7 +2070,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#22c55e",
+                "color": "#22C55E",
                 "value": null
               }
             ]
@@ -2092,7 +2092,7 @@
               "options": {
                 "match": "null+nan",
                 "result": {
-                  "color": "#6B7280",
+                  "color": "#64748B",
                   "text": "NO_DATA",
                   "index": 0
                 }
@@ -2192,15 +2192,15 @@
                     "type": "value",
                     "options": {
                       "Machine Start": {
-                        "color": "#22c55e",
+                        "color": "#22C55E",
                         "text": "START"
                       },
                       "Machine Stop": {
-                        "color": "#FF003C",
+                        "color": "#EF4444",
                         "text": "STOP"
                       },
                       "Alarm": {
-                        "color": "#facc15",
+                        "color": "#F59E0B",
                         "text": "ALARM"
                       }
                     }
@@ -2296,27 +2296,27 @@
                     "type": "value",
                     "options": {
                       "CRIT": {
-                        "color": "#FF003C",
+                        "color": "#EF4444",
                         "index": 0,
                         "text": "CRIT"
                       },
                       "CRITICAL": {
-                        "color": "#FF003C",
+                        "color": "#EF4444",
                         "index": 0,
                         "text": "CRITICAL"
                       },
                       "WARN": {
-                        "color": "#FF9100",
+                        "color": "#F59E0B",
                         "index": 1,
                         "text": "WARN"
                       },
                       "WARNING": {
-                        "color": "#FF9100",
+                        "color": "#F59E0B",
                         "index": 1,
                         "text": "WARNING"
                       },
                       "OK": {
-                        "color": "#22c55e",
+                        "color": "#22C55E",
                         "index": 2,
                         "text": "OK"
                       }
@@ -2343,27 +2343,27 @@
                     "type": "value",
                     "options": {
                       "CRIT": {
-                        "color": "#FF003C",
+                        "color": "#EF4444",
                         "index": 0,
                         "text": "CRIT"
                       },
                       "CRITICAL": {
-                        "color": "#FF003C",
+                        "color": "#EF4444",
                         "index": 0,
                         "text": "CRITICAL"
                       },
                       "WARN": {
-                        "color": "#FF9100",
+                        "color": "#F59E0B",
                         "index": 1,
                         "text": "WARN"
                       },
                       "WARNING": {
-                        "color": "#FF9100",
+                        "color": "#F59E0B",
                         "index": 1,
                         "text": "WARNING"
                       },
                       "OK": {
-                        "color": "#22c55e",
+                        "color": "#22C55E",
                         "index": 2,
                         "text": "OK"
                       }
@@ -2443,15 +2443,15 @@
                     "type": "value",
                     "options": {
                       "PASS": {
-                        "color": "#22c55e",
+                        "color": "#22C55E",
                         "text": "PASS"
                       },
                       "OUT OF SPEC": {
-                        "color": "#FF003C",
+                        "color": "#EF4444",
                         "text": "OUT OF SPEC"
                       },
                       "N/A": {
-                        "color": "#6B7280",
+                        "color": "#64748B",
                         "text": "N/A"
                       }
                     }
@@ -2631,27 +2631,27 @@
                     "type": "value",
                     "options": {
                       "CRIT": {
-                        "color": "#FF003C",
+                        "color": "#EF4444",
                         "index": 0,
                         "text": "CRIT"
                       },
                       "CRITICAL": {
-                        "color": "#FF003C",
+                        "color": "#EF4444",
                         "index": 0,
                         "text": "CRITICAL"
                       },
                       "WARN": {
-                        "color": "#FF9100",
+                        "color": "#F59E0B",
                         "index": 1,
                         "text": "WARN"
                       },
                       "WARNING": {
-                        "color": "#FF9100",
+                        "color": "#F59E0B",
                         "index": 1,
                         "text": "WARNING"
                       },
                       "OK": {
-                        "color": "#22c55e",
+                        "color": "#22C55E",
                         "index": 2,
                         "text": "OK"
                       }
@@ -2678,27 +2678,27 @@
                     "type": "value",
                     "options": {
                       "CRIT": {
-                        "color": "#FF003C",
+                        "color": "#EF4444",
                         "index": 0,
                         "text": "CRIT"
                       },
                       "CRITICAL": {
-                        "color": "#FF003C",
+                        "color": "#EF4444",
                         "index": 0,
                         "text": "CRITICAL"
                       },
                       "WARN": {
-                        "color": "#FF9100",
+                        "color": "#F59E0B",
                         "index": 1,
                         "text": "WARN"
                       },
                       "WARNING": {
-                        "color": "#FF9100",
+                        "color": "#F59E0B",
                         "index": 1,
                         "text": "WARNING"
                       },
                       "OK": {
-                        "color": "#22c55e",
+                        "color": "#22C55E",
                         "index": 2,
                         "text": "OK"
                       }
