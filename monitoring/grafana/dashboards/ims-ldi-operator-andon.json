@@ -1,5 +1,5 @@
 {
-  "description": "Factory floor kiosk. ISA-101 compliant. Zero interaction, zero scrolling. 1920x1080.",
+  "description": "Factory floor kiosk. ISA-101 compliant. Zero interaction, zero scrolling. 1280x720. Redesigned from an earlier 1920x1080 layout (World-Class Audit Phase 5): template-variable pickers and the drill-down links row are hidden (hide:2 / links:[]) since a kiosk display has no one to interact with them; Temperature/Humidity compliance trend charts and the PE/JE-vs-spec bargauge were dropped from this variant after measuring that a 10-row Live Production table alone already consumes the full available height at Grafana's minimum table row size -- both are still on ims-ldi-manufacturing.json and ims-ldi-engineering-analytics.json for drill-down.",
   "schemaVersion": 39,
   "liveNow": true,
   "style": "dark",
@@ -24,7 +24,7 @@
         "options": [],
         "refresh": 1,
         "sort": 1,
-        "hide": 0,
+        "hide": 2,
         "regex": "",
         "skipUrlSync": false
       },
@@ -47,7 +47,7 @@
         "options": [],
         "refresh": 1,
         "sort": 1,
-        "hide": 0,
+        "hide": 2,
         "regex": "",
         "skipUrlSync": false
       },
@@ -70,7 +70,7 @@
         "options": [],
         "refresh": 1,
         "sort": 1,
-        "hide": 0,
+        "hide": 2,
         "regex": "",
         "skipUrlSync": false
       }
@@ -128,11 +128,11 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": null
               },
               {
-                "color": "#22c55e",
+                "color": "#22C55E",
                 "value": 100
               }
             ]
@@ -157,7 +157,7 @@
               "options": {
                 "match": "null+nan",
                 "result": {
-                  "color": "#6B7280",
+                  "color": "#64748B",
                   "text": "NO_DATA",
                   "index": 0
                 }
@@ -219,11 +219,11 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#22c55e",
+                "color": "#22C55E",
                 "value": null
               },
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": 1
               }
             ]
@@ -244,7 +244,7 @@
               "options": {
                 "match": "null+nan",
                 "result": {
-                  "color": "#6B7280",
+                  "color": "#64748B",
                   "text": "NO_DATA",
                   "index": 0
                 }
@@ -306,15 +306,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": null
               },
               {
-                "color": "#FF9100",
+                "color": "#F59E0B",
                 "value": 80
               },
               {
-                "color": "#22c55e",
+                "color": "#22C55E",
                 "value": 95
               }
             ]
@@ -339,7 +339,7 @@
               "options": {
                 "match": "null+nan",
                 "result": {
-                  "color": "#6B7280",
+                  "color": "#64748B",
                   "text": "NO_DATA",
                   "index": 0
                 }
@@ -401,11 +401,11 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#EF4444",
                 "value": null
               },
               {
-                "color": "#22c55e",
+                "color": "#22C55E",
                 "value": 1
               }
             ]
@@ -428,7 +428,7 @@
               "options": {
                 "match": "null+nan",
                 "result": {
-                  "color": "#6B7280",
+                  "color": "#64748B",
                   "text": "NO_DATA",
                   "index": 0
                 }
@@ -472,188 +472,6 @@
       "description": "Count of machines currently OK (reporting AND running), out of the selected registered fleet. A silent machine is NOT counted, same fix as Fleet Availability."
     },
     {
-      "id": 5,
-      "title": "◈ Temperature Compliance (22±2°C)",
-      "type": "state-timeline",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 7,
-        "w": 12,
-        "h": 3
-      },
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "0": {
-                  "color": "#FF003C",
-                  "index": 0,
-                  "text": "CRIT"
-                },
-                "1": {
-                  "color": "#FF9100",
-                  "index": 1,
-                  "text": "WARN"
-                },
-                "2": {
-                  "color": "#22c55e",
-                  "index": 2,
-                  "text": "OK"
-                }
-              }
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#FF003C",
-                "value": null
-              },
-              {
-                "color": "#FF9100",
-                "value": 1
-              },
-              {
-                "color": "#00F2FE",
-                "value": 2
-              }
-            ]
-          },
-          "color": {
-            "mode": "thresholds"
-          },
-          "unit": "celsius",
-          "decimals": 1,
-          "min": 18,
-          "max": 28,
-          "custom": {
-            "lineWidth": 0,
-            "fillOpacity": 100
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "showValue": "auto",
-        "mergeValues": true,
-        "alignValue": "center",
-        "rowHeight": 0.9,
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT time, eqp_id AS metric, CASE WHEN temperature BETWEEN 20 AND 24 THEN 2 WHEN temperature BETWEEN 19 AND 25 THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) AND temperature IS NOT NULL ORDER BY time ASC",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
-        }
-      ],
-      "description": "Temperature Compliance: per-machine 3-color matrix. Green=20-24°C, Amber=19-25°C, Red=outside."
-    },
-    {
-      "id": 6,
-      "title": "◈ Humidity Compliance (55±5%)",
-      "type": "state-timeline",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 12,
-        "y": 7,
-        "w": 12,
-        "h": 3
-      },
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "0": {
-                  "color": "#FF003C",
-                  "index": 0,
-                  "text": "CRIT"
-                },
-                "1": {
-                  "color": "#FF9100",
-                  "index": 1,
-                  "text": "WARN"
-                },
-                "2": {
-                  "color": "#22c55e",
-                  "index": 2,
-                  "text": "OK"
-                }
-              }
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#FF003C",
-                "value": null
-              },
-              {
-                "color": "#FF9100",
-                "value": 1
-              },
-              {
-                "color": "#00F2FE",
-                "value": 2
-              }
-            ]
-          },
-          "color": {
-            "mode": "thresholds"
-          },
-          "unit": "humidity",
-          "decimals": 1,
-          "min": 40,
-          "max": 70,
-          "custom": {
-            "lineWidth": 0,
-            "fillOpacity": 100
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "showValue": "auto",
-        "mergeValues": true,
-        "alignValue": "center",
-        "rowHeight": 0.9,
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT time, eqp_id AS metric, CASE WHEN humidity BETWEEN 50 AND 60 THEN 2 WHEN humidity BETWEEN 45 AND 65 THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) AND humidity IS NOT NULL ORDER BY time ASC",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
-        }
-      ],
-      "description": "Humidity Compliance: per-machine 3-color matrix. Green=50-60%, Amber=45-65%, Red=outside."
-    },
-    {
       "id": 7,
       "title": "◈ Live Production",
       "type": "table",
@@ -662,9 +480,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 10,
+        "y": 6,
         "w": 24,
-        "h": 3
+        "h": 13
       },
       "options": {
         "showHeader": true,
@@ -810,27 +628,27 @@
                     "type": "value",
                     "options": {
                       "CRIT": {
-                        "color": "#FF003C",
+                        "color": "#EF4444",
                         "index": 0,
                         "text": "CRIT"
                       },
                       "CRITICAL": {
-                        "color": "#FF003C",
+                        "color": "#EF4444",
                         "index": 0,
                         "text": "CRITICAL"
                       },
                       "WARN": {
-                        "color": "#FF9100",
+                        "color": "#F59E0B",
                         "index": 1,
                         "text": "WARN"
                       },
                       "WARNING": {
-                        "color": "#FF9100",
+                        "color": "#F59E0B",
                         "index": 1,
                         "text": "WARNING"
                       },
                       "OK": {
-                        "color": "#22c55e",
+                        "color": "#22C55E",
                         "index": 2,
                         "text": "OK"
                       }
@@ -857,27 +675,27 @@
                     "type": "value",
                     "options": {
                       "CRIT": {
-                        "color": "#FF003C",
+                        "color": "#EF4444",
                         "index": 0,
                         "text": "CRIT"
                       },
                       "CRITICAL": {
-                        "color": "#FF003C",
+                        "color": "#EF4444",
                         "index": 0,
                         "text": "CRITICAL"
                       },
                       "WARN": {
-                        "color": "#FF9100",
+                        "color": "#F59E0B",
                         "index": 1,
                         "text": "WARN"
                       },
                       "WARNING": {
-                        "color": "#FF9100",
+                        "color": "#F59E0B",
                         "index": 1,
                         "text": "WARNING"
                       },
                       "OK": {
-                        "color": "#22c55e",
+                        "color": "#22C55E",
                         "index": 2,
                         "text": "OK"
                       }
@@ -903,89 +721,17 @@
       }
     },
     {
-      "id": 10,
-      "title": "◉ PE/JE vs Spec Limit (per machine)",
-      "type": "bargauge",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 13,
-        "w": 24,
-        "h": 3
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "min": 0,
-          "max": 150,
-          "decimals": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#22c55e",
-                "value": null
-              },
-              {
-                "color": "#FF9100",
-                "value": 80
-              },
-              {
-                "color": "#FF003C",
-                "value": 100
-              }
-            ]
-          },
-          "color": {
-            "mode": "thresholds"
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "orientation": "horizontal",
-        "displayMode": "gradient",
-        "valueMode": "color",
-        "showUnfilled": true,
-        "minVizWidth": 0,
-        "minVizHeight": 10,
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "/^value$/",
-          "values": false
-        }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "WITH latest AS (\n  SELECT DISTINCT ON (eqp_id) eqp_id,\n    CASE WHEN pe_1 IS NOT NULL AND pe_setting > 0 THEN GREATEST(ABS(pe_1),ABS(pe_2),ABS(pe_3),ABS(pe_4),ABS(pe_5),ABS(pe_6)) * 100.0 / pe_setting END AS pe_pct,\n    CASE WHEN je_1 IS NOT NULL AND je_setting > 0 THEN GREATEST(ABS(je_1),ABS(je_2),ABS(je_3),ABS(je_4)) * 100.0 / je_setting END AS je_pct\n  FROM public.ldi_data\n  WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time)\n  ORDER BY eqp_id, time DESC\n)\nSELECT eqp_id AS metric, ROUND(GREATEST(COALESCE(pe_pct,0), COALESCE(je_pct,0))::NUMERIC, 0) AS value\nFROM latest WHERE pe_pct IS NOT NULL OR je_pct IS NOT NULL\nORDER BY eqp_id",
-          "format": "table"
-        }
-      ],
-      "description": "Worst of PE% or JE% vs spec limit, per machine (whichever this machine actually reports). Previously PE-only, which silently excluded the 4 JE-only machines (LDI-01..04) from this gauge entirely."
-    },
-    {
-      "id": 11,
-      "title": "${machine_id}",
+      "id": 1000,
+      "title": "LDI-01",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
       },
-      "repeat": "machine_id",
-      "repeatDirection": "h",
-      "maxPerRow": 10,
       "gridPos": {
         "x": 0,
         "y": 4,
         "w": 2,
-        "h": 3
+        "h": 2
       },
       "fieldConfig": {
         "defaults": {
@@ -993,28 +739,17 @@
             {
               "type": "value",
               "options": {
-                "OK": {
-                  "color": "#22c55e",
-                  "text": "OK"
+                "0": {
+                  "color": "#64748B",
+                  "text": "NO_DATA"
                 },
-                "IDLE": {
-                  "color": "#FF9100",
+                "1": {
+                  "color": "#F59E0B",
                   "text": "IDLE"
                 },
-                "NO_DATA": {
-                  "color": "#6B7280",
-                  "text": "NO_DATA"
-                }
-              }
-            },
-            {
-              "type": "special",
-              "options": {
-                "match": "null+nan",
-                "result": {
-                  "color": "#6B7280",
-                  "text": "NO_DATA",
-                  "index": 1
+                "2": {
+                  "color": "#22C55E",
+                  "text": "OK"
                 }
               }
             }
@@ -1026,7 +761,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#FF003C",
+                "color": "#64748B",
                 "value": null
               }
             ]
@@ -1034,7 +769,7 @@
           "custom": {
             "gradientMode": "opacity"
           },
-          "unit": "string"
+          "unit": "none"
         },
         "overrides": []
       },
@@ -1042,20 +777,18 @@
         "colorMode": "background",
         "graphMode": "none",
         "justifyMode": "center",
-        "orientation": "auto",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
           ],
-          "fields": "/^value$/",
           "values": false
         },
         "text": {
-          "valueSize": 16,
-          "titleSize": 12
+          "valueSize": 22,
+          "titleSize": 13
         },
-        "noValue": "NO_DATA",
-        "textMode": "value",
+        "noValue": "0",
+        "textMode": "value_and_name",
         "tooltip": {
           "mode": "single",
           "sort": "none"
@@ -1067,42 +800,789 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT CASE WHEN n IS NULL OR n = 0 THEN 'NO_DATA' WHEN any_running THEN 'OK' ELSE 'IDLE' END AS value\nFROM (\n  SELECT BOOL_OR(state) AS any_running, COUNT(*) AS n\n  FROM public.ldi_data\n  WHERE eqp_id = '${machine_id}' AND time > NOW() - INTERVAL '10 minutes'\n) x",
+          "rawSql": "SELECT CASE WHEN n IS NULL OR n = 0 THEN 0 WHEN any_running THEN 2 ELSE 1 END AS \"LDI-01\"\nFROM (\n  SELECT BOOL_OR(state) AS any_running, COUNT(*) AS n\n  FROM public.ldi_data\n  WHERE eqp_id = 'LDI-01' AND time > NOW() - INTERVAL '10 minutes'\n) x",
           "format": "table"
         }
-      ]
+      ],
+      "description": "Live OK/IDLE/NO_DATA status for LDI-01."
+    },
+    {
+      "id": 1001,
+      "title": "LDI-02",
+      "type": "stat",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 2,
+        "y": 4,
+        "w": 2,
+        "h": 2
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "color": "#64748B",
+                  "text": "NO_DATA"
+                },
+                "1": {
+                  "color": "#F59E0B",
+                  "text": "IDLE"
+                },
+                "2": {
+                  "color": "#22C55E",
+                  "text": "OK"
+                }
+              }
+            }
+          ],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#64748B",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "gradientMode": "opacity"
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "text": {
+          "valueSize": 22,
+          "titleSize": 13
+        },
+        "noValue": "0",
+        "textMode": "value_and_name",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT CASE WHEN n IS NULL OR n = 0 THEN 0 WHEN any_running THEN 2 ELSE 1 END AS \"LDI-02\"\nFROM (\n  SELECT BOOL_OR(state) AS any_running, COUNT(*) AS n\n  FROM public.ldi_data\n  WHERE eqp_id = 'LDI-02' AND time > NOW() - INTERVAL '10 minutes'\n) x",
+          "format": "table"
+        }
+      ],
+      "description": "Live OK/IDLE/NO_DATA status for LDI-02."
+    },
+    {
+      "id": 1002,
+      "title": "LDI-03",
+      "type": "stat",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 4,
+        "y": 4,
+        "w": 2,
+        "h": 2
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "color": "#64748B",
+                  "text": "NO_DATA"
+                },
+                "1": {
+                  "color": "#F59E0B",
+                  "text": "IDLE"
+                },
+                "2": {
+                  "color": "#22C55E",
+                  "text": "OK"
+                }
+              }
+            }
+          ],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#64748B",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "gradientMode": "opacity"
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "text": {
+          "valueSize": 22,
+          "titleSize": 13
+        },
+        "noValue": "0",
+        "textMode": "value_and_name",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT CASE WHEN n IS NULL OR n = 0 THEN 0 WHEN any_running THEN 2 ELSE 1 END AS \"LDI-03\"\nFROM (\n  SELECT BOOL_OR(state) AS any_running, COUNT(*) AS n\n  FROM public.ldi_data\n  WHERE eqp_id = 'LDI-03' AND time > NOW() - INTERVAL '10 minutes'\n) x",
+          "format": "table"
+        }
+      ],
+      "description": "Live OK/IDLE/NO_DATA status for LDI-03."
+    },
+    {
+      "id": 1003,
+      "title": "LDI-04",
+      "type": "stat",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 4,
+        "w": 2,
+        "h": 2
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "color": "#64748B",
+                  "text": "NO_DATA"
+                },
+                "1": {
+                  "color": "#F59E0B",
+                  "text": "IDLE"
+                },
+                "2": {
+                  "color": "#22C55E",
+                  "text": "OK"
+                }
+              }
+            }
+          ],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#64748B",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "gradientMode": "opacity"
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "text": {
+          "valueSize": 22,
+          "titleSize": 13
+        },
+        "noValue": "0",
+        "textMode": "value_and_name",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT CASE WHEN n IS NULL OR n = 0 THEN 0 WHEN any_running THEN 2 ELSE 1 END AS \"LDI-04\"\nFROM (\n  SELECT BOOL_OR(state) AS any_running, COUNT(*) AS n\n  FROM public.ldi_data\n  WHERE eqp_id = 'LDI-04' AND time > NOW() - INTERVAL '10 minutes'\n) x",
+          "format": "table"
+        }
+      ],
+      "description": "Live OK/IDLE/NO_DATA status for LDI-04."
+    },
+    {
+      "id": 1004,
+      "title": "LDI-05",
+      "type": "stat",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 4,
+        "w": 2,
+        "h": 2
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "color": "#64748B",
+                  "text": "NO_DATA"
+                },
+                "1": {
+                  "color": "#F59E0B",
+                  "text": "IDLE"
+                },
+                "2": {
+                  "color": "#22C55E",
+                  "text": "OK"
+                }
+              }
+            }
+          ],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#64748B",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "gradientMode": "opacity"
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "text": {
+          "valueSize": 22,
+          "titleSize": 13
+        },
+        "noValue": "0",
+        "textMode": "value_and_name",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT CASE WHEN n IS NULL OR n = 0 THEN 0 WHEN any_running THEN 2 ELSE 1 END AS \"LDI-05\"\nFROM (\n  SELECT BOOL_OR(state) AS any_running, COUNT(*) AS n\n  FROM public.ldi_data\n  WHERE eqp_id = 'LDI-05' AND time > NOW() - INTERVAL '10 minutes'\n) x",
+          "format": "table"
+        }
+      ],
+      "description": "Live OK/IDLE/NO_DATA status for LDI-05."
+    },
+    {
+      "id": 1005,
+      "title": "LDI-06",
+      "type": "stat",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 10,
+        "y": 4,
+        "w": 2,
+        "h": 2
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "color": "#64748B",
+                  "text": "NO_DATA"
+                },
+                "1": {
+                  "color": "#F59E0B",
+                  "text": "IDLE"
+                },
+                "2": {
+                  "color": "#22C55E",
+                  "text": "OK"
+                }
+              }
+            }
+          ],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#64748B",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "gradientMode": "opacity"
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "text": {
+          "valueSize": 22,
+          "titleSize": 13
+        },
+        "noValue": "0",
+        "textMode": "value_and_name",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT CASE WHEN n IS NULL OR n = 0 THEN 0 WHEN any_running THEN 2 ELSE 1 END AS \"LDI-06\"\nFROM (\n  SELECT BOOL_OR(state) AS any_running, COUNT(*) AS n\n  FROM public.ldi_data\n  WHERE eqp_id = 'LDI-06' AND time > NOW() - INTERVAL '10 minutes'\n) x",
+          "format": "table"
+        }
+      ],
+      "description": "Live OK/IDLE/NO_DATA status for LDI-06."
+    },
+    {
+      "id": 1006,
+      "title": "LDI-07",
+      "type": "stat",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 4,
+        "w": 2,
+        "h": 2
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "color": "#64748B",
+                  "text": "NO_DATA"
+                },
+                "1": {
+                  "color": "#F59E0B",
+                  "text": "IDLE"
+                },
+                "2": {
+                  "color": "#22C55E",
+                  "text": "OK"
+                }
+              }
+            }
+          ],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#64748B",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "gradientMode": "opacity"
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "text": {
+          "valueSize": 22,
+          "titleSize": 13
+        },
+        "noValue": "0",
+        "textMode": "value_and_name",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT CASE WHEN n IS NULL OR n = 0 THEN 0 WHEN any_running THEN 2 ELSE 1 END AS \"LDI-07\"\nFROM (\n  SELECT BOOL_OR(state) AS any_running, COUNT(*) AS n\n  FROM public.ldi_data\n  WHERE eqp_id = 'LDI-07' AND time > NOW() - INTERVAL '10 minutes'\n) x",
+          "format": "table"
+        }
+      ],
+      "description": "Live OK/IDLE/NO_DATA status for LDI-07."
+    },
+    {
+      "id": 1007,
+      "title": "LDI-08",
+      "type": "stat",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 14,
+        "y": 4,
+        "w": 2,
+        "h": 2
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "color": "#64748B",
+                  "text": "NO_DATA"
+                },
+                "1": {
+                  "color": "#F59E0B",
+                  "text": "IDLE"
+                },
+                "2": {
+                  "color": "#22C55E",
+                  "text": "OK"
+                }
+              }
+            }
+          ],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#64748B",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "gradientMode": "opacity"
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "text": {
+          "valueSize": 22,
+          "titleSize": 13
+        },
+        "noValue": "0",
+        "textMode": "value_and_name",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT CASE WHEN n IS NULL OR n = 0 THEN 0 WHEN any_running THEN 2 ELSE 1 END AS \"LDI-08\"\nFROM (\n  SELECT BOOL_OR(state) AS any_running, COUNT(*) AS n\n  FROM public.ldi_data\n  WHERE eqp_id = 'LDI-08' AND time > NOW() - INTERVAL '10 minutes'\n) x",
+          "format": "table"
+        }
+      ],
+      "description": "Live OK/IDLE/NO_DATA status for LDI-08."
+    },
+    {
+      "id": 1008,
+      "title": "LDI-09",
+      "type": "stat",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 4,
+        "w": 2,
+        "h": 2
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "color": "#64748B",
+                  "text": "NO_DATA"
+                },
+                "1": {
+                  "color": "#F59E0B",
+                  "text": "IDLE"
+                },
+                "2": {
+                  "color": "#22C55E",
+                  "text": "OK"
+                }
+              }
+            }
+          ],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#64748B",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "gradientMode": "opacity"
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "text": {
+          "valueSize": 22,
+          "titleSize": 13
+        },
+        "noValue": "0",
+        "textMode": "value_and_name",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT CASE WHEN n IS NULL OR n = 0 THEN 0 WHEN any_running THEN 2 ELSE 1 END AS \"LDI-09\"\nFROM (\n  SELECT BOOL_OR(state) AS any_running, COUNT(*) AS n\n  FROM public.ldi_data\n  WHERE eqp_id = 'LDI-09' AND time > NOW() - INTERVAL '10 minutes'\n) x",
+          "format": "table"
+        }
+      ],
+      "description": "Live OK/IDLE/NO_DATA status for LDI-09."
+    },
+    {
+      "id": 1009,
+      "title": "LDI-10",
+      "type": "stat",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 4,
+        "w": 2,
+        "h": 2
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "color": "#64748B",
+                  "text": "NO_DATA"
+                },
+                "1": {
+                  "color": "#F59E0B",
+                  "text": "IDLE"
+                },
+                "2": {
+                  "color": "#22C55E",
+                  "text": "OK"
+                }
+              }
+            }
+          ],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#64748B",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "gradientMode": "opacity"
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "text": {
+          "valueSize": 22,
+          "titleSize": 13
+        },
+        "noValue": "0",
+        "textMode": "value_and_name",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT CASE WHEN n IS NULL OR n = 0 THEN 0 WHEN any_running THEN 2 ELSE 1 END AS \"LDI-10\"\nFROM (\n  SELECT BOOL_OR(state) AS any_running, COUNT(*) AS n\n  FROM public.ldi_data\n  WHERE eqp_id = 'LDI-10' AND time > NOW() - INTERVAL '10 minutes'\n) x",
+          "format": "table"
+        }
+      ],
+      "description": "Live OK/IDLE/NO_DATA status for LDI-10."
     }
   ],
   "fiscalYearStartMonth": 0,
-  "links": [
-    {
-      "title": "Apex Circuit Fleet Command Center",
-      "url": "/d/ims-ldi-manufacturing/set2-manufacturing?from=${__from}&to=${__to}",
-      "type": "link",
-      "icon": "external link",
-      "targetBlank": false,
-      "keepTime": false,
-      "includeVars": true
-    },
-    {
-      "title": "Engineering Analytics & SPC",
-      "url": "/d/ims-ldi-engineering-analytics/set2-engineering?from=${__from}&to=${__to}",
-      "type": "link",
-      "icon": "external link",
-      "targetBlank": false,
-      "keepTime": false,
-      "includeVars": true
-    },
-    {
-      "title": "Incident Snapshot",
-      "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?from=${__from}&to=${__to}",
-      "type": "link",
-      "icon": "external link",
-      "targetBlank": false,
-      "keepTime": false,
-      "includeVars": true
-    }
-  ],
+  "links": [],
   "id": null,
   "uid": "ims-ldi-operator-andon",
   "title": "IMS LDI - Operator Andon Board",
