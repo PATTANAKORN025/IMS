@@ -2585,7 +2585,7 @@
     },
     {
       "id": 14,
-      "title": "◈ Latest Alarm Records (Historical)",
+      "title": "◈ Recent Alarm Events (Last 50)",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
@@ -2617,7 +2617,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nSELECT a.logdate AS \"Time\", a.equipmentid AS \"Machine\", a.errorcode AS \"errorcode\", a.errortime AS \"errortime\",\n       COALESCE(m.alarm_msg,a.errorcode::TEXT) AS \"Message\", COALESCE(m.severity,'UNMAPPED') AS \"Severity\"\nFROM public.ldi_alarm_log a\nLEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT=m.alarm_code::TEXT\nWHERE a.equipmentid IN (${machine_id:sqlstring}) ORDER BY a.logdate DESC LIMIT 30;",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope -- ORDER BY DESC LIMIT 50 already bounds it */\nSELECT\n  c.alarm_time AS \"Time\",\n  c.eqp_id AS \"Machine\",\n  c.errorcode AS \"Code\",\n  COALESCE(c.severity, 'UNMAPPED') AS \"Severity\",\n  c.alarm_msg AS \"Message\",\n  COALESCE(cat.category, 'UNCLASSIFIED') AS \"Subsystem\",\n  COALESCE(c.process, '-') AS \"Process\",\n  CASE\n    WHEN c.flag_pe_out_of_spec THEN 'PE/JE Out of Spec'\n    WHEN c.flag_thermal_out_of_spec THEN 'Thermal Out of Spec'\n    WHEN c.flag_humidity_out_of_spec THEN 'Humidity Out of Spec'\n    WHEN c.flag_vac_out_of_spec THEN 'Vacuum Out of Spec'\n    WHEN c.flag_scan_speed_out_of_spec THEN 'Motion Out of Spec'\n    WHEN c.flag_exposure_out_of_spec THEN 'Exposure Out of Spec'\n    WHEN c.match_type IS NULL THEN 'No Telemetry Linked'\n    ELSE 'Within Spec'\n  END AS \"Quality Impact\",\n  c.mo AS \"Job (MO)\",\n  CASE WHEN c.board_no IS NOT NULL THEN c.board_no::TEXT || '/' || c.total_board::TEXT ELSE '-' END AS \"Board\",\n  COALESCE(c.match_type, 'none') AS \"Match\"\nFROM public.v_ldi_alarm_context c\nLEFT JOIN public.v_ldi_alarm_category cat ON cat.alarm_code = c.errorcode\nWHERE c.eqp_id IN (${machine_id:sqlstring})\nORDER BY c.alarm_time DESC LIMIT 50;",
           "format": "table"
         }
       ],
@@ -2696,10 +2696,70 @@
                 "value": 6
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Quality Impact"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "PE/JE Out of Spec": {
+                        "color": "#EF4444",
+                        "index": 0
+                      },
+                      "Thermal Out of Spec": {
+                        "color": "#EF4444",
+                        "index": 1
+                      },
+                      "Humidity Out of Spec": {
+                        "color": "#EF4444",
+                        "index": 2
+                      },
+                      "Vacuum Out of Spec": {
+                        "color": "#EF4444",
+                        "index": 3
+                      },
+                      "Motion Out of Spec": {
+                        "color": "#EF4444",
+                        "index": 4
+                      },
+                      "Exposure Out of Spec": {
+                        "color": "#EF4444",
+                        "index": 5
+                      },
+                      "Within Spec": {
+                        "color": "#22C55E",
+                        "index": 6
+                      },
+                      "No Telemetry Linked": {
+                        "color": "#64748B",
+                        "index": 7
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "custom.displayMode",
+                "value": "color-text"
+              }
+            ]
           }
         ]
       },
-      "description": "Full alarm history for selected machines and time range. Sort by date to find root causes. World-Class QA pass: removed 8 dead column-name overrides (Timestamp, eqp_id, layer_name, mo, alarm_code, alarm_msg, lowercase severity, logdate) left over from earlier query rewrites -- none matched this panel's actual current output columns (Time, Machine, errorcode, errortime, Message, Severity), so they were inert."
+      "description": "Every alarm event, joined to the real Alarm Master (migration 061) for message/severity and to v_ldi_alarm_category for subsystem, plus the exact-or-nearest matched telemetry row (v_ldi_alarm_context, migration 063) for the machine's real process, job, and board at the moment of the alarm. \"Quality Impact\" reads the same out-of-spec flags the RCA Truth Test correlates against -- it answers whether this specific alarm coincided with a real measurable deviation, not just whether an alarm code fired. \"Match\" is 'exact' when related_log_id points at the exact telemetry row that caused a condition-driven alarm, 'nearest' for noise-pool codes falling back to the closest reading within 5 minutes."
     },
     {
       "id": 10006,
