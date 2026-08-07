@@ -353,7 +353,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT COUNT(*)::NUMERIC AS value\nFROM public.ldi_alarm_log a\nJOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\nWHERE a.logdate > NOW() - INTERVAL '1 hour' AND m.alarm_type = 'A';",
+          "rawSql": "SELECT COUNT(*)::NUMERIC AS value\nFROM public.ldi_alarm_log a\nJOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\nWHERE a.logdate > NOW() - INTERVAL '1 hour' AND m.severity IN ('Critical', 'Major');",
           "format": "table"
         }
       ],
@@ -449,7 +449,61 @@
         "defaults": {
           "custom": {}
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Severity"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "Critical": {
+                        "color": "#EF4444",
+                        "index": 0,
+                        "text": "Critical"
+                      },
+                      "Major": {
+                        "color": "#F59E0B",
+                        "index": 1,
+                        "text": "Major"
+                      },
+                      "Minor": {
+                        "color": "#EAB308",
+                        "index": 2,
+                        "text": "Minor"
+                      },
+                      "Warning": {
+                        "color": "#3B82F6",
+                        "index": 3,
+                        "text": "Warning"
+                      },
+                      "UNMAPPED": {
+                        "color": "#64748B",
+                        "index": 4,
+                        "text": "UNMAPPED"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
+              }
+            ]
+          }
+        ]
       },
       "targets": [
         {
@@ -457,7 +511,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT alarm_time AS \"Time\", eqp_id AS \"Machine\", errorcode AS \"Code\", alarm_msg AS \"Message\",\n       ROUND(temperature::NUMERIC, 1) AS \"Temp (°C)\", ROUND(humidity::NUMERIC, 1) AS \"Humidity (%RH)\",\n       match_type AS \"Match\"\nFROM public.v_ldi_alarm_context\nORDER BY alarm_time DESC LIMIT 50",
+          "rawSql": "SELECT alarm_time AS \"Time\", eqp_id AS \"Machine\", errorcode AS \"Code\", alarm_msg AS \"Message\",\n       COALESCE(severity, 'UNMAPPED') AS \"Severity\",\n       ROUND(temperature::NUMERIC, 1) AS \"Temp (°C)\", ROUND(humidity::NUMERIC, 1) AS \"Humidity (%RH)\",\n       match_type AS \"Match\"\nFROM public.v_ldi_alarm_context\nORDER BY alarm_time DESC LIMIT 50",
           "format": "table"
         }
       ],

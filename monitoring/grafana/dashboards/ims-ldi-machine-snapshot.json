@@ -504,29 +504,34 @@
                   {
                     "type": "value",
                     "options": {
-                      "A": {
+                      "Critical": {
                         "color": "#EF4444",
                         "index": 0,
-                        "text": "A (Alarm)"
+                        "text": "Critical"
                       },
-                      "W": {
+                      "Major": {
                         "color": "#F59E0B",
                         "index": 1,
-                        "text": "W (Warning)"
+                        "text": "Major"
                       },
-                      "OK": {
-                        "color": "#22C55E",
+                      "Minor": {
+                        "color": "#EAB308",
                         "index": 2,
-                        "text": "OK"
+                        "text": "Minor"
+                      },
+                      "Warning": {
+                        "color": "#3B82F6",
+                        "index": 3,
+                        "text": "Warning"
                       },
                       "UNMAPPED": {
                         "color": "#64748B",
-                        "index": 3,
+                        "index": 4,
                         "text": "UNMAPPED"
                       },
                       "NONE": {
                         "color": "#64748B",
-                        "index": 4,
+                        "index": 5,
                         "text": "No alarm"
                       }
                     }
@@ -1428,29 +1433,34 @@
                   {
                     "type": "value",
                     "options": {
-                      "A": {
+                      "Critical": {
                         "color": "#EF4444",
                         "index": 0,
-                        "text": "A (Alarm)"
+                        "text": "Critical"
                       },
-                      "W": {
+                      "Major": {
                         "color": "#F59E0B",
                         "index": 1,
-                        "text": "W (Warning)"
+                        "text": "Major"
                       },
-                      "OK": {
-                        "color": "#22C55E",
+                      "Minor": {
+                        "color": "#EAB308",
                         "index": 2,
-                        "text": "OK"
+                        "text": "Minor"
+                      },
+                      "Warning": {
+                        "color": "#3B82F6",
+                        "index": 3,
+                        "text": "Warning"
                       },
                       "UNMAPPED": {
                         "color": "#64748B",
-                        "index": 3,
+                        "index": 4,
                         "text": "UNMAPPED"
                       },
                       "NONE": {
                         "color": "#64748B",
-                        "index": 4,
+                        "index": 5,
                         "text": "No alarm"
                       }
                     }
@@ -1828,7 +1838,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nWITH target AS (SELECT \"time\" FROM public.ldi_data WHERE log_id=(COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:sqlstring}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:sqlstring}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1),\nselected_machine AS (\n SELECT DISTINCT eqp_id FROM public.ldi_data\n WHERE (${event_time_ms:sqlstring}::NUMERIC > 0 AND eqp_id = split_part(${clicked_series:sqlstring},' - ',1))\n    OR (COALESCE(${event_time_ms:sqlstring}::NUMERIC, 0) <= 0 AND eqp_id IN (${machine_id:sqlstring}))\n), alarm_rows AS (\nSELECT al.logdate AS \"Time\",al.equipmentid AS \"Machine\",al.errorcode::TEXT AS \"errorcode\",al.errortime::TEXT AS \"errortime\",\n COALESCE(m.alarm_msg,al.errorcode::TEXT) AS \"Message\",COALESCE(m.alarm_type,'UNMAPPED') AS \"Severity\"\nFROM public.ldi_alarm_log al CROSS JOIN selected_machine sm\nLEFT JOIN public.ldi_alarm_ms_code m ON al.errorcode::TEXT=m.alarm_code::TEXT\nWHERE al.equipmentid=sm.eqp_id\n AND al.logdate BETWEEN (SELECT \"time\"-INTERVAL '5 minutes' FROM target) AND (SELECT \"time\"+INTERVAL '5 minutes' FROM target)\n)\nSELECT \"Time\", \"Machine\", \"errorcode\", \"errortime\", \"Message\", \"Severity\" FROM alarm_rows\nUNION ALL\nSELECT target.\"time\",sm.eqp_id,NULL::TEXT,NULL::TEXT,'No alarm in +/-5 minutes (real data)','NONE'\nFROM target CROSS JOIN selected_machine sm WHERE NOT EXISTS (SELECT 1 FROM alarm_rows)\nORDER BY \"Time\" DESC;",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nWITH target AS (SELECT \"time\" FROM public.ldi_data WHERE log_id=(COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:sqlstring}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:sqlstring}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1),\nselected_machine AS (\n SELECT DISTINCT eqp_id FROM public.ldi_data\n WHERE (${event_time_ms:sqlstring}::NUMERIC > 0 AND eqp_id = split_part(${clicked_series:sqlstring},' - ',1))\n    OR (COALESCE(${event_time_ms:sqlstring}::NUMERIC, 0) <= 0 AND eqp_id IN (${machine_id:sqlstring}))\n), alarm_rows AS (\nSELECT al.logdate AS \"Time\",al.equipmentid AS \"Machine\",al.errorcode::TEXT AS \"errorcode\",al.errortime::TEXT AS \"errortime\",\n COALESCE(m.alarm_msg,al.errorcode::TEXT) AS \"Message\",COALESCE(m.severity,'UNMAPPED') AS \"Severity\"\nFROM public.ldi_alarm_log al CROSS JOIN selected_machine sm\nLEFT JOIN public.ldi_alarm_ms_code m ON al.errorcode::TEXT=m.alarm_code::TEXT\nWHERE al.equipmentid=sm.eqp_id\n AND al.logdate BETWEEN (SELECT \"time\"-INTERVAL '5 minutes' FROM target) AND (SELECT \"time\"+INTERVAL '5 minutes' FROM target)\n)\nSELECT \"Time\", \"Machine\", \"errorcode\", \"errortime\", \"Message\", \"Severity\" FROM alarm_rows\nUNION ALL\nSELECT target.\"time\",sm.eqp_id,NULL::TEXT,NULL::TEXT,'No alarm in +/-5 minutes (real data)','NONE'\nFROM target CROSS JOIN selected_machine sm WHERE NOT EXISTS (SELECT 1 FROM alarm_rows)\nORDER BY \"Time\" DESC;",
           "format": "table"
         }
       ],
@@ -1850,29 +1860,34 @@
                   {
                     "type": "value",
                     "options": {
-                      "A": {
+                      "Critical": {
                         "color": "#EF4444",
                         "index": 0,
-                        "text": "A (Alarm)"
+                        "text": "Critical"
                       },
-                      "W": {
+                      "Major": {
                         "color": "#F59E0B",
                         "index": 1,
-                        "text": "W (Warning)"
+                        "text": "Major"
                       },
-                      "OK": {
-                        "color": "#22C55E",
+                      "Minor": {
+                        "color": "#EAB308",
                         "index": 2,
-                        "text": "OK"
+                        "text": "Minor"
+                      },
+                      "Warning": {
+                        "color": "#3B82F6",
+                        "index": 3,
+                        "text": "Warning"
                       },
                       "UNMAPPED": {
                         "color": "#64748B",
-                        "index": 3,
+                        "index": 4,
                         "text": "UNMAPPED"
                       },
                       "NONE": {
                         "color": "#64748B",
-                        "index": 4,
+                        "index": 5,
                         "text": "No alarm"
                       }
                     }
@@ -2342,29 +2357,34 @@
                   {
                     "type": "value",
                     "options": {
-                      "A": {
+                      "Critical": {
                         "color": "#EF4444",
                         "index": 0,
-                        "text": "A (Alarm)"
+                        "text": "Critical"
                       },
-                      "W": {
+                      "Major": {
                         "color": "#F59E0B",
                         "index": 1,
-                        "text": "W (Warning)"
+                        "text": "Major"
                       },
-                      "OK": {
-                        "color": "#22C55E",
+                      "Minor": {
+                        "color": "#EAB308",
                         "index": 2,
-                        "text": "OK"
+                        "text": "Minor"
+                      },
+                      "Warning": {
+                        "color": "#3B82F6",
+                        "index": 3,
+                        "text": "Warning"
                       },
                       "UNMAPPED": {
                         "color": "#64748B",
-                        "index": 3,
+                        "index": 4,
                         "text": "UNMAPPED"
                       },
                       "NONE": {
                         "color": "#64748B",
-                        "index": 4,
+                        "index": 5,
                         "text": "No alarm"
                       }
                     }
@@ -2677,29 +2697,34 @@
                   {
                     "type": "value",
                     "options": {
-                      "A": {
+                      "Critical": {
                         "color": "#EF4444",
                         "index": 0,
-                        "text": "A (Alarm)"
+                        "text": "Critical"
                       },
-                      "W": {
+                      "Major": {
                         "color": "#F59E0B",
                         "index": 1,
-                        "text": "W (Warning)"
+                        "text": "Major"
                       },
-                      "OK": {
-                        "color": "#22C55E",
+                      "Minor": {
+                        "color": "#EAB308",
                         "index": 2,
-                        "text": "OK"
+                        "text": "Minor"
+                      },
+                      "Warning": {
+                        "color": "#3B82F6",
+                        "index": 3,
+                        "text": "Warning"
                       },
                       "UNMAPPED": {
                         "color": "#64748B",
-                        "index": 3,
+                        "index": 4,
                         "text": "UNMAPPED"
                       },
                       "NONE": {
                         "color": "#64748B",
-                        "index": 4,
+                        "index": 5,
                         "text": "No alarm"
                       }
                     }
