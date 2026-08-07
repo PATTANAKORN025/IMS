@@ -722,7 +722,7 @@
     },
     {
       "id": 1000,
-      "title": "LDI-01",
+      "title": "EXPOSURE LDI-2",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -800,15 +800,15 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT CASE WHEN n IS NULL OR n = 0 THEN 0 WHEN any_running THEN 2 ELSE 1 END AS \"LDI-01\"\nFROM (\n  SELECT BOOL_OR(state) AS any_running, COUNT(*) AS n\n  FROM public.ldi_data\n  WHERE eqp_id = 'LDI-01' AND time > NOW() - INTERVAL '10 minutes'\n) x",
+          "rawSql": "SELECT CASE WHEN n IS NULL OR n = 0 THEN 0 WHEN any_running THEN 2 ELSE 1 END AS \"EXPOSURE LDI-2\"\nFROM (\n  SELECT BOOL_OR(state) AS any_running, COUNT(*) AS n\n  FROM public.ldi_data\n  WHERE eqp_id = 'EXPOSURE LDI-2' AND time > NOW() - INTERVAL '10 minutes'\n) x",
           "format": "table"
         }
       ],
-      "description": "Live OK/IDLE/NO_DATA status for LDI-01."
+      "description": "Live OK/IDLE/NO_DATA status for EXPOSURE LDI-2."
     },
     {
       "id": 1001,
-      "title": "LDI-02",
+      "title": "EXPOSURE LDI-2B",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -886,15 +886,15 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT CASE WHEN n IS NULL OR n = 0 THEN 0 WHEN any_running THEN 2 ELSE 1 END AS \"LDI-02\"\nFROM (\n  SELECT BOOL_OR(state) AS any_running, COUNT(*) AS n\n  FROM public.ldi_data\n  WHERE eqp_id = 'LDI-02' AND time > NOW() - INTERVAL '10 minutes'\n) x",
+          "rawSql": "SELECT CASE WHEN n IS NULL OR n = 0 THEN 0 WHEN any_running THEN 2 ELSE 1 END AS \"EXPOSURE LDI-2B\"\nFROM (\n  SELECT BOOL_OR(state) AS any_running, COUNT(*) AS n\n  FROM public.ldi_data\n  WHERE eqp_id = 'EXPOSURE LDI-2B' AND time > NOW() - INTERVAL '10 minutes'\n) x",
           "format": "table"
         }
       ],
-      "description": "Live OK/IDLE/NO_DATA status for LDI-02."
+      "description": "Live OK/IDLE/NO_DATA status for EXPOSURE LDI-2B."
     },
     {
       "id": 1002,
-      "title": "LDI-03",
+      "title": "LDI002-LD1",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -972,15 +972,15 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT CASE WHEN n IS NULL OR n = 0 THEN 0 WHEN any_running THEN 2 ELSE 1 END AS \"LDI-03\"\nFROM (\n  SELECT BOOL_OR(state) AS any_running, COUNT(*) AS n\n  FROM public.ldi_data\n  WHERE eqp_id = 'LDI-03' AND time > NOW() - INTERVAL '10 minutes'\n) x",
+          "rawSql": "SELECT CASE WHEN n IS NULL OR n = 0 THEN 0 WHEN any_running THEN 2 ELSE 1 END AS \"LDI002-LD1\"\nFROM (\n  SELECT BOOL_OR(state) AS any_running, COUNT(*) AS n\n  FROM public.ldi_data\n  WHERE eqp_id = 'LDI002-LD1' AND time > NOW() - INTERVAL '10 minutes'\n) x",
           "format": "table"
         }
       ],
-      "description": "Live OK/IDLE/NO_DATA status for LDI-03."
+      "description": "Live OK/IDLE/NO_DATA status for LDI002-LD1."
     },
     {
       "id": 1003,
-      "title": "LDI-04",
+      "title": "LDI002-LD2",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -1058,15 +1058,15 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT CASE WHEN n IS NULL OR n = 0 THEN 0 WHEN any_running THEN 2 ELSE 1 END AS \"LDI-04\"\nFROM (\n  SELECT BOOL_OR(state) AS any_running, COUNT(*) AS n\n  FROM public.ldi_data\n  WHERE eqp_id = 'LDI-04' AND time > NOW() - INTERVAL '10 minutes'\n) x",
+          "rawSql": "SELECT CASE WHEN n IS NULL OR n = 0 THEN 0 WHEN any_running THEN 2 ELSE 1 END AS \"LDI002-LD2\"\nFROM (\n  SELECT BOOL_OR(state) AS any_running, COUNT(*) AS n\n  FROM public.ldi_data\n  WHERE eqp_id = 'LDI002-LD2' AND time > NOW() - INTERVAL '10 minutes'\n) x",
           "format": "table"
         }
       ],
-      "description": "Live OK/IDLE/NO_DATA status for LDI-04."
+      "description": "Live OK/IDLE/NO_DATA status for LDI002-LD2."
     },
     {
       "id": 1004,
-      "title": "LDI-05",
+      "title": "LDI-C-01",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -1144,15 +1144,15 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT CASE WHEN n IS NULL OR n = 0 THEN 0 WHEN any_running THEN 2 ELSE 1 END AS \"LDI-05\"\nFROM (\n  SELECT BOOL_OR(state) AS any_running, COUNT(*) AS n\n  FROM public.ldi_data\n  WHERE eqp_id = 'LDI-05' AND time > NOW() - INTERVAL '10 minutes'\n) x",
+          "rawSql": "SELECT CASE WHEN n IS NULL OR n = 0 THEN 0 WHEN any_running THEN 2 ELSE 1 END AS \"LDI-C-01\"\nFROM (\n  SELECT BOOL_OR(state) AS any_running, COUNT(*) AS n\n  FROM public.ldi_data\n  WHERE eqp_id = 'LDI-C-01' AND time > NOW() - INTERVAL '10 minutes'\n) x",
           "format": "table"
         }
       ],
-      "description": "Live OK/IDLE/NO_DATA status for LDI-05."
+      "description": "Live OK/IDLE/NO_DATA status for LDI-C-01."
     },
     {
       "id": 1005,
-      "title": "LDI-06",
+      "title": "LDI-C-02",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -1230,15 +1230,15 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT CASE WHEN n IS NULL OR n = 0 THEN 0 WHEN any_running THEN 2 ELSE 1 END AS \"LDI-06\"\nFROM (\n  SELECT BOOL_OR(state) AS any_running, COUNT(*) AS n\n  FROM public.ldi_data\n  WHERE eqp_id = 'LDI-06' AND time > NOW() - INTERVAL '10 minutes'\n) x",
+          "rawSql": "SELECT CASE WHEN n IS NULL OR n = 0 THEN 0 WHEN any_running THEN 2 ELSE 1 END AS \"LDI-C-02\"\nFROM (\n  SELECT BOOL_OR(state) AS any_running, COUNT(*) AS n\n  FROM public.ldi_data\n  WHERE eqp_id = 'LDI-C-02' AND time > NOW() - INTERVAL '10 minutes'\n) x",
           "format": "table"
         }
       ],
-      "description": "Live OK/IDLE/NO_DATA status for LDI-06."
+      "description": "Live OK/IDLE/NO_DATA status for LDI-C-02."
     },
     {
       "id": 1006,
-      "title": "LDI-07",
+      "title": "LDIA-01",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -1316,15 +1316,15 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT CASE WHEN n IS NULL OR n = 0 THEN 0 WHEN any_running THEN 2 ELSE 1 END AS \"LDI-07\"\nFROM (\n  SELECT BOOL_OR(state) AS any_running, COUNT(*) AS n\n  FROM public.ldi_data\n  WHERE eqp_id = 'LDI-07' AND time > NOW() - INTERVAL '10 minutes'\n) x",
+          "rawSql": "SELECT CASE WHEN n IS NULL OR n = 0 THEN 0 WHEN any_running THEN 2 ELSE 1 END AS \"LDIA-01\"\nFROM (\n  SELECT BOOL_OR(state) AS any_running, COUNT(*) AS n\n  FROM public.ldi_data\n  WHERE eqp_id = 'LDIA-01' AND time > NOW() - INTERVAL '10 minutes'\n) x",
           "format": "table"
         }
       ],
-      "description": "Live OK/IDLE/NO_DATA status for LDI-07."
+      "description": "Live OK/IDLE/NO_DATA status for LDIA-01."
     },
     {
       "id": 1007,
-      "title": "LDI-08",
+      "title": "LDIA-02",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -1402,15 +1402,15 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT CASE WHEN n IS NULL OR n = 0 THEN 0 WHEN any_running THEN 2 ELSE 1 END AS \"LDI-08\"\nFROM (\n  SELECT BOOL_OR(state) AS any_running, COUNT(*) AS n\n  FROM public.ldi_data\n  WHERE eqp_id = 'LDI-08' AND time > NOW() - INTERVAL '10 minutes'\n) x",
+          "rawSql": "SELECT CASE WHEN n IS NULL OR n = 0 THEN 0 WHEN any_running THEN 2 ELSE 1 END AS \"LDIA-02\"\nFROM (\n  SELECT BOOL_OR(state) AS any_running, COUNT(*) AS n\n  FROM public.ldi_data\n  WHERE eqp_id = 'LDIA-02' AND time > NOW() - INTERVAL '10 minutes'\n) x",
           "format": "table"
         }
       ],
-      "description": "Live OK/IDLE/NO_DATA status for LDI-08."
+      "description": "Live OK/IDLE/NO_DATA status for LDIA-02."
     },
     {
       "id": 1008,
-      "title": "LDI-09",
+      "title": "LDIA3-SM-LDI1",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -1488,15 +1488,15 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT CASE WHEN n IS NULL OR n = 0 THEN 0 WHEN any_running THEN 2 ELSE 1 END AS \"LDI-09\"\nFROM (\n  SELECT BOOL_OR(state) AS any_running, COUNT(*) AS n\n  FROM public.ldi_data\n  WHERE eqp_id = 'LDI-09' AND time > NOW() - INTERVAL '10 minutes'\n) x",
+          "rawSql": "SELECT CASE WHEN n IS NULL OR n = 0 THEN 0 WHEN any_running THEN 2 ELSE 1 END AS \"LDIA3-SM-LDI1\"\nFROM (\n  SELECT BOOL_OR(state) AS any_running, COUNT(*) AS n\n  FROM public.ldi_data\n  WHERE eqp_id = 'LDIA3-SM-LDI1' AND time > NOW() - INTERVAL '10 minutes'\n) x",
           "format": "table"
         }
       ],
-      "description": "Live OK/IDLE/NO_DATA status for LDI-09."
+      "description": "Live OK/IDLE/NO_DATA status for LDIA3-SM-LDI1."
     },
     {
       "id": 1009,
-      "title": "LDI-10",
+      "title": "LDIA3-SM-LDI2",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -1574,11 +1574,11 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT CASE WHEN n IS NULL OR n = 0 THEN 0 WHEN any_running THEN 2 ELSE 1 END AS \"LDI-10\"\nFROM (\n  SELECT BOOL_OR(state) AS any_running, COUNT(*) AS n\n  FROM public.ldi_data\n  WHERE eqp_id = 'LDI-10' AND time > NOW() - INTERVAL '10 minutes'\n) x",
+          "rawSql": "SELECT CASE WHEN n IS NULL OR n = 0 THEN 0 WHEN any_running THEN 2 ELSE 1 END AS \"LDIA3-SM-LDI2\"\nFROM (\n  SELECT BOOL_OR(state) AS any_running, COUNT(*) AS n\n  FROM public.ldi_data\n  WHERE eqp_id = 'LDIA3-SM-LDI2' AND time > NOW() - INTERVAL '10 minutes'\n) x",
           "format": "table"
         }
       ],
-      "description": "Live OK/IDLE/NO_DATA status for LDI-10."
+      "description": "Live OK/IDLE/NO_DATA status for LDIA3-SM-LDI2."
     }
   ],
   "fiscalYearStartMonth": 0,

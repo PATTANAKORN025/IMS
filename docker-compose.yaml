@@ -372,6 +372,7 @@ services:
       TEAMS_WEBHOOK_URL: ${TEAMS_WEBHOOK_URL:-}
       TEAMS_WEBHOOK_TYPE: ${TEAMS_WEBHOOK_TYPE:-AdaptiveCard}
       INGEST_API_KEY: ${INGEST_API_KEY:?set INGEST_API_KEY in .env}
+      LDI_SIMULATOR_ENABLED: ${LDI_SIMULATOR_ENABLED:-true}
     ports:
       - "127.0.0.1:${NODE_RED_PORT:-1880}:${NODE_RED_PORT:-1880}"
     volumes:
