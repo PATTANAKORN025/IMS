@@ -10,8 +10,41 @@ simulator generates synthetic `ldi_data`/`ldi_alarm_log` rows by default
 (`LDI_SIMULATOR_ENABLED=true` unless overridden), and `docker-compose.yaml`
 seeds a small mock alarm-code set via the tracked migrations. Real device
 identifiers (machine names like `LDI002-LD1`) ARE tracked, in migration
-040 — those are equipment reference metadata, not business data, and the
-dashboards need real names to query against.
+040 — those are equipment reference metadata, not business data. Migration
+040 also registers the 10 synthetic `LDI-01`..`LDI-10` devices the
+simulator writes, so both device sets exist on every deploy regardless of
+which data mode is active (required by migration 055's FK constraints).
+
+## Switching between mock and real data
+
+`scripts/switch-data-mode.sh` is the single command for moving between
+modes on a local machine. It never touches `data/real/` (real data always
+stays local-only and reproducible from those files):
+
+```bash
+bash scripts/switch-data-mode.sh mock    # default for development
+bash scripts/switch-data-mode.sh real    # requires data/real/*_clean.sql locally
+bash scripts/switch-data-mode.sh status  # row counts + current LDI_SIMULATOR_ENABLED
+```
+
+`mock` truncates `ldi_data`/`ldi_alarm_log`, resets `ldi_alarm_ms_code` to
+the 19-code mock catalog (migration 036 — exactly the codes
+`nodered_data/flows.json`'s `almsim_gen` can emit, kept in sync by
+`tests/lint/alarm-sync-linter.js`), and turns the simulator back on.
+`real` turns the simulator off, restores the full 1,820-row vendor catalog
+(migration 061), and re-runs `scripts/import-real-data.sh`. Both directions
+recreate the `node-red` container so the `LDI_SIMULATOR_ENABLED` env change
+actually takes effect (Node-RED reads it once at flow-deploy time).
+
+Dashboards that need a per-machine panel use the `machine_id` template
+variable (`SELECT DISTINCT eqp_id FROM ldi_data ...`) with Grafana's
+`repeat` panel feature rather than one hardcoded panel per device name —
+this is what lets the Andon board's per-machine tiles work unmodified in
+either mode. Migration 036's mock catalog previously drifted out of sync
+with the simulator's actual codes (10 of 19 unresolvable) after an
+unrelated code swap — if you ever change which codes `almsim_gen` can
+emit, re-run `node tests/lint/alarm-sync-linter.js` against mock mode to
+catch the same class of staleness.
 
 ## Source files
 
