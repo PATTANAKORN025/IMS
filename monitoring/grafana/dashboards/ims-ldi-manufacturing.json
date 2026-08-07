@@ -1134,7 +1134,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nSELECT COUNT(*)::NUMERIC AS value\nFROM public.ldi_alarm_log a\nJOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\nWHERE a.equipmentid IN (${machine_id:sqlstring}) AND m.alarm_type = 'A';",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nSELECT COUNT(*)::NUMERIC AS value\nFROM public.ldi_alarm_log a\nJOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\nWHERE a.equipmentid IN (${machine_id:sqlstring}) AND m.severity IN ('Critical', 'Major');",
           "format": "table"
         }
       ],
@@ -2617,7 +2617,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nSELECT a.logdate AS \"Time\", a.equipmentid AS \"Machine\", a.errorcode AS \"errorcode\", a.errortime AS \"errortime\",\n       COALESCE(m.alarm_msg,a.errorcode::TEXT) AS \"Message\", COALESCE(m.alarm_type,'UNMAPPED') AS \"Severity\"\nFROM public.ldi_alarm_log a\nLEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT=m.alarm_code::TEXT\nWHERE a.equipmentid IN (${machine_id:sqlstring}) ORDER BY a.logdate DESC LIMIT 30;",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nSELECT a.logdate AS \"Time\", a.equipmentid AS \"Machine\", a.errorcode AS \"errorcode\", a.errortime AS \"errortime\",\n       COALESCE(m.alarm_msg,a.errorcode::TEXT) AS \"Message\", COALESCE(m.severity,'UNMAPPED') AS \"Severity\"\nFROM public.ldi_alarm_log a\nLEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT=m.alarm_code::TEXT\nWHERE a.equipmentid IN (${machine_id:sqlstring}) ORDER BY a.logdate DESC LIMIT 30;",
           "format": "table"
         }
       ],
@@ -2640,24 +2640,29 @@
                   {
                     "type": "value",
                     "options": {
-                      "A": {
+                      "Critical": {
                         "color": "#EF4444",
                         "index": 0,
-                        "text": "A (Alarm)"
+                        "text": "Critical"
                       },
-                      "W": {
+                      "Major": {
                         "color": "#F59E0B",
                         "index": 1,
-                        "text": "W (Warning)"
+                        "text": "Major"
                       },
-                      "OK": {
-                        "color": "#22C55E",
+                      "Minor": {
+                        "color": "#EAB308",
                         "index": 2,
-                        "text": "OK"
+                        "text": "Minor"
+                      },
+                      "Warning": {
+                        "color": "#3B82F6",
+                        "index": 3,
+                        "text": "Warning"
                       },
                       "UNMAPPED": {
                         "color": "#64748B",
-                        "index": 3,
+                        "index": 4,
                         "text": "UNMAPPED"
                       }
                     }

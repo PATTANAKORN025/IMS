@@ -2,101 +2,129 @@
 /**
  * RCA Alarm-Category Coverage Linter
  *
- * v_ldi_alarm_category (database/migrations/036-ldi-alarm-master-mock.sql)
- * is the single source of truth mapping every alarm_id in ldi_alarm_ms_code
- * to an RCA category (VACUUM/REGISTRATION/ALIGNMENT/ENVIRONMENT/CALIBRATION/
- * MOTION/OPTICS/DATA_QUALITY/UNCLASSIFIED). Any code that falls through the
- * CASE to UNCLASSIFIED gets zero RCA correlation coverage anywhere in the
- * system: it won't be shown by any dashboard's Lift table, and nobody would
- * notice unless they went looking.
+ * v_ldi_alarm_category maps alarm codes to an RCA category (VACUUM/
+ * REGISTRATION/ALIGNMENT/ENVIRONMENT/CALIBRATION/MOTION/OPTICS/
+ * UNCLASSIFIED). Any code that falls through the CASE to UNCLASSIFIED
+ * gets zero RCA correlation coverage anywhere in the system.
  *
- * This linter is the tripwire: it parses the master code list and the
- * categorization CASE straight out of the SQL migration (no DB connection
- * needed — same static-analysis approach as alarm-sync-linter.js), computes
- * coverage %, and fails CI if it drops below MIN_COVERAGE_PCT. It also
- * checks that every category the RCA dashboard panels filter on
- * (ims-ldi-engineering-analytics.json, ims-ldi-manufacturing.json) actually
- * exists in the view's CASE — catching a typo'd or renamed category before
- * it silently zeroes out a panel.
+ * World-Class QA (2026-08-07): rewritten. The previous version parsed
+ * database/migrations/036-ldi-alarm-master-mock.sql statically -- the
+ * 20-code mock master superseded by the real ~1,820-code Alarm Master
+ * import (migration 061). Its "70% of the master must be categorized"
+ * floor doesn't scale to 1,820 codes: the overwhelming majority are real
+ * vendor faults (camera/servo/network/config) with no telemetry column
+ * in this system's schema to correlate against -- there's nothing
+ * actionable about categorizing them, and holding the whole master to a
+ * coverage floor would just pressure someone into inventing fake
+ * category mappings.
+ *
+ * The coverage that actually matters is over the codes the SIMULATOR can
+ * generate (nodered_data/flows.json, almsim_gen) -- those are the only
+ * ones that can ever appear in ldi_alarm_log, so they're the only ones
+ * an uncategorized code silently costs anything. Reads the live database
+ * (categories, and DISTINCT category values) instead of static-parsing
+ * SQL text, since the view's canonical serialized form uses `= ANY
+ * (ARRAY[...])`, not the hand-written `IN (...)` the old regex expected.
  *
  * Usage: node tests/lint/rca-mapping-coverage.js
  */
 
 const fs = require('fs');
 const path = require('path');
+const { execFileSync } = require('child_process');
 
-const MASTER_SQL_PATH = path.join(process.cwd(), 'database', 'migrations', '036-ldi-alarm-master-mock.sql');
+const SIMULATOR_PATH = path.join(process.cwd(), 'nodered_data', 'flows.json');
 const DASHBOARD_PATHS = [
   path.join(process.cwd(), 'monitoring', 'grafana', 'dashboards', 'ims-ldi-engineering-analytics.json'),
   path.join(process.cwd(), 'monitoring', 'grafana', 'dashboards', 'ims-ldi-manufacturing.json'),
 ];
+const CONTAINER = process.env.TIMESCALEDB_CONTAINER || 'ims-timescaledb';
+const DB_USER = process.env.POSTGRES_USER || 'ims_admin';
+const DB_NAME = process.env.POSTGRES_DB || 'ims';
 
-// Coverage floor: 14/20 = 70% of currently-seeded codes have a real
-// category today (6 fall to UNCLASSIFIED: 91012, 91020, 91024, 91029,
-// 97014, 20021 — all generic/vendor-catalog-pending codes with no clear
-// physical-parameter match). Any regression below this means a new code
-// was added to the master list without updating the categorization CASE.
-const MIN_COVERAGE_PCT = 70;
+// Coverage floor over simulator-generatable codes only (currently 19; see
+// alarm-sync-linter.js for the same extraction). 9 are condition-driven or
+// otherwise physically meaningful and already categorized (VACUUM,
+// REGISTRATION, ALIGNMENT x4, ENVIRONMENT, MOTION, CALIBRATION, OPTICS);
+// the 10 generic-noise replacement codes (camera/PLC/comms/network/DB
+// faults, migration 061) have no telemetry column to correlate against
+// and are expected to stay UNCLASSIFIED. 9/19 = ~47%.
+const MIN_COVERAGE_PCT = 45;
+
+function execSql(sql) {
+  const out = execFileSync(
+    'docker',
+    ['exec', '-i', CONTAINER, 'psql', '-U', DB_USER, '-d', DB_NAME, '-t', '-A', '-F', '\x01', '-c', sql],
+    { encoding: 'utf8' }
+  );
+  return out.split('\n').map(l => l.trim()).filter(Boolean).map(l => l.split('\x01'));
+}
 
 console.log('IMS RCA Alarm-Category Coverage Linter');
 console.log('='.repeat(50));
 
 try {
-  const sqlContent = fs.readFileSync(MASTER_SQL_PATH, 'utf8');
+  // 1. Simulator-generatable codes (same structured extraction as
+  //    alarm-sync-linter.js).
+  const simData = JSON.parse(fs.readFileSync(SIMULATOR_PATH, 'utf8'));
+  const alarmNode = simData.find(n => n.type === 'function' && n.id === 'almsim_gen');
+  if (!alarmNode || !alarmNode.func) {
+    throw new Error('Failed to find the almsim_gen alarm-generator node in nodered_data/flows.json.');
+  }
+  const func = alarmNode.func;
+  const simCodes = new Set();
 
-  // 1. Master code list: alarm_id is the first element of each INSERT
-  //    tuple, e.g. ('91009','W','91009','...
-  const masterRegex = /\('(\d+)','[AW]',/g;
-  const masterCodes = new Set();
-  let m;
-  while ((m = masterRegex.exec(sqlContent)) !== null) {
-    masterCodes.add(m[1]);
-  }
-  if (masterCodes.size === 0) {
-    throw new Error('Failed to parse master alarm codes from SQL migration.');
-  }
-  console.log(`[+] Master alarm codes: ${masterCodes.size}`);
+  const noiseCumMatch = func.match(/const NOISE_CUM = (\[[\s\S]*?\]);/);
+  if (!noiseCumMatch) throw new Error('Failed to find NOISE_CUM table in almsim_gen.');
+  for (const m of noiseCumMatch[1].matchAll(/\[\s*["']([^"']+)["']\s*,/g)) simCodes.add(m[1]);
 
-  // 2. Categorization: WHEN alarm_code IN ('a','b') THEN 'CATEGORY'
-  const caseRegex = /WHEN alarm_code IN \(([^)]+)\)\s+THEN '(\w+)'/g;
-  const codeToCategory = new Map();
-  const knownCategories = new Set();
-  while ((m = caseRegex.exec(sqlContent)) !== null) {
-    const codes = m[1].match(/'(\d+)'/g).map(s => s.replace(/'/g, ''));
-    const category = m[2];
-    knownCategories.add(category);
-    for (const code of codes) codeToCategory.set(code, category);
-  }
-  if (codeToCategory.size === 0) {
-    throw new Error('Failed to parse v_ldi_alarm_category CASE expression from SQL migration.');
-  }
-  console.log(`[+] Categorized codes: ${codeToCategory.size}, categories found: ${[...knownCategories].join(', ')}`);
+  const alignCodesMatch = func.match(/const ALIGN_CODES = (\[[^\]]*\]);/);
+  if (!alignCodesMatch) throw new Error('Failed to find ALIGN_CODES array in almsim_gen.');
+  for (const m of alignCodesMatch[1].matchAll(/["']([^"']+)["']/g)) simCodes.add(m[1]);
 
-  // 3. Coverage
+  for (const m of func.matchAll(/newRow\(r\.eqp_id,\s*["']([^"']+)["']/g)) simCodes.add(m[1]);
+
+  if (simCodes.size === 0) {
+    throw new Error('Failed to parse any simulator alarm codes from almsim_gen.');
+  }
+  console.log(`[+] Simulator-generatable codes: ${simCodes.size}`);
+
+  // 2. Live categorization for exactly those codes.
+  const codesList = [...simCodes].map(c => `'${c.replace(/'/g, "''")}'`).join(',');
+  const rows = execSql(`SELECT alarm_code, category FROM public.v_ldi_alarm_category WHERE alarm_code IN (${codesList});`);
+  const codeToCategory = new Map(rows.map(([code, cat]) => [code, cat]));
+
   const unclassified = [];
-  for (const code of masterCodes) {
-    const cat = codeToCategory.get(code); // undefined = falls to ELSE 'UNCLASSIFIED'
-    if (!cat) unclassified.push(code);
+  for (const code of simCodes) {
+    const cat = codeToCategory.get(code);
+    if (!cat || cat === 'UNCLASSIFIED') unclassified.push(code);
   }
-  const coveredCount = masterCodes.size - unclassified.length;
-  const coveragePct = Math.round((coveredCount / masterCodes.size) * 1000) / 10;
+  const coveredCount = simCodes.size - unclassified.length;
+  const coveragePct = Math.round((coveredCount / simCodes.size) * 1000) / 10;
 
   console.log('-'.repeat(50));
-  console.log(`Coverage: ${coveredCount}/${masterCodes.size} (${coveragePct}%)`);
+  console.log(`Coverage: ${coveredCount}/${simCodes.size} (${coveragePct}%)`);
   if (unclassified.length > 0) {
     console.log(`Unclassified codes: ${unclassified.sort().join(', ')}`);
   }
 
   let errors = 0;
-
   if (coveragePct < MIN_COVERAGE_PCT) {
     console.error(`  ERROR  Coverage ${coveragePct}% is below the ${MIN_COVERAGE_PCT}% floor.`);
     errors++;
   }
 
-  // 4. Cross-check: every category referenced by an RCA dashboard panel
-  //    must be a real category from the view's CASE (catches typos/renames
-  //    before they silently zero out a panel).
+  // 3. Known categories, live (DISTINCT over the whole master, not just
+  //    simulator codes, so a category only used by non-simulator vendor
+  //    codes still counts as "real").
+  const knownCategories = new Set(
+    execSql('SELECT DISTINCT category FROM public.v_ldi_alarm_category;').map(([c]) => c)
+  );
+  console.log(`[+] Known categories (live): ${[...knownCategories].sort().join(', ')}`);
+
+  // 4. Cross-check: every category an RCA dashboard panel filters on must
+  //    be real -- catches a typo'd/renamed category before it silently
+  //    zeroes out a panel.
   const categoryRefRegex = /category\s*=\s*'(\w+)'|category IN \(('[\w']+(?:,'[\w']+)*)\)/g;
   for (const dashPath of DASHBOARD_PATHS) {
     if (!fs.existsSync(dashPath)) continue;
@@ -114,7 +142,7 @@ try {
       }
     }
     if (referenced.size > 0) {
-      console.log(`[+] ${path.basename(dashPath)}: references categories ${[...referenced].join(', ')} — all valid`.replace('all valid', errors === 0 ? 'all valid' : 'checked'));
+      console.log(`[+] ${path.basename(dashPath)}: references categories ${[...referenced].join(', ')}`);
     }
   }
 
