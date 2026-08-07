@@ -8,6 +8,11 @@ secrets/
 *.key
 *.pem
 
+# Real production data (NEVER commit) — schema/views/functions/dashboards
+# are the only things this repo tracks; real LDI data lives here locally
+# only, loaded via scripts/import-real-data.sh. See docs/REAL-DATA-IMPORT.md.
+data/real/
+
 # Docker named-volume / local data dirs
 *_data/
 
