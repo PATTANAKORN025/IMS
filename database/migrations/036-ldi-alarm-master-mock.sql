@@ -3,14 +3,30 @@
 -- ══════════════════════════════════════════════════════════════════════════
 -- แนวคิดด้านความปลอดภัย:
 --   • เอกสารรหัส alarm ของผู้ผลิตมี 1,820 รายการ — ไฟล์นี้ "ไม่" คัดลอกมาทั้งหมด
---   • ใช้เฉพาะ 20 รหัสที่ปรากฏจริงใน production log ซึ่งครอบคลุม 100% ของ
---     เหตุการณ์ที่เกิดขึ้นจริง → ได้คุณค่าเชิงวิเคราะห์ครบ 100% โดยไม่ต้อง
+--   • ใช้เฉพาะรหัสที่ simulator (nodered_data/flows.json, almsim_gen) สร้างขึ้นจริง
+--     ครอบคลุม 100% ของรหัสที่ dashboard จะพบเจอในโหมด mock โดยไม่ต้อง
 --     เผยแพร่แคตตาล็อกของผู้ผลิต
 --   • ข้อความ alarm_msg/alarm_detail เขียนขึ้นใหม่เป็นคำอธิบายเชิงหน้าที่
 --     (functional description) ไม่ใช่การคัดลอกข้อความจากเอกสารผู้ผลิต
 --   • ตัวรหัสเป็นเพียงตัวเลขระบุเหตุการณ์ ไม่ใช่ความลับทางธุรกิจ
 --
--- schema ตรงกับ production 100% (5 คอลัมน์, ไม่เพิ่ม ไม่ลด)
+-- schema ตรงกับ production 100% (severity เพิ่มโดย migration 061, ALTER
+-- TABLE ... ADD COLUMN IF NOT EXISTS ที่นั่นครอบคลุมกรณีนี้แล้ว)
+--
+-- Mock↔real switch (2026-08-07): re-synced against the LIVE simulator.
+-- Migration 100 (nodered_data/flows.json) swapped almsim_gen's noise-pool
+-- codes 91012/91017/91020/91024/93007/91029/97014/20/20021/2 (invented for
+-- early prototyping, never in the real vendor list) 1:1 for real generic-
+-- fault codes the real machines actually use -- but never came back to
+-- update this file, so scripts/switch-data-mode.sh mock would have left 10
+-- of the simulator's 19 codes unresolvable via v_ldi_alarm_context (no
+-- Alarm Master row -> no message/severity). This version has exactly the
+-- 19 codes almsim_gen can currently emit (NOISE_CUM + ALIGN_CODES +
+-- condition-driven literals '91008'/'70004'/'91009') -- 9 carried over
+-- unchanged, 10 new ones added with fresh functional descriptions (their
+-- real vendor text, e.g. "Failed to connect to PLC", is itself already a
+-- generic technical phrase, not proprietary content, but detail text below
+-- is still an independent rewrite per this file's stated policy).
 -- ══════════════════════════════════════════════════════════════════════════
 
 BEGIN;
@@ -29,39 +45,40 @@ INSERT INTO public.ldi_alarm_ms_code (alarm_id, alarm_type, alarm_code, alarm_ms
  'รอบการสอบเทียบไม่สมบูรณ์หรือไม่ได้เริ่มตามกำหนด'),
 ('90001','W','90001','Inner layer alignment to grip point failed',
  'การจัดตำแหน่งชั้นในกับจุดจับยึดล้มเหลว ตรวจสอบค่า PE ของชั้นใน'),
-('90013','W','90013','Alignment sequence aborted (code not in vendor catalog 2025-07)',
- 'พบในระบบจริงแต่ยังไม่มีในเอกสารรหัสเวอร์ชัน 2025-07-23 — ต้องขอเอกสารรุ่นใหม่จากผู้ผลิต'),
 ('90012','W','90012','Alignment failed and operator cancelled exposure',
  'ผู้ปฏิบัติงานยกเลิกการฉายแสงหลังการจัดตำแหน่งล้มเหลว'),
-('91012','W','91012','Process parameter deviation (code not in vendor catalog 2025-07)',
- 'พบในระบบจริงแต่ยังไม่มีในเอกสารรหัสเวอร์ชัน 2025-07-23'),
 ('91008','W','91008','Ambient temperature or humidity abnormal',
  'อุณหภูมิหรือความชื้นในห้องหลุดสเปก ตรวจสอบคอลัมน์ temperature (22±2°C) / humidity (55±5%)'),
-('91017','W','91017','Environmental control deviation (code not in vendor catalog 2025-07)',
- 'พบในระบบจริงแต่ยังไม่มีในเอกสารรหัสเวอร์ชัน 2025-07-23'),
-('91020','W','91020','Process interlock triggered (code not in vendor catalog 2025-07)',
- 'พบในระบบจริงแต่ยังไม่มีในเอกสารรหัสเวอร์ชัน 2025-07-23'),
-('91024','W','91024','Process supervision event (code not in vendor catalog 2025-07)',
- 'พบในระบบจริงแต่ยังไม่มีในเอกสารรหัสเวอร์ชัน 2025-07-23'),
-('93007','W','93007','Calibration verification event (code not in vendor catalog 2025-07)',
- 'พบในระบบจริงแต่ยังไม่มีในเอกสารรหัสเวอร์ชัน 2025-07-23'),
-('91029','W','91029','Process condition warning (code not in vendor catalog 2025-07)',
- 'พบในระบบจริงแต่ยังไม่มีในเอกสารรหัสเวอร์ชัน 2025-07-23'),
-('97014','W','97014','Auxiliary subsystem warning (code not in vendor catalog 2025-07)',
- 'พบในระบบจริงแต่ยังไม่มีในเอกสารรหัสเวอร์ชัน 2025-07-23'),
 -- ── กลุ่ม 7xxxx: Motion ────────────────────────────────────────────────
 ('70004','W','70004','Position-synchronised output overspeed',
  'ความเร็วสแกนเกินขีดจำกัดของระบบซิงค์ตำแหน่ง ตรวจสอบคอลัมน์ scan_speed'),
 -- ── กลุ่ม 1xxxx: Optics ────────────────────────────────────────────────
 ('10006','A','10006','Failed to set imaging device to protection mode',
  'ตั้งค่าอุปกรณ์สร้างภาพเข้าสู่โหมดป้องกันไม่สำเร็จ'),
--- ── รหัสผิดรูปแบบที่พบในระบบจริง (เก็บไว้เพื่อให้ dashboard สะท้อนความจริง) ──
-('20','A','20','Malformed alarm code (truncated at source)',
- 'รหัสสั้นผิดรูปแบบ เกิดจากข้อมูลถูกตัดที่ระบบต้นทาง — เป็นปัญหาคุณภาพข้อมูล ไม่ใช่ alarm จริง'),
-('20021','A','20021','Unclassified equipment event',
- 'เหตุการณ์ที่ยังไม่ถูกจัดหมวด'),
-('2','A','2','Malformed alarm code (truncated at source)',
- 'รหัสหลักเดียว เกิดจากข้อมูลถูกตัดที่ระบบต้นทาง — เป็นปัญหาคุณภาพข้อมูล');
+-- ── Camera / vision subsystem ────────────────────────────────────────
+('01060009','A','01060009','Wrong camera serial number',
+ 'หมายเลขซีเรียลกล้องที่ตรวจพบไม่ตรงกับที่ตั้งค่าไว้ในระบบ'),
+('0106000C','A','0106000C','Failed to stop camera',
+ 'สั่งหยุดการทำงานของกล้องไม่สำเร็จ'),
+('0106001C','A','0106001C','Stop trigger wait signal timeout',
+ 'รอสัญญาณ trigger เพื่อหยุดการทำงานนานเกินกำหนด'),
+-- ── Network / connectivity ────────────────────────────────────────────
+('01060013','A','01060013','Found the same IP',
+ 'ตรวจพบ IP ซ้ำกันบนเครือข่ายกล้อง/อุปกรณ์ อาจเกิดจากการตั้งค่าเครือข่ายผิดพลาด'),
+('92013','W','92013','Network connection timeout',
+ 'การเชื่อมต่อเครือข่ายหมดเวลา ตรวจสอบสถานะเครือข่ายของเครื่อง'),
+-- ── Motor / PLC / general comms ──────────────────────────────────────
+('010E0064','A','010E0064','Motor type undefined',
+ 'ยังไม่ได้กำหนดชนิดของมอเตอร์ในระบบ'),
+('01100001','A','01100001','Failed to connect to PLC',
+ 'เชื่อมต่อกับ PLC ไม่สำเร็จ ตรวจสอบสายสัญญาณ/การตั้งค่าเครือข่ายกับ PLC'),
+('01130002','A','01130002','Communication abnormality',
+ 'การสื่อสารระหว่างอุปกรณ์ผิดปกติ'),
+-- ── Process / data pipeline ──────────────────────────────────────────
+('80001','W','80001','Waiting for subdrawing preparation data timeout',
+ 'รอข้อมูลเตรียมภาพย่อย (subdrawing) นานเกินกำหนด'),
+('97005','W','97005','Database connection exception',
+ 'การเชื่อมต่อฐานข้อมูลผิดปกติ');
 
 -- ══════════════════════════════════════════════════════════════════════════
 -- VIEW: จับคู่ alarm กับ "คอลัมน์ที่ควรตรวจสอบ" ใน ldi_data
@@ -71,14 +88,20 @@ INSERT INTO public.ldi_alarm_ms_code (alarm_id, alarm_type, alarm_code, alarm_ms
 CREATE OR REPLACE VIEW public.v_ldi_alarm_category AS
 SELECT alarm_code,
     CASE
-        WHEN alarm_code IN ('91009')                   THEN 'VACUUM'
-        WHEN alarm_code IN ('90005')                   THEN 'REGISTRATION'
-        WHEN alarm_code IN ('90001','90004','90012','90013') THEN 'ALIGNMENT'
-        WHEN alarm_code IN ('93004','93007')           THEN 'CALIBRATION'
-        WHEN alarm_code IN ('91008','91017')           THEN 'ENVIRONMENT'
-        WHEN alarm_code IN ('70004')                   THEN 'MOTION'
-        WHEN alarm_code IN ('10006')                   THEN 'OPTICS'
-        WHEN alarm_code IN ('2','20')                  THEN 'DATA_QUALITY'
+        WHEN alarm_code IN ('91009')                       THEN 'VACUUM'
+        WHEN alarm_code IN ('90005')                       THEN 'REGISTRATION'
+        WHEN alarm_code IN ('90001','90004','90012')       THEN 'ALIGNMENT'
+        WHEN alarm_code IN ('93004')                       THEN 'CALIBRATION'
+        WHEN alarm_code IN ('91008')                       THEN 'ENVIRONMENT'
+        WHEN alarm_code IN ('70004')                       THEN 'MOTION'
+        WHEN alarm_code IN ('10006','01060009','0106000C','0106001C')
+                                                            THEN 'CAMERA'
+        WHEN alarm_code IN ('01060013','92013')            THEN 'NETWORK'
+        WHEN alarm_code IN ('010E0064')                    THEN 'MOTOR'
+        WHEN alarm_code IN ('01100001')                    THEN 'PLC'
+        WHEN alarm_code IN ('01130002')                    THEN 'COMMUNICATION'
+        WHEN alarm_code IN ('97005')                       THEN 'DATABASE'
+        WHEN alarm_code IN ('80001')                       THEN 'PROCESS'
         ELSE 'UNCLASSIFIED'
     END AS category,
     CASE
