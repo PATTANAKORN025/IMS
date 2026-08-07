@@ -194,7 +194,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH machines AS (\n  SELECT device_id AS eqp_id FROM public.devices WHERE device_type='ldi' AND enabled AND device_id IN (${machine_id:sqlstring})\n),\nlatest AS (\n  SELECT DISTINCT ON (eqp_id) eqp_id, state\n  FROM public.ldi_data\n  WHERE $__timeFilter(time) AND factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring})\n  ORDER BY eqp_id, time DESC\n)\nSELECT ROUND((COUNT(*) FILTER (WHERE l.state = true) * 100.0 / NULLIF(COUNT(*), 0))::NUMERIC, 0) AS value\nFROM machines m LEFT JOIN latest l ON l.eqp_id = m.eqp_id",
+          "rawSql": "/* QUERY_BUDGET_EXEMPT-safe rewrite (World-Class QA, 2026-08-06): same\n   DISTINCT-ON-vs-compressed-chunks fix as the \"Machines Running\" panel --\n   see that panel's comment. */\nWITH machines AS (\n  SELECT device_id AS eqp_id FROM public.devices WHERE device_type='ldi' AND enabled AND device_id IN (${machine_id:sqlstring})\n)\nSELECT ROUND((COUNT(*) FILTER (WHERE l.state = true) * 100.0 / NULLIF(COUNT(*), 0))::NUMERIC, 0) AS value\nFROM machines m\nLEFT JOIN LATERAL (\n  SELECT state FROM public.ldi_data d\n  WHERE d.eqp_id = m.eqp_id AND $__timeFilter(d.time) AND d.factory IN (${factory:sqlstring}) AND d.mo IN (${mo:sqlstring})\n  ORDER BY d.time DESC LIMIT 1\n) l ON true",
           "format": "table"
         }
       ],
@@ -465,7 +465,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH machines AS (\n  SELECT device_id AS eqp_id FROM public.devices WHERE device_type='ldi' AND enabled AND device_id IN (${machine_id:sqlstring})\n),\nlatest AS (\n  SELECT DISTINCT ON (eqp_id) eqp_id, state\n  FROM public.ldi_data\n  WHERE $__timeFilter(time) AND factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring})\n  ORDER BY eqp_id, time DESC\n)\nSELECT COUNT(*) FILTER (WHERE l.state = true) AS value\nFROM machines m LEFT JOIN latest l ON l.eqp_id = m.eqp_id",
+          "rawSql": "/* QUERY_BUDGET_EXEMPT-safe rewrite (World-Class QA, 2026-08-06): DISTINCT ON\n   over the full requested time range forced a full scan+sort of every chunk\n   (221K+ rows for the 30-day worst case this budget check tests), and once\n   TimescaleDB's compress_after policy started compressing older chunks that\n   became a real regression -- a per-device LATERAL lookup uses the\n   (eqp_id, time DESC) index to jump straight to each device's latest row\n   instead, the same pattern already proven in v_ldi_machine_latest_full. */\nWITH machines AS (\n  SELECT device_id AS eqp_id FROM public.devices WHERE device_type='ldi' AND enabled AND device_id IN (${machine_id:sqlstring})\n)\nSELECT COUNT(*) FILTER (WHERE l.state = true) AS value\nFROM machines m\nLEFT JOIN LATERAL (\n  SELECT state FROM public.ldi_data d\n  WHERE d.eqp_id = m.eqp_id AND $__timeFilter(d.time) AND d.factory IN (${factory:sqlstring}) AND d.mo IN (${mo:sqlstring})\n  ORDER BY d.time DESC LIMIT 1\n) l ON true",
           "format": "table"
         }
       ],
