@@ -252,7 +252,20 @@
             "fillOpacity": 15,
             "lineWidth": 2
           },
-          "decimals": 2
+          "decimals": 2,
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "text": "NO_DATA",
+                  "color": "#64748B"
+                }
+              }
+            }
+          ],
+          "noValue": "NO_DATA"
         },
         "overrides": [
           {
@@ -291,11 +304,11 @@
           ],
           "values": false
         },
-        "noValue": "N/A",
+        "noValue": "NO_DATA",
         "textMode": "auto",
         "text": {
-          "valueSize": 48,
-          "titleSize": 14
+          "valueSize": 56,
+          "titleSize": 18
         }
       },
       "targets": [
@@ -361,7 +374,20 @@
           "color": {
             "mode": "fixed",
             "fixedColor": "#00F2FE"
-          }
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "text": "NO_DATA",
+                  "color": "#64748B"
+                }
+              }
+            }
+          ],
+          "noValue": "NO_DATA"
         },
         "overrides": [
           {
@@ -400,11 +426,11 @@
           ],
           "values": false
         },
-        "noValue": "N/A",
+        "noValue": "NO_DATA",
         "textMode": "auto",
         "text": {
-          "valueSize": 48,
-          "titleSize": 14
+          "valueSize": 56,
+          "titleSize": 18
         }
       },
       "targets": [
@@ -606,11 +632,11 @@
           }
         ],
         "rowHeight": 0.4,
-        "cellHeight": "sm",
+        "cellHeight": "lg",
         "footer": {
           "show": false
         },
-        "noValue": "-"
+        "noValue": "NO_DATA"
       },
       "targets": [
         {
@@ -763,7 +789,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#10B981"
+                  "fixedColor": "#22C55E"
                 }
               }
             ]
@@ -828,7 +854,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#10B981",
+                  "fixedColor": "#22C55E",
                   "mode": "fixed"
                 }
               }
@@ -1095,7 +1121,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#10B981"
+                  "fixedColor": "#22C55E"
                 }
               }
             ]
@@ -1160,7 +1186,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#10B981",
+                  "fixedColor": "#22C55E",
                   "mode": "fixed"
                 }
               }
@@ -1393,7 +1419,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#00E5FF"
+                  "fixedColor": "#00F2FE"
                 }
               }
             ]
@@ -1582,7 +1608,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#10B981"
+                  "fixedColor": "#22C55E"
                 }
               }
             ]
@@ -1647,7 +1673,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#10B981",
+                  "fixedColor": "#22C55E",
                   "mode": "fixed"
                 }
               }

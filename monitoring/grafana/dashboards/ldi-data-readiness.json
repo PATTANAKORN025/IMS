@@ -863,7 +863,7 @@
         "footer": {
           "show": false
         },
-        "noValue": "-"
+        "noValue": "NO_DATA"
       }
     },
     {
@@ -912,7 +912,7 @@
         "footer": {
           "show": false
         },
-        "noValue": "-"
+        "noValue": "NO_DATA"
       }
     },
     {
@@ -961,7 +961,7 @@
         "footer": {
           "show": false
         },
-        "noValue": "-"
+        "noValue": "NO_DATA"
       }
     },
     {
@@ -1010,7 +1010,7 @@
         "footer": {
           "show": false
         },
-        "noValue": "-"
+        "noValue": "NO_DATA"
       }
     },
     {
@@ -1059,7 +1059,7 @@
         "footer": {
           "show": false
         },
-        "noValue": "-"
+        "noValue": "NO_DATA"
       }
     }
   ]

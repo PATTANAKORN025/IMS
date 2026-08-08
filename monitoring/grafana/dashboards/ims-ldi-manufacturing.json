@@ -205,7 +205,7 @@
                   "mode": "absolute",
                   "steps": [
                     {
-                      "color": "#E5484D",
+                      "color": "#EF4444",
                       "value": null
                     },
                     {
@@ -330,7 +330,7 @@
                   "mode": "absolute",
                   "steps": [
                     {
-                      "color": "#E5484D",
+                      "color": "#EF4444",
                       "value": null
                     },
                     {
@@ -550,7 +550,7 @@
                   "mode": "absolute",
                   "steps": [
                     {
-                      "color": "#E5484D",
+                      "color": "#EF4444",
                       "value": null
                     },
                     {
@@ -1016,7 +1016,7 @@
                   "mode": "absolute",
                   "steps": [
                     {
-                      "color": "#E5484D",
+                      "color": "#EF4444",
                       "value": null
                     },
                     {
@@ -1102,7 +1102,20 @@
             "lineInterpolation": "smooth",
             "fillOpacity": 15,
             "lineWidth": 2
-          }
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "text": "NO_DATA",
+                  "color": "#64748B"
+                }
+              }
+            }
+          ],
+          "noValue": "NO_DATA"
         },
         "overrides": []
       },
@@ -1230,7 +1243,7 @@
                   "mode": "absolute",
                   "steps": [
                     {
-                      "color": "#E5484D",
+                      "color": "#EF4444",
                       "value": null
                     },
                     {
@@ -1368,7 +1381,7 @@
                   "mode": "absolute",
                   "steps": [
                     {
-                      "color": "#E5484D",
+                      "color": "#EF4444",
                       "value": null
                     },
                     {
@@ -1455,7 +1468,7 @@
         "footer": {
           "show": false
         },
-        "noValue": "-"
+        "noValue": "NO_DATA"
       },
       "targets": [
         {
@@ -2609,7 +2622,7 @@
         "footer": {
           "show": false
         },
-        "noValue": "-"
+        "noValue": "NO_DATA"
       },
       "targets": [
         {
@@ -2801,7 +2814,7 @@
         "footer": {
           "show": false
         },
-        "noValue": "-"
+        "noValue": "NO_DATA"
       },
       "fieldConfig": {
         "defaults": {

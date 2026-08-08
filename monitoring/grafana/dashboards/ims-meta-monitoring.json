@@ -218,7 +218,20 @@
             "lineInterpolation": "smooth",
             "fillOpacity": 15,
             "lineWidth": 2
-          }
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "text": "NO_DATA",
+                  "color": "#64748B"
+                }
+              }
+            }
+          ],
+          "noValue": "NO_DATA"
         },
         "overrides": [
           {
@@ -256,7 +269,7 @@
       ],
       "description": "Timestamp of the most recent successful batch flush to TimescaleDB.",
       "options": {
-        "noValue": "No data",
+        "noValue": "NO_DATA",
         "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "auto",
@@ -325,7 +338,20 @@
             "lineInterpolation": "smooth",
             "fillOpacity": 15,
             "lineWidth": 2
-          }
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "text": "NO_DATA",
+                  "color": "#64748B"
+                }
+              }
+            }
+          ],
+          "noValue": "NO_DATA"
         },
         "overrides": [
           {
@@ -401,7 +427,7 @@
                 "value": null
               },
               {
-                "color": "#2563EB",
+                "color": "#3B82F6",
                 "value": 1
               }
             ]
@@ -411,7 +437,20 @@
             "lineInterpolation": "smooth",
             "fillOpacity": 15,
             "lineWidth": 2
-          }
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "text": "NO_DATA",
+                  "color": "#64748B"
+                }
+              }
+            }
+          ],
+          "noValue": "NO_DATA"
         },
         "overrides": [
           {
@@ -485,7 +524,20 @@
             "lineInterpolation": "smooth",
             "fillOpacity": 15,
             "lineWidth": 2
-          }
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "text": "NO_DATA",
+                  "color": "#64748B"
+                }
+              }
+            }
+          ],
+          "noValue": "NO_DATA"
         },
         "overrides": [
           {
@@ -748,7 +800,7 @@
         "footer": {
           "show": false
         },
-        "noValue": "-"
+        "noValue": "NO_DATA"
       }
     },
     {
@@ -810,7 +862,20 @@
             "lineInterpolation": "smooth",
             "fillOpacity": 15,
             "lineWidth": 2
-          }
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "text": "NO_DATA",
+                  "color": "#64748B"
+                }
+              }
+            }
+          ],
+          "noValue": "NO_DATA"
         },
         "overrides": [
           {
@@ -963,7 +1028,20 @@
               }
             ]
           },
-          "custom": {}
+          "custom": {},
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "text": "NO_DATA",
+                  "color": "#64748B"
+                }
+              }
+            }
+          ],
+          "noValue": "NO_DATA"
         },
         "overrides": [
           {
@@ -1001,7 +1079,7 @@
       ],
       "description": "Ratio of successful inserts to total inserts (success / (success + failure)).",
       "options": {
-        "noValue": "N/A",
+        "noValue": "NO_DATA",
         "showThresholdLabels": true,
         "showThresholdMarkers": true,
         "text": {

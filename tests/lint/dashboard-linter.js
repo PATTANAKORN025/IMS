@@ -16,6 +16,10 @@
  *  13. Panel gridPos.h uses the standard height system (warn — not all
  *      dashboards have been migrated yet, see ALLOWED_HEIGHTS)
  *  14. Kiosk dashboards (MAX_HEIGHT) don't exceed their no-scroll ceiling
+ *  15. thresholds.steps[].color and mappings[].options.color use only the
+ *      approved token set (GRAFANA_DESIGN_SYSTEM.md §2.1) — this check IS
+ *      the "central design token" enforcement the doc refers to; add new
+ *      colors to APPROVED_TOKENS there first, then here
  *
  * Usage: node tests/lint/dashboard-linter.js
  */
@@ -39,6 +43,20 @@ const ALLOWED_HEIGHTS = [1, 4, 5, 6, 8, 10, 16];
 const MAX_HEIGHT = {
   'ims-ldi-operator-andon': 20, // factory-floor kiosk, zero scroll at 720p (Phase 2 tile redesign)
 };
+
+// GRAFANA_DESIGN_SYSTEM.md §2.1 — the merged, single palette. Anything used
+// in thresholds.steps[].color or mappings[].options.color must be one of
+// these (case-insensitive) or explicitly whitelisted below.
+const APPROVED_TOKENS = new Set([
+  '#22c55e', // ok
+  '#f59e0b', // warning
+  '#ef4444', // critical
+  '#00f2fe', // info
+  '#3b82f6', // accent
+  '#64748b', // no_data
+  '#4a5568', // forecast
+  '#eab308', // severity-minor (4th ISA-18.2 tier, distinct from warning)
+]);
 
 let errors = 0;
 let warnings = 0;
@@ -131,6 +149,25 @@ function lintDashboard(filePath) {
     if (['stat', 'gauge'].includes(panel.type)) {
       if (!panel.options?.noValue) {
         warn(file, pid, `Missing options.noValue (shows "No data" text)`);
+      }
+    }
+
+    // Check 15: color-token compliance (GRAFANA_DESIGN_SYSTEM.md §2.1)
+    const hexRe = /^#[0-9a-fA-F]{6}$/;
+    for (const step of (panel.fieldConfig?.defaults?.thresholds?.steps || [])) {
+      if (step.color && hexRe.test(step.color) && !APPROVED_TOKENS.has(step.color.toLowerCase())) {
+        error(file, pid, `Threshold step color ${step.color} is not an approved token (GRAFANA_DESIGN_SYSTEM.md §2.1)`);
+      }
+    }
+    for (const mapping of (panel.fieldConfig?.defaults?.mappings || [])) {
+      const opts = mapping.options || {};
+      const colorEntries = mapping.type === 'value'
+        ? Object.values(opts).map(v => v && v.color).filter(Boolean)
+        : [opts.result?.color].filter(Boolean);
+      for (const c of colorEntries) {
+        if (hexRe.test(c) && !APPROVED_TOKENS.has(c.toLowerCase())) {
+          error(file, pid, `Value-mapping color ${c} is not an approved token (GRAFANA_DESIGN_SYSTEM.md §2.1)`);
+        }
       }
     }
 

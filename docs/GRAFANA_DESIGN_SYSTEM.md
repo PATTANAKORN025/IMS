@@ -18,46 +18,43 @@
 
 ## 2. Color System
 
-### 2.1 Semantic Palette (ห้ามใช้สีนอกตารางนี้เพื่อสื่อสถานะ)
+### 2.1 Semantic Palette — ONE table, every dashboard (merged 2026-08-08)
+
+Until now this repo ran **two** separate palettes: §2.1 for NOC/Engineering/Capacity
+and a distinct "LDI Kiosk" palette for the 5 LDI dashboards. In practice both had
+already drifted onto the *same* hex values almost everywhere (verified by counting
+every `#RRGGBB` literal across all 10 dashboard files before writing this section) —
+the two-table split had become a documentation fiction, not a real design boundary.
+Merged into one table, applied to **all 10 dashboards** including the LDI kiosk set.
+No dashboard is exempt.
 
 | Token | Hex Code | ความหมาย | ใช้กับ |
 |---|---|---|---|
-| `info` | `#00E5FF` | ข้อมูลหลัก / สถานะปกติ | RX (Download), Windows series, CPU normal |
+| `ok` | `#22C55E` | สถานะดี / ปกติ | Healthy, running, PASS, Capable+ thresholds — any "this is fine" verdict |
+| `warning` | `#F59E0B` | เฝ้าระวัง ยังไม่ฉุกเฉิน | IDLE, Marginal, warning thresholds |
+| `critical` | `#EF4444` | อันตราย ต้องแก้เดี๋ยวนี้ | OUT OF SPEC, critical thresholds, error states |
+| `info` | `#00F2FE` | ข้อมูลทั่วไปที่ไม่ใช่คำตัดสิน | Plain KPI numbers, machine-name labels, non-alerting stats |
 | `accent` | `#3B82F6` | สีเน้น / Active UI elements | Navigation highlights, interactive elements |
-| `healthy` | `#10B981` | สถานะดี / ปกติ | Healthy status, Ubuntu series, Throughput, Green thresholds |
-| `warning` | `#F59E0B` | เฝ้าระวัง ยังไม่ฉุกเฉิน | Warning thresholds, Temperature warnings, PE metric |
-| `critical` | `#EF4444` | อันตราย ต้องแก้เดี๋ยวนี้ | Critical thresholds, Max value alerts, Error states |
-| `forecast` | `#4A5568` | เส้นคาดการณ์/Regression (เส้นประ) | Forecast, regression, trend projection |
-| `gap` | `text-secondary` @ 40% opacity | เส้นอ้างอิง / ข้อมูลจริง | Threshold reference lines, capacity ceiling |
+| `no_data` | `#64748B` | NO_DATA โดยเฉพาะ | A genuine gap in reporting — a *different claim* than `critical` ("confirmed bad"). "We don't know" ≠ "something is wrong." Every stat/gauge/bargauge panel must carry an explicit `type: "special", options.match: "null+nan"` mapping to this color (or, for panels that convert no-rows into a sentinel value in SQL, a matching value-mapping to the text `NO_DATA`) — Grafana does not fall back to a neutral color on its own. `noValue` text must be the literal string `NO_DATA` everywhere (not `N/A`/`-`/Grafana's raw "No data"), except where a panel's fallback is a legitimate zero-count business value or already carries a more specific semantic label (e.g. NOC's `AWAITING TELEMETRY`). |
+| `forecast` | `#4A5568` | เส้นคาดการณ์/Regression (เส้นประ) | Forecast, regression, trend projection — dashed line only |
+| `severity-minor` | `#EAB308` | 4th alarm-severity tier | ISA-18.2 "Minor" severity specifically, distinct from `warning`/Major — the two are deliberately different shades so a 4-level severity scale (Critical/Major/Minor/Warning) stays visually distinguishable. Not part of the core 6; only used in alarm-severity value mappings. |
 
 **กฎเหล็ก:**
-- **ห้าม** ใช้สี Grafana default palette — ใช้เฉพาะ tokens ในตารางนี้เท่านั้น (Healthy: `#10B981`, Warning: `#F59E0B`, Critical: `#EF4444`, Info: `#00E5FF`, Accent: `#3B82F6`)
-- **ห้าม** ผูกสี fixed เข้ากับชื่อเครื่อง/series เฉพาะเจาะจง ยกเว้นกรณีเดียว: เครื่องจริงถาวรในโรงงานที่ต้องแยกด้วยสีคงที่ — ต้องประกาศ mapping ในภาคผนวกที่เดียว
+- **ห้าม** ใช้สี Grafana default palette — ใช้เฉพาะ tokens ในตารางนี้เท่านั้น เพื่อสื่อสถานะ
+- **ห้าม** ผูกสี fixed เข้ากับชื่อเครื่อง/series เฉพาะเจาะจง ยกเว้นกรณีเดียว: เครื่องจริงถาวรในโรงงานที่ต้องแยกด้วยสีคงที่ — ต้องประกาศ mapping ใน §8
 - แดง (`#EF4444`) ต้องแปลว่า critical **เสมอ** — ห้ามใช้แดงเป็นสี series เฉยๆ เพราะจะไปแย่งความหมายกับ alert
-- Forecast / regression / threshold reference ใช้ `#4A5568` (forecast) เส้นประเสมอ ไม่ใช่สีสดที่แข่งกับข้อมูลจริง
+- Forecast/regression/threshold reference ใช้ `#4A5568` เส้นประเสมอ ไม่ใช่สีสดที่แข่งกับข้อมูลจริง
+- Decorative colors (graph-series differentiation for lines with no status meaning, backgrounds, borders) are exempt from this table — a dashboard can't be built from 6 saturated colors alone. A color is "decorative" only if it never communicates OK/warning/critical/no-data for anything; if in doubt, it's semantic.
+- **Enforcement:** `tests/lint/dashboard-linter.js` (Check 15) validates every `thresholds.steps[].color` and `mappings[].options.color` in `monitoring/grafana/dashboards/*.json` against this table's hex values — scoped to those two structural locations specifically because that's where a color is *always* semantic, unlike a bare `fixedColor` which can legitimately be decorative (series differentiation). This is the actual "central" mechanism — `APPROVED_TOKENS` in that file is generated from this table; if you add a token here, add it there too.
 
-### 2.1a LDI Kiosk Palette (ใช้เฉพาะ 5 LDI dashboards — Manufacturing, Engineering Analytics, Machine Snapshot, Operator Andon, Data Readiness)
+### 2.1a (retired) — see history
 
-LDI dashboards ใช้ cyberpunk theme ที่แยกจาก §2.1 มาแต่แรก (พื้นหลัง `#030407`, Roboto Mono)
-และมี semantic mapping เดียวกันกับ §2.1 แต่คนละ hex — **ห้ามผสมสองชุดในไฟล์เดียวกัน**
-ถ้าแก้ panel ใน 5 ไฟล์นี้ ใช้ตารางนี้ ไม่ใช่ §2.1:
-
-**5-token status system (locked as of the World-Class audit — do not add a 6th):**
-
-| Token | Hex Code | เทียบเท่า §2.1 | ใช้กับ |
-|---|---|---|---|
-| `ok` | `#22c55e` | `healthy` (`#10B981`) | OK / healthy / running / PASS / Capable+ thresholds — any "this is fine" state |
-| `warning` | `#FF9100` / `facc15` | `warning` (`#F59E0B`) | IDLE state, Marginal, warning thresholds |
-| `critical` | `#FF003C` | `critical` (`#EF4444`) | OUT OF SPEC, critical thresholds, confirmed-bad states |
-| `info` | `#00F2FE` | `info` (`#00E5FF`) | Neutral informational readouts that aren't a status verdict (plain KPI numbers, machine-name labels, non-alerting stats) |
-| `no_data` | `#6B7280` | (no §2.1 equivalent) | NO_DATA state specifically — a genuine gap in reporting, which is a *different claim* than `critical` ("this is confirmed bad"). No_data means "we don't know," not "something is wrong." Every stat/gauge/bargauge panel with `noValue: "NO_DATA"` must also carry an explicit `type: "special", options.match: "null+nan"` mapping to this color — Grafana's threshold evaluation does not reliably fall back to a neutral color on its own. |
-
-**กฎที่แก้จาก draft แรก:** `ok` และ `info` เคยถูกรวมเป็นโทเค็นเดียว (`#00F2FE` ใช้ทั้งสถานะ "ปกติ" และ "ข้อมูลทั่วไป") — แยกออกจากกันแล้ว: `ok` คือคำตัดสิน (verdict) เกี่ยวกับสถานะ, `info` คือตัวเลข/label ที่ไม่ได้ตัดสินอะไร. เดิม NO_DATA ใช้สีเดียวกับ `critical` (แดง) — เปลี่ยนเป็น `no_data` (เทา) เพราะ "ไม่มีข้อมูล" ไม่เท่ากับ "ยืนยันว่าเสีย"; ใช้แดงกับทุกกรณี no-data ทำให้แยกไม่ออกระหว่าง alert จริงกับ pipeline gap เฉยๆ. `critical-muted`/`neutral` (draft เดิม) ถูกยุบเข้า `critical`/`no_data` ตามลำดับ เพื่อให้เหลือ 5 โทเค็นตามที่กำหนด — "Delta %" ใช้ `critical` เต็มสี (ไม่ muted อีกต่อไป), "N/A ที่ไม่มีข้อมูลจริง" ใช้ `no_data`.
-
-ตัวย่อ case: ใช้ตัวพิมพ์เล็กสำหรับ `#facc15`/`#22c55e` (ไม่ใช่ `#FACC15`/`#22C55E`) — ปนกันมาจากการ
-copy-paste ข้าม panel และแก้ให้ตรงกันแล้วใน Phase 2 (harmonized 33 stray instances of
-`#00E5FF`/`#EF4444`/`#FACC15`/`#22C55E`, plus 18 more of `#00FF87`/`#00ff87` found in
-Phase 3 acceptance testing — all → the table above, ตรวจสอบด้วย `grep` ก่อน merge panel ใหม่)
+The former "LDI Kiosk" 5-token table (`#22c55e`/`#FF9100`/`#FF003C`/`#00F2FE`/`#6B7280`)
+is retired as of the merge above. Every one of its concepts now maps 1:1 onto §2.1's
+table via the *already-dominant* hex values found in the live LDI dashboard files —
+nothing about the LDI dashboards' visual identity (dark `#030407` background, Roboto
+Mono) changed, only the status-color literals. See git history for the harmonization
+changelog predating this merge (Phase 2/3 stray-instance cleanup).
 
 ### 2.2 Threshold Contract (ต้องตรงกันทุก panel ที่วัดค่าเดียวกัน)
 
@@ -80,7 +77,9 @@ Phase 3 acceptance testing — all → the table above, ตรวจสอบด
 |---|---|
 | Panel title | สั้น ≤ 4 คำ, Title Case, ไม่ใส่หน่วยในชื่อ (หน่วยอยู่ใน axis/legend) |
 | Panel description | ใส่ทุก panel เสมอ อธิบาย "นี่คืออะไร + คำนวณยังไง" แสดงผ่าน hover (ⓘ icon) |
-| Stat value font size | ≥ 32px สำหรับ KPI แถวบนสุด (อ่านจากระยะ 2–3 เมตรบนจอ NOC) |
+| Stat value font size (NOC / kiosk row) | ≥ 56px สำหรับ KPI แถวบนสุดของ NOC Overview และ Andon Board (เพิ่มจาก 32px เดิม — อ่านจากระยะไกลกว่าเดิมบนจอ NOC/kiosk ขนาดใหญ่), `titleSize` ≥ 16px คู่กัน |
+| Stat value font size (อื่นๆ) | ≥ 32px สำหรับ KPI ทั่วไป |
+| Table `cellHeight` (NOC / kiosk) | `lg` เสมอ สำหรับตารางหลักบน NOC Overview และ Andon Board — ค่าเริ่มต้น `sm` เล็กเกินไปสำหรับอ่านจากระยะไกล |
 | หน่วย (unit) | ตั้งทุก field เสมอ ห้ามปล่อยตัวเลขดิบ (`%`, `°C`, `GB`, `Mbps`) |
 | Decimal | 1 ตำแหน่งพอสำหรับ % และอุณหภูมิ, 0 ตำแหน่งสำหรับ count |
 | เวลา | `dateTimeFromNow` สำหรับ "last seen" (เช่น "12s ago"), absolute time เฉพาะ tooltip |
@@ -140,6 +139,7 @@ Phase 3 acceptance testing — all → the table above, ตรวจสอบด
 - ห้ามผสม height ต่างกันในแถวเดียวกัน (ทำให้ grid ดูเอียง) — ถ้า panel สูงไม่เท่ากัน ให้แยกคนละแถว
 - ใช้ **Row** เสมอเพื่อแบ่งโซนความหมาย ตั้งชื่อ row ให้สื่อ (`🖥️ Compute`, `🌐 Network`, `🌡️ Environmental`) พร้อม emoji ตัวเดียวเป็น visual anchor
 - Row ที่ไม่ critical → `collapsed: true` เป็นค่าเริ่มต้น
+- **Panel density (2026-08-08):** dashboard ที่มี panel มากกว่า ~8 ตัวเรียงแนวตั้งแบบไม่มี row (สังเกตได้จาก `IMS LDI - Engineering Analytics & SPC` ที่เคยสูง 126 grid units) ต้องจัดกลุ่มเป็น row ตามโซนความหมาย แล้ว collapse ทุก row ยกเว้น row แรก/สำคัญที่สุด — เหลือแค่ header list สั้นๆ ให้เห็นภาพรวมทันที ไม่ต้อง scroll มหาศาล เนื้อหาทั้งหมดยังอยู่ครบ แค่ซ่อนไว้หลัง header ที่คลิกขยายได้
 
 ---
 
@@ -203,6 +203,7 @@ Panel ที่ปรากฏซ้ำมากกว่า 1 dashboard **ต�
 - [ ] ถ้า panel ซ้ำกับที่อื่น → แปลงเป็น Library Panel ก่อน merge
 - [ ] Query ตรงกติกา tiering (raw ≤ latest value, minute CAGG ≤ 6h, hourly CAGG > 2d)
 - [ ] ทดสอบด้วย `make test-visual` แล้ว screenshot ตรงกับที่คาดหวัง
+- [ ] `node tests/lint/dashboard-linter.js` ผ่าน 0 errors — linter ตรวจ hex สีนอกตาราง §2.1 อัตโนมัติ นี่คือกลไก "central token" ตัวจริง ไม่ใช่แค่เอกสารนี้
 
 ---
 
