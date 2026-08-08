@@ -1,0 +1,125 @@
+[
+  {
+    "id": "almsim_tab",
+    "type": "tab",
+    "label": "LDI Alarm Simulator",
+    "disabled": false,
+    "info": "จำลอง alarm ด้วยรหัสและความถี่จาก production log จริง (20 รหัส)\nปิดได้โดย disable tab นี้"
+  },
+  {
+    "id": "ccae533aefb8eced",
+    "type": "group",
+    "z": "almsim_tab",
+    "style": {
+      "stroke": "#999999",
+      "stroke-opacity": "1",
+      "fill": "none",
+      "fill-opacity": "1",
+      "label": true,
+      "label-position": "nw",
+      "color": "#a4a4a4"
+    },
+    "nodes": [
+      "almsim_tick",
+      "almsim_gen",
+      "almsim_db",
+      "almsim_catch",
+      "almsim_err"
+    ],
+    "x": 34,
+    "y": 39,
+    "w": 1024,
+    "h": 130
+  },
+  {
+    "id": "almsim_tick",
+    "type": "inject",
+    "z": "almsim_tab",
+    "g": "ccae533aefb8eced",
+    "name": "Tick 10s",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "10",
+    "crontab": "",
+    "once": true,
+    "onceDelay": "25",
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 140,
+    "y": 80,
+    "wires": [
+      [
+        "almsim_gen"
+      ]
+    ]
+  },
+  {
+    "id": "almsim_gen",
+    "type": "function",
+    "z": "almsim_tab",
+    "g": "ccae533aefb8eced",
+    "name": "Generate Alarm (correlated + noise)",
+    "func": "// World-Class QA (2026-08-07): real-data cutover. Gated by env, not a\n// hardcoded disable, so CI / fresh deployments (no LDI_SIMULATOR_ENABLED\n// set) keep generating mock data by default -- only this specific\n// environment's local .env (gitignored, never committed) turns it off.\nif (env.get('LDI_SIMULATOR_ENABLED') === 'false') {\n    node.status({ fill: 'grey', shape: 'ring', text: 'disabled (real-data mode)' });\n    return null;\n}\n\n\n// ══════════════════════════════════════════════════════════════════\n// LDI ALARM SIMULATOR — noise codes (real distribution, uncorrelated\n// equipment/calibration faults) + condition-driven codes (fired only\n// when the matching telemetry parameter is actually out of spec right\n// now, per the same thresholds v_ldi_alarm_context/migration 054+057\n// uses).\n//\n// IMS-FULL-SYSTEM-AUDIT.md P0-2: previously every code (including the\n// process-linked ones like 91009/90005/91008/70004) was drawn from a\n// pure Poisson/weighted-random process independent of telemetry, so\n// the RCA Truth Test correctly reported Lift ≈ 1 (no correlation to\n// find, because there was none by construction). Codes with a known\n// real-world parameter link now only fire when that parameter is\n// actually out of spec, so Lift should rise meaningfully (> 2).\n//\n// VACUUM (91009), World-Class QA realism audit 2026-08-06: previously\n// left as pure noise because the -50/-95 kPa threshold it was checked\n// against didn't match ANY simulated value (not even DF INNER's real\n// -16..-19 kPa baseline), so flag_vac_out_of_spec was true for ~100% of\n// all rows regardless of timing -- no alarm-timing strategy could raise\n// Lift above ~1 when the baseline itself was saturated. Migration 057\n// recalibrates the threshold to bound around the simulator's own DF\n// INNER recipe range (simulator-derived, not a sourced vendor spec) and\n// the telemetry generator now injects rare weak-vacuum fault events\n// (ldisim_gen, vacFaultTicks) so there's a real excursion to correlate\n// against. 91009 moves from the noise pool to condition-driven, same\n// pattern as 91008/align/70004.\n// ══════════════════════════════════════════════════════════════════\nconst pool = global.get('pgPool');\nif (!pool) { node.status({ fill: 'red', shape: 'ring', text: 'no pgPool' }); return null; }\n\n// codes with no known telemetry correlation - unconditioned background\n// noise. World-Class QA (2026-08-07): replaced with real codes from the\n// vendor Alarm Master import (migration 061) -- 91012/91017/91020/91024/\n// 93007/91029/97014/20/20021/2 never existed in the real 1,820-code list\n// (invented for early prototyping); swapped 1:1 for real generic-fault\n// codes (camera/PLC/comms/network/DB), keeping the exact same weights.\n// 90013 (5th ALIGN_CODES entry) also didn't exist in the real list --\n// dropped rather than force-substituted, since 4 real alignment codes\n// already cover the category.\nconst NOISE_CUM = [[\"93004\", 24.5], [\"01060009\", 31.3], [\"0106000C\", 38.2],\n    [\"0106001C\", 45.0], [\"01060013\", 51.8], [\"01100001\", 58.7], [\"01130002\", 65.5], [\"010E0064\", 72.4],\n    [\"10006\", 79.2], [\"92013\", 86.0], [\"97005\", 92.9], [\"80001\", 100.0]];\nconst MACHINES = [[\"LDI-01\", 16.6], [\"LDI-02\", 33.2], [\"LDI-03\", 44.1], [\"LDI-04\", 55.0],\n    [\"LDI-05\", 72.2], [\"LDI-06\", 89.3], [\"LDI-07\", 93.0], [\"LDI-08\", 96.7],\n    [\"LDI-09\", 98.4], [\"LDI-10\", 100.0]];\n// alignment codes correlated to PE/JE out-of-tolerance (misalignment <-> PE error)\nconst ALIGN_CODES = [\"90001\", \"90004\", \"90005\", \"90012\"];\nconst RATE_PER_TICK = 0.01194 * 20 * (15 / 20); // unchanged overall pacing, noise share only\n\nfunction pick(table) {\n    const x = Math.random() * 100;\n    for (const [v, c] of table) if (x <= c) return v;\n    return table[table.length - 1][0];\n}\nfunction poissonCount(rate) {\n    let n = 0, L = Math.exp(-rate), p = 1;\n    do { p *= Math.random(); n++; } while (p > L);\n    return n - 1;\n}\n// relatedLogId: the literal ldi_data.log_id of the telemetry row that\n// triggered this alarm, when known (condition-driven codes only -- noise\n// codes aren't tied to any specific board, so they pass null and let\n// migration 051's trigger fall back to its nearest-match heuristic).\n// World-Class Audit Priority 3: production-grade exact event linkage.\nfunction newRow(eq, code, ts, relatedLogId) {\n    return {\n        logid: 'SIM-ALM-' + ts.getTime() + '-' + eq + '-' + code + '-' + Math.floor(Math.random() * 1e6),\n        logdate: ts.toISOString(),\n        errorcode: code,\n        errortime: ts.toISOString().replace('T', ' ').substring(0, 19),\n        equipmentid: eq,\n        factory: Math.random() < 0.75 ? '2' : '3',\n        process: ['DF INNER', 'DF OUTER', 'SM'][Math.floor(Math.random() * 3)],\n        related_log_id: relatedLogId || null\n    };\n}\n\nconst rows = [];\nconst now = Date.now();\n\n// ── background noise (unconditioned, real historical distribution) ──\nconst nNoise = poissonCount(RATE_PER_TICK);\nfor (let k = 0; k < nNoise; k++) {\n    rows.push(newRow(pick(MACHINES), pick(NOISE_CUM), new Date(now - Math.floor(Math.random() * 9000))));\n}\n\n// ── condition-driven alarms: only fire when telemetry is actually out of\n//    spec right now, using the same thresholds as v_ldi_alarm_context ──\nconst sql = `\n    SELECT DISTINCT ON (eqp_id) eqp_id, process, temperature, humidity,\n           pe_1, je_1, scan_speed, air_vacuum, log_id\n    FROM public.ldi_data\n    WHERE time > NOW() - INTERVAL '3 minutes'\n    ORDER BY eqp_id, time DESC`;\n\npool.query(sql, [], function (err, result) {\n    if (err) { node.error('Alarm sim telemetry query failed: ' + err.message); return; }\n    const ts = new Date();\n    // ~25%/tick per condition so a persistently out-of-spec machine doesn't\n    // fire an alarm on literally every 10s tick while the fault holds\n    const fires = () => Math.random() < 0.25;\n    for (const r of (result.rows || [])) {\n        if ((r.temperature < 20 || r.temperature > 24 || r.humidity < 50 || r.humidity > 60) && fires()) {\n            rows.push(newRow(r.eqp_id, '91008', ts, r.log_id));\n        }\n        if ((Math.abs(r.pe_1) > 10 || Math.abs(r.je_1) > 10) && fires()) {\n            rows.push(newRow(r.eqp_id, ALIGN_CODES[Math.floor(Math.random() * ALIGN_CODES.length)], ts, r.log_id));\n        }\n        if ((r.scan_speed > 450 || r.scan_speed <= 0) && fires()) {\n            rows.push(newRow(r.eqp_id, '70004', ts, r.log_id));\n        }\n        if (r.air_vacuum !== null && (r.air_vacuum > -8 || r.air_vacuum < -30) && fires()) {\n            rows.push(newRow(r.eqp_id, '91009', ts, r.log_id));\n        }\n    }\n\n    if (rows.length === 0) { node.status({ fill: 'grey', shape: 'ring', text: 'no alarm' }); return; }\n    node.status({ fill: 'yellow', shape: 'dot',\n        text: rows.length + ' alarm: ' + rows.map(r => r.errorcode).join(',') });\n    node.send({ payload: rows });\n});\nreturn null;\n",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 588,
+    "y": 80,
+    "wires": [
+      [
+        "almsim_db"
+      ]
+    ]
+  },
+  {
+    "id": "almsim_db",
+    "type": "function",
+    "z": "almsim_tab",
+    "g": "ccae533aefb8eced",
+    "name": "Insert to ldi_alarm_log",
+    "func": "\nconst pool = global.get('pgPool');\nconst rows = msg.payload || [];\nif (!pool || rows.length === 0) return null;\nconst cols = ['logid','logdate','errorcode','errortime','equipmentid','factory','process','related_log_id'];\nconst ph = rows.map((_, i) => '(' + cols.map((_, j) => '$' + (i * cols.length + j + 1)).join(',') + ')').join(',');\nconst params = [];\nfor (const r of rows) for (const c of cols) params.push(r[c]);\nconst sql = 'INSERT INTO public.ldi_alarm_log (' + cols.join(',') + ') VALUES ' + ph +\n            ' ON CONFLICT (logdate, logid) DO NOTHING';\npool.query(sql, params, function (err) {\n    if (err) { node.error('Alarm sim INSERT failed: ' + err.message); return; }\n    node.log('Alarm sim: inserted ' + rows.length);\n});\nreturn null;\n",
+    "outputs": 1,
+    "noerr": 0,
+    "x": 932,
+    "y": 80,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "almsim_catch",
+    "type": "catch",
+    "z": "almsim_tab",
+    "g": "ccae533aefb8eced",
+    "name": "Catch Alarm Sim Errors",
+    "scope": null,
+    "uncaught": false,
+    "x": 180,
+    "y": 128,
+    "wires": [
+      [
+        "almsim_err"
+      ]
+    ]
+  },
+  {
+    "id": "almsim_err",
+    "type": "function",
+    "z": "almsim_tab",
+    "g": "ccae533aefb8eced",
+    "name": "Log Error",
+    "func": "node.error('Alarm simulator: ' + (msg.error && msg.error.message));\nreturn null;",
+    "outputs": 1,
+    "x": 508,
+    "y": 128,
+    "wires": [
+      []
+    ]
+  }
+]
