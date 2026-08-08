@@ -56,6 +56,53 @@ nothing about the LDI dashboards' visual identity (dark `#030407` background, Ro
 Mono) changed, only the status-color literals. See git history for the harmonization
 changelog predating this merge (Phase 2/3 stray-instance cleanup).
 
+### 2.1b Accessibility — WCAG AA contrast (audited 2026-08-08)
+
+Grafana's Stat/Gauge `colorMode: "background"` always renders **white** value
+text regardless of the background's actual brightness — verified empirically,
+not assumed from the Grafana docs (there is no auto-contrast switch to black
+text for light backgrounds in 13.1.1). Computed white-text contrast ratio for
+every §2.1 token against a solid fill:
+
+| Token | Hex | White-text ratio | AA large (≥3:1) | AA normal (≥4.5:1) |
+|---|---|---|---|---|
+| `ok` | `#22C55E` | 2.28 | ❌ | ❌ |
+| `warning` | `#F59E0B` | 2.15 | ❌ | ❌ |
+| `critical` | `#EF4444` | 3.76 | ✅ | ❌ |
+| `info` | `#00F2FE` | 1.39 | ❌ | ❌ |
+| `accent` | `#3B82F6` | 3.68 | ✅ | ❌ |
+| `no_data` | `#64748B` | 4.76 | ✅ | ✅ |
+| `severity-minor` | `#EAB308` | 1.92 | ❌ | ❌ |
+
+**Fix applied, not just documented:** every stat/gauge/bargauge panel using
+`colorMode: "background"` (31 panels) was switched to `colorMode: "value"` —
+same token color, now as large bold text on the dark panel background instead
+of a solid fill behind white text. As *text* against the dark panel background
+(effectively the same ratio, inverted), every token passes AA-large and all
+but `no_data` pass full AA-normal too (`no_data` is only ever used at the
+large stat-value sizes this system uses, so AA-large is the applicable bar).
+This also has a side benefit: it now visually reinforces §2.1's `ok`/`warning`/
+`critical` ("this is a verdict") vs `info` ("neutral readout, not a verdict")
+distinction — verdicts are solid-fill tiles, neutral readouts are colored text
+on a dark tile — rather than being identical-looking and only distinguishable
+by which specific color of solid tile it is.
+
+**One deliberate exception:** the Andon board's per-machine traffic-light
+tiles (`monitoring/grafana/dashboards/ims-ldi-operator-andon.json`, panel
+`1000`) keep `colorMode: "background"`. Their job is color *perception* from
+3-5 meters, not text *reading* — a solid color block is more reliably
+distinguishable at a glance from across a factory floor than colored text at
+any panel size that still fits ten tiles across a kiosk screen, matching how
+real industrial andon lights work. WCAG's text-contrast metric doesn't model
+this "is the block red or green" task, so applying it here would trade away
+the actual accessibility need (glanceability) for a metric that doesn't fit
+the use case.
+
+**Enforcement:** `tests/lint/dashboard-linter.js` (Check 17) warns on any
+stat/gauge/bargauge panel using `colorMode: "background"` outside the
+per-file exception list, so this doesn't silently regress as new panels are
+added.
+
 ### 2.2 Threshold Contract (ต้องตรงกันทุก panel ที่วัดค่าเดียวกัน)
 
 | Metric | Warning | Critical | หมายเหตุ |
@@ -140,6 +187,7 @@ changelog predating this merge (Phase 2/3 stray-instance cleanup).
 - ใช้ **Row** เสมอเพื่อแบ่งโซนความหมาย ตั้งชื่อ row ให้สื่อ (`🖥️ Compute`, `🌐 Network`, `🌡️ Environmental`) พร้อม emoji ตัวเดียวเป็น visual anchor
 - Row ที่ไม่ critical → `collapsed: true` เป็นค่าเริ่มต้น
 - **Panel density (2026-08-08):** dashboard ที่มี panel มากกว่า ~8 ตัวเรียงแนวตั้งแบบไม่มี row (สังเกตได้จาก `IMS LDI - Engineering Analytics & SPC` ที่เคยสูง 126 grid units) ต้องจัดกลุ่มเป็น row ตามโซนความหมาย แล้ว collapse ทุก row ยกเว้น row แรก/สำคัญที่สุด — เหลือแค่ header list สั้นๆ ให้เห็นภาพรวมทันที ไม่ต้อง scroll มหาศาล เนื้อหาทั้งหมดยังอยู่ครบ แค่ซ่อนไว้หลัง header ที่คลิกขยายได้
+- **Kiosk no-scroll ceiling (2026-08-08):** 3 dashboards are glance/kiosk boards per §1 principle 5 ("progressive disclosure" — NOC and Easy Overview answer "is everything OK," Andon is the factory-floor wall display) and carry a hard 20-grid-unit ceiling in `tests/lint/dashboard-linter.js`'s `MAX_HEIGHT`, enforced as an error, not a warning. All 3 use the same pattern: only the single most decision-relevant row stays expanded (Andon's KPI strip + machine tiles, NOC's alert list, Easy Overview's KPI strip) — everything else is a collapsed row, content still fully present, one click away. Engineering/Capacity/Machine-Snapshot/Manufacturing are deliberately deep-dive dashboards under the same principle and are NOT in `MAX_HEIGHT` — forcing them to 20u would fight their actual purpose, not serve it.
 
 ---
 
@@ -181,14 +229,17 @@ changelog predating this merge (Phase 2/3 stray-instance cleanup).
 
 ## 9. Reusability — Library Panels
 
-Panel ที่ปรากฏซ้ำมากกว่า 1 dashboard **ต้อง**เป็น Library Panel (แก้ที่เดียว อัปเดตทุกที่):
+Panel ที่ปรากฏซ้ำมากกว่า 1 dashboard **ต้อง**เป็น Library Panel (แก้ที่เดียว อัปเดตทุกที่) — **แต่เฉพาะกรณีที่ SQL/business logic ตรงกันจริงๆ**, ไม่ใช่แค่ชื่อ panel คล้ายกัน:
 
-- Fleet Health Score (stat)
-- CPU / RAM / Disk gauge template
-- Alert List (มาตรฐานเดียวกันทุกหน้า)
-- Server Fleet Status table
+- **Fleet Health Score** (stat) — ✅ true library panel, `ims-lib-fleet-health-score`. Confirmed byte-identical query (`SELECT value FROM public.v_fleet_score`) between `ims-capacity-planning.json` and `ims-noc-overview.json` before merging.
+- **Availability / Critical Alarms / Running / Yield** — ⚠️ audited 2026-08-08, found NOT duplicates despite similar names: each dashboard's version has a genuinely different SQL scope (e.g. Manufacturing's Yield panel adds a `machine_id` template filter and a period-over-period "Delta %" calc that Easy Overview's simpler version doesn't have; Andon/Manufacturing/Easy-Overview's "Availability"/"Running" panels differ in whether they filter by `machine_id` and which compression-chunk workaround they carry). Forcing these into one shared panel would mean changing what each dashboard actually computes — out of scope here (business logic is explicitly off-limits for this pass). If a real business decision is made later to standardize these to one canonical query/filter scope, redo this audit then and promote the survivors to library panels using the same mechanism.
 
-วิธีสร้าง: ใน Grafana UI → panel menu → "Create library panel" → ตั้งชื่อ prefix `lib-` (เช่น `lib-fleet-health-stat`) → เก็บ reference ไว้ใน `monitoring/grafana/library-panels/` เป็นไฟล์ JSON แยก provision ผ่าน provider เดียวกับ dashboard
+**How this actually works in this repo (Grafana 13.1.1 has no file-based provisioning for library panels — only datasources/dashboards/alerting/plugins get that; verified empirically, not by trusting the Grafana docs' provisioning section):**
+
+1. Write the panel spec to `monitoring/grafana/library-panels/<uid>.json` — shape: `{uid, name, kind: 1, model: {...full panel content...}}`. `uid` is hand-chosen and stable (not Grafana's auto-generated one) so dashboard JSON can reference it before it exists.
+2. Run `bash scripts/provision-library-panels.sh` — idempotent HTTP API script (creates via `POST /api/library-elements` if missing, `PATCH` if the uid already exists) against the live Grafana instance. Not wired into `docker-compose` as an automatic service (no existing image here has both curl and python3 without a fragile custom build) — run it manually after `docker compose up`, same pattern as `scripts/import-real-data.sh`.
+3. In the referencing dashboard's JSON, replace the panel with a minimal stub: `{"id": <id>, "gridPos": {...}, "libraryPanel": {"uid": "<uid>", "name": "<name>"}}` — no inline `type`/`fieldConfig`/`options`/`targets`/`description`; all of that comes from the library element.
+4. `tests/lint/dashboard-linter.js` validates `library-panels/*.json` directly (color tokens, description, noValue) since a referencing panel stub has nothing inline to check.
 
 ---
 

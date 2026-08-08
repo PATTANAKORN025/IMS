@@ -99,7 +99,7 @@
       "type": "text",
       "title": "",
       "options": {
-        "content": "<style>\n[class*=\"-panel-container\"] {\n  background: rgba(10, 13, 16, 0.7) !important;\n  border: 1px solid rgba(0, 242, 254, 0.15) !important;\n  border-radius: 12px !important;\n  box-shadow: 0 4px 24px -4px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05) !important;\n  transition: all 0.2s ease-in-out !important;\n}\n[class*=\"-panel-container\"]:hover {\n  border-color: rgba(0, 242, 254, 0.5) !important;\n  box-shadow: 0 8px 32px 0 rgba(0, 242, 254, 0.15) !important;\n  backdrop-filter: blur(10px) !important;\n}\n[class*=\"-panel-title\"] {\n  color: #E8EDF2 !important;\n  font-weight: 600 !important;\n  text-transform: uppercase !important;\n  letter-spacing: 1px !important;\n  font-size: 11px !important;\n}\n</style>",
+        "content": "<style>\n[class*=\"-panel-container\"] {\n  background: rgba(10, 13, 16, 0.7) !important;\n  border: 1px solid rgba(0, 242, 254, 0.15) !important;\n  border-radius: 12px !important;\n  box-shadow: 0 4px 24px -4px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.05) !important;\n  transition: all 0.2s ease-in-out !important;\n}\n[class*=\"-panel-container\"]:hover {\n  border-color: rgba(0, 242, 254, 0.5) !important;\n  box-shadow: 0 8px 32px 0 rgba(0, 242, 254, 0.15) !important;\n  backdrop-filter: blur(10px) !important;\n}\n[class*=\"-panel-title\"] {\n  color: #E8EDF2 !important;\n  font-weight: 600 !important;\n  text-transform: uppercase !important;\n  letter-spacing: 1px !important;\n  font-size: 11px !important;\n}\n</style>",
         "mode": "html"
       },
       "gridPos": {
@@ -220,7 +220,7 @@
         ]
       },
       "options": {
-        "colorMode": "background",
+        "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "center",
         "reduceOptions": {
@@ -231,11 +231,11 @@
           "values": false
         },
         "text": {
-          "valueSize": 28,
-          "titleSize": 12
+          "valueSize": 56,
+          "titleSize": 18
         },
         "noValue": "NO_DATA",
-        "textMode": "auto",
+        "textMode": "value",
         "tooltip": {
           "mode": "single",
           "sort": "none"
@@ -345,7 +345,7 @@
         ]
       },
       "options": {
-        "colorMode": "background",
+        "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "center",
         "reduceOptions": {
@@ -356,11 +356,11 @@
           "values": false
         },
         "text": {
-          "valueSize": 28,
-          "titleSize": 12
+          "valueSize": 56,
+          "titleSize": 18
         },
         "noValue": "NO_DATA",
-        "textMode": "auto",
+        "textMode": "value",
         "tooltip": {
           "mode": "single",
           "sort": "none"
@@ -421,7 +421,7 @@
         "overrides": []
       },
       "options": {
-        "colorMode": "background",
+        "colorMode": "value",
         "graphMode": "none",
         "justifyMode": "center",
         "reduceOptions": {
@@ -432,11 +432,11 @@
           "values": false
         },
         "text": {
-          "valueSize": 36,
-          "titleSize": 14
+          "valueSize": 56,
+          "titleSize": 18
         },
         "noValue": "NO_DATA",
-        "textMode": "auto",
+        "textMode": "value",
         "tooltip": {
           "mode": "single",
           "sort": "none"
@@ -565,7 +565,7 @@
         ]
       },
       "options": {
-        "colorMode": "background",
+        "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "center",
         "reduceOptions": {
@@ -576,11 +576,11 @@
           "values": false
         },
         "text": {
-          "valueSize": 28,
-          "titleSize": 12
+          "valueSize": 56,
+          "titleSize": 18
         },
         "noValue": "NO_DATA",
-        "textMode": "auto",
+        "textMode": "value",
         "tooltip": {
           "mode": "single",
           "sort": "none"
@@ -790,7 +790,7 @@
         "overrides": []
       },
       "options": {
-        "colorMode": "background",
+        "colorMode": "value",
         "graphMode": "none",
         "justifyMode": "center",
         "reduceOptions": {
@@ -801,11 +801,11 @@
           "values": false
         },
         "text": {
-          "valueSize": 28,
-          "titleSize": 12
+          "valueSize": 56,
+          "titleSize": 18
         },
         "noValue": "NO_DATA",
-        "textMode": "auto",
+        "textMode": "value",
         "tooltip": {
           "mode": "single",
           "sort": "none"
@@ -896,13 +896,13 @@
         "showThresholdMarkers": true,
         "noValue": "NO_DATA",
         "text": {
-          "titleSize": 12,
-          "valueSize": 28
+          "valueSize": 56,
+          "titleSize": 18
         },
-        "colorMode": "background",
+        "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "center",
-        "textMode": "auto",
+        "textMode": "value",
         "tooltip": {
           "mode": "single",
           "sort": "none"
@@ -1031,7 +1031,7 @@
         ]
       },
       "options": {
-        "colorMode": "background",
+        "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "center",
         "reduceOptions": {
@@ -1042,11 +1042,11 @@
           "values": false
         },
         "text": {
-          "valueSize": 28,
-          "titleSize": 12
+          "valueSize": 56,
+          "titleSize": 18
         },
         "noValue": "NO_DATA",
-        "textMode": "auto",
+        "textMode": "value",
         "tooltip": {
           "mode": "single",
           "sort": "none"
@@ -1120,7 +1120,7 @@
         "overrides": []
       },
       "options": {
-        "colorMode": "background",
+        "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "center",
         "reduceOptions": {
@@ -1131,11 +1131,11 @@
           "values": false
         },
         "text": {
-          "valueSize": 28,
-          "titleSize": 12
+          "valueSize": 56,
+          "titleSize": 18
         },
         "noValue": "0",
-        "textMode": "auto",
+        "textMode": "value",
         "tooltip": {
           "mode": "single",
           "sort": "none"
@@ -1258,7 +1258,7 @@
         ]
       },
       "options": {
-        "colorMode": "background",
+        "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "center",
         "reduceOptions": {
@@ -1269,11 +1269,11 @@
           "values": false
         },
         "text": {
-          "valueSize": 28,
-          "titleSize": 12
+          "valueSize": 56,
+          "titleSize": 18
         },
         "noValue": "NO_DATA",
-        "textMode": "auto",
+        "textMode": "value",
         "tooltip": {
           "mode": "single",
           "sort": "none"
@@ -1396,7 +1396,7 @@
         ]
       },
       "options": {
-        "colorMode": "background",
+        "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "center",
         "reduceOptions": {
@@ -1407,11 +1407,11 @@
           "values": false
         },
         "text": {
-          "valueSize": 28,
-          "titleSize": 12
+          "valueSize": 56,
+          "titleSize": 18
         },
         "noValue": "NO_DATA",
-        "textMode": "auto",
+        "textMode": "value",
         "tooltip": {
           "mode": "single",
           "sort": "none"
@@ -2971,7 +2971,7 @@
         "x": 0,
         "y": 72,
         "w": 6,
-        "h": 4
+        "h": 10
       },
       "fieldConfig": {
         "defaults": {
@@ -3014,7 +3014,7 @@
         "overrides": []
       },
       "options": {
-        "colorMode": "background",
+        "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "center",
         "reduceOptions": {
@@ -3024,10 +3024,14 @@
           "values": false
         },
         "noValue": "NO_DATA",
-        "textMode": "auto",
+        "textMode": "value",
         "tooltip": {
           "mode": "single",
           "sort": "none"
+        },
+        "text": {
+          "valueSize": 56,
+          "titleSize": 18
         }
       },
       "targets": [
