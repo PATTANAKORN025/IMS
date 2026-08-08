@@ -17,7 +17,7 @@ global.flow = {
     set: (key, val) => { flowStore[key] = val; }
 };
 
-const { parseAll, calcNetRate, sanitize, mkIface } = require('../../nodered_data/lib/parser');
+const { parseAll, calcNetRate, sanitize, mkIface, safeKey } = require('../../nodered_data/lib/parser');
 
 const emptyState = {
     cpu_cores: 0, cpu_load: 0, ram_total: 0, ram_used: 0, ram_free: 0,
@@ -215,6 +215,26 @@ test('returns zero Mbps when interface is down', () => {
     const r = calcNetRate('down', { '1': { name: 'port_1', rx32: 2000, tx32: 1000, err: 0, drop: 0, status: 2 } }, flow);
     assert.strictEqual(r.summary['port_1'].rx_mbps, 0);
     assert.strictEqual(r.summary['port_1'].status, 'DOWN');
+});
+
+test('device IDs with spaces (real machine names like "EXPOSURE LDI-2") never reach flow context keys raw -- Node-RED\'s context.get/set parses string keys as property-expressions and throws on a bare space', () => {
+    Object.keys(flowStore).forEach(k => delete flowStore[k]);
+    calcNetRate('EXPOSURE LDI-2', { '1': { name: 'port_1', rx32: 1000, tx32: 500, err: 0, drop: 0, status: 1 } }, flow);
+    const keys = Object.keys(flowStore);
+    assert.ok(keys.length > 0, 'calcNetRate should have written flow state');
+    for (const k of keys) {
+        assert.ok(!/\s/.test(k), `flow context key "${k}" must not contain whitespace`);
+    }
+});
+
+console.log('\nsafeKey');
+test('strips whitespace and punctuation Node-RED property-expressions reject', () => {
+    assert.strictEqual(safeKey('EXPOSURE LDI-2'), 'EXPOSURE_LDI-2');
+    assert.strictEqual(safeKey('a.b[c]'), 'a_b_c_');
+});
+test('handles null/undefined', () => {
+    assert.strictEqual(safeKey(null), '');
+    assert.strictEqual(safeKey(undefined), '');
 });
 
 console.log('\nsanitize');
