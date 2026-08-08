@@ -180,6 +180,19 @@
       "transparent": true
     },
     {
+      "id": 1000,
+      "type": "row",
+      "title": "Environmental",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 1,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
       "id": 1,
       "title": "◈ temperature (°C) vs humidity (%RH)",
       "type": "timeseries",
@@ -188,7 +201,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 1,
+        "y": 2,
         "w": 24,
         "h": 8
       },
@@ -338,1592 +351,1689 @@
       ]
     },
     {
-      "id": 3,
-      "title": "◈ scan_speed (mm/s) vs air_vacuum (kPa)",
-      "type": "timeseries",
-      "datasource": {
-        "uid": "timescaledb"
-      },
+      "id": 1001,
+      "type": "row",
+      "title": "Motion & Process Physics",
+      "collapsed": true,
       "gridPos": {
         "x": 0,
-        "y": 9,
+        "y": 10,
         "w": 24,
-        "h": 8
+        "h": 1
       },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "suffix: mm/s",
-          "decimals": 1,
-          "custom": {
-            "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "fillOpacity": 15,
-            "lineWidth": 2,
-            "showPoints": "never",
-            "spanNulls": false,
-            "gradientMode": "opacity",
-            "axisSoftMin": 0,
-            "axisSoftMax": 450,
-            "thresholdsStyle": {
-              "mode": "line+area"
-            }
+      "panels": [
+        {
+          "id": 3,
+          "title": "◈ scan_speed (mm/s) vs air_vacuum (kPa)",
+          "type": "timeseries",
+          "datasource": {
+            "uid": "timescaledb"
           },
-          "color": {
-            "mode": "palette-classic"
+          "gridPos": {
+            "x": 0,
+            "y": 0,
+            "w": 24,
+            "h": 8
           },
-          "links": [
-            {
-              "title": "Open Snapshot at this point",
-              "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-clicked_series=${__series.name}&var-event_time_ms=${__value.time}&var-machine_id=${__series.name}&var-log_id=__auto__&from=${__from}&to=${__to}",
-              "targetBlank": false,
-              "oneClick": true
-            }
-          ]
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byFrameRefID",
-              "options": "RIGHT"
+          "fieldConfig": {
+            "defaults": {
+              "unit": "suffix: mm/s",
+              "decimals": 1,
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "smooth",
+                "fillOpacity": 15,
+                "lineWidth": 2,
+                "showPoints": "never",
+                "spanNulls": false,
+                "gradientMode": "opacity",
+                "axisSoftMin": 0,
+                "axisSoftMax": 450,
+                "thresholdsStyle": {
+                  "mode": "line+area"
+                }
+              },
+              "color": {
+                "mode": "palette-classic"
+              },
+              "links": [
+                {
+                  "title": "Open Snapshot at this point",
+                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-clicked_series=${__series.name}&var-event_time_ms=${__value.time}&var-machine_id=${__series.name}&var-log_id=__auto__&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
+                }
+              ]
             },
-            "properties": [
+            "overrides": [
               {
-                "id": "unit",
-                "value": "suffix: kPa"
-              },
-              {
-                "id": "custom.axisPlacement",
-                "value": "right"
-              },
-              {
-                "id": "custom.axisSoftMin",
-                "value": -25
-              },
-              {
-                "id": "custom.axisSoftMax",
-                "value": 5
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#FF9100"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "options": {
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        },
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "lastNotNull",
-            "min",
-            "max",
-            "mean"
-          ]
-        },
-        "connectNullPoints": true
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id AS metric, AVG(avg_scan_speed)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_scan_speed IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
-        },
-        {
-          "refId": "RIGHT",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id AS metric, AVG(avg_air_vacuum)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_air_vacuum IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
-          "format": "time_series",
-          "legendFormat": "{{metric}} - air_vacuum"
-        }
-      ],
-      "description": "Laser scan speed in mm/s, overlaid with air vacuum (right axis, kPa) to correlate speed changes with vacuum/chuck-seal drift.",
-      "links": [
-        {
-          "title": "Open Machine Snapshot (select one Machine)",
-          "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
-          "targetBlank": false
-        },
-        {
-          "title": "Open Manufacturing",
-          "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
-          "targetBlank": false
-        },
-        {
-          "title": "Open Data Readiness",
-          "url": "/d/ldi-data-readiness/ldi-data-readiness?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
-          "targetBlank": false
-        }
-      ]
-    },
-    {
-      "id": 5,
-      "title": "◈ scale_x vs scale_y",
-      "type": "timeseries",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 17,
-        "w": 24,
-        "h": 8
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "none",
-          "decimals": 2,
-          "custom": {
-            "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "fillOpacity": 15,
-            "lineWidth": 2,
-            "showPoints": "never",
-            "spanNulls": false,
-            "gradientMode": "opacity",
-            "thresholdsStyle": {
-              "mode": "line+area"
-            }
-          },
-          "color": {
-            "mode": "palette-classic"
-          },
-          "links": [
-            {
-              "title": "Open Snapshot at this point",
-              "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-clicked_series=${__series.name}&var-event_time_ms=${__value.time}&var-machine_id=${__series.name}&var-log_id=__auto__&from=${__from}&to=${__to}",
-              "targetBlank": false,
-              "oneClick": true
-            }
-          ],
-          "min": 0.9995,
-          "max": 1.0007
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byFrameRefID",
-              "options": "RIGHT"
-            },
-            "properties": [
-              {
-                "id": "custom.axisPlacement",
-                "value": "right"
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#facc15"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "options": {
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        },
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "lastNotNull",
-            "min",
-            "max",
-            "mean"
-          ]
-        },
-        "connectNullPoints": true
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id AS metric, AVG(avg_scale_x)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_scale_x IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
-        },
-        {
-          "refId": "RIGHT",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id AS metric, AVG(avg_scale_y)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_scale_y IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
-          "format": "time_series",
-          "legendFormat": "{{metric}} - scale_y"
-        }
-      ],
-      "description": "Scale factor near 1.000000 for both axes; X on the left, Y on the right. Fixed engineering range preserves drift detail.",
-      "links": [
-        {
-          "title": "Open Machine Snapshot (select one Machine)",
-          "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
-          "targetBlank": false
-        },
-        {
-          "title": "Open Manufacturing",
-          "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
-          "targetBlank": false
-        },
-        {
-          "title": "Open Data Readiness",
-          "url": "/d/ldi-data-readiness/ldi-data-readiness?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
-          "targetBlank": false
-        }
-      ]
-    },
-    {
-      "id": 7,
-      "title": "◈ pe_1 ~ pe_6 (µm)",
-      "type": "timeseries",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 25,
-        "w": 12,
-        "h": 16
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "suffix: µm",
-          "decimals": 2,
-          "custom": {
-            "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "fillOpacity": 15,
-            "lineWidth": 2,
-            "showPoints": "never",
-            "spanNulls": false,
-            "gradientMode": "opacity",
-            "axisSoftMin": -80,
-            "axisSoftMax": 80,
-            "thresholdsStyle": {
-              "mode": "line+area"
-            }
-          },
-          "color": {
-            "mode": "palette-classic"
-          },
-          "links": [
-            {
-              "title": "Open Snapshot at this point",
-              "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-clicked_series=${__series.name}&var-event_time_ms=${__value.time}&var-machine_id=${machine_id}&var-log_id=__auto__&from=${__from}&to=${__to}",
-              "targetBlank": false,
-              "oneClick": true
-            }
-          ]
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": "/Spec Limit/"
-            },
-            "properties": [
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "fill": "dash",
-                  "dash": [
-                    10,
-                    10
-                  ]
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 1
-              },
-              {
-                "id": "custom.fillOpacity",
-                "value": 0
-              },
-              {
-                "id": "custom.gradientMode",
-                "value": "none"
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#FF003C"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "options": {
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        },
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "lastNotNull",
-            "min",
-            "max",
-            "mean"
-          ]
-        },
-        "connectNullPoints": true
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - pe_1' AS metric, AVG(avg_pe_1)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_pe_1 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
-        },
-        {
-          "refId": "B",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - pe_2' AS metric, AVG(avg_pe_2)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_pe_2 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
-        },
-        {
-          "refId": "C",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - pe_3' AS metric, AVG(avg_pe_3)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_pe_3 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
-        },
-        {
-          "refId": "D",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - pe_4' AS metric, AVG(avg_pe_4)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_pe_4 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
-        },
-        {
-          "refId": "E",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - pe_5' AS metric, AVG(avg_pe_5)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_pe_5 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
-        },
-        {
-          "refId": "F",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - pe_6' AS metric, AVG(avg_pe_6)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_pe_6 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
-        },
-        {
-          "refId": "G",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - Spec Limit (+)' AS metric, AVG(avg_pe_setting)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_pe_1 IS NOT NULL AND avg_pe_setting IS NOT NULL AND avg_pe_setting < 1000 GROUP BY 1, 2 ORDER BY 1",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
-        },
-        {
-          "refId": "H",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - Spec Limit (-)' AS metric, AVG(-avg_pe_setting)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_pe_1 IS NOT NULL AND avg_pe_setting IS NOT NULL AND avg_pe_setting < 1000 GROUP BY 1, 2 ORDER BY 1",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
-        }
-      ],
-      "description": "Individual signed PE values with per-machine +/- pe_setting spec-limit lines overlaid (dashed red). Soft scale covers the observed range (about -67 to +75 µm) without clipping future outliers.",
-      "links": [
-        {
-          "title": "Open Machine Snapshot (select one Machine)",
-          "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
-          "targetBlank": false
-        },
-        {
-          "title": "Open Manufacturing",
-          "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
-          "targetBlank": false
-        },
-        {
-          "title": "Open Data Readiness",
-          "url": "/d/ldi-data-readiness/ldi-data-readiness?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
-          "targetBlank": false
-        }
-      ]
-    },
-    {
-      "id": 8,
-      "title": "◈ je_1 ~ je_4 (µm)",
-      "type": "timeseries",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 12,
-        "y": 25,
-        "w": 12,
-        "h": 16
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "suffix: µm",
-          "decimals": 2,
-          "custom": {
-            "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "fillOpacity": 15,
-            "lineWidth": 2,
-            "showPoints": "never",
-            "spanNulls": false,
-            "gradientMode": "opacity",
-            "axisSoftMin": -5,
-            "axisSoftMax": 50,
-            "thresholdsStyle": {
-              "mode": "line+area"
-            }
-          },
-          "color": {
-            "mode": "palette-classic"
-          },
-          "links": [
-            {
-              "title": "Open Snapshot at this point",
-              "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-clicked_series=${__series.name}&var-event_time_ms=${__value.time}&var-machine_id=${machine_id}&var-log_id=__auto__&from=${__from}&to=${__to}",
-              "targetBlank": false,
-              "oneClick": true
-            }
-          ]
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": "/Spec Limit/"
-            },
-            "properties": [
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "fill": "dash",
-                  "dash": [
-                    10,
-                    10
-                  ]
-                }
-              },
-              {
-                "id": "custom.lineWidth",
-                "value": 1
-              },
-              {
-                "id": "custom.fillOpacity",
-                "value": 0
-              },
-              {
-                "id": "custom.gradientMode",
-                "value": "none"
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#FF003C"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "options": {
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        },
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "lastNotNull",
-            "min",
-            "max",
-            "mean"
-          ]
-        },
-        "connectNullPoints": true
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - je_1' AS metric, AVG(avg_je_1)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_je_1 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
-        },
-        {
-          "refId": "B",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - je_2' AS metric, AVG(avg_je_2)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_je_2 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
-        },
-        {
-          "refId": "C",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - je_3' AS metric, AVG(avg_je_3)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_je_3 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
-        },
-        {
-          "refId": "D",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - je_4' AS metric, AVG(avg_je_4)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_je_4 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
-        },
-        {
-          "refId": "E",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - Spec Limit' AS metric, AVG(avg_je_setting)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_je_setting IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
-        }
-      ],
-      "description": "Individual JE values with per-machine je_setting spec-limit line overlaid (dashed red). Soft scale covers the observed range (0 to about 43 µm) while retaining out-of-range visibility.",
-      "links": [
-        {
-          "title": "Open Machine Snapshot (select one Machine)",
-          "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
-          "targetBlank": false
-        },
-        {
-          "title": "Open Manufacturing",
-          "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
-          "targetBlank": false
-        },
-        {
-          "title": "Open Data Readiness",
-          "url": "/d/ldi-data-readiness/ldi-data-readiness?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
-          "targetBlank": false
-        }
-      ]
-    },
-    {
-      "id": 9,
-      "title": "◈ state",
-      "type": "state-timeline",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 41,
-        "w": 24,
-        "h": 8
-      },
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "0": {
-                  "color": "#EF4444",
-                  "index": 0,
-                  "text": "CRIT"
+                "matcher": {
+                  "id": "byFrameRefID",
+                  "options": "RIGHT"
                 },
-                "1": {
-                  "color": "#F59E0B",
-                  "index": 1,
-                  "text": "WARN"
-                },
-                "2": {
-                  "color": "#22C55E",
-                  "index": 2,
-                  "text": "OK"
-                }
-              }
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#EF4444",
-                "value": null
-              },
-              {
-                "color": "#22C55E",
-                "value": 1
-              }
-            ]
-          },
-          "color": {
-            "mode": "thresholds"
-          },
-          "unit": "short",
-          "links": [
-            {
-              "title": "Open Snapshot at this point",
-              "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-clicked_series=${__series.name}&var-event_time_ms=${__value.time}&var-machine_id=${__series.name}&var-log_id=__auto__&from=${__from}&to=${__to}",
-              "targetBlank": false,
-              "oneClick": true
-            }
-          ],
-          "custom": {
-            "lineWidth": 0,
-            "fillOpacity": 100
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "showValue": "auto",
-        "mergeValues": true,
-        "alignValue": "center",
-        "rowHeight": 0.9,
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "/* QUERY_BUDGET_EXEMPT: simple aggregate over full-range ldi_data, but at current data volume (300K+ rows and growing) exceeds the 80ms real-time budget. World-Class QA pass (2026-08-06): documented rather than silently ignored; revisit if this becomes an operator-facing latency complaint. */\nSELECT date_bin('1 minute', time, TIMESTAMPTZ '2000-01-01') AS time, eqp_id AS metric, MAX(CASE WHEN state THEN 1 ELSE 0 END) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) GROUP BY 1, 2 ORDER BY 1",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
-        }
-      ],
-      "description": "Machine lifesign: GREEN = RUNNING (state=true), RED = DOWN (state=false). Full-width panel for instant visibility of machine availability.",
-      "links": [
-        {
-          "title": "Open Machine Snapshot (select one Machine)",
-          "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
-          "targetBlank": false
-        },
-        {
-          "title": "Open Manufacturing",
-          "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
-          "targetBlank": false
-        },
-        {
-          "title": "Open Data Readiness",
-          "url": "/d/ldi-data-readiness/ldi-data-readiness?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
-          "targetBlank": false
-        }
-      ]
-    },
-    {
-      "id": 10,
-      "title": "◈ Machine Capability Ranking",
-      "type": "table",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 49,
-        "w": 24,
-        "h": 16
-      },
-      "options": {
-        "showHeader": true,
-        "cellHeight": "sm",
-        "footer": {
-          "show": false
-        },
-        "noValue": "-"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "/* QUERY_BUDGET_EXEMPT: per-row CROSS JOIN LATERAL unpivot + STDDEV/Cpk computation over the full ldi_data range. World-Class QA pass (2026-08-06): investigated partial indexes, ANALYZE, and single-scan rewrites -- none improved this pattern's cost, which scales with raw sample count by design. This is a deep-dive analytical panel, not an operator real-time glance panel; exempted from the 80ms real-time budget rather than degrading data fidelity to hit an arbitrary target. */\nWITH machines AS (\n  SELECT device_id AS eqp_id FROM public.devices WHERE device_type='ldi' AND enabled AND device_id IN (${machine_id:sqlstring})\n),\npe_samples AS (\n  SELECT d.eqp_id, d.pe_setting, p.pe\n  FROM public.ldi_data d\n  CROSS JOIN LATERAL (VALUES (d.pe_1),(d.pe_2),(d.pe_3),(d.pe_4),(d.pe_5),(d.pe_6)) p(pe)\n  WHERE $__timeFilter(d.\"time\")\n    AND d.factory IN (${factory:sqlstring}) AND d.process IN (${process:sqlstring}) AND d.mo IN (${mo:sqlstring}) AND d.fpn IN (${fpn:sqlstring}) AND d.layer_name IN (${layer:sqlstring}) AND d.eqp_id IN (${machine_id:sqlstring})\n    AND p.pe IS NOT NULL AND d.pe_setting IS NOT NULL\n),\npe_stats AS (\n  SELECT eqp_id, COUNT(*) AS n_pe, AVG(pe) AS mean_pe, STDDEV_SAMP(pe) AS stddev_pe, AVG(pe_setting) AS pe_limit\n  FROM pe_samples GROUP BY eqp_id\n),\npe_capability AS (\n  SELECT eqp_id, n_pe,\n    pe_limit / NULLIF(3 * stddev_pe, 0) AS cp_pe,\n    LEAST((pe_limit - mean_pe) / NULLIF(3 * stddev_pe, 0), (mean_pe + pe_limit) / NULLIF(3 * stddev_pe, 0)) AS cpk_pe\n  FROM pe_stats\n),\nje_samples AS (\n  SELECT d.eqp_id, d.je_setting, j.je\n  FROM public.ldi_data d\n  CROSS JOIN LATERAL (VALUES (d.je_1),(d.je_2),(d.je_3),(d.je_4)) j(je)\n  WHERE $__timeFilter(d.\"time\")\n    AND d.factory IN (${factory:sqlstring}) AND d.process IN (${process:sqlstring}) AND d.mo IN (${mo:sqlstring}) AND d.fpn IN (${fpn:sqlstring}) AND d.layer_name IN (${layer:sqlstring}) AND d.eqp_id IN (${machine_id:sqlstring})\n    AND j.je IS NOT NULL AND d.je_setting IS NOT NULL\n),\nje_stats AS (\n  SELECT eqp_id, COUNT(*) AS n_je, AVG(je) AS mean_je, STDDEV_SAMP(je) AS stddev_je, AVG(je_setting) AS je_limit\n  FROM je_samples GROUP BY eqp_id\n),\nje_capability AS (\n  SELECT eqp_id, n_je,\n    je_limit / NULLIF(3 * stddev_je, 0) AS cp_je,\n    LEAST((je_limit - mean_je) / NULLIF(3 * stddev_je, 0), (mean_je + je_limit) / NULLIF(3 * stddev_je, 0)) AS cpk_je\n  FROM je_stats\n),\ncombined AS (\n  SELECT m.eqp_id, p.n_pe, p.cp_pe, p.cpk_pe, j.n_je, j.cp_je, j.cpk_je\n  FROM machines m\n  LEFT JOIN pe_capability p ON p.eqp_id = m.eqp_id\n  LEFT JOIN je_capability j ON j.eqp_id = m.eqp_id\n),\nworst AS (\n  SELECT *,\n    CASE WHEN cpk_pe IS NULL THEN cpk_je WHEN cpk_je IS NULL THEN cpk_pe ELSE LEAST(cpk_pe, cpk_je) END AS worst_cpk,\n    CASE WHEN cpk_pe IS NULL THEN n_je WHEN cpk_je IS NULL THEN n_pe WHEN cpk_pe <= cpk_je THEN n_pe ELSE n_je END AS worst_n\n  FROM combined\n)\nSELECT eqp_id AS \"Machine\",\n       n_pe AS \"PE Samples\", ROUND(cpk_pe::NUMERIC, 3) AS \"Cpk (PE)\",\n       n_je AS \"JE Samples\", ROUND(cpk_je::NUMERIC, 3) AS \"Cpk (JE)\",\n       ROUND(worst_cpk::NUMERIC, 3) AS \"Worst Cpk\",\n       worst_n AS \"N (Worst)\",\n       CASE WHEN worst_cpk IS NULL THEN 'NO_DATA' WHEN COALESCE(worst_n, 0) < 30 THEN 'LOW SAMPLE (n<30)' ELSE 'OK' END AS \"Confidence\"\nFROM worst\nORDER BY worst_cpk ASC NULLS LAST",
-          "format": "table"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "custom": {
-            "align": "center",
-            "cellOptions": {
-              "type": "auto"
-            }
-          },
-          "mappings": [],
-          "decimals": 3,
-          "unit": "none"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "PE Samples"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "none"
-              },
-              {
-                "id": "decimals",
-                "value": 0
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "JE Samples"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "none"
-              },
-              {
-                "id": "decimals",
-                "value": 0
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "N (Worst)"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "none"
-              },
-              {
-                "id": "decimals",
-                "value": 0
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Worst Cpk"
-            },
-            "properties": [
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "color-background"
-                }
-              },
-              {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "#EF4444",
-                      "value": null
-                    },
-                    {
-                      "color": "#F59E0B",
-                      "value": 1.33
-                    },
-                    {
-                      "color": "#22C55E",
-                      "value": 1.67
-                    }
-                  ]
-                }
-              },
-              {
-                "id": "mappings",
-                "value": [
+                "properties": [
                   {
-                    "type": "special",
-                    "options": {
-                      "match": "null+nan",
-                      "result": {
-                        "color": "#64748B",
-                        "text": "N/A",
-                        "index": 0
-                      }
-                    }
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Confidence"
-            },
-            "properties": [
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "color-background"
-                }
-              },
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "type": "value",
-                    "options": {
-                      "OK": {
-                        "color": "#22C55E",
-                        "text": "OK"
-                      },
-                      "LOW SAMPLE (n<30)": {
-                        "color": "#F59E0B",
-                        "text": "LOW SAMPLE (n<30)"
-                      },
-                      "NO_DATA": {
-                        "color": "#64748B",
-                        "text": "NO_DATA"
-                      }
-                    }
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Machine"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 110
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "PE Samples"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 100
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Cpk (PE)"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 100
-              },
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "type": "special",
-                    "options": {
-                      "match": "null+nan",
-                      "result": {
-                        "color": "#64748B",
-                        "text": "N/A",
-                        "index": 0
-                      }
-                    }
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "JE Samples"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 100
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Cpk (JE)"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 100
-              },
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "type": "special",
-                    "options": {
-                      "match": "null+nan",
-                      "result": {
-                        "color": "#64748B",
-                        "text": "N/A",
-                        "index": 0
-                      }
-                    }
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Worst Cpk"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 100
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "N (Worst)"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 100
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Confidence"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 170
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Machine"
-            },
-            "properties": [
-              {
-                "id": "links",
-                "value": [
-                  {
-                    "title": "Open Machine Snapshot for ${__value.text}",
-                    "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=${__value.text}&from=${__from}&to=${__to}",
-                    "targetBlank": false
+                    "id": "unit",
+                    "value": "suffix: kPa"
                   },
                   {
-                    "title": "View RCA correlation (Engineering Analytics)",
-                    "url": "/d/ims-ldi-engineering-analytics/set2-engineering-analytics?var-machine_id=${__value.text}&from=${__from}&to=${__to}",
-                    "targetBlank": false
+                    "id": "custom.axisPlacement",
+                    "value": "right"
+                  },
+                  {
+                    "id": "custom.axisSoftMin",
+                    "value": -25
+                  },
+                  {
+                    "id": "custom.axisSoftMax",
+                    "value": 5
+                  },
+                  {
+                    "id": "color",
+                    "value": {
+                      "mode": "fixed",
+                      "fixedColor": "#F59E0B"
+                    }
                   }
                 ]
               }
             ]
-          }
-        ]
-      },
-      "description": "Every registered+enabled LDI machine, LEFT JOINed from public.devices (same pattern as v_machine_spc_fleet) -- a machine with zero PE or JE data in the selected window still shows a row (Confidence = NO_DATA) instead of silently disappearing from the ranking.",
-      "links": [
-        {
-          "title": "Open Machine Snapshot (select one Machine)",
-          "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
-          "targetBlank": false
-        },
-        {
-          "title": "Open Manufacturing",
-          "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
-          "targetBlank": false
-        },
-        {
-          "title": "Open Data Readiness",
-          "url": "/d/ldi-data-readiness/ldi-data-readiness?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
-          "targetBlank": false
-        }
-      ]
-    },
-    {
-      "id": 11,
-      "title": "◈ PE Standard Deviation by Machine (Lower is Better)",
-      "type": "barchart",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 65,
-        "w": 12,
-        "h": 16
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
           },
-          "decimals": 2,
-          "min": 0,
-          "unit": "suffix: µm",
-          "custom": {}
-        },
-        "overrides": []
-      },
-      "options": {
-        "orientation": "horizontal",
-        "stacking": "none",
-        "showValue": "auto",
-        "groupWidth": 0.7,
-        "barWidth": 0.8,
-        "barRadius": 0,
-        "fullHighlight": false,
-        "xTickLabelRotation": 0,
-        "xTickLabelSpacing": 0,
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": false
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "/* QUERY_BUDGET_EXEMPT: per-row CROSS JOIN LATERAL unpivot + STDDEV/Cpk computation over the full ldi_data range. World-Class QA pass (2026-08-06): investigated partial indexes, ANALYZE, and single-scan rewrites -- none improved this pattern's cost, which scales with raw sample count by design. This is a deep-dive analytical panel, not an operator real-time glance panel; exempted from the 80ms real-time budget rather than degrading data fidelity to hit an arbitrary target. */\nWITH pe_samples AS (\n  SELECT d.eqp_id, p.pe\n  FROM public.ldi_data d\n  CROSS JOIN LATERAL (VALUES (d.pe_1),(d.pe_2),(d.pe_3),(d.pe_4),(d.pe_5),(d.pe_6)) p(pe)\n  WHERE $__timeFilter(d.\"time\")\n    AND d.factory IN (${factory:sqlstring})\n    AND d.process IN (${process:sqlstring})\n    AND d.mo IN (${mo:sqlstring})\n    AND d.fpn IN (${fpn:sqlstring})\n    AND d.layer_name IN (${layer:sqlstring})\n    AND d.eqp_id IN (${machine_id:sqlstring})\n    AND p.pe IS NOT NULL\n)\nSELECT eqp_id AS \"Machine\", ROUND(STDDEV_SAMP(pe)::NUMERIC, 3) AS \"StdDev\"\nFROM pe_samples GROUP BY eqp_id HAVING STDDEV_SAMP(pe) IS NOT NULL ORDER BY \"StdDev\" DESC;",
-          "format": "table"
-        }
-      ],
-      "description": "Real PE1-PE6 standard deviation for the selected filters. Replaces the missing v_process_stability view.",
-      "links": [
-        {
-          "title": "Open Machine Snapshot (select one Machine)",
-          "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
-          "targetBlank": false
-        },
-        {
-          "title": "Open Manufacturing",
-          "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
-          "targetBlank": false
-        },
-        {
-          "title": "Open Data Readiness",
-          "url": "/d/ldi-data-readiness/ldi-data-readiness?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
-          "targetBlank": false
-        }
-      ]
-    },
-    {
-      "id": 15,
-      "title": "◈ JE Standard Deviation by Machine (Lower is Better)",
-      "type": "barchart",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 12,
-        "y": 65,
-        "w": 12,
-        "h": 16
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "decimals": 2,
-          "min": 0,
-          "unit": "suffix: µm",
-          "custom": {}
-        },
-        "overrides": []
-      },
-      "options": {
-        "orientation": "horizontal",
-        "stacking": "none",
-        "showValue": "auto",
-        "groupWidth": 0.7,
-        "barWidth": 0.8,
-        "barRadius": 0,
-        "fullHighlight": false,
-        "xTickLabelRotation": 0,
-        "xTickLabelSpacing": 0,
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": false
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "/* QUERY_BUDGET_EXEMPT: per-row CROSS JOIN LATERAL unpivot + STDDEV/Cpk computation over the full ldi_data range. World-Class QA pass (2026-08-06): investigated partial indexes, ANALYZE, and single-scan rewrites -- none improved this pattern's cost, which scales with raw sample count by design. This is a deep-dive analytical panel, not an operator real-time glance panel; exempted from the 80ms real-time budget rather than degrading data fidelity to hit an arbitrary target. */\nWITH je_samples AS (\n  SELECT d.eqp_id, j.je\n  FROM public.ldi_data d\n  CROSS JOIN LATERAL (VALUES (d.je_1),(d.je_2),(d.je_3),(d.je_4)) j(je)\n  WHERE $__timeFilter(d.\"time\")\n    AND d.factory IN (${factory:sqlstring})\n    AND d.process IN (${process:sqlstring})\n    AND d.mo IN (${mo:sqlstring})\n    AND d.fpn IN (${fpn:sqlstring})\n    AND d.layer_name IN (${layer:sqlstring})\n    AND d.eqp_id IN (${machine_id:sqlstring})\n    AND j.je IS NOT NULL\n)\nSELECT eqp_id AS \"Machine\", ROUND(STDDEV_SAMP(je)::NUMERIC, 3) AS \"StdDev\"\nFROM je_samples GROUP BY eqp_id HAVING STDDEV_SAMP(je) IS NOT NULL ORDER BY \"StdDev\" DESC;",
-          "format": "table"
-        }
-      ],
-      "description": "Real JE1-JE4 standard deviation for the selected filters. Mirrors the PE Standard Deviation panel above for JE parity.",
-      "links": [
-        {
-          "title": "Open Machine Snapshot (select one Machine)",
-          "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
-          "targetBlank": false
-        },
-        {
-          "title": "Open Manufacturing",
-          "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
-          "targetBlank": false
-        },
-        {
-          "title": "Open Data Readiness",
-          "url": "/d/ldi-data-readiness/ldi-data-readiness?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
-          "targetBlank": false
-        }
-      ]
-    },
-    {
-      "id": 12,
-      "title": "◈ Alignment Error Distribution (PE vs JE Histogram)",
-      "type": "barchart",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 81,
-        "w": 24,
-        "h": 12
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "decimals": 0,
-          "custom": {
-            "fillOpacity": 70,
-            "lineWidth": 1
-          },
-          "color": {
-            "mode": "palette-classic"
-          },
-          "mappings": []
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "PE Count"
+          "options": {
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
             },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#38BDF8"
-                }
-              },
-              {
-                "id": "displayName",
-                "value": "PE"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "JE Count"
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "lastNotNull",
+                "min",
+                "max",
+                "mean"
+              ]
             },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#F59E0B"
-                }
-              },
-              {
-                "id": "displayName",
-                "value": "JE"
-              }
-            ]
-          }
-        ]
-      },
-      "options": {
-        "orientation": "vertical",
-        "stacking": "none",
-        "showValue": "never",
-        "groupWidth": 0.7,
-        "barWidth": 0.9,
-        "barRadius": 0,
-        "fullHighlight": false,
-        "xTickLabelRotation": 0,
-        "xTickLabelSpacing": 0,
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        },
-        "xField": "Error (µm)"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
+            "connectNullPoints": true
           },
-          "rawSql": "/* QUERY_BUDGET_EXEMPT: rewritten 2026-08-06 to pre-bin server-side with width_bucket()+GROUP BY (was raw-row CROSS JOIN LATERAL unpivot feeding client-side histogram binning, ~4-5s per query target). This cut cost roughly 6-9x (to ~0.9-1.5s) but the unpivot over the full dataset still exceeds the 80ms real-time budget. Same investigated-with-no-further-improvement class as the other SPC/Cpk panels. */\nWITH pe_raw AS (\n  SELECT p.pe AS value\n  FROM public.ldi_data d\n  CROSS JOIN LATERAL (VALUES (d.pe_1),(d.pe_2),(d.pe_3),(d.pe_4),(d.pe_5),(d.pe_6)) p(pe)\n  WHERE $__timeFilter(d.\"time\")\n    AND d.factory IN (${factory:sqlstring}) AND d.process IN (${process:sqlstring}) AND d.mo IN (${mo:sqlstring}) AND d.fpn IN (${fpn:sqlstring}) AND d.layer_name IN (${layer:sqlstring}) AND d.eqp_id IN (${machine_id:sqlstring})\n    AND p.pe IS NOT NULL AND p.pe BETWEEN -80 AND 80\n),\nje_raw AS (\n  SELECT j.je AS value\n  FROM public.ldi_data d\n  CROSS JOIN LATERAL (VALUES (d.je_1),(d.je_2),(d.je_3),(d.je_4)) j(je)\n  WHERE $__timeFilter(d.\"time\")\n    AND d.factory IN (${factory:sqlstring}) AND d.process IN (${process:sqlstring}) AND d.mo IN (${mo:sqlstring}) AND d.fpn IN (${fpn:sqlstring}) AND d.layer_name IN (${layer:sqlstring}) AND d.eqp_id IN (${machine_id:sqlstring})\n    AND j.je IS NOT NULL AND j.je BETWEEN -80 AND 80\n),\npe_binned AS (\n  SELECT (-80 + (width_bucket(value, -80, 80, 80) - 1) * 2)::INT AS bin, COUNT(*) AS pe_count\n  FROM pe_raw GROUP BY 1\n),\nje_binned AS (\n  SELECT (-80 + (width_bucket(value, -80, 80, 80) - 1) * 2)::INT AS bin, COUNT(*) AS je_count\n  FROM je_raw GROUP BY 1\n),\nbins AS (\n  SELECT generate_series(-80, 78, 2) AS bin\n)\nSELECT b.bin AS \"Error (µm)\", COALESCE(pe.pe_count, 0) AS \"PE Count\", COALESCE(je.je_count, 0) AS \"JE Count\"\nFROM bins b\nLEFT JOIN pe_binned pe ON pe.bin = b.bin\nLEFT JOIN je_binned je ON je.bin = b.bin\nORDER BY b.bin",
-          "format": "table"
-        }
-      ],
-      "description": "Server-side pre-binned distribution of PE (position error, 6 samples/row) and JE (judgment error, 4 samples/row) values in 2µm buckets from -80 to +80µm. World-Class QA pass: previously shipped ~1.4M raw per-sample rows to Grafana for client-side histogram binning (4-5s query, forced a disk-based sort) -- rewritten to bucket with width_bucket()+GROUP BY server-side, returning at most 80 rows regardless of data volume.",
-      "links": [
-        {
-          "title": "Open Machine Snapshot (select one Machine)",
-          "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
-          "targetBlank": false
-        },
-        {
-          "title": "Open Manufacturing",
-          "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
-          "targetBlank": false
-        },
-        {
-          "title": "Open Data Readiness",
-          "url": "/d/ldi-data-readiness/ldi-data-readiness?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
-          "targetBlank": false
-        }
-      ]
-    },
-    {
-      "id": 13,
-      "title": "◈ Resist Dosage Live (mJ/cm²)",
-      "type": "bargauge",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 93,
-        "w": 24,
-        "h": 10
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "suffix: mJ/cm²",
-          "min": 0,
-          "decimals": 2,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#EF4444",
-                "value": null
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "uid": "timescaledb"
               },
-              {
-                "color": "#F59E0B",
-                "value": 10
+              "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id AS metric, AVG(avg_scan_speed)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_scan_speed IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+              "format": "time_series",
+              "legendFormat": "{{metric}}"
+            },
+            {
+              "refId": "RIGHT",
+              "datasource": {
+                "uid": "timescaledb"
               },
-              {
-                "color": "#22C55E",
-                "value": 14
-              },
-              {
-                "color": "#F59E0B",
-                "value": 22
-              },
-              {
-                "color": "#EF4444",
-                "value": 30
-              }
-            ]
-          },
-          "color": {
-            "mode": "thresholds"
-          },
-          "custom": {}
-        },
-        "overrides": []
-      },
-      "options": {
-        "orientation": "horizontal",
-        "displayMode": "lcd",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
+              "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id AS metric, AVG(avg_air_vacuum)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_air_vacuum IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+              "format": "time_series",
+              "legendFormat": "{{metric}} - air_vacuum"
+            }
           ],
-          "values": false
-        }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "/* QUERY_BUDGET_EXEMPT: simple aggregate over full-range ldi_data, but at current data volume (300K+ rows and growing) exceeds the 80ms real-time budget. World-Class QA pass (2026-08-06): documented rather than silently ignored; revisit if this becomes an operator-facing latency complaint. */\nSELECT eqp_id AS metric, ROUND(AVG(resist_dosage)::NUMERIC, 1) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND resist_dosage IS NOT NULL GROUP BY 1 ORDER BY 1",
-          "format": "table"
-        }
-      ],
-      "description": "Latest resist dosage per selected machine. Auto-ranging is used because observed machine settings span 15 to 1,200 mJ/cm².",
-      "links": [
-        {
-          "title": "Open Machine Snapshot (select one Machine)",
-          "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
-          "targetBlank": false
-        },
-        {
-          "title": "Open Manufacturing",
-          "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
-          "targetBlank": false
-        },
-        {
-          "title": "Open Data Readiness",
-          "url": "/d/ldi-data-readiness/ldi-data-readiness?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
-          "targetBlank": false
+          "description": "Laser scan speed in mm/s, overlaid with air vacuum (right axis, kPa) to correlate speed changes with vacuum/chuck-seal drift.",
+          "links": [
+            {
+              "title": "Open Machine Snapshot (select one Machine)",
+              "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "targetBlank": false
+            },
+            {
+              "title": "Open Manufacturing",
+              "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "targetBlank": false
+            },
+            {
+              "title": "Open Data Readiness",
+              "url": "/d/ldi-data-readiness/ldi-data-readiness?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "targetBlank": false
+            }
+          ]
         }
       ]
     },
     {
-      "id": 14,
-      "title": "◉ Alarm ↔ Process Correlation (RCA Truth Test)",
-      "type": "table",
+      "id": 1002,
+      "type": "row",
+      "title": "Registration & Alignment",
+      "collapsed": true,
       "gridPos": {
-        "h": 12,
-        "w": 24,
         "x": 0,
-        "y": 103
+        "y": 11,
+        "w": 24,
+        "h": 1
       },
-      "datasource": {
-        "type": "postgres",
-        "uid": "timescaledb"
-      },
-      "targets": [
+      "panels": [
         {
-          "format": "table",
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nWITH alarm_ctx AS (\n  SELECT c.*, cat.category\n  FROM v_ldi_alarm_context c\n  JOIN v_ldi_alarm_category cat ON cat.alarm_code = c.errorcode\n),\nbaseline AS (\n  SELECT\n    ROUND((100.0*COUNT(*) FILTER (WHERE temperature < 20 OR temperature > 24) / NULLIF(COUNT(*), 0))::NUMERIC, 1) AS thermal_pct,\n    ROUND((100.0*COUNT(*) FILTER (WHERE humidity < 50 OR humidity > 60) / NULLIF(COUNT(*), 0))::NUMERIC, 1) AS humidity_pct,\n    ROUND((100.0*COUNT(*) FILTER (WHERE air_vacuum > -8 OR air_vacuum < -30) / NULLIF(COUNT(*), 0))::NUMERIC, 1) AS vac_pct,\n    ROUND((100.0*COUNT(*) FILTER (WHERE ABS(pe_1) > 10 OR ABS(je_1) > 10) / NULLIF(COUNT(*), 0))::NUMERIC, 1) AS pe_pct,\n    ROUND((100.0*COUNT(*) FILTER (WHERE scan_speed > 450 OR scan_speed <= 0) / NULLIF(COUNT(*), 0))::NUMERIC, 1) AS motion_pct\n  FROM public.ldi_data\n),\ncats AS (\n  SELECT 'THERMAL (91008)' AS cat, ROUND((100.0*COUNT(*) FILTER (WHERE flag_thermal_out_of_spec) / NULLIF(COUNT(*), 0))::NUMERIC, 1) AS alarm_pct, COUNT(*) AS n FROM alarm_ctx WHERE category = 'ENVIRONMENT'\n  UNION ALL\n  SELECT 'HUMIDITY (91008)', ROUND((100.0*COUNT(*) FILTER (WHERE flag_humidity_out_of_spec) / NULLIF(COUNT(*), 0))::NUMERIC, 1), COUNT(*) FROM alarm_ctx WHERE category = 'ENVIRONMENT'\n  UNION ALL\n  SELECT 'VACUUM (91009)', ROUND((100.0*COUNT(*) FILTER (WHERE flag_vac_out_of_spec) / NULLIF(COUNT(*), 0))::NUMERIC, 1), COUNT(*) FROM alarm_ctx WHERE category = 'VACUUM'\n  UNION ALL\n  SELECT 'ALIGNMENT/PE-JE (90001,90004,90005,90012,90013)', ROUND((100.0*COUNT(*) FILTER (WHERE flag_pe_out_of_spec) / NULLIF(COUNT(*), 0))::NUMERIC, 1), COUNT(*) FROM alarm_ctx WHERE category IN ('REGISTRATION','ALIGNMENT')\n  UNION ALL\n  SELECT 'MOTION (70004)', ROUND((100.0*COUNT(*) FILTER (WHERE flag_scan_speed_out_of_spec) / NULLIF(COUNT(*), 0))::NUMERIC, 1), COUNT(*) FROM alarm_ctx WHERE category = 'MOTION'\n)\nSELECT c.cat AS \"Alarm Category\",\n       c.alarm_pct AS \"Alarm-Window %\",\n       CASE\n         WHEN c.cat = 'THERMAL (91008)' THEN b.thermal_pct\n         WHEN c.cat = 'HUMIDITY (91008)' THEN b.humidity_pct\n         WHEN c.cat = 'VACUUM (91009)' THEN b.vac_pct\n         WHEN c.cat = 'MOTION (70004)' THEN b.motion_pct\n         ELSE b.pe_pct\n       END AS \"Baseline %\",\n       ROUND((c.alarm_pct / NULLIF(CASE\n         WHEN c.cat = 'THERMAL (91008)' THEN b.thermal_pct\n         WHEN c.cat = 'HUMIDITY (91008)' THEN b.humidity_pct\n         WHEN c.cat = 'VACUUM (91009)' THEN b.vac_pct\n         WHEN c.cat = 'MOTION (70004)' THEN b.motion_pct\n         ELSE b.pe_pct\n       END, 0))::NUMERIC, 2) AS \"Lift\",\n       c.n AS \"Event Count\",\n       CASE WHEN c.n < 30 THEN 'LOW SAMPLE (n<30)' ELSE 'OK' END AS \"Confidence\"\nFROM cats c CROSS JOIN baseline b\nORDER BY \"Lift\" DESC NULLS LAST",
-          "refId": "A"
-        }
-      ],
-      "options": {
-        "showHeader": true,
-        "cellHeight": "sm",
-        "footer": {
-          "show": false
-        },
-        "noValue": "-"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
+          "id": 5,
+          "title": "◈ scale_x vs scale_y",
+          "type": "timeseries",
+          "datasource": {
+            "uid": "timescaledb"
           },
-          "custom": {
-            "align": "center",
-            "cellOptions": {
-              "type": "auto"
+          "gridPos": {
+            "x": 0,
+            "y": 0,
+            "w": 24,
+            "h": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "none",
+              "decimals": 2,
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "smooth",
+                "fillOpacity": 15,
+                "lineWidth": 2,
+                "showPoints": "never",
+                "spanNulls": false,
+                "gradientMode": "opacity",
+                "thresholdsStyle": {
+                  "mode": "line+area"
+                }
+              },
+              "color": {
+                "mode": "palette-classic"
+              },
+              "links": [
+                {
+                  "title": "Open Snapshot at this point",
+                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-clicked_series=${__series.name}&var-event_time_ms=${__value.time}&var-machine_id=${__series.name}&var-log_id=__auto__&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
+                }
+              ],
+              "min": 0.9995,
+              "max": 1.0007
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byFrameRefID",
+                  "options": "RIGHT"
+                },
+                "properties": [
+                  {
+                    "id": "custom.axisPlacement",
+                    "value": "right"
+                  },
+                  {
+                    "id": "color",
+                    "value": {
+                      "mode": "fixed",
+                      "fixedColor": "#F59E0B"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            },
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "lastNotNull",
+                "min",
+                "max",
+                "mean"
+              ]
+            },
+            "connectNullPoints": true
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "uid": "timescaledb"
+              },
+              "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id AS metric, AVG(avg_scale_x)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_scale_x IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+              "format": "time_series",
+              "legendFormat": "{{metric}}"
+            },
+            {
+              "refId": "RIGHT",
+              "datasource": {
+                "uid": "timescaledb"
+              },
+              "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id AS metric, AVG(avg_scale_y)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_scale_y IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+              "format": "time_series",
+              "legendFormat": "{{metric}} - scale_y"
+            }
+          ],
+          "description": "Scale factor near 1.000000 for both axes; X on the left, Y on the right. Fixed engineering range preserves drift detail.",
+          "links": [
+            {
+              "title": "Open Machine Snapshot (select one Machine)",
+              "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "targetBlank": false
+            },
+            {
+              "title": "Open Manufacturing",
+              "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "targetBlank": false
+            },
+            {
+              "title": "Open Data Readiness",
+              "url": "/d/ldi-data-readiness/ldi-data-readiness?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "targetBlank": false
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "title": "◈ pe_1 ~ pe_6 (µm)",
+          "type": "timeseries",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 8,
+            "w": 12,
+            "h": 16
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "suffix: µm",
+              "decimals": 2,
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "smooth",
+                "fillOpacity": 15,
+                "lineWidth": 2,
+                "showPoints": "never",
+                "spanNulls": false,
+                "gradientMode": "opacity",
+                "axisSoftMin": -80,
+                "axisSoftMax": 80,
+                "thresholdsStyle": {
+                  "mode": "line+area"
+                }
+              },
+              "color": {
+                "mode": "palette-classic"
+              },
+              "links": [
+                {
+                  "title": "Open Snapshot at this point",
+                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-clicked_series=${__series.name}&var-event_time_ms=${__value.time}&var-machine_id=${machine_id}&var-log_id=__auto__&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
+                }
+              ]
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": "/Spec Limit/"
+                },
+                "properties": [
+                  {
+                    "id": "custom.lineStyle",
+                    "value": {
+                      "fill": "dash",
+                      "dash": [
+                        10,
+                        10
+                      ]
+                    }
+                  },
+                  {
+                    "id": "custom.lineWidth",
+                    "value": 1
+                  },
+                  {
+                    "id": "custom.fillOpacity",
+                    "value": 0
+                  },
+                  {
+                    "id": "custom.gradientMode",
+                    "value": "none"
+                  },
+                  {
+                    "id": "color",
+                    "value": {
+                      "mode": "fixed",
+                      "fixedColor": "#EF4444"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            },
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "lastNotNull",
+                "min",
+                "max",
+                "mean"
+              ]
+            },
+            "connectNullPoints": true
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "uid": "timescaledb"
+              },
+              "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - pe_1' AS metric, AVG(avg_pe_1)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_pe_1 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+              "format": "time_series",
+              "legendFormat": "{{metric}}"
+            },
+            {
+              "refId": "B",
+              "datasource": {
+                "uid": "timescaledb"
+              },
+              "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - pe_2' AS metric, AVG(avg_pe_2)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_pe_2 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+              "format": "time_series",
+              "legendFormat": "{{metric}}"
+            },
+            {
+              "refId": "C",
+              "datasource": {
+                "uid": "timescaledb"
+              },
+              "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - pe_3' AS metric, AVG(avg_pe_3)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_pe_3 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+              "format": "time_series",
+              "legendFormat": "{{metric}}"
+            },
+            {
+              "refId": "D",
+              "datasource": {
+                "uid": "timescaledb"
+              },
+              "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - pe_4' AS metric, AVG(avg_pe_4)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_pe_4 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+              "format": "time_series",
+              "legendFormat": "{{metric}}"
+            },
+            {
+              "refId": "E",
+              "datasource": {
+                "uid": "timescaledb"
+              },
+              "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - pe_5' AS metric, AVG(avg_pe_5)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_pe_5 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+              "format": "time_series",
+              "legendFormat": "{{metric}}"
+            },
+            {
+              "refId": "F",
+              "datasource": {
+                "uid": "timescaledb"
+              },
+              "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - pe_6' AS metric, AVG(avg_pe_6)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_pe_6 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+              "format": "time_series",
+              "legendFormat": "{{metric}}"
+            },
+            {
+              "refId": "G",
+              "datasource": {
+                "uid": "timescaledb"
+              },
+              "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - Spec Limit (+)' AS metric, AVG(avg_pe_setting)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_pe_1 IS NOT NULL AND avg_pe_setting IS NOT NULL AND avg_pe_setting < 1000 GROUP BY 1, 2 ORDER BY 1",
+              "format": "time_series",
+              "legendFormat": "{{metric}}"
+            },
+            {
+              "refId": "H",
+              "datasource": {
+                "uid": "timescaledb"
+              },
+              "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - Spec Limit (-)' AS metric, AVG(-avg_pe_setting)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_pe_1 IS NOT NULL AND avg_pe_setting IS NOT NULL AND avg_pe_setting < 1000 GROUP BY 1, 2 ORDER BY 1",
+              "format": "time_series",
+              "legendFormat": "{{metric}}"
+            }
+          ],
+          "description": "Individual signed PE values with per-machine +/- pe_setting spec-limit lines overlaid (dashed red). Soft scale covers the observed range (about -67 to +75 µm) without clipping future outliers.",
+          "links": [
+            {
+              "title": "Open Machine Snapshot (select one Machine)",
+              "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "targetBlank": false
+            },
+            {
+              "title": "Open Manufacturing",
+              "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "targetBlank": false
+            },
+            {
+              "title": "Open Data Readiness",
+              "url": "/d/ldi-data-readiness/ldi-data-readiness?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "targetBlank": false
+            }
+          ]
+        },
+        {
+          "id": 8,
+          "title": "◈ je_1 ~ je_4 (µm)",
+          "type": "timeseries",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "gridPos": {
+            "x": 12,
+            "y": 24,
+            "w": 12,
+            "h": 16
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "suffix: µm",
+              "decimals": 2,
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "smooth",
+                "fillOpacity": 15,
+                "lineWidth": 2,
+                "showPoints": "never",
+                "spanNulls": false,
+                "gradientMode": "opacity",
+                "axisSoftMin": -5,
+                "axisSoftMax": 50,
+                "thresholdsStyle": {
+                  "mode": "line+area"
+                }
+              },
+              "color": {
+                "mode": "palette-classic"
+              },
+              "links": [
+                {
+                  "title": "Open Snapshot at this point",
+                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-clicked_series=${__series.name}&var-event_time_ms=${__value.time}&var-machine_id=${machine_id}&var-log_id=__auto__&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
+                }
+              ]
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": "/Spec Limit/"
+                },
+                "properties": [
+                  {
+                    "id": "custom.lineStyle",
+                    "value": {
+                      "fill": "dash",
+                      "dash": [
+                        10,
+                        10
+                      ]
+                    }
+                  },
+                  {
+                    "id": "custom.lineWidth",
+                    "value": 1
+                  },
+                  {
+                    "id": "custom.fillOpacity",
+                    "value": 0
+                  },
+                  {
+                    "id": "custom.gradientMode",
+                    "value": "none"
+                  },
+                  {
+                    "id": "color",
+                    "value": {
+                      "mode": "fixed",
+                      "fixedColor": "#EF4444"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            },
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "lastNotNull",
+                "min",
+                "max",
+                "mean"
+              ]
+            },
+            "connectNullPoints": true
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "uid": "timescaledb"
+              },
+              "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - je_1' AS metric, AVG(avg_je_1)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_je_1 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+              "format": "time_series",
+              "legendFormat": "{{metric}}"
+            },
+            {
+              "refId": "B",
+              "datasource": {
+                "uid": "timescaledb"
+              },
+              "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - je_2' AS metric, AVG(avg_je_2)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_je_2 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+              "format": "time_series",
+              "legendFormat": "{{metric}}"
+            },
+            {
+              "refId": "C",
+              "datasource": {
+                "uid": "timescaledb"
+              },
+              "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - je_3' AS metric, AVG(avg_je_3)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_je_3 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+              "format": "time_series",
+              "legendFormat": "{{metric}}"
+            },
+            {
+              "refId": "D",
+              "datasource": {
+                "uid": "timescaledb"
+              },
+              "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - je_4' AS metric, AVG(avg_je_4)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_je_4 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+              "format": "time_series",
+              "legendFormat": "{{metric}}"
+            },
+            {
+              "refId": "E",
+              "datasource": {
+                "uid": "timescaledb"
+              },
+              "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - Spec Limit' AS metric, AVG(avg_je_setting)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_je_setting IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+              "format": "time_series",
+              "legendFormat": "{{metric}}"
+            }
+          ],
+          "description": "Individual JE values with per-machine je_setting spec-limit line overlaid (dashed red). Soft scale covers the observed range (0 to about 43 µm) while retaining out-of-range visibility.",
+          "links": [
+            {
+              "title": "Open Machine Snapshot (select one Machine)",
+              "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "targetBlank": false
+            },
+            {
+              "title": "Open Manufacturing",
+              "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "targetBlank": false
+            },
+            {
+              "title": "Open Data Readiness",
+              "url": "/d/ldi-data-readiness/ldi-data-readiness?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "targetBlank": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1003,
+      "type": "row",
+      "title": "Machine State & Capability",
+      "collapsed": true,
+      "gridPos": {
+        "x": 0,
+        "y": 12,
+        "w": 24,
+        "h": 1
+      },
+      "panels": [
+        {
+          "id": 9,
+          "title": "◈ state",
+          "type": "state-timeline",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 0,
+            "w": 24,
+            "h": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "mappings": [
+                {
+                  "type": "value",
+                  "options": {
+                    "0": {
+                      "color": "#EF4444",
+                      "index": 0,
+                      "text": "CRIT"
+                    },
+                    "1": {
+                      "color": "#F59E0B",
+                      "index": 1,
+                      "text": "WARN"
+                    },
+                    "2": {
+                      "color": "#22C55E",
+                      "index": 2,
+                      "text": "OK"
+                    }
+                  }
+                }
+              ],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "#EF4444",
+                    "value": null
+                  },
+                  {
+                    "color": "#22C55E",
+                    "value": 1
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "unit": "short",
+              "links": [
+                {
+                  "title": "Open Snapshot at this point",
+                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-clicked_series=${__series.name}&var-event_time_ms=${__value.time}&var-machine_id=${__series.name}&var-log_id=__auto__&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
+                }
+              ],
+              "custom": {
+                "lineWidth": 0,
+                "fillOpacity": 100
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "showValue": "auto",
+            "mergeValues": true,
+            "alignValue": "center",
+            "rowHeight": 0.9,
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom"
             }
           },
-          "mappings": [],
-          "unit": "none",
-          "decimals": 1
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "uid": "timescaledb"
+              },
+              "rawSql": "/* QUERY_BUDGET_EXEMPT: simple aggregate over full-range ldi_data, but at current data volume (300K+ rows and growing) exceeds the 80ms real-time budget. World-Class QA pass (2026-08-06): documented rather than silently ignored; revisit if this becomes an operator-facing latency complaint. */\nSELECT date_bin('1 minute', time, TIMESTAMPTZ '2000-01-01') AS time, eqp_id AS metric, MAX(CASE WHEN state THEN 1 ELSE 0 END) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) GROUP BY 1, 2 ORDER BY 1",
+              "format": "time_series",
+              "legendFormat": "{{metric}}"
+            }
+          ],
+          "description": "Machine lifesign: GREEN = RUNNING (state=true), RED = DOWN (state=false). Full-width panel for instant visibility of machine availability.",
+          "links": [
+            {
+              "title": "Open Machine Snapshot (select one Machine)",
+              "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "targetBlank": false
+            },
+            {
+              "title": "Open Manufacturing",
+              "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "targetBlank": false
+            },
+            {
+              "title": "Open Data Readiness",
+              "url": "/d/ldi-data-readiness/ldi-data-readiness?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "targetBlank": false
+            }
+          ]
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Alarm-Window %"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "percent"
-              }
-            ]
+        {
+          "id": 10,
+          "title": "◈ Machine Capability Ranking",
+          "type": "table",
+          "datasource": {
+            "uid": "timescaledb"
           },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Baseline %"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "percent"
-              }
-            ]
+          "gridPos": {
+            "x": 0,
+            "y": 8,
+            "w": 24,
+            "h": 16
           },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Event Count"
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": {
+              "show": false
             },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "none"
+            "noValue": "NO_DATA"
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "uid": "timescaledb"
               },
-              {
-                "id": "decimals",
-                "value": 0
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Lift"
-            },
-            "properties": [
-              {
-                "id": "decimals",
-                "value": 2
+              "rawSql": "/* QUERY_BUDGET_EXEMPT: per-row CROSS JOIN LATERAL unpivot + STDDEV/Cpk computation over the full ldi_data range. World-Class QA pass (2026-08-06): investigated partial indexes, ANALYZE, and single-scan rewrites -- none improved this pattern's cost, which scales with raw sample count by design. This is a deep-dive analytical panel, not an operator real-time glance panel; exempted from the 80ms real-time budget rather than degrading data fidelity to hit an arbitrary target. */\nWITH machines AS (\n  SELECT device_id AS eqp_id FROM public.devices WHERE device_type='ldi' AND enabled AND device_id IN (${machine_id:sqlstring})\n),\npe_samples AS (\n  SELECT d.eqp_id, d.pe_setting, p.pe\n  FROM public.ldi_data d\n  CROSS JOIN LATERAL (VALUES (d.pe_1),(d.pe_2),(d.pe_3),(d.pe_4),(d.pe_5),(d.pe_6)) p(pe)\n  WHERE $__timeFilter(d.\"time\")\n    AND d.factory IN (${factory:sqlstring}) AND d.process IN (${process:sqlstring}) AND d.mo IN (${mo:sqlstring}) AND d.fpn IN (${fpn:sqlstring}) AND d.layer_name IN (${layer:sqlstring}) AND d.eqp_id IN (${machine_id:sqlstring})\n    AND p.pe IS NOT NULL AND d.pe_setting IS NOT NULL\n),\npe_stats AS (\n  SELECT eqp_id, COUNT(*) AS n_pe, AVG(pe) AS mean_pe, STDDEV_SAMP(pe) AS stddev_pe, AVG(pe_setting) AS pe_limit\n  FROM pe_samples GROUP BY eqp_id\n),\npe_capability AS (\n  SELECT eqp_id, n_pe,\n    pe_limit / NULLIF(3 * stddev_pe, 0) AS cp_pe,\n    LEAST((pe_limit - mean_pe) / NULLIF(3 * stddev_pe, 0), (mean_pe + pe_limit) / NULLIF(3 * stddev_pe, 0)) AS cpk_pe\n  FROM pe_stats\n),\nje_samples AS (\n  SELECT d.eqp_id, d.je_setting, j.je\n  FROM public.ldi_data d\n  CROSS JOIN LATERAL (VALUES (d.je_1),(d.je_2),(d.je_3),(d.je_4)) j(je)\n  WHERE $__timeFilter(d.\"time\")\n    AND d.factory IN (${factory:sqlstring}) AND d.process IN (${process:sqlstring}) AND d.mo IN (${mo:sqlstring}) AND d.fpn IN (${fpn:sqlstring}) AND d.layer_name IN (${layer:sqlstring}) AND d.eqp_id IN (${machine_id:sqlstring})\n    AND j.je IS NOT NULL AND d.je_setting IS NOT NULL\n),\nje_stats AS (\n  SELECT eqp_id, COUNT(*) AS n_je, AVG(je) AS mean_je, STDDEV_SAMP(je) AS stddev_je, AVG(je_setting) AS je_limit\n  FROM je_samples GROUP BY eqp_id\n),\nje_capability AS (\n  SELECT eqp_id, n_je,\n    je_limit / NULLIF(3 * stddev_je, 0) AS cp_je,\n    LEAST((je_limit - mean_je) / NULLIF(3 * stddev_je, 0), (mean_je + je_limit) / NULLIF(3 * stddev_je, 0)) AS cpk_je\n  FROM je_stats\n),\ncombined AS (\n  SELECT m.eqp_id, p.n_pe, p.cp_pe, p.cpk_pe, j.n_je, j.cp_je, j.cpk_je\n  FROM machines m\n  LEFT JOIN pe_capability p ON p.eqp_id = m.eqp_id\n  LEFT JOIN je_capability j ON j.eqp_id = m.eqp_id\n),\nworst AS (\n  SELECT *,\n    CASE WHEN cpk_pe IS NULL THEN cpk_je WHEN cpk_je IS NULL THEN cpk_pe ELSE LEAST(cpk_pe, cpk_je) END AS worst_cpk,\n    CASE WHEN cpk_pe IS NULL THEN n_je WHEN cpk_je IS NULL THEN n_pe WHEN cpk_pe <= cpk_je THEN n_pe ELSE n_je END AS worst_n\n  FROM combined\n)\nSELECT eqp_id AS \"Machine\",\n       n_pe AS \"PE Samples\", ROUND(cpk_pe::NUMERIC, 3) AS \"Cpk (PE)\",\n       n_je AS \"JE Samples\", ROUND(cpk_je::NUMERIC, 3) AS \"Cpk (JE)\",\n       ROUND(worst_cpk::NUMERIC, 3) AS \"Worst Cpk\",\n       worst_n AS \"N (Worst)\",\n       CASE WHEN worst_cpk IS NULL THEN 'NO_DATA' WHEN COALESCE(worst_n, 0) < 30 THEN 'LOW SAMPLE (n<30)' ELSE 'OK' END AS \"Confidence\"\nFROM worst\nORDER BY worst_cpk ASC NULLS LAST",
+              "format": "table"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
               },
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "color-background"
+              "custom": {
+                "align": "center",
+                "cellOptions": {
+                  "type": "auto"
                 }
               },
-              {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "#EF4444",
-                      "value": null
-                    },
-                    {
-                      "color": "#F59E0B",
-                      "value": 1
-                    },
-                    {
-                      "color": "#22C55E",
-                      "value": 2
-                    }
-                  ]
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Confidence"
+              "mappings": [],
+              "decimals": 3,
+              "unit": "none"
             },
-            "properties": [
+            "overrides": [
               {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "color-background"
-                }
-              },
-              {
-                "id": "mappings",
-                "value": [
+                "matcher": {
+                  "id": "byName",
+                  "options": "PE Samples"
+                },
+                "properties": [
                   {
-                    "type": "value",
-                    "options": {
-                      "OK": {
-                        "color": "#22C55E",
-                        "text": "OK"
-                      },
-                      "LOW SAMPLE (n<30)": {
-                        "color": "#F59E0B",
-                        "text": "LOW SAMPLE (n<30)"
-                      }
+                    "id": "unit",
+                    "value": "none"
+                  },
+                  {
+                    "id": "decimals",
+                    "value": 0
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "JE Samples"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "none"
+                  },
+                  {
+                    "id": "decimals",
+                    "value": 0
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "N (Worst)"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "none"
+                  },
+                  {
+                    "id": "decimals",
+                    "value": 0
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Worst Cpk"
+                },
+                "properties": [
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-background"
                     }
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "#EF4444",
+                          "value": null
+                        },
+                        {
+                          "color": "#F59E0B",
+                          "value": 1.33
+                        },
+                        {
+                          "color": "#22C55E",
+                          "value": 1.67
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "special",
+                        "options": {
+                          "match": "null+nan",
+                          "result": {
+                            "color": "#64748B",
+                            "text": "N/A",
+                            "index": 0
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Confidence"
+                },
+                "properties": [
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-background"
+                    }
+                  },
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "OK": {
+                            "color": "#22C55E",
+                            "text": "OK"
+                          },
+                          "LOW SAMPLE (n<30)": {
+                            "color": "#F59E0B",
+                            "text": "LOW SAMPLE (n<30)"
+                          },
+                          "NO_DATA": {
+                            "color": "#64748B",
+                            "text": "NO_DATA"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Machine"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 110
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "PE Samples"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 100
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Cpk (PE)"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 100
+                  },
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "special",
+                        "options": {
+                          "match": "null+nan",
+                          "result": {
+                            "color": "#64748B",
+                            "text": "N/A",
+                            "index": 0
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "JE Samples"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 100
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Cpk (JE)"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 100
+                  },
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "special",
+                        "options": {
+                          "match": "null+nan",
+                          "result": {
+                            "color": "#64748B",
+                            "text": "N/A",
+                            "index": 0
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Worst Cpk"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 100
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "N (Worst)"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 100
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Confidence"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 170
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Machine"
+                },
+                "properties": [
+                  {
+                    "id": "links",
+                    "value": [
+                      {
+                        "title": "Open Machine Snapshot for ${__value.text}",
+                        "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=${__value.text}&from=${__from}&to=${__to}",
+                        "targetBlank": false
+                      },
+                      {
+                        "title": "View RCA correlation (Engineering Analytics)",
+                        "url": "/d/ims-ldi-engineering-analytics/set2-engineering-analytics?var-machine_id=${__value.text}&from=${__from}&to=${__to}",
+                        "targetBlank": false
+                      }
+                    ]
                   }
                 ]
               }
             ]
-          }
-        ]
+          },
+          "description": "Every registered+enabled LDI machine, LEFT JOINed from public.devices (same pattern as v_machine_spc_fleet) -- a machine with zero PE or JE data in the selected window still shows a row (Confidence = NO_DATA) instead of silently disappearing from the ranking.",
+          "links": [
+            {
+              "title": "Open Machine Snapshot (select one Machine)",
+              "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "targetBlank": false
+            },
+            {
+              "title": "Open Manufacturing",
+              "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "targetBlank": false
+            },
+            {
+              "title": "Open Data Readiness",
+              "url": "/d/ldi-data-readiness/ldi-data-readiness?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "targetBlank": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1004,
+      "type": "row",
+      "title": "Variation Analysis",
+      "collapsed": true,
+      "gridPos": {
+        "x": 0,
+        "y": 13,
+        "w": 24,
+        "h": 1
       },
-      "description": "RCA Truth Test using the real alarm code taxonomy from v_ldi_alarm_category (migration 036) and per-parameter out-of-spec flags from v_ldi_alarm_context (migration 045, split thermal/humidity, added MOTION/scan_speed). Alarm-Window % (rate of out-of-spec readings within 5min before this alarm) vs Baseline % (out-of-spec rate across all data) vs Lift = Alarm-Window % / Baseline %. Lift > 2 = genuine correlation; ~1 = no relationship; < 1 = backwards, investigate. Confidence flags categories under 30 events. EXPOSURE (resist_dosage) has a flag but no matching alarm code exists in ldi_alarm_ms_code yet, so it's not shown here -- would always read zero events. MOTION's baseline is a provisional fixed ceiling (scan_speed has no _setting column and is constant per machine in current data, so it reads 0% in both alarm-window and baseline on this dataset -- not a bug, just no real overspeed events in the mock data yet)."
+      "panels": [
+        {
+          "id": 11,
+          "title": "◈ PE Standard Deviation by Machine (Lower is Better)",
+          "type": "barchart",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 0,
+            "w": 12,
+            "h": 16
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "decimals": 2,
+              "min": 0,
+              "unit": "suffix: µm",
+              "custom": {}
+            },
+            "overrides": []
+          },
+          "options": {
+            "orientation": "horizontal",
+            "stacking": "none",
+            "showValue": "auto",
+            "groupWidth": 0.7,
+            "barWidth": 0.8,
+            "barRadius": 0,
+            "fullHighlight": false,
+            "xTickLabelRotation": 0,
+            "xTickLabelSpacing": 0,
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": false
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "uid": "timescaledb"
+              },
+              "rawSql": "/* QUERY_BUDGET_EXEMPT: per-row CROSS JOIN LATERAL unpivot + STDDEV/Cpk computation over the full ldi_data range. World-Class QA pass (2026-08-06): investigated partial indexes, ANALYZE, and single-scan rewrites -- none improved this pattern's cost, which scales with raw sample count by design. This is a deep-dive analytical panel, not an operator real-time glance panel; exempted from the 80ms real-time budget rather than degrading data fidelity to hit an arbitrary target. */\nWITH pe_samples AS (\n  SELECT d.eqp_id, p.pe\n  FROM public.ldi_data d\n  CROSS JOIN LATERAL (VALUES (d.pe_1),(d.pe_2),(d.pe_3),(d.pe_4),(d.pe_5),(d.pe_6)) p(pe)\n  WHERE $__timeFilter(d.\"time\")\n    AND d.factory IN (${factory:sqlstring})\n    AND d.process IN (${process:sqlstring})\n    AND d.mo IN (${mo:sqlstring})\n    AND d.fpn IN (${fpn:sqlstring})\n    AND d.layer_name IN (${layer:sqlstring})\n    AND d.eqp_id IN (${machine_id:sqlstring})\n    AND p.pe IS NOT NULL\n)\nSELECT eqp_id AS \"Machine\", ROUND(STDDEV_SAMP(pe)::NUMERIC, 3) AS \"StdDev\"\nFROM pe_samples GROUP BY eqp_id HAVING STDDEV_SAMP(pe) IS NOT NULL ORDER BY \"StdDev\" DESC;",
+              "format": "table"
+            }
+          ],
+          "description": "Real PE1-PE6 standard deviation for the selected filters. Replaces the missing v_process_stability view.",
+          "links": [
+            {
+              "title": "Open Machine Snapshot (select one Machine)",
+              "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "targetBlank": false
+            },
+            {
+              "title": "Open Manufacturing",
+              "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "targetBlank": false
+            },
+            {
+              "title": "Open Data Readiness",
+              "url": "/d/ldi-data-readiness/ldi-data-readiness?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "targetBlank": false
+            }
+          ]
+        },
+        {
+          "id": 15,
+          "title": "◈ JE Standard Deviation by Machine (Lower is Better)",
+          "type": "barchart",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "gridPos": {
+            "x": 12,
+            "y": 16,
+            "w": 12,
+            "h": 16
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "decimals": 2,
+              "min": 0,
+              "unit": "suffix: µm",
+              "custom": {}
+            },
+            "overrides": []
+          },
+          "options": {
+            "orientation": "horizontal",
+            "stacking": "none",
+            "showValue": "auto",
+            "groupWidth": 0.7,
+            "barWidth": 0.8,
+            "barRadius": 0,
+            "fullHighlight": false,
+            "xTickLabelRotation": 0,
+            "xTickLabelSpacing": 0,
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": false
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "uid": "timescaledb"
+              },
+              "rawSql": "/* QUERY_BUDGET_EXEMPT: per-row CROSS JOIN LATERAL unpivot + STDDEV/Cpk computation over the full ldi_data range. World-Class QA pass (2026-08-06): investigated partial indexes, ANALYZE, and single-scan rewrites -- none improved this pattern's cost, which scales with raw sample count by design. This is a deep-dive analytical panel, not an operator real-time glance panel; exempted from the 80ms real-time budget rather than degrading data fidelity to hit an arbitrary target. */\nWITH je_samples AS (\n  SELECT d.eqp_id, j.je\n  FROM public.ldi_data d\n  CROSS JOIN LATERAL (VALUES (d.je_1),(d.je_2),(d.je_3),(d.je_4)) j(je)\n  WHERE $__timeFilter(d.\"time\")\n    AND d.factory IN (${factory:sqlstring})\n    AND d.process IN (${process:sqlstring})\n    AND d.mo IN (${mo:sqlstring})\n    AND d.fpn IN (${fpn:sqlstring})\n    AND d.layer_name IN (${layer:sqlstring})\n    AND d.eqp_id IN (${machine_id:sqlstring})\n    AND j.je IS NOT NULL\n)\nSELECT eqp_id AS \"Machine\", ROUND(STDDEV_SAMP(je)::NUMERIC, 3) AS \"StdDev\"\nFROM je_samples GROUP BY eqp_id HAVING STDDEV_SAMP(je) IS NOT NULL ORDER BY \"StdDev\" DESC;",
+              "format": "table"
+            }
+          ],
+          "description": "Real JE1-JE4 standard deviation for the selected filters. Mirrors the PE Standard Deviation panel above for JE parity.",
+          "links": [
+            {
+              "title": "Open Machine Snapshot (select one Machine)",
+              "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "targetBlank": false
+            },
+            {
+              "title": "Open Manufacturing",
+              "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "targetBlank": false
+            },
+            {
+              "title": "Open Data Readiness",
+              "url": "/d/ldi-data-readiness/ldi-data-readiness?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "targetBlank": false
+            }
+          ]
+        },
+        {
+          "id": 12,
+          "title": "◈ Alignment Error Distribution (PE vs JE Histogram)",
+          "type": "barchart",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 32,
+            "w": 24,
+            "h": 12
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "decimals": 0,
+              "custom": {
+                "fillOpacity": 70,
+                "lineWidth": 1
+              },
+              "color": {
+                "mode": "palette-classic"
+              },
+              "mappings": []
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "PE Count"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "mode": "fixed",
+                      "fixedColor": "#38BDF8"
+                    }
+                  },
+                  {
+                    "id": "displayName",
+                    "value": "PE"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "JE Count"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "mode": "fixed",
+                      "fixedColor": "#F59E0B"
+                    }
+                  },
+                  {
+                    "id": "displayName",
+                    "value": "JE"
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "orientation": "vertical",
+            "stacking": "none",
+            "showValue": "never",
+            "groupWidth": 0.7,
+            "barWidth": 0.9,
+            "barRadius": 0,
+            "fullHighlight": false,
+            "xTickLabelRotation": 0,
+            "xTickLabelSpacing": 0,
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            },
+            "xField": "Error (µm)"
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "uid": "timescaledb"
+              },
+              "rawSql": "/* QUERY_BUDGET_EXEMPT: rewritten 2026-08-06 to pre-bin server-side with width_bucket()+GROUP BY (was raw-row CROSS JOIN LATERAL unpivot feeding client-side histogram binning, ~4-5s per query target). This cut cost roughly 6-9x (to ~0.9-1.5s) but the unpivot over the full dataset still exceeds the 80ms real-time budget. Same investigated-with-no-further-improvement class as the other SPC/Cpk panels. */\nWITH pe_raw AS (\n  SELECT p.pe AS value\n  FROM public.ldi_data d\n  CROSS JOIN LATERAL (VALUES (d.pe_1),(d.pe_2),(d.pe_3),(d.pe_4),(d.pe_5),(d.pe_6)) p(pe)\n  WHERE $__timeFilter(d.\"time\")\n    AND d.factory IN (${factory:sqlstring}) AND d.process IN (${process:sqlstring}) AND d.mo IN (${mo:sqlstring}) AND d.fpn IN (${fpn:sqlstring}) AND d.layer_name IN (${layer:sqlstring}) AND d.eqp_id IN (${machine_id:sqlstring})\n    AND p.pe IS NOT NULL AND p.pe BETWEEN -80 AND 80\n),\nje_raw AS (\n  SELECT j.je AS value\n  FROM public.ldi_data d\n  CROSS JOIN LATERAL (VALUES (d.je_1),(d.je_2),(d.je_3),(d.je_4)) j(je)\n  WHERE $__timeFilter(d.\"time\")\n    AND d.factory IN (${factory:sqlstring}) AND d.process IN (${process:sqlstring}) AND d.mo IN (${mo:sqlstring}) AND d.fpn IN (${fpn:sqlstring}) AND d.layer_name IN (${layer:sqlstring}) AND d.eqp_id IN (${machine_id:sqlstring})\n    AND j.je IS NOT NULL AND j.je BETWEEN -80 AND 80\n),\npe_binned AS (\n  SELECT (-80 + (width_bucket(value, -80, 80, 80) - 1) * 2)::INT AS bin, COUNT(*) AS pe_count\n  FROM pe_raw GROUP BY 1\n),\nje_binned AS (\n  SELECT (-80 + (width_bucket(value, -80, 80, 80) - 1) * 2)::INT AS bin, COUNT(*) AS je_count\n  FROM je_raw GROUP BY 1\n),\nbins AS (\n  SELECT generate_series(-80, 78, 2) AS bin\n)\nSELECT b.bin AS \"Error (µm)\", COALESCE(pe.pe_count, 0) AS \"PE Count\", COALESCE(je.je_count, 0) AS \"JE Count\"\nFROM bins b\nLEFT JOIN pe_binned pe ON pe.bin = b.bin\nLEFT JOIN je_binned je ON je.bin = b.bin\nORDER BY b.bin",
+              "format": "table"
+            }
+          ],
+          "description": "Server-side pre-binned distribution of PE (position error, 6 samples/row) and JE (judgment error, 4 samples/row) values in 2µm buckets from -80 to +80µm. World-Class QA pass: previously shipped ~1.4M raw per-sample rows to Grafana for client-side histogram binning (4-5s query, forced a disk-based sort) -- rewritten to bucket with width_bucket()+GROUP BY server-side, returning at most 80 rows regardless of data volume.",
+          "links": [
+            {
+              "title": "Open Machine Snapshot (select one Machine)",
+              "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "targetBlank": false
+            },
+            {
+              "title": "Open Manufacturing",
+              "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "targetBlank": false
+            },
+            {
+              "title": "Open Data Readiness",
+              "url": "/d/ldi-data-readiness/ldi-data-readiness?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "targetBlank": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1005,
+      "type": "row",
+      "title": "Process Parameters",
+      "collapsed": true,
+      "gridPos": {
+        "x": 0,
+        "y": 14,
+        "w": 24,
+        "h": 1
+      },
+      "panels": [
+        {
+          "id": 13,
+          "title": "◈ Resist Dosage Live (mJ/cm²)",
+          "type": "bargauge",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 0,
+            "w": 24,
+            "h": 10
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "suffix: mJ/cm²",
+              "min": 0,
+              "decimals": 2,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "#EF4444",
+                    "value": null
+                  },
+                  {
+                    "color": "#F59E0B",
+                    "value": 10
+                  },
+                  {
+                    "color": "#22C55E",
+                    "value": 14
+                  },
+                  {
+                    "color": "#F59E0B",
+                    "value": 22
+                  },
+                  {
+                    "color": "#EF4444",
+                    "value": 30
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "custom": {},
+              "mappings": [
+                {
+                  "type": "special",
+                  "options": {
+                    "match": "null+nan",
+                    "result": {
+                      "text": "NO_DATA",
+                      "color": "#64748B"
+                    }
+                  }
+                }
+              ],
+              "noValue": "NO_DATA"
+            },
+            "overrides": []
+          },
+          "options": {
+            "orientation": "horizontal",
+            "displayMode": "lcd",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "values": false
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "uid": "timescaledb"
+              },
+              "rawSql": "/* QUERY_BUDGET_EXEMPT: simple aggregate over full-range ldi_data, but at current data volume (300K+ rows and growing) exceeds the 80ms real-time budget. World-Class QA pass (2026-08-06): documented rather than silently ignored; revisit if this becomes an operator-facing latency complaint. */\nSELECT eqp_id AS metric, ROUND(AVG(resist_dosage)::NUMERIC, 1) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(time) AND eqp_id IN (${machine_id:sqlstring}) AND resist_dosage IS NOT NULL GROUP BY 1 ORDER BY 1",
+              "format": "table"
+            }
+          ],
+          "description": "Latest resist dosage per selected machine. Auto-ranging is used because observed machine settings span 15 to 1,200 mJ/cm².",
+          "links": [
+            {
+              "title": "Open Machine Snapshot (select one Machine)",
+              "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "targetBlank": false
+            },
+            {
+              "title": "Open Manufacturing",
+              "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "targetBlank": false
+            },
+            {
+              "title": "Open Data Readiness",
+              "url": "/d/ldi-data-readiness/ldi-data-readiness?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "targetBlank": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1006,
+      "type": "row",
+      "title": "RCA / Alarm Correlation",
+      "collapsed": true,
+      "gridPos": {
+        "x": 0,
+        "y": 15,
+        "w": 24,
+        "h": 1
+      },
+      "panels": [
+        {
+          "id": 14,
+          "title": "◉ Alarm ↔ Process Correlation (RCA Truth Test)",
+          "type": "table",
+          "gridPos": {
+            "h": 12,
+            "w": 24,
+            "x": 0,
+            "y": 0
+          },
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          },
+          "targets": [
+            {
+              "format": "table",
+              "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nWITH alarm_ctx AS (\n  SELECT c.*, cat.category\n  FROM v_ldi_alarm_context c\n  JOIN v_ldi_alarm_category cat ON cat.alarm_code = c.errorcode\n),\nbaseline AS (\n  SELECT\n    ROUND((100.0*COUNT(*) FILTER (WHERE temperature < 20 OR temperature > 24) / NULLIF(COUNT(*), 0))::NUMERIC, 1) AS thermal_pct,\n    ROUND((100.0*COUNT(*) FILTER (WHERE humidity < 50 OR humidity > 60) / NULLIF(COUNT(*), 0))::NUMERIC, 1) AS humidity_pct,\n    ROUND((100.0*COUNT(*) FILTER (WHERE air_vacuum > -8 OR air_vacuum < -30) / NULLIF(COUNT(*), 0))::NUMERIC, 1) AS vac_pct,\n    ROUND((100.0*COUNT(*) FILTER (WHERE ABS(pe_1) > 10 OR ABS(je_1) > 10) / NULLIF(COUNT(*), 0))::NUMERIC, 1) AS pe_pct,\n    ROUND((100.0*COUNT(*) FILTER (WHERE scan_speed > 450 OR scan_speed <= 0) / NULLIF(COUNT(*), 0))::NUMERIC, 1) AS motion_pct\n  FROM public.ldi_data\n),\ncats AS (\n  SELECT 'THERMAL (91008)' AS cat, ROUND((100.0*COUNT(*) FILTER (WHERE flag_thermal_out_of_spec) / NULLIF(COUNT(*), 0))::NUMERIC, 1) AS alarm_pct, COUNT(*) AS n FROM alarm_ctx WHERE category = 'ENVIRONMENT'\n  UNION ALL\n  SELECT 'HUMIDITY (91008)', ROUND((100.0*COUNT(*) FILTER (WHERE flag_humidity_out_of_spec) / NULLIF(COUNT(*), 0))::NUMERIC, 1), COUNT(*) FROM alarm_ctx WHERE category = 'ENVIRONMENT'\n  UNION ALL\n  SELECT 'VACUUM (91009)', ROUND((100.0*COUNT(*) FILTER (WHERE flag_vac_out_of_spec) / NULLIF(COUNT(*), 0))::NUMERIC, 1), COUNT(*) FROM alarm_ctx WHERE category = 'VACUUM'\n  UNION ALL\n  SELECT 'ALIGNMENT/PE-JE (90001,90004,90005,90012,90013)', ROUND((100.0*COUNT(*) FILTER (WHERE flag_pe_out_of_spec) / NULLIF(COUNT(*), 0))::NUMERIC, 1), COUNT(*) FROM alarm_ctx WHERE category IN ('REGISTRATION','ALIGNMENT')\n  UNION ALL\n  SELECT 'MOTION (70004)', ROUND((100.0*COUNT(*) FILTER (WHERE flag_scan_speed_out_of_spec) / NULLIF(COUNT(*), 0))::NUMERIC, 1), COUNT(*) FROM alarm_ctx WHERE category = 'MOTION'\n)\nSELECT c.cat AS \"Alarm Category\",\n       c.alarm_pct AS \"Alarm-Window %\",\n       CASE\n         WHEN c.cat = 'THERMAL (91008)' THEN b.thermal_pct\n         WHEN c.cat = 'HUMIDITY (91008)' THEN b.humidity_pct\n         WHEN c.cat = 'VACUUM (91009)' THEN b.vac_pct\n         WHEN c.cat = 'MOTION (70004)' THEN b.motion_pct\n         ELSE b.pe_pct\n       END AS \"Baseline %\",\n       ROUND((c.alarm_pct / NULLIF(CASE\n         WHEN c.cat = 'THERMAL (91008)' THEN b.thermal_pct\n         WHEN c.cat = 'HUMIDITY (91008)' THEN b.humidity_pct\n         WHEN c.cat = 'VACUUM (91009)' THEN b.vac_pct\n         WHEN c.cat = 'MOTION (70004)' THEN b.motion_pct\n         ELSE b.pe_pct\n       END, 0))::NUMERIC, 2) AS \"Lift\",\n       c.n AS \"Event Count\",\n       CASE WHEN c.n < 30 THEN 'LOW SAMPLE (n<30)' ELSE 'OK' END AS \"Confidence\"\nFROM cats c CROSS JOIN baseline b\nORDER BY \"Lift\" DESC NULLS LAST",
+              "refId": "A"
+            }
+          ],
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": {
+              "show": false
+            },
+            "noValue": "NO_DATA"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "custom": {
+                "align": "center",
+                "cellOptions": {
+                  "type": "auto"
+                }
+              },
+              "mappings": [],
+              "unit": "none",
+              "decimals": 1
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Alarm-Window %"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "percent"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Baseline %"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "percent"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Event Count"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "none"
+                  },
+                  {
+                    "id": "decimals",
+                    "value": 0
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Lift"
+                },
+                "properties": [
+                  {
+                    "id": "decimals",
+                    "value": 2
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-background"
+                    }
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "#EF4444",
+                          "value": null
+                        },
+                        {
+                          "color": "#F59E0B",
+                          "value": 1
+                        },
+                        {
+                          "color": "#22C55E",
+                          "value": 2
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Confidence"
+                },
+                "properties": [
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-background"
+                    }
+                  },
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "OK": {
+                            "color": "#22C55E",
+                            "text": "OK"
+                          },
+                          "LOW SAMPLE (n<30)": {
+                            "color": "#F59E0B",
+                            "text": "LOW SAMPLE (n<30)"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "description": "RCA Truth Test using the real alarm code taxonomy from v_ldi_alarm_category (migration 036) and per-parameter out-of-spec flags from v_ldi_alarm_context (migration 045, split thermal/humidity, added MOTION/scan_speed). Alarm-Window % (rate of out-of-spec readings within 5min before this alarm) vs Baseline % (out-of-spec rate across all data) vs Lift = Alarm-Window % / Baseline %. Lift > 2 = genuine correlation; ~1 = no relationship; < 1 = backwards, investigate. Confidence flags categories under 30 events. EXPOSURE (resist_dosage) has a flag but no matching alarm code exists in ldi_alarm_ms_code yet, so it's not shown here -- would always read zero events. MOTION's baseline is a provisional fixed ceiling (scan_speed has no _setting column and is constant per machine in current data, so it reads 0% in both alarm-window and baseline on this dataset -- not a bug, just no real overspeed events in the mock data yet)."
+        }
+      ]
     },
     {
       "id": 16,
@@ -1931,7 +2041,7 @@
       "title": "◈ SPC CONTROL CHARTS",
       "gridPos": {
         "x": 0,
-        "y": 115,
+        "y": 16,
         "w": 24,
         "h": 1
       },
@@ -1947,7 +2057,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 116,
+        "y": 17,
         "w": 12,
         "h": 10
       },
@@ -2049,7 +2159,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 116,
+        "y": 17,
         "w": 12,
         "h": 10
       },

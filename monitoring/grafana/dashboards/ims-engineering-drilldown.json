@@ -227,7 +227,20 @@
             ]
           },
           "custom": {},
-          "decimals": 2
+          "decimals": 2,
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "text": "NO_DATA",
+                  "color": "#64748B"
+                }
+              }
+            }
+          ],
+          "noValue": "NO_DATA"
         },
         "overrides": [
           {
@@ -265,7 +278,7 @@
         },
         "showThresholdLabels": true,
         "showThresholdMarkers": true,
-        "noValue": "N/A",
+        "noValue": "NO_DATA",
         "text": {
           "titleSize": 14,
           "valueSize": 48
@@ -332,7 +345,20 @@
             ]
           },
           "custom": {},
-          "decimals": 2
+          "decimals": 2,
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "text": "NO_DATA",
+                  "color": "#64748B"
+                }
+              }
+            }
+          ],
+          "noValue": "NO_DATA"
         },
         "overrides": [
           {
@@ -370,7 +396,7 @@
         },
         "showThresholdLabels": true,
         "showThresholdMarkers": true,
-        "noValue": "N/A",
+        "noValue": "NO_DATA",
         "text": {
           "titleSize": 14,
           "valueSize": 48
@@ -437,7 +463,20 @@
             ]
           },
           "custom": {},
-          "decimals": 2
+          "decimals": 2,
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "text": "NO_DATA",
+                  "color": "#64748B"
+                }
+              }
+            }
+          ],
+          "noValue": "NO_DATA"
         },
         "overrides": [
           {
@@ -475,7 +514,7 @@
         },
         "showThresholdLabels": true,
         "showThresholdMarkers": true,
-        "noValue": "N/A",
+        "noValue": "NO_DATA",
         "text": {
           "titleSize": 14,
           "valueSize": 48
@@ -553,7 +592,20 @@
           "decimals": 1,
           "color": {
             "mode": "thresholds"
-          }
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "text": "NO_DATA",
+                  "color": "#64748B"
+                }
+              }
+            }
+          ],
+          "noValue": "NO_DATA"
         },
         "overrides": [
           {
@@ -591,7 +643,7 @@
         },
         "showThresholdLabels": true,
         "showThresholdMarkers": true,
-        "noValue": "N/A",
+        "noValue": "NO_DATA",
         "text": {
           "titleSize": 14,
           "valueSize": 48
@@ -723,7 +775,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#10B981"
+                  "fixedColor": "#22C55E"
                 }
               }
             ]
@@ -788,7 +840,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#10B981",
+                  "fixedColor": "#22C55E",
                   "mode": "fixed"
                 }
               }
@@ -978,7 +1030,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#10B981",
+                  "fixedColor": "#22C55E",
                   "mode": "fixed"
                 }
               }
@@ -1051,7 +1103,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#10B981"
+                  "fixedColor": "#22C55E"
                 }
               }
             ]
@@ -1328,7 +1380,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#10B981"
+                  "fixedColor": "#22C55E"
                 }
               }
             ]
@@ -1393,7 +1445,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#10B981",
+                  "fixedColor": "#22C55E",
                   "mode": "fixed"
                 }
               }
@@ -1595,7 +1647,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "#10B981",
+                  "fixedColor": "#22C55E",
                   "mode": "fixed"
                 }
               },
@@ -1653,7 +1705,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#10B981"
+                  "fixedColor": "#22C55E"
                 }
               }
             ]
@@ -1772,7 +1824,7 @@
           "targetBlank": true
         }
       ],
-      "description": "LDI manufacturing throughput (left axis, #10B981) and Process Efficiency in µm (right axis, #F59E0B). PE within ±10µm tolerance is normal."
+      "description": "LDI manufacturing throughput (left axis, #22C55E) and Process Efficiency in µm (right axis, #F59E0B). PE within ±10µm tolerance is normal."
     },
     {
       "id": 504,
@@ -1904,7 +1956,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#10B981"
+                  "fixedColor": "#22C55E"
                 }
               }
             ]
@@ -2106,7 +2158,7 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "description": "LDI quality scatter with ±10µm tolerance zone (#10B981 band). Points outside the zone indicate quality risk."
+      "description": "LDI quality scatter with ±10µm tolerance zone (#22C55E band). Points outside the zone indicate quality risk."
     },
     {
       "type": "row",
@@ -2167,7 +2219,20 @@
             "lineInterpolation": "smooth",
             "fillOpacity": 15,
             "lineWidth": 2
-          }
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "text": "NO_DATA",
+                  "color": "#64748B"
+                }
+              }
+            }
+          ],
+          "noValue": "NO_DATA"
         },
         "overrides": [
           {
@@ -2257,7 +2322,20 @@
             "lineInterpolation": "smooth",
             "fillOpacity": 15,
             "lineWidth": 2
-          }
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "text": "NO_DATA",
+                  "color": "#64748B"
+                }
+              }
+            }
+          ],
+          "noValue": "NO_DATA"
         },
         "overrides": [
           {
@@ -2346,7 +2424,20 @@
             "lineInterpolation": "smooth",
             "fillOpacity": 15,
             "lineWidth": 2
-          }
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "text": "NO_DATA",
+                  "color": "#64748B"
+                }
+              }
+            }
+          ],
+          "noValue": "NO_DATA"
         },
         "overrides": [
           {
@@ -2625,7 +2716,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#10B981"
+                  "fixedColor": "#22C55E"
                 }
               }
             ]
@@ -2721,7 +2812,7 @@
                 "id": "color",
                 "value": {
                   "mode": "fixed",
-                  "fixedColor": "#10B981"
+                  "fixedColor": "#22C55E"
                 }
               }
             ]

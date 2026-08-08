@@ -174,7 +174,7 @@
         "footer": {
           "show": false
         },
-        "noValue": "-"
+        "noValue": "NO_DATA"
       },
       "targets": [
         {
@@ -189,7 +189,7 @@
       "description": "Exact machine state at the clicked timestamp. Shows job context (MO, FPN, Layer, Board).",
       "fieldConfig": {
         "defaults": {
-          "noValue": "N/A",
+          "noValue": "NO_DATA",
           "custom": {}
         },
         "overrides": [
@@ -600,7 +600,7 @@
           "color": {
             "mode": "thresholds"
           },
-          "noValue": "N/A",
+          "noValue": "NO_DATA",
           "custom": {
             "gradientMode": "opacity",
             "lineInterpolation": "smooth",
@@ -703,7 +703,7 @@
           "color": {
             "mode": "thresholds"
           },
-          "noValue": "N/A",
+          "noValue": "NO_DATA",
           "custom": {
             "gradientMode": "opacity",
             "lineInterpolation": "smooth",
@@ -795,7 +795,7 @@
             "mode": "fixed",
             "fixedColor": "#00F2FE"
           },
-          "noValue": "N/A",
+          "noValue": "NO_DATA",
           "custom": {
             "gradientMode": "opacity",
             "lineInterpolation": "smooth",
@@ -885,7 +885,7 @@
             "mode": "fixed",
             "fixedColor": "#00F2FE"
           },
-          "noValue": "N/A",
+          "noValue": "NO_DATA",
           "custom": {
             "gradientMode": "opacity",
             "lineInterpolation": "smooth",
@@ -975,7 +975,7 @@
             "mode": "fixed",
             "fixedColor": "#00F2FE"
           },
-          "noValue": "N/A",
+          "noValue": "NO_DATA",
           "custom": {
             "gradientMode": "opacity",
             "lineInterpolation": "smooth",
@@ -1065,7 +1065,7 @@
             "mode": "fixed",
             "fixedColor": "#00F2FE"
           },
-          "noValue": "N/A",
+          "noValue": "NO_DATA",
           "custom": {
             "gradientMode": "opacity",
             "lineInterpolation": "smooth",
@@ -1141,7 +1141,7 @@
         "footer": {
           "show": false
         },
-        "noValue": "-"
+        "noValue": "NO_DATA"
       },
       "targets": [
         {
@@ -1158,7 +1158,7 @@
         "defaults": {
           "unit": "suffix: µm",
           "decimals": 3,
-          "noValue": "N/A",
+          "noValue": "NO_DATA",
           "custom": {}
         },
         "overrides": [
@@ -1505,7 +1505,7 @@
         "footer": {
           "show": false
         },
-        "noValue": "-"
+        "noValue": "NO_DATA"
       },
       "targets": [
         {
@@ -1519,7 +1519,7 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "noValue": "N/A",
+          "noValue": "NO_DATA",
           "unit": "none",
           "decimals": 2,
           "custom": {
@@ -1830,7 +1830,7 @@
         "footer": {
           "show": false
         },
-        "noValue": "-"
+        "noValue": "NO_DATA"
       },
       "targets": [
         {
@@ -1844,7 +1844,7 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "noValue": "N/A",
+          "noValue": "NO_DATA",
           "custom": {}
         },
         "overrides": [
@@ -2094,7 +2094,7 @@
             "mode": "fixed",
             "fixedColor": "#00F2FE"
           },
-          "noValue": "N/A",
+          "noValue": "NO_DATA",
           "custom": {
             "gradientMode": "opacity",
             "lineInterpolation": "smooth",
@@ -2176,7 +2176,7 @@
         "footer": {
           "show": false
         },
-        "noValue": "-"
+        "noValue": "NO_DATA"
       },
       "targets": [
         {
@@ -2190,7 +2190,7 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "noValue": "N/A",
+          "noValue": "NO_DATA",
           "custom": {}
         },
         "overrides": [
@@ -2429,7 +2429,7 @@
         "footer": {
           "show": false
         },
-        "noValue": "-"
+        "noValue": "NO_DATA"
       },
       "targets": [
         {
@@ -2446,7 +2446,7 @@
         "defaults": {
           "unit": "suffix: µm",
           "decimals": 3,
-          "noValue": "N/A",
+          "noValue": "NO_DATA",
           "custom": {}
         },
         "overrides": [

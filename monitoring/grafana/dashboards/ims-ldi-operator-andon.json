@@ -102,9 +102,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 4,
+        "y": 5,
         "w": 2,
-        "h": 2
+        "h": 3
       },
       "repeat": "machine_id",
       "repeatDirection": "h",
@@ -160,8 +160,8 @@
           "values": false
         },
         "text": {
-          "valueSize": 22,
-          "titleSize": 13
+          "valueSize": 30,
+          "titleSize": 14
         },
         "noValue": "0",
         "textMode": "value_and_name",
@@ -209,7 +209,7 @@
         "x": 0,
         "y": 1,
         "w": 6,
-        "h": 3
+        "h": 4
       },
       "fieldConfig": {
         "defaults": {
@@ -267,8 +267,8 @@
           "values": false
         },
         "text": {
-          "valueSize": 48,
-          "titleSize": 14
+          "valueSize": 56,
+          "titleSize": 16
         },
         "noValue": "NO_DATA",
         "textMode": "auto",
@@ -300,7 +300,7 @@
         "x": 6,
         "y": 1,
         "w": 6,
-        "h": 3
+        "h": 4
       },
       "fieldConfig": {
         "defaults": {
@@ -354,8 +354,8 @@
           "values": false
         },
         "text": {
-          "valueSize": 48,
-          "titleSize": 14
+          "valueSize": 56,
+          "titleSize": 16
         },
         "noValue": "NO_DATA",
         "textMode": "auto",
@@ -387,7 +387,7 @@
         "x": 12,
         "y": 1,
         "w": 6,
-        "h": 3
+        "h": 4
       },
       "fieldConfig": {
         "defaults": {
@@ -449,8 +449,8 @@
           "values": false
         },
         "text": {
-          "valueSize": 48,
-          "titleSize": 14
+          "valueSize": 56,
+          "titleSize": 16
         },
         "noValue": "NO_DATA",
         "textMode": "auto",
@@ -482,7 +482,7 @@
         "x": 18,
         "y": 1,
         "w": 6,
-        "h": 3
+        "h": 4
       },
       "fieldConfig": {
         "defaults": {
@@ -538,8 +538,8 @@
           "values": false
         },
         "text": {
-          "valueSize": 48,
-          "titleSize": 14
+          "valueSize": 56,
+          "titleSize": 16
         },
         "noValue": "NO_DATA",
         "textMode": "auto",
@@ -569,9 +569,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 6,
+        "y": 8,
         "w": 24,
-        "h": 13
+        "h": 12
       },
       "options": {
         "showHeader": true,
@@ -582,11 +582,11 @@
           }
         ],
         "rowHeight": 0.7,
-        "cellHeight": "sm",
+        "cellHeight": "lg",
         "footer": {
           "show": false
         },
-        "noValue": "-"
+        "noValue": "NO_DATA"
       },
       "targets": [
         {
