@@ -20,6 +20,20 @@
  *      approved token set (GRAFANA_DESIGN_SYSTEM.md §2.1) — this check IS
  *      the "central design token" enforcement the doc refers to; add new
  *      colors to APPROVED_TOKENS there first, then here
+ *  16. No mixed panel heights within the same row (same y, different h) —
+ *      design doc §5.2's actual rule; ALLOWED_HEIGHTS (Check 13) only
+ *      catches "unusual height," not "inconsistent with its row neighbors"
+ *  17. stat/gauge/bargauge colorMode "background" only on the documented
+ *      exception list (GRAFANA_DESIGN_SYSTEM.md §2.1b) — it fails WCAG AA
+ *      white-text contrast for every token except critical/accent/no_data;
+ *      use colorMode "value" instead
+ *
+ * Also validates monitoring/grafana/library-panels/*.json (real Grafana
+ * Library Panels, provisioned via scripts/provision-library-panels.sh --
+ * see that script for why this isn't file-provisioned the way dashboards
+ * are). A panel referencing one via `libraryPanel: {uid, name}` carries no
+ * inline content, so checks 5/8/11/15/17 run once against the library
+ * spec's `model` instead of once per referencing dashboard.
  *
  * Usage: node tests/lint/dashboard-linter.js
  */
@@ -29,19 +43,47 @@ const path = require('path');
 
 const DASHBOARD_DIR = path.join(process.cwd(), 'monitoring', 'grafana', 'dashboards');
 
+// Check 17 exceptions: panels intentionally kept at colorMode "background"
+// despite it failing WCAG AA white-text contrast for most §2.1 tokens (see
+// GRAFANA_DESIGN_SYSTEM.md §2.1b) -- glanceable color-block-from-a-distance
+// use cases where perceiving *which* solid color it is is the actual task,
+// not reading text. Keyed by dashboard filename -> panel id.
+const BACKGROUND_COLORMODE_EXCEPTIONS = {
+  'ims-ldi-operator-andon.json': [1000],
+};
+
 // Standard panel height system (Check 13). KPI stat, normal chart/table,
 // deep-analysis panel, plus the h=1 row/CSS-injector sliver. h=4 is the
 // GRAFANA_DESIGN_SYSTEM.md §5.2 canonical KPI stat height (added Phase 2);
 // h=5 is kept for pre-existing panels that predate that doc section.
-// Warn-only for now — most dashboards predate this rule and haven't been
-// migrated (see design roadmap); flip to `error` once they have been.
-const ALLOWED_HEIGHTS = [1, 4, 5, 6, 8, 10, 16];
+// Spacing/grid audit (2026-08-08): every dashboard was checked for the
+// real failure mode this rule exists to catch -- mixed panel heights
+// within the same row (design doc §5.2's actual rule) -- not just "is
+// this exact height on the list." Found and fixed exactly one real
+// violation (ims-ldi-manufacturing.json panel 22, a lone h=4 KPI beside
+// an h=10 table). Every other non-listed height (3, 12, 14, 18, 20) is
+// used consistently -- either alone in its own full-width row, or paired
+// with same-height siblings -- so those are legitimate additional tiers,
+// not drift; added them here rather than force-resizing working layouts
+// to match an incomplete list. Warn-only: this rule flags an unusual
+// height as worth a second look, not an automatic violation.
+const ALLOWED_HEIGHTS = [1, 3, 4, 5, 6, 8, 10, 12, 14, 16, 18, 20];
 
 // Per-dashboard total-height ceiling (Check 14), keyed by dashboard uid.
 // Only kiosk/wall displays get a hard ceiling — analysis dashboards are
 // meant to be scrolled and are intentionally left unconstrained.
 const MAX_HEIGHT = {
   'ims-ldi-operator-andon': 20, // factory-floor kiosk, zero scroll at 720p (Phase 2 tile redesign)
+  // 2026-08-08: NOC and Easy Overview are the other two dashboards this
+  // system's own design doc (§1 principle 5, "progressive disclosure")
+  // designates as glance/kiosk boards -- NOC answers "do I need to call
+  // someone," Easy Overview is explicitly named for at-a-glance use.
+  // Engineering/Capacity/Machine-Snapshot/Manufacturing are deliberately
+  // deep-dive dashboards by the same principle and stay unconstrained.
+  // Both restructured into collapsible rows (only the highest-priority
+  // content open by default) to fit, same pattern as the SPC density fix.
+  'ims-noc-overview': 20,
+  'ims-easy-overview': 20,
 };
 
 // GRAFANA_DESIGN_SYSTEM.md §2.1 — the merged, single palette. Anything used
@@ -95,10 +137,18 @@ function lintDashboard(filePath) {
     const pid = panel.id;
     const gp = panel.gridPos || {};
 
-    // Collect panels for overlap check (Check 9)
+    // Collect panels for overlap check (Check 9) -- library-panel stubs
+    // still occupy real grid space even though they have no inline content.
     if (gp.x !== undefined && gp.y !== undefined) {
       panels.push({ id: pid, title: panel.title || '(untitled)', x: gp.x, y: gp.y, w: gp.w, h: gp.h });
     }
+
+    // Library-panel references intentionally carry no inline type/
+    // fieldConfig/options/targets/description -- that content lives in
+    // the shared library element (monitoring/grafana/library-panels/*.json,
+    // validated separately by lintLibraryPanel below), not the dashboard
+    // JSON. Nothing past this point applies to them.
+    if (panel.libraryPanel) continue;
 
     // Check 11: Panel Design Tokens (PANEL_TOKENS.md)
     const title = (panel.title || '').toLowerCase();
@@ -149,6 +199,16 @@ function lintDashboard(filePath) {
     if (['stat', 'gauge'].includes(panel.type)) {
       if (!panel.options?.noValue) {
         warn(file, pid, `Missing options.noValue (shows "No data" text)`);
+      }
+    }
+
+    // Check 17: colorMode "background" fails WCAG AA white-text contrast for
+    // most §2.1 tokens (GRAFANA_DESIGN_SYSTEM.md §2.1b) -- only allowed for
+    // explicitly-documented distance-glanceability exceptions.
+    if (['stat', 'gauge', 'bargauge'].includes(panel.type) && panel.options?.colorMode === 'background') {
+      const allowed = (BACKGROUND_COLORMODE_EXCEPTIONS[file] || []).includes(pid);
+      if (!allowed) {
+        warn(file, pid, `colorMode "background" fails WCAG AA contrast for most tokens (GRAFANA_DESIGN_SYSTEM.md §2.1b) — use "value", or add to BACKGROUND_COLORMODE_EXCEPTIONS if this is a genuine distance-glanceability case`);
       }
     }
 
@@ -212,6 +272,20 @@ function lintDashboard(filePath) {
     }
   }
 
+  // ── Check 16: mixed heights within the same row (design doc §5.2) ──
+  const byY = new Map();
+  for (const p of panels) {
+    if (!byY.has(p.y)) byY.set(p.y, []);
+    byY.get(p.y).push(p);
+  }
+  for (const [y, row] of byY) {
+    const heights = new Set(row.map(p => p.h));
+    if (heights.size > 1) {
+      const desc = row.map(p => `${p.id}:${p.title}(h=${p.h})`).join(', ');
+      warn(file, `row@y=${y}`, `Mixed panel heights in the same row — ${desc}`);
+    }
+  }
+
   // ── Check 9: 2D Bounding Box Overlap Detection ──
   for (let i = 0; i < panels.length; i++) {
     const a = panels[i];
@@ -240,6 +314,48 @@ function lintDashboard(filePath) {
   return { panels: data.panels.length, title: data.title };
 }
 
+// Validates the shared content of a monitoring/grafana/library-panels/*.json
+// spec (its "model", the same shape as an inline panel) -- description,
+// unit, and color-token compliance all still apply, just checked once here
+// instead of once per dashboard that references it.
+function lintLibraryPanel(filePath) {
+  const file = path.basename(filePath);
+  const spec = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  const model = spec.model || {};
+  const pid = spec.uid;
+
+  if (!model.description) {
+    warn(file, pid, 'Missing description');
+  }
+
+  // Check 17 (library-panel form): see the inline-panel version above.
+  if (['stat', 'gauge', 'bargauge'].includes(model.type) && model.options?.colorMode === 'background') {
+    warn(file, pid, `colorMode "background" fails WCAG AA contrast for most tokens (GRAFANA_DESIGN_SYSTEM.md §2.1b) — use "value"`);
+  }
+
+  const hexRe = /^#[0-9a-fA-F]{6}$/;
+  for (const step of (model.fieldConfig?.defaults?.thresholds?.steps || [])) {
+    if (step.color && hexRe.test(step.color) && !APPROVED_TOKENS.has(step.color.toLowerCase())) {
+      error(file, pid, `Threshold step color ${step.color} is not an approved token (GRAFANA_DESIGN_SYSTEM.md §2.1)`);
+    }
+  }
+  for (const mapping of (model.fieldConfig?.defaults?.mappings || [])) {
+    const opts = mapping.options || {};
+    const colorEntries = mapping.type === 'value'
+      ? Object.values(opts).map(v => v && v.color).filter(Boolean)
+      : [opts.result?.color].filter(Boolean);
+    for (const c of colorEntries) {
+      if (hexRe.test(c) && !APPROVED_TOKENS.has(c.toLowerCase())) {
+        error(file, pid, `Value-mapping color ${c} is not an approved token (GRAFANA_DESIGN_SYSTEM.md §2.1)`);
+      }
+    }
+  }
+
+  if (['stat', 'gauge'].includes(model.type) && !model.options?.noValue) {
+    warn(file, pid, 'Missing options.noValue (shows "No data" text)');
+  }
+}
+
 // Main
 console.log('IMS Dashboard Linter');
 console.log('='.repeat(50));
@@ -256,6 +372,18 @@ for (const f of jsonFiles) {
   const fp = path.join(DASHBOARD_DIR, f);
   const result = lintDashboard(fp);
   console.log(`\n${f} — ${result.title} (${result.panels} panels)`);
+}
+
+const LIBRARY_PANEL_DIR = path.join(process.cwd(), 'monitoring', 'grafana', 'library-panels');
+if (fs.existsSync(LIBRARY_PANEL_DIR)) {
+  const libFiles = fs.readdirSync(LIBRARY_PANEL_DIR).filter(f => f.endsWith('.json'));
+  if (libFiles.length) {
+    console.log(`\n-- library panels (${libFiles.length}) --`);
+    for (const f of libFiles) {
+      lintLibraryPanel(path.join(LIBRARY_PANEL_DIR, f));
+      console.log(`${f}`);
+    }
+  }
 }
 
 console.log('\n' + '='.repeat(50));

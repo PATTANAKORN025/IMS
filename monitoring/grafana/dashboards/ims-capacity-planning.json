@@ -75,7 +75,7 @@
       "type": "text",
       "title": "",
       "options": {
-        "content": "<style>\n[class*=\"-panel-container\"] {\n  background: rgba(10, 13, 16, 0.7) !important;\n  border: 1px solid rgba(0, 242, 254, 0.15) !important;\n  border-radius: 12px !important;\n  box-shadow: 0 4px 24px -4px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05) !important;\n  transition: all 0.2s ease-in-out !important;\n}\n[class*=\"-panel-container\"]:hover {\n  border-color: rgba(0, 242, 254, 0.5) !important;\n  box-shadow: 0 8px 32px 0 rgba(0, 242, 254, 0.15) !important;\n  backdrop-filter: blur(10px) !important;\n}\n[class*=\"-panel-title\"] {\n  color: #E8EDF2 !important;\n  font-weight: 600 !important;\n  text-transform: uppercase !important;\n  letter-spacing: 1px !important;\n  font-size: 11px !important;\n}\n</style>",
+        "content": "<style>\n[class*=\"-panel-container\"] {\n  background: rgba(10, 13, 16, 0.7) !important;\n  border: 1px solid rgba(0, 242, 254, 0.15) !important;\n  border-radius: 12px !important;\n  box-shadow: 0 4px 24px -4px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.05) !important;\n  transition: all 0.2s ease-in-out !important;\n}\n[class*=\"-panel-container\"]:hover {\n  border-color: rgba(0, 242, 254, 0.5) !important;\n  box-shadow: 0 8px 32px 0 rgba(0, 242, 254, 0.15) !important;\n  backdrop-filter: blur(10px) !important;\n}\n[class*=\"-panel-title\"] {\n  color: #E8EDF2 !important;\n  font-weight: 600 !important;\n  text-transform: uppercase !important;\n  letter-spacing: 1px !important;\n  font-size: 11px !important;\n}\n</style>",
         "mode": "html"
       },
       "gridPos": {
@@ -356,7 +356,7 @@
         ]
       },
       "options": {
-        "colorMode": "background",
+        "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "center",
         "reduceOptions": {
@@ -366,7 +366,7 @@
           "values": false
         },
         "noValue": "NO_DATA",
-        "textMode": "auto",
+        "textMode": "value",
         "text": {
           "valueSize": 48,
           "titleSize": 14
@@ -493,7 +493,7 @@
         ]
       },
       "options": {
-        "colorMode": "background",
+        "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "center",
         "reduceOptions": {
@@ -503,7 +503,7 @@
           "values": false
         },
         "noValue": "NO_DATA",
-        "textMode": "auto",
+        "textMode": "value",
         "text": {
           "valueSize": 48,
           "titleSize": 14
@@ -629,7 +629,7 @@
         ]
       },
       "options": {
-        "colorMode": "background",
+        "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "center",
         "reduceOptions": {
@@ -639,7 +639,7 @@
           "values": false
         },
         "noValue": "NO_DATA",
-        "textMode": "auto",
+        "textMode": "value",
         "text": {
           "valueSize": 48,
           "titleSize": 14
@@ -667,126 +667,18 @@
     },
     {
       "id": 4,
-      "title": "◉ Fleet Health Score",
-      "type": "stat",
-      "datasource": {
-        "uid": "timescaledb"
-      },
       "gridPos": {
         "x": 18,
         "y": 9,
         "w": 6,
         "h": 10
       },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#EF4444",
-                "value": null
-              },
-              {
-                "color": "#F59E0B",
-                "value": 70
-              },
-              {
-                "color": "#22C55E",
-                "value": 90
-              }
-            ]
-          },
-          "custom": {
-            "gradientMode": "opacity",
-            "lineInterpolation": "smooth",
-            "fillOpacity": 15,
-            "lineWidth": 2
-          },
-          "decimals": 2,
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "#00F2FE"
-          },
-          "mappings": [
-            {
-              "type": "special",
-              "options": {
-                "match": "null+nan",
-                "result": {
-                  "text": "NO_DATA",
-                  "color": "#64748B"
-                }
-              }
-            }
-          ],
-          "noValue": "NO_DATA"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "/.*/"
-            },
-            "properties": [
-              {
-                "id": "decimals",
-                "value": 2
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "/.*/"
-            },
-            "properties": [
-              {
-                "id": "custom.fontFamily",
-                "value": "'Roboto Mono', monospace"
-              }
-            ]
-          }
-        ]
-      },
-      "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "center",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "values": false
-        },
-        "noValue": "NO_DATA",
-        "textMode": "auto",
-        "text": {
-          "valueSize": 48,
-          "titleSize": 14
-        }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nSELECT 'Fleet Score' AS metric, value FROM public.v_fleet_score",
-          "format": "table"
-        }
-      ],
-      "description": "Composite fleet health score (0-100%) from v_fleet_health view.",
-      "links": [
-        {
-          "title": "Drill-down → Engineering",
-          "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
-          "targetBlank": true
-        }
-      ]
+      "type": "stat",
+      "title": "◉ Fleet Health Score",
+      "libraryPanel": {
+        "uid": "ims-lib-fleet-health-score",
+        "name": "Fleet Health Score"
+      }
     },
     {
       "id": 200,
