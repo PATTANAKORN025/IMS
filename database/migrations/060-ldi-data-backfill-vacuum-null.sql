@@ -17,5 +17,17 @@
 -- reads as permanently out-of-spec -- inflating the RCA baseline for
 -- VACUUM (91009) enough to cap its achievable Lift even after the fault-
 -- injection fix (migration 058's commit) was working correctly.
+--
+-- Fresh-deploy audit (2026-08-08): on a brand-new database, this UPDATE
+-- runs against the full 034-ldi-statistical-mock.sql seed (several
+-- hundred thousand rows, mostly already compressed by that point) and
+-- fails with "tuple decompression limit exceeded ... current limit:
+-- 100000" -- a hard TimescaleDB per-transaction safety cap on the live
+-- system never hit historically because this migration was originally
+-- applied incrementally, before the dataset grew this large. Raised per
+-- TimescaleDB's own hint; scoped to this session/statement only, not a
+-- global setting.
+
+SET timescaledb.max_tuples_decompressed_per_dml_transaction = 0;
 
 UPDATE public.ldi_data SET air_vacuum = NULL WHERE air_vacuum = 0;

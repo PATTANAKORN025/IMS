@@ -35,8 +35,9 @@ function parseAll(items, type, state) {
 
 function calcNetRate(deviceId, currentIfaces, flow) {
     const now = Date.now();
-    const prevKey = 'net_prev_' + deviceId;
-    const tsKey = 'net_ts_' + deviceId;
+    const key = safeKey(deviceId);
+    const prevKey = 'net_prev_' + key;
+    const tsKey = 'net_ts_' + key;
     const prevIfaces = flow ? (flow.get(prevKey) || {}) : {};
     const prevTs = flow ? (flow.get(tsKey) || (now - 10000)) : (now - 10000);
     const elapsedSec = (now - prevTs) / 1000;
@@ -74,6 +75,16 @@ function calcNetRate(deviceId, currentIfaces, flow) {
 function sanitize(raw) { return String(raw || '').replace(/'/g, "''").trim(); }
 function mkIface(idx) { return { name: '', rx64: 0, tx64: 0, rx32: 0, tx32: 0, err: 0, drop: 0, status: 1 }; }
 
+// Node-RED's flow/global context.get(key)/set(key) always parses a string
+// key as a property-expression (dot/bracket path) -- a bare space or other
+// punctuation throws "Invalid property expression: unexpected '<char>' at
+// position N" rather than being treated as a flat literal key. Device IDs
+// (e.g. real machine names like "LDI-A01") are safe as SQL values
+// (sanitize() covers that) and safe as display text, but not safe as a
+// context-store key -- this derives a second, key-only-safe variant so
+// callers never build a context key directly from a raw device ID.
+function safeKey(id) { return String(id || '').replace(/[^a-zA-Z0-9_-]/g, '_'); }
+
 if (typeof module !== "undefined" && module.exports) {
-    module.exports = { parseAll, calcNetRate, sanitize, mkIface };
+    module.exports = { parseAll, calcNetRate, sanitize, mkIface, safeKey };
 }
