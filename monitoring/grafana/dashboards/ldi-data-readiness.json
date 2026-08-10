@@ -9,7 +9,7 @@
     "readiness",
     "real-data"
   ],
-  "timezone": "browser",
+  "timezone": "UTC",
   "schemaVersion": 39,
   "version": 3,
   "editable": true,

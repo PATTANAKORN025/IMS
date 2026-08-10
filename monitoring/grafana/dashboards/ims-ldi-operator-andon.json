@@ -864,7 +864,7 @@
     "from": "now-2h",
     "to": "now"
   },
-  "timezone": "browser",
+  "timezone": "UTC",
   "refresh": "5s",
   "tags": [
     "IMS",

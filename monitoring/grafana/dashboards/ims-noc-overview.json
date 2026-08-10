@@ -5,7 +5,7 @@
     "ims",
     "noc"
   ],
-  "timezone": "browser",
+  "timezone": "UTC",
   "schemaVersion": 39,
   "refresh": "5m",
   "time": {

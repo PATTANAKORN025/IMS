@@ -3173,7 +3173,7 @@
     "from": "now-6h",
     "to": "now"
   },
-  "timezone": "browser",
+  "timezone": "UTC",
   "refresh": "1m",
   "tags": [
     "IMS",
