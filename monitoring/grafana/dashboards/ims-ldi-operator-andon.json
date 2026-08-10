@@ -176,11 +176,11 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT CASE WHEN n IS NULL OR n = 0 THEN 0 WHEN any_running THEN 2 ELSE 1 END AS \"$machine_id\"\nFROM (\n  SELECT BOOL_OR(state) AS any_running, COUNT(*) AS n\n  FROM public.ldi_data\n  WHERE eqp_id = ${machine_id:sqlstring} AND time > NOW() - INTERVAL '10 minutes'\n) x",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: always the true latest row per machine -- see v_ldi_machine_latest_full (migration 052), same pattern as the Live Production panel. */\nSELECT CASE\n  WHEN NOT has_data OR is_stale THEN 0\n  WHEN state THEN 2\n  ELSE 1\nEND AS \"$machine_id\"\nFROM public.v_ldi_machine_latest_full\nWHERE eqp_id = ${machine_id:sqlstring}",
           "format": "table"
         }
       ],
-      "description": "Live OK/IDLE/NO_DATA status for $machine_id. Repeats per the machine_id variable (whichever eqp_id values actually have rows in ldi_data), so this works unmodified in both real and mock data mode."
+      "description": "Live OK/IDLE/NO_DATA status for $machine_id, from v_ldi_machine_latest_full's single latest row per machine (is_stale = no reading in the last 5 minutes, treated as NO_DATA rather than trusting an old state). Repeats per the machine_id variable (whichever eqp_id values actually have rows in ldi_data), so this works unmodified in both real and mock data mode."
     },
     {
       "id": 9999,
@@ -821,7 +821,7 @@
     "to": "now"
   },
   "timezone": "browser",
-  "refresh": "10s",
+  "refresh": "5s",
   "tags": [
     "IMS",
     "LDI",
