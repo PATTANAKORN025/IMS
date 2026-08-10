@@ -267,6 +267,7 @@ IMS/
 |:---:|---|
 | [**Architecture**](docs/architecture/ARCHITECTURE.md) | System context, ADRs, V10 streaming architecture, CAGG strategy |
 | [**Contributing**](CONTRIBUTING.md) | Development workflow, branch naming, commit conventions |
+| [**Code of Conduct**](CODE_OF_CONDUCT.md) | Community standards and enforcement |
 | [**Security**](SECURITY.md) | Vulnerability reporting, threat model, RBAC |
 | [**Design System**](docs/architecture/GRAFANA_DESIGN_SYSTEM.md) | Color palette, typography, panel type decisions, threshold contracts |
 | [**Troubleshooting**](docs/operations/TROUBLESHOOTING.md) | Common issues, debugging commands, recovery procedures |
