@@ -1,6 +1,7 @@
 {
   "uid": "ims-capacity",
   "title": "IMS AIOps & Capacity Forecast",
+  "description": "Days-until-full/saturation forecasts for CPU, RAM, and disk via 30-day linear regression, plus Z-Score (>3sigma) anomaly detection. Infrastructure-focused.",
   "tags": [
     "ims",
     "capacity",

@@ -85,6 +85,8 @@ This pipeline is what actually powers NOC Overview's infrastructure panels (CPU/
 
 ## Database Schema (as of migration 047)
 
+> Column counts, the full view/materialized-view/CAGG list, and the current applied-migration count are auto-generated in **[DATABASE_SCHEMA.md](DATABASE_SCHEMA.md)** (`node scripts/generate-schema-inventory.js`, CI-checked against the live database). This table adds the "why" -- what feeds each table and what it's for -- that the generator can't infer from `information_schema` alone.
+
 | Table | Type | Fed by | Purpose |
 |---|---|---|---|
 | `devices` | Table | manual/seed | Registry of every monitored entity (`device_type`: `ldi` or `server`) |
@@ -128,6 +130,8 @@ If either credential is unset, the corresponding delivery function calls `node.e
 ---
 
 ## Dashboard Inventory
+
+> Panel counts and descriptions are auto-generated in **[DASHBOARD_INVENTORY.md](DASHBOARD_INVENTORY.md)** (`node scripts/generate-dashboard-inventory.js`, CI-checked). This table adds the architectural "why" -- scope boundaries and cross-references -- that a generator can't infer from JSON alone; keep the UID/Title columns here in sync with the generated file when a dashboard is added or renamed.
 
 | UID | Title | Scope |
 |---|---|---|

@@ -8,7 +8,7 @@
 <div align="center">
 
 ![Admin](https://img.shields.io/badge/Admin-SRE%20Guide-green)
-![Version](https://img.shields.io/badge/Version-1.0-blue)
+![Version](https://img.shields.io/badge/Version-1.1-blue)
 ![Audience](https://img.shields.io/badge/Audience-IT%20Team-purple)
 
 </div>
@@ -30,18 +30,22 @@
 
 ### Container Overview
 
-ระบบทำงานบน Docker Compose ทั้งหมด 8 containers:
+ระบบทำงานบน Docker Compose ทั้งหมด 10 services (9 long-running + 1 one-shot migration runner ที่ทำงานเสร็จแล้ว exit):
 
 | Container | Service | Port | Purpose |
 |---|---|---|---|
-| `ims-timescaledb` | TimescaleDB | 5432 (internal) | Time-series database |
+| `ims-timescaledb` | TimescaleDB | 5432 (loopback only) | Time-series database |
 | `ims-pgbouncer` | PgBouncer | 5432 (internal) | Connection pooler |
-| `ims-node-red` | Node-RED | 1880 | Data pipeline |
+| `ims-db-migrate` | Migration runner | — (one-shot) | Applies `database/migrations/*.sql`, gates `node-red` startup |
+| `ims-node-red` | Node-RED | 1880 (loopback only) | Data pipeline |
 | `ims-grafana` | Grafana | 3000 | Dashboard |
-| `ims-prometheus` | Prometheus | 9090 | Metrics & alerting |
-| `ims-alertmanager` | Alertmanager | 9093 | Alert routing |
-| `ims-blackbox` | Blackbox Exporter | 9115 | SLA probes |
+| `ims-grafana-renderer` | Grafana Image Renderer | 8081 (internal) | PNG rendering for panel export/alerts |
+| `ims-prometheus` | Prometheus | 9090 (loopback only) | Metrics & alerting |
+| `ims-alertmanager` | Alertmanager | 9093 (loopback only) | Alert routing |
+| `ims-blackbox` | Blackbox Exporter | 9115 (loopback only) | SLA probes |
 | `ims-snmpsim` | SNMP Simulator | 161/udp | Dev testing |
+
+> `ims-db-migrate` exits with status 0 after applying pending migrations -- seeing it as `Exited (0)` in `docker compose ps` is expected, not a failure. `node-red` won't start until it completes successfully.
 
 ### Common Operations
 
@@ -92,6 +96,26 @@ curl -s http://localhost:9090/-/healthy
 # Alertmanager
 curl -s http://localhost:9093/-/healthy
 ```
+
+### Database Migrations
+
+`database/migrations/` currently has 40 sequenced files (`013` through `064` — earlier numbers `001-012` were folded into `postgres/init/001-init-timescaledb.sql`, the fresh-deploy bootstrap path). Applied automatically by the one-shot `ims-db-migrate` service on every `docker compose up`; `node-red` won't start until it exits successfully.
+
+```bash
+# Manually re-run migrations without bringing up the rest of the stack
+bash scripts/migrate.sh
+
+# Expect this exact line on a healthy, up-to-date database:
+#   Pending: 0  Applied: 0  Failed: 0
+# "Pending: N" means N migration files exist that schema_migrations doesn't
+# have a row for yet -- scripts/migrate.sh will apply them in order.
+
+# Check what's actually been applied
+docker compose exec timescaledb psql -U ims_admin -d ims -c \
+  "SELECT version, filename, applied_at FROM public.schema_migrations ORDER BY version DESC LIMIT 10;"
+```
+
+All migrations are written to be idempotent (`CREATE ... IF NOT EXISTS`, guarded `DO $$ ... $$` blocks) so re-running `scripts/migrate.sh` against an already-current database is always a safe no-op. See `docs/architecture/ARCHITECTURE.md`'s "Migration Governance" section for why there is deliberately exactly one migration runner, not three.
 
 ---
 
@@ -152,13 +176,19 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/dashboards
 
 ### Step 1: Register in Database
 
+`public.devices` มี `device_type` แยก `'server'` (SNMP-monitored infra, ค่า default) กับ `'ldi'` (LDI manufacturing machine) -- อย่าลืมระบุให้ถูก มิฉะนั้นจะกลายเป็น `'server'` โดยไม่ตั้งใจ และเครื่องจะไม่ขึ้นใน LDI dashboards ใดๆ เลย:
+
 ```sql
--- เพิ่มเครื่องใหม่ใน device registry (single source of truth)
-INSERT INTO public.devices (device_id, hostname, ip_address, snmp_community, snmp_port, enabled)
-VALUES ('NEW-MACHINE-01', '192.168.1.100', '192.168.1.100', 'public', 161, true);
+-- เพิ่ม infra server ใหม่ (SNMP-polled)
+INSERT INTO public.devices (device_id, hostname, ip_address, device_type, snmp_community, snmp_port, enabled)
+VALUES ('NEW-MACHINE-01', '192.168.1.100', '192.168.1.100', 'server', 'public', 161, true);
+
+-- เพิ่ม LDI machine ใหม่ (ไม่ผ่าน SNMP -- ป้อนข้อมูลผ่าน ldi_ingestion.json / simulator)
+INSERT INTO public.devices (device_id, hostname, ip_address, device_type, enabled)
+VALUES ('LDI-11', 'LDI-11', '', 'ldi', true);
 
 -- ตรวจสอบ
-SELECT device_id, hostname, snmp_community, enabled FROM public.devices WHERE device_id = 'NEW-MACHINE-01';
+SELECT device_id, hostname, device_type, snmp_community, enabled FROM public.devices WHERE device_id IN ('NEW-MACHINE-01', 'LDI-11');
 ```
 
 ### Step 2: Verify SNMP Connectivity
@@ -281,7 +311,7 @@ docker compose down -v && docker compose up -d
 # 2. รอ 40 วินาที
 sleep 40
 
-# 3. ตรวจสอบ 8 containers
+# 3. ตรวจสอบ containers (9 long-running + ims-db-migrate ที่ควร Exited (0))
 docker compose ps
 
 # 4. ตรวจสอบข้อมูลไหล
@@ -330,7 +360,8 @@ cat backup_20260627.sql | docker compose exec -T timescaledb psql -U ims_admin -
 ### Flow Backup
 
 ```bash
-# node-red/flows/ คือ source of truth ที่ git ดูแลอยู่แล้ว
+# nodered_data/flows/*.json คือ source of truth ที่ git ดูแลอยู่แล้ว
+# (built into nodered_data/flows.json by scripts/build-flows.js -- don't hand-edit flows.json)
 # สำรอง nodered_data/flows.json (runtime copy)
 cp nodered_data/flows.json nodered_data/flows.json.bak
 
@@ -423,7 +454,7 @@ LIMIT 10;"
 
 <div align="center">
 
-**IMS Admin Manual — Version 1.0**
+**IMS Admin Manual — Version 1.1**
 
 *For IT Team & MIS-G*
 

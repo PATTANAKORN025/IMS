@@ -1119,6 +1119,7 @@
     "to": "now"
   },
   "title": "IMS Pipeline Health & Meta-Monitoring",
+  "description": "The ingestion pipeline's own health: rows/sec insert rate, batch success rate, retry queue depth, circuit breaker state, and device poll rates. Watches the pipeline, not the fleet it monitors.",
   "uid": "ims-meta-monitoring",
   "version": 1,
   "timezone": "browser"

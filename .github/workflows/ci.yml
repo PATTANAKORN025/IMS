@@ -35,6 +35,13 @@ jobs:
       - name: Lint Query Budget (tiering contract)
         run: node tests/lint/query-budget-linter.js
 
+      - name: Check Dashboard Inventory is up to date
+        run: node scripts/generate-dashboard-inventory.js --check
+        # Fails if docs/architecture/DASHBOARD_INVENTORY.md doesn't match
+        # what monitoring/grafana/dashboards/*.json currently says -- the
+        # single-source-of-truth gate for panel counts/descriptions that
+        # used to drift silently in hand-typed README/ARCHITECTURE tables.
+
       - name: Lint Prometheus Config
         run: |
           docker run --rm \
@@ -150,6 +157,12 @@ jobs:
 
       - name: Run Orphan Object Check (World-Class Audit Phase 2/7)
         run: node tests/lint/orphan-object-linter.js
+
+      - name: Check Database Schema Inventory is up to date
+        run: node scripts/generate-schema-inventory.js --check
+        # Needs a live, migrated DB (has one at this point in the job) --
+        # fails if docs/architecture/DATABASE_SCHEMA.md doesn't match what
+        # information_schema / timescaledb_information.* currently say.
 
       - name: Run Golden-Dataset SPC Validation
         run: node tests/e2e/golden-dataset-spc.js
