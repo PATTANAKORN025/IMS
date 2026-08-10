@@ -1,5 +1,8 @@
 # 📝 IMS — Internship Report Summary
 
+> **ARCHIVED — historical academic/internship retrospective, dated June 2026.** Not living documentation; the project figures throughout (4 dashboards, 8 containers, documentation counts, etc.) describe the system as it existed at that time and predate the LDI manufacturing dashboard suite. The learning outcomes, challenges, and solutions described are an honest historical record and were not rewritten. Kept for historical record per docs/archive/README.md. For current information, see docs/architecture/ARCHITECTURE.md.
+
+
 > **รายงานสรุปสำหรับการประเมินทางวิชาการและฝ่ายจัดการ**
 > มุ่งเน้นผลลัพธ์การเรียนรู้และคุณค่าทางธุรกิจที่มอบให้กับองค์กร
 

@@ -1,5 +1,7 @@
 # IMS — Comprehensive Audit Report
 
+> **ARCHIVED — historical snapshot, dated 2026-08-04.** Not living documentation; numbers below (dashboard counts, migration counts, panel counts, etc.) reflect the system as it existed on that date and are known to be stale relative to the current system. Kept for historical record per docs/archive/README.md. For current information, see docs/architecture/ARCHITECTURE.md and docs/architecture/DASHBOARD_INVENTORY.md.
+
 > วันที่: 2026-08-04
 > ตรวจสอบโดย: Buffy (Freebuff AI) — ตรวจสอบทุกด้านของโปรเจค
 > ครอบคลุม: Security, Database, Node-RED, Grafana, CI/CD, Docker, Tests

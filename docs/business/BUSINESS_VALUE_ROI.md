@@ -1,7 +1,9 @@
 # 📈 Business Value & ROI Analysis
 
 > **เอกสารสรุปผลกระทบทางธุรกิจสำหรับผู้บริหาร**
-> โครงการ IMS (Infrastructure Monitoring System) — APEX Circuit
+> โครงการ IMS — APEX Circuit
+>
+> **Corrected 2026-08-10:** the technical figures below (dashboard count, container count, alert rule count, load-test results, documentation count) have been updated to match the current system — the original figures were written before the LDI manufacturing dashboard suite existed and significantly undersold the platform as a result. The financial/ROI figures (staff hours, ฿ savings, payback period) are the original business inputs from this report's authors and are outside what this documentation pass can independently verify — treat them as the original business case, not re-audited numbers.
 
 ---
 
@@ -40,8 +42,8 @@
 |---|---|---|
 | **Real-time SNMP Polling** | ทุก 30 วินาที อัตโนมัติ 100% | Zero manual effort |
 | **AIOps Z-Score Alerting** | ตรวจจับ 3σ anomaly ก่อนเครื่องเสีย | Proactive maintenance |
-| **4 Dashboards** | NOC, System, Engineering, Capacity | Full visibility |
-| **LINE/Teams Webhooks** | แจ้งเตือนภายใน 10 วินาที | Faster response |
+| **10 Dashboards** | 4 infrastructure (NOC, Engineering Drill-Down, Capacity, Meta-Monitoring) + 6 manufacturing (LDI Andon, Manufacturing, Engineering Analytics, Machine Snapshot, Data Readiness, Fleet Overview) | Full visibility across both infrastructure and the manufacturing line itself |
+| **LINE/Teams Webhooks** | Alert formatting and delivery-attempt logic is complete and correct; real delivery requires operator-configured credentials (`LINE_CHANNEL_ACCESS_TOKEN`, `TEAMS_WEBHOOK_URL`) not shipped in this repo | Faster response once configured |
 | **Predictive Analytics** | Linear regression forecasting | Prevent failures |
 
 ---
@@ -83,13 +85,13 @@ ROI: 2,750% (Year 1)
 
 | Component | Delivered |
 |---|---|
-| **Docker Stack** | 8 containers, fully orchestrated |
-| **Telemetry Schema** | 28 columns (CPU, RAM, Disk, Network, LDI, WiFi) |
-| **Alert Rules** | 38 rules across 13 groups |
-| **Dashboards** | 4 dashboards, 34+ panels |
-| **Load Test** | 1,000 VUs, 0% failure, p95 < 80ms |
-| **CI/CD** | GitHub Actions with security scanning |
-| **Documentation** | 8 enterprise-grade docs (~120 KB) |
+| **Docker Stack** | 10 containers, fully orchestrated |
+| **Telemetry Schema** | Two independent pipelines — infrastructure (`sys_metrics`/`net_metrics`/`ldi_metrics`) and LDI manufacturing (`ldi_data`, 34 columns: PE1-6, JE1-4, thickness, scan_speed, resist_dosage, and more) — see `docs/architecture/DATABASE_SCHEMA.md` |
+| **Alert Rules** | 30 rules: 6 LDI-specific + 11 infrastructure (Grafana native), 13 pipeline/platform meta-monitoring rules (Prometheus/Alertmanager) |
+| **Dashboards** | 10 dashboards (4 infrastructure + 6 manufacturing) |
+| **Load Test** | Up to 1,000 VUs (`chaos-stress.js`, deliberate 5% fault injection, >90% success threshold); `pipeline-stress.js` targets >95% success — not a 0%-failure guarantee, a defined acceptable-failure budget |
+| **CI/CD** | GitHub Actions with security scanning (Gitleaks) |
+| **Documentation** | 40+ documents across architecture, operations, user/admin manuals, and enterprise guides |
 
 ---
 
