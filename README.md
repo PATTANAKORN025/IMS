@@ -1,4 +1,6 @@
 <div align="center">
+  <img src="assets/ims-banner.jpg" alt="IMS Cyberpunk Banner" width="100%" style="border-radius:12px; box-shadow: 0 8px 32px rgba(0,242,254,0.3); margin-bottom: 24px;" />
+
 
 # IMS
 
