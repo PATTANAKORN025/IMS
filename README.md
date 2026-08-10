@@ -8,6 +8,7 @@
 
 **Enterprise-grade NOC infrastructure monitoring — 1000+ nodes, real-time streaming, cyberpunk HUD.**
 
+[![Release](https://img.shields.io/badge/Release-v1.0.0-blueviolet?style=for-the-badge&logo=github&logoColor=white)](#quick-start)
 [![License: MIT](https://img.shields.io/badge/License-MIT-10B981?style=for-the-badge&logo=opensourceinitiative&logoColor=white)](LICENSE)
 [![Docker: Ready](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 [![Grafana: v11+](https://img.shields.io/badge/Grafana-v11-F46800?style=for-the-badge&logo=grafana&logoColor=white)](https://grafana.com/)
