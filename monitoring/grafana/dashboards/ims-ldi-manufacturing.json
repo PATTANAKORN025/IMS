@@ -111,13 +111,57 @@
       "transparent": true
     },
     {
+      "id": 10014,
+      "title": "◉ Pipeline Heartbeat",
+      "type": "volkovlabs-echarts-panel",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 1,
+        "w": 24,
+        "h": 3
+      },
+      "description": "Watchdog: re-queries the database every dashboard refresh cycle. If this panel stalls (the frontend refresh timer dying, the reported \"requires F5\" bug), it force-reloads the page automatically. See migration 065 for the TimescaleDB-side half of this fix.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "format": "table",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: trivial constant-time heartbeat query, no table scan. */\nSELECT NOW() AS time, 1 AS value"
+        }
+      ],
+      "options": {
+        "editorMode": "code",
+        "getOption": "/* IMS frontend-stall watchdog: proves the browser -> Grafana -> Postgres\n   query pipeline is still alive on every dashboard refresh cycle. If this\n   panel goes STALE_MS without being re-invoked, the dashboard's own\n   refresh timer has stalled (the \"data stops retrieving, requires F5\"\n   symptom) -- force a full page reload, automating what an operator would\n   otherwise do by hand. Safe to prepend to any getOption body: wrapped in\n   its own IIFE, touches only window.__imsWatchdog*, never collides with\n   panel-local variable names. */\n(function (staleMs) {\n  if (!window.__imsWatchdog) {\n    window.__imsWatchdogTick = Date.now();\n    window.__imsWatchdog = setInterval(function () {\n      if (Date.now() - window.__imsWatchdogTick > staleMs) {\n        window.location.reload();\n      }\n    }, Math.min(staleMs / 4, 30000));\n  }\n  window.__imsWatchdogTick = Date.now();\n})(240000);\n\nconst frame = context.panel.data.series[0];\nconst timeField = frame && frame.fields.find((f) => f.type === 'time');\nconst serverTime = timeField ? (timeField.values.buffer || timeField.values)[0] : Date.now();\n\nconst d = new Date(serverTime);\nconst hh = String(d.getUTCHours()).padStart(2, '0');\nconst mm = String(d.getUTCMinutes()).padStart(2, '0');\nconst ss = String(d.getUTCSeconds()).padStart(2, '0');\n\nreturn {\n  backgroundColor: 'transparent',\n  title: {\n    text: '\\u25CF LIVE',\n    subtext: hh + ':' + mm + ':' + ss + ' UTC \\u2014 pipeline heartbeat',\n    left: 'center',\n    top: 'center',\n    textStyle: { color: '#22C55E', fontSize: 13, fontWeight: 600, fontFamily: 'Roboto Mono, monospace' },\n    subtextStyle: { color: '#8B98A9', fontSize: 11, fontFamily: 'Roboto Mono, monospace' },\n  },\n};\n",
+        "renderer": "canvas",
+        "editor": {
+          "format": "auto"
+        },
+        "themeEditor": {
+          "name": "default",
+          "config": "{}"
+        },
+        "map": "none"
+      }
+    },
+    {
       "id": 10010,
-      "title": "\u25c8 PRODUCTION",
+      "title": "◈ PRODUCTION",
       "type": "row",
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 1,
+        "y": 4,
         "w": 24,
         "h": 1
       },
@@ -125,14 +169,14 @@
     },
     {
       "id": 15,
-      "title": "\u25c9 Estimated Yield (%)",
+      "title": "◉ Estimated Yield (%)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 0,
-        "y": 2,
+        "y": 5,
         "w": 8,
         "h": 4
       },
@@ -255,14 +299,14 @@
     },
     {
       "id": 1,
-      "title": "\u25c9 Running",
+      "title": "◉ Running",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 8,
-        "y": 2,
+        "y": 5,
         "w": 8,
         "h": 4
       },
@@ -380,14 +424,14 @@
     },
     {
       "id": 20,
-      "title": "\u25c9 Fleet Status",
+      "title": "◉ Fleet Status",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 16,
-        "y": 2,
+        "y": 5,
         "w": 8,
         "h": 4
       },
@@ -456,12 +500,12 @@
     },
     {
       "id": 10011,
-      "title": "\u25c8 QUALITY",
+      "title": "◈ QUALITY",
       "type": "row",
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 6,
+        "y": 9,
         "w": 24,
         "h": 1
       },
@@ -469,14 +513,14 @@
     },
     {
       "id": 17,
-      "title": "\u25c9 Avg Cpk (Fleet)",
+      "title": "◉ Avg Cpk (Fleet)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 0,
-        "y": 7,
+        "y": 10,
         "w": 6,
         "h": 4
       },
@@ -600,14 +644,14 @@
     },
     {
       "id": 18,
-      "title": "\u25c9 Worst Cpk (Fleet, 24h)",
+      "title": "◉ Worst Cpk (Fleet, 24h)",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 6,
-        "y": 7,
+        "y": 10,
         "w": 6,
         "h": 4
       },
@@ -730,14 +774,14 @@
     },
     {
       "id": 19,
-      "title": "\u25c9 JE Pass Rate (Fleet, 24h)",
+      "title": "◉ JE Pass Rate (Fleet, 24h)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 12,
-        "y": 7,
+        "y": 10,
         "w": 6,
         "h": 4
       },
@@ -825,20 +869,20 @@
     },
     {
       "id": 2,
-      "title": "\u25c8 PE Limit Used",
+      "title": "◈ PE Limit Used",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 18,
-        "y": 7,
+        "y": 10,
         "w": 6,
         "h": 4
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "suffix: \u00b5m",
+          "unit": "suffix: µm",
           "min": 0,
           "max": 120,
           "decimals": 2,
@@ -922,12 +966,12 @@
     },
     {
       "id": 10012,
-      "title": "\u25c8 RISK",
+      "title": "◈ RISK",
       "type": "row",
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 11,
+        "y": 14,
         "w": 24,
         "h": 1
       },
@@ -935,14 +979,14 @@
     },
     {
       "id": 16,
-      "title": "\u25c9 Fleet Availability (%)",
+      "title": "◉ Fleet Availability (%)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 0,
-        "y": 12,
+        "y": 15,
         "w": 6,
         "h": 4
       },
@@ -1066,14 +1110,14 @@
     },
     {
       "id": 5,
-      "title": "\u25c9 Critical Alarms",
+      "title": "◉ Critical Alarms",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 6,
-        "y": 12,
+        "y": 15,
         "w": 6,
         "h": 4
       },
@@ -1155,14 +1199,14 @@
     },
     {
       "id": 3,
-      "title": "\u25c9 Avg Temperature",
+      "title": "◉ Avg Temperature",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 12,
-        "y": 12,
+        "y": 15,
         "w": 6,
         "h": 4
       },
@@ -1293,14 +1337,14 @@
     },
     {
       "id": 4,
-      "title": "\u25c9 Avg Humidity",
+      "title": "◉ Avg Humidity",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 18,
-        "y": 12,
+        "y": 15,
         "w": 6,
         "h": 4
       },
@@ -1432,10 +1476,10 @@
     {
       "id": 10001,
       "type": "row",
-      "title": "\u25c8 PRODUCTION & COMPLIANCE",
+      "title": "◈ PRODUCTION & COMPLIANCE",
       "gridPos": {
         "x": 0,
-        "y": 16,
+        "y": 19,
         "w": 24,
         "h": 1
       },
@@ -1443,7 +1487,7 @@
       "panels": [
         {
           "id": 6,
-          "title": "\u25c8 Production & Process Table",
+          "title": "◈ Production & Process Table",
           "type": "table",
           "datasource": {
             "uid": "timescaledb"
@@ -1475,7 +1519,7 @@
               "datasource": {
                 "uid": "timescaledb"
               },
-              "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: always the true latest row per machine, not bounded by the dashboard time range -- see v_ldi_machine_latest_full (migration 052) */\nSELECT dev.device_id AS \"Machine\", v.mo AS \"Job (MO)\", v.fpn AS \"Part (FPN)\", v.layer_name AS \"Layer\",\n       CASE WHEN v.log_id IS NULL THEN 'NO_DATA' ELSE (v.board_no::TEXT || '/' || v.total_board::TEXT) END AS \"Progress\",\n       ROUND(v.temperature::NUMERIC, 1) AS \"temperature (\u00b0C)\",\n       ROUND(v.humidity::NUMERIC, 1) AS \"humidity (%RH)\",\n       ROUND(v.scan_speed::NUMERIC, 1) AS \"scan_speed (mm/s)\",\n       ROUND(v.thickness::NUMERIC, 3) AS \"thickness (mm)\",\n       ROUND(v.resist_dosage::NUMERIC, 1) AS \"resist_dosage\",\n       v.state AS \"state\",\n       v.is_stale AS \"stale (>5min)\"\nFROM public.devices dev\nLEFT JOIN public.v_ldi_machine_latest_full v\n  ON v.eqp_id = dev.device_id AND v.factory IN (${factory:sqlstring}) AND v.mo IN (${mo:sqlstring})\nWHERE dev.device_type = 'ldi' AND dev.enabled AND dev.device_id IN (${machine_id:sqlstring})\nORDER BY dev.device_id",
+              "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: always the true latest row per machine, not bounded by the dashboard time range -- see v_ldi_machine_latest_full (migration 052) */\nSELECT dev.device_id AS \"Machine\", v.mo AS \"Job (MO)\", v.fpn AS \"Part (FPN)\", v.layer_name AS \"Layer\",\n       CASE WHEN v.log_id IS NULL THEN 'NO_DATA' ELSE (v.board_no::TEXT || '/' || v.total_board::TEXT) END AS \"Progress\",\n       ROUND(v.temperature::NUMERIC, 1) AS \"temperature (°C)\",\n       ROUND(v.humidity::NUMERIC, 1) AS \"humidity (%RH)\",\n       ROUND(v.scan_speed::NUMERIC, 1) AS \"scan_speed (mm/s)\",\n       ROUND(v.thickness::NUMERIC, 3) AS \"thickness (mm)\",\n       ROUND(v.resist_dosage::NUMERIC, 1) AS \"resist_dosage\",\n       v.state AS \"state\",\n       v.is_stale AS \"stale (>5min)\"\nFROM public.devices dev\nLEFT JOIN public.v_ldi_machine_latest_full v\n  ON v.eqp_id = dev.device_id AND v.factory IN (${factory:sqlstring}) AND v.mo IN (${mo:sqlstring})\nWHERE dev.device_type = 'ldi' AND dev.enabled AND dev.device_id IN (${machine_id:sqlstring})\nORDER BY dev.device_id",
               "format": "table"
             }
           ],
@@ -1787,7 +1831,7 @@
               {
                 "matcher": {
                   "id": "byName",
-                  "options": "temperature (\u00b0C)"
+                  "options": "temperature (°C)"
                 },
                 "properties": [
                   {
@@ -1861,7 +1905,7 @@
         },
         {
           "id": 7,
-          "title": "\u25c8 Temperature Compliance (22\u00b12\u00b0C)",
+          "title": "◈ Temperature Compliance (22±2°C)",
           "type": "state-timeline",
           "datasource": {
             "uid": "timescaledb"
@@ -1952,7 +1996,7 @@
         },
         {
           "id": 8,
-          "title": "\u25c8 Humidity Compliance (55\u00b15%)",
+          "title": "◈ Humidity Compliance (55±5%)",
           "type": "state-timeline",
           "datasource": {
             "uid": "timescaledb"
@@ -2046,10 +2090,10 @@
     {
       "id": 10002,
       "type": "row",
-      "title": "\u25c8 PROCESS METRICS",
+      "title": "◈ PROCESS METRICS",
       "gridPos": {
         "x": 0,
-        "y": 17,
+        "y": 20,
         "w": 24,
         "h": 1
       },
@@ -2057,7 +2101,7 @@
       "panels": [
         {
           "id": 9,
-          "title": "\u25c8 Scan Speed & Air Vacuum",
+          "title": "◈ Scan Speed & Air Vacuum",
           "type": "timeseries",
           "datasource": {
             "uid": "timescaledb"
@@ -2182,7 +2226,7 @@
         },
         {
           "id": 10,
-          "title": "\u25c8 Thickness & Resist Dosage",
+          "title": "◈ Thickness & Resist Dosage",
           "type": "timeseries",
           "datasource": {
             "uid": "timescaledb"
@@ -2244,7 +2288,7 @@
                 "properties": [
                   {
                     "id": "unit",
-                    "value": "suffix: mJ/cm\u00b2"
+                    "value": "suffix: mJ/cm²"
                   },
                   {
                     "id": "decimals",
@@ -2307,7 +2351,7 @@
         },
         {
           "id": 11,
-          "title": "\u25c8 Scale X / Y",
+          "title": "◈ Scale X / Y",
           "type": "timeseries",
           "datasource": {
             "uid": "timescaledb"
@@ -2427,10 +2471,10 @@
     {
       "id": 10003,
       "type": "row",
-      "title": "\u25c8 ANALYTICS & SPC",
+      "title": "◈ ANALYTICS & SPC",
       "gridPos": {
         "x": 0,
-        "y": 18,
+        "y": 21,
         "w": 24,
         "h": 1
       },
@@ -2438,7 +2482,7 @@
       "panels": [
         {
           "id": 12,
-          "title": "\u25c8 Calculated Time per Board",
+          "title": "◈ Calculated Time per Board",
           "type": "heatmap",
           "datasource": {
             "uid": "timescaledb"
@@ -2494,7 +2538,7 @@
         },
         {
           "id": 13,
-          "title": "\u25c8 Z-Score: temperature",
+          "title": "◈ Z-Score: temperature",
           "type": "timeseries",
           "datasource": {
             "uid": "timescaledb"
@@ -2589,10 +2633,10 @@
     {
       "id": 10004,
       "type": "row",
-      "title": "\u25c8 SYSTEM ALARMS",
+      "title": "◈ SYSTEM ALARMS",
       "gridPos": {
         "x": 0,
-        "y": 19,
+        "y": 22,
         "w": 24,
         "h": 1
       },
@@ -2600,7 +2644,7 @@
       "panels": [
         {
           "id": 14,
-          "title": "\u25c8 Recent Alarm Events (Last 50)",
+          "title": "◈ Recent Alarm Events (Last 50)",
           "type": "table",
           "datasource": {
             "uid": "timescaledb"
@@ -2780,19 +2824,19 @@
     },
     {
       "id": 10006,
-      "title": "\u25c8 RCA FLEET SUMMARY",
+      "title": "◈ RCA FLEET SUMMARY",
       "type": "row",
       "collapsed": true,
       "gridPos": {
         "x": 0,
-        "y": 20,
+        "y": 23,
         "w": 24,
         "h": 1
       },
       "panels": [
         {
           "id": 21,
-          "title": "\u25c9 Top Correlated Alarms (24h)",
+          "title": "◉ Top Correlated Alarms (24h)",
           "type": "table",
           "datasource": {
             "type": "postgres",
@@ -2955,10 +2999,10 @@
     {
       "id": 10013,
       "type": "row",
-      "title": "\u25c8 CYCLE TIME & TRACEABILITY",
+      "title": "◈ CYCLE TIME & TRACEABILITY",
       "gridPos": {
         "x": 0,
-        "y": 21,
+        "y": 24,
         "w": 24,
         "h": 1
       },
@@ -2966,7 +3010,7 @@
       "panels": [
         {
           "id": 22,
-          "title": "\u25c9 Avg Cycle Time (Fleet)",
+          "title": "◉ Avg Cycle Time (Fleet)",
           "type": "stat",
           "datasource": {
             "uid": "timescaledb"
@@ -3052,7 +3096,7 @@
         },
         {
           "id": 23,
-          "title": "\u25c8 Board Traceability",
+          "title": "◈ Board Traceability",
           "type": "table",
           "datasource": {
             "uid": "timescaledb"

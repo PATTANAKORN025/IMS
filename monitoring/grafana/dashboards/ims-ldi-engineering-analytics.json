@@ -1,5 +1,5 @@
 {
-  "description": "Layer 3 Process Timeline: synchronized multi-parameter RCA. temperature \u2192 humidity \u2192 scan_speed \u2192 air_vacuum \u2192 scale_x/y \u2192 pe_1~6 \u2192 je_1~4 \u2192 state. Shared crosshair + tooltip. Fixed axis scaling.",
+  "description": "Layer 3 Process Timeline: synchronized multi-parameter RCA. temperature → humidity → scan_speed → air_vacuum → scale_x/y → pe_1~6 → je_1~4 → state. Shared crosshair + tooltip. Fixed axis scaling.",
   "schemaVersion": 39,
   "liveNow": true,
   "style": "dark",
@@ -194,7 +194,7 @@
     },
     {
       "id": 1,
-      "title": "\u25c8 temperature (\u00b0C) vs humidity (%RH)",
+      "title": "◈ temperature (°C) vs humidity (%RH)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -331,7 +331,7 @@
           "legendFormat": "{{metric}} - humidity"
         }
       ],
-      "description": "Temperature per machine on the operational scale 18-28\u00b0C, overlaid with humidity (right axis, %RH) for at-a-glance correlation. Invalid zero sensor rows are monitored separately in Data Readiness.",
+      "description": "Temperature per machine on the operational scale 18-28°C, overlaid with humidity (right axis, %RH) for at-a-glance correlation. Invalid zero sensor rows are monitored separately in Data Readiness.",
       "links": [
         {
           "title": "Open Machine Snapshot (select one Machine)",
@@ -364,7 +364,7 @@
       "panels": [
         {
           "id": 3,
-          "title": "\u25c8 scan_speed (mm/s) vs air_vacuum (kPa)",
+          "title": "◈ scan_speed (mm/s) vs air_vacuum (kPa)",
           "type": "timeseries",
           "datasource": {
             "uid": "timescaledb"
@@ -511,7 +511,7 @@
       "panels": [
         {
           "id": 5,
-          "title": "\u25c8 scale_x vs scale_y",
+          "title": "◈ scale_x vs scale_y",
           "type": "timeseries",
           "datasource": {
             "uid": "timescaledb"
@@ -632,7 +632,7 @@
         },
         {
           "id": 7,
-          "title": "\u25c8 pe_1 ~ pe_6 (\u00b5m)",
+          "title": "◈ pe_1 ~ pe_6 (µm)",
           "type": "timeseries",
           "datasource": {
             "uid": "timescaledb"
@@ -645,7 +645,7 @@
           },
           "fieldConfig": {
             "defaults": {
-              "unit": "suffix: \u00b5m",
+              "unit": "suffix: µm",
               "decimals": 2,
               "custom": {
                 "drawStyle": "line",
@@ -804,7 +804,7 @@
               "legendFormat": "{{metric}}"
             }
           ],
-          "description": "Individual signed PE values with per-machine +/- pe_setting spec-limit lines overlaid (dashed red). Soft scale covers the observed range (about -67 to +75 \u00b5m) without clipping future outliers.",
+          "description": "Individual signed PE values with per-machine +/- pe_setting spec-limit lines overlaid (dashed red). Soft scale covers the observed range (about -67 to +75 µm) without clipping future outliers.",
           "links": [
             {
               "title": "Open Machine Snapshot (select one Machine)",
@@ -825,7 +825,7 @@
         },
         {
           "id": 8,
-          "title": "\u25c8 je_1 ~ je_4 (\u00b5m)",
+          "title": "◈ je_1 ~ je_4 (µm)",
           "type": "timeseries",
           "datasource": {
             "uid": "timescaledb"
@@ -838,7 +838,7 @@
           },
           "fieldConfig": {
             "defaults": {
-              "unit": "suffix: \u00b5m",
+              "unit": "suffix: µm",
               "decimals": 2,
               "custom": {
                 "drawStyle": "line",
@@ -970,7 +970,7 @@
               "legendFormat": "{{metric}}"
             }
           ],
-          "description": "Individual JE values with per-machine je_setting spec-limit line overlaid (dashed red). Soft scale covers the observed range (0 to about 43 \u00b5m) while retaining out-of-range visibility.",
+          "description": "Individual JE values with per-machine je_setting spec-limit line overlaid (dashed red). Soft scale covers the observed range (0 to about 43 µm) while retaining out-of-range visibility.",
           "links": [
             {
               "title": "Open Machine Snapshot (select one Machine)",
@@ -1005,7 +1005,7 @@
       "panels": [
         {
           "id": 9,
-          "title": "\u25c8 state",
+          "title": "◈ state",
           "type": "state-timeline",
           "datasource": {
             "uid": "timescaledb"
@@ -1114,7 +1114,7 @@
         },
         {
           "id": 10,
-          "title": "\u25c8 Machine Capability Ranking",
+          "title": "◈ Machine Capability Ranking",
           "type": "table",
           "datasource": {
             "uid": "timescaledb"
@@ -1481,7 +1481,7 @@
       "panels": [
         {
           "id": 11,
-          "title": "\u25c8 PE Standard Deviation by Machine (Lower is Better)",
+          "title": "◈ PE Standard Deviation by Machine (Lower is Better)",
           "type": "barchart",
           "datasource": {
             "uid": "timescaledb"
@@ -1499,7 +1499,7 @@
               },
               "decimals": 2,
               "min": 0,
-              "unit": "suffix: \u00b5m",
+              "unit": "suffix: µm",
               "custom": {}
             },
             "overrides": []
@@ -1555,7 +1555,7 @@
         },
         {
           "id": 15,
-          "title": "\u25c8 JE Standard Deviation by Machine (Lower is Better)",
+          "title": "◈ JE Standard Deviation by Machine (Lower is Better)",
           "type": "barchart",
           "datasource": {
             "uid": "timescaledb"
@@ -1573,7 +1573,7 @@
               },
               "decimals": 2,
               "min": 0,
-              "unit": "suffix: \u00b5m",
+              "unit": "suffix: µm",
               "custom": {}
             },
             "overrides": []
@@ -1629,7 +1629,7 @@
         },
         {
           "id": 12,
-          "title": "\u25c8 PE/JE Error Distribution by Machine (Box Plot) [ECharts]",
+          "title": "◈ PE/JE Error Distribution by Machine (Box Plot) [ECharts]",
           "type": "volkovlabs-echarts-panel",
           "datasource": {
             "uid": "timescaledb"
@@ -1648,7 +1648,7 @@
           },
           "options": {
             "editorMode": "code",
-            "getOption": "const frame = context.panel.data.series[0];\nconst fields = {};\nframe.fields.forEach((f) => { fields[f.name] = f.values.buffer || f.values; });\nconst seriesCol = fields['series'];\nconst machineCol = fields['machine'];\nconst minCol = fields['min'];\nconst q1Col = fields['q1'];\nconst medianCol = fields['median'];\nconst q3Col = fields['q3'];\nconst maxCol = fields['max'];\n\nconst key = (s, m) => s + '|' + m;\nconst lookup = {};\nfor (let i = 0; i < seriesCol.length; i++) {\n  lookup[key(seriesCol[i], machineCol[i])] = [minCol[i], q1Col[i], medianCol[i], q3Col[i], maxCol[i]];\n}\nconst machines = Array.from(new Set(Array.from(machineCol))).sort();\nconst peData = machines.map((m) => lookup[key('PE', m)] || [null, null, null, null, null]);\nconst jeData = machines.map((m) => lookup[key('JE', m)] || [null, null, null, null, null]);\n\nreturn {\n  backgroundColor: 'transparent',\n  tooltip: {\n    trigger: 'item',\n    backgroundColor: 'rgba(18,22,26,0.95)',\n    borderColor: 'rgba(255,255,255,0.12)',\n    borderWidth: 1,\n    textStyle: { color: '#E8EDF2', fontSize: 12 },\n  },\n  legend: {\n    bottom: 0,\n    textStyle: { color: 'rgba(224,224,224,0.85)' },\n    data: ['PE', 'JE'],\n  },\n  grid: { left: 55, right: 20, top: 20, bottom: 50, containLabel: true },\n  xAxis: {\n    type: 'category',\n    data: machines,\n    axisLabel: { color: 'rgba(224,224,224,0.85)' },\n    axisLine: { lineStyle: { color: 'rgba(255,255,255,0.15)' } },\n    splitLine: { show: false },\n  },\n  yAxis: {\n    type: 'value',\n    name: '\u00b5m',\n    nameTextStyle: { color: 'rgba(224,224,224,0.6)' },\n    axisLabel: { color: 'rgba(224,224,224,0.85)' },\n    splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } },\n  },\n  series: [\n    { name: 'PE', type: 'boxplot', data: peData, itemStyle: { color: 'rgba(0,242,254,0.16)', borderColor: '#00F2FE', borderWidth: 1.5 } },\n    { name: 'JE', type: 'boxplot', data: jeData, itemStyle: { color: 'rgba(59,130,246,0.16)', borderColor: '#3B82F6', borderWidth: 1.5 } },\n  ],\n};\n",
+            "getOption": "/* IMS frontend-stall watchdog: proves the browser -> Grafana -> Postgres\n   query pipeline is still alive on every dashboard refresh cycle. If this\n   panel goes STALE_MS without being re-invoked, the dashboard's own\n   refresh timer has stalled (the \"data stops retrieving, requires F5\"\n   symptom) -- force a full page reload, automating what an operator would\n   otherwise do by hand. Safe to prepend to any getOption body: wrapped in\n   its own IIFE, touches only window.__imsWatchdog*, never collides with\n   panel-local variable names. */\n(function (staleMs) {\n  if (!window.__imsWatchdog) {\n    window.__imsWatchdogTick = Date.now();\n    window.__imsWatchdog = setInterval(function () {\n      if (Date.now() - window.__imsWatchdogTick > staleMs) {\n        window.location.reload();\n      }\n    }, Math.min(staleMs / 4, 30000));\n  }\n  window.__imsWatchdogTick = Date.now();\n})(240000);\n\nconst frame = context.panel.data.series[0];\nconst fields = {};\nframe.fields.forEach((f) => { fields[f.name] = f.values.buffer || f.values; });\nconst seriesCol = fields['series'];\nconst machineCol = fields['machine'];\nconst minCol = fields['min'];\nconst q1Col = fields['q1'];\nconst medianCol = fields['median'];\nconst q3Col = fields['q3'];\nconst maxCol = fields['max'];\n\nconst key = (s, m) => s + '|' + m;\nconst lookup = {};\nfor (let i = 0; i < seriesCol.length; i++) {\n  lookup[key(seriesCol[i], machineCol[i])] = [minCol[i], q1Col[i], medianCol[i], q3Col[i], maxCol[i]];\n}\nconst machines = Array.from(new Set(Array.from(machineCol))).sort();\nconst peData = machines.map((m) => lookup[key('PE', m)] || [null, null, null, null, null]);\nconst jeData = machines.map((m) => lookup[key('JE', m)] || [null, null, null, null, null]);\n\nreturn {\n  backgroundColor: 'transparent',\n  tooltip: {\n    trigger: 'item',\n    backgroundColor: 'rgba(18,22,26,0.95)',\n    borderColor: 'rgba(255,255,255,0.12)',\n    borderWidth: 1,\n    textStyle: { color: '#E8EDF2', fontSize: 12 },\n  },\n  legend: {\n    bottom: 0,\n    textStyle: { color: 'rgba(224,224,224,0.85)' },\n    data: ['PE', 'JE'],\n  },\n  grid: { left: 55, right: 20, top: 20, bottom: 50, containLabel: true },\n  xAxis: {\n    type: 'category',\n    data: machines,\n    axisLabel: { color: 'rgba(224,224,224,0.85)' },\n    axisLine: { lineStyle: { color: 'rgba(255,255,255,0.15)' } },\n    splitLine: { show: false },\n  },\n  yAxis: {\n    type: 'value',\n    name: 'µm',\n    nameTextStyle: { color: 'rgba(224,224,224,0.6)' },\n    axisLabel: { color: 'rgba(224,224,224,0.85)' },\n    splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } },\n  },\n  series: [\n    { name: 'PE', type: 'boxplot', data: peData, itemStyle: { color: 'rgba(0,242,254,0.16)', borderColor: '#00F2FE', borderWidth: 1.5 } },\n    { name: 'JE', type: 'boxplot', data: jeData, itemStyle: { color: 'rgba(59,130,246,0.16)', borderColor: '#3B82F6', borderWidth: 1.5 } },\n  ],\n};\n",
             "renderer": "canvas",
             "editor": {
               "format": "auto"
@@ -1704,7 +1704,7 @@
       "panels": [
         {
           "id": 13,
-          "title": "\u25c8 Resist Dosage Live (mJ/cm\u00b2)",
+          "title": "◈ Resist Dosage Live (mJ/cm²)",
           "type": "bargauge",
           "datasource": {
             "uid": "timescaledb"
@@ -1717,7 +1717,7 @@
           },
           "fieldConfig": {
             "defaults": {
-              "unit": "suffix: mJ/cm\u00b2",
+              "unit": "suffix: mJ/cm²",
               "min": 0,
               "decimals": 2,
               "thresholds": {
@@ -1785,7 +1785,7 @@
               "format": "table"
             }
           ],
-          "description": "Latest resist dosage per selected machine. Auto-ranging is used because observed machine settings span 15 to 1,200 mJ/cm\u00b2.",
+          "description": "Latest resist dosage per selected machine. Auto-ranging is used because observed machine settings span 15 to 1,200 mJ/cm².",
           "links": [
             {
               "title": "Open Machine Snapshot (select one Machine)",
@@ -1820,7 +1820,7 @@
       "panels": [
         {
           "id": 14,
-          "title": "\u25c9 Alarm \u2194 Process Correlation (RCA Truth Test)",
+          "title": "◉ Alarm ↔ Process Correlation (RCA Truth Test)",
           "type": "table",
           "gridPos": {
             "h": 12,
@@ -1982,7 +1982,7 @@
     {
       "id": 16,
       "type": "row",
-      "title": "\u25c8 SPC CONTROL CHARTS",
+      "title": "◈ SPC CONTROL CHARTS",
       "gridPos": {
         "x": 0,
         "y": 16,
@@ -1994,7 +1994,7 @@
     },
     {
       "id": 17,
-      "title": "\u25c8 Thickness Control Chart (mean \u00b1 3\u03c3) [ECharts]",
+      "title": "◈ Thickness Control Chart (mean ± 3σ) [ECharts]",
       "type": "volkovlabs-echarts-panel",
       "datasource": {
         "uid": "timescaledb"
@@ -2013,7 +2013,7 @@
       },
       "options": {
         "editorMode": "code",
-        "getOption": "const frames = context.panel.data.series;\nconst frame = frames[0];\nconst timeField = frame.fields.find((f) => f.type === 'time');\nconst times = timeField.values.buffer || timeField.values;\nconst numberFields = frame.fields.filter((f) => f.type === 'number');\n\nfunction lastNonNull(arr) {\n  if (!arr) return null;\n  for (let i = arr.length - 1; i >= 0; i--) if (arr[i] != null) return arr[i];\n  return null;\n}\n\nconst uclField = numberFields.find((f) => f.name.indexOf('UCL') !== -1);\nconst lclField = numberFields.find((f) => f.name.indexOf('LCL') !== -1);\nconst latestUCL = uclField ? lastNonNull(uclField.values.buffer || uclField.values) : null;\nconst latestLCL = lclField ? lastNonNull(lclField.values.buffer || lclField.values) : null;\n\nconst GRAY = '#8B98A9';\nconst RED = '#EF4444';\n\nconst series = numberFields.map((f) => {\n  const values = f.values.buffer || f.values;\n  const name = f.name;\n  const isLimit = name.indexOf('UCL') !== -1 || name.indexOf('LCL') !== -1;\n  const data = [];\n  for (let i = 0; i < times.length; i++) data.push([times[i], values[i]]);\n\n  if (isLimit) {\n    return {\n      name: name,\n      type: 'line',\n      showSymbol: false,\n      connectNulls: true,\n      lineStyle: { width: 1.5, type: 'dashed', color: RED },\n      itemStyle: { color: RED },\n      z: 2,\n      data: data,\n    };\n  }\n\n  const latestVal = lastNonNull(values);\n  const outOfControl = latestVal != null && ((latestUCL != null && latestVal > latestUCL) || (latestLCL != null && latestVal < latestLCL));\n  return {\n    name: name,\n    type: 'line',\n    showSymbol: false,\n    connectNulls: true,\n    lineStyle: { width: outOfControl ? 1.5 : 1, color: outOfControl ? RED : GRAY, opacity: outOfControl ? 1 : 0.55 },\n    itemStyle: { color: outOfControl ? RED : GRAY },\n    z: outOfControl ? 3 : 1,\n    data: data,\n  };\n});\n\nreturn {\n  backgroundColor: 'transparent',\n  tooltip: {\n    trigger: 'axis',\n    backgroundColor: 'rgba(18,22,26,0.95)',\n    borderColor: 'rgba(255,255,255,0.12)',\n    borderWidth: 1,\n    textStyle: { color: '#E8EDF2', fontSize: 12 },\n    axisPointer: { lineStyle: { color: 'rgba(255,255,255,0.2)' } },\n  },\n  legend: {\n    type: 'scroll',\n    bottom: 0,\n    textStyle: { color: 'rgba(224,224,224,0.85)' },\n    data: series.map((s) => s.name),\n  },\n  grid: { left: 55, right: 20, top: 20, bottom: 50, containLabel: true },\n  xAxis: {\n    type: 'time',\n    axisLabel: { color: 'rgba(224,224,224,0.65)' },\n    axisLine: { lineStyle: { color: 'rgba(255,255,255,0.15)' } },\n    splitLine: { show: false },\n  },\n  yAxis: {\n    type: 'value',\n    name: 'mm',\n    nameTextStyle: { color: 'rgba(224,224,224,0.6)' },\n    axisLabel: { color: 'rgba(224,224,224,0.85)', formatter: (v) => v.toFixed(3) },\n    splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } },\n  },\n  series: series,\n};\n",
+        "getOption": "/* IMS frontend-stall watchdog: proves the browser -> Grafana -> Postgres\n   query pipeline is still alive on every dashboard refresh cycle. If this\n   panel goes STALE_MS without being re-invoked, the dashboard's own\n   refresh timer has stalled (the \"data stops retrieving, requires F5\"\n   symptom) -- force a full page reload, automating what an operator would\n   otherwise do by hand. Safe to prepend to any getOption body: wrapped in\n   its own IIFE, touches only window.__imsWatchdog*, never collides with\n   panel-local variable names. */\n(function (staleMs) {\n  if (!window.__imsWatchdog) {\n    window.__imsWatchdogTick = Date.now();\n    window.__imsWatchdog = setInterval(function () {\n      if (Date.now() - window.__imsWatchdogTick > staleMs) {\n        window.location.reload();\n      }\n    }, Math.min(staleMs / 4, 30000));\n  }\n  window.__imsWatchdogTick = Date.now();\n})(240000);\n\nconst frames = context.panel.data.series;\nconst frame = frames[0];\nconst timeField = frame.fields.find((f) => f.type === 'time');\nconst times = timeField.values.buffer || timeField.values;\nconst numberFields = frame.fields.filter((f) => f.type === 'number');\n\nfunction lastNonNull(arr) {\n  if (!arr) return null;\n  for (let i = arr.length - 1; i >= 0; i--) if (arr[i] != null) return arr[i];\n  return null;\n}\n\nconst uclField = numberFields.find((f) => f.name.indexOf('UCL') !== -1);\nconst lclField = numberFields.find((f) => f.name.indexOf('LCL') !== -1);\nconst latestUCL = uclField ? lastNonNull(uclField.values.buffer || uclField.values) : null;\nconst latestLCL = lclField ? lastNonNull(lclField.values.buffer || lclField.values) : null;\n\nconst GRAY = '#8B98A9';\nconst RED = '#EF4444';\n\nconst series = numberFields.map((f) => {\n  const values = f.values.buffer || f.values;\n  const name = f.name;\n  const isLimit = name.indexOf('UCL') !== -1 || name.indexOf('LCL') !== -1;\n  const data = [];\n  for (let i = 0; i < times.length; i++) data.push([times[i], values[i]]);\n\n  if (isLimit) {\n    return {\n      name: name,\n      type: 'line',\n      showSymbol: false,\n      connectNulls: true,\n      lineStyle: { width: 1.5, type: 'dashed', color: RED },\n      itemStyle: { color: RED },\n      z: 2,\n      data: data,\n    };\n  }\n\n  const latestVal = lastNonNull(values);\n  const outOfControl = latestVal != null && ((latestUCL != null && latestVal > latestUCL) || (latestLCL != null && latestVal < latestLCL));\n  return {\n    name: name,\n    type: 'line',\n    showSymbol: false,\n    connectNulls: true,\n    lineStyle: { width: outOfControl ? 1.5 : 1, color: outOfControl ? RED : GRAY, opacity: outOfControl ? 1 : 0.55 },\n    itemStyle: { color: outOfControl ? RED : GRAY },\n    z: outOfControl ? 3 : 1,\n    data: data,\n  };\n});\n\nreturn {\n  backgroundColor: 'transparent',\n  tooltip: {\n    trigger: 'axis',\n    backgroundColor: 'rgba(18,22,26,0.95)',\n    borderColor: 'rgba(255,255,255,0.12)',\n    borderWidth: 1,\n    textStyle: { color: '#E8EDF2', fontSize: 12 },\n    axisPointer: { lineStyle: { color: 'rgba(255,255,255,0.2)' } },\n  },\n  legend: {\n    type: 'scroll',\n    bottom: 0,\n    textStyle: { color: 'rgba(224,224,224,0.85)' },\n    data: series.map((s) => s.name),\n  },\n  grid: { left: 55, right: 20, top: 20, bottom: 50, containLabel: true },\n  xAxis: {\n    type: 'time',\n    axisLabel: { color: 'rgba(224,224,224,0.65)' },\n    axisLine: { lineStyle: { color: 'rgba(255,255,255,0.15)' } },\n    splitLine: { show: false },\n  },\n  yAxis: {\n    type: 'value',\n    name: 'mm',\n    nameTextStyle: { color: 'rgba(224,224,224,0.6)' },\n    axisLabel: { color: 'rgba(224,224,224,0.85)', formatter: (v) => v.toFixed(3) },\n    splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } },\n  },\n  series: series,\n};\n",
         "renderer": "canvas",
         "editor": {
           "format": "auto"
@@ -2038,7 +2038,7 @@
     },
     {
       "id": 18,
-      "title": "\u25c8 Scale X/Y Control Chart (mean \u00b1 3\u03c3)",
+      "title": "◈ Scale X/Y Control Chart (mean ± 3σ)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
