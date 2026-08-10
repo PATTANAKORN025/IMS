@@ -8,7 +8,7 @@
 <div align="center">
 
 ![Manual](https://img.shields.io/badge/Manual-User%20Guide-green)
-![Version](https://img.shields.io/badge/Version-1.0-blue)
+![Version](https://img.shields.io/badge/Version-1.1-blue)
 ![Audience](https://img.shields.io/badge/Audience-IT%20Support-purple)
 
 </div>
@@ -40,14 +40,22 @@
 
 ### Dashboard Overview
 
-เมื่อเข้าสู่ Grafana แล้ว จะพบ 4 dashboards หลัก:
+เมื่อเข้าสู่ Grafana แล้ว จะพบ 10 dashboards:
 
 ```
 📁 IMS Dashboards
-├── 📊 NOC Overview          — Executive fleet view (ภาพรวมทั้งหมด)
-├── 📊 System Overview       — Server health, disk, network, temperature
-├── 📊 Engineering Drilldown — Per-machine deep dive (per-interface)
-└── 📊 Capacity Planning     — Forecasting & resource prediction
+├── Infrastructure (servers/network)
+│   ├── 📊 NOC Overview            — Executive fleet envelope (infra only -- LDI lives below)
+│   ├── 📊 Engineering Drill-Down  — Per-server deep dive: CPU/RAM/disk/temp/network
+│   ├── 📊 Capacity Planning       — Linear-regression forecasting (days until disk/RAM full)
+│   └── 📊 Meta-Monitoring         — The pipeline's own health (rows/sec, batch success, retry queue)
+└── LDI Manufacturing (PCB laser direct imaging fleet)
+    ├── 📊 Easy Overview           — Zero-config whole-fleet glance, no filters to set
+    ├── 📊 LDI Manufacturing       — Executive KPIs + machine telemetry + alarm stream (main command center)
+    ├── 📊 LDI Operator Andon      — Factory-floor kiosk, 1280x720, zero-scroll
+    ├── 📊 LDI Engineering Analytics — Cpk/SPC ranking, RCA Truth Test, PE/JE distributions
+    ├── 📊 LDI Machine Snapshot    — Click any alarm/log to inspect the exact millisecond
+    └── 📊 LDI Data Readiness      — Self-auditing data-quality dashboard (coverage %, gaps)
 ```
 
 ---
@@ -81,9 +89,9 @@
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### 2. System Overview Dashboard
+### 2. Server Health Metrics (NOC Overview / Engineering Drill-Down)
 
-**จุดประสงค์**: ภาพรวม health ของ servers ทั้งหมด
+**จุดประสงค์**: ภาพรวม health ของ servers ทั้งหมด — panel ประเภทนี้กระจายอยู่บน **NOC Overview** (fleet envelope) และ **Engineering Drill-Down** (per-server deep dive), ไม่ใช่ dashboard แยกต่างหาก
 
 | Panel | Metrics | Color Coding |
 |---|---|---|
@@ -164,6 +172,54 @@
 | **Disk Forecast** | Predicted disk full date | Plan storage expansion |
 | **Memory Trend** | Memory usage growth rate | Plan RAM upgrades |
 | **Network Capacity** | Bandwidth utilization trend | Plan network upgrades |
+
+### 5. Easy Overview Dashboard
+
+**จุดประสงค์**: ดูภาพรวมทั้ง LDI fleet ได้ทันทีโดยไม่ต้องตั้งค่าอะไรเลย — ไม่มี template variable, ไม่มี filter, เปิดแล้วเห็นเลย
+
+ทุกตัวเลขบน dashboard นี้ดึงจาก shared view/function ชุดเดียวกับที่ dashboard อื่นใช้ (`v_ldi_machine_latest_full`, `v_ldi_alarm_context`, `f_ldi_yield_pct`, `v_machine_spc_fleet`) — ตัวเลขจะไม่มีวันขัดแย้งกันข้าม dashboard เพราะไม่มี query ซ้ำซ้อนที่คำนวณแยกกัน
+
+### 6. LDI Manufacturing Command Center
+
+**จุดประสงค์**: Dashboard หลักสำหรับสายการผลิต LDI — 4-layer RCA design
+
+| Layer | Content |
+|---|---|
+| **Executive HUD** | Yield %, Running machines, Fleet Status, Avg Cpk, Fleet Availability, Critical Alarms |
+| **Machine Telemetry** | Temperature/Humidity compliance, Scan Speed/Air Vacuum, Thickness/Resist Dosage, Scale X/Y |
+| **Production Context** | Live production table (Machine/Job/Part/Layer/Progress), Board Traceability, Calculated Time per Board |
+| **Alarm Stream** | Recent Alarm Events (last 50), Top Correlated Alarms (24h, RCA) |
+
+Deep-dive rows (Production & Compliance, Process Metrics, Analytics & SPC, System Alarms, RCA Fleet Summary, Cycle Time & Traceability) are collapsed by default — click a row header to expand. This keeps the initial glance to the executive KPI strip only.
+
+### 7. LDI Operator Andon Board
+
+**จุดประสงค์**: จอ kiosk หน้างาน (factory floor) — ISA-101 compliant, ไม่ต้องแตะอะไรเลย ไม่มี scroll ที่ความละเอียด 1280x720
+
+แสดง Fleet Availability, Critical Alarm count, Environmental Compliance %, Machines Running, สถานะเครื่องแต่ละตัว (OK/IDLE/NO_DATA เป็นสี background), และตาราง Live Production
+
+### 8. LDI Engineering Analytics & SPC
+
+**จุดประสงค์**: วิเคราะห์เชิงลึกสำหรับ engineer — Cpk/SPC ranking, RCA Truth Test, การกระจายตัวของ PE/JE
+
+| Section | Content |
+|---|---|
+| **Environmental** | Temperature vs Humidity, ทุกเครื่องพร้อมกัน |
+| **SPC Control Charts** | Thickness Control Chart (mean ± 3σ), Scale X/Y Control Chart |
+| **Variation Analysis** | PE/JE Standard Deviation by Machine, PE/JE Error Distribution (Box Plot) |
+| **RCA / Alarm Correlation** | RCA Truth Test — Lift/Confidence ต่อหมวดหมู่ alarm (Thermal/Humidity/Vacuum/Alignment/Motion) |
+
+### 9. LDI Machine Snapshot
+
+**จุดประสงค์**: ดูสภาพเครื่องแบบละเอียดที่ millisecond ที่คลิกจาก Process Timeline (drill-down จาก dashboard อื่น)
+
+แสดง job context, physical variables, PE alignment, Cpk, และ alarm ที่อยู่ใกล้เวลานั้น — ใช้เมื่อต้องสืบสวนเหตุการณ์เฉพาะจุด ไม่ใช่สำหรับดูภาพรวม
+
+### 10. LDI Data Readiness
+
+**จุดประสงค์**: Dashboard ตรวจสอบคุณภาพข้อมูลด้วยตัวเอง (self-auditing) — ใช้ข้อมูลจริงจาก PostgreSQL เท่านั้น ไม่มีข้อมูลจำลอง
+
+ใช้ตรวจสอบ board-key duplication, coverage %, และอัตราการ match กับ alarm master ก่อนที่จะเชื่อตัวเลขจาก dashboard อื่น
 
 ---
 
@@ -369,11 +425,11 @@ Escalation:
 - If system-level issue → contact system admin
 ```
 
-#### 🟡 Scenario 5: TelemetryGap (Warning)
+#### 🟡 Scenario 5: PipelineDataStalled (Warning)
 
 ```
 Symptoms:
-- Alert: TelemetryGap on server-01
+- Alert: PipelineDataStalled (formerly named TelemetryGap in older docs) on server-01
 - No data for 3+ minutes
 - Other machines still reporting
 
@@ -530,7 +586,7 @@ docker compose exec prometheus wget -qO- "http://localhost:9090/api/v1/alerts" 2
 
 <div align="center">
 
-**IMS User Manual — Version 1.0**
+**IMS User Manual — Version 1.1**
 
 *For IT Support & NOC Team*
 

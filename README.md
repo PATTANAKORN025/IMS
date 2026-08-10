@@ -157,18 +157,7 @@ flowchart LR
 <details>
 <summary><b>Dashboard Architecture</b></summary>
 
-| Dashboard | Panels | Purpose |
-|-----------|--------|---------|
-| **NOC Overview** | 8 | Fleet envelope (AVG+MAX), Fleet Health Score, Top-10 Critical Nodes, Network Bandwidth, LDI Yield Risk |
-| **Engineering Drill-Down** | 26 | Per-machine gauges, RAM/CPU/Temp timeseries, LDI manufacturing, Power analytics, Z-Score anomalies |
-| **Capacity Planning** | 17 | Disk/CPU/RAM forecast with linear regression, Days Until Full, Z-Score anomaly detection |
-| **Meta-Monitoring** | 16 | Pipeline throughput, deadman alerts, circuit breaker state, device poll rates |
-| **Easy Overview** | 8 | Zero-config whole-fleet glance built entirely from shared views/functions -- no template variables to set |
-| **LDI Engineering Analytics** | 12 | Deep dive analytics for LDI yield and machine performance |
-| **LDI Machine Snapshot** | 14 | Real-time state of an individual LDI machine (recipes, temperatures) |
-| **LDI Manufacturing** | 21 | Production metrics, output rates, and manufacturing floor status |
-| **LDI Operator Andon** | 7 | Simple visual alerts and call-for-help screens for operators |
-| **LDI Data Readiness** | 13 | Verification of data ingestion completeness and pipeline health |
+10 dashboards — 5 infrastructure, 5 LDI manufacturing. Full table with panel counts and descriptions: **[Dashboard Inventory](docs/architecture/DASHBOARD_INVENTORY.md)** — auto-generated from the dashboard JSON itself (`node scripts/generate-dashboard-inventory.js`), CI-checked so it can't silently drift from the real dashboards the way a hand-typed table can.
 
 **Design System:** Cyberpunk HUD — `#030407` background, Tailwind palette (`#10B981` Healthy, `#F59E0B` Warning, `#EF4444` Critical, `#3B82F6` Accent), Roboto Mono for stat values, glassmorphism panels, Grid-24 overlap-free layout.
 
@@ -210,17 +199,14 @@ open "http://localhost:3000/playlists/play/1?kiosk=tv&autofitpanels"
 <details>
 <summary><b>Database Schema</b></summary>
 
-| Table | Columns | Description |
-|-------|---------|-------------|
-| `devices` | 11 | Device registry (device_id, hostname, snmp_community, device_type, enabled) |
-| `sys_metrics` | 12 | CPU, RAM, Disk, Temperature per poll cycle (hypertable) |
-| `net_metrics` | 10 | Per-interface RX/TX Mbps, errors, drops, status (hypertable) |
-| `ldi_metrics` | 9 | Legacy manufacturing throughput, PE, JE, humidity, power, vibration (hypertable) |
-| `ldi_data` | 36 | **V2 Normalized Schema**: Manufacturing telemetry (eqp_id, mo, layer_name, resist_dosage) (hypertable) |
-| `ldi_alarm_log` | 8 | **V2 Normalized Schema**: Manufacturing alarms, exact-event RCA join via `related_log_id` (indexes only, no PK) (hypertable) |
-| `sys_hourly` | — | Continuous Aggregate: hourly CPU/RAM/Disk/Temp rollup |
-| `net_hourly` | — | Continuous Aggregate: hourly network throughput rollup |
-| `ldi_hourly` | — | Continuous Aggregate: hourly LDI metrics rollup |
+- `devices` — device registry, single source of truth for both SNMP-polled infra and LDI machines (`device_type`)
+- `sys_metrics` / `net_metrics` — infra telemetry (CPU/RAM/disk/temp, per-interface RX/TX), hypertables
+- `ldi_metrics` — legacy manufacturing throughput/PE/JE/humidity/power/vibration, hypertable
+- `ldi_data` / `ldi_alarm_log` — V2 normalized LDI telemetry + alarms, exact-event RCA join via `related_log_id`, hypertables
+- `sys_hourly` / `net_hourly` / `ldi_hourly` / `ldi_data_1m` / `ldi_data_15m` / `ldi_data_1h` / `ldi_data_hourly` — continuous aggregates
+- `v_machine_spc_fleet` / `v_ldi_rca_recent_window` / `v_ldi_rca_truth_test` — materialized views, refreshed every 60s
+
+Exact column counts, the full view/CAGG list, and applied-migration count: **[Database Schema Inventory](docs/architecture/DATABASE_SCHEMA.md)** — auto-generated from `information_schema` + `timescaledb_information.*` (`node scripts/generate-schema-inventory.js`), CI-checked against the live database.
 
 </details>
 
@@ -268,11 +254,16 @@ IMS/
 | Document | Description |
 |:---:|---|
 | [**Architecture**](docs/architecture/ARCHITECTURE.md) | System context, ADRs, V10 streaming architecture, CAGG strategy |
+| [**Dashboard Inventory**](docs/architecture/DASHBOARD_INVENTORY.md) | Auto-generated dashboard/panel-count table (CI-checked against the live JSON) |
+| [**Database Schema**](docs/architecture/DATABASE_SCHEMA.md) | Auto-generated table/column/view reference (CI-checked against `information_schema`) |
 | [**Contributing**](CONTRIBUTING.md) | Development workflow, branch naming, commit conventions |
 | [**Code of Conduct**](CODE_OF_CONDUCT.md) | Community standards and enforcement |
 | [**Security**](SECURITY.md) | Vulnerability reporting, threat model, RBAC |
 | [**Design System**](docs/architecture/GRAFANA_DESIGN_SYSTEM.md) | Color palette, typography, panel type decisions, threshold contracts |
 | [**Troubleshooting**](docs/operations/TROUBLESHOOTING.md) | Common issues, debugging commands, recovery procedures |
+| [**Release Checklist**](docs/operations/RELEASE_CHECKLIST.md) | What to verify before tagging a release |
+| [**User Manual**](docs/user/USER_MANUAL.md) | Dashboard guide, metric reference, alert response playbooks |
+| [**Admin Manual**](docs/admin/ADMIN_MANUAL.md) | Container ops, device registration, migrations, backup/recovery |
 | [**Bug Report**](.github/ISSUE_TEMPLATE/bug_report.md) | Report a bug or regression |
 | [**Feature Request**](.github/ISSUE_TEMPLATE/feature_request.md) | Suggest a new feature |
 

@@ -206,7 +206,7 @@ session.get(['1.3.6.1.2.1.1.1.0'], (err, varbinds) => {
 | # | Task | Owner |
 |---|---|---|
 | 1 | Review 24-hour monitoring data | IT Team |
-| false positive 2 | Address any false positive alerts | IT Team |
+| 2 | Address any false-positive alerts | IT Team |
 | 3 | Document any issues encountered | IT Team |
 | 4 | Schedule 1-week review meeting | IT Manager |
 
