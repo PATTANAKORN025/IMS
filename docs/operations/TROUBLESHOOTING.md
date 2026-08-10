@@ -216,8 +216,9 @@ for t in d['data']['activeTargets']:
 # Check Node-RED logs
 docker compose logs --tail=50 node-red
 
-# If flows are corrupted
-cp node-red/flows/ingestion.json nodered_data/flows.json
+# If flows.json is corrupted, rebuild it from the real source files
+# (nodered_data/flows/*.json), never hand-copy a single flow over it
+node scripts/build-flows.js
 docker compose restart node-red
 
 # Wait for stabilization

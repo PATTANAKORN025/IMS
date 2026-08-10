@@ -131,7 +131,7 @@ flowchart LR
     subgraph Alerting ["🔔 Alerting"]
         T --> PR[Prometheus\n/metrics scrape]
         PR --> AM[Alertmanager\nInhibition Rules]
-        AM --> WEB[LINE Notify\nSlack + Webhooks]
+        AM --> WEB[LINE Messaging API\n+ MS Teams Webhooks]
     end
 
     style Collection fill:#1a1f2e,stroke:#3B82F6,color:#e2e8f0
@@ -148,9 +148,9 @@ flowchart LR
 2. **Walking** — Sequential async bulk walks (`session.subtree` with `maxRepetitions: 50`). Single UDP socket eliminates switch-level packet drops. Circuit breaker trips after 2 failures with automatic HALF_OPEN probe.
 3. **Parsing** — `sre_parser` maintains per-device state in flow context (`dev_state_<deviceId>`), buffers rows in `batch_buf_<deviceId>`. Offline heartbeat (`_walker: "offline"`) immediately zeros all metrics on device failure.
 4. **Storage** — Timer-gated independent flushing: each table type (sys/net/ldi) inserts only if its buffer has rows. Partial walker failures don't block unrelated data writes.
-5. **Continuous Aggregation** — Hourly CAGGs refresh every 30min. Daily/Weekly CAGGs aggregate from hourly. Retention: raw 14d, hourly 90d, daily 2yr, weekly forever.
-6. **Visualization** — 10 dashboards: NOC Overview (fleet envelope), Engineering Drill-Down (per-machine), AIOps & Capacity (forecasting), Meta-Monitoring (pipeline health), Easy Overview (zero-config LDI fleet glance), LDI Manufacturing (PCB fleet).
-7. **Alerting** — Prometheus scrapes `/metrics`, Alertmanager routes to LINE Notify + Slack with runbook links. Z-Score anomalies via Grafana SQL over TimescaleDB.
+5. **Continuous Aggregation** — Hourly CAGGs refresh every 30min. Daily/Weekly CAGGs aggregate from hourly. Live retention (verified against the running database, not migration history -- see `docs/architecture/DATA_RETENTION.md` for a documented drift between the two): raw `sys_metrics`/`net_metrics`/`ldi_metrics` 30d, `ldi_data` 180d, hourly rollups 2yr.
+6. **Visualization** — 10 dashboards across 2 domains: 4 infrastructure (NOC Overview, Engineering Drill-Down, AIOps & Capacity, Meta-Monitoring) + 6 manufacturing (LDI Manufacturing, Operator Andon, Engineering Analytics & SPC, Machine Snapshot, Data Readiness, Fleet at a Glance).
+7. **Alerting** — Prometheus scrapes `/metrics`, Alertmanager routes to LINE Messaging API + MS Teams with runbook links (real delivery requires operator-configured credentials, absent by design). Z-Score anomalies via Grafana SQL over TimescaleDB.
 
 </details>
 
@@ -189,8 +189,8 @@ open "http://localhost:3000/playlists/play/1?kiosk=tv&autofitpanels"
 | **Orchestration** | Docker Compose | 7-service container stack with dev/prod overlays |
 | **Collection** | Node-RED + net-snmp | Sequential async bulk SNMP walks, 5-thread parallel walker |
 | **Database** | TimescaleDB (PostgreSQL) | Hypertables with CAGGs, 90% compression after 7d |
-| **Visualization** | Grafana 13.1.1 | 9 cyberpunk HUD dashboards, state-timeline anomalies |
-| **Alerting** | Prometheus + Alertmanager | Metric scraping, inhibition rules, LINE/Slack webhooks |
+| **Visualization** | Grafana 13.1.1 | 10 dashboards (4 infrastructure + 6 manufacturing), state-timeline anomalies |
+| **Alerting** | Prometheus + Alertmanager | Metric scraping, inhibition rules, LINE Messaging API + MS Teams webhooks |
 | **Load Testing** | K6 | Pipeline stress (50→200 VUs), threshold p95<500ms |
 | **SLA Probing** | Blackbox Exporter | HTTP/TCP/ICMP endpoint monitoring |
 
@@ -253,7 +253,14 @@ IMS/
 
 | Document | Description |
 |:---:|---|
-| [**Architecture**](docs/architecture/ARCHITECTURE.md) | System context, ADRs, V10 streaming architecture, CAGG strategy |
+| [**📖 Platform Book (start here)**](docs/architecture/IMS_PLATFORM_BOOK.md) | Navigational hub for the entire documentation set -- role-based entry points, full document map, terminology glossary |
+| [**Architecture**](docs/architecture/ARCHITECTURE.md) | System context, ADRs, V10 streaming architecture, CAGG strategy, Known Gaps |
+| [**Data Flow**](docs/architecture/DATA_FLOW.md) | End-to-end pipeline diagrams, the real CAGG rollup chain |
+| [**LDI SPC Guide**](docs/architecture/LDI_SPC_GUIDE.md) | Process capability (Cpk) methodology and formula |
+| [**LDI RCA Guide**](docs/architecture/LDI_RCA_GUIDE.md) | Root-cause correlation (Lift/Confidence) methodology |
+| [**Alarm Severity Guide**](docs/architecture/ALARM_SEVERITY_GUIDE.md) | The 4-tier severity taxonomy, ISA-18.2 scope |
+| [**Data Retention**](docs/architecture/DATA_RETENTION.md) | Live retention/compression policy |
+| [**Security Model**](docs/architecture/SECURITY_MODEL.md) | Trust boundaries, per-adapter authentication |
 | [**Manufacturing Platform Plan**](docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md) | Infra/manufacturing domain separation, EAP integration architecture, ownership, validation/soak/DR rollout plan and evidence |
 | [**Manufacturing Domain**](docs/architecture/MANUFACTURING_DOMAIN.md) | The LDI schema/dashboard pattern, and how a future process type (AOI, plating, etching, drilling) onboards additively |
 | [**Equipment Integration (EAP)**](docs/architecture/EAP_ARCHITECTURE.md) | The two real equipment adapters (SNMP, HTTP/JSON) and the unimplemented SECS/GEM adapter contract |
@@ -269,6 +276,9 @@ IMS/
 | [**Troubleshooting & Alarms**](docs/operations/ALARM_PLAYBOOK.md) | Alarm code resolution and troubleshooting playbook |
 | [**Video Onboarding Script**](docs/product/ONBOARDING_SCRIPT.md) | Storyboard and guide for recording onboarding GIFs/Videos |
 | [**Troubleshooting**](docs/operations/TROUBLESHOOTING.md) | Common issues, debugging commands, recovery procedures |
+| [**Incident Response**](docs/operations/INCIDENT_RESPONSE.md) | Severity framework + real worked incident examples |
+| [**Backup & Restore**](docs/operations/BACKUP_RESTORE.md) | Real dr-test.sh evidence, procedure, and caveats |
+| [**DR Test Plan**](docs/operations/DR_TEST_PLAN.md) | 3-drill disaster-recovery test plan |
 | [**Release Checklist**](docs/operations/RELEASE_CHECKLIST.md) | What to verify before tagging a release |
 | [**LDI Validation Protocol**](docs/operations/LDI_VALIDATION_PROTOCOL.md) | 4-phase production sign-off procedure, parameters verified against the live system |
 | [**User Manual**](docs/user/USER_MANUAL.md) | Dashboard guide, metric reference, alert response playbooks |

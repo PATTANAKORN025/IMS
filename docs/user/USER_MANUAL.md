@@ -578,7 +578,7 @@ docker compose exec prometheus wget -qO- "http://localhost:9090/api/v1/alerts" 2
 
 | Role | Contact | Channel |
 |---|---|---|
-| **NOC Team** | LINE Group | LINE Notify |
+| **NOC Team** | LINE Group | LINE Messaging API |
 | **System Admin** | MS Teams | Webhook |
 | **Management** | Email (Future) | SMTP |
 
