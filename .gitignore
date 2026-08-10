@@ -91,3 +91,7 @@ memory/
 backup_*.sql
 
 docker-compose.override.yaml
+
+# Runtime output from scripts/soak-test-report.sh -- generated during a
+# soak run, not committable source.
+scripts/soak-test-reports/
