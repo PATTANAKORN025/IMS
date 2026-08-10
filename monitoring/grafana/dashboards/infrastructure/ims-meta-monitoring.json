@@ -1094,7 +1094,8 @@
   "tags": [
     "ims",
     "meta-monitoring",
-    "sre"
+    "sre",
+    "infrastructure"
   ],
   "templating": {
     "list": [

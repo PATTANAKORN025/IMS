@@ -7,7 +7,8 @@
     "LDI",
     "data-quality",
     "readiness",
-    "real-data"
+    "real-data",
+    "manufacturing"
   ],
   "timezone": "UTC",
   "schemaVersion": 39,

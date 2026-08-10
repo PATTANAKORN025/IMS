@@ -1,13 +1,24 @@
 apiVersion: 1
 
 providers:
-  - name: 'IMS Dashboards'
+  - name: 'IMS Infrastructure'
     orgId: 1
-    folder: 'IMS'
+    folder: 'IMS Infrastructure'
     type: file
     disableDeletion: false
     updateIntervalSeconds: 30
     allowUiUpdates: false
     options:
-      path: /var/lib/grafana/dashboards
+      path: /var/lib/grafana/dashboards/infrastructure
+      foldersFromFilesStructure: false
+
+  - name: 'IMS Manufacturing'
+    orgId: 1
+    folder: 'IMS Manufacturing'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: false
+    options:
+      path: /var/lib/grafana/dashboards/manufacturing
       foldersFromFilesStructure: false

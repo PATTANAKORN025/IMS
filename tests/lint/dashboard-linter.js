@@ -117,6 +117,18 @@ function lintDashboard(filePath) {
   const file = path.basename(filePath);
   const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
 
+  // Check 18: dashboard tags match its domain subdirectory
+  // (dashboards/infrastructure/ vs dashboards/manufacturing/) -- enforces
+  // IMS_MANUFACTURING_PLATFORM_V2.md §1's tag/folder domain split so it
+  // can't silently drift the way root `timezone` did before that audit.
+  const domainDir = path.basename(path.dirname(filePath));
+  if (domainDir === 'infrastructure' || domainDir === 'manufacturing') {
+    const tags = data.tags || [];
+    if (!tags.includes(domainDir)) {
+      error(file, 'dashboard', `Lives in ${domainDir}/ but tags ${JSON.stringify(tags)} doesn't include "${domainDir}" (IMS_MANUFACTURING_PLATFORM_V2.md §1)`);
+    }
+  }
+
   // Check 1: No hardcoded IPs in rawSql
   const ipRegex = /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/;
 
@@ -365,8 +377,21 @@ if (!fs.existsSync(DASHBOARD_DIR)) {
   process.exit(1);
 }
 
-const jsonFiles = fs.readdirSync(DASHBOARD_DIR)
-  .filter(f => f.endsWith('.json') && !f.includes('backup'));
+function listDashboardJsonFiles(dir) {
+  const out = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (entry.isDirectory()) {
+      for (const f of fs.readdirSync(path.join(dir, entry.name))) {
+        if (f.endsWith('.json') && !f.includes('backup')) out.push(path.join(entry.name, f));
+      }
+    } else if (entry.isFile() && entry.name.endsWith('.json') && !entry.name.includes('backup')) {
+      out.push(entry.name);
+    }
+  }
+  return out;
+}
+
+const jsonFiles = listDashboardJsonFiles(DASHBOARD_DIR);
 
 for (const f of jsonFiles) {
   const fp = path.join(DASHBOARD_DIR, f);

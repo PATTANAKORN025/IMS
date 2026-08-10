@@ -3,7 +3,7 @@
 > **Generated file — do not hand-edit.** Regenerate with:
 > `node scripts/generate-dashboard-inventory.js`
 >
-> Source of truth: `monitoring/grafana/dashboards/*.json` (title, uid, panel
+> Source of truth: `monitoring/grafana/dashboards/{infrastructure,manufacturing}/*.json` (title, uid, panel
 > count, description — all read directly from the JSON, never hand-typed).
 > Panel counts use the identical computation as
 > `tests/lint/dashboard-linter.js` (`data.panels.length`), so this file and

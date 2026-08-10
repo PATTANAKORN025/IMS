@@ -143,7 +143,21 @@ if (!fs.existsSync(DASHBOARD_DIR)) {
   process.exit(1);
 }
 
-for (const f of fs.readdirSync(DASHBOARD_DIR).filter(f => f.endsWith('.json')).sort()) {
+function listDashboardJsonFiles(dir) {
+  const out = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (entry.isDirectory()) {
+      for (const f of fs.readdirSync(path.join(dir, entry.name))) {
+        if (f.endsWith('.json')) out.push(path.join(entry.name, f));
+      }
+    } else if (entry.isFile() && entry.name.endsWith('.json')) {
+      out.push(entry.name);
+    }
+  }
+  return out.sort();
+}
+
+for (const f of listDashboardJsonFiles(DASHBOARD_DIR)) {
   checkDashboard(path.join(DASHBOARD_DIR, f));
 }
 
