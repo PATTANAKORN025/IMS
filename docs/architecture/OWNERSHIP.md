@@ -1,0 +1,23 @@
+# Repository Ownership
+
+> Per `docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md` §4 (confirmed 2026-08-10): this repo **stays single-repo** — a multi-repo split was explicitly ruled out as not justified for a repo this size with one owner. This doc gives the internal directory/domain boundary that `.github/CODEOWNERS` enforces, so a future second owner has a real handoff boundary instead of a flat wildcard.
+
+## The two domains
+
+| | Infrastructure | Manufacturing |
+|---|---|---|
+| **What it covers** | NOC Overview, AIOps & Capacity Forecast, Engineering Drill-Down, Meta-Monitoring — SNMP-polled servers/network gear, the shared TimescaleDB/PgBouncer/Grafana/Prometheus/Alertmanager platform itself | LDI manufacturing telemetry and alarms — Manufacturing Command Center, Operator Andon, Engineering Analytics & SPC, Machine Snapshot, Data Readiness, Fleet at a Glance |
+| **Dashboards** | `monitoring/grafana/dashboards/infrastructure/` (4 dashboards, Grafana folder "IMS Infrastructure") | `monitoring/grafana/dashboards/manufacturing/` (6 dashboards, Grafana folder "IMS Manufacturing") |
+| **Node-RED flows** | `nodered_data/flows/ingestion.json` (SNMP adapter) | `nodered_data/flows/ldi_ingestion.json`, `ldi_alarm_simulator.json`, `ldi_simulator.json` (HTTP/JSON adapter) |
+| **Database** | `public.devices` rows with `device_type IN ('server','workstation','network')`; `sys_metrics`, `net_metrics`, `ldi_metrics` | `public.devices` rows with `device_type='ldi'`; `ldi_data`, `ldi_alarm_log`, `ldi_alarm_ms_code` |
+| **Owner (today)** | @PATTANAKORN025 | @PATTANAKORN025 |
+
+**Shared, not owned by either domain:** `database/` (schema-wide changes, e.g. `public.devices` itself), `.github/` (CI/CD), security-sensitive files (`.env.example`, `docker-compose*.yaml`, `SECURITY.md`), `nodered_data/flows/alerting.json` (alert delivery, reads from both domains), and Grafana Library Panels (folder `IMS` — shared components used across both domain's dashboards, provisioned via `scripts/provision-library-panels.sh`). These stay under the repo-wide `*` owner in `CODEOWNERS`, not domain-scoped.
+
+## Enforcement
+
+`.github/CODEOWNERS` is the enforced version of this boundary — the domain-scoped lines added there (2026-08-10) are more specific than the general `/nodered_data/flows/` line and take precedence (CODEOWNERS is last-match-wins) for the files they cover. This doc explains the *why*; `CODEOWNERS` is the *what* GitHub actually checks. If they ever disagree, `CODEOWNERS` is authoritative and this doc is stale — update this doc, not the other way around.
+
+## Why this boundary, not a repo split
+
+A physical multi-repo split (separate `infra-monitoring`, `manufacturing-monitoring` repos) was considered and explicitly ruled out: it would require splitting shared infrastructure (one Docker Compose stack, one TimescaleDB instance, one Grafana instance, shared Node-RED alerting) across repo boundaries for no operational benefit at this repo's current size and single-owner reality — real migration cost (git history, CI, deploy tooling) with no corresponding gain. If the team grows to genuinely independent domain owners with independent release cadences, that calculus can be revisited; it isn't today.
