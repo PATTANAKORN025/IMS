@@ -6,7 +6,7 @@
     "ims",
     "engineering"
   ],
-  "timezone": "browser",
+  "timezone": "UTC",
   "schemaVersion": 39,
   "refresh": "5m",
   "time": {
@@ -194,7 +194,7 @@
     },
     {
       "id": 1,
-      "title": "\u25c8 CPU Load",
+      "title": "◈ CPU Load",
       "type": "gauge",
       "datasource": {
         "uid": "timescaledb"
@@ -298,12 +298,12 @@
       ],
       "links": [
         {
-          "title": "Capacity forecast \u2192",
+          "title": "Capacity forecast →",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         },
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -312,7 +312,7 @@
     },
     {
       "id": 2,
-      "title": "\u25c8 RAM Usage",
+      "title": "◈ RAM Usage",
       "type": "gauge",
       "datasource": {
         "uid": "timescaledb"
@@ -416,12 +416,12 @@
       ],
       "links": [
         {
-          "title": "Capacity forecast \u2192",
+          "title": "Capacity forecast →",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         },
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -430,7 +430,7 @@
     },
     {
       "id": 3,
-      "title": "\u25c8 Storage Saturation",
+      "title": "◈ Storage Saturation",
       "type": "gauge",
       "datasource": {
         "uid": "timescaledb"
@@ -534,12 +534,12 @@
       ],
       "links": [
         {
-          "title": "Capacity forecast \u2192",
+          "title": "Capacity forecast →",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         },
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -548,7 +548,7 @@
     },
     {
       "id": 4,
-      "title": "\u25c8 Temperature",
+      "title": "◈ Temperature",
       "type": "gauge",
       "datasource": {
         "uid": "timescaledb"
@@ -661,15 +661,15 @@
           "legendFormat": "{{eqp_id}}"
         }
       ],
-      "description": "Current temperature (\u00b0C) for the selected machine. Yellow >70\u00b0C, Red >85\u00b0C.",
+      "description": "Current temperature (°C) for the selected machine. Yellow >70°C, Red >85°C.",
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         },
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -695,7 +695,7 @@
     },
     {
       "id": 501,
-      "title": "\u25c8 Memory Saturation",
+      "title": "◈ Memory Saturation",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -967,7 +967,7 @@
       "description": "RAM utilization for the selected machine. Yellow at 75%, Red at 90%. Gapfilled via LOCF.",
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -975,7 +975,7 @@
     },
     {
       "id": 502,
-      "title": "\u25c8 Network Bandwidth (Per-Interface)",
+      "title": "◈ Network Bandwidth (Per-Interface)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -1245,7 +1245,7 @@
       "description": "Per-interface bandwidth queried from per-interface rows in the net_metrics hypertable. Download positive, Upload mirrored (negative-Y axis, #EF4444).",
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -1253,7 +1253,7 @@
     },
     {
       "id": 21,
-      "title": "\u25c8 Temperature Sensors",
+      "title": "◈ Temperature Sensors",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -1565,7 +1565,7 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{metric}}",
-          "rawSql": "SELECT\n  time_bucket('1 hour', bucket) AS time,\n  device_id AS metric,\n  ROUND(AVG(max_temp)::NUMERIC, 1) AS \"Temperature (\u00b0C)\"\nFROM public.sys_hourly\nWHERE $__timeFilter(bucket) AND device_id IN (${machine_id:singlequote}) AND max_temp > 0\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  time_bucket('1 hour', bucket) AS time,\n  device_id AS metric,\n  ROUND(AVG(max_temp)::NUMERIC, 1) AS \"Temperature (°C)\"\nFROM public.sys_hourly\nWHERE $__timeFilter(bucket) AND device_id IN (${machine_id:singlequote}) AND max_temp > 0\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series"
         },
         {
@@ -1574,14 +1574,14 @@
             "uid": "timescaledb"
           },
           "legendFormat": "{{metric}}",
-          "rawSql": "SELECT\n  time_bucket('1 hour', bucket) AS time,\n  device_id AS metric,\n  ROUND(AVG(max_temp)::NUMERIC, 1) AS \"Temperature (\u00b0C)\"\nFROM public.sys_hourly\nWHERE $__timeFilter(bucket) AND device_id IN (${machine_id:singlequote}) AND max_temp > 0\nGROUP BY 1, 2\nORDER BY 1 ASC",
+          "rawSql": "SELECT\n  time_bucket('1 hour', bucket) AS time,\n  device_id AS metric,\n  ROUND(AVG(max_temp)::NUMERIC, 1) AS \"Temperature (°C)\"\nFROM public.sys_hourly\nWHERE $__timeFilter(bucket) AND device_id IN (${machine_id:singlequote}) AND max_temp > 0\nGROUP BY 1, 2\nORDER BY 1 ASC",
           "format": "time_series"
         }
       ],
       "description": "Temperature readings from sensor OIDs (UCD-SNMP lmSensors) for the selected machine.",
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -1607,7 +1607,7 @@
     },
     {
       "id": 503,
-      "title": "\u25c8 LDI Throughput & Process Efficiency",
+      "title": "◈ LDI Throughput & Process Efficiency",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -1677,7 +1677,7 @@
               },
               {
                 "id": "unit",
-                "value": "\u00b5m"
+                "value": "µm"
               }
             ]
           },
@@ -1815,21 +1815,21 @@
       ],
       "links": [
         {
-          "title": "OEE & Yield \u2192",
+          "title": "OEE & Yield →",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         },
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
       ],
-      "description": "LDI manufacturing throughput (left axis, #22C55E) and Process Efficiency in \u00b5m (right axis, #F59E0B). PE within \u00b110\u00b5m tolerance is normal."
+      "description": "LDI manufacturing throughput (left axis, #22C55E) and Process Efficiency in µm (right axis, #F59E0B). PE within ±10µm tolerance is normal."
     },
     {
       "id": 504,
-      "title": "\u25c8 LDI Junction Efficiency & Humidity",
+      "title": "◈ LDI Junction Efficiency & Humidity",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -1905,7 +1905,7 @@
               },
               {
                 "id": "unit",
-                "value": "\u00b5m"
+                "value": "µm"
               }
             ]
           },
@@ -2065,21 +2065,21 @@
       ],
       "links": [
         {
-          "title": "OEE & Yield \u2192",
+          "title": "OEE & Yield →",
           "url": "/d/ims-capacity?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         },
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
       ],
-      "description": "Junction Efficiency in \u00b5m (purple) and Humidity % (blue, right axis). High humidity may affect LDI precision."
+      "description": "Junction Efficiency in µm (purple) and Humidity % (blue, right axis). High humidity may affect LDI precision."
     },
     {
       "id": 510,
-      "title": "\u25c8 LDI Quality Scatter",
+      "title": "◈ LDI Quality Scatter",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -2104,7 +2104,7 @@
           "color": {
             "mode": "palette-classic"
           },
-          "unit": "suffix: \u00b5m",
+          "unit": "suffix: µm",
           "min": 0,
           "decimals": 2
         },
@@ -2158,7 +2158,7 @@
           "legendFormat": "{{metric}}"
         }
       ],
-      "description": "LDI quality scatter with \u00b110\u00b5m tolerance zone (#22C55E band). Points outside the zone indicate quality risk."
+      "description": "LDI quality scatter with ±10µm tolerance zone (#22C55E band). Points outside the zone indicate quality risk."
     },
     {
       "type": "row",
@@ -2179,7 +2179,7 @@
     },
     {
       "type": "stat",
-      "title": "\u25c9 Estimated Daily Power Cost (THB)",
+      "title": "◉ Estimated Daily Power Cost (THB)",
       "datasource": {
         "type": "postgres",
         "uid": "timescaledb"
@@ -2282,7 +2282,7 @@
     },
     {
       "type": "stat",
-      "title": "\u25c9 Power Efficiency Ratio",
+      "title": "◉ Power Efficiency Ratio",
       "datasource": {
         "type": "postgres",
         "uid": "timescaledb"
@@ -2385,7 +2385,7 @@
     },
     {
       "type": "stat",
-      "title": "\u25c9 Yield Risk Index",
+      "title": "◉ Yield Risk Index",
       "datasource": {
         "type": "postgres",
         "uid": "timescaledb"
@@ -2483,12 +2483,12 @@
           "valueSize": 48
         }
       },
-      "description": "Composite risk score (0-100) indicating probability of yield loss. Triggered when throughput drops below baseline minus 2 standard deviations while power consumption remains above 80% of baseline \u2014 indicating the machine is drawing full power but producing substandard output. Score 0 = normal, 100 = critical yield loss suspected."
+      "description": "Composite risk score (0-100) indicating probability of yield loss. Triggered when throughput drops below baseline minus 2 standard deviations while power consumption remains above 80% of baseline — indicating the machine is drawing full power but producing substandard output. Score 0 = normal, 100 = critical yield loss suspected."
     },
     {
       "id": 500,
       "type": "row",
-      "title": "AIOps \u2014 ANOMALY DETECTION (3-Sigma Z-Score)",
+      "title": "AIOps — ANOMALY DETECTION (3-Sigma Z-Score)",
       "gridPos": {
         "x": 0,
         "y": 69,
@@ -2506,7 +2506,7 @@
     },
     {
       "id": 40,
-      "title": "\u25c8 CPU Anomaly Score (Z-Score)",
+      "title": "◈ CPU Anomaly Score (Z-Score)",
       "type": "state-timeline",
       "datasource": {
         "uid": "timescaledb"
@@ -2581,7 +2581,7 @@
       "description": "CPU Z-Score per machine. Cyan = normal, Amber >= 2 sigma, Red >= 3 sigma.",
       "links": [
         {
-          "title": "Drill-down \u2192 Engineering",
+          "title": "Drill-down → Engineering",
           "url": "/d/ims-engineering?var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": true
         }
@@ -2589,7 +2589,7 @@
     },
     {
       "id": 41,
-      "title": "\u25c8 Temperature Anomaly Score (Z-Score)",
+      "title": "◈ Temperature Anomaly Score (Z-Score)",
       "type": "state-timeline",
       "datasource": {
         "uid": "timescaledb"
@@ -2682,7 +2682,7 @@
     },
     {
       "id": 2001,
-      "title": "\u25c8 CPU / RAM / Storage Distribution",
+      "title": "◈ CPU / RAM / Storage Distribution",
       "type": "piechart",
       "datasource": {
         "uid": "timescaledb"
@@ -2778,7 +2778,7 @@
     },
     {
       "id": 1002,
-      "title": "\u25c8 Fleet Status Composition",
+      "title": "◈ Fleet Status Composition",
       "type": "piechart",
       "datasource": {
         "uid": "timescaledb"
