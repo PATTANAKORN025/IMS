@@ -215,6 +215,40 @@ added.
 - **Forecast/regression series** ต้องเป็นเส้นประสีเทาเสมอ (ดูข้อ 2.1) และ matcher ของ override ต้องใช้ `byRegexp` ไม่ใช่ `byName` แบบ literal เมื่อชื่อ series มีตัวแปร interpolate (เช่น `${machine_id}`) เพราะ `byName` ไม่ interpolate template
 - **Legend:** `displayMode: table` + `placement: bottom` + เปิด `calcs: [mean, max, last]` เมื่อมีมากกว่า 3 series — ให้ legend ทำหน้าที่เป็น mini-table แทนแค่สัญลักษณ์สี
 
+### 7.1 ECharts panels (`volkovlabs-echarts-panel`) — theming is not optional (added 2026-08-08)
+
+The plugin's own defaults are built for a light-mode, many-category dashboard
+and actively fight this system if left untouched: a **white tooltip popup**
+against the dark theme, and — the moment you have more than 2-3 series — a
+**bright rainbow categorical palette** (candy blue/purple/pink/orange/etc.)
+that turns a precision instrument reading into a screensaver. Both were
+shipped in an earlier pass and had to be rolled back after review flagged
+the whole SPC section as "cluttered" despite the underlying engineering
+being sound — the defect was pure theming, not the chart choice itself.
+
+Every `getOption` function on this system MUST:
+
+- Set `tooltip.backgroundColor`/`borderColor`/`textStyle.color` explicitly
+  to the dark-panel palette (`rgba(18,22,26,0.95)` / `rgba(255,255,255,0.12)`
+  / `#E8EDF2`) — never leave ECharts' light-mode tooltip default active.
+- **Not** assign each series its own bright hue just because there are many
+  of them. For "N similar things over time" charts (e.g. 10 machines' raw
+  samples), render all N in one muted neutral tone (`#8B98A9`) and reserve
+  color for what's actually a verdict — e.g. the one machine currently
+  outside its control limits gets `critical` red, everything else stays
+  gray. This is the same §2.1 principle ("color has one meaning") applied
+  to a plugin that doesn't enforce it for you.
+- When two categories genuinely need to stay visually distinct (e.g. PE vs
+  JE box plot) but neither is a verdict, pick two tokens from the
+  **neutral-readout family** (`info` `#00F2FE`, `accent` `#3B82F6`) — not a
+  warning/critical token, and not an arbitrary non-token hex.
+- Style `xAxis`/`yAxis`/`legend` text color to `rgba(224,224,224,0.85)` and
+  grid/split lines to `rgba(255,255,255,0.06-0.15)`, matching the rest of
+  the system's restrained-gridline convention (§9 visual-noise rule).
+
+Reference implementations: `ims-ldi-engineering-analytics.json` panels 17
+(Thickness Control Chart) and 12 (PE/JE Box Plot).
+
 ---
 
 ## 8. Machine Identity Palette (ถ้าต้องผูกสีถาวรต่อเครื่องจริง)
