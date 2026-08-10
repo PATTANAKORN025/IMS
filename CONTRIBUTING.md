@@ -116,18 +116,24 @@ for f in monitoring/grafana/dashboards/*.json; do python -c "import json; json.l
 ```
 IMS/
 ├── docker-compose.yaml          # Main orchestration
-├── node-red/
-│   ├── flows/                   # Node-RED flows (Source of Truth)
+├── nodered_data/
+│   ├── flows/                   # Node-RED flows, split by concern (Source of Truth)
+│   ├── lib/                     # circuit-breaker.js, parser.js, snmp-normalize.js, units.js
+│   ├── flows.json                # Built by scripts/build-flows.js from flows/*.json -- don't hand-edit
 │   ├── Dockerfile               # Custom build: installs npm dependencies
 │   └── settings.js              # Runtime settings
-├── postgres/init/               # DB schema
-├── database/migrations/         # TimescaleDB migrations
+├── postgres/init/               # DB schema bootstrap (fresh-deploy path)
+├── database/migrations/         # TimescaleDB migrations, applied by the db-migrate service
 ├── monitoring/
-│   ├── grafana/dashboards/      # Dashboard JSONs
+│   ├── grafana/dashboards/      # Dashboard JSONs (10 dashboards, source of truth)
 │   └── prometheus/rules/        # Alert rules
-├── node-red/flows/              # Split flows
 ├── scripts/                     # Utility scripts
-├── tests/k6/                    # Load tests
+├── tests/
+│   ├── lint/                    # Dashboard/alarm/query-budget linters
+│   ├── unit/                    # Parser & counter unit tests
+│   ├── e2e/                     # Panel data, query timing, golden-dataset checks
+│   ├── k6/                      # Load tests
+│   └── playwright/              # Visual/layout regression
 └── docs/                        # Documentation
 ```
 
