@@ -254,12 +254,16 @@ IMS/
 | Document | Description |
 |:---:|---|
 | [**Architecture**](docs/architecture/ARCHITECTURE.md) | System context, ADRs, V10 streaming architecture, CAGG strategy |
+| [**Visual Architecture**](docs/architecture/ARCHITECTURE_DIAGRAM.md) | Mermaid C4 Model diagrams and sequence flows |
 | [**Dashboard Inventory**](docs/architecture/DASHBOARD_INVENTORY.md) | Auto-generated dashboard/panel-count table (CI-checked against the live JSON) |
 | [**Database Schema**](docs/architecture/DATABASE_SCHEMA.md) | Auto-generated table/column/view reference (CI-checked against `information_schema`) |
 | [**Contributing**](CONTRIBUTING.md) | Development workflow, branch naming, commit conventions |
 | [**Code of Conduct**](CODE_OF_CONDUCT.md) | Community standards and enforcement |
 | [**Security**](SECURITY.md) | Vulnerability reporting, threat model, RBAC |
 | [**Design System**](docs/architecture/GRAFANA_DESIGN_SYSTEM.md) | Color palette, typography, panel type decisions, threshold contracts |
+| [**Operator SOP**](docs/operations/SOP_OPERATOR.md) | Standard Operating Procedures for factory floor / Level 1 NOC |
+| [**Troubleshooting & Alarms**](docs/operations/ALARM_PLAYBOOK.md) | Alarm code resolution and troubleshooting playbook |
+| [**Video Onboarding Script**](docs/product/ONBOARDING_SCRIPT.md) | Storyboard and guide for recording onboarding GIFs/Videos |
 | [**Troubleshooting**](docs/operations/TROUBLESHOOTING.md) | Common issues, debugging commands, recovery procedures |
 | [**Release Checklist**](docs/operations/RELEASE_CHECKLIST.md) | What to verify before tagging a release |
 | [**User Manual**](docs/user/USER_MANUAL.md) | Dashboard guide, metric reference, alert response playbooks |
