@@ -88,7 +88,7 @@ on a dark tile — rather than being identical-looking and only distinguishable
 by which specific color of solid tile it is.
 
 **One deliberate exception:** the Andon board's per-machine traffic-light
-tiles (`monitoring/grafana/dashboards/ims-ldi-operator-andon.json`, panel
+tiles (`monitoring/grafana/dashboards/manufacturing/ims-ldi-operator-andon.json`, panel
 `1000`) keep `colorMode: "background"`. Their job is color *perception* from
 3-5 meters, not text *reading* — a solid color block is more reliably
 distinguishable at a glance from across a factory floor than colored text at

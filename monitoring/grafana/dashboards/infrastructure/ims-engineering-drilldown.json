@@ -4,7 +4,8 @@
   "description": "Per-server deep dive: CPU/RAM/disk/temperature/network gauges and timeseries for a selected machine, plus legacy-pipeline LDI throughput/quality and Z-Score anomaly panels.",
   "tags": [
     "ims",
-    "engineering"
+    "engineering",
+    "infrastructure"
   ],
   "timezone": "UTC",
   "schemaVersion": 39,

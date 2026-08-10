@@ -173,7 +173,7 @@ push to main (flows/*.json changed)
 | 3 | แก้ device registry | `database/migrations/` | INSERT ข้อมูล server จริง |
 | 4 | ทดสอบ SNMP connection | `scripts/snmp-discover.js` | ยืนยันว่า SNMP v2c ใช้ได้กับ server จริง |
 | 5 | Deploy แบบ canary | — | เปิด 5 เครื่องก่อน → verify → เปิดทั้งหมด |
-| 6 | Monitor pipeline health | `monitoring/grafana/dashboards/ims-meta-monitoring.json` | ดู ingestion rate, error rate |
+| 6 | Monitor pipeline health | `monitoring/grafana/dashboards/infrastructure/ims-meta-monitoring.json` | ดู ingestion rate, error rate |
 
 **Success Criteria:**
 - ✅ SNMP polling ใช้ได้กับ server จริง
@@ -194,7 +194,7 @@ push to main (flows/*.json changed)
 
 | Step | งาน | ไฟล์ที่เกี่ยวข้อง | รายละเอียด |
 |---|---|---|---|
-| 1 | สร้าง SQL query สำหรับ linear regression | `monitoring/grafana/dashboards/ims-capacity-planning.json` | คำนวณ slope + intercept จากข้อมูล 7 วัน |
+| 1 | สร้าง SQL query สำหรับ linear regression | `monitoring/grafana/dashboards/infrastructure/ims-capacity-planning.json` | คำนวณ slope + intercept จากข้อมูล 7 วัน |
 | 2 | สร้าง panel "Days Until Full" | — | แสดงจำนวนวันที่ disk จะเต็ม |
 | 3 | เพิ่ม threshold alert | — | <7 วัน = Warning, <3 วัน = Critical |
 | 4 | เพิ่ม panel "Disk Usage Forecast Chart" | — | กราฟ show trend + projection line |

@@ -81,8 +81,21 @@ if (!fs.existsSync(DASHBOARD_DIR)) {
   process.exit(1);
 }
 
-const jsonFiles = fs.readdirSync(DASHBOARD_DIR)
-  .filter(f => f.endsWith('.json') && !f.includes('backup'));
+function listDashboardJsonFiles(dir) {
+  const out = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (entry.isDirectory()) {
+      for (const f of fs.readdirSync(path.join(dir, entry.name))) {
+        if (f.endsWith('.json') && !f.includes('backup')) out.push(path.join(entry.name, f));
+      }
+    } else if (entry.isFile() && entry.name.endsWith('.json') && !entry.name.includes('backup')) {
+      out.push(entry.name);
+    }
+  }
+  return out;
+}
+
+const jsonFiles = listDashboardJsonFiles(DASHBOARD_DIR);
 
 for (const f of jsonFiles) {
   lintDashboard(path.join(DASHBOARD_DIR, f));

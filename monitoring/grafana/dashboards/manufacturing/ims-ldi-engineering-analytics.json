@@ -2192,6 +2192,7 @@
     "LDI",
     "set-2",
     "real-data",
-    "current-database"
+    "current-database",
+    "manufacturing"
   ]
 }

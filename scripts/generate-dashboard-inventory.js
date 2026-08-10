@@ -4,7 +4,7 @@
  * table that used to live hand-typed (and drifting) in README.md and
  * docs/architecture/ARCHITECTURE.md.
  *
- * Reads monitoring/grafana/dashboards/*.json directly and writes
+ * Reads monitoring/grafana/dashboards/{infrastructure,manufacturing}/*.json directly and writes
  * docs/architecture/DASHBOARD_INVENTORY.md. Panel counts use the exact
  * same computation as tests/lint/dashboard-linter.js (`data.panels.length`)
  * so the two can never disagree.
@@ -40,8 +40,22 @@ function firstSentence(desc) {
   return cleaned.length > 220 ? cleaned.slice(0, 217) + '...' : cleaned;
 }
 
+function listDashboardJsonFiles(dir) {
+  const out = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (entry.isDirectory()) {
+      for (const f of fs.readdirSync(path.join(dir, entry.name))) {
+        if (f.endsWith('.json')) out.push(path.join(entry.name, f));
+      }
+    } else if (entry.isFile() && entry.name.endsWith('.json')) {
+      out.push(entry.name);
+    }
+  }
+  return out.sort();
+}
+
 function generate() {
-  const files = fs.readdirSync(DASHBOARD_DIR).filter((f) => f.endsWith('.json')).sort();
+  const files = listDashboardJsonFiles(DASHBOARD_DIR);
   const rows = files.map((f) => {
     const data = JSON.parse(fs.readFileSync(path.join(DASHBOARD_DIR, f), 'utf8'));
     return {
@@ -71,7 +85,7 @@ function generate() {
 > **Generated file — do not hand-edit.** Regenerate with:
 > \`node scripts/generate-dashboard-inventory.js\`
 >
-> Source of truth: \`monitoring/grafana/dashboards/*.json\` (title, uid, panel
+> Source of truth: \`monitoring/grafana/dashboards/{infrastructure,manufacturing}/*.json\` (title, uid, panel
 > count, description — all read directly from the JSON, never hand-typed).
 > Panel counts use the identical computation as
 > \`tests/lint/dashboard-linter.js\` (\`data.panels.length\`), so this file and

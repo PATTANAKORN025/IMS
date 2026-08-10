@@ -3,7 +3,8 @@
   "title": "IMS NOC Overview",
   "tags": [
     "ims",
-    "noc"
+    "noc",
+    "infrastructure"
   ],
   "timezone": "UTC",
   "schemaVersion": 39,

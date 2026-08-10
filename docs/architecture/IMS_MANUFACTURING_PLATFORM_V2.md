@@ -16,7 +16,7 @@
 
 ## 0. Baseline (verified 2026-08-10)
 
-- 10 Grafana dashboards, all provisioned into a single flat `IMS` folder (`monitoring/grafana/provisioning/dashboards/*.yml`, `foldersFromFilesStructure: false`). No dashboard sets `tags`. No sub-folder structure exists.
+- 10 Grafana dashboards, all provisioned into a single flat `IMS` folder (`monitoring/grafana/provisioning/dashboards/*.yml`, `foldersFromFilesStructure: false`). No sub-folder structure exists. **Correction (caught during Phase A implementation):** dashboards already carry non-empty `tags` arrays (e.g. `["ims","noc"]`, `["IMS","LDI","set-2",...]`) — the original claim that "no dashboard sets tags" was wrong; what was actually missing was a *domain* tag (`infrastructure`/`manufacturing`), not tags altogether.
 - `public.devices.device_type` is `server | workstation | ldi | network` (migration 013) — `ldi` is the only manufacturing/process value. There is no `process_type` or equivalent dimension.
 - Two independent telemetry pipelines already exist at the data layer (`ARCHITECTURE.md` §System Context): the LDI pipeline (`ldi_data`, `ldi_alarm_log`) is manufacturing; the SNMP pipeline (`sys_metrics`, `net_metrics`, `ldi_metrics`) is infrastructure. **The separation already exists structurally in the schema and ingestion flows — it is only missing at the presentation (Grafana folder/tag) and documentation layer.**
 - `.github/CODEOWNERS` exists today but is flat: one owner (`@PATTANAKORN025`) for the whole repo, plus a few path-specific lines (`/database/`, `/nodered_data/flows/`, `/.github/`) that don't distinguish infra from manufacturing.
@@ -31,8 +31,8 @@
 
 - Add `"folder": "Infrastructure"` / `"folder": "Manufacturing/LDI"` equivalent via Grafana's nested-folder provisioning (Grafana 13.x supports a `folder` field per dashboard provider, or per-dashboard via the `meta` API — implementation will confirm which mechanism the provisioned-file model supports without hand-editing dashboards in the UI).
 - Add `"tags": ["infrastructure"]` or `["manufacturing", "ldi"]` to each of the 10 dashboard JSONs — a queryable, linter-checkable split, independent of folder mechanics.
-- **Infrastructure set (5):** NOC Overview, AIOps & Capacity Forecast, Engineering Drill-Down, Meta-Monitoring, Fleet at a Glance.
-- **Manufacturing set (5):** LDI Manufacturing, LDI Operator Andon, LDI Engineering Analytics, LDI Machine Snapshot, LDI Data Readiness.
+- **Infrastructure set (4):** NOC Overview, AIOps & Capacity Forecast, Engineering Drill-Down, Meta-Monitoring.
+- **Manufacturing set (6):** LDI Manufacturing, LDI Operator Andon, LDI Engineering Analytics, LDI Machine Snapshot, LDI Data Readiness, Fleet at a Glance (`ims-easy-overview.json` — its own description confirms it's built entirely from LDI-specific shared views (`v_ldi_machine_latest_full`, `v_ldi_alarm_context`, `f_ldi_yield_pct`), not a general infra overview despite the generic-sounding title; `scripts/generate-dashboard-inventory.js` already categorized it this way via an explicit allowlist before this plan existed).
 - Extend `dashboard-linter.js` with a check that every dashboard has both a `tags` entry and belongs to the expected set (prevents the tag scheme from drifting the way `timezone` did earlier this session).
 
 **Non-goals:** no second Grafana org/instance, no separate docker-compose stack, no split of `sys_metrics`/`ldi_data` at the database level (they already are split).
@@ -150,3 +150,32 @@ Grounded in numbers already measured this session (`LDI_VALIDATION_PROTOCOL.md`,
 | **DR Test** | §6 | `dr-test.sh`, `DR_TEST_PLAN.md`, executed drill | Real timings from an actual executed drill against this environment, not a hypothetical |
 
 Each phase's evidence is attached to this doc (or linked from it) before moving to the next phase — matching the standard already set by `LDI_VALIDATION_PROTOCOL.md` this session: verified output, not claims.
+
+---
+
+## Phase A — Evidence (closed 2026-08-10)
+
+**What shipped:** dashboards physically split into `monitoring/grafana/dashboards/{infrastructure,manufacturing}/`, two Grafana provisioning providers (`IMS Infrastructure`, `IMS Manufacturing` folders), a `manufacturing`/`infrastructure` domain tag on all 10 dashboards, `dashboard-linter.js` Check 18 enforcing tag/folder agreement, migrations `067`+`068` adding `devices.process_type`, and `MANUFACTURING_DOMAIN.md`.
+
+**Correction made during implementation:** the plan's own §1 draft mis-sorted `ims-easy-overview.json` as Infrastructure by guessing from its title ("Fleet at a Glance"). Its actual description and panels (`v_ldi_machine_latest_full`, `v_ldi_alarm_context`, `f_ldi_yield_pct` — all LDI-specific) confirmed it's Manufacturing content; `scripts/generate-dashboard-inventory.js`'s pre-existing `LDI_UID_EXTRAS` allowlist already agreed. Corrected before implementation (4 infra / 6 manufacturing, not 5/5) — caught by checking file contents instead of trusting the title, consistent with this session's verify-before-claim pattern.
+
+**Bug caught and fixed during implementation:** migration `067`'s `ADD COLUMN process_type TEXT DEFAULT 'ldi'` backfilled the default onto *every* existing row, not just `device_type='ldi'` ones — live-verified via `SELECT device_type, process_type, count(*) ... GROUP BY 1,2`, which showed 1002 `device_type='server'` rows incorrectly carrying `process_type='ldi'`. Fixed with migration `068` (drop the default, null out the incorrect backfill) rather than editing `067`, per this doc's own §7 Versioning Policy. Re-verified: `ldi/ldi: 23 rows`, `server/NULL: 1002 rows` — correct.
+
+**Test evidence (all commands run against the live stack, 2026-08-10):**
+
+| Check | Result |
+|---|---|
+| `node tests/lint/dashboard-linter.js` (incl. new Check 18) | 0 errors, 0 warnings |
+| `node tests/lint/alarm-sync-linter.js` | 19/19 codes resolve |
+| `node tests/lint/orphan-object-linter.js` | 0 orphans / 31 checked |
+| `node tests/lint/query-budget-linter.js` | 0 errors, 0 warnings |
+| `node tests/lint/rca-mapping-coverage.js` | 100% coverage |
+| `node scripts/generate-dashboard-inventory.js --check` | up to date |
+| `node scripts/generate-schema-inventory.js --check` | up to date |
+| 5 unit test files (`boundary-validation`, `parser`, `counter-wraparound`, `v2-parser`, `circuit-breaker`) | 99/99 passed |
+| `node tests/e2e/panel-data-check.js` | 73 passed, 2 pre-existing warnings (0-row edge cases unrelated to this change), 0 errors |
+| `node tests/e2e/query-timing-check.js` | 47 queries measured, P95 22.48ms (budget 80ms), 0 errors |
+| Grafana folder structure (live, post `docker compose up -d grafana`) | Confirmed via API + Playwright screenshot: `IMS` (library panels only, still in active use by `scripts/provision-library-panels.sh` — not deletable, not orphaned junk), `IMS Infrastructure` (4 dashboards), `IMS Manufacturing` (6 dashboards) |
+| `devices.process_type` live data | `ldi/ldi: 23`, `server/NULL: 1002` — correct after the `068` fix |
+
+**Not yet committed/pushed** — pending this evidence review.
