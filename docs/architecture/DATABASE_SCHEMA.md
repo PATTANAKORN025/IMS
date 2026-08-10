@@ -10,7 +10,7 @@
 > currently reports. Requires the `timescaledb` container to be running
 > and fully migrated.
 >
-> Last generated: 2026-08-10 | Migrations applied: 41 (013-065) | Tables: 8 | Continuous aggregates: 7 | Plain views: 11 | Materialized views: 3
+> Last generated: 2026-08-10 | Migrations applied: 42 (013-066) | Tables: 8 | Continuous aggregates: 7 | Plain views: 11 | Materialized views: 3
 
 ## Tables
 
