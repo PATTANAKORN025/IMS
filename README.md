@@ -211,7 +211,9 @@ open "http://localhost:3000/playlists/play/1?kiosk=tv&autofitpanels"
 | `devices` | 11 | Device registry (device_id, hostname, snmp_community, device_type, enabled) |
 | `sys_metrics` | 12 | CPU, RAM, Disk, Temperature per poll cycle (hypertable) |
 | `net_metrics` | 10 | Per-interface RX/TX Mbps, errors, drops, status (hypertable) |
-| `ldi_metrics` | 9 | Manufacturing throughput, PE, JE, humidity, power, vibration (hypertable) |
+| `ldi_metrics` | 9 | Legacy manufacturing throughput, PE, JE, humidity, power, vibration (hypertable) |
+| `ldi_data` | 34 | **V2 Normalized Schema**: Manufacturing telemetry (eqp_id, mo, layer_name, resist_dosage) (hypertable) |
+| `ldi_alarm_log` | 7 | **V2 Normalized Schema**: Manufacturing alarms (indexes only, no PK) (hypertable) |
 | `sys_hourly` | — | Continuous Aggregate: hourly CPU/RAM/Disk/Temp rollup |
 | `net_hourly` | — | Continuous Aggregate: hourly network throughput rollup |
 | `ldi_hourly` | — | Continuous Aggregate: hourly LDI metrics rollup |
@@ -244,6 +246,10 @@ IMS/
 │   └── build-flows.js                 #   Merge nodered_data/flows/*.json → flows.json (also used by CI)
 ├── assets/                            # Dashboard screenshots (auto-generated)
 ├── docs/                              # Architecture, Design System, Troubleshooting
+│   ├── architecture/                  #   ARCHITECTURE.md, GRAFANA_DESIGN_SYSTEM.md
+│   ├── operations/                    #   TROUBLESHOOTING.md, SCALING_PLAN.md
+│   ├── audits/                        #   Audit reports and technical debriefs
+│   └── product/                       #   PRODUCT.md, CONTEXT.md
 └── .mimocode/skills/                  # 24 custom skills for DevOps automation
 ```
 
@@ -257,11 +263,11 @@ IMS/
 
 | Document | Description |
 |:---:|---|
-| [**Architecture**](docs/ARCHITECTURE.md) | System context, ADRs, V10 streaming architecture, CAGG strategy |
+| [**Architecture**](docs/architecture/ARCHITECTURE.md) | System context, ADRs, V10 streaming architecture, CAGG strategy |
 | [**Contributing**](CONTRIBUTING.md) | Development workflow, branch naming, commit conventions |
 | [**Security**](SECURITY.md) | Vulnerability reporting, threat model, RBAC |
-| [**Design System**](docs/GRAFANA_DESIGN_SYSTEM.md) | Color palette, typography, panel type decisions, threshold contracts |
-| [**Troubleshooting**](docs/TROUBLESHOOTING.md) | Common issues, debugging commands, recovery procedures |
+| [**Design System**](docs/architecture/GRAFANA_DESIGN_SYSTEM.md) | Color palette, typography, panel type decisions, threshold contracts |
+| [**Troubleshooting**](docs/operations/TROUBLESHOOTING.md) | Common issues, debugging commands, recovery procedures |
 | [**Bug Report**](.github/ISSUE_TEMPLATE/bug_report.md) | Report a bug or regression |
 | [**Feature Request**](.github/ISSUE_TEMPLATE/feature_request.md) | Suggest a new feature |
 

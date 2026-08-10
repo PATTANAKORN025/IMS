@@ -69,7 +69,7 @@ Migration 020 (this session's `DOUBLE PRECISION → REAL`, 1-day → 1-hour chun
 
 **Fix:** apply the same column-type/chunk-interval change to `postgres/init/001-init-timescaledb.sql`.
 
-### P1-2 · `docs/ARCHITECTURE.md` is severely stale and internally self-contradictory
+### P1-2 · `../architecture/ARCHITECTURE.md` is severely stale and internally self-contradictory
 
 - Claims "3-4 dashboards" three separate times; the live system has 9. The entire LDI manufacturing dashboard family (Manufacturing, Andon, Engineering Analytics & SPC, Machine Snapshot, Data Readiness) isn't mentioned anywhere.
 - The file is **two different architecture docs concatenated** — line 159 starts a second, differently-styled "Detailed System Architecture" section with its own duplicate Mermaid diagram, duplicate alert-flow diagram, duplicate component table. Reads like an unresolved bad merge.
@@ -150,7 +150,7 @@ Runs on every push/PR to `main`. It builds `flows.json` via `node scripts/build-
 | 3 | Get real alert delivery working end-to-end (pick one channel, verify with a real test alert) | 🔴 P0 | Nothing currently reaches a human when something breaks |
 | 4 | Sync migration 020's schema tuning into `postgres/init/001` | 🟠 P1 | This session's own fix is currently a no-op on fresh deploys |
 | 5 | Fix or retire `ci-flows.yml` | 🟠 P1 | A CI check that structurally cannot pass trains people to ignore CI failures |
-| 6 | Rewrite `docs/ARCHITECTURE.md` from scratch | 🟠 P1 | Currently actively misleading (wrong dashboard count, wrong ingestion path, self-contradictory) |
+| 6 | Rewrite `../architecture/ARCHITECTURE.md` from scratch | 🟠 P1 | Currently actively misleading (wrong dashboard count, wrong ingestion path, self-contradictory) |
 | 7 | Remove or fix the vibration-critical alert | 🟠 P1 | A "critical" alert that can never fire is worse than none |
 | 8 | Everything else in P2/P3 | 🟡🟢 | Real but not urgent |
 
