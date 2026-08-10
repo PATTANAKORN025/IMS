@@ -153,6 +153,57 @@ Each phase's evidence is attached to this doc (or linked from it) before moving 
 
 ---
 
+## Soak Test — Status (started 2026-08-10, not yet closeable)
+
+**Honest constraint, stated up front:** `scripts/soak-test-report.sh` says so itself in its own header comment -- it "does NOT run a 72-hour test by itself." A soak test requires real elapsed wall-clock hours against an untouched running stack; no single tool invocation, however long, can manufacture that. Closing this phase with a real pass/fail verdict requires checking back after real time has passed, not a report generated in this session.
+
+**What's actually been done:**
+
+- One real snapshot taken and logged 2026-08-10T08:34:21Z: `inserts=4965 failed=0 overflows=0 restarted=no alerts_firing=1 db_mb=157`.
+- The single firing alert investigated, not ignored: `SLABreachWarning` on `http://grafana:3000/api/health`, live-verified as a transient artifact of this session's own Phase A `docker compose up -d grafana` container recreate (blackbox exporter's last probe failure timestamp `08:21:54Z` matches the recreate exactly; `curl localhost:3000/api/health` returns `{"database":"ok",...}` directly). Expected to self-clear on the next blackbox probe cycle -- the periodic log will show whether it does.
+- A Windows Scheduled Task (`IMS-SoakTest`) registered to run the snapshot every 15 minutes for up to 4 days, appending to `scripts/soak-test-reports/soak-log.tsv`, so real samples accumulate independent of this session.
+
+**To close this phase:** let the scheduled task run for a real window (24h minimum, target 72h), then run `./scripts/soak-test-report.sh --summarize` and attach the real output here. Not fabricated or estimated.
+
+---
+
+## DR Test — Evidence (Drills 1-2 closed 2026-08-10; Drill 3 not run)
+
+**What shipped:** `scripts/dr-test.sh` (3 drills), `docs/operations/DR_TEST_PLAN.md`.
+
+### Drill 1 — Backup / Restore: PASS
+
+First run produced a false FAIL (live row counts queried *after* the dump, so the live-ingesting system had already moved a few rows ahead — not a restore defect). Fixed the script to bracket live counts before and after the dump and check the restored count falls inside that window. Re-run:
+
+```text
+devices=1025 ldi_data=52795 ldi_alarm_log=10405   (before dump)
+devices=1025 ldi_data=52796 ldi_alarm_log=10405   (after dump)
+devices=1025 ldi_data=52795 ldi_alarm_log=10405   (restored, throwaway DB)
+VERDICT: PASS -- dump 1s, restore 18s, 22,284,869 bytes
+```
+
+### Drill 2 — Single-Container-Loss Recovery (`ims-timescaledb`): **FAIL — real, significant finding**
+
+`docker kill ims-timescaledb` (SIGKILL) was run twice, the second time while streaming `docker events` live. Both times: only `kill` and `die` events were recorded — **no automatic `start` event ever fired**, despite `docker inspect` confirming `RestartPolicy=unless-stopped` was correctly applied to the running container. `restart: unless-stopped` does not reliably auto-recover this container from a SIGKILL on this Docker Desktop/Windows environment. Root cause not fully isolated (candidates: a Docker Desktop/WSL2-specific interaction with `docker kill` vs. an in-container crash; needs verification on the actual Linux production host before assuming this generalizes) — flagged as an open question, not asserted as understood.
+
+**A second, cascading finding surfaced by the same drill:** after manually `docker start`-ing TimescaleDB back to healthy, LDI ingestion did **not** self-recover for several minutes — the same PgBouncer `server_login_retry` failure-caching behavior documented earlier this session (`ARCHITECTURE.md`), and specifically the failure mode the Node-RED pool-reconnect watchdog (`ldiDbConnFailureStreak`, 5-consecutive-failure threshold) was built to fix. The watchdog did **not** trigger an automatic Node-RED restart within the ~6 minutes observed — `max(ldi_data.time)` stayed frozen at the outage timestamp until a manual `docker restart ims-node-red`, which fixed it immediately. This means the watchdog's real-world trigger rate for this exact scenario needs re-examination — it may only be counting failures on one of several parallel insert paths, or the failure frequency during this specific outage didn't reach 5 consecutive attempts fast enough. **Filed as a gap, not fixed in this pass** — fixing it correctly requires understanding why the counter didn't reach threshold, which is follow-up investigation, not a same-session patch.
+
+**What worked correctly during the incident:** the alerting pipeline. Blackbox exporter correctly detected `timescaledb:5432` down, Alertmanager routed it, and Node-RED's alert-delivery flow correctly logged a formatted "ServiceDown" notification (LINE/Teams delivery skipped as designed — credentials absent by default, per `LDI_VALIDATION_PROTOCOL.md` Phase 4).
+
+**`scripts/dr-test.sh` improved as a direct result:** the container-loss drill now falls back to a manual `docker start` if the restart policy doesn't trigger within 120s, so running this drill doesn't leave the environment down for whoever runs it next -- that fallback doesn't change the FAIL verdict, it just cleans up after the drill.
+
+**Total live outage caused by this drill:** timescaledb ~2-3 min per kill (2 kills) + a further ~6 min ingestion-recovery gap after the second kill = roughly 10 minutes of real, deliberate downtime in this dev environment, fully restored and verified (0 lint errors, 0 e2e errors post-recovery) before continuing.
+
+### Drill 3 — Full-Stack Recreate: **not run**
+
+Given Drill 2 just demonstrated that automatic recovery in this environment is less reliable than assumed, running the destructive full-volume-wipe drill without confirming that's still wanted right now would compound risk on top of an already-surprising result. Deferred pending explicit confirmation — see `scripts/dr-test.sh full-recreate --confirm-destroy` when ready to run it.
+
+---
+
+## DR Test — Evidence
+
+---
+
 ## Phase A — Evidence (closed 2026-08-10)
 
 **What shipped:** dashboards physically split into `monitoring/grafana/dashboards/{infrastructure,manufacturing}/`, two Grafana provisioning providers (`IMS Infrastructure`, `IMS Manufacturing` folders), a `manufacturing`/`infrastructure` domain tag on all 10 dashboards, `dashboard-linter.js` Check 18 enforcing tag/folder agreement, migrations `067`+`068` adding `devices.process_type`, and `MANUFACTURING_DOMAIN.md`.

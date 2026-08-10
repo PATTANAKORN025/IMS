@@ -95,6 +95,7 @@ docker-compose.override.yaml
 # Runtime output from scripts/soak-test-report.sh -- generated during a
 # soak run, not committable source.
 scripts/soak-test-reports/
+scripts/dr-test-reports/
 
 # Editor/script backup and scratch dumps that turn up locally but were
 # never meant to be committed source.
