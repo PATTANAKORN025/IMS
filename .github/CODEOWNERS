@@ -15,3 +15,17 @@
 
 # Node-RED flows (critical data pipeline)
 /nodered_data/flows/       @PATTANAKORN025
+
+# Domain boundaries (docs/architecture/OWNERSHIP.md) -- same owner today
+# (single-person repo), but the paths are split so a future second owner
+# has a real boundary to take over rather than a flat wildcard. These
+# lines are last-match-wins per CODEOWNERS semantics and are more
+# specific than the /nodered_data/flows/ line above, so they take
+# precedence for the files they match.
+/monitoring/grafana/dashboards/infrastructure/  @PATTANAKORN025
+/nodered_data/flows/ingestion.json              @PATTANAKORN025
+
+/monitoring/grafana/dashboards/manufacturing/   @PATTANAKORN025
+/nodered_data/flows/ldi_ingestion.json          @PATTANAKORN025
+/nodered_data/flows/ldi_alarm_simulator.json    @PATTANAKORN025
+/nodered_data/flows/ldi_simulator.json          @PATTANAKORN025

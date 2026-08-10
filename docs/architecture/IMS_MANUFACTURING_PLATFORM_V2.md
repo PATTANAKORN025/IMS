@@ -75,9 +75,9 @@
 
 **Target:**
 
-- Extend `.github/CODEOWNERS` with domain-scoped path entries (still `@PATTANAKORN025` as owner today — single-person repo — but the *paths* are split so a future second owner has a real boundary to take over, not a flat wildcard):
-  - `/monitoring/grafana/dashboards/ims-ldi-*` , `/monitoring/grafana/dashboards/ldi-data-readiness.json`, `/nodered_data/flows/ldi_*` → Manufacturing domain
-  - `/monitoring/grafana/dashboards/ims-noc-*`, `ims-capacity-planning.json`, `ims-engineering-drilldown.json`, `ims-meta-monitoring.json`, `ims-easy-overview.json`, `/nodered_data/flows/ingestion.json` → Infrastructure domain
+- Extend `.github/CODEOWNERS` with domain-scoped path entries (still `@PATTANAKORN025` as owner today — single-person repo — but the *paths* are split so a future second owner has a real boundary to take over, not a flat wildcard). **Updated during Phase B to match Phase A's actual result:** Phase A physically split dashboards into `dashboards/{infrastructure,manufacturing}/` directories, which makes directory-based CODEOWNERS paths simpler and more precise than the file-glob list this section originally drafted before Phase A ran:
+  - `/monitoring/grafana/dashboards/manufacturing/`, `/nodered_data/flows/ldi_*` → Manufacturing domain
+  - `/monitoring/grafana/dashboards/infrastructure/`, `/nodered_data/flows/ingestion.json` → Infrastructure domain
   - Keep existing security/CI/database-wide lines as-is.
 - Add `docs/architecture/OWNERSHIP.md` explaining the two domains, what lives in each, and pointing at the `CODEOWNERS` paths as the enforced version of the same boundary (avoids the doc/reality drift this session repeatedly found elsewhere).
 
@@ -177,5 +177,25 @@ Each phase's evidence is attached to this doc (or linked from it) before moving 
 | `node tests/e2e/query-timing-check.js` | 47 queries measured, P95 22.48ms (budget 80ms), 0 errors |
 | Grafana folder structure (live, post `docker compose up -d grafana`) | Confirmed via API + Playwright screenshot: `IMS` (library panels only, still in active use by `scripts/provision-library-panels.sh` — not deletable, not orphaned junk), `IMS Infrastructure` (4 dashboards), `IMS Manufacturing` (6 dashboards) |
 | `devices.process_type` live data | `ldi/ldi: 23`, `server/NULL: 1002` — correct after the `068` fix |
+
+**Not yet committed/pushed** — pending this evidence review.
+
+---
+
+## Phase B — Evidence (closed 2026-08-10)
+
+**What shipped:** `EAP_ARCHITECTURE.md`, `OWNERSHIP.md`, extended `.github/CODEOWNERS` with domain-scoped path entries.
+
+**Correction made during implementation:** §4's original draft (written before Phase A ran) listed CODEOWNERS paths as dashboard filename globs (`ims-ldi-*`, etc.). Phase A's actual result — a physical directory split — makes directory-based paths (`/monitoring/grafana/dashboards/manufacturing/`) simpler and more precise; §4 above was updated to match reality rather than shipping CODEOWNERS entries that referenced a file layout that no longer exists.
+
+**Claims grep-verified against real source, not assumed:**
+
+| Claim in `EAP_ARCHITECTURE.md` | Verified against | Result |
+|---|---|---|
+| Adapter 2 (HTTP/JSON) endpoint is `POST /ldi-telemetry`, auth via `x-api-key` header against `INGEST_API_KEY` | `nodered_data/flows/ldi_ingestion.json` | Confirmed (`"url": "/ldi-telemetry"`, `msg.req?.headers?.['x-api-key']` checked against `global.get('INGEST_API_KEY')`) |
+| Adapter 2 batch insert is `INSERT INTO public.ldi_data ... ON CONFLICT (log_id, "time") DO NOTHING` | same file | Confirmed, exact SQL present |
+| Adapter 1 (SNMP) polls every 30 seconds via `fork_5_ways` | `nodered_data/flows/ingestion.json` | Confirmed (`fork_5_ways` node present, `"repeat": "30"`) |
+| CODEOWNERS paths (`/monitoring/grafana/dashboards/{infrastructure,manufacturing}/`, the four `nodered_data/flows/*.json` filenames) exist | `ls nodered_data/flows/`, Phase A's directory split | All 5 paths confirmed to exist |
+| CODEOWNERS syntax | Manual review against GitHub's documented format and this repo's own pre-existing working lines | Matches exactly (`<pattern> <owner>`, `/`-prefixed root-relative paths, last-match-wins semantics documented inline) |
 
 **Not yet committed/pushed** — pending this evidence review.
