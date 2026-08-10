@@ -170,7 +170,7 @@ Five automated gates run in CI (`.github/workflows/ci.yml`), each catching a dif
 | Orphan objects | `tests/lint/orphan-object-linter.js` | Every live DB table/view is referenced by at least one dashboard, alert rule, flow, or migration — not silently unused |
 | Golden-dataset SPC | `tests/e2e/golden-dataset-spc.js` | All 5 independent Cpk/Cp implementations agree with the textbook formula on a known synthetic dataset |
 
-Color tokens (`docs/GRAFANA_DESIGN_SYSTEM.md`): every threshold step and value-mapping color that conveys machine/alarm status uses one of 5 tokens — OK `#22C55E`, Warning `#F59E0B`, Critical `#EF4444`, No Data `#64748B`, Info `#2563EB`. Decorative colors (graph-series differentiation, backgrounds, borders, brand accents) are intentionally exempt — a dashboard can't be built from 5 saturated colors alone.
+Color tokens (`GRAFANA_DESIGN_SYSTEM.md`): every threshold step and value-mapping color that conveys machine/alarm status uses one of 5 tokens — OK `#22C55E`, Warning `#F59E0B`, Critical `#EF4444`, No Data `#64748B`, Info `#2563EB`. Decorative colors (graph-series differentiation, backgrounds, borders, brand accents) are intentionally exempt — a dashboard can't be built from 5 saturated colors alone.
 
 Not yet a CI gate: true visual/screenshot regression (baseline-image diffing). `tests/playwright/dashboard-visual-regression.js` captures screenshots of 4 dashboards for documentation purposes but has no baseline comparison or pass/fail assertion — a real regression gate would need committed baseline images, a pixel-diff tool, and Grafana running as a CI service, none of which exist yet.
 
@@ -187,4 +187,4 @@ Not yet a CI gate: true visual/screenshot regression (baseline-image diffing). `
 | Alertmanager Documentation | https://prometheus.io/docs/alerting/latest/configuration/ |
 | LINE Messaging API | https://developers.line.biz/en/docs/messaging-api/ |
 
-Related docs in this repo: `docs/GRAFANA_DESIGN_SYSTEM.md` (color/token conventions), `docs/TROUBLESHOOTING.md`, `IMS-WORLD-CLASS-AUDIT-REPORT.md` (the audit that prompted this rewrite).
+Related docs in this repo: `GRAFANA_DESIGN_SYSTEM.md` (color/token conventions), `../operations/TROUBLESHOOTING.md`, `../audits/IMS-WORLD-CLASS-AUDIT-REPORT.md` (the audit that prompted this rewrite).
