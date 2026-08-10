@@ -330,7 +330,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\n-- Intentional full table scan for global readiness\nWITH selected AS (\n  SELECT DISTINCT eqp_id\n  FROM public.ldi_data\n  WHERE factory IN (${factory:sqlstring})\n    AND eqp_id IN (${machine_id:sqlstring})\n)\nSELECT ROUND(100.0 * COUNT(*) FILTER (\n  WHERE EXISTS (SELECT 1 FROM public.ldi_alarm_log a WHERE a.equipmentid = s.eqp_id)\n) / NULLIF(COUNT(*), 0), 1) AS value\nFROM selected s;",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\n-- Intentional full table scan for global readiness\nWITH selected AS (\n  SELECT DISTINCT eqp_id\n  FROM public.ldi_data\n  WHERE factory IN (${factory:sqlstring})\n    AND eqp_id IN (${machine_id:sqlstring})\n)\nSELECT ROUND((100.0 * COUNT(*) FILTER (\n  WHERE EXISTS (SELECT 1 FROM public.ldi_alarm_log a WHERE a.equipmentid = s.eqp_id)\n) / NULLIF(COUNT(*), 0))::NUMERIC, 1) AS value\nFROM selected s;",
           "refId": "A",
           "sql": {
             "columns": [],

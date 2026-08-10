@@ -112,7 +112,7 @@
     },
     {
       "id": 10010,
-      "title": "◈ PRODUCTION",
+      "title": "\u25c8 PRODUCTION",
       "type": "row",
       "collapsed": false,
       "gridPos": {
@@ -125,7 +125,7 @@
     },
     {
       "id": 15,
-      "title": "◉ Estimated Yield (%)",
+      "title": "\u25c9 Estimated Yield (%)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -255,7 +255,7 @@
     },
     {
       "id": 1,
-      "title": "◉ Running",
+      "title": "\u25c9 Running",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -380,7 +380,7 @@
     },
     {
       "id": 20,
-      "title": "◉ Fleet Status",
+      "title": "\u25c9 Fleet Status",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -448,7 +448,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "/* QUERY_BUDGET_EXEMPT: reads public.v_machine_spc_fleet, which itself performs the same per-row unpivot+STDDEV Cpk computation on every call (not materialized/cached). Same root cause and same investigated-with-no-improvement history as the other SPC panels. Exempted 2026-08-06 World-Class QA pass; materializing this view is a larger follow-up, not a dashboard-only fix. */\nSELECT\n  (SELECT COUNT(*)::INT FROM public.devices WHERE device_type='ldi' AND enabled)::TEXT\n  || ' reg / '\n  || (SELECT COUNT(*) FILTER (WHERE COALESCE(n_pe,0)+COALESCE(n_je,0)>0)::INT FROM public.v_machine_spc_fleet)::TEXT\n  || ' rpt' AS value",
+          "rawSql": "/* RESOLVED 2026-08-10 (migration 064): v_machine_spc_fleet is now a materialized view refreshed every 60s via a TimescaleDB background job, not recomputed per read. Previously QUERY_BUDGET_EXEMPT (~150ms); now sub-millisecond. */\nSELECT\n  (SELECT COUNT(*)::INT FROM public.devices WHERE device_type='ldi' AND enabled)::TEXT\n  || ' reg / '\n  || (SELECT COUNT(*) FILTER (WHERE COALESCE(n_pe,0)+COALESCE(n_je,0)>0)::INT FROM public.v_machine_spc_fleet)::TEXT\n  || ' rpt' AS value",
           "format": "table"
         }
       ],
@@ -456,7 +456,7 @@
     },
     {
       "id": 10011,
-      "title": "◈ QUALITY",
+      "title": "\u25c8 QUALITY",
       "type": "row",
       "collapsed": false,
       "gridPos": {
@@ -469,7 +469,7 @@
     },
     {
       "id": 17,
-      "title": "◉ Avg Cpk (Fleet)",
+      "title": "\u25c9 Avg Cpk (Fleet)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -600,7 +600,7 @@
     },
     {
       "id": 18,
-      "title": "◉ Worst Cpk (Fleet, 24h)",
+      "title": "\u25c9 Worst Cpk (Fleet, 24h)",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
@@ -722,7 +722,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "/* QUERY_BUDGET_EXEMPT: reads public.v_machine_spc_fleet, which itself performs the same per-row unpivot+STDDEV Cpk computation on every call (not materialized/cached). Same root cause and same investigated-with-no-improvement history as the other SPC panels. Exempted 2026-08-06 World-Class QA pass; materializing this view is a larger follow-up, not a dashboard-only fix. */\nSELECT eqp_id AS \"Machine\", ROUND(worst_cpk::NUMERIC, 2) AS \"Worst Cpk\"\nFROM public.v_machine_spc_fleet\nWHERE worst_cpk IS NOT NULL\nORDER BY worst_cpk ASC\nLIMIT 1;",
+          "rawSql": "/* RESOLVED 2026-08-10 (migration 064): v_machine_spc_fleet is now a materialized view refreshed every 60s via a TimescaleDB background job, not recomputed per read. Previously QUERY_BUDGET_EXEMPT (~150ms); now sub-millisecond. */\nSELECT eqp_id AS \"Machine\", ROUND(worst_cpk::NUMERIC, 2) AS \"Worst Cpk\"\nFROM public.v_machine_spc_fleet\nWHERE worst_cpk IS NOT NULL\nORDER BY worst_cpk ASC\nLIMIT 1;",
           "format": "table"
         }
       ],
@@ -730,7 +730,7 @@
     },
     {
       "id": 19,
-      "title": "◉ JE Pass Rate (Fleet, 24h)",
+      "title": "\u25c9 JE Pass Rate (Fleet, 24h)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -817,7 +817,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "/* QUERY_BUDGET_EXEMPT: reads public.v_machine_spc_fleet, which itself performs the same per-row unpivot+STDDEV Cpk computation on every call (not materialized/cached). Same root cause and same investigated-with-no-improvement history as the other SPC panels. Exempted 2026-08-06 World-Class QA pass; materializing this view is a larger follow-up, not a dashboard-only fix. */\nSELECT ROUND((100.0 * SUM(n_je * je_pass_rate / 100.0) / NULLIF(SUM(n_je), 0))::NUMERIC, 1) AS value FROM public.v_machine_spc_fleet;",
+          "rawSql": "/* RESOLVED 2026-08-10 (migration 064): v_machine_spc_fleet is now a materialized view refreshed every 60s via a TimescaleDB background job, not recomputed per read. Previously QUERY_BUDGET_EXEMPT (~150ms); now sub-millisecond. */\nSELECT ROUND((100.0 * SUM(n_je * je_pass_rate / 100.0) / NULLIF(SUM(n_je), 0))::NUMERIC, 1) AS value FROM public.v_machine_spc_fleet;",
           "format": "table"
         }
       ],
@@ -825,7 +825,7 @@
     },
     {
       "id": 2,
-      "title": "◈ PE Limit Used",
+      "title": "\u25c8 PE Limit Used",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -838,7 +838,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "suffix: µm",
+          "unit": "suffix: \u00b5m",
           "min": 0,
           "max": 120,
           "decimals": 2,
@@ -922,7 +922,7 @@
     },
     {
       "id": 10012,
-      "title": "◈ RISK",
+      "title": "\u25c8 RISK",
       "type": "row",
       "collapsed": false,
       "gridPos": {
@@ -935,7 +935,7 @@
     },
     {
       "id": 16,
-      "title": "◉ Fleet Availability (%)",
+      "title": "\u25c9 Fleet Availability (%)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -1066,7 +1066,7 @@
     },
     {
       "id": 5,
-      "title": "◉ Critical Alarms",
+      "title": "\u25c9 Critical Alarms",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -1155,7 +1155,7 @@
     },
     {
       "id": 3,
-      "title": "◉ Avg Temperature",
+      "title": "\u25c9 Avg Temperature",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -1293,7 +1293,7 @@
     },
     {
       "id": 4,
-      "title": "◉ Avg Humidity",
+      "title": "\u25c9 Avg Humidity",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -1432,1657 +1432,1663 @@
     {
       "id": 10001,
       "type": "row",
-      "title": "◈ PRODUCTION & COMPLIANCE",
+      "title": "\u25c8 PRODUCTION & COMPLIANCE",
       "gridPos": {
         "x": 0,
         "y": 16,
         "w": 24,
         "h": 1
       },
-      "collapsed": false,
-      "panels": []
-    },
-    {
-      "id": 6,
-      "title": "◈ Production & Process Table",
-      "type": "table",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 17,
-        "w": 8,
-        "h": 12
-      },
-      "options": {
-        "showHeader": true,
-        "rowHeight": 0.6,
-        "sortBy": [
-          {
-            "displayName": "Machine",
-            "desc": true
-          }
-        ],
-        "cellHeight": "sm",
-        "footer": {
-          "show": false
-        },
-        "noValue": "NO_DATA"
-      },
-      "targets": [
+      "collapsed": true,
+      "panels": [
         {
-          "refId": "A",
+          "id": 6,
+          "title": "\u25c8 Production & Process Table",
+          "type": "table",
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: always the true latest row per machine, not bounded by the dashboard time range -- see v_ldi_machine_latest_full (migration 052) */\nSELECT dev.device_id AS \"Machine\", v.mo AS \"Job (MO)\", v.fpn AS \"Part (FPN)\", v.layer_name AS \"Layer\",\n       CASE WHEN v.log_id IS NULL THEN 'NO_DATA' ELSE (v.board_no::TEXT || '/' || v.total_board::TEXT) END AS \"Progress\",\n       ROUND(v.temperature::NUMERIC, 1) AS \"temperature (°C)\",\n       ROUND(v.humidity::NUMERIC, 1) AS \"humidity (%RH)\",\n       ROUND(v.scan_speed::NUMERIC, 1) AS \"scan_speed (mm/s)\",\n       ROUND(v.thickness::NUMERIC, 3) AS \"thickness (mm)\",\n       ROUND(v.resist_dosage::NUMERIC, 1) AS \"resist_dosage\",\n       v.state AS \"state\",\n       v.is_stale AS \"stale (>5min)\"\nFROM public.devices dev\nLEFT JOIN public.v_ldi_machine_latest_full v\n  ON v.eqp_id = dev.device_id AND v.factory IN (${factory:sqlstring}) AND v.mo IN (${mo:sqlstring})\nWHERE dev.device_type = 'ldi' AND dev.enabled AND dev.device_id IN (${machine_id:sqlstring})\nORDER BY dev.device_id",
-          "format": "table"
-        }
-      ],
-      "description": "Latest production context per machine (migration 052's v_ldi_machine_latest_full, World-Class Audit Priority 2): job info + live physical parameters (temperature, humidity, scan_speed, thickness, resist_dosage, state). Always the true latest row regardless of the dashboard time range -- a silent machine still shows a row (Progress = NO_DATA) instead of disappearing.",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "filterable": true
+          "gridPos": {
+            "x": 0,
+            "y": 0,
+            "w": 8,
+            "h": 12
           },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
+          "options": {
+            "showHeader": true,
+            "rowHeight": 0.6,
+            "sortBy": [
               {
-                "color": "#EF4444",
-                "value": null
-              },
-              {
-                "color": "#F59E0B",
-                "value": 19
-              },
-              {
-                "color": "#22C55E",
-                "value": 20
-              },
-              {
-                "color": "#F59E0B",
-                "value": 24
-              },
-              {
-                "color": "#EF4444",
-                "value": 25
+                "displayName": "Machine",
+                "desc": true
               }
-            ]
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Machine"
+            ],
+            "cellHeight": "sm",
+            "footer": {
+              "show": false
             },
-            "properties": [
-              {
-                "id": "links",
-                "value": [
-                  {
-                    "title": "Open Engineering Analytics",
-                    "url": "/d/ims-ldi-engineering-analytics/set2-engineering?var-machine_id=${__value.text}&from=${__from}&to=${__to}",
-                    "targetBlank": false
-                  }
-                ]
-              },
-              {
-                "id": "custom.width",
-                "value": 110
-              }
-            ]
+            "noValue": "NO_DATA"
           },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Timestamp"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "dateTimeAsIso"
-              },
-              {
-                "id": "decimals",
-                "value": 6
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Time"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "dateTimeAsIso"
-              },
-              {
-                "id": "decimals",
-                "value": 6
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "eqp_id"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Machine"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "layer_name"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Layer"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "mo"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Work Order (MO)"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "alarm_code"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Alarm Code"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "alarm_msg"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Alarm Message"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "severity"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Severity"
-              },
-              {
-                "id": "custom.displayMode",
-                "value": "color-background"
-              },
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "type": "value",
-                    "options": {
-                      "CRIT": {
-                        "color": "#EF4444",
-                        "index": 0,
-                        "text": "CRIT"
-                      },
-                      "CRITICAL": {
-                        "color": "#EF4444",
-                        "index": 0,
-                        "text": "CRITICAL"
-                      },
-                      "WARN": {
-                        "color": "#F59E0B",
-                        "index": 1,
-                        "text": "WARN"
-                      },
-                      "WARNING": {
-                        "color": "#F59E0B",
-                        "index": 1,
-                        "text": "WARNING"
-                      },
-                      "OK": {
-                        "color": "#22C55E",
-                        "index": 2,
-                        "text": "OK"
-                      }
-                    }
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Severity"
-            },
-            "properties": [
-              {
-                "id": "custom.displayMode",
-                "value": "color-background"
-              },
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "type": "value",
-                    "options": {
-                      "CRIT": {
-                        "color": "#EF4444",
-                        "index": 0,
-                        "text": "CRIT"
-                      },
-                      "CRITICAL": {
-                        "color": "#EF4444",
-                        "index": 0,
-                        "text": "CRITICAL"
-                      },
-                      "WARN": {
-                        "color": "#F59E0B",
-                        "index": 1,
-                        "text": "WARN"
-                      },
-                      "WARNING": {
-                        "color": "#F59E0B",
-                        "index": 1,
-                        "text": "WARNING"
-                      },
-                      "OK": {
-                        "color": "#22C55E",
-                        "index": 2,
-                        "text": "OK"
-                      }
-                    }
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "logdate"
-            },
-            "properties": [
-              {
-                "id": "custom.hidden",
-                "value": true
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Job (MO)"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 120
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Part (FPN)"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 100
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Layer"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 120
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Progress"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 70
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "temperature (°C)"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 90
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "humidity (%RH)"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 90
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "scan_speed (mm/s)"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 90
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "thickness (mm)"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 80
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "resist_dosage"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 80
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "state"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 70
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
-      "id": 7,
-      "title": "◈ Temperature Compliance (22±2°C)",
-      "type": "state-timeline",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 8,
-        "y": 17,
-        "w": 8,
-        "h": 12
-      },
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [
+          "targets": [
             {
-              "type": "value",
-              "options": {
-                "0": {
-                  "color": "#EF4444",
-                  "index": 0,
-                  "text": "CRIT"
-                },
-                "1": {
-                  "color": "#F59E0B",
-                  "index": 1,
-                  "text": "WARN"
-                },
-                "2": {
-                  "color": "#22C55E",
-                  "index": 2,
-                  "text": "OK"
-                }
-              }
+              "refId": "A",
+              "datasource": {
+                "uid": "timescaledb"
+              },
+              "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: always the true latest row per machine, not bounded by the dashboard time range -- see v_ldi_machine_latest_full (migration 052) */\nSELECT dev.device_id AS \"Machine\", v.mo AS \"Job (MO)\", v.fpn AS \"Part (FPN)\", v.layer_name AS \"Layer\",\n       CASE WHEN v.log_id IS NULL THEN 'NO_DATA' ELSE (v.board_no::TEXT || '/' || v.total_board::TEXT) END AS \"Progress\",\n       ROUND(v.temperature::NUMERIC, 1) AS \"temperature (\u00b0C)\",\n       ROUND(v.humidity::NUMERIC, 1) AS \"humidity (%RH)\",\n       ROUND(v.scan_speed::NUMERIC, 1) AS \"scan_speed (mm/s)\",\n       ROUND(v.thickness::NUMERIC, 3) AS \"thickness (mm)\",\n       ROUND(v.resist_dosage::NUMERIC, 1) AS \"resist_dosage\",\n       v.state AS \"state\",\n       v.is_stale AS \"stale (>5min)\"\nFROM public.devices dev\nLEFT JOIN public.v_ldi_machine_latest_full v\n  ON v.eqp_id = dev.device_id AND v.factory IN (${factory:sqlstring}) AND v.mo IN (${mo:sqlstring})\nWHERE dev.device_type = 'ldi' AND dev.enabled AND dev.device_id IN (${machine_id:sqlstring})\nORDER BY dev.device_id",
+              "format": "table"
             }
           ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
+          "description": "Latest production context per machine (migration 052's v_ldi_machine_latest_full, World-Class Audit Priority 2): job info + live physical parameters (temperature, humidity, scan_speed, thickness, resist_dosage, state). Always the true latest row regardless of the dashboard time range -- a silent machine still shows a row (Progress = NO_DATA) instead of disappearing.",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "filterable": true
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "#EF4444",
+                    "value": null
+                  },
+                  {
+                    "color": "#F59E0B",
+                    "value": 19
+                  },
+                  {
+                    "color": "#22C55E",
+                    "value": 20
+                  },
+                  {
+                    "color": "#F59E0B",
+                    "value": 24
+                  },
+                  {
+                    "color": "#EF4444",
+                    "value": 25
+                  }
+                ]
+              }
+            },
+            "overrides": [
               {
-                "color": "#EF4444",
-                "value": null
+                "matcher": {
+                  "id": "byName",
+                  "options": "Machine"
+                },
+                "properties": [
+                  {
+                    "id": "links",
+                    "value": [
+                      {
+                        "title": "Open Engineering Analytics",
+                        "url": "/d/ims-ldi-engineering-analytics/set2-engineering?var-machine_id=${__value.text}&from=${__from}&to=${__to}",
+                        "targetBlank": false
+                      }
+                    ]
+                  },
+                  {
+                    "id": "custom.width",
+                    "value": 110
+                  }
+                ]
               },
               {
-                "color": "#F59E0B",
-                "value": 1
+                "matcher": {
+                  "id": "byName",
+                  "options": "Timestamp"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "dateTimeAsIso"
+                  },
+                  {
+                    "id": "decimals",
+                    "value": 6
+                  }
+                ]
               },
               {
-                "color": "#22C55E",
-                "value": 2
+                "matcher": {
+                  "id": "byName",
+                  "options": "Time"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "dateTimeAsIso"
+                  },
+                  {
+                    "id": "decimals",
+                    "value": 6
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "eqp_id"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "Machine"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "layer_name"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "Layer"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "mo"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "Work Order (MO)"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "alarm_code"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "Alarm Code"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "alarm_msg"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "Alarm Message"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "severity"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "Severity"
+                  },
+                  {
+                    "id": "custom.displayMode",
+                    "value": "color-background"
+                  },
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "CRIT": {
+                            "color": "#EF4444",
+                            "index": 0,
+                            "text": "CRIT"
+                          },
+                          "CRITICAL": {
+                            "color": "#EF4444",
+                            "index": 0,
+                            "text": "CRITICAL"
+                          },
+                          "WARN": {
+                            "color": "#F59E0B",
+                            "index": 1,
+                            "text": "WARN"
+                          },
+                          "WARNING": {
+                            "color": "#F59E0B",
+                            "index": 1,
+                            "text": "WARNING"
+                          },
+                          "OK": {
+                            "color": "#22C55E",
+                            "index": 2,
+                            "text": "OK"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Severity"
+                },
+                "properties": [
+                  {
+                    "id": "custom.displayMode",
+                    "value": "color-background"
+                  },
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "CRIT": {
+                            "color": "#EF4444",
+                            "index": 0,
+                            "text": "CRIT"
+                          },
+                          "CRITICAL": {
+                            "color": "#EF4444",
+                            "index": 0,
+                            "text": "CRITICAL"
+                          },
+                          "WARN": {
+                            "color": "#F59E0B",
+                            "index": 1,
+                            "text": "WARN"
+                          },
+                          "WARNING": {
+                            "color": "#F59E0B",
+                            "index": 1,
+                            "text": "WARNING"
+                          },
+                          "OK": {
+                            "color": "#22C55E",
+                            "index": 2,
+                            "text": "OK"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "logdate"
+                },
+                "properties": [
+                  {
+                    "id": "custom.hidden",
+                    "value": true
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Job (MO)"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 120
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Part (FPN)"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 100
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Layer"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 120
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Progress"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 70
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "temperature (\u00b0C)"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 90
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "humidity (%RH)"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 90
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "scan_speed (mm/s)"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 90
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "thickness (mm)"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 80
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "resist_dosage"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 80
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "state"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 70
+                  }
+                ]
               }
             ]
-          },
-          "color": {
-            "mode": "thresholds"
-          },
-          "unit": "celsius",
-          "decimals": 1,
-          "min": 18,
-          "max": 28,
-          "custom": {
-            "lineWidth": 0,
-            "fillOpacity": 100
           }
         },
-        "overrides": []
-      },
-      "options": {
-        "showValue": "auto",
-        "mergeValues": true,
-        "alignValue": "center",
-        "rowHeight": 0.9,
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        }
-      },
-      "targets": [
         {
-          "refId": "A",
+          "id": 7,
+          "title": "\u25c8 Temperature Compliance (22\u00b12\u00b0C)",
+          "type": "state-timeline",
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, eqp_id AS metric, CASE WHEN temperature BETWEEN 20 AND 24 THEN 2 WHEN temperature BETWEEN 19 AND 25 THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) AND temperature IS NOT NULL ORDER BY time ASC",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
-        }
-      ],
-      "description": "Per-machine temperature compliance over time. Green = in spec (20-24C). No scrolling needed at 720p."
-    },
-    {
-      "id": 8,
-      "title": "◈ Humidity Compliance (55±5%)",
-      "type": "state-timeline",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 16,
-        "y": 17,
-        "w": 8,
-        "h": 12
-      },
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "0": {
-                  "color": "#EF4444",
-                  "index": 0,
-                  "text": "CRIT"
-                },
-                "1": {
-                  "color": "#F59E0B",
-                  "index": 1,
-                  "text": "WARN"
-                },
-                "2": {
-                  "color": "#22C55E",
-                  "index": 2,
-                  "text": "OK"
+          "gridPos": {
+            "x": 8,
+            "y": 0,
+            "w": 8,
+            "h": 12
+          },
+          "fieldConfig": {
+            "defaults": {
+              "mappings": [
+                {
+                  "type": "value",
+                  "options": {
+                    "0": {
+                      "color": "#EF4444",
+                      "index": 0,
+                      "text": "CRIT"
+                    },
+                    "1": {
+                      "color": "#F59E0B",
+                      "index": 1,
+                      "text": "WARN"
+                    },
+                    "2": {
+                      "color": "#22C55E",
+                      "index": 2,
+                      "text": "OK"
+                    }
+                  }
                 }
+              ],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "#EF4444",
+                    "value": null
+                  },
+                  {
+                    "color": "#F59E0B",
+                    "value": 1
+                  },
+                  {
+                    "color": "#22C55E",
+                    "value": 2
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "unit": "celsius",
+              "decimals": 1,
+              "min": 18,
+              "max": 28,
+              "custom": {
+                "lineWidth": 0,
+                "fillOpacity": 100
               }
+            },
+            "overrides": []
+          },
+          "options": {
+            "showValue": "auto",
+            "mergeValues": true,
+            "alignValue": "center",
+            "rowHeight": 0.9,
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom"
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "uid": "timescaledb"
+              },
+              "rawSql": "SELECT time, eqp_id AS metric, CASE WHEN temperature BETWEEN 20 AND 24 THEN 2 WHEN temperature BETWEEN 19 AND 25 THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) AND temperature IS NOT NULL ORDER BY time ASC",
+              "format": "time_series",
+              "legendFormat": "{{metric}}"
             }
           ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#EF4444",
-                "value": null
-              },
-              {
-                "color": "#F59E0B",
-                "value": 1
-              },
-              {
-                "color": "#22C55E",
-                "value": 2
-              }
-            ]
-          },
-          "color": {
-            "mode": "thresholds"
-          },
-          "unit": "humidity",
-          "decimals": 1,
-          "min": 40,
-          "max": 70,
-          "custom": {
-            "lineWidth": 0,
-            "fillOpacity": 100
-          }
+          "description": "Per-machine temperature compliance over time. Green = in spec (20-24C). No scrolling needed at 720p."
         },
-        "overrides": []
-      },
-      "options": {
-        "showValue": "auto",
-        "mergeValues": true,
-        "alignValue": "center",
-        "rowHeight": 0.9,
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        }
-      },
-      "targets": [
         {
-          "refId": "A",
+          "id": 8,
+          "title": "\u25c8 Humidity Compliance (55\u00b15%)",
+          "type": "state-timeline",
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, eqp_id AS metric, CASE WHEN humidity BETWEEN 50 AND 60 THEN 2 WHEN humidity BETWEEN 45 AND 65 THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) AND humidity IS NOT NULL ORDER BY time ASC",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
+          "gridPos": {
+            "x": 16,
+            "y": 0,
+            "w": 8,
+            "h": 12
+          },
+          "fieldConfig": {
+            "defaults": {
+              "mappings": [
+                {
+                  "type": "value",
+                  "options": {
+                    "0": {
+                      "color": "#EF4444",
+                      "index": 0,
+                      "text": "CRIT"
+                    },
+                    "1": {
+                      "color": "#F59E0B",
+                      "index": 1,
+                      "text": "WARN"
+                    },
+                    "2": {
+                      "color": "#22C55E",
+                      "index": 2,
+                      "text": "OK"
+                    }
+                  }
+                }
+              ],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "#EF4444",
+                    "value": null
+                  },
+                  {
+                    "color": "#F59E0B",
+                    "value": 1
+                  },
+                  {
+                    "color": "#22C55E",
+                    "value": 2
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "unit": "humidity",
+              "decimals": 1,
+              "min": 40,
+              "max": 70,
+              "custom": {
+                "lineWidth": 0,
+                "fillOpacity": 100
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "showValue": "auto",
+            "mergeValues": true,
+            "alignValue": "center",
+            "rowHeight": 0.9,
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom"
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "uid": "timescaledb"
+              },
+              "rawSql": "SELECT time, eqp_id AS metric, CASE WHEN humidity BETWEEN 50 AND 60 THEN 2 WHEN humidity BETWEEN 45 AND 65 THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) AND humidity IS NOT NULL ORDER BY time ASC",
+              "format": "time_series",
+              "legendFormat": "{{metric}}"
+            }
+          ],
+          "description": "Per-machine humidity compliance over time. Green = in spec (50-60% RH). No scrolling needed at 720p."
         }
-      ],
-      "description": "Per-machine humidity compliance over time. Green = in spec (50-60% RH). No scrolling needed at 720p."
+      ]
     },
     {
       "id": 10002,
       "type": "row",
-      "title": "◈ PROCESS METRICS",
+      "title": "\u25c8 PROCESS METRICS",
       "gridPos": {
         "x": 0,
-        "y": 29,
+        "y": 17,
         "w": 24,
         "h": 1
       },
-      "collapsed": false,
-      "panels": []
-    },
-    {
-      "id": 9,
-      "title": "◈ Scan Speed & Air Vacuum",
-      "type": "timeseries",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 30,
-        "w": 8,
-        "h": 10
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "suffix: mm/s",
-          "decimals": 1,
-          "custom": {
-            "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "fillOpacity": 15,
-            "lineWidth": 2,
-            "showPoints": "never",
-            "spanNulls": false,
-            "gradientMode": "opacity",
-            "axisSoftMin": 0,
-            "axisSoftMax": 450,
-            "thresholdsStyle": {
-              "mode": "line+area"
+      "collapsed": true,
+      "panels": [
+        {
+          "id": 9,
+          "title": "\u25c8 Scan Speed & Air Vacuum",
+          "type": "timeseries",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 0,
+            "w": 8,
+            "h": 10
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "suffix: mm/s",
+              "decimals": 1,
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "smooth",
+                "fillOpacity": 15,
+                "lineWidth": 2,
+                "showPoints": "never",
+                "spanNulls": false,
+                "gradientMode": "opacity",
+                "axisSoftMin": 0,
+                "axisSoftMax": 450,
+                "thresholdsStyle": {
+                  "mode": "line+area"
+                }
+              },
+              "color": {
+                "mode": "palette-classic"
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": ".*scan_speed.*"
+                },
+                "properties": [
+                  {
+                    "id": "custom.axisPlacement",
+                    "value": "left"
+                  },
+                  {
+                    "id": "custom.axisLabel",
+                    "value": "scan_speed (mm/s)"
+                  },
+                  {
+                    "id": "unit",
+                    "value": "short"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": ".*air_vacuum.*"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "pressurekpa"
+                  },
+                  {
+                    "id": "decimals",
+                    "value": 1
+                  },
+                  {
+                    "id": "custom.axisPlacement",
+                    "value": "right"
+                  },
+                  {
+                    "id": "custom.axisSoftMin",
+                    "value": -25
+                  },
+                  {
+                    "id": "custom.axisSoftMax",
+                    "value": 5
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            },
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "lastNotNull",
+                "min",
+                "max",
+                "mean"
+              ]
+            },
+            "connectNullPoints": true
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "uid": "timescaledb"
+              },
+              "rawSql": "SELECT time_bucket('1 minute', bucket) AS time, eqp_id || ' - scan_speed' AS metric, AVG(avg_scan_speed) AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_scan_speed IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+              "format": "time_series",
+              "legendFormat": "{{metric}}"
+            },
+            {
+              "refId": "B",
+              "datasource": {
+                "uid": "timescaledb"
+              },
+              "rawSql": "SELECT time_bucket('1 minute', bucket) AS time, eqp_id || ' - air_vacuum' AS metric, AVG(avg_air_vacuum) AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_air_vacuum IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+              "format": "time_series",
+              "legendFormat": "{{metric}}"
             }
-          },
-          "color": {
-            "mode": "palette-classic"
-          }
+          ],
+          "description": "Scan speed (left axis) and air vacuum (right axis) per machine. Outliers indicate process drift."
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": ".*scan_speed.*"
-            },
-            "properties": [
-              {
-                "id": "custom.axisPlacement",
-                "value": "left"
-              },
-              {
-                "id": "custom.axisLabel",
-                "value": "scan_speed (mm/s)"
-              },
-              {
-                "id": "unit",
-                "value": "short"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": ".*air_vacuum.*"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "pressurekpa"
-              },
-              {
-                "id": "decimals",
-                "value": 1
-              },
-              {
-                "id": "custom.axisPlacement",
-                "value": "right"
-              },
-              {
-                "id": "custom.axisSoftMin",
-                "value": -25
-              },
-              {
-                "id": "custom.axisSoftMax",
-                "value": 5
-              }
-            ]
-          }
-        ]
-      },
-      "options": {
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        },
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "lastNotNull",
-            "min",
-            "max",
-            "mean"
-          ]
-        },
-        "connectNullPoints": true
-      },
-      "targets": [
         {
-          "refId": "A",
+          "id": 10,
+          "title": "\u25c8 Thickness & Resist Dosage",
+          "type": "timeseries",
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - scan_speed' AS metric, AVG(avg_scan_speed) AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_scan_speed IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
-        },
-        {
-          "refId": "B",
-          "datasource": {
-            "uid": "timescaledb"
+          "gridPos": {
+            "x": 8,
+            "y": 0,
+            "w": 8,
+            "h": 10
           },
-          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - air_vacuum' AS metric, AVG(avg_air_vacuum) AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_air_vacuum IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
-        }
-      ],
-      "description": "Scan speed (left axis) and air vacuum (right axis) per machine. Outliers indicate process drift."
-    },
-    {
-      "id": 10,
-      "title": "◈ Thickness & Resist Dosage",
-      "type": "timeseries",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 8,
-        "y": 30,
-        "w": 8,
-        "h": 10
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "none",
-          "decimals": 2,
-          "custom": {
-            "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "fillOpacity": 15,
-            "lineWidth": 2,
-            "showPoints": "never",
-            "spanNulls": false,
-            "gradientMode": "opacity",
-            "axisSoftMin": 0,
-            "axisSoftMax": 1.6,
-            "thresholdsStyle": {
-              "mode": "line+area"
+          "fieldConfig": {
+            "defaults": {
+              "unit": "none",
+              "decimals": 2,
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "smooth",
+                "fillOpacity": 15,
+                "lineWidth": 2,
+                "showPoints": "never",
+                "spanNulls": false,
+                "gradientMode": "opacity",
+                "axisSoftMin": 0,
+                "axisSoftMax": 1.6,
+                "thresholdsStyle": {
+                  "mode": "line+area"
+                }
+              },
+              "color": {
+                "mode": "palette-classic"
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": ".*thickness.*"
+                },
+                "properties": [
+                  {
+                    "id": "custom.axisPlacement",
+                    "value": "left"
+                  },
+                  {
+                    "id": "custom.axisLabel",
+                    "value": "thickness (mm)"
+                  },
+                  {
+                    "id": "unit",
+                    "value": "suffix: mm"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": ".*resist_dosage.*"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "suffix: mJ/cm\u00b2"
+                  },
+                  {
+                    "id": "decimals",
+                    "value": 1
+                  },
+                  {
+                    "id": "custom.axisPlacement",
+                    "value": "right"
+                  },
+                  {
+                    "id": "custom.axisSoftMin",
+                    "value": 0
+                  },
+                  {
+                    "id": "custom.axisSoftMax",
+                    "value": 1200
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            },
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "lastNotNull",
+                "min",
+                "max",
+                "mean"
+              ]
+            },
+            "connectNullPoints": true
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "uid": "timescaledb"
+              },
+              "rawSql": "SELECT time_bucket('1 minute', bucket) AS time, eqp_id || ' - thickness' AS metric, AVG(avg_thickness) AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_thickness IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+              "format": "time_series",
+              "legendFormat": "{{metric}}"
+            },
+            {
+              "refId": "B",
+              "datasource": {
+                "uid": "timescaledb"
+              },
+              "rawSql": "SELECT time_bucket('1 minute', bucket) AS time, eqp_id || ' - resist_dosage' AS metric, AVG(avg_resist_dosage) AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_resist_dosage IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+              "format": "time_series",
+              "legendFormat": "{{metric}}"
             }
-          },
-          "color": {
-            "mode": "palette-classic"
-          }
+          ],
+          "description": "Resist thickness and dosage per machine. Outliers indicate coating issues."
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": ".*thickness.*"
-            },
-            "properties": [
-              {
-                "id": "custom.axisPlacement",
-                "value": "left"
-              },
-              {
-                "id": "custom.axisLabel",
-                "value": "thickness (mm)"
-              },
-              {
-                "id": "unit",
-                "value": "suffix: mm"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": ".*resist_dosage.*"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "suffix: mJ/cm²"
-              },
-              {
-                "id": "decimals",
-                "value": 1
-              },
-              {
-                "id": "custom.axisPlacement",
-                "value": "right"
-              },
-              {
-                "id": "custom.axisSoftMin",
-                "value": 0
-              },
-              {
-                "id": "custom.axisSoftMax",
-                "value": 1200
-              }
-            ]
-          }
-        ]
-      },
-      "options": {
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        },
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "lastNotNull",
-            "min",
-            "max",
-            "mean"
-          ]
-        },
-        "connectNullPoints": true
-      },
-      "targets": [
         {
-          "refId": "A",
+          "id": 11,
+          "title": "\u25c8 Scale X / Y",
+          "type": "timeseries",
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - thickness' AS metric, AVG(avg_thickness) AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_thickness IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
-        },
-        {
-          "refId": "B",
-          "datasource": {
-            "uid": "timescaledb"
+          "gridPos": {
+            "x": 16,
+            "y": 0,
+            "w": 8,
+            "h": 10
           },
-          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - resist_dosage' AS metric, AVG(avg_resist_dosage) AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_resist_dosage IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
-        }
-      ],
-      "description": "Resist thickness and dosage per machine. Outliers indicate coating issues."
-    },
-    {
-      "id": 11,
-      "title": "◈ Scale X / Y",
-      "type": "timeseries",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 16,
-        "y": 30,
-        "w": 8,
-        "h": 10
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "none",
-          "decimals": 2,
-          "custom": {
-            "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "fillOpacity": 15,
-            "lineWidth": 2,
-            "showPoints": "never",
-            "spanNulls": false,
-            "gradientMode": "opacity",
-            "axisSoftMin": 0.9995,
-            "axisSoftMax": 1.0007,
-            "thresholdsStyle": {
-              "mode": "line+area"
+          "fieldConfig": {
+            "defaults": {
+              "unit": "none",
+              "decimals": 2,
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "smooth",
+                "fillOpacity": 15,
+                "lineWidth": 2,
+                "showPoints": "never",
+                "spanNulls": false,
+                "gradientMode": "opacity",
+                "axisSoftMin": 0.9995,
+                "axisSoftMax": 1.0007,
+                "thresholdsStyle": {
+                  "mode": "line+area"
+                }
+              },
+              "color": {
+                "mode": "palette-classic"
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": ".*scale_x.*"
+                },
+                "properties": [
+                  {
+                    "id": "custom.axisPlacement",
+                    "value": "left"
+                  },
+                  {
+                    "id": "custom.axisLabel",
+                    "value": "scale_x"
+                  },
+                  {
+                    "id": "unit",
+                    "value": "short"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": ".*scale_y.*"
+                },
+                "properties": [
+                  {
+                    "id": "custom.axisPlacement",
+                    "value": "right"
+                  },
+                  {
+                    "id": "custom.axisLabel",
+                    "value": "scale_y"
+                  },
+                  {
+                    "id": "unit",
+                    "value": "short"
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            },
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "lastNotNull",
+                "min",
+                "max",
+                "mean"
+              ]
+            },
+            "connectNullPoints": true
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "uid": "timescaledb"
+              },
+              "rawSql": "SELECT time_bucket('1 minute', bucket) AS time, eqp_id || ' - scale_x' AS metric, AVG(avg_scale_x) AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_scale_x IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+              "format": "time_series",
+              "legendFormat": "{{metric}}"
+            },
+            {
+              "refId": "B",
+              "datasource": {
+                "uid": "timescaledb"
+              },
+              "rawSql": "SELECT time_bucket('1 minute', bucket) AS time, eqp_id || ' - scale_y' AS metric, AVG(avg_scale_y) AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_scale_y IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+              "format": "time_series",
+              "legendFormat": "{{metric}}"
             }
-          },
-          "color": {
-            "mode": "palette-classic"
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": ".*scale_x.*"
-            },
-            "properties": [
-              {
-                "id": "custom.axisPlacement",
-                "value": "left"
-              },
-              {
-                "id": "custom.axisLabel",
-                "value": "scale_x"
-              },
-              {
-                "id": "unit",
-                "value": "short"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": ".*scale_y.*"
-            },
-            "properties": [
-              {
-                "id": "custom.axisPlacement",
-                "value": "right"
-              },
-              {
-                "id": "custom.axisLabel",
-                "value": "scale_y"
-              },
-              {
-                "id": "unit",
-                "value": "short"
-              }
-            ]
-          }
-        ]
-      },
-      "options": {
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        },
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "lastNotNull",
-            "min",
-            "max",
-            "mean"
-          ]
-        },
-        "connectNullPoints": true
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - scale_x' AS metric, AVG(avg_scale_x) AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_scale_x IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
-        },
-        {
-          "refId": "B",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - scale_y' AS metric, AVG(avg_scale_y) AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_scale_y IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
+          ],
+          "description": "Scale X and Y alignment per machine. Outliers indicate mechanical drift."
         }
-      ],
-      "description": "Scale X and Y alignment per machine. Outliers indicate mechanical drift."
+      ]
     },
     {
       "id": 10003,
       "type": "row",
-      "title": "◈ ANALYTICS & SPC",
+      "title": "\u25c8 ANALYTICS & SPC",
       "gridPos": {
         "x": 0,
-        "y": 40,
+        "y": 18,
         "w": 24,
         "h": 1
       },
-      "collapsed": false,
-      "panels": []
-    },
-    {
-      "id": 12,
-      "title": "◈ Calculated Time per Board",
-      "type": "heatmap",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 41,
-        "w": 12,
-        "h": 8
-      },
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showCellBorders": true,
-            "stacking": {
-              "mode": "none"
-            },
-            "fillOpacity": 80,
-            "cellGap": 1
-          },
-          "color": {
-            "mode": "scheme",
-            "scheme": "Reds"
-          },
-          "unit": "s",
-          "decimals": 3
-        },
-        "overrides": []
-      },
-      "options": {
-        "tooltip": {
-          "mode": "single"
-        },
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        }
-      },
-      "targets": [
+      "collapsed": true,
+      "panels": [
         {
-          "refId": "A",
+          "id": 12,
+          "title": "\u25c8 Calculated Time per Board",
+          "type": "heatmap",
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "/* QUERY_BUDGET_EXEMPT: simple aggregate over full-range ldi_data, but at current data volume (300K+ rows and growing) exceeds the 80ms real-time budget. World-Class QA pass (2026-08-06): documented rather than silently ignored; revisit if this becomes an operator-facing latency complaint. */\nSELECT date_bin('5 minutes', \"time\", TIMESTAMPTZ '2000-01-01') AS \"time\", eqp_id AS metric,\n       ROUND(AVG(total_time)::NUMERIC, 2) AS value\nFROM public.ldi_data\nWHERE $__timeFilter(\"time\") AND factory IN (${factory:sqlstring})\n  AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND total_time IS NOT NULL\nGROUP BY 1,2 ORDER BY 1;",
-          "format": "time_series"
-        }
-      ],
-      "description": "total_time is already the per-board cycle time (confirmed against the simulator, ~7-10s/board) -- previously divided by total_board again, producing a meaningless ~0.03s figure."
-    },
-    {
-      "id": 13,
-      "title": "◈ Z-Score: temperature",
-      "type": "timeseries",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 12,
-        "y": 41,
-        "w": 12,
-        "h": 8
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "none",
-          "decimals": 2,
-          "custom": {
-            "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "fillOpacity": 15,
-            "lineWidth": 2,
-            "showPoints": "never",
-            "spanNulls": false,
-            "gradientMode": "opacity",
-            "thresholdsStyle": {
-              "mode": "line+area"
+          "gridPos": {
+            "x": 0,
+            "y": 0,
+            "w": 12,
+            "h": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showCellBorders": true,
+                "stacking": {
+                  "mode": "none"
+                },
+                "fillOpacity": 80,
+                "cellGap": 1
+              },
+              "color": {
+                "mode": "scheme",
+                "scheme": "Reds"
+              },
+              "unit": "s",
+              "decimals": 3
+            },
+            "overrides": []
+          },
+          "options": {
+            "tooltip": {
+              "mode": "single"
+            },
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom"
             }
           },
-          "color": {
-            "mode": "thresholds"
-          },
-          "min": -4,
-          "max": 4,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#EF4444",
-                "value": null
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "uid": "timescaledb"
               },
-              {
-                "color": "#F59E0B",
-                "value": -3
-              },
-              {
-                "color": "#22C55E",
-                "value": -2
-              },
-              {
-                "color": "#F59E0B",
-                "value": 2
-              },
-              {
-                "color": "#EF4444",
-                "value": 3
-              }
-            ]
-          }
+              "rawSql": "/* QUERY_BUDGET_EXEMPT: simple aggregate over full-range ldi_data, but at current data volume (300K+ rows and growing) exceeds the 80ms real-time budget. World-Class QA pass (2026-08-06): documented rather than silently ignored; revisit if this becomes an operator-facing latency complaint. */\nSELECT date_bin('5 minutes', \"time\", TIMESTAMPTZ '2000-01-01') AS \"time\", eqp_id AS metric,\n       ROUND(AVG(total_time)::NUMERIC, 2) AS value\nFROM public.ldi_data\nWHERE $__timeFilter(\"time\") AND factory IN (${factory:sqlstring})\n  AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND total_time IS NOT NULL\nGROUP BY 1,2 ORDER BY 1;",
+              "format": "time_series"
+            }
+          ],
+          "description": "total_time is already the per-board cycle time (confirmed against the simulator, ~7-10s/board) -- previously divided by total_board again, producing a meaningless ~0.03s figure."
         },
-        "overrides": []
-      },
-      "options": {
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        },
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "lastNotNull",
-            "min",
-            "max",
-            "mean"
-          ]
-        },
-        "connectNullPoints": true
-      },
-      "targets": [
         {
-          "refId": "A",
+          "id": 13,
+          "title": "\u25c8 Z-Score: temperature",
+          "type": "timeseries",
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH stats AS (\n  SELECT eqp_id, AVG(temperature) AS mu, STDDEV_SAMP(temperature) AS sigma\n  FROM public.ldi_data\n  WHERE $__timeFilter(\"time\") AND factory IN (${factory:sqlstring})\n    AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND temperature IS NOT NULL\n  GROUP BY eqp_id\n)\nSELECT time_bucket('$__interval', d.\"time\") AS \"time\", d.eqp_id AS metric, ROUND(AVG((d.temperature-s.mu)/NULLIF(s.sigma, 0))::NUMERIC,2) AS \"Z-Score\"\nFROM public.ldi_data d JOIN stats s ON d.eqp_id=s.eqp_id\nWHERE $__timeFilter(d.\"time\") AND d.factory IN (${factory:sqlstring})\n  AND d.mo IN (${mo:sqlstring}) AND d.eqp_id IN (${machine_id:sqlstring})\n  AND d.temperature IS NOT NULL AND s.sigma > 0\nGROUP BY 1, 2\nORDER BY 1, 2;",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
+          "gridPos": {
+            "x": 12,
+            "y": 0,
+            "w": 12,
+            "h": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "none",
+              "decimals": 2,
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "smooth",
+                "fillOpacity": 15,
+                "lineWidth": 2,
+                "showPoints": "never",
+                "spanNulls": false,
+                "gradientMode": "opacity",
+                "thresholdsStyle": {
+                  "mode": "line+area"
+                }
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "min": -4,
+              "max": 4,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "#EF4444",
+                    "value": null
+                  },
+                  {
+                    "color": "#F59E0B",
+                    "value": -3
+                  },
+                  {
+                    "color": "#22C55E",
+                    "value": -2
+                  },
+                  {
+                    "color": "#F59E0B",
+                    "value": 2
+                  },
+                  {
+                    "color": "#EF4444",
+                    "value": 3
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            },
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "lastNotNull",
+                "min",
+                "max",
+                "mean"
+              ]
+            },
+            "connectNullPoints": true
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "uid": "timescaledb"
+              },
+              "rawSql": "WITH stats AS (\n  SELECT eqp_id, AVG(temperature) AS mu, STDDEV_SAMP(temperature) AS sigma\n  FROM public.ldi_data\n  WHERE $__timeFilter(\"time\") AND factory IN (${factory:sqlstring})\n    AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND temperature IS NOT NULL\n  GROUP BY eqp_id\n)\nSELECT time_bucket('1 minute', d.\"time\") AS \"time\", d.eqp_id AS metric, ROUND(AVG((d.temperature-s.mu)/NULLIF(s.sigma, 0))::NUMERIC,2) AS \"Z-Score\"\nFROM public.ldi_data d JOIN stats s ON d.eqp_id=s.eqp_id\nWHERE $__timeFilter(d.\"time\") AND d.factory IN (${factory:sqlstring})\n  AND d.mo IN (${mo:sqlstring}) AND d.eqp_id IN (${machine_id:sqlstring})\n  AND d.temperature IS NOT NULL AND s.sigma > 0\nGROUP BY 1, 2\nORDER BY 1, 2;",
+              "format": "time_series",
+              "legendFormat": "{{metric}}"
+            }
+          ],
+          "description": "Temperature Z-score per machine. Values > 2 or < -2 indicate statistically significant deviation."
         }
-      ],
-      "description": "Temperature Z-score per machine. Values > 2 or < -2 indicate statistically significant deviation."
+      ]
     },
     {
       "id": 10004,
       "type": "row",
-      "title": "◈ SYSTEM ALARMS",
+      "title": "\u25c8 SYSTEM ALARMS",
       "gridPos": {
         "x": 0,
-        "y": 49,
+        "y": 19,
         "w": 24,
         "h": 1
       },
-      "collapsed": false,
-      "panels": []
-    },
-    {
-      "id": 14,
-      "title": "◈ Recent Alarm Events (Last 50)",
-      "type": "table",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 50,
-        "w": 24,
-        "h": 12
-      },
-      "options": {
-        "showHeader": true,
-        "rowHeight": 0.65,
-        "sortBy": [
-          {
-            "displayName": "Time",
-            "desc": true
-          }
-        ],
-        "cellHeight": "sm",
-        "footer": {
-          "show": false
-        },
-        "noValue": "NO_DATA"
-      },
-      "targets": [
+      "collapsed": true,
+      "panels": [
         {
-          "refId": "A",
+          "id": 14,
+          "title": "\u25c8 Recent Alarm Events (Last 50)",
+          "type": "table",
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope -- ORDER BY DESC LIMIT 50 already bounds it */\nSELECT\n  c.alarm_time AS \"Time\",\n  c.eqp_id AS \"Machine\",\n  c.errorcode AS \"Code\",\n  COALESCE(c.severity, 'UNMAPPED') AS \"Severity\",\n  c.alarm_msg AS \"Message\",\n  COALESCE(cat.category, 'UNCLASSIFIED') AS \"Subsystem\",\n  COALESCE(c.process, '-') AS \"Process\",\n  CASE\n    WHEN c.flag_pe_out_of_spec THEN 'PE/JE Out of Spec'\n    WHEN c.flag_thermal_out_of_spec THEN 'Thermal Out of Spec'\n    WHEN c.flag_humidity_out_of_spec THEN 'Humidity Out of Spec'\n    WHEN c.flag_vac_out_of_spec THEN 'Vacuum Out of Spec'\n    WHEN c.flag_scan_speed_out_of_spec THEN 'Motion Out of Spec'\n    WHEN c.flag_exposure_out_of_spec THEN 'Exposure Out of Spec'\n    WHEN c.match_type IS NULL THEN 'No Telemetry Linked'\n    ELSE 'Within Spec'\n  END AS \"Quality Impact\",\n  c.mo AS \"Job (MO)\",\n  CASE WHEN c.board_no IS NOT NULL THEN c.board_no::TEXT || '/' || c.total_board::TEXT ELSE '-' END AS \"Board\",\n  COALESCE(c.match_type, 'none') AS \"Match\"\nFROM public.v_ldi_alarm_context c\nLEFT JOIN public.v_ldi_alarm_category cat ON cat.alarm_code = c.errorcode\nWHERE c.eqp_id IN (${machine_id:sqlstring})\nORDER BY c.alarm_time DESC LIMIT 50;",
-          "format": "table"
+          "gridPos": {
+            "x": 0,
+            "y": 0,
+            "w": 24,
+            "h": 12
+          },
+          "options": {
+            "showHeader": true,
+            "rowHeight": 0.65,
+            "sortBy": [
+              {
+                "displayName": "Time",
+                "desc": true
+              }
+            ],
+            "cellHeight": "sm",
+            "footer": {
+              "show": false
+            },
+            "noValue": "NO_DATA"
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "uid": "timescaledb"
+              },
+              "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope -- ORDER BY DESC LIMIT 50 already bounds it */\nSELECT\n  c.alarm_time AS \"Time\",\n  c.eqp_id AS \"Machine\",\n  c.errorcode AS \"Code\",\n  COALESCE(c.severity, 'UNMAPPED') AS \"Severity\",\n  c.alarm_msg AS \"Message\",\n  COALESCE(cat.category, 'UNCLASSIFIED') AS \"Subsystem\",\n  COALESCE(c.process, '-') AS \"Process\",\n  CASE\n    WHEN c.flag_pe_out_of_spec THEN 'PE/JE Out of Spec'\n    WHEN c.flag_thermal_out_of_spec THEN 'Thermal Out of Spec'\n    WHEN c.flag_humidity_out_of_spec THEN 'Humidity Out of Spec'\n    WHEN c.flag_vac_out_of_spec THEN 'Vacuum Out of Spec'\n    WHEN c.flag_scan_speed_out_of_spec THEN 'Motion Out of Spec'\n    WHEN c.flag_exposure_out_of_spec THEN 'Exposure Out of Spec'\n    WHEN c.match_type IS NULL THEN 'No Telemetry Linked'\n    ELSE 'Within Spec'\n  END AS \"Quality Impact\",\n  c.mo AS \"Job (MO)\",\n  CASE WHEN c.board_no IS NOT NULL THEN c.board_no::TEXT || '/' || c.total_board::TEXT ELSE '-' END AS \"Board\",\n  COALESCE(c.match_type, 'none') AS \"Match\"\nFROM public.v_ldi_alarm_context c\nLEFT JOIN public.v_ldi_alarm_category cat ON cat.alarm_code = c.errorcode\nWHERE c.eqp_id IN (${machine_id:sqlstring})\nORDER BY c.alarm_time DESC LIMIT 50;",
+              "format": "table"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "filterable": true
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Severity"
+                },
+                "properties": [
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "Critical": {
+                            "color": "#EF4444",
+                            "index": 0,
+                            "text": "Critical"
+                          },
+                          "Major": {
+                            "color": "#F59E0B",
+                            "index": 1,
+                            "text": "Major"
+                          },
+                          "Minor": {
+                            "color": "#EAB308",
+                            "index": 2,
+                            "text": "Minor"
+                          },
+                          "Warning": {
+                            "color": "#3B82F6",
+                            "index": 3,
+                            "text": "Warning"
+                          },
+                          "UNMAPPED": {
+                            "color": "#64748B",
+                            "index": 4,
+                            "text": "UNMAPPED"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-background"
+                    }
+                  },
+                  {
+                    "id": "custom.displayMode",
+                    "value": "color-background"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Time"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "dateTimeAsIso"
+                  },
+                  {
+                    "id": "decimals",
+                    "value": 6
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Quality Impact"
+                },
+                "properties": [
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "PE/JE Out of Spec": {
+                            "color": "#EF4444",
+                            "index": 0
+                          },
+                          "Thermal Out of Spec": {
+                            "color": "#EF4444",
+                            "index": 1
+                          },
+                          "Humidity Out of Spec": {
+                            "color": "#EF4444",
+                            "index": 2
+                          },
+                          "Vacuum Out of Spec": {
+                            "color": "#EF4444",
+                            "index": 3
+                          },
+                          "Motion Out of Spec": {
+                            "color": "#EF4444",
+                            "index": 4
+                          },
+                          "Exposure Out of Spec": {
+                            "color": "#EF4444",
+                            "index": 5
+                          },
+                          "Within Spec": {
+                            "color": "#22C55E",
+                            "index": 6
+                          },
+                          "No Telemetry Linked": {
+                            "color": "#64748B",
+                            "index": 7
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-text"
+                    }
+                  },
+                  {
+                    "id": "custom.displayMode",
+                    "value": "color-text"
+                  }
+                ]
+              }
+            ]
+          },
+          "description": "Every alarm event, joined to the real Alarm Master (migration 061) for message/severity and to v_ldi_alarm_category for subsystem, plus the exact-or-nearest matched telemetry row (v_ldi_alarm_context, migration 063) for the machine's real process, job, and board at the moment of the alarm. \"Quality Impact\" reads the same out-of-spec flags the RCA Truth Test correlates against -- it answers whether this specific alarm coincided with a real measurable deviation, not just whether an alarm code fired. \"Match\" is 'exact' when related_log_id points at the exact telemetry row that caused a condition-driven alarm, 'nearest' for noise-pool codes falling back to the closest reading within 5 minutes."
         }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "filterable": true
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Severity"
-            },
-            "properties": [
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "type": "value",
-                    "options": {
-                      "Critical": {
-                        "color": "#EF4444",
-                        "index": 0,
-                        "text": "Critical"
-                      },
-                      "Major": {
-                        "color": "#F59E0B",
-                        "index": 1,
-                        "text": "Major"
-                      },
-                      "Minor": {
-                        "color": "#EAB308",
-                        "index": 2,
-                        "text": "Minor"
-                      },
-                      "Warning": {
-                        "color": "#3B82F6",
-                        "index": 3,
-                        "text": "Warning"
-                      },
-                      "UNMAPPED": {
-                        "color": "#64748B",
-                        "index": 4,
-                        "text": "UNMAPPED"
-                      }
-                    }
-                  }
-                ]
-              },
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "color-background"
-                }
-              },
-              {
-                "id": "custom.displayMode",
-                "value": "color-background"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Time"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "dateTimeAsIso"
-              },
-              {
-                "id": "decimals",
-                "value": 6
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Quality Impact"
-            },
-            "properties": [
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "type": "value",
-                    "options": {
-                      "PE/JE Out of Spec": {
-                        "color": "#EF4444",
-                        "index": 0
-                      },
-                      "Thermal Out of Spec": {
-                        "color": "#EF4444",
-                        "index": 1
-                      },
-                      "Humidity Out of Spec": {
-                        "color": "#EF4444",
-                        "index": 2
-                      },
-                      "Vacuum Out of Spec": {
-                        "color": "#EF4444",
-                        "index": 3
-                      },
-                      "Motion Out of Spec": {
-                        "color": "#EF4444",
-                        "index": 4
-                      },
-                      "Exposure Out of Spec": {
-                        "color": "#EF4444",
-                        "index": 5
-                      },
-                      "Within Spec": {
-                        "color": "#22C55E",
-                        "index": 6
-                      },
-                      "No Telemetry Linked": {
-                        "color": "#64748B",
-                        "index": 7
-                      }
-                    }
-                  }
-                ]
-              },
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "color-text"
-                }
-              },
-              {
-                "id": "custom.displayMode",
-                "value": "color-text"
-              }
-            ]
-          }
-        ]
-      },
-      "description": "Every alarm event, joined to the real Alarm Master (migration 061) for message/severity and to v_ldi_alarm_category for subsystem, plus the exact-or-nearest matched telemetry row (v_ldi_alarm_context, migration 063) for the machine's real process, job, and board at the moment of the alarm. \"Quality Impact\" reads the same out-of-spec flags the RCA Truth Test correlates against -- it answers whether this specific alarm coincided with a real measurable deviation, not just whether an alarm code fired. \"Match\" is 'exact' when related_log_id points at the exact telemetry row that caused a condition-driven alarm, 'nearest' for noise-pool codes falling back to the closest reading within 5 minutes."
+      ]
     },
     {
       "id": 10006,
-      "title": "◈ RCA FLEET SUMMARY",
+      "title": "\u25c8 RCA FLEET SUMMARY",
       "type": "row",
-      "collapsed": false,
+      "collapsed": true,
       "gridPos": {
         "x": 0,
-        "y": 62,
+        "y": 20,
         "w": 24,
         "h": 1
       },
-      "panels": []
-    },
-    {
-      "id": 21,
-      "title": "◉ Top Correlated Alarms (24h)",
-      "type": "table",
-      "datasource": {
-        "type": "postgres",
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 63,
-        "w": 24,
-        "h": 8
-      },
-      "targets": [
+      "panels": [
         {
-          "refId": "A",
-          "format": "table",
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: view defines its own rolling 24h window */\nSELECT alarm_category AS \"Alarm Category\",\n       alarm_window_pct AS \"Alarm-Window %\",\n       baseline_pct AS \"Baseline %\",\n       lift AS \"Lift\",\n       event_count AS \"Event Count\",\n       confidence AS \"Confidence\"\nFROM public.v_ldi_rca_recent_window;"
-        }
-      ],
-      "options": {
-        "showHeader": true,
-        "cellHeight": "sm",
-        "footer": {
-          "show": false
-        },
-        "noValue": "NO_DATA"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
+          "id": 21,
+          "title": "\u25c9 Top Correlated Alarms (24h)",
+          "type": "table",
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
           },
-          "custom": {
-            "align": "center",
-            "cellOptions": {
-              "type": "auto"
-            },
-            "filterable": true
+          "gridPos": {
+            "x": 0,
+            "y": 0,
+            "w": 24,
+            "h": 8
           },
-          "mappings": [],
-          "unit": "none",
-          "decimals": 1
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Alarm-Window %"
+          "targets": [
+            {
+              "refId": "A",
+              "format": "table",
+              "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: view defines its own rolling 24h window.\n   RESOLVED 2026-08-10 (migration 064): v_ldi_rca_recent_window is now a\n   materialized view refreshed every 60s via a TimescaleDB background job,\n   not recomputed per read. Previously QUERY_BUDGET_EXEMPT (~150ms); now\n   sub-millisecond. */\nSELECT alarm_category AS \"Alarm Category\",\n       alarm_window_pct AS \"Alarm-Window %\",\n       baseline_pct AS \"Baseline %\",\n       lift AS \"Lift\",\n       event_count AS \"Event Count\",\n       confidence AS \"Confidence\"\nFROM public.v_ldi_rca_recent_window;"
+            }
+          ],
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": {
+              "show": false
             },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "percent"
-              }
-            ]
+            "noValue": "NO_DATA"
           },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Baseline %"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "percent"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Event Count"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "none"
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
               },
-              {
-                "id": "decimals",
-                "value": 0
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Lift"
+              "custom": {
+                "align": "center",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "filterable": true
+              },
+              "mappings": [],
+              "unit": "none",
+              "decimals": 1
             },
-            "properties": [
+            "overrides": [
               {
-                "id": "decimals",
-                "value": 2
-              },
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "color-background"
-                }
-              },
-              {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "#EF4444",
-                      "value": null
-                    },
-                    {
-                      "color": "#F59E0B",
-                      "value": 1
-                    },
-                    {
-                      "color": "#22C55E",
-                      "value": 2
-                    }
-                  ]
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Confidence"
-            },
-            "properties": [
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "color-background"
-                }
-              },
-              {
-                "id": "mappings",
-                "value": [
+                "matcher": {
+                  "id": "byName",
+                  "options": "Alarm-Window %"
+                },
+                "properties": [
                   {
-                    "type": "value",
-                    "options": {
-                      "OK": {
-                        "color": "#22C55E",
-                        "text": "OK"
-                      },
-                      "LOW SAMPLE (n<30)": {
-                        "color": "#F59E0B",
-                        "text": "LOW SAMPLE (n<30)"
-                      }
+                    "id": "unit",
+                    "value": "percent"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Baseline %"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "percent"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Event Count"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "none"
+                  },
+                  {
+                    "id": "decimals",
+                    "value": 0
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Lift"
+                },
+                "properties": [
+                  {
+                    "id": "decimals",
+                    "value": 2
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-background"
                     }
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "#EF4444",
+                          "value": null
+                        },
+                        {
+                          "color": "#F59E0B",
+                          "value": 1
+                        },
+                        {
+                          "color": "#22C55E",
+                          "value": 2
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Confidence"
+                },
+                "properties": [
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-background"
+                    }
+                  },
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "OK": {
+                            "color": "#22C55E",
+                            "text": "OK"
+                          },
+                          "LOW SAMPLE (n<30)": {
+                            "color": "#F59E0B",
+                            "text": "LOW SAMPLE (n<30)"
+                          }
+                        }
+                      }
+                    ]
                   }
                 ]
               }
             ]
-          }
-        ]
-      },
-      "description": "Alarms correlated with production deviations. Higher lift = stronger causal signal. Hide rows with sample < 30."
+          },
+          "description": "Alarms correlated with production deviations. Higher lift = stronger causal signal. Hide rows with sample < 30."
+        }
+      ]
     },
     {
       "id": 10013,
       "type": "row",
-      "title": "◈ CYCLE TIME & TRACEABILITY",
+      "title": "\u25c8 CYCLE TIME & TRACEABILITY",
       "gridPos": {
         "x": 0,
-        "y": 71,
+        "y": 21,
         "w": 24,
         "h": 1
       },
-      "collapsed": false,
-      "panels": []
-    },
-    {
-      "id": 22,
-      "title": "◉ Avg Cycle Time (Fleet)",
-      "type": "stat",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 72,
-        "w": 6,
-        "h": 10
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s",
-          "decimals": 2,
-          "color": {
-            "mode": "thresholds"
+      "collapsed": true,
+      "panels": [
+        {
+          "id": 22,
+          "title": "\u25c9 Avg Cycle Time (Fleet)",
+          "type": "stat",
+          "datasource": {
+            "uid": "timescaledb"
           },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#22C55E",
-                "value": null
-              },
-              {
-                "color": "#F59E0B",
-                "value": 12
-              },
-              {
-                "color": "#EF4444",
-                "value": 18
-              }
-            ]
+          "gridPos": {
+            "x": 0,
+            "y": 0,
+            "w": 6,
+            "h": 10
           },
-          "mappings": [
-            {
-              "type": "special",
-              "options": {
-                "match": "null+nan",
-                "result": {
-                  "color": "#64748B",
-                  "text": "NO_DATA",
-                  "index": 0
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "decimals": 2,
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "#22C55E",
+                    "value": null
+                  },
+                  {
+                    "color": "#F59E0B",
+                    "value": 12
+                  },
+                  {
+                    "color": "#EF4444",
+                    "value": 18
+                  }
+                ]
+              },
+              "mappings": [
+                {
+                  "type": "special",
+                  "options": {
+                    "match": "null+nan",
+                    "result": {
+                      "color": "#64748B",
+                      "text": "NO_DATA",
+                      "index": 0
+                    }
+                  }
                 }
-              }
+              ]
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "center",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "values": false
+            },
+            "noValue": "NO_DATA",
+            "textMode": "value",
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            },
+            "text": {
+              "valueSize": 56,
+              "titleSize": 18
             }
-          ]
-        },
-        "overrides": []
-      },
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "center",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "uid": "timescaledb"
+              },
+              "rawSql": "/* QUERY_BUDGET_EXEMPT: simple aggregate over full-range ldi_data, but at current data volume (300K+ rows and growing) exceeds the 80ms real-time budget. World-Class QA pass (2026-08-06): documented rather than silently ignored; revisit if this becomes an operator-facing latency complaint. */\nSELECT ROUND(AVG(total_time)::NUMERIC, 2) AS value\nFROM public.ldi_data\nWHERE $__timeFilter(time) AND factory IN (${factory:sqlstring})\n  AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND total_time IS NOT NULL",
+              "format": "table"
+            }
           ],
-          "values": false
+          "description": "Average per-board cycle time (ldi_data.total_time) across the selected fleet/window. Thresholds: >12s warning, >18s critical (SM process boards run structurally longer -- ~7-25s -- than DF INNER/OUTER's ~7-10s, so this is a fleet-wide average, not a per-process spec limit)."
         },
-        "noValue": "NO_DATA",
-        "textMode": "value",
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        },
-        "text": {
-          "valueSize": 56,
-          "titleSize": 18
-        }
-      },
-      "targets": [
         {
-          "refId": "A",
+          "id": 23,
+          "title": "\u25c8 Board Traceability",
+          "type": "table",
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "/* QUERY_BUDGET_EXEMPT: simple aggregate over full-range ldi_data, but at current data volume (300K+ rows and growing) exceeds the 80ms real-time budget. World-Class QA pass (2026-08-06): documented rather than silently ignored; revisit if this becomes an operator-facing latency complaint. */\nSELECT ROUND(AVG(total_time)::NUMERIC, 2) AS value\nFROM public.ldi_data\nWHERE $__timeFilter(time) AND factory IN (${factory:sqlstring})\n  AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND total_time IS NOT NULL",
-          "format": "table"
-        }
-      ],
-      "description": "Average per-board cycle time (ldi_data.total_time) across the selected fleet/window. Thresholds: >12s warning, >18s critical (SM process boards run structurally longer -- ~7-25s -- than DF INNER/OUTER's ~7-10s, so this is a fleet-wide average, not a per-process spec limit)."
-    },
-    {
-      "id": 23,
-      "title": "◈ Board Traceability",
-      "type": "table",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 6,
-        "y": 72,
-        "w": 18,
-        "h": 10
-      },
-      "options": {
-        "showHeader": true,
-        "cellHeight": "sm",
-        "sortBy": [
-          {
-            "displayName": "Time",
-            "desc": true
-          }
-        ],
-        "footer": {
-          "show": false
-        }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
+          "gridPos": {
+            "x": 6,
+            "y": 0,
+            "w": 18,
+            "h": 10
           },
-          "rawSql": "SELECT \"time\" AS \"Time\", eqp_id AS \"Machine\", mo AS \"Job (MO)\", fpn AS \"Part (FPN)\",\n       layer_name AS \"Layer\", (board_no::TEXT || '/' || total_board::TEXT) AS \"Board\",\n       log_id AS \"Log ID\",\n       ROUND(total_time::NUMERIC, 2) AS \"Cycle Time (s)\",\n       ROUND(GREATEST(ABS(pe_1),ABS(pe_2),ABS(pe_3),ABS(pe_4),ABS(pe_5),ABS(pe_6))::NUMERIC, 2) AS \"Max |PE|\",\n       ROUND(GREATEST(ABS(je_1),ABS(je_2),ABS(je_3),ABS(je_4))::NUMERIC, 2) AS \"Max |JE|\",\n       ROUND(thickness::NUMERIC, 3) AS \"Thickness (mm)\"\nFROM public.ldi_data\nWHERE $__timeFilter(time) AND factory IN (${factory:sqlstring})\n  AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring})\nORDER BY \"time\" DESC LIMIT 200",
-          "format": "table"
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "sortBy": [
+              {
+                "displayName": "Time",
+                "desc": true
+              }
+            ],
+            "footer": {
+              "show": false
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "uid": "timescaledb"
+              },
+              "rawSql": "SELECT \"time\" AS \"Time\", eqp_id AS \"Machine\", mo AS \"Job (MO)\", fpn AS \"Part (FPN)\",\n       layer_name AS \"Layer\", (board_no::TEXT || '/' || total_board::TEXT) AS \"Board\",\n       log_id AS \"Log ID\",\n       ROUND(total_time::NUMERIC, 2) AS \"Cycle Time (s)\",\n       ROUND(GREATEST(ABS(pe_1),ABS(pe_2),ABS(pe_3),ABS(pe_4),ABS(pe_5),ABS(pe_6))::NUMERIC, 2) AS \"Max |PE|\",\n       ROUND(GREATEST(ABS(je_1),ABS(je_2),ABS(je_3),ABS(je_4))::NUMERIC, 2) AS \"Max |JE|\",\n       ROUND(thickness::NUMERIC, 3) AS \"Thickness (mm)\"\nFROM public.ldi_data\nWHERE $__timeFilter(time) AND factory IN (${factory:sqlstring})\n  AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring})\nORDER BY \"time\" DESC LIMIT 200",
+              "format": "table"
+            }
+          ],
+          "description": "One row per board processed (ldi_data has exactly one row per (eqp_id, mo, board_no) -- confirmed). Log ID is the per-board traceability key. The schema also has a board_id column, but it is always NULL (the simulator never populates it -- a known data gap) so it is omitted here rather than shown as a dead blank column."
         }
-      ],
-      "description": "One row per board processed (ldi_data has exactly one row per (eqp_id, mo, board_no) -- confirmed). Log ID is the per-board traceability key. The schema also has a board_id column, but it is always NULL (the simulator never populates it -- a known data gap) so it is omitted here rather than shown as a dead blank column."
+      ]
     }
   ],
   "style": "dark",

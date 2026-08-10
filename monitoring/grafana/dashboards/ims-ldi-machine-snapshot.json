@@ -2184,7 +2184,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nWITH target AS (SELECT \"time\" AS t FROM public.ldi_data WHERE log_id=(COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:sqlstring}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:sqlstring}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1), events AS (\n  SELECT d.\"time\" AS event_time,d.eqp_id,'STATE'::TEXT AS event_type,'ldi_data'::TEXT AS source,\n         CASE WHEN d.state THEN 'RUNNING' ELSE 'DOWN' END AS description\n  FROM public.ldi_data d,target\n  WHERE ((${event_time_ms:sqlstring}::NUMERIC > 0 AND d.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)) OR (${event_time_ms:sqlstring}::NUMERIC <= 0 AND d.eqp_id IN (${machine_id:sqlstring}))) AND d.\"time\" BETWEEN target.t-INTERVAL '5 minutes' AND target.t+INTERVAL '5 minutes'\n  UNION ALL\n  SELECT a.logdate,a.equipmentid,'ALARM','ldi_alarm_log',COALESCE(m.alarm_msg,a.errorcode::TEXT)\n  FROM public.ldi_alarm_log a LEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT=m.alarm_code::TEXT,target\n  WHERE ((${event_time_ms:sqlstring}::NUMERIC > 0 AND a.equipmentid = split_part(${clicked_series:sqlstring}, ' - ', 1)) OR (${event_time_ms:sqlstring}::NUMERIC <= 0 AND a.equipmentid IN (${machine_id:sqlstring}))) AND a.logdate BETWEEN target.t-INTERVAL '5 minutes' AND target.t+INTERVAL '5 minutes'\n)\nSELECT event_time AS \"Event Time\",eqp_id AS \"Machine\",event_type AS \"Event Type\",source AS \"Source\",description AS \"Description\"\nFROM events ORDER BY event_time DESC LIMIT 100;",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: bounded lookup around a single log_id, +/-5min window per machine */\nWITH target AS (\n  SELECT \"time\" AS t\n  FROM public.ldi_data\n  WHERE log_id = (COALESCE(\n    (\n      SELECT d0.log_id\n      FROM public.ldi_data d0\n      WHERE ${event_time_ms:sqlstring}::NUMERIC > 0\n        AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n      ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:sqlstring}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n      LIMIT 1\n    ),\n    NULLIF(${log_id:sqlstring}, '__auto__')\n  ))\n  LIMIT 1\n),\nstate_rows AS (\n  SELECT d.\"time\" AS event_time,\n         d.eqp_id,\n         d.state,\n         LAG(d.state) OVER (PARTITION BY d.eqp_id ORDER BY d.\"time\") AS prev_state\n  FROM public.ldi_data d, target\n  WHERE ((${event_time_ms:sqlstring}::NUMERIC > 0 AND d.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1))\n      OR (${event_time_ms:sqlstring}::NUMERIC <= 0 AND d.eqp_id IN (${machine_id:sqlstring})))\n    AND d.\"time\" BETWEEN target.t - INTERVAL '20 minutes' AND target.t + INTERVAL '5 minutes'\n),\nevents AS (\n  SELECT event_time, eqp_id,\n         CASE WHEN state THEN 'START' ELSE 'STOP' END AS event_type,\n         'ldi_data'::TEXT AS source,\n         CASE WHEN state THEN 'Machine started (RUNNING)' ELSE 'Machine stopped (DOWN)' END AS description,\n         NULL::TEXT AS severity\n  FROM state_rows, target\n  WHERE prev_state IS NOT NULL AND state IS DISTINCT FROM prev_state\n    AND event_time BETWEEN target.t - INTERVAL '5 minutes' AND target.t + INTERVAL '5 minutes'\n  UNION ALL\n  SELECT a.logdate, a.equipmentid, 'ALARM', 'ldi_alarm_log',\n         COALESCE(m.alarm_msg, a.errorcode::TEXT),\n         m.severity\n  FROM public.ldi_alarm_log a\n  LEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT, target\n  WHERE ((${event_time_ms:sqlstring}::NUMERIC > 0 AND a.equipmentid = split_part(${clicked_series:sqlstring}, ' - ', 1))\n      OR (${event_time_ms:sqlstring}::NUMERIC <= 0 AND a.equipmentid IN (${machine_id:sqlstring})))\n    AND a.logdate BETWEEN target.t - INTERVAL '5 minutes' AND target.t + INTERVAL '5 minutes'\n)\nSELECT event_time AS \"Event Time\", eqp_id AS \"Machine\", event_type AS \"Event Type\", source AS \"Source\", description AS \"Description\", severity AS \"Severity\"\nFROM events\nORDER BY event_time DESC\nLIMIT 100;",
           "format": "table"
         }
       ],
@@ -2206,15 +2206,15 @@
                   {
                     "type": "value",
                     "options": {
-                      "Machine Start": {
+                      "START": {
                         "color": "#22C55E",
                         "text": "START"
                       },
-                      "Machine Stop": {
+                      "STOP": {
                         "color": "#EF4444",
                         "text": "STOP"
                       },
-                      "Alarm": {
+                      "ALARM": {
                         "color": "#F59E0B",
                         "text": "ALARM"
                       }
@@ -2233,123 +2233,14 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "eqp_id"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Machine"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "layer_name"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Layer"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "mo"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Work Order (MO)"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "alarm_code"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Alarm Code"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "alarm_msg"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Alarm Message"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "severity"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Severity"
-              },
-              {
-                "id": "custom.displayMode",
-                "value": "color-background"
-              },
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "type": "value",
-                    "options": {
-                      "A": {
-                        "color": "#EF4444",
-                        "index": 0,
-                        "text": "A (Alarm)"
-                      },
-                      "W": {
-                        "color": "#F59E0B",
-                        "index": 1,
-                        "text": "W (Warning)"
-                      },
-                      "OK": {
-                        "color": "#22C55E",
-                        "index": 2,
-                        "text": "OK"
-                      },
-                      "UNMAPPED": {
-                        "color": "#64748B",
-                        "index": 3,
-                        "text": "UNMAPPED"
-                      },
-                      "NONE": {
-                        "color": "#64748B",
-                        "index": 4,
-                        "text": "No alarm"
-                      }
-                    }
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
               "options": "Severity"
             },
             "properties": [
               {
-                "id": "custom.displayMode",
-                "value": "color-background"
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
               },
               {
                 "id": "mappings",
@@ -2392,22 +2283,10 @@
                 ]
               }
             ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "logdate"
-            },
-            "properties": [
-              {
-                "id": "custom.hidden",
-                "value": true
-              }
-            ]
           }
         ]
       },
-      "description": "Inline real-data timeline replacing the missing v_ldi_event_timeline view."
+      "description": "Event Time / Machine / Event Type / Source / Description / Severity around the selected log_id. State rows are LAG-deduplicated to real START/STOP transitions only (raw ldi_data polls every 6-60s, so without dedup the +/-5min window fills with duplicate RUNNING rows and can push real alarms past the LIMIT 100 cap)."
     },
     {
       "id": 16,

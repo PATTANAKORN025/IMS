@@ -1,5 +1,5 @@
 {
-  "description": "Layer 3 Process Timeline: synchronized multi-parameter RCA. temperature → humidity → scan_speed → air_vacuum → scale_x/y → pe_1~6 → je_1~4 → state. Shared crosshair + tooltip. Fixed axis scaling.",
+  "description": "Layer 3 Process Timeline: synchronized multi-parameter RCA. temperature \u2192 humidity \u2192 scan_speed \u2192 air_vacuum \u2192 scale_x/y \u2192 pe_1~6 \u2192 je_1~4 \u2192 state. Shared crosshair + tooltip. Fixed axis scaling.",
   "schemaVersion": 39,
   "liveNow": true,
   "style": "dark",
@@ -194,7 +194,7 @@
     },
     {
       "id": 1,
-      "title": "◈ temperature (°C) vs humidity (%RH)",
+      "title": "\u25c8 temperature (\u00b0C) vs humidity (%RH)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
@@ -317,7 +317,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id AS metric, AVG(avg_temperature)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_temperature IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('1 minute', bucket) AS time, eqp_id AS metric, AVG(avg_temperature)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_temperature IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         },
@@ -326,12 +326,12 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id AS metric, AVG(avg_humidity)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_humidity IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT time_bucket('1 minute', bucket) AS time, eqp_id AS metric, AVG(avg_humidity)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_humidity IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "legendFormat": "{{metric}} - humidity"
         }
       ],
-      "description": "Temperature per machine on the operational scale 18-28°C, overlaid with humidity (right axis, %RH) for at-a-glance correlation. Invalid zero sensor rows are monitored separately in Data Readiness.",
+      "description": "Temperature per machine on the operational scale 18-28\u00b0C, overlaid with humidity (right axis, %RH) for at-a-glance correlation. Invalid zero sensor rows are monitored separately in Data Readiness.",
       "links": [
         {
           "title": "Open Machine Snapshot (select one Machine)",
@@ -364,7 +364,7 @@
       "panels": [
         {
           "id": 3,
-          "title": "◈ scan_speed (mm/s) vs air_vacuum (kPa)",
+          "title": "\u25c8 scan_speed (mm/s) vs air_vacuum (kPa)",
           "type": "timeseries",
           "datasource": {
             "uid": "timescaledb"
@@ -462,7 +462,7 @@
               "datasource": {
                 "uid": "timescaledb"
               },
-              "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id AS metric, AVG(avg_scan_speed)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_scan_speed IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+              "rawSql": "SELECT time_bucket('1 minute', bucket) AS time, eqp_id AS metric, AVG(avg_scan_speed)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_scan_speed IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
               "format": "time_series",
               "legendFormat": "{{metric}}"
             },
@@ -471,7 +471,7 @@
               "datasource": {
                 "uid": "timescaledb"
               },
-              "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id AS metric, AVG(avg_air_vacuum)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_air_vacuum IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+              "rawSql": "SELECT time_bucket('1 minute', bucket) AS time, eqp_id AS metric, AVG(avg_air_vacuum)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_air_vacuum IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
               "format": "time_series",
               "legendFormat": "{{metric}} - air_vacuum"
             }
@@ -511,7 +511,7 @@
       "panels": [
         {
           "id": 5,
-          "title": "◈ scale_x vs scale_y",
+          "title": "\u25c8 scale_x vs scale_y",
           "type": "timeseries",
           "datasource": {
             "uid": "timescaledb"
@@ -597,7 +597,7 @@
               "datasource": {
                 "uid": "timescaledb"
               },
-              "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id AS metric, AVG(avg_scale_x)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_scale_x IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+              "rawSql": "SELECT time_bucket('1 minute', bucket) AS time, eqp_id AS metric, AVG(avg_scale_x)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_scale_x IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
               "format": "time_series",
               "legendFormat": "{{metric}}"
             },
@@ -606,7 +606,7 @@
               "datasource": {
                 "uid": "timescaledb"
               },
-              "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id AS metric, AVG(avg_scale_y)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_scale_y IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+              "rawSql": "SELECT time_bucket('1 minute', bucket) AS time, eqp_id AS metric, AVG(avg_scale_y)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_scale_y IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
               "format": "time_series",
               "legendFormat": "{{metric}} - scale_y"
             }
@@ -632,7 +632,7 @@
         },
         {
           "id": 7,
-          "title": "◈ pe_1 ~ pe_6 (µm)",
+          "title": "\u25c8 pe_1 ~ pe_6 (\u00b5m)",
           "type": "timeseries",
           "datasource": {
             "uid": "timescaledb"
@@ -645,7 +645,7 @@
           },
           "fieldConfig": {
             "defaults": {
-              "unit": "suffix: µm",
+              "unit": "suffix: \u00b5m",
               "decimals": 2,
               "custom": {
                 "drawStyle": "line",
@@ -736,7 +736,7 @@
               "datasource": {
                 "uid": "timescaledb"
               },
-              "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - pe_1' AS metric, AVG(avg_pe_1)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_pe_1 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+              "rawSql": "SELECT time_bucket('1 minute', bucket) AS time, eqp_id || ' - pe_1' AS metric, AVG(avg_pe_1)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_pe_1 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
               "format": "time_series",
               "legendFormat": "{{metric}}"
             },
@@ -745,7 +745,7 @@
               "datasource": {
                 "uid": "timescaledb"
               },
-              "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - pe_2' AS metric, AVG(avg_pe_2)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_pe_2 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+              "rawSql": "SELECT time_bucket('1 minute', bucket) AS time, eqp_id || ' - pe_2' AS metric, AVG(avg_pe_2)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_pe_2 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
               "format": "time_series",
               "legendFormat": "{{metric}}"
             },
@@ -754,7 +754,7 @@
               "datasource": {
                 "uid": "timescaledb"
               },
-              "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - pe_3' AS metric, AVG(avg_pe_3)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_pe_3 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+              "rawSql": "SELECT time_bucket('1 minute', bucket) AS time, eqp_id || ' - pe_3' AS metric, AVG(avg_pe_3)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_pe_3 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
               "format": "time_series",
               "legendFormat": "{{metric}}"
             },
@@ -763,7 +763,7 @@
               "datasource": {
                 "uid": "timescaledb"
               },
-              "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - pe_4' AS metric, AVG(avg_pe_4)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_pe_4 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+              "rawSql": "SELECT time_bucket('1 minute', bucket) AS time, eqp_id || ' - pe_4' AS metric, AVG(avg_pe_4)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_pe_4 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
               "format": "time_series",
               "legendFormat": "{{metric}}"
             },
@@ -772,7 +772,7 @@
               "datasource": {
                 "uid": "timescaledb"
               },
-              "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - pe_5' AS metric, AVG(avg_pe_5)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_pe_5 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+              "rawSql": "SELECT time_bucket('1 minute', bucket) AS time, eqp_id || ' - pe_5' AS metric, AVG(avg_pe_5)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_pe_5 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
               "format": "time_series",
               "legendFormat": "{{metric}}"
             },
@@ -781,7 +781,7 @@
               "datasource": {
                 "uid": "timescaledb"
               },
-              "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - pe_6' AS metric, AVG(avg_pe_6)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_pe_6 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+              "rawSql": "SELECT time_bucket('1 minute', bucket) AS time, eqp_id || ' - pe_6' AS metric, AVG(avg_pe_6)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_pe_6 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
               "format": "time_series",
               "legendFormat": "{{metric}}"
             },
@@ -790,7 +790,7 @@
               "datasource": {
                 "uid": "timescaledb"
               },
-              "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - Spec Limit (+)' AS metric, AVG(avg_pe_setting)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_pe_1 IS NOT NULL AND avg_pe_setting IS NOT NULL AND avg_pe_setting < 1000 GROUP BY 1, 2 ORDER BY 1",
+              "rawSql": "SELECT time_bucket('1 minute', bucket) AS time, eqp_id || ' - Spec Limit (+)' AS metric, AVG(avg_pe_setting)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_pe_1 IS NOT NULL AND avg_pe_setting IS NOT NULL AND avg_pe_setting < 1000 GROUP BY 1, 2 ORDER BY 1",
               "format": "time_series",
               "legendFormat": "{{metric}}"
             },
@@ -799,12 +799,12 @@
               "datasource": {
                 "uid": "timescaledb"
               },
-              "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - Spec Limit (-)' AS metric, AVG(-avg_pe_setting)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_pe_1 IS NOT NULL AND avg_pe_setting IS NOT NULL AND avg_pe_setting < 1000 GROUP BY 1, 2 ORDER BY 1",
+              "rawSql": "SELECT time_bucket('1 minute', bucket) AS time, eqp_id || ' - Spec Limit (-)' AS metric, AVG(-avg_pe_setting)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_pe_1 IS NOT NULL AND avg_pe_setting IS NOT NULL AND avg_pe_setting < 1000 GROUP BY 1, 2 ORDER BY 1",
               "format": "time_series",
               "legendFormat": "{{metric}}"
             }
           ],
-          "description": "Individual signed PE values with per-machine +/- pe_setting spec-limit lines overlaid (dashed red). Soft scale covers the observed range (about -67 to +75 µm) without clipping future outliers.",
+          "description": "Individual signed PE values with per-machine +/- pe_setting spec-limit lines overlaid (dashed red). Soft scale covers the observed range (about -67 to +75 \u00b5m) without clipping future outliers.",
           "links": [
             {
               "title": "Open Machine Snapshot (select one Machine)",
@@ -825,20 +825,20 @@
         },
         {
           "id": 8,
-          "title": "◈ je_1 ~ je_4 (µm)",
+          "title": "\u25c8 je_1 ~ je_4 (\u00b5m)",
           "type": "timeseries",
           "datasource": {
             "uid": "timescaledb"
           },
           "gridPos": {
             "x": 12,
-            "y": 24,
+            "y": 8,
             "w": 12,
             "h": 16
           },
           "fieldConfig": {
             "defaults": {
-              "unit": "suffix: µm",
+              "unit": "suffix: \u00b5m",
               "decimals": 2,
               "custom": {
                 "drawStyle": "line",
@@ -929,7 +929,7 @@
               "datasource": {
                 "uid": "timescaledb"
               },
-              "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - je_1' AS metric, AVG(avg_je_1)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_je_1 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+              "rawSql": "SELECT time_bucket('1 minute', bucket) AS time, eqp_id || ' - je_1' AS metric, AVG(avg_je_1)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_je_1 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
               "format": "time_series",
               "legendFormat": "{{metric}}"
             },
@@ -938,7 +938,7 @@
               "datasource": {
                 "uid": "timescaledb"
               },
-              "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - je_2' AS metric, AVG(avg_je_2)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_je_2 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+              "rawSql": "SELECT time_bucket('1 minute', bucket) AS time, eqp_id || ' - je_2' AS metric, AVG(avg_je_2)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_je_2 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
               "format": "time_series",
               "legendFormat": "{{metric}}"
             },
@@ -947,7 +947,7 @@
               "datasource": {
                 "uid": "timescaledb"
               },
-              "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - je_3' AS metric, AVG(avg_je_3)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_je_3 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+              "rawSql": "SELECT time_bucket('1 minute', bucket) AS time, eqp_id || ' - je_3' AS metric, AVG(avg_je_3)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_je_3 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
               "format": "time_series",
               "legendFormat": "{{metric}}"
             },
@@ -956,7 +956,7 @@
               "datasource": {
                 "uid": "timescaledb"
               },
-              "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - je_4' AS metric, AVG(avg_je_4)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_je_4 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+              "rawSql": "SELECT time_bucket('1 minute', bucket) AS time, eqp_id || ' - je_4' AS metric, AVG(avg_je_4)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_je_4 IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
               "format": "time_series",
               "legendFormat": "{{metric}}"
             },
@@ -965,12 +965,12 @@
               "datasource": {
                 "uid": "timescaledb"
               },
-              "rawSql": "SELECT time_bucket('$__interval', bucket) AS time, eqp_id || ' - Spec Limit' AS metric, AVG(avg_je_setting)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_je_setting IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+              "rawSql": "SELECT time_bucket('1 minute', bucket) AS time, eqp_id || ' - Spec Limit' AS metric, AVG(avg_je_setting)::NUMERIC AS value FROM public.ldi_data_1m WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) AND $__timeFilter(bucket) AND eqp_id IN (${machine_id:sqlstring}) AND avg_je_setting IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
               "format": "time_series",
               "legendFormat": "{{metric}}"
             }
           ],
-          "description": "Individual JE values with per-machine je_setting spec-limit line overlaid (dashed red). Soft scale covers the observed range (0 to about 43 µm) while retaining out-of-range visibility.",
+          "description": "Individual JE values with per-machine je_setting spec-limit line overlaid (dashed red). Soft scale covers the observed range (0 to about 43 \u00b5m) while retaining out-of-range visibility.",
           "links": [
             {
               "title": "Open Machine Snapshot (select one Machine)",
@@ -1005,7 +1005,7 @@
       "panels": [
         {
           "id": 9,
-          "title": "◈ state",
+          "title": "\u25c8 state",
           "type": "state-timeline",
           "datasource": {
             "uid": "timescaledb"
@@ -1114,7 +1114,7 @@
         },
         {
           "id": 10,
-          "title": "◈ Machine Capability Ranking",
+          "title": "\u25c8 Machine Capability Ranking",
           "type": "table",
           "datasource": {
             "uid": "timescaledb"
@@ -1481,7 +1481,7 @@
       "panels": [
         {
           "id": 11,
-          "title": "◈ PE Standard Deviation by Machine (Lower is Better)",
+          "title": "\u25c8 PE Standard Deviation by Machine (Lower is Better)",
           "type": "barchart",
           "datasource": {
             "uid": "timescaledb"
@@ -1499,7 +1499,7 @@
               },
               "decimals": 2,
               "min": 0,
-              "unit": "suffix: µm",
+              "unit": "suffix: \u00b5m",
               "custom": {}
             },
             "overrides": []
@@ -1555,14 +1555,14 @@
         },
         {
           "id": 15,
-          "title": "◈ JE Standard Deviation by Machine (Lower is Better)",
+          "title": "\u25c8 JE Standard Deviation by Machine (Lower is Better)",
           "type": "barchart",
           "datasource": {
             "uid": "timescaledb"
           },
           "gridPos": {
             "x": 12,
-            "y": 16,
+            "y": 0,
             "w": 12,
             "h": 16
           },
@@ -1573,7 +1573,7 @@
               },
               "decimals": 2,
               "min": 0,
-              "unit": "suffix: µm",
+              "unit": "suffix: \u00b5m",
               "custom": {}
             },
             "overrides": []
@@ -1629,91 +1629,35 @@
         },
         {
           "id": 12,
-          "title": "◈ Alignment Error Distribution (PE vs JE Histogram)",
-          "type": "barchart",
+          "title": "\u25c8 PE/JE Error Distribution by Machine (Box Plot) [ECharts]",
+          "type": "volkovlabs-echarts-panel",
           "datasource": {
             "uid": "timescaledb"
           },
           "gridPos": {
             "x": 0,
-            "y": 32,
+            "y": 16,
             "w": 24,
             "h": 12
           },
           "fieldConfig": {
             "defaults": {
-              "unit": "short",
-              "decimals": 0,
-              "custom": {
-                "fillOpacity": 70,
-                "lineWidth": 1
-              },
-              "color": {
-                "mode": "palette-classic"
-              },
-              "mappings": []
+              "custom": {}
             },
-            "overrides": [
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "PE Count"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "mode": "fixed",
-                      "fixedColor": "#38BDF8"
-                    }
-                  },
-                  {
-                    "id": "displayName",
-                    "value": "PE"
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "JE Count"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "mode": "fixed",
-                      "fixedColor": "#F59E0B"
-                    }
-                  },
-                  {
-                    "id": "displayName",
-                    "value": "JE"
-                  }
-                ]
-              }
-            ]
+            "overrides": []
           },
           "options": {
-            "orientation": "vertical",
-            "stacking": "none",
-            "showValue": "never",
-            "groupWidth": 0.7,
-            "barWidth": 0.9,
-            "barRadius": 0,
-            "fullHighlight": false,
-            "xTickLabelRotation": 0,
-            "xTickLabelSpacing": 0,
-            "legend": {
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
+            "editorMode": "code",
+            "getOption": "const frame = context.panel.data.series[0];\nconst fields = {};\nframe.fields.forEach((f) => { fields[f.name] = f.values.buffer || f.values; });\nconst seriesCol = fields['series'];\nconst machineCol = fields['machine'];\nconst minCol = fields['min'];\nconst q1Col = fields['q1'];\nconst medianCol = fields['median'];\nconst q3Col = fields['q3'];\nconst maxCol = fields['max'];\n\nconst key = (s, m) => s + '|' + m;\nconst lookup = {};\nfor (let i = 0; i < seriesCol.length; i++) {\n  lookup[key(seriesCol[i], machineCol[i])] = [minCol[i], q1Col[i], medianCol[i], q3Col[i], maxCol[i]];\n}\nconst machines = Array.from(new Set(Array.from(machineCol))).sort();\nconst peData = machines.map((m) => lookup[key('PE', m)] || [null, null, null, null, null]);\nconst jeData = machines.map((m) => lookup[key('JE', m)] || [null, null, null, null, null]);\n\nreturn {\n  backgroundColor: 'transparent',\n  tooltip: {\n    trigger: 'item',\n    backgroundColor: 'rgba(18,22,26,0.95)',\n    borderColor: 'rgba(255,255,255,0.12)',\n    borderWidth: 1,\n    textStyle: { color: '#E8EDF2', fontSize: 12 },\n  },\n  legend: {\n    bottom: 0,\n    textStyle: { color: 'rgba(224,224,224,0.85)' },\n    data: ['PE', 'JE'],\n  },\n  grid: { left: 55, right: 20, top: 20, bottom: 50, containLabel: true },\n  xAxis: {\n    type: 'category',\n    data: machines,\n    axisLabel: { color: 'rgba(224,224,224,0.85)' },\n    axisLine: { lineStyle: { color: 'rgba(255,255,255,0.15)' } },\n    splitLine: { show: false },\n  },\n  yAxis: {\n    type: 'value',\n    name: '\u00b5m',\n    nameTextStyle: { color: 'rgba(224,224,224,0.6)' },\n    axisLabel: { color: 'rgba(224,224,224,0.85)' },\n    splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } },\n  },\n  series: [\n    { name: 'PE', type: 'boxplot', data: peData, itemStyle: { color: 'rgba(0,242,254,0.16)', borderColor: '#00F2FE', borderWidth: 1.5 } },\n    { name: 'JE', type: 'boxplot', data: jeData, itemStyle: { color: 'rgba(59,130,246,0.16)', borderColor: '#3B82F6', borderWidth: 1.5 } },\n  ],\n};\n",
+            "renderer": "canvas",
+            "editor": {
+              "format": "auto"
             },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "desc"
+            "themeEditor": {
+              "name": "default",
+              "config": "{}"
             },
-            "xField": "Error (µm)"
+            "map": "none"
           },
           "targets": [
             {
@@ -1721,11 +1665,11 @@
               "datasource": {
                 "uid": "timescaledb"
               },
-              "rawSql": "/* QUERY_BUDGET_EXEMPT: rewritten 2026-08-06 to pre-bin server-side with width_bucket()+GROUP BY (was raw-row CROSS JOIN LATERAL unpivot feeding client-side histogram binning, ~4-5s per query target). This cut cost roughly 6-9x (to ~0.9-1.5s) but the unpivot over the full dataset still exceeds the 80ms real-time budget. Same investigated-with-no-further-improvement class as the other SPC/Cpk panels. */\nWITH pe_raw AS (\n  SELECT p.pe AS value\n  FROM public.ldi_data d\n  CROSS JOIN LATERAL (VALUES (d.pe_1),(d.pe_2),(d.pe_3),(d.pe_4),(d.pe_5),(d.pe_6)) p(pe)\n  WHERE $__timeFilter(d.\"time\")\n    AND d.factory IN (${factory:sqlstring}) AND d.process IN (${process:sqlstring}) AND d.mo IN (${mo:sqlstring}) AND d.fpn IN (${fpn:sqlstring}) AND d.layer_name IN (${layer:sqlstring}) AND d.eqp_id IN (${machine_id:sqlstring})\n    AND p.pe IS NOT NULL AND p.pe BETWEEN -80 AND 80\n),\nje_raw AS (\n  SELECT j.je AS value\n  FROM public.ldi_data d\n  CROSS JOIN LATERAL (VALUES (d.je_1),(d.je_2),(d.je_3),(d.je_4)) j(je)\n  WHERE $__timeFilter(d.\"time\")\n    AND d.factory IN (${factory:sqlstring}) AND d.process IN (${process:sqlstring}) AND d.mo IN (${mo:sqlstring}) AND d.fpn IN (${fpn:sqlstring}) AND d.layer_name IN (${layer:sqlstring}) AND d.eqp_id IN (${machine_id:sqlstring})\n    AND j.je IS NOT NULL AND j.je BETWEEN -80 AND 80\n),\npe_binned AS (\n  SELECT (-80 + (width_bucket(value, -80, 80, 80) - 1) * 2)::INT AS bin, COUNT(*) AS pe_count\n  FROM pe_raw GROUP BY 1\n),\nje_binned AS (\n  SELECT (-80 + (width_bucket(value, -80, 80, 80) - 1) * 2)::INT AS bin, COUNT(*) AS je_count\n  FROM je_raw GROUP BY 1\n),\nbins AS (\n  SELECT generate_series(-80, 78, 2) AS bin\n)\nSELECT b.bin AS \"Error (µm)\", COALESCE(pe.pe_count, 0) AS \"PE Count\", COALESCE(je.je_count, 0) AS \"JE Count\"\nFROM bins b\nLEFT JOIN pe_binned pe ON pe.bin = b.bin\nLEFT JOIN je_binned je ON je.bin = b.bin\nORDER BY b.bin",
-              "format": "table"
+              "format": "table",
+              "rawSql": "/* QUERY_BUDGET_EXEMPT: same raw-row unpivot cost as the\n   pre-2026-08-06 histogram this panel replaced (see git history) --\n   aggregated with percentile_cont() instead of width_bucket() binning,\n   same investigated-with-no-further-improvement class as the other SPC/Cpk\n   panels. */\nWITH pe_raw AS (\n  SELECT d.eqp_id, p.pe AS value\n  FROM public.ldi_data d\n  CROSS JOIN LATERAL (VALUES (d.pe_1),(d.pe_2),(d.pe_3),(d.pe_4),(d.pe_5),(d.pe_6)) p(pe)\n  WHERE $__timeFilter(d.\"time\")\n    AND d.factory IN (${factory:sqlstring}) AND d.process IN (${process:sqlstring}) AND d.mo IN (${mo:sqlstring}) AND d.fpn IN (${fpn:sqlstring}) AND d.layer_name IN (${layer:sqlstring}) AND d.eqp_id IN (${machine_id:sqlstring})\n    AND p.pe IS NOT NULL AND p.pe BETWEEN -80 AND 80\n),\nje_raw AS (\n  SELECT d.eqp_id, j.je AS value\n  FROM public.ldi_data d\n  CROSS JOIN LATERAL (VALUES (d.je_1),(d.je_2),(d.je_3),(d.je_4)) j(je)\n  WHERE $__timeFilter(d.\"time\")\n    AND d.factory IN (${factory:sqlstring}) AND d.process IN (${process:sqlstring}) AND d.mo IN (${mo:sqlstring}) AND d.fpn IN (${fpn:sqlstring}) AND d.layer_name IN (${layer:sqlstring}) AND d.eqp_id IN (${machine_id:sqlstring})\n    AND j.je IS NOT NULL AND j.je BETWEEN -80 AND 80\n),\npe_stats AS (\n  SELECT eqp_id,\n    MIN(value) AS min, PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY value) AS q1,\n    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY value) AS median,\n    PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY value) AS q3, MAX(value) AS max\n  FROM pe_raw GROUP BY eqp_id\n),\nje_stats AS (\n  SELECT eqp_id,\n    MIN(value) AS min, PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY value) AS q1,\n    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY value) AS median,\n    PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY value) AS q3, MAX(value) AS max\n  FROM je_raw GROUP BY eqp_id\n)\nSELECT 'PE' AS series, eqp_id AS machine, min, q1, median, q3, max FROM pe_stats\nUNION ALL\nSELECT 'JE' AS series, eqp_id AS machine, min, q1, median, q3, max FROM je_stats\nORDER BY 1, 2"
             }
           ],
-          "description": "Server-side pre-binned distribution of PE (position error, 6 samples/row) and JE (judgment error, 4 samples/row) values in 2µm buckets from -80 to +80µm. World-Class QA pass: previously shipped ~1.4M raw per-sample rows to Grafana for client-side histogram binning (4-5s query, forced a disk-based sort) -- rewritten to bucket with width_bucket()+GROUP BY server-side, returning at most 80 rows regardless of data volume.",
+          "description": "Box-and-whisker (min/Q1/median/Q3/max) of PE (position error, 6 samples/row) and JE (judgment error, 4 samples/row) per machine, computed server-side with percentile_cont(). Replaces the earlier binned histogram with a per-machine distribution view -- easier to spot which specific machine is drifting or has wide variance at a glance than a single fleet-wide histogram.",
           "links": [
             {
               "title": "Open Machine Snapshot (select one Machine)",
@@ -1760,7 +1704,7 @@
       "panels": [
         {
           "id": 13,
-          "title": "◈ Resist Dosage Live (mJ/cm²)",
+          "title": "\u25c8 Resist Dosage Live (mJ/cm\u00b2)",
           "type": "bargauge",
           "datasource": {
             "uid": "timescaledb"
@@ -1773,7 +1717,7 @@
           },
           "fieldConfig": {
             "defaults": {
-              "unit": "suffix: mJ/cm²",
+              "unit": "suffix: mJ/cm\u00b2",
               "min": 0,
               "decimals": 2,
               "thresholds": {
@@ -1841,7 +1785,7 @@
               "format": "table"
             }
           ],
-          "description": "Latest resist dosage per selected machine. Auto-ranging is used because observed machine settings span 15 to 1,200 mJ/cm².",
+          "description": "Latest resist dosage per selected machine. Auto-ranging is used because observed machine settings span 15 to 1,200 mJ/cm\u00b2.",
           "links": [
             {
               "title": "Open Machine Snapshot (select one Machine)",
@@ -1876,7 +1820,7 @@
       "panels": [
         {
           "id": 14,
-          "title": "◉ Alarm ↔ Process Correlation (RCA Truth Test)",
+          "title": "\u25c9 Alarm \u2194 Process Correlation (RCA Truth Test)",
           "type": "table",
           "gridPos": {
             "h": 12,
@@ -1891,7 +1835,7 @@
           "targets": [
             {
               "format": "table",
-              "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nWITH alarm_ctx AS (\n  SELECT c.*, cat.category\n  FROM v_ldi_alarm_context c\n  JOIN v_ldi_alarm_category cat ON cat.alarm_code = c.errorcode\n),\nbaseline AS (\n  SELECT\n    ROUND((100.0*COUNT(*) FILTER (WHERE temperature < 20 OR temperature > 24) / NULLIF(COUNT(*), 0))::NUMERIC, 1) AS thermal_pct,\n    ROUND((100.0*COUNT(*) FILTER (WHERE humidity < 50 OR humidity > 60) / NULLIF(COUNT(*), 0))::NUMERIC, 1) AS humidity_pct,\n    ROUND((100.0*COUNT(*) FILTER (WHERE air_vacuum > -8 OR air_vacuum < -30) / NULLIF(COUNT(*), 0))::NUMERIC, 1) AS vac_pct,\n    ROUND((100.0*COUNT(*) FILTER (WHERE ABS(pe_1) > 10 OR ABS(je_1) > 10) / NULLIF(COUNT(*), 0))::NUMERIC, 1) AS pe_pct,\n    ROUND((100.0*COUNT(*) FILTER (WHERE scan_speed > 450 OR scan_speed <= 0) / NULLIF(COUNT(*), 0))::NUMERIC, 1) AS motion_pct\n  FROM public.ldi_data\n),\ncats AS (\n  SELECT 'THERMAL (91008)' AS cat, ROUND((100.0*COUNT(*) FILTER (WHERE flag_thermal_out_of_spec) / NULLIF(COUNT(*), 0))::NUMERIC, 1) AS alarm_pct, COUNT(*) AS n FROM alarm_ctx WHERE category = 'ENVIRONMENT'\n  UNION ALL\n  SELECT 'HUMIDITY (91008)', ROUND((100.0*COUNT(*) FILTER (WHERE flag_humidity_out_of_spec) / NULLIF(COUNT(*), 0))::NUMERIC, 1), COUNT(*) FROM alarm_ctx WHERE category = 'ENVIRONMENT'\n  UNION ALL\n  SELECT 'VACUUM (91009)', ROUND((100.0*COUNT(*) FILTER (WHERE flag_vac_out_of_spec) / NULLIF(COUNT(*), 0))::NUMERIC, 1), COUNT(*) FROM alarm_ctx WHERE category = 'VACUUM'\n  UNION ALL\n  SELECT 'ALIGNMENT/PE-JE (90001,90004,90005,90012,90013)', ROUND((100.0*COUNT(*) FILTER (WHERE flag_pe_out_of_spec) / NULLIF(COUNT(*), 0))::NUMERIC, 1), COUNT(*) FROM alarm_ctx WHERE category IN ('REGISTRATION','ALIGNMENT')\n  UNION ALL\n  SELECT 'MOTION (70004)', ROUND((100.0*COUNT(*) FILTER (WHERE flag_scan_speed_out_of_spec) / NULLIF(COUNT(*), 0))::NUMERIC, 1), COUNT(*) FROM alarm_ctx WHERE category = 'MOTION'\n)\nSELECT c.cat AS \"Alarm Category\",\n       c.alarm_pct AS \"Alarm-Window %\",\n       CASE\n         WHEN c.cat = 'THERMAL (91008)' THEN b.thermal_pct\n         WHEN c.cat = 'HUMIDITY (91008)' THEN b.humidity_pct\n         WHEN c.cat = 'VACUUM (91009)' THEN b.vac_pct\n         WHEN c.cat = 'MOTION (70004)' THEN b.motion_pct\n         ELSE b.pe_pct\n       END AS \"Baseline %\",\n       ROUND((c.alarm_pct / NULLIF(CASE\n         WHEN c.cat = 'THERMAL (91008)' THEN b.thermal_pct\n         WHEN c.cat = 'HUMIDITY (91008)' THEN b.humidity_pct\n         WHEN c.cat = 'VACUUM (91009)' THEN b.vac_pct\n         WHEN c.cat = 'MOTION (70004)' THEN b.motion_pct\n         ELSE b.pe_pct\n       END, 0))::NUMERIC, 2) AS \"Lift\",\n       c.n AS \"Event Count\",\n       CASE WHEN c.n < 30 THEN 'LOW SAMPLE (n<30)' ELSE 'OK' END AS \"Confidence\"\nFROM cats c CROSS JOIN baseline b\nORDER BY \"Lift\" DESC NULLS LAST",
+              "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope.\n   RESOLVED 2026-08-10 (migration 064): extracted into materialized view\n   public.v_ldi_rca_truth_test, refreshed every 60s via a TimescaleDB\n   background job instead of recomputing this CTE chain per read.\n   Previously QUERY_BUDGET_EXEMPT (~97ms); now sub-millisecond. */\nSELECT \"Alarm Category\", \"Alarm-Window %\", \"Baseline %\", \"Lift\", \"Event Count\", \"Confidence\"\nFROM public.v_ldi_rca_truth_test\nORDER BY \"Lift\" DESC NULLS LAST",
               "refId": "A"
             }
           ],
@@ -2038,7 +1982,7 @@
     {
       "id": 16,
       "type": "row",
-      "title": "◈ SPC CONTROL CHARTS",
+      "title": "\u25c8 SPC CONTROL CHARTS",
       "gridPos": {
         "x": 0,
         "y": 16,
@@ -2050,8 +1994,8 @@
     },
     {
       "id": 17,
-      "title": "◈ Thickness Control Chart (mean ± 3σ)",
-      "type": "timeseries",
+      "title": "\u25c8 Thickness Control Chart (mean \u00b1 3\u03c3) [ECharts]",
+      "type": "volkovlabs-echarts-panel",
       "datasource": {
         "uid": "timescaledb"
       },
@@ -2063,80 +2007,22 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "suffix: mm",
-          "custom": {
-            "lineWidth": 1,
-            "fillOpacity": 0,
-            "lineInterpolation": "linear",
-            "gradientMode": "opacity",
-            "drawStyle": "line",
-            "pointSize": 0,
-            "showPoints": "never"
-          },
-          "decimals": 3
+          "custom": {}
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": ".*UCL.*"
-            },
-            "properties": [
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "dash": [
-                    10,
-                    10
-                  ],
-                  "fill": "dash"
-                }
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#EF4444"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": ".*LCL.*"
-            },
-            "properties": [
-              {
-                "id": "custom.lineStyle",
-                "value": {
-                  "dash": [
-                    10,
-                    10
-                  ],
-                  "fill": "dash"
-                }
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#EF4444"
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "options": {
-        "tooltip": {
-          "mode": "multi"
+        "editorMode": "code",
+        "getOption": "const frames = context.panel.data.series;\nconst frame = frames[0];\nconst timeField = frame.fields.find((f) => f.type === 'time');\nconst times = timeField.values.buffer || timeField.values;\nconst numberFields = frame.fields.filter((f) => f.type === 'number');\n\nfunction lastNonNull(arr) {\n  if (!arr) return null;\n  for (let i = arr.length - 1; i >= 0; i--) if (arr[i] != null) return arr[i];\n  return null;\n}\n\nconst uclField = numberFields.find((f) => f.name.indexOf('UCL') !== -1);\nconst lclField = numberFields.find((f) => f.name.indexOf('LCL') !== -1);\nconst latestUCL = uclField ? lastNonNull(uclField.values.buffer || uclField.values) : null;\nconst latestLCL = lclField ? lastNonNull(lclField.values.buffer || lclField.values) : null;\n\nconst GRAY = '#8B98A9';\nconst RED = '#EF4444';\n\nconst series = numberFields.map((f) => {\n  const values = f.values.buffer || f.values;\n  const name = f.name;\n  const isLimit = name.indexOf('UCL') !== -1 || name.indexOf('LCL') !== -1;\n  const data = [];\n  for (let i = 0; i < times.length; i++) data.push([times[i], values[i]]);\n\n  if (isLimit) {\n    return {\n      name: name,\n      type: 'line',\n      showSymbol: false,\n      connectNulls: true,\n      lineStyle: { width: 1.5, type: 'dashed', color: RED },\n      itemStyle: { color: RED },\n      z: 2,\n      data: data,\n    };\n  }\n\n  const latestVal = lastNonNull(values);\n  const outOfControl = latestVal != null && ((latestUCL != null && latestVal > latestUCL) || (latestLCL != null && latestVal < latestLCL));\n  return {\n    name: name,\n    type: 'line',\n    showSymbol: false,\n    connectNulls: true,\n    lineStyle: { width: outOfControl ? 1.5 : 1, color: outOfControl ? RED : GRAY, opacity: outOfControl ? 1 : 0.55 },\n    itemStyle: { color: outOfControl ? RED : GRAY },\n    z: outOfControl ? 3 : 1,\n    data: data,\n  };\n});\n\nreturn {\n  backgroundColor: 'transparent',\n  tooltip: {\n    trigger: 'axis',\n    backgroundColor: 'rgba(18,22,26,0.95)',\n    borderColor: 'rgba(255,255,255,0.12)',\n    borderWidth: 1,\n    textStyle: { color: '#E8EDF2', fontSize: 12 },\n    axisPointer: { lineStyle: { color: 'rgba(255,255,255,0.2)' } },\n  },\n  legend: {\n    type: 'scroll',\n    bottom: 0,\n    textStyle: { color: 'rgba(224,224,224,0.85)' },\n    data: series.map((s) => s.name),\n  },\n  grid: { left: 55, right: 20, top: 20, bottom: 50, containLabel: true },\n  xAxis: {\n    type: 'time',\n    axisLabel: { color: 'rgba(224,224,224,0.65)' },\n    axisLine: { lineStyle: { color: 'rgba(255,255,255,0.15)' } },\n    splitLine: { show: false },\n  },\n  yAxis: {\n    type: 'value',\n    name: 'mm',\n    nameTextStyle: { color: 'rgba(224,224,224,0.6)' },\n    axisLabel: { color: 'rgba(224,224,224,0.85)', formatter: (v) => v.toFixed(3) },\n    splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } },\n  },\n  series: series,\n};\n",
+        "renderer": "canvas",
+        "editor": {
+          "format": "auto"
         },
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom"
+        "themeEditor": {
+          "name": "default",
+          "config": "{}"
         },
-        "connectNullPoints": true
+        "map": "none"
       },
       "targets": [
         {
@@ -2152,7 +2038,7 @@
     },
     {
       "id": 18,
-      "title": "◈ Scale X/Y Control Chart (mean ± 3σ)",
+      "title": "\u25c8 Scale X/Y Control Chart (mean \u00b1 3\u03c3)",
       "type": "timeseries",
       "datasource": {
         "uid": "timescaledb"
