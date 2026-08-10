@@ -157,7 +157,7 @@ flowchart LR
 <details>
 <summary><b>Dashboard Architecture</b></summary>
 
-10 dashboards — 5 infrastructure, 5 LDI manufacturing. Full table with panel counts and descriptions: **[Dashboard Inventory](docs/architecture/DASHBOARD_INVENTORY.md)** — auto-generated from the dashboard JSON itself (`node scripts/generate-dashboard-inventory.js`), CI-checked so it can't silently drift from the real dashboards the way a hand-typed table can.
+10 dashboards — 4 infrastructure, 6 manufacturing (`monitoring/grafana/dashboards/{infrastructure,manufacturing}/`, provisioned into separate Grafana folders — see **[Ownership](docs/architecture/OWNERSHIP.md)** for the domain boundary). Full table with panel counts and descriptions: **[Dashboard Inventory](docs/architecture/DASHBOARD_INVENTORY.md)** — auto-generated from the dashboard JSON itself (`node scripts/generate-dashboard-inventory.js`), CI-checked so it can't silently drift from the real dashboards the way a hand-typed table can.
 
 **Design System:** Cyberpunk HUD — `#030407` background, Tailwind palette (`#10B981` Healthy, `#F59E0B` Warning, `#EF4444` Critical, `#3B82F6` Accent), Roboto Mono for stat values, glassmorphism panels, Grid-24 overlap-free layout.
 
@@ -254,6 +254,10 @@ IMS/
 | Document | Description |
 |:---:|---|
 | [**Architecture**](docs/architecture/ARCHITECTURE.md) | System context, ADRs, V10 streaming architecture, CAGG strategy |
+| [**Manufacturing Platform Plan**](docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md) | Infra/manufacturing domain separation, EAP integration architecture, ownership, validation/soak/DR rollout plan and evidence |
+| [**Manufacturing Domain**](docs/architecture/MANUFACTURING_DOMAIN.md) | The LDI schema/dashboard pattern, and how a future process type (AOI, plating, etching, drilling) onboards additively |
+| [**Equipment Integration (EAP)**](docs/architecture/EAP_ARCHITECTURE.md) | The two real equipment adapters (SNMP, HTTP/JSON) and the unimplemented SECS/GEM adapter contract |
+| [**Ownership**](docs/architecture/OWNERSHIP.md) | Infrastructure vs. manufacturing domain boundary, enforced via `CODEOWNERS` |
 | [**Visual Architecture**](docs/architecture/ARCHITECTURE_DIAGRAM.md) | Mermaid C4 Model diagrams and sequence flows |
 | [**Dashboard Inventory**](docs/architecture/DASHBOARD_INVENTORY.md) | Auto-generated dashboard/panel-count table (CI-checked against the live JSON) |
 | [**Database Schema**](docs/architecture/DATABASE_SCHEMA.md) | Auto-generated table/column/view reference (CI-checked against `information_schema`) |

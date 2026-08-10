@@ -182,6 +182,24 @@ Each phase's evidence is attached to this doc (or linked from it) before moving 
 
 ---
 
+## Phase C — Evidence (closed 2026-08-10)
+
+**What shipped:** `README.md`'s documentation table now links `IMS_MANUFACTURING_PLATFORM_V2.md`, `MANUFACTURING_DOMAIN.md`, `EAP_ARCHITECTURE.md`, `OWNERSHIP.md`. `ARCHITECTURE.md`'s Known Gaps section gained a pointer bullet to all four rather than duplicating their content.
+
+**Drift caught and fixed as a direct consequence of Phase A (not scope creep):** `README.md` line 160 said "10 dashboards — 5 infrastructure, 5 LDI manufacturing," which became wrong the moment Phase A's corrected 4/6 split shipped. Fixed in the same edit. No other pre-existing README/ARCHITECTURE staleness (e.g. the "9 Grafana dashboards" count in `ARCHITECTURE.md`'s System Context, which predates this work and is unrelated to it) was touched — that's outside Phase C's charter of "cross-link the new docs, don't duplicate or rewrite existing content."
+
+**Test evidence:**
+
+| Check | Result |
+|---|---|
+| All 4 new doc links resolve to real files | `test -f` on all 4 paths — confirmed |
+| `node scripts/generate-dashboard-inventory.js --check` | up to date |
+| `node scripts/generate-schema-inventory.js --check` | up to date |
+
+**Not yet committed/pushed** — pending this evidence review.
+
+---
+
 ## Phase B — Evidence (closed 2026-08-10)
 
 **What shipped:** `EAP_ARCHITECTURE.md`, `OWNERSHIP.md`, extended `.github/CODEOWNERS` with domain-scoped path entries.
