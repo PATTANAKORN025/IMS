@@ -571,7 +571,7 @@
         "x": 0,
         "y": 7,
         "w": 24,
-        "h": 10
+        "h": 8
       },
       "options": {
         "showHeader": true,
@@ -807,6 +807,50 @@
             ]
           }
         ]
+      }
+    },
+    {
+      "id": 10000,
+      "title": "◉ Pipeline Heartbeat",
+      "type": "volkovlabs-echarts-panel",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 15,
+        "w": 24,
+        "h": 1
+      },
+      "description": "Watchdog: re-queries the database every dashboard refresh cycle. If this panel stalls (the frontend refresh timer dying, the reported \"requires F5\" bug), it force-reloads the page automatically. See migration 065 for the TimescaleDB-side half of this fix.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "format": "table",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: trivial constant-time heartbeat query, no table scan. */\nSELECT NOW() AS time, 1 AS value"
+        }
+      ],
+      "options": {
+        "editorMode": "code",
+        "getOption": "/* IMS frontend-stall watchdog: proves the browser -> Grafana -> Postgres\n   query pipeline is still alive on every dashboard refresh cycle. If this\n   panel goes STALE_MS without being re-invoked, the dashboard's own\n   refresh timer has stalled (the \"data stops retrieving, requires F5\"\n   symptom) -- force a full page reload, automating what an operator would\n   otherwise do by hand. Safe to prepend to any getOption body: wrapped in\n   its own IIFE, touches only window.__imsWatchdog*, never collides with\n   panel-local variable names. */\n(function (staleMs) {\n  if (!window.__imsWatchdog) {\n    window.__imsWatchdogTick = Date.now();\n    window.__imsWatchdog = setInterval(function () {\n      if (Date.now() - window.__imsWatchdogTick > staleMs) {\n        window.location.reload();\n      }\n    }, Math.min(staleMs / 4, 30000));\n  }\n  window.__imsWatchdogTick = Date.now();\n})(30000);\n\nconst frame = context.panel.data.series[0];\nconst timeField = frame && frame.fields.find((f) => f.type === 'time');\nconst serverTime = timeField ? (timeField.values.buffer || timeField.values)[0] : Date.now();\n\nconst d = new Date(serverTime);\nconst hh = String(d.getUTCHours()).padStart(2, '0');\nconst mm = String(d.getUTCMinutes()).padStart(2, '0');\nconst ss = String(d.getUTCSeconds()).padStart(2, '0');\n\nreturn {\n  backgroundColor: 'transparent',\n  title: {\n    text: '\\u25CF LIVE',\n    subtext: hh + ':' + mm + ':' + ss + ' UTC \\u2014 pipeline heartbeat',\n    left: 'center',\n    top: 'center',\n    textStyle: { color: '#22C55E', fontSize: 13, fontWeight: 600, fontFamily: 'Roboto Mono, monospace' },\n    subtextStyle: { color: '#8B98A9', fontSize: 11, fontFamily: 'Roboto Mono, monospace' },\n  },\n};\n",
+        "renderer": "canvas",
+        "editor": {
+          "format": "auto"
+        },
+        "themeEditor": {
+          "name": "default",
+          "config": "{}"
+        },
+        "map": "none"
       }
     }
   ],

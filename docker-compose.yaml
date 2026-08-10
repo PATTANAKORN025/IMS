@@ -71,7 +71,7 @@ services:
       - -c
       - timezone=${TZ:-UTC}
       - -c
-      - timescaledb.max_background_workers=16
+      - timescaledb.max_background_workers=32
     volumes:
       - timescaledb_data:/var/lib/postgresql/data
       - ./postgres/init:/docker-entrypoint-initdb.d:ro

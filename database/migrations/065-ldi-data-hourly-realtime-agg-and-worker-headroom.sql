@@ -1,0 +1,38 @@
+-- ══════════════════════════════════════════════════════════════
+-- Migration 065: ldi_data_hourly real-time aggregation + background
+-- worker headroom (Grafana "requires F5" investigation, part 2/2)
+-- ══════════════════════════════════════════════════════════════
+-- Investigated the reported "data stops retrieving after a while,
+-- requiring F5" symptom on the TimescaleDB side. Two concrete findings:
+--
+-- 1. Every other CAGG in this schema (ldi_data_1m/15m/1h, sys_hourly,
+--    net_hourly, ldi_hourly) has `timescaledb.materialized_only = false`,
+--    so queries against them transparently merge live-aggregated raw rows
+--    on top of whatever's already materialized -- the CAGG's own refresh
+--    schedule only affects how much *work* is deferred, never how fresh a
+--    query's *result* is. `ldi_data_hourly` was the one exception, left at
+--    `materialized_only = true` (default) since migration 032 -- any
+--    reader would see a hard cutoff at the last successful refresh with no
+--    live merge. No dashboard panel currently queries it (see migration
+--    043's header comment), so this hasn't caused a visible symptom yet,
+--    but it's a real inconsistency and a trap for whoever adds a panel
+--    against it next. Fixed for consistency with every sibling CAGG.
+--
+-- 2. `timescaledb.max_background_workers` was 16 (docker-compose.yaml)
+--    against 24 currently-scheduled background jobs (7 CAGG refreshes + 5
+--    compression + 5 retention + telemetry + job-history-retention + the
+--    migration-064 materialized-view refresh). `timescaledb_information.
+--    job_errors` shows repeated "failed to start job" errors clustered at
+--    the same minute across several past restarts -- classic worker-pool
+--    exhaustion when many jobs' next_start realigns around a container
+--    restart and more than 16 try to launch at once. A failed CAGG refresh
+--    self-heals via real-time aggregation (see #1) so this alone doesn't
+--    fully explain a sustained blackout, but it's a real, fixable
+--    contributor to intermittent staleness and shows up in the error log
+--    on essentially every restart. docker-compose.yaml's
+--    timescaledb.max_background_workers raised 16 -> 32 (requires a
+--    container recreate to take effect -- it's a postmaster-context GUC,
+--    not reloadable). No SQL action needed here; noted for the historical
+--    record alongside the fix this migration does make.
+
+ALTER MATERIALIZED VIEW public.ldi_data_hourly SET (timescaledb.materialized_only = false);

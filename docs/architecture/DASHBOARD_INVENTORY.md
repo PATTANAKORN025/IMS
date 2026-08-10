@@ -11,7 +11,7 @@
 > (`node scripts/generate-dashboard-inventory.js --check`) fails the build
 > if this file doesn't match what the dashboards currently say.
 >
-> Last generated: 2026-08-10 | Total dashboards: 10 | Total panels: 142
+> Last generated: 2026-08-10 | Total dashboards: 10 | Total panels: 144
 
 ## Infrastructure (4)
 
@@ -29,6 +29,6 @@
 | `ims-easy-overview` | IMS Easy Overview | 8 | The easiest way to see the whole LDI fleet at once: no template variables to set, no filters to configure, just open it. Built entirely from this repo's shared views/functions (v_ldi_machine_latest_full, v_ldi_alarm_c... |
 | `ims-ldi-engineering-analytics` | IMS LDI - Engineering Analytics & SPC | 12 | Layer 3 Process Timeline: synchronized multi-parameter RCA. temperature → humidity → scan_speed → air_vacuum → scale_x/y → pe_1~6 → je_1~4 → state. Shared crosshair + tooltip. Fixed axis scaling. |
 | `ims-ldi-machine-snapshot` | IMS LDI - Machine Snapshot | 14 | 360° machine snapshot at the exact millisecond clicked from Process Timeline. Shows job context, physical variables, PE alignment, Cpk, and alarm proximity. |
-| `ims-ldi-manufacturing` | IMS LDI - Manufacturing Command Center | 21 | 4-Layer RCA Dashboard: Executive HUD + Machine Telemetry + Production Context + Alarm Stream. Schema-driven naming. Shared crosshair. Fixed axis scaling. |
-| `ims-ldi-operator-andon` | IMS LDI - Operator Andon Board | 7 | Factory floor kiosk. ISA-101 compliant. Zero interaction, zero scrolling. 1280x720. Redesigned from an earlier 1920x1080 layout (World-Class Audit Phase 5): template-variable pickers and the drill-down links row are h... |
+| `ims-ldi-manufacturing` | IMS LDI - Manufacturing Command Center | 22 | 4-Layer RCA Dashboard: Executive HUD + Machine Telemetry + Production Context + Alarm Stream. Schema-driven naming. Shared crosshair. Fixed axis scaling. |
+| `ims-ldi-operator-andon` | IMS LDI - Operator Andon Board | 8 | Factory floor kiosk. ISA-101 compliant. Zero interaction, zero scrolling. 1280x720. Redesigned from an earlier 1920x1080 layout (World-Class Audit Phase 5): template-variable pickers and the drill-down links row are h... |
 | `ldi-data-readiness` | LDI Data Readiness & Integration Gaps (Real Database) | 13 | Evidence-based readiness dashboard using only current PostgreSQL rows. No simulated data. |
