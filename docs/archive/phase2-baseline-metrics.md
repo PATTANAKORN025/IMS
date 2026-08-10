@@ -1,5 +1,7 @@
 # Phase 2 Baseline (pre-redesign), captured 2026-08-04
 
+> **ARCHIVED — historical snapshot, dated 2026-08-04.** Not living documentation; numbers below (dashboard counts, migration counts, panel counts, etc.) reflect the system as it existed on that date and are known to be stale relative to the current system. Kept for historical record per docs/archive/README.md. For current information, see docs/architecture/ARCHITECTURE.md and docs/architecture/DASHBOARD_INVENTORY.md.
+
 ## Query execution time (server-side, realistic template-var filters, "All" selections)
 | Panel | Query time |
 |---|---|

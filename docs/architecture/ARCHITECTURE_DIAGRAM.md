@@ -18,7 +18,7 @@ C4Context
   System_Ext(switches, "Juniper EX Switches", "Network infrastructure providing SNMP telemetry.")
   System_Ext(servers, "Linux Server Fleet", "Compute infrastructure providing SNMP telemetry.")
   System_Ext(ldi, "LDI Manufacturing Machines", "Physical PCB processing hardware providing HTTP/JSON telemetry.")
-  System_Ext(line, "LINE Notify / MS Teams", "External notification systems for alarms.")
+  System_Ext(line, "LINE Messaging API / MS Teams", "External notification systems for alarms -- delivery requires operator-configured credentials (LINE_CHANNEL_ACCESS_TOKEN, TEAMS_WEBHOOK_URL), absent by design in this repo's .env.")
   
   System(ims, "IMS (Industrial Monitoring System)", "The core ingestion, storage, and visualization engine.")
   
@@ -69,7 +69,7 @@ This diagram explains the fault-tolerance mechanism when a server goes offline.
 
 ```mermaid
 sequenceDiagram
-    participant Timer as ⏱️ Node-RED Inject (10s)
+    participant Timer as ⏱️ Node-RED Inject (30s)
     participant Walker as 🛰️ SNMP Walker
     participant State as 🧠 Context State
     participant Device as 💻 Edge Server (Offline)

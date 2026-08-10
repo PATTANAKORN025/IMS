@@ -1,4 +1,7 @@
 # IMS — Full-System Audit Report
+
+> **ARCHIVED — historical snapshot, dated 2026-08-05.** Not living documentation; numbers below (dashboard counts, migration counts, panel counts, etc.) reflect the system as it existed on that date and are known to be stale relative to the current system. Kept for historical record per docs/archive/README.md. For current information, see docs/architecture/ARCHITECTURE.md and docs/architecture/DASHBOARD_INVENTORY.md.
+
 ### หลักฐานจากการตรวจ dashboard จริง 8 หน้า · 2026-08-05
 
 ---

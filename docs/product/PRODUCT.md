@@ -10,11 +10,11 @@ web
 
 ## Users
 
-Primary: NOC operators monitoring 1000+ industrial devices (Linux servers, Juniper EX4000 switches) across factory floors and data centers. They work 24/7 shifts, need instant visibility into device health, network bandwidth, temperature anomalies, and LDI manufacturing metrics. Secondary: SRE and DevOps engineers performing root cause analysis, capacity planning, and pipeline debugging.
+Primary: two distinct operator populations. (1) NOC operators monitoring servers and network devices across data centers — 24/7 shifts, need instant visibility into device health, network bandwidth, and temperature anomalies. (2) LDI manufacturing floor operators and process engineers monitoring the LDI (Laser Direct Imaging) PCB production line — need real-time Andon-board machine status, SPC/Cpk process capability, and RCA (root-cause) correlation between alarms and process parameters. Secondary: SRE and DevOps engineers performing root cause analysis, capacity planning, and pipeline debugging across both domains.
 
 ## Product Purpose
 
-Provide a single-pane-of-glass monitoring system that transforms raw SNMP telemetry into actionable operational intelligence. The system ingests metrics from 1000+ devices via Node-RED, stores them in TimescaleDB with continuous aggregation and retention policies, and visualizes them through 4 specialized Grafana dashboards (NOC Overview, Engineering Drill-down, Capacity Forecast, Meta-Monitoring). It includes AIOps features (Z-Score anomaly detection, circuit breaker failover, predictive capacity forecasting) and alerting via LINE/Slack with runbook links. Success means zero blind spots — every device, every metric, every anomaly visible within seconds.
+Provide a single-pane-of-glass monitoring system spanning two domains — infrastructure and manufacturing — each with its own telemetry pipeline, dashboard set, and alerting. The infrastructure side ingests SNMP metrics from servers and network devices via Node-RED into TimescaleDB, visualized through 4 dashboards (NOC Overview, Engineering Drill-Down, Capacity Forecast, Meta-Monitoring). The manufacturing side ingests LDI machine telemetry (position/judgment error, thickness, scan speed, resist dosage, and more) via HTTP/JSON, visualized through 6 dashboards (Manufacturing Command Center, Operator Andon Board, Engineering Analytics & SPC, Machine Snapshot, Data Readiness, Fleet Overview) with real SPC (Cpk process capability) and RCA (alarm-to-parameter correlation) analytics. It includes AIOps features (Z-Score anomaly detection on the infrastructure side, circuit breaker failover, predictive capacity forecasting) and alerting via LINE Messaging API and MS Teams with runbook links. Success means zero blind spots — every device, every machine, every anomaly visible within seconds.
 
 ## Positioning
 
@@ -34,7 +34,7 @@ Industrial-grade monitoring that understands both server and network switch hard
 
 ## Design Principles
 
-1. **Semantic color, never decorative.** Every color maps to an operational state: #FF4D4D=critical, #FFD93D=warning, #2DFF8B=healthy. Never use color for decoration alone.
+1. **Semantic color, never decorative.** Every color maps to an operational state, from one approved 8-token palette shared by every dashboard (`docs/architecture/GRAFANA_DESIGN_SYSTEM.md` §2.1): `#ef4444`=critical, `#f59e0b`=warning, `#22c55e`=ok, `#eab308`=severity-minor, `#3b82f6`=accent, `#00f2fe`=info, `#64748b`=no_data, `#4a5568`=forecast. Never use color for decoration alone — enforced at commit time by `dashboard-linter.js` Check 15.
 2. **Data density over whitespace.** NOC operators need maximum information per screen pixel. Empty space is wasted space in an operational context.
 3. **Zero cognitive load for anomalies.** An unhealthy device should be immediately obvious through color, position, or motion — never require reading numbers to detect a problem.
 4. **Self-healing by design.** The system detects and recovers from failures (circuit breakers, retry queues, degraded ingestion) without human intervention. The dashboard reflects this resilience.
