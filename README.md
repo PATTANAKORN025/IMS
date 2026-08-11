@@ -1,28 +1,66 @@
 <div align="center">
-  <img src="assets/apex-ldi-noc-banner.jpg" alt="APEX Circuit LDI NOC Banner" width="100%" style="border-radius:12px; box-shadow: 0 8px 32px rgba(0,242,254,0.3); margin-bottom: 24px;" />
+    <img src="assets/apex-ldi-noc-banner.jpg" alt="APEX Circuit LDI NOC Banner" width="100%" style="border-radius:12px; box-shadow: 0 8px 32px rgba(0,242,254,0.3); margin-bottom: 24px;" />
+    <br/>
+    <br/>
+    <a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.demolab.com?font=Orbitron&size=36&duration=3000&pause=2000&color=00F2FE&center=true&repeat=true&width=800&height=60&lines=APEX+Circuit+IMS+|+Initializing...;Manufacturing+Intelligence+%26+NOC+Platform;Enterprise-grade+Digital+Twin+Architecture" alt="Typing SVG" /></a>
+</div>
 
+<div align="center">
+    <a href="#quick-start"><img src="https://img.shields.io/badge/-Release_v1.0-030407?style=for-the-badge&logo=github&logoColor=10B981" alt="Release"/></a>
+    <a href="LICENSE"><img src="https://img.shields.io/badge/-MIT_License-030407?style=for-the-badge&logo=opensourceinitiative&logoColor=00F2FE" alt="License"/></a>
+    <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/-Docker_Ready-030407?style=for-the-badge&logo=docker&logoColor=2496ED" alt="Docker"/></a>
+    <a href="https://grafana.com/"><img src="https://img.shields.io/badge/-Grafana_v11+-030407?style=for-the-badge&logo=grafana&logoColor=F46800" alt="Grafana"/></a>
+    <a href="https://nodered.org/"><img src="https://img.shields.io/badge/-Node--RED_v4+-030407?style=for-the-badge&logo=nodered&logoColor=8F0000" alt="Node-RED"/></a>
+    <a href="https://www.timescale.com/"><img src="https://img.shields.io/badge/-TimescaleDB_2.x-030407?style=for-the-badge&logo=postgresql&logoColor=F59E0B" alt="TimescaleDB"/></a>
+    <br>
+    <a href="#quick-start"><img src="https://img.shields.io/badge/Status-100%25_Passing-10B981?style=for-the-badge&logoColor=white" alt="Tests" /></a>
+</div>
 
-# APEX Circuit IMS
-
-### Manufacturing Intelligence & NOC Platform
-
-**Enterprise-grade Digital Twin architecture for PCB manufacturing — 1000+ nodes, real-time LDI telemetry, and predictive AIOps.**
-
-[![Release](https://img.shields.io/badge/Release-v1.0.0-blueviolet?style=for-the-badge&logo=github&logoColor=white)](#quick-start)
-[![License: MIT](https://img.shields.io/badge/License-MIT-10B981?style=for-the-badge&logo=opensourceinitiative&logoColor=white)](LICENSE)
-[![Docker: Ready](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
-[![Grafana: v11+](https://img.shields.io/badge/Grafana-v11-F46800?style=for-the-badge&logo=grafana&logoColor=white)](https://grafana.com/)
-[![Node-RED: v4+](https://img.shields.io/badge/Node--RED-v4-8F0000?style=for-the-badge&logo=nodered&logoColor=white)](https://nodered.org/)
-[![TimescaleDB](https://img.shields.io/badge/TimescaleDB-2.x-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.timescale.com/)
-[![Tests Passing](https://img.shields.io/badge/Tests-Passing-10B981?style=for-the-badge&logo=jest&logoColor=white)](#quick-start)
-[![K6 Stress-Tested](https://img.shields.io/badge/K6-Stress--Tested-7B61FF?style=for-the-badge&logo=k6&logoColor=white)](#quick-start)
-[![Synthetic Data Engine](https://img.shields.io/badge/Data-Digital%20Twin-00C7B7?style=for-the-badge&logo=python&logoColor=white)](data-generators/)
-
+<div align="center" justify-content="space-between">
+    <a href="docs/architecture/IMS_PLATFORM_BOOK.md"><img src="https://img.shields.io/badge/PLATFORM_BOOK-ENTER-blue?color=00F2FE&labelColor=030407&style=for-the-badge"></a>
+    <a href="docs/architecture/ARCHITECTURE.md"><img src="https://img.shields.io/badge/ARCHITECTURE-READ-blue?color=10B981&labelColor=030407&style=for-the-badge"></a>
 </div>
 
 <br/>
 
+## A Little About IMS...
+
+I am an **Enterprise-grade Manufacturing Intelligence Platform** with a special bias towards predictive AIOps and real-time visualization. My actions are always aimed at achieving 99.999% uptime and zero-latency telemetry ingestion. In the factory floor, I am guided by Statistical Process Control (SPC), I never drop a packet.
+
+**Designed for APEX Circuit.** Currently I am engaged in monitoring 1000+ infrastructure nodes and high-precision LDI manufacturing machines. I specialize in acting as a live digital twin, catching yield anomalies before they happen.
+
+At the moment I am utilizing TimescaleDB continuous aggregates for high-performance rendering, as well as sequential bulk polling in Node-RED.
+
+```javascript
+const APEX_IMS = {
+    Environment: ["On-Premise / Edge", "Air-gapped Ready"],
+    Core_Architecture: {
+        Ingestion: ["Node-RED", "fork_5_ways", "Circuit Breakers"],
+        Database: ["PostgreSQL", "TimescaleDB", "Continuous Aggregates"],
+        Connection_Pool: ["PgBouncer (Transaction Mode)"],
+        Visualization: ["Grafana v11+", "Grid-24 Design System"]
+    },
+    Telemetry_Sources: {
+        Manufacturing: ["LDI Machines", "HTTP APIs", "SPC Data"],
+        Infrastructure: ["Juniper EX4000", "Linux Servers", "SNMP v2c"]
+    },
+    AIOps_Engine: {
+        Anomaly_Detection: ["Z-Score (3-Sigma)", "Rolling Baselines"],
+        Quality_Control: ["Automated Cpk Calculation"],
+        Alerting: ["Prometheus", "Alertmanager", "LINE API", "MS Teams"]
+    },
+    Design_Tokens: {
+        Background: "#030407",
+        Accent: "#00F2FE",
+        Success: "#10B981",
+        Warning: "#F59E0B",
+        Critical: "#EF4444"
+    }
+};
+```
+
 <table style="border:none; border-collapse:collapse; width:100%;">
+
 <tr>
 <td align="center" style="border:none; padding:8px; width:33%;">
   <img src="assets/noc-overview.png" alt="NOC Overview" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
