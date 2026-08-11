@@ -200,7 +200,7 @@
         "w": 24,
         "h": 1
       },
-      "collapsed": true,
+      "collapsed": false,
       "fieldConfig": {
         "defaults": {
           "custom": {}
@@ -358,7 +358,7 @@
         "w": 24,
         "h": 1
       },
-      "collapsed": true,
+      "collapsed": false,
       "fieldConfig": {
         "defaults": {
           "custom": {}
@@ -565,7 +565,7 @@
         "w": 24,
         "h": 1
       },
-      "collapsed": true,
+      "collapsed": false,
       "fieldConfig": {
         "defaults": {
           "custom": {}
@@ -1243,7 +1243,7 @@
         "w": 24,
         "h": 1
       },
-      "collapsed": true,
+      "collapsed": false,
       "fieldConfig": {
         "defaults": {
           "custom": {}

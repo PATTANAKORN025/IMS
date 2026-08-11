@@ -1,0 +1,342 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": false,
+        "iconColor": "rgba(255, 96, 96, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "text",
+      "title": "",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 3
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "## Alarm Dictionary\nLook up any Alarm Code's full definition from the vendor Alarm Master catalog (`public.ldi_alarm_ms_code`), plus its most recent live occurrences. Opened from the **Alarm Code** column on any alarm/event table across the LDI dashboards -- or set `alarm_code` in the URL / variable box below directly."
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "transparent": true,
+      "description": "Header panel -- no data query, just orientation text for the Alarm Dictionary lookup."
+    },
+    {
+      "id": 2,
+      "title": "◈ Master Catalog Entry",
+      "type": "table",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 3,
+        "w": 24,
+        "h": 8
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "lg",
+        "footer": {
+          "show": false
+        },
+        "noValue": "NO_DATA"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "NO_DATA",
+          "custom": {}
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Severity"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "Critical": {
+                        "color": "#EF4444",
+                        "index": 0,
+                        "text": "Critical"
+                      },
+                      "Major": {
+                        "color": "#F59E0B",
+                        "index": 1,
+                        "text": "Major"
+                      },
+                      "Minor": {
+                        "color": "#EAB308",
+                        "index": 2,
+                        "text": "Minor"
+                      },
+                      "Warning": {
+                        "color": "#3B82F6",
+                        "index": 3,
+                        "text": "Warning"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Alarm Type"
+            },
+            "properties": [
+              {
+                "id": "description",
+                "value": "Raw vendor category letter: A = general alarm, W = warning/advisory, E = servo/motion safety fault (always Critical severity)."
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Cause"
+            },
+            "properties": [
+              {
+                "id": "description",
+                "value": "Most likely root cause. See docs/architecture/ALARM_DETAIL_STYLE_GUIDE.md §6."
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Impact"
+            },
+            "properties": [
+              {
+                "id": "description",
+                "value": "What this means operationally right now -- blocked, delayed, or a quality risk. See ALARM_DETAIL_STYLE_GUIDE.md §6."
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Recovery Action"
+            },
+            "properties": [
+              {
+                "id": "description",
+                "value": "What the operator/technician should do next."
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "SOP / Work Instruction"
+            },
+            "properties": [
+              {
+                "id": "description",
+                "value": "Link to a real Standard Operating Procedure or Work Instruction document, when one exists. Intentionally not populated yet -- see ALARM_DETAIL_STYLE_GUIDE.md §7; this is a genuine content gap, not a broken field."
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "Not yet available": {
+                        "color": "#64748B"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: single-row master-catalog lookup by code, not a time series */\nSELECT alarm_id AS \"Alarm Code\", alarm_type AS \"Alarm Type\", alarm_msg AS \"Message\", alarm_detail AS \"Detail\", severity AS \"Severity\",\n       cause AS \"Cause\", impact AS \"Impact\", recovery_action AS \"Recovery Action\", COALESCE(sop_reference, 'Not yet available') AS \"SOP / Work Instruction\"\nFROM public.ldi_alarm_ms_code\nWHERE alarm_id = '${alarm_code}' OR alarm_code = '${alarm_code}'\nLIMIT 1;",
+          "format": "table"
+        }
+      ],
+      "description": "The full vendor Alarm Master definition for this code -- the same row every occurrence of this alarm type shares. No row here means the code isn't in the currently loaded catalog (check data mode: mock vs. real -- see docs/architecture/ALARM_SEVERITY_GUIDE.md)."
+    },
+    {
+      "id": 3,
+      "title": "◈ Recent Occurrences (Live Data)",
+      "type": "table",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 11,
+        "w": 24,
+        "h": 10
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        },
+        "noValue": "NO_DATA",
+        "sortBy": [
+          {
+            "displayName": "Time",
+            "desc": true
+          }
+        ]
+      },
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "NO_DATA",
+          "custom": {}
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Time"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              },
+              {
+                "id": "decimals",
+                "value": 6
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Link Basis"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "causal": {
+                        "color": "#22C55E",
+                        "text": "causal"
+                      },
+                      "nearest": {
+                        "color": "#64748B",
+                        "text": "nearest"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: last 20 firings of this specific code, full dataset scope */\nSELECT a.logdate AS \"Time\", a.equipmentid AS \"Machine\", a.logid AS \"Alarm Event ID\",\n       a.related_log_id AS \"Telemetry Event ID\", COALESCE(a.link_basis, 'nearest') AS \"Link Basis\"\nFROM public.ldi_alarm_log a\nWHERE a.errorcode = '${alarm_code}'\nORDER BY a.logdate DESC\nLIMIT 20;",
+          "format": "table"
+        }
+      ],
+      "description": "The most recent 20 times this alarm code actually fired, fleet-wide -- for pattern spotting (which machines, how often, causal vs. nearest telemetry link)."
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "alarm_code",
+        "label": "Alarm Code",
+        "type": "textbox",
+        "query": "",
+        "current": {
+          "selected": true,
+          "text": "",
+          "value": ""
+        },
+        "hide": 0,
+        "skipUrlSync": false
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timezone": "UTC",
+  "refresh": "",
+  "schemaVersion": 39,
+  "fiscalYearStartMonth": 0,
+  "liveNow": false,
+  "graphTooltip": 0,
+  "id": null,
+  "uid": "ims-ldi-alarm-dictionary",
+  "title": "IMS LDI - Alarm Dictionary",
+  "description": "Reference lookup dashboard: full vendor Alarm Master definition + recent live occurrences for any Alarm Code. Not part of the operator/engineering navigation flow -- opened via drill-down link from the Alarm Code column on other LDI dashboards.",
+  "version": 1,
+  "tags": [
+    "IMS",
+    "LDI",
+    "manufacturing",
+    "reference"
+  ]
+}

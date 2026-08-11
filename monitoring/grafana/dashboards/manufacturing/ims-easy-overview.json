@@ -385,7 +385,7 @@
         "w": 24,
         "h": 1
       },
-      "collapsed": true,
+      "collapsed": false,
       "panels": [
         {
           "id": 5,
@@ -420,7 +420,7 @@
               "datasource": {
                 "uid": "timescaledb"
               },
-              "rawSql": "SELECT eqp_id AS \"Machine\", CASE WHEN state THEN 'RUNNING' ELSE 'IDLE' END AS \"State\",\n       mo AS \"Job (MO)\", fpn AS \"Part (FPN)\", layer_name AS \"Layer\",\n       CASE WHEN log_id IS NULL THEN NULL ELSE (board_no::TEXT || '/' || total_board::TEXT) END AS \"Board Progress\",\n       ROUND(temperature::NUMERIC, 1) AS \"Temp (°C)\", ROUND(humidity::NUMERIC, 1) AS \"Humidity (%RH)\",\n       ROUND(thickness::NUMERIC, 3) AS \"Thickness (mm)\",\n       CASE WHEN is_stale THEN 'STALE (>5min)' ELSE 'live' END AS \"Freshness\"\nFROM public.v_ldi_machine_latest_full\nORDER BY eqp_id",
+              "rawSql": "SELECT eqp_id AS \"Machine\", CASE WHEN state THEN 'RUNNING' ELSE 'IDLE' END AS \"State\",\n       mo AS \"Job (MO)\", fpn AS \"Part (FPN)\", layer_name AS \"Layer\",\n       CASE WHEN log_id IS NULL THEN 'NO_DATA' ELSE (board_no::TEXT || '/' || total_board::TEXT) END AS \"Progress\",\n       ROUND(temperature::NUMERIC, 1) AS \"Temp (°C)\", ROUND(humidity::NUMERIC, 1) AS \"Humidity (%RH)\",\n       ROUND(thickness::NUMERIC, 3) AS \"Thickness (mm)\",\n       CASE WHEN is_stale THEN 'STALE (>5min)' ELSE 'live' END AS \"Freshness\"\nFROM public.v_ldi_machine_latest_full\nORDER BY eqp_id",
               "format": "table"
             }
           ],
@@ -438,7 +438,7 @@
         "w": 24,
         "h": 1
       },
-      "collapsed": true,
+      "collapsed": false,
       "panels": [
         {
           "id": 6,
@@ -466,6 +466,52 @@
               "custom": {}
             },
             "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Alarm Event ID"
+                },
+                "properties": [
+                  {
+                    "id": "description",
+                    "value": "Unique ID for this exact alarm occurrence (ldi_alarm_log.logid). Not the alarm type -- the same Alarm Code fires repeatedly; this ID identifies which specific firing this row is."
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Alarm Code"
+                },
+                "properties": [
+                  {
+                    "id": "description",
+                    "value": "The alarm type/definition code from the vendor Alarm Master catalog (ldi_alarm_ms_code). Shared by every occurrence of this alarm type. Click to open the Alarm Dictionary."
+                  },
+                  {
+                    "id": "links",
+                    "value": [
+                      {
+                        "title": "Open Alarm Dictionary",
+                        "url": "/d/ims-ldi-alarm-dictionary/alarm-dictionary?var-alarm_code=${__value.text}",
+                        "targetBlank": false
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Telemetry Event ID"
+                },
+                "properties": [
+                  {
+                    "id": "description",
+                    "value": "The linked telemetry snapshot (ldi_data.log_id). See 'Match': exact = confirmed by direct log_id join; nearest = inferred by closest timestamp, not a confirmed link."
+                  }
+                ]
+              },
               {
                 "matcher": {
                   "id": "byName",
@@ -527,7 +573,7 @@
               "datasource": {
                 "uid": "timescaledb"
               },
-              "rawSql": "SELECT alarm_time AS \"Time\", eqp_id AS \"Machine\", errorcode AS \"Code\", alarm_msg AS \"Message\",\n       COALESCE(severity, 'UNMAPPED') AS \"Severity\",\n       ROUND(temperature::NUMERIC, 1) AS \"Temp (°C)\", ROUND(humidity::NUMERIC, 1) AS \"Humidity (%RH)\",\n       match_type AS \"Match\"\nFROM public.v_ldi_alarm_context\nORDER BY alarm_time DESC LIMIT 50",
+              "rawSql": "SELECT alarm_time AS \"Time\", eqp_id AS \"Machine\", alarm_id AS \"Alarm Event ID\", errorcode AS \"Alarm Code\", alarm_msg AS \"Message\", alarm_detail AS \"Detail\",\n       COALESCE(severity, 'UNMAPPED') AS \"Severity\",\n       ROUND(temperature::NUMERIC, 1) AS \"Temp (°C)\", ROUND(humidity::NUMERIC, 1) AS \"Humidity (%RH)\",\n       related_log_id AS \"Telemetry Event ID\", COALESCE(match_type, 'none') AS \"Match\"\nFROM public.v_ldi_alarm_context\nORDER BY alarm_time DESC LIMIT 50",
               "format": "table"
             }
           ],
@@ -545,7 +591,7 @@
         "w": 24,
         "h": 1
       },
-      "collapsed": true,
+      "collapsed": false,
       "panels": [
         {
           "id": 7,
@@ -606,6 +652,42 @@
                     }
                   }
                 ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Confidence"
+                },
+                "properties": [
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-background"
+                    }
+                  },
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "OK": {
+                            "color": "#22C55E",
+                            "text": "OK"
+                          },
+                          "LOW SAMPLE (n<30)": {
+                            "color": "#F59E0B",
+                            "text": "LOW SAMPLE (n<30)"
+                          },
+                          "NO_DATA": {
+                            "color": "#64748B",
+                            "text": "NO_DATA"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
               }
             ]
           },
@@ -615,7 +697,7 @@
               "datasource": {
                 "uid": "timescaledb"
               },
-              "rawSql": "/* QUERY_BUDGET_EXEMPT: reads public.v_machine_spc_fleet, which itself performs the same per-row unpivot+STDDEV Cpk computation on every call (not materialized/cached). Same root cause and same investigated-with-no-improvement history as the other SPC panels. Exempted 2026-08-06 World-Class QA pass; materializing this view is a larger follow-up, not a dashboard-only fix. */\nSELECT eqp_id AS \"Machine\", n_pe AS \"PE Samples\", cpk_pe AS \"Cpk (PE)\", pe_pass_rate AS \"PE Pass %\",\n       n_je AS \"JE Samples\", cpk_je AS \"Cpk (JE)\", je_pass_rate AS \"JE Pass %\", worst_cpk AS \"Worst Cpk\"\nFROM public.v_machine_spc_fleet\nORDER BY worst_cpk ASC NULLS LAST",
+              "rawSql": "/* RESOLVED 2026-08-10 (migration 064): v_machine_spc_fleet is now a materialized view refreshed every 60s via a TimescaleDB background job, not recomputed per read (comment above was stale -- corrected alongside the Confidence-column consistency fix). */\nSELECT eqp_id AS \"Machine\", n_pe AS \"PE Samples\", cpk_pe AS \"Cpk (PE)\", pe_pass_rate AS \"PE Pass %\",\n       n_je AS \"JE Samples\", cpk_je AS \"Cpk (JE)\", je_pass_rate AS \"JE Pass %\", worst_cpk AS \"Worst Cpk\",\n       CASE\n         WHEN worst_cpk IS NULL THEN 'NO_DATA'\n         WHEN COALESCE(CASE WHEN cpk_pe IS NULL THEN n_je WHEN cpk_je IS NULL THEN n_pe WHEN cpk_pe <= cpk_je THEN n_pe ELSE n_je END, 0) < 30 THEN 'LOW SAMPLE (n<30)'\n         ELSE 'OK'\n       END AS \"Confidence\"\nFROM public.v_machine_spc_fleet\nORDER BY worst_cpk ASC NULLS LAST",
               "format": "table"
             }
           ],

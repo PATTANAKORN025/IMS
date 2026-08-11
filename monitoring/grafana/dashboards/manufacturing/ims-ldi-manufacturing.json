@@ -1483,7 +1483,7 @@
         "w": 24,
         "h": 1
       },
-      "collapsed": true,
+      "collapsed": false,
       "panels": [
         {
           "id": 6,
@@ -1519,7 +1519,7 @@
               "datasource": {
                 "uid": "timescaledb"
               },
-              "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: always the true latest row per machine, not bounded by the dashboard time range -- see v_ldi_machine_latest_full (migration 052) */\nSELECT dev.device_id AS \"Machine\", v.mo AS \"Job (MO)\", v.fpn AS \"Part (FPN)\", v.layer_name AS \"Layer\",\n       CASE WHEN v.log_id IS NULL THEN 'NO_DATA' ELSE (v.board_no::TEXT || '/' || v.total_board::TEXT) END AS \"Progress\",\n       ROUND(v.temperature::NUMERIC, 1) AS \"temperature (°C)\",\n       ROUND(v.humidity::NUMERIC, 1) AS \"humidity (%RH)\",\n       ROUND(v.scan_speed::NUMERIC, 1) AS \"scan_speed (mm/s)\",\n       ROUND(v.thickness::NUMERIC, 3) AS \"thickness (mm)\",\n       ROUND(v.resist_dosage::NUMERIC, 1) AS \"resist_dosage\",\n       v.state AS \"state\",\n       v.is_stale AS \"stale (>5min)\"\nFROM public.devices dev\nLEFT JOIN public.v_ldi_machine_latest_full v\n  ON v.eqp_id = dev.device_id AND v.factory IN (${factory:sqlstring}) AND v.mo IN (${mo:sqlstring})\nWHERE dev.device_type = 'ldi' AND dev.enabled AND dev.device_id IN (${machine_id:sqlstring})\nORDER BY dev.device_id",
+              "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: always the true latest row per machine, not bounded by the dashboard time range -- see v_ldi_machine_latest_full (migration 052) */\nSELECT dev.device_id AS \"Machine\", v.mo AS \"Job (MO)\", v.fpn AS \"Part (FPN)\", v.layer_name AS \"Layer\",\n       CASE WHEN v.log_id IS NULL THEN 'NO_DATA' ELSE (v.board_no::TEXT || '/' || v.total_board::TEXT) END AS \"Progress\",\n       ROUND(v.temperature::NUMERIC, 1) AS \"Temp (°C)\",\n       ROUND(v.humidity::NUMERIC, 1) AS \"Humidity (%RH)\",\n       ROUND(v.scan_speed::NUMERIC, 1) AS \"Scan Speed (mm/s)\",\n       ROUND(v.thickness::NUMERIC, 3) AS \"Thickness (mm)\",\n       ROUND(v.resist_dosage::NUMERIC, 1) AS \"Resist Dosage\",\n       CASE WHEN v.state THEN 'RUNNING' ELSE 'IDLE' END AS \"State\",\n       CASE WHEN v.is_stale THEN 'STALE (>5min)' ELSE 'live' END AS \"Freshness\"\nFROM public.devices dev\nLEFT JOIN public.v_ldi_machine_latest_full v\n  ON v.eqp_id = dev.device_id AND v.factory IN (${factory:sqlstring}) AND v.mo IN (${mo:sqlstring})\nWHERE dev.device_type = 'ldi' AND dev.enabled AND dev.device_id IN (${machine_id:sqlstring})\nORDER BY dev.device_id",
               "format": "table"
             }
           ],
@@ -1831,7 +1831,7 @@
               {
                 "matcher": {
                   "id": "byName",
-                  "options": "temperature (°C)"
+                  "options": "Temp (°C)"
                 },
                 "properties": [
                   {
@@ -1843,7 +1843,7 @@
               {
                 "matcher": {
                   "id": "byName",
-                  "options": "humidity (%RH)"
+                  "options": "Humidity (%RH)"
                 },
                 "properties": [
                   {
@@ -1855,7 +1855,7 @@
               {
                 "matcher": {
                   "id": "byName",
-                  "options": "scan_speed (mm/s)"
+                  "options": "Scan Speed (mm/s)"
                 },
                 "properties": [
                   {
@@ -1879,7 +1879,7 @@
               {
                 "matcher": {
                   "id": "byName",
-                  "options": "resist_dosage"
+                  "options": "Resist Dosage"
                 },
                 "properties": [
                   {
@@ -1891,7 +1891,7 @@
               {
                 "matcher": {
                   "id": "byName",
-                  "options": "state"
+                  "options": "State"
                 },
                 "properties": [
                   {
@@ -2097,7 +2097,7 @@
         "w": 24,
         "h": 1
       },
-      "collapsed": true,
+      "collapsed": false,
       "panels": [
         {
           "id": 9,
@@ -2478,7 +2478,7 @@
         "w": 24,
         "h": 1
       },
-      "collapsed": true,
+      "collapsed": false,
       "panels": [
         {
           "id": 12,
@@ -2640,7 +2640,7 @@
         "w": 24,
         "h": 1
       },
-      "collapsed": true,
+      "collapsed": false,
       "panels": [
         {
           "id": 14,
@@ -2676,7 +2676,7 @@
               "datasource": {
                 "uid": "timescaledb"
               },
-              "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope -- ORDER BY DESC LIMIT 50 already bounds it */\nSELECT\n  c.alarm_time AS \"Time\",\n  c.eqp_id AS \"Machine\",\n  c.errorcode AS \"Code\",\n  COALESCE(c.severity, 'UNMAPPED') AS \"Severity\",\n  c.alarm_msg AS \"Message\",\n  COALESCE(cat.category, 'UNCLASSIFIED') AS \"Subsystem\",\n  COALESCE(c.process, '-') AS \"Process\",\n  CASE\n    WHEN c.flag_pe_out_of_spec THEN 'PE/JE Out of Spec'\n    WHEN c.flag_thermal_out_of_spec THEN 'Thermal Out of Spec'\n    WHEN c.flag_humidity_out_of_spec THEN 'Humidity Out of Spec'\n    WHEN c.flag_vac_out_of_spec THEN 'Vacuum Out of Spec'\n    WHEN c.flag_scan_speed_out_of_spec THEN 'Motion Out of Spec'\n    WHEN c.flag_exposure_out_of_spec THEN 'Exposure Out of Spec'\n    WHEN c.match_type IS NULL THEN 'No Telemetry Linked'\n    ELSE 'Within Spec'\n  END AS \"Quality Impact\",\n  c.mo AS \"Job (MO)\",\n  CASE WHEN c.board_no IS NOT NULL THEN c.board_no::TEXT || '/' || c.total_board::TEXT ELSE '-' END AS \"Board\",\n  COALESCE(c.match_type, 'none') AS \"Match\"\nFROM public.v_ldi_alarm_context c\nLEFT JOIN public.v_ldi_alarm_category cat ON cat.alarm_code = c.errorcode\nWHERE c.eqp_id IN (${machine_id:sqlstring})\nORDER BY c.alarm_time DESC LIMIT 50;",
+              "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope -- ORDER BY DESC LIMIT 50 already bounds it */\nSELECT\n  c.alarm_time AS \"Time\",\n  c.eqp_id AS \"Machine\",\n  c.alarm_id AS \"Alarm Event ID\",\n  c.errorcode AS \"Alarm Code\",\n  COALESCE(c.severity, 'UNMAPPED') AS \"Severity\",\n  c.alarm_msg AS \"Message\",\n  c.alarm_detail AS \"Detail\",\n  COALESCE(cat.category, 'UNCLASSIFIED') AS \"Subsystem\",\n  COALESCE(c.process, '-') AS \"Process\",\n  CASE\n    WHEN c.flag_pe_out_of_spec THEN 'PE/JE Out of Spec'\n    WHEN c.flag_thermal_out_of_spec THEN 'Thermal Out of Spec'\n    WHEN c.flag_humidity_out_of_spec THEN 'Humidity Out of Spec'\n    WHEN c.flag_vac_out_of_spec THEN 'Vacuum Out of Spec'\n    WHEN c.flag_scan_speed_out_of_spec THEN 'Motion Out of Spec'\n    WHEN c.flag_exposure_out_of_spec THEN 'Exposure Out of Spec'\n    WHEN c.match_type IS NULL THEN 'No Telemetry Linked'\n    ELSE 'Within Spec'\n  END AS \"Quality Impact\",\n  c.mo AS \"Job (MO)\",\n  CASE WHEN c.board_no IS NOT NULL THEN c.board_no::TEXT || '/' || c.total_board::TEXT ELSE '-' END AS \"Board\",\n  c.related_log_id AS \"Telemetry Event ID\",\n  COALESCE(c.match_type, 'none') AS \"Match\"\nFROM public.v_ldi_alarm_context c\nLEFT JOIN public.v_ldi_alarm_category cat ON cat.alarm_code = c.errorcode\nWHERE c.eqp_id IN (${machine_id:sqlstring})\nORDER BY c.alarm_time DESC LIMIT 50;",
               "format": "table"
             }
           ],
@@ -2687,6 +2687,52 @@
               }
             },
             "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Alarm Event ID"
+                },
+                "properties": [
+                  {
+                    "id": "description",
+                    "value": "Unique ID for this exact alarm occurrence (ldi_alarm_log.logid). Not the alarm type -- the same Alarm Code fires repeatedly; this ID identifies which specific firing this row is."
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Alarm Code"
+                },
+                "properties": [
+                  {
+                    "id": "description",
+                    "value": "The alarm type/definition code from the vendor Alarm Master catalog (ldi_alarm_ms_code). Shared by every occurrence of this alarm type. Click to open the Alarm Dictionary."
+                  },
+                  {
+                    "id": "links",
+                    "value": [
+                      {
+                        "title": "Open Alarm Dictionary",
+                        "url": "/d/ims-ldi-alarm-dictionary/alarm-dictionary?var-alarm_code=${__value.text}",
+                        "targetBlank": false
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Telemetry Event ID"
+                },
+                "properties": [
+                  {
+                    "id": "description",
+                    "value": "The linked telemetry snapshot (ldi_data.log_id). See 'Match': exact = confirmed by direct log_id join; nearest = inferred by closest timestamp, not a confirmed link."
+                  }
+                ]
+              },
               {
                 "matcher": {
                   "id": "byName",
@@ -2826,7 +2872,7 @@
       "id": 10006,
       "title": "◈ RCA FLEET SUMMARY",
       "type": "row",
-      "collapsed": true,
+      "collapsed": false,
       "gridPos": {
         "x": 0,
         "y": 23,
@@ -3006,7 +3052,7 @@
         "w": 24,
         "h": 1
       },
-      "collapsed": true,
+      "collapsed": false,
       "panels": [
         {
           "id": 22,
@@ -3126,7 +3172,7 @@
               "datasource": {
                 "uid": "timescaledb"
               },
-              "rawSql": "SELECT \"time\" AS \"Time\", eqp_id AS \"Machine\", mo AS \"Job (MO)\", fpn AS \"Part (FPN)\",\n       layer_name AS \"Layer\", (board_no::TEXT || '/' || total_board::TEXT) AS \"Board\",\n       log_id AS \"Log ID\",\n       ROUND(total_time::NUMERIC, 2) AS \"Cycle Time (s)\",\n       ROUND(GREATEST(ABS(pe_1),ABS(pe_2),ABS(pe_3),ABS(pe_4),ABS(pe_5),ABS(pe_6))::NUMERIC, 2) AS \"Max |PE|\",\n       ROUND(GREATEST(ABS(je_1),ABS(je_2),ABS(je_3),ABS(je_4))::NUMERIC, 2) AS \"Max |JE|\",\n       ROUND(thickness::NUMERIC, 3) AS \"Thickness (mm)\"\nFROM public.ldi_data\nWHERE $__timeFilter(time) AND factory IN (${factory:sqlstring})\n  AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring})\nORDER BY \"time\" DESC LIMIT 200",
+              "rawSql": "SELECT \"time\" AS \"Time\", eqp_id AS \"Machine\", mo AS \"Job (MO)\", fpn AS \"Part (FPN)\",\n       layer_name AS \"Layer\", (board_no::TEXT || '/' || total_board::TEXT) AS \"Board\",\n       log_id AS \"Telemetry Event ID\",\n       ROUND(total_time::NUMERIC, 2) AS \"Cycle Time (s)\",\n       ROUND(GREATEST(ABS(pe_1),ABS(pe_2),ABS(pe_3),ABS(pe_4),ABS(pe_5),ABS(pe_6))::NUMERIC, 2) AS \"Max |PE|\",\n       ROUND(GREATEST(ABS(je_1),ABS(je_2),ABS(je_3),ABS(je_4))::NUMERIC, 2) AS \"Max |JE|\",\n       ROUND(thickness::NUMERIC, 3) AS \"Thickness (mm)\"\nFROM public.ldi_data\nWHERE $__timeFilter(time) AND factory IN (${factory:sqlstring})\n  AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring})\nORDER BY \"time\" DESC LIMIT 200",
               "format": "table"
             }
           ],
