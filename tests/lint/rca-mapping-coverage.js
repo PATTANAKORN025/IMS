@@ -82,6 +82,13 @@ try {
   if (!alignCodesMatch) throw new Error('Failed to find ALIGN_CODES array in almsim_gen.');
   for (const m of alignCodesMatch[1].matchAll(/["']([^"']+)["']/g)) simCodes.add(m[1]);
 
+  // RARE_CRITICAL_CODES = ["code", "code", ...] -- LDI Alarm Fidelity Audit
+  // fix #8 (2026-08-11): low-probability genuine-Critical branch.
+  const rareCriticalMatch = func.match(/const RARE_CRITICAL_CODES = (\[[^\]]*\]);/);
+  if (rareCriticalMatch) {
+    for (const m of rareCriticalMatch[1].matchAll(/["']([^"']+)["']/g)) simCodes.add(m[1]);
+  }
+
   for (const m of func.matchAll(/newRow\(r\.eqp_id,\s*["']([^"']+)["']/g)) simCodes.add(m[1]);
 
   if (simCodes.size === 0) {

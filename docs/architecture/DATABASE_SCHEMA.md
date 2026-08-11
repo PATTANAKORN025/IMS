@@ -10,15 +10,16 @@
 > currently reports. Requires the `timescaledb` container to be running
 > and fully migrated.
 >
-> Last generated: 2026-08-10 | Migrations applied: 44 (013-068) | Tables: 8 | Continuous aggregates: 7 | Plain views: 11 | Materialized views: 3
+> Last generated: 2026-08-11 | Migrations applied: 45 (013-069) | Tables: 9 | Continuous aggregates: 7 | Plain views: 11 | Materialized views: 3
 
 ## Tables
 
 | Table | Columns | Hypertable? |
 |---|---|---|
 | `devices` | 12 | — |
-| `ldi_alarm_log` | 8 | Yes |
+| `ldi_alarm_log` | 9 | Yes |
 | `ldi_alarm_ms_code` | 6 | — |
+| `ldi_alarm_state` | 5 | — |
 | `ldi_data` | 36 | Yes |
 | `ldi_metrics` | 9 | Yes |
 | `net_metrics` | 10 | Yes |

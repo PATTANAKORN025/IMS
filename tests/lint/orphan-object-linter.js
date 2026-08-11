@@ -56,6 +56,13 @@ function countReferences(name) {
     'postgres/init',
     'tests',
   ];
+  // nodered_data/flows/ holds stale per-node duplicate reference files (see
+  // alarm-sync-linter.js's 2026-08-07 fix) -- the actual deployed flow set
+  // Node-RED runs is nodered_data/flows.json, a single file, not covered by
+  // the directory walk above. Scanned explicitly so objects referenced only
+  // from live simulator function nodes (e.g. ldi_alarm_state) aren't
+  // false-flagged as orphans.
+  const extraFiles = ['nodered_data/flows.json'];
   const pattern = new RegExp(`\\b${name}\\b`);
   let count = 0;
   for (const dir of searchDirs) {
@@ -71,6 +78,11 @@ function countReferences(name) {
       }
     };
     walk(dirPath);
+  }
+  for (const f of extraFiles) {
+    const fPath = path.join(process.cwd(), f);
+    if (!fs.existsSync(fPath)) continue;
+    if (pattern.test(fs.readFileSync(fPath, 'utf8'))) count++;
   }
   return count;
 }

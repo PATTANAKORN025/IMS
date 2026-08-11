@@ -27,6 +27,11 @@
 -- real vendor text, e.g. "Failed to connect to PLC", is itself already a
 -- generic technical phrase, not proprietary content, but detail text below
 -- is still an independent rewrite per this file's stated policy).
+--
+-- LDI Alarm Fidelity Audit fix #8 (2026-08-11): 2 more codes added --
+-- '01180016'/'0C020014', both real Critical-severity vendor codes, fired
+-- by almsim_gen's new RARE_CRITICAL branch. 21 codes total as of this
+-- revision.
 -- ══════════════════════════════════════════════════════════════════════════
 
 BEGIN;
@@ -78,7 +83,18 @@ INSERT INTO public.ldi_alarm_ms_code (alarm_id, alarm_type, alarm_code, alarm_ms
 ('80001','W','80001','Waiting for subdrawing preparation data timeout',
  'รอข้อมูลเตรียมภาพย่อย (subdrawing) นานเกินกำหนด'),
 ('97005','W','97005','Database connection exception',
- 'การเชื่อมต่อฐานข้อมูลผิดปกติ');
+ 'การเชื่อมต่อฐานข้อมูลผิดปกติ'),
+-- ── Critical (LDI Alarm Fidelity Audit fix #8, 2026-08-11): the mock
+-- catalog previously had 0 Critical-severity codes, so the top of the
+-- severity taxonomy was unreachable under normal simulation. These 2 are
+-- real vendor codes (alarm_type/alarm_msg match migration 061's real
+-- import verbatim -- both are already generic short technical phrases,
+-- not proprietary text, per this file's stated IP policy), fired by
+-- almsim_gen's RARE_CRITICAL branch at a low, independent rate. ──
+('01180016','E','01180016','Emergency Stop',
+ 'มีการกดปุ่มหยุดฉุกเฉิน (E-Stop) เครื่องหยุดทำงานทันที ต้องตรวจสอบก่อนรีเซ็ต'),
+('0C020014','A','0C020014','Safety sensor triggered',
+ 'เซนเซอร์นิรภัยถูกกระตุ้น มีวัตถุ/บุคคลเข้าใกล้พื้นที่อันตรายของเครื่อง ต้องตรวจสอบก่อนดำเนินการต่อ');
 
 -- ══════════════════════════════════════════════════════════════════════════
 -- VIEW: จับคู่ alarm กับ "คอลัมน์ที่ควรตรวจสอบ" ใน ldi_data
