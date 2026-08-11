@@ -14,6 +14,8 @@
     <a href="https://www.timescale.com/"><img src="https://img.shields.io/badge/-TimescaleDB_2.x-030407?style=for-the-badge&logo=postgresql&logoColor=F59E0B" alt="TimescaleDB"/></a>
     <br>
     <a href="#quick-start"><img src="https://img.shields.io/badge/Status-100%25_Passing-10B981?style=for-the-badge&logoColor=white" alt="Tests" /></a>
+    <a href="#quick-start"><img src="https://img.shields.io/badge/K6-Stress--Tested-030407?style=for-the-badge&logo=k6&logoColor=7B61FF" alt="K6" /></a>
+    <a href="data-generators/"><img src="https://img.shields.io/badge/Data-Digital_Twin-030407?style=for-the-badge&logo=python&logoColor=00C7B7" alt="Synthetic Data" /></a>
 </div>
 
 <div align="center" justify-content="space-between">
@@ -25,11 +27,11 @@
 
 ## A Little About IMS...
 
-I am an **Enterprise-grade Manufacturing Intelligence Platform** with a special bias towards predictive AIOps and real-time visualization. My actions are always aimed at achieving 99.999% uptime and zero-latency telemetry ingestion. In the factory floor, I am guided by Statistical Process Control (SPC), I never drop a packet.
+**APEX Circuit IMS** is an Enterprise-grade Manufacturing Intelligence Platform designed for predictive AIOps and real-time visualization. Engineered for 99.999% uptime and zero-latency telemetry ingestion, it serves as the central nervous system for the factory floor, driven by strict Statistical Process Control (SPC) and lossless data pipelines.
 
-**Designed for APEX Circuit.** Currently I am engaged in monitoring 1000+ infrastructure nodes and high-precision LDI manufacturing machines. I specialize in acting as a live digital twin, catching yield anomalies before they happen.
+**Designed for APEX Circuit.** The platform concurrently monitors 1000+ infrastructure nodes and high-precision LDI manufacturing machines. It operates as a live digital twin, catching yield anomalies and hardware failures before they impact production.
 
-At the moment I am utilizing TimescaleDB continuous aggregates for high-performance rendering, as well as sequential bulk polling in Node-RED.
+Currently utilizing TimescaleDB continuous aggregates for high-performance rendering, alongside sequential bulk polling mechanisms in Node-RED.
 
 ```javascript
 const APEX_IMS = {
@@ -73,6 +75,20 @@ const APEX_IMS = {
 <td align="center" style="border:none; padding:8px; width:33%;">
   <img src="assets/capacity-planning.png" alt="Capacity Planning" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
   <sub><b>Capacity Planning</b> — Predictive Forecasting</sub>
+</td>
+</tr>
+<tr>
+<td align="center" style="border:none; padding:8px; width:33%;">
+  <img src="assets/ldi-manufacturing.png" alt="LDI Manufacturing Command Center" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
+  <sub><b>LDI Manufacturing</b> — Command Center</sub>
+</td>
+<td align="center" style="border:none; padding:8px; width:33%;">
+  <img src="assets/ldi-andon.png" alt="LDI Operator Andon Board" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
+  <sub><b>LDI Andon Board</b> — Operator Floor View</sub>
+</td>
+<td align="center" style="border:none; padding:8px; width:33%;">
+  <img src="assets/ldi-engineering.png" alt="LDI Engineering Analytics" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
+  <sub><b>LDI Engineering</b> — Yield & SPC Analytics</sub>
 </td>
 </tr>
 </table>
