@@ -1,4 +1,4 @@
-# 📈 IMS Scaling Plan
+#  IMS Scaling Plan
 
 > **แผนการขยายระบบ IMS สำหรับรองรับปริมาณงานที่เพิ่มขึ้น**
 > ออกแบบสำหรับ 1-1000+ machines
@@ -15,7 +15,7 @@
 
 ---
 
-## 📋 Table of Contents
+##  Table of Contents
 
 1. [Current Architecture](#-current-architecture)
 2. [Capacity Analysis](#-capacity-analysis)
@@ -26,13 +26,13 @@
 
 ---
 
-## 🏗️ Current Architecture
+## ️ Current Architecture
 
 ### Single Instance Deployment
 
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│  Node-RED   │────▶│  PgBouncer  │────▶│ TimescaleDB │
+│  Node-RED   │────│  PgBouncer  │────│ TimescaleDB │
 │ (1 instance)│     │ (1 instance)│     │ (1 instance)│
 │   ~150MB    │     │  20-50 conn │     │  ~1GB/day   │
 └─────────────┘     └─────────────┘     └─────────────┘
@@ -42,15 +42,15 @@
 
 | Metric | Value | Tested |
 |---|---|---|
-| **Load Test (K6)** | 1,000 VUs | ✅ Passed |
-| **Iterations** | ~65,000 in 2 min | ✅ Verified |
-| **p95 Latency** | ~156ms | ✅ Measured |
-| **Data Points/Hour** | ~600 per machine | ✅ Calculated |
-| **Storage/Hour** | ~50 KB per machine | ✅ Verified |
+| **Load Test (K6)** | 1,000 VUs |  Passed |
+| **Iterations** | ~65,000 in 2 min |  Verified |
+| **p95 Latency** | ~156ms |  Measured |
+| **Data Points/Hour** | ~600 per machine |  Calculated |
+| **Storage/Hour** | ~50 KB per machine |  Verified |
 
 ---
 
-## 📊 Capacity Analysis
+##  Capacity Analysis
 
 ### Ceiling Calculation
 
@@ -83,7 +83,7 @@ Ceiling: ~500 machines at 10s poll interval
 
 ---
 
-## 🚀 Scaling Options
+##  Scaling Options
 
 ### Option 1: Vertical Scaling (Easiest)
 
@@ -220,7 +220,7 @@ if (shardIndex === MY_SHARD_INDEX) {
 
 ---
 
-## ⚡ Performance Tuning
+##  Performance Tuning
 
 ### TimescaleDB Optimization
 
@@ -278,7 +278,7 @@ module.exports = {
 
 ---
 
-## 🗄️ Retention Policy
+## ️ Retention Policy
 
 ### Current Configuration
 
@@ -318,7 +318,7 @@ SELECT add_retention_policy('public.ldi_metrics', INTERVAL '30 days');
 
 ---
 
-## 💰 Cost Estimation
+##  Cost Estimation
 
 ### Infrastructure Costs (Cloud Deployment)
 

@@ -1,4 +1,4 @@
-# 🛠️ System Administration & SRE Guide
+# ️ System Administration & SRE Guide
 
 > **คู่มือสำหรับทีม IT (MIS-G) ในการดูแลระบบ IMS**
 > ครอบคลุม Docker management, device registration, alert management, troubleshooting
@@ -15,7 +15,7 @@
 
 ---
 
-## 📑 Table of Contents
+##  Table of Contents
 
 1. [System Management](#-system-management)
 2. [Adding New Devices](#-adding-new-devices)
@@ -26,7 +26,7 @@
 
 ---
 
-## 🐳 System Management
+##  System Management
 
 ### Container Overview
 
@@ -76,7 +76,7 @@ docker compose logs -f --tail 50 pgbouncer
 docker stats --no-stream
 ```
 
-> 💡 **Note:** หลัง `docker compose down -v` ต้องรอ 40 วินาทีให้ระบบทั้งหมด startup ก่อนตรวจสอบ
+>  **Note:** หลัง `docker compose down -v` ต้องรอ 40 วินาทีให้ระบบทั้งหมด startup ก่อนตรวจสอบ
 
 ### Service Health Checks
 
@@ -172,7 +172,7 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/dashboards
 
 ---
 
-## 📱 Adding New Devices
+##  Adding New Devices
 
 ### Step 1: Register in Database
 
@@ -231,7 +231,7 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c \
 
 ---
 
-## ⚠️ Alert Management
+## ️ Alert Management
 
 ### Alert Rules Location
 
@@ -289,7 +289,7 @@ docker compose exec prometheus promtool check rules /etc/prometheus/rules/ims-al
 
 ---
 
-## 🔧 Troubleshooting
+##  Troubleshooting
 
 ### Common Issues & Solutions
 
@@ -342,7 +342,7 @@ print(f'Prometheus: {ups}/{total} targets UP')
 
 ---
 
-## 💾 Backup & Recovery
+##  Backup & Recovery
 
 ### Database Backup
 
@@ -387,7 +387,7 @@ cp -r monitoring/grafana/dashboards/ monitoring/grafana/dashboards.bak/
 
 ---
 
-## 📊 Performance Monitoring
+##  Performance Monitoring
 
 ### System Metrics
 

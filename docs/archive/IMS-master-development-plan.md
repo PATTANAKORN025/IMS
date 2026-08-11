@@ -21,59 +21,59 @@
 | **Alerting** | Prometheus + Alertmanager → LINE Notify + MS Teams |
 | **AI Tooling** | 12 MCP servers, 90 skills, 8 plugins (MiMo Code + Claude Code + OpenCode + Copilot) |
 | **Tests** | Unit tests, K6 stress tests, Playwright visual regression, dashboard linter |
-| **CI/CD** | ❌ ยังไม่มี — flows.json deploy ด้วยมือ |
+| **CI/CD** |  ยังไม่มี — flows.json deploy ด้วยมือ |
 
 ---
 
 ## 2. Current State Assessment
 
-### 2.1 สิ่งที่ทำเสร็จแล้ว ✅
+### 2.1 สิ่งที่ทำเสร็จแล้ว 
 
 | Category | Item | Status |
 |---|---|---|
-| **Pipeline** | Zero-Leak Pipeline (4-thread parallel SNMP walker) | ✅ Done |
-| **Pipeline** | Network 64-bit Analytics (eth0/wlan0 Mbps) | ✅ Done |
-| **Pipeline** | Stateful Parser v9 (per-device flow context) | ✅ Done |
-| **Pipeline** | Circuit Breaker (2 failures → HALF_OPEN probe) | ✅ Done |
-| **Pipeline** | Retry Queue with age-based eviction | ✅ Done |
-| **Storage** | TimescaleDB V2 Normalized Schema (sys_metrics, net_metrics, ldi_data) | ✅ Done |
-| **Storage** | Continuous Aggregates (hourly → daily → weekly) | ✅ Done |
-| **Storage** | Retention Policies (raw 14d, hourly 90d, daily 2yr, weekly forever) | ✅ Done |
-| **Storage** | PgBouncer Transaction Pooling | ✅ Done |
-| **Dashboards** | NOC Overview (fleet envelope, health score) | ✅ Done |
-| **Dashboards** | Engineering Drill-Down (per-machine diagnostics) | ✅ Done |
-| **Dashboards** | Capacity Planning (forecasting, Z-Score) | ✅ Done |
-| **Dashboards** | Meta-Monitoring (pipeline health) | ✅ Done |
-| **Dashboards** | 5× LDI Manufacturing (analytics, snapshot, operator, data readiness) | ✅ Done |
-| **Alerting** | Prometheus Alert Rules (14 rules) | ✅ Done |
-| **Alerting** | Alertmanager Inhibition Rules | ✅ Done |
-| **Alerting** | LINE Notify + MS Teams Webhook | ✅ Done |
-| **LDI** | LDI Production Schema (ldi_data, ldi_alarm_log, SPC engine) | ✅ Done |
-| **LDI** | LDI Device Simulator + Alarm Simulator | ✅ Done |
-| **Security** | Gitleaks scanning | ✅ Done |
-| **Security** | Docker secrets management | ✅ Done |
-| **Tooling** | 90 skills (26 local + 41 mattpocock + 9 vercel + 14 superpowers) | ✅ Done |
-| **Tooling** | 12 MCP servers (MiMo/Claude/OpenCode/Copilot) | ✅ Done |
+| **Pipeline** | Zero-Leak Pipeline (4-thread parallel SNMP walker) |  Done |
+| **Pipeline** | Network 64-bit Analytics (eth0/wlan0 Mbps) |  Done |
+| **Pipeline** | Stateful Parser v9 (per-device flow context) |  Done |
+| **Pipeline** | Circuit Breaker (2 failures → HALF_OPEN probe) |  Done |
+| **Pipeline** | Retry Queue with age-based eviction |  Done |
+| **Storage** | TimescaleDB V2 Normalized Schema (sys_metrics, net_metrics, ldi_data) |  Done |
+| **Storage** | Continuous Aggregates (hourly → daily → weekly) |  Done |
+| **Storage** | Retention Policies (raw 14d, hourly 90d, daily 2yr, weekly forever) |  Done |
+| **Storage** | PgBouncer Transaction Pooling |  Done |
+| **Dashboards** | NOC Overview (fleet envelope, health score) |  Done |
+| **Dashboards** | Engineering Drill-Down (per-machine diagnostics) |  Done |
+| **Dashboards** | Capacity Planning (forecasting, Z-Score) |  Done |
+| **Dashboards** | Meta-Monitoring (pipeline health) |  Done |
+| **Dashboards** | 5× LDI Manufacturing (analytics, snapshot, operator, data readiness) |  Done |
+| **Alerting** | Prometheus Alert Rules (14 rules) |  Done |
+| **Alerting** | Alertmanager Inhibition Rules |  Done |
+| **Alerting** | LINE Notify + MS Teams Webhook |  Done |
+| **LDI** | LDI Production Schema (ldi_data, ldi_alarm_log, SPC engine) |  Done |
+| **LDI** | LDI Device Simulator + Alarm Simulator |  Done |
+| **Security** | Gitleaks scanning |  Done |
+| **Security** | Docker secrets management |  Done |
+| **Tooling** | 90 skills (26 local + 41 mattpocock + 9 vercel + 14 superpowers) |  Done |
+| **Tooling** | 12 MCP servers (MiMo/Claude/OpenCode/Copilot) |  Done |
 
 ### 2.2 สิ่งที่ต้องทำต่อ (Backlog)
 
 | # | Item | Priority | Effort | Impact |
 |---|---|---|---|---|
-| 1 | **CI/CD Pipeline** — GitHub Actions สำหรับ flows.json deploy | 🔴 P0 | Medium | 🔥 สูงมาก |
-| 2 | **K6 Stress Test** — 10,000 req/sec → PgBouncer throughput ceiling | 🔴 P0 | Medium | 🔥 สูงมาก |
-| 3 | **Disk Forecasting** — predictive disk-full panel ใน Capacity Planning | ⚠️ P1 | Low | 🟡 กลาง |
-| 4 | **Connect Real Servers** — swap simulator IPs ใน Node-RED | ⚠️ P1 | High | 🔥 สูงมาก |
-| 5 | **Webhook Alerts** — configure real LINE Notify / Slack webhook | ⚠️ P1 | Low | 🟡 กลาง |
+| 1 | **CI/CD Pipeline** — GitHub Actions สำหรับ flows.json deploy |  P0 | Medium |  สูงมาก |
+| 2 | **K6 Stress Test** — 10,000 req/sec → PgBouncer throughput ceiling |  P0 | Medium |  สูงมาก |
+| 3 | **Disk Forecasting** — predictive disk-full panel ใน Capacity Planning | ️ P1 | Low | 🟡 กลาง |
+| 4 | **Connect Real Servers** — swap simulator IPs ใน Node-RED | ️ P1 | High |  สูงมาก |
+| 5 | **Webhook Alerts** — configure real LINE Notify / Slack webhook | ️ P1 | Low | 🟡 กลาง |
 
 ### 2.3 Known Issues (จาก SECURITY.md)
 
 | # | Issue | Severity | Status |
 |---|---|---|---|
-| 1 | PgBouncer port exposed on host | ⚠️ Medium | Known |
-| 2 | Node-RED Admin UI has no auth | 🔴 High | Known |
-| 3 | SNMP community string in plain text | ⚠️ Medium | Known |
-| 4 | PgBouncer uses AUTH_TYPE: plain | ⚠️ Medium | Known (trade-off) |
-| 5 | GitHub PAT hardcoded in mimocode.json | 🔴 High | Known |
+| 1 | PgBouncer port exposed on host | ️ Medium | Known |
+| 2 | Node-RED Admin UI has no auth |  High | Known |
+| 3 | SNMP community string in plain text | ️ Medium | Known |
+| 4 | PgBouncer uses AUTH_TYPE: plain | ️ Medium | Known (trade-off) |
+| 5 | GitHub PAT hardcoded in mimocode.json |  High | Known |
 
 ---
 
@@ -109,10 +109,10 @@ push to main (flows/*.json changed)
 ```
 
 **Success Criteria:**
-- ✅ flows.json deploy อัตโนมัติทุกครั้งที่ push
-- ✅ validate + snapshot + verify สำเร็จก่อน deploy
-- ✅ rollback อัตโนมัติถ้า verify fail
-- ✅ deploy history มี audit trail ใน GitHub Actions
+-  flows.json deploy อัตโนมัติทุกครั้งที่ push
+-  validate + snapshot + verify สำเร็จก่อน deploy
+-  rollback อัตโนมัติถ้า verify fail
+-  deploy history มี audit trail ใน GitHub Actions
 
 ---
 
@@ -131,8 +131,8 @@ push to main (flows/*.json changed)
 | 5 | Restart Node-RED | `make restart` | ทดสอบ login |
 
 **Success Criteria:**
-- ✅ Node-RED Editor ต้อง login ก่อนเข้าถึง
-- ✅ ยังเข้าถึงผ่าน Docker network ได้ (ไม่ต้อง login สำหรับ pipeline)
+-  Node-RED Editor ต้อง login ก่อนเข้าถึง
+-  ยังเข้าถึงผ่าน Docker network ได้ (ไม่ต้อง login สำหรับ pipeline)
 
 ---
 
@@ -156,9 +156,9 @@ push to main (flows/*.json changed)
 | 6 | บันทึกผลลัพธ์ | `docs/PERFORMANCE.md` | baseline + optimized metrics |
 
 **Success Criteria:**
-- ✅ ผ่าน 10,000 req/sec โดยไม่ error > 0.1%
-- ✅ p95 latency < 500ms
-- ✅ PgBouncer connection pool ไม่ overflow
+-  ผ่าน 10,000 req/sec โดยไม่ error > 0.1%
+-  p95 latency < 500ms
+-  PgBouncer connection pool ไม่ overflow
 
 ---
 
@@ -178,9 +178,9 @@ push to main (flows/*.json changed)
 | 6 | Monitor pipeline health | `monitoring/grafana/dashboards/infrastructure/ims-meta-monitoring.json` | ดู ingestion rate, error rate |
 
 **Success Criteria:**
-- ✅ SNMP polling ใช้ได้กับ server จริง
-- ✅ ไม่มี data loss ในช่วง transition
-- ✅ Circuit breaker ทำงานถูกต้องกับ server จริง
+-  SNMP polling ใช้ได้กับ server จริง
+-  ไม่มี data loss ในช่วง transition
+-  Circuit breaker ทำงานถูกต้องกับ server จริง
 
 ---
 
@@ -203,9 +203,9 @@ push to main (flows/*.json changed)
 | 5 | ทดสอบกับข้อมูลจำลอง | — | สร้าง synthetic data ที่ disk กำลังจะเต็ม |
 
 **Success Criteria:**
-- ✅ Panel แสดง "Days Until Full" ได้ถูกต้อง
-- ✅ Alert ทำงานเมื่อ forecast <7 วัน
-- ✅ กราฟ show projection line ชัดเจน
+-  Panel แสดง "Days Until Full" ได้ถูกต้อง
+-  Alert ทำงานเมื่อ forecast <7 วัน
+-  กราฟ show projection line ชัดเจน
 
 ---
 
@@ -225,9 +225,9 @@ push to main (flows/*.json changed)
 | 6 | ตรวจสอบ notification | LINE/Slack app | ยืนยันว่าได้รับ notification |
 
 **Success Criteria:**
-- ✅ Alert ส่งถึง LINE Notify จริง
-- ✅ Alert ส่งถึง Slack จริง
-- ✅ Runbook link ทำงานถูกต้อง
+-  Alert ส่งถึง LINE Notify จริง
+-  Alert ส่งถึง Slack จริง
+-  Runbook link ทำงานถูกต้อง
 
 ---
 
@@ -299,19 +299,19 @@ push to main (flows/*.json changed)
 
 | Metric | Current | Target |
 |---|---|---|
-| CI/CD pipeline | ❌ None | ✅ GitHub Actions |
+| CI/CD pipeline |  None |  GitHub Actions |
 | Deploy time (flows.json) | ~5 min (manual) | <1 min (automated) |
 | Rollback time | ~10 min (manual) | <30s (automated) |
-| Alert channels | Placeholder | ✅ LINE + Slack + Teams |
-| Documentation coverage | Partial | ✅ Full (RUNBOOK + ONBOARDING + API) |
+| Alert channels | Placeholder |  LINE + Slack + Teams |
+| Documentation coverage | Partial |  Full (RUNBOOK + ONBOARDING + API) |
 
 ### 5.3 Security Metrics
 
 | Metric | Current | Target |
 |---|---|---|
-| Node-RED auth | ❌ None | ✅ bcrypt adminAuth |
+| Node-RED auth |  None |  bcrypt adminAuth |
 | SNMP version | v2c | v3 (Phase 17) |
-| Secret exposure | GitHub PAT leaked | ✅ All rotated |
+| Secret exposure | GitHub PAT leaked |  All rotated |
 | CVE response time | Unknown | <24h |
 
 ---

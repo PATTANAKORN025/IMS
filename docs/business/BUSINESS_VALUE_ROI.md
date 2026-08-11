@@ -1,4 +1,4 @@
-# 📈 Business Value & ROI Analysis
+#  Business Value & ROI Analysis
 
 > **เอกสารสรุปผลกระทบทางธุรกิจสำหรับผู้บริหาร**
 > โครงการ IMS — APEX Circuit
@@ -27,7 +27,7 @@
 
 ## 2. Problem → Solution Matrix
 
-### 🔴 Before (ปัญหาเดิม)
+###  Before (ปัญหาเดิม)
 
 | Problem | Impact | Daily Cost |
 |---|---|---|

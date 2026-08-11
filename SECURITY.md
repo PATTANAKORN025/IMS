@@ -1,4 +1,4 @@
-# 🔒 Security Policy
+#  Security Policy
 
 > **นโยบายความปลอดภัยของ IMS (Infrastructure Monitoring System)**
 > ทราบข้อจำกัดและแผนแก้ไขก่อน deploy ไปยัง Production
@@ -15,19 +15,19 @@
 
 ---
 
-## 📋 Known Limitations
+##  Known Limitations
 
 | # | Issue | Severity | Status | Fix Plan |
 |---|---|---|---|---|
-| 1 | PgBouncer port exposed on host | ⚠️ Medium | Known | Bind localhost-only or use reverse proxy |
-| 2 | Node-RED Admin UI has no auth | 🔴 High | Known | Add `adminAuth` in settings.js before production |
-| 3 | SNMP community string in plain text | ⚠️ Medium | Known | Move to environment variable |
-| 4 | PgBouncer uses AUTH_TYPE: plain | ⚠️ Medium | Known (trade-off) | Consider password hashing at source |
-| 5 | GitHub PAT hardcoded in `.mimocode/mimocode.json` (AI tool config) | 🔴 High | Known | Revoke token at GitHub; replace with `${GITHUB_PERSONAL_ACCESS_TOKEN}` env placeholder |
+| 1 | PgBouncer port exposed on host | ️ Medium | Known | Bind localhost-only or use reverse proxy |
+| 2 | Node-RED Admin UI has no auth |  High | Known | Add `adminAuth` in settings.js before production |
+| 3 | SNMP community string in plain text | ️ Medium | Known | Move to environment variable |
+| 4 | PgBouncer uses AUTH_TYPE: plain | ️ Medium | Known (trade-off) | Consider password hashing at source |
+| 5 | GitHub PAT hardcoded in `.mimocode/mimocode.json` (AI tool config) |  High | Known | Revoke token at GitHub; replace with `${GITHUB_PERSONAL_ACCESS_TOKEN}` env placeholder |
 
 ---
 
-## ✅ Production Hardening Checklist
+##  Production Hardening Checklist
 
 ### Before Granting Network Access
 
@@ -53,7 +53,7 @@
 
 ---
 
-## 🛡️ Security Controls
+## ️ Security Controls
 
 ### Network Security
 
@@ -83,7 +83,7 @@
 
 ---
 
-## 🤖 AI Tooling Security (MCP / Skills / Plugins)
+##  AI Tooling Security (MCP / Skills / Plugins)
 
 ### Agent Supply Chain Inventory
 
@@ -101,13 +101,13 @@ All AI tooling is open-source (MIT / Apache-2.0), per the Plugin Policy. Install
 - `.mcp.json` and `.opencode/opencode.json` are **tracked by git** — MUST use `${VAR}` placeholders (e.g. `${GITHUB_PERSONAL_ACCESS_TOKEN}`, `${POSTGRES_PASSWORD}`), never literal credentials.
 - MCP Python servers require **pinned `mcp==X.Y.Z` SDK versions** in the launch args (see `knowledge.md`) — pinning prevents supply-chain drift from breaking or hijacking the toolchain.
 
-### ⚠️ Typosquat / Canary Packages — NEVER Install
+### ️ Typosquat / Canary Packages — NEVER Install
 
 npm packages `mcp-server-fetch` and `mcp-server-git` are **security-research canaries** (`node-canaries` / `npx-canary`) masquerading as real MCP servers. Do NOT install them under any circumstances — use the official PyPI (`uvx mcp-server-*`) or `@modelcontextprotocol/server-*` npm packages instead. Always verify a package's maintainer + repository before adding to any AI config.
 
 ---
 
-## 🚨 Reporting Vulnerabilities
+##  Reporting Vulnerabilities
 
 If you discover a security vulnerability:
 
@@ -118,7 +118,7 @@ If you discover a security vulnerability:
 
 ---
 
-## 📚 References
+##  References
 
 - [Docker Security Best Practices](https://docs.docker.com/engine/security/)
 - [PostgreSQL Security](https://www.postgresql.org/docs/current/auth.html)

@@ -1,4 +1,4 @@
-# 🛡️ LDI System Validation & Readiness Protocol
+# ️ LDI System Validation & Readiness Protocol
 
 > **Objective:** Certify the LDI (Laser Direct Imaging) monitoring ecosystem for production deployment. This protocol verifies Data Integrity, Visual Accuracy, System Stability, and Operator Readiness.
 >
@@ -18,17 +18,17 @@
 **The Evidence (re-run 2026-08-10, verbatim test names confirmed present in `tests/unit/v2-parser.test.js`):**
 ```text
 TEST 1: Empty Payload Timeout Simulation
-  ✓ LDI: empty payload preserves zero state
-  ✓ parseAll skips null/undefined items gracefully
-  ✓ parseAll throws on non-iterable payload (parser guard catches this)
+   LDI: empty payload preserves zero state
+   parseAll skips null/undefined items gracefully
+   parseAll throws on non-iterable payload (parser guard catches this)
 
 TEST 2: 32-bit Counter Wraparound Math
-  ✓ 32-bit wrap: counter 4294967295 → 100 calculates correct positive delta
-  ✓ Cold-start: first poll returns 0 Mbps (no prev data)
+   32-bit wrap: counter 4294967295 → 100 calculates correct positive delta
+   Cold-start: first poll returns 0 Mbps (no prev data)
 
 TEST 3: Boundary Validations & Sanity Caps
-  ✓ Temperature clamped at max 150°C
-  ✓ sanitize escapes SQL injection attempts
+   Temperature clamped at max 150°C
+   sanitize escapes SQL injection attempts
 
 ==================================================
 RESULTS: 27 passed, 0 failed out of 27

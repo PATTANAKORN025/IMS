@@ -1,23 +1,23 @@
-# 🏭 IMS Operator Standard Operating Procedure (SOP)
+#  IMS Operator Standard Operating Procedure (SOP)
 
 > **Role:** LDI Factory Floor Operator / NOC Level 1 Support
 > **Objective:** Daily operation, monitoring, and first-line response using the IMS Grafana HUD.
 
 ---
 
-## 1. 🌅 Beginning of Shift (08:00 / 20:00)
+## 1.  Beginning of Shift (08:00 / 20:00)
 
 ### 1.1 Shift Handover Checklist
 1. **Login:** Open the [IMS NOC Overview](http://localhost:3000/d/ims-noc-overview) dashboard on the primary wall display.
 2. **Health Check:** Look at the **Fleet Health Score** (Top Left).
    - `> 95%`: 🟢 Nominal. Proceed with normal duties.
    - `90% - 94%`: 🟡 Warning. Check the "Top 10 Critical Nodes" panel.
-   - `< 90%`: 🔴 Critical. Escalate immediately to Level 2 (SRE/Engineering).
+   - `< 90%`:  Critical. Escalate immediately to Level 2 (SRE/Engineering).
 3. **Verify LDI Fleet:** Open the [LDI Manufacturing](http://localhost:3000/d/ims-ldi-manufacturing) dashboard. Ensure no machines are currently marked "OFFLINE" in red.
 
 ---
 
-## 2. 🚨 Routine Monitoring & Andon Response
+## 2.  Routine Monitoring & Andon Response
 
 The **Operator Andon Dashboard** is your primary tool. It operates on a strict Traffic Light protocol.
 
@@ -32,7 +32,7 @@ The **Operator Andon Dashboard** is your primary tool. It operates on a strict T
   2. Verify the specific metric (e.g., Laser Temp is 42°C, limit is 45°C).
   3. Notify the Line Supervisor via Walkie-Talkie/LINE. Mention the Machine ID.
 
-### 🔴 Red State (Critical / Stop Line)
+###  Red State (Critical / Stop Line)
 - **Visuals:** Panel turns red and pulses. Background may flash.
 - **Action:**
   1. **STOP THE LINE.** Halt loading PCBs into the affected LDI machine immediately.
@@ -42,7 +42,7 @@ The **Operator Andon Dashboard** is your primary tool. It operates on a strict T
 
 ---
 
-## 3. 🔍 How to Find Specific Information
+## 3.  How to Find Specific Information
 
 ### Q: "A supervisor wants to know why Machine LDI-05 is slow."
 1. Open the [Engineering Drill-Down](http://localhost:3000/d/ims-engineering-drilldown) dashboard.
@@ -55,7 +55,7 @@ The **Operator Andon Dashboard** is your primary tool. It operates on a strict T
 
 ---
 
-## 4. 🌙 End of Shift (19:30 / 07:30)
+## 4.  End of Shift (19:30 / 07:30)
 
 ### 4.1 Daily Reporting
 1. Open the [Capacity Planning](http://localhost:3000/d/ims-capacity-planning) dashboard.

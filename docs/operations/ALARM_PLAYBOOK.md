@@ -1,4 +1,4 @@
-# 📖 IMS Alarm & Alert Playbook
+#  IMS Alarm & Alert Playbook
 
 > **Objective:** first-responder resolution steps mapped to the alerts and alarm codes this system actually generates. Every code and rule name below was checked directly against the live database and the provisioned alert rule files on 2026-08-10 — this replaces an earlier version that used fictional codes (`SYS-001`, `NET-002`, `LDI-001`) that never existed in this system.
 >

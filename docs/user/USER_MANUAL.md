@@ -1,4 +1,4 @@
-# 📘 IMS — User Manual
+#  IMS — User Manual
 
 > **คู่มือการใช้งานสำหรับ IT Support และ NOC Team**
 > อธิบายวิธีอ่าน Dashboard, ตีความ metrics, และตอบสนองต่อ alerts
@@ -15,7 +15,7 @@
 
 ---
 
-## 📑 Table of Contents
+##  Table of Contents
 
 1. [Getting Started](#-getting-started)
 2. [Grafana Dashboard Guide](#-grafana-dashboard-guide)
@@ -27,7 +27,7 @@
 
 ---
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### Accessing the System
 
@@ -43,24 +43,24 @@
 เมื่อเข้าสู่ Grafana แล้ว จะพบ 10 dashboards:
 
 ```
-📁 IMS Dashboards
+ IMS Dashboards
 ├── Infrastructure (servers/network)
-│   ├── 📊 NOC Overview            — Executive fleet envelope (infra only -- LDI lives below)
-│   ├── 📊 Engineering Drill-Down  — Per-server deep dive: CPU/RAM/disk/temp/network
-│   ├── 📊 Capacity Planning       — Linear-regression forecasting (days until disk/RAM full)
-│   └── 📊 Meta-Monitoring         — The pipeline's own health (rows/sec, batch success, retry queue)
+│   ├──  NOC Overview            — Executive fleet envelope (infra only -- LDI lives below)
+│   ├──  Engineering Drill-Down  — Per-server deep dive: CPU/RAM/disk/temp/network
+│   ├──  Capacity Planning       — Linear-regression forecasting (days until disk/RAM full)
+│   └──  Meta-Monitoring         — The pipeline's own health (rows/sec, batch success, retry queue)
 └── LDI Manufacturing (PCB laser direct imaging fleet)
-    ├── 📊 Easy Overview           — Zero-config whole-fleet glance, no filters to set
-    ├── 📊 LDI Manufacturing       — Executive KPIs + machine telemetry + alarm stream (main command center)
-    ├── 📊 LDI Operator Andon      — Factory-floor kiosk, 1280x720, zero-scroll
-    ├── 📊 LDI Engineering Analytics — Cpk/SPC ranking, RCA Truth Test, PE/JE distributions
-    ├── 📊 LDI Machine Snapshot    — Click any alarm/log to inspect the exact millisecond
-    └── 📊 LDI Data Readiness      — Self-auditing data-quality dashboard (coverage %, gaps)
+    ├──  Easy Overview           — Zero-config whole-fleet glance, no filters to set
+    ├──  LDI Manufacturing       — Executive KPIs + machine telemetry + alarm stream (main command center)
+    ├──  LDI Operator Andon      — Factory-floor kiosk, 1280x720, zero-scroll
+    ├──  LDI Engineering Analytics — Cpk/SPC ranking, RCA Truth Test, PE/JE distributions
+    ├──  LDI Machine Snapshot    — Click any alarm/log to inspect the exact millisecond
+    └──  LDI Data Readiness      — Self-auditing data-quality dashboard (coverage %, gaps)
 ```
 
 ---
 
-## 📊 Grafana Dashboard Guide
+##  Grafana Dashboard Guide
 
 ### 1. NOC Overview Dashboard
 
@@ -68,13 +68,13 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  🏭 IMS NOC Overview                                            │
+│   IMS NOC Overview                                            │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌───────────┐ │
 │  │ Total       │ │ Healthy     │ │ Warning     │ │ Critical  │ │
 │  │ Machines: 5 │ │ Machines: 4 │ │ Alerts: 1   │ │ Alerts: 0 │ │
-│  │   🟢        │ │    🟢       │ │    🟡       │ │    🔴     │ │
+│  │   🟢        │ │    🟢       │ │    🟡       │ │         │ │
 │  └─────────────┘ └─────────────┘ └─────────────┘ └───────────┘ │
 │                                                                 │
 │  ┌───────────────────────────────────────────────────────────┐ │
@@ -95,11 +95,11 @@
 
 | Panel | Metrics | Color Coding |
 |---|---|---|
-| **CPU Usage** | `cpu_load_percent` per core | 🟢 < 60%, 🟡 60-80%, 🔴 > 80% |
-| **Memory Usage** | `ram_used_mb / ram_total_mb` | 🟢 < 70%, 🟡 70-85%, 🔴 > 85% |
-| **Disk Usage** | `disk_used_gb / disk_total_gb` | 🟢 < 70%, 🟡 70-80%, 🔴 > 80% |
+| **CPU Usage** | `cpu_load_percent` per core | 🟢 < 60%, 🟡 60-80%,  > 80% |
+| **Memory Usage** | `ram_used_mb / ram_total_mb` | 🟢 < 70%, 🟡 70-85%,  > 85% |
+| **Disk Usage** | `disk_used_gb / disk_total_gb` | 🟢 < 70%, 🟡 70-80%,  > 80% |
 | **Network Traffic** | `rx_mbps`, `tx_mbps` per interface | Blue = RX, Light Blue = TX |
-| **Temperature** | `temp_c` | 🟢 < 65°C, 🟡 65-80°C, 🔴 > 80°C |
+| **Temperature** | `temp_c` | 🟢 < 65°C, 🟡 65-80°C,  > 80°C |
 
 ### 3. Engineering Drilldown Dashboard
 
@@ -107,7 +107,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  🔧 Engineering Drilldown — [Select Machine ▼]                  │
+│   Engineering Drilldown — [Select Machine ▼]                  │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  ┌───────────────────────────────────────────────────────────┐ │
@@ -155,7 +155,7 @@
 | Zone | Color | Meaning |
 |---|---|---|
 | Inside ±10µm | 🟢 Green | ปกติ — หัวเลเซอร์ทำงานถูกต้อง |
-| Outside ±10µm | 🔴 Red | ผิดปกติ — หัวเลเซอร์เริ่มมีปัญหา |
+| Outside ±10µm |  Red | ผิดปกติ — หัวเลเซอร์เริ่มมีปัญหา |
 
 **วิธีใช้:**
 - จุดที่อยู่ในกรอบสีเขียว = คุณภาพ PCB อยู่ในเกณฑ์
@@ -223,7 +223,7 @@ Deep-dive rows (Production & Compliance, Process Metrics, Analytics & SPC, Syste
 
 ---
 
-## 📈 Reading Metrics
+##  Reading Metrics
 
 ### CPU Metrics
 
@@ -241,10 +241,10 @@ Deep-dive rows (Production & Compliance, Process Metrics, Analytics & SPC, Syste
 ```
 Machine: server-01
 CPU Load: 72% (Warning)
-├── Core 1: 85%  ⚠️
-├── Core 2: 45%  ✅
-├── Core 3: 78%  ⚠️
-└── Core 4: 80%  ⚠️
+├── Core 1: 85%  ️
+├── Core 2: 45%  
+├── Core 3: 78%  ️
+└── Core 4: 80%  ️
 → Core 1, 3, 4 กำลังถูกใช้งานหนัก ตรวจสอบว่ามี process ไหนกำลัง run อยู่
 ```
 
@@ -282,8 +282,8 @@ Machine: server-01
 ┌─────────┬──────────┬──────────┬──────────┬──────────┬────────┐
 │Interface│ RX Mbps  │ TX Mbps  │ Errors   │ Drops    │ Status │
 ├─────────┼──────────┼──────────┼──────────┼──────────┼────────┤
-│ eth0    │ 1200     │ 850      │ 0        │ 0        │ ✅ UP  │
-│ wlan0   │ 320      │ 180      │ 0        │ 12       │ ✅ UP  │
+│ eth0    │ 1200     │ 850      │ 0        │ 0        │  UP  │
+│ wlan0   │ 320      │ 180      │ 0        │ 12       │  UP  │
 └─────────┴──────────┴──────────┴──────────┴──────────┴────────┘
 → wlan0 มี drops 12 packets — ตรวจสอบ wireless signal
 ```
@@ -314,19 +314,19 @@ Machine: server-01
 
 ---
 
-## 🚨 Alert Response Procedures
+##  Alert Response Procedures
 
 ### Alert Severity Levels
 
 | Level | Color | Response Time | Example |
 |---|---|---|---|
-| **Critical** | 🔴 Red | ทันที (< 15 นาที) | InterfaceDown, ServiceDown, CriticalCPU |
+| **Critical** |  Red | ทันที (< 15 นาที) | InterfaceDown, ServiceDown, CriticalCPU |
 | **Warning** | 🟡 Yellow | เร็ว (< 1 ชั่วโมง) | HighCPU, HighMemory, DiskSpaceLow |
-| **Info** | 🔵 Blue | ตามปกติ (< 4 ชั่วโมง) | TelemetryGap, PredictiveDiskFull |
+| **Info** |  Blue | ตามปกติ (< 4 ชั่วโมง) | TelemetryGap, PredictiveDiskFull |
 
 ### Incident Response Playbook
 
-#### 🚨 Scenario 1: InterfaceDown (Critical)
+####  Scenario 1: InterfaceDown (Critical)
 
 ```
 Symptoms:
@@ -351,7 +351,7 @@ Escalation:
 - If switch port is down → contact data center team
 ```
 
-#### ⚠️ Scenario 2: HighCPUUsage (Warning)
+#### ️ Scenario 2: HighCPUUsage (Warning)
 
 ```
 Symptoms:
@@ -375,7 +375,7 @@ Escalation:
 - If affecting other services → consider scaling
 ```
 
-#### ⚠️ Scenario 3: DiskSpaceLow (Warning)
+#### ️ Scenario 3: DiskSpaceLow (Warning)
 
 ```
 Symptoms:
@@ -399,7 +399,7 @@ Escalation:
 - If critical (> 95%) → immediate cleanup required
 ```
 
-#### 🔴 Scenario 4: ServiceDown (Critical)
+####  Scenario 4: ServiceDown (Critical)
 
 ```
 Symptoms:
@@ -451,7 +451,7 @@ Escalation:
 
 ---
 
-## 🔧 Common Operations
+##  Common Operations
 
 ### Check System Status
 
@@ -501,7 +501,7 @@ docker compose restart node-red grafana alertmanager prometheus
 
 ---
 
-## 🐛 Troubleshooting
+##  Troubleshooting
 
 ### Common Issues
 
@@ -546,7 +546,7 @@ docker compose exec prometheus wget -qO- "http://localhost:9090/api/v1/alerts" 2
 
 ---
 
-## 📋 Quick Reference
+##  Quick Reference
 
 ### Keyboard Shortcuts (Grafana)
 
@@ -565,14 +565,14 @@ docker compose exec prometheus wget -qO- "http://localhost:9090/api/v1/alerts" 2
 
 | Metric | Healthy | Warning | Critical |
 |---|---|---|---|
-| **CPU** | 🟢 Green | 🟡 Yellow → Orange | 🔴 Red |
-| **Memory** | 🟢 Green | 🟡 Purple → Dark Orange | 🔴 Red |
-| **Disk** | 🟢 Green | 🟡 Cyan → Blue | 🔴 Red |
-| **Network RX** | 🔵 Dark Blue (#1F60C4) | — | 🔴 Red |
-| **Network TX** | 🔵 Light Blue (#5794F2) | — | 🔴 Red |
-| **Temperature** | 🟢 Green | 🟡 Yellow | 🔴 Red |
-| **Errors** | — | — | 🔴 Red (#C4162A) |
-| **Drops** | — | 🟠 Orange (#FF9830) | 🔴 Red |
+| **CPU** | 🟢 Green | 🟡 Yellow → Orange |  Red |
+| **Memory** | 🟢 Green | 🟡 Purple → Dark Orange |  Red |
+| **Disk** | 🟢 Green | 🟡 Cyan → Blue |  Red |
+| **Network RX** |  Dark Blue (#1F60C4) | — |  Red |
+| **Network TX** |  Light Blue (#5794F2) | — |  Red |
+| **Temperature** | 🟢 Green | 🟡 Yellow |  Red |
+| **Errors** | — | — |  Red (#C4162A) |
+| **Drops** | — | 🟠 Orange (#FF9830) |  Red |
 
 ### Alert Contacts
 

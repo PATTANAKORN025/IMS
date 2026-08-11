@@ -22,7 +22,7 @@ All three ran read-only in parallel, cross-checking file contents against live s
 
 ---
 
-## 🔴 P0 — Critical
+##  P0 — Critical
 
 ### P0-1 · A production alert rule is actively failing every evaluation cycle, right now
 
@@ -126,7 +126,7 @@ Runs on every push/PR to `main`. It builds `flows.json` via `node scripts/build-
 
 ---
 
-## ✅ Checked and found genuinely fine
+##  Checked and found genuinely fine
 
 - **Migration idempotency**, broadly: ~19 of 23 migrations correctly use `IF NOT EXISTS`/`CREATE OR REPLACE`/`ON CONFLICT DO NOTHING`/exception-swallowing `DO $$` blocks. The non-idempotent ones are the exception, not the rule (see P2-2).
 - **`archive/` is safely inert** — `migrate.sh`'s glob is non-recursive, never touches it.
@@ -148,9 +148,9 @@ Runs on every push/PR to `main`. It builds `flows.json` via `node scripts/build-
 
 | # | Item | Severity | Why first |
 |---|---|---|---|
-| 1 | Fix `ldi-machine-alarm-005`'s missing `ORDER BY time` | 🔴 P0 | Actively generating alert noise every ~5 minutes right now |
-| 2 | Collapse the 3 migration runners to 1 canonical script | 🔴 P0 | Root cause of the schema-tracking drift that's already bitten this project once (migration 038) |
-| 3 | Get real alert delivery working end-to-end (pick one channel, verify with a real test alert) | 🔴 P0 | Nothing currently reaches a human when something breaks |
+| 1 | Fix `ldi-machine-alarm-005`'s missing `ORDER BY time` |  P0 | Actively generating alert noise every ~5 minutes right now |
+| 2 | Collapse the 3 migration runners to 1 canonical script |  P0 | Root cause of the schema-tracking drift that's already bitten this project once (migration 038) |
+| 3 | Get real alert delivery working end-to-end (pick one channel, verify with a real test alert) |  P0 | Nothing currently reaches a human when something breaks |
 | 4 | Sync migration 020's schema tuning into `postgres/init/001` | 🟠 P1 | This session's own fix is currently a no-op on fresh deploys |
 | 5 | Fix or retire `ci-flows.yml` | 🟠 P1 | A CI check that structurally cannot pass trains people to ignore CI failures |
 | 6 | Rewrite `../architecture/ARCHITECTURE.md` from scratch | 🟠 P1 | Currently actively misleading (wrong dashboard count, wrong ingestion path, self-contradictory) |

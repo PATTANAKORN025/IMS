@@ -1,4 +1,4 @@
-# 🧪 IMS K6 Stress Testing
+#  IMS K6 Stress Testing
 
 > **Load testing scripts สำหรับ IMS ด้วย [K6](https://k6.io/) by Grafana Labs**
 
@@ -14,7 +14,7 @@
 
 ---
 
-## 📋 Prerequisites
+##  Prerequisites
 
 ```bash
 # Windows (choco)
@@ -29,7 +29,7 @@ sudo snap install k6
 
 ---
 
-## 📊 Test Scripts
+##  Test Scripts
 
 | Script | Purpose | Default Load |
 |---|---|---|
@@ -39,7 +39,7 @@ sudo snap install k6
 
 ---
 
-## 🚀 Running Tests
+##  Running Tests
 
 ### Database Write Stress
 
@@ -83,20 +83,20 @@ k6 run tests/k6/pipeline-stress.js \
 
 ---
 
-## 📈 Performance Targets
+##  Performance Targets
 
 | Metric | Target | Actual (Tested) |
 |---|---|---|
-| **DB Write P95** | < 500ms | ~156ms ✅ |
-| **Grafana Query P95** | < 3s | < 1s ✅ |
-| **E2E Pipeline P95** | < 10s | < 2s ✅ |
-| **Success Rate** | > 95% | 100% ✅ |
-| **Max VUs** | 1,000 | 1,000 ✅ |
+| **DB Write P95** | < 500ms | ~156ms  |
+| **Grafana Query P95** | < 3s | < 1s  |
+| **E2E Pipeline P95** | < 10s | < 2s  |
+| **Success Rate** | > 95% | 100%  |
+| **Max VUs** | 1,000 | 1,000  |
 | **Total Iterations** | — | ~65,000 in 2 min |
 
 ---
 
-## 📁 Output
+##  Output
 
 Results are saved to `tests/k6/*-results.json`:
 
@@ -113,7 +113,7 @@ Results are saved to `tests/k6/*-results.json`:
 
 ---
 
-## 🔧 Customization
+##  Customization
 
 ### Environment Variables
 

@@ -48,15 +48,15 @@
 <table>
 <tr>
 <td align="center" width="33%">
-  <h3>⚡ Zero-Latency Digital Twin</h3>
+  <h3>Zero-Latency Digital Twin</h3>
   Hyper-parallel ingestion pipeline. Captures microsecond-level telemetry from LDI machines and infrastructure, rendering a live digital twin of the factory floor with zero data staleness.
 </td>
 <td align="center" width="33%">
-  <h3>🧠 Predictive AIOps & SPC</h3>
+  <h3>Predictive AIOps & SPC</h3>
   Beyond simple monitoring. Utilizes Z-Score anomaly detection (3&sigma; rolling baselines) and automated Cpk calculations to predict yield drops and hardware failures before they impact production.
 </td>
 <td align="center" width="33%">
-  <h3>🛡️ Mission-Critical Uptime</h3>
+  <h3>Mission-Critical Uptime</h3>
   Built for 99.999% availability. Features automatic circuit breakers, PgBouncer transaction pooling, and continuous aggregates to guarantee sub-500ms analytics rendering under extreme factory stress.
 </td>
 </tr>
@@ -99,12 +99,12 @@ open http://localhost:3000
 
 ```mermaid
 flowchart LR
-    subgraph Collection ["🛰️ Collection"]
+    subgraph Collection ["Collection"]
         J[Juniper EX4000\n78 interfaces] -->|SNMP v2c| W[Node-RED\nSequential Async Bulk]
         S[Linux Servers\n1000+ nodes] -->|SNMP v2c| W
     end
 
-    subgraph Processing ["⚙️ V10 Streaming Pipeline"]
+    subgraph Processing ["V10 Streaming Pipeline"]
         W -->|fork_5_ways| CPU[CPU Walker]
         W -->|fork_5_ways| NET[Network Walker\nifTable + ifXTable]
         W -->|fork_5_ways| STO[Storage Walker]
@@ -115,20 +115,20 @@ flowchart LR
         TMP --> P
     end
 
-    subgraph Storage ["🗄️ Storage"]
+    subgraph Storage ["Storage"]
         P -->|Batch INSERT 10s| B[PgBouncer\nTransaction Pool]
         B --> T[(TimescaleDB\nHypertables)]
         T --> CAGG[CAGGs\nHourly → Daily → Weekly]
     end
 
-    subgraph Visualization ["📊 Visualization"]
+    subgraph Visualization ["Visualization"]
         T --> G1[NOC Overview\n15 panels]
         T --> G2[Engineering\n25 panels]
         T --> G3[Capacity\n16 panels]
         T --> G4[Meta-Monitor\n15 panels]
     end
 
-    subgraph Alerting ["🔔 Alerting"]
+    subgraph Alerting ["Alerting"]
         T --> PR[Prometheus\n/metrics scrape]
         PR --> AM[Alertmanager\nInhibition Rules]
         AM --> WEB[LINE Messaging API\n+ MS Teams Webhooks]
@@ -253,7 +253,7 @@ IMS/
 
 | Document | Description |
 |:---:|---|
-| [**📖 Platform Book (start here)**](docs/architecture/IMS_PLATFORM_BOOK.md) | Navigational hub for the entire documentation set -- role-based entry points, full document map, terminology glossary |
+| [** Platform Book (start here)**](docs/architecture/IMS_PLATFORM_BOOK.md) | Navigational hub for the entire documentation set -- role-based entry points, full document map, terminology glossary |
 | [**Architecture**](docs/architecture/ARCHITECTURE.md) | System context, ADRs, V10 streaming architecture, CAGG strategy, Known Gaps |
 | [**Data Flow**](docs/architecture/DATA_FLOW.md) | End-to-end pipeline diagrams, the real CAGG rollup chain |
 | [**LDI SPC Guide**](docs/architecture/LDI_SPC_GUIDE.md) | Process capability (Cpk) methodology and formula |
@@ -294,6 +294,6 @@ IMS/
 
 **Built with precision. Designed for uptime.**
 
-[MIT License](LICENSE) — © 2026 IMS Contributors
+[MIT License](LICENSE) —  2026 IMS Contributors
 
 </div>
