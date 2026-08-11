@@ -2,11 +2,11 @@
   <img src="assets/apex-ldi-noc-banner.jpg" alt="APEX Circuit LDI NOC Banner" width="100%" style="border-radius:12px; box-shadow: 0 8px 32px rgba(0,242,254,0.3); margin-bottom: 24px;" />
 
 
-# IMS
+# APEX Circuit IMS
 
-### Industrial Monitoring System
+### Manufacturing Intelligence & NOC Platform
 
-**Enterprise-grade NOC infrastructure monitoring — 1000+ nodes, real-time streaming, cyberpunk HUD.**
+**Enterprise-grade Digital Twin architecture for PCB manufacturing — 1000+ nodes, real-time LDI telemetry, and predictive AIOps.**
 
 [![Release](https://img.shields.io/badge/Release-v1.0.0-blueviolet?style=for-the-badge&logo=github&logoColor=white)](#quick-start)
 [![License: MIT](https://img.shields.io/badge/License-MIT-10B981?style=for-the-badge&logo=opensourceinitiative&logoColor=white)](LICENSE)
@@ -43,21 +43,21 @@
 
 ---
 
-## Why IMS?
+## Enterprise Capabilities
 
 <table>
 <tr>
 <td align="center" width="33%">
-  <h3>⚡ Hyper-Parallel Ingestion</h3>
-  Sequential async bulk SNMP walks with <code>maxRepetitions: 50</code>. 78-port Juniper switches polled in &lt;2s per cycle. Circuit breaker trips after 2 consecutive failures — zero log spam, zero stale data.
+  <h3>⚡ Zero-Latency Digital Twin</h3>
+  Hyper-parallel ingestion pipeline. Captures microsecond-level telemetry from LDI machines and infrastructure, rendering a live digital twin of the factory floor with zero data staleness.
 </td>
 <td align="center" width="33%">
-  <h3>🧠 Predictive AIOps</h3>
-  Z-Score anomaly detection (3&sigma; from 24h rolling baseline), linear regression capacity forecasting (days until disk/RAM full), continuous fleet health scoring (0–100).
+  <h3>🧠 Predictive AIOps & SPC</h3>
+  Beyond simple monitoring. Utilizes Z-Score anomaly detection (3&sigma; rolling baselines) and automated Cpk calculations to predict yield drops and hardware failures before they impact production.
 </td>
 <td align="center" width="33%">
-  <h3>🛡️ Zero-Downtime Architecture</h3>
-  Circuit breaker with HALF_OPEN probe, PgBouncer transaction pooling, retry queue with age-based eviction, offline heartbeat — the database ALWAYS records the exact moment of outage.
+  <h3>🛡️ Mission-Critical Uptime</h3>
+  Built for 99.999% availability. Features automatic circuit breakers, PgBouncer transaction pooling, and continuous aggregates to guarantee sub-500ms analytics rendering under extreme factory stress.
 </td>
 </tr>
 </table>
