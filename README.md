@@ -33,46 +33,7 @@
 
 Currently utilizing TimescaleDB continuous aggregates for high-performance rendering, alongside sequential bulk polling mechanisms in Node-RED.
 
-```typescript
-/**
- * @name APEX_Circuit_IMS
- * @version 1.0.0-PROD
- * @description Enterprise-grade Manufacturing Intelligence & NOC Platform
- */
-const SYSTEM_ARCHITECTURE: ImsCoreCapabilities = {
-  deployment: {
-    environment: "On-Premise Edge Node",
-    security: "Air-gapped Ready",
-    availability: "99.999% SLA Guarantee"
-  },
-  pipeline: {
-    ingestion: ["Node-RED", "fork_5_ways", "Auto-Circuit Breakers"],
-    database: ["TimescaleDB", "PostgreSQL", "Continuous Aggregates"],
-    pooling: "PgBouncer (Transaction Mode)",
-    latency: "< 500ms (Zero-Latency Rendering)"
-  },
-  telemetry_matrix: {
-    manufacturing: ["LDI High-Precision Machines", "HTTP APIs", "Real-time SPC"],
-    infrastructure: ["Juniper EX4000 Fabric", "1000+ Linux Nodes", "SNMP v2c"]
-  },
-  aiops_engine: {
-    anomaly_detection: "Z-Score 3σ Rolling Baselines",
-    quality_control: "Automated Cpk (Process Capability) Engine",
-    alerting_mesh: ["Prometheus", "Alertmanager", "LINE API", "MS Teams"]
-  },
-  design_system: {
-    framework: "Grafana v11+",
-    layout: "Grid-24 Overlap-Free Architecture",
-    canonical_tokens: {
-      Background: "#030407", /* Pitch Black */
-      Accent:     "#00F2FE", /* Neon Cyan */
-      Success:    "#10B981", /* Emerald */
-      Warning:    "#F59E0B", /* Amber */
-      Critical:   "#EF4444"  /* Crimson */
-    }
-  }
-};
-```
+
 
 <table style="border:none; border-collapse:collapse; width:100%;">
 
