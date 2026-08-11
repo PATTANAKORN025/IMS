@@ -2,7 +2,7 @@
     <img src="assets/apex-ldi-noc-banner.jpg" alt="APEX Circuit LDI NOC Banner" width="100%" style="border-radius:12px; box-shadow: 0 8px 32px rgba(0,242,254,0.3); margin-bottom: 24px;" />
     <br/>
     <br/>
-    <a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.demolab.com?font=Orbitron&size=36&duration=3000&pause=2000&color=00F2FE&center=true&repeat=true&width=800&height=60&lines=APEX+Circuit+IMS+|+Initializing...;Manufacturing+Intelligence+%26+NOC+Platform;Enterprise-grade+Digital+Twin+Architecture" alt="Typing SVG" /></a>
+    <a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.demolab.com?font=Orbitron&size=30&duration=3000&pause=2000&color=00F2FE&center=true&repeat=true&width=900&height=60&lines=APEX+Circuit+IMS+|+Initializing...;Manufacturing+Intelligence+%26+NOC+Platform;Enterprise-grade+Digital+Twin+Architecture" alt="Typing SVG" /></a>
 </div>
 
 <div align="center">
@@ -35,28 +35,28 @@ Currently utilizing TimescaleDB continuous aggregates for high-performance rende
 
 ```javascript
 const APEX_IMS = {
-    Environment: ["On-Premise / Edge", "Air-gapped Ready"],
-    Core_Architecture: {
-        Ingestion: ["Node-RED", "fork_5_ways", "Circuit Breakers"],
-        Database: ["PostgreSQL", "TimescaleDB", "Continuous Aggregates"],
-        Connection_Pool: ["PgBouncer (Transaction Mode)"],
-        Visualization: ["Grafana v11+", "Grid-24 Design System"]
+    environment: ["On-Premise / Edge", "Air-gapped Ready"],
+    coreArchitecture: {
+        ingestion: ["Node-RED", "fork_5_ways", "Circuit Breakers"],
+        database: ["PostgreSQL", "TimescaleDB", "Continuous Aggregates"],
+        connectionPool: ["PgBouncer (Transaction Mode)"],
+        visualization: ["Grafana v11+", "Grid-24 Design System"]
     },
-    Telemetry_Sources: {
-        Manufacturing: ["LDI Machines", "HTTP APIs", "SPC Data"],
-        Infrastructure: ["Juniper EX4000", "Linux Servers", "SNMP v2c"]
+    telemetrySources: {
+        manufacturing: ["LDI Machines", "HTTP APIs", "SPC Data"],
+        infrastructure: ["Juniper EX4000", "Linux Servers", "SNMP v2c"]
     },
-    AIOps_Engine: {
-        Anomaly_Detection: ["Z-Score (3-Sigma)", "Rolling Baselines"],
-        Quality_Control: ["Automated Cpk Calculation"],
-        Alerting: ["Prometheus", "Alertmanager", "LINE API", "MS Teams"]
+    aiOpsEngine: {
+        anomalyDetection: ["Z-Score (3-Sigma)", "Rolling Baselines"],
+        qualityControl: ["Automated Cpk Calculation"],
+        alerting: ["Prometheus", "Alertmanager", "LINE API", "MS Teams"]
     },
-    Design_Tokens: {
-        Background: "#030407",
-        Accent: "#00F2FE",
-        Success: "#10B981",
-        Warning: "#F59E0B",
-        Critical: "#EF4444"
+    designTokens: {
+        background: "#030407",
+        accent: "#00F2FE",
+        success: "#10B981",
+        warning: "#F59E0B",
+        critical: "#EF4444"
     }
 };
 ```
