@@ -2,7 +2,7 @@
     <img src="assets/apex-ldi-noc-banner.jpg" alt="APEX Circuit LDI NOC Banner" width="100%" style="border-radius:12px; box-shadow: 0 8px 32px rgba(0,242,254,0.3); margin-bottom: 24px;" />
     <br/>
     <br/>
-    <a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.demolab.com?font=Orbitron&size=30&duration=3000&pause=2000&color=00F2FE&center=true&repeat=true&width=900&height=60&lines=APEX+Circuit+IMS+|+Initializing...;Manufacturing+Intelligence+%26+NOC+Platform;Enterprise-grade+Digital+Twin+Architecture" alt="Typing SVG" /></a>
+    <a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.demolab.com?font=Orbitron&weight=600&size=36&duration=4000&pause=2000&color=00F2FE&center=true&repeat=true&width=1000&height=60&lines=APEX+Circuit+IMS+|+System+Initializing...;Advanced+Manufacturing+Intelligence+%26+NOC;Zero-Latency+Digital+Twin+Architecture" alt="Typing SVG" /></a>
 </div>
 
 <div align="center">
@@ -33,31 +33,44 @@
 
 Currently utilizing TimescaleDB continuous aggregates for high-performance rendering, alongside sequential bulk polling mechanisms in Node-RED.
 
-```javascript
-const APEX_IMS = {
-    environment: ["On-Premise / Edge", "Air-gapped Ready"],
-    coreArchitecture: {
-        ingestion: ["Node-RED", "fork_5_ways", "Circuit Breakers"],
-        database: ["PostgreSQL", "TimescaleDB", "Continuous Aggregates"],
-        connectionPool: ["PgBouncer (Transaction Mode)"],
-        visualization: ["Grafana v11+", "Grid-24 Design System"]
-    },
-    telemetrySources: {
-        manufacturing: ["LDI Machines", "HTTP APIs", "SPC Data"],
-        infrastructure: ["Juniper EX4000", "Linux Servers", "SNMP v2c"]
-    },
-    aiOpsEngine: {
-        anomalyDetection: ["Z-Score (3-Sigma)", "Rolling Baselines"],
-        qualityControl: ["Automated Cpk Calculation"],
-        alerting: ["Prometheus", "Alertmanager", "LINE API", "MS Teams"]
-    },
-    designTokens: {
-        background: "#030407",
-        accent: "#00F2FE",
-        success: "#10B981",
-        warning: "#F59E0B",
-        critical: "#EF4444"
+```typescript
+/**
+ * @name APEX_Circuit_IMS
+ * @version 1.0.0-PROD
+ * @description Enterprise-grade Manufacturing Intelligence & NOC Platform
+ */
+const SYSTEM_ARCHITECTURE: ImsCoreCapabilities = {
+  deployment: {
+    environment: "On-Premise Edge Node",
+    security: "Air-gapped Ready",
+    availability: "99.999% SLA Guarantee"
+  },
+  pipeline: {
+    ingestion: ["Node-RED", "fork_5_ways", "Auto-Circuit Breakers"],
+    database: ["TimescaleDB", "PostgreSQL", "Continuous Aggregates"],
+    pooling: "PgBouncer (Transaction Mode)",
+    latency: "< 500ms (Zero-Latency Rendering)"
+  },
+  telemetry_matrix: {
+    manufacturing: ["LDI High-Precision Machines", "HTTP APIs", "Real-time SPC"],
+    infrastructure: ["Juniper EX4000 Fabric", "1000+ Linux Nodes", "SNMP v2c"]
+  },
+  aiops_engine: {
+    anomaly_detection: "Z-Score 3σ Rolling Baselines",
+    quality_control: "Automated Cpk (Process Capability) Engine",
+    alerting_mesh: ["Prometheus", "Alertmanager", "LINE API", "MS Teams"]
+  },
+  design_system: {
+    framework: "Grafana v11+",
+    layout: "Grid-24 Overlap-Free Architecture",
+    canonical_tokens: {
+      Background: "#030407", /* Pitch Black */
+      Accent:     "#00F2FE", /* Neon Cyan */
+      Success:    "#10B981", /* Emerald */
+      Warning:    "#F59E0B", /* Amber */
+      Critical:   "#EF4444"  /* Crimson */
     }
+  }
 };
 ```
 
