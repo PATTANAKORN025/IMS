@@ -51,6 +51,33 @@
         "skipUrlSync": false
       },
       {
+        "name": "scope_filter",
+        "label": "Event Timeline Scope",
+        "type": "custom",
+        "query": "This Machine Only : machine,Fleet Wide : fleet",
+        "current": {
+          "selected": true,
+          "text": "This Machine Only",
+          "value": "machine"
+        },
+        "options": [
+          {
+            "selected": true,
+            "text": "This Machine Only",
+            "value": "machine"
+          },
+          {
+            "selected": false,
+            "text": "Fleet Wide",
+            "value": "fleet"
+          }
+        ],
+        "multi": false,
+        "includeAll": false,
+        "hide": 0,
+        "skipUrlSync": false
+      },
+      {
         "name": "factory",
         "label": "Factory",
         "type": "query",
@@ -182,7 +209,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nSELECT eqp_id AS \"Machine\", state AS \"State\", mo AS \"MO\", fpn AS \"FPN\", layer_name AS \"Layer\", (board_no::TEXT || '/' || total_board::TEXT) AS \"Board\", filmno AS \"Film\", resist AS \"Resist\", scale_mode AS \"Scale Mode\", \"time\" AS \"Timestamp\" FROM public.ldi_data WHERE log_id = (COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:sqlstring}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:sqlstring}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nSELECT eqp_id AS \"Machine\", state AS \"State\", mo AS \"Job (MO)\", fpn AS \"Part (FPN)\", layer_name AS \"Layer\", (board_no::TEXT || '/' || total_board::TEXT) AS \"Board\", filmno AS \"Film\", resist AS \"Resist\", scale_mode AS \"Scale Mode\", \"time\" AS \"Timestamp\" FROM public.ldi_data WHERE log_id = (COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:sqlstring}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:sqlstring}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1",
           "format": "table"
         }
       ],
@@ -211,7 +238,7 @@
                       },
                       "false": {
                         "color": "#EF4444",
-                        "text": "DOWN"
+                        "text": "IDLE"
                       }
                     }
                   }
@@ -284,7 +311,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "FPN"
+              "options": "Part (FPN)"
             },
             "properties": [
               {
@@ -320,7 +347,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "MO"
+              "options": "Job (MO)"
             },
             "properties": [
               {
@@ -1149,7 +1176,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nSELECT ROUND(pe_1::NUMERIC,3) AS \"pe_1\",ROUND(pe_2::NUMERIC,3) AS \"pe_2\",\n ROUND(pe_3::NUMERIC,3) AS \"pe_3\",ROUND(pe_4::NUMERIC,3) AS \"pe_4\",\n ROUND(pe_5::NUMERIC,3) AS \"pe_5\",ROUND(pe_6::NUMERIC,3) AS \"pe_6\",\n ROUND(max_pe::NUMERIC,3) AS \"MAX|PE|\",ROUND(pe_setting::NUMERIC,3) AS \"pe_setting\",\n CASE WHEN max_pe IS NULL THEN 'N/A' WHEN max_pe <= pe_setting THEN 'PASS' ELSE 'OUT OF SPEC' END AS \"PE Status\"\nFROM (\n SELECT d.*,GREATEST(ABS(pe_1),ABS(pe_2),ABS(pe_3),ABS(pe_4),ABS(pe_5),ABS(pe_6)) AS max_pe\n FROM public.ldi_data d WHERE log_id=(COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:sqlstring}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:sqlstring}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1\n) event_row;",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nSELECT ROUND(pe_1::NUMERIC,3) AS \"PE 1\",ROUND(pe_2::NUMERIC,3) AS \"PE 2\",\n ROUND(pe_3::NUMERIC,3) AS \"PE 3\",ROUND(pe_4::NUMERIC,3) AS \"PE 4\",\n ROUND(pe_5::NUMERIC,3) AS \"PE 5\",ROUND(pe_6::NUMERIC,3) AS \"PE 6\",\n ROUND(max_pe::NUMERIC,3) AS \"Max |PE|\",ROUND(pe_setting::NUMERIC,3) AS \"PE Setting\",\n CASE WHEN max_pe IS NULL THEN 'N/A' WHEN max_pe <= pe_setting THEN 'PASS' ELSE 'OUT OF SPEC' END AS \"PE Status\"\nFROM (\n SELECT d.*,GREATEST(ABS(pe_1),ABS(pe_2),ABS(pe_3),ABS(pe_4),ABS(pe_5),ABS(pe_6)) AS max_pe\n FROM public.ldi_data d WHERE log_id=(COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:sqlstring}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:sqlstring}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1\n) event_row;",
           "format": "table"
         }
       ],
@@ -1213,7 +1240,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "pe_2"
+              "options": "PE 2"
             },
             "properties": [
               {
@@ -1225,7 +1252,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "MAX|PE|"
+              "options": "Max |PE|"
             },
             "properties": [
               {
@@ -1237,7 +1264,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "pe_1"
+              "options": "PE 1"
             },
             "properties": [
               {
@@ -1249,7 +1276,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "pe_6"
+              "options": "PE 6"
             },
             "properties": [
               {
@@ -1261,7 +1288,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "pe_setting"
+              "options": "PE Setting"
             },
             "properties": [
               {
@@ -1273,7 +1300,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "pe_5"
+              "options": "PE 5"
             },
             "properties": [
               {
@@ -1285,7 +1312,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "pe_4"
+              "options": "PE 4"
             },
             "properties": [
               {
@@ -1297,7 +1324,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "pe_3"
+              "options": "PE 3"
             },
             "properties": [
               {
@@ -1838,7 +1865,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nWITH target AS (SELECT \"time\" FROM public.ldi_data WHERE log_id=(COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:sqlstring}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:sqlstring}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1),\nselected_machine AS (\n SELECT DISTINCT eqp_id FROM public.ldi_data\n WHERE (${event_time_ms:sqlstring}::NUMERIC > 0 AND eqp_id = split_part(${clicked_series:sqlstring},' - ',1))\n    OR (COALESCE(${event_time_ms:sqlstring}::NUMERIC, 0) <= 0 AND eqp_id IN (${machine_id:sqlstring}))\n), alarm_rows AS (\nSELECT al.logdate AS \"Time\",al.equipmentid AS \"Machine\",al.errorcode::TEXT AS \"errorcode\",al.errortime::TEXT AS \"errortime\",\n COALESCE(m.alarm_msg,al.errorcode::TEXT) AS \"Message\",COALESCE(m.severity,'UNMAPPED') AS \"Severity\"\nFROM public.ldi_alarm_log al CROSS JOIN selected_machine sm\nLEFT JOIN public.ldi_alarm_ms_code m ON al.errorcode::TEXT=m.alarm_code::TEXT\nWHERE al.equipmentid=sm.eqp_id\n AND al.logdate BETWEEN (SELECT \"time\"-INTERVAL '5 minutes' FROM target) AND (SELECT \"time\"+INTERVAL '5 minutes' FROM target)\n)\nSELECT \"Time\", \"Machine\", \"errorcode\", \"errortime\", \"Message\", \"Severity\" FROM alarm_rows\nUNION ALL\nSELECT target.\"time\",sm.eqp_id,NULL::TEXT,NULL::TEXT,'No alarm in +/-5 minutes (real data)','NONE'\nFROM target CROSS JOIN selected_machine sm WHERE NOT EXISTS (SELECT 1 FROM alarm_rows)\nORDER BY \"Time\" DESC;",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nWITH target AS (SELECT \"time\" FROM public.ldi_data WHERE log_id=(COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:sqlstring}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:sqlstring}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1),\nselected_machine AS (\n SELECT DISTINCT eqp_id FROM public.ldi_data\n WHERE (${event_time_ms:sqlstring}::NUMERIC > 0 AND eqp_id = split_part(${clicked_series:sqlstring},' - ',1))\n    OR (COALESCE(${event_time_ms:sqlstring}::NUMERIC, 0) <= 0 AND eqp_id IN (${machine_id:sqlstring}))\n), alarm_rows AS (\nSELECT al.logdate AS \"Time\",al.equipmentid AS \"Machine\",al.logid AS \"Alarm Event ID\",al.errorcode::TEXT AS \"Alarm Code\",al.errortime::TEXT AS \"Error Time\",\n COALESCE(m.alarm_msg,al.errorcode::TEXT) AS \"Message\",m.alarm_detail AS \"Detail\",COALESCE(m.severity,'UNMAPPED') AS \"Severity\",\n al.related_log_id AS \"Telemetry Event ID\",COALESCE(al.link_basis,'nearest') AS \"Link Basis\"\nFROM public.ldi_alarm_log al CROSS JOIN selected_machine sm\nLEFT JOIN public.ldi_alarm_ms_code m ON al.errorcode::TEXT=m.alarm_code::TEXT\nWHERE al.equipmentid=sm.eqp_id\n AND al.logdate BETWEEN (SELECT \"time\"-INTERVAL '5 minutes' FROM target) AND (SELECT \"time\"+INTERVAL '5 minutes' FROM target)\n)\nSELECT \"Time\", \"Machine\", \"Alarm Event ID\", \"Alarm Code\", \"Error Time\", \"Message\", \"Detail\", \"Severity\", \"Telemetry Event ID\", \"Link Basis\" FROM alarm_rows\nUNION ALL\nSELECT target.\"time\",sm.eqp_id,NULL::TEXT,NULL::TEXT,NULL::TEXT,'No alarm in +/-5 minutes (real data)',NULL::TEXT,'NONE',NULL::TEXT,NULL::TEXT\nFROM target CROSS JOIN selected_machine sm WHERE NOT EXISTS (SELECT 1 FROM alarm_rows)\nORDER BY \"Time\" DESC;",
           "format": "table"
         }
       ],
@@ -1848,6 +1875,52 @@
           "custom": {}
         },
         "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Alarm Event ID"
+            },
+            "properties": [
+              {
+                "id": "description",
+                "value": "Unique ID for this exact alarm occurrence (ldi_alarm_log.logid). Not the alarm type -- the same Alarm Code fires repeatedly; this ID identifies which specific firing this row is."
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Alarm Code"
+            },
+            "properties": [
+              {
+                "id": "description",
+                "value": "The alarm type/definition code from the vendor Alarm Master catalog (ldi_alarm_ms_code). Shared by every occurrence of this alarm type. Click to open the Alarm Dictionary."
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Open Alarm Dictionary",
+                    "url": "/d/ims-ldi-alarm-dictionary/alarm-dictionary?var-alarm_code=${__value.text}",
+                    "targetBlank": false
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Telemetry Event ID"
+            },
+            "properties": [
+              {
+                "id": "description",
+                "value": "The linked telemetry snapshot (ldi_data.log_id). See Link Basis: causal = confirmed trigger, nearest = closest reading in time only."
+              }
+            ]
+          },
           {
             "matcher": {
               "id": "byName",
@@ -2060,10 +2133,42 @@
                 "value": true
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Link Basis"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "causal": {
+                        "color": "#22C55E",
+                        "text": "causal"
+                      },
+                      "nearest": {
+                        "color": "#64748B",
+                        "text": "nearest"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
           }
         ]
       },
-      "description": "Real alarms within +/-5 minutes of the selected ldi_data.log_id event. No data is valid when alarm and telemetry exports do not overlap."
+      "description": "Real alarms within +/-5 minutes of the selected ldi_data.log_id event. No data is valid when alarm and telemetry exports do not overlap. Link Basis: causal = the alarm's related telemetry event is the one that actually triggered it; nearest = a background/noise alarm linked to the closest telemetry row in time only, not causally related (see docs/audit/LDI_ALARM_FIDELITY_AUDIT.md)."
     },
     {
       "id": 11,
@@ -2184,7 +2289,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: bounded lookup around a single log_id, +/-5min window per machine */\nWITH target AS (\n  SELECT \"time\" AS t\n  FROM public.ldi_data\n  WHERE log_id = (COALESCE(\n    (\n      SELECT d0.log_id\n      FROM public.ldi_data d0\n      WHERE ${event_time_ms:sqlstring}::NUMERIC > 0\n        AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n      ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:sqlstring}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n      LIMIT 1\n    ),\n    NULLIF(${log_id:sqlstring}, '__auto__')\n  ))\n  LIMIT 1\n),\nstate_rows AS (\n  SELECT d.\"time\" AS event_time,\n         d.eqp_id,\n         d.state,\n         LAG(d.state) OVER (PARTITION BY d.eqp_id ORDER BY d.\"time\") AS prev_state\n  FROM public.ldi_data d, target\n  WHERE ((${event_time_ms:sqlstring}::NUMERIC > 0 AND d.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1))\n      OR (${event_time_ms:sqlstring}::NUMERIC <= 0 AND d.eqp_id IN (${machine_id:sqlstring})))\n    AND d.\"time\" BETWEEN target.t - INTERVAL '20 minutes' AND target.t + INTERVAL '5 minutes'\n),\nevents AS (\n  SELECT event_time, eqp_id,\n         CASE WHEN state THEN 'START' ELSE 'STOP' END AS event_type,\n         'ldi_data'::TEXT AS source,\n         CASE WHEN state THEN 'Machine started (RUNNING)' ELSE 'Machine stopped (DOWN)' END AS description,\n         NULL::TEXT AS severity\n  FROM state_rows, target\n  WHERE prev_state IS NOT NULL AND state IS DISTINCT FROM prev_state\n    AND event_time BETWEEN target.t - INTERVAL '5 minutes' AND target.t + INTERVAL '5 minutes'\n  UNION ALL\n  SELECT a.logdate, a.equipmentid, 'ALARM', 'ldi_alarm_log',\n         COALESCE(m.alarm_msg, a.errorcode::TEXT),\n         m.severity\n  FROM public.ldi_alarm_log a\n  LEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT, target\n  WHERE ((${event_time_ms:sqlstring}::NUMERIC > 0 AND a.equipmentid = split_part(${clicked_series:sqlstring}, ' - ', 1))\n      OR (${event_time_ms:sqlstring}::NUMERIC <= 0 AND a.equipmentid IN (${machine_id:sqlstring})))\n    AND a.logdate BETWEEN target.t - INTERVAL '5 minutes' AND target.t + INTERVAL '5 minutes'\n)\nSELECT event_time AS \"Event Time\", eqp_id AS \"Machine\", event_type AS \"Event Type\", source AS \"Source\", description AS \"Description\", severity AS \"Severity\"\nFROM events\nORDER BY event_time DESC\nLIMIT 100;",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: bounded lookup around a single log_id, +/-5min window per machine (or fleet-wide, if scope_filter='fleet') */\nWITH target AS (\n  SELECT \"time\" AS t\n  FROM public.ldi_data\n  WHERE log_id = (COALESCE(\n    (\n      SELECT d0.log_id\n      FROM public.ldi_data d0\n      WHERE ${event_time_ms:sqlstring}::NUMERIC > 0\n        AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n      ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:sqlstring}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n      LIMIT 1\n    ),\n    NULLIF(${log_id:sqlstring}, '__auto__')\n  ))\n  LIMIT 1\n),\nstate_rows AS (\n  SELECT d.\"time\" AS event_time,\n         d.eqp_id,\n         d.state,\n         LAG(d.state) OVER (PARTITION BY d.eqp_id ORDER BY d.\"time\") AS prev_state\n  FROM public.ldi_data d, target\n  WHERE (${scope_filter:sqlstring} = 'fleet' OR (\n      (${event_time_ms:sqlstring}::NUMERIC > 0 AND d.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1))\n      OR (${event_time_ms:sqlstring}::NUMERIC <= 0 AND d.eqp_id IN (${machine_id:sqlstring}))\n    ))\n    AND d.\"time\" BETWEEN target.t - INTERVAL '20 minutes' AND target.t + INTERVAL '5 minutes'\n),\nevents AS (\n  SELECT event_time, eqp_id,\n         CASE WHEN state THEN 'START' ELSE 'STOP' END AS event_type,\n         'ldi_data'::TEXT AS source,\n         CASE WHEN state THEN 'Machine started (RUNNING)' ELSE 'Machine stopped (DOWN)' END AS description,\n         NULL::TEXT AS severity,\n         NULL::TEXT AS alarm_id,\n         NULL::TEXT AS event_id\n  FROM state_rows, target\n  WHERE prev_state IS NOT NULL AND state IS DISTINCT FROM prev_state\n    AND event_time BETWEEN target.t - INTERVAL '5 minutes' AND target.t + INTERVAL '5 minutes'\n  UNION ALL\n  SELECT a.logdate, a.equipmentid, 'ALARM', 'ldi_alarm_log',\n         COALESCE(m.alarm_msg, a.errorcode::TEXT),\n         m.severity,\n         a.logid,\n         a.related_log_id\n  FROM public.ldi_alarm_log a\n  LEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT, target\n  WHERE (${scope_filter:sqlstring} = 'fleet' OR (\n      (${event_time_ms:sqlstring}::NUMERIC > 0 AND a.equipmentid = split_part(${clicked_series:sqlstring}, ' - ', 1))\n      OR (${event_time_ms:sqlstring}::NUMERIC <= 0 AND a.equipmentid IN (${machine_id:sqlstring}))\n    ))\n    AND a.logdate BETWEEN target.t - INTERVAL '5 minutes' AND target.t + INTERVAL '5 minutes'\n)\nSELECT event_time AS \"Event Time\", eqp_id AS \"Machine\", event_type AS \"Event Type\", source AS \"Source\", description AS \"Description\", severity AS \"Severity\", alarm_id AS \"Alarm Event ID\", event_id AS \"Telemetry Event ID\"\nFROM events\nORDER BY event_time DESC\nLIMIT 100;",
           "format": "table"
         }
       ],
@@ -2194,6 +2299,30 @@
           "custom": {}
         },
         "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Alarm Event ID"
+            },
+            "properties": [
+              {
+                "id": "description",
+                "value": "Unique ID for this exact alarm occurrence (ldi_alarm_log.logid), populated only for ALARM rows. NULL for START/STOP machine-state rows."
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Telemetry Event ID"
+            },
+            "properties": [
+              {
+                "id": "description",
+                "value": "The linked telemetry snapshot (ldi_data.log_id) for ALARM rows. NULL for START/STOP machine-state rows."
+              }
+            ]
+          },
           {
             "matcher": {
               "id": "byName",
@@ -2316,7 +2445,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nSELECT ROUND(je_1::NUMERIC,3) AS \"je_1\",ROUND(je_2::NUMERIC,3) AS \"je_2\",\n ROUND(je_3::NUMERIC,3) AS \"je_3\",ROUND(je_4::NUMERIC,3) AS \"je_4\",\n ROUND(max_je::NUMERIC,3) AS \"MAX|JE|\",ROUND(je_setting::NUMERIC,3) AS \"je_setting\",\n CASE WHEN max_je IS NULL THEN 'N/A' WHEN max_je <= je_setting THEN 'PASS' ELSE 'OUT OF SPEC' END AS \"JE Status\"\nFROM (\n SELECT d.*,GREATEST(ABS(je_1),ABS(je_2),ABS(je_3),ABS(je_4)) AS max_je\n FROM public.ldi_data d WHERE log_id=(COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:sqlstring}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:sqlstring}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1\n) event_row;",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nSELECT ROUND(je_1::NUMERIC,3) AS \"JE 1\",ROUND(je_2::NUMERIC,3) AS \"JE 2\",\n ROUND(je_3::NUMERIC,3) AS \"JE 3\",ROUND(je_4::NUMERIC,3) AS \"JE 4\",\n ROUND(max_je::NUMERIC,3) AS \"Max |JE|\",ROUND(je_setting::NUMERIC,3) AS \"JE Setting\",\n CASE WHEN max_je IS NULL THEN 'N/A' WHEN max_je <= je_setting THEN 'PASS' ELSE 'OUT OF SPEC' END AS \"JE Status\"\nFROM (\n SELECT d.*,GREATEST(ABS(je_1),ABS(je_2),ABS(je_3),ABS(je_4)) AS max_je\n FROM public.ldi_data d WHERE log_id=(COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:sqlstring}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:sqlstring}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${log_id:sqlstring}, '__auto__')\n)) LIMIT 1\n) event_row;",
           "format": "table"
         }
       ],
@@ -2368,7 +2497,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "je_1"
+              "options": "JE 1"
             },
             "properties": [
               {
@@ -2380,7 +2509,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "je_4"
+              "options": "JE 4"
             },
             "properties": [
               {
@@ -2392,7 +2521,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "MAX|JE|"
+              "options": "Max |JE|"
             },
             "properties": [
               {
@@ -2404,7 +2533,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "je_3"
+              "options": "JE 3"
             },
             "properties": [
               {
@@ -2416,7 +2545,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "je_setting"
+              "options": "JE Setting"
             },
             "properties": [
               {
@@ -2428,7 +2557,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "je_2"
+              "options": "JE 2"
             },
             "properties": [
               {

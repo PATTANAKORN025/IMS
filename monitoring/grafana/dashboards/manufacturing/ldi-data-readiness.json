@@ -940,7 +940,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\n-- Intentional full table scan for global readiness\nSELECT\n  a.errorcode::TEXT AS \"Alarm Code\",\n  COUNT(*) AS \"Rows\",\n  CASE WHEN m.alarm_code IS NULL THEN 'UNMAPPED' ELSE 'MATCHED' END AS \"Mapping\",\n  COALESCE(m.alarm_msg, '') AS \"Message\",\n  COALESCE(m.alarm_type, '') AS \"Severity\"\nFROM public.ldi_alarm_log a\nLEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\nGROUP BY a.errorcode, m.alarm_code, m.alarm_msg, m.alarm_type\nORDER BY \"Rows\" DESC\nLIMIT 1000;",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\n-- Intentional full table scan for global readiness\nSELECT\n  a.errorcode::TEXT AS \"Alarm Code\",\n  COUNT(*) AS \"Rows\",\n  CASE WHEN m.alarm_code IS NULL THEN 'UNMAPPED' ELSE 'MATCHED' END AS \"Mapping\",\n  COALESCE(m.alarm_msg, '') AS \"Message\",\n  COALESCE(m.severity, '') AS \"Severity\"\nFROM public.ldi_alarm_log a\nLEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\nGROUP BY a.errorcode, m.alarm_code, m.alarm_msg, m.severity\nORDER BY \"Rows\" DESC\nLIMIT 1000;",
           "refId": "A",
           "sql": {
             "columns": [],
@@ -953,7 +953,30 @@
         "defaults": {
           "custom": {}
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Alarm Code"
+            },
+            "properties": [
+              {
+                "id": "description",
+                "value": "The alarm type/definition code from the vendor Alarm Master catalog (ldi_alarm_ms_code). Click to open the Alarm Dictionary."
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Open Alarm Dictionary",
+                    "url": "/d/ims-ldi-alarm-dictionary/alarm-dictionary?var-alarm_code=${__value.text}",
+                    "targetBlank": false
+                  }
+                ]
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "cellHeight": "sm",

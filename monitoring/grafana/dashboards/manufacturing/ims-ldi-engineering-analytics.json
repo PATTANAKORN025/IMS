@@ -354,7 +354,7 @@
       "id": 1001,
       "type": "row",
       "title": "Motion & Process Physics",
-      "collapsed": true,
+      "collapsed": false,
       "gridPos": {
         "x": 0,
         "y": 10,
@@ -501,7 +501,7 @@
       "id": 1002,
       "type": "row",
       "title": "Registration & Alignment",
-      "collapsed": true,
+      "collapsed": false,
       "gridPos": {
         "x": 0,
         "y": 11,
@@ -995,7 +995,7 @@
       "id": 1003,
       "type": "row",
       "title": "Machine State & Capability",
-      "collapsed": true,
+      "collapsed": false,
       "gridPos": {
         "x": 0,
         "y": 12,
@@ -1471,7 +1471,7 @@
       "id": 1004,
       "type": "row",
       "title": "Variation Analysis",
-      "collapsed": true,
+      "collapsed": false,
       "gridPos": {
         "x": 0,
         "y": 13,
@@ -1694,7 +1694,7 @@
       "id": 1005,
       "type": "row",
       "title": "Process Parameters",
-      "collapsed": true,
+      "collapsed": false,
       "gridPos": {
         "x": 0,
         "y": 14,
@@ -1810,7 +1810,7 @@
       "id": 1006,
       "type": "row",
       "title": "RCA / Alarm Correlation",
-      "collapsed": true,
+      "collapsed": false,
       "gridPos": {
         "x": 0,
         "y": 15,
@@ -1976,6 +1976,212 @@
             ]
           },
           "description": "RCA Truth Test using the real alarm code taxonomy from v_ldi_alarm_category (migration 036) and per-parameter out-of-spec flags from v_ldi_alarm_context (migration 045, split thermal/humidity, added MOTION/scan_speed). Alarm-Window % (rate of out-of-spec readings within 5min before this alarm) vs Baseline % (out-of-spec rate across all data) vs Lift = Alarm-Window % / Baseline %. Lift > 2 = genuine correlation; ~1 = no relationship; < 1 = backwards, investigate. Confidence flags categories under 30 events. EXPOSURE (resist_dosage) has a flag but no matching alarm code exists in ldi_alarm_ms_code yet, so it's not shown here -- would always read zero events. MOTION's baseline is a provisional fixed ceiling (scan_speed has no _setting column and is constant per machine in current data, so it reads 0% in both alarm-window and baseline on this dataset -- not a bug, just no real overspeed events in the mock data yet)."
+        },
+        {
+          "id": 19,
+          "title": "◈ Recent Alarm Events (Last 50)",
+          "type": "table",
+          "gridPos": {
+            "h": 12,
+            "w": 24,
+            "x": 0,
+            "y": 12
+          },
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "uid": "timescaledb"
+              },
+              "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope -- ORDER BY DESC LIMIT 50 already bounds it */\nSELECT\n  c.alarm_time AS \"Time\",\n  c.eqp_id AS \"Machine\",\n  c.alarm_id AS \"Alarm Event ID\",\n  c.errorcode AS \"Alarm Code\",\n  m.alarm_type AS \"Alarm Type\",\n  COALESCE(c.severity, 'UNMAPPED') AS \"Severity\",\n  c.alarm_msg AS \"Message\",\n  c.alarm_detail AS \"Detail\",\n  c.related_log_id AS \"Telemetry Event ID\",\n  COALESCE(c.link_basis, 'nearest') AS \"Link Basis\"\nFROM public.v_ldi_alarm_context c\nLEFT JOIN public.ldi_alarm_ms_code m ON m.alarm_id = c.errorcode\nWHERE c.eqp_id IN (${machine_id:sqlstring})\nORDER BY c.alarm_time DESC LIMIT 50;",
+              "format": "table"
+            }
+          ],
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": {
+              "show": false
+            },
+            "noValue": "NO_DATA"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "noValue": "NO_DATA",
+              "custom": {
+                "filterable": true
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Alarm Type"
+                },
+                "properties": [
+                  {
+                    "id": "custom.hidden",
+                    "value": true
+                  },
+                  {
+                    "id": "description",
+                    "value": "Optional column, hidden by default -- enable via the column-visibility toggle. Raw vendor category letter: A = general alarm, W = warning/advisory, E = servo/motion safety fault (always Critical severity)."
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Alarm Event ID"
+                },
+                "properties": [
+                  {
+                    "id": "description",
+                    "value": "Unique ID for this exact alarm occurrence (ldi_alarm_log.logid). Not the alarm type -- the same Alarm Code fires repeatedly; this ID identifies which specific firing this row is."
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Alarm Code"
+                },
+                "properties": [
+                  {
+                    "id": "description",
+                    "value": "The alarm type/definition code from the vendor Alarm Master catalog (ldi_alarm_ms_code). Shared by every occurrence of this alarm type. Click to open the Alarm Dictionary."
+                  },
+                  {
+                    "id": "links",
+                    "value": [
+                      {
+                        "title": "Open Alarm Dictionary",
+                        "url": "/d/ims-ldi-alarm-dictionary/alarm-dictionary?var-alarm_code=${__value.text}",
+                        "targetBlank": false
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Telemetry Event ID"
+                },
+                "properties": [
+                  {
+                    "id": "description",
+                    "value": "The linked telemetry snapshot (ldi_data.log_id). See Link Basis: causal = confirmed trigger, nearest = closest reading in time only."
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Link Basis"
+                },
+                "properties": [
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-background"
+                    }
+                  },
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "causal": {
+                            "color": "#22C55E",
+                            "text": "causal"
+                          },
+                          "nearest": {
+                            "color": "#64748B",
+                            "text": "nearest"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Severity"
+                },
+                "properties": [
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "Critical": {
+                            "color": "#EF4444",
+                            "index": 0,
+                            "text": "Critical"
+                          },
+                          "Major": {
+                            "color": "#F59E0B",
+                            "index": 1,
+                            "text": "Major"
+                          },
+                          "Minor": {
+                            "color": "#EAB308",
+                            "index": 2,
+                            "text": "Minor"
+                          },
+                          "Warning": {
+                            "color": "#3B82F6",
+                            "index": 3,
+                            "text": "Warning"
+                          },
+                          "UNMAPPED": {
+                            "color": "#64748B",
+                            "index": 4,
+                            "text": "UNMAPPED"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-background"
+                    }
+                  },
+                  {
+                    "id": "custom.displayMode",
+                    "value": "color-background"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Time"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "dateTimeAsIso"
+                  },
+                  {
+                    "id": "decimals",
+                    "value": 6
+                  }
+                ]
+              }
+            ]
+          },
+          "description": "Same alarm event stream as the Manufacturing dashboard's Recent Alarm Events, with one addition for engineering use: Alarm Type (the raw vendor A/W/E category), hidden by default -- enable it via the table's column-visibility control when you need to see the underlying vendor classification alongside the computed Severity."
         }
       ]
     },
