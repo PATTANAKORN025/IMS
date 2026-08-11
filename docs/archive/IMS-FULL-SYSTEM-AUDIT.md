@@ -20,7 +20,7 @@
 
 ---
 
-# 🔴 P0 — ตัวเลขขัดแย้งกันเอง (ร้ายแรงที่สุด)
+#  P0 — ตัวเลขขัดแย้งกันเอง (ร้ายแรงที่สุด)
 
 ## P0-1 · Yield ของระบบเดียวกัน สองหน้าจอให้คำตอบต่างกัน 87 percentage points
 
@@ -54,7 +54,7 @@ WHERE "time" > NOW() - INTERVAL '1 hour' AND COALESCE(pe_setting,0) > 2.0;
 
 ---
 
-# 🔴 P0-2 · RCA Truth Test รายงานว่า "ไม่มีความสัมพันธ์" — และมันพูดถูก
+#  P0-2 · RCA Truth Test รายงานว่า "ไม่มีความสัมพันธ์" — และมันพูดถูก
 
 หลักฐานจาก Engineering Analytics & SPC:
 
@@ -86,7 +86,7 @@ if (rec.temperature < 20 || rec.temperature > 24)     emitAlarm('91008');
 
 ---
 
-# 🔴 P1 — Panel ที่ไม่แสดงข้อมูล (นับได้ 15 จุด)
+#  P1 — Panel ที่ไม่แสดงข้อมูล (นับได้ 15 จุด)
 
 ## Engineering Drill-Down — เสียหายหนักที่สุด (10 panels)
 
@@ -108,7 +108,7 @@ DISK: Days Until Full  → No data
 RAM:  Days Until Full  → No data
 CPU:  Days Until Saturation → No data
 Days Until Full (Resource Battery) → No data
-Fleet Health Score 91.30% → ✅ ทำงาน
+Fleet Health Score 91.30% →  ทำงาน
 ```
 
 ## NOC Overview — ตัวเลขที่ไม่น่าเชื่อถือ
@@ -138,13 +138,13 @@ PE/JE VS SPEC LIMIT        → ไม่มีเนื้อหาเลย
 
 | ตัวชี้วัด | ค่า | ประเมิน |
 |---|---|---|
-| Machine ID Match | **100%** | ✅ แก้จาก 20% เดิมได้แล้ว |
-| Alarm Master Match | **100%** | ✅ แก้จาก 0% เดิมได้แล้ว |
-| Telemetry Age / Alarm Age | 0.0 hour | ✅ ข้อมูลสด |
+| Machine ID Match | **100%** |  แก้จาก 20% เดิมได้แล้ว |
+| Alarm Master Match | **100%** |  แก้จาก 0% เดิมได้แล้ว |
+| Telemetry Age / Alarm Age | 0.0 hour |  ข้อมูลสด |
 | **Board ID Completeness** | **8.0%** | 🟠 ตรงกับข้อมูลจริงที่ NULL 100% |
-| **PE / JE4 Coverage** | **45% / 45%** | ✅ ถูกต้อง (DF INNER ไม่วัด PE) |
+| **PE / JE4 Coverage** | **45% / 45%** |  ถูกต้อง (DF INNER ไม่วัด PE) |
 
-## 🔴 Duplicate Board Keys — พบเฉพาะ 2 เครื่อง
+##  Duplicate Board Keys — พบเฉพาะ 2 เครื่อง
 
 ```
 LDI-01:  43,667 rows → 43,510 unique → 157 duplicate board keys
@@ -183,12 +183,12 @@ LDI-05..10:  Vacuum "ALL ZERO - VERIFY"
 Donut legend: "value value value"  ← ไม่มีชื่อ series
 ```
 
-**✅ ที่แก้ได้ดีแล้ว:** `µm`, `°C`, `%H`, `mm/s`, `kPa`, `mJ/cm²` แสดงถูกต้องทุกจุดใน
+** ที่แก้ได้ดีแล้ว:** `µm`, `°C`, `%H`, `mm/s`, `kPa`, `mJ/cm²` แสดงถูกต้องทุกจุดใน
 Machine Snapshot และ Manufacturing — บั๊ก `lengthum` หายไปหมดแล้ว
 
 ---
 
-# ✅ สิ่งที่ทำงานได้ดีจริง (อย่าแก้)
+#  สิ่งที่ทำงานได้ดีจริง (อย่าแก้)
 
 | Dashboard | สถานะ | หลักฐาน |
 |---|---|---|
@@ -204,7 +204,7 @@ Machine Snapshot และ Manufacturing — บั๊ก `lengthum` หาย�
 
 ---
 
-# 📋 แผนตรวจสอบต่อเนื่อง (Audit Framework)
+#  แผนตรวจสอบต่อเนื่อง (Audit Framework)
 
 ## เพิ่ม Layer C เข้าระบบอัตโนมัติ — จุดที่ขาดที่สุด
 
@@ -235,14 +235,14 @@ for (const panel of allPanels) {
 
 ---
 
-# 🎯 ลำดับลงมือ
+#  ลำดับลงมือ
 
 | # | งาน | ความรุนแรง | ผู้ได้ประโยชน์ |
 |---|---|---|---|
-| 1 | **รวมสูตร Yield เป็น view เดียว** | 🔴 P0 | ผู้บริหาร — เลิกเห็นตัวเลขขัดแย้ง |
-| 2 | **แก้ simulator ให้ alarm ผูกกับพารามิเตอร์** | 🔴 P0 | Process Engineer — RCA ใช้พิสูจน์ได้จริง |
-| 3 | แก้ 2 panels ว่างใน Andon | 🔴 P1 | คนงานหน้าเครื่อง |
-| 4 | แก้ 15 panels "No data" | 🔴 P1 | ทุกฝ่าย |
+| 1 | **รวมสูตร Yield เป็น view เดียว** |  P0 | ผู้บริหาร — เลิกเห็นตัวเลขขัดแย้ง |
+| 2 | **แก้ simulator ให้ alarm ผูกกับพารามิเตอร์** |  P0 | Process Engineer — RCA ใช้พิสูจน์ได้จริง |
+| 3 | แก้ 2 panels ว่างใน Andon |  P1 | คนงานหน้าเครื่อง |
+| 4 | แก้ 15 panels "No data" |  P1 | ทุกฝ่าย |
 | 5 | สืบ duplicate board keys (LDI-01/04) | 🟠 P2 | QA — ตัวเลขนับบอร์ดอาจผิด |
 | 6 | เพิ่ม E2E panel-data check เข้า CI | 🟠 P2 | ทีมพัฒนา — กันเกิดซ้ำ |
 | 7 | แก้ currency unit + donut legend | 🟡 P3 | ความเรียบร้อย |

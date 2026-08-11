@@ -1,4 +1,4 @@
-# 📝 IMS — Internship Report Summary
+#  IMS — Internship Report Summary
 
 > **ARCHIVED — historical academic/internship retrospective, dated June 2026.** Not living documentation; the project figures throughout (4 dashboards, 8 containers, documentation counts, etc.) describe the system as it existed at that time and predate the LDI manufacturing dashboard suite. The learning outcomes, challenges, and solutions described are an honest historical record and were not rewritten. Kept for historical record per docs/archive/README.md. For current information, see docs/architecture/ARCHITECTURE.md.
 
@@ -18,7 +18,7 @@
 
 ---
 
-## 📑 Table of Contents
+##  Table of Contents
 
 1. [Executive Summary](#-executive-summary)
 2. [Project Objectives & Achievement](#-project-objectives--achievement)
@@ -31,7 +31,7 @@
 
 ---
 
-## 📋 Executive Summary
+##  Executive Summary
 
 ### โครงการ IMS (Infrastructure Monitoring System)
 
@@ -53,9 +53,9 @@
 
 ---
 
-## 🎯 Project Objectives & Achievement
+##  Project Objectives & Achievement
 
-### Objective 1: Real-time Monitoring ✅
+### Objective 1: Real-time Monitoring 
 
 **สถานะ**: สำเร็จสมบูรณ์
 
@@ -70,7 +70,7 @@
 - SNMP v2c/v3 สำหรับ data collection
 - TimescaleDB สำหรับ time-series storage
 
-### Objective 2: Health Monitoring ✅
+### Objective 2: Health Monitoring 
 
 **สถานะ**: สำเร็จสมบูรณ์
 
@@ -85,7 +85,7 @@
 - IF-MIB สำหรับ network interface metrics
 - Custom MIB (LDI) สำหรับ manufacturing metrics
 
-### Objective 3: Downtime Reduction ✅
+### Objective 3: Downtime Reduction 
 
 **สถานะ**: สำเร็จสมบูรณ์
 
@@ -100,7 +100,7 @@
 - Alertmanager สำหรับ notification routing
 - LINE Notify + MS Teams webhooks
 
-### Objective 4: Visibility Dashboard ✅
+### Objective 4: Visibility Dashboard 
 
 **สถานะ**: สำเร็จสมบูรณ์
 
@@ -115,7 +115,7 @@
 - PostgreSQL queries สำหรับ real-time data
 - Continuous Aggregates สำหรับ performance optimization
 
-### Objective 5: Internship Training ✅
+### Objective 5: Internship Training 
 
 **สถานะ**: สำเร็จสมบูรณ์
 
@@ -127,7 +127,7 @@
 
 ---
 
-## 📚 Learning Outcomes
+##  Learning Outcomes
 
 ### 1. SNMP Protocol Mastery
 
@@ -220,7 +220,7 @@
 
 ---
 
-## 💼 Technical Skills Acquired
+##  Technical Skills Acquired
 
 ### Programming Languages
 
@@ -258,7 +258,7 @@
 
 ---
 
-## 💰 Business Value Delivered
+##  Business Value Delivered
 
 ### Quantitative Value
 
@@ -293,7 +293,7 @@
 
 ---
 
-## 🚧 Challenges & Solutions
+##  Challenges & Solutions
 
 ### Challenge 1: SNMP Walker Unreliability
 
@@ -345,7 +345,7 @@ fs.writeFileSync('flows-ubuntu.json', JSON.stringify(flows));
 
 ---
 
-## 🔮 Future Recommendations
+##  Future Recommendations
 
 ### Short-term (1-3 เดือน)
 
@@ -376,17 +376,17 @@ fs.writeFileSync('flows-ubuntu.json', JSON.stringify(flows));
 
 ---
 
-## 🎓 Conclusion
+##  Conclusion
 
 ### ผลลัพธ์ของโครงการ
 
 โครงการ IMS ประสบความสำเร็จตามวัตถุประสงค์ทั้ง 5 ข้อ:
 
-1. ✅ **Real-time Monitoring** — ระบบ monitoring แบบ end-to-end ที่ทำงานได้จริง
-2. ✅ **Health Monitoring** — ตรวจสอบ server, network, services อย่างต่อเนื่อง
-3. ✅ **Downtime Reduction** — ลด MTTD จาก 30+ นาที เหลือ < 1 นาที
-4. ✅ **Visibility Dashboard** — 4 dashboards ที่เข้าใจง่ายและให้ข้อมูลครบถ้วน
-5. ✅ **Internship Training** — นักศึกษาได้เรียนรู้เครื่องมือ monitoring สมัยใหม่
+1.  **Real-time Monitoring** — ระบบ monitoring แบบ end-to-end ที่ทำงานได้จริง
+2.  **Health Monitoring** — ตรวจสอบ server, network, services อย่างต่อเนื่อง
+3.  **Downtime Reduction** — ลด MTTD จาก 30+ นาที เหลือ < 1 นาที
+4.  **Visibility Dashboard** — 4 dashboards ที่เข้าใจง่ายและให้ข้อมูลครบถ้วน
+5.  **Internship Training** — นักศึกษาได้เรียนรู้เครื่องมือ monitoring สมัยใหม่
 
 ### คุณค่าที่มอบให้กับองค์กร
 

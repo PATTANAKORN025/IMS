@@ -106,7 +106,7 @@ make deploy-flows
 
 # Incident Response Runbook
 
-# 🚨 Incident Response Runbook
+#  Incident Response Runbook
 
 > **คู่มือการตอบสนองต่อเหตุการณ์สำหรับ NOC Team และ IT Support**
 > ใช้เมื่อได้รับ alert หรือตรวจพบปัญหาในระบบ
@@ -123,7 +123,7 @@ make deploy-flows
 
 ---
 
-## 📋 Table of Contents
+##  Table of Contents
 
 1. [Alert Severity Matrix](#-alert-severity-matrix)
 2. [Alert → Action Matrix](#-alert--action-matrix)
@@ -133,36 +133,36 @@ make deploy-flows
 
 ---
 
-## 🎯 Alert Severity Matrix
+##  Alert Severity Matrix
 
 | Level | Icon | Response Time | Example | Communication |
 |---|---|---|---|---|
-| **Critical** | 🔴 | < 15 minutes | InterfaceDown, ServiceDown | Immediate call + LINE |
+| **Critical** |  | < 15 minutes | InterfaceDown, ServiceDown | Immediate call + LINE |
 | **Warning** | 🟡 | < 1 hour | HighCPU, DiskSpaceLow | LINE notification |
-| **Info** | 🔵 | < 4 hours | TelemetryGap, PredictiveDiskFull | Email summary |
+| **Info** |  | < 4 hours | TelemetryGap, PredictiveDiskFull | Email summary |
 
 ---
 
-## 📊 Alert → Action Matrix
+##  Alert → Action Matrix
 
 ### Infrastructure Alerts
 
 | Alert | Severity | First Action | Escalation |
 |---|---|---|---|
-| **ServiceDown** | 🔴 Critical | `docker compose up -d <service>` | If persists >5 min: check logs |
-| **InterfaceDown** | 🔴 Critical | Check cable/switch port | If eth0 flapping: expected in simulator |
-| **NodeREDDown** | 🔴 Critical | `docker compose restart node-red` | If crashes repeatedly: check OOM |
-| **PgBouncerDown** | 🔴 Critical | `docker compose restart pgbouncer` | Check TimescaleDB first |
+| **ServiceDown** |  Critical | `docker compose up -d <service>` | If persists >5 min: check logs |
+| **InterfaceDown** |  Critical | Check cable/switch port | If eth0 flapping: expected in simulator |
+| **NodeREDDown** |  Critical | `docker compose restart node-red` | If crashes repeatedly: check OOM |
+| **PgBouncerDown** |  Critical | `docker compose restart pgbouncer` | Check TimescaleDB first |
 | **TargetDown** | 🟡 Warning | Check Prometheus targets | Verify blackbox DNS name |
 
 ### Resource Alerts
 
 | Alert | Severity | First Action | Escalation |
 |---|---|---|---|
-| **HighCpuLoad** | 🟡/🔴 | Check `top` inside container | If sustained >1h: investigate workload |
-| **HighMemoryUsage** | 🟡/🔴 | Check `free -m` inside container | If >90%: restart container |
-| **DiskSpaceLow** | 🟡/🔴 | `docker system prune -f` | If persists: expand volume |
-| **HighTemperature** | 🟡/🔴 | Check physical environment (AC) | If >90°C: emergency shutdown |
+| **HighCpuLoad** | 🟡/ | Check `top` inside container | If sustained >1h: investigate workload |
+| **HighMemoryUsage** | 🟡/ | Check `free -m` inside container | If >90%: restart container |
+| **DiskSpaceLow** | 🟡/ | `docker system prune -f` | If persists: expand volume |
+| **HighTemperature** | 🟡/ | Check physical environment (AC) | If >90°C: emergency shutdown |
 | **NetworkErrors** | 🟡 Warning | Check cable quality | If sustained: replace cable |
 
 ### Data Alerts
@@ -170,11 +170,11 @@ make deploy-flows
 | Alert | Severity | First Action | Escalation |
 |---|---|---|---|
 | **TelemetryGap** | 🟡 Warning | Check Node-RED logs | If >5 min gap: restart full stack |
-| **SLABreachWarning** | 🔵 Info | Check uptime percentage | Review architecture requirements |
+| **SLABreachWarning** |  Info | Check uptime percentage | Review architecture requirements |
 
 ---
 
-## 🎮 Step-by-Step Playbooks
+##  Step-by-Step Playbooks
 
 ### Playbook 1: Full Stack Restart
 
@@ -287,7 +287,7 @@ docker compose exec prometheus wget -qO- -X POST "http://localhost:9090/-/reload
 
 ---
 
-## 📞 Escalation Matrix
+##  Escalation Matrix
 
 | Level | Contact | When to Escalate | Response Time |
 |---|---|---|---|
@@ -308,7 +308,7 @@ docker compose exec prometheus wget -qO- -X POST "http://localhost:9090/-/reload
 
 ---
 
-## 📝 Post-Incident Review
+##  Post-Incident Review
 
 ### Incident Report Template
 
@@ -360,7 +360,7 @@ docker compose exec prometheus wget -qO- -X POST "http://localhost:9090/-/reload
 
 ---
 
-## 📚 Quick Reference
+##  Quick Reference
 
 ### Common Commands
 

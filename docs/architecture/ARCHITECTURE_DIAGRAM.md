@@ -1,4 +1,4 @@
-# 🖼️ IMS Visual Architecture Diagrams
+# ️ IMS Visual Architecture Diagrams
 
 > **Note:** These diagrams are generated dynamically using Mermaid.js. They provide a visual, structural overview of the IMS ecosystem.
 
@@ -70,9 +70,9 @@ This diagram explains the fault-tolerance mechanism when a server goes offline.
 ```mermaid
 sequenceDiagram
     participant Timer as ⏱️ Node-RED Inject (30s)
-    participant Walker as 🛰️ SNMP Walker
-    participant State as 🧠 Context State
-    participant Device as 💻 Edge Server (Offline)
+    participant Walker as ️ SNMP Walker
+    participant State as  Context State
+    participant Device as  Edge Server (Offline)
     
     Timer->>Walker: Trigger poll cycle
     Walker->>State: Check device status

@@ -66,13 +66,13 @@ every §2.1 token against a solid fill:
 
 | Token | Hex | White-text ratio | AA large (≥3:1) | AA normal (≥4.5:1) |
 |---|---|---|---|---|
-| `ok` | `#22C55E` | 2.28 | ❌ | ❌ |
-| `warning` | `#F59E0B` | 2.15 | ❌ | ❌ |
-| `critical` | `#EF4444` | 3.76 | ✅ | ❌ |
-| `info` | `#00F2FE` | 1.39 | ❌ | ❌ |
-| `accent` | `#3B82F6` | 3.68 | ✅ | ❌ |
-| `no_data` | `#64748B` | 4.76 | ✅ | ✅ |
-| `severity-minor` | `#EAB308` | 1.92 | ❌ | ❌ |
+| `ok` | `#22C55E` | 2.28 |  |  |
+| `warning` | `#F59E0B` | 2.15 |  |  |
+| `critical` | `#EF4444` | 3.76 |  |  |
+| `info` | `#00F2FE` | 1.39 |  |  |
+| `accent` | `#3B82F6` | 3.68 |  |  |
+| `no_data` | `#64748B` | 4.76 |  |  |
+| `severity-minor` | `#EAB308` | 1.92 |  |  |
 
 **Fix applied, not just documented:** every stat/gauge/bargauge panel using
 `colorMode: "background"` (31 panels) was switched to `colorMode: "value"` —
@@ -184,7 +184,7 @@ added.
 | Pie/Donut | 6–8 | 8 |
 
 - ห้ามผสม height ต่างกันในแถวเดียวกัน (ทำให้ grid ดูเอียง) — ถ้า panel สูงไม่เท่ากัน ให้แยกคนละแถว
-- ใช้ **Row** เสมอเพื่อแบ่งโซนความหมาย ตั้งชื่อ row ให้สื่อ (`🖥️ Compute`, `🌐 Network`, `🌡️ Environmental`) พร้อม emoji ตัวเดียวเป็น visual anchor
+- ใช้ **Row** เสมอเพื่อแบ่งโซนความหมาย ตั้งชื่อ row ให้สื่อ (`️ Compute`, ` Network`, `️ Environmental`) พร้อม emoji ตัวเดียวเป็น visual anchor
 - Row ที่ไม่ critical → `collapsed: true` เป็นค่าเริ่มต้น
 - **Panel density (2026-08-08):** dashboard ที่มี panel มากกว่า ~8 ตัวเรียงแนวตั้งแบบไม่มี row (สังเกตได้จาก `IMS LDI - Engineering Analytics & SPC` ที่เคยสูง 126 grid units) ต้องจัดกลุ่มเป็น row ตามโซนความหมาย แล้ว collapse ทุก row ยกเว้น row แรก/สำคัญที่สุด — เหลือแค่ header list สั้นๆ ให้เห็นภาพรวมทันที ไม่ต้อง scroll มหาศาล เนื้อหาทั้งหมดยังอยู่ครบ แค่ซ่อนไว้หลัง header ที่คลิกขยายได้
 - **Kiosk no-scroll ceiling (2026-08-08):** 3 dashboards are glance/kiosk boards per §1 principle 5 ("progressive disclosure" — NOC and Easy Overview answer "is everything OK," Andon is the factory-floor wall display) and carry a hard 20-grid-unit ceiling in `tests/lint/dashboard-linter.js`'s `MAX_HEIGHT`, enforced as an error, not a warning. All 3 use the same pattern: only the single most decision-relevant row stays expanded (Andon's KPI strip + machine tiles, NOC's alert list, Easy Overview's KPI strip) — everything else is a collapsed row, content still fully present, one click away. Engineering/Capacity/Machine-Snapshot/Manufacturing are deliberately deep-dive dashboards under the same principle and are NOT in `MAX_HEIGHT` — forcing them to 20u would fight their actual purpose, not serve it.
@@ -265,8 +265,8 @@ Reference implementations: `ims-ldi-engineering-analytics.json` panels 17
 
 Panel ที่ปรากฏซ้ำมากกว่า 1 dashboard **ต้อง**เป็น Library Panel (แก้ที่เดียว อัปเดตทุกที่) — **แต่เฉพาะกรณีที่ SQL/business logic ตรงกันจริงๆ**, ไม่ใช่แค่ชื่อ panel คล้ายกัน:
 
-- **Fleet Health Score** (stat) — ✅ true library panel, `ims-lib-fleet-health-score`. Confirmed byte-identical query (`SELECT value FROM public.v_fleet_score`) between `ims-capacity-planning.json` and `ims-noc-overview.json` before merging.
-- **Availability / Critical Alarms / Running / Yield** — ⚠️ audited 2026-08-08, found NOT duplicates despite similar names: each dashboard's version has a genuinely different SQL scope (e.g. Manufacturing's Yield panel adds a `machine_id` template filter and a period-over-period "Delta %" calc that Easy Overview's simpler version doesn't have; Andon/Manufacturing/Easy-Overview's "Availability"/"Running" panels differ in whether they filter by `machine_id` and which compression-chunk workaround they carry). Forcing these into one shared panel would mean changing what each dashboard actually computes — out of scope here (business logic is explicitly off-limits for this pass). If a real business decision is made later to standardize these to one canonical query/filter scope, redo this audit then and promote the survivors to library panels using the same mechanism.
+- **Fleet Health Score** (stat) —  true library panel, `ims-lib-fleet-health-score`. Confirmed byte-identical query (`SELECT value FROM public.v_fleet_score`) between `ims-capacity-planning.json` and `ims-noc-overview.json` before merging.
+- **Availability / Critical Alarms / Running / Yield** — ️ audited 2026-08-08, found NOT duplicates despite similar names: each dashboard's version has a genuinely different SQL scope (e.g. Manufacturing's Yield panel adds a `machine_id` template filter and a period-over-period "Delta %" calc that Easy Overview's simpler version doesn't have; Andon/Manufacturing/Easy-Overview's "Availability"/"Running" panels differ in whether they filter by `machine_id` and which compression-chunk workaround they carry). Forcing these into one shared panel would mean changing what each dashboard actually computes — out of scope here (business logic is explicitly off-limits for this pass). If a real business decision is made later to standardize these to one canonical query/filter scope, redo this audit then and promote the survivors to library panels using the same mechanism.
 
 **How this actually works in this repo (Grafana 13.1.1 has no file-based provisioning for library panels — only datasources/dashboards/alerting/plugins get that; verified empirically, not by trusting the Grafana docs' provisioning section):**
 

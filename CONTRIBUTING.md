@@ -1,4 +1,4 @@
-# 🤝 Contributing to IMS
+#  Contributing to IMS
 
 > **Guidelines สำหรับการร่วมพัฒนา IMS**
 
@@ -13,7 +13,7 @@
 
 ---
 
-## 📋 Development Workflow
+##  Development Workflow
 
 1. Fork the repository
 2. Create a feature branch from `main`
@@ -23,7 +23,7 @@
 
 ---
 
-## 🔧 Project Conventions
+##  Project Conventions
 
 ### Node-RED Flows
 
@@ -63,7 +63,7 @@ done
 
 ---
 
-## 📝 Commit Messages
+##  Commit Messages
 
 Follow [Conventional Commits](https://www.conventionalcommits.org/):
 
@@ -91,7 +91,7 @@ security/<topic>  # Security fixes
 
 ---
 
-## 🧪 Testing
+##  Testing
 
 ```bash
 # Unit tests (5 files, 99 assertions)
@@ -116,7 +116,7 @@ node tests/e2e/golden-dataset-spc.js
 
 ---
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 IMS/
@@ -148,7 +148,7 @@ IMS/
 
 ---
 
-## 🔍 Code Review Checklist
+##  Code Review Checklist
 
 - [ ] No secrets or credentials in code
 - [ ] SQL uses `sanitize()` (from `nodered_data/lib/parser.js`) for user inputs
