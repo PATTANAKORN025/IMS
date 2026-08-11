@@ -95,6 +95,28 @@
   },
   "panels": [
     {
+      "id": 10015,
+      "type": "stat",
+      "title": "Plant Overall OEE (%)",
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "WITH stats AS (\n  SELECT\n    -- Availability: Ratio of buckets where machine is running\n    COUNT(*) FILTER (WHERE state = true)::numeric / NULLIF(COUNT(*), 0) AS avail,\n    -- Performance: (Total Actual Boards * Master Ideal Cycle) / Actual Run Time\n    -- Notice we join with ldi_master_config for actual cycle times!\n    SUM((SELECT COUNT(DISTINCT board_no) FROM public.ldi_data d2 WHERE d2.eqp_id = d.eqp_id AND $__timeFilter(d2.time)) * m.ideal_cycle_sec) / NULLIF(COUNT(*) FILTER (WHERE d.state = true) * 60, 0) AS perf,\n    -- Quality: Strict check across all 6 lenses\n    COUNT(*) FILTER (WHERE GREATEST(ABS(COALESCE(pe_1, 0)), ABS(COALESCE(pe_2, 0)), ABS(COALESCE(pe_3, 0)), ABS(COALESCE(pe_4, 0)), ABS(COALESCE(pe_5, 0)), ABS(COALESCE(pe_6, 0))) <= pe_setting) :: numeric / NULLIF(COUNT(*), 0) AS qual\n  FROM public.ldi_data_1m d\n  JOIN public.ldi_master_config m ON d.eqp_id = m.eqp_id\n  WHERE factory IN (${factory:sqlstring}) AND $__timeFilter(bucket)\n)\nSELECT ROUND((avail * LEAST(perf, 1.0) * qual * 100.0) :: numeric, 1) AS value FROM stats;"
+        }
+      ]
+    },
+    {
       "id": 9999,
       "type": "text",
       "title": "",
@@ -106,7 +128,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 0
+        "y": 6
       },
       "transparent": true
     },
@@ -119,7 +141,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 1,
+        "y": 7,
         "w": 24,
         "h": 3
       },
@@ -161,7 +183,7 @@
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 4,
+        "y": 10,
         "w": 24,
         "h": 1
       },
@@ -176,7 +198,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 5,
+        "y": 11,
         "w": 8,
         "h": 4
       },
@@ -306,7 +328,7 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 5,
+        "y": 11,
         "w": 8,
         "h": 4
       },
@@ -431,7 +453,7 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 5,
+        "y": 11,
         "w": 8,
         "h": 4
       },
@@ -505,7 +527,7 @@
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 9,
+        "y": 15,
         "w": 24,
         "h": 1
       },
@@ -520,7 +542,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 10,
+        "y": 16,
         "w": 6,
         "h": 4
       },
@@ -651,7 +673,7 @@
       },
       "gridPos": {
         "x": 6,
-        "y": 10,
+        "y": 16,
         "w": 6,
         "h": 4
       },
@@ -781,7 +803,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 10,
+        "y": 16,
         "w": 6,
         "h": 4
       },
@@ -876,7 +898,7 @@
       },
       "gridPos": {
         "x": 18,
-        "y": 10,
+        "y": 16,
         "w": 6,
         "h": 4
       },
@@ -971,7 +993,7 @@
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 14,
+        "y": 20,
         "w": 24,
         "h": 1
       },
@@ -986,7 +1008,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 15,
+        "y": 21,
         "w": 6,
         "h": 4
       },
@@ -1117,7 +1139,7 @@
       },
       "gridPos": {
         "x": 6,
-        "y": 15,
+        "y": 21,
         "w": 6,
         "h": 4
       },
@@ -1206,7 +1228,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 15,
+        "y": 21,
         "w": 6,
         "h": 4
       },
@@ -1344,7 +1366,7 @@
       },
       "gridPos": {
         "x": 18,
-        "y": 15,
+        "y": 21,
         "w": 6,
         "h": 4
       },
@@ -1479,7 +1501,7 @@
       "title": "◈ PRODUCTION & COMPLIANCE",
       "gridPos": {
         "x": 0,
-        "y": 19,
+        "y": 25,
         "w": 24,
         "h": 1
       },
@@ -2093,7 +2115,7 @@
       "title": "◈ PROCESS METRICS",
       "gridPos": {
         "x": 0,
-        "y": 20,
+        "y": 26,
         "w": 24,
         "h": 1
       },
@@ -2474,7 +2496,7 @@
       "title": "◈ ANALYTICS & SPC",
       "gridPos": {
         "x": 0,
-        "y": 21,
+        "y": 27,
         "w": 24,
         "h": 1
       },
@@ -2636,7 +2658,7 @@
       "title": "◈ SYSTEM ALARMS",
       "gridPos": {
         "x": 0,
-        "y": 22,
+        "y": 28,
         "w": 24,
         "h": 1
       },
@@ -2875,7 +2897,7 @@
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 23,
+        "y": 29,
         "w": 24,
         "h": 1
       },
@@ -3048,7 +3070,7 @@
       "title": "◈ CYCLE TIME & TRACEABILITY",
       "gridPos": {
         "x": 0,
-        "y": 24,
+        "y": 30,
         "w": 24,
         "h": 1
       },
