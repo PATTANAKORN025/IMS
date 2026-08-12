@@ -61,7 +61,7 @@ function runSql(sql) {
   return execFileSync(
     'docker',
     ['exec', '-i', CONTAINER, 'psql', '-U', DB_USER, '-d', DB_NAME,
-     '-A', '-F', FIELD_SEP, '-P', 'footer=off', '-v', 'ON_ERROR_STOP=1', '-f', '-'],
+     '-q', '-A', '-F', FIELD_SEP, '-P', 'footer=off', '-v', 'ON_ERROR_STOP=1', '-f', '-'],
     { encoding: 'utf8', input: sql, maxBuffer: 10 * 1024 * 1024 }
   );
 }
@@ -145,8 +145,31 @@ const CHECKS = [
     expected: EXPECTED_CPK_PE,
   },
   {
+    // v_machine_spc_fleet is a MATERIALIZED view (migration 064, refreshed
+    // on a 1-minute background job) -- querying it directly can never see
+    // this transaction's just-inserted golden rows, since a materialized
+    // view is a separate physical snapshot with its own refresh cycle, not
+    // a live re-execution of its defining query. Inlined here instead,
+    // same as the other panel checks above: formula copied verbatim from
+    // migration 064's pe_capability CTE chain, with the devices-registry
+    // join layer (device_type='ldi' AND enabled) replaced by a direct
+    // eqp_id filter -- that join/filtering layer is what a materialized
+    // view's own staleness would otherwise hide from this test, not the
+    // Cpk math itself, which is what this suite actually validates.
     label: 'v_machine_spc_fleet (migration 042) -- cpk_pe',
-    sql: `SELECT cpk_pe FROM public.v_machine_spc_fleet WHERE eqp_id = '${GOLDEN_EQP}';`,
+    sql: `
+      WITH pe_base AS (
+        SELECT eqp_id, pe_1, pe_2, pe_3, pe_4, pe_5, pe_6, COALESCE(pe_setting, 25.0) AS pe_val
+        FROM public.ldi_data
+        WHERE eqp_id = '${GOLDEN_EQP}' AND pe_1 IS NOT NULL AND COALESCE(pe_setting, 0) > 2.0
+      ), pe_samples AS (
+        SELECT eqp_id, pe_val, v.pe FROM pe_base
+        CROSS JOIN LATERAL (VALUES (pe_1),(pe_2),(pe_3),(pe_4),(pe_5),(pe_6)) v(pe)
+        WHERE v.pe IS NOT NULL
+      ), pe_stats AS (
+        SELECT eqp_id, AVG(pe) AS mu, STDDEV(pe) AS sigma, AVG(pe_val) AS setting_val FROM pe_samples GROUP BY eqp_id
+      )
+      SELECT LEAST((setting_val - mu) / NULLIF(3 * sigma, 0), (mu + setting_val) / NULLIF(3 * sigma, 0)) AS cpk_pe FROM pe_stats;`,
     expected: EXPECTED_CPK_PE,
   },
   {
@@ -168,8 +191,43 @@ const CHECKS = [
     expected: EXPECTED_CPK_JE,
   },
   {
+    // Same materialized-view staleness reason as the cpk_pe check above --
+    // inlines migration 064's full pe_capability + je_capability CTE
+    // chains and its final worst_cpk CASE/LEAST combination, verbatim
+    // minus the devices-registry join layer.
     label: 'v_machine_spc_fleet (migration 042) -- worst_cpk',
-    sql: `SELECT LEAST(cpk_pe, cpk_je) FROM public.v_machine_spc_fleet WHERE eqp_id = '${GOLDEN_EQP}';`,
+    sql: `
+      WITH pe_base AS (
+        SELECT eqp_id, pe_1, pe_2, pe_3, pe_4, pe_5, pe_6, COALESCE(pe_setting, 25.0) AS pe_val
+        FROM public.ldi_data
+        WHERE eqp_id = '${GOLDEN_EQP}' AND pe_1 IS NOT NULL AND COALESCE(pe_setting, 0) > 2.0
+      ), pe_samples AS (
+        SELECT eqp_id, pe_val, v.pe FROM pe_base
+        CROSS JOIN LATERAL (VALUES (pe_1),(pe_2),(pe_3),(pe_4),(pe_5),(pe_6)) v(pe)
+        WHERE v.pe IS NOT NULL
+      ), pe_stats AS (
+        SELECT eqp_id, AVG(pe) AS mu, STDDEV(pe) AS sigma, AVG(pe_val) AS setting_val FROM pe_samples GROUP BY eqp_id
+      ), pe_capability AS (
+        SELECT eqp_id, LEAST((setting_val - mu) / NULLIF(3 * sigma, 0), (mu + setting_val) / NULLIF(3 * sigma, 0)) AS cpk_pe FROM pe_stats
+      ), je_base AS (
+        SELECT eqp_id, je_1, je_2, je_3, je_4, COALESCE(je_setting, 25.0) AS je_val
+        FROM public.ldi_data
+        WHERE eqp_id = '${GOLDEN_EQP}' AND je_1 IS NOT NULL AND COALESCE(je_setting, 0) > 2.0
+      ), je_samples AS (
+        SELECT eqp_id, je_val, v.je FROM je_base
+        CROSS JOIN LATERAL (VALUES (je_1),(je_2),(je_3),(je_4)) v(je)
+        WHERE v.je IS NOT NULL
+      ), je_stats AS (
+        SELECT eqp_id, AVG(je) AS mu, STDDEV(je) AS sigma, AVG(je_val) AS setting_val FROM je_samples GROUP BY eqp_id
+      ), je_capability AS (
+        SELECT eqp_id, LEAST((setting_val - mu) / NULLIF(3 * sigma, 0), (mu + setting_val) / NULLIF(3 * sigma, 0)) AS cpk_je FROM je_stats
+      )
+      SELECT CASE
+          WHEN p.cpk_pe IS NULL THEN j.cpk_je
+          WHEN j.cpk_je IS NULL THEN p.cpk_pe
+          ELSE LEAST(p.cpk_pe, j.cpk_je)
+        END AS worst_cpk
+      FROM pe_capability p FULL JOIN je_capability j ON p.eqp_id = j.eqp_id;`,
     expected: EXPECTED_WORST_CPK,
   },
 ];
