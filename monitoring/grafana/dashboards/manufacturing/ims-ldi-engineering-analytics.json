@@ -2395,7 +2395,9 @@
           }
         }
       },
-      "options": {}
+      "options": {
+        "connectNullPoints": true
+      }
     },
     {
       "id": 10002,
@@ -2426,6 +2428,9 @@
             "drawStyle": "line"
           }
         }
+      },
+      "options": {
+        "connectNullPoints": true
       }
     }
   ],
