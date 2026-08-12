@@ -10,7 +10,7 @@
 > currently reports. Requires the `timescaledb` container to be running
 > and fully migrated.
 >
-> Last generated: 2026-08-12 | Migrations applied: 50 (013-075) | Tables: 10 | Continuous aggregates: 8 | Plain views: 11 | Materialized views: 3
+> Last generated: 2026-08-12 | Migrations applied: 51 (013-076) | Tables: 9 | Continuous aggregates: 7 | Plain views: 11 | Materialized views: 3
 
 ## Tables
 
@@ -21,7 +21,6 @@
 | `ldi_alarm_ms_code` | 10 | — |
 | `ldi_alarm_state` | 5 | — |
 | `ldi_data` | 36 | Yes |
-| `ldi_master_config` | 6 | — |
 | `ldi_metrics` | 9 | Yes |
 | `net_metrics` | 10 | Yes |
 | `schema_migrations` | 4 | — |
@@ -36,7 +35,6 @@
 | `ldi_data_1m` | `_materialized_hypertable_18` |
 | `ldi_data_hourly` | `_materialized_hypertable_17` |
 | `ldi_hourly` | `_materialized_hypertable_6` |
-| `ldi_oee_1m` | `_materialized_hypertable_23` |
 | `net_hourly` | `_materialized_hypertable_5` |
 | `sys_hourly` | `_materialized_hypertable_4` |
 

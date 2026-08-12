@@ -95,75 +95,6 @@
   },
   "panels": [
     {
-      "id": 10015,
-      "type": "stat",
-      "title": "◉ Plant Overall OEE (%)",
-      "description": "Availability x Performance x Quality, averaged across machines in the selected factory/time range. Sourced from ldi_oee_1m (dedicated 1-minute CAGG, migration 075) -- not a raw-table scan.",
-      "gridPos": {
-        "h": 6,
-        "w": 6,
-        "x": 0,
-        "y": 0
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#EF4444",
-                "value": null
-              },
-              {
-                "color": "#F59E0B",
-                "value": 60
-              },
-              {
-                "color": "#22C55E",
-                "value": 85
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "orientation": "auto",
-        "textMode": "auto",
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "noValue": "No data"
-      },
-      "pluginVersion": "10.4.0",
-      "datasource": {
-        "type": "postgres",
-        "uid": "timescaledb"
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "postgres",
-            "uid": "timescaledb"
-          },
-          "format": "table",
-          "rawQuery": true,
-          "refId": "A",
-          "rawSql": "WITH machine_stats AS (\n  SELECT\n    o.eqp_id,\n    SUM(o.running_count)::numeric / NULLIF(SUM(o.sample_count), 0) AS avail,\n    (SUM(o.board_count) * MAX(m.ideal_cycle_sec)) / NULLIF(SUM(o.running_count) * 10.0, 0) AS perf,\n    SUM(o.in_spec_count)::numeric / NULLIF(SUM(o.sample_count), 0) AS qual\n  FROM public.ldi_oee_1m o\n  JOIN public.ldi_master_config m ON o.eqp_id = m.eqp_id\n  WHERE o.factory IN (${factory:sqlstring}) AND $__timeFilter(o.bucket)\n  GROUP BY o.eqp_id\n)\nSELECT ROUND(AVG(avail * LEAST(perf, 1.0) * qual * 100.0) :: numeric, 1) AS value FROM machine_stats;"
-        }
-      ]
-    },
-    {
       "id": 9999,
       "type": "text",
       "title": "",
@@ -175,7 +106,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 6
+        "y": 0
       },
       "transparent": true
     },
@@ -188,9 +119,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 7,
-        "w": 24,
-        "h": 3
+        "y": 22,
+        "w": 1,
+        "h": 1
       },
       "description": "Watchdog: re-queries the database every dashboard refresh cycle. If this panel stalls (the frontend refresh timer dying, the reported \"requires F5\" bug), it force-reloads the page automatically. See migration 065 for the TimescaleDB-side half of this fix.",
       "fieldConfig": {
@@ -211,7 +142,7 @@
       ],
       "options": {
         "editorMode": "code",
-        "getOption": "/* IMS frontend-stall watchdog: proves the browser -> Grafana -> Postgres\n   query pipeline is still alive on every dashboard refresh cycle. If this\n   panel goes STALE_MS without being re-invoked, the dashboard's own\n   refresh timer has stalled (the \"data stops retrieving, requires F5\"\n   symptom) -- force a full page reload, automating what an operator would\n   otherwise do by hand. Safe to prepend to any getOption body: wrapped in\n   its own IIFE, touches only window.__imsWatchdog*, never collides with\n   panel-local variable names. */\n(function (staleMs) {\n  if (!window.__imsWatchdog) {\n    window.__imsWatchdogTick = Date.now();\n    window.__imsWatchdog = setInterval(function () {\n      if (Date.now() - window.__imsWatchdogTick > staleMs) {\n        window.location.reload();\n      }\n    }, Math.min(staleMs / 4, 30000));\n  }\n  window.__imsWatchdogTick = Date.now();\n})(240000);\n\nconst frame = context.panel.data.series[0];\nconst timeField = frame && frame.fields.find((f) => f.type === 'time');\nconst serverTime = timeField ? (timeField.values.buffer || timeField.values)[0] : Date.now();\n\nconst d = new Date(serverTime);\nconst hh = String(d.getUTCHours()).padStart(2, '0');\nconst mm = String(d.getUTCMinutes()).padStart(2, '0');\nconst ss = String(d.getUTCSeconds()).padStart(2, '0');\n\nreturn {\n  backgroundColor: 'transparent',\n  title: {\n    text: '\\u25CF LIVE',\n    subtext: hh + ':' + mm + ':' + ss + ' UTC \\u2014 pipeline heartbeat',\n    left: 'center',\n    top: 'center',\n    textStyle: { color: '#22C55E', fontSize: 13, fontWeight: 600, fontFamily: 'Roboto Mono, monospace' },\n    subtextStyle: { color: '#8B98A9', fontSize: 11, fontFamily: 'Roboto Mono, monospace' },\n  },\n};\n",
+        "getOption": "/* IMS frontend-stall watchdog: proves the browser -> Grafana -> Postgres\n   query pipeline is still alive on every dashboard refresh cycle. If this\n   panel goes STALE_MS without being re-invoked, the dashboard's own\n   refresh timer has stalled (the \"data stops retrieving, requires F5\"\n   symptom) -- force a full page reload, automating what an operator would\n   otherwise do by hand. Safe to prepend to any getOption body: wrapped in\n   its own IIFE, touches only window.__imsWatchdog*, never collides with\n   panel-local variable names. */\n(function (staleMs) {\n  if (!window.__imsWatchdog) {\n    window.__imsWatchdogTick = Date.now();\n    window.__imsWatchdog = setInterval(function () {\n      if (Date.now() - window.__imsWatchdogTick > staleMs) {\n        window.location.reload();\n      }\n    }, Math.min(staleMs / 4, 30000));\n  }\n  window.__imsWatchdogTick = Date.now();\n})(240000);\n\nconst frame = context.panel.data.series[0];\nconst timeField = frame && frame.fields.find((f) => f.type === 'time');\nconst serverTime = timeField ? (timeField.values.buffer || timeField.values)[0] : Date.now();\n\nconst d = new Date(serverTime);\nconst hh = String(d.getUTCHours()).padStart(2, '0');\nconst mm = String(d.getUTCMinutes()).padStart(2, '0');\nconst ss = String(d.getUTCSeconds()).padStart(2, '0');\n\nreturn {\n  backgroundColor: 'transparent',\n};\n",
         "renderer": "canvas",
         "editor": {
           "format": "auto"
@@ -230,7 +161,7 @@
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 10,
+        "y": 1,
         "w": 24,
         "h": 1
       },
@@ -245,7 +176,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 11,
+        "y": 2,
         "w": 8,
         "h": 4
       },
@@ -375,7 +306,7 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 11,
+        "y": 2,
         "w": 8,
         "h": 4
       },
@@ -500,7 +431,7 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 11,
+        "y": 2,
         "w": 8,
         "h": 4
       },
@@ -574,7 +505,7 @@
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 15,
+        "y": 6,
         "w": 24,
         "h": 1
       },
@@ -589,7 +520,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 16,
+        "y": 7,
         "w": 6,
         "h": 4
       },
@@ -720,7 +651,7 @@
       },
       "gridPos": {
         "x": 6,
-        "y": 16,
+        "y": 7,
         "w": 6,
         "h": 4
       },
@@ -850,7 +781,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 16,
+        "y": 7,
         "w": 6,
         "h": 4
       },
@@ -945,7 +876,7 @@
       },
       "gridPos": {
         "x": 18,
-        "y": 16,
+        "y": 7,
         "w": 6,
         "h": 4
       },
@@ -1040,7 +971,7 @@
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 20,
+        "y": 11,
         "w": 24,
         "h": 1
       },
@@ -1055,7 +986,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 21,
+        "y": 12,
         "w": 6,
         "h": 4
       },
@@ -1186,7 +1117,7 @@
       },
       "gridPos": {
         "x": 6,
-        "y": 21,
+        "y": 12,
         "w": 6,
         "h": 4
       },
@@ -1275,7 +1206,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 21,
+        "y": 12,
         "w": 6,
         "h": 4
       },
@@ -1413,7 +1344,7 @@
       },
       "gridPos": {
         "x": 18,
-        "y": 21,
+        "y": 12,
         "w": 6,
         "h": 4
       },
@@ -1548,7 +1479,7 @@
       "title": "◈ PRODUCTION & COMPLIANCE",
       "gridPos": {
         "x": 0,
-        "y": 25,
+        "y": 16,
         "w": 24,
         "h": 1
       },
@@ -2162,7 +2093,7 @@
       "title": "◈ PROCESS METRICS",
       "gridPos": {
         "x": 0,
-        "y": 26,
+        "y": 17,
         "w": 24,
         "h": 1
       },
@@ -2543,7 +2474,7 @@
       "title": "◈ ANALYTICS & SPC",
       "gridPos": {
         "x": 0,
-        "y": 27,
+        "y": 18,
         "w": 24,
         "h": 1
       },
@@ -2705,7 +2636,7 @@
       "title": "◈ SYSTEM ALARMS",
       "gridPos": {
         "x": 0,
-        "y": 28,
+        "y": 19,
         "w": 24,
         "h": 1
       },
@@ -2944,7 +2875,7 @@
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 29,
+        "y": 20,
         "w": 24,
         "h": 1
       },
@@ -3117,7 +3048,7 @@
       "title": "◈ CYCLE TIME & TRACEABILITY",
       "gridPos": {
         "x": 0,
-        "y": 30,
+        "y": 21,
         "w": 24,
         "h": 1
       },
@@ -3248,482 +3179,6 @@
           "description": "One row per board processed (ldi_data has exactly one row per (eqp_id, mo, board_no) -- confirmed). Log ID is the per-board traceability key. The schema also has a board_id column, but it is always NULL (the simulator never populates it -- a known data gap) so it is omitted here rather than shown as a dead blank column."
         }
       ]
-    },
-    {
-      "id": 10030,
-      "title": "◈ OEE EXECUTIVE SUMMARY",
-      "type": "row",
-      "collapsed": false,
-      "gridPos": {
-        "x": 0,
-        "y": 31,
-        "w": 24,
-        "h": 1
-      },
-      "panels": []
-    },
-    {
-      "id": 10031,
-      "title": "◉ OEE",
-      "type": "stat",
-      "datasource": {
-        "type": "postgres",
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 32,
-        "w": 6,
-        "h": 4
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#EF4444",
-                "value": null
-              },
-              {
-                "color": "#F59E0B",
-                "value": 60
-              },
-              {
-                "color": "#22C55E",
-                "value": 85
-              }
-            ]
-          },
-          "mappings": [
-            {
-              "type": "special",
-              "options": {
-                "match": "null+nan",
-                "result": {
-                  "color": "#64748B",
-                  "text": "NO_DATA",
-                  "index": 0
-                }
-              }
-            }
-          ]
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "orientation": "auto",
-        "textMode": "auto",
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "noValue": "NO_DATA"
-      },
-      "pluginVersion": "10.4.0",
-      "targets": [
-        {
-          "datasource": {
-            "type": "postgres",
-            "uid": "timescaledb"
-          },
-          "format": "table",
-          "rawQuery": true,
-          "refId": "A",
-          "rawSql": "WITH machine_stats AS (\n  SELECT o.eqp_id,\n    SUM(o.running_count)::numeric / NULLIF(SUM(o.sample_count), 0) AS avail,\n    (SUM(o.board_count) * MAX(m.ideal_cycle_sec)) / NULLIF(SUM(o.running_count) * 10.0, 0) AS perf,\n    SUM(o.in_spec_count)::numeric / NULLIF(SUM(o.sample_count), 0) AS qual\n  FROM public.ldi_oee_1m o\n  JOIN public.ldi_master_config m ON o.eqp_id = m.eqp_id\n  WHERE o.factory IN (${factory:sqlstring}) AND $__timeFilter(o.bucket)\n  GROUP BY o.eqp_id\n)\nSELECT ROUND(AVG(avail * LEAST(perf, 1.0) * qual * 100.0) :: numeric, 1) AS value FROM machine_stats;"
-        }
-      ],
-      "description": "Same source/formula as the Plant Overall OEE hero panel above -- recapped here alongside Availability/Performance/Alarm Rate for a self-contained executive summary that doesn't require scrolling back up."
-    },
-    {
-      "id": 10032,
-      "title": "◉ Availability",
-      "type": "stat",
-      "datasource": {
-        "type": "postgres",
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 6,
-        "y": 32,
-        "w": 6,
-        "h": 4
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#EF4444",
-                "value": null
-              },
-              {
-                "color": "#F59E0B",
-                "value": 60
-              },
-              {
-                "color": "#22C55E",
-                "value": 85
-              }
-            ]
-          },
-          "mappings": [
-            {
-              "type": "special",
-              "options": {
-                "match": "null+nan",
-                "result": {
-                  "color": "#64748B",
-                  "text": "NO_DATA",
-                  "index": 0
-                }
-              }
-            }
-          ]
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "orientation": "auto",
-        "textMode": "auto",
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "noValue": "NO_DATA"
-      },
-      "pluginVersion": "10.4.0",
-      "targets": [
-        {
-          "datasource": {
-            "type": "postgres",
-            "uid": "timescaledb"
-          },
-          "format": "table",
-          "rawQuery": true,
-          "refId": "A",
-          "rawSql": "SELECT ROUND((SUM(o.running_count)::numeric / NULLIF(SUM(o.sample_count), 0) * 100)::numeric, 1) AS value\nFROM public.ldi_oee_1m o\nWHERE o.factory IN (${factory:sqlstring}) AND $__timeFilter(o.bucket);"
-        }
-      ],
-      "description": "Fraction of selected-window minutes each machine was actually running. Target >=95%. From ldi_oee_1m."
-    },
-    {
-      "id": 10033,
-      "title": "◉ Performance",
-      "type": "stat",
-      "datasource": {
-        "type": "postgres",
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 12,
-        "y": 32,
-        "w": 6,
-        "h": 4
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#EF4444",
-                "value": null
-              },
-              {
-                "color": "#F59E0B",
-                "value": 60
-              },
-              {
-                "color": "#22C55E",
-                "value": 85
-              }
-            ]
-          },
-          "mappings": [
-            {
-              "type": "special",
-              "options": {
-                "match": "null+nan",
-                "result": {
-                  "color": "#64748B",
-                  "text": "NO_DATA",
-                  "index": 0
-                }
-              }
-            }
-          ]
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "orientation": "auto",
-        "textMode": "auto",
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "noValue": "NO_DATA"
-      },
-      "pluginVersion": "10.4.0",
-      "targets": [
-        {
-          "datasource": {
-            "type": "postgres",
-            "uid": "timescaledb"
-          },
-          "format": "table",
-          "rawQuery": true,
-          "refId": "A",
-          "rawSql": "WITH machine_stats AS (\n  SELECT o.eqp_id,\n    (SUM(o.board_count) * MAX(m.ideal_cycle_sec)) / NULLIF(SUM(o.running_count) * 10.0, 0) AS perf\n  FROM public.ldi_oee_1m o\n  JOIN public.ldi_master_config m ON o.eqp_id = m.eqp_id\n  WHERE o.factory IN (${factory:sqlstring}) AND $__timeFilter(o.bucket)\n  GROUP BY o.eqp_id\n)\nSELECT ROUND((AVG(LEAST(perf, 1.0)) * 100)::numeric, 1) AS value FROM machine_stats;"
-        }
-      ],
-      "description": "Actual throughput vs. ideal cycle time, capped at 100% per machine before averaging. Target >=90%. From ldi_oee_1m + ldi_master_config.ideal_cycle_sec."
-    },
-    {
-      "id": 10034,
-      "title": "◉ Alarm Rate",
-      "type": "stat",
-      "datasource": {
-        "type": "postgres",
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 18,
-        "y": 32,
-        "w": 6,
-        "h": 4
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "decimals": 2,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#22C55E",
-                "value": null
-              },
-              {
-                "color": "#F59E0B",
-                "value": 1
-              },
-              {
-                "color": "#EF4444",
-                "value": 3
-              }
-            ]
-          },
-          "mappings": [
-            {
-              "type": "special",
-              "options": {
-                "match": "null+nan",
-                "result": {
-                  "color": "#64748B",
-                  "text": "NO_DATA",
-                  "index": 0
-                }
-              }
-            }
-          ]
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "orientation": "auto",
-        "textMode": "auto",
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "noValue": "NO_DATA"
-      },
-      "pluginVersion": "10.4.0",
-      "targets": [
-        {
-          "datasource": {
-            "type": "postgres",
-            "uid": "timescaledb"
-          },
-          "format": "table",
-          "rawQuery": true,
-          "refId": "A",
-          "rawSql": "/* Critical/Major alarms per hour over the selected window. Count-based, not duration-based -- this system has no alarm-clear event, so a true MTTR/downtime-minutes metric can't be computed without inventing one; alarm rate (occurrences/hour) is the honest substitute. */\nSELECT ROUND((COUNT(*)::numeric / NULLIF(EXTRACT(EPOCH FROM ($__timeTo()::timestamptz - $__timeFrom()::timestamptz))/3600, 0))::numeric, 2) AS value\nFROM public.ldi_alarm_log a\nJOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\nWHERE m.severity IN ('Critical','Major') AND a.factory IN (${factory:sqlstring}) AND $__timeFilter(a.logdate);"
-        }
-      ],
-      "description": "Critical/Major alarms per hour, selected window. Lower is better. Count-based (occurrences/hour), not a duration/MTTR metric -- see panel query comment for why."
-    },
-    {
-      "id": 10035,
-      "title": "◈ OEE / Availability / Performance — 8h Trend",
-      "type": "timeseries",
-      "datasource": {
-        "type": "postgres",
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 36,
-        "w": 24,
-        "h": 8
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "custom": {
-            "drawStyle": "line",
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "fillOpacity": 10,
-            "showPoints": "never",
-            "connectNullPoints": true,
-            "spanNulls": true,
-            "gradientMode": "opacity"
-          },
-          "color": {
-            "mode": "palette-classic"
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true,
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        },
-        "connectNullPoints": true
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "postgres",
-            "uid": "timescaledb"
-          },
-          "format": "time_series",
-          "rawQuery": true,
-          "refId": "A",
-          "rawSql": "/* Same avail/perf/qual formula as the KPI panels above, time-bucketed for trend display. Fixed 8h lookback (not $__timeFilter) so this always reads as \"the last shift\" regardless of the dashboard's selected range. */\nWITH machine_stats AS (\n  SELECT time_bucket('15 minutes', o.bucket) AS bucket, o.eqp_id,\n    SUM(o.running_count)::numeric / NULLIF(SUM(o.sample_count), 0) AS avail,\n    (SUM(o.board_count) * MAX(m.ideal_cycle_sec)) / NULLIF(SUM(o.running_count) * 10.0, 0) AS perf,\n    SUM(o.in_spec_count)::numeric / NULLIF(SUM(o.sample_count), 0) AS qual\n  FROM public.ldi_oee_1m o\n  JOIN public.ldi_master_config m ON o.eqp_id = m.eqp_id\n  WHERE o.bucket > NOW() - INTERVAL '8 hours' AND o.factory IN (${factory:sqlstring})\n  GROUP BY 1, o.eqp_id\n)\nSELECT bucket AS \"time\",\n  ROUND((AVG(avail) * 100)::numeric, 1) AS \"Availability\",\n  ROUND((AVG(LEAST(perf,1.0)) * 100)::numeric, 1) AS \"Performance\",\n  ROUND((AVG(avail * LEAST(perf,1.0) * qual) * 100)::numeric, 1) AS \"OEE\"\nFROM machine_stats GROUP BY bucket ORDER BY bucket;"
-        }
-      ],
-      "description": "8h fleet-wide trend for the selected factory. Fixed lookback window (last 8h), independent of the dashboard time picker."
-    },
-    {
-      "id": 10036,
-      "title": "◈ ALARM PARETO",
-      "type": "row",
-      "collapsed": false,
-      "gridPos": {
-        "x": 0,
-        "y": 44,
-        "w": 24,
-        "h": 1
-      },
-      "panels": []
-    },
-    {
-      "id": 10037,
-      "title": "◈ Critical/Major Alarms by Category (selected window)",
-      "type": "barchart",
-      "datasource": {
-        "type": "postgres",
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 45,
-        "w": 24,
-        "h": 8
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "unit": "short",
-          "min": 0,
-          "custom": {}
-        },
-        "overrides": []
-      },
-      "options": {
-        "orientation": "horizontal",
-        "stacking": "none",
-        "showValue": "always",
-        "groupWidth": 0.7,
-        "barWidth": 0.8,
-        "barRadius": 0,
-        "fullHighlight": false,
-        "xTickLabelRotation": 0,
-        "xTickLabelSpacing": 0,
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": false
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "postgres",
-            "uid": "timescaledb"
-          },
-          "format": "table",
-          "rawQuery": true,
-          "refId": "A",
-          "rawSql": "/* Occurrence count, not duration -- see Alarm Rate KPI comment for why a true downtime Pareto isn't computable in this system. Category is the real RCA taxonomy (public.v_ldi_alarm_category), not invented. */\nSELECT COALESCE(c.category, 'UNCLASSIFIED') AS \"Category\", COUNT(*) AS \"Count\"\nFROM public.ldi_alarm_log a\nJOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\nLEFT JOIN public.v_ldi_alarm_category c ON c.alarm_code = a.errorcode::TEXT\nWHERE m.severity IN ('Critical','Major') AND a.factory IN (${factory:sqlstring}) AND $__timeFilter(a.logdate)\nGROUP BY 1 ORDER BY 2 DESC;"
-        }
-      ],
-      "description": "Count of Critical/Major alarms by RCA category, selected dashboard window. Occurrence-based Pareto (not downtime-minutes -- see query comment)."
     }
   ],
   "style": "dark",
