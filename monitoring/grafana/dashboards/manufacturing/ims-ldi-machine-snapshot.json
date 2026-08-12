@@ -124,6 +124,29 @@
         "skipUrlSync": false
       },
       {
+        "name": "mo",
+        "label": "MO",
+        "type": "query",
+        "datasource": {
+          "uid": "timescaledb"
+        },
+        "query": "SELECT DISTINCT mo AS __text, mo AS __value FROM public.ldi_data WHERE eqp_id IN (${machine_id:sqlstring}) ORDER BY mo",
+        "definition": "SELECT DISTINCT mo AS __text, mo AS __value FROM public.ldi_data WHERE eqp_id IN (${machine_id:sqlstring}) ORDER BY mo",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "multi": true,
+        "includeAll": true,
+        "options": [],
+        "refresh": 1,
+        "sort": 1,
+        "hide": 0,
+        "regex": "",
+        "skipUrlSync": false
+      },
+      {
         "name": "log_id",
         "label": "Event Log ID",
         "type": "query",

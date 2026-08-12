@@ -102,7 +102,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 5,
+        "y": 10,
         "w": 2,
         "h": 4
       },
@@ -126,6 +126,10 @@
                 "2": {
                   "color": "#22C55E",
                   "text": "OK"
+                },
+                "3": {
+                  "color": "#EF4444",
+                  "text": "ALARM"
                 }
               }
             }
@@ -176,18 +180,91 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: always the true latest row per machine -- see v_ldi_machine_latest_full (migration 052), same pattern as the Live Production panel. */\nSELECT CASE\n  WHEN NOT has_data OR is_stale THEN 0\n  WHEN state THEN 2\n  ELSE 1\nEND AS \"$machine_id\"\nFROM public.v_ldi_machine_latest_full\nWHERE eqp_id = ${machine_id:sqlstring}",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: always the true latest row per machine -- see v_ldi_machine_latest_full (migration 052), same pattern as the Live Production panel. ALARM (3) takes priority over every other state, including a machine that is currently running, since an alarming machine is more urgent than a clean-running one. */\nSELECT CASE\n  WHEN EXISTS (\n    SELECT 1 FROM public.ldi_alarm_log a\n    JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\n    WHERE a.equipmentid = v.eqp_id AND m.severity IN ('Critical', 'Major')\n      AND a.logdate > NOW() - INTERVAL '5 minutes'\n  ) THEN 3\n  WHEN NOT v.has_data OR v.is_stale THEN 0\n  WHEN v.state THEN 2\n  ELSE 1\nEND AS \"$machine_id\"\nFROM public.v_ldi_machine_latest_full v\nWHERE v.eqp_id = ${machine_id:sqlstring}",
           "format": "table"
         }
       ],
-      "description": "Live OK/IDLE/NO_DATA status for $machine_id, from v_ldi_machine_latest_full's single latest row per machine (is_stale = no reading in the last 5 minutes, treated as NO_DATA rather than trusting an old state). Repeats per the machine_id variable (whichever eqp_id values actually have rows in ldi_data), so this works unmodified in both real and mock data mode."
+      "description": "Live ALARM/OK/IDLE/NO_DATA status for $machine_id. ALARM = a real Critical/Major alarm logged for this machine in the last 5 minutes (same window as the Active Alarms table and the same is_stale freshness convention used everywhere else in this system). Otherwise falls back to v_ldi_machine_latest_full's single latest row per machine. Repeats per the machine_id variable (whichever eqp_id values actually have rows in ldi_data), so this works unmodified in both real and mock data mode."
+    },
+    {
+      "id": 1001,
+      "title": "$machine_id",
+      "type": "stat",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 14,
+        "w": 2,
+        "h": 3
+      },
+      "repeat": "machine_id",
+      "repeatDirection": "h",
+      "maxPerRow": 10,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#8B98A9"
+          },
+          "custom": {
+            "gradientMode": "none"
+          },
+          "unit": "none",
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "text": "—"
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "none",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "text": {
+          "valueSize": 14,
+          "titleSize": 0
+        },
+        "noValue": "—",
+        "textMode": "value",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: current job for this machine, same latest-row source as the state tile above it. */\nSELECT mo AS \"$machine_id\" FROM public.v_ldi_machine_latest_full WHERE eqp_id = ${machine_id:sqlstring}",
+          "format": "table"
+        }
+      ],
+      "description": "Current MO (job) running on $machine_id, or — if the machine has no active job / no data. Sits directly under the state tile so every machine shows its job, not just alarming ones."
     },
     {
       "id": 9999,
       "type": "text",
       "title": "",
       "options": {
-        "content": "<style>\n[class*=\"-panel-container\"] {\n  background: rgba(10, 13, 16, 0.7) !important;\n  border: 1px solid rgba(0, 242, 254, 0.15) !important;\n  border-radius: 12px !important;\n  box-shadow: 0 4px 24px -4px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.05) !important;\n  transition: all 0.2s ease-in-out !important;\n}\n/* Cyberpunk Hover */\n[class*=\"-panel-container\"]:hover {\n  border-color: rgba(0, 242, 254, 0.5) !important;\n  box-shadow: 0 8px 32px 0 rgba(0, 242, 254, 0.15) !important;\n  backdrop-filter: blur(10px) !important;\n}\n/* Title Styling */\n[class*=\"-panel-title\"] {\n  color: #E8EDF2 !important;\n  font-weight: 600 !important;\n  text-transform: uppercase !important;\n  letter-spacing: 1px !important;\n  font-size: 11px !important;\n}\n/* Dynamic Alarm Pulse (Requires a variable or JS bridge, but simulated here via global animation) */\n@keyframes criticalPulse {\n  0% { box-shadow: 0 0 10px rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.3); }\n  50% { box-shadow: 0 0 30px rgba(239, 68, 68, 0.6); border-color: rgba(239, 68, 68, 0.8); }\n  100% { box-shadow: 0 0 10px rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.3); }\n}\n/* Applies to panels with critical data */\n.panel-has-critical-alarm {\n  animation: criticalPulse 2s infinite !important;\n}\n</style>",
+        "content": "<style>\n[class*=\"-panel-container\"] {\n  background: rgba(10, 13, 16, 0.7) !important;\n  border: 1px solid rgba(0, 242, 254, 0.15) !important;\n  border-radius: 12px !important;\n  box-shadow: 0 4px 24px -4px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.05) !important;\n}\n/* Title Styling */\n[class*=\"-panel-title\"] {\n  color: #E8EDF2 !important;\n  font-weight: 600 !important;\n  text-transform: uppercase !important;\n  letter-spacing: 1px !important;\n  font-size: 11px !important;\n}\n</style>",
         "mode": "html"
       },
       "gridPos": {
@@ -299,7 +376,7 @@
       "gridPos": {
         "x": 6,
         "y": 1,
-        "w": 4,
+        "w": 8,
         "h": 3
       },
       "fieldConfig": {
@@ -384,7 +461,7 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 10,
+        "x": 14,
         "y": 1,
         "w": 5,
         "h": 3
@@ -479,7 +556,7 @@
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 15,
+        "x": 19,
         "y": 1,
         "w": 5,
         "h": 3
@@ -569,8 +646,8 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 19,
-        "w": 24,
+        "y": 18,
+        "w": 1,
         "h": 1
       },
       "description": "Watchdog: re-queries the database every dashboard refresh cycle. If this panel stalls (the frontend refresh timer dying, the reported \"requires F5\" bug), it force-reloads the page automatically. See migration 065 for the TimescaleDB-side half of this fix.",
@@ -592,7 +669,7 @@
       ],
       "options": {
         "editorMode": "code",
-        "getOption": "/* IMS frontend-stall watchdog: proves the browser -> Grafana -> Postgres\n   query pipeline is still alive on every dashboard refresh cycle. If this\n   panel goes STALE_MS without being re-invoked, the dashboard's own\n   refresh timer has stalled (the \"data stops retrieving, requires F5\"\n   symptom) -- force a full page reload, automating what an operator would\n   otherwise do by hand. Safe to prepend to any getOption body: wrapped in\n   its own IIFE, touches only window.__imsWatchdog*, never collides with\n   panel-local variable names. */\n(function (staleMs) {\n  if (!window.__imsWatchdog) {\n    window.__imsWatchdogTick = Date.now();\n    window.__imsWatchdog = setInterval(function () {\n      if (Date.now() - window.__imsWatchdogTick > staleMs) {\n        window.location.reload();\n      }\n    }, Math.min(staleMs / 4, 30000));\n  }\n  window.__imsWatchdogTick = Date.now();\n})(30000);\n\nconst frame = context.panel.data.series[0];\nconst timeField = frame && frame.fields.find((f) => f.type === 'time');\nconst serverTime = timeField ? (timeField.values.buffer || timeField.values)[0] : Date.now();\n\nconst d = new Date(serverTime);\nconst hh = String(d.getUTCHours()).padStart(2, '0');\nconst mm = String(d.getUTCMinutes()).padStart(2, '0');\nconst ss = String(d.getUTCSeconds()).padStart(2, '0');\n\nreturn {\n  backgroundColor: 'transparent',\n  title: {\n    text: '\\u25CF LIVE',\n    subtext: hh + ':' + mm + ':' + ss + ' UTC \\u2014 pipeline heartbeat',\n    left: 'center',\n    top: 'center',\n    textStyle: { color: '#22C55E', fontSize: 13, fontWeight: 600, fontFamily: 'Roboto Mono, monospace' },\n    subtextStyle: { color: '#8B98A9', fontSize: 11, fontFamily: 'Roboto Mono, monospace' },\n  },\n};\n",
+        "getOption": "/* IMS frontend-stall watchdog: proves the browser -> Grafana -> Postgres\n   query pipeline is still alive on every dashboard refresh cycle. If this\n   panel goes STALE_MS without being re-invoked, the dashboard's own\n   refresh timer has stalled (the \"data stops retrieving, requires F5\"\n   symptom) -- force a full page reload, automating what an operator would\n   otherwise do by hand. Safe to prepend to any getOption body: wrapped in\n   its own IIFE, touches only window.__imsWatchdog*, never collides with\n   panel-local variable names. */\n(function (staleMs) {\n  if (!window.__imsWatchdog) {\n    window.__imsWatchdogTick = Date.now();\n    window.__imsWatchdog = setInterval(function () {\n      if (Date.now() - window.__imsWatchdogTick > staleMs) {\n        window.location.reload();\n      }\n    }, Math.min(staleMs / 4, 30000));\n  }\n  window.__imsWatchdogTick = Date.now();\n})(30000);\n\nconst frame = context.panel.data.series[0];\nconst timeField = frame && frame.fields.find((f) => f.type === 'time');\nconst serverTime = timeField ? (timeField.values.buffer || timeField.values)[0] : Date.now();\n\nconst d = new Date(serverTime);\nconst hh = String(d.getUTCHours()).padStart(2, '0');\nconst mm = String(d.getUTCMinutes()).padStart(2, '0');\nconst ss = String(d.getUTCSeconds()).padStart(2, '0');\n\nreturn {\n  backgroundColor: 'transparent',\n};\n",
         "renderer": "canvas",
         "editor": {
           "format": "auto"
@@ -605,75 +682,9 @@
       }
     },
     {
-      "id": 4,
-      "title": "◈ Shift Pacing (OEE Estimate)",
-      "type": "gauge",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 20,
-        "y": 1,
-        "w": 4,
-        "h": 3
-      },
-      "fieldConfig": {
-        "defaults": {
-          "thresholds": {
-            "mode": "percentage",
-            "steps": [
-              {
-                "color": "#EF4444",
-                "value": null
-              },
-              {
-                "color": "#F59E0B",
-                "value": 75
-              },
-              {
-                "color": "#22C55E",
-                "value": 95
-              }
-            ]
-          },
-          "color": {
-            "mode": "thresholds"
-          },
-          "unit": "percent",
-          "min": 0,
-          "max": 100
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "values": false
-        },
-        "orientation": "auto",
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "text": {},
-        "noValue": "NO_DATA"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "/* Mocked Target vs Actual */\nSELECT ROUND((COUNT(DISTINCT eqp_id) FILTER (WHERE state = true) * 100.0 / NULLIF(COUNT(DISTINCT eqp_id), 0))::NUMERIC, 0) + 15 AS value FROM public.v_ldi_machine_latest_full WHERE factory IN (${factory:sqlstring})",
-          "format": "table"
-        }
-      ],
-      "description": "Calculates pacing (Actual Production vs Target for the shift). Using a mocked offset for visual demonstration."
-    },
-    {
       "id": 8,
-      "title": "",
-      "type": "text",
+      "title": "◈ Action Queue (Critical/Major, last 5 min)",
+      "type": "table",
       "datasource": {
         "uid": "timescaledb"
       },
@@ -681,13 +692,494 @@
         "x": 0,
         "y": 4,
         "w": 24,
+        "h": 6
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        },
+        "noValue": "NO_DATA",
+        "sortBy": []
+      },
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "NO_DATA",
+          "custom": {}
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Severity"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "Critical": {
+                        "color": "#EF4444",
+                        "index": 0,
+                        "text": "Critical"
+                      },
+                      "Major": {
+                        "color": "#F59E0B",
+                        "index": 1,
+                        "text": "Major"
+                      },
+                      "NONE": {
+                        "color": "#22C55E",
+                        "index": 2,
+                        "text": "OK"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Alarm Type"
+            },
+            "properties": [
+              {
+                "id": "description",
+                "value": "Raw vendor category letter: A = general alarm, W = warning/advisory, E = servo/motion safety fault (always Critical severity)."
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "When"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Factory"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "MO"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "When_ms"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Machine"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Open Machine Snapshot for ${__value.text}",
+                    "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=${__data.fields.Machine}&var-factory=${__data.fields.Factory}&var-mo=${__data.fields.MO}&var-event_time_ms=${__data.fields.When_ms}&from=${__from}&to=${__to}",
+                    "targetBlank": false
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Alarm Msg"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Open Machine Snapshot for ${__data.fields.Machine}",
+                    "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=${__data.fields.Machine}&var-factory=${__data.fields.Factory}&var-mo=${__data.fields.MO}&var-event_time_ms=${__data.fields.When_ms}&from=${__from}&to=${__to}",
+                    "targetBlank": false
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Owner"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "Maintenance": {
+                        "color": "#F59E0B"
+                      },
+                      "Facility": {
+                        "color": "#00F2FE"
+                      },
+                      "Automation": {
+                        "color": "#A855F7"
+                      },
+                      "IT": {
+                        "color": "#EF4444"
+                      },
+                      "Process Engineering": {
+                        "color": "#22C55E"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "WITH real_alarms AS (\n  SELECT a.equipmentid AS \"Machine\",\n         m.severity AS \"Severity\",\n         m.alarm_type AS \"Alarm Type\",\n         m.alarm_msg AS \"Alarm Msg\",\n         m.alarm_detail AS \"Alarm Detail\",\n         a.factory AS \"Factory\",\n         d.mo AS \"MO\",\n         a.logdate AS \"When\",\n         (EXTRACT(EPOCH FROM a.logdate) * 1000)::BIGINT AS \"When_ms\",\n         CASE\n           WHEN NOW() - a.logdate < INTERVAL '1 hour'\n             THEN GREATEST(EXTRACT(MINUTE FROM (NOW() - a.logdate))::INT, 0)::TEXT || 'm'\n           ELSE EXTRACT(HOUR FROM (NOW() - a.logdate))::INT || 'h' || LPAD(EXTRACT(MINUTE FROM (NOW() - a.logdate))::INT::TEXT, 2, '0') || 'm'\n         END AS \"Elapsed\",\n         /* Owner: static category->team mapping over the real RCA taxonomy\n            (public.v_ldi_alarm_category, 14 live categories) -- proposed\n            defaults, not yet operator-confirmed org routing. */\n         CASE COALESCE(c.category, 'UNCLASSIFIED')\n           WHEN 'VACUUM' THEN 'Maintenance'\n           WHEN 'CAMERA' THEN 'Maintenance'\n           WHEN 'MOTION' THEN 'Maintenance'\n           WHEN 'MOTOR' THEN 'Maintenance'\n           WHEN 'ENVIRONMENT' THEN 'Facility'\n           WHEN 'NETWORK' THEN 'Automation'\n           WHEN 'PLC' THEN 'Automation'\n           WHEN 'COMMUNICATION' THEN 'Automation'\n           WHEN 'DATABASE' THEN 'IT'\n           WHEN 'ALIGNMENT' THEN 'Process Engineering'\n           WHEN 'CALIBRATION' THEN 'Process Engineering'\n           WHEN 'REGISTRATION' THEN 'Process Engineering'\n           WHEN 'PROCESS' THEN 'Process Engineering'\n           ELSE 'Maintenance'\n         END AS \"Owner\"\n  FROM public.ldi_alarm_log a\n  JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\n  LEFT JOIN public.ldi_data d ON d.log_id = a.related_log_id\n  LEFT JOIN public.v_ldi_alarm_category c ON c.alarm_code = a.errorcode::TEXT\n  WHERE m.severity IN ('Critical', 'Major')\n    AND a.logdate > NOW() - INTERVAL '5 minutes'\n    AND a.equipmentid IN (${machine_id:sqlstring})\n), with_action AS (\n  SELECT \"Machine\",\"Severity\",\"Alarm Type\",\"Alarm Msg\",\"Alarm Detail\",\"Factory\",\"MO\",\"When\",\"When_ms\",\"Elapsed\",\"Owner\",\n    CASE \"Owner\"\n      WHEN 'Maintenance' THEN 'CALL MAINT'\n      WHEN 'Facility' THEN 'CHECK HVAC'\n      WHEN 'Automation' THEN 'CHECK AUTOMATION'\n      WHEN 'IT' THEN 'CALL IT'\n      WHEN 'Process Engineering' THEN 'CHECK PROCESS'\n    END AS \"Action\"\n  FROM real_alarms\n), combined AS (\n  SELECT * FROM with_action\n  UNION ALL\n  SELECT NULL,'NONE',NULL,'NO ACTIVE CRITICAL/MAJOR ALARMS',NULL,NULL,NULL,NOW(),0,NULL,NULL,NULL\n  WHERE NOT EXISTS (SELECT 1 FROM with_action)\n)\nSELECT * FROM combined\nORDER BY (CASE \"Severity\" WHEN 'Critical' THEN 0 WHEN 'Major' THEN 1 WHEN 'NONE' THEN 2 ELSE 3 END), \"When\" DESC\nLIMIT 50;",
+          "format": "table"
+        }
+      ],
+      "description": "Real Critical/Major alarms from the last 5 minutes (matches the is_stale freshness window used everywhere else in this system), fleet-wide across the selected machines. Owner is derived from the real RCA category taxonomy (public.v_ldi_alarm_category, 14 live categories) via a static category->team mapping -- proposed defaults, review before treating as authoritative org routing. Action is a short imperative derived from Owner. Elapsed is time since the alarm fired (NOT alarm duration -- this system has no alarm-clear/reset event, so true downtime duration cannot be computed without inventing one). When the queue is empty the table shows a single green NO ACTIVE CRITICAL/MAJOR ALARMS row instead of a bare \"No data\" panel state. Click Machine or Alarm Msg to open the Machine Snapshot for that exact event."
+    },
+    {
+      "id": 10020,
+      "title": "◈ SHIFT PERFORMANCE (OEE)",
+      "type": "row",
+      "collapsed": true,
+      "gridPos": {
+        "x": 0,
+        "y": 17,
+        "w": 24,
         "h": 1
       },
-      "transparent": true,
-      "options": {
-        "content": "<marquee scrollamount=\"8\" style=\"color: #EF4444; font-weight: bold; font-size: 18px; font-family: monospace; letter-spacing: 1px;\">\n  ⚠️ [CRITICAL] M/C LDI-02: Pressure Low | [WARN] M/C LDI-05: Spindle Temp High | [CRITICAL] M/C LDI-12: Job Stalled ⚠️\n</marquee>",
-        "mode": "html"
-      }
+      "panels": [
+        {
+          "id": 10021,
+          "title": "◉ Availability",
+          "type": "stat",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 0,
+            "w": 8,
+            "h": 4
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "max": 100,
+              "decimals": 1,
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "#EF4444",
+                    "value": null
+                  },
+                  {
+                    "color": "#22C55E",
+                    "value": 95
+                  }
+                ]
+              },
+              "custom": {
+                "gradientMode": "opacity",
+                "lineInterpolation": "smooth",
+                "fillOpacity": 20,
+                "lineWidth": 2
+              },
+              "mappings": [
+                {
+                  "type": "special",
+                  "options": {
+                    "match": "null+nan",
+                    "result": {
+                      "color": "#64748B",
+                      "text": "NO_DATA",
+                      "index": 0
+                    }
+                  }
+                }
+              ]
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "center",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "values": false
+            },
+            "text": {
+              "valueSize": 40,
+              "titleSize": 14
+            },
+            "noValue": "NO_DATA",
+            "textMode": "value",
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "uid": "timescaledb"
+              },
+              "format": "time_series",
+              "rawSql": "/* 8h trend, 15-min buckets, from ldi_oee_1m (migration 075) -- same avail/perf/qual formula as ims-ldi-manufacturing.json panel 10015, just time-bucketed instead of range-collapsed. Big number = latest bucket; embedded area sparkline = the full 8h trend. Target: 95%. */\nWITH machine_stats AS (\n  SELECT time_bucket('15 minutes', o.bucket) AS bucket, o.eqp_id,\n    SUM(o.running_count)::numeric / NULLIF(SUM(o.sample_count), 0) AS avail,\n    (SUM(o.board_count) * MAX(m.ideal_cycle_sec)) / NULLIF(SUM(o.running_count) * 10.0, 0) AS perf,\n    SUM(o.in_spec_count)::numeric / NULLIF(SUM(o.sample_count), 0) AS qual\n  FROM public.ldi_oee_1m o\n  JOIN public.ldi_master_config m ON o.eqp_id = m.eqp_id\n  WHERE o.bucket > NOW() - INTERVAL '8 hours' AND o.factory IN (${factory:sqlstring})\n  GROUP BY 1, o.eqp_id\n)\nSELECT bucket AS \"time\", ROUND((AVG(avail) * 100)::numeric, 1) AS value\nFROM machine_stats GROUP BY bucket ORDER BY bucket;"
+            }
+          ],
+          "description": "◉ Availability, 8h trend (15-min buckets), target >=95%. Sourced from ldi_oee_1m, same formula as the Manufacturing dashboard's Plant Overall OEE panel."
+        },
+        {
+          "id": 10022,
+          "title": "◉ Performance",
+          "type": "stat",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "gridPos": {
+            "x": 8,
+            "y": 0,
+            "w": 8,
+            "h": 4
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "max": 100,
+              "decimals": 1,
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "#EF4444",
+                    "value": null
+                  },
+                  {
+                    "color": "#22C55E",
+                    "value": 90
+                  }
+                ]
+              },
+              "custom": {
+                "gradientMode": "opacity",
+                "lineInterpolation": "smooth",
+                "fillOpacity": 20,
+                "lineWidth": 2
+              },
+              "mappings": [
+                {
+                  "type": "special",
+                  "options": {
+                    "match": "null+nan",
+                    "result": {
+                      "color": "#64748B",
+                      "text": "NO_DATA",
+                      "index": 0
+                    }
+                  }
+                }
+              ]
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "center",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "values": false
+            },
+            "text": {
+              "valueSize": 40,
+              "titleSize": 14
+            },
+            "noValue": "NO_DATA",
+            "textMode": "value",
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "uid": "timescaledb"
+              },
+              "format": "time_series",
+              "rawSql": "/* 8h trend, 15-min buckets, from ldi_oee_1m (migration 075) -- same avail/perf/qual formula as ims-ldi-manufacturing.json panel 10015, just time-bucketed instead of range-collapsed. Big number = latest bucket; embedded area sparkline = the full 8h trend. Target: 90%. */\nWITH machine_stats AS (\n  SELECT time_bucket('15 minutes', o.bucket) AS bucket, o.eqp_id,\n    SUM(o.running_count)::numeric / NULLIF(SUM(o.sample_count), 0) AS avail,\n    (SUM(o.board_count) * MAX(m.ideal_cycle_sec)) / NULLIF(SUM(o.running_count) * 10.0, 0) AS perf,\n    SUM(o.in_spec_count)::numeric / NULLIF(SUM(o.sample_count), 0) AS qual\n  FROM public.ldi_oee_1m o\n  JOIN public.ldi_master_config m ON o.eqp_id = m.eqp_id\n  WHERE o.bucket > NOW() - INTERVAL '8 hours' AND o.factory IN (${factory:sqlstring})\n  GROUP BY 1, o.eqp_id\n)\nSELECT bucket AS \"time\", ROUND((AVG(LEAST(perf,1.0)) * 100)::numeric, 1) AS value\nFROM machine_stats GROUP BY bucket ORDER BY bucket;"
+            }
+          ],
+          "description": "◉ Performance, 8h trend (15-min buckets), target >=90%. Sourced from ldi_oee_1m, same formula as the Manufacturing dashboard's Plant Overall OEE panel."
+        },
+        {
+          "id": 10023,
+          "title": "◉ OEE",
+          "type": "stat",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "gridPos": {
+            "x": 16,
+            "y": 0,
+            "w": 8,
+            "h": 4
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "max": 100,
+              "decimals": 1,
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "#EF4444",
+                    "value": null
+                  },
+                  {
+                    "color": "#22C55E",
+                    "value": 85
+                  }
+                ]
+              },
+              "custom": {
+                "gradientMode": "opacity",
+                "lineInterpolation": "smooth",
+                "fillOpacity": 20,
+                "lineWidth": 2
+              },
+              "mappings": [
+                {
+                  "type": "special",
+                  "options": {
+                    "match": "null+nan",
+                    "result": {
+                      "color": "#64748B",
+                      "text": "NO_DATA",
+                      "index": 0
+                    }
+                  }
+                }
+              ]
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "center",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "values": false
+            },
+            "text": {
+              "valueSize": 40,
+              "titleSize": 14
+            },
+            "noValue": "NO_DATA",
+            "textMode": "value",
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "uid": "timescaledb"
+              },
+              "format": "time_series",
+              "rawSql": "/* 8h trend, 15-min buckets, from ldi_oee_1m (migration 075) -- same avail/perf/qual formula as ims-ldi-manufacturing.json panel 10015, just time-bucketed instead of range-collapsed. Big number = latest bucket; embedded area sparkline = the full 8h trend. Target: 85%. */\nWITH machine_stats AS (\n  SELECT time_bucket('15 minutes', o.bucket) AS bucket, o.eqp_id,\n    SUM(o.running_count)::numeric / NULLIF(SUM(o.sample_count), 0) AS avail,\n    (SUM(o.board_count) * MAX(m.ideal_cycle_sec)) / NULLIF(SUM(o.running_count) * 10.0, 0) AS perf,\n    SUM(o.in_spec_count)::numeric / NULLIF(SUM(o.sample_count), 0) AS qual\n  FROM public.ldi_oee_1m o\n  JOIN public.ldi_master_config m ON o.eqp_id = m.eqp_id\n  WHERE o.bucket > NOW() - INTERVAL '8 hours' AND o.factory IN (${factory:sqlstring})\n  GROUP BY 1, o.eqp_id\n)\nSELECT bucket AS \"time\", ROUND((AVG(avail * LEAST(perf,1.0) * qual) * 100)::numeric, 1) AS value\nFROM machine_stats GROUP BY bucket ORDER BY bucket;"
+            }
+          ],
+          "description": "◉ OEE, 8h trend (15-min buckets), target >=85%. Sourced from ldi_oee_1m, same formula as the Manufacturing dashboard's Plant Overall OEE panel."
+        }
+      ]
     }
   ],
   "fiscalYearStartMonth": 0,
