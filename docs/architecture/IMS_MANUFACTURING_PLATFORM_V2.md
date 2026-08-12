@@ -153,17 +153,35 @@ Each phase's evidence is attached to this doc (or linked from it) before moving 
 
 ---
 
-## Soak Test — Status (started 2026-08-10, not yet closeable)
+## Soak Test — Status (started 2026-08-10, still open — window not yet 72h)
 
 **Honest constraint, stated up front:** `scripts/soak-test-report.sh` says so itself in its own header comment -- it "does NOT run a 72-hour test by itself." A soak test requires real elapsed wall-clock hours against an untouched running stack; no single tool invocation, however long, can manufacture that. Closing this phase with a real pass/fail verdict requires checking back after real time has passed, not a report generated in this session.
 
-**What's actually been done:**
+**Real `--summarize` output, run 2026-08-12T13:05Z (52.5h elapsed, `IMS-SoakTest` scheduled task running every 15min throughout):**
 
-- One real snapshot taken and logged 2026-08-10T08:34:21Z: `inserts=4965 failed=0 overflows=0 restarted=no alerts_firing=1 db_mb=157`.
-- The single firing alert investigated, not ignored: `SLABreachWarning` on `http://grafana:3000/api/health`, live-verified as a transient artifact of this session's own Phase A `docker compose up -d grafana` container recreate (blackbox exporter's last probe failure timestamp `08:21:54Z` matches the recreate exactly; `curl localhost:3000/api/health` returns `{"database":"ok",...}` directly). Expected to self-clear on the next blackbox probe cycle -- the periodic log will show whether it does.
-- A Windows Scheduled Task (`IMS-SoakTest`) registered to run the snapshot every 15 minutes for up to 4 days, appending to `scripts/soak-test-reports/soak-log.tsv`, so real samples accumulate independent of this session.
+```text
+═══════════════════════════════════════════════════
+  IMS Soak Test Summary
+═══════════════════════════════════════════════════
+Samples: 57   Window: 2026-08-10T08:34:21Z -> 2026-08-12T13:05:15Z  (52.5h elapsed)
+Window length: NOT YET 72h -- keep this script running periodically and re-summarize later.
 
-**To close this phase:** let the scheduled task run for a real window (24h minimum, target 72h), then run `./scripts/soak-test-report.sh --summarize` and attach the real output here. Not fabricated or estimated.
+Ingest failures ever nonzero in a sample: max=NaN (want 0)
+Buffer overflows ever nonzero in a sample: max=NaN (want 0)
+Samples where any container had restarted since last sample: 4 (want 0)
+Samples with >=1 non-Watchdog alert firing: 37 (want 0)
+DB size drift: NaNMB -> 157MB
+
+VERDICT: FAIL -- see nonzero counters above
+```
+
+**This is a real interim FAIL, not a passing report withheld or a failing report softened.** Investigated the three drivers rather than just quoting the counters:
+
+- **The `NaN` values are a script artifact, not evidence of failure:** 24 of the 57 samples have `NaN` for inserts/failures/overflows/db_size (two clusters: 2026-08-11T14:00-17:20 and 2026-08-12T08:05-10:35, each ~2.5-3.5h of consecutive samples), because `node-red:1880/metrics` or the `psql` size query didn't respond at collection time. `sort -n` puts the literal string `"NaN"` at the tail, so `MAX_FAILED`/`MAX_OVERFLOW` print `NaN` instead of a real number even though every *numeric* sample in the log shows `0` for both. Real defect in the collector worth fixing later (it should retry or mark these samples explicitly rather than silently gapping), but it is a collection gap, not evidence that ingestion actually failed or overflowed during those windows.
+- **`ANY_RESTART=4`, all pre-dating today's work**, confirmed by timestamp: `2026-08-11T04:22:14Z`, `2026-08-11T05:45:06Z`, `2026-08-12T08:05:15Z`, `2026-08-12T10:50:14Z`. None of these correspond to this session's DR testing (which ran ~2026-08-12T12:57-13:03Z, entirely between the 10:50 and 13:05 samples) -- the DR drills used `docker start` after a `docker kill`, which does not increment Docker's own `RestartCount` the way an auto-restart-policy trigger does, so that testing did not add to this counter. This is 4 real restart events across 52.5h that would need individual investigation to close out, not addressed in this pass.
+- **`ANY_FIRING=37` samples with >=1 non-Watchdog alert active** -- the largest driver of the FAIL. Not root-caused in this pass (would need per-sample alert history, which Alertmanager doesn't retain past current state, only this log's aggregate count). The one alert active *right now* (`PipelineDataStalled`, critical) is very likely residual from this session's own DR container-kill drills a few minutes prior to this summarize run, expected to self-clear on the next scheduled sample -- but that doesn't explain the other 36 historical firings, which predate this session's work and are a real open finding.
+
+**To close this phase:** let the scheduled task keep running to 72h, then re-run `--summarize`. Separately, the 37-sample alert-firing count and the 4 restart events are real findings worth their own investigation regardless of window length -- not blocked on reaching 72h.
 
 ---
 
@@ -182,9 +200,24 @@ devices=1025 ldi_data=52795 ldi_alarm_log=10405   (restored, throwaway DB)
 VERDICT: PASS -- dump 1s, restore 18s, 22,284,869 bytes
 ```
 
-### Drill 2 — Single-Container-Loss Recovery (`ims-timescaledb`): **FAIL — real, significant finding**
+### Drill 2 — Single-Container-Loss Recovery (`ims-timescaledb`, `ims-node-red`): root-caused and fixed 2026-08-12, now **PASS**
 
-`docker kill ims-timescaledb` (SIGKILL) was run twice, the second time while streaming `docker events` live. Both times: only `kill` and `die` events were recorded — **no automatic `start` event ever fired**, despite `docker inspect` confirming `RestartPolicy=unless-stopped` was correctly applied to the running container. `restart: unless-stopped` does not reliably auto-recover this container from a SIGKILL on this Docker Desktop/Windows environment. Root cause not fully isolated (candidates: a Docker Desktop/WSL2-specific interaction with `docker kill` vs. an in-container crash; needs verification on the actual Linux production host before assuming this generalizes) — flagged as an open question, not asserted as understood.
+**Original finding (2026-08-10), reproduced and root-caused (2026-08-12):** `docker kill ims-timescaledb` (SIGKILL) was re-run, this time watched for a full 5 minutes via repeated `docker inspect` polling instead of the drill's normal 120s window. Result: `RestartCount` stayed at `0` for the entire 5 minutes — not slow, genuinely never fired. Ruled out a compose misconfiguration first: `docker inspect` confirms `RestartPolicy=unless-stopped, MaximumRetryCount=0` correctly applied to the running container, matching `docker-compose.yaml`. Also ruled out "maybe the container just needs a real crash, not `docker kill`": tried killing PID 1 from *inside* the container (`docker exec -u root ... kill -9 1`) and it silently no-ops — this is expected Linux kernel behavior (`man 7 pid_namespaces`: a PID namespace's init process is immune to SIGKILL sent from *within* its own namespace; only a kill from outside, i.e. `docker kill` from the host, can actually terminate it). So the container-loss mechanism itself (`docker kill`) is correct and does terminate the container (confirmed via `kill`+`die` events); what's broken is specifically Docker Desktop's (WSL2 backend, server 29.6.2) restart-policy engine not being invoked afterward on this host.
+
+**Fix:** `scripts/container-watchdog.sh` — an external watchdog that polls every container with `restart: unless-stopped` in this compose file and issues `docker start` on anything not `running`, compensating for the confirmed gap in Docker's own restart engine. Meant to run continuously via a scheduled task (same deployment pattern as `IMS-SoakTest`), not committed as an OS-level task in this pass (a persistent Scheduled Task is a host change outside the repo — flagged for the user to decide, not silently installed).
+
+**Re-run with the watchdog active (`--loop 5`), 2026-08-12, 6 trials across both critical containers:**
+
+```text
+timescaledb: PASS -- recovered in 6s
+node-red:    PASS -- recovered in 6s
+timescaledb: PASS -- recovered in 8s
+node-red:    PASS -- recovered in 3s
+timescaledb: PASS -- recovered in 5s
+node-red:    PASS -- recovered in 6s
+```
+
+6/6 PASS, single-digit-second recovery every time. **The underlying Docker Desktop restart-policy gap is not fixed** (that's outside this repo's control) — what changed is that this environment now has a compensating control that actually works, verified against the real, reproduced failure mode rather than assumed to work.
 
 **A second, cascading finding surfaced by the same drill:** after manually `docker start`-ing TimescaleDB back to healthy, LDI ingestion did **not** self-recover for several minutes — the same PgBouncer `server_login_retry` failure-caching behavior documented earlier this session (`ARCHITECTURE.md`), and specifically the failure mode the Node-RED pool-reconnect watchdog (`ldiDbConnFailureStreak`, 5-consecutive-failure threshold) was built to fix. The watchdog did **not** trigger an automatic Node-RED restart within the ~6 minutes observed — `max(ldi_data.time)` stayed frozen at the outage timestamp until a manual `docker restart ims-node-red`, which fixed it immediately. This means the watchdog's real-world trigger rate for this exact scenario needs re-examination — it may only be counting failures on one of several parallel insert paths, or the failure frequency during this specific outage didn't reach 5 consecutive attempts fast enough. **Filed as a gap, not fixed in this pass** — fixing it correctly requires understanding why the counter didn't reach threshold, which is follow-up investigation, not a same-session patch.
 
