@@ -28,6 +28,12 @@ const DASHBOARDS = [
     { uid: 'ims-engineering', name: 'Engineering Drill-Down', file: 'engineering-drilldown', wait: 5000 },
     { uid: 'ims-capacity', name: 'Capacity Planning', file: 'capacity-planning', wait: 5000 },
     { uid: 'ims-meta-monitoring', name: 'Meta-Monitoring', file: 'meta-monitoring', wait: 3000 },
+    { uid: 'ims-ldi-manufacturing', name: 'LDI Manufacturing', file: 'ldi-manufacturing', wait: 5000 },
+    { uid: 'ims-ldi-engineering-analytics', name: 'LDI Engineering Analytics', file: 'ldi-engineering', wait: 5000 },
+    { uid: 'ims-ldi-machine-snapshot', name: 'LDI Machine Snapshot', file: 'ldi-machine', wait: 3000 },
+    { uid: 'ims-ldi-operator-andon', name: 'LDI Operator Andon', file: 'ldi-andon', wait: 3000 },
+    { uid: 'ldi-data-readiness', name: 'LDI Data Readiness', file: 'ldi-data-readiness', wait: 3000 },
+    { uid: 'ims-easy-overview', name: 'IMS Easy Overview', file: 'ims-easy-overview', wait: 5000 }
 ];
 
 async function run() {
