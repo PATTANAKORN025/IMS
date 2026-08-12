@@ -50,13 +50,13 @@ status)
 mock)
     echo "==> switching to MOCK data mode"
 
-    echo "==> 1/4 ensuring the full device set (real + mock) is registered"
+    echo "==> 1/5 ensuring the full device set (real + mock) is registered"
     psql < database/migrations/040-register-ldi-devices.sql
 
-    echo "==> 2/4 clearing telemetry/alarm tables (real data is untouched on disk in data/real/)"
+    echo "==> 2/5 clearing telemetry/alarm tables (real data is untouched on disk in data/real/)"
     psql -c "TRUNCATE public.ldi_data, public.ldi_alarm_log;"
 
-    echo "==> 3/4 resetting alarm master to the mock catalog (exactly the codes the simulator emits)"
+    echo "==> 3/5 resetting alarm master to the mock catalog (exactly the codes the simulator emits)"
     psql < database/migrations/036-ldi-alarm-master-mock.sql
     psql <<'SQL'
 UPDATE public.ldi_alarm_ms_code SET severity =
@@ -70,8 +70,12 @@ UPDATE public.ldi_alarm_ms_code SET severity =
     END;
 SQL
 
-    echo "==> 4/4 enabling the simulator"
+    echo "==> 4/5 enabling the simulator"
     set_simulator_flag true
+
+    echo "==> 5/5 re-applying AlarmDetail Style Guide (docs/architecture/ALARM_DETAIL_STYLE_GUIDE.md, v1.0 + v1.1)"
+    psql < database/migrations/072-alarm-detail-style-guide-v1.sql
+    psql < database/migrations/073-alarm-knowledge-structured-fields-v1.1.sql
 
     echo "==> done. Node-RED will start writing live mock telemetry/alarms within a few seconds."
     ;;
@@ -86,14 +90,18 @@ real)
         }
     done
 
-    echo "==> 1/3 disabling the simulator"
+    echo "==> 1/4 disabling the simulator"
     set_simulator_flag false
 
-    echo "==> 2/3 restoring the real alarm master catalog (1,820 rows, migration 061)"
+    echo "==> 2/4 restoring the real alarm master catalog (1,820 rows, migration 061)"
     psql < database/migrations/061-ldi-alarm-master-real-import.sql
 
-    echo "==> 3/3 loading real telemetry/alarm data + merging supplemental catalog export"
+    echo "==> 3/4 loading real telemetry/alarm data + merging supplemental catalog export"
     bash scripts/import-real-data.sh
+
+    echo "==> 4/4 re-applying AlarmDetail Style Guide (docs/architecture/ALARM_DETAIL_STYLE_GUIDE.md, v1.0 + v1.1)"
+    psql < database/migrations/072-alarm-detail-style-guide-v1.sql
+    psql < database/migrations/073-alarm-knowledge-structured-fields-v1.1.sql
     ;;
 
 *)
