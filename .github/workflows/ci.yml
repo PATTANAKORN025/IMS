@@ -21,6 +21,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+        # Needed from here on: alert-rule-linter.js is the first lint script
+        # in this job with an actual npm dependency (js-yaml). The other
+        # lint scripts below are dependency-free by design and would run
+        # fine without this step, but a shared job needs one install path.
+
       - name: Validate Docker Compose
         run: |
           cp .env.example .env
@@ -34,6 +46,9 @@ jobs:
 
       - name: Lint Query Budget (tiering contract)
         run: node tests/lint/query-budget-linter.js
+
+      - name: Lint Alert Rules (ORDER BY on time_series queries)
+        run: node tests/lint/alert-rule-linter.js
 
       - name: Check Dashboard Inventory is up to date
         run: node scripts/generate-dashboard-inventory.js --check

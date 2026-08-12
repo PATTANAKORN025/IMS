@@ -82,6 +82,7 @@ groups:
                        cpk AS value
                 FROM public.v_machine_spc_ranking
                 WHERE cpk < 1.33 AND sample_count >= 30
+                ORDER BY 1
               format: time_series
               intervalMs: 300000
               maxDataPoints: 100
@@ -175,6 +176,7 @@ groups:
                        cpk_je AS value
                 FROM public.v_machine_spc_ranking
                 WHERE cpk_je IS NOT NULL AND cpk_je < 1.33 AND sample_count_je >= 30
+                ORDER BY 1
               format: time_series
               intervalMs: 300000
               maxDataPoints: 100
