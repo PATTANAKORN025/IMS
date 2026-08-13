@@ -368,7 +368,7 @@
     },
     {
       "id": 2,
-      "title": "◉ Critical Alarm Records (master-code matched)",
+      "title": "◉ Active Critical/Major Alarms (master-code matched)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -447,11 +447,11 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope */\nSELECT COUNT(*)::NUMERIC AS value FROM public.ldi_alarm_log a\nJOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT=m.alarm_code::TEXT\nWHERE a.equipmentid IN (${machine_id:sqlstring}) AND m.severity IN ('Critical', 'Major');",
+          "rawSql": "/* Real active count via ldi_alarm_lifecycle -- excludes RESOLVED, no arbitrary time window */\nSELECT COUNT(*)::NUMERIC AS value\nFROM public.ldi_alarm_log a\nJOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\nLEFT JOIN public.ldi_alarm_lifecycle l ON l.logdate = a.logdate AND l.logid = a.logid\nWHERE a.equipmentid IN (${machine_id:sqlstring})\n  AND m.severity IN ('Critical', 'Major')\n  AND l.status IS DISTINCT FROM 'RESOLVED';",
           "format": "table"
         }
       ],
-      "description": "Note: Alarm durations and MTTR are not calculated as the source EAP system currently does not broadcast explicit alarm-clear events. Only occurrence times are logged. Duration estimation requires EAP team confirmation of clear/reset event availability. Active Alarms: count of unresolved alarms in the last 5 minutes."
+      "description": "Active (not yet RESOLVED) Critical/Major alarms, fleet-wide across selected machines, via the real lifecycle state in public.ldi_alarm_lifecycle. Previously this counted every Critical/Major alarm ever logged with no time or status filter -- a number that only ever grows, mislabeled as active/recent. Now it actually goes down as operators resolve alarms via alarm-api."
     },
     {
       "id": 3,
