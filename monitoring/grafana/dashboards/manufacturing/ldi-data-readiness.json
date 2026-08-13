@@ -762,7 +762,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "/* QUERY_BUDGET_EXEMPT: simple aggregate over full-range ldi_data, but at current data volume (300K+ rows and growing) exceeds the 80ms real-time budget. World-Class QA pass (2026-08-06): documented rather than silently ignored; revisit if this becomes an operator-facing latency complaint. */\nSELECT\n  time_bucket('5 minutes', bucket) AS \"time\",\n  eqp_id AS metric,\n  SUM(sample_count)::NUMERIC AS value\nFROM public.ldi_data_1m\nWHERE $__timeFilter(bucket)\n  AND factory IN (${factory:sqlstring})\n  AND eqp_id IN (${machine_id:sqlstring})\nGROUP BY 1, 2\nORDER BY 1, 2;",
+          "rawSql": "/* QUERY_BUDGET_EXEMPT: simple aggregate over full-range ldi_data, but at current data volume (300K+ rows and growing) exceeds the 80ms real-time budget. Query Optimization pass (2026-08-06): documented rather than silently ignored; revisit if this becomes an operator-facing latency complaint. */\nSELECT\n  time_bucket('5 minutes', bucket) AS \"time\",\n  eqp_id AS metric,\n  SUM(sample_count)::NUMERIC AS value\nFROM public.ldi_data_1m\nWHERE $__timeFilter(bucket)\n  AND factory IN (${factory:sqlstring})\n  AND eqp_id IN (${machine_id:sqlstring})\nGROUP BY 1, 2\nORDER BY 1, 2;",
           "refId": "A",
           "sql": {
             "columns": [],
