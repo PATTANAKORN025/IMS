@@ -10,5 +10,10 @@ if ! grep -q '"grafana_reader"' "${_AUTH_FILE}" 2>/dev/null; then
   echo "\"grafana_reader\" \"${GRAFANA_DB_PASSWORD:-grafana_secure}\"" >> "${_AUTH_FILE}"
 fi
 
+# Add alarm_api_writer if missing
+if ! grep -q '"alarm_api_writer"' "${_AUTH_FILE}" 2>/dev/null; then
+  echo "\"alarm_api_writer\" \"${ALARM_API_DB_PASSWORD}\"" >> "${_AUTH_FILE}"
+fi
+
 # Run original entrypoint with the pgbouncer command as argument
 exec /entrypoint.sh pgbouncer /etc/pgbouncer/pgbouncer.ini
