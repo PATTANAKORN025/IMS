@@ -57,6 +57,12 @@ jobs:
         # single-source-of-truth gate for panel counts/descriptions that
         # used to drift silently in hand-typed README/ARCHITECTURE tables.
 
+      - name: Lint Doc Over-Claims (dashboard/service/migration counts)
+        run: node tests/lint/doc-overclaim-linter.js
+        # Catches the exact drift class found in the 2026-08-13 doc audit --
+        # hardcoded counts in prose that go stale next time a dashboard,
+        # service, or migration is added.
+
       - name: Lint Prometheus Config
         run: |
           docker run --rm \
