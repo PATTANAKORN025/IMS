@@ -25,13 +25,13 @@
 
 <br/>
 
-## A Little About IMS...
+## System Overview
 
-**APEX Circuit IMS** is an Enterprise-grade Manufacturing Intelligence Platform designed for predictive AIOps and real-time visualization. Engineered for 99.999% uptime and zero-latency telemetry ingestion, it serves as the central nervous system for the factory floor, driven by strict Statistical Process Control (SPC) and lossless data pipelines.
+**IMS (Industrial Monitoring System)** is a telemetry monitoring platform spanning infrastructure and manufacturing domains. Built on Node-RED, TimescaleDB, and Grafana, it integrates IT metrics (servers, network switches) and OT data (LDI manufacturing machines) into a single PostgreSQL-backed repository.
 
-**Designed for APEX Circuit.** The platform concurrently monitors 1000+ infrastructure nodes and high-precision LDI manufacturing machines. It operates as a live digital twin, catching yield anomalies and hardware failures before they impact production.
+**Scale and Scope:** Designed to monitor 1000+ infrastructure nodes alongside high-precision LDI (Laser Direct Imaging) manufacturing equipment. It implements Statistical Process Control (SPC) methodologies and Z-Score anomaly detection for proactive alerting.
 
-Currently utilizing TimescaleDB continuous aggregates for high-performance rendering, alongside sequential bulk polling mechanisms in Node-RED.
+Performance relies on TimescaleDB continuous aggregates for dashboard rendering and a stateful Node-RED pipeline for data ingestion.
 
 
 
@@ -71,21 +71,21 @@ Currently utilizing TimescaleDB continuous aggregates for high-performance rende
 
 ---
 
-## Enterprise Capabilities
+## Core Capabilities
 
 <table>
 <tr>
 <td align="center" width="33%">
-  <h3>Zero-Latency Digital Twin</h3>
-  Hyper-parallel ingestion pipeline. Captures microsecond-level telemetry from LDI machines and infrastructure, rendering a live digital twin of the factory floor with zero data staleness.
+  <h3>Telemetry Ingestion</h3>
+  Parallel Node-RED walkers utilizing sequential bulk SNMP polling and HTTP endpoints, persisting data to TimescaleDB via PgBouncer transaction pooling.
 </td>
 <td align="center" width="33%">
-  <h3>Predictive AIOps & SPC</h3>
-  Beyond simple monitoring. Utilizes Z-Score anomaly detection (3&sigma; rolling baselines) and automated Cpk calculations to predict yield drops and hardware failures before they impact production.
+  <h3>Statistical Process Control</h3>
+  Real-time SPC metrics (Cpk) and rolling 3&sigma; baselines (Z-Score anomaly detection) evaluated at the database level for early warning alerts.
 </td>
 <td align="center" width="33%">
-  <h3>Mission-Critical Uptime</h3>
-  Built for 99.999% availability. Features automatic circuit breakers, PgBouncer transaction pooling, and continuous aggregates to guarantee sub-500ms analytics rendering under extreme factory stress.
+  <h3>Continuous Aggregation</h3>
+  Hourly, daily, and weekly rollups automatically calculated by TimescaleDB to maintain sub-second Grafana rendering times over large time ranges.
 </td>
 </tr>
 </table>
@@ -94,16 +94,28 @@ Currently utilizing TimescaleDB continuous aggregates for high-performance rende
 
 ---
 
-## Quick Start
+## Quick Start (Local Simulator Environment)
+
+> [!NOTE]
+> **Simulator Boundary:** The following quick start runs the IMS stack locally using a builtin SNMP/HTTP data simulator (`ims-snmpsim`). It **does not** connect to real factory equipment or external network devices. The simulator generates realistic, bounded telemetry and alarm sequences for development and validation purposes.
 
 ```bash
 git clone https://github.com/PATTANAKORN025/IMS.git
 cd IMS
 cp .env.example .env
-make up            # docker compose up -d
+make up            # docker compose up -d (starts stack with simulator)
 sleep 40 && make verify
 open http://localhost:3000
 ```
+
+### Known Limitations
+- The simulated LDI workload generates ~10-15 rows per minute; load testing requires running the explicit K6 stress test framework to simulate production 1000-node scale.
+- Nginx reverse-proxy is configured for `localhost` and requires manual certificate deployment for production environments.
+- Grafana Alertmanager integrations (LINE/Teams) will fail silently until explicit tokens are provided in the `.env` file.
+
+### Verification & Evidence
+Every architectural claim is backed by continuous integration or explicit test scripts. For load test results, visual regression evidence, and disaster recovery validations, refer to the **[Evidence Index](docs/evidence/INDEX.md)**.
+
 
 <details>
 <summary><b>Available Commands</b></summary>
