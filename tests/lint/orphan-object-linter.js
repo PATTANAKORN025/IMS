@@ -33,6 +33,12 @@ const EXEMPT = new Set([
   // dashboard panel needing >6h LDI ranges, per the tiering contract in
   // docs/GRAFANA_DESIGN_SYSTEM.md §10.
   'ldi_data_15m', 'ldi_data_1h', 'ldi_data_hourly',
+  // Real alarm lifecycle state (migration 077): written by
+  // trg_ldi_alarm_lifecycle_init on every ldi_alarm_log insert and
+  // exercised by golden-transaction tests, but has no dashboard/panel
+  // consumer yet -- the operator write-path (ack/resolve UI) and the
+  // dashboards that read it are the next phase of this work, not this one.
+  'ldi_alarm_lifecycle',
   // Postgres/TimescaleDB system objects, not app-created.
   'pg_stat_statements', 'pg_stat_statements_info', 'schema_migrations',
 ]);
