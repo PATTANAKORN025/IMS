@@ -10,7 +10,7 @@
 > currently reports. Requires the `timescaledb` container to be running
 > and fully migrated.
 >
-> Last generated: 2026-08-13 | Migrations applied: 54 (013-079) | Tables: 10 | Continuous aggregates: 4 | Plain views: 10 | Materialized views: 1
+> Last generated: 2026-08-13 | Migrations applied: 54 (013-079) | Tables: 10 | Continuous aggregates: 7 | Plain views: 11 | Materialized views: 3
 
 ## Tables
 
@@ -31,24 +31,30 @@
 
 | Continuous Aggregate | Materialized Hypertable |
 |---|---|
-| `ldi_data_hourly` | `_materialized_hypertable_9` |
+| `ldi_data_15m` | `_materialized_hypertable_19` |
+| `ldi_data_1h` | `_materialized_hypertable_20` |
+| `ldi_data_1m` | `_materialized_hypertable_18` |
+| `ldi_data_hourly` | `_materialized_hypertable_17` |
 | `ldi_hourly` | `_materialized_hypertable_6` |
 | `net_hourly` | `_materialized_hypertable_5` |
 | `sys_hourly` | `_materialized_hypertable_4` |
 
 ## Materialized Views (plain PostgreSQL, refreshed via TimescaleDB background jobs)
 
+- `v_ldi_rca_recent_window`
+- `v_ldi_rca_truth_test`
 - `v_machine_spc_fleet`
 
 ## Plain Views
 
-- `ldi_data_15m`
-- `ldi_data_1h`
-- `ldi_data_1m`
 - `v_fleet_health`
 - `v_fleet_score`
 - `v_ldi_alarm_category`
+- `v_ldi_alarm_context`
+- `v_ldi_event_timeline`
 - `v_ldi_machine_latest_full`
+- `v_ldi_machine_snapshot`
+- `v_ldi_nelson_rules_detection`
 - `v_machine_spc_ranking`
 - `v_process_stability`
 - `v_uptime_summary`
