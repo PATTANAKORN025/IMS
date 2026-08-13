@@ -88,7 +88,7 @@ ROI: 2,750% (Year 1)
 | **Docker Stack** | 10 containers, fully orchestrated |
 | **Telemetry Schema** | Two independent pipelines — infrastructure (`sys_metrics`/`net_metrics`/`ldi_metrics`) and LDI manufacturing (`ldi_data`, 34 columns: PE1-6, JE1-4, thickness, scan_speed, resist_dosage, and more) — see `docs/architecture/DATABASE_SCHEMA.md` |
 | **Alert Rules** | 30 rules: 6 LDI-specific + 11 infrastructure (Grafana native), 13 pipeline/platform meta-monitoring rules (Prometheus/Alertmanager) |
-| **Dashboards** | 10 dashboards (4 infrastructure + 6 manufacturing) |
+| **Dashboards** | 11 dashboards (4 infrastructure + 7 manufacturing) |
 | **Load Test** | Up to 1,000 VUs (`chaos-stress.js`, deliberate 5% fault injection, >90% success threshold); `pipeline-stress.js` targets >95% success — not a 0%-failure guarantee, a defined acceptable-failure budget |
 | **CI/CD** | GitHub Actions with security scanning (Gitleaks) |
 | **Documentation** | 40+ documents across architecture, operations, user/admin manuals, and enterprise guides |

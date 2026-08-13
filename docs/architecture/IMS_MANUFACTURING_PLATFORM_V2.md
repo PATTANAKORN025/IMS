@@ -239,7 +239,7 @@ Given Drill 2 just demonstrated that automatic recovery in this environment is l
 
 ## Phase A — Evidence (closed 2026-08-10)
 
-**What shipped:** dashboards physically split into `monitoring/grafana/dashboards/{infrastructure,manufacturing}/`, two Grafana provisioning providers (`IMS Infrastructure`, `IMS Manufacturing` folders), a `manufacturing`/`infrastructure` domain tag on all 10 dashboards, `dashboard-linter.js` Check 18 enforcing tag/folder agreement, migrations `067`+`068` adding `devices.process_type`, and `MANUFACTURING_DOMAIN.md`.
+**What shipped:** dashboards physically split into `monitoring/grafana/dashboards/{infrastructure,manufacturing}/`, two Grafana provisioning providers (`IMS Infrastructure`, `IMS Manufacturing` folders), a `manufacturing`/`infrastructure` domain tag on all 11 dashboards, `dashboard-linter.js` Check 18 enforcing tag/folder agreement, migrations `067`+`068` adding `devices.process_type`, and `MANUFACTURING_DOMAIN.md`.
 
 **Correction made during implementation:** the plan's own §1 draft mis-sorted `ims-easy-overview.json` as Infrastructure by guessing from its title ("Fleet at a Glance"). Its actual description and panels (`v_ldi_machine_latest_full`, `v_ldi_alarm_context`, `f_ldi_yield_pct` — all LDI-specific) confirmed it's Manufacturing content; `scripts/generate-dashboard-inventory.js`'s pre-existing `LDI_UID_EXTRAS` allowlist already agreed. Corrected before implementation (4 infra / 6 manufacturing, not 5/5) — caught by checking file contents instead of trusting the title, consistent with this session's verify-before-claim pattern.
 
@@ -270,7 +270,7 @@ Given Drill 2 just demonstrated that automatic recovery in this environment is l
 
 **What shipped:** `README.md`'s documentation table now links `IMS_MANUFACTURING_PLATFORM_V2.md`, `MANUFACTURING_DOMAIN.md`, `EAP_ARCHITECTURE.md`, `OWNERSHIP.md`. `ARCHITECTURE.md`'s Known Gaps section gained a pointer bullet to all four rather than duplicating their content.
 
-**Drift caught and fixed as a direct consequence of Phase A (not scope creep):** `README.md` line 160 said "10 dashboards — 5 infrastructure, 5 LDI manufacturing," which became wrong the moment Phase A's corrected 4/6 split shipped. Fixed in the same edit. No other pre-existing README/ARCHITECTURE staleness (e.g. the "9 Grafana dashboards" count in `ARCHITECTURE.md`'s System Context, which predates this work and is unrelated to it) was touched — that's outside Phase C's charter of "cross-link the new docs, don't duplicate or rewrite existing content."
+**Drift caught and fixed as a direct consequence of Phase A (not scope creep):** `README.md` line 160 said "11 dashboards — 5 infrastructure, 5 LDI manufacturing," which became wrong the moment Phase A's corrected 4/6 split shipped. Fixed in the same edit. No other pre-existing README/ARCHITECTURE staleness (e.g. the "9 Grafana dashboards" count in `ARCHITECTURE.md`'s System Context, which predates this work and is unrelated to it) was touched — that's outside Phase C's charter of "cross-link the new docs, don't duplicate or rewrite existing content."
 
 **Test evidence:**
 
