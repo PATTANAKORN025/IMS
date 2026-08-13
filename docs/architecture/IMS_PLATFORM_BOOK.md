@@ -117,7 +117,8 @@ See `docs/architecture/ARCHITECTURE.md`'s domain sections for full context; the 
 | **EAP** | Equipment Automation Program — SECS/GEM-style equipment integration (see `EAP_ARCHITECTURE.md`); not "Enterprise Application Platform." |
 | **SPC** | Statistical Process Control — Cpk-based process capability tracking (see `LDI_SPC_GUIDE.md`). |
 | **RCA** | Root Cause Analysis — alarm-to-process-parameter correlation via the Lift metric (see `LDI_RCA_GUIDE.md`), not equipment fault diagnosis. |
-| **Andon** | The Operator Andon Board — a glanceable, status-only floor display, ISA-101 (HMI design) informed, not to be confused with ISA-18.2 (alarm management). |
+| **Andon** | The Operator Andon Board — a glanceable, status-only floor display, ISA-101 (HMI design) informed, not to be confused with ISA-18.2 (alarm management). Deliberately non-interactive (TV-wall kiosk); see Alarm Console for the operator write-path. |
+| **Alarm Console** | `IMS LDI - Alarm Console` — the dashboard where Acknowledge/Resolve actions actually happen, writing to `public.ldi_alarm_lifecycle` via `services/alarm-api`. Companion to the read-only Andon board, not a replacement for it. |
 | **CAGG** | TimescaleDB Continuous Aggregate — a pre-computed rollup that updates incrementally (see `DATA_FLOW.md`'s rollup chain). |
 | **Cpk** | Process capability index — see `LDI_SPC_GUIDE.md` for the exact formula used here. |
 | **Lift** | The RCA correlation strength metric — see `LDI_RCA_GUIDE.md`. |
