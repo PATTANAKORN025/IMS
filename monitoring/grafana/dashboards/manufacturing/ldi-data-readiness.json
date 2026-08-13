@@ -1085,6 +1085,217 @@
         },
         "noValue": "NO_DATA"
       }
+    },
+    {
+      "id": 13,
+      "title": "◉ Alarm Lifecycle Coverage",
+      "description": "Percent of alarms fired since the lifecycle feature (migration 077) went live that actually have a public.ldi_alarm_lifecycle row. Alarms from before that date correctly have none (no fabricated backfill) and are excluded from this check, not counted against it. Below 100% here means the auto-init trigger (trg_ldi_alarm_lifecycle_init) is not firing for some inserts -- a real bug, not a historical-data gap.",
+      "type": "stat",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 4,
+        "x": 0,
+        "y": 61
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "timescaledb"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope, self-bounded by migration cutoff below */\nWITH cutoff AS (\n  SELECT applied_at FROM public.schema_migrations WHERE version = '077-ldi-alarm-lifecycle'\n)\nSELECT ROUND((100.0 * COUNT(*) FILTER (\n  WHERE EXISTS (SELECT 1 FROM public.ldi_alarm_lifecycle l WHERE l.logdate = a.logdate AND l.logid = a.logid)\n) / NULLIF(COUNT(*), 0))::NUMERIC, 1) AS value\nFROM public.ldi_alarm_log a, cutoff c\nWHERE a.equipmentid IN (${machine_id:sqlstring})\n  AND a.logdate >= c.applied_at;",
+          "refId": "A",
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#EF4444",
+                "value": null
+              },
+              {
+                "color": "#F59E0B",
+                "value": 95
+              },
+              {
+                "color": "#22C55E",
+                "value": 100
+              }
+            ]
+          },
+          "custom": {
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 15,
+            "lineWidth": 2
+          },
+          "min": 0,
+          "max": 100,
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "#64748B",
+                  "text": "NO_DATA",
+                  "index": 0
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value_and_name",
+        "wideLayout": true,
+        "text": {
+          "titleSize": 14,
+          "valueSize": 48
+        },
+        "noValue": "NO_DATA",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      }
+    },
+    {
+      "id": 14,
+      "title": "◉ Stuck Acknowledged Alarms",
+      "description": "Alarms an operator acknowledged via alarm-api more than 2 hours ago but never resolved. Signals abandoned work, not a data-integrity bug like the coverage panel -- someone started handling it and it fell off track.",
+      "type": "stat",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 4,
+        "x": 4,
+        "y": 61
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "timescaledb"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*)::NUMERIC AS value\nFROM public.ldi_alarm_lifecycle l\nJOIN public.ldi_alarm_log a ON a.logdate = l.logdate AND a.logid = l.logid\nWHERE a.equipmentid IN (${machine_id:sqlstring})\n  AND l.status = 'ACKNOWLEDGED'\n  AND l.acknowledged_at < NOW() - INTERVAL '2 hours';",
+          "refId": "A",
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#22C55E",
+                "value": null
+              },
+              {
+                "color": "#F59E0B",
+                "value": 1
+              },
+              {
+                "color": "#EF4444",
+                "value": 5
+              }
+            ]
+          },
+          "custom": {
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 15,
+            "lineWidth": 2
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "#64748B",
+                  "text": "NO_DATA",
+                  "index": 0
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value_and_name",
+        "wideLayout": true,
+        "text": {
+          "titleSize": 14,
+          "valueSize": 48
+        },
+        "noValue": "NO_DATA",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      }
     }
   ]
 }
