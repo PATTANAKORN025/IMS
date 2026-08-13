@@ -52,7 +52,9 @@
 └── LDI Manufacturing (PCB laser direct imaging fleet)
     ├──  Easy Overview           — Zero-config whole-fleet glance, no filters to set
     ├──  LDI Manufacturing       — Executive KPIs + machine telemetry + alarm stream (main command center)
-    ├──  LDI Operator Andon      — Factory-floor kiosk, 1280x720, zero-scroll
+    ├──  LDI Operator Andon      — Factory-floor kiosk, 1280x720, zero-scroll, read-only (no interactive elements)
+    ├──  LDI Alarm Console       — Interactive Acknowledge/Resolve workflow, companion to the read-only Andon board
+    ├──  LDI Alarm Dictionary    — Reference lookup: full vendor alarm definitions + recent occurrences
     ├──  LDI Engineering Analytics — Cpk/SPC ranking, RCA Truth Test, PE/JE distributions
     ├──  LDI Machine Snapshot    — Click any alarm/log to inspect the exact millisecond
     └──  LDI Data Readiness      — Self-auditing data-quality dashboard (coverage %, gaps)

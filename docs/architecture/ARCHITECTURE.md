@@ -6,7 +6,7 @@
 
 ## System Context
 
-IMS is a Docker Compose stack with **two independent telemetry pipelines** feeding one shared TimescaleDB, visualized across **10 Grafana dashboards** with alerting through both Grafana's native alert engine and Prometheus/Alertmanager.
+IMS is a Docker Compose stack with **two independent telemetry pipelines** feeding one shared TimescaleDB, visualized across **12 Grafana dashboards** with alerting through both Grafana's native alert engine and Prometheus/Alertmanager.
 
 ```mermaid
 flowchart TB
@@ -34,7 +34,7 @@ flowchart TB
     style LEGACY fill:#1e293b,stroke:#F59E0B,color:#e2e8f0
 ```
 
-**Why two pipelines exist:** the legacy SNMP pipeline (`ingestion.json`) was the system's original design — poll SNMP-speaking devices, parse via a stateful `sre_parser`, insert into `sys_metrics`/`net_metrics`/`ldi_metrics`. LDI manufacturing telemetry was later given its own, higher-fidelity pipeline (`ldi_data`, fed by HTTP POST rather than SNMP) because the manufacturing dashboards need per-sample PE/JE/Cpk precision that the k6-synthetic `ldi_metrics` table was never designed to carry. **All 10 Grafana dashboards' LDI/manufacturing content reads from `ldi_data`, not `ldi_metrics`.** `ldi_metrics` still exists and is still written to (via `ingestion.json`'s SRE parser), but several of its LDI-specific columns (`throughput`, `power_watt`, `vibration`) are confirmed to always be `0` for LDI-class devices — a known gap in that pipeline, not in `ldi_data`. See "Known Gaps" below.
+**Why two pipelines exist:** the legacy SNMP pipeline (`ingestion.json`) was the system's original design — poll SNMP-speaking devices, parse via a stateful `sre_parser`, insert into `sys_metrics`/`net_metrics`/`ldi_metrics`. LDI manufacturing telemetry was later given its own, higher-fidelity pipeline (`ldi_data`, fed by HTTP POST rather than SNMP) because the manufacturing dashboards need per-sample PE/JE/Cpk precision that the k6-synthetic `ldi_metrics` table was never designed to carry. **All 12 Grafana dashboards' LDI/manufacturing content reads from `ldi_data`, not `ldi_metrics`.** `ldi_metrics` still exists and is still written to (via `ingestion.json`'s SRE parser), but several of its LDI-specific columns (`throughput`, `power_watt`, `vibration`) are confirmed to always be `0` for LDI-class devices — a known gap in that pipeline, not in `ldi_data`. See "Known Gaps" below.
 
 ---
 
@@ -45,15 +45,17 @@ flowchart TB
 | `timescaledb` | `ims-timescaledb` | PostgreSQL + TimescaleDB — all persistent storage |
 | `pgbouncer` | `ims-pgbouncer` | Transaction-mode connection pooler in front of TimescaleDB |
 | `node-red` | `ims-node-red` | Both telemetry pipelines (simulators + ingestion) and the alert-delivery flow |
-| `grafana` | `ims-grafana` | Dashboards, provisioned alert rules, native alerting |
+| `grafana` | `ims-grafana` | Dashboards, provisioned alert rules, native alerting. No host port of its own — reachable only through `proxy` (see below). |
+| `proxy` | `ims-proxy` | nginx reverse proxy; the only host-published entry point to Grafana and `alarm-api`. Gates `/alarm-api/` behind an `auth_request` check against Grafana's own session (`proxy/nginx.conf`) — see `SECURITY_MODEL.md`. |
+| `alarm-api` | `ims-alarm-api` | Write path for `public.ldi_alarm_lifecycle` (Acknowledge/Resolve, called from `IMS LDI - Alarm Console`). No host port; reachable only via `proxy`. Connects to Postgres as the least-privilege `alarm_api_writer` role (migration 078). |
 | `renderer` | `ims-grafana-renderer` | External `grafana-image-renderer` service (PNG export for alerts/reports) |
 | `prometheus` | `ims-prometheus` | Scrapes `sys_metrics`-adjacent exporters and Node-RED health; evaluates its own alert rules |
 | `alertmanager` | `ims-alertmanager` | Routes Prometheus alerts to Node-RED's `/alert-webhook` |
 | `blackbox-exporter` | (blackbox) | HTTP/TCP/ICMP probes for SLA monitoring |
 | `snmpsim` | (snmpsim) | Simulated SNMP agent for the legacy pipeline's dev/test targets |
-| `db-migrate` | `ims-db-migrate` | One-shot migration runner (`scripts/migrate-entrypoint.sh`), gates `node-red` startup |
+| `db-migrate` | `ims-db-migrate` | One-shot migration runner (`scripts/migrate-entrypoint.sh`), gates `node-red` and `alarm-api` startup |
 
-Internal-only services (PgBouncer, SNMP simulator, blackbox exporter) are never exposed to the host; only Grafana (3000), Node-RED (1880), Prometheus (9090), and Alertmanager (127.0.0.1:9093, loopback-only) publish ports.
+Internal-only services (PgBouncer, SNMP simulator, blackbox exporter, Grafana, alarm-api) are never exposed to the host directly; only `proxy` (3000, fronting both Grafana and alarm-api), Node-RED (1880), Prometheus (9090), and Alertmanager (127.0.0.1:9093, loopback-only) publish ports.
 
 ---
 
