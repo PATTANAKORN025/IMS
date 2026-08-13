@@ -40,7 +40,7 @@
 
 ### Dashboard Overview
 
-เมื่อเข้าสู่ Grafana แล้ว จะพบ 11 dashboards:
+เมื่อเข้าสู่ Grafana แล้ว จะพบ 12 dashboards:
 
 ```
  IMS Dashboards

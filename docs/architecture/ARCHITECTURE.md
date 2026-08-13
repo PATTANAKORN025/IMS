@@ -21,7 +21,7 @@ flowchart TB
         NR --> SYSMETRICS[("public.sys_metrics\npublic.net_metrics\npublic.ldi_metrics")]
     end
 
-    LDIDATA --> GRAFANA["Grafana\n11 dashboards"]
+    LDIDATA --> GRAFANA["Grafana\n12 dashboards"]
     ALARMLOG --> GRAFANA
     SYSMETRICS --> GRAFANA
     SYSMETRICS --> PROM["Prometheus"]

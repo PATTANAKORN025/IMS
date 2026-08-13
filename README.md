@@ -177,7 +177,7 @@ flowchart LR
 3. **Parsing** — `sre_parser` maintains per-device state in flow context (`dev_state_<deviceId>`), buffers rows in `batch_buf_<deviceId>`. Offline heartbeat (`_walker: "offline"`) immediately zeros all metrics on device failure.
 4. **Storage** — Timer-gated independent flushing: each table type (sys/net/ldi) inserts only if its buffer has rows. Partial walker failures don't block unrelated data writes.
 5. **Continuous Aggregation** — Hourly CAGGs refresh every 30min. Daily/Weekly CAGGs aggregate from hourly. Live retention (verified against the running database, not migration history -- see `docs/architecture/DATA_RETENTION.md` for a documented drift between the two): raw `sys_metrics`/`net_metrics`/`ldi_metrics` 30d, `ldi_data` 180d, hourly rollups 2yr.
-6. **Visualization** — 11 dashboards across 2 domains: 4 infrastructure (NOC Overview, Engineering Drill-Down, AIOps & Capacity, Meta-Monitoring) + 6 manufacturing (LDI Manufacturing, Operator Andon, Engineering Analytics & SPC, Machine Snapshot, Data Readiness, Fleet at a Glance).
+6. **Visualization** — 12 dashboards across 2 domains: 4 infrastructure (NOC Overview, Engineering Drill-Down, AIOps & Capacity, Meta-Monitoring) + 6 manufacturing (LDI Manufacturing, Operator Andon, Engineering Analytics & SPC, Machine Snapshot, Data Readiness, Fleet at a Glance).
 7. **Alerting** — Prometheus scrapes `/metrics`, Alertmanager routes to LINE Messaging API + MS Teams with runbook links (real delivery requires operator-configured credentials, absent by design). Z-Score anomalies via Grafana SQL over TimescaleDB.
 
 </details>
@@ -185,7 +185,7 @@ flowchart LR
 <details>
 <summary><b>Dashboard Architecture</b></summary>
 
-11 dashboards — 4 infrastructure, 6 manufacturing (`monitoring/grafana/dashboards/{infrastructure,manufacturing}/`, provisioned into separate Grafana folders — see **[Ownership](docs/architecture/OWNERSHIP.md)** for the domain boundary). Full table with panel counts and descriptions: **[Dashboard Inventory](docs/architecture/DASHBOARD_INVENTORY.md)** — auto-generated from the dashboard JSON itself (`node scripts/generate-dashboard-inventory.js`), CI-checked so it can't silently drift from the real dashboards the way a hand-typed table can.
+12 dashboards — 4 infrastructure, 6 manufacturing (`monitoring/grafana/dashboards/{infrastructure,manufacturing}/`, provisioned into separate Grafana folders — see **[Ownership](docs/architecture/OWNERSHIP.md)** for the domain boundary). Full table with panel counts and descriptions: **[Dashboard Inventory](docs/architecture/DASHBOARD_INVENTORY.md)** — auto-generated from the dashboard JSON itself (`node scripts/generate-dashboard-inventory.js`), CI-checked so it can't silently drift from the real dashboards the way a hand-typed table can.
 
 **Design System:** Cyberpunk HUD — `#030407` background, Tailwind palette (`#10B981` Healthy, `#F59E0B` Warning, `#EF4444` Critical, `#3B82F6` Accent), Roboto Mono for stat values, glassmorphism panels, Grid-24 overlap-free layout.
 
@@ -217,7 +217,7 @@ open "http://localhost:3000/playlists/play/1?kiosk=tv&autofitpanels"
 | **Orchestration** | Docker Compose | 7-service container stack with dev/prod overlays |
 | **Collection** | Node-RED + net-snmp | Sequential async bulk SNMP walks, 5-thread parallel walker |
 | **Database** | TimescaleDB (PostgreSQL) | Hypertables with CAGGs, 90% compression after 7d |
-| **Visualization** | Grafana 13.1.1 | 11 dashboards (4 infrastructure + 7 manufacturing), state-timeline anomalies |
+| **Visualization** | Grafana 13.1.1 | 12 dashboards (4 infrastructure + 8 manufacturing), state-timeline anomalies |
 | **Alerting** | Prometheus + Alertmanager | Metric scraping, inhibition rules, LINE Messaging API + MS Teams webhooks |
 | **Load Testing** | K6 | Pipeline stress (50→200 VUs), threshold p95<500ms |
 | **SLA Probing** | Blackbox Exporter | HTTP/TCP/ICMP endpoint monitoring |

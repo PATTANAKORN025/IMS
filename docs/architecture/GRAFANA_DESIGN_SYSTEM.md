@@ -25,7 +25,7 @@ and a distinct "LDI Kiosk" palette for the 5 LDI dashboards. In practice both ha
 already drifted onto the *same* hex values almost everywhere (verified by counting
 every `#RRGGBB` literal across all 10 dashboard files before writing this section) —
 the two-table split had become a documentation fiction, not a real design boundary.
-Merged into one table, applied to **all 11 dashboards** including the LDI kiosk set.
+Merged into one table, applied to **all 12 dashboards** including the LDI kiosk set.
 No dashboard is exempt.
 
 | Token | Hex Code | ความหมาย | ใช้กับ |
