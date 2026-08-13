@@ -31,9 +31,9 @@
 
 ### Before Granting Network Access
 
-- [ ] Remove PgBouncer host port binding (already done in prod compose)
+- [x] PgBouncer has no host port binding — never published one in the base `docker-compose.yaml`, not a prod-overlay change
 - [ ] Enable Node-RED adminAuth (generate bcrypt hash)
-- [ ] Bind Grafana to localhost only (already done in prod compose)
+- [x] Grafana is not directly reachable from the host — `docker-compose.yaml` gives it no host port at all; the `proxy` service (nginx) is the only published entry point (3000), fronting both Grafana and `alarm-api` and gating the latter behind an `auth_request` check against Grafana's own session (see `docs/architecture/SECURITY_MODEL.md`)
 - [ ] Review all Docker secrets in `secrets/` directory
 - [ ] Enable SNMPv3 for production devices (replacing v2c)
 
