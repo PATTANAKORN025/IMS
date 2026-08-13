@@ -226,8 +226,9 @@ services:
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./monitoring/grafana/grafana.ini:/etc/grafana/grafana.ini:ro
       - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
-    ports:
-      - "${GRAFANA_PORT:-3000}:${GRAFANA_PORT:-3000}"
+    # No host port published -- reached only via the proxy service below,
+    # so every request (including to alarm-api) goes through one
+    # same-origin front door and can carry Grafana's session cookie.
     deploy:
       resources:
         limits: *resource-medium
@@ -252,6 +253,34 @@ services:
     networks:
       - ims-internal
       - ims-monitoring
+    logging: *default-logging
+
+  # ── Proxy (same-origin front door: Grafana + auth-gated alarm-api) ──
+  proxy:
+    image: nginx:1.27-alpine
+    container_name: ims-proxy
+    <<: *default-restart
+    init: true
+    volumes:
+      - ./proxy/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "${GRAFANA_PORT:-3000}:80"
+    deploy:
+      resources:
+        limits: *resource-small
+        reservations:
+          cpus: '0.1'
+          memory: 32M
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:80/api/health || exit 1"]
+      <<: *healthcheck-defaults
+    depends_on:
+      grafana:
+        condition: service_healthy
+      alarm-api:
+        condition: service_healthy
+    networks:
+      - ims-internal
     logging: *default-logging
 
   # ── Grafana Image Renderer ───────────────────────────────
@@ -363,8 +392,10 @@ services:
       PGPASSWORD: ${ALARM_API_DB_PASSWORD:?set ALARM_API_DB_PASSWORD in .env}
       ALARM_API_ALLOWED_ORIGIN: ${GRAFANA_ROOT_URL:-http://localhost:3000}
       PORT: "4000"
-    ports:
-      - "${ALARM_API_PORT:-4000}:4000"
+    # No host port published -- reachable only through the proxy service's
+    # /alarm-api/ path, which is auth_request-gated on Grafana's own
+    # session. Direct access to :4000 from outside the docker network is
+    # no longer possible.
     deploy:
       resources:
         limits: *resource-small
