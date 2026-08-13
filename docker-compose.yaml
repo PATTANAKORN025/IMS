@@ -109,6 +109,7 @@ services:
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@timescaledb:5432/${POSTGRES_DB}
       GRAFANA_DB_PASSWORD: ${GRAFANA_DB_PASSWORD:?GRAFANA_DB_PASSWORD required in .env}
+      ALARM_API_DB_PASSWORD: ${ALARM_API_DB_PASSWORD:?ALARM_API_DB_PASSWORD required in .env}
       POOL_MODE: transaction
       MAX_CLIENT_CONN: 200
       DEFAULT_POOL_SIZE: 20
@@ -336,12 +337,48 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
       PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       PGHOST: timescaledb
+      ALARM_API_DB_PASSWORD: ${ALARM_API_DB_PASSWORD:?set ALARM_API_DB_PASSWORD in .env}
     volumes:
       - ./database/migrations:/migrations:ro
       - ./scripts/migrate-entrypoint.sh:/scripts/migrate-entrypoint.sh:ro
     depends_on:
       timescaledb:
         condition: service_healthy
+    networks:
+      - ims-internal
+    logging: *default-logging
+
+  # ── Alarm API (operator ack/resolve write path) ────────────
+  alarm-api:
+    build:
+      context: ./services/alarm-api
+    container_name: ims-alarm-api
+    <<: *default-restart
+    init: true
+    environment:
+      PGHOST: ims-pgbouncer
+      PGPORT: "5432"
+      PGDATABASE: ${POSTGRES_DB}
+      PGUSER: alarm_api_writer
+      PGPASSWORD: ${ALARM_API_DB_PASSWORD:?set ALARM_API_DB_PASSWORD in .env}
+      ALARM_API_ALLOWED_ORIGIN: ${GRAFANA_ROOT_URL:-http://localhost:3000}
+      PORT: "4000"
+    ports:
+      - "${ALARM_API_PORT:-4000}:4000"
+    deploy:
+      resources:
+        limits: *resource-small
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://127.0.0.1:4000/healthz',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))\""]
+      <<: *healthcheck-defaults
+    depends_on:
+      pgbouncer:
+        condition: service_healthy
+      db-migrate:
+        condition: service_completed_successfully
     networks:
       - ims-internal
     logging: *default-logging

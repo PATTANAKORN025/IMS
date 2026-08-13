@@ -1,0 +1,14 @@
+{
+  "name": "ims-alarm-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Write path for ldi_alarm_lifecycle: operator acknowledge/resolve endpoints.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "pg": "^8.12.0"
+  }
+}
