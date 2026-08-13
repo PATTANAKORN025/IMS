@@ -18,10 +18,16 @@ Raw data: `docs/evidence/soak-log-2026-08-13-attempt2-contaminated-by-dr-drill.t
 
 Killed by DR Drill 3 (see `DR_DRILL_3_FINDINGS.md`): the drill's `full-recreate` step ran `docker compose down -v` at 07:43Z, inside this window. Sample at 07:50:17Z shows `any_container_restarted=yes` and `NaN` inserts (node-red was down). Archived, not deleted, same reasoning as Attempt 1.
 
-## Attempt 3 (started 2026-08-13T07:54:17Z) — in progress
+## Attempt 3 (2026-08-13T07:54:17Z → 08:58:28Z) — INVALID, contaminated by DR Drill 3 root-cause fix iteration
 
-Log reset: Attempt 2's log moved to `docs/evidence/soak-log-2026-08-13-attempt2-contaminated-by-dr-drill.tsv`, fresh log started at `scripts/soak-test-reports/soak-log.tsv`.
+Raw data: `docs/evidence/soak-log-2026-08-13-attempt3-contaminated-by-dr-fix-iteration.tsv`.
+
+Root-causing the Drill 3 findings above required repeatedly running `docker compose down -v` (7+ times) against this same environment to reproduce and verify the fix -- see `docs/evidence/DR_DRILL_3_FINDINGS.md`. Necessary for that work, but it makes this window's data meaningless as a "quiet system" soak. Archived, not deleted, same reasoning as Attempts 1 and 2.
+
+## Attempt 4 (started 2026-08-13T08:58:28Z) — in progress
+
+Log reset: Attempt 3's log moved to `docs/evidence/soak-log-2026-08-13-attempt3-contaminated-by-dr-fix-iteration.tsv`, fresh log started at `scripts/soak-test-reports/soak-log.tsv`.
 
 Collection mechanism: Windows Scheduled Task `IMS-SoakTest` (already existed, enabled since 2026-08-10T15:35:12+07:00, fires every 15 minutes independent of any chat session).
 
-No further intentional container restarts planned during this window. Re-run `bash scripts/soak-test-report.sh --summarize` after 72h real elapsed time (target: 2026-08-16T07:54Z or later) for the actual verdict.
+No further intentional container restarts planned during this window -- the DR Drill 3 root-cause fix is done and verified (see `DR_DRILL_3_FINDINGS.md`), so there's no more reason to tear the stack down before this window completes. Re-run `bash scripts/soak-test-report.sh --summarize` after 72h real elapsed time (target: 2026-08-16T08:58Z or later) for the actual verdict.

@@ -97,6 +97,15 @@ FROM public.ldi_data
 GROUP BY bucket, eqp_id
 WITH NO DATA;
 
+-- Refresh BEFORE the policy exists, not after: add_continuous_aggregate_policy
+-- can hand this CAGG to a background worker almost immediately, which then
+-- races an explicit refresh run later against the same object (found running
+-- this migration for real on 2026-08-13 -- "could not refresh continuous
+-- aggregate ... due to a concurrent refresh", non-deterministic, timing
+-- dependent, on a genuinely fresh database). No policy yet means nothing else
+-- can be refreshing this CAGG concurrently.
+CALL refresh_continuous_aggregate('public.ldi_data_hourly', NULL, NULL);
+
 DO $$ BEGIN
     PERFORM add_continuous_aggregate_policy('public.ldi_data_hourly',
         start_offset => INTERVAL '3 days', end_offset => INTERVAL '1 hour',
@@ -127,6 +136,8 @@ SELECT
 FROM public.ldi_data
 GROUP BY bucket, eqp_id, factory, process, mo, fpn, layer_name
 WITH NO DATA;
+
+CALL refresh_continuous_aggregate('public.ldi_data_1m', NULL, NULL);
 
 DO $$ BEGIN
     PERFORM add_continuous_aggregate_policy('public.ldi_data_1m',
@@ -160,6 +171,8 @@ FROM public.ldi_data_1m
 GROUP BY 1, eqp_id, factory, process, mo, fpn, layer_name
 WITH NO DATA;
 
+CALL refresh_continuous_aggregate('public.ldi_data_15m', NULL, NULL);
+
 DO $$ BEGIN
     PERFORM add_continuous_aggregate_policy('public.ldi_data_15m',
         start_offset => INTERVAL '3 hours', end_offset => INTERVAL '15 minutes',
@@ -192,6 +205,8 @@ FROM public.ldi_data_15m
 GROUP BY 1, eqp_id, factory, process, mo, fpn, layer_name
 WITH NO DATA;
 
+CALL refresh_continuous_aggregate('public.ldi_data_1h', NULL, NULL);
+
 DO $$ BEGIN
     PERFORM add_continuous_aggregate_policy('public.ldi_data_1h',
         start_offset => INTERVAL '1 day', end_offset => INTERVAL '1 hour',
@@ -200,22 +215,6 @@ EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
 ALTER MATERIALIZED VIEW public.ldi_data_1h SET (timescaledb.materialized_only = false);
 SELECT add_retention_policy('public.ldi_data_1h', INTERVAL '2 years', if_not_exists => true);
-
-DO $$
-BEGIN
-    IF (SELECT count(*) FROM ldi_data_hourly) = 0 THEN
-        CALL refresh_continuous_aggregate('public.ldi_data_hourly', NULL, NULL);
-    END IF;
-    IF (SELECT count(*) FROM ldi_data_1m) = 0 THEN
-        CALL refresh_continuous_aggregate('public.ldi_data_1m', NULL, NULL);
-    END IF;
-    IF (SELECT count(*) FROM ldi_data_15m) = 0 THEN
-        CALL refresh_continuous_aggregate('public.ldi_data_15m', NULL, NULL);
-    END IF;
-    IF (SELECT count(*) FROM ldi_data_1h) = 0 THEN
-        CALL refresh_continuous_aggregate('public.ldi_data_1h', NULL, NULL);
-    END IF;
-END $$;
 
 CREATE OR REPLACE VIEW public.v_ldi_alarm_context AS
  SELECT a.logdate AS alarm_time,

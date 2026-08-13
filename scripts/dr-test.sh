@@ -179,18 +179,89 @@ drill_full_recreate() {
     t0=$(date +%s)
     docker compose down -v
 
-    echo "-> docker compose up -d (recreate from docker-compose.yaml + migrations)"
-    docker compose up -d
-    echo "-> waiting for db-migrate to complete"
-    docker compose up db-migrate
+    # Schema first (via db-migrate, from database/migrations/), THEN data
+    # -- not a full pg_dump|psql restore. Tried that both ways (restore
+    # before migrate, restore after migrate) running this drill for real on
+    # 2026-08-13 -- both fail. TimescaleDB's own pg_dump output warns why
+    # every single run ("circular foreign-key constraints... You might not
+    # be able to restore the dump"): a plain logical dump of a database
+    # with continuous aggregates is not reliably restorable, full stop
+    # ("cannot alter the internal view of a continuous aggregate",
+    # "operation not supported on materialization tables", internal
+    # per-chunk table names tied to the instance that produced the dump).
+    # See docs/evidence/DR_DRILL_3_FINDINGS.md for both failed attempts.
+    #
+    # The schema (tables, views, CAGGs, policies) is already fully and
+    # correctly reproducible from migrations alone -- proven clean on an
+    # empty database. A backup only needs to carry what migrations don't
+    # seed: the raw ldi_data/ldi_alarm_log rows. scripts/dr-restore-table-data.py
+    # pulls just those out of the dump and restores them through the
+    # PARENT table name (TimescaleDB routes to the right chunk itself),
+    # sidestepping the internal-chunk-ID problem entirely.
+    # timescaledb only, not the full stack -- `docker compose up -d` starts
+    # every service including db-migrate (node-red/etc. depend on it), so
+    # calling both races two db-migrate runs against each other (found
+    # running this drill for real on 2026-08-13: the first, implicit run
+    # left migrations partially applied, the second, explicit one then hit
+    # a different mid-sequence failure). One explicit run only.
+    echo "-> docker compose up -d timescaledb (database only)"
+    docker compose up -d timescaledb
+    for _ in $(seq 1 30); do
+        status=$(docker inspect -f '{{.State.Health.Status}}' ims-timescaledb 2>/dev/null)
+        [[ "$status" == "healthy" ]] && break
+        sleep 2
+    done
 
-    echo "-> restoring from $BACKUP_FILE"
-    docker exec -i ims-timescaledb psql -U "$PGUSER" -d "$PGDB" < "$BACKUP_FILE" > "$REPORT_DIR/full-recreate-restore-$STAMP.log" 2>&1
+    echo "-> docker compose up db-migrate (schema, from database/migrations/)"
+    docker compose up db-migrate
+    local migrate_exit=$?
+
+    echo "-> restoring ldi_data + ldi_alarm_log row data from $BACKUP_FILE"
+    local restore_log="$REPORT_DIR/full-recreate-restore-$STAMP.log"
+    : > "$restore_log"
+    local data_restore_ok=1
+    for table in ldi_data ldi_alarm_log; do
+        local tsv="$REPORT_DIR/full-recreate-$STAMP-$table.tsv"
+        local cols
+        cols=$(python3 scripts/dr-restore-table-data.py "$BACKUP_FILE" "$table" "$tsv" 2>>"$restore_log")
+        if [[ -z "$cols" ]]; then
+            echo "  $table: extraction failed, see $restore_log" | tee -a "$restore_log"
+            data_restore_ok=0
+            continue
+        fi
+        docker cp "$tsv" "ims-timescaledb:/tmp/$table.tsv"
+        docker exec -i ims-timescaledb psql -U "$PGUSER" -d "$PGDB" -v ON_ERROR_STOP=1 \
+            -c "\\copy $table ($cols) FROM '/tmp/$table.tsv'" >> "$restore_log" 2>&1 \
+            || data_restore_ok=0
+    done
+
+    echo "-> docker compose up -d (start everything else now that data is restored)"
+    docker compose up -d
     t1=$(date +%s)
     local total_secs=$((t1 - t0))
 
+    # Query actual final state rather than trust $migrate_exit alone --
+    # if the explicit run above failed, `docker compose up -d` retries
+    # db-migrate itself (service_completed_successfully dependency), so
+    # the real outcome is whatever that retry left behind, not the first
+    # exit code. Same idempotent check-all-pending logic CI's schema-drift
+    # gate uses, since it's already the authoritative "is everything
+    # really applied" answer.
+    local migrate_recheck gated_up
+    migrate_recheck=$(bash scripts/migrate.sh 2>&1)
+    echo "$migrate_recheck" | grep -q "Pending: 0  Applied: 0  Failed: 0" && migrate_exit=0 || migrate_exit=1
+    gated_up="yes"
+    for svc in node-red proxy alarm-api; do
+        state=$(docker inspect -f '{{.State.Status}}' "ims-$svc" 2>/dev/null)
+        [[ "$state" == "running" ]] || gated_up="no"
+    done
+
     echo ""
-    echo "VERDICT: full recreate + restore completed in ${total_secs}s -- verify manually against pre-wipe row counts before trusting this environment again"
+    if [[ "$migrate_exit" -eq 0 && "$data_restore_ok" -eq 1 && "$gated_up" == "yes" ]]; then
+        echo "VERDICT: PASS -- full recreate completed in ${total_secs}s, migrations applied cleanly, ldi_data/ldi_alarm_log restored, node-red/proxy/alarm-api running"
+    else
+        echo "VERDICT: FAIL -- db-migrate exit ${migrate_exit}, data restore ok=${data_restore_ok}, gated services up=${gated_up} (see $restore_log)"
+    fi
     echo ""
 }
 
