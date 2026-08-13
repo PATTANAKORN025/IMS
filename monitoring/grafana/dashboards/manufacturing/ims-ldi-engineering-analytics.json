@@ -2355,7 +2355,7 @@
     {
       "id": 10000,
       "type": "row",
-      "title": "🧠 AI-Assisted Advanced Diagnostics (Predictive & RCA)",
+      "title": "◈ Advanced Diagnostics (Correlation & SPC)",
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -2366,14 +2366,30 @@
       "panels": []
     },
     {
+      "id": 10005,
+      "type": "text",
+      "title": "",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 1001
+      },
+      "transparent": true,
+      "options": {
+        "mode": "markdown",
+        "content": "⚠️ **No ML or predictive models are used on this dashboard.** Every panel below is real-time descriptive/retrospective statistics (moving averages, rolling control limits, CUSUM, Nelson Rules) computed directly from live telemetry -- nothing here forecasts future values or produces an AI/predictive score. See docs/architecture/FUTURE_ANALYTICS.md for the roadmap concept this row previously overclaimed."
+      }
+    },
+    {
       "id": 10001,
       "type": "timeseries",
-      "title": "6.1 Dynamic Moving Average Trend (Predictive Drift)",
+      "title": "6.1 Dynamic Moving Average Trend",
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 1001
+        "y": 1002
       },
       "targets": [
         {
@@ -2386,7 +2402,7 @@
           "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: time_bucket is handled by the 1m continuous aggregate */\nWITH pe_stats AS (\n  SELECT bucket AS time, eqp_id, avg_pe_1 AS pe_1, avg_pe_setting AS pe_setting,\n    AVG(avg_pe_1) OVER (PARTITION BY eqp_id ORDER BY bucket ROWS BETWEEN 50 PRECEDING AND 1 PRECEDING) AS mu_baseline,\n    STDDEV(avg_pe_1) OVER (PARTITION BY eqp_id ORDER BY bucket ROWS BETWEEN 50 PRECEDING AND 1 PRECEDING) AS sigma_baseline\n  FROM public.ldi_data_1m\n  WHERE $__timeFilter(bucket) AND factory IN (${factory:sqlstring}) AND eqp_id IN (${machine_id:sqlstring})\n)\nSELECT time, pe_1 AS \"Raw PE_1 (µm)\",\n  AVG(pe_1) OVER (PARTITION BY eqp_id ORDER BY time ROWS BETWEEN 10 PRECEDING AND CURRENT ROW) AS \"Trend (SMA-10)\",\n  pe_setting AS \"Upper Spec Limit\", -pe_setting AS \"Lower Spec Limit\",\n  (mu_baseline + 3 * sigma_baseline) AS \"Dynamic UCL\",\n  (mu_baseline - 3 * sigma_baseline) AS \"Dynamic LCL\"\nFROM pe_stats ORDER BY time ASC;"
         }
       ],
-      "description": "Dynamic Moving Average Trend using 1-minute Continuous Aggregates for predictive analytics.",
+      "description": "Rolling 10-sample moving average against dynamic control limits (rolling 50-sample mean +/- 3 sigma, both computed from ldi_data_1m). Descriptive/retrospective statistics only -- this tracks where the process has been, it does not forecast where it is going. No ML/predictive model is used.",
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -2407,7 +2423,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 1001
+        "y": 1002
       },
       "targets": [
         {
@@ -2420,7 +2436,7 @@
           "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: time_bucket is handled by the 1m continuous aggregate */\nWITH base AS (\n  SELECT bucket AS time, eqp_id, avg_air_vacuum AS air_vacuum,\n         AVG(avg_air_vacuum) OVER (PARTITION BY eqp_id ORDER BY bucket ROWS BETWEEN 50 PRECEDING AND 1 PRECEDING) AS mu,\n         STDDEV(avg_air_vacuum) OVER (PARTITION BY eqp_id ORDER BY bucket ROWS BETWEEN 50 PRECEDING AND 1 PRECEDING) AS sig\n  FROM public.ldi_data_1m WHERE $__timeFilter(bucket) AND factory IN (${factory:sqlstring}) AND eqp_id IN (${machine_id:sqlstring})\n)\nSELECT time, eqp_id AS metric, air_vacuum AS \"Vacuum (kPa)\",\n  mu - (0.5 * sig) AS \"CUSUM Reference Limit\",\n  CASE WHEN (air_vacuum < (mu - 3*sig)) THEN 1 ELSE 0 END AS \"Nelson Rule 1 Violation (Spike Drop)\"\nFROM base ORDER BY time ASC;"
         }
       ],
-      "description": "Dual-CUSUM and Nelson Rules applied to Vacuum metrics.",
+      "description": "Dual-CUSUM reference limit and a real Nelson Rule 1 violation flag (value beyond mean +/- 3 sigma) applied to vacuum telemetry. Both are standard, textbook SPC techniques -- not AI/ML, not a prediction.",
       "fieldConfig": {
         "defaults": {
           "custom": {

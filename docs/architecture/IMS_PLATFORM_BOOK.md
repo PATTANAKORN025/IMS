@@ -64,6 +64,7 @@ IMS is a monitoring platform spanning two domains — **infrastructure** (server
 - [`LDI_RCA_GUIDE.md`](LDI_RCA_GUIDE.md) — root-cause correlation (Lift/Confidence) methodology.
 - [`ALARM_SEVERITY_GUIDE.md`](ALARM_SEVERITY_GUIDE.md) — the 4-tier severity taxonomy and ISA-18.2 scope.
 - [`DATA_RETENTION.md`](DATA_RETENTION.md) — live retention/compression policy.
+- [`FUTURE_ANALYTICS.md`](FUTURE_ANALYTICS.md) — roadmap-only concepts (predictive drift, AI/anomaly scoring, multi-factor RCA) explicitly **not implemented** — nothing here is real until it has its own golden-dataset test, same bar as every shipped SPC/RCA calculation.
 
 ### Design system
 - [`GRAFANA_DESIGN_SYSTEM.md`](GRAFANA_DESIGN_SYSTEM.md) — color tokens, typography, panel conventions, enforced by `dashboard-linter.js`.
