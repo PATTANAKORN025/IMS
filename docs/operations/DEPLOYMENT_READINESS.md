@@ -110,9 +110,9 @@ sudo systemctl start snmpd
 
 | # | Task | Status | Reference |
 |---|---|---|---|
-| 1 | Remove PgBouncer host port |  | Already in prod compose |
+| 1 | Remove PgBouncer host port |  | Never published one in base `docker-compose.yaml` -- not a prod-overlay change |
 | 2 | Enable Node-RED adminAuth |  | Generate bcrypt hash |
-| 3 | Bind Grafana to localhost |  | Already in prod compose |
+| 3 | Grafana not directly host-reachable |  | No host port in base compose; `proxy` (nginx) is the sole entry point, fronting Grafana + `alarm-api` |
 | 4 | Review SECURITY.md |  | See security checklist |
 
 ---

@@ -30,22 +30,24 @@
 
 ### Container Overview
 
-ระบบทำงานบน Docker Compose ทั้งหมด 10 services (9 long-running + 1 one-shot migration runner ที่ทำงานเสร็จแล้ว exit):
+ระบบทำงานบน Docker Compose ทั้งหมด 12 services (11 long-running + 1 one-shot migration runner ที่ทำงานเสร็จแล้ว exit):
 
 | Container | Service | Port | Purpose |
 |---|---|---|---|
 | `ims-timescaledb` | TimescaleDB | 5432 (loopback only) | Time-series database |
 | `ims-pgbouncer` | PgBouncer | 5432 (internal) | Connection pooler |
-| `ims-db-migrate` | Migration runner | — (one-shot) | Applies `database/migrations/*.sql`, gates `node-red` startup |
+| `ims-db-migrate` | Migration runner | — (one-shot) | Applies `database/migrations/*.sql`, gates `node-red` and `alarm-api` startup |
 | `ims-node-red` | Node-RED | 1880 (loopback only) | Data pipeline |
-| `ims-grafana` | Grafana | 3000 | Dashboard |
+| `ims-proxy` | nginx reverse proxy | **3000** | The only host-published entry point to Grafana and `alarm-api`. Gates `/alarm-api/` behind an `auth_request` check against Grafana's own session. |
+| `ims-grafana` | Grafana | internal only, no host port | Dashboard — reachable only through `ims-proxy` now, not directly |
+| `ims-alarm-api` | alarm-api | internal only, no host port | Write path for `public.ldi_alarm_lifecycle` (Acknowledge/Resolve from `IMS LDI - Alarm Console`). Reachable only through `ims-proxy`. |
 | `ims-grafana-renderer` | Grafana Image Renderer | 8081 (internal) | PNG rendering for panel export/alerts |
 | `ims-prometheus` | Prometheus | 9090 (loopback only) | Metrics & alerting |
 | `ims-alertmanager` | Alertmanager | 9093 (loopback only) | Alert routing |
 | `ims-blackbox` | Blackbox Exporter | 9115 (loopback only) | SLA probes |
 | `ims-snmpsim` | SNMP Simulator | 161/udp | Dev testing |
 
-> `ims-db-migrate` exits with status 0 after applying pending migrations -- seeing it as `Exited (0)` in `docker compose ps` is expected, not a failure. `node-red` won't start until it completes successfully.
+> `ims-db-migrate` exits with status 0 after applying pending migrations -- seeing it as `Exited (0)` in `docker compose ps` is expected, not a failure. `node-red` and `alarm-api` won't start until it completes successfully.
 
 ### Common Operations
 
@@ -66,6 +68,8 @@ docker compose down -v && docker compose up -d
 docker compose restart node-red
 docker compose restart pgbouncer
 docker compose restart grafana
+docker compose restart proxy
+docker compose restart alarm-api
 docker compose restart prometheus alertmanager
 
 # ดู Real-time Log (Last 50 lines)
@@ -99,7 +103,7 @@ curl -s http://localhost:9093/-/healthy
 
 ### Database Migrations
 
-`database/migrations/` currently has 40 sequenced files (`013` through `064` — earlier numbers `001-012` were folded into `postgres/init/001-init-timescaledb.sql`, the fresh-deploy bootstrap path). Applied automatically by the one-shot `ims-db-migrate` service on every `docker compose up`; `node-red` won't start until it exits successfully.
+`database/migrations/` currently has 53 sequenced files (`013` through `078`, with some numbers skipped/archived — earlier numbers `001-012` were folded into `postgres/init/001-init-timescaledb.sql`, the fresh-deploy bootstrap path). Applied automatically by the one-shot `ims-db-migrate` service on every `docker compose up`; `node-red` and `alarm-api` won't start until it exits successfully.
 
 ```bash
 # Manually re-run migrations without bringing up the rest of the stack
@@ -128,6 +132,7 @@ All migrations are written to be idempotent (`CREATE ... IF NOT EXISTS`, guarded
 | `INGEST_API_KEY` | `ims-secret-key` | `.env` + `docker-compose.yaml` (`ims-node-red` env) | **CHANGE** — unauthorized users can inject spoofed telemetry via `POST /inject` |
 | `POSTGRES_PASSWORD` | `change-me-please` | `.env` | **CHANGE** — database superuser access |
 | `GRAFANA_ADMIN_PASSWORD` | `change-me-please` | `.env` | **CHANGE** — dashboard edit + datasource access |
+| `ALARM_API_DB_PASSWORD` | `change-me-please` | `.env` | **CHANGE** — credential for the `alarm_api_writer` role (migration `078-alarm-api-writer-role.sql`); scoped to `SELECT`+`UPDATE` on `ldi_alarm_lifecycle` only, but still a real DB credential |
 
 ### How to Rotate
 
@@ -136,17 +141,21 @@ All migrations are written to be idempotent (`CREATE ... IF NOT EXISTS`, guarded
 NEW_API_KEY=$(python -c "import secrets; print(secrets.token_urlsafe(32))")
 NEW_DB_PASS=$(python -c "import secrets; print(secrets.token_urlsafe(24))")
 NEW_GRAFANA_PASS=$(python -c "import secrets; print(secrets.token_urlsafe(24))")
+NEW_ALARM_API_DB_PASS=$(python -c "import secrets; print(secrets.token_urlsafe(24))")
 
 # 2. Update .env
 sed -i "s/^INGEST_API_KEY=.*/INGEST_API_KEY=$NEW_API_KEY/" .env
 sed -i "s/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=$NEW_DB_PASS/" .env
 sed -i "s/^GRAFANA_ADMIN_PASSWORD=.*/GRAFANA_ADMIN_PASSWORD=$NEW_GRAFANA_PASS/" .env
+sed -i "s/^ALARM_API_DB_PASSWORD=.*/ALARM_API_DB_PASSWORD=$NEW_ALARM_API_DB_PASS/" .env
 
-# 3. Update grafana_reader DB password
+# 3. Update grafana_reader and alarm_api_writer DB passwords
 docker compose exec -T timescaledb psql -U ims_admin -d ims \
   -c "ALTER ROLE grafana_reader WITH PASSWORD '$NEW_DB_PASS';"
+docker compose exec -T timescaledb psql -U ims_admin -d ims \
+  -c "ALTER ROLE alarm_api_writer WITH PASSWORD '$NEW_ALARM_API_DB_PASS';"
 
-# 4. Restart all services
+# 4. Restart all services (pgbouncer re-seeds its userlist.txt from .env on start)
 docker compose up -d
 
 # 5. Verify
@@ -311,7 +320,7 @@ docker compose down -v && docker compose up -d
 # 2. รอ 40 วินาที
 sleep 40
 
-# 3. ตรวจสอบ containers (9 long-running + ims-db-migrate ที่ควร Exited (0))
+# 3. ตรวจสอบ containers (11 long-running + ims-db-migrate ที่ควร Exited (0))
 docker compose ps
 
 # 4. ตรวจสอบข้อมูลไหล
@@ -376,6 +385,7 @@ docker compose restart node-red
 # Backup docker-compose files
 cp docker-compose.yaml docker-compose.yaml.bak
 cp docker-compose.prod.yaml docker-compose.prod.yaml.bak
+cp proxy/nginx.conf proxy/nginx.conf.bak
 
 # Backup Prometheus config
 cp monitoring/prometheus/prometheus.yml monitoring/prometheus/prometheus.yml.bak
