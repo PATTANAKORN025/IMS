@@ -252,7 +252,7 @@ IMS/
 │   └── settings.js                    #   functionGlobalContext, auth config
 ├── postgres/                          # Database initialization
 │   └── init/                          #   001-init-timescaledb.sql (schema + views)
-├── database/migrations/               #   40 sequenced migration files (013-064), applied by db-migrate
+├── database/migrations/               #   54 sequenced migration files (013-079, some numbers skipped/archived), applied by db-migrate
 ├── tests/                             # Test suites
 │   ├── k6/                            #   K6 pipeline stress test
 │   ├── unit/                          #   Parser & counter unit tests
