@@ -31,11 +31,15 @@ function isNonEmptyString(v) {
 }
 
 async function transitionAlarm(req, res, { fromStatuses, toStatus, actorField, extraSet, extraParams }) {
-  const { logdate, logid } = req.body;
+  const { logdate_ms: logdateMs, logid } = req.body;
   const actor = req.body[actorField];
 
-  if (!isNonEmptyString(logdate) || !isNonEmptyString(logid) || !isNonEmptyString(actor)) {
-    return res.status(400).json({ error: `logdate, logid, and ${actorField} are required` });
+  // logdate_ms (epoch milliseconds, e.g. Grafana's own When_ms field) instead
+  // of a date string -- string formats are ambiguous across client-side
+  // stringification (Handlebars/JS Date.toString() is not ISO 8601), and a
+  // mismatch there fails the whole request. A number has no such ambiguity.
+  if (!Number.isFinite(logdateMs) || !isNonEmptyString(logid) || !isNonEmptyString(actor)) {
+    return res.status(400).json({ error: `logdate_ms (number), logid, and ${actorField} are required` });
   }
 
   const client = await pool.connect();
@@ -43,9 +47,9 @@ async function transitionAlarm(req, res, { fromStatuses, toStatus, actorField, e
     const result = await client.query(
       `UPDATE public.ldi_alarm_lifecycle
        SET status = $1, ${extraSet}
-       WHERE logdate = $2 AND logid = $3 AND status = ANY($4::text[])
+       WHERE logdate = to_timestamp($2::double precision / 1000.0) AND logid = $3 AND status = ANY($4::text[])
        RETURNING logid, logdate, status, acknowledged_at, acknowledged_by, resolved_at, resolved_by, resolution_note`,
-      [toStatus, logdate, logid, fromStatuses, ...extraParams]
+      [toStatus, logdateMs, logid, fromStatuses, ...extraParams]
     );
 
     if (result.rowCount === 1) {
@@ -53,8 +57,8 @@ async function transitionAlarm(req, res, { fromStatuses, toStatus, actorField, e
     }
 
     const existing = await client.query(
-      `SELECT status FROM public.ldi_alarm_lifecycle WHERE logdate = $1 AND logid = $2`,
-      [logdate, logid]
+      `SELECT status FROM public.ldi_alarm_lifecycle WHERE logdate = to_timestamp($1::double precision / 1000.0) AND logid = $2`,
+      [logdateMs, logid]
     );
 
     if (existing.rowCount === 0) {
