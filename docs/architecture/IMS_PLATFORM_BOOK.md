@@ -8,7 +8,7 @@
 
 ## Executive summary
 
-IMS is a monitoring platform spanning two domains — **infrastructure** (servers, network devices) and **LDI manufacturing** (a PCB Laser Direct Imaging production line) — sharing one TimescaleDB, one Grafana instance (11 dashboards, split into `Infrastructure`/`Manufacturing` folders), and alerting through both Grafana native rules and Prometheus/Alertmanager. The manufacturing side includes real SPC (Cpk process capability) and RCA (alarm-to-parameter correlation) analytics, not just telemetry display. The two domains are logically separated (folders, tags, `CODEOWNERS`) but share infrastructure — see `docs/architecture/OWNERSHIP.md` for why a physical split wasn't justified at this system's current size.
+IMS is a monitoring platform spanning two domains — **infrastructure** (servers, network devices) and **LDI manufacturing** (a PCB Laser Direct Imaging production line) — sharing one TimescaleDB, one Grafana instance (12 dashboards, split into `Infrastructure`/`Manufacturing` folders), and alerting through both Grafana native rules and Prometheus/Alertmanager. The manufacturing side includes real SPC (Cpk process capability) and RCA (alarm-to-parameter correlation) analytics, not just telemetry display. The two domains are logically separated (folders, tags, `CODEOWNERS`) but share infrastructure — see `docs/architecture/OWNERSHIP.md` for why a physical split wasn't justified at this system's current size.
 
 ---
 

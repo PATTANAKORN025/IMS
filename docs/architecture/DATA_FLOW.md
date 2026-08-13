@@ -23,7 +23,7 @@ flowchart TB
         ALMSIM["ldi_alarm_simulator.json\n10s tick"] --> ALOG[("ldi_alarm_log")]
     end
 
-    SYS --> GRAFANA["Grafana\n11 dashboards\n(Infrastructure / Manufacturing folders)"]
+    SYS --> GRAFANA["Grafana\n12 dashboards\n(Infrastructure / Manufacturing folders)"]
     NET --> GRAFANA
     LDID --> GRAFANA
     ALOG --> GRAFANA

@@ -42,7 +42,7 @@
 |---|---|---|
 | **Real-time SNMP Polling** | ทุก 30 วินาที อัตโนมัติ 100% | Zero manual effort |
 | **AIOps Z-Score Alerting** | ตรวจจับ 3σ anomaly ก่อนเครื่องเสีย | Proactive maintenance |
-| **10 Dashboards** | 4 infrastructure (NOC, Engineering Drill-Down, Capacity, Meta-Monitoring) + 6 manufacturing (LDI Andon, Manufacturing, Engineering Analytics, Machine Snapshot, Data Readiness, Fleet Overview) | Full visibility across both infrastructure and the manufacturing line itself |
+| **12 Dashboards** | 4 infrastructure (NOC, Engineering Drill-Down, Capacity, Meta-Monitoring) + 8 manufacturing (Easy Overview, Alarm Console, Alarm Dictionary, Engineering Analytics, Machine Snapshot, Manufacturing, Operator Andon, Data Readiness) | Full visibility across both infrastructure and the manufacturing line itself |
 | **LINE/Teams Webhooks** | Alert formatting and delivery-attempt logic is complete and correct; real delivery requires operator-configured credentials (`LINE_CHANNEL_ACCESS_TOKEN`, `TEAMS_WEBHOOK_URL`) not shipped in this repo | Faster response once configured |
 | **Predictive Analytics** | Linear regression forecasting | Prevent failures |
 
@@ -88,7 +88,7 @@ ROI: 2,750% (Year 1)
 | **Docker Stack** | 10 containers, fully orchestrated |
 | **Telemetry Schema** | Two independent pipelines — infrastructure (`sys_metrics`/`net_metrics`/`ldi_metrics`) and LDI manufacturing (`ldi_data`, 34 columns: PE1-6, JE1-4, thickness, scan_speed, resist_dosage, and more) — see `docs/architecture/DATABASE_SCHEMA.md` |
 | **Alert Rules** | 30 rules: 6 LDI-specific + 11 infrastructure (Grafana native), 13 pipeline/platform meta-monitoring rules (Prometheus/Alertmanager) |
-| **Dashboards** | 11 dashboards (4 infrastructure + 7 manufacturing) |
+| **Dashboards** | 12 dashboards (4 infrastructure + 8 manufacturing) |
 | **Load Test** | Up to 1,000 VUs (`chaos-stress.js`, deliberate 5% fault injection, >90% success threshold); `pipeline-stress.js` targets >95% success — not a 0%-failure guarantee, a defined acceptable-failure budget |
 | **CI/CD** | GitHub Actions with security scanning (Gitleaks) |
 | **Documentation** | 40+ documents across architecture, operations, user/admin manuals, and enterprise guides |
