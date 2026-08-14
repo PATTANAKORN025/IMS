@@ -11,7 +11,7 @@
 > (`node scripts/generate-dashboard-inventory.js --check`) fails the build
 > if this file doesn't match what the dashboards currently say.
 >
-> Last generated: 2026-08-14 | Total dashboards: 13 | Total panels: 164
+> Last generated: 2026-08-14 | Total dashboards: 13 | Total panels: 165
 
 ## Infrastructure (5)
 
@@ -19,7 +19,7 @@
 |---|---|---|---|
 | `ims-capacity` | IMS AIOps & Capacity Forecast | 16 | Days-until-full/saturation forecasts for CPU, RAM, and disk via 30-day linear regression, plus Z-Score (>3sigma) anomaly detection. Infrastructure-focused. |
 | `ims-engineering` | IMS Engineering Drill-Down | 25 | Per-server deep dive: CPU/RAM/disk/temperature/network gauges and timeseries for a selected machine, plus legacy-pipeline LDI throughput/quality and Z-Score anomaly panels. |
-| `ims-ingestion-latency` | IMS Ingestion Latency | 12 | Read-only. Real source_ts -> ingest_ts latency evidence from migration 081's ingest_ts columns -- no simulated data, no interactive write actions. Companion to tests/e2e/ingestion-latency-check.js. |
+| `ims-ingestion-latency` | IMS Ingestion Latency | 13 | Read-only. Real source_ts -> ingest_ts latency evidence from migration 081's ingest_ts columns -- no simulated data, no interactive write actions. Companion to tests/e2e/ingestion-latency-check.js. |
 | `ims-meta-monitoring` | IMS Pipeline Health & Meta-Monitoring | 16 | The ingestion pipeline's own health: rows/sec insert rate, batch success rate, retry queue depth, circuit breaker state, and device poll rates. Watches the pipeline, not the fleet it monitors. |
 | `ims-noc-overview` | IMS NOC Overview | 7 | Infrastructure-only (servers) -- LDI process/quality metrics live on the Manufacturing and Machine Snapshot dashboards. |
 
