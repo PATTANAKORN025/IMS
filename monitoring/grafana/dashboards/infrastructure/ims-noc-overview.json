@@ -106,7 +106,7 @@
       "gridPos": {
         "x": 0,
         "y": 1,
-        "w": 19,
+        "w": 24,
         "h": 3
       },
       "options": {
@@ -115,42 +115,6 @@
       },
       "datasource": null,
       "description": "OS Taskbar navigation and CSS theme.",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        }
-      }
-    },
-    {
-      "id": 999,
-      "type": "grafana-clock-panel",
-      "title": "",
-      "gridPos": {
-        "x": 19,
-        "y": 1,
-        "w": 5,
-        "h": 3
-      },
-      "options": {
-        "mode": "clock",
-        "clockType": "24hour",
-        "pendulum": false,
-        "showDate": true,
-        "dateSettings": {
-          "dateFormat": "YYYY-MM-DD",
-          "locale": "en",
-          "timeZone": "UTC"
-        },
-        "timeSettings": {
-          "showSeconds": true,
-          "showHour": true,
-          "showMinutes": true,
-          "timeFormat": "24"
-        },
-        "timezone": "UTC",
-        "bgColor": "transparent"
-      },
-      "description": "Current time and date (UTC).",
       "fieldConfig": {
         "defaults": {
           "custom": {}
