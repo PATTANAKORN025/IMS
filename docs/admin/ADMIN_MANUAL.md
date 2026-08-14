@@ -1,7 +1,7 @@
 # ️ System Administration & SRE Guide
 
-> **คู่มือสำหรับทีม IT (MIS-G) ในการดูแลระบบ IMS**
-> ครอบคลุม Docker management, device registration, alert management, troubleshooting
+> **Administration Manual for the IT Team (MIS-G) for IMS Maintenance**
+> Covers Docker management, device registration, alert management, and troubleshooting.
 
 ---
 
@@ -30,7 +30,7 @@
 
 ### Container Overview
 
-ระบบทำงานบน Docker Compose ทั้งหมด 12 services (11 long-running + 1 one-shot migration runner ที่ทำงานเสร็จแล้ว exit):
+The system operates entirely on Docker Compose, comprising a total of 12 services (11 long-running services and 1 one-shot migration runner that exits upon completion):
 
 | Container              | Service                | Port                        | Purpose                                                                                                                                           |
 | ---------------------- | ---------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -52,19 +52,19 @@
 ### Common Operations
 
 ```bash
-# ตรวจสอบสถานะทั้งหมด
+# Check the status of all containers
 docker compose ps
 
-# เริ่มต้นระบบทั้งหมด
+# Start all systems
 docker compose up -d
 
-# ปิดระบบทั้งหมด
+# Shut down all systems
 docker compose down
 
-# Clean Restart (ทำลายข้อมูลทั้งหมด เริ่มใหม่)
+# Clean Restart (Destroy all data and restart from scratch)
 docker compose down -v && docker compose up -d
 
-# Restart เฉพาะ service ที่มีปัญหา
+# Restart a specific service experiencing issues
 docker compose restart node-red
 docker compose restart pgbouncer
 docker compose restart grafana
@@ -72,17 +72,17 @@ docker compose restart proxy
 docker compose restart alarm-api
 docker compose restart prometheus alertmanager
 
-# ดู Real-time Log (Last 50 lines)
+# View real-time logs (Last 50 lines)
 docker compose logs -f --tail 50 node-red
 docker compose logs -f --tail 50 pgbouncer
 
-# ตรวจสอบ Resource Usage
+# Monitor resource utilization
 docker stats --no-stream
 ```
 
 > [!NOTE]
 >
-> > หลัง `docker compose down -v` ต้องรอ 40 วินาทีให้ระบบทั้งหมด startup ก่อนตรวจสอบ
+> > Following a `docker compose down -v`, a 40-second waiting period is required to allow all systems to start up completely prior to inspection.
 
 ### Service Health Checks
 
@@ -187,18 +187,18 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/dashboards
 
 ### Step 1: Register in Database
 
-`public.devices` มี `device_type` แยก `'server'` (SNMP-monitored infra, ค่า default) กับ `'ldi'` (LDI manufacturing machine) -- อย่าลืมระบุให้ถูก มิฉะนั้นจะกลายเป็น `'server'` โดยไม่ตั้งใจ และเครื่องจะไม่ขึ้นใน LDI dashboards ใดๆ เลย:
+The `public.devices` table categorizes `device_type` strictly between `'server'` (SNMP-monitored infrastructure, which is the default) and `'ldi'` (LDI manufacturing machine). Ensure the appropriate type is specified; otherwise, it will default to `'server'` and will subsequently fail to appear on any LDI dashboards:
 
 ```sql
--- เพิ่ม infra server ใหม่ (SNMP-polled)
+-- Add a new infrastructure server (SNMP-polled)
 INSERT INTO public.devices (device_id, hostname, ip_address, device_type, snmp_community, snmp_port, enabled)
 VALUES ('NEW-MACHINE-01', '192.168.1.100', '192.168.1.100', 'server', 'public', 161, true);
 
--- เพิ่ม LDI machine ใหม่ (ไม่ผ่าน SNMP -- ป้อนข้อมูลผ่าน ldi_ingestion.json / simulator)
+-- Add a new LDI machine (Bypasses SNMP — data is inputted via ldi_ingestion.json / simulator)
 INSERT INTO public.devices (device_id, hostname, ip_address, device_type, enabled)
 VALUES ('LDI-11', 'LDI-11', '', 'ldi', true);
 
--- ตรวจสอบ
+-- Verification
 SELECT device_id, hostname, device_type, snmp_community, enabled FROM public.devices WHERE device_id IN ('NEW-MACHINE-01', 'LDI-11');
 ```
 
@@ -220,10 +220,10 @@ session.get(['1.3.6.1.2.1.1.1.0'], (err, varbinds) => {
 ### Step 3: Verify Data Flow
 
 ```bash
-# รอ 30 วินาทีให้ poll cycle ทำงาน
+# Wait 30 seconds for the poll cycle to execute
 sleep 30
 
-# ตรวจสอบข้อมูล
+# Verify data ingestion
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
  "SELECT device_id, COUNT(*) as rows, MAX(s.time) as latest
  FROM public.sys_metrics s
@@ -233,12 +233,12 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c \
 
 ### Step 4: Add Dashboard Panel (Optional)
 
-ถ้าต้องการ dashboard เฉพาะสำหรับเครื่องใหม่:
+If a dedicated dashboard is required for the new machine:
 
-1. เปิด Grafana → Dashboard → Edit
-2. เพิ่ม panel ใหม่
-3. ใช้ query: `SELECT time, cpu_load_percent FROM public.sys_metrics WHERE device_id IN (\${machine_id:sqlstring}) ORDER BY time DESC`
-4. บันทึก dashboard
+1. Open Grafana → Dashboard → Edit
+2. Add a new panel
+3. Use the query: `SELECT time, cpu_load_percent FROM public.sys_metrics WHERE device_id IN (\${machine_id:sqlstring}) ORDER BY time DESC`
+4. Save the dashboard
 
 ---
 
@@ -246,15 +246,15 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c \
 
 ### Alert Rules Location
 
-ไฟล์: `monitoring/prometheus/rules/ims-alerts.yml`
+File: `monitoring/prometheus/rules/ims-alerts.yml`
 
 ### Editing Alert Rules
 
-**ตัวอย่าง: แก้ไข Threshold ของ High CPU Load:**
+**Example: Modifying the High CPU Load Threshold:**
 
 ```yaml
 - alert: HighCpuLoad
- # เปลี่ยนจาก 80% เป็น 85%
+ # Change from 80% to 85%
  expr: avg_over_time(cpu_load_percent[5m]) > 85
  for: 5m
  labels:
@@ -264,7 +264,7 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c \
  description: "CPU load {{ $value }}% exceeds threshold 85%"
 ```
 
-**ตัวอย่าง: เพิ่ม Alert ใหม่สำหรับ LDI Vibration:**
+**Example: Adding a New Alert for LDI Vibration:**
 
 ```yaml
 - alert: LDI_Vibration_Critical
@@ -280,21 +280,21 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c \
 ### Reload Configuration
 
 ```bash
-# หลังแก้ไข alert rules ต้อง reload
+# Following modifications to alert rules, a reload is mandatory
 curl -X POST http://localhost:9090/-/reload
 
-# ตรวจสอบ syntax
+# Verify syntax
 docker compose exec prometheus promtool check rules /etc/prometheus/rules/ims-alerts.yml
 ```
 
 ### Inhibition Rules
 
-ระบบมี Inhibition Rules อัตโนมัติ:
+The system implements automated Inhibition Rules:
 
 | Source Alert               | Suppressed Alerts | Scope                    |
 | -------------------------- | ----------------- | ------------------------ |
-| `InterfaceDown` (critical) | Warning ทั้งหมด   | Same machine             |
-| `ServiceDown` (critical)   | Warning ทั้งหมด   | Same machine             |
+| `InterfaceDown` (critical) | All Warnings      | Same machine             |
+| `ServiceDown` (critical)   | All Warnings      | Same machine             |
 | `NodeREDDown`              | `TelemetryGap`    | Global                   |
 | `Critical`                 | `Warning`, `Info` | Same alertname + machine |
 
@@ -304,14 +304,14 @@ docker compose exec prometheus promtool check rules /etc/prometheus/rules/ims-al
 
 ### Common Issues & Solutions
 
-| ปัญหา                            | สาเหตุ                                | วิธีแก้                                                        |
-| -------------------------------- | ------------------------------------- | -------------------------------------------------------------- |
-| Grafana แสดง "No Data"           | PgBouncer connection เต็ม หรือ DB ล่ม | `docker restart ims-pgbouncer` + เช็ค disk space               |
-| Alert ไม่ส่งไป LINE/Teams        | Alertmanager Webhook ขาด              | เช็ค Node-RED log ที่ `POST/alert-webhook` node                |
-| กราฟ Bandwidth กระโดดเป็น Tbps   | 32-bit Counter Wrap                   | Parser จัดการแล้ว แต่ถ้ายังเจอ เช็คว่าอุปกรณ์รองรับ 64-bit HC  |
-| Node-RED ไม่เริ่มทำงาน           | Syntax Error ใน Flow JSON             | เช็ค log: `docker compose logs --tail=50 node-red`             |
-| Continuous Aggregate ไม่มีข้อมูล | ต้อง refresh ด้วยมือ                  | `CALL refresh_continuous_aggregate('sys_hourly', NULL, NULL);` |
-| Container ไม่ขึ้น "Restarting"   | Config ผิด หรือ port ชน               | เช็ค log ของ container นั้นๆ                                   |
+| Issue                               | Root Cause                                 | Resolution                                                              |
+| ----------------------------------- | ------------------------------------------ | ----------------------------------------------------------------------- |
+| Grafana displays "No Data"          | PgBouncer connections saturated or DB down | Execute `docker restart ims-pgbouncer` and check disk space             |
+| Alerts not dispatched to LINE/Teams | Alertmanager Webhook missing               | Review Node-RED logs at the `POST/alert-webhook` node                   |
+| Bandwidth graphs spike to Tbps      | 32-bit Counter Wrap                        | Handled by parser, but if encountered, ensure device supports 64-bit HC |
+| Node-RED fails to start             | Syntax Error in Flow JSON                  | Review logs: `docker compose logs --tail=50 node-red`                   |
+| Continuous Aggregate lacks data     | Manual refresh required                    | Execute `CALL refresh_continuous_aggregate('sys_hourly', NULL, NULL);`  |
+| Container stuck in "Restarting"     | Configuration mismatch or port conflict    | Check the logs for the specific container                               |
 
 ### SRE Verification Protocol
 
@@ -319,29 +319,29 @@ docker compose exec prometheus promtool check rules /etc/prometheus/rules/ims-al
 # 1. Clean Restart
 docker compose down -v && docker compose up -d
 
-# 2. รอ 40 วินาที
+# 2. Wait 40 seconds
 sleep 40
 
-# 3. ตรวจสอบ containers (11 long-running + ims-db-migrate ที่ควร Exited (0))
+# 3. Verify containers (11 long-running + ims-db-migrate which should be Exited (0))
 docker compose ps
 
-# 4. ตรวจสอบข้อมูลไหล
+# 4. Verify data flow
 docker compose exec timescaledb psql -U ims_admin -d ims -c "
 SELECT device_id, COUNT(*) as rows, MAX(s.time) as latest
 FROM public.sys_metrics s JOIN public.devices d ON d.device_id = s.device_id
 WHERE s.time > NOW() - INTERVAL '5 minutes'
 GROUP BY device_id;"
 
-# 5. ตรวจสอบ Continuous Aggregates
+# 5. Verify Continuous Aggregates
 docker compose exec timescaledb psql -U ims_admin -d ims -c "
 SELECT bucket, avg_cpu, max_temp
 FROM public.sys_hourly
 ORDER BY bucket DESC LIMIT 4;"
 
-# 6. ตรวจสอบ Grafana
+# 6. Verify Grafana
 curl -sf http://localhost:3000/api/health
 
-# 7. ตรวจสอบ Prometheus Targets
+# 7. Verify Prometheus Targets
 curl -sf http://localhost:9090/api/v1/targets | python3 -c "
 import sys, json
 data = json.load(sys.stdin)
@@ -358,10 +358,10 @@ print(f'Prometheus: {ups}/{total} targets UP')
 ### Database Backup
 
 ```bash
-# Backup ทั้ง database
+# Perform a full database backup
 docker compose exec timescaledb pg_dump -U ims_admin ims > backup_$(date +%Y%m%d).sql
 
-# Restore
+# Restore from backup
 cat backup_20260627.sql | docker compose exec -T timescaledb psql -U ims_admin -d ims
 
 # Automated backup (cron)
@@ -371,9 +371,9 @@ cat backup_20260627.sql | docker compose exec -T timescaledb psql -U ims_admin -
 ### Flow Backup
 
 ```bash
-# nodered_data/flows/*.json คือ source of truth ที่ git ดูแลอยู่แล้ว
+# nodered_data/flows/*.json is the source of truth maintained by git
 # (built into nodered_data/flows.json by scripts/build-flows.js -- don't hand-edit flows.json)
-# สำรอง nodered_data/flows.json (runtime copy)
+# Backup nodered_data/flows.json (runtime copy)
 cp nodered_data/flows.json nodered_data/flows.json.bak
 
 # Restore from backup

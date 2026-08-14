@@ -1,9 +1,9 @@
 # Business Value & ROI Analysis
 
-> **เอกสารสรุปผลกระทบทางธุรกิจสำหรับผู้บริหาร**
-> โครงการ IMS — APEX Circuit
+> **Executive Business Impact Summary**
+> IMS Project — APEX Circuit
 >
-> **Corrected 2026-08-10:** the technical figures below (dashboard count, container count, alert rule count, load-test results, documentation count) have been updated to match the current system — the original figures were written before the LDI manufacturing dashboard suite existed and significantly undersold the platform as a result. The financial/ROI figures (staff hours, ฿ savings, payback period) are the original business inputs from this report's authors and are outside what this documentation pass can independently verify — treat them as the original business case, not re-audited numbers.
+> **Corrected 2026-08-10:** the technical figures below (dashboard count, container count, alert rule count, load-test results, documentation count) have been updated to match the current system — the original figures were written before the LDI manufacturing dashboard suite existed and significantly undersold the platform as a result. The financial/ROI figures (staff hours, THB savings, payback period) are the original business inputs from this report's authors and are outside what this documentation pass can independently verify — treat them as the original business case, not re-audited numbers.
 
 ---
 
@@ -19,29 +19,29 @@
 
 ## 1. Executive Summary
 
-**IMS** คือการเปลี่ยนผ่านจากระบบ **Manual Monitoring** สู่ **Real-time Automated Monitoring with AIOps** สำหรับเครื่องจักร YSPhotec / LDI ในสายการผลิต PCB
+**IMS** represents the transition from a **Manual Monitoring** system to **Real-time Automated Monitoring with AIOps** for YSPhotec / LDI machinery on the PCB production line.
 
-ระบบใช้สถาปัตยกรรม **Open-Source Stack** ที่ผ่าน Load Testing ระดับ **1,000 VUs** แบบ Zero Data Loss
+The system leverages an **Open-Source Stack** architecture that has passed Load Testing at **1,000 VUs** with Zero Data Loss.
 
 ---
 
 ## 2. Problem → Solution Matrix
 
-### Before (ปัญหาเดิม)
+### Before (Legacy Problems)
 
 | Problem                     | Impact                      | Daily Cost                     |
 | --------------------------- | --------------------------- | ------------------------------ |
-| **No Real-time Visibility** | ต้องเดินดูหน้าปัดเอง        | 2 staff × 4 rounds = 8 hrs/day |
-| **Slow Downtime Detection** | 2-4 hours to detect failure | ของเสียสะสม                    |
-| **Manual Data Entry**       | Human error ~15%            | ไม่สามารถ trend ได้            |
-| **Reactive Maintenance**    | รอของเสียก่อนค่อยซ่อม       | Unplanned downtime             |
+| **No Real-time Visibility** | Requires walking rounds to check physical gauges | 2 staff × 4 rounds = 8 hrs/day |
+| **Slow Downtime Detection** | 2-4 hours to detect failure | Accumulated defective yields   |
+| **Manual Data Entry**       | Human error ~15%            | Impossible to track trends     |
+| **Reactive Maintenance**    | Waiting for defects before repairing | Unplanned downtime             |
 
-### ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) After (วิธีแก้ปัญหา)
+### ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) After (Solutions)
 
 | Solution                         | Result                                                                                                                                                                                                                                                  | Impact                                                                       |
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| **Real-time SNMP Polling**       | ทุก 30 วินาที อัตโนมัติ 100%                                                                                                                                                                                                                            | Zero manual effort                                                           |
-| **Z-Score Statistical Alerting** | ตรวจจับ 3σ anomaly ก่อนเครื่องเสีย                                                                                                                                                                                                                      | Proactive maintenance                                                        |
+| **Real-time SNMP Polling**       | Every 30 seconds, 100% automated                                                                                                                                                                                                                        | Zero manual effort                                                           |
+| **Z-Score Statistical Alerting** | Detects 3σ anomalies before machine failure                                                                                                                                                                                                             | Proactive maintenance                                                        |
 | **13 Dashboards**                | 5 infrastructure (NOC, Engineering Drill-Down, Capacity, Meta-Monitoring, Ingestion Latency) + 8 manufacturing (Easy Overview, Alarm Console, Alarm Dictionary, Engineering Analytics, Machine Snapshot, Manufacturing, Operator Andon, Data Readiness) | Full visibility across both infrastructure and the manufacturing line itself |
 | **LINE/Teams Webhooks**          | Alert formatting and delivery-attempt logic is complete and correct; real delivery requires operator-configured credentials (`LINE_CHANNEL_ACCESS_TOKEN`, `TEAMS_WEBHOOK_URL`) not shipped in this repo                                                 | Faster response once configured                                              |
 | **Predictive Analytics**         | Linear regression forecasting                                                                                                                                                                                                                           | Prevent failures                                                             |
@@ -65,16 +65,16 @@
 
 | Category                 | Before                      | After            | Savings/Year   |
 | ------------------------ | --------------------------- | ---------------- | -------------- |
-| **License Fees**         | ฿3,000,000-10,000,000       | ฿0 (Open-Source) | **฿3-10M**     |
-| **Manual Labor**         | ฿730,000 (2,920 hrs × ฿250) | ฿0               | **฿730K**      |
-| **Downtime Cost**        | ฿500,000/incident × N       | Near zero        | **฿2-5M**      |
-| **Total Annual Savings** |                             |                  | **฿5.7-15.7M** |
+| **License Fees**         | THB 3,000,000-10,000,000       | THB 0 (Open-Source) | **THB 3-10M**     |
+| **Manual Labor**         | THB 730,000 (2,920 hrs × THB 250) | THB 0               | **THB 730K**      |
+| **Downtime Cost**        | THB 500,000/incident × N       | Near zero        | **THB 2-5M**      |
+| **Total Annual Savings** |                             |                  | **THB 5.7-15.7M** |
 
 ### Payback Period
 
 ```text
-Initial Investment: ~฿200,000 (intern labor + compute)
-Annual Savings: ~฿5,700,000 (conservative)
+Initial Investment: ~THB 200,000 (intern labor + compute)
+Annual Savings: ~THB 5,700,000 (conservative)
 Payback Period: < 1 month
 ROI: 2,750% (Year 1)
 ```
@@ -112,7 +112,7 @@ ROI: 2,750% (Year 1)
 
 ### Value of Trained Personnel
 
-> นักศึกษาฝึกงานได้เรียนรู้ **กระบวนการพัฒนาซอฟต์แวร์ทางวิศวกรรมเต็มรูปแบบ** ตั้งแต่ Architecture → Development → Testing → Deployment → Monitoring
+> Interns learned the **complete software engineering development lifecycle**, spanning Architecture → Development → Testing → Deployment → Monitoring.
 
 ---
 
@@ -120,10 +120,10 @@ ROI: 2,750% (Year 1)
 
 | Dimension       | Value                               |
 | --------------- | ----------------------------------- |
-| **Operational** | ลด MTTR จาก 2 ชั่วโมง เหลือ 15 นาที |
-| **Financial**   | ประหยัด ฿5.7-15.7M ต่อปี            |
-| **Knowledge**   | สร้าง documentation suite ครบถ้วน   |
-| **Scalability** | รองรับ 1-1,000+ machines            |
+| **Operational** | Reduced MTTR from 2 hours to 15 minutes |
+| **Financial**   | Saves THB 5.7-15.7M annually           |
+| **Knowledge**   | Established a comprehensive documentation suite |
+| **Scalability** | Supports 1-1,000+ machines          |
 | **Compliance**  | Audit trail, SLA reporting ready    |
 
 ---

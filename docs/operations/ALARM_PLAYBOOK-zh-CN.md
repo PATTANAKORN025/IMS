@@ -75,7 +75,7 @@
 | `PrometheusDown` / `AlertmanagerDown` / `TargetDown` / `HighScrapeErrors` | 监控堆栈自身的组件不健康。                                                                          | 执行 `docker ps` 检查受影响的容器；见 `INCIDENT_RESPONSE.md`。                                                 |
 | `ServiceDown` / `ServiceHighLatency` / `SLABreachWarning`                 | 针对监控端点（例如 Grafana 的 `/api/health`）的 blackbox-exporter 探针失败。                        | 直接检查目标服务；注意，这可能是故意重建容器的瞬时假象——见 `DR_TEST_PLAN.md` 演练 2 寻找真实示例。             |
 | `SSLCertExpiring`                                                         | 监控端点的 TLS 证书即将过期。                                                                       | 在过期前续期。                                                                                                 |
-| `Watchdog`                                                                | 持续触发的心跳，确认 Alertmanager 的路由工作正常——**并非** 真实事故。在扫描实际触发的警报时排除它。 |
+| `Watchdog`                                                                | 持续触发的心跳，确认 Alertmanager 的路由工作正常——**并非** 真实事故。在扫描实际触发的警报时排除它。 | 不适用 - 正常工作 |
 | `PipelineDataStalled` / `PipelineDataDegraded` / `PipelineHighErrorRate`  | Node-RED 摄取管道健康状况——遥测数据流停滞/降级/错误率高。                                           | `Meta-Monitoring` 仪表板；检查 `ims-node-red` 日志寻找特定的故障特征（见 `INCIDENT_RESPONSE.md` 的工作示例）。 |
 | `CircuitBreakerOpen`                                                      | 设备的 SNMP 断路器跳闸（多次失败后由 CLOSED 变为 OPEN）。                                           | 检查特定设备的连通性；断路器在冷却后自动复位为 HALF_OPEN。                                                     |
 

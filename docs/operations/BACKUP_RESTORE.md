@@ -12,7 +12,7 @@
 docker exec ims-timescaledb pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" > backup.sql
 ```
 
-A plain `pg_dump` against the live database. **Real measured performance** (2026-08-10, ~52,800 `ldi_data` rows + ~1,025 `devices` + ~10,400 `ldi_alarm_log` rows): **1 second, 22.3 MB**. `pg_dump` emits a warning about circular foreign-key constraints on `continuous_agg` — expected and harmless for this stack (TimescaleDB's own catalog tables), not a sign of a corrupted dump.
+An uncompressed `pg_dump` snapshot extracted from the production database. **Real measured performance** (2026-08-10, ~52,800 `ldi_data` rows + ~1,025 `devices` + ~10,400 `ldi_alarm_log` rows): **1 second, 22.3 MB**. `pg_dump` emits a warning about circular foreign-key constraints on `continuous_agg` — expected and harmless for this stack (TimescaleDB's own catalog tables), not a sign of a corrupted dump.
 
 ## Restore procedure
 
@@ -25,13 +25,13 @@ docker exec -i ims-timescaledb psql -U "$POSTGRES_USER" -d ims_dr_test < backup.
 
 ## Verification: row-count bracketing, not exact equality
 
-This is a **live-ingesting system** — the simulator writes continuously. A naive "restored count == live count" check will produce a false failure, because a few rows land between when the dump snapshot was taken and when you check. `scripts/dr-test.sh` handles this correctly: it captures row counts _before_ and _after_ the dump, then verifies the restored count falls inside that bracket (inclusive) rather than expecting exact equality. This was a real bug caught during this system's own DR testing — the first drill run produced a false FAIL because the script checked live counts only after the dump completed.
+This is a **live-ingesting system** — the simulator writes continuously. A simplistic "restored count == live count" check will produce a false negative validationure, because a few rows land between when the database snapshot was taken and when you check. `scripts/dr-test.sh` handles this correctly: it captures row counts _before_ and _after_ the snapshot, then verifies the restored count falls inside that bracket (inclusive) rather than expecting exact equality. This was a real bug caught during this system's own DR testing — the first drill run produced a false negative validation because the script checked live counts only after the snapshot completed.
 
 ```bash
 ./scripts/dr-test.sh backup-restore
 ```
 
-Runs the full drill end-to-end: dump, bracket the live count, restore into a throwaway `ims_dr_test` database (**never touches the live database**), verify, then drop the throwaway database. Real result, 2026-08-10: **PASS** — `devices=1025 ldi_data=52795→52796 (bracket) alarm_log=10405`, restored count `52795` fell inside the bracket.
+Runs the full drill end-to-end: dump, bracket the live count, restore into a ephemeral `ims_dr_test` validation database (**never touches the live database**), verify, then drop the throwaway database. Real result, 2026-08-10: **PASS** — `devices=1025 ldi_data=52795→52796 (bracket) alarm_log=10405`, restored count `52795` fell inside the bracket.
 
 ## What backup/restore does _not_ cover
 

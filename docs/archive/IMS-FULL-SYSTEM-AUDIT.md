@@ -2,45 +2,45 @@
 
 > **ARCHIVED — historical snapshot, dated 2026-08-05.** Not living documentation; numbers below (dashboard counts, migration counts, panel counts, etc.) reflect the system as it existed on that date and are known to be stale relative to the current system. Kept for historical record per docs/archive/README.md. For current information, see docs/architecture/ARCHITECTURE.md and docs/architecture/DASHBOARD_INVENTORY.md.
 
-### หลักฐานจากการตรวจ dashboard จริง 8 หน้า · 2026-08-05
+### Evidence from Live Dashboard Inspection of 8 Interfaces · 2026-08-05
 
 ---
 
-## วิธีการตรวจ (Methodology)
+## Methodology
 
-| ชั้น                        | วิธี                                  | ครอบคลุม                             |
+| Layer | Method | Coverage |
 | --------------------------- | ------------------------------------- | ------------------------------------ |
-| **A. Static**               | อ่านโค้ด SQL / JSON / flow            | 9 dashboards · 126 panels · 65 nodes |
-| **B. Automated**            | 19 unit tests · 12 linter checks      | schema, layout, alarm sync           |
-| **C. Visual (ชั้นนี้ใหม่)** | ตรวจ dashboard ที่ render จริง 8 หน้า | สิ่งที่ A และ B มองไม่เห็น           |
+| **A. Static** | Reviewing SQL / JSON / Flow code | 9 dashboards · 126 panels · 65 nodes |
+| **B. Automated** | 19 unit tests · 12 linter checks | Schema, layout, alarm synchronization |
+| **C. Visual (New Layer)** | Inspecting 8 live rendered dashboards | Elements undetected by Layers A and B |
 
-**ข้อค้นพบสำคัญเชิงวิธีการ:** ชั้น C พบข้อบกพร่อง **12 จุดที่ชั้น A และ B ผ่านหมด**
-เพราะ query ที่ syntax ถูกต้องและ schema ตรง ยังคืนค่า NULL หรือค่าที่ขัดแย้งกันได้
-→ **ระบบตรวจอัตโนมัติที่มีอยู่ยังขาดชั้น "ตรวจผลลัพธ์จริง"**
+**Key Methodological Finding:** Layer C identified **12 defects that completely bypassed Layers A and B**.
+This occurs because queries with correct syntax and matching schemas can still yield NULL values or contradictory data.
+→ **The existing automated testing system currently lacks a "live output validation" layer.**
 
 ---
 
-# P0 — ตัวเลขขัดแย้งกันเอง (ร้ายแรงที่สุด)
+# P0 — Contradictory Metrics (Most Critical)
 
-## P0-1 · Yield ของระบบเดียวกัน สองหน้าจอให้คำตอบต่างกัน 87 percentage points
+## P0-1 · Yield Metrics for the Same System Diverge by 87 Percentage Points Across Two Interfaces
 
-| Dashboard         | ตัวเลขที่แสดง                | สูตรที่ใช้จริง                            |
+| Dashboard | Displayed Value | Underlying Formula |
 | ----------------- | ---------------------------- | ----------------------------------------- |
-| **NOC Overview**  | **87.10%** (แดง — วิกฤต)     | `ABS(pe_1) > 10 OR ABS(je_1) > 10`        |
-| **Manufacturing** | **99.6%** (เขียว — ดีเยี่ยม) | `GREATEST(ABS(pe_1..pe_6)) <= pe_setting` |
+| **NOC Overview** | **87.10%** (Red — Critical) | `ABS(pe_1) > 10 OR ABS(je_1) > 10` |
+| **Manufacturing** | **99.6%** (Green — Excellent)| `GREATEST(ABS(pe_1..pe_6)) <= pe_setting` |
 
-**สาเหตุ — สูตรผิดกันคนละแบบ 3 จุด:**
+**Root Cause — Three Fundamental Discrepancies in Logic:**
 
-1. **NOC ใช้ threshold `10` ตายตัว** ขณะที่ค่าจริงของ `pe_setting` คือ **25 / 50 / 75** แล้วแต่ผลิตภัณฑ์
-   → NOC ตัดสินว่า "เสีย" ทั้งที่ยังอยู่ในสเปกจริง
-2. **NOC ดูแค่ `pe_1` และ `je_1`** ไม่ได้ดูทั้ง 6 จุด → ไม่ใช่ค่าที่ใช้ตัดสินคุณภาพจริง
-3. **NOC วัด "ความเสี่ยง" แต่ Manufacturing วัด "ผลผลิต"** — เป็นคนละนิยาม แต่ผู้อ่านเข้าใจว่าเรื่องเดียวกัน
+1. **NOC utilizes a hardcoded threshold of `10`**, whereas the actual `pe_setting` value is **25 / 50 / 75** depending on the product.
+   → The NOC inaccurately flags products as "defective" despite them conforming to actual specifications.
+2. **NOC solely evaluates `pe_1` and `je_1`**, ignoring the full set of 6 measurement points → This does not represent the metric utilized for actual quality determination.
+3. **NOC measures "Risk" while Manufacturing measures "Yield"** — These constitute distinct definitions, yet end-users interpret them as identical metrics.
 
-**ผลกระทบทางธุรกิจ:** ถ้าผู้บริหารเปิด NOC จะเห็นว่าโรงงานมีปัญหาคุณภาพ 87%
-ถ้าเปิด Manufacturing จะเห็นว่าดีเยี่ยม 99.6% — **ตัดสินใจผิดพลาดได้ทันที**
-และเมื่อพบว่าขัดแย้ง ความน่าเชื่อถือของ**ทั้งระบบ**จะหายไปพร้อมกัน
+**Business Impact:** If executives consult the NOC, they will perceive an 87% defect rate in manufacturing quality.
+If they consult the Manufacturing dashboard, they will perceive a 99.6% excellence rate — **This leads directly to flawed decision-making.**
+Furthermore, when the contradiction is discovered, the credibility of the **entire system** will be simultaneously compromised.
 
-**แก้:** ให้ NOC เรียกใช้ตรรกะเดียวกับ Manufacturing ผ่าน view กลาง
+**Resolution:** Enforce the NOC to query the identical logic utilized by Manufacturing via a centralized view.
 
 ```sql
 CREATE OR REPLACE VIEW public.v_ldi_yield_1h AS
@@ -52,48 +52,48 @@ FROM public.ldi_data
 WHERE "time" > NOW() - INTERVAL '1 hour' AND COALESCE(pe_setting,0) > 2.0;
 ```
 
-แล้วทั้งสอง dashboard query จาก view นี้ — **ตัวเลขจะตรงกันเสมอโดยโครงสร้าง ไม่ใช่โดยความบังเอิญ**
+Subsequently, both dashboards will query this centralized view — **The metrics will remain consistently synchronized by architectural design, rather than by coincidence.**
 
 ---
 
-# P0-2 · RCA Truth Test รายงานว่า "ไม่มีความสัมพันธ์" — และมันพูดถูก
+# P0-2 · RCA Truth Test Reports "No Correlation" — And It Is Correct
 
-หลักฐานจาก Engineering Analytics & SPC:
+Evidence from Engineering Analytics & SPC:
 
-| Alarm Category   | Alarm-Window % | Baseline % | **Lift** | Events | ผลตีความ          |
+| Alarm Category | Alarm-Window % | Baseline % | **Lift** | Events | Interpretation |
 | ---------------- | -------------- | ---------- | -------- | ------ | ----------------- |
-| ALIGNMENT/PE-JE  | 49.0%          | 44.8%      | **1.09** | 251    | แทบไม่ต่างจากสุ่ม |
-| VACUUM (91009)   | 96.8%          | 100.0%     | **0.97** | 95     | **ต่ำกว่า 1**     |
-| THERMAL (91008)  | 13.8%          | 16.6%      | **0.83** | 29     | ต่ำกว่า 1         |
-| HUMIDITY (91008) | 3.4%           | 9.9%       | **0.34** | 29     | ต่ำกว่ามาก        |
-| MOTION (70004)   | 0.0%           | 0.0%       | **0.00** | 19     | ไม่มีข้อมูล       |
+| ALIGNMENT/PE-JE | 49.0% | 44.8% | **1.09** | 251 | Statistically insignificant |
+| VACUUM (91009) | 96.8% | 100.0% | **0.97** | 95 | **Sub-1 ratio** |
+| THERMAL (91008) | 13.8% | 16.6% | **0.83** | 29 | Sub-1 ratio |
+| HUMIDITY (91008) | 3.4% | 9.9% | **0.34** | 29 | Significantly Sub-1 |
+| MOTION (70004) | 0.0% | 0.0% | **0.00** | 19 | Insufficient data |
 
-**การอ่านผล:** `Lift = 1` แปลว่าไม่มีความสัมพันธ์เลย · `Lift < 1` แปลว่าสัมพันธ์**กลับทาง**
+**Interpretation:** A `Lift = 1` indicates zero correlation. A `Lift < 1` indicates an **inverse** correlation.
 
-**นี่ไม่ใช่บั๊กของ RCA — RCA ทำงานถูกต้องและกำลังบอกความจริงที่สำคัญ:**
+**This is not an RCA bug — The RCA mechanism operates correctly and reveals a critical truth:**
 
-> ข้อมูลจำลองสร้าง alarm แบบสุ่มตามความถี่ **โดยไม่ผูกกับค่าพารามิเตอร์จริง**
-> ดังนั้น alarm "vacuum" จึงไม่ได้เกิดตอน `air_vacuum` ผิดปกติจริง
+> The mock data generator spawns alarms randomly based on frequency, **without binding them to actual parameter values.**
+> Consequently, the "vacuum" alarm is not triggered during genuine `air_vacuum` anomalies.
 
-**คุณค่าที่ได้:** RCA Truth Test พิสูจน์ตัวเองแล้วว่า**จับความสัมพันธ์ปลอมได้**
-ถ้ามันรายงาน Lift สูงบนข้อมูลที่ไม่มีความสัมพันธ์จริง แปลว่าเครื่องมือพัง — แต่มันไม่ทำ
+**Value Delivered:** The RCA Truth Test has successfully validated its capability to **detect false correlations**.
+If it reported a high Lift on data lacking actual correlation, the diagnostic tool itself would be flawed — but it performed correctly.
 
-**สิ่งที่ต้องทำ:** แก้ **simulator** ไม่ใช่แก้ RCA
+**Action Item:** Rectify the **simulator**, not the RCA logic.
 
 ```javascript
-// ldi_simulator.js — ให้ alarm เกิดจากค่าพารามิเตอร์จริง
+// ldi_simulator.js — Ensure alarms are triggered by actual parameter anomalies
 if (rec.air_vacuum > -10 && p.process === "DF INNER") emitAlarm("91009");
 if (maxPE > rec.pe_setting * 0.9) emitAlarm("90005");
 if (rec.temperature < 20 || rec.temperature > 24) emitAlarm("91008");
 ```
 
-หลังแก้ Lift ควรขึ้นไป **> 2** ถ้ายังไม่ขึ้น แปลว่ามีบั๊กจริงใน RCA ที่ต้องหา
+Post-modification, the Lift should surge to **> 2**. If it fails to do so, it indicates a genuine underlying bug within the RCA engine that requires investigation.
 
 ---
 
-# P1 — Panel ที่ไม่แสดงข้อมูล (นับได้ 15 จุด)
+# P1 — Panels Rendering Without Data (15 instances detected)
 
-## Engineering Drill-Down — เสียหายหนักที่สุด (10 panels)
+## Engineering Drill-Down — Most severely impacted (10 panels)
 
 ```text
 CPU Load · RAM Usage · Storage Saturation · Temperature      → "No data"
@@ -102,56 +102,55 @@ LDI Throughput · LDI Junction Efficiency · LDI Quality Scatter → "No data"
 CPU Anomaly Score · Temperature Anomaly Score → "Data does not have a time field"
 ```
 
-**สาเหตุที่ต่างกัน 2 กลุ่ม:**
+**Two Distinct Root Causes:**
 
-- **"No data"** — query ถูกต้องแต่ไม่มีแถวตรงเงื่อนไข (ตัวแปร Machine/Interface ยังไม่ถูกเลือก)
-- **"Data does not have a time field"** — query คืนผลลัพธ์แต่**ไม่มีคอลัมน์ `time`** ทั้งที่ panel เป็น timeseries → บั๊กจริงใน SQL
+- **"No data"** — The query is syntactically valid but yields zero rows matching the conditions (Machine/Interface variables remain unselected).
+- **"Data does not have a time field"** — The query returns results but **lacks a `time` column**, despite the panel being configured as a timeseries → Genuine SQL bug.
 
-## AIOps & Capacity Forecast — 3 ใน 4 KPI เสีย
+## AIOps & Capacity Forecast — 3 out of 4 KPIs failed
 
 ```text
 DISK: Days Until Full  → No data
 RAM:  Days Until Full  → No data
 CPU:  Days Until Saturation → No data
 Days Until Full (Resource Battery) → No data
-Fleet Health Score 91.30% →  ทำงาน
+Fleet Health Score 91.30% →  Operational
 ```
 
-## NOC Overview — ตัวเลขที่ไม่น่าเชื่อถือ
+## NOC Overview — Unreliable metrics
 
 ```text
-CPU Load (Fleet Envelope)  → 0.00% แบนราบทั้งเส้น   ← ไม่ควรเป็น 0
+CPU Load (Fleet Envelope)  → 0.00% completely flat trajectory   ← Should not be 0
 RAM Saturation             → "AWAITING TELEMETRY"
-Temperature Fleet Envelope → 65.0°C แบนราบ          ← เป็น temp ของ server ไม่ใช่ LDI
+Temperature Fleet Envelope → 65.0°C flat trajectory          ← Reflects server temp, not LDI
 ```
 
-## Operator Andon — 2 panels ว่างเปล่าสนิท
+## Operator Andon — 2 completely vacant panels
 
 ```text
-LIVE PRODUCTION            → ไม่มีเนื้อหาเลย
-PE/JE VS SPEC LIMIT        → ไม่มีเนื้อหาเลย
+LIVE PRODUCTION            → Completely devoid of content
+PE/JE VS SPEC LIMIT        → Completely devoid of content
 ```
 
-**กระทบมากเป็นพิเศษ** เพราะ Andon คือจอที่คนงานใช้จริงตลอดกะ และ 2 panel นี้
-คือส่วนที่บอกว่า "กำลังผลิตอะไรอยู่" กับ "คุณภาพงานเป็นยังไง"
+**Severe Operational Impact** as the Andon serves as the primary live interface for operators throughout their shift, and these two specific panels dictate "current production status" and "real-time quality metrics."
 
 ---
 
-# <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> P2 — คุณภาพข้อมูลที่ตรวจพบเอง
+# <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> P2 — Auto-Detected Data Quality Issues
 
-หลักฐานจาก LDI Data Readiness (dashboard นี้ทำงานได้ดีมาก):
+Evidence from LDI Data Readiness (this specific dashboard performs exceptionally well):
 
-## ปัญหาจริงที่ระบบตรวจเจอเอง
+## Genuine Issues Detected Autonomously by the System
 
-| ตัวชี้วัด                 | ค่า           | ประเมิน                                                                                                              |
+| Metric | Value | Assessment |
 | ------------------------- | ------------- | -------------------------------------------------------------------------------------------------------------------- |
-| Machine ID Match          | **100%**      | แก้จาก 20% เดิมได้แล้ว                                                                                               |
-| Alarm Master Match        | **100%**      | แก้จาก 0% เดิมได้แล้ว                                                                                                |
-| Telemetry Age / Alarm Age | 0.0 hour      | ข้อมูลสด                                                                                                             |
-| **Board ID Completeness** | **8.0%**      | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> ตรงกับข้อมูลจริงที่ NULL 100% |
-| **PE / JE4 Coverage**     | **45% / 45%** | ถูกต้อง (DF INNER ไม่วัด PE)                                                                                         |
+| Machine ID Match | **100%** | Successfully resolved from the previous 20% baseline |
+| Alarm Master Match | **100%** | Successfully resolved from the previous 0% baseline |
+| Telemetry Age / Alarm Age | 0.0 hour | Telemetry is live |
+| **Board ID Completeness** | **8.0%** | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Accurately reflects ground truth where data is 100% NULL |
+| **PE / JE4 Coverage** | **45% / 45%** | Correct (The DF INNER process does not measure PE) |
 
-## Duplicate Board Keys — พบเฉพาะ 2 เครื่อง
+## Duplicate Board Keys — Isolated exclusively to 2 machines
 
 ```text
 LDI-01:  43,667 rows → 43,510 unique → 157 duplicate board keys
@@ -159,117 +158,116 @@ LDI-04:  28,683 rows → 28,562 unique → 121 duplicate
 LDI-02,03,05..10:                        0 duplicate
 ```
 
-**น่าสงสัยมาก** — ถ้าเป็นบั๊กของ generator ควรเกิดทุกเครื่องเท่ากัน
-การที่เกิดเฉพาะ LDI-01 และ LDI-04 บ่งชี้ว่ามี logic บางอย่างต่างกัน
-(ทั้งคู่เป็น DF INNER แต่ LDI-02, LDI-03 ก็ DF INNER เหมือนกันและไม่มีปัญหา)
+**Highly Suspicious** — If this were a generator bug, it should manifest uniformly across all machines.
+The fact that it occurs exclusively on LDI-01 and LDI-04 implies a divergence in logic.
+(Both are DF INNER machines, yet LDI-02 and LDI-03 are also DF INNER and exhibit zero issues).
 
-**ต้องสืบ:** `UNIQUE INDEX idx_logid (log_id, time DESC)` ควรกันซ้ำได้อยู่แล้ว
-→ แปลว่าซ้ำที่ระดับ `(mo, board_no)` ไม่ใช่ `log_id` = **อาจเป็นการนับ board ซ้ำจริง**
+**Investigation Required:** The `UNIQUE INDEX idx_logid (log_id, time DESC)` should inherently prevent duplication.
+→ This implies the duplication resides at the `(mo, board_no)` level rather than `log_id` = **It may indicate physical dual-counting of boards.**
 
-## Inferred Sensor Capability — ระบบตั้งข้อสังเกตเอง
+## Inferred Sensor Capability — Autonomous System Observation
 
 ```text
 LDI-01..04:  Vacuum "CONSTANT - VERIFY"   Scan Speed "CONSTANT - VERIFY"
 LDI-05..10:  Vacuum "ALL ZERO - VERIFY"
 ```
 
-ระบบทำเครื่องหมายว่า "ค่าคงที่ตลอด — ควรตรวจสอบ" ซึ่ง**ถูกต้องตามข้อมูลจริง**
-(recipe setting เป็นค่าคงที่จริง ไม่ใช่ค่าที่วัดได้) — แต่ควรเปลี่ยนข้อความเป็น
-`"CONSTANT (recipe setting — expected)"` เพื่อไม่ให้เข้าใจผิดว่าเป็นปัญหา
+The system flags these as "Persistent constant values — investigation recommended", which is **accurate based on the raw data**
+(The recipe setting is intrinsically static, not dynamically measured). However, the messaging should be amended to
+`"CONSTANT (recipe setting — expected)"` to prevent misinterpretation as an anomaly.
 
-## LDI-03 / LDI-04 แสดงสถานะ "stale" ใน NOC
+## LDI-03 / LDI-04 Displaying "Stale" Status in NOC
 
-ขณะที่ Data Readiness บอกว่า Telemetry Age = 0.0 hour → **ขัดแย้งกัน**
-เป็นบั๊กของ NOC ที่ใช้ threshold ความสดต่างจาก Data Readiness
+While Data Readiness reports Telemetry Age = 0.0 hour → **Contradiction.**
+This stems from a NOC bug utilizing a disparate freshness threshold compared to Data Readiness.
 
 ---
 
-# <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> P3 — หน่วยและการแสดงผล
+# <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> P3 — Units and Formatting
 
 ```text
-"255.03 currency-thb"   ← ควรเป็น ฿255.03
-"574.00 currencyTHB"    ← ควรเป็น ฿574.00
-Donut legend: "value value value"  ← ไม่มีชื่อ series
+"255.03 currency-thb"   ← Requires formatting to ฿255.03
+"574.00 currencyTHB"    ← Requires formatting to ฿574.00
+Donut legend: "value value value"  ← Missing series nomenclature
 ```
 
-**ที่แก้ได้ดีแล้ว:** `µm`, `°C`, `%H`, `mm/s`, `kPa`, `mJ/cm²` แสดงถูกต้องทุกจุดใน
-Machine Snapshot และ Manufacturing — บั๊ก `lengthum` หายไปหมดแล้ว
+**Successfully Resolved Items:** `µm`, `°C`, `%H`, `mm/s`, `kPa`, `mJ/cm²` all render accurately across
+Machine Snapshot and Manufacturing interfaces — The `lengthum` bug has been comprehensively eliminated.
 
 ---
 
-# สิ่งที่ทำงานได้ดีจริง (อย่าแก้)
+# Highly Functional Components (Do Not Modify)
 
-| Dashboard             | สถานะ                                                                                             | หลักฐาน                                                                                            |
+| Dashboard | Status | Evidence |
 | --------------------- | ------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| **Machine Snapshot**  | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> สมบูรณ์    | ทุก panel มีข้อมูล · หน่วยถูกทุกตัว · PE/JE PASS · Cpk แยก PE/JE · Event timeline ระดับมิลลิวินาที |
-| **Manufacturing**     | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> ดีมาก      | KPI ครบ · ตารางมีข้อมูล · compliance เขียวเป็นหลัก · RCA summary ท้ายหน้า                          |
-| **Engineering & SPC** | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> ดี         | PE/JE 6+4 เส้นแยกได้ · histogram PE vs JE ซ้อนกัน · Cpk PE 1.253 / JE 2.710                        |
-| **Data Readiness**    | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> ดีเยี่ยม   | ตรวจเจอปัญหาจริง 3 อย่างด้วยตัวเอง                                                                 |
-| **Andon**             | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> ครึ่งเดียว | KPI + 10 machine tiles ทำงานดี · แต่ 2 panels ว่าง                                                 |
+| **Machine Snapshot** | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Perfect | All panels populated · Units 100% accurate · PE/JE PASS functioning · Cpk isolates PE/JE · Millisecond-precision event timeline |
+| **Manufacturing** | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Excellent | Full KPI coverage · Populated tabular data · Dominant green compliance indicators · Footer RCA summary |
+| **Engineering & SPC** | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Solid | 6+4 PE/JE trajectories successfully uncoupled · Overlaid PE vs JE histograms · Validated Cpk PE 1.253 / JE 2.710 |
+| **Data Readiness** | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Outstanding | Successfully identified 3 legitimate data anomalies autonomously |
+| **Andon** | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Partially Functional | KPIs + 10 machine tiles operate flawlessly · However, 2 panels remain unpopulated |
 
-**จุดที่น่าประทับใจที่สุด:** Machine Capability Ranking แสดง **Cpk (PE) 1.253 กับ Cpk (JE) 2.710
-แยกกันคนละคอลัมน์** พร้อม Worst Cpk และ Confidence — พิสูจน์ว่า JE Cpk ที่แยก base
-ออกจาก PE ทำงานได้จริงตามที่ออกแบบ
+**Most Impressive Achievement:** The Machine Capability Ranking displays **Cpk (PE) 1.253 and Cpk (JE) 2.710
+in isolated, dedicated columns** alongside Worst Cpk and Confidence intervals — Conclusively proving that the architectural decoupling of the JE base from PE operates flawlessly as designed.
 
 ---
 
-# แผนตรวจสอบต่อเนื่อง (Audit Framework)
+# Continuous Audit Framework
 
-## เพิ่ม Layer C เข้าระบบอัตโนมัติ — จุดที่ขาดที่สุด
+## Integrate Layer C into Automated Pipelines — The Most Critical Gap
 
-ระบบมี unit test + linter ครบแล้ว แต่**ไม่มีอะไรตรวจว่า panel คืนข้อมูลจริงหรือไม่**
+The system currently possesses comprehensive unit tests and linters, but **lacks any mechanism to validate that panels render actual payload data.**
 
 ```javascript
-// tests/e2e/panel-data-check.js  (ใหม่)
-// รัน query ของทุก panel จริงกับฐานข้อมูล แล้วตรวจว่าคืนแถว
+// tests/e2e/panel-data-check.js  (New)
+// Execute the actual SQL query for every panel against the database and verify row yields
 for (const panel of allPanels) {
   const rows = await pg.query(resolveMacros(panel.rawSql));
-  if (rows.length === 0) fail(`${dashboard}/${panel.title}: query คืน 0 แถว`);
+  if (rows.length === 0) fail(`${dashboard}/${panel.title}: query returned 0 rows`);
   if (panel.type === "timeseries" && !rows.fields.includes("time"))
-    fail(`${dashboard}/${panel.title}: timeseries ไม่มีคอลัมน์ time`);
+    fail(`${dashboard}/${panel.title}: timeseries lacks a 'time' column`);
 }
 ```
 
-**เกณฑ์ผ่าน:** ทุก panel คืน ≥1 แถว และ timeseries ทุกตัวมีคอลัมน์ `time`
-→ check นี้จะจับ 15 panel ที่เสียอยู่ตอนนี้ได้ทั้งหมดโดยอัตโนมัติ
+**Pass Criteria:** Every panel must yield ≥1 row, and every timeseries panel must contain a `time` column.
+→ This automated check will reliably catch the 15 currently malfunctioning panels without manual intervention.
 
-## เพิ่ม Cross-Dashboard Consistency Check
+## Implement Cross-Dashboard Consistency Verification
 
 ```sql
--- ตัวเลขชื่อเดียวกันบนหลาย dashboard ต้องมาจาก view เดียวกัน
--- ห้าม hardcode threshold ที่ควรมาจาก pe_setting/je_setting
+-- Identically named metrics across diverse dashboards must source from a unified view.
+-- Prohibit hardcoded thresholds that should inherently map to pe_setting/je_setting.
 ```
 
-**เกณฑ์ผ่าน:** ไม่มี query ไหนใช้ตัวเลข threshold ตายตัวสำหรับ PE/JE
-(ต้องอ้าง `pe_setting` / `je_setting` จากฐานข้อมูลเสมอ)
+**Pass Criteria:** Zero queries utilize hardcoded numerical thresholds for PE/JE metrics.
+(They must unconditionally reference `pe_setting` / `je_setting` from the database layer).
 
 ---
 
-# ลำดับลงมือ
+# Execution Priority Sequence
 
-| #   | งาน                                           | ความรุนแรง                                                                                | ผู้ได้ประโยชน์                           |
+| # | Task | Severity | Beneficiary |
 | --- | --------------------------------------------- | ----------------------------------------------------------------------------------------- | ---------------------------------------- |
-| 1   | **รวมสูตร Yield เป็น view เดียว**             | P0                                                                                        | ผู้บริหาร — เลิกเห็นตัวเลขขัดแย้ง        |
-| 2   | **แก้ simulator ให้ alarm ผูกกับพารามิเตอร์** | P0                                                                                        | Process Engineer — RCA ใช้พิสูจน์ได้จริง |
-| 3   | แก้ 2 panels ว่างใน Andon                     | P1                                                                                        | คนงานหน้าเครื่อง                         |
-| 4   | แก้ 15 panels "No data"                       | P1                                                                                        | ทุกฝ่าย                                  |
-| 5   | สืบ duplicate board keys (LDI-01/04)          | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> P2 | QA — ตัวเลขนับบอร์ดอาจผิด                |
-| 6   | เพิ่ม E2E panel-data check เข้า CI            | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> P2 | ทีมพัฒนา — กันเกิดซ้ำ                    |
-| 7   | แก้ currency unit + donut legend              | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> P3 | ความเรียบร้อย                            |
+| 1 | **Consolidate Yield Logic into a Centralized View** | P0 | Executives — Eradicates conflicting metrics |
+| 2 | **Bind Simulator Alarms to Parameter Anomalies** | P0 | Process Engineers — Enables RCA validation |
+| 3 | Resolve 2 unpopulated panels in Andon | P1 | Shop-floor Operators |
+| 4 | Resolve 15 "No data" panels | P1 | All Stakeholders |
+| 5 | Investigate duplicate board keys (LDI-01/04) | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> P2 | QA — Mitigates skewed board counts |
+| 6 | Integrate E2E panel-data verification into CI | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> P2 | Development Team — Prevents regression |
+| 7 | Rectify currency units + donut legend formatting | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> P3 | General interface polish |
 
 ---
 
-# สรุปสำหรับแต่ละฝ่าย
+# Stakeholder Executive Summaries
 
-**ผู้บริหาร:** ระบบใช้งานได้จริง 5 จาก 9 หน้า · มี 1 ปัญหาที่ต้องแก้ทันที
-คือตัวเลข Yield ขัดแย้งกัน 87% vs 99.6% ซึ่งกระทบการตัดสินใจโดยตรง
+**Executive Board:** The system is fully operational across 5 of 9 interfaces. However, 1 critical issue demands immediate resolution:
+A severe contradiction in Yield reporting (87% vs 99.6%) that directly undermines strategic decision-making.
 
-**SRE / IT:** 15 panels ไม่คืนข้อมูล · ต้องเพิ่ม E2E check เพราะ linter ปัจจุบัน
-ตรวจ syntax ผ่านหมดแต่ไม่ตรวจว่ามีข้อมูลจริง
+**SRE / IT Operations:** 15 panels currently fail to render data. The implementation of E2E verification is mandatory, as the current linter
+strictly validates syntax but fails to ensure actual data retrieval.
 
-**QA:** พบ duplicate board keys 157 และ 121 รายการบน LDI-01/LDI-04
-ต้องสืบว่าเป็นการนับซ้ำจริงหรือบั๊กของข้อมูลจำลอง
+**QA Engineering:** Discovered 157 and 121 duplicate board keys isolated to LDI-01 and LDI-04.
+An immediate investigation is required to determine whether this is a physical dual-counting error or an anomaly within the data simulator.
 
-**Process Engineer:** RCA Truth Test ทำงานถูกต้องและรายงานตรงว่า
-ยังไม่มีความสัมพันธ์ที่พิสูจน์ได้ (Lift ≈ 1) — ต้องรอข้อมูลจริงหรือแก้ simulator ก่อน
-จึงจะใช้สรุปสาเหตุได้ · Cpk (PE) 1.253 อยู่ในเกณฑ์ "ใช้ได้" แต่ต่ำกว่า 1.33 ที่เป็นมาตรฐาน
+**Process Engineering:** The RCA Truth Test functions perfectly and accurately reports that
+no statistically significant correlation currently exists (Lift ≈ 1) — Actionable root cause analysis requires authentic data or a corrected simulator.
+Cpk (PE) stands at 1.253, which is categorized as "Acceptable" but falls below the stringent 1.33 industry benchmark.

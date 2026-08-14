@@ -1,7 +1,7 @@
 # IMS Scaling Plan
 
-> **แผนการขยายระบบ IMS สำหรับรองรับปริมาณงานที่เพิ่มขึ้น**
-> ออกแบบสำหรับ 1-1000+ machines
+> **IMS Scaling Plan to Accommodate Increased Workloads**
+> Designed for 1-1000+ machines
 
 ---
 

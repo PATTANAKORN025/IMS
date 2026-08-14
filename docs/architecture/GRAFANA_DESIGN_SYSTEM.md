@@ -1,19 +1,19 @@
 # IMS Grafana Design System
 
 > [!IMPORTANT]
-> ทำให้ dashboard ทั้งหมดของ IMS (NOC Overview, Engineering Drill-Down, Capacity Planning, และตั้งแต่ Phase 2 เป็นต้นไป — LDI Manufacturing, LDI Engineering Analytics & SPC, LDI Machine Snapshot, LDI Operator Andon Board, LDI Data Readiness) มีมาตรฐานเดียวกัน แก้ที่นี่ที่เดียว ไม่ drift ข้ามไฟล์ และดูเป็นระบบ "ชุดเดียวกัน" ทันทีที่สลับหน้า
+> This ensures that all IMS dashboards (NOC Overview, Engineering Drill-Down, Capacity Planning, and from Phase 2 onwards — LDI Manufacturing, LDI Engineering Analytics & SPC, LDI Machine Snapshot, LDI Operator Andon Board, LDI Data Readiness) adhere to the same standard. Edit here in one place to prevent cross-file drift, ensuring the system appears as a unified suite immediately upon switching pages.
 >
-> เอกสารนี้คือ **contract** ไม่ใช่คำแนะนำ — panel ใหม่ทุกตัวต้องผ่านกฎในนี้ก่อน merge
+> This document is a **contract**, not merely a guideline — every new panel must comply with these rules prior to merging.
 
 ---
 
-## 1. หลักการออกแบบ (Design Principles)
+## 1. Design Principles
 
-1. **Function first, beauty follows** — ความสวยที่ไม่ช่วยให้อ่านข้อมูลเร็วขึ้นคือของตกแต่งที่ต้องตัดทิ้ง
-2. **Color มีความหมายเดียวเสมอ** (Semantic, ไม่ใช่ Decorative) — กฎข้อ 3 ด้านล่าง
-3. **3-Second Rule** — คนเดินผ่านจอ NOC ต้องรู้ภายใน 3 วินาทีว่า "ตอนนี้ปกติไหม" โดยไม่ต้องอ่าน label
-4. **Consistency > Novelty** — panel ชนิดเดียวกันต้องหน้าตาเหมือนกันทุกที่ที่ปรากฏ (ผ่าน Library Panels)
-5. **Progressive disclosure** — NOC ตอบ "ต้องเรียกใครไหม", Engineering ตอบ "ทำไม", Capacity ตอบ "จะเกิดอะไรต่อ" ห้ามผสมระดับรายละเอียดในหน้าเดียวกัน
+1. **Function first, beauty follows** — Aesthetics that do not accelerate data comprehension are decorative elements that must be eliminated.
+2. **Color always has a single meaning** (Semantic, not Decorative) — See rule 3 below.
+3. **3-Second Rule** — Anyone walking past a NOC display must determine within 3 seconds whether "everything is currently normal" without reading labels.
+4. **Consistency > Novelty** — Panels of the same type must share an identical appearance wherever they appear (via Library Panels).
+5. **Progressive disclosure** — NOC answers "do we need to call someone?", Engineering answers "why?", Capacity answers "what will happen next?". Do not mix levels of detail on the same page.
 
 ---
 
@@ -29,23 +29,23 @@ the two-table split had become a documentation fiction, not a real design bounda
 Merged into one table, applied to **all 12 dashboards** including the LDI kiosk set.
 No dashboard is exempt.
 
-| Token            | Hex Code  | ความหมาย                          | ใช้กับ                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Token            | Hex Code  | Meaning                           | Used For                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | ---------------- | --------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ok`             | `#22C55E` | สถานะดี / ปกติ                    | Healthy, running, PASS, Capable+ thresholds — any "this is fine" verdict                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| `warning`        | `#F59E0B` | เฝ้าระวัง ยังไม่ฉุกเฉิน           | IDLE, Marginal, warning thresholds                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| `critical`       | `#EF4444` | อันตราย ต้องแก้เดี๋ยวนี้          | OUT OF SPEC, critical thresholds, error states                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| `info`           | `#00F2FE` | ข้อมูลทั่วไปที่ไม่ใช่คำตัดสิน     | Plain KPI numbers, machine-name labels, non-alerting stats                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `accent`         | `#3B82F6` | สีเน้น / Active UI elements       | Navigation highlights, interactive elements                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| `no_data`        | `#64748B` | NO_DATA โดยเฉพาะ                  | A genuine gap in reporting — a _different claim_ than `critical` ("confirmed bad"). "We don't know" ≠ "something is wrong." Every stat/gauge/bargauge panel must carry an explicit `type: "special", options.match: "null+nan"` mapping to this color (or, for panels that convert no-rows into a sentinel value in SQL, a matching value-mapping to the text `NO_DATA`) — Grafana does not fall back to a neutral color on its own. `noValue` text must be the literal string `NO_DATA` everywhere (not `N/A`/`-`/Grafana's raw "No data"), except where a panel's fallback is a legitimate zero-count business value or already carries a more specific semantic label (e.g. NOC's `AWAITING TELEMETRY`). |
-| `forecast`       | `#4A5568` | เส้นคาดการณ์/Regression (เส้นประ) | Forecast, regression, trend projection — dashed line only                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `ok`             | `#22C55E` | Healthy / Normal                  | Healthy, running, PASS, Capable+ thresholds — any "this is fine" verdict                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `warning`        | `#F59E0B` | Monitor / Non-urgent              | IDLE, Marginal, warning thresholds                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `critical`       | `#EF4444` | Danger / Immediate action required| OUT OF SPEC, critical thresholds, error states                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `info`           | `#00F2FE` | General data / Non-verdict        | Plain KPI numbers, machine-name labels, non-alerting stats                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `accent`         | `#3B82F6` | Highlight / Active UI elements    | Navigation highlights, interactive elements                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `no_data`        | `#64748B` | Specifically NO_DATA              | A genuine gap in reporting — a _different claim_ than `critical` ("confirmed bad"). "We don't know" ≠ "something is wrong." Every stat/gauge/bargauge panel must carry an explicit `type: "special", options.match: "null+nan"` mapping to this color (or, for panels that convert no-rows into a sentinel value in SQL, a matching value-mapping to the text `NO_DATA`) — Grafana does not fall back to a neutral color on its own. `noValue` text must be the literal string `NO_DATA` everywhere (not `N/A`/`-`/Grafana's raw "No data"), except where a panel's fallback is a legitimate zero-count business value or already carries a more specific semantic label (e.g. NOC's `AWAITING TELEMETRY`). |
+| `forecast`       | `#4A5568` | Forecast / Regression (dashed line)| Forecast, regression, trend projection — dashed line only                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | `severity-minor` | `#EAB308` | 4th alarm-severity tier           | ISA-18.2 "Minor" severity specifically, distinct from `warning`/Major — the two are deliberately different shades so a 4-level severity scale (Critical/Major/Minor/Warning) stays visually distinguishable. Not part of the core 6; only used in alarm-severity value mappings.                                                                                                                                                                                                                                                                                                                                                                                                                            |
 
-**กฎเหล็ก:**
+**Strict Rules:**
 
-- **ห้าม** ใช้สี Grafana default palette — ใช้เฉพาะ tokens ในตารางนี้เท่านั้น เพื่อสื่อสถานะ
-- **ห้าม** ผูกสี fixed เข้ากับชื่อเครื่อง/series เฉพาะเจาะจง ยกเว้นกรณีเดียว: เครื่องจริงถาวรในโรงงานที่ต้องแยกด้วยสีคงที่ — ต้องประกาศ mapping ใน §8
-- แดง (`#EF4444`) ต้องแปลว่า critical **เสมอ** — ห้ามใช้แดงเป็นสี series เฉยๆ เพราะจะไปแย่งความหมายกับ alert
-- Forecast/regression/threshold reference ใช้ `#4A5568` เส้นประเสมอ ไม่ใช่สีสดที่แข่งกับข้อมูลจริง
+- **Do not** use the Grafana default palette — exclusively use the tokens in this table to communicate status.
+- **Do not** bind fixed colors to specific machine/series names, except in one case: permanent physical machines in the factory that must be distinguished by a static color — mapping must be declared in §8.
+- Red (`#EF4444`) must **always** signify critical — do not use red simply as a series color, as it conflicts with the alert semantics.
+- Forecast/regression/threshold reference lines must always use a `#4A5568` dashed line, not bright colors that compete with actual data.
 - Decorative colors (graph-series differentiation for lines with no status meaning, backgrounds, borders) are exempt from this table — a dashboard can't be built from 6 saturated colors alone. A color is "decorative" only if it never communicates OK/warning/critical/no-data for anything; if in doubt, it's semantic.
 - **Enforcement:** `tests/lint/dashboard-linter.js` (Check 15) validates every `thresholds.steps[].color` and `mappings[].options.color` in `monitoring/grafana/dashboards/*.json` against this table's hex values — scoped to those two structural locations specifically because that's where a color is _always_ semantic, unlike a bare `fixedColor` which can legitimately be decorative (series differentiation). This is the actual "central" mechanism — `APPROVED_TOKENS` in that file is generated from this table; if you add a token here, add it there too.
 
@@ -105,117 +105,117 @@ stat/gauge/bargauge panel using `colorMode: "background"` outside the
 per-file exception list, so this doesn't silently regress as new panels are
 added.
 
-### 2.2 Threshold Contract (ต้องตรงกันทุก panel ที่วัดค่าเดียวกัน)
+### 2.2 Threshold Contract (Must be identical across all panels measuring the same metric)
 
-| Metric             | Warning | Critical | หมายเหตุ                            |
+| Metric             | Warning | Critical | Notes                               |
 | ------------------ | ------- | -------- | ----------------------------------- |
 | CPU Load %         | 80      | 90       |                                     |
 | RAM Used %         | 85      | 95       |                                     |
 | Disk Used %        | 80      | 90       |                                     |
-| Temperature °C     | 45      | 55       | ปรับตาม spec เครื่องจริงเมื่อรู้ค่า |
-| LDI PE (µm, abs)   | 10      | 15       | ตาม tolerance ที่ตกลงกับฝ่าย QA     |
-| Fleet Health Score | < 70    | < 50     | สเกลต่อเนื่อง 0–100 (ห้ามขั้นบันได) |
+| Temperature °C     | 45      | 55       | Adjust to actual machine specs when known |
+| LDI PE (µm, abs)   | 10      | 15       | According to tolerances agreed with QA |
+| Fleet Health Score | < 70    | < 50     | Continuous scale 0–100 (no step functions) |
 
-ตัวเลขนี้ต้อง**เขียนครั้งเดียว**แล้ว reuse ผ่าน field config template ไม่ใช่พิมพ์ threshold ซ้ำในทุก panel — ถ้าจะเปลี่ยนค่า เปลี่ยนที่เดียวแล้ว save เป็น Library Panel field config
+These figures must be **written once** and reused via the field config template, rather than typing thresholds repeatedly across every panel — if a value needs to change, change it in one place and save it as a Library Panel field config.
 
 ---
 
 ## 3. Typography & Number Formatting
 
-| องค์ประกอบ                             | กฎ                                                                                                                                                         |
+| Element                                | Rule                                                                                                                                                       |
 | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Panel title                            | สั้น ≤ 4 คำ, Title Case, ไม่ใส่หน่วยในชื่อ (หน่วยอยู่ใน axis/legend)                                                                                       |
-| Panel description                      | ใส่ทุก panel เสมอ อธิบาย "นี่คืออะไร + คำนวณยังไง" แสดงผ่าน hover (ⓘ icon)                                                                                 |
-| Stat value font size (NOC / kiosk row) | ≥ 56px สำหรับ KPI แถวบนสุดของ NOC Overview และ Andon Board (เพิ่มจาก 32px เดิม — อ่านจากระยะไกลกว่าเดิมบนจอ NOC/kiosk ขนาดใหญ่), `titleSize` ≥ 16px คู่กัน |
-| Stat value font size (อื่นๆ)           | ≥ 32px สำหรับ KPI ทั่วไป                                                                                                                                   |
-| Table `cellHeight` (NOC / kiosk)       | `lg` เสมอ สำหรับตารางหลักบน NOC Overview และ Andon Board — ค่าเริ่มต้น `sm` เล็กเกินไปสำหรับอ่านจากระยะไกล                                                 |
-| หน่วย (unit)                           | ตั้งทุก field เสมอ ห้ามปล่อยตัวเลขดิบ (`%`, `°C`, `GB`, `Mbps`)                                                                                            |
-| Decimal                                | 1 ตำแหน่งพอสำหรับ % และอุณหภูมิ, 0 ตำแหน่งสำหรับ count                                                                                                     |
-| เวลา                                   | `dateTimeFromNow` สำหรับ "last seen" (เช่น "12s ago"), absolute time เฉพาะ tooltip                                                                         |
-| Sentinel values                        | ค่าพิเศษ (เช่น 9999 = ไม่มีการเติบโต) ต้องมี value mapping เป็นข้อความเสมอ ห้ามโชว์ตัวเลขดิบที่ดูเหมือน bug                                                |
+| Panel title                            | Short ≤ 4 words, Title Case, do not include units in the name (units belong in axis/legend).                                                               |
+| Panel description                      | Always include for every panel, explaining "what this is + how it is calculated", displayed via hover (ⓘ icon).                                            |
+| Stat value font size (NOC / kiosk row) | ≥ 56px for the top row KPIs of NOC Overview and Andon Board (increased from the original 32px — read from further away on large NOC/kiosk screens), paired with `titleSize` ≥ 16px. |
+| Stat value font size (Others)          | ≥ 32px for general KPIs.                                                                                                                                   |
+| Table `cellHeight` (NOC / kiosk)       | Always `lg` for main tables on NOC Overview and Andon Board — the default `sm` is too small to read from a distance.                                       |
+| Unit                                   | Always configure for every field, do not leave raw numbers (`%`, `°C`, `GB`, `Mbps`).                                                                      |
+| Decimal                                | 1 decimal place is sufficient for % and temperature, 0 decimal places for counts.                                                                          |
+| Time                                   | `dateTimeFromNow` for "last seen" (e.g., "12s ago"), absolute time reserved only for tooltips.                                                             |
+| Sentinel values                        | Special values (e.g., 9999 = no growth) must always have a text value mapping; never show raw numbers that look like bugs.                                 |
 
 ---
 
 ## 4. Panel Type Decision Table
 
-เลือกชนิด panel จาก**ธรรมชาติของข้อมูล** ไม่ใช่ความเคยชิน:
+Choose panel types based on the **nature of the data**, not out of habit:
 
-| ข้อมูลแบบไหน                            | ใช้ Panel                           | ตัวอย่างใน IMS                  |
+| Data Type                               | Use Panel                           | Example in IMS                  |
 | --------------------------------------- | ----------------------------------- | ------------------------------- |
-| ค่าล่าสุด เดี่ยว + อยากเห็นเทรนด์คู่กัน | **Stat** (`graphMode: area`)        | CPU ล่าสุด, RAM ล่าสุด          |
-| ค่าที่มีเพดาน ต้องรู้ "เหลือเท่าไหร่"   | **Bar Gauge** / **Gauge**           | RAM %, Disk %                   |
-| สถานะจำนวนมากตามเวลา                    | **State Timeline**                  | Fleet uptime 24h                |
-| เทรนด์ต่อเนื่อง เปรียบเทียบหลาย series  | **Time Series**                     | CPU/RAM/Network history         |
-| สัดส่วนของทั้งหมด ณ จุดเวลาหนึ่ง        | **Pie / Donut**                     | Traffic breakdown ต่อ interface |
-| ตารางรายละเอียด หลาย field              | **Table** + gauge cell + color text | Server Fleet Status             |
-| Correlation ระหว่าง 2 ตัวแปร            | **XY Chart**                        | CPU vs Temperature              |
-| Alert ที่กำลัง fire                     | **Alert List**                      | แถวบนสุดของ NOC                 |
-| คำอธิบาย/ลิงก์ runbook                  | **Text (Markdown)**                 | หมายเหตุใต้ row                 |
-| ตำแหน่งเชิงพื้นที่ในโรงงาน              | **Geomap (custom image)**           | ผังเครื่องจริงตามพื้นที่ผลิต    |
+| Single latest value + side-by-side trend| **Stat** (`graphMode: area`)        | Latest CPU, Latest RAM          |
+| Capped values requiring "amount remaining"| **Bar Gauge** / **Gauge**           | RAM %, Disk %                   |
+| Numerous statuses over time             | **State Timeline**                  | Fleet uptime 24h                |
+| Continuous trends, multi-series comparison| **Time Series**                     | CPU/RAM/Network history         |
+| Proportions of a whole at a point in time| **Pie / Donut**                     | Traffic breakdown per interface |
+| Detailed table with multiple fields     | **Table** + gauge cell + color text | Server Fleet Status             |
+| Correlation between 2 variables         | **XY Chart**                        | CPU vs Temperature              |
+| Actively firing alerts                  | **Alert List**                      | Top row of NOC                  |
+| Runbook descriptions/links              | **Text (Markdown)**                 | Notes beneath a row             |
+| Spatial locations on the factory floor  | **Geomap (custom image)**           | Physical machine layout by production area |
 
-**ข้อห้าม:** อย่ายัด time series ลง stat panel ขนาดเล็ก (6×6) เพราะมันจะไม่มีที่ให้อ่านแกน — ถ้าต้องการเทรนด์ในพื้นที่เล็ก ใช้ stat + sparkline แทน
+**Prohibition:** Do not cram time series into small stat panels (6×6) because there will be no room to read the axes — if a trend is needed in a small space, use a stat + sparkline instead.
 
 ---
 
 ## 5. Layout Grid System
 
-### 5.1 กติกา Grid (24 columns มาตรฐาน Grafana)
+### 5.1 Grid Rules (Standard Grafana 24 columns)
 
 ```text
 ┌─────────────────────────────────────────────────────┐
-│ Row 1: KPI Strip  [4][4][4][4][4][4] h=4  │ ← ตัวเลขเดียว บอกสถานะรวม
+│ Row 1: KPI Strip  [4][4][4][4][4][4] h=4  │ ← Single metric indicating overall status
 ├─────────────────────────────────────────────────────┤
-│ Row 2: Alert + Status [Alert List: 8][Table: 16] h=8│ ← สิ่งที่ต้องดูก่อนอย่างอื่น
+│ Row 2: Alert + Status [Alert List: 8][Table: 16] h=8│ ← Must be viewed before anything else
 ├─────────────────────────────────────────────────────┤
-│ Row 3: Trends (collapsible row ตาม domain) h=8-10 │ ← 1-2 timeseries ต่อแถว กว้าง 12-24
+│ Row 3: Trends (collapsible row by domain) h=8-10 │ ← 1-2 timeseries per row, width 12-24
 ├─────────────────────────────────────────────────────┤
-│ Row N: Deep Debug (collapsed by default)  h=8  │ ← raw table, ไม่ critical
+│ Row N: Deep Debug (collapsed by default)  h=8  │ ← Raw table, non-critical
 └─────────────────────────────────────────────────────┘
 ```
 
-### 5.2 กฎ Width/Height
+### 5.2 Width/Height Rules
 
-| Panel type                 | Width (คอลัมน์) | Height |
+| Panel type                 | Width (Columns) | Height |
 | -------------------------- | --------------- | ------ |
 | Stat (KPI)                 | 4–6             | 4      |
 | Gauge / Bar Gauge          | 6–8             | 6      |
-| Time Series หลัก           | 12–24           | 8      |
-| Time Series รอง (คู่เทียบ) | 12              | 8      |
+| Primary Time Series        | 12–24           | 8      |
+| Secondary Time Series (comparison) | 12              | 8      |
 | Table                      | 16–24           | 8–10   |
 | Alert List                 | 8               | 8      |
 | Pie/Donut                  | 6–8             | 8      |
 
-- ห้ามผสม height ต่างกันในแถวเดียวกัน (ทำให้ grid ดูเอียง) — ถ้า panel สูงไม่เท่ากัน ให้แยกคนละแถว
-- ใช้ **Row** เสมอเพื่อแบ่งโซนความหมาย ตั้งชื่อ row ให้สื่อ (`️ Compute`, `Network`, `️ Environmental`) พร้อม emoji ตัวเดียวเป็น visual anchor
-- Row ที่ไม่ critical → `collapsed: true` เป็นค่าเริ่มต้น
-- **Panel density (2026-08-08):** dashboard ที่มี panel มากกว่า ~8 ตัวเรียงแนวตั้งแบบไม่มี row (สังเกตได้จาก `IMS LDI - Engineering Analytics & SPC` ที่เคยสูง 126 grid units) ต้องจัดกลุ่มเป็น row ตามโซนความหมาย แล้ว collapse ทุก row ยกเว้น row แรก/สำคัญที่สุด — เหลือแค่ header list สั้นๆ ให้เห็นภาพรวมทันที ไม่ต้อง scroll มหาศาล เนื้อหาทั้งหมดยังอยู่ครบ แค่ซ่อนไว้หลัง header ที่คลิกขยายได้
+- Do not mix different heights within the same row (this makes the grid look misaligned) — if panels have unequal heights, separate them into different rows.
+- Always use a **Row** to partition semantic zones. Give rows descriptive names (`Compute`, `Network`, `Environmental`) paired with a single emoji as a visual anchor.
+- Non-critical rows → `collapsed: true` by default.
+- **Panel density (2026-08-08):** dashboards with more than ~8 panels stacked vertically without rows (noticeable in `IMS LDI - Engineering Analytics & SPC` which used to be 126 grid units tall) must be grouped into rows based on semantic zones, collapsing all rows except the first/most important one — leaving a short header list to provide an immediate overview without massive scrolling. All content remains intact, simply hidden behind clickable headers.
 - **Kiosk no-scroll ceiling (2026-08-08):** 3 dashboards are glance/kiosk boards per §1 principle 5 ("progressive disclosure" — NOC and Easy Overview answer "is everything OK," Andon is the factory-floor wall display) and carry a hard 20-grid-unit ceiling in `tests/lint/dashboard-linter.js`'s `MAX_HEIGHT`, enforced as an error, not a warning. All 3 use the same pattern: only the single most decision-relevant row stays expanded (Andon's KPI strip + machine tiles, NOC's alert list, Easy Overview's KPI strip) — everything else is a collapsed row, content still fully present, one click away. Engineering/Capacity/Machine-Snapshot/Manufacturing are deliberately deep-dive dashboards under the same principle and are NOT in `MAX_HEIGHT` — forcing them to 20u would fight their actual purpose, not serve it.
 
 ---
 
 ## 6. Interaction Standards
 
-ตั้งค่าระดับ **dashboard settings** ให้เหมือนกันทุกไฟล์:
+Configure **dashboard settings** identically across all files:
 
-| Setting                                   | ค่า                                                         | เหตุผล                                                          |
+| Setting                                   | Value                                                       | Rationale                                                       |
 | ----------------------------------------- | ----------------------------------------------------------- | --------------------------------------------------------------- |
-| Graph tooltip                             | `Shared crosshair`                                          | ลาก cursor แล้วทุก panel sync ตำแหน่งเวลา — รู้สึกเป็นระบบเดียว |
-| Tooltip mode (ต่อ panel ที่มีหลาย series) | `multi`                                                     | เห็นค่าทุกเส้น ณ จุดนั้นพร้อมกัน                                |
-| `spanNulls`                               | `60000` (1 นาที) ไม่ใช่ `true`                              | รูบนกราฟ = เหตุการณ์จริง (outage) ต้องเห็น ไม่ใช่เส้นเรียบลวงตา |
-| Default time range                        | NOC: `now-6h` / Engineering: `now-6h` / Capacity: `now-30d` | ตรงพฤติกรรมใช้งานจริงของแต่ละหน้า ไม่ default เดียวกันหมด       |
-| Refresh rate                              | NOC/Engineering: `10s` / Capacity: `5m`                     | ตรงความถี่ที่ข้อมูลเปลี่ยนจริง ไม่ยิง query เกินจำเป็น          |
-| `allowUiUpdates` (provider)               | `false`                                                     | บังคับ dashboard-as-code, กัน drift จาก git                     |
+| Graph tooltip                             | `Shared crosshair`                                          | Dragging the cursor syncs the time position across all panels — feels like a unified system. |
+| Tooltip mode (for multi-series panels)    | `multi`                                                     | Displays values for all series simultaneously at that point.    |
+| `spanNulls`                               | `60000` (1 minute), not `true`                              | Gaps in the graph represent actual events (outages) and must be visible, not masked by interpolated lines. |
+| Default time range                        | NOC: `now-6h` / Engineering: `now-6h` / Capacity: `now-30d` | Aligns with the actual usage behavior of each page; not universally defaulted. |
+| Refresh rate                              | NOC/Engineering: `10s` / Capacity: `5m`                     | Aligns with actual data mutation frequency; prevents unnecessary queries. |
+| `allowUiUpdates` (provider)               | `false`                                                     | Enforces dashboard-as-code, preventing drift from git.          |
 
 ---
 
-## 7. Data Visualization Rules เฉพาะกราฟ
+## 7. Graph-Specific Data Visualization Rules
 
-- **spanNulls แบบมีเพดานเวลา** (ข้อ 6) ไม่ใช่เชื่อมทุกช่องว่างเสมอ
-- **Threshold แสดงเป็น area shading** (`thresholdsStyle: "area"` หรือ `"line+area"`) แทน dashed line เปล่า — พื้นหลังแดงจางๆ เห็นจากระยะไกลง่ายกว่าเส้นบางๆ มาก
-- **ค่าที่เป็น counter สะสม (SNMP errors/drops) ต้องแปลงเป็น rate ก่อนแสดง** ด้วย `LAG() OVER (...)` ใน SQL — ห้ามโชว์เส้นสะสมที่ขึ้นตลอดกาล อ่านไม่ออกว่าตอนนี้แย่ลงไหม
-- **ข้อมูลที่ต้อง mirror แกน (เช่น TX ใต้ RX)** ใช้ field override `custom.transform: "negative-Y"` ที่ visualization layer เท่านั้น — ห้ามคูณ `-1` ใน SQL เพราะ legend/tooltip จะแสดงค่าติดลบผิดความจริง
-- **Forecast/regression series** ต้องเป็นเส้นประสีเทาเสมอ (ดูข้อ 2.1) และ matcher ของ override ต้องใช้ `byRegexp` ไม่ใช่ `byName` แบบ literal เมื่อชื่อ series มีตัวแปร interpolate (เช่น `${machine_id}`) เพราะ `byName` ไม่ interpolate template
-- **Legend:** `displayMode: table` + `placement: bottom` + เปิด `calcs: [mean, max, last]` เมื่อมีมากกว่า 3 series — ให้ legend ทำหน้าที่เป็น mini-table แทนแค่สัญลักษณ์สี
+- **Time-bounded `spanNulls`** (Rule 6), instead of always bridging every gap.
+- **Display thresholds as area shading** (`thresholdsStyle: "area"` or `"line+area"`) instead of bare dashed lines — a faint red background is far easier to see from a distance than a thin line.
+- **Accumulated counter values (SNMP errors/drops) must be converted to a rate before display** using `LAG() OVER (...)` in SQL — do not show perpetually climbing cumulative lines, as it is impossible to read if the situation is currently worsening.
+- **Data requiring a mirrored axis (e.g., TX below RX)** must use the field override `custom.transform: "negative-Y"` at the visualization layer only — do not multiply by `-1` in SQL, as the legend/tooltip would inaccurately display negative values.
+- **Forecast/regression series** must always be gray dashed lines (see §2.1), and the override matcher must use `byRegexp`, not a literal `byName`, when the series name contains an interpolated variable (e.g., `${machine_id}`) because `byName` does not interpolate templates.
+- **Legend:** `displayMode: table` + `placement: bottom` + enable `calcs: [mean, max, last]` when there are more than 3 series — allowing the legend to function as a mini-table rather than merely a color key.
 
 ### 7.1 ECharts panels (`volkovlabs-echarts-panel`) — theming is not optional (added 2026-08-08)
 
@@ -253,19 +253,19 @@ Reference implementations: `ims-ldi-engineering-analytics.json` panels 17
 
 ---
 
-## 8. Machine Identity Palette (ถ้าต้องผูกสีถาวรต่อเครื่องจริง)
+## 8. Machine Identity Palette (If static color bindings to physical machines are required)
 
-> เติมตารางนี้เมื่อทราบรายชื่อเครื่องจริงที่จะ deploy ใน production ห้ามสร้าง fixed color override ที่อื่นนอกจากอ้างอิงจากตารางนี้
+> Populate this table once the list of physical machines slated for production deployment is known. Do not create fixed color overrides anywhere else except by referencing this table.
 
-| Machine ID              | สี  | หมายเหตุ |
-| ----------------------- | --- | -------- |
-| _(รอข้อมูลเครื่องจริง)_ |     |          |
+| Machine ID              | Color | Notes    |
+| ----------------------- | ----- | -------- |
+| _(Awaiting machine data)_ |     |          |
 
 ---
 
 ## 9. Reusability — Library Panels
 
-Panel ที่ปรากฏซ้ำมากกว่า 1 dashboard **ต้อง**เป็น Library Panel (แก้ที่เดียว อัปเดตทุกที่) — **แต่เฉพาะกรณีที่ SQL/business logic ตรงกันจริงๆ**, ไม่ใช่แค่ชื่อ panel คล้ายกัน:
+Panels appearing across more than 1 dashboard **must** be implemented as Library Panels (edit once, update everywhere) — **but strictly only when the SQL/business logic is genuinely identical**, not merely when the panel names are similar:
 
 - **Fleet Health Score** (stat) — true library panel, `ims-lib-fleet-health-score`. Confirmed byte-identical query (`SELECT value FROM public.v_fleet_score`) between `ims-capacity-planning.json` and `ims-noc-overview.json` before merging.
 - **Availability / Critical Alarms / Running / Yield** — ️ audited 2026-08-08, found NOT duplicates despite similar names: each dashboard's version has a genuinely different SQL scope (e.g. Manufacturing's Yield panel adds a `machine_id` template filter and a period-over-period "Delta %" calc that Easy Overview's simpler version doesn't have; Andon/Manufacturing/Easy-Overview's "Availability"/"Running" panels differ in whether they filter by `machine_id` and which compression-chunk workaround they carry). Forcing these into one shared panel would mean changing what each dashboard actually computes — out of scope here (business logic is explicitly off-limits for this pass). If a real business decision is made later to standardize these to one canonical query/filter scope, redo this audit then and promote the survivors to library panels using the same mechanism.
@@ -279,19 +279,19 @@ Panel ที่ปรากฏซ้ำมากกว่า 1 dashboard **ต�
 
 ---
 
-## 10. Checklist ก่อน Merge Panel/Dashboard ใหม่
+## 10. Pre-Merge Checklist for New Panels/Dashboards
 
-- [ ] สีที่ใช้อยู่ในตาราง §2.1 เท่านั้น ไม่มี fixed color ผูกกับ series เฉพาะที่ไม่ใช่เครื่องจริงถาวร
-- [ ] Threshold ตรงกับสัญญาใน §2.2 (ถ้า metric ใหม่ ให้เพิ่มแถวในตารางนี้ก่อน)
-- [ ] มี `unit` และ `description` ครบทุก field
-- [ ] Panel type เลือกตามตาราง §4 ไม่ใช่ตามความเคยชิน
-- [ ] Grid width/height ตรงกฎ §5.2 ไม่ผสม height ในแถวเดียวกัน
-- [ ] `spanNulls` ตั้งเป็นตัวเลข ไม่ใช่ `true`
-- [ ] ถ้า panel ซ้ำกับที่อื่น → แปลงเป็น Library Panel ก่อน merge
-- [ ] Query ตรงกติกา tiering (raw ≤ latest value, minute CAGG ≤ 6h, hourly CAGG > 2d)
-- [ ] ทดสอบด้วย `make test-visual` แล้ว screenshot ตรงกับที่คาดหวัง
-- [ ] `node tests/lint/dashboard-linter.js` ผ่าน 0 errors — linter ตรวจ hex สีนอกตาราง §2.1 อัตโนมัติ นี่คือกลไก "central token" ตัวจริง ไม่ใช่แค่เอกสารนี้
+- [ ] Colors used are exclusively from the §2.1 table; no fixed colors bound to specific series unless they represent permanent physical machines.
+- [ ] Thresholds match the contract in §2.2 (if a new metric, add a row to this table first).
+- [ ] `unit` and `description` are populated for every field.
+- [ ] Panel type is selected according to the §4 table, not out of habit.
+- [ ] Grid width/height complies with §5.2 rules; no mixing heights in the same row.
+- [ ] `spanNulls` is set to a numeric value, not `true`.
+- [ ] If the panel is duplicated elsewhere → convert to a Library Panel before merging.
+- [ ] Query adheres to tiering rules (raw ≤ latest value, minute CAGG ≤ 6h, hourly CAGG > 2d).
+- [ ] Tested with `make test-visual` and screenshots match expectations.
+- [ ] `node tests/lint/dashboard-linter.js` passes with 0 errors — the linter automatically detects hex colors outside the §2.1 table. This is the actual "central token" mechanism, not just this document.
 
 ---
 
-_เอกสารนี้คือ living document — แก้ไขผ่าน PR เดียวกับที่แก้ dashboard ที่เกี่ยวข้องเสมอ ห้ามให้ dashboard กับเอกสารนี้ drift จากกัน_
+_This document is a living document — always update it via the same PR that modifies the relevant dashboard. Do not allow the dashboard and this document to drift from each other._

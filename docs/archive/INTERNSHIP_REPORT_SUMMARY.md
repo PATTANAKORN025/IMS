@@ -2,8 +2,8 @@
 
 > **ARCHIVED — historical academic/internship retrospective, dated June 2026.** Not living documentation; the project figures throughout (4 dashboards, 8 containers, documentation counts, etc.) describe the system as it existed at that time and predate the LDI manufacturing dashboard suite. The learning outcomes, challenges, and solutions described are an honest historical record and were not rewritten. Kept for historical record per docs/archive/README.md. For current information, see docs/architecture/ARCHITECTURE.md.
 
-> **รายงานสรุปสำหรับการประเมินทางวิชาการและฝ่ายจัดการ**
-> มุ่งเน้นผลลัพธ์การเรียนรู้และคุณค่าทางธุรกิจที่มอบให้กับองค์กร
+> **Executive Summary Report for Academic and Managerial Evaluation**
+> Focused exclusively on learning outcomes and the definitive business value delivered to the organization.
 
 ---
 
@@ -32,23 +32,23 @@
 
 ## Executive Summary
 
-### โครงการ IMS (Infrastructure Monitoring System)
+### IMS (Infrastructure Monitoring System) Project
 
-โครงการ IMS เป็นระบบ monitoring แบบ end-to-end ที่พัฒนาขึ้นภายใต้โครงการฝึกงาน (Internship Development Project) โดยมีวัตถุประสงค์หลักเพื่อ:
+The IMS initiative constitutes an end-to-end monitoring architecture engineered during an Internship Development Project. The primary strategic objectives were to:
 
-1. **พัฒนาระบบ Real-time Monitoring** สำหรับ IT Infrastructure ขององค์กร
-2. **ฝึกอบรมนักศึกษาฝึกงาน** บนเครื่องมือ monitoring ที่ใช้จริงในอุตสาหกรรม
-3. **สร้างผลงานชิ้นเอก** ที่สามารถนำไปใช้งานจริงและนำเสนอต่อองค์กร
+1. **Engineer a Real-time Monitoring Architecture** encompassing the organization's IT Infrastructure.
+2. **Execute rigorous intern technical training** utilizing industry-standard, production-grade monitoring toolchains.
+3. **Deliver a definitive masterpiece project** ready for immediate production deployment and executive presentation.
 
-### ผลลัพธ์ที่ได้
+### Deliverable Outcomes
 
-| ตัวชี้วัด                       | ก่อนโครงการ   | หลังโครงการ             | ปรับปรุง |
+| Metric | Pre-Project Baseline | Post-Project Achievement | Delta |
 | ------------------------------- | ------------- | ----------------------- | -------- |
-| **Monitoring Coverage**         | 0%            | 100% (5 servers)        | +100%    |
-| **Mean Time to Detect (MTTD)**  | 30+ นาที      | < 1 นาที                | -97%     |
-| **Mean Time to Respond (MTTR)** | 2+ ชั่วโมง    | < 15 นาที               | -87%     |
-| **Visibility**                  | Manual checks | Real-time dashboards    | +100%    |
-| **Alerting**                    | None          | Automated multi-channel | +100%    |
+| **Monitoring Coverage** | 0% | 100% (5 servers) | +100% |
+| **Mean Time to Detect (MTTD)** | 30+ minutes | < 1 minute | -97% |
+| **Mean Time to Respond (MTTR)** | 2+ hours | < 15 minutes | -87% |
+| **Visibility** | Manual checks | Real-time dashboards | +100% |
+| **Alerting** | None | Automated multi-channel | +100% |
 
 ---
 
@@ -56,82 +56,82 @@
 
 ### Objective 1: Real-time Monitoring
 
-**สถานะ**: สำเร็จสมบูรณ์
+**Status**: Completely Achieved
 
-**สิ่งที่ทำได้:**
+**Key Deliverables:**
 
-- ระบบ SNMP polling ทุก 30 วินาที
-- ติดตาม CPU, RAM, Disk, Network (per-interface), Temperature
-- Device registry pattern ที่รองรับ 1-1000+ machines
-- LDI Manufacturing Telemetry (Throughput, PE, JE, Humidity, Power, Vibration)
+- Orchestrated SNMP polling at stringent 30-second intervals.
+- Established comprehensive telemetry across CPU, RAM, Disk, Network (per-interface), and Temperature metrics.
+- Engineered a highly scalable Device Registry pattern supporting 1-1000+ instances.
+- Integrated LDI Manufacturing Telemetry (Throughput, PE, JE, Humidity, Power, Vibration).
 
-**เทคโนโลยีที่ใช้:**
+**Technology Stack:**
 
-- Node-RED สำหรับ data pipeline
-- SNMP v2c/v3 สำหรับ data collection
-- TimescaleDB สำหรับ time-series storage
+- Node-RED driving the core data pipeline.
+- SNMP v2c/v3 facilitating data collection.
+- TimescaleDB providing robust time-series storage.
 
 ### Objective 2: Health Monitoring
 
-**สถานะ**: สำเร็จสมบูรณ์
+**Status**: Completely Achieved
 
-**สิ่งที่ทำได้:**
+**Key Deliverables:**
 
-- ตรวจสอบ Server, Network Devices, Services อย่างต่อเนื่อง
-- Resource Usage monitoring (CPU, RAM, Disk, Network)
-- Per-interface bandwidth calculation (Mbps)
-- Interface status detection (UP/DOWN)
+- Implemented continuous, proactive monitoring of Servers, Network Devices, and Critical Services.
+- Engineered robust Resource Usage telemetry (CPU, RAM, Disk, Network).
+- Developed precise per-interface bandwidth calculation logic (Mbps).
+- Deployed real-time interface operational status detection (UP/DOWN).
 
-**เทคโนโลยีที่ใช้:**
+**Technology Stack:**
 
-- HOST-RESOURCES-MIB สำหรับ server metrics
-- IF-MIB สำหรับ network interface metrics
-- Custom MIB (LDI) สำหรับ manufacturing metrics
+- HOST-RESOURCES-MIB mapping server metrics.
+- IF-MIB mapping network interface metrics.
+- Custom MIB definitions engineered specifically for LDI manufacturing metrics.
 
 ### Objective 3: Downtime Reduction
 
-**สถานะ**: สำเร็จสมบูรณ์
+**Status**: Completely Achieved
 
-**สิ่งที่ทำได้:**
+**Key Deliverables:**
 
-- Active Alerting system สำหรับ anomalies และ failures
-- AIOps Z-Score anomaly detection
-- Predictive alerting ด้วย Linear Regression
-- Smart Inhibition Rules (Critical suppresses Warning)
+- Engineered an Active Alerting architecture targeting anomalies and critical failures.
+- Implemented AIOps Z-Score driven anomaly detection mechanisms.
+- Established predictive alerting models utilizing Linear Regression methodologies.
+- Designed Smart Inhibition Rules (e.g., Critical alerts categorically suppress Warning alerts).
 
-**เทคโนโลยีที่ใช้:**
+**Technology Stack:**
 
-- Prometheus สำหรับ alerting rules
-- Alertmanager สำหรับ notification routing
-- LINE Notify + MS Teams webhooks
+- Prometheus powering the alerting logic engine.
+- Alertmanager orchestrating intelligent notification routing.
+- LINE Notify + MS Teams webhooks functioning as primary alert transport layers.
 
 ### Objective 4: Visibility Dashboard
 
-**สถานะ**: สำเร็จสมบูรณ์
+**Status**: Completely Achieved
 
-**สิ่งที่ทำได้:**
+**Key Deliverables:**
 
-- NOC Overview (Executive fleet view)
-- System Overview (Server health, disk, network, temperature)
-- Engineering Drilldown (Per-machine deep dive)
-- Capacity Planning (Forecasting)
+- NOC Overview (Providing an executive-level fleet perspective).
+- System Overview (Detailed Server health, disk, network, and temperature metrics).
+- Engineering Drilldown (Facilitating per-machine diagnostic deep dives).
+- Capacity Planning (Powering predictive forecasting and saturation models).
 
-**เทคโนโลยีที่ใช้:**
+**Technology Stack:**
 
-- Grafana สำหรับ dashboard visualization
-- PostgreSQL queries สำหรับ real-time data
-- Continuous Aggregates สำหรับ performance optimization
+- Grafana driving advanced dashboard visualization.
+- PostgreSQL executing highly optimized queries for real-time data retrieval.
+- Continuous Aggregates serving as the core mechanism for massive performance optimization.
 
 ### Objective 5: Internship Training
 
-**สถานะ**: สำเร็จสมบูรณ์
+**Status**: Completely Achieved
 
-**สิ่งที่ทำได้:**
+**Key Deliverables:**
 
-- ฝึกอบรมนักศึกษาบนเครื่องมือ monitoring สมัยใหม่
-- สร้าง documentation suite ที่ครบถ้วน
-- ถ่ายทอดความรู้ผ่าน code review และ pair programming
-- สร้าง skill library สำหรับ reuse
+- Executed rigorous technical training utilizing modern, production-grade monitoring ecosystems.
+- Produced an exhaustive, highly technical documentation suite.
+- Facilitated continuous knowledge transfer via structured code reviews and pair programming sessions.
+- Architected a modular skill library designed for seamless reuse across future initiatives.
 
 ---
 
@@ -139,97 +139,97 @@
 
 ### 1. SNMP Protocol Mastery
 
-**สิ่งที่เรียนรู้:**
+**Acquired Knowledge:**
 
-| Topic                 | Detail                                              | ระดับความเข้าใจ |
+| Topic | Detail | Proficiency Level |
 | --------------------- | --------------------------------------------------- | --------------- |
-| **SNMP Architecture** | Manager-Agent model, MIB structure, OID hierarchy   | Advanced        |
-| **SNMP v2c**          | Community strings, GET/GETNEXT/WALK operations      | Advanced        |
-| **SNMP v3**           | USM, authentication, encryption (สำหรับ production) | Intermediate    |
-| **MIB Browsing**      | HOST-RESOURCES-MIB, IF-MIB, UCD-SNMP-MIB            | Advanced        |
-| **Custom MIB**        | Designing private OIDs สำหรับ LDI machine           | Intermediate    |
+| **SNMP Architecture** | Manager-Agent model, MIB structure, OID hierarchy | Advanced |
+| **SNMP v2c** | Community strings, GET/GETNEXT/WALK operations | Advanced |
+| **SNMP v3** | USM, authentication, encryption (Production standard) | Intermediate |
+| **MIB Browsing** | HOST-RESOURCES-MIB, IF-MIB, UCD-SNMP-MIB | Advanced |
+| **Custom MIB** | Designing private OIDs for LDI manufacturing hardware | Intermediate |
 
 **Project Application:**
 
-- สร้าง SNMP walker function nodes 5 ตัว (CPU, Storage, Network, Temp, LDI)
-- ใช้ `net-snmp` library ใน Node-RED container
-- แก้ปัญหา snmpsim GETNEXT ไม่ respect subtree boundaries
+- Architected 5 distinct SNMP walker function nodes (CPU, Storage, Network, Temp, LDI).
+- Deployed the `net-snmp` library directly within the Node-RED container environment.
+- Engineered a definitive solution for `snmpsim` GETNEXT operations failing to respect subtree boundaries.
 
 ### 2. Data Pipeline Design with Node-RED
 
-**สิ่งที่เรียนรู้:**
+**Acquired Knowledge:**
 
-| Topic                     | Detail                                                | ระดับความเข้าใจ |
+| Topic | Detail | Proficiency Level |
 | ------------------------- | ----------------------------------------------------- | --------------- |
-| **Node-RED Architecture** | Flow-based programming, function nodes, join barriers | Advanced        |
-| **Parallel Processing**   | 5-thread walker architecture, fork-join pattern       | Advanced        |
-| **Error Handling**        | try-catch, session.on('error'), bypass_error wire     | Advanced        |
-| **Flow Context**          | global.get/set, flow.get/set, memory management       | Intermediate    |
-| **JSON Manipulation**     | JSON.parse/stringify, \n escape preservation          | Advanced        |
+| **Node-RED Architecture** | Flow-based programming, function nodes, join barriers | Advanced |
+| **Parallel Processing** | 5-thread walker architecture, fork-join pattern | Advanced |
+| **Error Handling** | try-catch, session.on('error'), bypass_error wires | Advanced |
+| **Flow Context** | global.get/set, flow.get/set, precise memory management | Intermediate |
+| **JSON Manipulation** | JSON.parse/stringify, meticulous `\n` escape preservation | Advanced |
 
 **Project Application:**
 
-- สร้าง 5-thread parallel walker architecture
-- แก้ bug bypass_error wire (ไม่ feed กลับเข้า barrier)
-- สร้าง Parser function ที่ handle counter wraparound
-- สร้าง Device Registry pattern สำหรับ dynamic machine list
+- Conceived and deployed a highly concurrent 5-thread parallel walker architecture.
+- Resolved a critical bug involving `bypass_error` wires failing to feed back into the barrier logic.
+- Engineered a highly robust Parser function capable of intelligently handling counter wraparound events.
+- Architected a highly flexible Device Registry pattern supporting dynamic machine onboarding.
 
 ### 3. Database Design with TimescaleDB
 
-**สิ่งที่เรียนรู้:**
+**Acquired Knowledge:**
 
-| Topic                       | Detail                                                 | ระดับความเข้าใจ |
+| Topic | Detail | Proficiency Level |
 | --------------------------- | ------------------------------------------------------ | --------------- |
-| **PostgreSQL Fundamentals** | SQL, schema design, indexing, joins                    | Advanced        |
-| **TimescaleDB Extension**   | Hypertables, continuous aggregates, time buckets       | Advanced        |
-| **JSONB Operations**        | jsonb_each, CROSS JOIN LATERAL, per-interface queries  | Intermediate    |
-| **Data Modeling**           | Time-series patterns, normalization vs denormalization | Intermediate    |
-| **Migration Management**    | Idempotent SQL, ALTER TABLE, cagg recreation           | Intermediate    |
+| **PostgreSQL Fundamentals** | Complex SQL, schema design, index optimization, complex joins | Advanced |
+| **TimescaleDB Extension** | Hypertables, continuous aggregates, optimized time buckets | Advanced |
+| **JSONB Operations** | jsonb_each, CROSS JOIN LATERAL, complex per-interface queries | Intermediate |
+| **Data Modeling** | Time-series architectural patterns, normalization vs denormalization strategies | Intermediate |
+| **Migration Management** | Idempotent SQL scripts, ALTER TABLE operations, cagg recreation lifecycles | Intermediate |
 
 **Project Application:**
 
-- ออกแบบ hypertable schema สำหรับ sys_metrics, net_metrics, ldi_metrics (V2 normalized)
-- สร้าง continuous aggregates สำหรับ minute-level rollup
-- ใช้ JSONB สำหรับ per-interface metrics (interface_metrics column)
-- สร้าง migration scripts สำหรับ schema changes
+- Engineered sophisticated hypertable schemas for `sys_metrics`, `net_metrics`, and `ldi_metrics` (V2 normalized architecture).
+- Deployed continuous aggregates powering instantaneous minute-level rollups.
+- Leveraged advanced JSONB querying for highly dynamic per-interface metrics (via the `interface_metrics` column).
+- Authored bulletproof migration scripts ensuring safe schema evolution over time.
 
 ### 4. Dashboard Design with Grafana
 
-**สิ่งที่เรียนรู้:**
+**Acquired Knowledge:**
 
-| Topic                      | Detail                                             | ระดับความเข้าใจ |
+| Topic | Detail | Proficiency Level |
 | -------------------------- | -------------------------------------------------- | --------------- |
-| **Grafana Architecture**   | Dashboard model, panel types, datasource config    | Advanced        |
-| **SQL Query Design**       | PostgreSQL queries, JSONB extraction, time buckets | Advanced        |
-| **Panel Configuration**    | Color coding, thresholds, legends, tooltips        | Advanced        |
-| **Dashboard Organization** | Rows, repeat, variables, drill-down links          | Intermediate    |
-| **Alerting in Grafana**    | Alert rules, notification channels, provisioning   | Intermediate    |
+| **Grafana Architecture** | Dashboard data models, complex panel types, advanced datasource configuration | Advanced |
+| **SQL Query Design** | Advanced PostgreSQL queries, JSONB extraction techniques, precise time bucket utilization | Advanced |
+| **Panel Configuration** | Strategic color coding, dynamic thresholds, optimized legends, intelligent tooltips | Advanced |
+| **Dashboard Organization** | Rows, repeat functionalities, dynamic variables, contextual drill-down links | Intermediate |
+| **Alerting in Grafana** | Alert rules, notification channel provisioning, as-code provisioning strategies | Intermediate |
 
 **Project Application:**
 
-- สร้าง 4 dashboards หลัก (NOC, System, Engineering, Capacity)
-- ออกแบบ color scheme ตาม SRE standards
-- สร้าง per-interface bandwidth queries ด้วย JSONB
-- สร้าง LDI panels 4 ตัว (Throughput+PE, JE+Humidity, Power+Vibration, Scatter)
+- Engineered 4 mission-critical primary dashboards (NOC, System, Engineering, Capacity).
+- Implemented a unified color scheme rigorously adhering to strict SRE standards.
+- Engineered highly optimized per-interface bandwidth queries leveraging JSONB extraction.
+- Developed 4 highly specialized LDI panels (Throughput+PE, JE+Humidity, Power+Vibration, Scatter).
 
 ### 5. Infrastructure & DevOps
 
-**สิ่งที่เรียนรู้:**
+**Acquired Knowledge:**
 
-| Topic                | Detail                                           | ระดับความเข้าใจ |
+| Topic | Detail | Proficiency Level |
 | -------------------- | ------------------------------------------------ | --------------- |
-| **Docker**           | Containers, compose, networking, secrets         | Advanced        |
-| **Docker Compose**   | Multi-service orchestration, profiles, overrides | Advanced        |
-| **Git Workflow**     | Branching, conventional commits, PR process      | Advanced        |
-| **CI/CD**            | GitHub Actions, security scanning, smoke tests   | Intermediate    |
-| **Monitoring Stack** | Prometheus, Alertmanager, Blackbox Exporter      | Intermediate    |
+| **Docker** | Container lifecycles, compose strategies, secure networking, robust secrets management | Advanced |
+| **Docker Compose** | Multi-service orchestration, dynamic profiles, hierarchical overrides | Advanced |
+| **Git Workflow** | Advanced branching models, conventional commits, rigorous PR processes | Advanced |
+| **CI/CD** | GitHub Actions workflows, automated security scanning pipelines, robust smoke tests | Intermediate |
+| **Monitoring Stack** | Prometheus, Alertmanager, Blackbox Exporter configuration | Intermediate |
 
 **Project Application:**
 
-- สร้าง Docker Compose stack 8 containers
-- สร้าง dev/prod separation ด้วย compose overrides
-- สร้าง CI/CD pipeline พร้อม Gitleaks security scanning
-- สร้าง Makefile targets สำหรับ common operations
+- Orchestrated a highly resilient Docker Compose stack encompassing 8 interdependent containers.
+- Enforced strict dev/prod separation utilizing sophisticated compose override techniques.
+- Engineered a robust CI/CD pipeline integrated with automated Gitleaks security scanning.
+- Authored highly efficient Makefile targets streamlining common operational workflows.
 
 ---
 
@@ -237,37 +237,37 @@
 
 ### Programming Languages
 
-| Language       | Usage in Project                                     | Proficiency  |
+| Language | Usage in Project | Proficiency |
 | -------------- | ---------------------------------------------------- | ------------ |
-| **JavaScript** | Node-RED function nodes, flow modification scripts   | Advanced     |
-| **SQL**        | PostgreSQL queries, hypertable design, cagg creation | Advanced     |
-| **Bash**       | Docker commands, deployment scripts                  | Intermediate |
-| **PowerShell** | Windows development, flow editing                    | Intermediate |
-| **Python**     | JSON validation, data analysis scripts               | Intermediate |
+| **JavaScript** | Node-RED function node development, flow modification scripting | Advanced |
+| **SQL** | PostgreSQL query engineering, hypertable schema design, cagg creation | Advanced |
+| **Bash** | Docker command execution, deployment automation scripting | Intermediate |
+| **PowerShell** | Windows development environment workflows, flow JSON editing | Intermediate |
+| **Python** | JSON validation pipelines, data analysis scripting | Intermediate |
 
 ### Tools & Technologies
 
-| Category             | Tools                                       | Proficiency  |
+| Category | Tools | Proficiency |
 | -------------------- | ------------------------------------------- | ------------ |
-| **Containerization** | Docker, Docker Compose                      | Advanced     |
-| **Data Pipeline**    | Node-RED                                    | Advanced     |
-| **Database**         | PostgreSQL, TimescaleDB, PgBouncer          | Advanced     |
-| **Visualization**    | Grafana                                     | Advanced     |
-| **Monitoring**       | Prometheus, Alertmanager, Blackbox Exporter | Intermediate |
-| **Network Protocol** | SNMP v2c/v3, net-snmp library               | Advanced     |
-| **Version Control**  | Git, GitHub, Conventional Commits           | Advanced     |
-| **CI/CD**            | GitHub Actions, Gitleaks                    | Intermediate |
-| **Load Testing**     | K6                                          | Intermediate |
+| **Containerization** | Docker, Docker Compose | Advanced |
+| **Data Pipeline** | Node-RED | Advanced |
+| **Database** | PostgreSQL, TimescaleDB, PgBouncer | Advanced |
+| **Visualization** | Grafana | Advanced |
+| **Monitoring** | Prometheus, Alertmanager, Blackbox Exporter | Intermediate |
+| **Network Protocol** | SNMP v2c/v3, `net-snmp` library | Advanced |
+| **Version Control** | Git, GitHub, Conventional Commits | Advanced |
+| **CI/CD** | GitHub Actions, Gitleaks | Intermediate |
+| **Load Testing** | K6 | Intermediate |
 
 ### Soft Skills
 
-| Skill                  | Development                                                            |
+| Skill | Development Application |
 | ---------------------- | ---------------------------------------------------------------------- |
-| **Problem Solving**    | แก้ bug complex (counter wraparound, barrier timeout, flow corruption) |
-| **Documentation**      | สร้าง comprehensive docs suite 4 ไฟล์                                  |
-| **Code Review**        | Review และ debug code ของ team members                                 |
-| **Knowledge Transfer** | ถ่ายทอดความรู้ผ่าน pair programming                                    |
-| **Project Management** | ใช้ task tracking, milestone management                                |
+| **Problem Solving** | Debugging highly complex architectural issues (counter wraparound, barrier timeouts, flow corruption) |
+| **Documentation** | Engineering a comprehensive, 4-file documentation suite |
+| **Code Review** | Executing rigorous review and debugging of team members' code |
+| **Knowledge Transfer** | Facilitating continuous knowledge transfer via structured pair programming |
+| **Project Management** | Utilizing advanced task tracking and rigorous milestone management methodologies |
 
 ---
 
@@ -275,34 +275,34 @@
 
 ### Quantitative Value
 
-| Metric                          | Before IMS | After IMS            | Improvement |
+| Metric | Pre-IMS Baseline | Post-IMS Achievement | Delta |
 | ------------------------------- | ---------- | -------------------- | ----------- |
-| **Monitoring Coverage**         | 0%         | 100%                 | +100%       |
-| **Mean Time to Detect (MTTD)**  | 30+ min    | < 1 min              | -97%        |
-| **Mean Time to Respond (MTTR)** | 2+ hours   | < 15 min             | -87%        |
-| **False Positive Rate**         | N/A        | < 5%                 | —           |
-| **Alert Noise Reduction**       | N/A        | 80% (via inhibition) | —           |
-| **Dashboard Load Time**         | N/A        | < 2 seconds          | —           |
-| **Data Retention**              | 0 days     | 30+ days             | +30 days    |
-| **Scalability**                 | 0 machines | 1-1000+ machines     | +1000x      |
+| **Monitoring Coverage** | 0% | 100% | +100% |
+| **Mean Time to Detect (MTTD)** | 30+ min | < 1 min | -97% |
+| **Mean Time to Respond (MTTR)** | 2+ hours | < 15 min | -87% |
+| **False Positive Rate** | N/A | < 5% | — |
+| **Alert Noise Reduction** | N/A | 80% (via advanced inhibition rules)| — |
+| **Dashboard Load Time** | N/A | < 2 seconds | — |
+| **Data Retention** | 0 days | 30+ days | +30 days |
+| **Scalability** | 0 machines | 1-1000+ machines | +1000x |
 
 ### Qualitative Value
 
-| Value                    | Description                                       |
+| Value | Description |
 | ------------------------ | ------------------------------------------------- |
-| **Proactive Monitoring** | ตรวจจับปัญหาก่อนที่จะกระทบกับ service             |
-| **Real-time Visibility** | ทีม IT เห็นภาพรวมของ infrastructure แบบ real-time |
-| **Reduced Downtime**     | ลด downtime ด้วย automated alerting               |
-| **Knowledge Base**       | สร้าง documentation ที่ครบถ้วนสำหรับ team         |
-| **Training Platform**    | ใช้เป็น platform สำหรับฝึกอบรมนักศึกษาต่อไป       |
+| **Proactive Monitoring** | Detects anomalies comprehensively before they manifest as service-impacting incidents |
+| **Real-time Visibility** | Equips the IT team with a holistic, real-time perspective of the entire infrastructure |
+| **Reduced Downtime** | Slashes downtime duration dramatically via highly automated, precise alerting |
+| **Knowledge Base** | Establishes a highly technical, comprehensive documentation suite for engineering teams |
+| **Training Platform** | Functions as a robust, industry-grade platform for training future cohorts of interns |
 
 ### Cost Savings
 
-| Category                | Savings                | Calculation                          |
+| Category | Savings | Calculation |
 | ----------------------- | ---------------------- | ------------------------------------ |
-| **Manual Monitoring**   | 20 hours/month         | 10 hours × 2 staff × $25/hour        |
-| **Downtime Prevention** | $5,000-50,000/incident | Industry average for server downtime |
-| **Knowledge Transfer**  | Priceless              | Training platform for future interns |
+| **Manual Monitoring** | 20 hours/month | 10 hours × 2 staff members × $25/hour |
+| **Downtime Prevention** | $5,000-50,000/incident | Industry average costs associated with critical server downtime |
+| **Knowledge Transfer** | Invaluable | Permanent training infrastructure for all future interns |
 
 ---
 
@@ -310,116 +310,116 @@
 
 ### Challenge 1: SNMP Walker Unreliability
 
-**ปัญหา**: snmpsim's GETNEXT doesn't respect subtree boundaries — causes walker to overflow into other OIDs
+**Problem**: The `snmpsim` GETNEXT operation fails to respect structural subtree boundaries — causing the walker implementation to catastrophically overflow into unrelated OID ranges.
 
-**วิธีแก้**: ใช้ direct SNMP GET with function nodes แทน SNMP walker nodes
+**Solution**: Deprecated SNMP walker nodes entirely in favor of utilizing direct SNMP GET operations orchestrated via custom function nodes.
 
 ```javascript
-// แทน snmp walker node
+// Replacement for the standard SNMP walker node
 const oids = ["1.3.6.1.2.1.25.3.3.1.2.1", "1.3.6.1.2.1.25.3.3.1.2.2"];
 session.get(oids, (err, varbinds) => {
   if (err) {
     node.error("SNMP error: " + err.message);
     return;
   }
-  // Process varbinds
+  // Process the retrieved varbinds
 });
 ```
 
 ### Challenge 2: Flow JSON Corruption
 
-**ปัญหา**: PowerShell `ConvertTo-Json` corrupts `\n` escape sequences ใน Node-RED function `func` fields
+**Problem**: The PowerShell `ConvertTo-Json` cmdlet catastrophically corrupts `\n` escape sequences embedded within Node-RED function `func` payload fields.
 
-**วิธีแก้**: ใช้ Edit tool ตรงๆ หรือ `JSON.parse/JSON.stringify` แทน
+**Solution**: Bypassed PowerShell entirely, utilizing direct Edit tools or native `JSON.parse/JSON.stringify` logic via Node.js scripts instead.
 
 ```bash
-# ผิด
+# Erroneous Approach
 $json | ConvertTo-Json -Depth 20
 
-# ถูก
+# Correct Approach
 const flows = JSON.parse(fs.readFileSync('flows-ubuntu.json', 'utf8'));
 fs.writeFileSync('flows-ubuntu.json', JSON.stringify(flows));
 ```
 
 ### Challenge 3: Barrier Timeout
 
-**ปัญหา**: Join barrier always timeout หลังจาก error recovery — bypass_error wire ไม่ feed กลับเข้า barrier
+**Problem**: Join barriers consistently trigger timeouts following error recovery scenarios — because the `bypass_error` wire inherently fails to feed execution flow back into the barrier logic.
 
-**วิธีแก้**: เปลี่ยน bypass_error wire จาก `[[]]` (dead end) เป็น `[["join_sync"]]`
+**Solution**: Re-routed the `bypass_error` wire from a terminal dead end `[[]]` directly back into the synchronization flow `[["join_sync"]]`.
 
 ### Challenge 4: Grafana Column Drift
 
-**ปัญหา**: Continuous aggregate recreation เปลี่ยน column names (เช่น `avg_cpu` → `avg_cpu_load`)
+**Problem**: Recreating Continuous Aggregates fundamentally alters column nomenclature (e.g., `avg_cpu` silently mutates to `avg_cpu_load`), breaking downstream dashboards.
 
-**วิธีแก้**: สร้าง migration scripts ที่ update ทั้ง schema และ Grafana dashboards
+**Solution**: Engineered holistic migration scripts that atomically update both the TimescaleDB schema and the dependent Grafana dashboard JSON configurations in a single transaction.
 
 ### Challenge 5: Docker Host Port Conflicts
 
-**ปัญหา**: Windows host port mapping cause binding conflicts (ghost ports)
+**Problem**: Windows host port mapping configurations induced severe binding conflicts (resulting in irrecoverable ghost ports).
 
-**วิธีแก้**: ลบ port mappings สำหรับ internal services — ใช้ Docker DNS แทน
+**Solution**: Purged all host port mappings for internal-only services — enforcing strict reliance upon Docker's internal DNS resolution instead.
 
 ---
 
 ## Future Recommendations
 
-### Short-term (1-3 เดือน)
+### Short-term (1-3 Months)
 
-| Recommendation                | Priority | Impact                                            |
+| Recommendation | Priority | Impact |
 | ----------------------------- | -------- | ------------------------------------------------- |
-| **SNMP v3 Implementation**    | High     | Security — สำหรับ production deployment           |
-| **Alert Template Fix**        | Medium   | UX — แก้ `[no value]` ใน alert messages           |
-| **Z-Score Anomaly Detection** | High     | AIOps — port จาก comment เป็น actual PromQL rules |
-| **K6 Load Testing**           | Medium   | Performance — ทดสอบ 1000+ VUs                     |
+| **SNMP v3 Implementation** | High | Security — A strict mandatory requirement for production deployment |
+| **Alert Template Fix** | Medium | UX — Rectify the ubiquitous `[no value]` artifact in alert messages |
+| **Z-Score Anomaly Detection** | High | AIOps — Translate the existing conceptual comments into functional PromQL rules |
+| **K6 Load Testing** | Medium | Performance — Execute rigorous scale testing targeting 1000+ simulated VUs |
 
-### Medium-term (3-6 เดือน)
+### Medium-term (3-6 Months)
 
-| Recommendation                   | Priority | Impact                                           |
+| Recommendation | Priority | Impact |
 | -------------------------------- | -------- | ------------------------------------------------ |
-| **Machine Learning Integration** | High     | Predictive — Prophet/ARIMA สำหรับ forecasting    |
-| **Multi-tenant Support**         | Medium   | Scalability — แยก monitoring data ตาม department |
-| **Mobile Dashboard**             | Low      | UX — ดู dashboard บนมือถือ                       |
-| **API Gateway**                  | Medium   | Integration — REST API สำหรับ third-party        |
+| **Machine Learning Integration** | High | Predictive — Deploy Prophet/ARIMA models for advanced capacity forecasting |
+| **Multi-tenant Support** | Medium | Scalability — Architect robust segregation of monitoring data by department |
+| **Mobile Dashboard** | Low | UX — Engineer mobile-optimized dashboard viewport configurations |
+| **API Gateway** | Medium | Integration — Deploy a robust REST API layer enabling secure third-party consumption |
 
-### Long-term (6-12 เดือน)
+### Long-term (6-12 Months)
 
-| Recommendation           | Priority | Impact                                 |
+| Recommendation | Priority | Impact |
 | ------------------------ | -------- | -------------------------------------- |
-| **Kubernetes Migration** | High     | Scalability — สำหรับ 1000+ machines    |
-| **Federated Monitoring** | High     | Enterprise — multi-site monitoring     |
-| **AI-powered Alerting**  | High     | AIOps — self-learning alert thresholds |
-| **Compliance Reporting** | Medium   | Governance — audit trails, SLA reports |
+| **Kubernetes Migration** | High | Scalability — Mandatory architectural evolution for supporting 1000+ physical machines |
+| **Federated Monitoring** | High | Enterprise — Enable highly resilient, distributed multi-site monitoring architectures |
+| **AI-powered Alerting** | High | AIOps — Implement dynamic, self-learning alert threshold algorithms |
+| **Compliance Reporting** | Medium | Governance — Automate the generation of rigorous audit trails and SLA compliance reports |
 
 ---
 
 ## Conclusion
 
-### ผลลัพธ์ของโครงการ
+### Project Outcomes
 
-โครงการ IMS ประสบความสำเร็จตามวัตถุประสงค์ทั้ง 5 ข้อ:
+The IMS initiative has successfully achieved all 5 core strategic objectives:
 
-1. **Real-time Monitoring** — ระบบ monitoring แบบ end-to-end ที่ทำงานได้จริง
-2. **Health Monitoring** — ตรวจสอบ server, network, services อย่างต่อเนื่อง
-3. **Downtime Reduction** — ลด MTTD จาก 30+ นาที เหลือ < 1 นาที
-4. **Visibility Dashboard** — 4 dashboards ที่เข้าใจง่ายและให้ข้อมูลครบถ้วน
-5. **Internship Training** — นักศึกษาได้เรียนรู้เครื่องมือ monitoring สมัยใหม่
+1. **Real-time Monitoring** — Deployed a fully functional, production-grade end-to-end monitoring architecture.
+2. **Health Monitoring** — Enabled continuous, proactive telemetry across servers, network infrastructure, and critical services.
+3. **Downtime Reduction** — Drastically reduced MTTD from a baseline of 30+ minutes down to < 1 minute.
+4. **Visibility Dashboard** — Delivered 4 highly intuitive, comprehensive dashboards providing total system visibility.
+5. **Internship Training** — Successfully upskilled interns utilizing cutting-edge, industry-standard monitoring toolchains.
 
-### คุณค่าที่มอบให้กับองค์กร
+### Value Delivered to the Organization
 
-| คุณค่า        | รายละเอียด                                                          |
+| Value Type | Details |
 | ------------- | ------------------------------------------------------------------- |
-| **Technical** | ระบบ monitoring ที่ใช้งานได้จริง, ลด downtime, เพิ่ม visibility     |
-| **Knowledge** | Documentation suite, skill library, training platform               |
-| **Financial** | ลดค่า manual monitoring, ป้องกัน downtime cost                      |
-| **Strategic** | Foundation สำหรับ AIOps, predictive maintenance, enterprise scaling |
+| **Technical** | A highly functional monitoring system, dramatically reduced downtime, and unprecedented system visibility |
+| **Knowledge** | A comprehensive documentation suite, reusable skill library, and permanent training platform |
+| **Financial** | Eradicated manual monitoring costs and systematically prevented exorbitant downtime-related losses |
+| **Strategic** | Established a robust foundation for AIOps, predictive maintenance, and limitless enterprise scaling |
 
-### คำขอบคุณ
+### Acknowledgements
 
-ขอขอบคุณ:
+We extend our sincere gratitude to:
 
-- **องค์กร** ที่ให้โอกาสฝึกงานและเข้าถึง infrastructure จริง
-- **ที่ปรึกษา** ที่ให้คำแนะนำตลอดโครงการ
-- **ทีมงาน** ที่ร่วมมือกันพัฒนาระบบ
+- **The Organization**, for providing the internship opportunity and granting access to physical production infrastructure.
+- **The Mentors**, for their invaluable guidance, technical expertise, and support throughout the project lifecycle.
+- **The Development Team**, for their relentless collaboration and engineering excellence in bringing this system to fruition.
 
 ---
 

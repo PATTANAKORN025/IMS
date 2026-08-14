@@ -26,13 +26,13 @@ Should reflect: `TROUBLESHOOTING.md` should not contain a second incident-respon
 
 ## P1 — Materially wrong technical claims
 
-**`docs/admin/ADMIN_MANUAL.md:33`** — "ระบบทำงานบน Docker Compose ทั้งหมด 10 services (9 long-running + 1 one-shot migration runner...)"
+**`docs/admin/ADMIN_MANUAL.md:33`** — "The system operates on Docker Compose with a total of 10 services (9 long-running + 1 one-shot migration runner...)"
 Actual: 12 services total (11 long-running + 1 one-shot `db-migrate`): `timescaledb, pgbouncer, prometheus, alertmanager, grafana, proxy, renderer, snmpsim, blackbox-exporter, alarm-api, node-red` + `db-migrate`.
 
 **`docs/admin/ADMIN_MANUAL.md:100-102`** — "`database/migrations/` currently has 40 sequenced files (`013` through `064`...)"
 Actual: 53 files, `013` through `078` (with some numbers skipped/archived).
 
-**`docs/admin/ADMIN_MANUAL.md:314`** — SRE Verification Protocol step 3: "ตรวจสอบ containers (9 long-running + ims-db-migrate ที่ควร Exited (0))"
+**`docs/admin/ADMIN_MANUAL.md:314`** — SRE Verification Protocol step 3: "Verify containers (9 long-running + ims-db-migrate, which should be Exited (0))"
 Same stale count as the `:33` finding above — should be 11 long-running + 1 one-shot.
 
 **`docs/admin/ADMIN_MANUAL.md:122-147`** — Pre-Production Security Checklist ("ALL default credentials MUST be changed") lists only `INGEST_API_KEY`, `POSTGRES_PASSWORD`, `GRAFANA_ADMIN_PASSWORD`.
