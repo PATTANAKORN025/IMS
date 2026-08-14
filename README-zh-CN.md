@@ -1,61 +1,30 @@
 <div align="center">
-  <img src="assets/meowrch.png" alt="IMS Logo" width="120" style="margin-bottom: 16px;" />
-</div>
-
-<h1 align="center" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; letter-spacing: -0.5px;">Industrial Monitoring System (IMS)</h1>
-
-<div align="center">
-  <p style="font-size: 15px; color: #6B7280;">
-    <a href="README.md" style="text-decoration: none;">🇬🇧 <b>English</b></a> &nbsp;&nbsp;|&nbsp;&nbsp;
-    <a href="README-th.md" style="text-decoration: none;">🇹🇭 <b>ไทย</b></a> &nbsp;&nbsp;|&nbsp;&nbsp;
-    <a href="README-zh-CN.md" style="text-decoration: none;">🇨🇳 <b>中文</b></a>
-  </p>
-</div>
-
-<div align="center" style="margin: 24px 0;">
-  <strong style="font-size: 18px; font-weight: 500;">高精度制造遥测与统计过程控制</strong>
+    <img src="assets/apex-ldi-noc-banner.jpg" alt="APEX Circuit LDI NOC Banner" width="100%" style="border-radius:12px; box-shadow: 0 8px 32px rgba(0,242,254,0.3); margin-bottom: 24px;" />
+    <br/>
+    <br/>
+    <a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.demolab.com?font=Orbitron&weight=600&size=36&duration=4000&pause=2000&color=00F2FE&center=true&repeat=true&width=1000&height=60&lines=APEX+Circuit+IMS+|+System+Initializing...;Advanced+Manufacturing+Intelligence+%26+NOC;Zero-Latency+Digital+Twin+Architecture" alt="Typing SVG" /></a>
 </div>
 
 <div align="center">
-  <a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.demolab.com?font=Orbitron&weight=600&size=36&duration=4000&pause=2000&color=00F2FE&center=true&repeat=true&width=1000&height=60&lines=APEX+Circuit+IMS+|+System+Initializing...;Advanced+Manufacturing+Intelligence+%26+NOC;Zero-Latency+Digital+Twin+Architecture" alt="Typing SVG" /></a>
+    <a href="#quick-start"><img src="https://img.shields.io/badge/-Release_v1.0-030407?style=for-the-badge&logo=github&logoColor=10B981" alt="Release"/></a>
+    <a href="LICENSE"><img src="https://img.shields.io/badge/-MIT_License-030407?style=for-the-badge&logo=opensourceinitiative&logoColor=00F2FE" alt="License"/></a>
+    <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/-Docker_Ready-030407?style=for-the-badge&logo=docker&logoColor=2496ED" alt="Docker"/></a>
+    <a href="https://grafana.com/"><img src="https://img.shields.io/badge/-Grafana_v11+-030407?style=for-the-badge&logo=grafana&logoColor=F46800" alt="Grafana"/></a>
+    <a href="https://nodered.org/"><img src="https://img.shields.io/badge/-Node--RED_v4+-030407?style=for-the-badge&logo=nodered&logoColor=8F0000" alt="Node-RED"/></a>
+    <a href="https://www.timescale.com/"><img src="https://img.shields.io/badge/-TimescaleDB_2.x-030407?style=for-the-badge&logo=postgresql&logoColor=F59E0B" alt="TimescaleDB"/></a>
+    <br>
+    <a href="#quick-start"><img src="https://img.shields.io/badge/Status-100%25_Passing-10B981?style=for-the-badge&logoColor=white" alt="Tests" /></a>
+    <a href="#quick-start"><img src="https://img.shields.io/badge/K6-Stress--Tested-030407?style=for-the-badge&logo=k6&logoColor=7B61FF" alt="K6" /></a>
+    <a href="data-generators/"><img src="https://img.shields.io/badge/Data-Digital_Twin-030407?style=for-the-badge&logo=python&logoColor=00C7B7" alt="Synthetic Data" /></a>
+</div>
+
+<div align="center" justify-content="space-between">
+    <a href="docs/architecture/IMS_PLATFORM_BOOK.md"><img src="https://img.shields.io/badge/PLATFORM_BOOK-ENTER-blue?color=00F2FE&labelColor=030407&style=for-the-badge"></a>
+    <a href="docs/architecture/ARCHITECTURE.md"><img src="https://img.shields.io/badge/ARCHITECTURE-READ-blue?color=10B981&labelColor=030407&style=for-the-badge"></a>
 </div>
 
 <br/>
 
-<div align="center">
-  <!-- Status Badges -->
-  <a href="https://github.com/PATTANAKORN025/IMS/releases"><img src="https://img.shields.io/badge/Release-v1.0-030407?style=flat-square&logo=github&logoColor=10B981" alt="Release"/></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-030407?style=flat-square&logo=opensourceinitiative&logoColor=00F2FE" alt="License"/></a>
-  <a href="#quick-start"><img src="https://img.shields.io/badge/Build-Passing-10B981?style=flat-square&logoColor=white" alt="Tests" /></a>
-  <a href="#quick-start"><img src="https://img.shields.io/badge/K6_Stress_Test-Passed-030407?style=flat-square&logo=k6&logoColor=7B61FF" alt="K6" /></a>
-  <br/><br/>
-  <!-- Tech Badges -->
-  <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/Docker-Ready-030407?style=flat-square&logo=docker&logoColor=2496ED" alt="Docker"/></a>
-  <a href="https://grafana.com/"><img src="https://img.shields.io/badge/Grafana-v11+-030407?style=flat-square&logo=grafana&logoColor=F46800" alt="Grafana"/></a>
-  <a href="https://nodered.org/"><img src="https://img.shields.io/badge/Node--RED-v4+-030407?style=flat-square&logo=nodered&logoColor=8F0000" alt="Node-RED"/></a>
-  <a href="https://www.timescale.com/"><img src="https://img.shields.io/badge/TimescaleDB-2.x-030407?style=flat-square&logo=postgresql&logoColor=F59E0B" alt="TimescaleDB"/></a>
-</div>
-
-<br/>
-
-<div align="center">
-  <table style="border:none; border-collapse:collapse; width:100%;">
-<tr>
-<td align="center" style="border:none; padding:16px; width:50%; vertical-align: top;">
- <img src="assets/noc-overview.png" alt="NOC Overview" width="100%" style="border-radius:12px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);" /><br/><br/>
- <b style="font-size: 15px;">Global NOC Overview</b><br/><sub style="color: #6B7280;">Real-time Fleet Health Envelope</sub>
-</td>
-<td align="center" style="border:none; padding:16px; width:50%; vertical-align: top;">
- <img src="assets/ldi-manufacturing.png" alt="LDI Command Center" width="100%" style="border-radius:12px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);" /><br/><br/>
- <b style="font-size: 15px;">LDI Manufacturing</b><br/><sub style="color: #6B7280;">Production Command Center</sub>
-</td>
-</tr>
-</table>
-</div>
-
-<br/>
-<hr style="height: 1px; border: none; background: #E5E7EB;" />
-<br/>
 ## 系统概述
 
 **IMS（工业监控系统，Industrial Monitoring System）** 是一个跨越基础设施和制造领域的遥测监控平台。它基于 Node-RED、TimescaleDB 和 Grafana 构建，将 IT 指标（服务器、网络交换机）和 OT 数据（LDI 制造机器）集成到单个由 PostgreSQL 支持的存储库中。
@@ -70,30 +39,30 @@
 
 <tr>
 <td align="center" style="border:none; padding:8px; width:33%;">
- <img src="assets/noc-overview.png" alt="NOC Overview" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
- <sub><b>NOC 概览</b> — 舰队健康包络</sub>
+  <img src="assets/noc-overview.png" alt="NOC Overview" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
+  <sub><b>NOC 概览</b> — 舰队健康包络</sub>
 </td>
 <td align="center" style="border:none; padding:8px; width:33%;">
- <img src="assets/engineering-drilldown.png" alt="Engineering Drill-Down" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
- <sub><b>工程向下钻取</b> — 单机诊断</sub>
+  <img src="assets/engineering-drilldown.png" alt="Engineering Drill-Down" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
+  <sub><b>工程向下钻取</b> — 单机诊断</sub>
 </td>
 <td align="center" style="border:none; padding:8px; width:33%;">
- <img src="assets/capacity-planning.png" alt="Capacity Planning" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
- <sub><b>容量规划</b> — 预测性预测</sub>
+  <img src="assets/capacity-planning.png" alt="Capacity Planning" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
+  <sub><b>容量规划</b> — 预测性预测</sub>
 </td>
 </tr>
 <tr>
 <td align="center" style="border:none; padding:8px; width:33%;">
- <img src="assets/ldi-manufacturing.png" alt="LDI Manufacturing Command Center" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
- <sub><b>LDI 制造</b> — 指挥中心</sub>
+  <img src="assets/ldi-manufacturing.png" alt="LDI Manufacturing Command Center" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
+  <sub><b>LDI 制造</b> — 指挥中心</sub>
 </td>
 <td align="center" style="border:none; padding:8px; width:33%;">
- <img src="assets/ldi-andon.png" alt="LDI Operator Andon Board" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
- <sub><b>LDI 安灯看板</b> — 操作员车间视图</sub>
+  <img src="assets/ldi-andon.png" alt="LDI Operator Andon Board" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
+  <sub><b>LDI 安灯看板</b> — 操作员车间视图</sub>
 </td>
 <td align="center" style="border:none; padding:8px; width:33%;">
- <img src="assets/ldi-engineering.png" alt="LDI Engineering Analytics" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
- <sub><b>LDI 工程</b> — 良率与 SPC 分析</sub>
+  <img src="assets/ldi-engineering.png" alt="LDI Engineering Analytics" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
+  <sub><b>LDI 工程</b> — 良率与 SPC 分析</sub>
 </td>
 </tr>
 </table>
@@ -107,18 +76,18 @@
 <table>
 <tr>
 <td align="center" width="33%">
- <h3>遥测摄取</h3>
- 并行的 Node-RED 遍历器 (walkers) 利用顺序批量 SNMP 轮询和 HTTP 端点，通过 PgBouncer 事务池将数据持久化到 TimescaleDB。<br/><br/>
- **已验证：** [nodered-ingestion-20260813.txt](docs/evidence/runtime/nodered-ingestion-20260813.txt)
+  <h3>遥测摄取</h3>
+  并行的 Node-RED 遍历器 (walkers) 利用顺序批量 SNMP 轮询和 HTTP 端点，通过 PgBouncer 事务池将数据持久化到 TimescaleDB。<br/><br/>
+  **已验证：** [nodered-ingestion-20260813.txt](docs/evidence/runtime/nodered-ingestion-20260813.txt)
 </td>
 <td align="center" width="33%">
- <h3>统计过程控制 (SPC)</h3>
- 实时 SPC 指标 (Cpk) 和滚动 3&sigma; 基线（Z-Score 异常检测）在数据库层面进行评估，用于早期预警。
+  <h3>统计过程控制 (SPC)</h3>
+  实时 SPC 指标 (Cpk) 和滚动 3&sigma; 基线（Z-Score 异常检测）在数据库层面进行评估，用于早期预警。
 </td>
 <td align="center" width="33%">
- <h3>连续聚合 (Continuous Aggregates)</h3>
- 由 TimescaleDB 自动计算每小时、每天和每周的汇总数据，以在跨越大时间范围时维持亚秒级的 Grafana 渲染时间。<br/><br/>
- **已验证：** [cagg-policies-20260813.txt](docs/evidence/runtime/cagg-policies-20260813.txt)
+  <h3>连续聚合 (Continuous Aggregates)</h3>
+  由 TimescaleDB 自动计算每小时、每天和每周的汇总数据，以在跨越大时间范围时维持亚秒级的 Grafana 渲染时间。<br/><br/>
+  **已验证：** [cagg-policies-20260813.txt](docs/evidence/runtime/cagg-policies-20260813.txt)
 </td>
 </tr>
 </table>
@@ -136,7 +105,7 @@
 git clone https://github.com/PATTANAKORN025/IMS.git
 cd IMS
 cp .env.example .env
-make up      # docker compose up -d (启动包含模拟器的堆栈)
+make up            # docker compose up -d (启动包含模拟器的堆栈)
 sleep 40 && make verify
 open http://localhost:3000
 ```
@@ -173,46 +142,46 @@ open http://localhost:3000
 
 ```mermaid
 flowchart LR
-  subgraph Collection ["采集 (Collection)"]
-    J["Juniper EX4000\n78 个接口"] -->|SNMP v2c| W["Node-RED\n顺序异步批处理"]
-    S["Linux 服务器\n1000+ 个节点"] -->|SNMP v2c| W
-  end
+    subgraph Collection ["采集 (Collection)"]
+        J["Juniper EX4000\n78 个接口"] -->|SNMP v2c| W["Node-RED\n顺序异步批处理"]
+        S["Linux 服务器\n1000+ 个节点"] -->|SNMP v2c| W
+    end
 
-  subgraph Processing ["V10 流水线处理 (Processing)"]
-    W -->|fork_5_ways| CPU[CPU 遍历器]
-    W -->|fork_5_ways| NET["网络遍历器\nifTable + ifXTable"]
-    W -->|fork_5_ways| STO[存储遍历器]
-    W -->|fork_5_ways| TMP[温度遍历器]
-    CPU --> P["有状态解析器\n每设备流上下文"]
-    NET --> P
-    STO --> P
-    TMP --> P
-  end
+    subgraph Processing ["V10 流水线处理 (Processing)"]
+        W -->|fork_5_ways| CPU[CPU 遍历器]
+        W -->|fork_5_ways| NET["网络遍历器\nifTable + ifXTable"]
+        W -->|fork_5_ways| STO[存储遍历器]
+        W -->|fork_5_ways| TMP[温度遍历器]
+        CPU --> P["有状态解析器\n每设备流上下文"]
+        NET --> P
+        STO --> P
+        TMP --> P
+    end
 
-  subgraph Storage ["存储 (Storage)"]
-    P -->|批量 INSERT 10s| B["PgBouncer\n事务池"]
-    B --> T["(TimescaleDB\n超表)"]
-    T --> CAGG["连续聚合<br>每小时 → 每天 → 每周"]
-  end
+    subgraph Storage ["存储 (Storage)"]
+        P -->|批量 INSERT 10s| B["PgBouncer\n事务池"]
+        B --> T["(TimescaleDB\n超表)"]
+        T --> CAGG["连续聚合<br>每小时 → 每天 → 每周"]
+    end
 
-  subgraph Visualization ["可视化 (Visualization)"]
-    T --> G1["NOC 概览\n15 个面板"]
-    T --> G2["工程\n25 个面板"]
-    T --> G3["容量\n16 个面板"]
-    T --> G4["元监控\n15 个面板"]
-  end
+    subgraph Visualization ["可视化 (Visualization)"]
+        T --> G1["NOC 概览\n15 个面板"]
+        T --> G2["工程\n25 个面板"]
+        T --> G3["容量\n16 个面板"]
+        T --> G4["元监控\n15 个面板"]
+    end
 
-  subgraph Alerting ["警报 (Alerting)"]
-    T --> PR["Prometheus\n/metrics 抓取"]
-    PR --> AM["Alertmanager\n抑制规则"]
-    AM --> WEB["LINE Messaging API\n+ MS Teams Webhooks"]
-  end
+    subgraph Alerting ["警报 (Alerting)"]
+        T --> PR["Prometheus\n/metrics 抓取"]
+        PR --> AM["Alertmanager\n抑制规则"]
+        AM --> WEB["LINE Messaging API\n+ MS Teams Webhooks"]
+    end
 
-  style Collection fill:#1a1f2e,stroke:#3B82F6,color:#e2e8f0
-  style Processing fill:#1a1f2e,stroke:#F59E0B,color:#e2e8f0
-  style Storage fill:#1a1f2e,stroke:#10B981,color:#e2e8f0
-  style Visualization fill:#1a1f2e,stroke:#8B5CF6,color:#e2e8f0
-  style Alerting fill:#1a1f2e,stroke:#EF4444,color:#e2e8f0
+    style Collection fill:#1a1f2e,stroke:#3B82F6,color:#e2e8f0
+    style Processing fill:#1a1f2e,stroke:#F59E0B,color:#e2e8f0
+    style Storage fill:#1a1f2e,stroke:#10B981,color:#e2e8f0
+    style Visualization fill:#1a1f2e,stroke:#8B5CF6,color:#e2e8f0
+    style Alerting fill:#1a1f2e,stroke:#EF4444,color:#e2e8f0
 ```
 
 <details>
@@ -289,32 +258,32 @@ open "http://localhost:3000/playlists/play/1?kiosk=tv&autofitpanels"
 
 ```
 IMS/
-├── monitoring/grafana/        # Grafana 仪表板 + 预配
-│  ├── dashboards/          #  10 个 JSON 仪表板文件（事实来源）
-│  └── library-panels/        #  共享库面板（舰队健康评分）
-├── nodered_data/           # Node-RED 管道引擎
-│  ├── flows/             #  ingestion.json + alerting.json（源代码）
-│  ├── lib/              #  circuit-breaker.js, parser, units.js
-│  └── settings.js          #  functionGlobalContext，认证配置
-├── postgres/             # 数据库初始化
-│  └── init/             #  001-init-timescaledb.sql（模式 + 视图）
-├── database/migrations/        #  55 个排序的迁移文件 (013-080，部分编号跳过/存档)，由 db-migrate 应用
-├── tests/               # 测试套件
-│  ├── k6/              #  K6 管道压力测试
-│  ├── unit/             #  解析器与计数器单元测试
-│  └── playwright/          #  视觉回归 + 屏幕截图捕获
-├── scripts/              # 运维脚本
-│  ├── create-playlist.sh       #  NOC 大屏显示播放列表创建器
-│  ├── generate-showcase.sh      #  仪表板屏幕截图生成器
-│  ├── snmp-discover.js        #  企业 SNMP OID 发现
-│  └── build-flows.js         #  合并 nodered_data/flows/*.json → flows.json（也被 CI 使用）
-├── assets/              # 仪表板屏幕截图（自动生成）
-├── docs/               # 架构、设计系统、故障排除文档
-│  ├── architecture/         #  ARCHITECTURE.md, GRAFANA_DESIGN_SYSTEM.md
-│  ├── operations/          #  TROUBLESHOOTING.md, SCALING_PLAN.md
-│  ├── audits/            #  审计报告与技术简报
-│  └── product/            #  PRODUCT.md, CONTEXT.md
-└── .mimocode/skills/         # 24 个用于 DevOps 自动化的自定义技能
+├── monitoring/grafana/                # Grafana 仪表板 + 预配
+│   ├── dashboards/                    #   10 个 JSON 仪表板文件（事实来源）
+│   └── library-panels/               #   共享库面板（舰队健康评分）
+├── nodered_data/                      # Node-RED 管道引擎
+│   ├── flows/                         #   ingestion.json + alerting.json（源代码）
+│   ├── lib/                           #   circuit-breaker.js, parser, units.js
+│   └── settings.js                    #   functionGlobalContext，认证配置
+├── postgres/                          # 数据库初始化
+│   └── init/                          #   001-init-timescaledb.sql（模式 + 视图）
+├── database/migrations/               #   55 个排序的迁移文件 (013-080，部分编号跳过/存档)，由 db-migrate 应用
+├── tests/                             # 测试套件
+│   ├── k6/                            #   K6 管道压力测试
+│   ├── unit/                          #   解析器与计数器单元测试
+│   └── playwright/                    #   视觉回归 + 屏幕截图捕获
+├── scripts/                           # 运维脚本
+│   ├── create-playlist.sh             #   NOC 大屏显示播放列表创建器
+│   ├── generate-showcase.sh           #   仪表板屏幕截图生成器
+│   ├── snmp-discover.js               #   企业 SNMP OID 发现
+│   └── build-flows.js                 #   合并 nodered_data/flows/*.json → flows.json（也被 CI 使用）
+├── assets/                            # 仪表板屏幕截图（自动生成）
+├── docs/                              # 架构、设计系统、故障排除文档
+│   ├── architecture/                  #   ARCHITECTURE.md, GRAFANA_DESIGN_SYSTEM.md
+│   ├── operations/                    #   TROUBLESHOOTING.md, SCALING_PLAN.md
+│   ├── audits/                        #   审计报告与技术简报
+│   └── product/                       #   PRODUCT.md, CONTEXT.md
+└── .mimocode/skills/                  # 24 个用于 DevOps 自动化的自定义技能
 ```
 
 </details>
@@ -327,7 +296,7 @@ IMS/
 
 <div align="center">
 
-### <img src="docs/assets/icons/briefcase.svg" width="18" height="18" align="center" /> 高管与业务战略 (Executive & Business Strategy)
+### 💼 高管与业务战略 (Executive & Business Strategy)
 
 | 文档 | 描述 |
 |:---:|---|
@@ -335,7 +304,7 @@ IMS/
 | [**平台手册（从这里开始）**](docs/architecture/IMS_PLATFORM_BOOK.md) | 整个文档集的导航中心，术语词汇表 |
 | [**产品背景**](docs/product/PRODUCT.md) | 产品目的、目标受众和定位 |
 
-### <img src="docs/assets/icons/factory.svg" width="18" height="18" align="center" /> 制造与 LDI 智能 (Manufacturing & LDI Intelligence)
+### 🏭 制造与 LDI 智能 (Manufacturing & LDI Intelligence)
 
 | 文档 | 描述 |
 |:---:|---|
@@ -345,7 +314,7 @@ IMS/
 | [**LDI RCA 指南**](docs/architecture/LDI_RCA_GUIDE.md) | 根本原因关联（提升度/置信度）方法论 |
 | [**LDI 验证协议**](docs/operations/LDI_VALIDATION_PROTOCOL.md) | 4 阶段生产签字验收程序 |
 
-### <img src="docs/assets/icons/layers.svg" width="18" height="18" align="center" />️ 核心架构与安全 (Core Architecture & Security)
+### 🏗️ 核心架构与安全 (Core Architecture & Security)
 
 | 文档 | 描述 |
 |:---:|---|
@@ -359,7 +328,7 @@ IMS/
 | [**设计系统**](docs/architecture/GRAFANA_DESIGN_SYSTEM.md) | 语义调色板、排版、阈值契约 |
 | [**仪表板清单**](docs/architecture/DASHBOARD_INVENTORY.md) | 自动生成的仪表板/面板计数表（CI 检查验证） |
 
-### ️ 运维与 SRE 手册 (Operations & SRE Playbooks)
+### ⚙️ 运维与 SRE 手册 (Operations & SRE Playbooks)
 
 | 文档 | 描述 |
 |:---:|---|
@@ -375,7 +344,7 @@ IMS/
 | [**发布清单**](docs/operations/RELEASE_CHECKLIST.md) | 标记发布版本前需要验证的内容 |
 | [**故障排除**](docs/operations/TROUBLESHOOTING.md) | 常见问题、调试命令、恢复程序 |
 
-### <img src="docs/assets/icons/users.svg" width="18" height="18" align="center" /> 社区与参考 (Community & Reference)
+### 🤝 社区与参考 (Community & Reference)
 
 | 文档 | 描述 |
 |:---:|---|
@@ -394,6 +363,6 @@ IMS/
 
 **以精密构建，为可用性而生。**
 
-[MIT License](LICENSE) — 2026 IMS Contributors
+[MIT License](LICENSE) —  2026 IMS Contributors
 
 </div>
