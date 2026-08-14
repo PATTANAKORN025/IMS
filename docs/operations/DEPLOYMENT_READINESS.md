@@ -1,4 +1,4 @@
-#  Deployment Readiness Assessment
+# Deployment Readiness Assessment
 
 > **เอกสารประเมินความพร้อมก่อน deploy ระบบ IMS ไปยัง Production**
 > อัปเดตล่าสุด: 2026-06-29
@@ -15,7 +15,7 @@
 
 ---
 
-##  Table of Contents
+## Table of Contents
 
 1. [Version Compatibility](#-version-compatibility)
 2. [Pre-Deployment Checklist](#-pre-deployment-checklist)
@@ -25,18 +25,18 @@
 
 ---
 
-##  Version Compatibility
+## Version Compatibility
 
 ### Current Stack Versions
 
 | Component | Current | Latest | Risk | Notes |
 |---|---|---|---|---|
 | **Node-RED** | 4.0.5 | 5.0 | ️ HIGH | 2 major versions behind, requires Node.js 22.9+ |
-| **TimescaleDB** | PostgreSQL 16 | PG 17 |  LOW | v16 still supported until 2028 |
-| **Grafana** | 11.x | 11.x |  NONE | Current version |
-| **Prometheus** | v2.55.x | 3.x |  LOW | v2.x still maintained |
-| **K6** | unspecified | current |  NONE | Works fine |
-| **Docker** | v4.0+ | v4.0+ |  NONE | Stable |
+| **TimescaleDB** | PostgreSQL 16 | PG 17 | LOW | v16 still supported until 2028 |
+| **Grafana** | 11.x | 11.x | NONE | Current version |
+| **Prometheus** | v2.55.x | 3.x | LOW | v2.x still maintained |
+| **K6** | unspecified | current | NONE | Works fine |
+| **Docker** | v4.0+ | v4.0+ | NONE | Stable |
 
 ### Node-RED Upgrade Path
 
@@ -47,7 +47,7 @@
 | Node.js | 18.x | 22.9+ |
 | Docker Base Image | node:18-alpine | node:22-alpine |
 | Editor UI | Legacy | New React-based |
-| Flow Compatibility |  | ️ Test first |
+| Flow Compatibility | | ️ Test first |
 
 **Recommended Upgrade Path:**
 1. Test in staging environment first
@@ -57,17 +57,17 @@
 
 ---
 
-##  Pre-Deployment Checklist
+## Pre-Deployment Checklist
 
 ### Phase 1: Network Preparation
 
 | # | Task | Status | Owner |
 |---|---|---|---|
-| 1 | Obtain target machine IP addresses |  | Network Team |
-| 2 | Confirm SNMP community strings |  | Security Team |
-| 3 | Verify SNMP enabled on targets |  | Server Team |
-| 4 | Verify UDP 161 not blocked by firewall |  | Network Team |
-| 5 | Test network connectivity (ping) |  | IT Team |
+| 1 | Obtain target machine IP addresses | | Network Team |
+| 2 | Confirm SNMP community strings | | Security Team |
+| 3 | Verify SNMP enabled on targets | | Server Team |
+| 4 | Verify UDP 161 not blocked by firewall | | Network Team |
+| 5 | Test network connectivity (ping) | | IT Team |
 
 **Windows SNMP Enablement:**
 ```powershell
@@ -91,33 +91,33 @@ sudo systemctl start snmpd
 
 | # | Task | Status | Command |
 |---|---|---|---|
-| 1 | Clone repository |  | `git clone https://github.com/PATTANAKORN025/IMS.git` |
-| 2 | Create secrets |  | `mkdir -p secrets && echo "password" > secrets/postgres_password.txt` |
-| 3 | Copy environment |  | `cp .env.example .env` |
-| 4 | Start services |  | `docker compose up -d` |
-| 5 | Wait for startup |  | `sleep 40` |
-| 6 | Verify containers |  | `docker compose ps` |
+| 1 | Clone repository | | `git clone https://github.com/PATTANAKORN025/IMS.git` |
+| 2 | Create secrets | | `mkdir -p secrets && echo "password" > secrets/postgres_password.txt` |
+| 3 | Copy environment | | `cp .env.example .env` |
+| 4 | Start services | | `docker compose up -d` |
+| 5 | Wait for startup | | `sleep 40` |
+| 6 | Verify containers | | `docker compose ps` |
 
 ### Phase 3: Device Registration
 
 | # | Task | Status | Command |
 |---|---|---|---|
-| 1 | Update `public.devices` table |  | `INSERT INTO public.devices (device_id, hostname, ip_address, snmp_community, snmp_port, enabled) VALUES (...)` |
-| 2 | Test SNMP connectivity |  | `snmpwalk -v2c -c <community> <ip> 1.3.6.1.2.1.1` |
-| 3 | Verify data flow |  | Check Grafana dashboards |
+| 1 | Update `public.devices` table | | `INSERT INTO public.devices (device_id, hostname, ip_address, snmp_community, snmp_port, enabled) VALUES (...)` |
+| 2 | Test SNMP connectivity | | `snmpwalk -v2c -c <community> <ip> 1.3.6.1.2.1.1` |
+| 3 | Verify data flow | | Check Grafana dashboards |
 
 ### Phase 4: Security Hardening
 
 | # | Task | Status | Reference |
 |---|---|---|---|
-| 1 | Remove PgBouncer host port |  | Never published one in base `docker-compose.yaml` -- not a prod-overlay change |
-| 2 | Enable Node-RED adminAuth |  | Generate bcrypt hash |
-| 3 | Grafana not directly host-reachable |  | No host port in base compose; `proxy` (nginx) is the sole entry point, fronting Grafana + `alarm-api` |
-| 4 | Review SECURITY.md |  | See security checklist |
+| 1 | Remove PgBouncer host port | | Never published one in base `docker-compose.yaml` -- not a prod-overlay change |
+| 2 | Enable Node-RED adminAuth | | Generate bcrypt hash |
+| 3 | Grafana not directly host-reachable | | No host port in base compose; `proxy` (nginx) is the sole entry point, fronting Grafana + `alarm-api` |
+| 4 | Review SECURITY.md | | See security checklist |
 
 ---
 
-##  Real-World Troubleshooting
+## Real-World Troubleshooting
 
 ### Priority-Based Failure Analysis
 
@@ -144,24 +144,24 @@ docker exec ims-node-red node -e "
 const snmp = require('net-snmp');
 const session = snmp.createSession('<ip>', '<community>', {port: 161, timeout: 5000});
 session.get(['1.3.6.1.2.1.1.1.0'], (err, varbinds) => {
-    if (err) console.error('ERROR:', err.message);
-    else console.log('OK:', varbinds[0].value.toString());
-    session.close();
+  if (err) console.error('ERROR:', err.message);
+  else console.log('OK:', varbinds[0].value.toString());
+  session.close();
 });
 "
 ```
 
 ---
 
-##  Data Format Confidence
+## Data Format Confidence
 
 ### Machine Type Assessment
 
 | Machine Type | Simulated vs Real | MIB Standard | Confidence | Notes |
 |---|---|---|---|---|
-| **Ubuntu (SNMP)** | Standard MIBs | HOST-RESOURCES-MIB | 🟢 HIGH | Highly likely to match |
-| **Windows (SNMP)** | Standard MIBs | HOST-RESOURCES-MIB | 🟢 HIGH | Highly likely to match |
-| **LDI (YSPhotec)** | Custom `.9999` MIB | Private Enterprise |  **UNPROVEN** | Entirely assumed |
+| **Ubuntu (SNMP)** | Standard MIBs | HOST-RESOURCES-MIB | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) HIGH | Highly likely to match |
+| **Windows (SNMP)** | Standard MIBs | HOST-RESOURCES-MIB | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) HIGH | Highly likely to match |
+| **LDI (YSPhotec)** | Custom `.9999` MIB | Private Enterprise | **UNPROVEN** | Entirely assumed |
 
 ### LDI Machine Considerations
 
@@ -178,16 +178,16 @@ session.get(['1.3.6.1.2.1.1.1.0'], (err, varbinds) => {
 
 ---
 
-##  Go-Live Checklist
+## Go-Live Checklist
 
 ### Day Before Go-Live
 
 | # | Task | Owner | Sign-off |
 |---|---|---|---|
-| 1 | All pre-deployment tasks complete | IT Team |  |
-| 2 | Backup existing monitoring (if any) | IT Team |  |
-| 3 | Notify stakeholders of maintenance window | IT Manager |  |
-| 4 | Prepare rollback plan | IT Team |  |
+| 1 | All pre-deployment tasks complete | IT Team | |
+| 2 | Backup existing monitoring (if any) | IT Team | |
+| 3 | Notify stakeholders of maintenance window | IT Manager | |
+| 4 | Prepare rollback plan | IT Team | |
 
 ### Go-Live Day
 

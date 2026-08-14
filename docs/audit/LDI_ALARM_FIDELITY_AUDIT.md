@@ -37,13 +37,13 @@ The live 19-row master's severity was assigned by `scripts/switch-data-mode.sh`'
 
 ```sql
 UPDATE ldi_alarm_ms_code SET severity =
-  CASE
-    WHEN alarm_msg ~* 'emergency|e-stop|estop|crash|collision|overcurrent|fire|critical|safety|violation|overheat|speeding|hyper-?acceleration' THEN 'Critical'
-    WHEN upper(trim(alarm_type)) = 'E' THEN 'Critical'
-    WHEN upper(trim(alarm_type)) = 'W' THEN 'Warning'
-    WHEN alarm_msg ~* 'timeout|retry|not supported|empty|invalid|parameter|please|not found' THEN 'Minor'
-    ELSE 'Major'
-  END;
+ CASE
+  WHEN alarm_msg ~* 'emergency|e-stop|estop|crash|collision|overcurrent|fire|critical|safety|violation|overheat|speeding|hyper-?acceleration' THEN 'Critical'
+  WHEN upper(trim(alarm_type)) = 'E' THEN 'Critical'
+  WHEN upper(trim(alarm_type)) = 'W' THEN 'Warning'
+  WHEN alarm_msg ~* 'timeout|retry|not supported|empty|invalid|parameter|please|not found' THEN 'Minor'
+  ELSE 'Major'
+ END;
 ```
 
 Checked every one of the 19 live rows against this rule by hand: **100% match, no drift** (e.g. `0106001C` "Stop trigger wait signal timeout" → Minor via the timeout keyword; all 12 `alarm_type='W'` rows → Warning; all remaining `alarm_type='A'` rows with no soft keyword → Major). No inconsistency in the currently loaded data.
@@ -57,7 +57,7 @@ The rule itself has two structural weaknesses, surfaced in detail in §8 because
 ```sql
 SELECT alarm_id, alarm_msg, alarm_detail FROM ldi_alarm_ms_code
 WHERE alarm_msg ~* 'test|todo|tbd|lorem|xxx|foo|bar|debug|dummy|sample|placeholder'
-   OR alarm_msg = '' OR alarm_msg IS NULL OR alarm_detail = '' OR length(alarm_detail) < 5;
+  OR alarm_msg = '' OR alarm_msg IS NULL OR alarm_detail = '' OR length(alarm_detail) < 5;
 -- 0 rows
 ```
 
@@ -81,11 +81,11 @@ But noise codes are only 8.6% of all alarms fired (1,246 of 14,490). The other 9
 
 ```sql
 SELECT
-  round(100.0*count(*) FILTER (WHERE air_vacuum IS NOT NULL AND (air_vacuum > -8 OR air_vacuum < -30))/count(*),2) AS pct_vac_oos,
-  round(100.0*count(*) FILTER (WHERE temperature<20 OR temperature>24 OR humidity<50 OR humidity>60)/count(*),2) AS pct_env_oos,
-  round(100.0*count(*) FILTER (WHERE abs(pe_1)>10 OR abs(je_1)>10)/count(*),2) AS pct_pe_oos
+ round(100.0*count(*) FILTER (WHERE air_vacuum IS NOT NULL AND (air_vacuum > -8 OR air_vacuum < -30))/count(*),2) AS pct_vac_oos,
+ round(100.0*count(*) FILTER (WHERE temperature<20 OR temperature>24 OR humidity<50 OR humidity>60)/count(*),2) AS pct_env_oos,
+ round(100.0*count(*) FILTER (WHERE abs(pe_1)>10 OR abs(je_1)>10)/count(*),2) AS pct_pe_oos
 FROM ldi_data;
--- pct_vac_oos=26.99   pct_env_oos=23.26   pct_pe_oos=44.93
+-- pct_vac_oos=26.99  pct_env_oos=23.26  pct_pe_oos=44.93
 ```
 
 **Nearly half of all telemetry rows (44.93%) are alignment-out-of-spec, and over a quarter are vacuum-out-of-spec, continuously across the entire 3-day dataset window.** On a real PCB LDI line, PE/JE tolerance excursions on ~45% of readings would mean roughly half of production is out of registration essentially all the time — not a plausible steady state. This is a telemetry-generator calibration issue (baseline noise range too wide relative to the spec thresholds), not an alarm-logic bug, but it is the root cause of every alarm-realism problem in §5–§7.
@@ -97,18 +97,18 @@ FROM ldi_data;
 ```sql
 SELECT equipmentid, errorcode, count(*) AS repeats_under_15s
 FROM (SELECT equipmentid, errorcode, logdate,
-             logdate - LAG(logdate) OVER (PARTITION BY equipmentid, errorcode ORDER BY logdate) AS gap
-      FROM ldi_alarm_log) g
+       logdate - LAG(logdate) OVER (PARTITION BY equipmentid, errorcode ORDER BY logdate) AS gap
+   FROM ldi_alarm_log) g
 WHERE gap < INTERVAL '15 seconds'
 GROUP BY 1,2 ORDER BY 3 DESC LIMIT 5;
 
  equipmentid | errorcode | repeats_under_15s
 -------------+-----------+-------------------
- LDI-02      | 91008     |               479
- LDI-08      | 91009     |               222
- LDI-10      | 91009     |               190
- LDI-09      | 91009     |               187
- LDI-06      | 91009     |               184
+ LDI-02   | 91008   |        479
+ LDI-08   | 91009   |        222
+ LDI-10   | 91009   |        190
+ LDI-09   | 91009   |        187
+ LDI-06   | 91009   |        184
 ```
 
 `LDI-02` fired code `91008` (environment out-of-spec) 479 times with under 15 seconds between consecutive firings — consistent with a condition that has been continuously true for the entire 3-day window, re-rolling a 25%-per-tick dice roll every 10 seconds rather than firing once and clearing. There is no cooldown/debounce and no alarm-latching model (fire once, stay latched until the condition clears, then re-fire on the next distinct excursion) — real alarm systems virtually always debounce to avoid exactly this kind of flood. Per-machine alarm totals over the 3-day window also skew heavily by which machines happen to have chronically out-of-spec telemetry (`LDI-05`: 3,040 alarms; `LDI-03`: 159) rather than by the simulator's own configured per-machine noise weights (`MACHINES` table gives `LDI-05` only 17.2% weight and `LDI-03` 10.9% — nowhere near enough to explain a 19x gap), confirming the skew comes from telemetry calibration, not intentional machine-reliability modeling.
@@ -123,25 +123,25 @@ The flag-correlation data itself is correct and confirms the codes work exactly 
 
 ```sql
 SELECT errorcode, count(*) n,
-  round(100.0*count(*) FILTER (WHERE flag_pe_out_of_spec)/count(*),1) pct_pe_oos,
-  round(100.0*count(*) FILTER (WHERE flag_vac_out_of_spec)/count(*),1) pct_vac_oos,
-  round(100.0*count(*) FILTER (WHERE flag_temp_out_of_spec)/count(*),1) pct_env_oos
+ round(100.0*count(*) FILTER (WHERE flag_pe_out_of_spec)/count(*),1) pct_pe_oos,
+ round(100.0*count(*) FILTER (WHERE flag_vac_out_of_spec)/count(*),1) pct_vac_oos,
+ round(100.0*count(*) FILTER (WHERE flag_temp_out_of_spec)/count(*),1) pct_env_oos
 FROM v_ldi_alarm_context GROUP BY errorcode ORDER BY n DESC;
 
- 91009 (VACUUM)      | 4477 | pe 57.8 | vac 100.0 | env  4.4   <- designed correlation confirmed
- 91008 (ENVIRONMENT) | 2379 | pe 21.9 | vac   8.3 | env 100.0  <- designed correlation confirmed
- 90004 (ALIGNMENT)   | 1637 | pe 100.0| vac  41.1 | env  7.9   <- designed correlation confirmed
- 93004 (noise)       |  302 | pe 42.1 | vac  22.5 | env 21.5  <- ≈ baseline (44.9/27.0/23.3), no real correlation, as intended
- 97005 (noise)       |   90 | pe 46.7 | vac  20.0 | env 16.7  <- ≈ baseline
+ 91009 (VACUUM)   | 4477 | pe 57.8 | vac 100.0 | env 4.4  <- designed correlation confirmed
+ 91008 (ENVIRONMENT) | 2379 | pe 21.9 | vac  8.3 | env 100.0 <- designed correlation confirmed
+ 90004 (ALIGNMENT)  | 1637 | pe 100.0| vac 41.1 | env 7.9  <- designed correlation confirmed
+ 93004 (noise)    | 302 | pe 42.1 | vac 22.5 | env 21.5 <- ≈ baseline (44.9/27.0/23.3), no real correlation, as intended
+ 97005 (noise)    |  90 | pe 46.7 | vac 20.0 | env 16.7 <- ≈ baseline
 ```
 
 **But this baseline-level correlation is high in absolute terms purely because §5's telemetry is chronically out of spec** — and it surfaces directly on `ims-ldi-manufacturing.json`'s "Recent Alarm Events (Last 50)" panel, whose `"Quality Impact"` column derives from these same flags with no distinction for match basis:
 
 ```sql
 CASE WHEN c.flag_pe_out_of_spec THEN 'PE/JE Out of Spec'
-     WHEN c.flag_thermal_out_of_spec THEN 'Thermal Out of Spec'
-     ...
-     ELSE 'Within Spec' END AS "Quality Impact"
+   WHEN c.flag_thermal_out_of_spec THEN 'Thermal Out of Spec'
+   ...
+   ELSE 'Within Spec' END AS "Quality Impact"
 ```
 
 A `93004` "Calibration cycle exception" event (a pure noise code with zero designed relationship to position error) has a ~42% chance of displaying **"PE/JE Out of Spec"** in this column, purely because whatever telemetry row landed nearest in time happened to be one of the ~45% of all rows that are PE-out-of-spec at baseline. An engineer reading this table would reasonably read that as "this alarm was caused by a position error" — it wasn't; it's a coincidence of timing on a chronically-faulted dataset. This is the audit's most actionable finding: it's not just an internal semantic imprecision, it produces a specific, verifiable false attribution on a live production panel.
@@ -174,8 +174,8 @@ All three run the identical filter `m.severity IN ('Critical', 'Major')` — non
 
 ```sql
 SELECT severity, COUNT(*) FROM ldi_alarm_log a JOIN ldi_alarm_ms_code m
-  ON a.errorcode::TEXT = m.alarm_code::TEXT GROUP BY severity;
--- Warning: 13880   Major: 564   Minor: 75   (Critical: 0)
+ ON a.errorcode::TEXT = m.alarm_code::TEXT GROUP BY severity;
+-- Warning: 13880  Major: 564  Minor: 75  (Critical: 0)
 ```
 
 Given §8's finding, **all 564 events counted by every one of these "Critical" panels are actually Major-severity** — currently 0% of what any of these tiles display is Critical. The label is not just inconsistent across dashboards, it is 100% inaccurate for what it currently contains.
@@ -260,25 +260,25 @@ SELECT alarm_id, length(alarm_msg), length(alarm_detail) FROM ldi_alarm_ms_code;
 -- §5
 SELECT errorcode, count(*) FROM ldi_alarm_log GROUP BY errorcode ORDER BY 2 DESC;
 SELECT round(100.0*count(*) FILTER (WHERE air_vacuum IS NOT NULL AND (air_vacuum > -8 OR air_vacuum < -30))/count(*),2) pct_vac_oos,
-       round(100.0*count(*) FILTER (WHERE temperature<20 OR temperature>24 OR humidity<50 OR humidity>60)/count(*),2) pct_env_oos,
-       round(100.0*count(*) FILTER (WHERE abs(pe_1)>10 OR abs(je_1)>10)/count(*),2) pct_pe_oos
+    round(100.0*count(*) FILTER (WHERE temperature<20 OR temperature>24 OR humidity<50 OR humidity>60)/count(*),2) pct_env_oos,
+    round(100.0*count(*) FILTER (WHERE abs(pe_1)>10 OR abs(je_1)>10)/count(*),2) pct_pe_oos
 FROM ldi_data;
 
 -- §6
 SELECT equipmentid, count(*) FROM ldi_alarm_log GROUP BY equipmentid ORDER BY 2 DESC;
 WITH gaps AS (
-  SELECT equipmentid, errorcode, logdate,
-         logdate - LAG(logdate) OVER (PARTITION BY equipmentid, errorcode ORDER BY logdate) AS gap
-  FROM ldi_alarm_log)
+ SELECT equipmentid, errorcode, logdate,
+     logdate - LAG(logdate) OVER (PARTITION BY equipmentid, errorcode ORDER BY logdate) AS gap
+ FROM ldi_alarm_log)
 SELECT equipmentid, errorcode, count(*) FROM gaps WHERE gap < INTERVAL '15 seconds' GROUP BY 1,2 ORDER BY 3 DESC;
 
 -- §7
 SELECT count(*) FILTER (WHERE related_log_id IS NOT NULL), count(*) FROM ldi_alarm_log;
 SELECT match_type, count(*) FROM v_ldi_alarm_context GROUP BY match_type;
 SELECT errorcode, count(*) n,
-  round(100.0*count(*) FILTER (WHERE flag_pe_out_of_spec)/count(*),1) pct_pe_oos,
-  round(100.0*count(*) FILTER (WHERE flag_vac_out_of_spec)/count(*),1) pct_vac_oos,
-  round(100.0*count(*) FILTER (WHERE flag_temp_out_of_spec)/count(*),1) pct_env_oos
+ round(100.0*count(*) FILTER (WHERE flag_pe_out_of_spec)/count(*),1) pct_pe_oos,
+ round(100.0*count(*) FILTER (WHERE flag_vac_out_of_spec)/count(*),1) pct_vac_oos,
+ round(100.0*count(*) FILTER (WHERE flag_temp_out_of_spec)/count(*),1) pct_env_oos
 FROM v_ldi_alarm_context GROUP BY errorcode ORDER BY n DESC;
 
 -- §8 (static file review, not a live query)
@@ -286,11 +286,11 @@ grep -n "'Critical')" database/migrations/061-ldi-alarm-master-real-import.sql
 
 -- §9
 SELECT COUNT(*) FROM ldi_alarm_log a JOIN ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT
-  WHERE a.logdate > NOW() - INTERVAL '1 hour' AND m.severity IN ('Critical','Major');
+ WHERE a.logdate > NOW() - INTERVAL '1 hour' AND m.severity IN ('Critical','Major');
 SELECT COUNT(*) FROM ldi_alarm_log a JOIN ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT
-  WHERE m.severity IN ('Critical','Major');
+ WHERE m.severity IN ('Critical','Major');
 SELECT severity, COUNT(*) FROM ldi_alarm_log a JOIN ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT GROUP BY severity;
 
 -- §10 (extracted programmatically from monitoring/grafana/dashboards/manufacturing/*.json
---       fieldConfig.defaults.mappings / fieldConfig.overrides[].properties[id=mappings])
+--    fieldConfig.defaults.mappings / fieldConfig.overrides[].properties[id=mappings])
 ```

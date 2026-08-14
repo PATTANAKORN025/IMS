@@ -1,26 +1,26 @@
 <div align="center">
-    <img src="assets/apex-ldi-noc-banner.jpg" alt="APEX Circuit LDI NOC Banner" width="100%" style="border-radius:12px; box-shadow: 0 8px 32px rgba(0,242,254,0.3); margin-bottom: 24px;" />
-    <br/>
-    <br/>
-    <a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.demolab.com?font=Orbitron&weight=600&size=36&duration=4000&pause=2000&color=00F2FE&center=true&repeat=true&width=1000&height=60&lines=APEX+Circuit+IMS+|+System+Initializing...;Advanced+Manufacturing+Intelligence+%26+NOC;Zero-Latency+Digital+Twin+Architecture" alt="Typing SVG" /></a>
+  <img src="assets/apex-ldi-noc-banner.jpg" alt="APEX Circuit LDI NOC Banner" width="100%" style="border-radius:12px; box-shadow: 0 8px 32px rgba(0,242,254,0.3); margin-bottom: 24px;" />
+  <br/>
+  <br/>
+  <a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.demolab.com?font=Orbitron&weight=600&size=36&duration=4000&pause=2000&color=00F2FE&center=true&repeat=true&width=1000&height=60&lines=APEX+Circuit+IMS+|+System+Initializing...;Advanced+Manufacturing+Intelligence+%26+NOC;Zero-Latency+Digital+Twin+Architecture" alt="Typing SVG" /></a>
 </div>
 
 <div align="center">
-    <a href="#quick-start"><img src="https://img.shields.io/badge/-Release_v1.0-030407?style=for-the-badge&logo=github&logoColor=10B981" alt="Release"/></a>
-    <a href="LICENSE"><img src="https://img.shields.io/badge/-MIT_License-030407?style=for-the-badge&logo=opensourceinitiative&logoColor=00F2FE" alt="License"/></a>
-    <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/-Docker_Ready-030407?style=for-the-badge&logo=docker&logoColor=2496ED" alt="Docker"/></a>
-    <a href="https://grafana.com/"><img src="https://img.shields.io/badge/-Grafana_v11+-030407?style=for-the-badge&logo=grafana&logoColor=F46800" alt="Grafana"/></a>
-    <a href="https://nodered.org/"><img src="https://img.shields.io/badge/-Node--RED_v4+-030407?style=for-the-badge&logo=nodered&logoColor=8F0000" alt="Node-RED"/></a>
-    <a href="https://www.timescale.com/"><img src="https://img.shields.io/badge/-TimescaleDB_2.x-030407?style=for-the-badge&logo=postgresql&logoColor=F59E0B" alt="TimescaleDB"/></a>
-    <br>
-    <a href="#quick-start"><img src="https://img.shields.io/badge/Status-100%25_Passing-10B981?style=for-the-badge&logoColor=white" alt="Tests" /></a>
-    <a href="#quick-start"><img src="https://img.shields.io/badge/K6-Stress--Tested-030407?style=for-the-badge&logo=k6&logoColor=7B61FF" alt="K6" /></a>
-    <a href="data-generators/"><img src="https://img.shields.io/badge/Data-Digital_Twin-030407?style=for-the-badge&logo=python&logoColor=00C7B7" alt="Synthetic Data" /></a>
+  <a href="#quick-start"><img src="https://img.shields.io/badge/-Release_v1.0-030407?style=for-the-badge&logo=github&logoColor=10B981" alt="Release"/></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/-MIT_License-030407?style=for-the-badge&logo=opensourceinitiative&logoColor=00F2FE" alt="License"/></a>
+  <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/-Docker_Ready-030407?style=for-the-badge&logo=docker&logoColor=2496ED" alt="Docker"/></a>
+  <a href="https://grafana.com/"><img src="https://img.shields.io/badge/-Grafana_v11+-030407?style=for-the-badge&logo=grafana&logoColor=F46800" alt="Grafana"/></a>
+  <a href="https://nodered.org/"><img src="https://img.shields.io/badge/-Node--RED_v4+-030407?style=for-the-badge&logo=nodered&logoColor=8F0000" alt="Node-RED"/></a>
+  <a href="https://www.timescale.com/"><img src="https://img.shields.io/badge/-TimescaleDB_2.x-030407?style=for-the-badge&logo=postgresql&logoColor=F59E0B" alt="TimescaleDB"/></a>
+  <br>
+  <a href="#quick-start"><img src="https://img.shields.io/badge/Status-100%25_Passing-10B981?style=for-the-badge&logoColor=white" alt="Tests" /></a>
+  <a href="#quick-start"><img src="https://img.shields.io/badge/K6-Stress--Tested-030407?style=for-the-badge&logo=k6&logoColor=7B61FF" alt="K6" /></a>
+  <a href="data-generators/"><img src="https://img.shields.io/badge/Data-Digital_Twin-030407?style=for-the-badge&logo=python&logoColor=00C7B7" alt="Synthetic Data" /></a>
 </div>
 
 <div align="center" justify-content="space-between">
-    <a href="docs/architecture/IMS_PLATFORM_BOOK.md"><img src="https://img.shields.io/badge/PLATFORM_BOOK-ENTER-blue?color=00F2FE&labelColor=030407&style=for-the-badge"></a>
-    <a href="docs/architecture/ARCHITECTURE.md"><img src="https://img.shields.io/badge/ARCHITECTURE-READ-blue?color=10B981&labelColor=030407&style=for-the-badge"></a>
+  <a href="docs/architecture/IMS_PLATFORM_BOOK.md"><img src="https://img.shields.io/badge/PLATFORM_BOOK-ENTER-blue?color=00F2FE&labelColor=030407&style=for-the-badge"></a>
+  <a href="docs/architecture/ARCHITECTURE.md"><img src="https://img.shields.io/badge/ARCHITECTURE-READ-blue?color=10B981&labelColor=030407&style=for-the-badge"></a>
 </div>
 
 <br/>
@@ -39,30 +39,30 @@
 
 <tr>
 <td align="center" style="border:none; padding:8px; width:33%;">
-  <img src="assets/noc-overview.png" alt="NOC Overview" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
-  <sub><b>NOC Overview</b> — Fleet Health Envelope</sub>
+ <img src="assets/noc-overview.png" alt="NOC Overview" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
+ <sub><b>NOC Overview</b> — Fleet Health Envelope</sub>
 </td>
 <td align="center" style="border:none; padding:8px; width:33%;">
-  <img src="assets/engineering-drilldown.png" alt="Engineering Drill-Down" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
-  <sub><b>Engineering Drill-Down</b> — Per-Machine Diagnostics</sub>
+ <img src="assets/engineering-drilldown.png" alt="Engineering Drill-Down" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
+ <sub><b>Engineering Drill-Down</b> — Per-Machine Diagnostics</sub>
 </td>
 <td align="center" style="border:none; padding:8px; width:33%;">
-  <img src="assets/capacity-planning.png" alt="Capacity Planning" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
-  <sub><b>Capacity Planning</b> — Predictive Forecasting</sub>
+ <img src="assets/capacity-planning.png" alt="Capacity Planning" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
+ <sub><b>Capacity Planning</b> — Predictive Forecasting</sub>
 </td>
 </tr>
 <tr>
 <td align="center" style="border:none; padding:8px; width:33%;">
-  <img src="assets/ldi-manufacturing.png" alt="LDI Manufacturing Command Center" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
-  <sub><b>LDI Manufacturing</b> — Command Center</sub>
+ <img src="assets/ldi-manufacturing.png" alt="LDI Manufacturing Command Center" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
+ <sub><b>LDI Manufacturing</b> — Command Center</sub>
 </td>
 <td align="center" style="border:none; padding:8px; width:33%;">
-  <img src="assets/ldi-andon.png" alt="LDI Operator Andon Board" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
-  <sub><b>LDI Andon Board</b> — Operator Floor View</sub>
+ <img src="assets/ldi-andon.png" alt="LDI Operator Andon Board" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
+ <sub><b>LDI Andon Board</b> — Operator Floor View</sub>
 </td>
 <td align="center" style="border:none; padding:8px; width:33%;">
-  <img src="assets/ldi-engineering.png" alt="LDI Engineering Analytics" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
-  <sub><b>LDI Engineering</b> — Yield & SPC Analytics</sub>
+ <img src="assets/ldi-engineering.png" alt="LDI Engineering Analytics" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
+ <sub><b>LDI Engineering</b> — Yield & SPC Analytics</sub>
 </td>
 </tr>
 </table>
@@ -76,18 +76,18 @@
 <table>
 <tr>
 <td align="center" width="33%">
-  <h3>การนำเข้าโทรมาตร (Telemetry Ingestion)</h3>
-  ระบบ Node-RED walkers แบบขนาน ซึ่งใช้การดึงข้อมูล SNMP ปริมาณมากแบบตามลำดับ (sequential bulk SNMP polling) และ HTTP endpoints และทำการบันทึกข้อมูลแบบถาวรลงใน TimescaleDB ผ่านการรวมกลุ่มทรานแซกชัน (transaction pooling) ด้วย PgBouncer<br/><br/>
-  **ตรวจสอบแล้ว:** [nodered-ingestion-20260813.txt](docs/evidence/runtime/nodered-ingestion-20260813.txt)
+ <h3>การนำเข้าโทรมาตร (Telemetry Ingestion)</h3>
+ ระบบ Node-RED walkers แบบขนาน ซึ่งใช้การดึงข้อมูล SNMP ปริมาณมากแบบตามลำดับ (sequential bulk SNMP polling) และ HTTP endpoints และทำการบันทึกข้อมูลแบบถาวรลงใน TimescaleDB ผ่านการรวมกลุ่มทรานแซกชัน (transaction pooling) ด้วย PgBouncer<br/><br/>
+ **ตรวจสอบแล้ว:** [nodered-ingestion-20260813.txt](docs/evidence/runtime/nodered-ingestion-20260813.txt)
 </td>
 <td align="center" width="33%">
-  <h3>การควบคุมกระบวนการเชิงสถิติ (Statistical Process Control)</h3>
-  เมทริกซ์ SPC แบบเรียลไทม์ (Cpk) และค่าพื้นฐาน 3&sigma; แบบหมุนเวียน (การตรวจจับความผิดปกติด้วย Z-Score) ซึ่งประเมินในระดับฐานข้อมูล เพื่อการแจ้งเตือนล่วงหน้า
+ <h3>การควบคุมกระบวนการเชิงสถิติ (Statistical Process Control)</h3>
+ เมทริกซ์ SPC แบบเรียลไทม์ (Cpk) และค่าพื้นฐาน 3&sigma; แบบหมุนเวียน (การตรวจจับความผิดปกติด้วย Z-Score) ซึ่งประเมินในระดับฐานข้อมูล เพื่อการแจ้งเตือนล่วงหน้า
 </td>
 <td align="center" width="33%">
-  <h3>Continuous Aggregation</h3>
-  การสรุปผลรายชั่วโมง, รายวัน, และรายสัปดาห์ จะถูกคำนวณอัตโนมัติโดย TimescaleDB เพื่อรักษาเวลาในการเรนเดอร์ Grafana ให้อยู่ในระดับต่ำกว่าวินาทีสำหรับช่วงเวลาที่กว้าง<br/><br/>
-  **ตรวจสอบแล้ว:** [cagg-policies-20260813.txt](docs/evidence/runtime/cagg-policies-20260813.txt)
+ <h3>Continuous Aggregation</h3>
+ การสรุปผลรายชั่วโมง, รายวัน, และรายสัปดาห์ จะถูกคำนวณอัตโนมัติโดย TimescaleDB เพื่อรักษาเวลาในการเรนเดอร์ Grafana ให้อยู่ในระดับต่ำกว่าวินาทีสำหรับช่วงเวลาที่กว้าง<br/><br/>
+ **ตรวจสอบแล้ว:** [cagg-policies-20260813.txt](docs/evidence/runtime/cagg-policies-20260813.txt)
 </td>
 </tr>
 </table>
@@ -105,7 +105,7 @@
 git clone https://github.com/PATTANAKORN025/IMS.git
 cd IMS
 cp .env.example .env
-make up            # docker compose up -d (เริ่มการทำงานสแต็กพร้อมตัวจำลอง)
+make up      # docker compose up -d (เริ่มการทำงานสแต็กพร้อมตัวจำลอง)
 sleep 40 && make verify
 open http://localhost:3000
 ```
@@ -142,46 +142,46 @@ open http://localhost:3000
 
 ```mermaid
 flowchart LR
-    subgraph Collection ["Collection"]
-        J["Juniper EX4000\n78 interfaces"] -->|SNMP v2c| W["Node-RED\nSequential Async Bulk"]
-        S["Linux Servers\n1000+ nodes"] -->|SNMP v2c| W
-    end
+  subgraph Collection ["Collection"]
+    J["Juniper EX4000\n78 interfaces"] -->|SNMP v2c| W["Node-RED\nSequential Async Bulk"]
+    S["Linux Servers\n1000+ nodes"] -->|SNMP v2c| W
+  end
 
-    subgraph Processing ["V10 Streaming Pipeline"]
-        W -->|fork_5_ways| CPU[CPU Walker]
-        W -->|fork_5_ways| NET["Network Walker\nifTable + ifXTable"]
-        W -->|fork_5_ways| STO[Storage Walker]
-        W -->|fork_5_ways| TMP[Temp Walker]
-        CPU --> P["Stateful Parser\nper-device flow context"]
-        NET --> P
-        STO --> P
-        TMP --> P
-    end
+  subgraph Processing ["V10 Streaming Pipeline"]
+    W -->|fork_5_ways| CPU[CPU Walker]
+    W -->|fork_5_ways| NET["Network Walker\nifTable + ifXTable"]
+    W -->|fork_5_ways| STO[Storage Walker]
+    W -->|fork_5_ways| TMP[Temp Walker]
+    CPU --> P["Stateful Parser\nper-device flow context"]
+    NET --> P
+    STO --> P
+    TMP --> P
+  end
 
-    subgraph Storage ["Storage"]
-        P -->|Batch INSERT 10s| B["PgBouncer\nTransaction Pool"]
-        B --> T["(TimescaleDB\nHypertables)"]
-        T --> CAGG["CAGGs\nHourly → Daily → Weekly"]
-    end
+  subgraph Storage ["Storage"]
+    P -->|Batch INSERT 10s| B["PgBouncer\nTransaction Pool"]
+    B --> T["(TimescaleDB\nHypertables)"]
+    T --> CAGG["CAGGs\nHourly → Daily → Weekly"]
+  end
 
-    subgraph Visualization ["Visualization"]
-        T --> G1["NOC Overview\n15 panels"]
-        T --> G2["Engineering\n25 panels"]
-        T --> G3["Capacity\n16 panels"]
-        T --> G4["Meta-Monitor\n15 panels"]
-    end
+  subgraph Visualization ["Visualization"]
+    T --> G1["NOC Overview\n15 panels"]
+    T --> G2["Engineering\n25 panels"]
+    T --> G3["Capacity\n16 panels"]
+    T --> G4["Meta-Monitor\n15 panels"]
+  end
 
-    subgraph Alerting ["Alerting"]
-        T --> PR["Prometheus\n/metrics scrape"]
-        PR --> AM["Alertmanager\nInhibition Rules"]
-        AM --> WEB["LINE Messaging API\n+ MS Teams Webhooks"]
-    end
+  subgraph Alerting ["Alerting"]
+    T --> PR["Prometheus\n/metrics scrape"]
+    PR --> AM["Alertmanager\nInhibition Rules"]
+    AM --> WEB["LINE Messaging API\n+ MS Teams Webhooks"]
+  end
 
-    style Collection fill:#1a1f2e,stroke:#3B82F6,color:#e2e8f0
-    style Processing fill:#1a1f2e,stroke:#F59E0B,color:#e2e8f0
-    style Storage fill:#1a1f2e,stroke:#10B981,color:#e2e8f0
-    style Visualization fill:#1a1f2e,stroke:#8B5CF6,color:#e2e8f0
-    style Alerting fill:#1a1f2e,stroke:#EF4444,color:#e2e8f0
+  style Collection fill:#1a1f2e,stroke:#3B82F6,color:#e2e8f0
+  style Processing fill:#1a1f2e,stroke:#F59E0B,color:#e2e8f0
+  style Storage fill:#1a1f2e,stroke:#10B981,color:#e2e8f0
+  style Visualization fill:#1a1f2e,stroke:#8B5CF6,color:#e2e8f0
+  style Alerting fill:#1a1f2e,stroke:#EF4444,color:#e2e8f0
 ```
 
 <details>
@@ -258,32 +258,32 @@ open "http://localhost:3000/playlists/play/1?kiosk=tv&autofitpanels"
 
 ```
 IMS/
-├── monitoring/grafana/                # Grafana dashboards + provisioning
-│   ├── dashboards/                    #   10 ไฟล์ JSON แดชบอร์ด (source of truth)
-│   └── library-panels/               #   พาเนลไลบรารีส่วนกลาง (Fleet Health Score)
-├── nodered_data/                      # Node-RED pipeline engine
-│   ├── flows/                         #   ingestion.json + alerting.json (source)
-│   ├── lib/                           #   circuit-breaker.js, parser, units.js
-│   └── settings.js                    #   functionGlobalContext, การตั้งค่าการพิสูจน์ตัวตน (auth)
-├── postgres/                          # การกำหนดค่าฐานข้อมูลเริ่มต้น
-│   └── init/                          #   001-init-timescaledb.sql (schema + views)
-├── database/migrations/               #   55 ไฟล์ไมเกรชันตามลำดับ (013-080, บางตัวเลขถูกข้าม/เก็บถาวร), ประยุกต์ใช้โดย db-migrate
-├── tests/                             # ชุดทดสอบ
-│   ├── k6/                            #   ทดสอบความเครียดไปป์ไลน์ด้วย K6
-│   ├── unit/                          #   Unit tests สำหรับ Parser และ counter
-│   └── playwright/                    #   ทดสอบ Visual regression + ถ่ายภาพหน้าจอ
-├── scripts/                           # สคริปต์ปฏิบัติการ
-│   ├── create-playlist.sh             #   เครื่องมือสร้างเพลย์ลิสต์หน้าจอแสดงผลผนัง NOC
-│   ├── generate-showcase.sh           #   ตัวสร้างภาพหน้าจอแดชบอร์ด
-│   ├── snmp-discover.js               #   การค้นหาองค์กรระดับ Enterprise SNMP OID
-│   └── build-flows.js                 #   ผสาน nodered_data/flows/*.json → flows.json (ใช้โดย CI ด้วย)
-├── assets/                            # ภาพหน้าจอแดชบอร์ด (สร้างโดยอัตโนมัติ)
-├── docs/                              # เอกสารด้านสถาปัตยกรรม, ระบบการออกแบบ, การแก้ไขปัญหา
-│   ├── architecture/                  #   ARCHITECTURE.md, GRAFANA_DESIGN_SYSTEM.md
-│   ├── operations/                    #   TROUBLESHOOTING.md, SCALING_PLAN.md
-│   ├── audits/                        #   รายงานการตรวจสอบและสรุปผลทางเทคนิค
-│   └── product/                       #   PRODUCT.md, CONTEXT.md
-└── .mimocode/skills/                  # 24 ทักษะแบบกำหนดเองสำหรับ DevOps automation
+├── monitoring/grafana/        # Grafana dashboards + provisioning
+│  ├── dashboards/          #  10 ไฟล์ JSON แดชบอร์ด (source of truth)
+│  └── library-panels/        #  พาเนลไลบรารีส่วนกลาง (Fleet Health Score)
+├── nodered_data/           # Node-RED pipeline engine
+│  ├── flows/             #  ingestion.json + alerting.json (source)
+│  ├── lib/              #  circuit-breaker.js, parser, units.js
+│  └── settings.js          #  functionGlobalContext, การตั้งค่าการพิสูจน์ตัวตน (auth)
+├── postgres/             # การกำหนดค่าฐานข้อมูลเริ่มต้น
+│  └── init/             #  001-init-timescaledb.sql (schema + views)
+├── database/migrations/        #  55 ไฟล์ไมเกรชันตามลำดับ (013-080, บางตัวเลขถูกข้าม/เก็บถาวร), ประยุกต์ใช้โดย db-migrate
+├── tests/               # ชุดทดสอบ
+│  ├── k6/              #  ทดสอบความเครียดไปป์ไลน์ด้วย K6
+│  ├── unit/             #  Unit tests สำหรับ Parser และ counter
+│  └── playwright/          #  ทดสอบ Visual regression + ถ่ายภาพหน้าจอ
+├── scripts/              # สคริปต์ปฏิบัติการ
+│  ├── create-playlist.sh       #  เครื่องมือสร้างเพลย์ลิสต์หน้าจอแสดงผลผนัง NOC
+│  ├── generate-showcase.sh      #  ตัวสร้างภาพหน้าจอแดชบอร์ด
+│  ├── snmp-discover.js        #  การค้นหาองค์กรระดับ Enterprise SNMP OID
+│  └── build-flows.js         #  ผสาน nodered_data/flows/*.json → flows.json (ใช้โดย CI ด้วย)
+├── assets/              # ภาพหน้าจอแดชบอร์ด (สร้างโดยอัตโนมัติ)
+├── docs/               # เอกสารด้านสถาปัตยกรรม, ระบบการออกแบบ, การแก้ไขปัญหา
+│  ├── architecture/         #  ARCHITECTURE.md, GRAFANA_DESIGN_SYSTEM.md
+│  ├── operations/          #  TROUBLESHOOTING.md, SCALING_PLAN.md
+│  ├── audits/            #  รายงานการตรวจสอบและสรุปผลทางเทคนิค
+│  └── product/            #  PRODUCT.md, CONTEXT.md
+└── .mimocode/skills/         # 24 ทักษะแบบกำหนดเองสำหรับ DevOps automation
 ```
 
 </details>
@@ -294,7 +294,7 @@ IMS/
 
 <div align="center">
 
-### 💼 กลยุทธ์ระดับบริหารและคุณค่าทางธุรกิจ (Executive & Business Strategy)
+### <img src="docs/assets/icons/briefcase.svg" width="18" height="18" align="center" /> กลยุทธ์ระดับบริหารและคุณค่าทางธุรกิจ (Executive & Business Strategy)
 
 | เอกสาร | คำอธิบาย |
 |:---:|---|
@@ -302,7 +302,7 @@ IMS/
 | [**Platform Book (เริ่มที่นี่)**](docs/architecture/IMS_PLATFORM_BOOK.md) | ศูนย์รวมระบบนำทางสำหรับชุดเอกสารทั้งหมด, อภิธานศัพท์ |
 | [**Product Context**](docs/product/PRODUCT.md) | จุดประสงค์ของผลิตภัณฑ์, กลุ่มผู้ใช้งานเป้าหมาย, และจุดยืนของระบบ |
 
-### 🏭 ระบบอัจฉริยะในสายการผลิต (Manufacturing & LDI Intelligence)
+### <img src="docs/assets/icons/factory.svg" width="18" height="18" align="center" /> ระบบอัจฉริยะในสายการผลิต (Manufacturing & LDI Intelligence)
 
 | เอกสาร | คำอธิบาย |
 |:---:|---|
@@ -312,7 +312,7 @@ IMS/
 | [**LDI RCA Guide**](docs/architecture/LDI_RCA_GUIDE.md) | ระเบียบวิธีความสัมพันธ์ระดับรากฐานของสาเหตุ (Root-cause correlation: Lift/Confidence) |
 | [**LDI Validation Protocol**](docs/operations/LDI_VALIDATION_PROTOCOL.md) | ขั้นตอนการอนุมัติขั้นโปรดักชัน 4 เฟส |
 
-### 🏗️ สถาปัตยกรรมหลักและความปลอดภัย (Core Architecture & Security)
+### <img src="docs/assets/icons/layers.svg" width="18" height="18" align="center" />️ สถาปัตยกรรมหลักและความปลอดภัย (Core Architecture & Security)
 
 | เอกสาร | คำอธิบาย |
 |:---:|---|
@@ -326,7 +326,7 @@ IMS/
 | [**Design System**](docs/architecture/GRAFANA_DESIGN_SYSTEM.md) | พาเล็ตสีเพื่อสื่อความหมาย, รูปแบบตัวอักษร, เงื่อนไขขีดจำกัด |
 | [**Dashboard Inventory**](docs/architecture/DASHBOARD_INVENTORY.md) | ตารางจำนวนแดชบอร์ด/พาเนลที่ถูกสร้างอัตโนมัติ (ตรวจสอบโดย CI) |
 
-### ⚙️ ปฏิบัติการและคู่มือการดูแลระบบ (Operations & SRE Playbooks)
+### ️ ปฏิบัติการและคู่มือการดูแลระบบ (Operations & SRE Playbooks)
 
 | เอกสาร | คำอธิบาย |
 |:---:|---|
@@ -342,7 +342,7 @@ IMS/
 | [**Release Checklist**](docs/operations/RELEASE_CHECKLIST.md) | สิ่งที่ต้องตรวจสอบก่อนทำแท็ก (tag) release |
 | [**Troubleshooting**](docs/operations/TROUBLESHOOTING.md) | ปัญหาที่พบบ่อย, คำสั่งดีบัก, ขั้นตอนการกู้คืน |
 
-### 🤝 ชุมชนและส่วนอ้างอิง (Community & Reference)
+### <img src="docs/assets/icons/users.svg" width="18" height="18" align="center" /> ชุมชนและส่วนอ้างอิง (Community & Reference)
 
 | เอกสาร | คำอธิบาย |
 |:---:|---|
@@ -361,6 +361,6 @@ IMS/
 
 **สร้างด้วยความแม่นยำ ออกแบบมาเพื่อประสิทธิภาพและเวลาทำงานสูงสุด (uptime)**
 
-[MIT License](LICENSE) —  2026 ผู้ร่วมพัฒนา IMS
+[MIT License](LICENSE) — 2026 ผู้ร่วมพัฒนา IMS
 
 </div>

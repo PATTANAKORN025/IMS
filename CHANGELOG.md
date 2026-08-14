@@ -1,4 +1,4 @@
-#  Changelog
+# Changelog
 
 > **บันทึกการเปลี่ยนแปลง IMS (Infrastructure Monitoring System)**
 > รูปแบบอ้างอิงจาก [Keep a Changelog](https://keepachangelog.com/)
@@ -17,7 +17,7 @@
 
 ## [1.0.0] — 2026-06-29 (Production Release)
 
-###  Highlights
+### Highlights
 
 - **5-Thread Parallel Walker** — CPU, Storage, Network, Temperature, LDI
 - **Device Registry** — Database-driven machine management (1-1000+ machines)
@@ -26,7 +26,7 @@
 - **K6 Load Test** — 1,000 VUs, 0% failure, p95 < 80ms
 - **CI/CD Pipeline** — GitHub Actions with security scanning
 
-###  Fixed
+### Fixed
 
 - LDI enterprise OID mismatch (9999 vs 99999)
 - `bypass_error` node wire not connecting (caused barrier timeout)
@@ -38,7 +38,7 @@
 - TimescaleDB migration transaction incompatibility
 - Stale credential file persistence across `docker compose down -v`
 
-###  Added
+### Added
 
 - **Device Registry Pattern** — `public.machines` table with SNMP walker integration
 - **LINE Notify / MS Teams Webhooks** — Real alert notifications
@@ -59,7 +59,7 @@
 - **Scaling Plan** — `docs/scaling-plan.md`
 - **Prometheus Exporter** — Node-RED self-monitoring config
 
-###  Changed
+### Changed
 
 - Separated `docker-compose.yaml` into base/dev/prod
 - Flow source of truth: `node-red/flows/ingestion.json` + `alerting.json`
@@ -70,7 +70,7 @@
 - Architecture upgraded to 5-Thread Parallel Walker
 - All services internal-only (no host port bindings)
 
-###  Security
+### Security
 
 - `.mimocode/` and `.playwright-mcp/` untracked from git
 - GitHub PAT removed from tracked files

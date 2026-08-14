@@ -22,9 +22,9 @@ modes on a local machine. It never touches `data/real/` (real data always
 stays local-only and reproducible from those files):
 
 ```bash
-bash scripts/switch-data-mode.sh mock    # default for development
-bash scripts/switch-data-mode.sh real    # requires data/real/*_clean.sql locally
-bash scripts/switch-data-mode.sh status  # row counts + current LDI_SIMULATOR_ENABLED
+bash scripts/switch-data-mode.sh mock  # default for development
+bash scripts/switch-data-mode.sh real  # requires data/real/*_clean.sql locally
+bash scripts/switch-data-mode.sh status # row counts + current LDI_SIMULATOR_ENABLED
 ```
 
 `mock` truncates `ldi_data`/`ldi_alarm_log`, resets `ldi_alarm_ms_code` to
@@ -54,9 +54,9 @@ Place these 3 files (pgAdmin "Copy with SQL INSERT statements" exports) in
 - `ldi_data_clean.sql` — real telemetry (10,000 rows in the reference export)
 - `ldi_alarm_log_clean.sql` — real alarm history (10,000 rows)
 - `ldi_alarm_ms_code_clean.sql` — supplemental live-DB alarm-code export
-  (892 rows; smaller and more authoritative than the 1,820-row vendor
-  catalog already in migration 061, since it reflects codes the plant
-  actually saw, not just the full vendor list)
+ (892 rows; smaller and more authoritative than the 1,820-row vendor
+ catalog already in migration 061, since it reflects codes the plant
+ actually saw, not just the full vendor list)
 
 If your export is still in pgAdmin's raw CSV-wrapped INSERT format (a
 single `insert_sql` column, each row a full multi-line SQL statement),
@@ -75,18 +75,18 @@ bash scripts/import-real-data.sh
 This is idempotent and safe to re-run. In order, it:
 
 1. Registers 3 equipment IDs that appear only in the real alarm log, never
-   in the telemetry export (`LDI-B05`, `LDI-B06`, `LDI-B07`) —
-   already covered by migration 040 for a fresh deploy, but re-asserted
-   here in case the import runs against a database that predates that.
+  in the telemetry export (`LDI-B05`, `LDI-B06`, `LDI-B07`) —
+  already covered by migration 040 for a fresh deploy, but re-asserted
+  here in case the import runs against a database that predates that.
 2. Decompresses `ldi_data` chunks (compressed chunks reject inserts),
-   truncates `ldi_data`/`ldi_alarm_log` if non-empty, and loads the real
-   rows.
+  truncates `ldi_data`/`ldi_alarm_log` if non-empty, and loads the real
+  rows.
 3. Merges the 892-row alarm-code export into `ldi_alarm_ms_code` via
-   `UPSERT`, computing `severity` with the identical rule documented in
-   migration 061 (keyword/AlarmType-based Critical/Major/Minor/Warning
-   classification) so both sources get consistent treatment.
+  `UPSERT`, computing `severity` with the identical rule documented in
+  migration 061 (keyword/AlarmType-based Critical/Major/Minor/Warning
+  classification) so both sources get consistent treatment.
 4. Refreshes all 4 continuous aggregates, recompresses chunks older than
-   7 days, and runs `ANALYZE`.
+  7 days, and runs `ANALYZE`.
 
 Before running for real data, stop the simulator so it doesn't keep
 overwriting the real rows: set `LDI_SIMULATOR_ENABLED=false` in your
@@ -108,11 +108,11 @@ depend on this linkage and are unaffected.
 ## Auditing
 
 - `scripts/import-real-data.sh` is the only path that writes real data —
-  read it top to bottom for exactly what runs.
+ read it top to bottom for exactly what runs.
 - Migration 061 (already committed) embeds the 1,820-row vendor alarm
-  catalog as text — an accepted, low-sensitivity historical exception
-  predating this out-of-git policy. Nothing after it repeats that
-  pattern.
+ catalog as text — an accepted, low-sensitivity historical exception
+ predating this out-of-git policy. Nothing after it repeats that
+ pattern.
 - `git log -- data/real/` and `git check-ignore -v data/real/anything`
-  confirm the directory has never been and cannot accidentally be
-  committed.
+ confirm the directory has never been and cannot accidentally be
+ committed.

@@ -1,9 +1,9 @@
 <div align="center">
-  <p>
-    🇬🇧 <b>English</b> |
-    <a href="ARCHITECTURE-th.md">🇹🇭 ไทย</a> |
-    <a href="ARCHITECTURE-zh-CN.md">🇨🇳 中文</a>
-  </p>
+ <p>
+  🇬🇧 <b>English</b> |
+  <a href="ARCHITECTURE-th.md">🇹🇭 ไทย</a> |
+  <a href="ARCHITECTURE-zh-CN.md">🇨🇳 中文</a>
+ </p>
 </div>
 
 # IMS System Architecture
@@ -20,28 +20,28 @@ IMS is a Docker Compose stack with **two independent telemetry pipelines** feedi
 
 ```mermaid
 flowchart TB
-    subgraph LDI ["LDI Manufacturing Pipeline (primary, real)"]
-        SIM["ldi_simulator.json\nOrnstein-Uhlenbeck live simulator\n2s tick, 10 machines"] -->|"HTTP POST /ldi-telemetry"| ING["ldi_ingestion.json\nauth check -> INSERT"]
-        ING --> LDIDATA[("public.ldi_data\nhypertable, 1h chunks")]
-        ALMSIM["ldi_alarm_simulator.json\ncondition-driven + noise\n10s tick"] --> ALARMLOG[("public.ldi_alarm_log")]
-    end
+  subgraph LDI ["LDI Manufacturing Pipeline (primary, real)"]
+    SIM["ldi_simulator.json\nOrnstein-Uhlenbeck live simulator\n2s tick, 10 machines"] -->|"HTTP POST /ldi-telemetry"| ING["ldi_ingestion.json\nauth check -> INSERT"]
+    ING --> LDIDATA[("public.ldi_data\nhypertable, 1h chunks")]
+    ALMSIM["ldi_alarm_simulator.json\ncondition-driven + noise\n10s tick"] --> ALARMLOG[("public.ldi_alarm_log")]
+  end
 
-    subgraph LEGACY ["Legacy SNMP / Infra Pipeline"]
-        DEV["2 real servers\n+ SNMP simulator"] -->|"SNMP v2c, 30s poll"| NR["ingestion.json\nfork_5_ways walkers -> sre_parser"]
-        NR --> SYSMETRICS[("public.sys_metrics\npublic.net_metrics\npublic.ldi_metrics")]
-    end
+  subgraph LEGACY ["Legacy SNMP / Infra Pipeline"]
+    DEV["2 real servers\n+ SNMP simulator"] -->|"SNMP v2c, 30s poll"| NR["ingestion.json\nfork_5_ways walkers -> sre_parser"]
+    NR --> SYSMETRICS[("public.sys_metrics\npublic.net_metrics\npublic.ldi_metrics")]
+  end
 
-    LDIDATA --> GRAFANA["Grafana\n12 dashboards"]
-    ALARMLOG --> GRAFANA
-    SYSMETRICS --> GRAFANA
-    SYSMETRICS --> PROM["Prometheus"]
-    GRAFANA -->|"native alert rules"| NRWEBHOOK["Node-RED /alert-webhook"]
-    PROM --> AM["Alertmanager"] --> NRWEBHOOK
-    NRWEBHOOK --> LINE["LINE Messaging API"]
-    NRWEBHOOK --> TEAMS["MS Teams webhook"]
+  LDIDATA --> GRAFANA["Grafana\n12 dashboards"]
+  ALARMLOG --> GRAFANA
+  SYSMETRICS --> GRAFANA
+  SYSMETRICS --> PROM["Prometheus"]
+  GRAFANA -->|"native alert rules"| NRWEBHOOK["Node-RED /alert-webhook"]
+  PROM --> AM["Alertmanager"] --> NRWEBHOOK
+  NRWEBHOOK --> LINE["LINE Messaging API"]
+  NRWEBHOOK --> TEAMS["MS Teams webhook"]
 
-    style LDI fill:#1e293b,stroke:#10B981,color:#e2e8f0
-    style LEGACY fill:#1e293b,stroke:#F59E0B,color:#e2e8f0
+  style LDI fill:#1e293b,stroke:#10B981,color:#e2e8f0
+  style LEGACY fill:#1e293b,stroke:#F59E0B,color:#e2e8f0
 ```
 
 **Why two pipelines exist:** the legacy SNMP pipeline (`ingestion.json`) was the system's original design — poll SNMP-speaking devices, parse via a stateful `sre_parser`, insert into `sys_metrics`/`net_metrics`/`ldi_metrics`. LDI manufacturing telemetry was later given its own, higher-fidelity pipeline (`ldi_data`, fed by HTTP POST rather than SNMP) because the manufacturing dashboards need per-sample PE/JE/Cpk precision that the k6-synthetic `ldi_metrics` table was never designed to carry. **All 12 Grafana dashboards' LDI/manufacturing content reads from `ldi_data`, not `ldi_metrics`.** `ldi_metrics` still exists and is still written to (via `ingestion.json`'s SRE parser), but several of its LDI-specific columns (`throughput`, `power_watt`, `vibration`) are confirmed to always be `0` for LDI-class devices — a known gap in that pipeline, not in `ldi_data`. See "Known Gaps" below.

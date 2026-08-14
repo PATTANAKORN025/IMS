@@ -12,28 +12,28 @@ IMS เป็น Docker Compose stack ที่มี **ไปป์ไลน์
 
 ```mermaid
 flowchart TB
-    subgraph LDI ["LDI Manufacturing Pipeline (primary, real)"]
-        SIM["ldi_simulator.json\nOrnstein-Uhlenbeck live simulator\n2s tick, 10 machines"] -->|"HTTP POST /ldi-telemetry"| ING["ldi_ingestion.json\nauth check -> INSERT"]
-        ING --> LDIDATA[("public.ldi_data\nhypertable, 1h chunks")]
-        ALMSIM["ldi_alarm_simulator.json\ncondition-driven + noise\n10s tick"] --> ALARMLOG[("public.ldi_alarm_log")]
-    end
+  subgraph LDI ["LDI Manufacturing Pipeline (primary, real)"]
+    SIM["ldi_simulator.json\nOrnstein-Uhlenbeck live simulator\n2s tick, 10 machines"] -->|"HTTP POST /ldi-telemetry"| ING["ldi_ingestion.json\nauth check -> INSERT"]
+    ING --> LDIDATA[("public.ldi_data\nhypertable, 1h chunks")]
+    ALMSIM["ldi_alarm_simulator.json\ncondition-driven + noise\n10s tick"] --> ALARMLOG[("public.ldi_alarm_log")]
+  end
 
-    subgraph LEGACY ["Legacy SNMP / Infra Pipeline"]
-        DEV["2 real servers\n+ SNMP simulator"] -->|"SNMP v2c, 30s poll"| NR["ingestion.json\nfork_5_ways walkers -> sre_parser"]
-        NR --> SYSMETRICS[("public.sys_metrics\npublic.net_metrics\npublic.ldi_metrics")]
-    end
+  subgraph LEGACY ["Legacy SNMP / Infra Pipeline"]
+    DEV["2 real servers\n+ SNMP simulator"] -->|"SNMP v2c, 30s poll"| NR["ingestion.json\nfork_5_ways walkers -> sre_parser"]
+    NR --> SYSMETRICS[("public.sys_metrics\npublic.net_metrics\npublic.ldi_metrics")]
+  end
 
-    LDIDATA --> GRAFANA["Grafana\n12 dashboards"]
-    ALARMLOG --> GRAFANA
-    SYSMETRICS --> GRAFANA
-    SYSMETRICS --> PROM["Prometheus"]
-    GRAFANA -->|"native alert rules"| NRWEBHOOK["Node-RED /alert-webhook"]
-    PROM --> AM["Alertmanager"] --> NRWEBHOOK
-    NRWEBHOOK --> LINE["LINE Messaging API"]
-    NRWEBHOOK --> TEAMS["MS Teams webhook"]
+  LDIDATA --> GRAFANA["Grafana\n12 dashboards"]
+  ALARMLOG --> GRAFANA
+  SYSMETRICS --> GRAFANA
+  SYSMETRICS --> PROM["Prometheus"]
+  GRAFANA -->|"native alert rules"| NRWEBHOOK["Node-RED /alert-webhook"]
+  PROM --> AM["Alertmanager"] --> NRWEBHOOK
+  NRWEBHOOK --> LINE["LINE Messaging API"]
+  NRWEBHOOK --> TEAMS["MS Teams webhook"]
 
-    style LDI fill:#1e293b,stroke:#10B981,color:#e2e8f0
-    style LEGACY fill:#1e293b,stroke:#F59E0B,color:#e2e8f0
+  style LDI fill:#1e293b,stroke:#10B981,color:#e2e8f0
+  style LEGACY fill:#1e293b,stroke:#F59E0B,color:#e2e8f0
 ```
 
 **ทำไมถึงมีไปป์ไลน์สองชุด:** ไปป์ไลน์ SNMP แบบดั้งเดิม (`ingestion.json`) คือการออกแบบดั้งเดิมของระบบ — คือการดึงข้อมูลจากอุปกรณ์ที่สื่อสารด้วย SNMP, แปลงข้อมูลผ่าน `sre_parser` แบบเก็บสถานะ, จากนั้น insert ลงใน `sys_metrics`/`net_metrics`/`ldi_metrics` ภายหลังเทเลเมทรีการผลิตของเครื่อง LDI ได้ถูกสร้างเป็นไปป์ไลน์ของตัวเองที่มีความละเอียดสูงกว่า (นำเข้า `ldi_data`, ส่งผ่าน HTTP POST แทน SNMP) เนื่องจากแดชบอร์ดด้านการผลิตต้องการความแม่นยำระดับตัวอย่างในเรื่อง PE/JE/Cpk ซึ่งตาราง `ldi_metrics` ที่ได้จากการจำลองด้วย k6 ไม่ได้ถูกออกแบบมาเพื่อรองรับข้อมูลระดับนี้ **เนื้อหาด้าน LDI/การผลิตของ Grafana แดชบอร์ดทั้ง 12 ตัว อ่านข้อมูลจาก `ldi_data` ไม่ใช่ `ldi_metrics`** ตาราง `ldi_metrics` ยังคงมีอยู่และยังมีการบันทึกข้อมูล (ผ่าน SRE parser ของ `ingestion.json`) แต่พารามิเตอร์บางตัวที่เป็นข้อมูลเฉพาะของเครื่อง LDI (`throughput`, `power_watt`, `vibration`) ได้รับการยืนยันแล้วว่ามีค่าเป็น `0` เสมอสำหรับอุปกรณ์ประเภท LDI — ถือเป็นช่องโหว่ที่ทราบกันในไปป์ไลน์นั้น ไม่ใช่ช่องโหว่ใน `ldi_data` ดูส่วน "ช่องโหว่ที่ทราบแล้ว (Known Gaps)" ด้านล่าง

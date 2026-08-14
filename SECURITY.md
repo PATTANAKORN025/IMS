@@ -1,4 +1,4 @@
-#  Security Policy
+# Security Policy
 
 > **นโยบายความปลอดภัยของ IMS (Infrastructure Monitoring System)**
 > ทราบข้อจำกัดและแผนแก้ไขก่อน deploy ไปยัง Production
@@ -15,19 +15,19 @@
 
 ---
 
-##  Known Limitations
+## Known Limitations
 
 | # | Issue | Severity | Status | Fix Plan |
 |---|---|---|---|---|
 | 1 | PgBouncer port exposed on host | ️ Medium | Known | Bind localhost-only or use reverse proxy |
-| 2 | Node-RED Admin UI has no auth |  High | Known | Add `adminAuth` in settings.js before production |
+| 2 | Node-RED Admin UI has no auth | High | Known | Add `adminAuth` in settings.js before production |
 | 3 | SNMP community string in plain text | ️ Medium | Known | Move to environment variable |
 | 4 | PgBouncer uses AUTH_TYPE: plain | ️ Medium | Known (trade-off) | Consider password hashing at source |
-| 5 | GitHub PAT hardcoded in `.mimocode/mimocode.json` (AI tool config) |  High | Known | Revoke token at GitHub; replace with `${GITHUB_PERSONAL_ACCESS_TOKEN}` env placeholder |
+| 5 | GitHub PAT hardcoded in `.mimocode/mimocode.json` (AI tool config) | High | Known | Revoke token at GitHub; replace with `${GITHUB_PERSONAL_ACCESS_TOKEN}` env placeholder |
 
 ---
 
-##  Production Hardening Checklist
+## Production Hardening Checklist
 
 ### Before Granting Network Access
 
@@ -83,7 +83,7 @@
 
 ---
 
-##  AI Tooling Security (MCP / Skills / Plugins)
+## AI Tooling Security (MCP / Skills / Plugins)
 
 ### Agent Supply Chain Inventory
 
@@ -107,7 +107,7 @@ npm packages `mcp-server-fetch` and `mcp-server-git` are **security-research can
 
 ---
 
-##  Reporting Vulnerabilities
+## Reporting Vulnerabilities
 
 If you discover a security vulnerability:
 
@@ -118,7 +118,7 @@ If you discover a security vulnerability:
 
 ---
 
-##  References
+## References
 
 - [Docker Security Best Practices](https://docs.docker.com/engine/security/)
 - [PostgreSQL Security](https://www.postgresql.org/docs/current/auth.html)

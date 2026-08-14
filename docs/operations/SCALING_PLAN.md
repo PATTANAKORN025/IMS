@@ -1,4 +1,4 @@
-#  IMS Scaling Plan
+# IMS Scaling Plan
 
 > **แผนการขยายระบบ IMS สำหรับรองรับปริมาณงานที่เพิ่มขึ้น**
 > ออกแบบสำหรับ 1-1000+ machines
@@ -15,7 +15,7 @@
 
 ---
 
-##  Table of Contents
+## Table of Contents
 
 1. [Current Architecture](#-current-architecture)
 2. [Capacity Analysis](#-capacity-analysis)
@@ -31,26 +31,26 @@
 ### Single Instance Deployment
 
 ```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│  Node-RED   │────│  PgBouncer  │────│ TimescaleDB │
-│ (1 instance)│     │ (1 instance)│     │ (1 instance)│
-│   ~150MB    │     │  20-50 conn │     │  ~1GB/day   │
-└─────────────┘     └─────────────┘     └─────────────┘
+┌─────────────┐   ┌─────────────┐   ┌─────────────┐
+│ Node-RED  │────│ PgBouncer │────│ TimescaleDB │
+│ (1 instance)│   │ (1 instance)│   │ (1 instance)│
+│  ~150MB  │   │ 20-50 conn │   │ ~1GB/day  │
+└─────────────┘   └─────────────┘   └─────────────┘
 ```
 
 ### Current Capacity
 
 | Metric | Value | Tested |
 |---|---|---|
-| **Load Test (K6)** | 1,000 VUs |  Passed |
-| **Iterations** | ~65,000 in 2 min |  Verified |
-| **p95 Latency** | ~156ms |  Measured |
-| **Data Points/Hour** | ~600 per machine |  Calculated |
-| **Storage/Hour** | ~50 KB per machine |  Verified |
+| **Load Test (K6)** | 1,000 VUs | Passed |
+| **Iterations** | ~65,000 in 2 min | Verified |
+| **p95 Latency** | ~156ms | Measured |
+| **Data Points/Hour** | ~600 per machine | Calculated |
+| **Storage/Hour** | ~50 KB per machine | Verified |
 
 ---
 
-##  Capacity Analysis
+## Capacity Analysis
 
 ### Ceiling Calculation
 
@@ -83,7 +83,7 @@ Ceiling: ~500 machines at 10s poll interval
 
 ---
 
-##  Scaling Options
+## Scaling Options
 
 ### Option 1: Vertical Scaling (Easiest)
 
@@ -92,32 +92,32 @@ Ceiling: ~500 machines at 10s poll interval
 ```yaml
 # docker-compose.yaml additions
 services:
-  node-red:
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-          cpus: '2.0'
-    environment:
-      - NODE_OPTIONS=--max-old-space-size=800
+ node-red:
+  deploy:
+   resources:
+    limits:
+     memory: 1G
+     cpus: '2.0'
+  environment:
+   - NODE_OPTIONS=--max-old-space-size=800
 
-  timescaledb:
-    deploy:
-      resources:
-        limits:
-          memory: 4G
-          cpus: '4.0'
-    command: >
-      postgres
-      -c shared_buffers=2GB
-      -c work_mem=256MB
-      -c max_parallel_workers_per_gather=4
+ timescaledb:
+  deploy:
+   resources:
+    limits:
+     memory: 4G
+     cpus: '4.0'
+  command: >
+   postgres
+   -c shared_buffers=2GB
+   -c work_mem=256MB
+   -c max_parallel_workers_per_gather=4
 
-  pgbouncer:
-    environment:
-      - DEFAULT_POOL_SIZE=50
-      - MAX_CLIENT_CONN=500
-      - RESERVE_POOL_SIZE=10
+ pgbouncer:
+  environment:
+   - DEFAULT_POOL_SIZE=50
+   - MAX_CLIENT_CONN=500
+   - RESERVE_POOL_SIZE=10
 ```
 
 **Benefits:**
@@ -135,26 +135,26 @@ services:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                      Load Balancer (nginx)                       │
+│           Load Balancer (nginx)            │
 └─────────────────────────────────────────────────────────────────┘
-                              │
-            ┌─────────────────┼─────────────────┐
-            ▼                 ▼                 ▼
-    ┌───────────────┐ ┌───────────────┐ ┌───────────────┐
-    │  Node-RED A   │ │  Node-RED B   │ │  Node-RED C   │
-    │ Machines 0-166│ │Machines 167-333│ │Machines 334-500│
-    └───────┬───────┘ └───────┬───────┘ └───────┬───────┘
-            │                 │                 │
-            └─────────────────┼─────────────────┘
-                              ▼
-                    ┌───────────────┐
-                    │   PgBouncer   │
-                    └───────┬───────┘
-                            ▼
-                    ┌───────────────┐
-                    │  TimescaleDB  │
-                    │  (Primary)    │
-                    └───────────────┘
+               │
+      ┌─────────────────┼─────────────────┐
+      ▼         ▼         ▼
+  ┌───────────────┐ ┌───────────────┐ ┌───────────────┐
+  │ Node-RED A  │ │ Node-RED B  │ │ Node-RED C  │
+  │ Machines 0-166│ │Machines 167-333│ │Machines 334-500│
+  └───────┬───────┘ └───────┬───────┘ └───────┬───────┘
+      │         │         │
+      └─────────────────┼─────────────────┘
+               ▼
+          ┌───────────────┐
+          │  PgBouncer  │
+          └───────┬───────┘
+              ▼
+          ┌───────────────┐
+          │ TimescaleDB │
+          │ (Primary)  │
+          └───────────────┘
 ```
 
 **Implementation:**
@@ -165,9 +165,9 @@ const shardIndex = hash(machine_id) % shardCount;
 
 // Each Node-RED instance only processes its shard
 if (shardIndex === MY_SHARD_INDEX) {
-    // Process this machine
+  // Process this machine
 } else {
-    // Skip - another instance handles this
+  // Skip - another instance handles this
 }
 ```
 
@@ -187,24 +187,24 @@ if (shardIndex === MY_SHARD_INDEX) {
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    Telegraf Fleet (1000+ agents)                 │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐          │
-│  │Telegraf 1│ │Telegraf 2│ │Telegraf 3│ │Telegraf N│          │
-│  │SNMP      │ │SNMP      │ │SNMP      │ │SNMP      │          │
-│  └────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘          │
+│          Telegraf Fleet (1000+ agents)         │
+│ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐     │
+│ │Telegraf 1│ │Telegraf 2│ │Telegraf 3│ │Telegraf N│     │
+│ │SNMP   │ │SNMP   │ │SNMP   │ │SNMP   │     │
+│ └────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘     │
 └───────┼─────────────┼───────────┼─────────────┼────────────────┘
-        │             │           │             │
-        └─────────────┼───────────┼─────────────┘
-                      ▼           ▼
-              ┌───────────────────────┐
-              │    Redis Streams      │
-              │  (Ingestion Buffer)   │
-              └───────────┬───────────┘
-                          ▼
-              ┌───────────────────────┐
-              │     TimescaleDB       │
-              │   (Storage Backend)   │
-              └───────────────────────┘
+    │       │      │       │
+    └─────────────┼───────────┼─────────────┘
+           ▼      ▼
+       ┌───────────────────────┐
+       │  Redis Streams   │
+       │ (Ingestion Buffer)  │
+       └───────────┬───────────┘
+             ▼
+       ┌───────────────────────┐
+       │   TimescaleDB    │
+       │  (Storage Backend)  │
+       └───────────────────────┘
 ```
 
 **Benefits:**
@@ -220,7 +220,7 @@ if (shardIndex === MY_SHARD_INDEX) {
 
 ---
 
-##  Performance Tuning
+## Performance Tuning
 
 ### TimescaleDB Optimization
 
@@ -264,15 +264,15 @@ client_idle_timeout = 0
 ```javascript
 // settings.js optimizations
 module.exports = {
-    flowFile: 'flows.json',
-    credentialSecret: process.env.CREDENTIAL_SECRET,
-    editorTheme: {
-        projects: {
-            enabled: false  // Disable for performance
-        }
-    },
-    // Increase memory limit
-    max_old_space_size: 800
+  flowFile: 'flows.json',
+  credentialSecret: process.env.CREDENTIAL_SECRET,
+  editorTheme: {
+    projects: {
+      enabled: false // Disable for performance
+    }
+  },
+  // Increase memory limit
+  max_old_space_size: 800
 };
 ```
 
@@ -318,7 +318,7 @@ SELECT add_retention_policy('public.ldi_metrics', INTERVAL '30 days');
 
 ---
 
-##  Cost Estimation
+## Cost Estimation
 
 ### Infrastructure Costs (Cloud Deployment)
 

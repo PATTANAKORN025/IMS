@@ -13,7 +13,7 @@ IMS tracks process capability (Cpk) for two measured quantities on every LDI exp
 ## The Cpk formula
 
 ```text
-cp  = tolerance / (3 * sigma)
+cp = tolerance / (3 * sigma)
 cpk = LEAST( (tolerance - mean) / (3 * sigma), (mean + tolerance) / (3 * sigma) )
 ```
 

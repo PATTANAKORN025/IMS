@@ -1,44 +1,44 @@
 <div align="center">
-  <img src="assets/meowrch.png" alt="IMS Logo" width="120" />
+ <img src="assets/meowrch.png" alt="IMS Logo" width="120" />
 </div>
 
 <h1 align="center">Industrial Monitoring System (IMS)</h1>
 
 <div align="center">
-  <p>
-    🇬🇧 <b>English</b> |
-    <a href="README-th.md">🇹🇭 ไทย</a> |
-    <a href="README-zh-CN.md">🇨🇳 中文</a>
-  </p>
+ <p>
+  🇬🇧 <b>English</b> |
+  <a href="README-th.md">🇹🇭 ไทย</a> |
+  <a href="README-zh-CN.md">🇨🇳 中文</a>
+ </p>
 </div>
 
 <div align="center">
-  <strong>High-Precision Manufacturing Telemetry & Statistical Process Control</strong>
+ <strong>High-Precision Manufacturing Telemetry & Statistical Process Control</strong>
 </div>
 
 <div align="center">
-    <img src="assets/apex-ldi-noc-banner.jpg" alt="APEX Circuit LDI NOC Banner" width="100%" style="border-radius:12px; box-shadow: 0 8px 32px rgba(0,242,254,0.3); margin-bottom: 24px;" />
-    <br/>
-    <br/>
-    <a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.demolab.com?font=Orbitron&weight=600&size=36&duration=4000&pause=2000&color=00F2FE&center=true&repeat=true&width=1000&height=60&lines=APEX+Circuit+IMS+|+System+Initializing...;Advanced+Manufacturing+Intelligence+%26+NOC;Zero-Latency+Digital+Twin+Architecture" alt="Typing SVG" /></a>
+  <img src="assets/apex-ldi-noc-banner.jpg" alt="APEX Circuit LDI NOC Banner" width="100%" style="border-radius:12px; box-shadow: 0 8px 32px rgba(0,242,254,0.3); margin-bottom: 24px;" />
+  <br/>
+  <br/>
+  <a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.demolab.com?font=Orbitron&weight=600&size=36&duration=4000&pause=2000&color=00F2FE&center=true&repeat=true&width=1000&height=60&lines=APEX+Circuit+IMS+|+System+Initializing...;Advanced+Manufacturing+Intelligence+%26+NOC;Zero-Latency+Digital+Twin+Architecture" alt="Typing SVG" /></a>
 </div>
 
 <div align="center">
-    <a href="#quick-start"><img src="https://img.shields.io/badge/-Release_v1.0-030407?style=for-the-badge&logo=github&logoColor=10B981" alt="Release"/></a>
-    <a href="LICENSE"><img src="https://img.shields.io/badge/-MIT_License-030407?style=for-the-badge&logo=opensourceinitiative&logoColor=00F2FE" alt="License"/></a>
-    <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/-Docker_Ready-030407?style=for-the-badge&logo=docker&logoColor=2496ED" alt="Docker"/></a>
-    <a href="https://grafana.com/"><img src="https://img.shields.io/badge/-Grafana_v11+-030407?style=for-the-badge&logo=grafana&logoColor=F46800" alt="Grafana"/></a>
-    <a href="https://nodered.org/"><img src="https://img.shields.io/badge/-Node--RED_v4+-030407?style=for-the-badge&logo=nodered&logoColor=8F0000" alt="Node-RED"/></a>
-    <a href="https://www.timescale.com/"><img src="https://img.shields.io/badge/-TimescaleDB_2.x-030407?style=for-the-badge&logo=postgresql&logoColor=F59E0B" alt="TimescaleDB"/></a>
-    <br>
-    <a href="#quick-start"><img src="https://img.shields.io/badge/Status-100%25_Passing-10B981?style=for-the-badge&logoColor=white" alt="Tests" /></a>
-    <a href="#quick-start"><img src="https://img.shields.io/badge/K6-Stress--Tested-030407?style=for-the-badge&logo=k6&logoColor=7B61FF" alt="K6" /></a>
-    <a href="data-generators/"><img src="https://img.shields.io/badge/Data-Digital_Twin-030407?style=for-the-badge&logo=python&logoColor=00C7B7" alt="Synthetic Data" /></a>
+  <a href="#quick-start"><img src="https://img.shields.io/badge/-Release_v1.0-030407?style=for-the-badge&logo=github&logoColor=10B981" alt="Release"/></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/-MIT_License-030407?style=for-the-badge&logo=opensourceinitiative&logoColor=00F2FE" alt="License"/></a>
+  <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/-Docker_Ready-030407?style=for-the-badge&logo=docker&logoColor=2496ED" alt="Docker"/></a>
+  <a href="https://grafana.com/"><img src="https://img.shields.io/badge/-Grafana_v11+-030407?style=for-the-badge&logo=grafana&logoColor=F46800" alt="Grafana"/></a>
+  <a href="https://nodered.org/"><img src="https://img.shields.io/badge/-Node--RED_v4+-030407?style=for-the-badge&logo=nodered&logoColor=8F0000" alt="Node-RED"/></a>
+  <a href="https://www.timescale.com/"><img src="https://img.shields.io/badge/-TimescaleDB_2.x-030407?style=for-the-badge&logo=postgresql&logoColor=F59E0B" alt="TimescaleDB"/></a>
+  <br>
+  <a href="#quick-start"><img src="https://img.shields.io/badge/Status-100%25_Passing-10B981?style=for-the-badge&logoColor=white" alt="Tests" /></a>
+  <a href="#quick-start"><img src="https://img.shields.io/badge/K6-Stress--Tested-030407?style=for-the-badge&logo=k6&logoColor=7B61FF" alt="K6" /></a>
+  <a href="data-generators/"><img src="https://img.shields.io/badge/Data-Digital_Twin-030407?style=for-the-badge&logo=python&logoColor=00C7B7" alt="Synthetic Data" /></a>
 </div>
 
 <div align="center" justify-content="space-between">
-    <a href="docs/architecture/IMS_PLATFORM_BOOK.md"><img src="https://img.shields.io/badge/PLATFORM_BOOK-ENTER-blue?color=00F2FE&labelColor=030407&style=for-the-badge"></a>
-    <a href="docs/architecture/ARCHITECTURE.md"><img src="https://img.shields.io/badge/ARCHITECTURE-READ-blue?color=10B981&labelColor=030407&style=for-the-badge"></a>
+  <a href="docs/architecture/IMS_PLATFORM_BOOK.md"><img src="https://img.shields.io/badge/PLATFORM_BOOK-ENTER-blue?color=00F2FE&labelColor=030407&style=for-the-badge"></a>
+  <a href="docs/architecture/ARCHITECTURE.md"><img src="https://img.shields.io/badge/ARCHITECTURE-READ-blue?color=10B981&labelColor=030407&style=for-the-badge"></a>
 </div>
 
 <br/>
@@ -57,30 +57,30 @@ Performance relies on TimescaleDB continuous aggregates for dashboard rendering 
 
 <tr>
 <td align="center" style="border:none; padding:8px; width:33%;">
-  <img src="assets/noc-overview.png" alt="NOC Overview" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
-  <sub><b>NOC Overview</b> — Fleet Health Envelope</sub>
+ <img src="assets/noc-overview.png" alt="NOC Overview" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
+ <sub><b>NOC Overview</b> — Fleet Health Envelope</sub>
 </td>
 <td align="center" style="border:none; padding:8px; width:33%;">
-  <img src="assets/engineering-drilldown.png" alt="Engineering Drill-Down" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
-  <sub><b>Engineering Drill-Down</b> — Per-Machine Diagnostics</sub>
+ <img src="assets/engineering-drilldown.png" alt="Engineering Drill-Down" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
+ <sub><b>Engineering Drill-Down</b> — Per-Machine Diagnostics</sub>
 </td>
 <td align="center" style="border:none; padding:8px; width:33%;">
-  <img src="assets/capacity-planning.png" alt="Capacity Planning" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
-  <sub><b>Capacity Planning</b> — Predictive Forecasting</sub>
+ <img src="assets/capacity-planning.png" alt="Capacity Planning" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
+ <sub><b>Capacity Planning</b> — Predictive Forecasting</sub>
 </td>
 </tr>
 <tr>
 <td align="center" style="border:none; padding:8px; width:33%;">
-  <img src="assets/ldi-manufacturing.png" alt="LDI Manufacturing Command Center" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
-  <sub><b>LDI Manufacturing</b> — Command Center</sub>
+ <img src="assets/ldi-manufacturing.png" alt="LDI Manufacturing Command Center" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
+ <sub><b>LDI Manufacturing</b> — Command Center</sub>
 </td>
 <td align="center" style="border:none; padding:8px; width:33%;">
-  <img src="assets/ldi-andon.png" alt="LDI Operator Andon Board" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
-  <sub><b>LDI Andon Board</b> — Operator Floor View</sub>
+ <img src="assets/ldi-andon.png" alt="LDI Operator Andon Board" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
+ <sub><b>LDI Andon Board</b> — Operator Floor View</sub>
 </td>
 <td align="center" style="border:none; padding:8px; width:33%;">
-  <img src="assets/ldi-engineering.png" alt="LDI Engineering Analytics" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
-  <sub><b>LDI Engineering</b> — Yield & SPC Analytics</sub>
+ <img src="assets/ldi-engineering.png" alt="LDI Engineering Analytics" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
+ <sub><b>LDI Engineering</b> — Yield & SPC Analytics</sub>
 </td>
 </tr>
 </table>
@@ -94,18 +94,18 @@ Performance relies on TimescaleDB continuous aggregates for dashboard rendering 
 <table>
 <tr>
 <td align="center" width="33%">
-  <h3>Telemetry Ingestion</h3>
-  Parallel Node-RED walkers utilizing sequential bulk SNMP polling and HTTP endpoints, persisting data to TimescaleDB via PgBouncer transaction pooling.<br/><br/>
-  **Verified:** [nodered-ingestion-20260813.txt](docs/evidence/runtime/nodered-ingestion-20260813.txt)
+ <h3>Telemetry Ingestion</h3>
+ Parallel Node-RED walkers utilizing sequential bulk SNMP polling and HTTP endpoints, persisting data to TimescaleDB via PgBouncer transaction pooling.<br/><br/>
+ **Verified:** [nodered-ingestion-20260813.txt](docs/evidence/runtime/nodered-ingestion-20260813.txt)
 </td>
 <td align="center" width="33%">
-  <h3>Statistical Process Control</h3>
-  Real-time SPC metrics (Cpk) and rolling 3&sigma; baselines (Z-Score anomaly detection) evaluated at the database level for early warning alerts.
+ <h3>Statistical Process Control</h3>
+ Real-time SPC metrics (Cpk) and rolling 3&sigma; baselines (Z-Score anomaly detection) evaluated at the database level for early warning alerts.
 </td>
 <td align="center" width="33%">
-  <h3>Continuous Aggregation</h3>
-  Hourly, daily, and weekly rollups automatically calculated by TimescaleDB to maintain sub-second Grafana rendering times over large time ranges.<br/><br/>
-  **Verified:** [cagg-policies-20260813.txt](docs/evidence/runtime/cagg-policies-20260813.txt)
+ <h3>Continuous Aggregation</h3>
+ Hourly, daily, and weekly rollups automatically calculated by TimescaleDB to maintain sub-second Grafana rendering times over large time ranges.<br/><br/>
+ **Verified:** [cagg-policies-20260813.txt](docs/evidence/runtime/cagg-policies-20260813.txt)
 </td>
 </tr>
 </table>
@@ -123,7 +123,7 @@ Performance relies on TimescaleDB continuous aggregates for dashboard rendering 
 git clone https://github.com/PATTANAKORN025/IMS.git
 cd IMS
 cp .env.example .env
-make up            # docker compose up -d (starts stack with simulator)
+make up      # docker compose up -d (starts stack with simulator)
 sleep 40 && make verify
 open http://localhost:3000
 ```
@@ -160,46 +160,46 @@ Every architectural claim is backed by continuous integration or explicit test s
 
 ```mermaid
 flowchart LR
-    subgraph Collection ["Collection"]
-        J["Juniper EX4000\n78 interfaces"] -->|SNMP v2c| W["Node-RED\nSequential Async Bulk"]
-        S["Linux Servers\n1000+ nodes"] -->|SNMP v2c| W
-    end
+  subgraph Collection ["Collection"]
+    J["Juniper EX4000\n78 interfaces"] -->|SNMP v2c| W["Node-RED\nSequential Async Bulk"]
+    S["Linux Servers\n1000+ nodes"] -->|SNMP v2c| W
+  end
 
-    subgraph Processing ["V10 Streaming Pipeline"]
-        W -->|fork_5_ways| CPU[CPU Walker]
-        W -->|fork_5_ways| NET["Network Walker\nifTable + ifXTable"]
-        W -->|fork_5_ways| STO[Storage Walker]
-        W -->|fork_5_ways| TMP[Temp Walker]
-        CPU --> P["Stateful Parser\nper-device flow context"]
-        NET --> P
-        STO --> P
-        TMP --> P
-    end
+  subgraph Processing ["V10 Streaming Pipeline"]
+    W -->|fork_5_ways| CPU[CPU Walker]
+    W -->|fork_5_ways| NET["Network Walker\nifTable + ifXTable"]
+    W -->|fork_5_ways| STO[Storage Walker]
+    W -->|fork_5_ways| TMP[Temp Walker]
+    CPU --> P["Stateful Parser\nper-device flow context"]
+    NET --> P
+    STO --> P
+    TMP --> P
+  end
 
-    subgraph Storage ["Storage"]
-        P -->|Batch INSERT 10s| B["PgBouncer\nTransaction Pool"]
-        B --> T["(TimescaleDB\nHypertables)"]
-        T --> CAGG["CAGGs\nHourly → Daily → Weekly"]
-    end
+  subgraph Storage ["Storage"]
+    P -->|Batch INSERT 10s| B["PgBouncer\nTransaction Pool"]
+    B --> T["(TimescaleDB\nHypertables)"]
+    T --> CAGG["CAGGs\nHourly → Daily → Weekly"]
+  end
 
-    subgraph Visualization ["Visualization"]
-        T --> G1["NOC Overview\n15 panels"]
-        T --> G2["Engineering\n25 panels"]
-        T --> G3["Capacity\n16 panels"]
-        T --> G4["Meta-Monitor\n15 panels"]
-    end
+  subgraph Visualization ["Visualization"]
+    T --> G1["NOC Overview\n15 panels"]
+    T --> G2["Engineering\n25 panels"]
+    T --> G3["Capacity\n16 panels"]
+    T --> G4["Meta-Monitor\n15 panels"]
+  end
 
-    subgraph Alerting ["Alerting"]
-        T --> PR["Prometheus\n/metrics scrape"]
-        PR --> AM["Alertmanager\nInhibition Rules"]
-        AM --> WEB["LINE Messaging API\n+ MS Teams Webhooks"]
-    end
+  subgraph Alerting ["Alerting"]
+    T --> PR["Prometheus\n/metrics scrape"]
+    PR --> AM["Alertmanager\nInhibition Rules"]
+    AM --> WEB["LINE Messaging API\n+ MS Teams Webhooks"]
+  end
 
-    style Collection fill:#1a1f2e,stroke:#3B82F6,color:#e2e8f0
-    style Processing fill:#1a1f2e,stroke:#F59E0B,color:#e2e8f0
-    style Storage fill:#1a1f2e,stroke:#10B981,color:#e2e8f0
-    style Visualization fill:#1a1f2e,stroke:#8B5CF6,color:#e2e8f0
-    style Alerting fill:#1a1f2e,stroke:#EF4444,color:#e2e8f0
+  style Collection fill:#1a1f2e,stroke:#3B82F6,color:#e2e8f0
+  style Processing fill:#1a1f2e,stroke:#F59E0B,color:#e2e8f0
+  style Storage fill:#1a1f2e,stroke:#10B981,color:#e2e8f0
+  style Visualization fill:#1a1f2e,stroke:#8B5CF6,color:#e2e8f0
+  style Alerting fill:#1a1f2e,stroke:#EF4444,color:#e2e8f0
 ```
 
 <details>
@@ -276,32 +276,32 @@ Exact column counts, the full view/CAGG list, and applied-migration count: **[Da
 
 ```
 IMS/
-├── monitoring/grafana/                # Grafana dashboards + provisioning
-│   ├── dashboards/                    #   10 JSON dashboard files (source of truth)
-│   └── library-panels/               #   Shared library panels (Fleet Health Score)
-├── nodered_data/                      # Node-RED pipeline engine
-│   ├── flows/                         #   ingestion.json + alerting.json (source)
-│   ├── lib/                           #   circuit-breaker.js, parser, units.js
-│   └── settings.js                    #   functionGlobalContext, auth config
-├── postgres/                          # Database initialization
-│   └── init/                          #   001-init-timescaledb.sql (schema + views)
-├── database/migrations/               #   55 sequenced migration files (013-080, some numbers skipped/archived), applied by db-migrate
-├── tests/                             # Test suites
-│   ├── k6/                            #   K6 pipeline stress test
-│   ├── unit/                          #   Parser & counter unit tests
-│   └── playwright/                    #   Visual regression + screenshot capture
-├── scripts/                           # Operational scripts
-│   ├── create-playlist.sh             #   NOC wall-display playlist creator
-│   ├── generate-showcase.sh           #   Dashboard screenshot generator
-│   ├── snmp-discover.js               #   Enterprise SNMP OID discovery
-│   └── build-flows.js                 #   Merge nodered_data/flows/*.json → flows.json (also used by CI)
-├── assets/                            # Dashboard screenshots (auto-generated)
-├── docs/                              # Architecture, Design System, Troubleshooting
-│   ├── architecture/                  #   ARCHITECTURE.md, GRAFANA_DESIGN_SYSTEM.md
-│   ├── operations/                    #   TROUBLESHOOTING.md, SCALING_PLAN.md
-│   ├── audits/                        #   Audit reports and technical debriefs
-│   └── product/                       #   PRODUCT.md, CONTEXT.md
-└── .mimocode/skills/                  # 24 custom skills for DevOps automation
+├── monitoring/grafana/        # Grafana dashboards + provisioning
+│  ├── dashboards/          #  10 JSON dashboard files (source of truth)
+│  └── library-panels/        #  Shared library panels (Fleet Health Score)
+├── nodered_data/           # Node-RED pipeline engine
+│  ├── flows/             #  ingestion.json + alerting.json (source)
+│  ├── lib/              #  circuit-breaker.js, parser, units.js
+│  └── settings.js          #  functionGlobalContext, auth config
+├── postgres/             # Database initialization
+│  └── init/             #  001-init-timescaledb.sql (schema + views)
+├── database/migrations/        #  55 sequenced migration files (013-080, some numbers skipped/archived), applied by db-migrate
+├── tests/               # Test suites
+│  ├── k6/              #  K6 pipeline stress test
+│  ├── unit/             #  Parser & counter unit tests
+│  └── playwright/          #  Visual regression + screenshot capture
+├── scripts/              # Operational scripts
+│  ├── create-playlist.sh       #  NOC wall-display playlist creator
+│  ├── generate-showcase.sh      #  Dashboard screenshot generator
+│  ├── snmp-discover.js        #  Enterprise SNMP OID discovery
+│  └── build-flows.js         #  Merge nodered_data/flows/*.json → flows.json (also used by CI)
+├── assets/              # Dashboard screenshots (auto-generated)
+├── docs/               # Architecture, Design System, Troubleshooting
+│  ├── architecture/         #  ARCHITECTURE.md, GRAFANA_DESIGN_SYSTEM.md
+│  ├── operations/          #  TROUBLESHOOTING.md, SCALING_PLAN.md
+│  ├── audits/            #  Audit reports and technical debriefs
+│  └── product/            #  PRODUCT.md, CONTEXT.md
+└── .mimocode/skills/         # 24 custom skills for DevOps automation
 ```
 
 </details>
@@ -312,7 +312,7 @@ IMS/
 
 <div align="center">
 
-### 💼 Executive & Business Strategy
+### <img src="docs/assets/icons/briefcase.svg" width="18" height="18" align="center" /> Executive & Business Strategy
 
 | Document | Description |
 |:---:|---|
@@ -320,7 +320,7 @@ IMS/
 | [**Platform Book (start here)**](docs/architecture/IMS_PLATFORM_BOOK.md) | Navigational hub for the entire documentation set, terminology glossary |
 | [**Product Context**](docs/product/PRODUCT.md) | Product purpose, target audience, and positioning |
 
-### 🏭 Manufacturing & LDI Intelligence
+### <img src="docs/assets/icons/factory.svg" width="18" height="18" align="center" /> Manufacturing & LDI Intelligence
 
 | Document | Description |
 |:---:|---|
@@ -330,7 +330,7 @@ IMS/
 | [**LDI RCA Guide**](docs/architecture/LDI_RCA_GUIDE.md) | Root-cause correlation (Lift/Confidence) methodology |
 | [**LDI Validation Protocol**](docs/operations/LDI_VALIDATION_PROTOCOL.md) | 4-phase production sign-off procedure |
 
-### 🏗️ Core Architecture & Security
+### <img src="docs/assets/icons/layers.svg" width="18" height="18" align="center" />️ Core Architecture & Security
 
 | Document | Description |
 |:---:|---|
@@ -344,7 +344,7 @@ IMS/
 | [**Design System**](docs/architecture/GRAFANA_DESIGN_SYSTEM.md) | Semantic color palette, typography, threshold contracts |
 | [**Dashboard Inventory**](docs/architecture/DASHBOARD_INVENTORY.md) | Auto-generated dashboard/panel-count table (CI-checked) |
 
-### ⚙️ Operations & SRE Playbooks
+### ️ Operations & SRE Playbooks
 
 | Document | Description |
 |:---:|---|
@@ -360,7 +360,7 @@ IMS/
 | [**Release Checklist**](docs/operations/RELEASE_CHECKLIST.md) | What to verify before tagging a release |
 | [**Troubleshooting**](docs/operations/TROUBLESHOOTING.md) | Common issues, debugging commands, recovery procedures |
 
-### 🤝 Community & Reference
+### <img src="docs/assets/icons/users.svg" width="18" height="18" align="center" /> Community & Reference
 
 | Document | Description |
 |:---:|---|
@@ -379,6 +379,6 @@ IMS/
 
 **Built with precision. Designed for uptime.**
 
-[MIT License](LICENSE) —  2026 IMS Contributors
+[MIT License](LICENSE) — 2026 IMS Contributors
 
 </div>

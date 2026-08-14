@@ -1,4 +1,4 @@
-#  IMS K6 Stress Testing
+# IMS K6 Stress Testing
 
 > **Load testing scripts สำหรับ IMS ด้วย [K6](https://k6.io/) by Grafana Labs**
 
@@ -14,7 +14,7 @@
 
 ---
 
-##  Prerequisites
+## Prerequisites
 
 ```bash
 # Windows (choco)
@@ -29,7 +29,7 @@ sudo snap install k6
 
 ---
 
-##  Test Scripts
+## Test Scripts
 
 | Script | Purpose | Default Load |
 |---|---|---|
@@ -39,7 +39,7 @@ sudo snap install k6
 
 ---
 
-##  Running Tests
+## Running Tests
 
 ### Database Write Stress
 
@@ -49,10 +49,10 @@ k6 run tests/k6/db-write-stress.js
 
 # Custom: 500 servers, 5s interval
 k6 run tests/k6/db-write-stress.js \
-  --env SERVER_COUNT=500 \
-  --env WRITE_INTERVAL=5 \
-  --env PGHOST=localhost \
-  --env PGPORT=6432
+ --env SERVER_COUNT=500 \
+ --env WRITE_INTERVAL=5 \
+ --env PGHOST=localhost \
+ --env PGPORT=6432
 ```
 
 ### Grafana Query Stress
@@ -63,10 +63,10 @@ k6 run tests/k6/grafana-query-stress.js
 
 # Custom: 200 users
 k6 run tests/k6/grafana-query-stress.js \
-  --env CONCURRENT_USERS=200 \
-  --env GRAFANA_URL=http://localhost:3000 \
-  --env GRAFANA_USER=admin \
-  --env GRAFANA_PASS=your-password
+ --env CONCURRENT_USERS=200 \
+ --env GRAFANA_URL=http://localhost:3000 \
+ --env GRAFANA_USER=admin \
+ --env GRAFANA_PASS=your-password
 ```
 
 ### Full Pipeline E2E
@@ -77,43 +77,43 @@ k6 run tests/k6/pipeline-stress.js
 
 # Custom: 1000 servers
 k6 run tests/k6/pipeline-stress.js \
-  --env TARGET_SERVERS=1000 \
-  --env NODERED_URL=http://localhost:1880
+ --env TARGET_SERVERS=1000 \
+ --env NODERED_URL=http://localhost:1880
 ```
 
 ---
 
-##  Performance Targets
+## Performance Targets
 
 | Metric | Target | Actual (Tested) |
 |---|---|---|
-| **DB Write P95** | < 500ms | ~156ms  |
-| **Grafana Query P95** | < 3s | < 1s  |
-| **E2E Pipeline P95** | < 10s | < 2s  |
-| **Success Rate** | > 95% | 100%  |
-| **Max VUs** | 1,000 | 1,000  |
+| **DB Write P95** | < 500ms | ~156ms |
+| **Grafana Query P95** | < 3s | < 1s |
+| **E2E Pipeline P95** | < 10s | < 2s |
+| **Success Rate** | > 95% | 100% |
+| **Max VUs** | 1,000 | 1,000 |
 | **Total Iterations** | — | ~65,000 in 2 min |
 
 ---
 
-##  Output
+## Output
 
 Results are saved to `tests/k6/*-results.json`:
 
 ```json
 {
-  "totalOperations": 65000,
-  "successRate": 100,
-  "avgLatency": 45,
-  "p95Latency": 156,
-  "p99Latency": 280,
-  "errors": 0
+ "totalOperations": 65000,
+ "successRate": 100,
+ "avgLatency": 45,
+ "p95Latency": 156,
+ "p99Latency": 280,
+ "errors": 0
 }
 ```
 
 ---
 
-##  Customization
+## Customization
 
 ### Environment Variables
 

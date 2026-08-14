@@ -25,8 +25,8 @@ Or just push/open a PR — `.github/workflows/ci.yml` runs all of this (plus the
 ## 2. Governance docs match reality (no silent drift)
 
 ```bash
-node scripts/generate-dashboard-inventory.js --check   # needs no DB
-node scripts/generate-schema-inventory.js --check       # needs timescaledb up + migrated
+node scripts/generate-dashboard-inventory.js --check  # needs no DB
+node scripts/generate-schema-inventory.js --check    # needs timescaledb up + migrated
 ```
 
 Both run in CI (`lint` and `integration-chaos` jobs respectively) — a red CI run already covers this, but if you're releasing from a branch that skipped CI for any reason, run them locally first. If either reports drift, regenerate (drop `--check`) and commit the result *before* tagging, not after.
@@ -38,7 +38,7 @@ Both run in CI (`lint` and `integration-chaos` jobs respectively) — a red CI r
 
 ```bash
 bash scripts/migrate.sh
-# Expect: Pending: 0  Applied: 0  Failed: 0
+# Expect: Pending: 0 Applied: 0 Failed: 0
 ```
 
 If this reports `Pending: N > 0`, either the migration wasn't applied to whatever database you just checked, or a new migration file was added without running it — resolve before tagging. Every migration should already be idempotent (`CREATE ... IF NOT EXISTS`-style guards); if you wrote one that isn't, fix it now, not after it's tagged and someone else re-runs it.
@@ -49,7 +49,7 @@ If this reports `Pending: N > 0`, either the migration wasn't applied to whateve
 
 ```bash
 docker run --rm -v "$(pwd):/repo" zricethezav/gitleaks:latest \
-  detect --source=/repo --no-git --redact --verbose --config=/repo/.gitleaks.toml
+ detect --source=/repo --no-git --redact --verbose --config=/repo/.gitleaks.toml
 ```
 
 Also runs in CI's `lint` job. If this is a production tag (not just a dev/staging build), separately confirm the target environment's `.env` has real values for `INGEST_API_KEY`, `POSTGRES_PASSWORD`, and `GRAFANA_ADMIN_PASSWORD` — see `docs/admin/ADMIN_MANUAL.md`'s Pre-Production Security Checklist. This repo cannot ship real credentials; that verification has to happen against the actual deploy target, not the repo.

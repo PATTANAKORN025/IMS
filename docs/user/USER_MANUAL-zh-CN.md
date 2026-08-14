@@ -1,4 +1,4 @@
-#  IMS — 用户手册
+# IMS — 用户手册
 
 > **IT 支持与 NOC 团队用户指南**
 > 解释如何阅读仪表盘、解读指标以及应对警报
@@ -15,7 +15,7 @@
 
 ---
 
-##  目录
+## 目录
 
 1. [快速入门](#-快速入门)
 2. [Grafana 仪表盘指南](#-grafana-仪表盘指南)
@@ -27,7 +27,7 @@
 
 ---
 
-##  快速入门
+## 快速入门
 
 ### 访问系统
 
@@ -45,24 +45,24 @@
 ```
  IMS Dashboards
 ├── Infrastructure (服务器/网络)
-│   ├──  NOC 概览            — 管理层设备包络 (仅限基础设施 -- LDI 在下面)
-│   ├──  工程深入分析  — 单个服务器深入分析: CPU/内存/磁盘/温度/网络
-│   ├──  容量规划       — 线性回归预测 (距离磁盘/内存占满的天数)
-│   └──  元监控         — 数据管道自身的健康状况 (行/秒, 批处理成功, 重试队列)
+│  ├── NOC 概览      — 管理层设备包络 (仅限基础设施 -- LDI 在下面)
+│  ├── 工程深入分析 — 单个服务器深入分析: CPU/内存/磁盘/温度/网络
+│  ├── 容量规划    — 线性回归预测 (距离磁盘/内存占满的天数)
+│  └── 元监控     — 数据管道自身的健康状况 (行/秒, 批处理成功, 重试队列)
 └── LDI Manufacturing (PCB 激光直接成像设备)
-    ├──  简易概览           — 零配置全设备一览，无需设置过滤器
-    ├──  LDI 制造       — 管理层 KPI + 机器遥测 + 警报流 (主指挥中心)
-    ├──  LDI 操作员安灯      — 工厂车间信息亭，1280x720，零滚动，只读 (无交互元素)
-    ├──  LDI 警报控制台       — 交互式确认/解决工作流，只读安灯板的配套组件
-    ├──  LDI 警报字典    — 参考查询：完整供应商警报定义 + 最近发生事件
-    ├──  LDI 工程分析 — Cpk/SPC 排名，RCA 真理测试，PE/JE 分布
-    ├──  LDI 机器快照    — 单击任何警报/日志以检查确切的毫秒
-    └──  LDI 数据就绪度      — 自我审计数据质量仪表盘 (覆盖率 %, 差距)
+  ├── 简易概览      — 零配置全设备一览，无需设置过滤器
+  ├── LDI 制造    — 管理层 KPI + 机器遥测 + 警报流 (主指挥中心)
+  ├── LDI 操作员安灯   — 工厂车间信息亭，1280x720，零滚动，只读 (无交互元素)
+  ├── LDI 警报控制台    — 交互式确认/解决工作流，只读安灯板的配套组件
+  ├── LDI 警报字典  — 参考查询：完整供应商警报定义 + 最近发生事件
+  ├── LDI 工程分析 — Cpk/SPC 排名，RCA 真理测试，PE/JE 分布
+  ├── LDI 机器快照  — 单击任何警报/日志以检查确切的毫秒
+  └── LDI 数据就绪度   — 自我审计数据质量仪表盘 (覆盖率 %, 差距)
 ```
 
 ---
 
-##  Grafana 仪表盘指南
+## Grafana 仪表盘指南
 
 ### 1. NOC 概览仪表盘
 
@@ -70,24 +70,24 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│   IMS NOC Overview                                            │
+│  IMS NOC Overview                      │
 ├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌───────────┐ │
-│  │ Total       │ │ Healthy     │ │ Warning     │ │ Critical  │ │
-│  │ Machines: 5 │ │ Machines: 4 │ │ Alerts: 1   │ │ Alerts: 0 │ │
-│  │   🟢        │ │    🟢       │ │    🟡       │ │         │ │
-│  └─────────────┘ └─────────────┘ └─────────────┘ └───────────┘ │
-│                                                                 │
-│  ┌───────────────────────────────────────────────────────────┐ │
-│  │  Fleet CPU Usage (Last 1 Hour)                            │ │
-│  │  [Line chart showing all machines CPU over time]          │ │
-│  └───────────────────────────────────────────────────────────┘ │
-│                                                                 │
-│  ┌───────────────────────────────────────────────────────────┐ │
-│  │  Active Alerts                                            │ │
-│  │  [Table of current firing alerts with severity]           │ │
-│  └───────────────────────────────────────────────────────────┘ │
+│                                 │
+│ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌───────────┐ │
+│ │ Total    │ │ Healthy   │ │ Warning   │ │ Critical │ │
+│ │ Machines: 5 │ │ Machines: 4 │ │ Alerts: 1  │ │ Alerts: 0 │ │
+│ │  ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen)    │ │  ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen)    │ │  ![Warning](https://img.shields.io/badge/Status-Warning-yellow)    │ │     │ │
+│ └─────────────┘ └─────────────┘ └─────────────┘ └───────────┘ │
+│                                 │
+│ ┌───────────────────────────────────────────────────────────┐ │
+│ │ Fleet CPU Usage (Last 1 Hour)              │ │
+│ │ [Line chart showing all machines CPU over time]     │ │
+│ └───────────────────────────────────────────────────────────┘ │
+│                                 │
+│ ┌───────────────────────────────────────────────────────────┐ │
+│ │ Active Alerts                      │ │
+│ │ [Table of current firing alerts with severity]      │ │
+│ └───────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -97,11 +97,11 @@
 
 | 面板 | 指标 | 颜色编码 |
 |---|---|---|
-| **CPU 使用率** | 每核心 `cpu_load_percent` | 🟢 < 60%, 🟡 60-80%,  > 80% |
-| **内存使用率** | `ram_used_mb / ram_total_mb` | 🟢 < 70%, 🟡 70-85%,  > 85% |
-| **磁盘使用率** | `disk_used_gb / disk_total_gb` | 🟢 < 70%, 🟡 70-80%,  > 80% |
+| **CPU 使用率** | 每核心 `cpu_load_percent` | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) < 60%, ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 60-80%, > 80% |
+| **内存使用率** | `ram_used_mb / ram_total_mb` | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) < 70%, ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 70-85%, > 85% |
+| **磁盘使用率** | `disk_used_gb / disk_total_gb` | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) < 70%, ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 70-80%, > 80% |
 | **网络流量** | 每接口 `rx_mbps`, `tx_mbps` | 蓝色 = RX, 浅蓝色 = TX |
-| **温度** | `temp_c` | 🟢 < 65°C, 🟡 65-80°C,  > 80°C |
+| **温度** | `temp_c` | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) < 65°C, ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 65-80°C, > 80°C |
 
 ### 3. 工程深入分析仪表盘
 
@@ -109,44 +109,44 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│   Engineering Drilldown — [Select Machine ▼]                  │
+│  Engineering Drilldown — [Select Machine ▼]         │
 ├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ┌───────────────────────────────────────────────────────────┐ │
-│  │  Network Interface Traffic (Symmetrical Butterfly)        │ │
-│  │  ┌─────────────────────────────────────────────────────┐  │ │
-│  │  │     ▲ eth0 RX: ████████████ 2.4 Gbps               │  │ │
-│  │  │     │ wlan0 RX: ██████ 800 Mbps                     │  │ │
-│  │  │  ───┼────────────────────────────────── 0 Mbps      │  │ │
-│  │  │     │ wlan0 TX: ████ 400 Mbps                       │  │ │
-│  │  │     ▼ eth0 TX: ████████ 1.6 Gbps                   │  │ │
-│  │  └─────────────────────────────────────────────────────┘  │ │
-│  └───────────────────────────────────────────────────────────┘ │
-│                                                                 │
-│  ┌──────────────────────┐ ┌──────────────────────────────────┐ │
-│  │  CPU Temperature      │ │  Disk Usage                      │ │
-│  │  [Gauge: 72°C]       │ │  [Bar: /dev/sda1 45%, sdb1 62%] │ │
-│  └──────────────────────┘ └──────────────────────────────────┘ │
-│                                                                 │
-│  ┌───────────────────────────────────────────────────────────┐ │
-│  │  LDI Quality Scatter (PE vs JE)                           │ │
-│  │  ┌─────────────────────────────────────────────────────┐  │ │
-│  │  │  PE (µm)                                            │  │ │
-│  │  │   15 ┤         ╱ Tolerance Box                      │  │ │
-│  │  │      │  ·  · ╱· · ·                                │  │ │
-│  │  │    0 ┤──╱────────────────── 0                       │  │ │
-│  │  │      │ ╱· · · ·                                    │  │ │
-│  │  │  -15 ┤╱         (green zone ±10µm)                 │  │ │
-│  │  │      └─┬────┬────┬────┬────┬─                      │  │ │
-│  │  │       -15   -5    0    5   15  JE (µm)             │  │ │
-│  │  └─────────────────────────────────────────────────────┘  │ │
-│  └───────────────────────────────────────────────────────────┘ │
-│                                                                 │
-│  ┌───────────────────────────────────────────────────────────┐ │
-│  │  LDI Manufacturing Telemetry                              │ │
-│  │  Throughput: 1250 units/hr | PE: 0.85 | JE: 0.92          │ │
-│  │  Humidity: 65% | Power: 2400W | Vibration: 2.1 mm/s       │ │
-│  └───────────────────────────────────────────────────────────┘ │
+│                                 │
+│ ┌───────────────────────────────────────────────────────────┐ │
+│ │ Network Interface Traffic (Symmetrical Butterfly)    │ │
+│ │ ┌─────────────────────────────────────────────────────┐ │ │
+│ │ │   ▲ eth0 RX: ████████████ 2.4 Gbps        │ │ │
+│ │ │   │ wlan0 RX: ██████ 800 Mbps           │ │ │
+│ │ │ ───┼────────────────────────────────── 0 Mbps   │ │ │
+│ │ │   │ wlan0 TX: ████ 400 Mbps            │ │ │
+│ │ │   ▼ eth0 TX: ████████ 1.6 Gbps          │ │ │
+│ │ └─────────────────────────────────────────────────────┘ │ │
+│ └───────────────────────────────────────────────────────────┘ │
+│                                 │
+│ ┌──────────────────────┐ ┌──────────────────────────────────┐ │
+│ │ CPU Temperature   │ │ Disk Usage           │ │
+│ │ [Gauge: 72°C]    │ │ [Bar: /dev/sda1 45%, sdb1 62%] │ │
+│ └──────────────────────┘ └──────────────────────────────────┘ │
+│                                 │
+│ ┌───────────────────────────────────────────────────────────┐ │
+│ │ LDI Quality Scatter (PE vs JE)              │ │
+│ │ ┌─────────────────────────────────────────────────────┐ │ │
+│ │ │ PE (µm)                      │ │ │
+│ │ │  15 ┤     ╱ Tolerance Box           │ │ │
+│ │ │   │ · · ╱· · ·                │ │ │
+│ │ │  0 ┤──╱────────────────── 0            │ │ │
+│ │ │   │ ╱· · · ·                  │ │ │
+│ │ │ -15 ┤╱     (green zone ±10µm)         │ │ │
+│ │ │   └─┬────┬────┬────┬────┬─           │ │ │
+│ │ │    -15  -5  0  5  15 JE (µm)       │ │ │
+│ │ └─────────────────────────────────────────────────────┘ │ │
+│ └───────────────────────────────────────────────────────────┘ │
+│                                 │
+│ ┌───────────────────────────────────────────────────────────┐ │
+│ │ LDI Manufacturing Telemetry               │ │
+│ │ Throughput: 1250 units/hr | PE: 0.85 | JE: 0.92     │ │
+│ │ Humidity: 65% | Power: 2400W | Vibration: 2.1 mm/s    │ │
+│ └───────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -156,8 +156,8 @@
 
 | 区域 | 颜色 | 含义 |
 |---|---|---|
-| ±10µm 内 | 🟢 绿色 | 正常 — 激光头工作正常 |
-| ±10µm 外 |  红色 | 异常 — 激光头开始出现问题 |
+| ±10µm 内 | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) 绿色 | 正常 — 激光头工作正常 |
+| ±10µm 外 | 红色 | 异常 — 激光头开始出现问题 |
 
 **使用方法：**
 - 绿色框内的点 = PCB 质量在标准内
@@ -225,7 +225,7 @@
 
 ---
 
-##  指标解读
+## 指标解读
 
 ### CPU 指标
 
@@ -243,10 +243,10 @@
 ```
 Machine: server-01
 CPU Load: 72% (Warning)
-├── Core 1: 85%  ️
-├── Core 2: 45%  
-├── Core 3: 78%  ️
-└── Core 4: 80%  ️
+├── Core 1: 85% ️
+├── Core 2: 45% 
+├── Core 3: 78% ️
+└── Core 4: 80% ️
 → Core 1, 3, 4 正在被大量使用。检查哪些进程正在运行。
 ```
 
@@ -282,10 +282,10 @@ CPU Load: 72% (Warning)
 ```
 Machine: server-01
 ┌─────────┬──────────┬──────────┬──────────┬──────────┬────────┐
-│Interface│ RX Mbps  │ TX Mbps  │ Errors   │ Drops    │ Status │
+│Interface│ RX Mbps │ TX Mbps │ Errors  │ Drops  │ Status │
 ├─────────┼──────────┼──────────┼──────────┼──────────┼────────┤
-│ eth0    │ 1200     │ 850      │ 0        │ 0        │  UP  │
-│ wlan0   │ 320      │ 180      │ 0        │ 12       │  UP  │
+│ eth0  │ 1200   │ 850   │ 0    │ 0    │ UP │
+│ wlan0  │ 320   │ 180   │ 0    │ 12    │ UP │
 └─────────┴──────────┴──────────┴──────────┴──────────┴────────┘
 → wlan0 有 12 个丢包 — 请检查无线信号
 ```
@@ -316,19 +316,19 @@ Machine: server-01
 
 ---
 
-##  警报响应程序
+## 警报响应程序
 
 ### 警报严重级别
 
 | 级别 | 颜色 | 响应时间 | 示例 |
 |---|---|---|---|
-| **严重 (Critical)** |  红色 | 立即 (< 15 分钟) | InterfaceDown, ServiceDown, CriticalCPU |
-| **警告 (Warning)** | 🟡 黄色 | 尽快 (< 1 小时) | HighCPU, HighMemory, DiskSpaceLow |
-| **信息 (Info)** |  蓝色 | 正常 (< 4 小时) | TelemetryGap, PredictiveDiskFull |
+| **严重 (Critical)** | 红色 | 立即 (< 15 分钟) | InterfaceDown, ServiceDown, CriticalCPU |
+| **警告 (Warning)** | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 黄色 | 尽快 (< 1 小时) | HighCPU, HighMemory, DiskSpaceLow |
+| **信息 (Info)** | 蓝色 | 正常 (< 4 小时) | TelemetryGap, PredictiveDiskFull |
 
 ### 事故响应剧本
 
-####  场景 1: InterfaceDown (严重)
+#### 场景 1: InterfaceDown (严重)
 
 ```
 症状:
@@ -401,7 +401,7 @@ Machine: server-01
 - 如果情况严重 (> 95%) → 必须立即清理
 ```
 
-####  场景 4: ServiceDown (严重)
+#### 场景 4: ServiceDown (严重)
 
 ```
 症状:
@@ -427,7 +427,7 @@ Machine: server-01
 - 如果是系统级问题 → 联系系统管理员
 ```
 
-#### 🟡 场景 5: PipelineDataStalled (警告)
+#### ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 场景 5: PipelineDataStalled (警告)
 
 ```
 症状:
@@ -453,7 +453,7 @@ Machine: server-01
 
 ---
 
-##  常见操作
+## 常见操作
 
 ### 检查系统状态
 
@@ -476,16 +476,16 @@ docker compose exec prometheus wget -qO- "http://localhost:9090/api/v1/alerts"
 ```bash
 # 最近的遥测数据 (过去 5 分钟)
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
-  "SELECT device_id, time, cpu_load_percent, temp_c
-   FROM public.sys_metrics
-   WHERE time > NOW() - INTERVAL '5 minutes'
-   ORDER BY time DESC LIMIT 10;"
+ "SELECT device_id, time, cpu_load_percent, temp_c
+  FROM public.sys_metrics
+  WHERE time > NOW() - INTERVAL '5 minutes'
+  ORDER BY time DESC LIMIT 10;"
 
 # 检查接口指标
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
-  "SELECT device_id, iface_name, rx_mbps, tx_mbps
-   FROM public.net_metrics
-   ORDER BY time DESC LIMIT 1;"
+ "SELECT device_id, iface_name, rx_mbps, tx_mbps
+  FROM public.net_metrics
+  ORDER BY time DESC LIMIT 1;"
 ```
 
 ### 重启服务
@@ -503,7 +503,7 @@ docker compose restart node-red grafana alertmanager prometheus
 
 ---
 
-##  故障排除
+## 故障排除
 
 ### 常见问题
 
@@ -536,19 +536,19 @@ docker compose ps --format "table {{.Name}}\t{{.Status}}"
 
 echo "=== 数据流 ==="
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
-  "SELECT device_id, COUNT(*) as rows, MAX(time) as latest
-   FROM public.sys_metrics
-   WHERE time > NOW() - INTERVAL '5 minutes'
-   GROUP BY device_id;"
+ "SELECT device_id, COUNT(*) as rows, MAX(time) as latest
+  FROM public.sys_metrics
+  WHERE time > NOW() - INTERVAL '5 minutes'
+  GROUP BY device_id;"
 
 echo "=== 警报 ==="
 docker compose exec prometheus wget -qO- "http://localhost:9090/api/v1/alerts" 2>&1 | \
-  python -c "import sys,json; d=json.load(sys.stdin); print(f'{len(d[\"data\"][\"alerts\"])} 个活动警报')"
+ python -c "import sys,json; d=json.load(sys.stdin); print(f'{len(d[\"data\"][\"alerts\"])} 个活动警报')"
 ```
 
 ---
 
-##  快速参考
+## 快速参考
 
 ### 键盘快捷键 (Grafana)
 
@@ -567,14 +567,14 @@ docker compose exec prometheus wget -qO- "http://localhost:9090/api/v1/alerts" 2
 
 | 指标 | 健康 | 警告 | 严重 |
 |---|---|---|---|
-| **CPU** | 🟢 绿色 | 🟡 黄色 → 橙色 |  红色 |
-| **内存** | 🟢 绿色 | 🟡 紫色 → 深橙色 |  红色 |
-| **磁盘** | 🟢 绿色 | 🟡 青色 → 蓝色 |  红色 |
-| **网络 RX** |  深蓝色 (#1F60C4) | — |  红色 |
-| **网络 TX** |  浅蓝色 (#5794F2) | — |  红色 |
-| **温度** | 🟢 绿色 | 🟡 黄色 |  红色 |
-| **错误** | — | — |  红色 (#C4162A) |
-| **丢包 (Drops)** | — | 🟠 橙色 (#FF9830) |  红色 |
+| **CPU** | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) 绿色 | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 黄色 → 橙色 | 红色 |
+| **内存** | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) 绿色 | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 紫色 → 深橙色 | 红色 |
+| **磁盘** | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) 绿色 | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 青色 → 蓝色 | 红色 |
+| **网络 RX** | 深蓝色 (#1F60C4) | — | 红色 |
+| **网络 TX** | 浅蓝色 (#5794F2) | — | 红色 |
+| **温度** | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) 绿色 | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 黄色 | 红色 |
+| **错误** | — | — | 红色 (#C4162A) |
+| **丢包 (Drops)** | — | ![Warning](https://img.shields.io/badge/Status-Warning-orange) 橙色 (#FF9830) | 红色 |
 
 ### 警报联系人
 

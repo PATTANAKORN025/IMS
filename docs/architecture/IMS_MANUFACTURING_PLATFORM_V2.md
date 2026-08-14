@@ -47,11 +47,11 @@
 
 - Add `public.devices.process_type TEXT DEFAULT 'ldi'` (nullable-safe default backfills existing rows; additive migration, no breaking change to any existing view — `device_type='ldi'` stays the join key everywhere it's used today).
 - Write `docs/architecture/MANUFACTURING_DOMAIN.md` documenting the generic pattern every future process type follows, using LDI as the worked example:
-  - One telemetry hypertable keyed by `(device_id, process_type, time)`.
-  - One alarm-code master per process, following the `ldi_alarm_ms_code` shape (code, severity, description).
-  - One SPC/RCA view pattern per process, following migration 064's now-generic materialized-view shape (`v_machine_spc_fleet` already filters by `device_type`, so it's one `WHERE` clause away from being multi-process).
-  - One dashboard trio per process (Andon / Engineering Analytics / Manufacturing Overview), following the LDI suite's structure.
-  - A short "onboarding checklist" for adding a new process type: migration, alarm master seed, dashboard trio, linter registration.
+ - One telemetry hypertable keyed by `(device_id, process_type, time)`.
+ - One alarm-code master per process, following the `ldi_alarm_ms_code` shape (code, severity, description).
+ - One SPC/RCA view pattern per process, following migration 064's now-generic materialized-view shape (`v_machine_spc_fleet` already filters by `device_type`, so it's one `WHERE` clause away from being multi-process).
+ - One dashboard trio per process (Andon / Engineering Analytics / Manufacturing Overview), following the LDI suite's structure.
+ - A short "onboarding checklist" for adding a new process type: migration, alarm master seed, dashboard trio, linter registration.
 
 **Explicit non-goal:** no AOI/Plating/Etching/Drilling tables, dashboards, simulators, or fake data are built now. There are no requirements for them yet — building them would be speculative. This section only makes the *next* process type additive instead of a rewrite.
 
@@ -76,9 +76,9 @@
 **Target:**
 
 - Extend `.github/CODEOWNERS` with domain-scoped path entries (still `@PATTANAKORN025` as owner today — single-person repo — but the *paths* are split so a future second owner has a real boundary to take over, not a flat wildcard). **Updated during Phase B to match Phase A's actual result:** Phase A physically split dashboards into `dashboards/{infrastructure,manufacturing}/` directories, which makes directory-based CODEOWNERS paths simpler and more precise than the file-glob list this section originally drafted before Phase A ran:
-  - `/monitoring/grafana/dashboards/manufacturing/`, `/nodered_data/flows/ldi_*` → Manufacturing domain
-  - `/monitoring/grafana/dashboards/infrastructure/`, `/nodered_data/flows/ingestion.json` → Infrastructure domain
-  - Keep existing security/CI/database-wide lines as-is.
+ - `/monitoring/grafana/dashboards/manufacturing/`, `/nodered_data/flows/ldi_*` → Manufacturing domain
+ - `/monitoring/grafana/dashboards/infrastructure/`, `/nodered_data/flows/ingestion.json` → Infrastructure domain
+ - Keep existing security/CI/database-wide lines as-is.
 - Add `docs/architecture/OWNERSHIP.md` explaining the two domains, what lives in each, and pointing at the `CODEOWNERS` paths as the enforced version of the same boundary (avoids the doc/reality drift this session repeatedly found elsewhere).
 
 **Non-goal:** no multi-repo split. Confirmed by user as out of scope — the migration/CI/deploy cost isn't justified for a single-owner repo at this size.
@@ -100,10 +100,10 @@ Sequenced **after** sections 1–4 land, so it documents the settled structure o
 - **Validation:** already complete and accurate (`docs/operations/LDI_VALIDATION_PROTOCOL.md`). No further action.
 - **Soak test:** tooling exists (`scripts/soak-test-report.sh`) but has never produced a real report. Run it for a real window (target: 24h minimum, ideally 72h) against the running stack and attach the actual `--summarize` output as evidence.
 - **DR test:** does not exist. Build a DR runbook + script modeled on the soak-test tooling's pattern (`scripts/dr-test.sh` + `docs/operations/DR_TEST_PLAN.md`), covering:
-  1. Backup/restore drill (`pg_dump` → drop/recreate → restore → row-count + spot-check parity).
-  2. Single-container-loss recovery (kill `ims-timescaledb` / `ims-node-red` mid-flight, measure automatic recovery — this directly exercises the Node-RED pool-reconnect watchdog fixed earlier this session).
-  3. Full-stack recreate from `docker-compose.yaml` + latest backup on a clean volume set, timed.
-  - Execute it for real against this environment and attach real timings/output, not a hypothetical runbook.
+ 1. Backup/restore drill (`pg_dump` → drop/recreate → restore → row-count + spot-check parity).
+ 2. Single-container-loss recovery (kill `ims-timescaledb` / `ims-node-red` mid-flight, measure automatic recovery — this directly exercises the Node-RED pool-reconnect watchdog fixed earlier this session).
+ 3. Full-stack recreate from `docker-compose.yaml` + latest backup on a clean volume set, timed.
+ - Execute it for real against this environment and attach real timings/output, not a hypothetical runbook.
 
 ---
 
@@ -161,9 +161,9 @@ Each phase's evidence is attached to this doc (or linked from it) before moving 
 
 ```text
 ═══════════════════════════════════════════════════
-  IMS Soak Test Summary
+ IMS Soak Test Summary
 ═══════════════════════════════════════════════════
-Samples: 57   Window: 2026-08-10T08:34:21Z -> 2026-08-12T13:05:15Z  (52.5h elapsed)
+Samples: 57  Window: 2026-08-10T08:34:21Z -> 2026-08-12T13:05:15Z (52.5h elapsed)
 Window length: NOT YET 72h -- keep this script running periodically and re-summarize later.
 
 Ingest failures ever nonzero in a sample: max=NaN (want 0)
@@ -194,9 +194,9 @@ VERDICT: FAIL -- see nonzero counters above
 First run produced a false FAIL (live row counts queried *after* the dump, so the live-ingesting system had already moved a few rows ahead — not a restore defect). Fixed the script to bracket live counts before and after the dump and check the restored count falls inside that window. Re-run:
 
 ```text
-devices=1025 ldi_data=52795 ldi_alarm_log=10405   (before dump)
-devices=1025 ldi_data=52796 ldi_alarm_log=10405   (after dump)
-devices=1025 ldi_data=52795 ldi_alarm_log=10405   (restored, throwaway DB)
+devices=1025 ldi_data=52795 ldi_alarm_log=10405  (before dump)
+devices=1025 ldi_data=52796 ldi_alarm_log=10405  (after dump)
+devices=1025 ldi_data=52795 ldi_alarm_log=10405  (restored, throwaway DB)
 VERDICT: PASS -- dump 1s, restore 18s, 22,284,869 bytes
 ```
 
@@ -210,11 +210,11 @@ VERDICT: PASS -- dump 1s, restore 18s, 22,284,869 bytes
 
 ```text
 timescaledb: PASS -- recovered in 6s
-node-red:    PASS -- recovered in 6s
+node-red:  PASS -- recovered in 6s
 timescaledb: PASS -- recovered in 8s
-node-red:    PASS -- recovered in 3s
+node-red:  PASS -- recovered in 3s
 timescaledb: PASS -- recovered in 5s
-node-red:    PASS -- recovered in 6s
+node-red:  PASS -- recovered in 6s
 ```
 
 6/6 PASS, single-digit-second recovery every time. **The underlying Docker Desktop restart-policy gap is not fixed** (that's outside this repo's control) — what changed is that this environment now has a compensating control that actually works, verified against the real, reproduced failure mode rather than assumed to work.
