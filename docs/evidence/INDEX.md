@@ -2,6 +2,8 @@
 
 This document serves as the central registry linking architectural claims to verifiable evidence files (runtime logs, database policies, etc.). It acts as the single source of truth for all claims made in the documentation.
 
+> **KPI-level evidence** (latency, DR, soak, alarm realism) lives in `EVIDENCE_PACK.md`. **Pass/fail verdict** against the 8 production-grade criteria lives in `SYSTEM_TRUST_REPORT.md`.
+
 ## Core Capabilities Evidence
 
 | Capability Claim | Evidence Location | Description |

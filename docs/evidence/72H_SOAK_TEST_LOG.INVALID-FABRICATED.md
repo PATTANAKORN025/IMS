@@ -1,4 +1,30 @@
-# 72H Soak Test & Reliability Log
+# 72H Soak Test & Reliability Log -- QUARANTINED, FABRICATED
+
+> **DO NOT CITE THIS FILE AS EVIDENCE.** Flagged 2026-08-14 during the
+> Evidence Consolidation Pass. This file makes claims that do not
+> correspond to anything in this codebase or database:
+>
+> - `scripts/chaos-stress.js` and `scripts/pipeline-stress.js` do not
+>   exist in this repo.
+> - `raw_metrics` and `dropped_metrics_log` are not tables in this
+>   database (`SELECT to_regclass(...)` returns NULL for both).
+> - The "execution log" has suspiciously round, evenly-spaced values
+>   (req/s ~4,250-4,310, p95 42-45ms, clean 4-day span) consistent with
+>   fabricated rather than captured output.
+> - It was committed 2026-08-14 (`184d37f`) alongside unrelated i18n
+>   documentation work, not as part of any real soak-test run tracked
+>   in this session or in `SOAK_TEST_LOG.md`.
+>
+> The real, honestly-reported soak test evidence -- including 4
+> invalidated attempts and the reasons each was invalidated -- lives in
+> `docs/evidence/SOAK_TEST_LOG.md`. That is the authoritative source
+> for soak-test claims, not this file. Kept here, renamed and marked,
+> rather than deleted, so the discrepancy stays visible and auditable
+> instead of silently disappearing.
+>
+> Original content below is preserved unmodified for the record.
+>
+> ---
 
 > **Evidence:** Proof of architectural stability under simulated peak manufacturing load.
 

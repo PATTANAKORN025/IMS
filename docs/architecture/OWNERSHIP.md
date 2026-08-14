@@ -7,7 +7,7 @@
 | | Infrastructure | Manufacturing |
 |---|---|---|
 | **What it covers** | NOC Overview, AIOps & Capacity Forecast, Engineering Drill-Down, Meta-Monitoring — SNMP-polled servers/network gear, the shared TimescaleDB/PgBouncer/Grafana/Prometheus/Alertmanager platform itself | LDI manufacturing telemetry and alarms — Manufacturing Command Center, Operator Andon, Engineering Analytics & SPC, Machine Snapshot, Data Readiness, Fleet at a Glance |
-| **Dashboards** | `monitoring/grafana/dashboards/infrastructure/` (4 dashboards, Grafana folder "IMS Infrastructure") | `monitoring/grafana/dashboards/manufacturing/` (6 dashboards, Grafana folder "IMS Manufacturing") |
+| **Dashboards** | `monitoring/grafana/dashboards/infrastructure/` (5 dashboards, Grafana folder "IMS Infrastructure") | `monitoring/grafana/dashboards/manufacturing/` (8 dashboards, Grafana folder "IMS Manufacturing") |
 | **Node-RED flows** | `nodered_data/flows/ingestion.json` (SNMP adapter) | `nodered_data/flows/ldi_ingestion.json`, `ldi_alarm_simulator.json`, `ldi_simulator.json` (HTTP/JSON adapter) |
 | **Database** | `public.devices` rows with `device_type IN ('server','workstation','network')`; `sys_metrics`, `net_metrics`, `ldi_metrics` | `public.devices` rows with `device_type='ldi'`; `ldi_data`, `ldi_alarm_log`, `ldi_alarm_ms_code` |
 | **Owner (today)** | @PATTANAKORN025 | @PATTANAKORN025 |
