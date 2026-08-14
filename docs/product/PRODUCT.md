@@ -1,5 +1,14 @@
 # Product
 
+## Executive Business Value
+
+The IMS (Industrial Monitoring System) bridges the critical visibility gap between traditional IT infrastructure and PCB manufacturing floor operations. By replacing reactive manual inspection with real-time, automated telemetry, IMS acts as a direct multiplier for operational efficiency and equipment uptime.
+
+- **Risk Mitigation:** Prevents catastrophic failures via sub-10-second anomaly detection (Z-Score AIOps) before hardware thresholds are breached.
+- **Cost Avoidance:** Zero-license open-source architecture eliminates the massive recurring fees (฿3M-10M annually) typical of enterprise monitoring software.
+- **Operational Scalability:** Automates manual data logging (saving 2,920 man-hours annually), allowing operators to shift from reactive monitoring to proactive maintenance.
+- **Root-Cause Agility:** Reduces Mean Time to Resolution (MTTR) from hours to minutes through direct correlation of machine alarms with process parameters (e.g., LDI laser intensity and position errors).
+
 ## Register
 
 product

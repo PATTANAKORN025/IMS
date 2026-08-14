@@ -41,7 +41,7 @@
 | Solution | Result | Impact |
 |---|---|---|
 | **Real-time SNMP Polling** | ทุก 30 วินาที อัตโนมัติ 100% | Zero manual effort |
-| **AIOps Z-Score Alerting** | ตรวจจับ 3σ anomaly ก่อนเครื่องเสีย | Proactive maintenance |
+| **Z-Score Statistical Alerting** | ตรวจจับ 3σ anomaly ก่อนเครื่องเสีย | Proactive maintenance |
 | **12 Dashboards** | 4 infrastructure (NOC, Engineering Drill-Down, Capacity, Meta-Monitoring) + 8 manufacturing (Easy Overview, Alarm Console, Alarm Dictionary, Engineering Analytics, Machine Snapshot, Manufacturing, Operator Andon, Data Readiness) | Full visibility across both infrastructure and the manufacturing line itself |
 | **LINE/Teams Webhooks** | Alert formatting and delivery-attempt logic is complete and correct; real delivery requires operator-configured credentials (`LINE_CHANNEL_ACCESS_TOKEN`, `TEAMS_WEBHOOK_URL`) not shipped in this repo | Faster response once configured |
 | **Predictive Analytics** | Linear regression forecasting | Prevent failures |
@@ -112,7 +112,7 @@ ROI: 2,750% (Year 1)
 
 ### Value of Trained Personnel
 
-> นักศึกษาฝึกงานได้เรียนรู้ **การออกแบบระบบระดับ Enterprise** ตั้งแต่ Architecture → Development → Testing → Deployment → Monitoring
+> นักศึกษาฝึกงานได้เรียนรู้ **กระบวนการพัฒนาซอฟต์แวร์ทางวิศวกรรมเต็มรูปแบบ** ตั้งแต่ Architecture → Development → Testing → Deployment → Monitoring
 
 ---
 
