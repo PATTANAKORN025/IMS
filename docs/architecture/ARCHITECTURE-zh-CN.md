@@ -11,6 +11,7 @@
 IMS 是一个 Docker Compose 技术栈，包含**两条独立的遥测管道**，它们向同一个共享的 TimescaleDB 提供数据，跨 **12 个 Grafana 仪表板**进行可视化，并通过 Grafana 原生告警引擎和 Prometheus/Alertmanager 发出告警。
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
 flowchart TB
  subgraph LDI ["LDI 制造管道 (主干，真实)"]
   SIM["ldi_simulator.json\nOrnstein-Uhlenbeck 实时模拟器\n2秒周期，10台机器"] -->|"HTTP POST /ldi-telemetry"| ING["ldi_ingestion.json\n鉴权检查 -> INSERT"]

@@ -11,6 +11,7 @@
 This diagram shows how external actors interact with the IMS system.
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
 C4Context
  title System Context diagram for IMS
 
@@ -41,6 +42,7 @@ C4Context
 This diagram breaks down the IMS system into its deployable Docker containers.
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
 C4Container
  title Container diagram for IMS
 
@@ -70,6 +72,7 @@ C4Container
 This diagram explains the fault-tolerance mechanism when a server goes offline.
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
 sequenceDiagram
  participant Timer as <img src="docs/assets/icons/clock.svg" width="18" height="18" align="center" /> Node-RED Inject (30s)
  participant Walker as ️ SNMP Walker

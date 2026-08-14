@@ -11,6 +11,7 @@
 IMS เป็น Docker Compose stack ที่มี **ไปป์ไลน์ข้อมูลเทเลเมทรีที่เป็นอิสระต่อกันสองชุด** ซึ่งส่งข้อมูลไปยัง TimescaleDB ฐานข้อมูลเดียวที่ใช้งานร่วมกัน แสดงผลผ่าน **Grafana แดชบอร์ด 12 ตัว** พร้อมการแจ้งเตือนผ่านทั้งระบบแจ้งเตือนดั้งเดิมของ Grafana และ Prometheus/Alertmanager
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
 flowchart TB
  subgraph LDI ["LDI Manufacturing Pipeline (primary, real)"]
   SIM["ldi_simulator.json\nOrnstein-Uhlenbeck live simulator\n2s tick, 10 machines"] -->|"HTTP POST /ldi-telemetry"| ING["ldi_ingestion.json\nauth check -> INSERT"]

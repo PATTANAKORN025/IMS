@@ -9,6 +9,7 @@
 ## Trust boundaries
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
 flowchart TB
  subgraph HOST["Host network"]
   subgraph DOCKER["Docker bridge network (ims-internal / ims-monitoring)"]
