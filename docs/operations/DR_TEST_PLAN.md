@@ -6,7 +6,7 @@
 
 `./scripts/dr-test.sh backup-restore`
 
-`pg_dump`s the live `ims` database, restores it into a throwaway `ims_dr_test` database (never touches live data), compares row counts on `devices`/`ldi_data`/`ldi_alarm_log` between live and restored, then drops the throwaway database. Pass criterion: **row-count bracketing, not exact match** — this is a live-ingesting system, so `scripts/dr-test.sh` captures counts before and after the dump and verifies the restored count falls inside that bracket (see `docs/operations/BACKUP_RESTORE.md` for why exact-match was tried first and produced a false FAIL).
+`pg_dump`s the live `ims` database, restores it into a ephemeral `ims_dr_test` validation database (never touches live data), compares row counts on `devices`/`ldi_data`/`ldi_alarm_log` between live and restored, then drops the throwaway database. Pass criterion: **row-count bracketing, not exact match** — this is a live-ingesting system, so `scripts/dr-test.sh` captures counts before and after the snapshot and verifies the restored count falls inside that bracket (see `docs/operations/BACKUP_RESTORE.md` for why exact-match was tried first and produced a false negative validation).
 
 ## Drill 2 — Single-Container-Loss Recovery
 

@@ -1,7 +1,7 @@
 # Deployment Readiness Assessment
 
-> **เอกสารประเมินความพร้อมก่อน deploy ระบบ IMS ไปยัง Production**
-> อัปเดตล่าสุด: 2026-06-29
+> **IMS Production Deployment Readiness Assessment Document**
+> Last Updated: 2026-06-29
 
 ---
 

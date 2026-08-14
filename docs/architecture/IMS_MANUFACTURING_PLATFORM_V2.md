@@ -193,13 +193,13 @@ VERDICT: FAIL -- see nonzero counters above
 
 ### Drill 1 — Backup / Restore: PASS
 
-First run produced a false FAIL (live row counts queried _after_ the dump, so the live-ingesting system had already moved a few rows ahead — not a restore defect). Fixed the script to bracket live counts before and after the dump and check the restored count falls inside that window. Re-run:
+First run produced a false negative validation (live row counts queried _after_ the snapshot, so the live-ingesting system had already moved a few rows ahead — not a restore defect). Fixed the script to bracket live counts before and after the snapshot and check the restored count falls inside that window. Re-run:
 
 ```text
-devices=1025 ldi_data=52795 ldi_alarm_log=10405 (before dump)
-devices=1025 ldi_data=52796 ldi_alarm_log=10405 (after dump)
-devices=1025 ldi_data=52795 ldi_alarm_log=10405 (restored, throwaway DB)
-VERDICT: PASS -- dump 1s, restore 18s, 22,284,869 bytes
+devices=1025 ldi_data=52795 ldi_alarm_log=10405 (before snapshot)
+devices=1025 ldi_data=52796 ldi_alarm_log=10405 (after snapshot)
+devices=1025 ldi_data=52795 ldi_alarm_log=10405 (restored, ephemeral isolated database)
+VERDICT: PASS -- snapshot export time: dump 1s, restore 18s, 22,284,869 bytes
 ```
 
 ### Drill 2 — Single-Container-Loss Recovery (`ims-timescaledb`, `ims-node-red`): root-caused and fixed 2026-08-12, now **PASS**

@@ -1,7 +1,7 @@
 # IMS — User Manual
 
-> **คู่มือการใช้งานสำหรับ IT Support และ NOC Team**
-> อธิบายวิธีอ่าน Dashboard, ตีความ metrics, และตอบสนองต่อ alerts
+> **User Guide for IT Support and NOC Team**
+> Details procedures for interpreting dashboards, analyzing metrics, and executing alert responses.
 
 ---
 
@@ -40,7 +40,7 @@
 
 ### Dashboard Overview
 
-เมื่อเข้าสู่ Grafana แล้ว จะพบ 12 dashboards:
+Upon accessing Grafana, 12 distinct dashboards are available:
 
 ```text
  IMS Dashboards
@@ -66,7 +66,7 @@
 
 ### 1. NOC Overview Dashboard
 
-**จุดประสงค์**: ภาพรวมสำหรับผู้บริหารและ NOC team
+**Purpose**: High-level overview intended for executives and the NOC team.
 
 ```text
 ┌─────────────────────────────────────────────────────────────────┐
@@ -93,7 +93,7 @@
 
 ### 2. Server Health Metrics (NOC Overview / Engineering Drill-Down)
 
-**จุดประสงค์**: ภาพรวม health ของ servers ทั้งหมด — panel ประเภทนี้กระจายอยู่บน **NOC Overview** (fleet envelope) และ **Engineering Drill-Down** (per-server deep dive), ไม่ใช่ dashboard แยกต่างหาก
+**Purpose**: Comprehensive health overview of all servers — these panel types are distributed across the **NOC Overview** (fleet envelope) and **Engineering Drill-Down** (per-server deep dive) dashboards; they do not constitute a standalone dashboard.
 
 | Panel               | Metrics                            | Color Coding                                                                                                                                               |
 | ------------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -105,7 +105,7 @@
 
 ### 3. Engineering Drilldown Dashboard
 
-**จุดประสงค์**: Deep dive สำหรับ engineer แต่ละเครื่อง
+**Purpose**: Detailed analytical deep dive per individual server for engineers.
 
 ```text
 ┌─────────────────────────────────────────────────────────────────┐
@@ -152,22 +152,22 @@
 
 **LDI Scatter Plot Tolerance Box:**
 
-กราฟ Scatter Plot แสดง PE (Position Error) vs JE (Judgment Error) ในหน่วย µm:
+The Scatter Plot illustrates PE (Position Error) vs JE (Judgment Error) measured in µm:
 
-| Zone          | Color                                                                     | Meaning                          |
-| ------------- | ------------------------------------------------------------------------- | -------------------------------- |
-| Inside ±10µm  | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) Green | ปกติ — หัวเลเซอร์ทำงานถูกต้อง    |
-| Outside ±10µm | Red                                                                       | ผิดปกติ — หัวเลเซอร์เริ่มมีปัญหา |
+| Zone          | Color                                                                     | Meaning                                         |
+| ------------- | ------------------------------------------------------------------------- | ----------------------------------------------- |
+| Inside ±10µm  | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) Green | Normal — The laser head is functioning properly |
+| Outside ±10µm | Red                                                                       | Abnormal — The laser head requires inspection   |
 
-**วิธีใช้:**
+**Instructions:**
 
-- จุดที่อยู่ในกรอบสีเขียว = คุณภาพ PCB อยู่ในเกณฑ์
-- จุดที่กระโดดออกนอกกรอบสีแดง = ต้องตรวจสอบหัวเลเซอร์ทันที
-- ใช้คู่กับ **LDI Throughput** panel เพื่อดูว่า production rate ยังปกติหรือไม่
+- Data points within the green bounding box indicate that PCB quality is within acceptable thresholds.
+- Data points deviating into the red zone require immediate inspection of the laser head.
+- Correlate this data with the **LDI Throughput** panel to verify if production rates remain nominal.
 
 ### 4. Capacity Planning Dashboard
 
-**จุดประสงค์**: Forecasting สำหรับ resource planning
+**Purpose**: Resource capacity forecasting to aid in infrastructure planning.
 
 | Panel                | What It Shows                                | Use Case               |
 | -------------------- | -------------------------------------------- | ---------------------- |
@@ -178,13 +178,13 @@
 
 ### 5. Easy Overview Dashboard
 
-**จุดประสงค์**: ดูภาพรวมทั้ง LDI fleet ได้ทันทีโดยไม่ต้องตั้งค่าอะไรเลย — ไม่มี template variable, ไม่มี filter, เปิดแล้วเห็นเลย
+**Purpose**: Instantmatic overview of the entire LDI fleet requiring zero configuration — no template variables, no filters; immediately visible upon loading.
 
-ทุกตัวเลขบน dashboard นี้ดึงจาก shared view/function ชุดเดียวกับที่ dashboard อื่นใช้ (`v_ldi_machine_latest_full`, `v_ldi_alarm_context`, `f_ldi_yield_pct`, `v_machine_spc_fleet`) — ตัวเลขจะไม่มีวันขัดแย้งกันข้าม dashboard เพราะไม่มี query ซ้ำซ้อนที่คำนวณแยกกัน
+Every metric on this dashboard is sourced from the exact same shared views/functions utilized by other dashboards (`v_ldi_machine_latest_full`, `v_ldi_alarm_context`, `f_ldi_yield_pct`, `v_machine_spc_fleet`) — thereby guaranteeing zero data discrepancy across dashboards, as no redundant isolated queries are executed.
 
 ### 6. LDI Manufacturing Command Center
 
-**จุดประสงค์**: Dashboard หลักสำหรับสายการผลิต LDI — 4-layer RCA design
+**Purpose**: Primary operational dashboard for the LDI manufacturing line — featuring a 4-layer RCA architecture.
 
 | Layer                  | Content                                                                                                |
 | ---------------------- | ------------------------------------------------------------------------------------------------------ |
@@ -197,32 +197,32 @@ Deep-dive rows (Production & Compliance, Process Metrics, Analytics & SPC, Syste
 
 ### 7. LDI Operator Andon Board
 
-**จุดประสงค์**: จอ kiosk หน้างาน (factory floor) — ISA-101 compliant, ไม่ต้องแตะอะไรเลย ไม่มี scroll ที่ความละเอียด 1280x720
+**Purpose**: Factory floor kiosk display — strictly ISA-101 compliant, completely touchless with zero scrolling requirements optimized for a 1280x720 resolution.
 
-แสดง Fleet Availability, Critical Alarm count, Environmental Compliance %, Machines Running, สถานะเครื่องแต่ละตัว (OK/IDLE/NO_DATA เป็นสี background), และตาราง Live Production
+Displays Fleet Availability, Critical Alarm count, Environmental Compliance %, Machines Running, individual machine statuses (OK/IDLE/NO_DATA indicated via background color coding), alongside the Live Production tracking table.
 
 ### 8. LDI Engineering Analytics & SPC
 
-**จุดประสงค์**: วิเคราะห์เชิงลึกสำหรับ engineer — Cpk/SPC ranking, RCA Truth Test, การกระจายตัวของ PE/JE
+**Purpose**: Comprehensive in-depth analysis for engineering personnel — Cpk/SPC ranking, RCA Truth Test, and PE/JE spatial distributions.
 
-| Section                     | Content                                                                                       |
-| --------------------------- | --------------------------------------------------------------------------------------------- |
-| **Environmental**           | Temperature vs Humidity, ทุกเครื่องพร้อมกัน                                                   |
-| **SPC Control Charts**      | Thickness Control Chart (mean ± 3σ), Scale X/Y Control Chart                                  |
-| **Variation Analysis**      | PE/JE Standard Deviation by Machine, PE/JE Error Distribution (Box Plot)                      |
-| **RCA / Alarm Correlation** | RCA Truth Test — Lift/Confidence ต่อหมวดหมู่ alarm (Thermal/Humidity/Vacuum/Alignment/Motion) |
+| Section                     | Content                                                                                             |
+| --------------------------- | --------------------------------------------------------------------------------------------------- |
+| **Environmental**           | Temperature vs Humidity, synchronized across all machines simultaneously                            |
+| **SPC Control Charts**      | Thickness Control Chart (mean ± 3σ), Scale X/Y Control Chart                                        |
+| **Variation Analysis**      | PE/JE Standard Deviation by Machine, PE/JE Error Distribution (Box Plot)                            |
+| **RCA / Alarm Correlation** | RCA Truth Test — Lift/Confidence metrics categorized by alarm type (Thermal/Humidity/Vacuum/etc.) |
 
 ### 9. LDI Machine Snapshot
 
-**จุดประสงค์**: ดูสภาพเครื่องแบบละเอียดที่ millisecond ที่คลิกจาก Process Timeline (drill-down จาก dashboard อื่น)
+**Purpose**: Exact millisecond-level machine state inspection triggered via click-through from the Process Timeline (a drill-down capability integrated across other dashboards).
 
-แสดง job context, physical variables, PE alignment, Cpk, และ alarm ที่อยู่ใกล้เวลานั้น — ใช้เมื่อต้องสืบสวนเหตุการณ์เฉพาะจุด ไม่ใช่สำหรับดูภาพรวม
+Provides detailed job context, physical variables, PE alignment, Cpk, and correlated alarms within close temporal proximity to the selected event — intended specifically for pinpoint incident investigation rather than high-level overviews.
 
 ### 10. LDI Data Readiness
 
-**จุดประสงค์**: Dashboard ตรวจสอบคุณภาพข้อมูลด้วยตัวเอง (self-auditing) — ใช้ข้อมูลจริงจาก PostgreSQL เท่านั้น ไม่มีข้อมูลจำลอง
+**Purpose**: Self-auditing data quality verification dashboard — relies exclusively on actual PostgreSQL production data with zero simulated inputs.
 
-ใช้ตรวจสอบ board-key duplication, coverage %, และอัตราการ match กับ alarm master ก่อนที่จะเชื่อตัวเลขจาก dashboard อื่น
+Utilized to detect board-key duplication, verify overall coverage %, and validate the matching rate against the alarm master database prior to trusting metrics presented on primary dashboards.
 
 ---
 
@@ -235,13 +235,13 @@ Deep-dive rows (Production & Compliance, Process Metrics, Analytics & SPC, Syste
 | `cpu_load_percent` | %     | < 60%   | 60-80%  | > 80%    |
 | `cpu_cores`        | count | —       | —       | —        |
 
-**วิธีอ่าน:**
+**Instructions:**
 
-- **Average CPU** — ค่าเฉลี่ยของทุก cores ในช่วงเวลาที่เลือก
-- **Peak CPU** — ค่าสูงสุดที่บันทึกไว้ (อาจเกิด spike ชั่วคราว)
-- **CPU per Core** — ดูว่า core ไหนกำลังถูกใช้งานหนัก
+- **Average CPU** — The mean value across all cores during the selected time frame.
+- **Peak CPU** — The maximum recorded value (which may indicate a transient spike).
+- **CPU per Core** — Identifies which specific core is experiencing heavy utilization.
 
-**ตัวอย่าง:**
+**Example:**
 
 ```text
 Machine: server-01
@@ -250,7 +250,7 @@ CPU Load: 72% (Warning)
 ├── Core 2: 45%
 ├── Core 3: 78% ️
 └── Core 4: 80% ️
-→ Core 1, 3, 4 กำลังถูกใช้งานหนัก ตรวจสอบว่ามี process ไหนกำลัง run อยู่
+→ Cores 1, 3, and 4 are under heavy load; investigate running processes.
 ```
 
 ### Memory Metrics
@@ -261,11 +261,11 @@ CPU Load: 72% (Warning)
 | `ram_total_mb` | MB   | —       | —       | —        |
 | **Usage %**    | %    | < 70%   | 70-85%  | > 85%    |
 
-**วิธีอ่าน:**
+**Instructions:**
 
 - **Usage %** = `(ram_used_mb / ram_total_mb) × 100`
 - **Available** = `ram_total_mb - ram_used_mb`
-- Memory ที่สูงไม่จำเป็นต้องแย่ — Linux ใช้ memory สำหรับ caching
+- Elevated memory usage is not inherently indicative of a problem — Linux architectures proactively utilize memory for caching purposes.
 
 ### Network Metrics
 
@@ -277,13 +277,13 @@ CPU Load: 72% (Warning)
 | `net_rx_drops`  | count | Dropped packets (buffer overflow)      |
 | `net_if_status` | 1/2   | 1 = UP, 2 = DOWN                       |
 
-**วิธีอ่าน:**
+**Instructions:**
 
 - **Bandwidth Utilization** = `(rx_mbps / link_speed) × 100`
 - **Error Rate** = `net_rx_errors / total_packets × 100`
-- **Interface DOWN** = สาย network ขาด หรือ switch port ปิด
+- **Interface DOWN** = Indicates a severed network cable or a disabled switch port.
 
-**ตัวอย่าง:**
+**Example:**
 
 ```text
 Machine: server-01
@@ -293,7 +293,7 @@ Machine: server-01
 │ eth0 │ 1200  │ 850  │ 0  │ 0  │ UP │
 │ wlan0 │ 320  │ 180  │ 0  │ 12  │ UP │
 └─────────┴──────────┴──────────┴──────────┴──────────┴────────┘
-→ wlan0 มี drops 12 packets — ตรวจสอบ wireless signal
+→ wlan0 registers 12 dropped packets — investigate wireless signal integrity.
 ```
 
 ### Disk Metrics
@@ -304,11 +304,11 @@ Machine: server-01
 | `disk_total_gb` | GB   | —       | —       | —        |
 | **Usage %**     | %    | < 70%   | 70-80%  | > 80%    |
 
-**วิธีอ่าน:**
+**Instructions:**
 
 - **Usage %** = `(disk_used_gb / disk_total_gb) × 100`
 - **Free Space** = `disk_total_gb - disk_used_gb`
-- **IOPS** = จำนวน operations ต่อวินาที (ถ้ามี metric เพิ่มเติม)
+- **IOPS** = Input/Output Operations Per Second (if supplementary metrics are configured).
 
 ### Temperature Metrics
 
@@ -316,11 +316,11 @@ Machine: server-01
 | -------- | ---- | ------- | ------- | -------- |
 | `temp_c` | °C   | < 65°C  | 65-80°C | > 80°C   |
 
-**วิธีอ่าน:**
+**Instructions:**
 
-- **Average Temp** — อุณหภูมิเฉลี่ย
-- **Max Temp** — อุณหภูมิสูงสุด (peak temperature)
-- **Temperature Trend** — กำลังเพิ่มขึ้นหรือลดลง
+- **Average Temp** — Mean temperature reading.
+- **Max Temp** — Peak temperature recorded.
+- **Temperature Trend** — Indicates whether the temperature is ascending or descending.
 
 ---
 
@@ -328,11 +328,11 @@ Machine: server-01
 
 ### Alert Severity Levels
 
-| Level        | Color                                                                 | Response Time         | Example                                 |
-| ------------ | --------------------------------------------------------------------- | --------------------- | --------------------------------------- |
-| **Critical** | Red                                                                   | ทันที (< 15 นาที)     | InterfaceDown, ServiceDown, CriticalCPU |
-| **Warning**  | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) Yellow | เร็ว (< 1 ชั่วโมง)    | HighCPU, HighMemory, DiskSpaceLow       |
-| **Info**     | Blue                                                                  | ตามปกติ (< 4 ชั่วโมง) | TelemetryGap, PredictiveDiskFull        |
+| Level        | Color                                                                 | Response Time                 | Example                                 |
+| ------------ | --------------------------------------------------------------------- | ----------------------------- | --------------------------------------- |
+| **Critical** | Red                                                                   | Immediate (< 15 minutes)      | InterfaceDown, ServiceDown, CriticalCPU |
+| **Warning**  | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) Yellow | Prompt (< 1 hour)             | HighCPU, HighMemory, DiskSpaceLow       |
+| **Info**     | Blue                                                                  | Standard priority (< 4 hours) | TelemetryGap, PredictiveDiskFull        |
 
 ### Incident Response Playbook
 
