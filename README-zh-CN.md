@@ -1,30 +1,73 @@
 <div align="center">
-  <img src="assets/apex-ldi-noc-banner.jpg" alt="APEX Circuit LDI NOC Banner" width="100%" style="border-radius:12px; box-shadow: 0 8px 32px rgba(0,242,254,0.3); margin-bottom: 24px;" />
-  <br/>
-  <br/>
-  <a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.demolab.com?font=Orbitron&weight=600&size=36&duration=4000&pause=2000&color=00F2FE&center=true&repeat=true&width=1000&height=60&lines=APEX+Circuit+IMS+|+System+Initializing...;Advanced+Manufacturing+Intelligence+%26+NOC;Zero-Latency+Digital+Twin+Architecture" alt="Typing SVG" /></a>
+  <img src="assets/ims-logo.jpg" alt="IMS Logo" width="160" style="border-radius: 20%; box-shadow: 0 10px 30px rgba(0, 242, 254, 0.4);" />
+  <h1 align="center" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; letter-spacing: 2px;">INDUSTRIAL MONITORING SYSTEM (IMS)</h1>
 </div>
 
 <div align="center">
-  <a href="#quick-start"><img src="https://img.shields.io/badge/-Release_v1.0-030407?style=for-the-badge&logo=github&logoColor=10B981" alt="Release"/></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/-MIT_License-030407?style=for-the-badge&logo=opensourceinitiative&logoColor=00F2FE" alt="License"/></a>
-  <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/-Docker_Ready-030407?style=for-the-badge&logo=docker&logoColor=2496ED" alt="Docker"/></a>
-  <a href="https://grafana.com/"><img src="https://img.shields.io/badge/-Grafana_v11+-030407?style=for-the-badge&logo=grafana&logoColor=F46800" alt="Grafana"/></a>
-  <a href="https://nodered.org/"><img src="https://img.shields.io/badge/-Node--RED_v4+-030407?style=for-the-badge&logo=nodered&logoColor=8F0000" alt="Node-RED"/></a>
-  <a href="https://www.timescale.com/"><img src="https://img.shields.io/badge/-TimescaleDB_2.x-030407?style=for-the-badge&logo=postgresql&logoColor=F59E0B" alt="TimescaleDB"/></a>
-  <br>
-  <a href="#quick-start"><img src="https://img.shields.io/badge/Status-100%25_Passing-10B981?style=for-the-badge&logoColor=white" alt="Tests" /></a>
-  <a href="#quick-start"><img src="https://img.shields.io/badge/K6-Stress--Tested-030407?style=for-the-badge&logo=k6&logoColor=7B61FF" alt="K6" /></a>
-  <a href="data-generators/"><img src="https://img.shields.io/badge/Data-Digital_Twin-030407?style=for-the-badge&logo=python&logoColor=00C7B7" alt="Synthetic Data" /></a>
+  <p>
+    <a href="README.md">🇬🇧 <b>English</b></a> &nbsp;•&nbsp;
+    <a href="README-th.md">🇹🇭 <b>ไทย</b></a> &nbsp;•&nbsp;
+    <a href="README-zh-CN.md">🇨🇳 <b>中文</b></a>
+  </p>
 </div>
 
-<div align="center" justify-content="space-between">
-  <a href="docs/architecture/IMS_PLATFORM_BOOK.md"><img src="https://img.shields.io/badge/PLATFORM_BOOK-ENTER-blue?color=00F2FE&labelColor=030407&style=for-the-badge"></a>
-  <a href="docs/architecture/ARCHITECTURE.md"><img src="https://img.shields.io/badge/ARCHITECTURE-READ-blue?color=10B981&labelColor=030407&style=for-the-badge"></a>
+<div align="center">
+  <blockquote>
+    <b>高精度制造遥测与统计过程控制</b><br/>
+    <i>支持 1,000+ 节点的零延迟数字孪生架构</i>
+  </blockquote>
+</div>
+
+<div align="center">
+  <!-- Status Badges -->
+  <a href="https://github.com/PATTANAKORN025/IMS/releases"><img src="https://img.shields.io/badge/Release-v1.0-00F2FE?style=for-the-badge&logo=github&logoColor=white" alt="Release"/></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-00F2FE?style=for-the-badge&logo=opensourceinitiative&logoColor=white" alt="License"/></a>
+  <a href="#quick-start"><img src="https://img.shields.io/badge/Build-100%25_Passing-10B981?style=for-the-badge&logo=githubactions&logoColor=white" alt="Build" /></a>
+  <a href="#quick-start"><img src="https://img.shields.io/badge/K6_Stress_Test-Passed-7B61FF?style=for-the-badge&logo=k6&logoColor=white" alt="K6" /></a>
+  <br/>
+  <!-- Tech Badges -->
+  <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker"/></a>
+  <a href="https://nodered.org/"><img src="https://img.shields.io/badge/Node--RED-v4.x-8F0000?style=for-the-badge&logo=nodered&logoColor=white" alt="Node-RED"/></a>
+  <a href="https://www.timescale.com/"><img src="https://img.shields.io/badge/TimescaleDB-2.x-F59E0B?style=for-the-badge&logo=postgresql&logoColor=white" alt="TimescaleDB"/></a>
+  <a href="https://grafana.com/"><img src="https://img.shields.io/badge/Grafana-v11+-F46800?style=for-the-badge&logo=grafana&logoColor=white" alt="Grafana"/></a>
 </div>
 
 <br/>
 
+<div align="center">
+  <table style="border:none; border-collapse:collapse; width:100%;">
+<tr>
+<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
+ <img src="assets/noc-overview.png" alt="NOC Overview" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
+ <kbd>NOC Overview</kbd><br/><sub>Fleet Health Envelope</sub>
+</td>
+<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
+ <img src="assets/engineering-drilldown.png" alt="Engineering Drill-Down" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
+ <kbd>Engineering Drill-Down</kbd><br/><sub>Per-Machine Diagnostics</sub>
+</td>
+<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
+ <img src="assets/capacity-planning.png" alt="Capacity Planning" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
+ <kbd>Capacity Planning</kbd><br/><sub>Predictive Forecasting</sub>
+</td>
+</tr>
+<tr>
+<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
+ <img src="assets/ldi-manufacturing.png" alt="LDI Command Center" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
+ <kbd>LDI Manufacturing</kbd><br/><sub>Command Center</sub>
+</td>
+<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
+ <img src="assets/ldi-andon.png" alt="Operator Andon Board" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
+ <kbd>Operator Andon</kbd><br/><sub>Real-time Alerts</sub>
+</td>
+<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
+ <img src="assets/ldi-data-readiness.png" alt="Data Readiness Matrix" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
+ <kbd>Data Readiness Matrix</kbd><br/><sub>SPC Data Completeness</sub>
+</td>
+</tr>
+</table>
+</div>
+
+<br/>
 ## 系统概述
 
 **IMS（工业监控系统，Industrial Monitoring System）** 是一个跨越基础设施和制造领域的遥测监控平台。它基于 Node-RED、TimescaleDB 和 Grafana 构建，将 IT 指标（服务器、网络交换机）和 OT 数据（LDI 制造机器）集成到单个由 PostgreSQL 支持的存储库中。
@@ -36,33 +79,32 @@
 
 
 <table style="border:none; border-collapse:collapse; width:100%;">
-
 <tr>
-<td align="center" style="border:none; padding:8px; width:33%;">
- <img src="assets/noc-overview.png" alt="NOC Overview" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
- <sub><b>NOC 概览</b> — 舰队健康包络</sub>
+<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
+ <img src="assets/noc-overview.png" alt="NOC Overview" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
+ <kbd>NOC Overview</kbd><br/><sub>Fleet Health Envelope</sub>
 </td>
-<td align="center" style="border:none; padding:8px; width:33%;">
- <img src="assets/engineering-drilldown.png" alt="Engineering Drill-Down" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
- <sub><b>工程向下钻取</b> — 单机诊断</sub>
+<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
+ <img src="assets/engineering-drilldown.png" alt="Engineering Drill-Down" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
+ <kbd>Engineering Drill-Down</kbd><br/><sub>Per-Machine Diagnostics</sub>
 </td>
-<td align="center" style="border:none; padding:8px; width:33%;">
- <img src="assets/capacity-planning.png" alt="Capacity Planning" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
- <sub><b>容量规划</b> — 预测性预测</sub>
+<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
+ <img src="assets/capacity-planning.png" alt="Capacity Planning" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
+ <kbd>Capacity Planning</kbd><br/><sub>Predictive Forecasting</sub>
 </td>
 </tr>
 <tr>
-<td align="center" style="border:none; padding:8px; width:33%;">
- <img src="assets/ldi-manufacturing.png" alt="LDI Manufacturing Command Center" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
- <sub><b>LDI 制造</b> — 指挥中心</sub>
+<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
+ <img src="assets/ldi-manufacturing.png" alt="LDI Command Center" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
+ <kbd>LDI Manufacturing</kbd><br/><sub>Command Center</sub>
 </td>
-<td align="center" style="border:none; padding:8px; width:33%;">
- <img src="assets/ldi-andon.png" alt="LDI Operator Andon Board" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
- <sub><b>LDI 安灯看板</b> — 操作员车间视图</sub>
+<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
+ <img src="assets/ldi-andon.png" alt="Operator Andon Board" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
+ <kbd>Operator Andon</kbd><br/><sub>Real-time Alerts</sub>
 </td>
-<td align="center" style="border:none; padding:8px; width:33%;">
- <img src="assets/ldi-engineering.png" alt="LDI Engineering Analytics" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
- <sub><b>LDI 工程</b> — 良率与 SPC 分析</sub>
+<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
+ <img src="assets/ldi-data-readiness.png" alt="Data Readiness Matrix" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
+ <kbd>Data Readiness Matrix</kbd><br/><sub>SPC Data Completeness</sub>
 </td>
 </tr>
 </table>
@@ -73,21 +115,33 @@
 
 ## 核心能力
 
-<table>
+<table style="border:none; border-collapse:collapse; width:100%;">
 <tr>
-<td align="center" width="33%">
- <h3>遥测摄取</h3>
- 并行的 Node-RED 遍历器 (walkers) 利用顺序批量 SNMP 轮询和 HTTP 端点，通过 PgBouncer 事务池将数据持久化到 TimescaleDB。<br/><br/>
- **已验证：** [nodered-ingestion-20260813.txt](docs/evidence/runtime/nodered-ingestion-20260813.txt)
+<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
+ <img src="assets/noc-overview.png" alt="NOC Overview" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
+ <kbd>NOC Overview</kbd><br/><sub>Fleet Health Envelope</sub>
 </td>
-<td align="center" width="33%">
- <h3>统计过程控制 (SPC)</h3>
- 实时 SPC 指标 (Cpk) 和滚动 3&sigma; 基线（Z-Score 异常检测）在数据库层面进行评估，用于早期预警。
+<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
+ <img src="assets/engineering-drilldown.png" alt="Engineering Drill-Down" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
+ <kbd>Engineering Drill-Down</kbd><br/><sub>Per-Machine Diagnostics</sub>
 </td>
-<td align="center" width="33%">
- <h3>连续聚合 (Continuous Aggregates)</h3>
- 由 TimescaleDB 自动计算每小时、每天和每周的汇总数据，以在跨越大时间范围时维持亚秒级的 Grafana 渲染时间。<br/><br/>
- **已验证：** [cagg-policies-20260813.txt](docs/evidence/runtime/cagg-policies-20260813.txt)
+<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
+ <img src="assets/capacity-planning.png" alt="Capacity Planning" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
+ <kbd>Capacity Planning</kbd><br/><sub>Predictive Forecasting</sub>
+</td>
+</tr>
+<tr>
+<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
+ <img src="assets/ldi-manufacturing.png" alt="LDI Command Center" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
+ <kbd>LDI Manufacturing</kbd><br/><sub>Command Center</sub>
+</td>
+<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
+ <img src="assets/ldi-andon.png" alt="Operator Andon Board" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
+ <kbd>Operator Andon</kbd><br/><sub>Real-time Alerts</sub>
+</td>
+<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
+ <img src="assets/ldi-data-readiness.png" alt="Data Readiness Matrix" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
+ <kbd>Data Readiness Matrix</kbd><br/><sub>SPC Data Completeness</sub>
 </td>
 </tr>
 </table>
