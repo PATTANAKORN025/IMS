@@ -24,10 +24,18 @@ Raw data: `docs/evidence/soak-log-2026-08-13-attempt3-contaminated-by-dr-fix-ite
 
 Root-causing the Drill 3 findings above required repeatedly running `docker compose down -v` (7+ times) against this same environment to reproduce and verify the fix -- see `docs/evidence/DR_DRILL_3_FINDINGS.md`. Necessary for that work, but it makes this window's data meaningless as a "quiet system" soak. Archived, not deleted, same reasoning as Attempts 1 and 2.
 
-## Attempt 4 (started 2026-08-13T08:58:28Z) — in progress
+## Attempt 4 (2026-08-13T08:58:28Z → 2026-08-14T02:50:23Z, 24 samples) — INVALID, restart detection was blind
 
-Log reset: Attempt 3's log moved to `docs/evidence/soak-log-2026-08-13-attempt3-contaminated-by-dr-fix-iteration.tsv`, fresh log started at `scripts/soak-test-reports/soak-log.tsv`.
+Raw data: `docs/evidence/soak-log-2026-08-13-attempt4-contaminated-by-undetected-manual-restarts.tsv`.
+
+The restart-detection logic compared `docker inspect --format='{{.RestartCount}}'` between samples. That counter only increments when the daemon's own `restart: unless-stopped` policy fires after a crash -- it does **not** change for a deliberate `docker compose restart` / `docker restart`. During this window, `ims-node-red` was restarted twice (2026-08-14T02:00Z and 02:13Z, deploying the net_metrics root-cause fix) and once more during a live restart-detection test (02:50:23Z, deliberately forcing the check to confirm it fires). All three are real restarts of a container this soak test is supposed to be watching, and the log shows `restarted=no` for the two real ones -- the evidence was silently wrong, not just incomplete.
+
+**Root-cause fixed**: `scripts/soak-test-report.sh` now tracks `docker inspect --format='{{.State.StartedAt}}'` alongside `RestartCount` and flags `restarted=yes` if either changes -- `StartedAt` changes on every restart regardless of cause. Verified live: forcing a stale state file correctly produced `restarted=yes` on the next sample (`docs/evidence/soak-log-2026-08-13-attempt4-contaminated-by-undetected-manual-restarts.tsv`, last row).
+
+## Attempt 5 (started 2026-08-14T02:50:39Z) — in progress
+
+Log reset: Attempt 4's log archived above, fresh log started at `scripts/soak-test-reports/soak-log.tsv`, restart-state files (`.restart_*`) cleared so the new detection logic starts from a clean baseline rather than false-flagging the format change as a restart.
 
 Collection mechanism: Windows Scheduled Task `IMS-SoakTest` (already existed, enabled since 2026-08-10T15:35:12+07:00, fires every 15 minutes independent of any chat session).
 
-No further intentional container restarts planned during this window -- the DR Drill 3 root-cause fix is done and verified (see `DR_DRILL_3_FINDINGS.md`), so there's no more reason to tear the stack down before this window completes. Re-run `bash scripts/soak-test-report.sh --summarize` after 72h real elapsed time (target: 2026-08-16T08:58Z or later) for the actual verdict.
+No further intentional container restarts planned during this window. Re-run `bash scripts/soak-test-report.sh --summarize` after 72h real elapsed time (target: 2026-08-17T02:50Z or later) for the actual verdict.
