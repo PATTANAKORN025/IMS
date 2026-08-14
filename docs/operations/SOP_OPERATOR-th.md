@@ -45,7 +45,7 @@
 ## 3. วิธีค้นหาข้อมูลเฉพาะ
 
 ### Q: "หัวหน้าต้องการทราบว่าทำไมเครื่อง LDI-05 ทำงานช้า"
-1. เปิดแดชบอร์ด [Engineering Drill-Down](http://localhost:3000/d/ims-engineering-drilldown)
+1. เปิดแดชบอร์ด [Engineering Drill-Down](http://localhost:3000/d/ims-engineering)
 2. เมนูแบบเลื่อนลงมุมซ้ายบน (Variable) เลือก `LDI-05`
 3. ตรวจสอบพาเนล timeseries **CPU / RAM / Yield** หาการลดลงกะทันหัน (Z-Score anomalies)
 
@@ -58,7 +58,7 @@
 ## 4. จบกะ (19:30 / 07:30)
 
 ### 4.1 รายงานประจำวัน
-1. เปิดแดชบอร์ด [Capacity Planning](http://localhost:3000/d/ims-capacity-planning)
+1. เปิดแดชบอร์ด [Capacity Planning](http://localhost:3000/d/ims-capacity)
 2. จดบันทึกเครื่องที่แสดง **"Days Until Full < 7"**
 3. บันทึกค่าเฉลี่ย Fleet Health Score ประจำกะลงในสมุดบันทึกกะ
 4. ส่งต่อสถานะสีเหลือง/คำเตือนที่ยังอยู่ให้กับผู้ปฏิบัติงานกะถัดไป

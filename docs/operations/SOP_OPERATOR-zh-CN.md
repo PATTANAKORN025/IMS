@@ -45,7 +45,7 @@
 ## 3. 如何查找特定信息
 
 ### Q: "主管想知道为什么 LDI-05 机器速度慢。"
-1. 打开 [Engineering Drill-Down](http://localhost:3000/d/ims-engineering-drilldown) 仪表板。
+1. 打开 [Engineering Drill-Down](http://localhost:3000/d/ims-engineering) 仪表板。
 2. 在左上角的下拉菜单 (Variable) 中，选择 `LDI-05`。
 3. 检查 **CPU / RAM / Yield** 时间序列面板是否有突然下降 (Z-Score anomalies)。
 
@@ -58,7 +58,7 @@
 ## 4. 班次结束 (19:30 / 07:30)
 
 ### 4.1 每日报告
-1. 打开 [Capacity Planning](http://localhost:3000/d/ims-capacity-planning) 仪表板。
+1. 打开 [Capacity Planning](http://localhost:3000/d/ims-capacity) 仪表板。
 2. 记录任何显示 **"Days Until Full < 7"** 的机器。
 3. 在交接班记录本中记录当班的平均 Fleet Health Score。
 4. 将持续的黄色/警告状态移交给下一班操作员。

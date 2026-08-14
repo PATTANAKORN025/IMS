@@ -9,6 +9,12 @@
 > for the items below live in `docs/architecture/specs/`:
 > `SPEC_ALARM_ACTOR_IDENTITY.md`, `SPEC_SIMULATOR_REALISM.md`,
 > `SPEC_ALERT_HYGIENE.md`.
+>
+> **Superseding priority, added 2026-08-14**: `SPEC_PG_POOL_RESILIENCE.md`
+> outranks everything below. It fixes a real bug that just invalidated
+> Soak Attempt 6 on its own (not dev activity) and can keep doing so
+> to every subsequent attempt until fixed. Deploy that fix first, once
+> the freeze lifts, before anything in Tracks A or B.
 
 ## Why these two, together
 

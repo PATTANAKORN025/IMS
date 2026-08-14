@@ -45,7 +45,7 @@ The **Operator Andon Dashboard** is your primary tool. It operates on a strict T
 ## 3. How to Find Specific Information
 
 ### Q: "A supervisor wants to know why Machine LDI-05 is slow."
-1. Open the [Engineering Drill-Down](http://localhost:3000/d/ims-engineering-drilldown) dashboard.
+1. Open the [Engineering Drill-Down](http://localhost:3000/d/ims-engineering) dashboard.
 2. In the top-left dropdown (Variable), select `LDI-05`.
 3. Check the **CPU / RAM / Yield** timeseries panels for sudden drops (Z-Score anomalies).
 
@@ -58,7 +58,7 @@ The **Operator Andon Dashboard** is your primary tool. It operates on a strict T
 ## 4. End of Shift (19:30 / 07:30)
 
 ### 4.1 Daily Reporting
-1. Open the [Capacity Planning](http://localhost:3000/d/ims-capacity-planning) dashboard.
+1. Open the [Capacity Planning](http://localhost:3000/d/ims-capacity) dashboard.
 2. Note any machines showing **"Days Until Full < 7"**.
 3. Record the Average Fleet Health Score for the shift in the shift-log book.
 4. Pass on any persistent Yellow/Warning states to the incoming shift operator.
