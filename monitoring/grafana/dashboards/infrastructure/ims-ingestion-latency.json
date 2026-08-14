@@ -1,0 +1,352 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "id": 9999,
+      "type": "text",
+      "title": "",
+      "options": {
+        "content": "<style>\n[class*=\"-panel-container\"] {\n  background: rgba(10, 13, 16, 0.7) !important;\n  border: 1px solid rgba(0, 242, 254, 0.15) !important;\n  border-radius: 12px !important;\n  box-shadow: 0 4px 24px -4px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.05) !important;\n  transition: all 0.2s ease-in-out !important;\n}\n[class*=\"-panel-container\"]:hover {\n  border-color: rgba(0, 242, 254, 0.5) !important;\n  box-shadow: 0 8px 32px 0 rgba(0, 242, 254, 0.15) !important;\n  backdrop-filter: blur(10px) !important;\n}\n[class*=\"-panel-title\"] {\n  color: #E8EDF2 !important;\n  font-weight: 600 !important;\n  text-transform: uppercase !important;\n  letter-spacing: 1px !important;\n  font-size: 11px !important;\n}\n</style>",
+        "mode": "html"
+      },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "transparent": true
+    },
+    {
+      "id": 9998,
+      "type": "text",
+      "title": "",
+      "options": {
+        "mode": "markdown",
+        "content": "Read-only. Source -> commit latency, real values from `ingest_ts` (migration 081), no simulated data. Does **not** show time-until-next-dashboard-refresh -- that's a per-dashboard config choice (5s-5m), not a pipeline latency. See `tests/e2e/ingestion-latency-check.js` for the same measurement as a scriptable evidence artifact."
+      },
+      "gridPos": { "h": 2, "w": 24, "x": 0, "y": 1 },
+      "transparent": true
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 3 },
+      "id": 100,
+      "title": "◈ SOURCE → COMMIT LATENCY (P95, last 15m)",
+      "type": "row",
+      "panels": []
+    },
+    {
+      "id": 1,
+      "title": "◉ ldi_data",
+      "type": "stat",
+      "datasource": { "uid": "timescaledb" },
+      "gridPos": { "x": 0, "y": 4, "w": 5, "h": 6 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 50 },
+              { "color": "red", "value": 200 }
+            ]
+          },
+          "color": { "mode": "thresholds" }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "textMode": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "values": false }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "uid": "timescaledb" },
+          "format": "table",
+          "rawSql": "SELECT percentile_cont(0.95) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (ingest_ts - \"time\")) * 1000) AS value FROM public.ldi_data WHERE ingest_ts IS NOT NULL AND \"time\" > NOW() - INTERVAL '15 minutes'"
+        }
+      ],
+      "description": "P95 source_ts -> ingest_ts latency, LDI manufacturing telemetry, last 15 minutes."
+    },
+    {
+      "id": 2,
+      "title": "◉ ldi_alarm_log",
+      "type": "stat",
+      "datasource": { "uid": "timescaledb" },
+      "gridPos": { "x": 5, "y": 4, "w": 5, "h": 6 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 500 },
+              { "color": "red", "value": 5000 }
+            ]
+          },
+          "color": { "mode": "thresholds" }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "textMode": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "values": false }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "uid": "timescaledb" },
+          "format": "table",
+          "rawSql": "SELECT percentile_cont(0.95) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (ingest_ts - logdate)) * 1000) AS value FROM public.ldi_alarm_log WHERE ingest_ts IS NOT NULL AND logdate > NOW() - INTERVAL '15 minutes'"
+        }
+      ],
+      "description": "P95 source_ts -> ingest_ts latency, alarm events, last 15 minutes. Alarms are rare/debounced by design -- low sample count in a quiet window is expected, not a bug."
+    },
+    {
+      "id": 3,
+      "title": "◉ sys_metrics",
+      "type": "stat",
+      "datasource": { "uid": "timescaledb" },
+      "gridPos": { "x": 10, "y": 4, "w": 5, "h": 6 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 50 },
+              { "color": "red", "value": 200 }
+            ]
+          },
+          "color": { "mode": "thresholds" }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "textMode": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "values": false }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "uid": "timescaledb" },
+          "format": "table",
+          "rawSql": "SELECT percentile_cont(0.95) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (ingest_ts - \"time\")) * 1000) AS value FROM public.sys_metrics WHERE ingest_ts IS NOT NULL AND \"time\" > NOW() - INTERVAL '15 minutes'"
+        }
+      ],
+      "description": "P95 source_ts -> ingest_ts latency, SNMP host telemetry, last 15 minutes."
+    },
+    {
+      "id": 4,
+      "title": "◉ net_metrics",
+      "type": "stat",
+      "datasource": { "uid": "timescaledb" },
+      "gridPos": { "x": 15, "y": 4, "w": 5, "h": 6 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 50 },
+              { "color": "red", "value": 200 }
+            ]
+          },
+          "color": { "mode": "thresholds" }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "textMode": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "values": false }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "uid": "timescaledb" },
+          "format": "table",
+          "rawSql": "SELECT percentile_cont(0.95) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (ingest_ts - \"time\")) * 1000) AS value FROM public.net_metrics WHERE ingest_ts IS NOT NULL AND \"time\" > NOW() - INTERVAL '15 minutes'"
+        }
+      ],
+      "description": "P95 source_ts -> ingest_ts latency, SNMP network telemetry, last 15 minutes."
+    },
+    {
+      "id": 5,
+      "title": "◉ ldi_metrics",
+      "type": "stat",
+      "datasource": { "uid": "timescaledb" },
+      "gridPos": { "x": 20, "y": 4, "w": 4, "h": 6 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 50 },
+              { "color": "red", "value": 200 }
+            ]
+          },
+          "color": { "mode": "thresholds" }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "textMode": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "values": false }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "uid": "timescaledb" },
+          "format": "table",
+          "rawSql": "SELECT percentile_cont(0.95) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (ingest_ts - \"time\")) * 1000) AS value FROM public.ldi_metrics WHERE ingest_ts IS NOT NULL AND \"time\" > NOW() - INTERVAL '15 minutes'"
+        }
+      ],
+      "description": "P95 source_ts -> ingest_ts latency, SNMP LDI-telemetry channel, last 15 minutes."
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 10 },
+      "id": 200,
+      "title": "◈ LDI DATA LATENCY TREND (P50/P95/P99)",
+      "type": "row",
+      "panels": []
+    },
+    {
+      "id": 10,
+      "title": "◈ ldi_data: source → commit latency over time",
+      "type": "timeseries",
+      "datasource": { "uid": "timescaledb" },
+      "gridPos": { "x": 0, "y": 11, "w": 24, "h": 9 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "showPoints": "never",
+            "spanNulls": true
+          }
+        }
+      },
+      "options": {
+        "tooltip": { "mode": "multi" },
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "mean", "max"] }
+      },
+      "targets": [
+        {
+          "refId": "P50",
+          "datasource": { "uid": "timescaledb" },
+          "format": "time_series",
+          "rawSql": "SELECT time_bucket('1 minute', \"time\") AS time, 'P50' AS metric, percentile_cont(0.5) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (ingest_ts - \"time\")) * 1000) AS value FROM public.ldi_data WHERE ingest_ts IS NOT NULL AND $__timeFilter(\"time\") GROUP BY 1 ORDER BY 1"
+        },
+        {
+          "refId": "P95",
+          "datasource": { "uid": "timescaledb" },
+          "format": "time_series",
+          "rawSql": "SELECT time_bucket('1 minute', \"time\") AS time, 'P95' AS metric, percentile_cont(0.95) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (ingest_ts - \"time\")) * 1000) AS value FROM public.ldi_data WHERE ingest_ts IS NOT NULL AND $__timeFilter(\"time\") GROUP BY 1 ORDER BY 1"
+        },
+        {
+          "refId": "P99",
+          "datasource": { "uid": "timescaledb" },
+          "format": "time_series",
+          "rawSql": "SELECT time_bucket('1 minute', \"time\") AS time, 'P99' AS metric, percentile_cont(0.99) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (ingest_ts - \"time\")) * 1000) AS value FROM public.ldi_data WHERE ingest_ts IS NOT NULL AND $__timeFilter(\"time\") GROUP BY 1 ORDER BY 1"
+        }
+      ],
+      "description": "Real per-minute P50/P95/P99 of (ingest_ts - time) for ldi_data -- the highest-volume production table. NO_TIMEFILTER caveat does not apply here: this panel needs the dashboard time range."
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 20 },
+      "id": 300,
+      "title": "◈ INFRA TELEMETRY LATENCY TREND (P95, all 3 SNMP tables)",
+      "type": "row",
+      "panels": []
+    },
+    {
+      "id": 11,
+      "title": "◈ sys/net/ldi_metrics: P95 source → commit latency over time",
+      "type": "timeseries",
+      "datasource": { "uid": "timescaledb" },
+      "gridPos": { "x": 0, "y": 21, "w": 24, "h": 9 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "showPoints": "never",
+            "spanNulls": true
+          }
+        }
+      },
+      "options": {
+        "tooltip": { "mode": "multi" },
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "mean", "max"] }
+      },
+      "targets": [
+        {
+          "refId": "SYS",
+          "datasource": { "uid": "timescaledb" },
+          "format": "time_series",
+          "rawSql": "SELECT time_bucket('1 minute', \"time\") AS time, 'sys_metrics' AS metric, percentile_cont(0.95) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (ingest_ts - \"time\")) * 1000) AS value FROM public.sys_metrics WHERE ingest_ts IS NOT NULL AND $__timeFilter(\"time\") GROUP BY 1 ORDER BY 1"
+        },
+        {
+          "refId": "NET",
+          "datasource": { "uid": "timescaledb" },
+          "format": "time_series",
+          "rawSql": "SELECT time_bucket('1 minute', \"time\") AS time, 'net_metrics' AS metric, percentile_cont(0.95) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (ingest_ts - \"time\")) * 1000) AS value FROM public.net_metrics WHERE ingest_ts IS NOT NULL AND $__timeFilter(\"time\") GROUP BY 1 ORDER BY 1"
+        },
+        {
+          "refId": "LDIM",
+          "datasource": { "uid": "timescaledb" },
+          "format": "time_series",
+          "rawSql": "SELECT time_bucket('1 minute', \"time\") AS time, 'ldi_metrics' AS metric, percentile_cont(0.95) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (ingest_ts - \"time\")) * 1000) AS value FROM public.ldi_metrics WHERE ingest_ts IS NOT NULL AND $__timeFilter(\"time\") GROUP BY 1 ORDER BY 1"
+        }
+      ],
+      "description": "Real per-minute P95 of (ingest_ts - time) for the 3 SNMP infra-telemetry tables."
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["ims", "latency", "ingestion", "infrastructure", "evidence"],
+  "templating": { "list": [] },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "title": "IMS Ingestion Latency",
+  "description": "Read-only. Real source_ts -> ingest_ts latency evidence from migration 081's ingest_ts columns -- no simulated data, no interactive write actions. Companion to tests/e2e/ingestion-latency-check.js.",
+  "uid": "ims-ingestion-latency",
+  "version": 1,
+  "timezone": "UTC"
+}
