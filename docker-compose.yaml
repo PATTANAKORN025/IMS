@@ -470,6 +470,38 @@ services:
       - ims-internal
     logging: *default-logging
 
+  # ── Observability Archiver (durable restart/crash-log evidence) ────
+  # Closes the gap found investigating the 2026-08-13 16h simulator outage:
+  # Docker's own json-file log driver had already rotated past it by the
+  # time anyone looked, and there was no restart record outside the soak
+  # script's own 15-min poll of 3 containers. This subscribes to `docker
+  # events` directly (rotation-independent) and durably records restarts
+  # to both a host file and public.container_restart_audit, plus tails
+  # each critical container's logs into their own non-rotating host file.
+  observability-archiver:
+    image: docker:27-cli
+    container_name: ims-observability-archiver
+    <<: *default-restart
+    init: true
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - "apk add --no-cache postgresql-client jq bash >/dev/null && sh /scripts/observability-archiver.sh"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      PGHOST: timescaledb
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./scripts/observability-archiver.sh:/scripts/observability-archiver.sh:ro
+      - ./ops-logs:/archive
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    networks:
+      - ims-internal
+    logging: *default-logging
+
 volumes:
   timescaledb_data:
     driver: local

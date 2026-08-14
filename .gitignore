@@ -16,6 +16,11 @@ data/real/
 # Docker named-volume / local data dirs
 *_data/
 
+# Continuous observability archive (docker events + crash-log tails) --
+# durable evidence lives here at runtime, not meant to be committed; see
+# scripts/observability-archiver.sh and container_restart_audit table.
+ops-logs/
+
 # AI tooling / test artifacts — not project source
 .gemini/
 .claude/
