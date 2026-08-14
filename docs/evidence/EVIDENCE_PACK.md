@@ -34,10 +34,12 @@ Instrumentation: `database/migrations/081-ingest-durability-and-latency.sql` (`i
 | Metric | Value | Evidence |
 |---|---|---|
 | Backup/restore row-count integrity | PASS, restored counts within live bracket for every table | `docs/evidence/DR_DRILL_3_FINDINGS.md` §Drill 1 |
-| Container-loss auto-recovery | FAIL on this host's Docker Desktop/WSL2 (native restart policy doesn't fire), **compensated** by `scripts/container-watchdog.sh`, verified 6x | `docs/evidence/DR_DRILL_3_FINDINGS.md` §Drill 2 |
+| Container-loss auto-recovery (external `docker kill`) | FAIL on this host's Docker Desktop/WSL2 (native restart policy doesn't fire), **compensated** by `scripts/container-watchdog.sh`, verified 6x | `docs/evidence/DR_DRILL_3_FINDINGS.md` §Drill 2 |
+| Container-loss auto-recovery (internal process crash) | **Different result than the above, real evidence, not yet reconciled**: an unhandled `pg` pool exception crashed `ims-node-red`/`ims-alarm-api` from *inside* the process on 2026-08-14, and `restart: unless-stopped` recovered both within ~2s -- the opposite of Drill 2's "doesn't fire" finding. Not a contradiction necessarily (external `docker kill` vs. an internal non-zero exit may hit different code paths in Docker Desktop/WSL2), but flagged rather than silently left inconsistent. | `docs/evidence/SOAK_TEST_LOG.md` §Attempt 6, `docs/architecture/specs/SPEC_PG_POOL_RESILIENCE.md` |
 | Full-stack recreate + data restore | Real bug found (stale init-seed script, hypertable chunk-ID mismatch on restore) -- root-caused and fixed, then 2 clean PASSes (38/38 migrations, 0 restore errors) | `docs/evidence/DR_DRILL_3_FINDINGS.md` §Drill 3, root-cause fix section |
 | Row-level data integrity after manual recovery | `devices=1025, ldi_data=55556, ldi_alarm_log=1057` -- exact match to pre-wipe snapshot | `docs/evidence/DR_DRILL_3_FINDINGS.md`, "Live recovery performed" |
 | Raw drill output | -- | `docs/evidence/dr-drill-3-raw-output.log` |
+| **Unhandled pg-pool exception on idle-connection drop** | **Real bug, found 2026-08-14**: PgBouncer's `client_idle_timeout=300` (its own config flags this "Dangerous timeouts") kills idle pooled connections; neither `node-red` nor `alarm-api` has a `pool.on('error', ...)` handler, so the resulting error crashes the whole process instead of being handled. This is the actual cause of Attempt 6's soak failure -- not simulator/dev activity. Spec'd, not yet fixed (fix requires a restart, deferred past the freeze). | `docs/architecture/specs/SPEC_PG_POOL_RESILIENCE.md` |
 
 ## 3. Soak test (72h stability)
 
@@ -45,7 +47,8 @@ Instrumentation: `database/migrations/081-ingest-durability-and-latency.sql` (`i
 |---|---|---|
 | 1-4 | Each invalidated for a real, documented reason (contaminated by concurrent dev work, DR drill, or a blind restart-detection bug) | `docs/evidence/SOAK_TEST_LOG.md` |
 | 5 | Clean 1h44m, then invalidated by a deliberate `node-red` restart during the ingestion-durability fix (user-approved reset) | `docs/evidence/SOAK_TEST_LOG.md` §Attempt 5, `docs/evidence/soak-log-2026-08-14-attempt5-contaminated-by-ingestion-durability-fix.tsv` |
-| 6 | **In progress**, started 2026-08-14T04:48:35Z, target verdict after 2026-08-17T04:48Z+ | `docs/evidence/SOAK_TEST_LOG.md` §Attempt 6, live at `scripts/soak-test-reports/soak-log.tsv` (gitignored, local) |
+| 6 | Clean 1h03m, then invalidated by a **real, unrelated bug** -- unhandled pg-pool exception crashed node-red/alarm-api (see §2's new row above), not caused by any dev activity this time | `docs/evidence/SOAK_TEST_LOG.md` §Attempt 6, `docs/evidence/soak-log-2026-08-14-attempt6-contaminated-by-pg-pool-crash.tsv` |
+| 7 | **In progress**, started 2026-08-14T07:34:17Z, target verdict after 2026-08-17T07:34Z+. Fix for Attempt 6's crash cause not yet deployed (would require a restart) -- Attempt 7 carries the same real risk of recurrence, accepted rather than hidden. | `docs/evidence/SOAK_TEST_LOG.md` §Attempt 7, live at `scripts/soak-test-reports/soak-log.tsv` (gitignored, local) |
 
 **A fabricated "72h soak" document was found and quarantined** during this pass -- see `docs/evidence/72H_SOAK_TEST_LOG.INVALID-FABRICATED.md`. It is not evidence of anything and must not be cited.
 
