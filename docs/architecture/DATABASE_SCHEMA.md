@@ -10,22 +10,24 @@
 > currently reports. Requires the `timescaledb` container to be running
 > and fully migrated.
 >
-> Last generated: 2026-08-13 | Migrations applied: 55 (013-080) | Tables: 10 | Continuous aggregates: 7 | Plain views: 11 | Materialized views: 3
+> Last generated: 2026-08-14 | Migrations applied: 56 (013-081) | Tables: 12 | Continuous aggregates: 7 | Plain views: 11 | Materialized views: 3
 
 ## Tables
 
 | Table | Columns | Hypertable? |
 |---|---|---|
+| `container_restart_audit` | 6 | — |
 | `devices` | 12 | — |
+| `ingest_staging` | 9 | — |
 | `ldi_alarm_lifecycle` | 9 | — |
-| `ldi_alarm_log` | 9 | Yes |
+| `ldi_alarm_log` | 10 | Yes |
 | `ldi_alarm_ms_code` | 10 | — |
 | `ldi_alarm_state` | 5 | — |
-| `ldi_data` | 36 | Yes |
-| `ldi_metrics` | 9 | Yes |
-| `net_metrics` | 10 | Yes |
+| `ldi_data` | 37 | Yes |
+| `ldi_metrics` | 10 | Yes |
+| `net_metrics` | 11 | Yes |
 | `schema_migrations` | 4 | — |
-| `sys_metrics` | 14 | Yes |
+| `sys_metrics` | 15 | Yes |
 
 ## Continuous Aggregates (TimescaleDB)
 

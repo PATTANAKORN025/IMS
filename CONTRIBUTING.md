@@ -43,7 +43,7 @@ done
 
 - All objects live in the `public` schema.
 - Never query raw hypertables (`ldi_data`, `sys_metrics`, `net_metrics`) directly from a dashboard when a continuous aggregate or materialized view already exists for that use case — see `docs/architecture/DATABASE_SCHEMA.md` for the current view/CAGG inventory. `tests/lint/query-budget-linter.js` enforces this.
-- Every migration is a new, sequentially-numbered file in `database/migrations/` (currently 013–080, applied in order by the `db-migrate` service). **Never edit or renumber a migration after it's merged** — a correction is always the *next* number. See `docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md` §7 for the full versioning policy.
+- Every migration is a new, sequentially-numbered file in `database/migrations/` (currently 013–081, applied in order by the `db-migrate` service). **Never edit or renumber a migration after it's merged** — a correction is always the *next* number. See `docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md` §7 for the full versioning policy.
 - Use `sanitize()` (from `nodered_data/lib/parser.js`, exported via `global.get('parser')`) for any user-supplied string that reaches SQL — zero tolerance for SQL injection.
 
 ### Grafana
