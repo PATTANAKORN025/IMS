@@ -312,38 +312,62 @@ IMS/
 
 <div align="center">
 
+### 💼 Executive & Business Strategy
+
 | Document | Description |
 |:---:|---|
-| [** Platform Book (start here)**](docs/architecture/IMS_PLATFORM_BOOK.md) | Navigational hub for the entire documentation set -- role-based entry points, full document map, terminology glossary |
-| [**Architecture**](docs/architecture/ARCHITECTURE.md) | System context, ADRs, V10 streaming architecture, CAGG strategy, Known Gaps |
-| [**Data Flow**](docs/architecture/DATA_FLOW.md) | End-to-end pipeline diagrams, the real CAGG rollup chain |
+| [**Business Value & ROI**](docs/business/BUSINESS_VALUE_ROI.md) | Executive summary, cost savings, MTTR reduction, and strategic impact |
+| [**Platform Book (start here)**](docs/architecture/IMS_PLATFORM_BOOK.md) | Navigational hub for the entire documentation set, terminology glossary |
+| [**Product Context**](docs/product/PRODUCT.md) | Product purpose, target audience, and positioning |
+
+### 🏭 Manufacturing & LDI Intelligence
+
+| Document | Description |
+|:---:|---|
+| [**Manufacturing Platform Plan**](docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md) | Infra/manufacturing domain separation, validation/soak/DR rollout plan |
+| [**Manufacturing Domain**](docs/architecture/MANUFACTURING_DOMAIN.md) | The LDI schema/dashboard pattern and onboarding flow |
 | [**LDI SPC Guide**](docs/architecture/LDI_SPC_GUIDE.md) | Process capability (Cpk) methodology and formula |
 | [**LDI RCA Guide**](docs/architecture/LDI_RCA_GUIDE.md) | Root-cause correlation (Lift/Confidence) methodology |
-| [**Alarm Severity Guide**](docs/architecture/ALARM_SEVERITY_GUIDE.md) | The 4-tier severity taxonomy, ISA-18.2 scope |
-| [**Data Retention**](docs/architecture/DATA_RETENTION.md) | Live retention/compression policy |
-| [**Security Model**](docs/architecture/SECURITY_MODEL.md) | Trust boundaries, per-adapter authentication |
-| [**Manufacturing Platform Plan**](docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md) | Infra/manufacturing domain separation, EAP integration architecture, ownership, validation/soak/DR rollout plan and evidence |
-| [**Manufacturing Domain**](docs/architecture/MANUFACTURING_DOMAIN.md) | The LDI schema/dashboard pattern, and how a future process type (AOI, plating, etching, drilling) onboards additively |
-| [**Equipment Integration (EAP)**](docs/architecture/EAP_ARCHITECTURE.md) | The two real equipment adapters (SNMP, HTTP/JSON) and the unimplemented SECS/GEM adapter contract |
-| [**Ownership**](docs/architecture/OWNERSHIP.md) | Infrastructure vs. manufacturing domain boundary, enforced via `CODEOWNERS` |
+| [**LDI Validation Protocol**](docs/operations/LDI_VALIDATION_PROTOCOL.md) | 4-phase production sign-off procedure |
+
+### 🏗️ Core Architecture & Security
+
+| Document | Description |
+|:---:|---|
+| [**Architecture**](docs/architecture/ARCHITECTURE.md) | System context, ADRs, streaming architecture, CAGG strategy |
 | [**Visual Architecture**](docs/architecture/ARCHITECTURE_DIAGRAM.md) | Mermaid C4 Model diagrams and sequence flows |
-| [**Dashboard Inventory**](docs/architecture/DASHBOARD_INVENTORY.md) | Auto-generated dashboard/panel-count table (CI-checked against the live JSON) |
-| [**Database Schema**](docs/architecture/DATABASE_SCHEMA.md) | Auto-generated table/column/view reference (CI-checked against `information_schema`) |
-| [**Contributing**](CONTRIBUTING.md) | Development workflow, branch naming, commit conventions |
-| [**Code of Conduct**](CODE_OF_CONDUCT.md) | Community standards and enforcement |
-| [**Security**](SECURITY.md) | Vulnerability reporting, threat model, RBAC |
-| [**Design System**](docs/architecture/GRAFANA_DESIGN_SYSTEM.md) | Color palette, typography, panel type decisions, threshold contracts |
-| [**Operator SOP**](docs/operations/SOP_OPERATOR.md) | Standard Operating Procedures for factory floor / Level 1 NOC |
-| [**Troubleshooting & Alarms**](docs/operations/ALARM_PLAYBOOK.md) | Alarm code resolution and troubleshooting playbook |
-| [**Video Onboarding Script**](docs/product/ONBOARDING_SCRIPT.md) | Storyboard and guide for recording onboarding GIFs/Videos |
-| [**Troubleshooting**](docs/operations/TROUBLESHOOTING.md) | Common issues, debugging commands, recovery procedures |
-| [**Incident Response**](docs/operations/INCIDENT_RESPONSE.md) | Severity framework + real worked incident examples |
-| [**Backup & Restore**](docs/operations/BACKUP_RESTORE.md) | Real dr-test.sh evidence, procedure, and caveats |
-| [**DR Test Plan**](docs/operations/DR_TEST_PLAN.md) | 3-drill disaster-recovery test plan |
-| [**Release Checklist**](docs/operations/RELEASE_CHECKLIST.md) | What to verify before tagging a release |
-| [**LDI Validation Protocol**](docs/operations/LDI_VALIDATION_PROTOCOL.md) | 4-phase production sign-off procedure, parameters verified against the live system |
+| [**Data Flow**](docs/architecture/DATA_FLOW.md) | End-to-end pipeline diagrams, the real CAGG rollup chain |
+| [**Database Schema**](docs/architecture/DATABASE_SCHEMA.md) | Auto-generated table/column/view reference (CI-checked) |
+| [**Security Model**](docs/architecture/SECURITY_MODEL.md) | Trust boundaries, per-adapter authentication, and RBAC |
+| [**Equipment Integration (EAP)**](docs/architecture/EAP_ARCHITECTURE.md) | SNMP, HTTP/JSON, and SECS/GEM adapter contracts |
+| [**Ownership**](docs/architecture/OWNERSHIP.md) | Domain boundaries enforced via `CODEOWNERS` |
+| [**Design System**](docs/architecture/GRAFANA_DESIGN_SYSTEM.md) | Semantic color palette, typography, threshold contracts |
+| [**Dashboard Inventory**](docs/architecture/DASHBOARD_INVENTORY.md) | Auto-generated dashboard/panel-count table (CI-checked) |
+
+### ⚙️ Operations & SRE Playbooks
+
+| Document | Description |
+|:---:|---|
 | [**User Manual**](docs/user/USER_MANUAL.md) | Dashboard guide, metric reference, alert response playbooks |
 | [**Admin Manual**](docs/admin/ADMIN_MANUAL.md) | Container ops, device registration, migrations, backup/recovery |
+| [**Operator SOP**](docs/operations/SOP_OPERATOR.md) | Standard Operating Procedures for factory floor / Level 1 NOC |
+| [**Troubleshooting & Alarms**](docs/operations/ALARM_PLAYBOOK.md) | Alarm code resolution and troubleshooting playbook |
+| [**Incident Response**](docs/operations/INCIDENT_RESPONSE.md) | Severity framework + real worked incident examples |
+| [**Alarm Severity Guide**](docs/architecture/ALARM_SEVERITY_GUIDE.md) | The 4-tier severity taxonomy, ISA-18.2 scope |
+| [**Backup & Restore**](docs/operations/BACKUP_RESTORE.md) | Real dr-test.sh evidence, procedure, and caveats |
+| [**DR Test Plan**](docs/operations/DR_TEST_PLAN.md) | 3-drill disaster-recovery test plan |
+| [**Data Retention**](docs/architecture/DATA_RETENTION.md) | Live retention/compression policy |
+| [**Release Checklist**](docs/operations/RELEASE_CHECKLIST.md) | What to verify before tagging a release |
+| [**Troubleshooting**](docs/operations/TROUBLESHOOTING.md) | Common issues, debugging commands, recovery procedures |
+
+### 🤝 Community & Reference
+
+| Document | Description |
+|:---:|---|
+| [**Video Onboarding Script**](docs/product/ONBOARDING_SCRIPT.md) | Storyboard and guide for recording onboarding GIFs/Videos |
+| [**Contributing**](CONTRIBUTING.md) | Development workflow, branch naming, commit conventions |
+| [**Code of Conduct**](CODE_OF_CONDUCT.md) | Community standards and enforcement |
+| [**Security Policy**](SECURITY.md) | Vulnerability reporting |
 | [**Bug Report**](.github/ISSUE_TEMPLATE/bug_report.md) | Report a bug or regression |
 | [**Feature Request**](.github/ISSUE_TEMPLATE/feature_request.md) | Suggest a new feature |
 

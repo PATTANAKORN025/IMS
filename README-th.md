@@ -294,38 +294,62 @@ IMS/
 
 <div align="center">
 
+### 💼 กลยุทธ์ระดับบริหารและคุณค่าทางธุรกิจ (Executive & Business Strategy)
+
 | เอกสาร | คำอธิบาย |
 |:---:|---|
-| [** Platform Book (เริ่มที่นี่)**](docs/architecture/IMS_PLATFORM_BOOK.md) | ศูนย์รวมระบบนำทางสำหรับชุดเอกสารทั้งหมด -- จุดเริ่มต้นตามบทบาทหน้าที่, แผนที่เอกสารทั้งหมด, อภิธานศัพท์ |
-| [**Architecture**](docs/architecture/ARCHITECTURE.md) | บริบทของระบบ, ADRs, สถาปัตยกรรมสตรีมมิ่ง V10, กลยุทธ์ CAGG, ช่องโหว่ที่ทราบ |
-| [**Data Flow**](docs/architecture/DATA_FLOW.md) | ไดอะแกรมไปป์ไลน์แบบ end-to-end, ลำดับการรวมข้อมูลของ CAGG จริง |
+| [**Business Value & ROI**](docs/business/BUSINESS_VALUE_ROI.md) | บทสรุปผู้บริหาร, การลดต้นทุน, การลดเวลา MTTR, และผลกระทบเชิงกลยุทธ์ |
+| [**Platform Book (เริ่มที่นี่)**](docs/architecture/IMS_PLATFORM_BOOK.md) | ศูนย์รวมระบบนำทางสำหรับชุดเอกสารทั้งหมด, อภิธานศัพท์ |
+| [**Product Context**](docs/product/PRODUCT.md) | จุดประสงค์ของผลิตภัณฑ์, กลุ่มผู้ใช้งานเป้าหมาย, และจุดยืนของระบบ |
+
+### 🏭 ระบบอัจฉริยะในสายการผลิต (Manufacturing & LDI Intelligence)
+
+| เอกสาร | คำอธิบาย |
+|:---:|---|
+| [**Manufacturing Platform Plan**](docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md) | การแยกโดเมน Infra/manufacturing, แผนการทดสอบ/Go-Live และแผนสำรอง |
+| [**Manufacturing Domain**](docs/architecture/MANUFACTURING_DOMAIN.md) | รูปแบบสคีมา/แดชบอร์ด LDI และกระบวนการ Onboarding |
 | [**LDI SPC Guide**](docs/architecture/LDI_SPC_GUIDE.md) | ระเบียบวิธีและสูตรของ Process capability (Cpk) |
 | [**LDI RCA Guide**](docs/architecture/LDI_RCA_GUIDE.md) | ระเบียบวิธีความสัมพันธ์ระดับรากฐานของสาเหตุ (Root-cause correlation: Lift/Confidence) |
-| [**Alarm Severity Guide**](docs/architecture/ALARM_SEVERITY_GUIDE.md) | อนุกรมวิธานความรุนแรง 4 ระดับ, ขอบเขต ISA-18.2 |
-| [**Data Retention**](docs/architecture/DATA_RETENTION.md) | นโยบายการเก็บรักษาข้อมูลสด/การบีบอัดข้อมูล |
-| [**Security Model**](docs/architecture/SECURITY_MODEL.md) | ขอบเขตความเชื่อถือ, การพิสูจน์ตัวตนแบบรายอะแดปเตอร์ |
-| [**Manufacturing Platform Plan**](docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md) | การแยกโดเมน Infra/manufacturing, สถาปัตยกรรมการบูรณาการ EAP, เจ้าของ (ownership), การตรวจสอบ/soak/DR แผนการนำไปใช้งานและหลักฐาน |
-| [**Manufacturing Domain**](docs/architecture/MANUFACTURING_DOMAIN.md) | รูปแบบสคีมา/แดชบอร์ด LDI, และวิธีการที่ประเภทกระบวนการในอนาคต (AOI, plating, etching, drilling) จะถูกรับเข้ามาในระบบในลักษณะเพิ่มเติม |
-| [**Equipment Integration (EAP)**](docs/architecture/EAP_ARCHITECTURE.md) | อะแดปเตอร์อุปกรณ์จริงสองตัว (SNMP, HTTP/JSON) และสัญญาอะแดปเตอร์ SECS/GEM ที่ยังไม่ถูกอิมพลีเมนต์ |
-| [**Ownership**](docs/architecture/OWNERSHIP.md) | ขอบเขตโดเมน Infrastructure เทียบกับ manufacturing, ถูกบังคับใช้ผ่าน `CODEOWNERS` |
+| [**LDI Validation Protocol**](docs/operations/LDI_VALIDATION_PROTOCOL.md) | ขั้นตอนการอนุมัติขั้นโปรดักชัน 4 เฟส |
+
+### 🏗️ สถาปัตยกรรมหลักและความปลอดภัย (Core Architecture & Security)
+
+| เอกสาร | คำอธิบาย |
+|:---:|---|
+| [**Architecture**](docs/architecture/ARCHITECTURE.md) | บริบทของระบบ, ADRs, สถาปัตยกรรมสตรีมมิ่ง, กลยุทธ์ CAGG |
 | [**Visual Architecture**](docs/architecture/ARCHITECTURE_DIAGRAM.md) | ไดอะแกรม Mermaid C4 Model และ sequence flows |
-| [**Dashboard Inventory**](docs/architecture/DASHBOARD_INVENTORY.md) | ตารางจำนวนแดชบอร์ด/พาเนลที่ถูกสร้างอัตโนมัติ (ตรวจสอบโดย CI เทียบกับ JSON สด) |
-| [**Database Schema**](docs/architecture/DATABASE_SCHEMA.md) | การอ้างอิงตาราง/คอลัมน์/มุมมองที่สร้างอัตโนมัติ (ตรวจสอบโดย CI เทียบกับ `information_schema`) |
-| [**Contributing**](CONTRIBUTING.md) | เวิร์กโฟลว์การพัฒนา, การตั้งชื่อสาขา, กฎเกณฑ์การคอมมิต |
-| [**Code of Conduct**](CODE_OF_CONDUCT.md) | มาตรฐานชุมชนและการบังคับใช้ |
-| [**Security**](SECURITY.md) | การรายงานช่องโหว่, threat model, RBAC |
-| [**Design System**](docs/architecture/GRAFANA_DESIGN_SYSTEM.md) | พาเล็ตสี, รูปแบบตัวอักษร, การตัดสินใจประเภทพาเนล, เงื่อนไขขีดจำกัด |
+| [**Data Flow**](docs/architecture/DATA_FLOW.md) | ไดอะแกรมไปป์ไลน์แบบ end-to-end, ลำดับการรวมข้อมูลของ CAGG จริง |
+| [**Database Schema**](docs/architecture/DATABASE_SCHEMA.md) | การอ้างอิงตาราง/คอลัมน์/มุมมองที่สร้างอัตโนมัติ (ตรวจสอบโดย CI) |
+| [**Security Model**](docs/architecture/SECURITY_MODEL.md) | ขอบเขตความเชื่อถือ, การพิสูจน์ตัวตนแบบรายอะแดปเตอร์, และ RBAC |
+| [**Equipment Integration (EAP)**](docs/architecture/EAP_ARCHITECTURE.md) | สัญญาของอะแดปเตอร์ SNMP, HTTP/JSON, และ SECS/GEM |
+| [**Ownership**](docs/architecture/OWNERSHIP.md) | ขอบเขตโดเมนที่ถูกบังคับใช้ผ่าน `CODEOWNERS` |
+| [**Design System**](docs/architecture/GRAFANA_DESIGN_SYSTEM.md) | พาเล็ตสีเพื่อสื่อความหมาย, รูปแบบตัวอักษร, เงื่อนไขขีดจำกัด |
+| [**Dashboard Inventory**](docs/architecture/DASHBOARD_INVENTORY.md) | ตารางจำนวนแดชบอร์ด/พาเนลที่ถูกสร้างอัตโนมัติ (ตรวจสอบโดย CI) |
+
+### ⚙️ ปฏิบัติการและคู่มือการดูแลระบบ (Operations & SRE Playbooks)
+
+| เอกสาร | คำอธิบาย |
+|:---:|---|
+| [**User Manual**](docs/user/USER_MANUAL.md) | คู่มือแดชบอร์ด, การอ้างอิงเมทริกซ์, เพลย์บุ๊กการตอบสนองต่อการแจ้งเตือน |
+| [**Admin Manual**](docs/admin/ADMIN_MANUAL.md) | การปฏิบัติงานของคอนเทนเนอร์, ไมเกรชัน, สำรอง/กู้คืนระบบ |
 | [**Operator SOP**](docs/operations/SOP_OPERATOR.md) | ขั้นตอนการปฏิบัติงานมาตรฐาน (SOP) สำหรับพื้นโรงงาน / ระดับ L1 NOC |
 | [**Troubleshooting & Alarms**](docs/operations/ALARM_PLAYBOOK.md) | เพลย์บุ๊กการระบุแก้ไขโค้ดแจ้งเตือนและการแก้ไขปัญหา |
-| [**Video Onboarding Script**](docs/product/ONBOARDING_SCRIPT.md) | สตอรี่บอร์ดและคำแนะนำสำหรับการบันทึกวิดีโอ/GIFs เพื่อสอนการใช้งาน |
-| [**Troubleshooting**](docs/operations/TROUBLESHOOTING.md) | ปัญหาที่พบบ่อย, คำสั่งดีบัก, ขั้นตอนการกู้คืน |
 | [**Incident Response**](docs/operations/INCIDENT_RESPONSE.md) | กรอบงานความรุนแรง + ตัวอย่างเหตุการณ์จริงที่แก้ไขแล้ว |
+| [**Alarm Severity Guide**](docs/architecture/ALARM_SEVERITY_GUIDE.md) | อนุกรมวิธานความรุนแรง 4 ระดับ, ขอบเขต ISA-18.2 |
 | [**Backup & Restore**](docs/operations/BACKUP_RESTORE.md) | หลักฐานจริงจาก dr-test.sh, ขั้นตอน, และข้อควรระวัง |
 | [**DR Test Plan**](docs/operations/DR_TEST_PLAN.md) | แผนการทดสอบการกู้คืนระบบจากภัยพิบัติ 3 การจำลองซ้อมรับมือ |
+| [**Data Retention**](docs/architecture/DATA_RETENTION.md) | นโยบายการเก็บรักษาข้อมูลสด/การบีบอัดข้อมูล |
 | [**Release Checklist**](docs/operations/RELEASE_CHECKLIST.md) | สิ่งที่ต้องตรวจสอบก่อนทำแท็ก (tag) release |
-| [**LDI Validation Protocol**](docs/operations/LDI_VALIDATION_PROTOCOL.md) | ขั้นตอนการอนุมัติขั้นโปรดักชัน 4 เฟส, พารามิเตอร์ที่ใช้ตรวจสอบกับระบบจริง |
-| [**User Manual**](docs/user/USER_MANUAL.md) | คู่มือแดชบอร์ด, การอ้างอิงเมทริกซ์, เพลย์บุ๊กการตอบสนองต่อการแจ้งเตือน |
-| [**Admin Manual**](docs/admin/ADMIN_MANUAL.md) | การปฏิบัติงานของคอนเทนเนอร์, การลงทะเบียนอุปกรณ์, ไมเกรชัน, สำรอง/กู้คืนระบบ |
+| [**Troubleshooting**](docs/operations/TROUBLESHOOTING.md) | ปัญหาที่พบบ่อย, คำสั่งดีบัก, ขั้นตอนการกู้คืน |
+
+### 🤝 ชุมชนและส่วนอ้างอิง (Community & Reference)
+
+| เอกสาร | คำอธิบาย |
+|:---:|---|
+| [**Video Onboarding Script**](docs/product/ONBOARDING_SCRIPT.md) | สตอรี่บอร์ดและคำแนะนำสำหรับการบันทึกวิดีโอสอนการใช้งาน |
+| [**Contributing**](CONTRIBUTING.md) | เวิร์กโฟลว์การพัฒนา, การตั้งชื่อสาขา, กฎเกณฑ์การคอมมิต |
+| [**Code of Conduct**](CODE_OF_CONDUCT.md) | มาตรฐานชุมชนและการบังคับใช้ |
+| [**Security Policy**](SECURITY.md) | การรายงานช่องโหว่ความปลอดภัย |
 | [**Bug Report**](.github/ISSUE_TEMPLATE/bug_report.md) | รายงานข้อบกพร่องหรือการถดถอย |
 | [**Feature Request**](.github/ISSUE_TEMPLATE/feature_request.md) | แนะนำคุณสมบัติใหม่ |
 
