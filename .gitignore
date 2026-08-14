@@ -17,6 +17,8 @@ data/real/
 *_data/
 
 # AI tooling / test artifacts — not project source
+.gemini/
+.claude/
 .mimocode/
 .playwright-mcp/
 .ai/
@@ -45,6 +47,7 @@ Thumbs.db
 # Temp scripts (auto-generated)
 _tmp_*.js
 _tmp_*.sql
+scratch_scripts/_tmp_*.py
 
 # K6 results
 tests/k6/*-results.json

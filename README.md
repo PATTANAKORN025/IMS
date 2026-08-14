@@ -77,7 +77,8 @@ Performance relies on TimescaleDB continuous aggregates for dashboard rendering 
 <tr>
 <td align="center" width="33%">
   <h3>Telemetry Ingestion</h3>
-  Parallel Node-RED walkers utilizing sequential bulk SNMP polling and HTTP endpoints, persisting data to TimescaleDB via PgBouncer transaction pooling.
+  Parallel Node-RED walkers utilizing sequential bulk SNMP polling and HTTP endpoints, persisting data to TimescaleDB via PgBouncer transaction pooling.<br/><br/>
+  **Verified:** [nodered-ingestion-20260813.txt](docs/evidence/runtime/nodered-ingestion-20260813.txt)
 </td>
 <td align="center" width="33%">
   <h3>Statistical Process Control</h3>
@@ -85,7 +86,8 @@ Performance relies on TimescaleDB continuous aggregates for dashboard rendering 
 </td>
 <td align="center" width="33%">
   <h3>Continuous Aggregation</h3>
-  Hourly, daily, and weekly rollups automatically calculated by TimescaleDB to maintain sub-second Grafana rendering times over large time ranges.
+  Hourly, daily, and weekly rollups automatically calculated by TimescaleDB to maintain sub-second Grafana rendering times over large time ranges.<br/><br/>
+  **Verified:** [cagg-policies-20260813.txt](docs/evidence/runtime/cagg-policies-20260813.txt)
 </td>
 </tr>
 </table>
@@ -107,6 +109,7 @@ make up            # docker compose up -d (starts stack with simulator)
 sleep 40 && make verify
 open http://localhost:3000
 ```
+> **Verified:** `docker compose ps` on 2026-08-13, archived in [`docs/evidence/runtime/compose-ps-20260813.txt`](docs/evidence/runtime/compose-ps-20260813.txt).
 
 ### Known Limitations
 - The simulated LDI workload generates ~10-15 rows per minute; load testing requires running the explicit K6 stress test framework to simulate production 1000-node scale.

@@ -1,0 +1,12 @@
+NAME                   IMAGE                                   COMMAND                  SERVICE             CREATED          STATUS                    PORTS
+ims-alarm-api          ims-alarm-api                           "docker-entrypoint.s…"   alarm-api           40 minutes ago   Up 10 minutes (healthy)   4000/tcp
+ims-alertmanager       prom/alertmanager:v0.33.1               "/bin/alertmanager -…"   alertmanager        40 minutes ago   Up 10 minutes             127.0.0.1:9093->9093/tcp
+ims-blackbox           prom/blackbox-exporter:v0.28.0          "/bin/blackbox_expor…"   blackbox-exporter   40 minutes ago   Up 10 minutes             127.0.0.1:9115->9115/tcp
+ims-grafana            grafana/grafana:13.1.1                  "/run.sh"                grafana             40 minutes ago   Up 10 minutes (healthy)   3000/tcp
+ims-grafana-renderer   grafana/grafana-image-renderer:latest   "tini -- /usr/bin/gr…"   renderer            40 minutes ago   Up 10 minutes (healthy)   8081/tcp
+ims-node-red           ims-node-red                            "./entrypoint.sh"        node-red            40 minutes ago   Up 10 minutes (healthy)   127.0.0.1:1880->1880/tcp
+ims-pgbouncer          edoburu/pgbouncer:v1.25.2-p0            "/bin/sh /etc/pgboun…"   pgbouncer           40 minutes ago   Up 10 minutes (healthy)   5432/tcp
+ims-prometheus         prom/prometheus:v3.13.1                 "/bin/prometheus --c…"   prometheus          40 minutes ago   Up 10 minutes             127.0.0.1:9090->9090/tcp
+ims-proxy              nginx:1.27-alpine                       "/docker-entrypoint.…"   proxy               40 minutes ago   Up 10 minutes (healthy)   0.0.0.0:3000->80/tcp, [::]:3000->80/tcp
+ims-snmpsim            tandrup/snmpsim:v0.4                    "python /usr/local/b…"   snmpsim             40 minutes ago   Up 10 minutes             161/udp
+ims-timescaledb        timescale/timescaledb:2.29.0-pg16       "docker-entrypoint.s…"   timescaledb         40 minutes ago   Up 10 minutes (healthy)   127.0.0.1:5432->5432/tcp
