@@ -1,6 +1,7 @@
 # IMS Grafana Design System
 
-> **เป้าหมาย:** ทำให้ dashboard ทั้งหมดของ IMS (NOC Overview, Engineering Drill-Down, Capacity Planning, และตั้งแต่ Phase 2 เป็นต้นไป — LDI Manufacturing, LDI Engineering Analytics & SPC, LDI Machine Snapshot, LDI Operator Andon Board, LDI Data Readiness) มีมาตรฐานเดียวกัน แก้ที่นี่ที่เดียว ไม่ drift ข้ามไฟล์ และดูเป็นระบบ "ชุดเดียวกัน" ทันทีที่สลับหน้า
+> [!IMPORTANT]
+> ทำให้ dashboard ทั้งหมดของ IMS (NOC Overview, Engineering Drill-Down, Capacity Planning, และตั้งแต่ Phase 2 เป็นต้นไป — LDI Manufacturing, LDI Engineering Analytics & SPC, LDI Machine Snapshot, LDI Operator Andon Board, LDI Data Readiness) มีมาตรฐานเดียวกัน แก้ที่นี่ที่เดียว ไม่ drift ข้ามไฟล์ และดูเป็นระบบ "ชุดเดียวกัน" ทันทีที่สลับหน้า
 >
 > เอกสารนี้คือ **contract** ไม่ใช่คำแนะนำ — panel ใหม่ทุกตัวต้องผ่านกฎในนี้ก่อน merge
 
