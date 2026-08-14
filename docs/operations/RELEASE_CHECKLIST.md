@@ -29,7 +29,7 @@ node scripts/generate-dashboard-inventory.js --check # needs no DB
 node scripts/generate-schema-inventory.js --check  # needs timescaledb up + migrated
 ```
 
-Both run in CI (`lint` and `integration-chaos` jobs respectively) — a red CI run already covers this, but if you're releasing from a branch that skipped CI for any reason, run them locally first. If either reports drift, regenerate (drop `--check`) and commit the result *before* tagging, not after.
+Both run in CI (`lint` and `integration-chaos` jobs respectively) — a red CI run already covers this, but if you're releasing from a branch that skipped CI for any reason, run them locally first. If either reports drift, regenerate (drop `--check`) and commit the result _before_ tagging, not after.
 
 - [ ] Dashboard inventory (`docs/architecture/DASHBOARD_INVENTORY.md`) is current
 - [ ] Database schema inventory (`docs/architecture/DATABASE_SCHEMA.md`) is current

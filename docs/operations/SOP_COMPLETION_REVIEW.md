@@ -11,10 +11,10 @@
 linked to two dashboard URLs that don't match the real dashboard
 `uid`s (verified against the actual `.json` files, not assumed):
 
-| Link text | Broken URL used | Real uid |
-|---|---|---|
+| Link text              | Broken URL used                | Real uid          |
+| ---------------------- | ------------------------------ | ----------------- |
 | Engineering Drill-Down | `/d/ims-engineering-drilldown` | `ims-engineering` |
-| Capacity Planning | `/d/ims-capacity-planning` | `ims-capacity` |
+| Capacity Planning      | `/d/ims-capacity-planning`     | `ims-capacity`    |
 
 Both were wrong identically across all three language files -- same
 mistake propagated through translation, not three independent errors.
@@ -41,15 +41,15 @@ fields are populated on 25 of 1,820 rows -- and those 25 are exactly
 the codes the simulator can fire plus a handful of hand-curated extra
 Critical codes (verified: the 25 IDs match the simulator's active
 code list from `alarm-sync-linter.js` almost exactly). So the
-*structured guidance* fields got real, scoped attention. The
-*SOP-linkage* field did not get any.
+_structured guidance_ fields got real, scoped attention. The
+_SOP-linkage_ field did not get any.
 
 This is not the same gap as "ALARM_PLAYBOOK.md is incomplete" --
 `ALARM_PLAYBOOK.md` already covers all 19-21 simulator-active codes
 with real first-response text, verified against the live database and
 alert rule files (confirmed by reading it this pass, content is
 accurate and current). The gap is narrower: nothing in
-`ldi_alarm_ms_code.sop_reference` points *back* to that playbook (or
+`ldi_alarm_ms_code.sop_reference` points _back_ to that playbook (or
 to any other SOP document) per-code, so a query against the master
 catalog alone can't answer "what SOP covers this alarm."
 
@@ -69,9 +69,9 @@ review is deliberately read-only during the freeze.
 ## What was NOT reviewed this pass
 
 - `ALARM_PLAYBOOK.md`'s content accuracy beyond a read-through --
- spot-checked against the live simulator code list and found
- consistent, but not re-verified line-by-line against current alert
- rule YAML files the way its own header claims it was done
- originally (2026-08-10).
+  spot-checked against the live simulator code list and found
+  consistent, but not re-verified line-by-line against current alert
+  rule YAML files the way its own header claims it was done
+  originally (2026-08-10).
 - `docs/product/ONBOARDING_SCRIPT.md` (also matched the SOP grep) --
- out of scope, that's an onboarding doc not an operator SOP.
+  out of scope, that's an onboarding doc not an operator SOP.

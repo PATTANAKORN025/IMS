@@ -43,7 +43,7 @@ done
 
 - All objects live in the `public` schema.
 - Never query raw hypertables (`ldi_data`, `sys_metrics`, `net_metrics`) directly from a dashboard when a continuous aggregate or materialized view already exists for that use case — see `docs/architecture/DATABASE_SCHEMA.md` for the current view/CAGG inventory. `tests/lint/query-budget-linter.js` enforces this.
-- Every migration is a new, sequentially-numbered file in `database/migrations/` (currently 013–081, applied in order by the `db-migrate` service). **Never edit or renumber a migration after it's merged** — a correction is always the *next* number. See `docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md` §7 for the full versioning policy.
+- Every migration is a new, sequentially-numbered file in `database/migrations/` (currently 013–081, applied in order by the `db-migrate` service). **Never edit or renumber a migration after it's merged** — a correction is always the _next_ number. See `docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md` §7 for the full versioning policy.
 - Use `sanitize()` (from `nodered_data/lib/parser.js`, exported via `global.get('parser')`) for any user-supplied string that reaches SQL — zero tolerance for SQL injection.
 
 ### Grafana
@@ -67,19 +67,19 @@ done
 
 Follow [Conventional Commits](https://www.conventionalcommits.org/):
 
-| Type | Usage | Example |
-|---|---|---|
-| `feat:` | New feature | `feat(snmp): add LDI walker for manufacturing metrics` |
-| `fix:` | Bug fix | `fix(parser): correct counter wraparound detection` |
-| `docs:` | Documentation only | `docs: upgrade enterprise documentation suite` |
-| `refactor:` | Code restructuring | `refactor(flows): split ingestion and alerting` |
-| `chore:` | Maintenance | `chore(ci): add Gitleaks security scanning` |
-| `test:` | Adding tests | `test(k6): add database write stress test` |
-| `security:` | Security fix | `security: remove hardcoded credentials` |
+| Type        | Usage              | Example                                                |
+| ----------- | ------------------ | ------------------------------------------------------ |
+| `feat:`     | New feature        | `feat(snmp): add LDI walker for manufacturing metrics` |
+| `fix:`      | Bug fix            | `fix(parser): correct counter wraparound detection`    |
+| `docs:`     | Documentation only | `docs: upgrade enterprise documentation suite`         |
+| `refactor:` | Code restructuring | `refactor(flows): split ingestion and alerting`        |
+| `chore:`    | Maintenance        | `chore(ci): add Gitleaks security scanning`            |
+| `test:`     | Adding tests       | `test(k6): add database write stress test`             |
+| `security:` | Security fix       | `security: remove hardcoded credentials`               |
 
 ### Branch Naming
 
-```
+```text
 feat/<topic>  # New features
 fix/<topic>  # Bug fixes
 chore/<topic>  # Maintenance
@@ -118,7 +118,7 @@ node tests/e2e/golden-dataset-spc.js
 
 ## Project Structure
 
-```
+```text
 IMS/
 ├── docker-compose.yaml   # Main orchestration
 ├── nodered_data/

@@ -10,11 +10,11 @@
 
 This audit follows directly on from `IMS-FULL-SYSTEM-AUDIT.md` (all 9 LDI Grafana dashboards, the Node-RED simulator/ingestion flows, and several DB views — audited, fixed, and merged to `main` in the prior pass of this session). Re-auditing that ground would be wasted effort, so this pass deliberately covers what that one didn't:
 
-| Area | Covered by |
-|---|---|
-| Monitoring/infra stack configs (Prometheus, Alertmanager, Blackbox, SNMP sim, PgBouncer, Grafana provisioning/library panels) | Fork 1 |
-| Node-RED alerting flow, CI/CD pipeline (beyond `ci.yml`), `scripts/` directory, `db-migrate` service | Fork 2 |
-| Full database migration history (23 files), `postgres/init/`, and the `docs/` set | Fork 3 |
+| Area                                                                                                                          | Covered by |
+| ----------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| Monitoring/infra stack configs (Prometheus, Alertmanager, Blackbox, SNMP sim, PgBouncer, Grafana provisioning/library panels) | Fork 1     |
+| Node-RED alerting flow, CI/CD pipeline (beyond `ci.yml`), `scripts/` directory, `db-migrate` service                          | Fork 2     |
+| Full database migration history (23 files), `postgres/init/`, and the `docs/` set                                             | Fork 3     |
 
 All three ran read-only in parallel, cross-checking file contents against live system state (`docker logs`, read-only `psql` queries, running-container inspection) rather than relying on static review alone — the same "layer C" principle (query results, not just syntax) that drove the previous audit's most valuable findings.
 
@@ -22,22 +22,22 @@ All three ran read-only in parallel, cross-checking file contents against live s
 
 ---
 
-##  P0 — Critical
+## P0 — Critical
 
 ### P0-1 · A production alert rule is actively failing every evaluation cycle, right now
 
 `ldi-machine-alarm-005` (provisioned via `monitoring/grafana/provisioning/alerting/ldi-rules.yml`) has no `ORDER BY time` in its query — required for Grafana's time-series dataframe conversion. Confirmed live in `docker logs ims-grafana`:
 
-```
+```text
 level=error msg="Failed to evaluate rule" ... error="...failed to convert long to wide series...not sorted in ascending order by time"
 level=info msg="Sending alerts to local notifier" count=1
 ```
 
-This repeats on every ~5-minute evaluation cycle. Worse: it appears to fire a notification on each evaluation *error*, not on a real machine condition — meaning this rule is currently generating alert noise unrelated to actual LDI machine state, on a schedule.
+This repeats on every ~5-minute evaluation cycle. Worse: it appears to fire a notification on each evaluation _error_, not on a real machine condition — meaning this rule is currently generating alert noise unrelated to actual LDI machine state, on a schedule.
 
 **Fix:** add `ORDER BY time` (or the equivalent bucketed ordering) to the rule's query.
 
-### P0-2 · Three inconsistent migration-runner scripts — this is *why* schema_migrations drifted
+### P0-2 · Three inconsistent migration-runner scripts — this is _why_ schema_migrations drifted
 
 Three separate scripts apply migrations, each tracking differently:
 
@@ -64,7 +64,7 @@ Individually these are P1-ish misconfigurations. Together they mean: **if someth
 
 ---
 
-## 🟠 P1 — High
+## <img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /> P1 — High
 
 ### P1-1 · This session's own schema tuning is dead on arrival for fresh deployments
 
@@ -95,21 +95,21 @@ Runs on every push/PR to `main`. It builds `flows.json` via `node scripts/build-
 
 ---
 
-## 🟡 P2 — Medium
+## <img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /> P2 — Medium
 
-| # | Area | Finding |
-|---|---|---|
-| 1 | `postgres/init/003-grafana-password.sh` | Hardcoded fallback password `grafana_secure` for the `grafana_reader` DB role if `GRAFANA_DB_PASSWORD` isn't set — same anti-pattern already fixed this session in `nodered_data/settings.js`, not swept here. |
-| 2 | `database/migrations/038-rename-ldi-metrics-columns.sql` | Non-idempotent `ALTER TABLE ... RENAME COLUMN` with no existence guard, unlike every other rename in this codebase (e.g. migration 013 wraps in `DO $$ ... IF EXISTS ...`). Directly connects to P0-2 — this is exactly the kind of migration that breaks under `init-migrations.sh`'s blind-rerun behavior. |
-| 3 | `monitoring/grafana/provisioning/libraries/libraries.yml` | Library-panel provisioning is completely non-functional: the panel definition lives in `monitoring/grafana/library-panels/`, a directory never mounted into the Grafana container at all (confirmed inside the running container — only `libraries.yml` present). Zero current consumers either way. |
-| 4 | Connection pool sizing | Node-RED's PG pool was widened to `max: 50` this session; Grafana's datasource adds `maxOpenConns: 20`; both share PgBouncer's single `DEFAULT_POOL_SIZE: 20`. Transaction-mode pooling softens this, but it's a capacity-planning mismatch worth revisiting under real load. |
-| 5 | SNMP simulator coverage gap | The ingestion flow's "Walk Temperature" node branches to Juniper-specific OIDs for `device_type='network_switch'`, but no `.snmprec` file simulates any `2636`-prefixed OID. Currently dormant (no switch is registered) — a trap for whenever one is. |
-| 6 | `verify-db-health.sh` | Checks `sys_metrics`/`net_metrics`/`ldi_metrics` and their hourly CAGGs — never checks `ldi_data` or its `_1m/_15m/_1h` tiers, the actual real-telemetry path every LDI Grafana dashboard depends on. A "database health check" blind to the primary data path. |
-| 7 | `scripts/analyze_dashboard.py`, `fix_dashboard.py`, `fix_validate.py` | One-off historical patch scripts (hardcoded filenames, docstrings referencing a specific already-applied past fix set) living in the general-purpose `scripts/` directory. Re-running any against the current, much-changed dashboards would likely no-op at best. Misleads anyone assuming `scripts/` is all maintained, reusable tooling. |
+| #   | Area                                                                  | Finding                                                                                                                                                                                                                                                                                                                                     |
+| --- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `postgres/init/003-grafana-password.sh`                               | Hardcoded fallback password `grafana_secure` for the `grafana_reader` DB role if `GRAFANA_DB_PASSWORD` isn't set — same anti-pattern already fixed this session in `nodered_data/settings.js`, not swept here.                                                                                                                              |
+| 2   | `database/migrations/038-rename-ldi-metrics-columns.sql`              | Non-idempotent `ALTER TABLE ... RENAME COLUMN` with no existence guard, unlike every other rename in this codebase (e.g. migration 013 wraps in `DO $$ ... IF EXISTS ...`). Directly connects to P0-2 — this is exactly the kind of migration that breaks under `init-migrations.sh`'s blind-rerun behavior.                                |
+| 3   | `monitoring/grafana/provisioning/libraries/libraries.yml`             | Library-panel provisioning is completely non-functional: the panel definition lives in `monitoring/grafana/library-panels/`, a directory never mounted into the Grafana container at all (confirmed inside the running container — only `libraries.yml` present). Zero current consumers either way.                                        |
+| 4   | Connection pool sizing                                                | Node-RED's PG pool was widened to `max: 50` this session; Grafana's datasource adds `maxOpenConns: 20`; both share PgBouncer's single `DEFAULT_POOL_SIZE: 20`. Transaction-mode pooling softens this, but it's a capacity-planning mismatch worth revisiting under real load.                                                               |
+| 5   | SNMP simulator coverage gap                                           | The ingestion flow's "Walk Temperature" node branches to Juniper-specific OIDs for `device_type='network_switch'`, but no `.snmprec` file simulates any `2636`-prefixed OID. Currently dormant (no switch is registered) — a trap for whenever one is.                                                                                      |
+| 6   | `verify-db-health.sh`                                                 | Checks `sys_metrics`/`net_metrics`/`ldi_metrics` and their hourly CAGGs — never checks `ldi_data` or its `_1m/_15m/_1h` tiers, the actual real-telemetry path every LDI Grafana dashboard depends on. A "database health check" blind to the primary data path.                                                                             |
+| 7   | `scripts/analyze_dashboard.py`, `fix_dashboard.py`, `fix_validate.py` | One-off historical patch scripts (hardcoded filenames, docstrings referencing a specific already-applied past fix set) living in the general-purpose `scripts/` directory. Re-running any against the current, much-changed dashboards would likely no-op at best. Misleads anyone assuming `scripts/` is all maintained, reusable tooling. |
 
 ---
 
-## 🟢 P3 — Low
+## <img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /> P3 — Low
 
 - Prometheus, Alertmanager, Blackbox exporter, SNMP simulator, and the Grafana renderer have no `healthcheck:` block (PgBouncer and Grafana itself do) — inconsistent within an observability stack, and blocks any future `depends_on: condition: service_healthy` gating on them.
 - `contactpoints.yml` comment references a `flows-ubuntu.json` that doesn't exist (current file is `alerting.json`) — stale comment only, the actual webhook wiring is correct.
@@ -126,7 +126,7 @@ Runs on every push/PR to `main`. It builds `flows.json` via `node scripts/build-
 
 ---
 
-##  Checked and found genuinely fine
+## Checked and found genuinely fine
 
 - **Migration idempotency**, broadly: ~19 of 23 migrations correctly use `IF NOT EXISTS`/`CREATE OR REPLACE`/`ON CONFLICT DO NOTHING`/exception-swallowing `DO $$` blocks. The non-idempotent ones are the exception, not the rule (see P2-2).
 - **`archive/` is safely inert** — `migrate.sh`'s glob is non-recursive, never touches it.
@@ -146,25 +146,25 @@ Runs on every push/PR to `main`. It builds `flows.json` via `node scripts/build-
 
 ## Recommended action order
 
-| # | Item | Severity | Why first |
-|---|---|---|---|
-| 1 | Fix `ldi-machine-alarm-005`'s missing `ORDER BY time` |  P0 | Actively generating alert noise every ~5 minutes right now |
-| 2 | Collapse the 3 migration runners to 1 canonical script |  P0 | Root cause of the schema-tracking drift that's already bitten this project once (migration 038) |
-| 3 | Get real alert delivery working end-to-end (pick one channel, verify with a real test alert) |  P0 | Nothing currently reaches a human when something breaks |
-| 4 | Sync migration 020's schema tuning into `postgres/init/001` | 🟠 P1 | This session's own fix is currently a no-op on fresh deploys |
-| 5 | Fix or retire `ci-flows.yml` | 🟠 P1 | A CI check that structurally cannot pass trains people to ignore CI failures |
-| 6 | Rewrite `../architecture/ARCHITECTURE.md` from scratch | 🟠 P1 | Currently actively misleading (wrong dashboard count, wrong ingestion path, self-contradictory) |
-| 7 | Remove or fix the vibration-critical alert | 🟠 P1 | A "critical" alert that can never fire is worse than none |
-| 8 | Everything else in P2/P3 | 🟡🟢 | Real but not urgent |
+| #   | Item                                                                                         | Severity                                                                                                                                                         | Why first                                                                                       |
+| --- | -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| 1   | Fix `ldi-machine-alarm-005`'s missing `ORDER BY time`                                        | P0                                                                                                                                                               | Actively generating alert noise every ~5 minutes right now                                      |
+| 2   | Collapse the 3 migration runners to 1 canonical script                                       | P0                                                                                                                                                               | Root cause of the schema-tracking drift that's already bitten this project once (migration 038) |
+| 3   | Get real alert delivery working end-to-end (pick one channel, verify with a real test alert) | P0                                                                                                                                                               | Nothing currently reaches a human when something breaks                                         |
+| 4   | Sync migration 020's schema tuning into `postgres/init/001`                                  | <img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /> P1                                                                              | This session's own fix is currently a no-op on fresh deploys                                    |
+| 5   | Fix or retire `ci-flows.yml`                                                                 | <img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /> P1                                                                              | A CI check that structurally cannot pass trains people to ignore CI failures                    |
+| 6   | Rewrite `../architecture/ARCHITECTURE.md` from scratch                                       | <img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /> P1                                                                              | Currently actively misleading (wrong dashboard count, wrong ingestion path, self-contradictory) |
+| 7   | Remove or fix the vibration-critical alert                                                   | <img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /> P1                                                                              | A "critical" alert that can never fire is worse than none                                       |
+| 8   | Everything else in P2/P3                                                                     | <img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /><img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /> | Real but not urgent                                                                             |
 
 ---
 
 ## Summary by audience
 
-**Management:** Three critical findings, none of them about the LDI manufacturing dashboards fixed earlier this session — they're about the operational scaffolding *around* the system. The one to care about most: **if something breaks badly right now, no one gets paged.** Every alert-delivery channel configured in this system is either a placeholder, has empty credentials, or targets a discontinued API. That's the single highest-leverage fix available.
+**Management:** Three critical findings, none of them about the LDI manufacturing dashboards fixed earlier this session — they're about the operational scaffolding _around_ the system. The one to care about most: **if something breaks badly right now, no one gets paged.** Every alert-delivery channel configured in this system is either a placeholder, has empty credentials, or targets a discontinued API. That's the single highest-leverage fix available.
 
 **SRE / IT:** The migration-runner inconsistency (P0-2) is the real prize here — it's the mechanical explanation for tracking drift that was previously worked around case-by-case. Fixing it properly (one canonical runner) prevents this class of bug recurring. Also worth immediate attention: `ci-flows.yml` cannot currently pass under any circumstances, which means it's either already being ignored (bad) or blocking merges for no real reason (also bad) — worth checking which.
 
-**QA:** A "critical" vibration alert that can structurally never fire, and a Cpk-adjacent stale architecture doc, are both instances of the same underlying pattern this project has now hit multiple times: things that *look* like they're checking something but structurally can't. Worth a standing check for this pattern specifically (does the threshold's underlying data ever actually vary?) whenever a new alert or dashboard panel is added.
+**QA:** A "critical" vibration alert that can structurally never fire, and a Cpk-adjacent stale architecture doc, are both instances of the same underlying pattern this project has now hit multiple times: things that _look_ like they're checking something but structurally can't. Worth a standing check for this pattern specifically (does the threshold's underlying data ever actually vary?) whenever a new alert or dashboard panel is added.
 
 **Process Engineer:** Nothing in this pass touches LDI process/quality logic directly — that was the prior audit. The one item with process relevance is the vibration alert (P1-3): if vibration monitoring is expected to be live, it currently isn't, for the same reason PE/JE throughput reporting was found broken for LDI machines in the prior audit (the k6-synthetic ingestion pipeline gap).

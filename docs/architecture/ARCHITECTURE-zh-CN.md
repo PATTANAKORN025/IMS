@@ -1,7 +1,7 @@
 # IMS 系统架构
 
 > 系统拓扑、数据流和运行架构的唯一事实来源。在发现之前的版本是将两个不同且自相矛盾的架构文档拼接在一起（描述的仪表板数量和摄取路径已不再与实时系统匹配，参见 `IMS-SYSTEM-AUDIT-REPORT.md` P1-2）后，于 2026-08-05 进行了重写。以下所有声明均直接对照运行中的系统或受控源文件进行了验证，而非沿用自先前文档。
-> 
+>
 > **已验证声明：** 有关证明以下声明的实际运行时日志、配置输出和屏幕截图，请参阅 **[证据索引 (Evidence Index)](../evidence/INDEX.md)**。
 
 ---
@@ -42,20 +42,20 @@ flowchart TB
 
 ## 容器清单
 
-| Service | Container | Purpose |
-|---|---|---|
-| `timescaledb` | `ims-timescaledb` | PostgreSQL + TimescaleDB — 所有持久化存储 |
-| `pgbouncer` | `ims-pgbouncer` | TimescaleDB 前端基于事务模式的连接池 |
-| `node-red` | `ims-node-red` | 包含遥测管道（模拟器 + 摄取）和告警分发流 |
-| `grafana` | `ims-grafana` | 仪表板、已配置的告警规则、原生告警。无专有主机端口 — 只能通过 `proxy` 访问（见下文）。 |
-| `proxy` | `ims-proxy` | nginx 反向代理；Grafana 和 `alarm-api` 唯一面向主机发布的入口。通过对照 Grafana 自身会话的 `auth_request` 检查来控制对 `/alarm-api/` 的访问权限（`proxy/nginx.conf`） — 参见 `SECURITY_MODEL.md`。 |
-| `alarm-api` | `ims-alarm-api` | `public.ldi_alarm_lifecycle` 的写入路径（用于确认/解决告警，由 `IMS LDI - Alarm Console` 调用）。无主机端口；仅能通过 `proxy` 访问。以最低权限角色 `alarm_api_writer` 连接到 Postgres（迁移脚本 078）。 |
-| `renderer` | `ims-grafana-renderer` | 外部 `grafana-image-renderer` 服务（为告警/报告提供 PNG 导出） |
-| `prometheus` | `ims-prometheus` | 抓取与 `sys_metrics` 相关的导出器和 Node-RED 运行状况；评估其自身的告警规则 |
-| `alertmanager` | `ims-alertmanager` | 将 Prometheus 告警路由至 Node-RED 的 `/alert-webhook` |
-| `blackbox-exporter` | (blackbox) | 针对 SLA 监控的 HTTP/TCP/ICMP 探测 |
-| `snmpsim` | (snmpsim) | 用于传统管道开发/测试目标的模拟 SNMP 代理 |
-| `db-migrate` | `ims-db-migrate` | 一次性迁移运行器（`scripts/migrate-entrypoint.sh`），负责控制 `node-red` 和 `alarm-api` 的启动时序 |
+| Service             | Container              | Purpose                                                                                                                                                                                                 |
+| ------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `timescaledb`       | `ims-timescaledb`      | PostgreSQL + TimescaleDB — 所有持久化存储                                                                                                                                                               |
+| `pgbouncer`         | `ims-pgbouncer`        | TimescaleDB 前端基于事务模式的连接池                                                                                                                                                                    |
+| `node-red`          | `ims-node-red`         | 包含遥测管道（模拟器 + 摄取）和告警分发流                                                                                                                                                               |
+| `grafana`           | `ims-grafana`          | 仪表板、已配置的告警规则、原生告警。无专有主机端口 — 只能通过 `proxy` 访问（见下文）。                                                                                                                  |
+| `proxy`             | `ims-proxy`            | nginx 反向代理；Grafana 和 `alarm-api` 唯一面向主机发布的入口。通过对照 Grafana 自身会话的 `auth_request` 检查来控制对 `/alarm-api/` 的访问权限（`proxy/nginx.conf`） — 参见 `SECURITY_MODEL.md`。      |
+| `alarm-api`         | `ims-alarm-api`        | `public.ldi_alarm_lifecycle` 的写入路径（用于确认/解决告警，由 `IMS LDI - Alarm Console` 调用）。无主机端口；仅能通过 `proxy` 访问。以最低权限角色 `alarm_api_writer` 连接到 Postgres（迁移脚本 078）。 |
+| `renderer`          | `ims-grafana-renderer` | 外部 `grafana-image-renderer` 服务（为告警/报告提供 PNG 导出）                                                                                                                                          |
+| `prometheus`        | `ims-prometheus`       | 抓取与 `sys_metrics` 相关的导出器和 Node-RED 运行状况；评估其自身的告警规则                                                                                                                             |
+| `alertmanager`      | `ims-alertmanager`     | 将 Prometheus 告警路由至 Node-RED 的 `/alert-webhook`                                                                                                                                                   |
+| `blackbox-exporter` | (blackbox)             | 针对 SLA 监控的 HTTP/TCP/ICMP 探测                                                                                                                                                                      |
+| `snmpsim`           | (snmpsim)              | 用于传统管道开发/测试目标的模拟 SNMP 代理                                                                                                                                                               |
+| `db-migrate`        | `ims-db-migrate`       | 一次性迁移运行器（`scripts/migrate-entrypoint.sh`），负责控制 `node-red` 和 `alarm-api` 的启动时序                                                                                                      |
 
 内部专属服务（PgBouncer、SNMP 模拟器、blackbox exporter、Grafana、alarm-api）从不直接暴露给主机；只有 `proxy`（3000，前置于 Grafana 和 alarm-api）、Node-RED（1880）、Prometheus（9090）和 Alertmanager（127.0.0.1:9093，仅限环回地址）发布端口。
 
@@ -91,14 +91,14 @@ flowchart TB
 
 > 列数、完整的 视图/物化视图/连续聚合 (Continuous Aggregates) 列表以及当前已应用的迁移数会在 **[DATABASE_SCHEMA.md](DATABASE_SCHEMA.md)** 中自动生成（`node scripts/generate-schema-inventory.js`，通过 CI 与实时数据库进行检查校验）。此表补充说明了“原因” —— 向每个表提供数据的内容及其用途，因为生成器无法仅从 `information_schema` 中推断出这些。
 
-| Table | Type | Fed by | Purpose |
-|---|---|---|---|
-| `devices` | 表 (Table) | 手动/种子 | 记录每个被监控实体的注册表（`device_type`: `ldi` 或 `server`） |
-| `ldi_data` | 超表 (Hypertable)，1小时区块 | `ldi_ingestion.json` | 真实的 LDI 工艺遥测 —— PE/JE、温度、湿度、真空度、扫描速度，具体到每个样本。是所有 LDI 仪表板面板的来源。 |
-| `ldi_alarm_log` | 超表 (Hypertable)，7天区块 | `ldi_alarm_simulator.json` | 告警事件行，自本次会话的模拟器修复后与条件相关联 |
-| `ldi_alarm_ms_code` | 表 (Table) | 迁移脚本 036（模拟种子） | 主告警代码参考（20个真实的生产代码，仅功能描述 —— 而非供应商目录） |
-| `sys_metrics` / `net_metrics` / `ldi_metrics` | 超表 (Hypertables)，1天区块 | `ingestion.json`（传统管道） | 基础设施遥测 + 具有已知缺口的 k6 合成 LDI 指标表（见下文） |
-| `schema_migrations` | 表 (Table) | `scripts/migrate-entrypoint.sh` | 迁移跟踪 —— `(version, filename, applied_at)`，在规范形态中没有 `checksum` 列 |
+| Table                                         | Type                         | Fed by                          | Purpose                                                                                                   |
+| --------------------------------------------- | ---------------------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `devices`                                     | 表 (Table)                   | 手动/种子                       | 记录每个被监控实体的注册表（`device_type`: `ldi` 或 `server`）                                            |
+| `ldi_data`                                    | 超表 (Hypertable)，1小时区块 | `ldi_ingestion.json`            | 真实的 LDI 工艺遥测 —— PE/JE、温度、湿度、真空度、扫描速度，具体到每个样本。是所有 LDI 仪表板面板的来源。 |
+| `ldi_alarm_log`                               | 超表 (Hypertable)，7天区块   | `ldi_alarm_simulator.json`      | 告警事件行，自本次会话的模拟器修复后与条件相关联                                                          |
+| `ldi_alarm_ms_code`                           | 表 (Table)                   | 迁移脚本 036（模拟种子）        | 主告警代码参考（20个真实的生产代码，仅功能描述 —— 而非供应商目录）                                        |
+| `sys_metrics` / `net_metrics` / `ldi_metrics` | 超表 (Hypertables)，1天区块  | `ingestion.json`（传统管道）    | 基础设施遥测 + 具有已知缺口的 k6 合成 LDI 指标表（见下文）                                                |
+| `schema_migrations`                           | 表 (Table)                   | `scripts/migrate-entrypoint.sh` | 迁移跟踪 —— `(version, filename, applied_at)`，在规范形态中没有 `checksum` 列                             |
 
 **值得了解的视图：** `v_ldi_alarm_context`（迁移脚本 045，将告警连接到其之前 5 分钟内的遥测读数 —— 这是 RCA 事实测试关联的基础），`v_machine_spc_fleet` / `v_machine_spc_ranking`（Cpk，针对全队列与针对单选），`v_fleet_health` / `v_fleet_score`（迁移脚本 047，范围仅限定为 `device_type='server'` —— 以前它包含 LDI 机器的永久零桩行，稀释了基础设施健康评分）。
 
@@ -126,6 +126,7 @@ flowchart TB
 2. **Prometheus + Alertmanager** —— 聚焦于基础设施的规则（CPU/RAM/磁盘/温度阈值、服务宕机、接口中断）由 Prometheus 评估，通过 Alertmanager 路由（`monitoring/alertmanager/alertmanager.yml`），并配置有基于严重性的分组和抑制规则（严重级别抑制同设备上的警告级别）。
 
 **两条路径都在 `nodered_data/flows/alerting.json` 汇集**（“IMS 告警管道”选项卡），其通过 `POST /alert-webhook` 接收 Alertmanager 的 Webhook，格式化告警并散布至：
+
 - **LINE Messaging API**（并非 LINE Notify —— 该 API 已于 2025 年被 LINE 废弃且未在此使用）通过 `LINE_CHANNEL_ACCESS_TOKEN` + `LINE_USER_ID` 发送。
 - **MS Teams** 通过 `TEAMS_WEBHOOK_URL` 作为 Adaptive Card (自适应卡片) 发送。
 
@@ -137,18 +138,18 @@ flowchart TB
 
 > 面板计数和描述会自动在 **[DASHBOARD_INVENTORY.md](DASHBOARD_INVENTORY.md)** 内生成（`node scripts/generate-dashboard-inventory.js`，受 CI 检查）。下表补充了架构层的“原因” —— 范围边界以及交叉引用 —— 因为生成器无法仅从 JSON 推测这些信息；当新增或重命名仪表板时，须保持此处的 UID/标题列与生成文件同步。
 
-| UID | Title | Scope |
-|---|---|---|
-| `ims-noc-overview` | IMS NOC Overview | 仅限基础设施（2台真实服务器 + 网络）—— LDI 工艺内容放置于它处，见下方 |
-| `ims-ldi-manufacturing` | IMS LDI - Manufacturing Command Center | 完整的4层 RCA 仪表板：高管 KPI、机器遥测、生产上下文、告警流 |
-| `ims-ldi-operator-andon` | IMS LDI - Operator Andon Board | 工厂车间信息终端，1280x720 无滚动设计预留 |
-| `ims-ldi-engineering-analytics` | IMS LDI - Engineering Analytics & SPC | Cpk/SPC 排名、RCA 事实测试、PE/JE 分布 |
-| `ims-ldi-machine-snapshot` | IMS LDI - Machine Snapshot | 逐个事件向下钻取（点击告警/日志以审查） |
-| `ldi-data-readiness` | LDI Data Readiness & Integration Gaps | 具备自审能力的数据质量仪表板（板键重复度、覆盖率 %、主告警匹配率） |
-| `ims-easy-overview` | IMS Easy Overview | 零配置全队列概览，完全基于共享视图/函数构建（`v_ldi_machine_latest_full`, `v_ldi_alarm_context`, `f_ldi_yield_pct`, `v_machine_spc_fleet`）—— 无模板变量设置要求 |
-| `ims-engineering` | IMS Engineering Drill-Down | 聚焦基础设施：每台服务器的 CPU/RAM/存储/网络情况，LDI 吞吐量/质量（传统管道） |
-| `ims-capacity` | IMS AIOps & Capacity Forecast | 全满/饱和天数回归预测（基础设施层） |
-| `ims-meta-monitoring` | IMS Pipeline Health & Meta-Monitoring | 摄取管道自身的健康度（每秒行数，批量成功率，重试队列深度） |
+| UID                             | Title                                  | Scope                                                                                                                                                            |
+| ------------------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ims-noc-overview`              | IMS NOC Overview                       | 仅限基础设施（2台真实服务器 + 网络）—— LDI 工艺内容放置于它处，见下方                                                                                            |
+| `ims-ldi-manufacturing`         | IMS LDI - Manufacturing Command Center | 完整的4层 RCA 仪表板：高管 KPI、机器遥测、生产上下文、告警流                                                                                                     |
+| `ims-ldi-operator-andon`        | IMS LDI - Operator Andon Board         | 工厂车间信息终端，1280x720 无滚动设计预留                                                                                                                        |
+| `ims-ldi-engineering-analytics` | IMS LDI - Engineering Analytics & SPC  | Cpk/SPC 排名、RCA 事实测试、PE/JE 分布                                                                                                                           |
+| `ims-ldi-machine-snapshot`      | IMS LDI - Machine Snapshot             | 逐个事件向下钻取（点击告警/日志以审查）                                                                                                                          |
+| `ldi-data-readiness`            | LDI Data Readiness & Integration Gaps  | 具备自审能力的数据质量仪表板（板键重复度、覆盖率 %、主告警匹配率）                                                                                               |
+| `ims-easy-overview`             | IMS Easy Overview                      | 零配置全队列概览，完全基于共享视图/函数构建（`v_ldi_machine_latest_full`, `v_ldi_alarm_context`, `f_ldi_yield_pct`, `v_machine_spc_fleet`）—— 无模板变量设置要求 |
+| `ims-engineering`               | IMS Engineering Drill-Down             | 聚焦基础设施：每台服务器的 CPU/RAM/存储/网络情况，LDI 吞吐量/质量（传统管道）                                                                                    |
+| `ims-capacity`                  | IMS AIOps & Capacity Forecast          | 全满/饱和天数回归预测（基础设施层）                                                                                                                              |
+| `ims-meta-monitoring`           | IMS Pipeline Health & Meta-Monitoring  | 摄取管道自身的健康度（每秒行数，批量成功率，重试队列深度）                                                                                                       |
 
 NOC 概览在本次会话中从 LDI/制造内容中拆分出来（它此前包含了制造良率面板的重复版本）—— 现已将基础设施与制造关注点有意识地放在独立仪表板中，而非混合在一个“概览”页面上。
 
@@ -175,16 +176,16 @@ NOC 概览在本次会话中从 LDI/制造内容中拆分出来（它此前包�
 
 五大自动化门控设施在 CI 里持续放行 (`.github/workflows/ci.yml`)，逐一狙击某大类失败风险，省却了审核员通过双眼做繁重工序的一道坎：
 
-| Gate | Script | What it proves |
-|---|---|---|
-| Dashboard structure | `tests/lint/dashboard-linter.js` | 网格对齐、标准面板高度限制、信息亭的免滚动高度天花板（逐仪表板校验，例如 `ims-ldi-operator-andon`: 20 个网格单元） |
-| RCA category coverage | `tests/lint/rca-mapping-coverage.js` | 主告警代码之中 ≥70% 能得以关联到某个 RCA 类目之上，并且每一处在仪表板上的征用都是货真价实的 |
-| Query budget (structural) | `tests/lint/query-budget-linter.js` | 不允许任一面板对未加工过的原始 `ldi_data` 执行大段的全程漫游式范围扫描，必须使用 `_1m`/`_15m`/`_1h` 连续聚合 (Continuous Aggregates) 梯队层级 |
-| Query budget (real timing) | `tests/e2e/query-timing-check.js` | 根据实时 DB 之真面目得到的服务器端正牌 `EXPLAIN ANALYZE` 读秒反馈，P95 < 80ms |
-| Panel data correctness | `tests/e2e/panel-data-check.js` | 每一块面板中*实质完成解析后*的 SQL 在实时数据库试剑，并且能取回确确实实连带妥贴 `time` 专栏的横列 |
-| Schema drift | `scripts/migrate.sh` (断言 `Pending: 0`) | 迁移库目录与活数据库实录的 `schema_migrations` 总表达成共识 |
-| Orphan objects | `tests/lint/orphan-object-linter.js` | 所有存活于世的 DB 表面或视图最少需获得任一仪表板、告警原则、信号流或迁移历程所钦点关连 —— 杜绝悄无声息的占着茅坑不拉屎 |
-| Golden-dataset SPC | `tests/e2e/golden-dataset-spc.js` | 全数五套各自为战的 Cpk/Cp 算法，皆于特定一则合成数据集当中运算后交出同教条公式吻合的标准统一的答卷 |
+| Gate                       | Script                                   | What it proves                                                                                                                                |
+| -------------------------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Dashboard structure        | `tests/lint/dashboard-linter.js`         | 网格对齐、标准面板高度限制、信息亭的免滚动高度天花板（逐仪表板校验，例如 `ims-ldi-operator-andon`: 20 个网格单元）                            |
+| RCA category coverage      | `tests/lint/rca-mapping-coverage.js`     | 主告警代码之中 ≥70% 能得以关联到某个 RCA 类目之上，并且每一处在仪表板上的征用都是货真价实的                                                   |
+| Query budget (structural)  | `tests/lint/query-budget-linter.js`      | 不允许任一面板对未加工过的原始 `ldi_data` 执行大段的全程漫游式范围扫描，必须使用 `_1m`/`_15m`/`_1h` 连续聚合 (Continuous Aggregates) 梯队层级 |
+| Query budget (real timing) | `tests/e2e/query-timing-check.js`        | 根据实时 DB 之真面目得到的服务器端正牌 `EXPLAIN ANALYZE` 读秒反馈，P95 < 80ms                                                                 |
+| Panel data correctness     | `tests/e2e/panel-data-check.js`          | 每一块面板中*实质完成解析后*的 SQL 在实时数据库试剑，并且能取回确确实实连带妥贴 `time` 专栏的横列                                             |
+| Schema drift               | `scripts/migrate.sh` (断言 `Pending: 0`) | 迁移库目录与活数据库实录的 `schema_migrations` 总表达成共识                                                                                   |
+| Orphan objects             | `tests/lint/orphan-object-linter.js`     | 所有存活于世的 DB 表面或视图最少需获得任一仪表板、告警原则、信号流或迁移历程所钦点关连 —— 杜绝悄无声息的占着茅坑不拉屎                        |
+| Golden-dataset SPC         | `tests/e2e/golden-dataset-spc.js`        | 全数五套各自为战的 Cpk/Cp 算法，皆于特定一则合成数据集当中运算后交出同教条公式吻合的标准统一的答卷                                            |
 
 色彩标记 (`GRAFANA_DESIGN_SYSTEM.md`)：每一道表示机器或告警状况高低的门坎跨越及映射的色彩分配，只能仰仗五大令牌来差遣行事 —— OK `#22C55E`、Warning `#F59E0B`、Critical `#EF4444`、No Data `#64748B`、Info `#2563EB`。点缀用色（拉开图表序列区分感、底子颜色、界框线条边际，或为打响招牌名声的显眼装潢）都经受了放任许可 —— 一面仪表板不可能靠区区五种重彩颜色就可以造好。
 
@@ -194,13 +195,13 @@ NOC 概览在本次会话中从 LDI/制造内容中拆分出来（它此前包�
 
 ## 参考资料
 
-| Resource | Link |
-|---|---|
-| TimescaleDB Documentation | https://docs.timescale.com/ |
-| Node-RED Documentation | https://nodered.org/docs/ |
-| Grafana Documentation | https://grafana.com/docs/ |
-| Prometheus Documentation | https://prometheus.io/docs/ |
+| Resource                   | Link                                                      |
+| -------------------------- | --------------------------------------------------------- |
+| TimescaleDB Documentation  | https://docs.timescale.com/                               |
+| Node-RED Documentation     | https://nodered.org/docs/                                 |
+| Grafana Documentation      | https://grafana.com/docs/                                 |
+| Prometheus Documentation   | https://prometheus.io/docs/                               |
 | Alertmanager Documentation | https://prometheus.io/docs/alerting/latest/configuration/ |
-| LINE Messaging API | https://developers.line.biz/en/docs/messaging-api/ |
+| LINE Messaging API         | https://developers.line.biz/en/docs/messaging-api/        |
 
 本仓库相关文档：`GRAFANA_DESIGN_SYSTEM.md`（颜色/标记约定），`../operations/TROUBLESHOOTING.md`，`../audits/IMS-SYSTEM-AUDIT-REPORT.md`（促成此次重写的审计报告）。

@@ -12,17 +12,17 @@
 
 ## Files rewritten (9)
 
-| File | What was wrong |
-|---|---|
-| `CONTRIBUTING.md` | Backwards Node-RED source-of-truth guidance (wrong path, told contributors never to edit the actual source files); a nonexistent `safeStr()` function (real name: `sanitize()`); stale dashboard paths. |
-| `docs/operations/ALARM_PLAYBOOK.md` | Entirely fictional alarm codes (`SYS-001`, `NET-002`, `LDI-001`) that never existed in this system. Replaced with the real 19 simulator-active codes and real alert rule names. |
-| `docs/architecture/ARCHITECTURE.md` | Self-contradiction (prose said "9 dashboards", its own diagram said "10"); two stale hardcoded RCA Lift figures; a stray "Slack" mention where only LINE/Teams credentials were ever listed. |
-| `docs/architecture/ARCHITECTURE_DIAGRAM.md` | "LINE Notify" (discontinued API) instead of LINE Messaging API; a 10s timer claim vs. the real 30s. |
-| `docs/business/BUSINESS_VALUE_ROI.md` | Dashboard count (4→10), container count (8→10), alert rule count, a false "0% failure" load-test claim vs. the real k6 scripts' defined failure budgets. Financial/ROI figures left as original business inputs — outside what this pass can independently verify. |
-| `docs/product/PRODUCT.md` | Omitted the entire LDI manufacturing/SPC/RCA capability; wrong dashboard count; wrong alert channel (Slack, never actually wired in); stale color tokens. |
-| `docs/product/CONTEXT.md` | Referenced 5 files that don't exist in this repo; wrong Node-RED path; wrong alert channel. (Note: this file is gitignored — the fix is local-only, not part of the tracked repo.) |
-| `README.md` | Doc table missing the platform book and 8 new guides; 3 stale "LINE Notify"/"Slack" mentions; stale dashboard count and retention figures matching an outdated migration value rather than the live database. |
-| `docs/user/USER_MANUAL.md`, `docs/operations/TROUBLESHOOTING.md` | "LINE Notify" terminology; a Node-RED recovery command that referenced a nonexistent path and would have actively corrupted `flows.json` further if followed. |
+| File                                                             | What was wrong                                                                                                                                                                                                                                                     |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `CONTRIBUTING.md`                                                | Backwards Node-RED source-of-truth guidance (wrong path, told contributors never to edit the actual source files); a nonexistent `safeStr()` function (real name: `sanitize()`); stale dashboard paths.                                                            |
+| `docs/operations/ALARM_PLAYBOOK.md`                              | Entirely fictional alarm codes (`SYS-001`, `NET-002`, `LDI-001`) that never existed in this system. Replaced with the real 19 simulator-active codes and real alert rule names.                                                                                    |
+| `docs/architecture/ARCHITECTURE.md`                              | Self-contradiction (prose said "9 dashboards", its own diagram said "10"); two stale hardcoded RCA Lift figures; a stray "Slack" mention where only LINE/Teams credentials were ever listed.                                                                       |
+| `docs/architecture/ARCHITECTURE_DIAGRAM.md`                      | "LINE Notify" (discontinued API) instead of LINE Messaging API; a 10s timer claim vs. the real 30s.                                                                                                                                                                |
+| `docs/business/BUSINESS_VALUE_ROI.md`                            | Dashboard count (4→10), container count (8→10), alert rule count, a false "0% failure" load-test claim vs. the real k6 scripts' defined failure budgets. Financial/ROI figures left as original business inputs — outside what this pass can independently verify. |
+| `docs/product/PRODUCT.md`                                        | Omitted the entire LDI manufacturing/SPC/RCA capability; wrong dashboard count; wrong alert channel (Slack, never actually wired in); stale color tokens.                                                                                                          |
+| `docs/product/CONTEXT.md`                                        | Referenced 5 files that don't exist in this repo; wrong Node-RED path; wrong alert channel. (Note: this file is gitignored — the fix is local-only, not part of the tracked repo.)                                                                                 |
+| `README.md`                                                      | Doc table missing the platform book and 8 new guides; 3 stale "LINE Notify"/"Slack" mentions; stale dashboard count and retention figures matching an outdated migration value rather than the live database.                                                      |
+| `docs/user/USER_MANUAL.md`, `docs/operations/TROUBLESHOOTING.md` | "LINE Notify" terminology; a Node-RED recovery command that referenced a nonexistent path and would have actively corrupted `flows.json` further if followed.                                                                                                      |
 
 ## Files added (10)
 
@@ -40,14 +40,14 @@ Moved to a new, git-tracked `docs/archive/` (not the repo's existing `ARCHIVES/`
 
 ## Terminology corrections
 
-| Wrong | Correct | Occurrences fixed |
-|---|---|---|
-| `node-red/flows/` | `nodered_data/flows/` | 3 files |
-| `safeStr()` | `sanitize()` | 1 file (2 mentions) |
-| LINE Notify (discontinued 2025) | LINE Messaging API | 4 files |
-| Slack (never actually integrated) | LINE Messaging API + MS Teams | 4 files |
-| "12 Grafana dashboards" / "4 dashboards" / "4 infrastructure, 8 manufacturing" | 12 dashboards, 4 infrastructure + 8 manufacturing | 6 files |
-| Fictional alarm codes (`SYS-001` etc.) | Real numeric codes from `ldi_alarm_ms_code` | 1 file, full rewrite |
+| Wrong                                                                          | Correct                                           | Occurrences fixed    |
+| ------------------------------------------------------------------------------ | ------------------------------------------------- | -------------------- |
+| `node-red/flows/`                                                              | `nodered_data/flows/`                             | 3 files              |
+| `safeStr()`                                                                    | `sanitize()`                                      | 1 file (2 mentions)  |
+| LINE Notify (discontinued 2025)                                                | LINE Messaging API                                | 4 files              |
+| Slack (never actually integrated)                                              | LINE Messaging API + MS Teams                     | 4 files              |
+| "12 Grafana dashboards" / "4 dashboards" / "4 infrastructure, 8 manufacturing" | 12 dashboards, 4 infrastructure + 8 manufacturing | 6 files              |
+| Fictional alarm codes (`SYS-001` etc.)                                         | Real numeric codes from `ldi_alarm_ms_code`       | 1 file, full rewrite |
 
 A canonical glossary (IMS, LDI, EAP, SPC, RCA, Andon, CAGG, Cpk, Lift) now lives in `docs/architecture/IMS_PLATFORM_BOOK.md`.
 

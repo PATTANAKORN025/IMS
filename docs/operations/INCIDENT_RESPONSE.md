@@ -8,12 +8,12 @@
 
 ## Severity framework
 
-| Severity | Definition | Example | Response target |
-|---|---|---|---|
+| Severity  | Definition                                                      | Example                                                 | Response target       |
+| --------- | --------------------------------------------------------------- | ------------------------------------------------------- | --------------------- |
 | **SEV-1** | Production data loss or complete ingestion stop, both pipelines | Both `ldi_data` and `sys_metrics` stop receiving writes | Immediate — all hands |
-| **SEV-2** | One pipeline down, or a container won't recover | LDI ingestion stalled, infra pipeline unaffected | Within the shift |
-| **SEV-3** | Degraded but functioning | Elevated query latency, one machine's telemetry stale | Next business day |
-| **SEV-4** | Cosmetic / non-functional | A dashboard panel shows a stale color token | Backlog |
+| **SEV-2** | One pipeline down, or a container won't recover                 | LDI ingestion stalled, infra pipeline unaffected        | Within the shift      |
+| **SEV-3** | Degraded but functioning                                        | Elevated query latency, one machine's telemetry stale   | Next business day     |
+| **SEV-4** | Cosmetic / non-functional                                       | A dashboard panel shows a stale color token             | Backlog               |
 
 ## First response, any severity
 

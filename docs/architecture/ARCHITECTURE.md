@@ -1,15 +1,15 @@
 <div align="center">
  <p>
- 🇬🇧 <b>English</b> |
- <a href="ARCHITECTURE-th.md">🇹🇭 ไทย</a> |
- <a href="ARCHITECTURE-zh-CN.md">🇨🇳 中文</a>
+ <img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /><img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /> <b>English</b> |
+ <a href="ARCHITECTURE-th.md"><img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /><img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /> ไทย</a> |
+ <a href="ARCHITECTURE-zh-CN.md"><img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /><img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /> 中文</a>
  </p>
 </div>
 
 # IMS System Architecture
 
 > Single source of truth for system topology, data flow, and operational architecture. Rewritten 2026-08-05 after the previous version was found to be two different, self-contradictory architecture docs concatenated together, describing a dashboard count and ingestion path that no longer matched the live system (see `IMS-SYSTEM-AUDIT-REPORT.md` P1-2). Every claim below was verified directly against the running system or the tracked source files, not carried over from the prior doc.
-> 
+>
 > **Verified Claims:** For actual runtime logs, configuration outputs, and screenshots proving the statements below, see the **[Evidence Index](../evidence/INDEX.md)**.
 
 ---
@@ -50,20 +50,20 @@ flowchart TB
 
 ## Container Inventory
 
-| Service | Container | Purpose |
-|---|---|---|
-| `timescaledb` | `ims-timescaledb` | PostgreSQL + TimescaleDB — all persistent storage |
-| `pgbouncer` | `ims-pgbouncer` | Transaction-mode connection pooler in front of TimescaleDB |
-| `node-red` | `ims-node-red` | Both telemetry pipelines (simulators + ingestion) and the alert-delivery flow |
-| `grafana` | `ims-grafana` | Dashboards, provisioned alert rules, native alerting. No host port of its own — reachable only through `proxy` (see below). |
-| `proxy` | `ims-proxy` | nginx reverse proxy; the only host-published entry point to Grafana and `alarm-api`. Gates `/alarm-api/` behind an `auth_request` check against Grafana's own session (`proxy/nginx.conf`) — see `SECURITY_MODEL.md`. |
-| `alarm-api` | `ims-alarm-api` | Write path for `public.ldi_alarm_lifecycle` (Acknowledge/Resolve, called from `IMS LDI - Alarm Console`). No host port; reachable only via `proxy`. Connects to Postgres as the least-privilege `alarm_api_writer` role (migration 078). |
-| `renderer` | `ims-grafana-renderer` | External `grafana-image-renderer` service (PNG export for alerts/reports) |
-| `prometheus` | `ims-prometheus` | Scrapes `sys_metrics`-adjacent exporters and Node-RED health; evaluates its own alert rules |
-| `alertmanager` | `ims-alertmanager` | Routes Prometheus alerts to Node-RED's `/alert-webhook` |
-| `blackbox-exporter` | (blackbox) | HTTP/TCP/ICMP probes for SLA monitoring |
-| `snmpsim` | (snmpsim) | Simulated SNMP agent for the legacy pipeline's dev/test targets |
-| `db-migrate` | `ims-db-migrate` | One-shot migration runner (`scripts/migrate-entrypoint.sh`), gates `node-red` and `alarm-api` startup |
+| Service             | Container              | Purpose                                                                                                                                                                                                                                  |
+| ------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `timescaledb`       | `ims-timescaledb`      | PostgreSQL + TimescaleDB — all persistent storage                                                                                                                                                                                        |
+| `pgbouncer`         | `ims-pgbouncer`        | Transaction-mode connection pooler in front of TimescaleDB                                                                                                                                                                               |
+| `node-red`          | `ims-node-red`         | Both telemetry pipelines (simulators + ingestion) and the alert-delivery flow                                                                                                                                                            |
+| `grafana`           | `ims-grafana`          | Dashboards, provisioned alert rules, native alerting. No host port of its own — reachable only through `proxy` (see below).                                                                                                              |
+| `proxy`             | `ims-proxy`            | nginx reverse proxy; the only host-published entry point to Grafana and `alarm-api`. Gates `/alarm-api/` behind an `auth_request` check against Grafana's own session (`proxy/nginx.conf`) — see `SECURITY_MODEL.md`.                    |
+| `alarm-api`         | `ims-alarm-api`        | Write path for `public.ldi_alarm_lifecycle` (Acknowledge/Resolve, called from `IMS LDI - Alarm Console`). No host port; reachable only via `proxy`. Connects to Postgres as the least-privilege `alarm_api_writer` role (migration 078). |
+| `renderer`          | `ims-grafana-renderer` | External `grafana-image-renderer` service (PNG export for alerts/reports)                                                                                                                                                                |
+| `prometheus`        | `ims-prometheus`       | Scrapes `sys_metrics`-adjacent exporters and Node-RED health; evaluates its own alert rules                                                                                                                                              |
+| `alertmanager`      | `ims-alertmanager`     | Routes Prometheus alerts to Node-RED's `/alert-webhook`                                                                                                                                                                                  |
+| `blackbox-exporter` | (blackbox)             | HTTP/TCP/ICMP probes for SLA monitoring                                                                                                                                                                                                  |
+| `snmpsim`           | (snmpsim)              | Simulated SNMP agent for the legacy pipeline's dev/test targets                                                                                                                                                                          |
+| `db-migrate`        | `ims-db-migrate`       | One-shot migration runner (`scripts/migrate-entrypoint.sh`), gates `node-red` and `alarm-api` startup                                                                                                                                    |
 
 Internal-only services (PgBouncer, SNMP simulator, blackbox exporter, Grafana, alarm-api) are never exposed to the host directly; only `proxy` (3000, fronting both Grafana and alarm-api), Node-RED (1880), Prometheus (9090), and Alertmanager (127.0.0.1:9093, loopback-only) publish ports.
 
@@ -99,14 +99,14 @@ This pipeline is what actually powers NOC Overview's infrastructure panels (CPU/
 
 > Column counts, the full view/materialized-view/CAGG list, and the current applied-migration count are auto-generated in **[DATABASE_SCHEMA.md](DATABASE_SCHEMA.md)** (`node scripts/generate-schema-inventory.js`, CI-checked against the live database). This table adds the "why" -- what feeds each table and what it's for -- that the generator can't infer from `information_schema` alone.
 
-| Table | Type | Fed by | Purpose |
-|---|---|---|---|
-| `devices` | Table | manual/seed | Registry of every monitored entity (`device_type`: `ldi` or `server`) |
-| `ldi_data` | Hypertable, 1h chunks | `ldi_ingestion.json` | Real LDI process telemetry — PE/JE, temperature, humidity, vacuum, scan speed, per-sample. Source for every LDI dashboard panel. |
-| `ldi_alarm_log` | Hypertable, 7d chunks | `ldi_alarm_simulator.json` | Per-alarm-event rows, condition-correlated as of this session's simulator fix |
-| `ldi_alarm_ms_code` | Table | migration 036 (mock seed) | Master alarm code reference (20 real production codes, functional descriptions only — not the vendor catalog) |
-| `sys_metrics` / `net_metrics` / `ldi_metrics` | Hypertables, 1d chunks | `ingestion.json` (legacy pipeline) | Infra telemetry + the k6-synthetic LDI metrics table with known gaps (see below) |
-| `schema_migrations` | Table | `scripts/migrate-entrypoint.sh` | Migration tracking — `(version, filename, applied_at)`, no `checksum` column in the canonical shape |
+| Table                                         | Type                   | Fed by                             | Purpose                                                                                                                          |
+| --------------------------------------------- | ---------------------- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `devices`                                     | Table                  | manual/seed                        | Registry of every monitored entity (`device_type`: `ldi` or `server`)                                                            |
+| `ldi_data`                                    | Hypertable, 1h chunks  | `ldi_ingestion.json`               | Real LDI process telemetry — PE/JE, temperature, humidity, vacuum, scan speed, per-sample. Source for every LDI dashboard panel. |
+| `ldi_alarm_log`                               | Hypertable, 7d chunks  | `ldi_alarm_simulator.json`         | Per-alarm-event rows, condition-correlated as of this session's simulator fix                                                    |
+| `ldi_alarm_ms_code`                           | Table                  | migration 036 (mock seed)          | Master alarm code reference (20 real production codes, functional descriptions only — not the vendor catalog)                    |
+| `sys_metrics` / `net_metrics` / `ldi_metrics` | Hypertables, 1d chunks | `ingestion.json` (legacy pipeline) | Infra telemetry + the k6-synthetic LDI metrics table with known gaps (see below)                                                 |
+| `schema_migrations`                           | Table                  | `scripts/migrate-entrypoint.sh`    | Migration tracking — `(version, filename, applied_at)`, no `checksum` column in the canonical shape                              |
 
 **Views worth knowing:** `v_ldi_alarm_context` (migration 045, joins alarms to the telemetry reading within 5 minutes prior — this is what the RCA Truth Test correlates against), `v_machine_spc_fleet` / `v_machine_spc_ranking` (Cpk, fleet-wide vs. per-selection), `v_fleet_health` / `v_fleet_score` (migration 047, scoped to `device_type='server'` only — this previously included LDI machines' permanently-zero stub rows, diluting the infra health score).
 
@@ -122,7 +122,7 @@ All migrations should be idempotent (`CREATE ... IF NOT EXISTS`, `DO $$ ... IF E
 
 Migration 048 completes what 020 started: `ldi_data`'s `DOUBLE PRECISION` → `REAL` conversion, which silently no-op'd on compressed chunks. It decompresses, drops/rebuilds the dependent continuous-aggregate chain (`ldi_data_1m` → `15m` → `1h`, plus `ldi_data_hourly`) and 7 dependent plain views, converts the columns, and refreshes every CAGG from raw data — guarded so it's a no-op if the columns are already `REAL` (true on any fresh deployment via `postgres/init/001`). Migration 049 drops the dead `alert_rules`/`alert_history` tables (see Known Gaps). Migration 050 promotes the RCA Lift/Confidence logic to a real shared view, `v_ldi_rca_recent_window`.
 
-Migration 064 converts `v_machine_spc_fleet` and `v_ldi_rca_recent_window` from plain views to materialized views (identical names and output columns, so no dashboard changes were needed for the 4 panels reading them), refreshed every 60s via TimescaleDB's built-in generic job scheduler (`add_job` — this stack has no `pg_cron` extension installed, so that wasn't an option). It also extracts the Engineering Analytics "RCA Truth Test" panel's inline CTE into a new materialized view, `v_ldi_rca_truth_test`, which *did* require a one-line panel SQL change (now `SELECT ... FROM v_ldi_rca_truth_test` instead of recomputing the CTE chain per read). Both changes were driven by measured `EXPLAIN ANALYZE` numbers, not guesswork: LDI-suite P95 query latency went from 60.12ms to 5.30ms.
+Migration 064 converts `v_machine_spc_fleet` and `v_ldi_rca_recent_window` from plain views to materialized views (identical names and output columns, so no dashboard changes were needed for the 4 panels reading them), refreshed every 60s via TimescaleDB's built-in generic job scheduler (`add_job` — this stack has no `pg_cron` extension installed, so that wasn't an option). It also extracts the Engineering Analytics "RCA Truth Test" panel's inline CTE into a new materialized view, `v_ldi_rca_truth_test`, which _did_ require a one-line panel SQL change (now `SELECT ... FROM v_ldi_rca_truth_test` instead of recomputing the CTE chain per read). Both changes were driven by measured `EXPLAIN ANALYZE` numbers, not guesswork: LDI-suite P95 query latency went from 60.12ms to 5.30ms.
 
 ---
 
@@ -134,6 +134,7 @@ Two independent alert-evaluation engines both funnel into the same Node-RED deli
 2. **Prometheus + Alertmanager** — infra-focused rules (CPU/RAM/disk/temperature thresholds, service-down, interface-down) evaluated by Prometheus, routed by Alertmanager (`monitoring/alertmanager/alertmanager.yml`) with severity-based grouping and inhibition rules (critical suppresses warning on the same device).
 
 **Both paths converge on `nodered_data/flows/alerting.json`** ("IMS Alerting Pipeline" tab), which receives Alertmanager's webhook at `POST /alert-webhook`, formats the alert, and fans out to:
+
 - **LINE Messaging API** (not LINE Notify — that API was discontinued by LINE in 2025 and is not used here) via `LINE_CHANNEL_ACCESS_TOKEN` + `LINE_USER_ID`.
 - **MS Teams** via `TEAMS_WEBHOOK_URL`, as an Adaptive Card.
 
@@ -145,18 +146,18 @@ If either credential is unset, the corresponding delivery function calls `node.e
 
 > Panel counts and descriptions are auto-generated in **[DASHBOARD_INVENTORY.md](DASHBOARD_INVENTORY.md)** (`node scripts/generate-dashboard-inventory.js`, CI-checked). This table adds the architectural "why" -- scope boundaries and cross-references -- that a generator can't infer from JSON alone; keep the UID/Title columns here in sync with the generated file when a dashboard is added or renamed.
 
-| UID | Title | Scope |
-|---|---|---|
-| `ims-noc-overview` | IMS NOC Overview | Infrastructure only (2 real servers + network) — LDI process content lives elsewhere, see below |
-| `ims-ldi-manufacturing` | IMS LDI - Manufacturing Command Center | Full 4-layer RCA dashboard: executive KPIs, machine telemetry, production context, alarm stream |
-| `ims-ldi-operator-andon` | IMS LDI - Operator Andon Board | Factory-floor kiosk, 1280x720 no-scroll budget |
-| `ims-ldi-engineering-analytics` | IMS LDI - Engineering Analytics & SPC | Cpk/SPC ranking, RCA Truth Test, PE/JE distributions |
-| `ims-ldi-machine-snapshot` | IMS LDI - Machine Snapshot | Per-event drill-down (click an alarm/log to inspect) |
-| `ldi-data-readiness` | LDI Data Readiness & Integration Gaps | Self-auditing data-quality dashboard (board-key duplication, coverage %, alarm-master match rate) |
-| `ims-easy-overview` | IMS Easy Overview | Zero-config whole-fleet glance built entirely from shared views/functions (`v_ldi_machine_latest_full`, `v_ldi_alarm_context`, `f_ldi_yield_pct`, `v_machine_spc_fleet`) -- no template variables to set |
-| `ims-engineering` | IMS Engineering Drill-Down | Infra-focused: CPU/RAM/storage/network per server, LDI throughput/quality (legacy pipeline) |
-| `ims-capacity` | IMS AIOps & Capacity Forecast | Days-until-full/saturation regression forecasts (infra) |
-| `ims-meta-monitoring` | IMS Pipeline Health & Meta-Monitoring | Ingestion pipeline's own health (rows/sec, batch success rate, retry queue depth) |
+| UID                             | Title                                  | Scope                                                                                                                                                                                                    |
+| ------------------------------- | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ims-noc-overview`              | IMS NOC Overview                       | Infrastructure only (2 real servers + network) — LDI process content lives elsewhere, see below                                                                                                          |
+| `ims-ldi-manufacturing`         | IMS LDI - Manufacturing Command Center | Full 4-layer RCA dashboard: executive KPIs, machine telemetry, production context, alarm stream                                                                                                          |
+| `ims-ldi-operator-andon`        | IMS LDI - Operator Andon Board         | Factory-floor kiosk, 1280x720 no-scroll budget                                                                                                                                                           |
+| `ims-ldi-engineering-analytics` | IMS LDI - Engineering Analytics & SPC  | Cpk/SPC ranking, RCA Truth Test, PE/JE distributions                                                                                                                                                     |
+| `ims-ldi-machine-snapshot`      | IMS LDI - Machine Snapshot             | Per-event drill-down (click an alarm/log to inspect)                                                                                                                                                     |
+| `ldi-data-readiness`            | LDI Data Readiness & Integration Gaps  | Self-auditing data-quality dashboard (board-key duplication, coverage %, alarm-master match rate)                                                                                                        |
+| `ims-easy-overview`             | IMS Easy Overview                      | Zero-config whole-fleet glance built entirely from shared views/functions (`v_ldi_machine_latest_full`, `v_ldi_alarm_context`, `f_ldi_yield_pct`, `v_machine_spc_fleet`) -- no template variables to set |
+| `ims-engineering`               | IMS Engineering Drill-Down             | Infra-focused: CPU/RAM/storage/network per server, LDI throughput/quality (legacy pipeline)                                                                                                              |
+| `ims-capacity`                  | IMS AIOps & Capacity Forecast          | Days-until-full/saturation regression forecasts (infra)                                                                                                                                                  |
+| `ims-meta-monitoring`           | IMS Pipeline Health & Meta-Monitoring  | Ingestion pipeline's own health (rows/sec, batch success rate, retry queue depth)                                                                                                                        |
 
 NOC Overview was split from LDI/manufacturing content this session (it previously duplicated Manufacturing's Yield panel) — infrastructure and manufacturing concerns are deliberately kept on separate dashboards now, not blended on one "overview" page.
 
@@ -183,16 +184,16 @@ Documented here rather than silently left for the next person to rediscover:
 
 Five automated gates run in CI (`.github/workflows/ci.yml`), each catching a different failure class a human reviewer would otherwise have to check by hand:
 
-| Gate | Script | What it proves |
-|---|---|---|
-| Dashboard structure | `tests/lint/dashboard-linter.js` | Grid alignment, standard panel heights, kiosk no-scroll ceilings (per-dashboard, e.g. `ims-ldi-operator-andon`: 20 grid units) |
-| RCA category coverage | `tests/lint/rca-mapping-coverage.js` | ≥70% of master alarm codes are mapped to an RCA category, and every dashboard reference is valid |
-| Query budget (structural) | `tests/lint/query-budget-linter.js` | No panel range-scans raw `ldi_data` instead of the `_1m`/`_15m`/`_1h` CAGG tiers |
-| Query budget (real timing) | `tests/e2e/query-timing-check.js` | Real server-side `EXPLAIN ANALYZE` timing, P95 < 80ms, against the live DB |
-| Panel data correctness | `tests/e2e/panel-data-check.js` | Every panel's *actually-resolved* SQL runs against a live DB and returns real rows with a proper `time` column |
-| Schema drift | `scripts/migrate.sh` (asserted `Pending: 0`) | The migrations directory and the live `schema_migrations` table agree |
-| Orphan objects | `tests/lint/orphan-object-linter.js` | Every live DB table/view is referenced by at least one dashboard, alert rule, flow, or migration — not silently unused |
-| Golden-dataset SPC | `tests/e2e/golden-dataset-spc.js` | All 5 independent Cpk/Cp implementations agree with the textbook formula on a known synthetic dataset |
+| Gate                       | Script                                       | What it proves                                                                                                                 |
+| -------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Dashboard structure        | `tests/lint/dashboard-linter.js`             | Grid alignment, standard panel heights, kiosk no-scroll ceilings (per-dashboard, e.g. `ims-ldi-operator-andon`: 20 grid units) |
+| RCA category coverage      | `tests/lint/rca-mapping-coverage.js`         | ≥70% of master alarm codes are mapped to an RCA category, and every dashboard reference is valid                               |
+| Query budget (structural)  | `tests/lint/query-budget-linter.js`          | No panel range-scans raw `ldi_data` instead of the `_1m`/`_15m`/`_1h` CAGG tiers                                               |
+| Query budget (real timing) | `tests/e2e/query-timing-check.js`            | Real server-side `EXPLAIN ANALYZE` timing, P95 < 80ms, against the live DB                                                     |
+| Panel data correctness     | `tests/e2e/panel-data-check.js`              | Every panel's _actually-resolved_ SQL runs against a live DB and returns real rows with a proper `time` column                 |
+| Schema drift               | `scripts/migrate.sh` (asserted `Pending: 0`) | The migrations directory and the live `schema_migrations` table agree                                                          |
+| Orphan objects             | `tests/lint/orphan-object-linter.js`         | Every live DB table/view is referenced by at least one dashboard, alert rule, flow, or migration — not silently unused         |
+| Golden-dataset SPC         | `tests/e2e/golden-dataset-spc.js`            | All 5 independent Cpk/Cp implementations agree with the textbook formula on a known synthetic dataset                          |
 
 Color tokens (`GRAFANA_DESIGN_SYSTEM.md`): every threshold step and value-mapping color that conveys machine/alarm status uses one of 5 tokens — OK `#22C55E`, Warning `#F59E0B`, Critical `#EF4444`, No Data `#64748B`, Info `#2563EB`. Decorative colors (graph-series differentiation, backgrounds, borders, brand accents) are intentionally exempt — a dashboard can't be built from 5 saturated colors alone.
 
@@ -202,13 +203,13 @@ Not yet a CI gate: true visual/screenshot regression (baseline-image diffing). `
 
 ## References
 
-| Resource | Link |
-|---|---|
-| TimescaleDB Documentation | https://docs.timescale.com/ |
-| Node-RED Documentation | https://nodered.org/docs/ |
-| Grafana Documentation | https://grafana.com/docs/ |
-| Prometheus Documentation | https://prometheus.io/docs/ |
+| Resource                   | Link                                                      |
+| -------------------------- | --------------------------------------------------------- |
+| TimescaleDB Documentation  | https://docs.timescale.com/                               |
+| Node-RED Documentation     | https://nodered.org/docs/                                 |
+| Grafana Documentation      | https://grafana.com/docs/                                 |
+| Prometheus Documentation   | https://prometheus.io/docs/                               |
 | Alertmanager Documentation | https://prometheus.io/docs/alerting/latest/configuration/ |
-| LINE Messaging API | https://developers.line.biz/en/docs/messaging-api/ |
+| LINE Messaging API         | https://developers.line.biz/en/docs/messaging-api/        |
 
 Related docs in this repo: `GRAFANA_DESIGN_SYSTEM.md` (color/token conventions), `../operations/TROUBLESHOOTING.md`, `../audits/IMS-SYSTEM-AUDIT-REPORT.md` (the audit that prompted this rewrite).

@@ -32,12 +32,12 @@ Every adapter's job is the same regardless of protocol: get telemetry and alarm 
 
 No code exists for this adapter. If a future process type's equipment actually speaks SECS/GEM, it would need to satisfy this contract to plug into the same registry and downstream views/dashboards without changing anything else:
 
-| EAP concept | What Adapter 3 would need to provide | Maps to (existing pattern) |
-|---|---|---|
-| **Equipment model registration** | Register the tool as a `public.devices` row with a `device_id`, appropriate `device_type`, and a `process_type` (per `MANUFACTURING_DOMAIN.md`) — same identity contract as Adapters 1 and 2. | `public.devices` |
-| **Event report → alarm mapping** | Translate SECS/GEM event reports (collection event IDs, CEIDs) into rows in that process's alarm master + alarm log table, keyed by `device_id` — same shape as `ldi_alarm_ms_code`/`ldi_alarm_log`. | Adapter 2's alarm path |
-| **Data collection plan → telemetry mapping** | Translate SECS/GEM SVID/ECID variable reports into rows in that process's telemetry hypertable, keyed by `(device_id, time)` — same shape as `ldi_data`. | Adapter 2's telemetry path |
-| **Versioning** | Ship as an explicitly versioned contract (e.g. `adapter-contract-v1`) per `IMS_MANUFACTURING_PLATFORM_V2.md` §7 — the one integration point in this repo where a breaking change wouldn't be caught by any existing linter or test. | New requirement, no existing analog |
+| EAP concept                                  | What Adapter 3 would need to provide                                                                                                                                                                                                | Maps to (existing pattern)          |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| **Equipment model registration**             | Register the tool as a `public.devices` row with a `device_id`, appropriate `device_type`, and a `process_type` (per `MANUFACTURING_DOMAIN.md`) — same identity contract as Adapters 1 and 2.                                       | `public.devices`                    |
+| **Event report → alarm mapping**             | Translate SECS/GEM event reports (collection event IDs, CEIDs) into rows in that process's alarm master + alarm log table, keyed by `device_id` — same shape as `ldi_alarm_ms_code`/`ldi_alarm_log`.                                | Adapter 2's alarm path              |
+| **Data collection plan → telemetry mapping** | Translate SECS/GEM SVID/ECID variable reports into rows in that process's telemetry hypertable, keyed by `(device_id, time)` — same shape as `ldi_data`.                                                                            | Adapter 2's telemetry path          |
+| **Versioning**                               | Ship as an explicitly versioned contract (e.g. `adapter-contract-v1`) per `IMS_MANUFACTURING_PLATFORM_V2.md` §7 — the one integration point in this repo where a breaking change wouldn't be caught by any existing linter or test. | New requirement, no existing analog |
 
 Building Adapter 3 is out of scope until a real SECS/GEM-speaking tool needs to be connected — there is nothing to integrate against or test today, and a simulated SECS/GEM stack would be speculative infrastructure with no requirement behind it.
 

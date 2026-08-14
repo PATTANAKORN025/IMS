@@ -23,13 +23,13 @@ A Lift of 1.0 means the alarm has no predictive relationship to the parameter (i
 
 ## Two views, two purposes — don't confuse them
 
-| | `v_ldi_rca_recent_window` | `v_ldi_rca_truth_test` |
-|---|---|---|
-| **Scope** | Rolling 24-hour window | Full dataset, all time |
-| **Purpose** | Operational KPI — "is RCA correlation still holding up right now" | Validation/truth-test — "does the simulator's fault-injection logic actually produce the claimed correlations" |
-| **VACUUM included?** | No (excluded — see migration 050) | Yes |
-| **Materialized?** | Yes (migration 064, 60s refresh) | Yes (migration 064, 60s refresh) |
-| **Where it's read** | LDI Manufacturing's "Top Correlated Alarms (24h)" panel | LDI Engineering Analytics's "RCA Truth Test" panel |
+|                      | `v_ldi_rca_recent_window`                                         | `v_ldi_rca_truth_test`                                                                                         |
+| -------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| **Scope**            | Rolling 24-hour window                                            | Full dataset, all time                                                                                         |
+| **Purpose**          | Operational KPI — "is RCA correlation still holding up right now" | Validation/truth-test — "does the simulator's fault-injection logic actually produce the claimed correlations" |
+| **VACUUM included?** | No (excluded — see migration 050)                                 | Yes                                                                                                            |
+| **Materialized?**    | Yes (migration 064, 60s refresh)                                  | Yes (migration 064, 60s refresh)                                                                               |
+| **Where it's read**  | LDI Manufacturing's "Top Correlated Alarms (24h)" panel           | LDI Engineering Analytics's "RCA Truth Test" panel                                                             |
 
 ## Current live figures (snapshot, 2026-08-10 — see caveat below)
 

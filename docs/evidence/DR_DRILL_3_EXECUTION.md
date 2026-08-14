@@ -3,6 +3,7 @@
 > **Evidence:** Proof of system recoverability within the 15-minute RTO (Recovery Time Objective).
 
 ## Drill Parameters
+
 - **Objective:** Simulate catastrophic failure of the primary TimescaleDB master node and execute full restore from PgBackRest.
 - **RTO Target:** 15 Minutes
 - **RPO Target:** 1 Hour (Data loss window)
@@ -28,9 +29,11 @@
 ```
 
 ## Results
+
 - **Actual RTO:** 12 Minutes (Pass)
 - **Actual RPO:** 5 Minutes (Pass)
 - **Data Integrity:** Validated. No corruption detected in chunk compression blocks.
 
 ## Conclusion
+
 Drill 3 demonstrates that the system meets and exceeds the strict Recovery Time Objective (RTO) required for a tier-1 manufacturing platform.

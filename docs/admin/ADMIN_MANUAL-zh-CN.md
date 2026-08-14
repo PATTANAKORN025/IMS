@@ -32,20 +32,20 @@
 
 系统基于Docker Compose，共12个服务 (11个常驻服务 + 1个一次性迁移任务):
 
-| Container | Service | Port | Purpose |
-|---|---|---|---|
-| `ims-timescaledb` | TimescaleDB | 5432 (loopback) | 时序数据库 |
-| `ims-pgbouncer` | PgBouncer | 5432 (internal) | 连接池 |
-| `ims-db-migrate` | Migration runner | — (one-shot) | 执行 `database/migrations/*.sql`，阻塞 `node-red` 和 `alarm-api` 启动 |
-| `ims-node-red` | Node-RED | 1880 (loopback) | 数据管道 |
-| `ims-proxy` | nginx proxy | **3000** | Grafana和`alarm-api`的唯一入口。拦截`/alarm-api/`通过`auth_request` |
-| `ims-grafana` | Grafana | internal | 仪表盘 — 仅通过 `ims-proxy` 访问 |
-| `ims-alarm-api` | alarm-api | internal | 写入 `public.ldi_alarm_lifecycle`。仅通过 `ims-proxy` 访问 |
-| `ims-grafana-renderer` | Grafana Renderer | 8081 (internal) | 渲染PNG告警 |
-| `ims-prometheus` | Prometheus | 9090 (loopback) | 监控与告警 |
-| `ims-alertmanager` | Alertmanager | 9093 (loopback) | 告警路由 |
-| `ims-blackbox` | Blackbox Exporter | 9115 (loopback) | SLA拨测 |
-| `ims-snmpsim` | SNMP Simulator | 161/udp | 开发测试 |
+| Container              | Service           | Port            | Purpose                                                               |
+| ---------------------- | ----------------- | --------------- | --------------------------------------------------------------------- |
+| `ims-timescaledb`      | TimescaleDB       | 5432 (loopback) | 时序数据库                                                            |
+| `ims-pgbouncer`        | PgBouncer         | 5432 (internal) | 连接池                                                                |
+| `ims-db-migrate`       | Migration runner  | — (one-shot)    | 执行 `database/migrations/*.sql`，阻塞 `node-red` 和 `alarm-api` 启动 |
+| `ims-node-red`         | Node-RED          | 1880 (loopback) | 数据管道                                                              |
+| `ims-proxy`            | nginx proxy       | **3000**        | Grafana和`alarm-api`的唯一入口。拦截`/alarm-api/`通过`auth_request`   |
+| `ims-grafana`          | Grafana           | internal        | 仪表盘 — 仅通过 `ims-proxy` 访问                                      |
+| `ims-alarm-api`        | alarm-api         | internal        | 写入 `public.ldi_alarm_lifecycle`。仅通过 `ims-proxy` 访问            |
+| `ims-grafana-renderer` | Grafana Renderer  | 8081 (internal) | 渲染PNG告警                                                           |
+| `ims-prometheus`       | Prometheus        | 9090 (loopback) | 监控与告警                                                            |
+| `ims-alertmanager`     | Alertmanager      | 9093 (loopback) | 告警路由                                                              |
+| `ims-blackbox`         | Blackbox Exporter | 9115 (loopback) | SLA拨测                                                               |
+| `ims-snmpsim`          | SNMP Simulator    | 161/udp         | 开发测试                                                              |
 
 > `ims-db-migrate` 成功退出状态为0。`docker compose ps` 显示 `Exited (0)` 是正常的。在此完成前 `node-red` 和 `alarm-api` 不会启动。
 
@@ -80,7 +80,9 @@ docker compose logs -f --tail 50 pgbouncer
 docker stats --no-stream
 ```
 
-> **Note:** 执行 `docker compose down -v` 后，需等待40秒以确保所有服务启动完毕再进行检查。
+> [!NOTE]
+>
+> > 执行 `docker compose down -v` 后，需等待40秒以确保所有服务启动完毕再进行检查。
 
 ### Service Health Checks
 
@@ -120,12 +122,12 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c \
 
 > **CRITICAL:** 部署到生产环境前，必须修改所有默认凭证。
 
-| Credential | Default Value | Location | Action Required |
-|---|---|---|---|
-| `INGEST_API_KEY` | `ims-secret-key` | `.env` + `docker-compose.yaml` | **CHANGE** — 防止伪造数据注入 |
-| `POSTGRES_PASSWORD` | `change-me-please` | `.env` | **CHANGE** — 数据库超级用户权限 |
-| `GRAFana_ADMIN_PASSWORD` | `change-me-please` | `.env` | **CHANGE** — 仪表盘管理员权限 |
-| `ALARM_API_DB_PASSWORD` | `change-me-please` | `.env` | **CHANGE** — `alarm_api_writer` 角色凭证 |
+| Credential               | Default Value      | Location                       | Action Required                          |
+| ------------------------ | ------------------ | ------------------------------ | ---------------------------------------- |
+| `INGEST_API_KEY`         | `ims-secret-key`   | `.env` + `docker-compose.yaml` | **CHANGE** — 防止伪造数据注入            |
+| `POSTGRES_PASSWORD`      | `change-me-please` | `.env`                         | **CHANGE** — 数据库超级用户权限          |
+| `GRAFana_ADMIN_PASSWORD` | `change-me-please` | `.env`                         | **CHANGE** — 仪表盘管理员权限            |
+| `ALARM_API_DB_PASSWORD`  | `change-me-please` | `.env`                         | **CHANGE** — `alarm_api_writer` 角色凭证 |
 
 ### How to Rotate
 
@@ -274,12 +276,12 @@ docker compose exec prometheus promtool check rules /etc/prometheus/rules/ims-al
 
 系统包含自动抑制规则:
 
-| Source Alert | Suppressed Alerts | Scope |
-|---|---|---|
-| `InterfaceDown` (critical) | 所有 Warning | Same machine |
-| `ServiceDown` (critical) | 所有 Warning | Same machine |
-| `NodeREDDown` | `TelemetryGap` | Global |
-| `Critical` | `Warning`, `Info` | Same alertname + machine |
+| Source Alert               | Suppressed Alerts | Scope                    |
+| -------------------------- | ----------------- | ------------------------ |
+| `InterfaceDown` (critical) | 所有 Warning      | Same machine             |
+| `ServiceDown` (critical)   | 所有 Warning      | Same machine             |
+| `NodeREDDown`              | `TelemetryGap`    | Global                   |
+| `Critical`                 | `Warning`, `Info` | Same alertname + machine |
 
 ---
 
@@ -287,14 +289,14 @@ docker compose exec prometheus promtool check rules /etc/prometheus/rules/ims-al
 
 ### Common Issues & Solutions
 
-| Issue | Cause | Fix |
-|---|---|---|
-| Grafana "No Data" | PgBouncer 连接满, 数据库故障 | `docker restart ims-pgbouncer`, 检查磁盘 |
-| 告警未发送至聊天软件 | Webhook 配置丢失 | 检查 Node-RED 日志 (`POST/alert-webhook`) |
-| 吞吐量飙升 Tbps | 32位计数器溢出 | 检查设备是否支持 64-bit HC |
-| Node-RED 无法启动 | Flow JSON 语法错误 | `docker compose logs --tail=50 node-red` |
-| 连续聚合表无数据 | 需要手动刷新 | `CALL refresh_continuous_aggregate('sys_hourly', NULL, NULL);` |
-| 容器持续 "Restarting" | 配置错误, 端口冲突 | 查看对应容器日志 |
+| Issue                 | Cause                        | Fix                                                            |
+| --------------------- | ---------------------------- | -------------------------------------------------------------- |
+| Grafana "No Data"     | PgBouncer 连接满, 数据库故障 | `docker restart ims-pgbouncer`, 检查磁盘                       |
+| 告警未发送至聊天软件  | Webhook 配置丢失             | 检查 Node-RED 日志 (`POST/alert-webhook`)                      |
+| 吞吐量飙升 Tbps       | 32位计数器溢出               | 检查设备是否支持 64-bit HC                                     |
+| Node-RED 无法启动     | Flow JSON 语法错误           | `docker compose logs --tail=50 node-red`                       |
+| 连续聚合表无数据      | 需要手动刷新                 | `CALL refresh_continuous_aggregate('sys_hourly', NULL, NULL);` |
+| 容器持续 "Restarting" | 配置错误, 端口冲突           | 查看对应容器日志                                               |
 
 ### SRE Verification Protocol
 
@@ -424,6 +426,6 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c "SELECT query, calls
 
 **IMS Admin Manual — Version 1.1**
 
-*For IT Team & MIS-G*
+_For IT Team & MIS-G_
 
 </div>

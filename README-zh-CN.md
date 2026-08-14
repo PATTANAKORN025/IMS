@@ -33,8 +33,6 @@
 
 性能依赖于 TimescaleDB 的连续聚合 (Continuous Aggregates) 进行仪表板渲染，以及基于状态的 Node-RED 管道进行数据摄取。
 
-
-
 <table style="border:none; border-collapse:collapse; width:100%;">
 
 <tr>
@@ -109,30 +107,32 @@ make up      # docker compose up -d (启动包含模拟器的堆栈)
 sleep 40 && make verify
 open http://localhost:3000
 ```
+
 > **已验证：** `docker compose ps` 于 2026-08-13 运行，已存档于 [`docs/evidence/runtime/compose-ps-20260813.txt`](docs/evidence/runtime/compose-ps-20260813.txt)。
 
 ### 已知限制
+
 - 模拟的 LDI 工作负载每分钟生成约 10-15 行数据；负载测试需要运行显式的 K6 压力测试框架来模拟生产环境的 1000 节点规模。
 - Nginx 反向代理配置为 `localhost`，在生产环境中需要手动部署证书。
 - 除非在 `.env` 文件中提供显式令牌，否则 Grafana Alertmanager 集成 (LINE/Teams) 将静默失败。
 
 ### 验证与证据
-每一项架构声明都由持续集成或显式测试脚本支持。有关负载测试结果、视觉回归证据和灾难恢复验证，请参阅 **[证据索引](docs/evidence/INDEX.md)**。
 
+每一项架构声明都由持续集成或显式测试脚本支持。有关负载测试结果、视觉回归证据和灾难恢复验证，请参阅 **[证据索引](docs/evidence/INDEX.md)**。
 
 <details>
 <summary><b>可用命令</b></summary>
 
-| 命令 | 描述 |
-|---------|-------------|
-| `make up` | 启动所有服务（带 SNMP 模拟器的开发模式） |
-| `make down` | 停止所有服务 |
-| `make verify` | 完整的系统健康检查（容器、数据库、管道、警报） |
-| `make test-unit` | 运行单元测试（18 个解析器 + 计数器测试） |
-| `make test-load` | 运行 K6 管道压力测试（50→200 个虚拟用户） |
-| `make test-visual` | 通过 Playwright 捕获仪表板屏幕截图 |
+| 命令                       | 描述                                             |
+| -------------------------- | ------------------------------------------------ |
+| `make up`                  | 启动所有服务（带 SNMP 模拟器的开发模式）         |
+| `make down`                | 停止所有服务                                     |
+| `make verify`              | 完整的系统健康检查（容器、数据库、管道、警报）   |
+| `make test-unit`           | 运行单元测试（18 个解析器 + 计数器测试）         |
+| `make test-load`           | 运行 K6 管道压力测试（50→200 个虚拟用户）        |
+| `make test-visual`         | 通过 Playwright 捕获仪表板屏幕截图               |
 | `make validate-dashboards` | 检查仪表板 JSON 以防止网格重叠和十六进制颜色损坏 |
-| `make backup` | 数据库备份 |
+| `make backup`              | 数据库备份                                       |
 
 </details>
 
@@ -216,26 +216,26 @@ export GRAFANA_API_KEY="your-admin-api-key"
 open "http://localhost:3000/playlists/play/1?kiosk=tv&autofitpanels"
 ```
 
-| 模式 | URL | 用例 |
-|------|-----|----------|
-| **TV 模式** | `?kiosk=tv&autofitpanels` | NOC 大屏显示 — 隐藏所有 UI 框架，自动适应面板大小 |
-| **纯净模式** | `?kiosk` | 演示模式 — 隐藏侧边栏 + 顶部导航 |
-| **嵌入模式** | `?kiosk=1` | iframe 嵌入 — 隐藏所有内容 |
+| 模式         | URL                       | 用例                                              |
+| ------------ | ------------------------- | ------------------------------------------------- |
+| **TV 模式**  | `?kiosk=tv&autofitpanels` | NOC 大屏显示 — 隐藏所有 UI 框架，自动适应面板大小 |
+| **纯净模式** | `?kiosk`                  | 演示模式 — 隐藏侧边栏 + 顶部导航                  |
+| **嵌入模式** | `?kiosk=1`                | iframe 嵌入 — 隐藏所有内容                        |
 
 ---
 
 <details>
 <summary><b>技术栈</b></summary>
 
-| 层级 | 技术 | 目的 |
-|-------|-----------|---------|
-| **编排** | Docker Compose | 具有开发/生产覆盖配置的 7 服务容器堆栈 |
-| **采集** | Node-RED + net-snmp | 顺序异步批量 SNMP 遍历，5 线程并行遍历器 |
-| **数据库** | TimescaleDB (PostgreSQL) | 具有连续聚合 (Continuous Aggregates) 的超表，7 天后达到 90% 压缩率 |
-| **可视化** | Grafana 13.1.1 | 12 个仪表板（4 个基础设施 + 8 个制造），状态时间线异常 |
-| **警报** | Prometheus + Alertmanager | 指标抓取，抑制规则，LINE Messaging API + MS Teams webhooks |
-| **负载测试** | K6 | 管道压力测试（50→200 虚拟用户），阈值 p95<500ms |
-| **SLA 探测** | Blackbox Exporter | HTTP/TCP/ICMP 端点监控 |
+| 层级         | 技术                      | 目的                                                               |
+| ------------ | ------------------------- | ------------------------------------------------------------------ |
+| **编排**     | Docker Compose            | 具有开发/生产覆盖配置的 7 服务容器堆栈                             |
+| **采集**     | Node-RED + net-snmp       | 顺序异步批量 SNMP 遍历，5 线程并行遍历器                           |
+| **数据库**   | TimescaleDB (PostgreSQL)  | 具有连续聚合 (Continuous Aggregates) 的超表，7 天后达到 90% 压缩率 |
+| **可视化**   | Grafana 13.1.1            | 12 个仪表板（4 个基础设施 + 8 个制造），状态时间线异常             |
+| **警报**     | Prometheus + Alertmanager | 指标抓取，抑制规则，LINE Messaging API + MS Teams webhooks         |
+| **负载测试** | K6                        | 管道压力测试（50→200 虚拟用户），阈值 p95<500ms                    |
+| **SLA 探测** | Blackbox Exporter         | HTTP/TCP/ICMP 端点监控                                             |
 
 </details>
 
@@ -256,7 +256,7 @@ open "http://localhost:3000/playlists/play/1?kiosk=tv&autofitpanels"
 <details>
 <summary><b>项目结构</b></summary>
 
-```
+```text
 IMS/
 ├── monitoring/grafana/        # Grafana 仪表板 + 预配
 │  ├── dashboards/          #  10 个 JSON 仪表板文件（事实来源）
@@ -298,62 +298,62 @@ IMS/
 
 ### <img src="docs/assets/icons/briefcase.svg" width="18" height="18" align="center" /> 高管与业务战略 (Executive & Business Strategy)
 
-| 文档 | 描述 |
-|:---:|---|
-| [**Business Value & ROI**](docs/business/BUSINESS_VALUE_ROI.md) | 高管摘要、成本节约、缩短故障恢复时间 (MTTR) 及战略影响 |
-| [**平台手册（从这里开始）**](docs/architecture/IMS_PLATFORM_BOOK.md) | 整个文档集的导航中心，术语词汇表 |
-| [**产品背景**](docs/product/PRODUCT.md) | 产品目的、目标受众和定位 |
+|                                 文档                                 | 描述                                                   |
+| :------------------------------------------------------------------: | ------------------------------------------------------ |
+|   [**Business Value & ROI**](docs/business/BUSINESS_VALUE_ROI.md)    | 高管摘要、成本节约、缩短故障恢复时间 (MTTR) 及战略影响 |
+| [**平台手册（从这里开始）**](docs/architecture/IMS_PLATFORM_BOOK.md) | 整个文档集的导航中心，术语词汇表                       |
+|               [**产品背景**](docs/product/PRODUCT.md)                | 产品目的、目标受众和定位                               |
 
 ### <img src="docs/assets/icons/factory.svg" width="18" height="18" align="center" /> 制造与 LDI 智能 (Manufacturing & LDI Intelligence)
 
-| 文档 | 描述 |
-|:---:|---|
+|                                  文档                                  | 描述                                          |
+| :--------------------------------------------------------------------: | --------------------------------------------- |
 | [**制造平台计划**](docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md) | 基础设施/制造领域分离，验证/浸泡/灾备演练计划 |
-| [**制造域**](docs/architecture/MANUFACTURING_DOMAIN.md) | LDI 模式/仪表板模式及接入流程 |
-| [**LDI SPC 指南**](docs/architecture/LDI_SPC_GUIDE.md) | 过程能力 (Cpk) 方法论与公式 |
-| [**LDI RCA 指南**](docs/architecture/LDI_RCA_GUIDE.md) | 根本原因关联（提升度/置信度）方法论 |
-| [**LDI 验证协议**](docs/operations/LDI_VALIDATION_PROTOCOL.md) | 4 阶段生产签字验收程序 |
+|        [**制造域**](docs/architecture/MANUFACTURING_DOMAIN.md)         | LDI 模式/仪表板模式及接入流程                 |
+|         [**LDI SPC 指南**](docs/architecture/LDI_SPC_GUIDE.md)         | 过程能力 (Cpk) 方法论与公式                   |
+|         [**LDI RCA 指南**](docs/architecture/LDI_RCA_GUIDE.md)         | 根本原因关联（提升度/置信度）方法论           |
+|     [**LDI 验证协议**](docs/operations/LDI_VALIDATION_PROTOCOL.md)     | 4 阶段生产签字验收程序                        |
 
 ### <img src="docs/assets/icons/layers.svg" width="18" height="18" align="center" />️ 核心架构与安全 (Core Architecture & Security)
 
-| 文档 | 描述 |
-|:---:|---|
-| [**架构**](docs/architecture/ARCHITECTURE.md) | 系统上下文、ADRs、流媒体架构、CAGG 策略 |
-| [**可视化架构**](docs/architecture/ARCHITECTURE_DIAGRAM.md) | Mermaid C4 模型图和顺序流 |
-| [**数据流**](docs/architecture/DATA_FLOW.md) | 端到端管道图，真实的 CAGG 汇总链 |
-| [**数据库模式**](docs/architecture/DATABASE_SCHEMA.md) | 自动生成的表/列/视图参考（CI 检查验证） |
-| [**安全模型**](docs/architecture/SECURITY_MODEL.md) | 信任边界、各适配器身份验证及 RBAC |
-| [**设备集成 (EAP)**](docs/architecture/EAP_ARCHITECTURE.md) | SNMP、HTTP/JSON 以及 SECS/GEM 适配器契约 |
-| [**所有权**](docs/architecture/OWNERSHIP.md) | 通过 `CODEOWNERS` 强制执行的领域边界 |
-| [**设计系统**](docs/architecture/GRAFANA_DESIGN_SYSTEM.md) | 语义调色板、排版、阈值契约 |
-| [**仪表板清单**](docs/architecture/DASHBOARD_INVENTORY.md) | 自动生成的仪表板/面板计数表（CI 检查验证） |
+|                            文档                             | 描述                                       |
+| :---------------------------------------------------------: | ------------------------------------------ |
+|        [**架构**](docs/architecture/ARCHITECTURE.md)        | 系统上下文、ADRs、流媒体架构、CAGG 策略    |
+| [**可视化架构**](docs/architecture/ARCHITECTURE_DIAGRAM.md) | Mermaid C4 模型图和顺序流                  |
+|        [**数据流**](docs/architecture/DATA_FLOW.md)         | 端到端管道图，真实的 CAGG 汇总链           |
+|   [**数据库模式**](docs/architecture/DATABASE_SCHEMA.md)    | 自动生成的表/列/视图参考（CI 检查验证）    |
+|     [**安全模型**](docs/architecture/SECURITY_MODEL.md)     | 信任边界、各适配器身份验证及 RBAC          |
+| [**设备集成 (EAP)**](docs/architecture/EAP_ARCHITECTURE.md) | SNMP、HTTP/JSON 以及 SECS/GEM 适配器契约   |
+|        [**所有权**](docs/architecture/OWNERSHIP.md)         | 通过 `CODEOWNERS` 强制执行的领域边界       |
+| [**设计系统**](docs/architecture/GRAFANA_DESIGN_SYSTEM.md)  | 语义调色板、排版、阈值契约                 |
+| [**仪表板清单**](docs/architecture/DASHBOARD_INVENTORY.md)  | 自动生成的仪表板/面板计数表（CI 检查验证） |
 
 ### ️ 运维与 SRE 手册 (Operations & SRE Playbooks)
 
-| 文档 | 描述 |
-|:---:|---|
-| [**用户手册**](docs/user/USER_MANUAL.md) | 仪表板指南、指标参考、警报响应手册 |
-| [**管理员手册**](docs/admin/ADMIN_MANUAL.md) | 容器运维、迁移、备份与恢复 |
-| [**操作员 SOP**](docs/operations/SOP_OPERATOR.md) | 工厂车间 / 一级 NOC 标准操作程序 |
-| [**故障排除与警报**](docs/operations/ALARM_PLAYBOOK.md) | 警报代码解决和故障排除手册 |
-| [**事件响应**](docs/operations/INCIDENT_RESPONSE.md) | 严重性框架 + 真实的已解决事件示例 |
-| [**警报严重性指南**](docs/architecture/ALARM_SEVERITY_GUIDE.md) | 4 层严重性分类，ISA-18.2 范围 |
-| [**备份与恢复**](docs/operations/BACKUP_RESTORE.md) | 真实的 dr-test.sh 证据、程序及注意事项 |
-| [**灾备演练计划**](docs/operations/DR_TEST_PLAN.md) | 3 项演练灾难恢复测试计划 |
-| [**数据保留**](docs/architecture/DATA_RETENTION.md) | 实时保留/压缩策略 |
-| [**发布清单**](docs/operations/RELEASE_CHECKLIST.md) | 标记发布版本前需要验证的内容 |
-| [**故障排除**](docs/operations/TROUBLESHOOTING.md) | 常见问题、调试命令、恢复程序 |
+|                              文档                               | 描述                                   |
+| :-------------------------------------------------------------: | -------------------------------------- |
+|            [**用户手册**](docs/user/USER_MANUAL.md)             | 仪表板指南、指标参考、警报响应手册     |
+|          [**管理员手册**](docs/admin/ADMIN_MANUAL.md)           | 容器运维、迁移、备份与恢复             |
+|        [**操作员 SOP**](docs/operations/SOP_OPERATOR.md)        | 工厂车间 / 一级 NOC 标准操作程序       |
+|     [**故障排除与警报**](docs/operations/ALARM_PLAYBOOK.md)     | 警报代码解决和故障排除手册             |
+|      [**事件响应**](docs/operations/INCIDENT_RESPONSE.md)       | 严重性框架 + 真实的已解决事件示例      |
+| [**警报严重性指南**](docs/architecture/ALARM_SEVERITY_GUIDE.md) | 4 层严重性分类，ISA-18.2 范围          |
+|       [**备份与恢复**](docs/operations/BACKUP_RESTORE.md)       | 真实的 dr-test.sh 证据、程序及注意事项 |
+|       [**灾备演练计划**](docs/operations/DR_TEST_PLAN.md)       | 3 项演练灾难恢复测试计划               |
+|       [**数据保留**](docs/architecture/DATA_RETENTION.md)       | 实时保留/压缩策略                      |
+|      [**发布清单**](docs/operations/RELEASE_CHECKLIST.md)       | 标记发布版本前需要验证的内容           |
+|       [**故障排除**](docs/operations/TROUBLESHOOTING.md)        | 常见问题、调试命令、恢复程序           |
 
 ### <img src="docs/assets/icons/users.svg" width="18" height="18" align="center" /> 社区与参考 (Community & Reference)
 
-| 文档 | 描述 |
-|:---:|---|
-| [**视频入职脚本**](docs/product/ONBOARDING_SCRIPT.md) | 录制入职教学视频的故事板和指南 |
-| [**贡献**](CONTRIBUTING.md) | 开发工作流、分支命名、提交约定 |
-| [**行为准则**](CODE_OF_CONDUCT.md) | 社区标准及其执行 |
-| [**安全政策**](SECURITY.md) | 漏洞安全报告 |
-| [**漏洞报告**](.github/ISSUE_TEMPLATE/bug_report.md) | 报告错误或回归 |
-| [**功能请求**](.github/ISSUE_TEMPLATE/feature_request.md) | 建议新功能 |
+|                           文档                            | 描述                           |
+| :-------------------------------------------------------: | ------------------------------ |
+|   [**视频入职脚本**](docs/product/ONBOARDING_SCRIPT.md)   | 录制入职教学视频的故事板和指南 |
+|                [**贡献**](CONTRIBUTING.md)                | 开发工作流、分支命名、提交约定 |
+|            [**行为准则**](CODE_OF_CONDUCT.md)             | 社区标准及其执行               |
+|                [**安全政策**](SECURITY.md)                | 漏洞安全报告                   |
+|   [**漏洞报告**](.github/ISSUE_TEMPLATE/bug_report.md)    | 报告错误或回归                 |
+| [**功能请求**](.github/ISSUE_TEMPLATE/feature_request.md) | 建议新功能                     |
 
 </div>
 

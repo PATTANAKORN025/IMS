@@ -6,11 +6,11 @@ This document serves as the central registry linking architectural claims to ver
 
 ## Core Capabilities Evidence
 
-| Capability Claim | Evidence Location | Description |
-|---|---|---|
-| **Local Simulator Environment** | [`runtime/compose-ps-20260813.txt`](runtime/compose-ps-20260813.txt) | Output of `docker compose ps` verifying that the system runs completely contained using `ims-snmpsim` without external production dependencies. |
-| **Telemetry Ingestion via Node-RED** | [`runtime/nodered-ingestion-20260813.txt`](runtime/nodered-ingestion-20260813.txt) | Log excerpt showing successful `Batch INSERT` into `sys_metrics` and `ldi_alarm_log` from Node-RED bulk SNMP polling. |
-| **Continuous Aggregation** | [`runtime/cagg-policies-20260813.txt`](runtime/cagg-policies-20260813.txt) | Output of the TimescaleDB Continuous Aggregates registry proving hourly, daily, and weekly rollups exist in the database. |
+| Capability Claim                     | Evidence Location                                                                  | Description                                                                                                                                     |
+| ------------------------------------ | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Local Simulator Environment**      | [`runtime/compose-ps-20260813.txt`](runtime/compose-ps-20260813.txt)               | Output of `docker compose ps` verifying that the system runs completely contained using `ims-snmpsim` without external production dependencies. |
+| **Telemetry Ingestion via Node-RED** | [`runtime/nodered-ingestion-20260813.txt`](runtime/nodered-ingestion-20260813.txt) | Log excerpt showing successful `Batch INSERT` into `sys_metrics` and `ldi_alarm_log` from Node-RED bulk SNMP polling.                           |
+| **Continuous Aggregation**           | [`runtime/cagg-policies-20260813.txt`](runtime/cagg-policies-20260813.txt)         | Output of the TimescaleDB Continuous Aggregates registry proving hourly, daily, and weekly rollups exist in the database.                       |
 
 ## Verification Procedures
 

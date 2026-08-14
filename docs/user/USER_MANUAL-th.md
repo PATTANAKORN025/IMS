@@ -31,18 +31,18 @@
 
 ### การเข้าถึงระบบ
 
-| บริการ | URL | ข้อมูลการเข้าสู่ระบบ |
-|---|---|---|
-| **Grafana Dashboard** | `http://localhost:3000` | admin / admin |
-| **Node-RED Editor** | `http://localhost:1880` | (ตามที่ตั้งค่าไว้) |
-| **Prometheus** | `http://localhost:9090` | — |
-| **Alertmanager** | `http://localhost:9093` | — |
+| บริการ                | URL                     | ข้อมูลการเข้าสู่ระบบ |
+| --------------------- | ----------------------- | -------------------- |
+| **Grafana Dashboard** | `http://localhost:3000` | admin / admin        |
+| **Node-RED Editor**   | `http://localhost:1880` | (ตามที่ตั้งค่าไว้)   |
+| **Prometheus**        | `http://localhost:9090` | —                    |
+| **Alertmanager**      | `http://localhost:9093` | —                    |
 
 ### ภาพรวม Dashboard
 
 เมื่อเข้าสู่ Grafana แล้ว จะพบ 12 dashboards:
 
-```
+```text
  IMS Dashboards
 ├── Infrastructure (เซิร์ฟเวอร์/เครือข่าย)
 │ ├── NOC Overview   — ภาพรวมระดับบริหารสำหรับ fleet (เฉพาะ infra -- LDI อยู่ด้านล่าง)
@@ -68,7 +68,7 @@
 
 **จุดประสงค์**: ภาพรวมสำหรับผู้บริหารและ NOC team
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │ IMS NOC Overview           │
 ├─────────────────────────────────────────────────────────────────┤
@@ -95,19 +95,19 @@
 
 **จุดประสงค์**: ภาพรวม health ของ servers ทั้งหมด — panel ประเภทนี้กระจายอยู่บน **NOC Overview** (fleet envelope) และ **Engineering Drill-Down** (per-server deep dive), ไม่ใช่ dashboard แยกต่างหาก
 
-| Panel | ตัวชี้วัด (Metrics) | การใช้สี |
-|---|---|---|
-| **CPU Usage** | `cpu_load_percent` ต่อ core | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) < 60%, ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 60-80%, > 80% |
-| **Memory Usage** | `ram_used_mb / ram_total_mb` | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) < 70%, ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 70-85%, > 85% |
-| **Disk Usage** | `disk_used_gb / disk_total_gb` | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) < 70%, ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 70-80%, > 80% |
-| **Network Traffic** | `rx_mbps`, `tx_mbps` ต่อ interface | สีน้ำเงิน = ดาวน์โหลด (RX), สีฟ้า = อัปโหลด (TX) |
-| **Temperature** | `temp_c` | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) < 65°C, ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 65-80°C, > 80°C |
+| Panel               | ตัวชี้วัด (Metrics)                | การใช้สี                                                                                                                                                   |
+| ------------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **CPU Usage**       | `cpu_load_percent` ต่อ core        | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) < 60%, ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 60-80%, > 80%    |
+| **Memory Usage**    | `ram_used_mb / ram_total_mb`       | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) < 70%, ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 70-85%, > 85%    |
+| **Disk Usage**      | `disk_used_gb / disk_total_gb`     | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) < 70%, ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 70-80%, > 80%    |
+| **Network Traffic** | `rx_mbps`, `tx_mbps` ต่อ interface | สีน้ำเงิน = ดาวน์โหลด (RX), สีฟ้า = อัปโหลด (TX)                                                                                                           |
+| **Temperature**     | `temp_c`                           | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) < 65°C, ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 65-80°C, > 80°C |
 
 ### 3. Engineering Drilldown Dashboard
 
 **จุดประสงค์**: Deep dive สำหรับ engineer แต่ละเครื่อง
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │ Engineering Drilldown — [เลือกเครื่อง ▼]      │
 ├─────────────────────────────────────────────────────────────────┤
@@ -154,12 +154,13 @@
 
 กราฟ Scatter Plot แสดง PE (Position Error) vs JE (Judgment Error) ในหน่วย µm:
 
-| โซน | สี | ความหมาย |
-|---|---|---|
-| ภายใน ±10µm | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) เขียว | ปกติ — หัวเลเซอร์ทำงานถูกต้อง |
-| ภายนอก ±10µm | แดง | ผิดปกติ — หัวเลเซอร์เริ่มมีปัญหา |
+| โซน          | สี                                                                        | ความหมาย                         |
+| ------------ | ------------------------------------------------------------------------- | -------------------------------- |
+| ภายใน ±10µm  | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) เขียว | ปกติ — หัวเลเซอร์ทำงานถูกต้อง    |
+| ภายนอก ±10µm | แดง                                                                       | ผิดปกติ — หัวเลเซอร์เริ่มมีปัญหา |
 
 **วิธีใช้:**
+
 - จุดที่อยู่ในกรอบสีเขียว = คุณภาพ PCB อยู่ในเกณฑ์
 - จุดที่กระโดดออกนอกกรอบสีแดง = ต้องตรวจสอบหัวเลเซอร์ทันที
 - ใช้คู่กับ **LDI Throughput** panel เพื่อดูว่า production rate ยังปกติหรือไม่
@@ -168,12 +169,12 @@
 
 **จุดประสงค์**: การพยากรณ์สำหรับการวางแผนทรัพยากร
 
-| Panel | แสดงข้อมูล | กรณีใช้งาน |
-|---|---|---|
-| **พยากรณ์ CPU** | ความชันของการถดถอยเชิงเส้น → คาดการณ์เวลาที่ CPU จะถึง 100% | วางแผนอัปเกรดเซิร์ฟเวอร์ |
-| **พยากรณ์ดิสก์** | คาดการณ์วันที่ดิสก์จะเต็ม | วางแผนขยายพื้นที่จัดเก็บ |
-| **แนวโน้มหน่วยความจำ** | อัตราการเพิ่มขึ้นของการใช้หน่วยความจำ | วางแผนอัปเกรด RAM |
-| **ความจุเครือข่าย** | แนวโน้มการใช้งานแบนด์วิธ | วางแผนอัปเกรดเครือข่าย |
+| Panel                  | แสดงข้อมูล                                                  | กรณีใช้งาน               |
+| ---------------------- | ----------------------------------------------------------- | ------------------------ |
+| **พยากรณ์ CPU**        | ความชันของการถดถอยเชิงเส้น → คาดการณ์เวลาที่ CPU จะถึง 100% | วางแผนอัปเกรดเซิร์ฟเวอร์ |
+| **พยากรณ์ดิสก์**       | คาดการณ์วันที่ดิสก์จะเต็ม                                   | วางแผนขยายพื้นที่จัดเก็บ |
+| **แนวโน้มหน่วยความจำ** | อัตราการเพิ่มขึ้นของการใช้หน่วยความจำ                       | วางแผนอัปเกรด RAM        |
+| **ความจุเครือข่าย**    | แนวโน้มการใช้งานแบนด์วิธ                                    | วางแผนอัปเกรดเครือข่าย   |
 
 ### 5. Easy Overview Dashboard
 
@@ -185,12 +186,12 @@
 
 **จุดประสงค์**: Dashboard หลักสำหรับสายการผลิต LDI — การออกแบบ RCA 4 ชั้น
 
-| ชั้น | เนื้อหา |
-|---|---|
-| **Executive HUD** | % Yield, เครื่องที่ทำงานอยู่, สถานะ Fleet, ค่า Cpk เฉลี่ย, Availability ของ Fleet, การแจ้งเตือนวิกฤต |
-| **Machine Telemetry** | การปฏิบัติตามเกณฑ์อุณหภูมิ/ความชื้น, ความเร็วการสแกน/ระบบสุญญากาศ, ความหนา/ปริมาณรังสี, มาตราส่วน X/Y |
+| ชั้น                   | เนื้อหา                                                                                                      |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------ |
+| **Executive HUD**      | % Yield, เครื่องที่ทำงานอยู่, สถานะ Fleet, ค่า Cpk เฉลี่ย, Availability ของ Fleet, การแจ้งเตือนวิกฤต         |
+| **Machine Telemetry**  | การปฏิบัติตามเกณฑ์อุณหภูมิ/ความชื้น, ความเร็วการสแกน/ระบบสุญญากาศ, ความหนา/ปริมาณรังสี, มาตราส่วน X/Y        |
 | **Production Context** | ตารางการผลิตสด (เครื่อง/งาน/ชิ้นส่วน/เลเยอร์/ความคืบหน้า), ความสามารถในการตรวจสอบย้อนกลับบอร์ด, เวลาต่อบอร์ด |
-| **Alarm Stream** | เหตุการณ์การแจ้งเตือนล่าสุด (50 รายการ), การแจ้งเตือนที่เกี่ยวข้องกันสูงสุด (24 ชั่วโมง, RCA) |
+| **Alarm Stream**       | เหตุการณ์การแจ้งเตือนล่าสุด (50 รายการ), การแจ้งเตือนที่เกี่ยวข้องกันสูงสุด (24 ชั่วโมง, RCA)                |
 
 ส่วนเนื้อหาเจาะลึกถูกย่อไว้โดยค่าเริ่มต้น — คลิกที่ส่วนหัวเพื่อขยาย การทำเช่นนี้ช่วยให้ภาพรวมเริ่มต้นมีเพียงส่วนข้อมูลสำหรับผู้บริหาร (Executive KPI strip) เท่านั้น
 
@@ -204,11 +205,11 @@
 
 **จุดประสงค์**: วิเคราะห์เชิงลึกสำหรับ engineer — จัดอันดับ Cpk/SPC, ทดสอบสาเหตุที่แท้จริง, การกระจายตัวของ PE/JE
 
-| ส่วน | เนื้อหา |
-|---|---|
-| **สิ่งแวดล้อม** | อุณหภูมิเทียบกับความชื้น ทุกเครื่องพร้อมกัน |
-| **กราฟควบคุม SPC** | กราฟควบคุมความหนา (เฉลี่ย ± 3σ), กราฟควบคุมมาตราส่วน X/Y |
-| **การวิเคราะห์การเปลี่ยนแปลง** | ค่าเบี่ยงเบนมาตรฐาน PE/JE ตามเครื่อง, การกระจายข้อผิดพลาด PE/JE (Box Plot) |
+| ส่วน                               | เนื้อหา                                                                                                          |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| **สิ่งแวดล้อม**                    | อุณหภูมิเทียบกับความชื้น ทุกเครื่องพร้อมกัน                                                                      |
+| **กราฟควบคุม SPC**                 | กราฟควบคุมความหนา (เฉลี่ย ± 3σ), กราฟควบคุมมาตราส่วน X/Y                                                         |
+| **การวิเคราะห์การเปลี่ยนแปลง**     | ค่าเบี่ยงเบนมาตรฐาน PE/JE ตามเครื่อง, การกระจายข้อผิดพลาด PE/JE (Box Plot)                                       |
 | **RCA / ความสัมพันธ์การแจ้งเตือน** | RCA Truth Test — Lift/ความมั่นใจต่อหมวดหมู่การแจ้งเตือน (ความร้อน/ความชื้น/สุญญากาศ/การจัดตำแหน่ง/การเคลื่อนที่) |
 
 ### 9. LDI Machine Snapshot
@@ -229,22 +230,24 @@
 
 ### ตัวชี้วัด CPU
 
-| ตัวชี้วัด | หน่วย | ปกติ | เตือน | วิกฤต |
-|---|---|---|---|---|
-| `cpu_load_percent` | % | < 60% | 60-80% | > 80% |
-| `cpu_cores` | จำนวน | — | — | — |
+| ตัวชี้วัด          | หน่วย | ปกติ  | เตือน  | วิกฤต |
+| ------------------ | ----- | ----- | ------ | ----- |
+| `cpu_load_percent` | %     | < 60% | 60-80% | > 80% |
+| `cpu_cores`        | จำนวน | —     | —      | —     |
 
 **วิธีอ่าน:**
+
 - **Average CPU** — ค่าเฉลี่ยของทุก cores ในช่วงเวลาที่เลือก
 - **Peak CPU** — ค่าสูงสุดที่บันทึกไว้ (อาจเกิด spike ชั่วคราว)
 - **CPU per Core** — ดูว่า core ไหนกำลังถูกใช้งานหนัก
 
 **ตัวอย่าง:**
-```
+
+```text
 เครื่อง: server-01
 โหลด CPU: 72% (เตือน)
 ├── Core 1: 85% ️
-├── Core 2: 45% 
+├── Core 2: 45%
 ├── Core 3: 78% ️
 └── Core 4: 80% ️
 → Core 1, 3, 4 กำลังถูกใช้งานหนัก ตรวจสอบว่ามีกระบวนการ (process) ใดกำลังทำงานอยู่
@@ -252,34 +255,37 @@
 
 ### ตัวชี้วัดหน่วยความจำ (Memory)
 
-| ตัวชี้วัด | หน่วย | ปกติ | เตือน | วิกฤต |
-|---|---|---|---|---|
-| `ram_used_mb` | MB | — | — | — |
-| `ram_total_mb` | MB | — | — | — |
-| **การใช้งาน %** | % | < 70% | 70-85% | > 85% |
+| ตัวชี้วัด       | หน่วย | ปกติ  | เตือน  | วิกฤต |
+| --------------- | ----- | ----- | ------ | ----- |
+| `ram_used_mb`   | MB    | —     | —      | —     |
+| `ram_total_mb`  | MB    | —     | —      | —     |
+| **การใช้งาน %** | %     | < 70% | 70-85% | > 85% |
 
 **วิธีอ่าน:**
+
 - **การใช้งาน %** = `(ram_used_mb / ram_total_mb) × 100`
 - **พื้นที่ว่าง** = `ram_total_mb - ram_used_mb`
 - Memory ที่สูงไม่จำเป็นต้องแย่ — Linux ใช้ memory สำหรับ caching
 
 ### ตัวชี้วัดเครือข่าย
 
-| ตัวชี้วัด | หน่วย | คำอธิบาย |
-|---|---|---|
-| `rx_mbps` | Mbps | ความเร็วดาวน์โหลด (การรับข้อมูล) |
-| `tx_mbps` | Mbps | ความเร็วอัปโหลด (การส่งข้อมูล) |
+| ตัวชี้วัด       | หน่วย | คำอธิบาย                                        |
+| --------------- | ----- | ----------------------------------------------- |
+| `rx_mbps`       | Mbps  | ความเร็วดาวน์โหลด (การรับข้อมูล)                |
+| `tx_mbps`       | Mbps  | ความเร็วอัปโหลด (การส่งข้อมูล)                  |
 | `net_rx_errors` | จำนวน | ข้อผิดพลาดในการรับ (ปัญหาจากฮาร์ดแวร์/ไดรเวอร์) |
-| `net_rx_drops` | จำนวน | แพ็กเก็ตที่สูญหาย (buffer overflow) |
-| `net_if_status` | 1/2 | 1 = เปิด (UP), 2 = ปิด (DOWN) |
+| `net_rx_drops`  | จำนวน | แพ็กเก็ตที่สูญหาย (buffer overflow)             |
+| `net_if_status` | 1/2   | 1 = เปิด (UP), 2 = ปิด (DOWN)                   |
 
 **วิธีอ่าน:**
+
 - **การใช้แบนด์วิธ** = `(rx_mbps / ความเร็วของลิงก์) × 100`
 - **อัตราความผิดพลาด** = `net_rx_errors / จำนวนแพ็กเก็ตทั้งหมด × 100`
 - **เครือข่าย DOWN** = สาย network ขาด หรือ switch port ปิด
 
 **ตัวอย่าง:**
-```
+
+```text
 เครื่อง: server-01
 ┌─────────┬──────────┬──────────┬──────────┬──────────┬────────┐
 │อินเตอร์เฟส │ RX Mbps │ TX Mbps │ Error │ Drop  │ สถานะ │
@@ -292,24 +298,26 @@
 
 ### ตัวชี้วัดดิสก์
 
-| ตัวชี้วัด | หน่วย | ปกติ | เตือน | วิกฤต |
-|---|---|---|---|---|
-| `disk_used_gb` | GB | — | — | — |
-| `disk_total_gb` | GB | — | — | — |
-| **การใช้งาน %** | % | < 70% | 70-80% | > 80% |
+| ตัวชี้วัด       | หน่วย | ปกติ  | เตือน  | วิกฤต |
+| --------------- | ----- | ----- | ------ | ----- |
+| `disk_used_gb`  | GB    | —     | —      | —     |
+| `disk_total_gb` | GB    | —     | —      | —     |
+| **การใช้งาน %** | %     | < 70% | 70-80% | > 80% |
 
 **วิธีอ่าน:**
+
 - **การใช้งาน %** = `(disk_used_gb / disk_total_gb) × 100`
 - **พื้นที่ว่าง** = `disk_total_gb - disk_used_gb`
 - **IOPS** = จำนวน operations ต่อวินาที (ถ้ามีตัวชี้วัดเพิ่มเติม)
 
 ### ตัวชี้วัดอุณหภูมิ
 
-| ตัวชี้วัด | หน่วย | ปกติ | เตือน | วิกฤต |
-|---|---|---|---|---|
-| `temp_c` | °C | < 65°C | 65-80°C | > 80°C |
+| ตัวชี้วัด | หน่วย | ปกติ   | เตือน   | วิกฤต  |
+| --------- | ----- | ------ | ------- | ------ |
+| `temp_c`  | °C    | < 65°C | 65-80°C | > 80°C |
 
 **วิธีอ่าน:**
+
 - **Average Temp** — อุณหภูมิเฉลี่ย
 - **Max Temp** — อุณหภูมิสูงสุด (peak temperature)
 - **Temperature Trend** — กำลังเพิ่มขึ้นหรือลดลง
@@ -320,17 +328,17 @@
 
 ### ระดับความรุนแรงของการแจ้งเตือน
 
-| ระดับ | สี | เวลาตอบสนอง | ตัวอย่าง |
-|---|---|---|---|
-| **วิกฤต (Critical)** | แดง | ทันที (< 15 นาที) | InterfaceDown, ServiceDown, CriticalCPU |
-| **เตือน (Warning)** | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) เหลือง | เร็ว (< 1 ชั่วโมง) | HighCPU, HighMemory, DiskSpaceLow |
-| **ข้อมูล (Info)** | น้ำเงิน | ตามปกติ (< 4 ชั่วโมง) | TelemetryGap, PredictiveDiskFull |
+| ระดับ                | สี                                                                    | เวลาตอบสนอง           | ตัวอย่าง                                |
+| -------------------- | --------------------------------------------------------------------- | --------------------- | --------------------------------------- |
+| **วิกฤต (Critical)** | แดง                                                                   | ทันที (< 15 นาที)     | InterfaceDown, ServiceDown, CriticalCPU |
+| **เตือน (Warning)**  | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) เหลือง | เร็ว (< 1 ชั่วโมง)    | HighCPU, HighMemory, DiskSpaceLow       |
+| **ข้อมูล (Info)**    | น้ำเงิน                                                               | ตามปกติ (< 4 ชั่วโมง) | TelemetryGap, PredictiveDiskFull        |
 
 ### คู่มือรับมือกับเหตุการณ์ขัดข้อง (Incident Response Playbook)
 
 #### สถานการณ์ที่ 1: InterfaceDown (วิกฤต)
 
-```
+```text
 อาการ:
 - แจ้งเตือน: InterfaceDown บน server-01
 - พาเนลเครือข่ายขึ้น "No Data" (ไม่มีข้อมูล)
@@ -355,7 +363,7 @@
 
 #### ️ สถานการณ์ที่ 2: HighCPUUsage (เตือน)
 
-```
+```text
 อาการ:
 - แจ้งเตือน: HighCPUUsage บน server-01
 - พาเนล CPU ขึ้นสูงเกิน > 80%
@@ -379,7 +387,7 @@
 
 #### ️ สถานการณ์ที่ 3: DiskSpaceLow (เตือน)
 
-```
+```text
 อาการ:
 - แจ้งเตือน: DiskSpaceLow บน server-01
 - พาเนลดิสก์ขึ้นสูงเกิน > 80%
@@ -403,7 +411,7 @@
 
 #### สถานการณ์ที่ 4: ServiceDown (วิกฤต)
 
-```
+```text
 อาการ:
 - แจ้งเตือน: ServiceDown บน server-01
 - Blackbox probe เกิดข้อผิดพลาด
@@ -429,7 +437,7 @@
 
 #### ![Warning](https://img.shields.io/badge/Status-Warning-yellow) สถานการณ์ที่ 5: PipelineDataStalled (เตือน)
 
-```
+```text
 อาการ:
 - แจ้งเตือน: PipelineDataStalled (แต่ก่อนเรียก TelemetryGap) บน server-01
 - ไม่มีข้อมูล 3+ นาที
@@ -507,25 +515,25 @@ docker compose restart node-red grafana alertmanager prometheus
 
 ### ปัญหาที่พบบ่อย
 
-| อาการ | สาเหตุที่เป็นไปได้ | วิธีแก้ไข |
-|---|---|---|
-| **ขึ้น "No Data" บนพาเนลทั้งหมด** | Node-RED ไม่ได้รัน | `docker compose restart node-red` |
-| **ขึ้น "No Data" ในบางเครื่อง** | เครื่องไม่ได้อยู่ในรีจิสทรี | เพิ่มไปที่ตาราง `machines` |
-| **Alertmanager ทำการรีสตาร์ทบ่อยครั้ง** | โครงสร้าง Config YAML ผิด | เช็ค `docker compose logs alertmanager` |
-| **เป้าหมาย Blackbox ทั้งหมดตกอยู่ในสถานะ DOWN** | ชื่อเซอร์วิสผิดใน config | ใช้ `blackbox-exporter:9115` |
-| **Grafana แสดงข้อมูลเก่า** | แดชบอร์ดไม่ได้ถูกโหลดซ้ำ | รีเฟรชขั้นสูง: Ctrl+Shift+R |
-| **การใช้หน่วยความจำสูง** | หน่วยความจำรั่วไหลใน Node-RED | เช็ค `docker stats ims-node-red` |
-| **การเชื่อมต่อฐานข้อมูลถูกปฏิเสธ** | PgBouncer มีปัญหา | `docker compose restart pgbouncer` |
+| อาการ                                           | สาเหตุที่เป็นไปได้            | วิธีแก้ไข                               |
+| ----------------------------------------------- | ----------------------------- | --------------------------------------- |
+| **ขึ้น "No Data" บนพาเนลทั้งหมด**               | Node-RED ไม่ได้รัน            | `docker compose restart node-red`       |
+| **ขึ้น "No Data" ในบางเครื่อง**                 | เครื่องไม่ได้อยู่ในรีจิสทรี   | เพิ่มไปที่ตาราง `machines`              |
+| **Alertmanager ทำการรีสตาร์ทบ่อยครั้ง**         | โครงสร้าง Config YAML ผิด     | เช็ค `docker compose logs alertmanager` |
+| **เป้าหมาย Blackbox ทั้งหมดตกอยู่ในสถานะ DOWN** | ชื่อเซอร์วิสผิดใน config      | ใช้ `blackbox-exporter:9115`            |
+| **Grafana แสดงข้อมูลเก่า**                      | แดชบอร์ดไม่ได้ถูกโหลดซ้ำ      | รีเฟรชขั้นสูง: Ctrl+Shift+R             |
+| **การใช้หน่วยความจำสูง**                        | หน่วยความจำรั่วไหลใน Node-RED | เช็ค `docker stats ims-node-red`        |
+| **การเชื่อมต่อฐานข้อมูลถูกปฏิเสธ**              | PgBouncer มีปัญหา             | `docker compose restart pgbouncer`      |
 
 ### ตำแหน่งไฟล์บันทึก (Log Locations)
 
-| เซอร์วิส | คำสั่ง | สิ่งที่ควรมองหา |
-|---|---|---|
-| **Node-RED** | `docker compose logs node-red` | `Started flows`, `TypeError`, `ETIMEOUT` |
-| **TimescaleDB** | `docker compose logs timescaledb` | `connection refused`, `authentication failed` |
-| **Prometheus** | `docker compose logs prometheus` | `failed to check config`, `target down` |
-| **Alertmanager** | `docker compose logs alertmanager` | `Loading configuration file failed` |
-| **Grafana** | `docker compose logs grafana` | `Failed to look up user`, `dashboard not found` |
+| เซอร์วิส         | คำสั่ง                             | สิ่งที่ควรมองหา                                 |
+| ---------------- | ---------------------------------- | ----------------------------------------------- |
+| **Node-RED**     | `docker compose logs node-red`     | `Started flows`, `TypeError`, `ETIMEOUT`        |
+| **TimescaleDB**  | `docker compose logs timescaledb`  | `connection refused`, `authentication failed`   |
+| **Prometheus**   | `docker compose logs prometheus`   | `failed to check config`, `target down`         |
+| **Alertmanager** | `docker compose logs alertmanager` | `Loading configuration file failed`             |
+| **Grafana**      | `docker compose logs grafana`      | `Failed to look up user`, `dashboard not found` |
 
 ### สคริปต์การวินิจฉัยข้อมูลด่วน
 
@@ -552,37 +560,37 @@ docker compose exec prometheus wget -qO- "http://localhost:9090/api/v1/alerts" 2
 
 ### คีย์ลัด (Grafana)
 
-| คีย์ลัด | การใช้งาน |
-|---|---|
-| `Ctrl+S` | บันทึกแดชบอร์ด |
-| `Ctrl+Z` | เลิกทำ (Undo) |
-| `Ctrl+Shift+Z` | ทำซ้ำ (Redo) |
-| `F` | เปิด/ปิดมุมมองเต็มหน้าจอ |
-| `R` | รีเฟรชแดชบอร์ด |
-| `T` | เปิดเครื่องมือเลือกเวลา |
-| `D` | ค้นหาแดชบอร์ด |
+| คีย์ลัด        | การใช้งาน                            |
+| -------------- | ------------------------------------ |
+| `Ctrl+S`       | บันทึกแดชบอร์ด                       |
+| `Ctrl+Z`       | เลิกทำ (Undo)                        |
+| `Ctrl+Shift+Z` | ทำซ้ำ (Redo)                         |
+| `F`            | เปิด/ปิดมุมมองเต็มหน้าจอ             |
+| `R`            | รีเฟรชแดชบอร์ด                       |
+| `T`            | เปิดเครื่องมือเลือกเวลา              |
+| `D`            | ค้นหาแดชบอร์ด                        |
 | `Ctrl+Shift+P` | เปิดคอมมานด์พาเล็ต (command palette) |
 
 ### อ้างอิงการใช้สี (Color Coding)
 
-| ตัวชี้วัด | ปกติ | เตือน | วิกฤต |
-|---|---|---|---|
-| **CPU** | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) เขียว | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) เหลือง → ส้ม | แดง |
-| **Memory** | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) เขียว | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) ม่วง → ส้มเข้ม | แดง |
-| **Disk** | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) เขียว | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) ฟ้า (Cyan) → น้ำเงิน | แดง |
-| **Network RX** | น้ำเงินเข้ม (#1F60C4) | — | แดง |
-| **Network TX** | สีฟ้าอ่อน (#5794F2) | — | แดง |
-| **Temperature** | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) เขียว | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) เหลือง | แดง |
-| **Errors** | — | — | แดง (#C4162A) |
-| **Drops** | — | ![Warning](https://img.shields.io/badge/Status-Warning-orange) ส้ม (#FF9830) | แดง |
+| ตัวชี้วัด       | ปกติ                                                                      | เตือน                                                                               | วิกฤต         |
+| --------------- | ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ------------- |
+| **CPU**         | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) เขียว | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) เหลือง → ส้ม         | แดง           |
+| **Memory**      | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) เขียว | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) ม่วง → ส้มเข้ม       | แดง           |
+| **Disk**        | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) เขียว | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) ฟ้า (Cyan) → น้ำเงิน | แดง           |
+| **Network RX**  | น้ำเงินเข้ม (#1F60C4)                                                     | —                                                                                   | แดง           |
+| **Network TX**  | สีฟ้าอ่อน (#5794F2)                                                       | —                                                                                   | แดง           |
+| **Temperature** | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) เขียว | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) เหลือง               | แดง           |
+| **Errors**      | —                                                                         | —                                                                                   | แดง (#C4162A) |
+| **Drops**       | —                                                                         | ![Warning](https://img.shields.io/badge/Status-Warning-orange) ส้ม (#FF9830)        | แดง           |
 
 ### ติดต่อผู้ดูแล
 
-| ตำแหน่ง | ช่องทางติดต่อ | ช่องทาง |
-|---|---|---|
-| **NOC Team** | กลุ่ม LINE | LINE Messaging API |
-| **System Admin** | MS Teams | Webhook |
-| **Management** | อีเมล (ในอนาคต) | SMTP |
+| ตำแหน่ง          | ช่องทางติดต่อ   | ช่องทาง            |
+| ---------------- | --------------- | ------------------ |
+| **NOC Team**     | กลุ่ม LINE      | LINE Messaging API |
+| **System Admin** | MS Teams        | Webhook            |
+| **Management**   | อีเมล (ในอนาคต) | SMTP               |
 
 ---
 
@@ -590,6 +598,6 @@ docker compose exec prometheus wget -qO- "http://localhost:9090/api/v1/alerts" 2
 
 **IMS คู่มือผู้ใช้ — เวอร์ชั่น 1.1**
 
-*สำหรับฝ่าย IT Support และ NOC Team*
+_สำหรับฝ่าย IT Support และ NOC Team_
 
 </div>

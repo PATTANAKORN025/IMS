@@ -28,24 +28,25 @@ curl -s http://localhost:9090/api/v1/targets | python3 -c \
 
 ## Failure Modes
 
-| Symptom | Likely Cause | Diagnostic | Resolution |
-|---------|-------------|-----------|------------|
-| **Node-RED crash-looping** | DB connection failure or missing npm modules | `docker logs ims-node-red --tail=50` | Check PgBouncer: `docker logs ims-pgbouncer --tail=20`. Verify `.env` has `POSTGRES_PASSWORD`. Rebuild if missing modules: `docker compose build --no-cache node-red && docker compose up -d node-red` |
-| **Node-RED "Started flows" but no data** | SNMP target unreachable or wrong community string | `docker exec ims-node-red node -e "const s=require('net-snmp').createSession('ims-snmpsim','apex_mock',{port:161,version:2});s.get(['1.3.6.1.2.1.1.3.0'],(e,v)=>{console.log(e||v);s.close()})"` | Verify snmpsim is running: `docker logs ims-snmpsim --tail=5`. Check community string matches profile (`ubuntu` or `windows`) |
-| **Grafana "No Data" on panels** | CAGG not refreshed yet or wrong time range | `docker compose exec timescaledb psql -U ims_admin -d ims -c "SELECT COUNT(*) FROM public.sys_hourly WHERE bucket > NOW() - INTERVAL '1 hour';"` | CAGGs take ~3 min to populate after restart. Wait and refresh. If count=0, check Node-RED logs for INSERT errors |
-| **Grafana "Panel plugin not found: clock"** | Plugin not installed or stale volume | `docker compose exec grafana grafana-cli plugins ls` | Wipe Grafana volume: `docker compose rm -fs grafana && docker volume rm ims_grafana_data && docker compose up -d grafana` |
-| **High CPU on TimescaleDB** | CAGG refresh storm or unoptimized queries | `docker compose exec timescaledb psql -U ims_admin -d ims -c "SELECT query, calls, mean_exec_time FROM pg_stat_statements ORDER BY mean_exec_time DESC LIMIT 5;"` | Check Grafana dashboard refresh rates. Capacity dashboard should be 5m, not 10s. Kill long queries: `SELECT pg_terminate_backend(pid);` |
-| **PgBouncer "server login has been failing"** | Stale auth cache after password change | `docker logs ims-pgbouncer --tail=20 \| grep -i "login\|error"` | Restart PgBouncer: `docker compose restart pgbouncer`. Verify `DATABASE_URL` env var matches TimescaleDB credentials |
-| **Retry queue growing** (`/data/retry_queue.json`) | DB inserts failing repeatedly | `docker exec ims-node-red cat /data/retry_queue.json \| python3 -c "import sys,json; q=json.load(sys.stdin); print(f'Queue: {len(q)} entries, latest error: {q[-1][\"error\"] if q else \"none\"}')"` | Check PgBouncer connectivity. Max 5 retries per entry, max 500 entries. Queue drains automatically every 30s |
-| **Alertmanager "TargetDown" for blackbox** | Wrong Docker DNS name in prometheus.yml | `curl -s http://localhost:9090/api/v1/targets \| python3 -c "import sys,json; [print(t['labels'].get('job','?'), t['health']) for t in json.load(sys.stdin)['data']['activeTargets']]"` | Blackbox targets MUST use service name `blackbox-exporter:9115`, NOT container name `ims-blackbox` or `blackbox:9115` |
-| **Docker "port already in use"** | Windows NAT port conflict | `netstat -ano \| findstr :1880` | Run: `net stop winnat && net start winnat` to reset Windows NAT |
-| **Can't reach Grafana at :3000** | `proxy` (nginx) down — it's the only host-published entry point, Grafana no longer publishes its own port | `docker logs ims-proxy --tail=20` | Restart: `docker compose restart proxy`. If `proxy` is healthy but Grafana itself is down, check `docker logs ims-grafana` |
-| **Alarm Console Ack/Resolve fails (403)** | `proxy`'s `auth_request` to Grafana's `/api/user` failing, or session expired | `docker logs ims-proxy --tail=20`; confirm logged into Grafana in the same browser | Re-login to Grafana. If persistent, check `proxy/nginx.conf`'s `/auth-check` location is proxying to `grafana:3000` correctly |
-| **Alarm Console Ack/Resolve fails (500)** | `alarm-api` can't reach Postgres, or `alarm_api_writer` role/grants missing | `docker logs ims-alarm-api --tail=20` | Restart: `docker compose restart alarm-api`. Verify migration `078-alarm-api-writer-role.sql` applied: `bash scripts/migrate.sh` |
+| Symptom                                            | Likely Cause                                                                                              | Diagnostic                                                                                                                                                                                            | Resolution                                                                                                                                                                                             |
+| -------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Node-RED crash-looping**                         | DB connection failure or missing npm modules                                                              | `docker logs ims-node-red --tail=50`                                                                                                                                                                  | Check PgBouncer: `docker logs ims-pgbouncer --tail=20`. Verify `.env` has `POSTGRES_PASSWORD`. Rebuild if missing modules: `docker compose build --no-cache node-red && docker compose up -d node-red` |
+| **Node-RED "Started flows" but no data**           | SNMP target unreachable or wrong community string                                                         | `docker exec ims-node-red node -e "const s=require('net-snmp').createSession('ims-snmpsim','apex_mock',{port:161,version:2});s.get(['1.3.6.1.2.1.1.3.0'],(e,v)=>{console.log(e                            |                                                                                                                                                                                                        | v);s.close()})"` | Verify snmpsim is running: `docker logs ims-snmpsim --tail=5`. Check community string matches profile (`ubuntu` or `windows`) |
+| **Grafana "No Data" on panels**                    | CAGG not refreshed yet or wrong time range                                                                | `docker compose exec timescaledb psql -U ims_admin -d ims -c "SELECT COUNT(*) FROM public.sys_hourly WHERE bucket > NOW() - INTERVAL '1 hour';"`                                                      | CAGGs take ~3 min to populate after restart. Wait and refresh. If count=0, check Node-RED logs for INSERT errors                                                                                       |
+| **Grafana "Panel plugin not found: clock"**        | Plugin not installed or stale volume                                                                      | `docker compose exec grafana grafana-cli plugins ls`                                                                                                                                                  | Wipe Grafana volume: `docker compose rm -fs grafana && docker volume rm ims_grafana_data && docker compose up -d grafana`                                                                              |
+| **High CPU on TimescaleDB**                        | CAGG refresh storm or unoptimized queries                                                                 | `docker compose exec timescaledb psql -U ims_admin -d ims -c "SELECT query, calls, mean_exec_time FROM pg_stat_statements ORDER BY mean_exec_time DESC LIMIT 5;"`                                     | Check Grafana dashboard refresh rates. Capacity dashboard should be 5m, not 10s. Kill long queries: `SELECT pg_terminate_backend(pid);`                                                                |
+| **PgBouncer "server login has been failing"**      | Stale auth cache after password change                                                                    | `docker logs ims-pgbouncer --tail=20 \| grep -i "login\|error"`                                                                                                                                       | Restart PgBouncer: `docker compose restart pgbouncer`. Verify `DATABASE_URL` env var matches TimescaleDB credentials                                                                                   |
+| **Retry queue growing** (`/data/retry_queue.json`) | DB inserts failing repeatedly                                                                             | `docker exec ims-node-red cat /data/retry_queue.json \| python3 -c "import sys,json; q=json.load(sys.stdin); print(f'Queue: {len(q)} entries, latest error: {q[-1][\"error\"] if q else \"none\"}')"` | Check PgBouncer connectivity. Max 5 retries per entry, max 500 entries. Queue drains automatically every 30s                                                                                           |
+| **Alertmanager "TargetDown" for blackbox**         | Wrong Docker DNS name in prometheus.yml                                                                   | `curl -s http://localhost:9090/api/v1/targets \| python3 -c "import sys,json; [print(t['labels'].get('job','?'), t['health']) for t in json.load(sys.stdin)['data']['activeTargets']]"`               | Blackbox targets MUST use service name `blackbox-exporter:9115`, NOT container name `ims-blackbox` or `blackbox:9115`                                                                                  |
+| **Docker "port already in use"**                   | Windows NAT port conflict                                                                                 | `netstat -ano \| findstr :1880`                                                                                                                                                                       | Run: `net stop winnat && net start winnat` to reset Windows NAT                                                                                                                                        |
+| **Can't reach Grafana at :3000**                   | `proxy` (nginx) down — it's the only host-published entry point, Grafana no longer publishes its own port | `docker logs ims-proxy --tail=20`                                                                                                                                                                     | Restart: `docker compose restart proxy`. If `proxy` is healthy but Grafana itself is down, check `docker logs ims-grafana`                                                                             |
+| **Alarm Console Ack/Resolve fails (403)**          | `proxy`'s `auth_request` to Grafana's `/api/user` failing, or session expired                             | `docker logs ims-proxy --tail=20`; confirm logged into Grafana in the same browser                                                                                                                    | Re-login to Grafana. If persistent, check `proxy/nginx.conf`'s `/auth-check` location is proxying to `grafana:3000` correctly                                                                          |
+| **Alarm Console Ack/Resolve fails (500)**          | `alarm-api` can't reach Postgres, or `alarm_api_writer` role/grants missing                               | `docker logs ims-alarm-api --tail=20`                                                                                                                                                                 | Restart: `docker compose restart alarm-api`. Verify migration `078-alarm-api-writer-role.sql` applied: `bash scripts/migrate.sh`                                                                       |
 
 ## Common Operations
 
 ### Restart a single service
+
 ```bash
 docker compose restart node-red # Restart pipeline
 docker compose restart grafana  # Reload dashboard JSON
@@ -55,11 +56,13 @@ docker compose restart alarm-api # Restart the alarm ack/resolve write-path serv
 ```
 
 ### Deploy flow changes
+
 ```bash
 make deploy-flows # Merge split flows → POST to Admin API
 ```
 
 ### Check database state
+
 ```bash
 # Row count per machine (last 5 min)
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
@@ -72,12 +75,14 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c \
 ```
 
 ### Backup and restore
+
 ```bash
 make backup     # Backup to backups/backup_YYYYMMDD.sql
 make restore FILE=backups/backup_20260701.sql
 ```
 
 ### Full clean restart (destroys all data)
+
 ```bash
 docker compose down -v && docker compose up -d
 # Wait 40s for startup, then:
@@ -86,17 +91,17 @@ make deploy-flows
 
 ## Environment Variables
 
-| Variable | Required | Default | Purpose |
-|----------|----------|---------|---------|
-| `POSTGRES_DB` | Yes | `ims` | Database name |
-| `POSTGRES_USER` | Yes | `ims_admin` | Database user |
-| `POSTGRES_PASSWORD` | Yes | — | Database password |
-| `GRAFANA_ADMIN_USER` | Yes | `admin` | Grafana admin username |
-| `GRAFANA_ADMIN_PASSWORD` | Yes | — | Grafana admin password |
-| `NODE_RED_CREDENTIAL_SECRET` | Yes | — | Encrypts stored flow credentials |
-| `LINE_CHANNEL_ACCESS_TOKEN` | No | — | LINE Messaging API token |
-| `LINE_USER_ID` | No | — | LINE user ID for alerts |
-| `TEAMS_WEBHOOK_URL` | No | — | MS Teams incoming webhook URL |
+| Variable                     | Required | Default     | Purpose                          |
+| ---------------------------- | -------- | ----------- | -------------------------------- |
+| `POSTGRES_DB`                | Yes      | `ims`       | Database name                    |
+| `POSTGRES_USER`              | Yes      | `ims_admin` | Database user                    |
+| `POSTGRES_PASSWORD`          | Yes      | —           | Database password                |
+| `GRAFANA_ADMIN_USER`         | Yes      | `admin`     | Grafana admin username           |
+| `GRAFANA_ADMIN_PASSWORD`     | Yes      | —           | Grafana admin password           |
+| `NODE_RED_CREDENTIAL_SECRET` | Yes      | —           | Encrypts stored flow credentials |
+| `LINE_CHANNEL_ACCESS_TOKEN`  | No       | —           | LINE Messaging API token         |
+| `LINE_USER_ID`               | No       | —           | LINE user ID for alerts          |
+| `TEAMS_WEBHOOK_URL`          | No       | —           | MS Teams incoming webhook URL    |
 
 ## Escalation Path
 

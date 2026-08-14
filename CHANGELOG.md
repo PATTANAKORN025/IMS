@@ -93,6 +93,6 @@
 
 **IMS Changelog — Version 1.0**
 
-*Follows [Keep a Changelog](https://keepachangelog.com/) format*
+_Follows [Keep a Changelog](https://keepachangelog.com/) format_
 
 </div>

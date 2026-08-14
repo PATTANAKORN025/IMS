@@ -7,6 +7,7 @@
 ## ️ Tooling Recommendations
 
 To record the onboarding assets, use the following tools:
+
 1. **Screen Recording (Video):** OBS Studio (1080p, 60fps) for smooth Grafana animations.
 2. **GIF Capture:** [Kap](https://getkap.co/) (macOS) or ScreenToGif (Windows). Export at 24fps for smooth UI transitions.
 3. **Browser State:** Run Chrome in Kiosk mode `http://localhost:3000/d/ims-noc-overview?kiosk=tv` to hide the URL bar and OS chrome.
@@ -19,6 +20,7 @@ To record the onboarding assets, use the following tools:
 **Target Location:** Top of `README.md` (replacing the static banner if desired).
 
 **Action Script:**
+
 1. Open [NOC Overview](http://localhost:3000/d/ims-noc-overview).
 2. Set the Grafana auto-refresh to `5s` so charts actively move during the recording.
 3. Hover your mouse smoothly over the **Fleet Health Score** gauge to trigger the tooltip.
@@ -33,6 +35,7 @@ To record the onboarding assets, use the following tools:
 **Target Location:** `docs/product/ONBOARDING.md`
 
 **Action Script:**
+
 1. Start on the NOC Overview. Notice a red anomaly on the **Network Bandwidth** chart.
 2. **Click** the anomaly. (This triggers a Grafana Data Link).
 3. The screen transitions instantly to the **Engineering Drill-Down** dashboard.
@@ -49,6 +52,7 @@ To record the onboarding assets, use the following tools:
 **Target Location:** Features section of `README.md`.
 
 **Action Script:**
+
 1. Open [Capacity Planning](http://localhost:3000/d/ims-capacity-planning).
 2. Focus the recording box strictly on the **Days Until Full** gauge and the **Linear Regression Forecast** graph.
 3. Hover over the intersection point where the trend line hits 100%. The tooltip should clearly say "Estimated Full Date: Oct 12, 2026".
@@ -61,6 +65,7 @@ To record the onboarding assets, use the following tools:
 **Target Location:** `SOP_OPERATOR.md`
 
 **Action Script:**
+
 1. Open [LDI Operator Andon](http://localhost:3000/d/ims-ldi-operator-andon).
 2. Use the database script `make test-load` to inject a simulated error.
 3. Record the exact moment the dashboard flashes from Green to Red.

@@ -6,9 +6,9 @@
 
 <div align="center">
  <p>
-  🇬🇧 <b>English</b> |
-  <a href="README-th.md">🇹🇭 ไทย</a> |
-  <a href="README-zh-CN.md">🇨🇳 中文</a>
+  <img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /><img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /> <b>English</b> |
+  <a href="README-th.md"><img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /><img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /> ไทย</a> |
+  <a href="README-zh-CN.md"><img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /><img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /> 中文</a>
  </p>
 </div>
 
@@ -50,8 +50,6 @@
 **Scale and Scope:** Designed to monitor 1000+ infrastructure nodes alongside high-precision LDI (Laser Direct Imaging) manufacturing equipment. It implements Statistical Process Control (SPC) methodologies and Z-Score anomaly detection for proactive alerting.
 
 Performance relies on TimescaleDB continuous aggregates for dashboard rendering and a stateful Node-RED pipeline for data ingestion.
-
-
 
 <table style="border:none; border-collapse:collapse; width:100%;">
 
@@ -127,30 +125,32 @@ make up      # docker compose up -d (starts stack with simulator)
 sleep 40 && make verify
 open http://localhost:3000
 ```
+
 > **Verified:** `docker compose ps` on 2026-08-13, archived in [`docs/evidence/runtime/compose-ps-20260813.txt`](docs/evidence/runtime/compose-ps-20260813.txt).
 
 ### Known Limitations
+
 - The simulated LDI workload generates ~10-15 rows per minute; load testing requires running the explicit K6 stress test framework to simulate production 1000-node scale.
 - Nginx reverse-proxy is configured for `localhost` and requires manual certificate deployment for production environments.
 - Grafana Alertmanager integrations (LINE/Teams) will fail silently until explicit tokens are provided in the `.env` file.
 
 ### Verification & Evidence
-Every architectural claim is backed by continuous integration or explicit test scripts. For load test results, visual regression evidence, and disaster recovery validations, refer to the **[Evidence Index](docs/evidence/INDEX.md)**.
 
+Every architectural claim is backed by continuous integration or explicit test scripts. For load test results, visual regression evidence, and disaster recovery validations, refer to the **[Evidence Index](docs/evidence/INDEX.md)**.
 
 <details>
 <summary><b>Available Commands</b></summary>
 
-| Command | Description |
-|---------|-------------|
-| `make up` | Start all services (dev mode with SNMP simulator) |
-| `make down` | Stop all services |
-| `make verify` | Full system health check (containers, DB, pipeline, alerts) |
-| `make test-unit` | Run unit tests (18 parser + counter tests) |
-| `make test-load` | Run K6 pipeline stress test (50→200 VUs) |
-| `make test-visual` | Capture dashboard screenshots via Playwright |
-| `make validate-dashboards` | Lint dashboard JSON for grid overlap + hex corruption |
-| `make backup` | Database backup |
+| Command                    | Description                                                 |
+| -------------------------- | ----------------------------------------------------------- |
+| `make up`                  | Start all services (dev mode with SNMP simulator)           |
+| `make down`                | Stop all services                                           |
+| `make verify`              | Full system health check (containers, DB, pipeline, alerts) |
+| `make test-unit`           | Run unit tests (18 parser + counter tests)                  |
+| `make test-load`           | Run K6 pipeline stress test (50→200 VUs)                    |
+| `make test-visual`         | Capture dashboard screenshots via Playwright                |
+| `make validate-dashboards` | Lint dashboard JSON for grid overlap + hex corruption       |
+| `make backup`              | Database backup                                             |
 
 </details>
 
@@ -234,26 +234,26 @@ export GRAFANA_API_KEY="your-admin-api-key"
 open "http://localhost:3000/playlists/play/1?kiosk=tv&autofitpanels"
 ```
 
-| Mode | URL | Use Case |
-|------|-----|----------|
+| Mode         | URL                       | Use Case                                              |
+| ------------ | ------------------------- | ----------------------------------------------------- |
 | **TV Kiosk** | `?kiosk=tv&autofitpanels` | NOC wall-display — hides all chrome, auto-fits panels |
-| **Clean** | `?kiosk` | Presentation mode — hides sidebar + topnav |
-| **Embedded** | `?kiosk=1` | iframe embedding — hides everything |
+| **Clean**    | `?kiosk`                  | Presentation mode — hides sidebar + topnav            |
+| **Embedded** | `?kiosk=1`                | iframe embedding — hides everything                   |
 
 ---
 
 <details>
 <summary><b>Tech Stack</b></summary>
 
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| **Orchestration** | Docker Compose | 7-service container stack with dev/prod overlays |
-| **Collection** | Node-RED + net-snmp | Sequential async bulk SNMP walks, 5-thread parallel walker |
-| **Database** | TimescaleDB (PostgreSQL) | Hypertables with CAGGs, 90% compression after 7d |
-| **Visualization** | Grafana 13.1.1 | 13 dashboards (5 infrastructure + 8 manufacturing), state-timeline anomalies |
-| **Alerting** | Prometheus + Alertmanager | Metric scraping, inhibition rules, LINE Messaging API + MS Teams webhooks |
-| **Load Testing** | K6 | Pipeline stress (50→200 VUs), threshold p95<500ms |
-| **SLA Probing** | Blackbox Exporter | HTTP/TCP/ICMP endpoint monitoring |
+| Layer             | Technology                | Purpose                                                                      |
+| ----------------- | ------------------------- | ---------------------------------------------------------------------------- |
+| **Orchestration** | Docker Compose            | 7-service container stack with dev/prod overlays                             |
+| **Collection**    | Node-RED + net-snmp       | Sequential async bulk SNMP walks, 5-thread parallel walker                   |
+| **Database**      | TimescaleDB (PostgreSQL)  | Hypertables with CAGGs, 90% compression after 7d                             |
+| **Visualization** | Grafana 13.1.1            | 13 dashboards (5 infrastructure + 8 manufacturing), state-timeline anomalies |
+| **Alerting**      | Prometheus + Alertmanager | Metric scraping, inhibition rules, LINE Messaging API + MS Teams webhooks    |
+| **Load Testing**  | K6                        | Pipeline stress (50→200 VUs), threshold p95<500ms                            |
+| **SLA Probing**   | Blackbox Exporter         | HTTP/TCP/ICMP endpoint monitoring                                            |
 
 </details>
 
@@ -274,7 +274,7 @@ Exact column counts, the full view/CAGG list, and applied-migration count: **[Da
 <details>
 <summary><b>Project Structure</b></summary>
 
-```
+```text
 IMS/
 ├── monitoring/grafana/        # Grafana dashboards + provisioning
 │  ├── dashboards/          #  10 JSON dashboard files (source of truth)
@@ -314,62 +314,62 @@ IMS/
 
 ### <img src="docs/assets/icons/briefcase.svg" width="18" height="18" align="center" /> Executive & Business Strategy
 
-| Document | Description |
-|:---:|---|
-| [**Business Value & ROI**](docs/business/BUSINESS_VALUE_ROI.md) | Executive summary, cost savings, MTTR reduction, and strategic impact |
+|                                 Document                                 | Description                                                             |
+| :----------------------------------------------------------------------: | ----------------------------------------------------------------------- |
+|     [**Business Value & ROI**](docs/business/BUSINESS_VALUE_ROI.md)      | Executive summary, cost savings, MTTR reduction, and strategic impact   |
 | [**Platform Book (start here)**](docs/architecture/IMS_PLATFORM_BOOK.md) | Navigational hub for the entire documentation set, terminology glossary |
-| [**Product Context**](docs/product/PRODUCT.md) | Product purpose, target audience, and positioning |
+|              [**Product Context**](docs/product/PRODUCT.md)              | Product purpose, target audience, and positioning                       |
 
 ### <img src="docs/assets/icons/factory.svg" width="18" height="18" align="center" /> Manufacturing & LDI Intelligence
 
-| Document | Description |
-|:---:|---|
+|                                       Document                                        | Description                                                            |
+| :-----------------------------------------------------------------------------------: | ---------------------------------------------------------------------- |
 | [**Manufacturing Platform Plan**](docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md) | Infra/manufacturing domain separation, validation/soak/DR rollout plan |
-| [**Manufacturing Domain**](docs/architecture/MANUFACTURING_DOMAIN.md) | The LDI schema/dashboard pattern and onboarding flow |
-| [**LDI SPC Guide**](docs/architecture/LDI_SPC_GUIDE.md) | Process capability (Cpk) methodology and formula |
-| [**LDI RCA Guide**](docs/architecture/LDI_RCA_GUIDE.md) | Root-cause correlation (Lift/Confidence) methodology |
-| [**LDI Validation Protocol**](docs/operations/LDI_VALIDATION_PROTOCOL.md) | 4-phase production sign-off procedure |
+|         [**Manufacturing Domain**](docs/architecture/MANUFACTURING_DOMAIN.md)         | The LDI schema/dashboard pattern and onboarding flow                   |
+|                [**LDI SPC Guide**](docs/architecture/LDI_SPC_GUIDE.md)                | Process capability (Cpk) methodology and formula                       |
+|                [**LDI RCA Guide**](docs/architecture/LDI_RCA_GUIDE.md)                | Root-cause correlation (Lift/Confidence) methodology                   |
+|       [**LDI Validation Protocol**](docs/operations/LDI_VALIDATION_PROTOCOL.md)       | 4-phase production sign-off procedure                                  |
 
 ### <img src="docs/assets/icons/layers.svg" width="18" height="18" align="center" />️ Core Architecture & Security
 
-| Document | Description |
-|:---:|---|
-| [**Architecture**](docs/architecture/ARCHITECTURE.md) | System context, ADRs, streaming architecture, CAGG strategy |
-| [**Visual Architecture**](docs/architecture/ARCHITECTURE_DIAGRAM.md) | Mermaid C4 Model diagrams and sequence flows |
-| [**Data Flow**](docs/architecture/DATA_FLOW.md) | End-to-end pipeline diagrams, the real CAGG rollup chain |
-| [**Database Schema**](docs/architecture/DATABASE_SCHEMA.md) | Auto-generated table/column/view reference (CI-checked) |
-| [**Security Model**](docs/architecture/SECURITY_MODEL.md) | Trust boundaries, per-adapter authentication, and RBAC |
-| [**Equipment Integration (EAP)**](docs/architecture/EAP_ARCHITECTURE.md) | SNMP, HTTP/JSON, and SECS/GEM adapter contracts |
-| [**Ownership**](docs/architecture/OWNERSHIP.md) | Domain boundaries enforced via `CODEOWNERS` |
-| [**Design System**](docs/architecture/GRAFANA_DESIGN_SYSTEM.md) | Semantic color palette, typography, threshold contracts |
-| [**Dashboard Inventory**](docs/architecture/DASHBOARD_INVENTORY.md) | Auto-generated dashboard/panel-count table (CI-checked) |
+|                                 Document                                 | Description                                                 |
+| :----------------------------------------------------------------------: | ----------------------------------------------------------- |
+|          [**Architecture**](docs/architecture/ARCHITECTURE.md)           | System context, ADRs, streaming architecture, CAGG strategy |
+|   [**Visual Architecture**](docs/architecture/ARCHITECTURE_DIAGRAM.md)   | Mermaid C4 Model diagrams and sequence flows                |
+|             [**Data Flow**](docs/architecture/DATA_FLOW.md)              | End-to-end pipeline diagrams, the real CAGG rollup chain    |
+|       [**Database Schema**](docs/architecture/DATABASE_SCHEMA.md)        | Auto-generated table/column/view reference (CI-checked)     |
+|        [**Security Model**](docs/architecture/SECURITY_MODEL.md)         | Trust boundaries, per-adapter authentication, and RBAC      |
+| [**Equipment Integration (EAP)**](docs/architecture/EAP_ARCHITECTURE.md) | SNMP, HTTP/JSON, and SECS/GEM adapter contracts             |
+|             [**Ownership**](docs/architecture/OWNERSHIP.md)              | Domain boundaries enforced via `CODEOWNERS`                 |
+|     [**Design System**](docs/architecture/GRAFANA_DESIGN_SYSTEM.md)      | Semantic color palette, typography, threshold contracts     |
+|   [**Dashboard Inventory**](docs/architecture/DASHBOARD_INVENTORY.md)    | Auto-generated dashboard/panel-count table (CI-checked)     |
 
 ### ️ Operations & SRE Playbooks
 
-| Document | Description |
-|:---:|---|
-| [**User Manual**](docs/user/USER_MANUAL.md) | Dashboard guide, metric reference, alert response playbooks |
-| [**Admin Manual**](docs/admin/ADMIN_MANUAL.md) | Container ops, device registration, migrations, backup/recovery |
-| [**Operator SOP**](docs/operations/SOP_OPERATOR.md) | Standard Operating Procedures for factory floor / Level 1 NOC |
-| [**Troubleshooting & Alarms**](docs/operations/ALARM_PLAYBOOK.md) | Alarm code resolution and troubleshooting playbook |
-| [**Incident Response**](docs/operations/INCIDENT_RESPONSE.md) | Severity framework + real worked incident examples |
-| [**Alarm Severity Guide**](docs/architecture/ALARM_SEVERITY_GUIDE.md) | The 4-tier severity taxonomy, ISA-18.2 scope |
-| [**Backup & Restore**](docs/operations/BACKUP_RESTORE.md) | Real dr-test.sh evidence, procedure, and caveats |
-| [**DR Test Plan**](docs/operations/DR_TEST_PLAN.md) | 3-drill disaster-recovery test plan |
-| [**Data Retention**](docs/architecture/DATA_RETENTION.md) | Live retention/compression policy |
-| [**Release Checklist**](docs/operations/RELEASE_CHECKLIST.md) | What to verify before tagging a release |
-| [**Troubleshooting**](docs/operations/TROUBLESHOOTING.md) | Common issues, debugging commands, recovery procedures |
+|                               Document                                | Description                                                     |
+| :-------------------------------------------------------------------: | --------------------------------------------------------------- |
+|              [**User Manual**](docs/user/USER_MANUAL.md)              | Dashboard guide, metric reference, alert response playbooks     |
+|            [**Admin Manual**](docs/admin/ADMIN_MANUAL.md)             | Container ops, device registration, migrations, backup/recovery |
+|          [**Operator SOP**](docs/operations/SOP_OPERATOR.md)          | Standard Operating Procedures for factory floor / Level 1 NOC   |
+|   [**Troubleshooting & Alarms**](docs/operations/ALARM_PLAYBOOK.md)   | Alarm code resolution and troubleshooting playbook              |
+|     [**Incident Response**](docs/operations/INCIDENT_RESPONSE.md)     | Severity framework + real worked incident examples              |
+| [**Alarm Severity Guide**](docs/architecture/ALARM_SEVERITY_GUIDE.md) | The 4-tier severity taxonomy, ISA-18.2 scope                    |
+|       [**Backup & Restore**](docs/operations/BACKUP_RESTORE.md)       | Real dr-test.sh evidence, procedure, and caveats                |
+|          [**DR Test Plan**](docs/operations/DR_TEST_PLAN.md)          | 3-drill disaster-recovery test plan                             |
+|       [**Data Retention**](docs/architecture/DATA_RETENTION.md)       | Live retention/compression policy                               |
+|     [**Release Checklist**](docs/operations/RELEASE_CHECKLIST.md)     | What to verify before tagging a release                         |
+|       [**Troubleshooting**](docs/operations/TROUBLESHOOTING.md)       | Common issues, debugging commands, recovery procedures          |
 
 ### <img src="docs/assets/icons/users.svg" width="18" height="18" align="center" /> Community & Reference
 
-| Document | Description |
-|:---:|---|
+|                             Document                             | Description                                               |
+| :--------------------------------------------------------------: | --------------------------------------------------------- |
 | [**Video Onboarding Script**](docs/product/ONBOARDING_SCRIPT.md) | Storyboard and guide for recording onboarding GIFs/Videos |
-| [**Contributing**](CONTRIBUTING.md) | Development workflow, branch naming, commit conventions |
-| [**Code of Conduct**](CODE_OF_CONDUCT.md) | Community standards and enforcement |
-| [**Security Policy**](SECURITY.md) | Vulnerability reporting |
-| [**Bug Report**](.github/ISSUE_TEMPLATE/bug_report.md) | Report a bug or regression |
-| [**Feature Request**](.github/ISSUE_TEMPLATE/feature_request.md) | Suggest a new feature |
+|               [**Contributing**](CONTRIBUTING.md)                | Development workflow, branch naming, commit conventions   |
+|            [**Code of Conduct**](CODE_OF_CONDUCT.md)             | Community standards and enforcement                       |
+|                [**Security Policy**](SECURITY.md)                | Vulnerability reporting                                   |
+|      [**Bug Report**](.github/ISSUE_TEMPLATE/bug_report.md)      | Report a bug or regression                                |
+| [**Feature Request**](.github/ISSUE_TEMPLATE/feature_request.md) | Suggest a new feature                                     |
 
 </div>
 
