@@ -1,37 +1,81 @@
 <div align="center">
-  <br/>
-  <img src="assets/ims-logo.jpg" alt="IMS Logo" width="130" style="border-radius: 24px; box-shadow: 0 12px 40px rgba(0, 242, 254, 0.4);" />
-  <h1 align="center" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; letter-spacing: 4px; margin-top: 24px; margin-bottom: 8px;">INDUSTRIAL MONITORING SYSTEM (IMS)</h1>
+  <img src="assets/meowrch.png" alt="IMS Logo" width="120" style="margin-bottom: 16px;" />
 </div>
 
-<div align="center">
-  <a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.demolab.com?font=Orbitron&weight=600&size=22&duration=4000&pause=2000&color=00F2FE&center=true&repeat=true&width=800&height=50&lines=%E9%AB%98%E7%B2%BE%E5%BA%A6%E5%88%B6%E9%80%A0%E9%81%A5%E6%B5%8B%E7%B3%BB%E7%BB%9F;%E7%BB%9F%E8%AE%A1%E8%BF%87%E7%A8%8B%E6%8E%A7%E5%88%B6%20%28SPC%29;%E9%9B%B6%E5%BB%B6%E8%BF%9F%E6%95%B0%E5%AD%97%E5%AD%AA%E7%94%9F%E6%9E%B6%E6%9E%84;1000%2B%20%E8%8A%82%E7%82%B9%E9%9B%86%E7%BE%A4%E5%81%A5%E5%BA%B7%E7%9B%91%E6%8E%A7" alt="Typing SVG" /></a>
-</div>
+<h1 align="center" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; letter-spacing: -0.5px;">Industrial Monitoring System (IMS)</h1>
 
 <div align="center">
-  <p style="font-size: 14px; margin-top: -10px;">
-    <a href="README.md" style="text-decoration: none;">🇬🇧 <b>English</b></a> &nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;
-    <a href="README-th.md" style="text-decoration: none;">🇹🇭 <b>ไทย</b></a> &nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;
+  <p style="font-size: 15px; color: #6B7280;">
+    <a href="README.md" style="text-decoration: none;">🇬🇧 <b>English</b></a> &nbsp;&nbsp;|&nbsp;&nbsp;
+    <a href="README-th.md" style="text-decoration: none;">🇹🇭 <b>ไทย</b></a> &nbsp;&nbsp;|&nbsp;&nbsp;
     <a href="README-zh-CN.md" style="text-decoration: none;">🇨🇳 <b>中文</b></a>
   </p>
 </div>
 
-<br/>
+<div align="center" style="margin: 24px 0;">
+  <strong style="font-size: 18px; font-weight: 500;">高精度制造遥测与统计过程控制</strong>
+</div>
 
 <div align="center">
-  <!-- Minimalist Essential Badges -->
-  <a href="https://github.com/PATTANAKORN025/IMS/releases"><img src="https://img.shields.io/badge/Release-v1.0-00F2FE?style=for-the-badge&logo=github&logoColor=white" alt="Release"/></a>
-  <a href="#quick-start"><img src="https://img.shields.io/badge/Build-100%25_Passing-10B981?style=for-the-badge&logo=githubactions&logoColor=white" alt="Build" /></a>
-  <a href="#quick-start"><img src="https://img.shields.io/badge/K6_Stress_Test-Passed-7B61FF?style=for-the-badge&logo=k6&logoColor=white" alt="K6" /></a>
-  <br/><br/>
-  <!-- Elegant Call to Action Buttons -->
-  <a href="docs/architecture/IMS_PLATFORM_BOOK.md"><img src="https://img.shields.io/badge/ENTER_PLATFORM_BOOK-030407?style=for-the-badge&logo=gitbook&logoColor=00F2FE&labelColor=030407&color=00F2FE"></a>
-  &nbsp;
-  <a href="docs/architecture/ARCHITECTURE.md"><img src="https://img.shields.io/badge/READ_ARCHITECTURE-030407?style=for-the-badge&logo=amazonaws&logoColor=10B981&labelColor=030407&color=10B981"></a>
+  <img src="assets/apex-ldi-noc-banner.jpg" alt="APEX Circuit LDI NOC Banner" width="100%" style="border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); margin-bottom: 24px;" />
+  <br/>
+  <br/>
+  <a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.demolab.com?font=Orbitron&weight=600&size=36&duration=4000&pause=2000&color=00F2FE&center=true&repeat=true&width=1000&height=60&lines=APEX+Circuit+IMS+|+System+Initializing...;Advanced+Manufacturing+Intelligence+%26+NOC;Zero-Latency+Digital+Twin+Architecture" alt="Typing SVG" /></a>
 </div>
 
 <br/>
-<hr style="height: 1px; border: none; background: linear-gradient(to right, transparent, rgba(59, 130, 246, 0.5), transparent);" />
+
+<div align="center">
+  <!-- Status Badges -->
+  <a href="https://github.com/PATTANAKORN025/IMS/releases"><img src="https://img.shields.io/badge/Release-v1.0-030407?style=flat-square&logo=github&logoColor=10B981" alt="Release"/></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-030407?style=flat-square&logo=opensourceinitiative&logoColor=00F2FE" alt="License"/></a>
+  <a href="#quick-start"><img src="https://img.shields.io/badge/Build-Passing-10B981?style=flat-square&logoColor=white" alt="Tests" /></a>
+  <a href="#quick-start"><img src="https://img.shields.io/badge/K6_Stress_Test-Passed-030407?style=flat-square&logo=k6&logoColor=7B61FF" alt="K6" /></a>
+  <br/><br/>
+  <!-- Tech Badges -->
+  <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/Docker-Ready-030407?style=flat-square&logo=docker&logoColor=2496ED" alt="Docker"/></a>
+  <a href="https://grafana.com/"><img src="https://img.shields.io/badge/Grafana-v11+-030407?style=flat-square&logo=grafana&logoColor=F46800" alt="Grafana"/></a>
+  <a href="https://nodered.org/"><img src="https://img.shields.io/badge/Node--RED-v4+-030407?style=flat-square&logo=nodered&logoColor=8F0000" alt="Node-RED"/></a>
+  <a href="https://www.timescale.com/"><img src="https://img.shields.io/badge/TimescaleDB-2.x-030407?style=flat-square&logo=postgresql&logoColor=F59E0B" alt="TimescaleDB"/></a>
+</div>
+
+<br/>
+
+<div align="center">
+  <table style="border:none; border-collapse:collapse; width:100%;">
+<tr>
+<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
+ <img src="assets/noc-overview.png" alt="NOC Overview" width="100%" style="border-radius:8px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);" /><br/><br/>
+ <b style="font-size: 14px;">NOC Overview</b><br/><sub style="color: #6B7280;">Fleet Health Envelope</sub>
+</td>
+<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
+ <img src="assets/engineering-drilldown.png" alt="Engineering Drill-Down" width="100%" style="border-radius:8px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);" /><br/><br/>
+ <b style="font-size: 14px;">Engineering Drill-Down</b><br/><sub style="color: #6B7280;">Per-Machine Diagnostics</sub>
+</td>
+<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
+ <img src="assets/capacity-planning.png" alt="Capacity Planning" width="100%" style="border-radius:8px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);" /><br/><br/>
+ <b style="font-size: 14px;">Capacity Planning</b><br/><sub style="color: #6B7280;">Predictive Forecasting</sub>
+</td>
+</tr>
+<tr>
+<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
+ <img src="assets/ldi-manufacturing.png" alt="LDI Command Center" width="100%" style="border-radius:8px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);" /><br/><br/>
+ <b style="font-size: 14px;">LDI Manufacturing</b><br/><sub style="color: #6B7280;">Command Center</sub>
+</td>
+<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
+ <img src="assets/ldi-andon.png" alt="Operator Andon Board" width="100%" style="border-radius:8px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);" /><br/><br/>
+ <b style="font-size: 14px;">Operator Andon</b><br/><sub style="color: #6B7280;">Real-time Line Alerts</sub>
+</td>
+<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
+ <img src="assets/ldi-data-readiness.png" alt="Data Readiness Matrix" width="100%" style="border-radius:8px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);" /><br/><br/>
+ <b style="font-size: 14px;">Data Readiness Matrix</b><br/><sub style="color: #6B7280;">SPC Data Completeness</sub>
+</td>
+</tr>
+</table>
+</div>
+
+<br/>
+<hr style="height: 1px; border: none; background: #E5E7EB;" />
 <br/>
 ## 系统概述
 
@@ -44,32 +88,33 @@
 
 
 <table style="border:none; border-collapse:collapse; width:100%;">
+
 <tr>
-<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
- <img src="assets/noc-overview.png" alt="NOC Overview" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
- <kbd>NOC Overview</kbd><br/><sub>Fleet Health Envelope</sub>
+<td align="center" style="border:none; padding:8px; width:33%;">
+ <img src="assets/noc-overview.png" alt="NOC Overview" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
+ <sub><b>NOC 概览</b> — 舰队健康包络</sub>
 </td>
-<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
- <img src="assets/engineering-drilldown.png" alt="Engineering Drill-Down" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
- <kbd>Engineering Drill-Down</kbd><br/><sub>Per-Machine Diagnostics</sub>
+<td align="center" style="border:none; padding:8px; width:33%;">
+ <img src="assets/engineering-drilldown.png" alt="Engineering Drill-Down" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
+ <sub><b>工程向下钻取</b> — 单机诊断</sub>
 </td>
-<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
- <img src="assets/capacity-planning.png" alt="Capacity Planning" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
- <kbd>Capacity Planning</kbd><br/><sub>Predictive Forecasting</sub>
+<td align="center" style="border:none; padding:8px; width:33%;">
+ <img src="assets/capacity-planning.png" alt="Capacity Planning" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
+ <sub><b>容量规划</b> — 预测性预测</sub>
 </td>
 </tr>
 <tr>
-<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
- <img src="assets/ldi-manufacturing.png" alt="LDI Command Center" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
- <kbd>LDI Manufacturing</kbd><br/><sub>Command Center</sub>
+<td align="center" style="border:none; padding:8px; width:33%;">
+ <img src="assets/ldi-manufacturing.png" alt="LDI Manufacturing Command Center" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
+ <sub><b>LDI 制造</b> — 指挥中心</sub>
 </td>
-<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
- <img src="assets/ldi-andon.png" alt="Operator Andon Board" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
- <kbd>Operator Andon</kbd><br/><sub>Real-time Alerts</sub>
+<td align="center" style="border:none; padding:8px; width:33%;">
+ <img src="assets/ldi-andon.png" alt="LDI Operator Andon Board" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
+ <sub><b>LDI 安灯看板</b> — 操作员车间视图</sub>
 </td>
-<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
- <img src="assets/ldi-data-readiness.png" alt="Data Readiness Matrix" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
- <kbd>Data Readiness Matrix</kbd><br/><sub>SPC Data Completeness</sub>
+<td align="center" style="border:none; padding:8px; width:33%;">
+ <img src="assets/ldi-engineering.png" alt="LDI Engineering Analytics" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
+ <sub><b>LDI 工程</b> — 良率与 SPC 分析</sub>
 </td>
 </tr>
 </table>
@@ -80,33 +125,21 @@
 
 ## 核心能力
 
-<table style="border:none; border-collapse:collapse; width:100%;">
+<table>
 <tr>
-<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
- <img src="assets/noc-overview.png" alt="NOC Overview" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
- <kbd>NOC Overview</kbd><br/><sub>Fleet Health Envelope</sub>
+<td align="center" width="33%">
+ <h3>遥测摄取</h3>
+ 并行的 Node-RED 遍历器 (walkers) 利用顺序批量 SNMP 轮询和 HTTP 端点，通过 PgBouncer 事务池将数据持久化到 TimescaleDB。<br/><br/>
+ **已验证：** [nodered-ingestion-20260813.txt](docs/evidence/runtime/nodered-ingestion-20260813.txt)
 </td>
-<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
- <img src="assets/engineering-drilldown.png" alt="Engineering Drill-Down" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
- <kbd>Engineering Drill-Down</kbd><br/><sub>Per-Machine Diagnostics</sub>
+<td align="center" width="33%">
+ <h3>统计过程控制 (SPC)</h3>
+ 实时 SPC 指标 (Cpk) 和滚动 3&sigma; 基线（Z-Score 异常检测）在数据库层面进行评估，用于早期预警。
 </td>
-<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
- <img src="assets/capacity-planning.png" alt="Capacity Planning" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
- <kbd>Capacity Planning</kbd><br/><sub>Predictive Forecasting</sub>
-</td>
-</tr>
-<tr>
-<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
- <img src="assets/ldi-manufacturing.png" alt="LDI Command Center" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
- <kbd>LDI Manufacturing</kbd><br/><sub>Command Center</sub>
-</td>
-<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
- <img src="assets/ldi-andon.png" alt="Operator Andon Board" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
- <kbd>Operator Andon</kbd><br/><sub>Real-time Alerts</sub>
-</td>
-<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
- <img src="assets/ldi-data-readiness.png" alt="Data Readiness Matrix" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
- <kbd>Data Readiness Matrix</kbd><br/><sub>SPC Data Completeness</sub>
+<td align="center" width="33%">
+ <h3>连续聚合 (Continuous Aggregates)</h3>
+ 由 TimescaleDB 自动计算每小时、每天和每周的汇总数据，以在跨越大时间范围时维持亚秒级的 Grafana 渲染时间。<br/><br/>
+ **已验证：** [cagg-policies-20260813.txt](docs/evidence/runtime/cagg-policies-20260813.txt)
 </td>
 </tr>
 </table>
@@ -160,7 +193,6 @@ open http://localhost:3000
 ## 架构
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#030407', 'primaryTextColor': '#e2e8f0', 'primaryBorderColor': '#3B82F6', 'lineColor': '#00F2FE', 'secondaryColor': '#1a1f2e', 'tertiaryColor': '#030407'}}}%%
 flowchart LR
   subgraph Collection ["采集 (Collection)"]
     J["Juniper EX4000\n78 个接口"] -->|SNMP v2c| W["Node-RED\n顺序异步批处理"]

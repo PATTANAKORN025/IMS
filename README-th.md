@@ -1,37 +1,81 @@
 <div align="center">
-  <br/>
-  <img src="assets/ims-logo.jpg" alt="IMS Logo" width="130" style="border-radius: 24px; box-shadow: 0 12px 40px rgba(0, 242, 254, 0.4);" />
-  <h1 align="center" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; letter-spacing: 4px; margin-top: 24px; margin-bottom: 8px;">INDUSTRIAL MONITORING SYSTEM (IMS)</h1>
+  <img src="assets/meowrch.png" alt="IMS Logo" width="120" style="margin-bottom: 16px;" />
 </div>
 
-<div align="center">
-  <a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.demolab.com?font=Orbitron&weight=600&size=22&duration=4000&pause=2000&color=00F2FE&center=true&repeat=true&width=800&height=50&lines=%E0%B8%A3%E0%B8%B0%E0%B8%9A%E0%B8%9A%E0%B9%82%E0%B8%97%E0%B8%A3%E0%B8%A1%E0%B8%B2%E0%B8%95%E0%B8%A3%E0%B8%81%E0%B8%B2%E0%B8%A3%E0%B8%9C%E0%B8%A5%E0%B8%B4%E0%B8%95%E0%B8%84%E0%B8%A7%E0%B8%B2%E0%B8%A1%E0%B9%81%E0%B8%A1%E0%B9%88%E0%B8%99%E0%B8%A2%E0%B8%B3%E0%B8%AA%E0%B8%B9%E0%B8%87;%E0%B8%81%E0%B8%B2%E0%B8%A3%E0%B8%84%E0%B8%A7%E0%B8%9A%E0%B8%84%E0%B8%B8%E0%B8%A1%E0%B8%81%E0%B8%A3%E0%B8%B0%E0%B8%9A%E0%B8%A7%E0%B8%99%E0%B8%81%E0%B8%B2%E0%B8%A3%E0%B8%97%E0%B8%B2%E0%B8%87%E0%B8%AA%E0%B8%96%E0%B8%B4%E0%B8%95%E0%B8%B4%20%28SPC%29;%E0%B8%AA%E0%B8%96%E0%B8%B2%E0%B8%9B%E0%B8%B1%E0%B8%95%E0%B8%A2%E0%B8%81%E0%B8%A3%E0%B8%A3%E0%B8%A1%20Digital%20Twin%20%E0%B9%84%E0%B8%A3%E0%B9%89%E0%B8%A3%E0%B8%AD%E0%B8%A2%E0%B8%95%E0%B9%88%E0%B8%AD;%E0%B8%95%E0%B8%A3%E0%B8%A7%E0%B8%88%E0%B8%AA%E0%B8%AD%E0%B8%9A%E0%B9%82%E0%B8%AB%E0%B8%99%E0%B8%94%E0%B9%82%E0%B8%84%E0%B8%A3%E0%B8%87%E0%B8%AA%E0%B8%A3%E0%B9%89%E0%B8%B2%E0%B8%87%E0%B8%9E%E0%B8%B7%E0%B9%89%E0%B8%99%E0%B8%90%E0%B8%B2%E0%B8%99%E0%B8%81%E0%B8%A7%E0%B9%88%E0%B8%B2%201000%2B" alt="Typing SVG" /></a>
-</div>
+<h1 align="center" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; letter-spacing: -0.5px;">Industrial Monitoring System (IMS)</h1>
 
 <div align="center">
-  <p style="font-size: 14px; margin-top: -10px;">
-    <a href="README.md" style="text-decoration: none;">🇬🇧 <b>English</b></a> &nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;
-    <a href="README-th.md" style="text-decoration: none;">🇹🇭 <b>ไทย</b></a> &nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;
+  <p style="font-size: 15px; color: #6B7280;">
+    <a href="README.md" style="text-decoration: none;">🇬🇧 <b>English</b></a> &nbsp;&nbsp;|&nbsp;&nbsp;
+    <a href="README-th.md" style="text-decoration: none;">🇹🇭 <b>ไทย</b></a> &nbsp;&nbsp;|&nbsp;&nbsp;
     <a href="README-zh-CN.md" style="text-decoration: none;">🇨🇳 <b>中文</b></a>
   </p>
 </div>
 
-<br/>
+<div align="center" style="margin: 24px 0;">
+  <strong style="font-size: 18px; font-weight: 500;">ระบบโทรมาตรความแม่นยำสูงสำหรับการผลิตและควบคุมกระบวนการทางสถิติ</strong>
+</div>
 
 <div align="center">
-  <!-- Minimalist Essential Badges -->
-  <a href="https://github.com/PATTANAKORN025/IMS/releases"><img src="https://img.shields.io/badge/Release-v1.0-00F2FE?style=for-the-badge&logo=github&logoColor=white" alt="Release"/></a>
-  <a href="#quick-start"><img src="https://img.shields.io/badge/Build-100%25_Passing-10B981?style=for-the-badge&logo=githubactions&logoColor=white" alt="Build" /></a>
-  <a href="#quick-start"><img src="https://img.shields.io/badge/K6_Stress_Test-Passed-7B61FF?style=for-the-badge&logo=k6&logoColor=white" alt="K6" /></a>
-  <br/><br/>
-  <!-- Elegant Call to Action Buttons -->
-  <a href="docs/architecture/IMS_PLATFORM_BOOK.md"><img src="https://img.shields.io/badge/ENTER_PLATFORM_BOOK-030407?style=for-the-badge&logo=gitbook&logoColor=00F2FE&labelColor=030407&color=00F2FE"></a>
-  &nbsp;
-  <a href="docs/architecture/ARCHITECTURE.md"><img src="https://img.shields.io/badge/READ_ARCHITECTURE-030407?style=for-the-badge&logo=amazonaws&logoColor=10B981&labelColor=030407&color=10B981"></a>
+  <img src="assets/apex-ldi-noc-banner.jpg" alt="APEX Circuit LDI NOC Banner" width="100%" style="border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); margin-bottom: 24px;" />
+  <br/>
+  <br/>
+  <a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.demolab.com?font=Orbitron&weight=600&size=36&duration=4000&pause=2000&color=00F2FE&center=true&repeat=true&width=1000&height=60&lines=APEX+Circuit+IMS+|+System+Initializing...;Advanced+Manufacturing+Intelligence+%26+NOC;Zero-Latency+Digital+Twin+Architecture" alt="Typing SVG" /></a>
 </div>
 
 <br/>
-<hr style="height: 1px; border: none; background: linear-gradient(to right, transparent, rgba(59, 130, 246, 0.5), transparent);" />
+
+<div align="center">
+  <!-- Status Badges -->
+  <a href="https://github.com/PATTANAKORN025/IMS/releases"><img src="https://img.shields.io/badge/Release-v1.0-030407?style=flat-square&logo=github&logoColor=10B981" alt="Release"/></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-030407?style=flat-square&logo=opensourceinitiative&logoColor=00F2FE" alt="License"/></a>
+  <a href="#quick-start"><img src="https://img.shields.io/badge/Build-Passing-10B981?style=flat-square&logoColor=white" alt="Tests" /></a>
+  <a href="#quick-start"><img src="https://img.shields.io/badge/K6_Stress_Test-Passed-030407?style=flat-square&logo=k6&logoColor=7B61FF" alt="K6" /></a>
+  <br/><br/>
+  <!-- Tech Badges -->
+  <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/Docker-Ready-030407?style=flat-square&logo=docker&logoColor=2496ED" alt="Docker"/></a>
+  <a href="https://grafana.com/"><img src="https://img.shields.io/badge/Grafana-v11+-030407?style=flat-square&logo=grafana&logoColor=F46800" alt="Grafana"/></a>
+  <a href="https://nodered.org/"><img src="https://img.shields.io/badge/Node--RED-v4+-030407?style=flat-square&logo=nodered&logoColor=8F0000" alt="Node-RED"/></a>
+  <a href="https://www.timescale.com/"><img src="https://img.shields.io/badge/TimescaleDB-2.x-030407?style=flat-square&logo=postgresql&logoColor=F59E0B" alt="TimescaleDB"/></a>
+</div>
+
+<br/>
+
+<div align="center">
+  <table style="border:none; border-collapse:collapse; width:100%;">
+<tr>
+<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
+ <img src="assets/noc-overview.png" alt="NOC Overview" width="100%" style="border-radius:8px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);" /><br/><br/>
+ <b style="font-size: 14px;">NOC Overview</b><br/><sub style="color: #6B7280;">Fleet Health Envelope</sub>
+</td>
+<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
+ <img src="assets/engineering-drilldown.png" alt="Engineering Drill-Down" width="100%" style="border-radius:8px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);" /><br/><br/>
+ <b style="font-size: 14px;">Engineering Drill-Down</b><br/><sub style="color: #6B7280;">Per-Machine Diagnostics</sub>
+</td>
+<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
+ <img src="assets/capacity-planning.png" alt="Capacity Planning" width="100%" style="border-radius:8px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);" /><br/><br/>
+ <b style="font-size: 14px;">Capacity Planning</b><br/><sub style="color: #6B7280;">Predictive Forecasting</sub>
+</td>
+</tr>
+<tr>
+<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
+ <img src="assets/ldi-manufacturing.png" alt="LDI Command Center" width="100%" style="border-radius:8px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);" /><br/><br/>
+ <b style="font-size: 14px;">LDI Manufacturing</b><br/><sub style="color: #6B7280;">Command Center</sub>
+</td>
+<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
+ <img src="assets/ldi-andon.png" alt="Operator Andon Board" width="100%" style="border-radius:8px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);" /><br/><br/>
+ <b style="font-size: 14px;">Operator Andon</b><br/><sub style="color: #6B7280;">Real-time Line Alerts</sub>
+</td>
+<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
+ <img src="assets/ldi-data-readiness.png" alt="Data Readiness Matrix" width="100%" style="border-radius:8px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);" /><br/><br/>
+ <b style="font-size: 14px;">Data Readiness Matrix</b><br/><sub style="color: #6B7280;">SPC Data Completeness</sub>
+</td>
+</tr>
+</table>
+</div>
+
+<br/>
+<hr style="height: 1px; border: none; background: #E5E7EB;" />
 <br/>
 ## ภาพรวมของระบบ (System Overview)
 
@@ -44,32 +88,33 @@
 
 
 <table style="border:none; border-collapse:collapse; width:100%;">
+
 <tr>
-<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
- <img src="assets/noc-overview.png" alt="NOC Overview" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
- <kbd>NOC Overview</kbd><br/><sub>Fleet Health Envelope</sub>
+<td align="center" style="border:none; padding:8px; width:33%;">
+ <img src="assets/noc-overview.png" alt="NOC Overview" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
+ <sub><b>NOC Overview</b> — Fleet Health Envelope</sub>
 </td>
-<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
- <img src="assets/engineering-drilldown.png" alt="Engineering Drill-Down" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
- <kbd>Engineering Drill-Down</kbd><br/><sub>Per-Machine Diagnostics</sub>
+<td align="center" style="border:none; padding:8px; width:33%;">
+ <img src="assets/engineering-drilldown.png" alt="Engineering Drill-Down" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
+ <sub><b>Engineering Drill-Down</b> — Per-Machine Diagnostics</sub>
 </td>
-<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
- <img src="assets/capacity-planning.png" alt="Capacity Planning" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
- <kbd>Capacity Planning</kbd><br/><sub>Predictive Forecasting</sub>
+<td align="center" style="border:none; padding:8px; width:33%;">
+ <img src="assets/capacity-planning.png" alt="Capacity Planning" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
+ <sub><b>Capacity Planning</b> — Predictive Forecasting</sub>
 </td>
 </tr>
 <tr>
-<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
- <img src="assets/ldi-manufacturing.png" alt="LDI Command Center" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
- <kbd>LDI Manufacturing</kbd><br/><sub>Command Center</sub>
+<td align="center" style="border:none; padding:8px; width:33%;">
+ <img src="assets/ldi-manufacturing.png" alt="LDI Manufacturing Command Center" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
+ <sub><b>LDI Manufacturing</b> — Command Center</sub>
 </td>
-<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
- <img src="assets/ldi-andon.png" alt="Operator Andon Board" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
- <kbd>Operator Andon</kbd><br/><sub>Real-time Alerts</sub>
+<td align="center" style="border:none; padding:8px; width:33%;">
+ <img src="assets/ldi-andon.png" alt="LDI Operator Andon Board" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
+ <sub><b>LDI Andon Board</b> — Operator Floor View</sub>
 </td>
-<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
- <img src="assets/ldi-data-readiness.png" alt="Data Readiness Matrix" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
- <kbd>Data Readiness Matrix</kbd><br/><sub>SPC Data Completeness</sub>
+<td align="center" style="border:none; padding:8px; width:33%;">
+ <img src="assets/ldi-engineering.png" alt="LDI Engineering Analytics" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
+ <sub><b>LDI Engineering</b> — Yield & SPC Analytics</sub>
 </td>
 </tr>
 </table>
@@ -80,33 +125,21 @@
 
 ## ความสามารถหลัก (Core Capabilities)
 
-<table style="border:none; border-collapse:collapse; width:100%;">
+<table>
 <tr>
-<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
- <img src="assets/noc-overview.png" alt="NOC Overview" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
- <kbd>NOC Overview</kbd><br/><sub>Fleet Health Envelope</sub>
+<td align="center" width="33%">
+ <h3>การนำเข้าโทรมาตร (Telemetry Ingestion)</h3>
+ ระบบ Node-RED walkers แบบขนาน ซึ่งใช้การดึงข้อมูล SNMP ปริมาณมากแบบตามลำดับ (sequential bulk SNMP polling) และ HTTP endpoints และทำการบันทึกข้อมูลแบบถาวรลงใน TimescaleDB ผ่านการรวมกลุ่มทรานแซกชัน (transaction pooling) ด้วย PgBouncer<br/><br/>
+ **ตรวจสอบแล้ว:** [nodered-ingestion-20260813.txt](docs/evidence/runtime/nodered-ingestion-20260813.txt)
 </td>
-<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
- <img src="assets/engineering-drilldown.png" alt="Engineering Drill-Down" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
- <kbd>Engineering Drill-Down</kbd><br/><sub>Per-Machine Diagnostics</sub>
+<td align="center" width="33%">
+ <h3>การควบคุมกระบวนการเชิงสถิติ (Statistical Process Control)</h3>
+ เมทริกซ์ SPC แบบเรียลไทม์ (Cpk) และค่าพื้นฐาน 3&sigma; แบบหมุนเวียน (การตรวจจับความผิดปกติด้วย Z-Score) ซึ่งประเมินในระดับฐานข้อมูล เพื่อการแจ้งเตือนล่วงหน้า
 </td>
-<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
- <img src="assets/capacity-planning.png" alt="Capacity Planning" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
- <kbd>Capacity Planning</kbd><br/><sub>Predictive Forecasting</sub>
-</td>
-</tr>
-<tr>
-<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
- <img src="assets/ldi-manufacturing.png" alt="LDI Command Center" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
- <kbd>LDI Manufacturing</kbd><br/><sub>Command Center</sub>
-</td>
-<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
- <img src="assets/ldi-andon.png" alt="Operator Andon Board" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
- <kbd>Operator Andon</kbd><br/><sub>Real-time Alerts</sub>
-</td>
-<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
- <img src="assets/ldi-data-readiness.png" alt="Data Readiness Matrix" width="100%" style="border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" /><br/><br/>
- <kbd>Data Readiness Matrix</kbd><br/><sub>SPC Data Completeness</sub>
+<td align="center" width="33%">
+ <h3>Continuous Aggregation</h3>
+ การสรุปผลรายชั่วโมง, รายวัน, และรายสัปดาห์ จะถูกคำนวณอัตโนมัติโดย TimescaleDB เพื่อรักษาเวลาในการเรนเดอร์ Grafana ให้อยู่ในระดับต่ำกว่าวินาทีสำหรับช่วงเวลาที่กว้าง<br/><br/>
+ **ตรวจสอบแล้ว:** [cagg-policies-20260813.txt](docs/evidence/runtime/cagg-policies-20260813.txt)
 </td>
 </tr>
 </table>
@@ -160,7 +193,6 @@ open http://localhost:3000
 ## สถาปัตยกรรม (Architecture)
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#030407', 'primaryTextColor': '#e2e8f0', 'primaryBorderColor': '#3B82F6', 'lineColor': '#00F2FE', 'secondaryColor': '#1a1f2e', 'tertiaryColor': '#030407'}}}%%
 flowchart LR
   subgraph Collection ["Collection"]
     J["Juniper EX4000\n78 interfaces"] -->|SNMP v2c| W["Node-RED\nSequential Async Bulk"]
