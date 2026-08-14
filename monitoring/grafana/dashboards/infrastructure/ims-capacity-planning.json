@@ -114,7 +114,6 @@
       "id": 997,
       "type": "grafana-clock-panel",
       "title": "",
-      "datasource": null,
       "gridPos": {
         "x": 19,
         "y": 1,
@@ -677,10 +676,44 @@
       },
       "type": "stat",
       "title": "◉ Fleet Health Score",
-      "libraryPanel": {
-        "uid": "ims-lib-fleet-health-score",
-        "name": "Fleet Health Score"
-      }
+      "description": "Was a Grafana library panel (ims-lib-fleet-health-score) -- library panels live in Grafana's own DB, not in this repo's provisioned files, so a `docker compose down -v` (DR Drill 3, 2026-08-13) wiped it while this reference survived. Restored inline so it can't recur.",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "green", "value": 90 }
+            ]
+          },
+          "color": { "mode": "thresholds" }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "textMode": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "uid": "timescaledb" },
+          "format": "table",
+          "rawSql": "WITH latest AS (SELECT device_id, disk_used_gb / NULLIF(disk_total_gb, 0) * 100 AS disk_pct, ram_used_mb / NULLIF(ram_total_mb, 0) * 100 AS ram_pct, cpu_load_percent AS cpu_pct FROM public.sys_metrics WHERE \"time\" > NOW() - INTERVAL '5 minutes') SELECT 'Fleet Score' AS metric, ROUND(AVG(CASE WHEN disk_pct > 90 OR ram_pct > 95 OR cpu_pct > 90 THEN 0 WHEN disk_pct > 80 OR ram_pct > 85 OR cpu_pct > 80 THEN 50 ELSE 100 END), 1) AS value FROM latest"
+        }
+      ]
     },
     {
       "id": 200,

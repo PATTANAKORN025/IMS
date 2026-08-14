@@ -142,7 +142,6 @@
       "id": 1001,
       "type": "grafana-clock-panel",
       "title": "",
-      "datasource": null,
       "gridPos": {
         "x": 19,
         "y": 1,
