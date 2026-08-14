@@ -7,27 +7,27 @@
 ## Current state, verified this pass
 
 - Grafana auth is local-only: `GF_SECURITY_ADMIN_USER` /
-  `GF_SECURITY_ADMIN_PASSWORD` (single admin account), no
-  `GF_AUTH_GENERIC_OAUTH_*` or SAML env vars set anywhere in
-  `docker-compose.yaml`. `GF_AUTH_ANONYMOUS_ENABLED: "false"` (good --
-  no anonymous access).
+ `GF_SECURITY_ADMIN_PASSWORD` (single admin account), no
+ `GF_AUTH_GENERIC_OAUTH_*` or SAML env vars set anywhere in
+ `docker-compose.yaml`. `GF_AUTH_ANONYMOUS_ENABLED: "false"` (good --
+ no anonymous access).
 - Image is `grafana/grafana:13.1.1` -- **OSS**, not
-  `grafana-enterprise`. Grafana made SAML support free in OSS starting
-  around v10.1 (verify against the 13.1.1 release notes before relying
-  on this at implementation time -- stating from general knowledge,
-  not re-verified against this specific version's docs this pass).
-  Generic OAuth2/OIDC (`auth.generic_oauth`) has always been an OSS
-  core feature, no edition dependency.
+ `grafana-enterprise`. Grafana made SAML support free in OSS starting
+ around v10.1 (verify against the 13.1.1 release notes before relying
+ on this at implementation time -- stating from general knowledge,
+ not re-verified against this specific version's docs this pass).
+ Generic OAuth2/OIDC (`auth.generic_oauth`) has always been an OSS
+ core feature, no edition dependency.
 - `alarm-api` has no login of its own -- it trusts whatever Grafana
-  session the `proxy` service's `auth_request` already validated
-  (`SECURITY_MODEL.md` Boundary 1a). SSO on Grafana therefore
-  propagates to `alarm-api` "for free," no separate SSO integration
-  needed on that service.
+ session the `proxy` service's `auth_request` already validated
+ (`SECURITY_MODEL.md` Boundary 1a). SSO on Grafana therefore
+ propagates to `alarm-api` "for free," no separate SSO integration
+ needed on that service.
 - `GF_SECURITY_COOKIE_SECURE: "false"` -- fine for this local/mock
-  environment, but a **real prerequisite for any production SSO
-  rollout**: secure cookies (`Secure` flag, requires HTTPS) should be
-  on before real corporate identities flow through this system, not
-  as an afterthought.
+ environment, but a **real prerequisite for any production SSO
+ rollout**: secure cookies (`Secure` flag, requires HTTPS) should be
+ on before real corporate identities flow through this system, not
+ as an afterthought.
 
 ## Why SSO, precisely
 
@@ -78,52 +78,52 @@ that literal group name.
 ## Rollout plan (staged, not a single cutover)
 
 1. **Add OIDC alongside the existing local admin account, don't
-   remove it yet.** `GF_AUTH_DISABLE_LOGIN_FORM` stays `false` (or
-   unset) initially -- the local admin remains a break-glass fallback
-   if the IdP is unreachable. Losing the only working login to a
-   misconfigured OIDC setup mid-rollout would be a self-inflicted
-   outage.
+  remove it yet.** `GF_AUTH_DISABLE_LOGIN_FORM` stays `false` (or
+  unset) initially -- the local admin remains a break-glass fallback
+  if the IdP is unreachable. Losing the only working login to a
+  misconfigured OIDC setup mid-rollout would be a self-inflicted
+  outage.
 2. Test with a single real IdP account end-to-end: login redirects
-   correctly, Grafana session is created, `/alarm-api/` `auth_request`
-   still passes (it doesn't care *how* the Grafana session was
-   established, only that one exists -- should need zero changes on
-   the proxy/alarm-api side).
+  correctly, Grafana session is created, `/alarm-api/` `auth_request`
+  still passes (it doesn't care *how* the Grafana session was
+  established, only that one exists -- should need zero changes on
+  the proxy/alarm-api side).
 3. Confirm `${__user.login}` in the Alarm Console buttons now reflects
-   the real IdP identity (e.g. email or corporate username) instead of
-   the shared admin account -- this is the actual payoff, verify it
-   explicitly rather than assuming OIDC login alone guarantees it.
+  the real IdP identity (e.g. email or corporate username) instead of
+  the shared admin account -- this is the actual payoff, verify it
+  explicitly rather than assuming OIDC login alone guarantees it.
 4. Only after step 3 is confirmed working for at least one real user,
-   decide whether to disable the local login form
-   (`GF_AUTH_DISABLE_LOGIN_FORM: "true"`) and go SSO-only. That's an
-   organizational decision (are all real operators on the IdP yet?),
-   not an engineering one -- don't make it unilaterally as part of
-   "finishing the SSO feature."
+  decide whether to disable the local login form
+  (`GF_AUTH_DISABLE_LOGIN_FORM: "true"`) and go SSO-only. That's an
+  organizational decision (are all real operators on the IdP yet?),
+  not an engineering one -- don't make it unilaterally as part of
+  "finishing the SSO feature."
 
 ## Testing plan
 
 - Config-only dry run: since this needs a real IdP's client
-  credentials to test end-to-end, the actual OIDC handshake cannot be
-  verified without picking a real (or sandbox) IdP first -- that's the
-  real blocker to moving this from spec to implementation, not
-  engineering effort.
+ credentials to test end-to-end, the actual OIDC handshake cannot be
+ verified without picking a real (or sandbox) IdP first -- that's the
+ real blocker to moving this from spec to implementation, not
+ engineering effort.
 - Once an IdP is chosen: single real-user login test (step 2/3 above),
-  then a second test confirming the local admin fallback still works
-  (didn't get accidentally locked out by the new config).
+ then a second test confirming the local admin fallback still works
+ (didn't get accidentally locked out by the new config).
 - Regression: `/alarm-api/` ack/resolve still works end-to-end via an
-  SSO-authenticated session -- same regression bar as
-  `SPEC_ALARM_ACTOR_IDENTITY.md`, since these two specs compound (SSO
-  gives real identity, actor-identity verification makes that identity
-  trustworthy at the write layer).
+ SSO-authenticated session -- same regression bar as
+ `SPEC_ALARM_ACTOR_IDENTITY.md`, since these two specs compound (SSO
+ gives real identity, actor-identity verification makes that identity
+ trustworthy at the write layer).
 
 ## Explicitly out of scope for this spec
 
 - Choosing a specific IdP -- organizational decision, not made here.
 - SAML as an alternative to OIDC -- OIDC recommended above for
-  simplicity; SAML remains possible on this Grafana version if a
-  specific IdP requires it, not designed here since nothing currently
-  points at that requirement.
+ simplicity; SAML remains possible on this Grafana version if a
+ specific IdP requires it, not designed here since nothing currently
+ points at that requirement.
 - Multi-tenancy / per-team dashboard permissions beyond basic
-  Admin/Editor/Viewer role mapping -- this repo is explicitly
-  single-owner today (`OWNERSHIP.md`), designing fine-grained
-  team-based access now would be solving a problem that doesn't exist
-  yet.
+ Admin/Editor/Viewer role mapping -- this repo is explicitly
+ single-owner today (`OWNERSHIP.md`), designing fine-grained
+ team-based access now would be solving a problem that doesn't exist
+ yet.

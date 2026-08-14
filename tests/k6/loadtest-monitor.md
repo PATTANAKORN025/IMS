@@ -21,7 +21,7 @@ docker exec ims-pgbouncer psql -p 5432 -U pgbouncer pgbouncer -c "SHOW STATS;" 2
 # Active queries count + longest running
 watch -n 2 "docker exec ims-timescaledb psql -U ims_admin -d ims -c \"
 SELECT count(*) as active_queries,
-    max(now() - query_start) as longest_running
+  max(now() - query_start) as longest_running
 FROM pg_stat_activity
 WHERE state = 'active' AND datname = 'ims';
 \""

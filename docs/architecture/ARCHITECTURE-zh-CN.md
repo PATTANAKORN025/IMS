@@ -12,28 +12,28 @@ IMS 是一个 Docker Compose 技术栈，包含**两条独立的遥测管道**�
 
 ```mermaid
 flowchart TB
-  subgraph LDI ["LDI 制造管道 (主干，真实)"]
-    SIM["ldi_simulator.json\nOrnstein-Uhlenbeck 实时模拟器\n2秒周期，10台机器"] -->|"HTTP POST /ldi-telemetry"| ING["ldi_ingestion.json\n鉴权检查 -> INSERT"]
-    ING --> LDIDATA[("public.ldi_data\n超表，1小时区块")]
-    ALMSIM["ldi_alarm_simulator.json\n基于条件驱动 + 噪声\n10秒周期"] --> ALARMLOG[("public.ldi_alarm_log")]
-  end
+ subgraph LDI ["LDI 制造管道 (主干，真实)"]
+  SIM["ldi_simulator.json\nOrnstein-Uhlenbeck 实时模拟器\n2秒周期，10台机器"] -->|"HTTP POST /ldi-telemetry"| ING["ldi_ingestion.json\n鉴权检查 -> INSERT"]
+  ING --> LDIDATA[("public.ldi_data\n超表，1小时区块")]
+  ALMSIM["ldi_alarm_simulator.json\n基于条件驱动 + 噪声\n10秒周期"] --> ALARMLOG[("public.ldi_alarm_log")]
+ end
 
-  subgraph LEGACY ["传统 SNMP / 基础设施管道"]
-    DEV["2台真实服务器\n+ SNMP 模拟器"] -->|"SNMP v2c, 30秒轮询"| NR["ingestion.json\n5路分发执行器 -> sre_parser"]
-    NR --> SYSMETRICS[("public.sys_metrics\npublic.net_metrics\npublic.ldi_metrics")]
-  end
+ subgraph LEGACY ["传统 SNMP / 基础设施管道"]
+  DEV["2台真实服务器\n+ SNMP 模拟器"] -->|"SNMP v2c, 30秒轮询"| NR["ingestion.json\n5路分发执行器 -> sre_parser"]
+  NR --> SYSMETRICS[("public.sys_metrics\npublic.net_metrics\npublic.ldi_metrics")]
+ end
 
-  LDIDATA --> GRAFANA["Grafana\n12个仪表板"]
-  ALARMLOG --> GRAFANA
-  SYSMETRICS --> GRAFANA
-  SYSMETRICS --> PROM["Prometheus"]
-  GRAFANA -->|"原生告警规则"| NRWEBHOOK["Node-RED /alert-webhook"]
-  PROM --> AM["Alertmanager"] --> NRWEBHOOK
-  NRWEBHOOK --> LINE["LINE Messaging API"]
-  NRWEBHOOK --> TEAMS["MS Teams Webhook"]
+ LDIDATA --> GRAFANA["Grafana\n12个仪表板"]
+ ALARMLOG --> GRAFANA
+ SYSMETRICS --> GRAFANA
+ SYSMETRICS --> PROM["Prometheus"]
+ GRAFANA -->|"原生告警规则"| NRWEBHOOK["Node-RED /alert-webhook"]
+ PROM --> AM["Alertmanager"] --> NRWEBHOOK
+ NRWEBHOOK --> LINE["LINE Messaging API"]
+ NRWEBHOOK --> TEAMS["MS Teams Webhook"]
 
-  style LDI fill:#1e293b,stroke:#10B981,color:#e2e8f0
-  style LEGACY fill:#1e293b,stroke:#F59E0B,color:#e2e8f0
+ style LDI fill:#1e293b,stroke:#10B981,color:#e2e8f0
+ style LEGACY fill:#1e293b,stroke:#F59E0B,color:#e2e8f0
 ```
 
 **存在两条管道的原因：** 传统的 SNMP 管道 (`ingestion.json`) 是系统的最初设计 —— 轮询支持 SNMP 的设备，通过有状态的 `sre_parser` 进行解析，并插入至 `sys_metrics`/`net_metrics`/`ldi_metrics`。LDI 制造遥测后来被赋予了其专属的、保真度更高的管道（`ldi_data`，由 HTTP POST 而非 SNMP 提供数据），因为制造仪表板需要每个样本的 PE/JE/Cpk 精度，而用于 k6 合成测试的 `ldi_metrics` 表在设计上从未打算承载此类精度。**所有 12 个 Grafana 仪表板的 LDI/制造内容均从 `ldi_data` 读取，而非 `ldi_metrics`。** `ldi_metrics` 仍然存在且仍在写入（通过 `ingestion.json` 的 SRE 解析器），但其几个 LDI 专有列（`throughput`、`power_watt`、`vibration`）已确认对于 LDI 级设备始终为 `0` —— 这是该管道中的一个已知缺陷，但在 `ldi_data` 中不存在。参见下方的“已知差异 (Known Gaps)”。

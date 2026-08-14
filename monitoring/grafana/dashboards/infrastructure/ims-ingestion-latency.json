@@ -301,19 +301,19 @@
           "refId": "P50",
           "datasource": { "uid": "timescaledb" },
           "format": "time_series",
-          "rawSql": "SELECT time_bucket('1 minute', \"time\") AS time, 'P50' AS metric, percentile_cont(0.5) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (ingest_ts - \"time\")) * 1000) AS value FROM public.ldi_data WHERE ingest_ts IS NOT NULL AND $__timeFilter(\"time\") GROUP BY 1 ORDER BY 1"
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: ldi_data_1m CAGG has no ingest_ts column (checked live, information_schema.columns) -- this panel's whole purpose is measuring ingest_ts, so raw ldi_data is unavoidable, not a tiering-contract oversight */ SELECT time_bucket('1 minute', \"time\") AS time, 'P50' AS metric, percentile_cont(0.5) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (ingest_ts - \"time\")) * 1000) AS value FROM public.ldi_data WHERE ingest_ts IS NOT NULL AND $__timeFilter(\"time\") GROUP BY 1 ORDER BY 1"
         },
         {
           "refId": "P95",
           "datasource": { "uid": "timescaledb" },
           "format": "time_series",
-          "rawSql": "SELECT time_bucket('1 minute', \"time\") AS time, 'P95' AS metric, percentile_cont(0.95) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (ingest_ts - \"time\")) * 1000) AS value FROM public.ldi_data WHERE ingest_ts IS NOT NULL AND $__timeFilter(\"time\") GROUP BY 1 ORDER BY 1"
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: see P50 target, ldi_data_1m has no ingest_ts */ SELECT time_bucket('1 minute', \"time\") AS time, 'P95' AS metric, percentile_cont(0.95) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (ingest_ts - \"time\")) * 1000) AS value FROM public.ldi_data WHERE ingest_ts IS NOT NULL AND $__timeFilter(\"time\") GROUP BY 1 ORDER BY 1"
         },
         {
           "refId": "P99",
           "datasource": { "uid": "timescaledb" },
           "format": "time_series",
-          "rawSql": "SELECT time_bucket('1 minute', \"time\") AS time, 'P99' AS metric, percentile_cont(0.99) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (ingest_ts - \"time\")) * 1000) AS value FROM public.ldi_data WHERE ingest_ts IS NOT NULL AND $__timeFilter(\"time\") GROUP BY 1 ORDER BY 1"
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: see P50 target, ldi_data_1m has no ingest_ts */ SELECT time_bucket('1 minute', \"time\") AS time, 'P99' AS metric, percentile_cont(0.99) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (ingest_ts - \"time\")) * 1000) AS value FROM public.ldi_data WHERE ingest_ts IS NOT NULL AND $__timeFilter(\"time\") GROUP BY 1 ORDER BY 1"
         }
       ],
       "description": "Real per-minute P50/P95/P99 of (ingest_ts - time) for ldi_data -- the highest-volume production table. NO_TIMEFILTER caveat does not apply here: this panel needs the dashboard time range."

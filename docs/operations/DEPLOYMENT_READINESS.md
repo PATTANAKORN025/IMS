@@ -144,9 +144,9 @@ docker exec ims-node-red node -e "
 const snmp = require('net-snmp');
 const session = snmp.createSession('<ip>', '<community>', {port: 161, timeout: 5000});
 session.get(['1.3.6.1.2.1.1.1.0'], (err, varbinds) => {
-  if (err) console.error('ERROR:', err.message);
-  else console.log('OK:', varbinds[0].value.toString());
-  session.close();
+ if (err) console.error('ERROR:', err.message);
+ else console.log('OK:', varbinds[0].value.toString());
+ session.close();
 });
 "
 ```

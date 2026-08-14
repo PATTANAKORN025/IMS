@@ -45,12 +45,12 @@ C4Container
  System_Ext(devices, "Edge Devices", "Servers, Switches, LDI")
  
  System_Boundary(c1, "IMS Docker Stack") {
-  Container(nodered, "Node-RED", "Node.js", "Handles sequential bulk ingestion, parsing, and circuit breaking.")
-  Container(pgbouncer, "PgBouncer", "C", "Connection pooling for TimescaleDB to prevent connection starvation.")
-  ContainerDb(timescale, "TimescaleDB", "PostgreSQL", "Stores hyper-scale time-series data and Continuous Aggregates (CAGGs).")
-  Container(grafana, "Grafana", "Go", "Provides the Cyberpunk HUD visualization layer.")
-  Container(prometheus, "Prometheus", "Go", "Scrapes metrics from TimescaleDB and evaluates alert rules.")
-  Container(alertmanager, "Alertmanager", "Go", "Handles alert deduplication, inhibition, and routing.")
+ Container(nodered, "Node-RED", "Node.js", "Handles sequential bulk ingestion, parsing, and circuit breaking.")
+ Container(pgbouncer, "PgBouncer", "C", "Connection pooling for TimescaleDB to prevent connection starvation.")
+ ContainerDb(timescale, "TimescaleDB", "PostgreSQL", "Stores hyper-scale time-series data and Continuous Aggregates (CAGGs).")
+ Container(grafana, "Grafana", "Go", "Provides the Cyberpunk HUD visualization layer.")
+ Container(prometheus, "Prometheus", "Go", "Scrapes metrics from TimescaleDB and evaluates alert rules.")
+ Container(alertmanager, "Alertmanager", "Go", "Handles alert deduplication, inhibition, and routing.")
  }
  
  Rel(devices, nodered, "Telemetry (SNMP/HTTP)")
@@ -69,26 +69,26 @@ This diagram explains the fault-tolerance mechanism when a server goes offline.
 
 ```mermaid
 sequenceDiagram
-  participant Timer as <img src="docs/assets/icons/clock.svg" width="18" height="18" align="center" /> Node-RED Inject (30s)
-  participant Walker as ️ SNMP Walker
-  participant State as Context State
-  participant Device as Edge Server (Offline)
+ participant Timer as <img src="docs/assets/icons/clock.svg" width="18" height="18" align="center" /> Node-RED Inject (30s)
+ participant Walker as ️ SNMP Walker
+ participant State as Context State
+ participant Device as Edge Server (Offline)
+ 
+ Timer->>Walker: Trigger poll cycle
+ Walker->>State: Check device status
+ 
+ alt Status == OPEN (Tripped)
+  State-->>Walker: Abort poll (Protect Network)
+ else Status == CLOSED (Healthy)
+  Walker->>Device: SNMP Bulk Request
+  Device--xWalker: Timeout (No Response)
+  Walker->>State: Increment Error Count
   
-  Timer->>Walker: Trigger poll cycle
-  Walker->>State: Check device status
-  
-  alt Status == OPEN (Tripped)
-    State-->>Walker: Abort poll (Protect Network)
-  else Status == CLOSED (Healthy)
-    Walker->>Device: SNMP Bulk Request
-    Device--xWalker: Timeout (No Response)
-    Walker->>State: Increment Error Count
-    
-    alt Error Count == 2
-      State->>State: Transition to OPEN state
-      State->>State: Emit "Node Offline" metric to DB
-    end
+  alt Error Count == 2
+   State->>State: Transition to OPEN state
+   State->>State: Emit "Node Offline" metric to DB
   end
-  
-  note over Timer,Device: After 2 minutes, State transitions to HALF_OPEN to test recovery.
+ end
+ 
+ note over Timer,Device: After 2 minutes, State transitions to HALF_OPEN to test recovery.
 ```

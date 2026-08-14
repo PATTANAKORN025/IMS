@@ -45,19 +45,19 @@
 ```
  IMS Dashboards
 ├── Infrastructure (服务器/网络)
-│  ├── NOC 概览      — 管理层设备包络 (仅限基础设施 -- LDI 在下面)
-│  ├── 工程深入分析 — 单个服务器深入分析: CPU/内存/磁盘/温度/网络
-│  ├── 容量规划    — 线性回归预测 (距离磁盘/内存占满的天数)
-│  └── 元监控     — 数据管道自身的健康状况 (行/秒, 批处理成功, 重试队列)
+│ ├── NOC 概览   — 管理层设备包络 (仅限基础设施 -- LDI 在下面)
+│ ├── 工程深入分析 — 单个服务器深入分析: CPU/内存/磁盘/温度/网络
+│ ├── 容量规划  — 线性回归预测 (距离磁盘/内存占满的天数)
+│ └── 元监控   — 数据管道自身的健康状况 (行/秒, 批处理成功, 重试队列)
 └── LDI Manufacturing (PCB 激光直接成像设备)
-  ├── 简易概览      — 零配置全设备一览，无需设置过滤器
-  ├── LDI 制造    — 管理层 KPI + 机器遥测 + 警报流 (主指挥中心)
-  ├── LDI 操作员安灯   — 工厂车间信息亭，1280x720，零滚动，只读 (无交互元素)
-  ├── LDI 警报控制台    — 交互式确认/解决工作流，只读安灯板的配套组件
-  ├── LDI 警报字典  — 参考查询：完整供应商警报定义 + 最近发生事件
-  ├── LDI 工程分析 — Cpk/SPC 排名，RCA 真理测试，PE/JE 分布
-  ├── LDI 机器快照  — 单击任何警报/日志以检查确切的毫秒
-  └── LDI 数据就绪度   — 自我审计数据质量仪表盘 (覆盖率 %, 差距)
+ ├── 简易概览   — 零配置全设备一览，无需设置过滤器
+ ├── LDI 制造  — 管理层 KPI + 机器遥测 + 警报流 (主指挥中心)
+ ├── LDI 操作员安灯  — 工厂车间信息亭，1280x720，零滚动，只读 (无交互元素)
+ ├── LDI 警报控制台  — 交互式确认/解决工作流，只读安灯板的配套组件
+ ├── LDI 警报字典 — 参考查询：完整供应商警报定义 + 最近发生事件
+ ├── LDI 工程分析 — Cpk/SPC 排名，RCA 真理测试，PE/JE 分布
+ ├── LDI 机器快照 — 单击任何警报/日志以检查确切的毫秒
+ └── LDI 数据就绪度  — 自我审计数据质量仪表盘 (覆盖率 %, 差距)
 ```
 
 ---
@@ -70,23 +70,23 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  IMS NOC Overview                      │
+│ IMS NOC Overview           │
 ├─────────────────────────────────────────────────────────────────┤
-│                                 │
+│                 │
 │ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌───────────┐ │
-│ │ Total    │ │ Healthy   │ │ Warning   │ │ Critical │ │
-│ │ Machines: 5 │ │ Machines: 4 │ │ Alerts: 1  │ │ Alerts: 0 │ │
-│ │  ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen)    │ │  ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen)    │ │  ![Warning](https://img.shields.io/badge/Status-Warning-yellow)    │ │     │ │
+│ │ Total  │ │ Healthy  │ │ Warning  │ │ Critical │ │
+│ │ Machines: 5 │ │ Machines: 4 │ │ Alerts: 1 │ │ Alerts: 0 │ │
+│ │ ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen)  │ │ ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen)  │ │ ![Warning](https://img.shields.io/badge/Status-Warning-yellow)  │ │   │ │
 │ └─────────────┘ └─────────────┘ └─────────────┘ └───────────┘ │
-│                                 │
+│                 │
 │ ┌───────────────────────────────────────────────────────────┐ │
-│ │ Fleet CPU Usage (Last 1 Hour)              │ │
-│ │ [Line chart showing all machines CPU over time]     │ │
+│ │ Fleet CPU Usage (Last 1 Hour)       │ │
+│ │ [Line chart showing all machines CPU over time]   │ │
 │ └───────────────────────────────────────────────────────────┘ │
-│                                 │
+│                 │
 │ ┌───────────────────────────────────────────────────────────┐ │
-│ │ Active Alerts                      │ │
-│ │ [Table of current firing alerts with severity]      │ │
+│ │ Active Alerts           │ │
+│ │ [Table of current firing alerts with severity]   │ │
 │ └───────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -109,43 +109,43 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  Engineering Drilldown — [Select Machine ▼]         │
+│ Engineering Drilldown — [Select Machine ▼]     │
 ├─────────────────────────────────────────────────────────────────┤
-│                                 │
+│                 │
 │ ┌───────────────────────────────────────────────────────────┐ │
-│ │ Network Interface Traffic (Symmetrical Butterfly)    │ │
+│ │ Network Interface Traffic (Symmetrical Butterfly)  │ │
 │ │ ┌─────────────────────────────────────────────────────┐ │ │
-│ │ │   ▲ eth0 RX: ████████████ 2.4 Gbps        │ │ │
-│ │ │   │ wlan0 RX: ██████ 800 Mbps           │ │ │
-│ │ │ ───┼────────────────────────────────── 0 Mbps   │ │ │
-│ │ │   │ wlan0 TX: ████ 400 Mbps            │ │ │
-│ │ │   ▼ eth0 TX: ████████ 1.6 Gbps          │ │ │
+│ │ │  ▲ eth0 RX: ████████████ 2.4 Gbps    │ │ │
+│ │ │  │ wlan0 RX: ██████ 800 Mbps      │ │ │
+│ │ │ ───┼────────────────────────────────── 0 Mbps  │ │ │
+│ │ │  │ wlan0 TX: ████ 400 Mbps      │ │ │
+│ │ │  ▼ eth0 TX: ████████ 1.6 Gbps     │ │ │
 │ │ └─────────────────────────────────────────────────────┘ │ │
 │ └───────────────────────────────────────────────────────────┘ │
-│                                 │
+│                 │
 │ ┌──────────────────────┐ ┌──────────────────────────────────┐ │
-│ │ CPU Temperature   │ │ Disk Usage           │ │
-│ │ [Gauge: 72°C]    │ │ [Bar: /dev/sda1 45%, sdb1 62%] │ │
+│ │ CPU Temperature  │ │ Disk Usage      │ │
+│ │ [Gauge: 72°C]  │ │ [Bar: /dev/sda1 45%, sdb1 62%] │ │
 │ └──────────────────────┘ └──────────────────────────────────┘ │
-│                                 │
+│                 │
 │ ┌───────────────────────────────────────────────────────────┐ │
-│ │ LDI Quality Scatter (PE vs JE)              │ │
+│ │ LDI Quality Scatter (PE vs JE)       │ │
 │ │ ┌─────────────────────────────────────────────────────┐ │ │
-│ │ │ PE (µm)                      │ │ │
-│ │ │  15 ┤     ╱ Tolerance Box           │ │ │
-│ │ │   │ · · ╱· · ·                │ │ │
-│ │ │  0 ┤──╱────────────────── 0            │ │ │
-│ │ │   │ ╱· · · ·                  │ │ │
-│ │ │ -15 ┤╱     (green zone ±10µm)         │ │ │
-│ │ │   └─┬────┬────┬────┬────┬─           │ │ │
-│ │ │    -15  -5  0  5  15 JE (µm)       │ │ │
+│ │ │ PE (µm)           │ │ │
+│ │ │ 15 ┤   ╱ Tolerance Box      │ │ │
+│ │ │  │ · · ╱· · ·        │ │ │
+│ │ │ 0 ┤──╱────────────────── 0      │ │ │
+│ │ │  │ ╱· · · ·         │ │ │
+│ │ │ -15 ┤╱   (green zone ±10µm)     │ │ │
+│ │ │  └─┬────┬────┬────┬────┬─      │ │ │
+│ │ │  -15 -5 0 5 15 JE (µm)    │ │ │
 │ │ └─────────────────────────────────────────────────────┘ │ │
 │ └───────────────────────────────────────────────────────────┘ │
-│                                 │
+│                 │
 │ ┌───────────────────────────────────────────────────────────┐ │
-│ │ LDI Manufacturing Telemetry               │ │
-│ │ Throughput: 1250 units/hr | PE: 0.85 | JE: 0.92     │ │
-│ │ Humidity: 65% | Power: 2400W | Vibration: 2.1 mm/s    │ │
+│ │ LDI Manufacturing Telemetry        │ │
+│ │ Throughput: 1250 units/hr | PE: 0.85 | JE: 0.92   │ │
+│ │ Humidity: 65% | Power: 2400W | Vibration: 2.1 mm/s  │ │
 │ └───────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -282,10 +282,10 @@ CPU Load: 72% (Warning)
 ```
 Machine: server-01
 ┌─────────┬──────────┬──────────┬──────────┬──────────┬────────┐
-│Interface│ RX Mbps │ TX Mbps │ Errors  │ Drops  │ Status │
+│Interface│ RX Mbps │ TX Mbps │ Errors │ Drops │ Status │
 ├─────────┼──────────┼──────────┼──────────┼──────────┼────────┤
-│ eth0  │ 1200   │ 850   │ 0    │ 0    │ UP │
-│ wlan0  │ 320   │ 180   │ 0    │ 12    │ UP │
+│ eth0 │ 1200  │ 850  │ 0  │ 0  │ UP │
+│ wlan0 │ 320  │ 180  │ 0  │ 12  │ UP │
 └─────────┴──────────┴──────────┴──────────┴──────────┴────────┘
 → wlan0 有 12 个丢包 — 请检查无线信号
 ```
@@ -477,15 +477,15 @@ docker compose exec prometheus wget -qO- "http://localhost:9090/api/v1/alerts"
 # 最近的遥测数据 (过去 5 分钟)
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
  "SELECT device_id, time, cpu_load_percent, temp_c
-  FROM public.sys_metrics
-  WHERE time > NOW() - INTERVAL '5 minutes'
-  ORDER BY time DESC LIMIT 10;"
+ FROM public.sys_metrics
+ WHERE time > NOW() - INTERVAL '5 minutes'
+ ORDER BY time DESC LIMIT 10;"
 
 # 检查接口指标
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
  "SELECT device_id, iface_name, rx_mbps, tx_mbps
-  FROM public.net_metrics
-  ORDER BY time DESC LIMIT 1;"
+ FROM public.net_metrics
+ ORDER BY time DESC LIMIT 1;"
 ```
 
 ### 重启服务
@@ -537,9 +537,9 @@ docker compose ps --format "table {{.Name}}\t{{.Status}}"
 echo "=== 数据流 ==="
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
  "SELECT device_id, COUNT(*) as rows, MAX(time) as latest
-  FROM public.sys_metrics
-  WHERE time > NOW() - INTERVAL '5 minutes'
-  GROUP BY device_id;"
+ FROM public.sys_metrics
+ WHERE time > NOW() - INTERVAL '5 minutes'
+ GROUP BY device_id;"
 
 echo "=== 警报 ==="
 docker compose exec prometheus wget -qO- "http://localhost:9090/api/v1/alerts" 2>&1 | \

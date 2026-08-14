@@ -10,34 +10,34 @@
 
 ```mermaid
 flowchart TB
-  subgraph HOST["Host network"]
-    subgraph DOCKER["Docker bridge network (ims-internal / ims-monitoring)"]
-      PROXY["nginx proxy :3000\n(only host-published entry to Grafana + alarm-api)"]
-      GRAFANA["Grafana\ninternal only, no host port"]
-      ALARMAPI["alarm-api\ninternal only, no host port"]
-      NODERED["Node-RED :1880"]
-      PROM["Prometheus :9090"]
-      AM["Alertmanager\n127.0.0.1:9093 loopback-only"]
-      PGB["PgBouncer\ninternal only"]
-      TSDB["TimescaleDB\ninternal only"]
-      SNMPSIM["SNMP simulator\ninternal only"]
-      BLACKBOX["Blackbox exporter\ninternal only"]
-    end
+ subgraph HOST["Host network"]
+  subgraph DOCKER["Docker bridge network (ims-internal / ims-monitoring)"]
+   PROXY["nginx proxy :3000\n(only host-published entry to Grafana + alarm-api)"]
+   GRAFANA["Grafana\ninternal only, no host port"]
+   ALARMAPI["alarm-api\ninternal only, no host port"]
+   NODERED["Node-RED :1880"]
+   PROM["Prometheus :9090"]
+   AM["Alertmanager\n127.0.0.1:9093 loopback-only"]
+   PGB["PgBouncer\ninternal only"]
+   TSDB["TimescaleDB\ninternal only"]
+   SNMPSIM["SNMP simulator\ninternal only"]
+   BLACKBOX["Blackbox exporter\ninternal only"]
   end
+ end
 
-  EXT1["Real SNMP devices\n(servers, network gear)"] -->|"community-string auth"| NODERED
-  EXT2["Real/simulated LDI machines"] -->|"HTTP POST, x-api-key auth"| NODERED
-  NODERED --> PGB --> TSDB
-  PROXY -->|"reverse proxy"| GRAFANA
-  PROXY -->|"auth_request /api/user\n(rejects if session invalid)\nthen reverse proxy"| ALARMAPI
-  GRAFANA --> PGB
-  ALARMAPI -->|"alarm_api_writer role:\nSELECT+UPDATE on\nldi_alarm_lifecycle only"| PGB
-  PROM --> AM
-  AM --> NODERED
-  NODERED -->|"credentials not shipped"| LINE["LINE Messaging API"]
-  NODERED -->|"credentials not shipped"| TEAMS["MS Teams"]
+ EXT1["Real SNMP devices\n(servers, network gear)"] -->|"community-string auth"| NODERED
+ EXT2["Real/simulated LDI machines"] -->|"HTTP POST, x-api-key auth"| NODERED
+ NODERED --> PGB --> TSDB
+ PROXY -->|"reverse proxy"| GRAFANA
+ PROXY -->|"auth_request /api/user\n(rejects if session invalid)\nthen reverse proxy"| ALARMAPI
+ GRAFANA --> PGB
+ ALARMAPI -->|"alarm_api_writer role:\nSELECT+UPDATE on\nldi_alarm_lifecycle only"| PGB
+ PROM --> AM
+ AM --> NODERED
+ NODERED -->|"credentials not shipped"| LINE["LINE Messaging API"]
+ NODERED -->|"credentials not shipped"| TEAMS["MS Teams"]
 
-  FUTURE["Future: real SECS/GEM equipment\n(not built)"] -.->|"NEW boundary, not yet designed"| NODERED
+ FUTURE["Future: real SECS/GEM equipment\n(not built)"] -.->|"NEW boundary, not yet designed"| NODERED
 ```
 
 **Boundary 1 — Host ↔ Docker network.** Only the `proxy` service (nginx), Node-RED, Prometheus, and Alertmanager (loopback-only) publish host ports. Grafana and alarm-api used to publish their own ports directly; both were moved behind `proxy` so every browser-facing request — read or write — goes through one front door. PgBouncer, TimescaleDB, and the SNMP simulator are never exposed to the host — internal Docker DNS only.

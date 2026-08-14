@@ -10,9 +10,9 @@
 ### 1.1 Shift Handover Checklist
 1. **Login:** Open the [IMS NOC Overview](http://localhost:3000/d/ims-noc-overview) dashboard on the primary wall display.
 2. **Health Check:** Look at the **Fleet Health Score** (Top Left).
-  - `> 95%`: ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) Nominal. Proceed with normal duties.
-  - `90% - 94%`: ![Warning](https://img.shields.io/badge/Status-Warning-yellow) Warning. Check the "Top 10 Critical Nodes" panel.
-  - `< 90%`: Critical. Escalate immediately to Level 2 (SRE/Engineering).
+ - `> 95%`: ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) Nominal. Proceed with normal duties.
+ - `90% - 94%`: ![Warning](https://img.shields.io/badge/Status-Warning-yellow) Warning. Check the "Top 10 Critical Nodes" panel.
+ - `< 90%`: Critical. Escalate immediately to Level 2 (SRE/Engineering).
 3. **Verify LDI Fleet:** Open the [LDI Manufacturing](http://localhost:3000/d/ims-ldi-manufacturing) dashboard. Ensure no machines are currently marked "OFFLINE" in red.
 
 ---

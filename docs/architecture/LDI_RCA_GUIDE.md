@@ -14,7 +14,7 @@ IMS correlates LDI alarm events against process-parameter excursions — answeri
 
 ```text
 Lift = (% of alarm-context rows where the parameter flag is out-of-spec)
-    / (% of ALL rows where that same parameter flag is out-of-spec)
+  / (% of ALL rows where that same parameter flag is out-of-spec)
 
 Confidence = "OK" if event_count >= 30, else "LOW SAMPLE (n<30)"
 ```
@@ -34,12 +34,12 @@ A Lift of 1.0 means the alarm has no predictive relationship to the parameter (i
 ## Current live figures (snapshot, 2026-08-10 — see caveat below)
 
 ```text
-Alarm Category                  Alarm-Window % Baseline %  Lift Event Count Confidence
-MOTION (70004)                       100.0    0.4 250.00      56 OK
-VACUUM (91009)                       100.0    14.2  7.04     2493 OK
-THERMAL (91008)                       73.1    16.6  4.40     1924 OK
-HUMIDITY (91008)                       44.0    10.1  4.36     1924 OK
-ALIGNMENT/PE-JE (90001,90004,90005,90012,90013)       100.0    44.9  2.23     5201 OK
+Alarm Category         Alarm-Window % Baseline % Lift Event Count Confidence
+MOTION (70004)            100.0  0.4 250.00   56 OK
+VACUUM (91009)            100.0  14.2 7.04   2493 OK
+THERMAL (91008)            73.1  16.6 4.40   1924 OK
+HUMIDITY (91008)            44.0  10.1 4.36   1924 OK
+ALIGNMENT/PE-JE (90001,90004,90005,90012,90013)    100.0  44.9 2.23   5201 OK
 ```
 
 **This is a point-in-time snapshot, not a permanent fact.** Lift figures on this live-ingesting mock system drift as the data window rolls and the simulator continues generating events — a figure measured today will not exactly match a figure measured next week. Re-run `SELECT * FROM public.v_ldi_rca_truth_test ORDER BY "Lift" DESC;` for current numbers before citing one in a report. (An earlier version of `ARCHITECTURE.md` cited VACUUM at "7,352x" — that was accurate when measured 2026-08-07, and is not accurate now; this guide replaces that stale reference.)

@@ -22,8 +22,8 @@ modes on a local machine. It never touches `data/real/` (real data always
 stays local-only and reproducible from those files):
 
 ```bash
-bash scripts/switch-data-mode.sh mock  # default for development
-bash scripts/switch-data-mode.sh real  # requires data/real/*_clean.sql locally
+bash scripts/switch-data-mode.sh mock # default for development
+bash scripts/switch-data-mode.sh real # requires data/real/*_clean.sql locally
 bash scripts/switch-data-mode.sh status # row counts + current LDI_SIMULATOR_ENABLED
 ```
 
@@ -75,18 +75,18 @@ bash scripts/import-real-data.sh
 This is idempotent and safe to re-run. In order, it:
 
 1. Registers 3 equipment IDs that appear only in the real alarm log, never
-  in the telemetry export (`LDI-B05`, `LDI-B06`, `LDI-B07`) —
-  already covered by migration 040 for a fresh deploy, but re-asserted
-  here in case the import runs against a database that predates that.
+ in the telemetry export (`LDI-B05`, `LDI-B06`, `LDI-B07`) —
+ already covered by migration 040 for a fresh deploy, but re-asserted
+ here in case the import runs against a database that predates that.
 2. Decompresses `ldi_data` chunks (compressed chunks reject inserts),
-  truncates `ldi_data`/`ldi_alarm_log` if non-empty, and loads the real
-  rows.
+ truncates `ldi_data`/`ldi_alarm_log` if non-empty, and loads the real
+ rows.
 3. Merges the 892-row alarm-code export into `ldi_alarm_ms_code` via
-  `UPSERT`, computing `severity` with the identical rule documented in
-  migration 061 (keyword/AlarmType-based Critical/Major/Minor/Warning
-  classification) so both sources get consistent treatment.
+ `UPSERT`, computing `severity` with the identical rule documented in
+ migration 061 (keyword/AlarmType-based Critical/Major/Minor/Warning
+ classification) so both sources get consistent treatment.
 4. Refreshes all 4 continuous aggregates, recompresses chunks older than
-  7 days, and runs `ANALYZE`.
+ 7 days, and runs `ANALYZE`.
 
 Before running for real data, stop the simulator so it doesn't keep
 overwriting the real rows: set `LDI_SIMULATOR_ENABLED=false` in your
