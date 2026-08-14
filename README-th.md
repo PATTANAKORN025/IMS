@@ -17,9 +17,6 @@
 </div>
 
 <div align="center">
-  <img src="assets/apex-ldi-noc-banner.jpg" alt="APEX Circuit LDI NOC Banner" width="100%" style="border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); margin-bottom: 24px;" />
-  <br/>
-  <br/>
   <a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.demolab.com?font=Orbitron&weight=600&size=36&duration=4000&pause=2000&color=00F2FE&center=true&repeat=true&width=1000&height=60&lines=APEX+Circuit+IMS+|+System+Initializing...;Advanced+Manufacturing+Intelligence+%26+NOC;Zero-Latency+Digital+Twin+Architecture" alt="Typing SVG" /></a>
 </div>
 
@@ -44,31 +41,13 @@
 <div align="center">
   <table style="border:none; border-collapse:collapse; width:100%;">
 <tr>
-<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
- <img src="assets/noc-overview.png" alt="NOC Overview" width="100%" style="border-radius:8px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);" /><br/><br/>
- <b style="font-size: 14px;">NOC Overview</b><br/><sub style="color: #6B7280;">Fleet Health Envelope</sub>
+<td align="center" style="border:none; padding:16px; width:50%; vertical-align: top;">
+ <img src="assets/noc-overview.png" alt="NOC Overview" width="100%" style="border-radius:12px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);" /><br/><br/>
+ <b style="font-size: 15px;">Global NOC Overview</b><br/><sub style="color: #6B7280;">Real-time Fleet Health Envelope</sub>
 </td>
-<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
- <img src="assets/engineering-drilldown.png" alt="Engineering Drill-Down" width="100%" style="border-radius:8px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);" /><br/><br/>
- <b style="font-size: 14px;">Engineering Drill-Down</b><br/><sub style="color: #6B7280;">Per-Machine Diagnostics</sub>
-</td>
-<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
- <img src="assets/capacity-planning.png" alt="Capacity Planning" width="100%" style="border-radius:8px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);" /><br/><br/>
- <b style="font-size: 14px;">Capacity Planning</b><br/><sub style="color: #6B7280;">Predictive Forecasting</sub>
-</td>
-</tr>
-<tr>
-<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
- <img src="assets/ldi-manufacturing.png" alt="LDI Command Center" width="100%" style="border-radius:8px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);" /><br/><br/>
- <b style="font-size: 14px;">LDI Manufacturing</b><br/><sub style="color: #6B7280;">Command Center</sub>
-</td>
-<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
- <img src="assets/ldi-andon.png" alt="Operator Andon Board" width="100%" style="border-radius:8px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);" /><br/><br/>
- <b style="font-size: 14px;">Operator Andon</b><br/><sub style="color: #6B7280;">Real-time Line Alerts</sub>
-</td>
-<td align="center" style="border:none; padding:12px; width:33%; vertical-align: top;">
- <img src="assets/ldi-data-readiness.png" alt="Data Readiness Matrix" width="100%" style="border-radius:8px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);" /><br/><br/>
- <b style="font-size: 14px;">Data Readiness Matrix</b><br/><sub style="color: #6B7280;">SPC Data Completeness</sub>
+<td align="center" style="border:none; padding:16px; width:50%; vertical-align: top;">
+ <img src="assets/ldi-manufacturing.png" alt="LDI Command Center" width="100%" style="border-radius:12px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);" /><br/><br/>
+ <b style="font-size: 15px;">LDI Manufacturing</b><br/><sub style="color: #6B7280;">Production Command Center</sub>
 </td>
 </tr>
 </table>
