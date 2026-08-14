@@ -80,10 +80,18 @@ INSERTS=${INSERTS:-NaN}; FAILED=${FAILED:-NaN}; OVERFLOWS=${OVERFLOWS:-NaN}
 RESTARTED="no"
 for c in ims-timescaledb ims-node-red ims-grafana; do
     RC=$(docker inspect --format='{{.RestartCount}}' "$c" 2>/dev/null || echo "?")
+    # RestartCount only increments when the daemon's own restart-policy
+    # (restart: unless-stopped) fires after a crash -- it does NOT change
+    # for a deliberate `docker compose restart`/`docker restart`, so that
+    # class of restart went completely undetected here (found live,
+    # 2026-08-14: two manual node-red restarts during Soak Attempt 4 logged
+    # as restarted=no). StartedAt changes on every restart regardless of
+    # cause, so track both and flag on either changing.
+    STARTED=$(docker inspect --format='{{.State.StartedAt}}' "$c" 2>/dev/null || echo "?")
     STATE_FILE="$REPORT_DIR/.restart_${c}"
-    PREV=$(cat "$STATE_FILE" 2>/dev/null || echo "$RC")
-    echo "$RC" > "$STATE_FILE"
-    if [[ "$RC" != "$PREV" ]]; then RESTARTED="yes"; fi
+    PREV=$(cat "$STATE_FILE" 2>/dev/null || echo "${RC}|${STARTED}")
+    echo "${RC}|${STARTED}" > "$STATE_FILE"
+    if [[ "${RC}|${STARTED}" != "$PREV" ]]; then RESTARTED="yes"; fi
 done
 
 COUNT_FIRING_PY="$REPORT_DIR/.count_firing.py"
