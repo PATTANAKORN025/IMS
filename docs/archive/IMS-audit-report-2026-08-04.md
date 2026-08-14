@@ -343,16 +343,16 @@ docker run --rm ... gitleaks detect ... || true
 
 ## Priority Fix Order
 
-| #   | Issue                            | Severity | Effort | Impact                                                                                                  |
-| --- | -------------------------------- | -------- | ------ | ------------------------------------------------------------------------------------------------------- |
-| 1   | Revoke leaked GitHub token       | CRITICAL | 5 min  | ป้องกัน unauthorized access                                                                             |
-| 2   | Add auto-rollback to CI/CD       | HIGH     | 2 hrs  | ป้องกัน broken deploy                                                                                   |
-| 3   | Add `.env.example` instructions  | HIGH     | 10 min | <img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /> ป้องกัน Node-RED crash |
-| 4   | Move CI keys to GitHub Secrets   | ️ MEDIUM  | 30 min | <img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /> Security best practice |
-| 5   | Add `.opencode/` to .gitignore   | ️ MEDIUM  | 5 min  | <img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /> Clean git state        |
-| 6   | Add `.mcp.json` to .gitignore    | ️ MEDIUM  | 5 min  | <img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /> Clean git state        |
-| 7   | Verify zero-statement migrations | ️ LOW     | 30 min | <img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /> Data integrity         |
-| 8   | Review gitleaks `                |          | true`  | ️ LOW                                                                                                    | 15 min | <img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /> Security visibility |
+| #   | Issue                            | Severity | Effort | Impact                                                                                                        |
+| --- | -------------------------------- | -------- | ------ | ------------------------------------------------------------------------------------------------------------- |
+| 1   | Revoke leaked GitHub token       | CRITICAL | 5 min  | ป้องกัน unauthorized access                                                                                   |
+| 2   | Add auto-rollback to CI/CD       | HIGH     | 2 hrs  | ป้องกัน broken deploy                                                                                         |
+| 3   | Add `.env.example` instructions  | HIGH     | 10 min | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> ป้องกัน Node-RED crash |
+| 4   | Move CI keys to GitHub Secrets   | ️ MEDIUM  | 30 min | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Security best practice |
+| 5   | Add `.opencode/` to .gitignore   | ️ MEDIUM  | 5 min  | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Clean git state        |
+| 6   | Add `.mcp.json` to .gitignore    | ️ MEDIUM  | 5 min  | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Clean git state        |
+| 7   | Verify zero-statement migrations | ️ LOW     | 30 min | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Data integrity         |
+| 8   | Review gitleaks `                |          | true`  | ️ LOW                                                                                                          | 15 min | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Security visibility |
 
 ---
 

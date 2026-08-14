@@ -1,8 +1,8 @@
 <div align="center">
  <p>
- <img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /><img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /> <b>English</b> |
- <a href="ARCHITECTURE-th.md"><img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /><img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /> ไทย</a> |
- <a href="ARCHITECTURE-zh-CN.md"><img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /><img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /> 中文</a>
+ <img src="https://hatscripts.github.io/circle-flags/flags/gb.svg" width="18" align="center"/> <b>English</b> |
+ <a href="ARCHITECTURE-th.md"><img src="https://hatscripts.github.io/circle-flags/flags/th.svg" width="18" align="center"/> ไทย</a> |
+ <a href="ARCHITECTURE-zh-CN.md"><img src="https://hatscripts.github.io/circle-flags/flags/cn.svg" width="18" align="center"/> 中文</a>
  </p>
 </div>
 

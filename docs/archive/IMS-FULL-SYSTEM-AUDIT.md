@@ -137,19 +137,19 @@ PE/JE VS SPEC LIMIT        → ไม่มีเนื้อหาเลย
 
 ---
 
-# <img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /> P2 — คุณภาพข้อมูลที่ตรวจพบเอง
+# <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> P2 — คุณภาพข้อมูลที่ตรวจพบเอง
 
 หลักฐานจาก LDI Data Readiness (dashboard นี้ทำงานได้ดีมาก):
 
 ## ปัญหาจริงที่ระบบตรวจเจอเอง
 
-| ตัวชี้วัด                 | ค่า           | ประเมิน                                                                                                        |
-| ------------------------- | ------------- | -------------------------------------------------------------------------------------------------------------- |
-| Machine ID Match          | **100%**      | แก้จาก 20% เดิมได้แล้ว                                                                                         |
-| Alarm Master Match        | **100%**      | แก้จาก 0% เดิมได้แล้ว                                                                                          |
-| Telemetry Age / Alarm Age | 0.0 hour      | ข้อมูลสด                                                                                                       |
-| **Board ID Completeness** | **8.0%**      | <img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /> ตรงกับข้อมูลจริงที่ NULL 100% |
-| **PE / JE4 Coverage**     | **45% / 45%** | ถูกต้อง (DF INNER ไม่วัด PE)                                                                                   |
+| ตัวชี้วัด                 | ค่า           | ประเมิน                                                                                                              |
+| ------------------------- | ------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Machine ID Match          | **100%**      | แก้จาก 20% เดิมได้แล้ว                                                                                               |
+| Alarm Master Match        | **100%**      | แก้จาก 0% เดิมได้แล้ว                                                                                                |
+| Telemetry Age / Alarm Age | 0.0 hour      | ข้อมูลสด                                                                                                             |
+| **Board ID Completeness** | **8.0%**      | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> ตรงกับข้อมูลจริงที่ NULL 100% |
+| **PE / JE4 Coverage**     | **45% / 45%** | ถูกต้อง (DF INNER ไม่วัด PE)                                                                                         |
 
 ## Duplicate Board Keys — พบเฉพาะ 2 เครื่อง
 
@@ -184,7 +184,7 @@ LDI-05..10:  Vacuum "ALL ZERO - VERIFY"
 
 ---
 
-# <img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /> P3 — หน่วยและการแสดงผล
+# <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> P3 — หน่วยและการแสดงผล
 
 ```text
 "255.03 currency-thb"   ← ควรเป็น ฿255.03
@@ -199,13 +199,13 @@ Machine Snapshot และ Manufacturing — บั๊ก `lengthum` หาย�
 
 # สิ่งที่ทำงานได้ดีจริง (อย่าแก้)
 
-| Dashboard             | สถานะ                                                                                       | หลักฐาน                                                                                            |
-| --------------------- | ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| **Machine Snapshot**  | <img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /> สมบูรณ์    | ทุก panel มีข้อมูล · หน่วยถูกทุกตัว · PE/JE PASS · Cpk แยก PE/JE · Event timeline ระดับมิลลิวินาที |
-| **Manufacturing**     | <img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /> ดีมาก      | KPI ครบ · ตารางมีข้อมูล · compliance เขียวเป็นหลัก · RCA summary ท้ายหน้า                          |
-| **Engineering & SPC** | <img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /> ดี         | PE/JE 6+4 เส้นแยกได้ · histogram PE vs JE ซ้อนกัน · Cpk PE 1.253 / JE 2.710                        |
-| **Data Readiness**    | <img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /> ดีเยี่ยม   | ตรวจเจอปัญหาจริง 3 อย่างด้วยตัวเอง                                                                 |
-| **Andon**             | <img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /> ครึ่งเดียว | KPI + 10 machine tiles ทำงานดี · แต่ 2 panels ว่าง                                                 |
+| Dashboard             | สถานะ                                                                                             | หลักฐาน                                                                                            |
+| --------------------- | ------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| **Machine Snapshot**  | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> สมบูรณ์    | ทุก panel มีข้อมูล · หน่วยถูกทุกตัว · PE/JE PASS · Cpk แยก PE/JE · Event timeline ระดับมิลลิวินาที |
+| **Manufacturing**     | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> ดีมาก      | KPI ครบ · ตารางมีข้อมูล · compliance เขียวเป็นหลัก · RCA summary ท้ายหน้า                          |
+| **Engineering & SPC** | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> ดี         | PE/JE 6+4 เส้นแยกได้ · histogram PE vs JE ซ้อนกัน · Cpk PE 1.253 / JE 2.710                        |
+| **Data Readiness**    | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> ดีเยี่ยม   | ตรวจเจอปัญหาจริง 3 อย่างด้วยตัวเอง                                                                 |
+| **Andon**             | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> ครึ่งเดียว | KPI + 10 machine tiles ทำงานดี · แต่ 2 panels ว่าง                                                 |
 
 **จุดที่น่าประทับใจที่สุด:** Machine Capability Ranking แสดง **Cpk (PE) 1.253 กับ Cpk (JE) 2.710
 แยกกันคนละคอลัมน์** พร้อม Worst Cpk และ Confidence — พิสูจน์ว่า JE Cpk ที่แยก base
@@ -247,15 +247,15 @@ for (const panel of allPanels) {
 
 # ลำดับลงมือ
 
-| #   | งาน                                           | ความรุนแรง                                                                          | ผู้ได้ประโยชน์                           |
-| --- | --------------------------------------------- | ----------------------------------------------------------------------------------- | ---------------------------------------- |
-| 1   | **รวมสูตร Yield เป็น view เดียว**             | P0                                                                                  | ผู้บริหาร — เลิกเห็นตัวเลขขัดแย้ง        |
-| 2   | **แก้ simulator ให้ alarm ผูกกับพารามิเตอร์** | P0                                                                                  | Process Engineer — RCA ใช้พิสูจน์ได้จริง |
-| 3   | แก้ 2 panels ว่างใน Andon                     | P1                                                                                  | คนงานหน้าเครื่อง                         |
-| 4   | แก้ 15 panels "No data"                       | P1                                                                                  | ทุกฝ่าย                                  |
-| 5   | สืบ duplicate board keys (LDI-01/04)          | <img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /> P2 | QA — ตัวเลขนับบอร์ดอาจผิด                |
-| 6   | เพิ่ม E2E panel-data check เข้า CI            | <img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /> P2 | ทีมพัฒนา — กันเกิดซ้ำ                    |
-| 7   | แก้ currency unit + donut legend              | <img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /> P3 | ความเรียบร้อย                            |
+| #   | งาน                                           | ความรุนแรง                                                                                | ผู้ได้ประโยชน์                           |
+| --- | --------------------------------------------- | ----------------------------------------------------------------------------------------- | ---------------------------------------- |
+| 1   | **รวมสูตร Yield เป็น view เดียว**             | P0                                                                                        | ผู้บริหาร — เลิกเห็นตัวเลขขัดแย้ง        |
+| 2   | **แก้ simulator ให้ alarm ผูกกับพารามิเตอร์** | P0                                                                                        | Process Engineer — RCA ใช้พิสูจน์ได้จริง |
+| 3   | แก้ 2 panels ว่างใน Andon                     | P1                                                                                        | คนงานหน้าเครื่อง                         |
+| 4   | แก้ 15 panels "No data"                       | P1                                                                                        | ทุกฝ่าย                                  |
+| 5   | สืบ duplicate board keys (LDI-01/04)          | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> P2 | QA — ตัวเลขนับบอร์ดอาจผิด                |
+| 6   | เพิ่ม E2E panel-data check เข้า CI            | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> P2 | ทีมพัฒนา — กันเกิดซ้ำ                    |
+| 7   | แก้ currency unit + donut legend              | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> P3 | ความเรียบร้อย                            |
 
 ---
 
