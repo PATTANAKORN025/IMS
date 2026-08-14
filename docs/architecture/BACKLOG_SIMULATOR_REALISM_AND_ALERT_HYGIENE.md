@@ -4,6 +4,11 @@
 > started** -- explicitly deferred until Soak Attempt 6 reaches 72h
 > clean. Every item below states its current real state, verified
 > against the live repo/database this pass, not assumed from memory.
+>
+> Detailed implementation specs (design, rollout plan, testing plan)
+> for the items below live in `docs/architecture/specs/`:
+> `SPEC_ALARM_ACTOR_IDENTITY.md`, `SPEC_SIMULATOR_REALISM.md`,
+> `SPEC_ALERT_HYGIENE.md`.
 
 ## Why these two, together
 
@@ -28,7 +33,7 @@ priority order below, once the soak clock finishes.
 
 | Item | Current state (verified 2026-08-14) | Priority |
 |---|---|---|
-| Authentication on `alarm-api` | **Not present.** Grepped `services/alarm-api` for auth/JWT/basic-auth/apikey patterns -- none found. The only interactive write surface in the whole system (`ldi_alarm_lifecycle` ack/resolve) is currently unauthenticated. | **Highest** -- this is a real security gap, not a polish item |
+| Alarm actor-identity verification | **CORRECTED 2026-08-14: access control already exists**, this pass's original entry was wrong. `services/alarm-api` itself has no auth code, but `proxy/nginx.conf` gates `/alarm-api/` behind `auth_request` against Grafana's own `/api/user` (confirmed live in the nginx config, not just documented) -- an unauthenticated caller cannot reach the service at all. The real, narrower gap, per `SECURITY_MODEL.md`'s own stated limitation: `acknowledged_by`/`resolved_by` is free text the client sends, never cross-checked against the authenticated session's actual Grafana username -- so a logged-in operator could attribute an ack/resolve to a different name than their own. See `docs/architecture/specs/SPEC_ALARM_ACTOR_IDENTITY.md`. | Medium -- attribution integrity, not access control. Downgraded from "Highest" after re-verification. |
 | MTTA / MTTR dashboard using real lifecycle data | **Does not exist.** No dashboard or panel matches "MTTA"/"MTTR" anywhere in `monitoring/grafana/dashboards/`. `ldi_alarm_lifecycle` has the raw timestamps to build this from. | High -- lifecycle data exists, nothing surfaces it |
 | Rename "Critical Alarms" panels to match their actual query | **Still misleading.** 4 panels titled "Critical Alarms" / "Critical/Major Alarms" exist across `ims-easy-overview`, `ims-ldi-manufacturing`, `ims-ldi-alarm-console`, `ims-ldi-operator-andon`. Per the fidelity audit, the counted rows are Critical+Major combined and, in the live dataset, composed entirely of Major-severity events (0 Critical). Titles overclaim what's shown. | Medium -- misleading label, not a functional bug |
 | Move "Pipeline Heartbeat" panel off operator-facing dashboards to an admin dashboard | **Not moved.** Still present on both `ims-ldi-manufacturing` and `ims-ldi-operator-andon` (titled "◉ Pipeline Heartbeat", type `volkovlabs-echarts-panel`). A prior pass hid it on the Andon board via collapse rather than relocating it -- confirm that's still the case before assuming this is done. | Low-medium -- query-noise reduction, not correctness |
@@ -37,9 +42,9 @@ priority order below, once the soak clock finishes.
 
 ## Suggested order, once soak clears
 
-1. `alarm-api` auth (security gap, should not wait on anything else)
-2. Fresh realism audit score (cheap, read-only, tells you if Track A's other items are even still needed at current severity)
-3. Remove noise-code `logdate` backdating (small, isolated, already root-caused)
+1. Fresh realism audit score (cheap, read-only, tells you if Track A's other items are even still needed at current severity)
+2. Remove noise-code `logdate` backdating (small, isolated, already root-caused)
+3. Alarm actor-identity verification (small, isolated, closes a real if minor attribution gap)
 4. Real environmental noise/drift (temp/humidity/vacuum/PE-JE/micro-stop/warm-up)
 5. MTTA/MTTR dashboard + Critical-panel renames + lifecycle quality checks (grouped -- all consume `ldi_alarm_lifecycle`)
 6. Heartbeat panel relocation, debounce load test (lowest urgency)
