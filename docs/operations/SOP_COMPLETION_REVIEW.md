@@ -69,9 +69,9 @@ review is deliberately read-only during the freeze.
 ## What was NOT reviewed this pass
 
 - `ALARM_PLAYBOOK.md`'s content accuracy beyond a read-through --
-  spot-checked against the live simulator code list and found
-  consistent, but not re-verified line-by-line against current alert
-  rule YAML files the way its own header claims it was done
-  originally (2026-08-10).
+ spot-checked against the live simulator code list and found
+ consistent, but not re-verified line-by-line against current alert
+ rule YAML files the way its own header claims it was done
+ originally (2026-08-10).
 - `docs/product/ONBOARDING_SCRIPT.md` (also matched the SOP grep) --
-  out of scope, that's an onboarding doc not an operator SOP.
+ out of scope, that's an onboarding doc not an operator SOP.

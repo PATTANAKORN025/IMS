@@ -10,9 +10,9 @@
 ### 1.1 รายการตรวจสอบการส่งมอบกะ
 1. **เข้าสู่ระบบ:** เปิดแดชบอร์ด [IMS NOC Overview](http://localhost:3000/d/ims-noc-overview) บนจอแสดงผลหลัก
 2. **ตรวจสอบสถานะ:** ดูที่ **Fleet Health Score** (บนซ้าย)
-  - `> 95%`: ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) ปกติ ทำงานตามปกติ
-  - `90% - 94%`: ![Warning](https://img.shields.io/badge/Status-Warning-yellow) คำเตือน ตรวจสอบพาเนล "Top 10 Critical Nodes"
-  - `< 90%`: วิกฤต ส่งเรื่องให้ระดับ 2 (SRE/Engineering) ทันที
+ - `> 95%`: ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) ปกติ ทำงานตามปกติ
+ - `90% - 94%`: ![Warning](https://img.shields.io/badge/Status-Warning-yellow) คำเตือน ตรวจสอบพาเนล "Top 10 Critical Nodes"
+ - `< 90%`: วิกฤต ส่งเรื่องให้ระดับ 2 (SRE/Engineering) ทันที
 3. **ตรวจสอบกลุ่ม LDI:** เปิดแดชบอร์ด [LDI Manufacturing](http://localhost:3000/d/ims-ldi-manufacturing) ตรวจสอบให้แน่ใจว่าไม่มีเครื่องใดขึ้นสถานะ "OFFLINE" สีแดง
 
 ---

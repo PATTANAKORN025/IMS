@@ -82,11 +82,11 @@ Before any concept above (or a new one) moves from "idea in this doc" to
 "real panel," it needs:
 
 1. A real, named computation — not marketing language ("AI-assisted",
-  "predictive", "smart") standing in for an actual method.
+ "predictive", "smart") standing in for an actual method.
 2. A validation test (golden dataset or equivalent) checked into CI,
-  matching the bar `tests/e2e/golden-dataset-spc.js` already sets for
-  every other SPC/Cpk calculation in this repo.
+ matching the bar `tests/e2e/golden-dataset-spc.js` already sets for
+ every other SPC/Cpk calculation in this repo.
 3. Visible, honest framing in the dashboard itself of what the number is
-  and isn't (measured vs. forecast, validated vs. low-confidence) — the
-  same standard already applied to `v_ldi_rca_truth_test`'s confidence
-  flag and the Action Queue's Owner-mapping disclosure.
+ and isn't (measured vs. forecast, validated vs. low-confidence) — the
+ same standard already applied to `v_ldi_rca_truth_test`'s confidence
+ flag and the Action Queue's Owner-mapping disclosure.

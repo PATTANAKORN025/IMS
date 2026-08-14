@@ -16,14 +16,14 @@ docker logs ims-node-red 2>&1 | tail -5
 # 3. 遥测数据流 (应显示每台机器的行)
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
  "SELECT device_id, COUNT(*) as rows, MAX(s.time) as latest \
-  FROM public.sys_metrics s JOIN public.devices d ON d.device_id = s.device_id \
-  WHERE s.time > NOW() - INTERVAL '5 minutes' GROUP BY device_id;"
+ FROM public.sys_metrics s JOIN public.devices d ON d.device_id = s.device_id \
+ WHERE s.time > NOW() - INTERVAL '5 minutes' GROUP BY device_id;"
 
 # 4. Prometheus 目标 (所有状态应为 UP)
 curl -s http://localhost:9090/api/v1/targets | python3 -c \
  "import sys,json; d=json.load(sys.stdin); \
-  up=sum(1 for t in d['data']['activeTargets'] if t['health']=='up'); \
-  print(f'{up}/{len(d[\"data\"][\"activeTargets\"])} targets UP')"
+ up=sum(1 for t in d['data']['activeTargets'] if t['health']=='up'); \
+ print(f'{up}/{len(d[\"data\"][\"activeTargets\"])} targets UP')"
 ```
 
 ## 故障模式
@@ -47,16 +47,16 @@ curl -s http://localhost:9090/api/v1/targets | python3 -c \
 
 ### 重启单个服务
 ```bash
-docker compose restart node-red  # 重启数据管道
-docker compose restart grafana   # 重新加载 dashboard JSON
+docker compose restart node-red # 重启数据管道
+docker compose restart grafana  # 重新加载 dashboard JSON
 docker compose restart prometheus # 重新加载 alert rules
-docker compose restart proxy    # 重新加载 nginx 配置 (proxy/nginx.conf)
-docker compose restart alarm-api  # 重启 alarm ack/resolve 写入路径服务
+docker compose restart proxy  # 重新加载 nginx 配置 (proxy/nginx.conf)
+docker compose restart alarm-api # 重启 alarm ack/resolve 写入路径服务
 ```
 
 ### 部署 flow 更改
 ```bash
-make deploy-flows  # 合并拆分的 flow → POST 至 Admin API
+make deploy-flows # 合并拆分的 flow → POST 至 Admin API
 ```
 
 ### 检查数据库状态
@@ -64,7 +64,7 @@ make deploy-flows  # 合并拆分的 flow → POST 至 Admin API
 # 每台机器的行数 (最近 5 分钟)
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
  "SELECT device_id, COUNT(*) FROM public.sys_metrics \
-  WHERE time > NOW() - INTERVAL '5 minutes' GROUP BY device_id;"
+ WHERE time > NOW() - INTERVAL '5 minutes' GROUP BY device_id;"
 
 # CAGG 刷新状态
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
@@ -73,7 +73,7 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c \
 
 ### 备份和恢复
 ```bash
-make backup          # 备份至 backups/backup_YYYYMMDD.sql
+make backup     # 备份至 backups/backup_YYYYMMDD.sql
 make restore FILE=backups/backup_20260701.sql
 ```
 

@@ -45,19 +45,19 @@
 ```
  IMS Dashboards
 ├── Infrastructure (servers/network)
-│  ├── NOC Overview      — Executive fleet envelope (infra only -- LDI lives below)
-│  ├── Engineering Drill-Down — Per-server deep dive: CPU/RAM/disk/temp/network
-│  ├── Capacity Planning    — Linear-regression forecasting (days until disk/RAM full)
-│  └── Meta-Monitoring     — The pipeline's own health (rows/sec, batch success, retry queue)
+│ ├── NOC Overview   — Executive fleet envelope (infra only -- LDI lives below)
+│ ├── Engineering Drill-Down — Per-server deep dive: CPU/RAM/disk/temp/network
+│ ├── Capacity Planning  — Linear-regression forecasting (days until disk/RAM full)
+│ └── Meta-Monitoring   — The pipeline's own health (rows/sec, batch success, retry queue)
 └── LDI Manufacturing (PCB laser direct imaging fleet)
-  ├── Easy Overview      — Zero-config whole-fleet glance, no filters to set
-  ├── LDI Manufacturing    — Executive KPIs + machine telemetry + alarm stream (main command center)
-  ├── LDI Operator Andon   — Factory-floor kiosk, 1280x720, zero-scroll, read-only (no interactive elements)
-  ├── LDI Alarm Console    — Interactive Acknowledge/Resolve workflow, companion to the read-only Andon board
-  ├── LDI Alarm Dictionary  — Reference lookup: full vendor alarm definitions + recent occurrences
-  ├── LDI Engineering Analytics — Cpk/SPC ranking, RCA Truth Test, PE/JE distributions
-  ├── LDI Machine Snapshot  — Click any alarm/log to inspect the exact millisecond
-  └── LDI Data Readiness   — Self-auditing data-quality dashboard (coverage %, gaps)
+ ├── Easy Overview   — Zero-config whole-fleet glance, no filters to set
+ ├── LDI Manufacturing  — Executive KPIs + machine telemetry + alarm stream (main command center)
+ ├── LDI Operator Andon  — Factory-floor kiosk, 1280x720, zero-scroll, read-only (no interactive elements)
+ ├── LDI Alarm Console  — Interactive Acknowledge/Resolve workflow, companion to the read-only Andon board
+ ├── LDI Alarm Dictionary — Reference lookup: full vendor alarm definitions + recent occurrences
+ ├── LDI Engineering Analytics — Cpk/SPC ranking, RCA Truth Test, PE/JE distributions
+ ├── LDI Machine Snapshot — Click any alarm/log to inspect the exact millisecond
+ └── LDI Data Readiness  — Self-auditing data-quality dashboard (coverage %, gaps)
 ```
 
 ---
@@ -70,23 +70,23 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  IMS NOC Overview                      │
+│ IMS NOC Overview           │
 ├─────────────────────────────────────────────────────────────────┤
-│                                 │
+│                 │
 │ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌───────────┐ │
-│ │ Total    │ │ Healthy   │ │ Warning   │ │ Critical │ │
-│ │ Machines: 5 │ │ Machines: 4 │ │ Alerts: 1  │ │ Alerts: 0 │ │
-│ │  ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen)    │ │  ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen)    │ │  ![Warning](https://img.shields.io/badge/Status-Warning-yellow)    │ │     │ │
+│ │ Total  │ │ Healthy  │ │ Warning  │ │ Critical │ │
+│ │ Machines: 5 │ │ Machines: 4 │ │ Alerts: 1 │ │ Alerts: 0 │ │
+│ │ ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen)  │ │ ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen)  │ │ ![Warning](https://img.shields.io/badge/Status-Warning-yellow)  │ │   │ │
 │ └─────────────┘ └─────────────┘ └─────────────┘ └───────────┘ │
-│                                 │
+│                 │
 │ ┌───────────────────────────────────────────────────────────┐ │
-│ │ Fleet CPU Usage (Last 1 Hour)              │ │
-│ │ [Line chart showing all machines CPU over time]     │ │
+│ │ Fleet CPU Usage (Last 1 Hour)       │ │
+│ │ [Line chart showing all machines CPU over time]   │ │
 │ └───────────────────────────────────────────────────────────┘ │
-│                                 │
+│                 │
 │ ┌───────────────────────────────────────────────────────────┐ │
-│ │ Active Alerts                      │ │
-│ │ [Table of current firing alerts with severity]      │ │
+│ │ Active Alerts           │ │
+│ │ [Table of current firing alerts with severity]   │ │
 │ └───────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -109,43 +109,43 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  Engineering Drilldown — [Select Machine ▼]         │
+│ Engineering Drilldown — [Select Machine ▼]     │
 ├─────────────────────────────────────────────────────────────────┤
-│                                 │
+│                 │
 │ ┌───────────────────────────────────────────────────────────┐ │
-│ │ Network Interface Traffic (Symmetrical Butterfly)    │ │
+│ │ Network Interface Traffic (Symmetrical Butterfly)  │ │
 │ │ ┌─────────────────────────────────────────────────────┐ │ │
-│ │ │   ▲ eth0 RX: ████████████ 2.4 Gbps        │ │ │
-│ │ │   │ wlan0 RX: ██████ 800 Mbps           │ │ │
-│ │ │ ───┼────────────────────────────────── 0 Mbps   │ │ │
-│ │ │   │ wlan0 TX: ████ 400 Mbps            │ │ │
-│ │ │   ▼ eth0 TX: ████████ 1.6 Gbps          │ │ │
+│ │ │  ▲ eth0 RX: ████████████ 2.4 Gbps    │ │ │
+│ │ │  │ wlan0 RX: ██████ 800 Mbps      │ │ │
+│ │ │ ───┼────────────────────────────────── 0 Mbps  │ │ │
+│ │ │  │ wlan0 TX: ████ 400 Mbps      │ │ │
+│ │ │  ▼ eth0 TX: ████████ 1.6 Gbps     │ │ │
 │ │ └─────────────────────────────────────────────────────┘ │ │
 │ └───────────────────────────────────────────────────────────┘ │
-│                                 │
+│                 │
 │ ┌──────────────────────┐ ┌──────────────────────────────────┐ │
-│ │ CPU Temperature   │ │ Disk Usage           │ │
-│ │ [Gauge: 72°C]    │ │ [Bar: /dev/sda1 45%, sdb1 62%] │ │
+│ │ CPU Temperature  │ │ Disk Usage      │ │
+│ │ [Gauge: 72°C]  │ │ [Bar: /dev/sda1 45%, sdb1 62%] │ │
 │ └──────────────────────┘ └──────────────────────────────────┘ │
-│                                 │
+│                 │
 │ ┌───────────────────────────────────────────────────────────┐ │
-│ │ LDI Quality Scatter (PE vs JE)              │ │
+│ │ LDI Quality Scatter (PE vs JE)       │ │
 │ │ ┌─────────────────────────────────────────────────────┐ │ │
-│ │ │ PE (µm)                      │ │ │
-│ │ │  15 ┤     ╱ Tolerance Box           │ │ │
-│ │ │   │ · · ╱· · ·                │ │ │
-│ │ │  0 ┤──╱────────────────── 0            │ │ │
-│ │ │   │ ╱· · · ·                  │ │ │
-│ │ │ -15 ┤╱     (green zone ±10µm)         │ │ │
-│ │ │   └─┬────┬────┬────┬────┬─           │ │ │
-│ │ │    -15  -5  0  5  15 JE (µm)       │ │ │
+│ │ │ PE (µm)           │ │ │
+│ │ │ 15 ┤   ╱ Tolerance Box      │ │ │
+│ │ │  │ · · ╱· · ·        │ │ │
+│ │ │ 0 ┤──╱────────────────── 0      │ │ │
+│ │ │  │ ╱· · · ·         │ │ │
+│ │ │ -15 ┤╱   (green zone ±10µm)     │ │ │
+│ │ │  └─┬────┬────┬────┬────┬─      │ │ │
+│ │ │  -15 -5 0 5 15 JE (µm)    │ │ │
 │ │ └─────────────────────────────────────────────────────┘ │ │
 │ └───────────────────────────────────────────────────────────┘ │
-│                                 │
+│                 │
 │ ┌───────────────────────────────────────────────────────────┐ │
-│ │ LDI Manufacturing Telemetry               │ │
-│ │ Throughput: 1250 units/hr | PE: 0.85 | JE: 0.92     │ │
-│ │ Humidity: 65% | Power: 2400W | Vibration: 2.1 mm/s    │ │
+│ │ LDI Manufacturing Telemetry        │ │
+│ │ Throughput: 1250 units/hr | PE: 0.85 | JE: 0.92   │ │
+│ │ Humidity: 65% | Power: 2400W | Vibration: 2.1 mm/s  │ │
 │ └───────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -282,10 +282,10 @@ CPU Load: 72% (Warning)
 ```
 Machine: server-01
 ┌─────────┬──────────┬──────────┬──────────┬──────────┬────────┐
-│Interface│ RX Mbps │ TX Mbps │ Errors  │ Drops  │ Status │
+│Interface│ RX Mbps │ TX Mbps │ Errors │ Drops │ Status │
 ├─────────┼──────────┼──────────┼──────────┼──────────┼────────┤
-│ eth0  │ 1200   │ 850   │ 0    │ 0    │ UP │
-│ wlan0  │ 320   │ 180   │ 0    │ 12    │ UP │
+│ eth0 │ 1200  │ 850  │ 0  │ 0  │ UP │
+│ wlan0 │ 320  │ 180  │ 0  │ 12  │ UP │
 └─────────┴──────────┴──────────┴──────────┴──────────┴────────┘
 → wlan0 มี drops 12 packets — ตรวจสอบ wireless signal
 ```
@@ -477,15 +477,15 @@ docker compose exec prometheus wget -qO- "http://localhost:9090/api/v1/alerts"
 # Recent telemetry (last 5 minutes)
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
  "SELECT device_id, time, cpu_load_percent, temp_c
-  FROM public.sys_metrics
-  WHERE time > NOW() - INTERVAL '5 minutes'
-  ORDER BY time DESC LIMIT 10;"
+ FROM public.sys_metrics
+ WHERE time > NOW() - INTERVAL '5 minutes'
+ ORDER BY time DESC LIMIT 10;"
 
 # Check interface metrics
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
  "SELECT device_id, iface_name, rx_mbps, tx_mbps
-  FROM public.net_metrics
-  ORDER BY time DESC LIMIT 1;"
+ FROM public.net_metrics
+ ORDER BY time DESC LIMIT 1;"
 ```
 
 ### Restart Services
@@ -537,9 +537,9 @@ docker compose ps --format "table {{.Name}}\t{{.Status}}"
 echo "=== Data Flow ==="
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
  "SELECT device_id, COUNT(*) as rows, MAX(time) as latest
-  FROM public.sys_metrics
-  WHERE time > NOW() - INTERVAL '5 minutes'
-  GROUP BY device_id;"
+ FROM public.sys_metrics
+ WHERE time > NOW() - INTERVAL '5 minutes'
+ GROUP BY device_id;"
 
 echo "=== Alerts ==="
 docker compose exec prometheus wget -qO- "http://localhost:9090/api/v1/alerts" 2>&1 | \

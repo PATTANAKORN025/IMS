@@ -10,10 +10,10 @@
 ## How to reproduce every number in this pack
 
 ```bash
-node tests/e2e/ingestion-latency-check.js          # latency P50/P95/P99
-bash scripts/soak-test-report.sh --summarize        # soak verdict
-bash scripts/dr-test.sh all --confirm-destroy       # DR drill (destructive, throwaway env only)
-node tests/lint/alarm-sync-linter.js                # alarm code / master sync
+node tests/e2e/ingestion-latency-check.js     # latency P50/P95/P99
+bash scripts/soak-test-report.sh --summarize    # soak verdict
+bash scripts/dr-test.sh all --confirm-destroy    # DR drill (destructive, throwaway env only)
+node tests/lint/alarm-sync-linter.js        # alarm code / master sync
 node scripts/generate-dashboard-inventory.js --check # dashboard inventory drift
 ```
 

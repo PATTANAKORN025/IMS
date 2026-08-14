@@ -10,9 +10,9 @@
 ### 1.1 交接班检查表
 1. **登录:** 在主屏幕打开 [IMS NOC Overview](http://localhost:3000/d/ims-noc-overview) 仪表板。
 2. **健康检查:** 查看 **Fleet Health Score** (左上角)。
-  - `> 95%`: ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) 正常。继续日常工作。
-  - `90% - 94%`: ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 警告。检查 "Top 10 Critical Nodes" 面板。
-  - `< 90%`: 严重。立即升级至 2 级 (SRE/Engineering)。
+ - `> 95%`: ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) 正常。继续日常工作。
+ - `90% - 94%`: ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 警告。检查 "Top 10 Critical Nodes" 面板。
+ - `< 90%`: 严重。立即升级至 2 级 (SRE/Engineering)。
 3. **验证 LDI 机群:** 打开 [LDI Manufacturing](http://localhost:3000/d/ims-ldi-manufacturing) 仪表板。确保没有机器标记为红色 "OFFLINE"。
 
 ---

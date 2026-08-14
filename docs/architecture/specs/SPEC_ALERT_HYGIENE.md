@@ -15,30 +15,30 @@ raw data to compute both already exists in
 **Design**:
 
 - **MTTA** (mean time to acknowledge) = `AVG(acknowledged_at - logdate)`
-  over `WHERE acknowledged_at IS NOT NULL`, grouped by whatever
-  dimension is useful (per-machine, per-severity, per-shift). Severity
-  needs a join back to `ldi_alarm_ms_code` since `ldi_alarm_lifecycle`
-  itself doesn't carry it.
+ over `WHERE acknowledged_at IS NOT NULL`, grouped by whatever
+ dimension is useful (per-machine, per-severity, per-shift). Severity
+ needs a join back to `ldi_alarm_ms_code` since `ldi_alarm_lifecycle`
+ itself doesn't carry it.
 - **MTTR** (mean time to resolve) = `AVG(resolved_at - logdate)` over
-  `WHERE resolved_at IS NOT NULL`, same grouping options.
+ `WHERE resolved_at IS NOT NULL`, same grouping options.
 - Reasonable v1 scope: single new dashboard (not folded into an
-  existing one -- this is a distinct "how well is the team responding"
-  question, different audience from the RCA/SPC dashboards), 2 stat
-  panels (current MTTA/MTTR, e.g. last 24h) + 1 trend panel (daily
-  MTTA/MTTR over the selected range) + 1 table (worst-offender alarms
-  by time-to-ack, for triage).
+ existing one -- this is a distinct "how well is the team responding"
+ question, different audience from the RCA/SPC dashboards), 2 stat
+ panels (current MTTA/MTTR, e.g. last 24h) + 1 trend panel (daily
+ MTTA/MTTR over the selected range) + 1 table (worst-offender alarms
+ by time-to-ack, for triage).
 - **Real caveat to document up front, not discover during
-  implementation**: MTTA/MTTR are meaningless in mock-simulator mode
-  unless someone is actually clicking Ack/Resolve regularly -- in a
-  quiet mock environment this dashboard will show mostly nulls/low-n,
-  same honesty requirement as the ingestion-latency dashboard's
-  "alarms are rare/debounced, low sample count expected" caveat.
-  State that explicitly in the new dashboard's description text, don't
-  let it look broken instead of quiet.
+ implementation**: MTTA/MTTR are meaningless in mock-simulator mode
+ unless someone is actually clicking Ack/Resolve regularly -- in a
+ quiet mock environment this dashboard will show mostly nulls/low-n,
+ same honesty requirement as the ingestion-latency dashboard's
+ "alarms are rare/debounced, low sample count expected" caveat.
+ State that explicitly in the new dashboard's description text, don't
+ let it look broken instead of quiet.
 - Owner/decision context (per `DECISION_MATRIX.md`'s pattern once
-  built): "Is the team responding to alarms fast enough?" -- shift
-  lead / manufacturing owner audience, same as Manufacturing Command
-  Center.
+ built): "Is the team responding to alarms fast enough?" -- shift
+ lead / manufacturing owner audience, same as Manufacturing Command
+ Center.
 
 ## Item 2: Rename "Critical Alarms" panels
 
@@ -77,14 +77,14 @@ edits since then could have changed it either way.
 repo's 13-dashboard inventory to move it *to*. Two real options:
 
 1. Create a small new admin/ops dashboard (would be dashboard #14,
-   needs its own entry in `DECISION_MATRIX.md` and `OWNERSHIP.md`,
-   plus updates to every dashboard-count doc the overclaim linter
-   checks -- non-trivial for a single panel).
-   `ims-meta-monitoring` ("IMS Pipeline Health & Meta-Monitoring")
-   already exists and is explicitly the "watches the pipeline itself"
-   dashboard -- Pipeline Heartbeat fits its stated purpose exactly.
-   Moving it there is additive to an existing dashboard, not a new
-   one -- lower blast radius, recommended over option 1.
+  needs its own entry in `DECISION_MATRIX.md` and `OWNERSHIP.md`,
+  plus updates to every dashboard-count doc the overclaim linter
+  checks -- non-trivial for a single panel).
+  `ims-meta-monitoring` ("IMS Pipeline Health & Meta-Monitoring")
+  already exists and is explicitly the "watches the pipeline itself"
+  dashboard -- Pipeline Heartbeat fits its stated purpose exactly.
+  Moving it there is additive to an existing dashboard, not a new
+  one -- lower blast radius, recommended over option 1.
 
 **Recommendation**: option 2 (move into `ims-meta-monitoring`), unless
 there's a reason operator-facing dashboards specifically need a live
@@ -103,15 +103,15 @@ rows"), not alarm-lifecycle completeness.
 not a vague "quality" gesture):
 
 - Alarms stuck `OPEN` past a reasonable SLA (e.g. `> 4 hours` --
-  threshold needs a real operational answer, not invented here) --
-  `SELECT count(*) FROM ldi_alarm_lifecycle WHERE status='OPEN' AND logdate < NOW() - INTERVAL '4 hours'`.
+ threshold needs a real operational answer, not invented here) --
+ `SELECT count(*) FROM ldi_alarm_lifecycle WHERE status='OPEN' AND logdate < NOW() - INTERVAL '4 hours'`.
 - Orphaned lifecycle rows: a `ldi_alarm_lifecycle` row whose
-  `(logdate, logid)` has no matching `ldi_alarm_log` row (shouldn't
-  happen given the FK from migration 077, but the readiness dashboard
-  exists precisely to catch "shouldn't happen" cases with evidence
-  instead of assumption).
+ `(logdate, logid)` has no matching `ldi_alarm_log` row (shouldn't
+ happen given the FK from migration 077, but the readiness dashboard
+ exists precisely to catch "shouldn't happen" cases with evidence
+ instead of assumption).
 - `ACKNOWLEDGED` rows that never reach `RESOLVED` within some window --
-  distinct from "stuck OPEN," this is "stuck mid-workflow."
+ distinct from "stuck OPEN," this is "stuck mid-workflow."
 
 **Rollout**: additive panels to an existing dashboard, same pattern as
 Item 3's recommended approach -- no new dashboard, no inventory-count

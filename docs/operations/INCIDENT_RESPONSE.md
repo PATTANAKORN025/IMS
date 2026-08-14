@@ -59,7 +59,7 @@ Confirm recovery: `SELECT max(time) FROM public.ldi_data;` should advance within
 **Manual recovery:**
 
 ```bash
-docker start ims-timescaledb  # if the container exists but isn't running
+docker start ims-timescaledb # if the container exists but isn't running
 # or, if that doesn't work:
 docker compose up -d timescaledb
 ```

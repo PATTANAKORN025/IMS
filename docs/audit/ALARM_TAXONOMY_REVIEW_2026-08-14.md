@@ -34,8 +34,8 @@ the simulator just wasn't using any until Phase F.
 
 ```sql
 SELECT
-  count(*) FILTER (WHERE cause IS NOT NULL AND cause <> '') AS has_cause,
-  count(*) FILTER (WHERE sop_reference IS NOT NULL AND sop_reference <> '') AS has_sop
+ count(*) FILTER (WHERE cause IS NOT NULL AND cause <> '') AS has_cause,
+ count(*) FILTER (WHERE sop_reference IS NOT NULL AND sop_reference <> '') AS has_sop
 FROM public.ldi_alarm_ms_code;
 -- has_cause=25, has_sop=0 (out of 1,820)
 ```
@@ -81,13 +81,13 @@ not assumed from the older audit.
 ## What this review does not cover
 
 - Whether the 1,795 non-curated codes' `alarm_msg`/`alarm_detail` text
-  is itself accurate to the real vendor source -- that was the import
-  process's job (892-row merge, 1,820-code catalog build), not
-  re-verified here.
+ is itself accurate to the real vendor source -- that was the import
+ process's job (892-row merge, 1,820-code catalog build), not
+ re-verified here.
 - Alarm *behavior* (firing rate, debounce effectiveness, correlation
-  quality) -- that's `LDI_ALARM_FIDELITY_AUDIT.md`'s scope, and its
-  score (58/100) is known-stale per `BACKLOG_SIMULATOR_REALISM_AND_ALERT_HYGIENE.md`,
-  not re-run here since this review is catalog-data-only.
+ quality) -- that's `LDI_ALARM_FIDELITY_AUDIT.md`'s scope, and its
+ score (58/100) is known-stale per `BACKLOG_SIMULATOR_REALISM_AND_ALERT_HYGIENE.md`,
+ not re-run here since this review is catalog-data-only.
 
 ## Summary
 

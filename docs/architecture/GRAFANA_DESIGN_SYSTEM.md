@@ -161,13 +161,13 @@ added.
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│ Row 1: KPI Strip    [4][4][4][4][4][4] h=4   │ ← ตัวเลขเดียว บอกสถานะรวม
+│ Row 1: KPI Strip  [4][4][4][4][4][4] h=4  │ ← ตัวเลขเดียว บอกสถานะรวม
 ├─────────────────────────────────────────────────────┤
-│ Row 2: Alert + Status  [Alert List: 8][Table: 16] h=8│ ← สิ่งที่ต้องดูก่อนอย่างอื่น
+│ Row 2: Alert + Status [Alert List: 8][Table: 16] h=8│ ← สิ่งที่ต้องดูก่อนอย่างอื่น
 ├─────────────────────────────────────────────────────┤
-│ Row 3: Trends (collapsible row ตาม domain)  h=8-10 │ ← 1-2 timeseries ต่อแถว กว้าง 12-24
+│ Row 3: Trends (collapsible row ตาม domain) h=8-10 │ ← 1-2 timeseries ต่อแถว กว้าง 12-24
 ├─────────────────────────────────────────────────────┤
-│ Row N: Deep Debug (collapsed by default)   h=8   │ ← raw table, ไม่ critical
+│ Row N: Deep Debug (collapsed by default)  h=8  │ ← raw table, ไม่ critical
 └─────────────────────────────────────────────────────┘
 ```
 

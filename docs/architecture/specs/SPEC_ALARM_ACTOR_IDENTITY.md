@@ -14,8 +14,8 @@ template variable for the logged-in user:
 
 ```js
 fetch('/alarm-api/alarms/ack', {
-  method: 'POST',
-  body: JSON.stringify({ logdate_ms: {{When_ms}}, logid: '{{logid}}', acknowledged_by: '${__user.login}' })
+ method: 'POST',
+ body: JSON.stringify({ logdate_ms: {{When_ms}}, logid: '{{logid}}', acknowledged_by: '${__user.login}' })
 })
 ```
 
@@ -45,20 +45,20 @@ trusted header; have alarm-api prefer the header over the body field.
 
 ```
 proxy/nginx.conf, location /auth-check:
-  proxy_pass http://grafana:3000/api/user;
-  # NEW: capture the response body's "login" field so /alarm-api/
-  # can forward it as a header the upstream service can trust.
-  auth_request_set $verified_user $upstream_http_x_grafana_user;
-  # (requires Grafana's /api/user response to expose login via a
-  #  header, OR a small Lua/njs snippet to parse the JSON body --
-  #  see "Open question" below, this is the one design decision
-  #  this spec does NOT resolve outright)
+ proxy_pass http://grafana:3000/api/user;
+ # NEW: capture the response body's "login" field so /alarm-api/
+ # can forward it as a header the upstream service can trust.
+ auth_request_set $verified_user $upstream_http_x_grafana_user;
+ # (requires Grafana's /api/user response to expose login via a
+ # header, OR a small Lua/njs snippet to parse the JSON body --
+ # see "Open question" below, this is the one design decision
+ # this spec does NOT resolve outright)
 
 location /alarm-api/ {
-  auth_request /auth-check;
-  auth_request_set $verified_user ...;
-  proxy_set_header X-Verified-User $verified_user;
-  proxy_pass http://alarm-api:4000/;
+ auth_request /auth-check;
+ auth_request_set $verified_user ...;
+ proxy_set_header X-Verified-User $verified_user;
+ proxy_pass http://alarm-api:4000/;
 }
 ```
 
@@ -67,12 +67,12 @@ location /alarm-api/ {
 const verifiedUser = req.headers['x-verified-user'];
 const claimedActor = req.body[actorField];
 if (verifiedUser && claimedActor !== verifiedUser) {
-  // Log the mismatch (real signal -- someone tampered with the
-  // client, or the two are legitimately different for a reason we
-  // don't understand yet). Do NOT silently accept -- and don't
-  // silently overwrite either, until we've seen real mismatch
-  // traffic and know which case we're actually seeing.
-  console.warn(`actor mismatch: verified=${verifiedUser} claimed=${claimedActor}`);
+ // Log the mismatch (real signal -- someone tampered with the
+ // client, or the two are legitimately different for a reason we
+ // don't understand yet). Do NOT silently accept -- and don't
+ // silently overwrite either, until we've seen real mismatch
+ // traffic and know which case we're actually seeing.
+ console.warn(`actor mismatch: verified=${verifiedUser} claimed=${claimedActor}`);
 }
 const actor = verifiedUser || claimedActor; // prefer verified once trusted
 ```
@@ -85,11 +85,11 @@ as JSON, not a header) without an njs/Lua module. Two real options,
 neither picked yet:
 
 1. Add an njs (`ngx_http_js_module`) snippet to parse the JSON body and
-   set a variable from it -- more moving parts, but stays in nginx.
+  set a variable from it -- more moving parts, but stays in nginx.
 2. Have alarm-api itself call Grafana's `/api/user` server-side
-   (service-to-service, using the forwarded session cookie) instead of
-   trusting anything from nginx -- fewer moving parts in nginx, but
-   alarm-api now makes an extra network call per write request.
+  (service-to-service, using the forwarded session cookie) instead of
+  trusting anything from nginx -- fewer moving parts in nginx, but
+  alarm-api now makes an extra network call per write request.
 
 Recommend evaluating both against actual `nginx:alpine`'s available
 modules (`ngx_http_js_module` may not be compiled in) before picking,
@@ -98,32 +98,32 @@ rather than assuming option 1 works.
 ## Rollout plan
 
 1. Implement with `console.warn`-only mismatch logging first (no
-   behavior change for existing correct clients) -- ships safely,
-   generates real evidence of whether mismatches ever actually occur.
+  behavior change for existing correct clients) -- ships safely,
+  generates real evidence of whether mismatches ever actually occur.
 2. Watch logs for a real observation window (days, not minutes).
 3. Only then decide whether to make `verifiedUser` authoritative
-   (override `claimedActor` silently) or reject mismatches outright
-   (`403`) -- decision needs real mismatch-frequency data, not a guess
-   made now.
+  (override `claimedActor` silently) or reject mismatches outright
+  (`403`) -- decision needs real mismatch-frequency data, not a guess
+  made now.
 
 ## Testing plan
 
 - Unit: `transitionAlarm` with header present + matching body -> no
-  warning, normal write.
+ warning, normal write.
 - Unit: header present + mismatched body -> warning logged, write
-  still succeeds (phase 1 behavior).
+ still succeeds (phase 1 behavior).
 - Integration: real `curl` against `/alarm-api/alarms/ack` with a
-  valid session cookie but a forged `acknowledged_by` -> confirm the
-  mismatch is visible in `docker logs ims-alarm-api`.
+ valid session cookie but a forged `acknowledged_by` -> confirm the
+ mismatch is visible in `docker logs ims-alarm-api`.
 - Regression: existing Alarm Console ack/resolve buttons still work
-  end-to-end (this is the one write path in the whole system --
-  breaking it is not an acceptable regression for a Medium-priority
-  hardening item).
+ end-to-end (this is the one write path in the whole system --
+ breaking it is not an acceptable regression for a Medium-priority
+ hardening item).
 
 ## Out of scope for this spec
 
 - Adding a second, independent credential to alarm-api (session-based
-  trust via Grafana is an intentional, documented design choice --
-  `SECURITY_MODEL.md` Boundary 1a -- not being revisited here).
+ trust via Grafana is an intentional, documented design choice --
+ `SECURITY_MODEL.md` Boundary 1a -- not being revisited here).
 - Rate limiting / abuse prevention on the ack/resolve endpoints --
-  separate concern, not an identity problem.
+ separate concern, not an identity problem.

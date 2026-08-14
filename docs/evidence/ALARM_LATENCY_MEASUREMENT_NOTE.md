@@ -36,8 +36,8 @@ depending on `link_basis`:
 
 ```
 $ node tests/e2e/ingestion-latency-check.js
-ldi_alarm_log (causal)     n=5   P50=  3.6ms  P95=  9.0ms  P99= 13.2ms  <- real pipeline latency
-ldi_alarm_log (nearest)    n=15  P50=5883ms   P95=7811ms  P99=8065ms  <- includes simulated delay, NOT pipeline latency
+ldi_alarm_log (causal)   n=5  P50= 3.6ms P95= 9.0ms P99= 13.2ms <- real pipeline latency
+ldi_alarm_log (nearest)  n=15 P50=5883ms  P95=7811ms P99=8065ms <- includes simulated delay, NOT pipeline latency
 ```
 
 `causal` latency matches the telemetry tables (single-digit ms). The
@@ -47,12 +47,12 @@ deliberately backdating timestamps for realism.
 ## What changed to fix the measurement (not the pipeline, not the simulator)
 
 - `tests/e2e/ingestion-latency-check.js`: reports `ldi_alarm_log` as
-  two lines (`causal` / `nearest`) instead of one blended number.
+ two lines (`causal` / `nearest`) instead of one blended number.
 - `monitoring/grafana/dashboards/infrastructure/ims-ingestion-latency.json`:
-  split the single "ldi_alarm_log" stat panel into "ldi_alarm_log
-  (causal)" (real thresholds, green/yellow/red like telemetry) and
-  "ldi_alarm_log (nearest)" (no pass/fail thresholds -- informational
-  only, tooltip states it includes simulated delay).
+ split the single "ldi_alarm_log" stat panel into "ldi_alarm_log
+ (causal)" (real thresholds, green/yellow/red like telemetry) and
+ "ldi_alarm_log (nearest)" (no pass/fail thresholds -- informational
+ only, tooltip states it includes simulated delay).
 
 No write path, no simulator code, no running container touched or
 restarted by this fix -- dashboard JSON hot-reloads within 30s per

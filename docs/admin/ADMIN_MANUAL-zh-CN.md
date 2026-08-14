@@ -201,9 +201,9 @@ docker exec ims-node-red node -e "
 const snmp = require('net-snmp');
 const session = snmp.createSession('192.168.1.100', 'public', {port: 161, timeout: 5000});
 session.get(['1.3.6.1.2.1.1.1.0'], (err, varbinds) => {
-  if (err) console.error('ERROR:', err.message);
-  else console.log('OK:', varbinds[0].value.toString());
-  session.close();
+ if (err) console.error('ERROR:', err.message);
+ else console.log('OK:', varbinds[0].value.toString());
+ session.close();
 });
 "
 ```
@@ -217,9 +217,9 @@ sleep 30
 # 验证数据写入
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
  "SELECT device_id, COUNT(*) as rows, MAX(s.time) as latest
-  FROM public.sys_metrics s
-  WHERE device_id = 'NEW-MACHINE-01'
-  GROUP BY device_id;"
+ FROM public.sys_metrics s
+ WHERE device_id = 'NEW-MACHINE-01'
+ GROUP BY device_id;"
 ```
 
 ### Step 4: Add Dashboard Panel (Optional)
@@ -245,19 +245,19 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c \
  expr: avg_over_time(cpu_load_percent[5m]) > 85
  for: 5m
  labels:
-  severity: warning
+ severity: warning
  annotations:
-  summary: "High CPU load on {{ $labels.machine_id }}"
-  description: "CPU load {{ $value }}% exceeds threshold 85%"
+ summary: "High CPU load on {{ $labels.machine_id }}"
+ description: "CPU load {{ $value }}% exceeds threshold 85%"
 
 - alert: LDI_Vibration_Critical
  expr: ldi_vibration > 10.0
  for: 5m
  labels:
-  severity: critical
+ severity: critical
  annotations:
-  summary: "LDI vibration critical on {{ $labels.machine_id }}"
-  description: "Vibration {{ $value }} mm/s exceeds threshold 10.0"
+ summary: "LDI vibration critical on {{ $labels.machine_id }}"
+ description: "Vibration {{ $value }} mm/s exceeds threshold 10.0"
 ```
 
 ### Reload Configuration

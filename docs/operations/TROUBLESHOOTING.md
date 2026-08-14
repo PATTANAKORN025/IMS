@@ -16,14 +16,14 @@ docker logs ims-node-red 2>&1 | tail -5
 # 3. Telemetry flow (should show rows for each machine)
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
  "SELECT device_id, COUNT(*) as rows, MAX(s.time) as latest \
-  FROM public.sys_metrics s JOIN public.devices d ON d.device_id = s.device_id \
-  WHERE s.time > NOW() - INTERVAL '5 minutes' GROUP BY device_id;"
+ FROM public.sys_metrics s JOIN public.devices d ON d.device_id = s.device_id \
+ WHERE s.time > NOW() - INTERVAL '5 minutes' GROUP BY device_id;"
 
 # 4. Prometheus targets (all should be UP)
 curl -s http://localhost:9090/api/v1/targets | python3 -c \
  "import sys,json; d=json.load(sys.stdin); \
-  up=sum(1 for t in d['data']['activeTargets'] if t['health']=='up'); \
-  print(f'{up}/{len(d[\"data\"][\"activeTargets\"])} targets UP')"
+ up=sum(1 for t in d['data']['activeTargets'] if t['health']=='up'); \
+ print(f'{up}/{len(d[\"data\"][\"activeTargets\"])} targets UP')"
 ```
 
 ## Failure Modes
@@ -47,16 +47,16 @@ curl -s http://localhost:9090/api/v1/targets | python3 -c \
 
 ### Restart a single service
 ```bash
-docker compose restart node-red  # Restart pipeline
-docker compose restart grafana   # Reload dashboard JSON
+docker compose restart node-red # Restart pipeline
+docker compose restart grafana  # Reload dashboard JSON
 docker compose restart prometheus # Reload alert rules
-docker compose restart proxy    # Reload nginx config (proxy/nginx.conf)
-docker compose restart alarm-api  # Restart the alarm ack/resolve write-path service
+docker compose restart proxy  # Reload nginx config (proxy/nginx.conf)
+docker compose restart alarm-api # Restart the alarm ack/resolve write-path service
 ```
 
 ### Deploy flow changes
 ```bash
-make deploy-flows  # Merge split flows → POST to Admin API
+make deploy-flows # Merge split flows → POST to Admin API
 ```
 
 ### Check database state
@@ -64,7 +64,7 @@ make deploy-flows  # Merge split flows → POST to Admin API
 # Row count per machine (last 5 min)
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
  "SELECT device_id, COUNT(*) FROM public.sys_metrics \
-  WHERE time > NOW() - INTERVAL '5 minutes' GROUP BY device_id;"
+ WHERE time > NOW() - INTERVAL '5 minutes' GROUP BY device_id;"
 
 # CAGG freshness
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
@@ -73,7 +73,7 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c \
 
 ### Backup and restore
 ```bash
-make backup          # Backup to backups/backup_YYYYMMDD.sql
+make backup     # Backup to backups/backup_YYYYMMDD.sql
 make restore FILE=backups/backup_20260701.sql
 ```
 

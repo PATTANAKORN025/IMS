@@ -80,12 +80,12 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/):
 ### Branch Naming
 
 ```
-feat/<topic>   # New features
-fix/<topic>    # Bug fixes
-chore/<topic>   # Maintenance
-docs/<topic>   # Documentation
+feat/<topic>  # New features
+fix/<topic>  # Bug fixes
+chore/<topic>  # Maintenance
+docs/<topic>  # Documentation
 refactor/<topic> # Code restructuring
-test/<topic>   # Tests
+test/<topic>  # Tests
 security/<topic> # Security fixes
 ```
 
@@ -120,30 +120,30 @@ node tests/e2e/golden-dataset-spc.js
 
 ```
 IMS/
-├── docker-compose.yaml     # Main orchestration
+├── docker-compose.yaml   # Main orchestration
 ├── nodered_data/
-│  ├── flows/          # Node-RED flows, split by concern (Source of Truth)
-│  ├── lib/           # circuit-breaker.js, parser.js, snmp-normalize.js, units.js
-│  ├── flows.json        # Built by scripts/build-flows.js from flows/*.json -- don't hand-edit
-│  ├── Dockerfile        # Custom build: installs npm dependencies
-│  └── settings.js       # Runtime settings
-├── postgres/init/        # DB schema bootstrap (fresh-deploy path)
-├── database/migrations/     # TimescaleDB migrations, applied by the db-migrate service
+│ ├── flows/     # Node-RED flows, split by concern (Source of Truth)
+│ ├── lib/      # circuit-breaker.js, parser.js, snmp-normalize.js, units.js
+│ ├── flows.json    # Built by scripts/build-flows.js from flows/*.json -- don't hand-edit
+│ ├── Dockerfile    # Custom build: installs npm dependencies
+│ └── settings.js    # Runtime settings
+├── postgres/init/    # DB schema bootstrap (fresh-deploy path)
+├── database/migrations/   # TimescaleDB migrations, applied by the db-migrate service
 ├── monitoring/
-│  ├── grafana/dashboards/
-│  │  ├── infrastructure/   # NOC, Capacity, Engineering Drill-Down, Meta-Monitoring (4)
-│  │  └── manufacturing/    # LDI Manufacturing, Andon, Engineering Analytics, Machine
-│  │              #  Snapshot, Data Readiness, Fleet at a Glance (6)
-│  ├── grafana/library-panels/ # Shared Grafana Library Panels
-│  └── prometheus/rules/    # Alert rules
-├── scripts/           # Utility scripts
+│ ├── grafana/dashboards/
+│ │ ├── infrastructure/  # NOC, Capacity, Engineering Drill-Down, Meta-Monitoring (4)
+│ │ └── manufacturing/  # LDI Manufacturing, Andon, Engineering Analytics, Machine
+│ │       # Snapshot, Data Readiness, Fleet at a Glance (6)
+│ ├── grafana/library-panels/ # Shared Grafana Library Panels
+│ └── prometheus/rules/  # Alert rules
+├── scripts/      # Utility scripts
 ├── tests/
-│  ├── lint/          # Dashboard/alarm/query-budget/RCA/orphan linters
-│  ├── unit/          # Parser & counter unit tests
-│  ├── e2e/           # Panel data, query timing, golden-dataset checks
-│  ├── k6/           # Load tests
-│  └── playwright/       # Visual/layout regression
-└── docs/            # Documentation -- start at docs/architecture/IMS_PLATFORM_BOOK.md
+│ ├── lint/     # Dashboard/alarm/query-budget/RCA/orphan linters
+│ ├── unit/     # Parser & counter unit tests
+│ ├── e2e/      # Panel data, query timing, golden-dataset checks
+│ ├── k6/      # Load tests
+│ └── playwright/    # Visual/layout regression
+└── docs/      # Documentation -- start at docs/architecture/IMS_PLATFORM_BOOK.md
 ```
 
 ---

@@ -67,27 +67,27 @@ distribution, no existing reference implementation in this repo to
 extend). What this spec commits to instead:
 
 - **Per-variable design questions to answer before implementing**, one
-  at a time, each needs a real answer not a guess:
-  - Temperature/humidity: what's the real sensor noise floor for this
-    hardware class? (Spec sheet, if available; else a documented
-    reasonable assumption, explicitly flagged as an assumption.)
-  - Vacuum: same question, plus whether drift correlates with duty
-    cycle (real vacuum systems often do).
-  - PE/JE: these already drive alarm correlation (`ALIGN_CODES`) --
-    any added noise must not break that correlation's signal-to-noise
-    ratio, or it silently defeats the RCA guide's own claims.
-  - Micro-stop: currently absent entirely from the simulator (no
-    `micro_stop` or downtime-event field found in `almsim_gen` or
-    `ldisim_gen` this pass) -- this is a **new mechanism**, not a
-    tuning change to an existing one. Needs its own mini-design: what
-    table/column represents it, how it interacts with OEE calculations
-    that already exist (`ims-ldi-manufacturing`'s OEE section).
-  - Warm-up drift: needs a definition of "warm-up window" (time since
-    last state change to RUN?) before any drift curve can be designed
-    against it.
+ at a time, each needs a real answer not a guess:
+ - Temperature/humidity: what's the real sensor noise floor for this
+  hardware class? (Spec sheet, if available; else a documented
+  reasonable assumption, explicitly flagged as an assumption.)
+ - Vacuum: same question, plus whether drift correlates with duty
+  cycle (real vacuum systems often do).
+ - PE/JE: these already drive alarm correlation (`ALIGN_CODES`) --
+  any added noise must not break that correlation's signal-to-noise
+  ratio, or it silently defeats the RCA guide's own claims.
+ - Micro-stop: currently absent entirely from the simulator (no
+  `micro_stop` or downtime-event field found in `almsim_gen` or
+  `ldisim_gen` this pass) -- this is a **new mechanism**, not a
+  tuning change to an existing one. Needs its own mini-design: what
+  table/column represents it, how it interacts with OEE calculations
+  that already exist (`ims-ldi-manufacturing`'s OEE section).
+ - Warm-up drift: needs a definition of "warm-up window" (time since
+  last state change to RUN?) before any drift curve can be designed
+  against it.
 - **Do not implement any of the above without running it through the
-  brainstorming skill's design process first** -- this item has real
-  unresolved design questions, unlike Item 1's one-line fix.
+ brainstorming skill's design process first** -- this item has real
+ unresolved design questions, unlike Item 1's one-line fix.
 
 ## Item 3: Re-run the alarm fidelity audit
 

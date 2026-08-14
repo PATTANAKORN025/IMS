@@ -163,7 +163,7 @@ Each phase's evidence is attached to this doc (or linked from it) before moving 
 ═══════════════════════════════════════════════════
  IMS Soak Test Summary
 ═══════════════════════════════════════════════════
-Samples: 57  Window: 2026-08-10T08:34:21Z -> 2026-08-12T13:05:15Z (52.5h elapsed)
+Samples: 57 Window: 2026-08-10T08:34:21Z -> 2026-08-12T13:05:15Z (52.5h elapsed)
 Window length: NOT YET 72h -- keep this script running periodically and re-summarize later.
 
 Ingest failures ever nonzero in a sample: max=NaN (want 0)
@@ -194,9 +194,9 @@ VERDICT: FAIL -- see nonzero counters above
 First run produced a false FAIL (live row counts queried *after* the dump, so the live-ingesting system had already moved a few rows ahead — not a restore defect). Fixed the script to bracket live counts before and after the dump and check the restored count falls inside that window. Re-run:
 
 ```text
-devices=1025 ldi_data=52795 ldi_alarm_log=10405  (before dump)
-devices=1025 ldi_data=52796 ldi_alarm_log=10405  (after dump)
-devices=1025 ldi_data=52795 ldi_alarm_log=10405  (restored, throwaway DB)
+devices=1025 ldi_data=52795 ldi_alarm_log=10405 (before dump)
+devices=1025 ldi_data=52796 ldi_alarm_log=10405 (after dump)
+devices=1025 ldi_data=52795 ldi_alarm_log=10405 (restored, throwaway DB)
 VERDICT: PASS -- dump 1s, restore 18s, 22,284,869 bytes
 ```
 
@@ -210,11 +210,11 @@ VERDICT: PASS -- dump 1s, restore 18s, 22,284,869 bytes
 
 ```text
 timescaledb: PASS -- recovered in 6s
-node-red:  PASS -- recovered in 6s
+node-red: PASS -- recovered in 6s
 timescaledb: PASS -- recovered in 8s
-node-red:  PASS -- recovered in 3s
+node-red: PASS -- recovered in 3s
 timescaledb: PASS -- recovered in 5s
-node-red:  PASS -- recovered in 6s
+node-red: PASS -- recovered in 6s
 ```
 
 6/6 PASS, single-digit-second recovery every time. **The underlying Docker Desktop restart-policy gap is not fixed** (that's outside this repo's control) — what changed is that this environment now has a compensating control that actually works, verified against the real, reproduced failure mode rather than assumed to work.

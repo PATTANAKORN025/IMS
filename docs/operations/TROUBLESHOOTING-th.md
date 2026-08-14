@@ -16,14 +16,14 @@ docker logs ims-node-red 2>&1 | tail -5
 # 3. โฟลว์ข้อมูล (ควรแสดงแถวสำหรับแต่ละเครื่อง)
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
  "SELECT device_id, COUNT(*) as rows, MAX(s.time) as latest \
-  FROM public.sys_metrics s JOIN public.devices d ON d.device_id = s.device_id \
-  WHERE s.time > NOW() - INTERVAL '5 minutes' GROUP BY device_id;"
+ FROM public.sys_metrics s JOIN public.devices d ON d.device_id = s.device_id \
+ WHERE s.time > NOW() - INTERVAL '5 minutes' GROUP BY device_id;"
 
 # 4. เป้าหมาย Prometheus (ทั้งหมดควรเป็น UP)
 curl -s http://localhost:9090/api/v1/targets | python3 -c \
  "import sys,json; d=json.load(sys.stdin); \
-  up=sum(1 for t in d['data']['activeTargets'] if t['health']=='up'); \
-  print(f'{up}/{len(d[\"data\"][\"activeTargets\"])} targets UP')"
+ up=sum(1 for t in d['data']['activeTargets'] if t['health']=='up'); \
+ print(f'{up}/{len(d[\"data\"][\"activeTargets\"])} targets UP')"
 ```
 
 ## โหมดความล้มเหลว
@@ -47,16 +47,16 @@ curl -s http://localhost:9090/api/v1/targets | python3 -c \
 
 ### รีสตาร์ทเซอร์วิสเดียว
 ```bash
-docker compose restart node-red  # รีสตาร์ท pipeline
-docker compose restart grafana   # โหลด dashboard JSON ใหม่
+docker compose restart node-red # รีสตาร์ท pipeline
+docker compose restart grafana  # โหลด dashboard JSON ใหม่
 docker compose restart prometheus # โหลด alert rules ใหม่
-docker compose restart proxy    # โหลด nginx config ใหม่ (proxy/nginx.conf)
-docker compose restart alarm-api  # รีสตาร์ทเซอร์วิสเขียนข้อมูล alarm ack/resolve
+docker compose restart proxy  # โหลด nginx config ใหม่ (proxy/nginx.conf)
+docker compose restart alarm-api # รีสตาร์ทเซอร์วิสเขียนข้อมูล alarm ack/resolve
 ```
 
 ### ดีพลอยการเปลี่ยนแปลง Flow
 ```bash
-make deploy-flows  # รวม split flows → POST ไปที่ Admin API
+make deploy-flows # รวม split flows → POST ไปที่ Admin API
 ```
 
 ### ตรวจสอบสถานะ Database
@@ -64,7 +64,7 @@ make deploy-flows  # รวม split flows → POST ไปที่ Admin API
 # จำนวนแถวต่อเครื่อง (5 นาทีล่าสุด)
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
  "SELECT device_id, COUNT(*) FROM public.sys_metrics \
-  WHERE time > NOW() - INTERVAL '5 minutes' GROUP BY device_id;"
+ WHERE time > NOW() - INTERVAL '5 minutes' GROUP BY device_id;"
 
 # ความใหม่ของ CAGG
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
@@ -73,7 +73,7 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c \
 
 ### สำรองและกู้คืน
 ```bash
-make backup          # สำรองไปยัง backups/backup_YYYYMMDD.sql
+make backup     # สำรองไปยัง backups/backup_YYYYMMDD.sql
 make restore FILE=backups/backup_20260701.sql
 ```
 
