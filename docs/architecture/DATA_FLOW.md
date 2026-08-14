@@ -59,7 +59,7 @@ flowchart LR
  RAW -->|"materialized, 60s refresh"| SPCVIEW["v_machine_spc_fleet\nv_ldi_rca_recent_window\nv_ldi_rca_truth_test"]
 ```
 
-`ldi_data_1m → 15m → 1h` is a chained rollup (each level aggregates the level below it) for dashboard time-range performance. `ldi_data_hourly` is a *separate*, purpose-built hourly view computed directly from raw data with its own analytical columns (`avg_max_pe`, `peak_pe`, and more) and `timescaledb.materialized_only = false` (real-time aggregation — migration 065), because those specific metrics need to reflect the current partial hour, not wait for the next scheduled refresh.
+`ldi_data_1m → 15m → 1h` is a chained rollup (each level aggregates the level below it) for dashboard time-range performance. `ldi_data_hourly` is a _separate_, purpose-built hourly view computed directly from raw data with its own analytical columns (`avg_max_pe`, `peak_pe`, and more) and `timescaledb.materialized_only = false` (real-time aggregation — migration 065), because those specific metrics need to reflect the current partial hour, not wait for the next scheduled refresh.
 
 ## Alarm master + severity
 

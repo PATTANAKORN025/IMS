@@ -33,8 +33,6 @@
 
 ประสิทธิภาพของระบบอาศัย Continuous Aggregates ของ TimescaleDB ในการเรนเดอร์แดชบอร์ด และไปป์ไลน์แบบ stateful ของ Node-RED สำหรับการนำเข้าข้อมูล (data ingestion)
 
-
-
 <table style="border:none; border-collapse:collapse; width:100%;">
 
 <tr>
@@ -109,30 +107,32 @@ make up      # docker compose up -d (เริ่มการทำงานส�
 sleep 40 && make verify
 open http://localhost:3000
 ```
+
 > **ตรวจสอบแล้ว:** `docker compose ps` เมื่อ 2026-08-13, เก็บถาวรไว้ที่ [`docs/evidence/runtime/compose-ps-20260813.txt`](docs/evidence/runtime/compose-ps-20260813.txt)
 
 ### ข้อจำกัดที่ทราบแล้ว
+
 - เวิร์กโหลดจำลองของ LDI จะสร้างข้อมูลประมาณ 10-15 แถวต่อนาที; การทดสอบโหลดแบบจำลองสเกลโปรดักชันที่ 1000 โหนด จำเป็นต้องรันเฟรมเวิร์กการทดสอบความเครียด K6 แบบเฉพาะ
 - Nginx reverse-proxy ถูกตั้งค่าไว้สำหรับ `localhost` และต้องมีการปรับใช้ใบรับรอง (certificate) แบบแมนนวลสำหรับสภาพแวดล้อมโปรดักชัน
 - การบูรณาการ Grafana Alertmanager (LINE/Teams) จะล้มเหลวแบบเงียบๆ จนกว่าจะมีการระบุโทเค็นอย่างชัดเจนในไฟล์ `.env`
 
 ### การตรวจสอบและหลักฐาน
-คำกล่าวอ้างทางสถาปัตยกรรมทุกประการได้รับการสนับสนุนโดย continuous integration หรือสคริปต์ทดสอบที่ชัดเจน สำหรับผลการทดสอบโหลด, หลักฐานการถดถอยเชิงภาพ (visual regression), และการตรวจสอบการกู้คืนระบบจากภัยพิบัติ โปรดอ้างอิง **[ดัชนีหลักฐาน (Evidence Index)](docs/evidence/INDEX.md)**
 
+คำกล่าวอ้างทางสถาปัตยกรรมทุกประการได้รับการสนับสนุนโดย continuous integration หรือสคริปต์ทดสอบที่ชัดเจน สำหรับผลการทดสอบโหลด, หลักฐานการถดถอยเชิงภาพ (visual regression), และการตรวจสอบการกู้คืนระบบจากภัยพิบัติ โปรดอ้างอิง **[ดัชนีหลักฐาน (Evidence Index)](docs/evidence/INDEX.md)**
 
 <details>
 <summary><b>คำสั่งที่ใช้งานได้</b></summary>
 
-| คำสั่ง | คำอธิบาย |
-|---------|-------------|
-| `make up` | เริ่มบริการทั้งหมด (โหมดผู้พัฒนาพร้อมตัวจำลอง SNMP) |
-| `make down` | หยุดบริการทั้งหมด |
-| `make verify` | ตรวจสอบความสมบูรณ์ของระบบทั้งหมด (คอนเทนเนอร์, ฐานข้อมูล, ไปป์ไลน์, การแจ้งเตือน) |
-| `make test-unit` | รัน unit tests (18 การทดสอบพาร์สเซอร์และตัวนับ) |
-| `make test-load` | รันการทดสอบความเครียด K6 บนไปป์ไลน์ (50→200 VUs) |
-| `make test-visual` | จับภาพหน้าจอแดชบอร์ดผ่าน Playwright |
-| `make validate-dashboards` | Lint JSON แดชบอร์ดเพื่อตรวจสอบกริดทับซ้อนและความเสียหายของฐานสิบหก |
-| `make backup` | สำรองข้อมูลฐานข้อมูล |
+| คำสั่ง                     | คำอธิบาย                                                                          |
+| -------------------------- | --------------------------------------------------------------------------------- |
+| `make up`                  | เริ่มบริการทั้งหมด (โหมดผู้พัฒนาพร้อมตัวจำลอง SNMP)                               |
+| `make down`                | หยุดบริการทั้งหมด                                                                 |
+| `make verify`              | ตรวจสอบความสมบูรณ์ของระบบทั้งหมด (คอนเทนเนอร์, ฐานข้อมูล, ไปป์ไลน์, การแจ้งเตือน) |
+| `make test-unit`           | รัน unit tests (18 การทดสอบพาร์สเซอร์และตัวนับ)                                   |
+| `make test-load`           | รันการทดสอบความเครียด K6 บนไปป์ไลน์ (50→200 VUs)                                  |
+| `make test-visual`         | จับภาพหน้าจอแดชบอร์ดผ่าน Playwright                                               |
+| `make validate-dashboards` | Lint JSON แดชบอร์ดเพื่อตรวจสอบกริดทับซ้อนและความเสียหายของฐานสิบหก                |
+| `make backup`              | สำรองข้อมูลฐานข้อมูล                                                              |
 
 </details>
 
@@ -216,26 +216,26 @@ export GRAFANA_API_KEY="your-admin-api-key"
 open "http://localhost:3000/playlists/play/1?kiosk=tv&autofitpanels"
 ```
 
-| โหมด | URL | กรณีใช้งาน |
-|------|-----|----------|
+| โหมด         | URL                       | กรณีใช้งาน                                                                   |
+| ------------ | ------------------------- | ---------------------------------------------------------------------------- |
 | **TV Kiosk** | `?kiosk=tv&autofitpanels` | หน้าจอแสดงผลผนัง NOC — ซ่อนองค์ประกอบ chrome ทั้งหมด, ปรับขนาดพาเนลอัตโนมัติ |
-| **Clean** | `?kiosk` | โหมดการนำเสนอ — ซ่อนแถบด้านข้าง + แถบนำทางด้านบน |
-| **Embedded** | `?kiosk=1` | การฝังด้วย iframe — ซ่อนทุกสิ่ง |
+| **Clean**    | `?kiosk`                  | โหมดการนำเสนอ — ซ่อนแถบด้านข้าง + แถบนำทางด้านบน                             |
+| **Embedded** | `?kiosk=1`                | การฝังด้วย iframe — ซ่อนทุกสิ่ง                                              |
 
 ---
 
 <details>
 <summary><b>เทคโนโลยีที่ใช้ (Tech Stack)</b></summary>
 
-| เลเยอร์ | เทคโนโลยี | วัตถุประสงค์ |
-|-------|-----------|---------|
-| **Orchestration** | Docker Compose | คอนเทนเนอร์สแต็ก 7 บริการ พร้อมโอเวอร์เลย์สำหรับ dev/prod |
-| **Collection** | Node-RED + net-snmp | การดึงข้อมูล SNMP ปริมาณมากแบบตามลำดับ (Sequential async bulk SNMP walks), walker แบบขนาน 5-เธรด |
-| **Database** | TimescaleDB (PostgreSQL) | Hypertables พร้อมด้วย Continuous Aggregates, การบีบอัดข้อมูล 90% หลัง 7 วัน |
-| **Visualization** | Grafana 13.1.1 | 12 แดชบอร์ด (4 โครงสร้างพื้นฐาน + 8 การผลิต), ระบบเตือนความผิดปกติด้วย state-timeline |
-| **Alerting** | Prometheus + Alertmanager | การสแครปเมทริกซ์, inhibition rules, LINE Messaging API + MS Teams webhooks |
-| **Load Testing** | K6 | การทดสอบความเครียดไปป์ไลน์ (50→200 VUs), ขีดจำกัด p95<500ms |
-| **SLA Probing** | Blackbox Exporter | การตรวจสอบ endpoint ผ่าน HTTP/TCP/ICMP |
+| เลเยอร์           | เทคโนโลยี                 | วัตถุประสงค์                                                                                     |
+| ----------------- | ------------------------- | ------------------------------------------------------------------------------------------------ |
+| **Orchestration** | Docker Compose            | คอนเทนเนอร์สแต็ก 7 บริการ พร้อมโอเวอร์เลย์สำหรับ dev/prod                                        |
+| **Collection**    | Node-RED + net-snmp       | การดึงข้อมูล SNMP ปริมาณมากแบบตามลำดับ (Sequential async bulk SNMP walks), walker แบบขนาน 5-เธรด |
+| **Database**      | TimescaleDB (PostgreSQL)  | Hypertables พร้อมด้วย Continuous Aggregates, การบีบอัดข้อมูล 90% หลัง 7 วัน                      |
+| **Visualization** | Grafana 13.1.1            | 12 แดชบอร์ด (4 โครงสร้างพื้นฐาน + 8 การผลิต), ระบบเตือนความผิดปกติด้วย state-timeline            |
+| **Alerting**      | Prometheus + Alertmanager | การสแครปเมทริกซ์, inhibition rules, LINE Messaging API + MS Teams webhooks                       |
+| **Load Testing**  | K6                        | การทดสอบความเครียดไปป์ไลน์ (50→200 VUs), ขีดจำกัด p95<500ms                                      |
+| **SLA Probing**   | Blackbox Exporter         | การตรวจสอบ endpoint ผ่าน HTTP/TCP/ICMP                                                           |
 
 </details>
 
@@ -256,7 +256,7 @@ open "http://localhost:3000/playlists/play/1?kiosk=tv&autofitpanels"
 <details>
 <summary><b>โครงสร้างโปรเจกต์ (Project Structure)</b></summary>
 
-```
+```text
 IMS/
 ├── monitoring/grafana/        # Grafana dashboards + provisioning
 │  ├── dashboards/          #  10 ไฟล์ JSON แดชบอร์ด (source of truth)
@@ -296,62 +296,62 @@ IMS/
 
 ### <img src="docs/assets/icons/briefcase.svg" width="18" height="18" align="center" /> กลยุทธ์ระดับบริหารและคุณค่าทางธุรกิจ (Executive & Business Strategy)
 
-| เอกสาร | คำอธิบาย |
-|:---:|---|
-| [**Business Value & ROI**](docs/business/BUSINESS_VALUE_ROI.md) | บทสรุปผู้บริหาร, การลดต้นทุน, การลดเวลา MTTR, และผลกระทบเชิงกลยุทธ์ |
-| [**Platform Book (เริ่มที่นี่)**](docs/architecture/IMS_PLATFORM_BOOK.md) | ศูนย์รวมระบบนำทางสำหรับชุดเอกสารทั้งหมด, อภิธานศัพท์ |
-| [**Product Context**](docs/product/PRODUCT.md) | จุดประสงค์ของผลิตภัณฑ์, กลุ่มผู้ใช้งานเป้าหมาย, และจุดยืนของระบบ |
+|                                  เอกสาร                                   | คำอธิบาย                                                            |
+| :-----------------------------------------------------------------------: | ------------------------------------------------------------------- |
+|      [**Business Value & ROI**](docs/business/BUSINESS_VALUE_ROI.md)      | บทสรุปผู้บริหาร, การลดต้นทุน, การลดเวลา MTTR, และผลกระทบเชิงกลยุทธ์ |
+| [**Platform Book (เริ่มที่นี่)**](docs/architecture/IMS_PLATFORM_BOOK.md) | ศูนย์รวมระบบนำทางสำหรับชุดเอกสารทั้งหมด, อภิธานศัพท์                |
+|              [**Product Context**](docs/product/PRODUCT.md)               | จุดประสงค์ของผลิตภัณฑ์, กลุ่มผู้ใช้งานเป้าหมาย, และจุดยืนของระบบ    |
 
 ### <img src="docs/assets/icons/factory.svg" width="18" height="18" align="center" /> ระบบอัจฉริยะในสายการผลิต (Manufacturing & LDI Intelligence)
 
-| เอกสาร | คำอธิบาย |
-|:---:|---|
-| [**Manufacturing Platform Plan**](docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md) | การแยกโดเมน Infra/manufacturing, แผนการทดสอบ/Go-Live และแผนสำรอง |
-| [**Manufacturing Domain**](docs/architecture/MANUFACTURING_DOMAIN.md) | รูปแบบสคีมา/แดชบอร์ด LDI และกระบวนการ Onboarding |
-| [**LDI SPC Guide**](docs/architecture/LDI_SPC_GUIDE.md) | ระเบียบวิธีและสูตรของ Process capability (Cpk) |
-| [**LDI RCA Guide**](docs/architecture/LDI_RCA_GUIDE.md) | ระเบียบวิธีความสัมพันธ์ระดับรากฐานของสาเหตุ (Root-cause correlation: Lift/Confidence) |
-| [**LDI Validation Protocol**](docs/operations/LDI_VALIDATION_PROTOCOL.md) | ขั้นตอนการอนุมัติขั้นโปรดักชัน 4 เฟส |
+|                                        เอกสาร                                         | คำอธิบาย                                                                              |
+| :-----------------------------------------------------------------------------------: | ------------------------------------------------------------------------------------- |
+| [**Manufacturing Platform Plan**](docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md) | การแยกโดเมน Infra/manufacturing, แผนการทดสอบ/Go-Live และแผนสำรอง                      |
+|         [**Manufacturing Domain**](docs/architecture/MANUFACTURING_DOMAIN.md)         | รูปแบบสคีมา/แดชบอร์ด LDI และกระบวนการ Onboarding                                      |
+|                [**LDI SPC Guide**](docs/architecture/LDI_SPC_GUIDE.md)                | ระเบียบวิธีและสูตรของ Process capability (Cpk)                                        |
+|                [**LDI RCA Guide**](docs/architecture/LDI_RCA_GUIDE.md)                | ระเบียบวิธีความสัมพันธ์ระดับรากฐานของสาเหตุ (Root-cause correlation: Lift/Confidence) |
+|       [**LDI Validation Protocol**](docs/operations/LDI_VALIDATION_PROTOCOL.md)       | ขั้นตอนการอนุมัติขั้นโปรดักชัน 4 เฟส                                                  |
 
 ### <img src="docs/assets/icons/layers.svg" width="18" height="18" align="center" />️ สถาปัตยกรรมหลักและความปลอดภัย (Core Architecture & Security)
 
-| เอกสาร | คำอธิบาย |
-|:---:|---|
-| [**Architecture**](docs/architecture/ARCHITECTURE.md) | บริบทของระบบ, ADRs, สถาปัตยกรรมสตรีมมิ่ง, กลยุทธ์ CAGG |
-| [**Visual Architecture**](docs/architecture/ARCHITECTURE_DIAGRAM.md) | ไดอะแกรม Mermaid C4 Model และ sequence flows |
-| [**Data Flow**](docs/architecture/DATA_FLOW.md) | ไดอะแกรมไปป์ไลน์แบบ end-to-end, ลำดับการรวมข้อมูลของ CAGG จริง |
-| [**Database Schema**](docs/architecture/DATABASE_SCHEMA.md) | การอ้างอิงตาราง/คอลัมน์/มุมมองที่สร้างอัตโนมัติ (ตรวจสอบโดย CI) |
-| [**Security Model**](docs/architecture/SECURITY_MODEL.md) | ขอบเขตความเชื่อถือ, การพิสูจน์ตัวตนแบบรายอะแดปเตอร์, และ RBAC |
-| [**Equipment Integration (EAP)**](docs/architecture/EAP_ARCHITECTURE.md) | สัญญาของอะแดปเตอร์ SNMP, HTTP/JSON, และ SECS/GEM |
-| [**Ownership**](docs/architecture/OWNERSHIP.md) | ขอบเขตโดเมนที่ถูกบังคับใช้ผ่าน `CODEOWNERS` |
-| [**Design System**](docs/architecture/GRAFANA_DESIGN_SYSTEM.md) | พาเล็ตสีเพื่อสื่อความหมาย, รูปแบบตัวอักษร, เงื่อนไขขีดจำกัด |
-| [**Dashboard Inventory**](docs/architecture/DASHBOARD_INVENTORY.md) | ตารางจำนวนแดชบอร์ด/พาเนลที่ถูกสร้างอัตโนมัติ (ตรวจสอบโดย CI) |
+|                                  เอกสาร                                  | คำอธิบาย                                                        |
+| :----------------------------------------------------------------------: | --------------------------------------------------------------- |
+|          [**Architecture**](docs/architecture/ARCHITECTURE.md)           | บริบทของระบบ, ADRs, สถาปัตยกรรมสตรีมมิ่ง, กลยุทธ์ CAGG          |
+|   [**Visual Architecture**](docs/architecture/ARCHITECTURE_DIAGRAM.md)   | ไดอะแกรม Mermaid C4 Model และ sequence flows                    |
+|             [**Data Flow**](docs/architecture/DATA_FLOW.md)              | ไดอะแกรมไปป์ไลน์แบบ end-to-end, ลำดับการรวมข้อมูลของ CAGG จริง  |
+|       [**Database Schema**](docs/architecture/DATABASE_SCHEMA.md)        | การอ้างอิงตาราง/คอลัมน์/มุมมองที่สร้างอัตโนมัติ (ตรวจสอบโดย CI) |
+|        [**Security Model**](docs/architecture/SECURITY_MODEL.md)         | ขอบเขตความเชื่อถือ, การพิสูจน์ตัวตนแบบรายอะแดปเตอร์, และ RBAC   |
+| [**Equipment Integration (EAP)**](docs/architecture/EAP_ARCHITECTURE.md) | สัญญาของอะแดปเตอร์ SNMP, HTTP/JSON, และ SECS/GEM                |
+|             [**Ownership**](docs/architecture/OWNERSHIP.md)              | ขอบเขตโดเมนที่ถูกบังคับใช้ผ่าน `CODEOWNERS`                     |
+|     [**Design System**](docs/architecture/GRAFANA_DESIGN_SYSTEM.md)      | พาเล็ตสีเพื่อสื่อความหมาย, รูปแบบตัวอักษร, เงื่อนไขขีดจำกัด     |
+|   [**Dashboard Inventory**](docs/architecture/DASHBOARD_INVENTORY.md)    | ตารางจำนวนแดชบอร์ด/พาเนลที่ถูกสร้างอัตโนมัติ (ตรวจสอบโดย CI)    |
 
 ### ️ ปฏิบัติการและคู่มือการดูแลระบบ (Operations & SRE Playbooks)
 
-| เอกสาร | คำอธิบาย |
-|:---:|---|
-| [**User Manual**](docs/user/USER_MANUAL.md) | คู่มือแดชบอร์ด, การอ้างอิงเมทริกซ์, เพลย์บุ๊กการตอบสนองต่อการแจ้งเตือน |
-| [**Admin Manual**](docs/admin/ADMIN_MANUAL.md) | การปฏิบัติงานของคอนเทนเนอร์, ไมเกรชัน, สำรอง/กู้คืนระบบ |
-| [**Operator SOP**](docs/operations/SOP_OPERATOR.md) | ขั้นตอนการปฏิบัติงานมาตรฐาน (SOP) สำหรับพื้นโรงงาน / ระดับ L1 NOC |
-| [**Troubleshooting & Alarms**](docs/operations/ALARM_PLAYBOOK.md) | เพลย์บุ๊กการระบุแก้ไขโค้ดแจ้งเตือนและการแก้ไขปัญหา |
-| [**Incident Response**](docs/operations/INCIDENT_RESPONSE.md) | กรอบงานความรุนแรง + ตัวอย่างเหตุการณ์จริงที่แก้ไขแล้ว |
-| [**Alarm Severity Guide**](docs/architecture/ALARM_SEVERITY_GUIDE.md) | อนุกรมวิธานความรุนแรง 4 ระดับ, ขอบเขต ISA-18.2 |
-| [**Backup & Restore**](docs/operations/BACKUP_RESTORE.md) | หลักฐานจริงจาก dr-test.sh, ขั้นตอน, และข้อควรระวัง |
-| [**DR Test Plan**](docs/operations/DR_TEST_PLAN.md) | แผนการทดสอบการกู้คืนระบบจากภัยพิบัติ 3 การจำลองซ้อมรับมือ |
-| [**Data Retention**](docs/architecture/DATA_RETENTION.md) | นโยบายการเก็บรักษาข้อมูลสด/การบีบอัดข้อมูล |
-| [**Release Checklist**](docs/operations/RELEASE_CHECKLIST.md) | สิ่งที่ต้องตรวจสอบก่อนทำแท็ก (tag) release |
-| [**Troubleshooting**](docs/operations/TROUBLESHOOTING.md) | ปัญหาที่พบบ่อย, คำสั่งดีบัก, ขั้นตอนการกู้คืน |
+|                                เอกสาร                                 | คำอธิบาย                                                               |
+| :-------------------------------------------------------------------: | ---------------------------------------------------------------------- |
+|              [**User Manual**](docs/user/USER_MANUAL.md)              | คู่มือแดชบอร์ด, การอ้างอิงเมทริกซ์, เพลย์บุ๊กการตอบสนองต่อการแจ้งเตือน |
+|            [**Admin Manual**](docs/admin/ADMIN_MANUAL.md)             | การปฏิบัติงานของคอนเทนเนอร์, ไมเกรชัน, สำรอง/กู้คืนระบบ                |
+|          [**Operator SOP**](docs/operations/SOP_OPERATOR.md)          | ขั้นตอนการปฏิบัติงานมาตรฐาน (SOP) สำหรับพื้นโรงงาน / ระดับ L1 NOC      |
+|   [**Troubleshooting & Alarms**](docs/operations/ALARM_PLAYBOOK.md)   | เพลย์บุ๊กการระบุแก้ไขโค้ดแจ้งเตือนและการแก้ไขปัญหา                     |
+|     [**Incident Response**](docs/operations/INCIDENT_RESPONSE.md)     | กรอบงานความรุนแรง + ตัวอย่างเหตุการณ์จริงที่แก้ไขแล้ว                  |
+| [**Alarm Severity Guide**](docs/architecture/ALARM_SEVERITY_GUIDE.md) | อนุกรมวิธานความรุนแรง 4 ระดับ, ขอบเขต ISA-18.2                         |
+|       [**Backup & Restore**](docs/operations/BACKUP_RESTORE.md)       | หลักฐานจริงจาก dr-test.sh, ขั้นตอน, และข้อควรระวัง                     |
+|          [**DR Test Plan**](docs/operations/DR_TEST_PLAN.md)          | แผนการทดสอบการกู้คืนระบบจากภัยพิบัติ 3 การจำลองซ้อมรับมือ              |
+|       [**Data Retention**](docs/architecture/DATA_RETENTION.md)       | นโยบายการเก็บรักษาข้อมูลสด/การบีบอัดข้อมูล                             |
+|     [**Release Checklist**](docs/operations/RELEASE_CHECKLIST.md)     | สิ่งที่ต้องตรวจสอบก่อนทำแท็ก (tag) release                             |
+|       [**Troubleshooting**](docs/operations/TROUBLESHOOTING.md)       | ปัญหาที่พบบ่อย, คำสั่งดีบัก, ขั้นตอนการกู้คืน                          |
 
 ### <img src="docs/assets/icons/users.svg" width="18" height="18" align="center" /> ชุมชนและส่วนอ้างอิง (Community & Reference)
 
-| เอกสาร | คำอธิบาย |
-|:---:|---|
+|                              เอกสาร                              | คำอธิบาย                                               |
+| :--------------------------------------------------------------: | ------------------------------------------------------ |
 | [**Video Onboarding Script**](docs/product/ONBOARDING_SCRIPT.md) | สตอรี่บอร์ดและคำแนะนำสำหรับการบันทึกวิดีโอสอนการใช้งาน |
-| [**Contributing**](CONTRIBUTING.md) | เวิร์กโฟลว์การพัฒนา, การตั้งชื่อสาขา, กฎเกณฑ์การคอมมิต |
-| [**Code of Conduct**](CODE_OF_CONDUCT.md) | มาตรฐานชุมชนและการบังคับใช้ |
-| [**Security Policy**](SECURITY.md) | การรายงานช่องโหว่ความปลอดภัย |
-| [**Bug Report**](.github/ISSUE_TEMPLATE/bug_report.md) | รายงานข้อบกพร่องหรือการถดถอย |
-| [**Feature Request**](.github/ISSUE_TEMPLATE/feature_request.md) | แนะนำคุณสมบัติใหม่ |
+|               [**Contributing**](CONTRIBUTING.md)                | เวิร์กโฟลว์การพัฒนา, การตั้งชื่อสาขา, กฎเกณฑ์การคอมมิต |
+|            [**Code of Conduct**](CODE_OF_CONDUCT.md)             | มาตรฐานชุมชนและการบังคับใช้                            |
+|                [**Security Policy**](SECURITY.md)                | การรายงานช่องโหว่ความปลอดภัย                           |
+|      [**Bug Report**](.github/ISSUE_TEMPLATE/bug_report.md)      | รายงานข้อบกพร่องหรือการถดถอย                           |
+| [**Feature Request**](.github/ISSUE_TEMPLATE/feature_request.md) | แนะนำคุณสมบัติใหม่                                     |
 
 </div>
 

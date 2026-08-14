@@ -32,20 +32,20 @@
 
 ระบบทำงานบน Docker Compose ทั้งหมด 12 services (11 long-running + 1 one-shot migration runner ที่ทำงานเสร็จแล้ว exit):
 
-| Container | Service | Port | Purpose |
-|---|---|---|---|
-| `ims-timescaledb` | TimescaleDB | 5432 (loopback only) | Time-series database |
-| `ims-pgbouncer` | PgBouncer | 5432 (internal) | Connection pooler |
-| `ims-db-migrate` | Migration runner | — (one-shot) | Applies `database/migrations/*.sql`, gates `node-red` and `alarm-api` startup |
-| `ims-node-red` | Node-RED | 1880 (loopback only) | Data pipeline |
-| `ims-proxy` | nginx reverse proxy | **3000** | The only host-published entry point to Grafana and `alarm-api`. Gates `/alarm-api/` behind an `auth_request` check against Grafana's own session. |
-| `ims-grafana` | Grafana | internal only, no host port | Dashboard — reachable only through `ims-proxy` now, not directly |
-| `ims-alarm-api` | alarm-api | internal only, no host port | Write path for `public.ldi_alarm_lifecycle` (Acknowledge/Resolve from `IMS LDI - Alarm Console`). Reachable only through `ims-proxy`. |
-| `ims-grafana-renderer` | Grafana Image Renderer | 8081 (internal) | PNG rendering for panel export/alerts |
-| `ims-prometheus` | Prometheus | 9090 (loopback only) | Metrics & alerting |
-| `ims-alertmanager` | Alertmanager | 9093 (loopback only) | Alert routing |
-| `ims-blackbox` | Blackbox Exporter | 9115 (loopback only) | SLA probes |
-| `ims-snmpsim` | SNMP Simulator | 161/udp | Dev testing |
+| Container              | Service                | Port                        | Purpose                                                                                                                                           |
+| ---------------------- | ---------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ims-timescaledb`      | TimescaleDB            | 5432 (loopback only)        | Time-series database                                                                                                                              |
+| `ims-pgbouncer`        | PgBouncer              | 5432 (internal)             | Connection pooler                                                                                                                                 |
+| `ims-db-migrate`       | Migration runner       | — (one-shot)                | Applies `database/migrations/*.sql`, gates `node-red` and `alarm-api` startup                                                                     |
+| `ims-node-red`         | Node-RED               | 1880 (loopback only)        | Data pipeline                                                                                                                                     |
+| `ims-proxy`            | nginx reverse proxy    | **3000**                    | The only host-published entry point to Grafana and `alarm-api`. Gates `/alarm-api/` behind an `auth_request` check against Grafana's own session. |
+| `ims-grafana`          | Grafana                | internal only, no host port | Dashboard — reachable only through `ims-proxy` now, not directly                                                                                  |
+| `ims-alarm-api`        | alarm-api              | internal only, no host port | Write path for `public.ldi_alarm_lifecycle` (Acknowledge/Resolve from `IMS LDI - Alarm Console`). Reachable only through `ims-proxy`.             |
+| `ims-grafana-renderer` | Grafana Image Renderer | 8081 (internal)             | PNG rendering for panel export/alerts                                                                                                             |
+| `ims-prometheus`       | Prometheus             | 9090 (loopback only)        | Metrics & alerting                                                                                                                                |
+| `ims-alertmanager`     | Alertmanager           | 9093 (loopback only)        | Alert routing                                                                                                                                     |
+| `ims-blackbox`         | Blackbox Exporter      | 9115 (loopback only)        | SLA probes                                                                                                                                        |
+| `ims-snmpsim`          | SNMP Simulator         | 161/udp                     | Dev testing                                                                                                                                       |
 
 > `ims-db-migrate` exits with status 0 after applying pending migrations -- seeing it as `Exited (0)` in `docker compose ps` is expected, not a failure. `node-red` and `alarm-api` won't start until it completes successfully.
 
@@ -80,7 +80,9 @@ docker compose logs -f --tail 50 pgbouncer
 docker stats --no-stream
 ```
 
-> **Note:** หลัง `docker compose down -v` ต้องรอ 40 วินาทีให้ระบบทั้งหมด startup ก่อนตรวจสอบ
+> [!NOTE]
+>
+> > หลัง `docker compose down -v` ต้องรอ 40 วินาทีให้ระบบทั้งหมด startup ก่อนตรวจสอบ
 
 ### Service Health Checks
 
@@ -127,12 +129,12 @@ All migrations are written to be idempotent (`CREATE ... IF NOT EXISTS`, guarded
 
 > **CRITICAL:** Before deploying to production, ALL default credentials MUST be changed. Failure to do so exposes the system to unauthorized access.
 
-| Credential | Default Value | Location | Action Required |
-|---|---|---|---|
-| `INGEST_API_KEY` | `ims-secret-key` | `.env` + `docker-compose.yaml` (`ims-node-red` env) | **CHANGE** — unauthorized users can inject spoofed telemetry via `POST /inject` |
-| `POSTGRES_PASSWORD` | `change-me-please` | `.env` | **CHANGE** — database superuser access |
-| `GRAFANA_ADMIN_PASSWORD` | `change-me-please` | `.env` | **CHANGE** — dashboard edit + datasource access |
-| `ALARM_API_DB_PASSWORD` | `change-me-please` | `.env` | **CHANGE** — credential for the `alarm_api_writer` role (migration `078-alarm-api-writer-role.sql`); scoped to `SELECT`+`UPDATE` on `ldi_alarm_lifecycle` only, but still a real DB credential |
+| Credential               | Default Value      | Location                                            | Action Required                                                                                                                                                                                |
+| ------------------------ | ------------------ | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `INGEST_API_KEY`         | `ims-secret-key`   | `.env` + `docker-compose.yaml` (`ims-node-red` env) | **CHANGE** — unauthorized users can inject spoofed telemetry via `POST /inject`                                                                                                                |
+| `POSTGRES_PASSWORD`      | `change-me-please` | `.env`                                              | **CHANGE** — database superuser access                                                                                                                                                         |
+| `GRAFANA_ADMIN_PASSWORD` | `change-me-please` | `.env`                                              | **CHANGE** — dashboard edit + datasource access                                                                                                                                                |
+| `ALARM_API_DB_PASSWORD`  | `change-me-please` | `.env`                                              | **CHANGE** — credential for the `alarm_api_writer` role (migration `078-alarm-api-writer-role.sql`); scoped to `SELECT`+`UPDATE` on `ldi_alarm_lifecycle` only, but still a real DB credential |
 
 ### How to Rotate
 
@@ -289,12 +291,12 @@ docker compose exec prometheus promtool check rules /etc/prometheus/rules/ims-al
 
 ระบบมี Inhibition Rules อัตโนมัติ:
 
-| Source Alert | Suppressed Alerts | Scope |
-|---|---|---|
-| `InterfaceDown` (critical) | Warning ทั้งหมด | Same machine |
-| `ServiceDown` (critical) | Warning ทั้งหมด | Same machine |
-| `NodeREDDown` | `TelemetryGap` | Global |
-| `Critical` | `Warning`, `Info` | Same alertname + machine |
+| Source Alert               | Suppressed Alerts | Scope                    |
+| -------------------------- | ----------------- | ------------------------ |
+| `InterfaceDown` (critical) | Warning ทั้งหมด   | Same machine             |
+| `ServiceDown` (critical)   | Warning ทั้งหมด   | Same machine             |
+| `NodeREDDown`              | `TelemetryGap`    | Global                   |
+| `Critical`                 | `Warning`, `Info` | Same alertname + machine |
 
 ---
 
@@ -302,14 +304,14 @@ docker compose exec prometheus promtool check rules /etc/prometheus/rules/ims-al
 
 ### Common Issues & Solutions
 
-| ปัญหา | สาเหตุ | วิธีแก้ |
-|---|---|---|
-| Grafana แสดง "No Data" | PgBouncer connection เต็ม หรือ DB ล่ม | `docker restart ims-pgbouncer` + เช็ค disk space |
-| Alert ไม่ส่งไป LINE/Teams | Alertmanager Webhook ขาด | เช็ค Node-RED log ที่ `POST/alert-webhook` node |
-| กราฟ Bandwidth กระโดดเป็น Tbps | 32-bit Counter Wrap | Parser จัดการแล้ว แต่ถ้ายังเจอ เช็คว่าอุปกรณ์รองรับ 64-bit HC |
-| Node-RED ไม่เริ่มทำงาน | Syntax Error ใน Flow JSON | เช็ค log: `docker compose logs --tail=50 node-red` |
-| Continuous Aggregate ไม่มีข้อมูล | ต้อง refresh ด้วยมือ | `CALL refresh_continuous_aggregate('sys_hourly', NULL, NULL);` |
-| Container ไม่ขึ้น "Restarting" | Config ผิด หรือ port ชน | เช็ค log ของ container นั้นๆ |
+| ปัญหา                            | สาเหตุ                                | วิธีแก้                                                        |
+| -------------------------------- | ------------------------------------- | -------------------------------------------------------------- |
+| Grafana แสดง "No Data"           | PgBouncer connection เต็ม หรือ DB ล่ม | `docker restart ims-pgbouncer` + เช็ค disk space               |
+| Alert ไม่ส่งไป LINE/Teams        | Alertmanager Webhook ขาด              | เช็ค Node-RED log ที่ `POST/alert-webhook` node                |
+| กราฟ Bandwidth กระโดดเป็น Tbps   | 32-bit Counter Wrap                   | Parser จัดการแล้ว แต่ถ้ายังเจอ เช็คว่าอุปกรณ์รองรับ 64-bit HC  |
+| Node-RED ไม่เริ่มทำงาน           | Syntax Error ใน Flow JSON             | เช็ค log: `docker compose logs --tail=50 node-red`             |
+| Continuous Aggregate ไม่มีข้อมูล | ต้อง refresh ด้วยมือ                  | `CALL refresh_continuous_aggregate('sys_hourly', NULL, NULL);` |
+| Container ไม่ขึ้น "Restarting"   | Config ผิด หรือ port ชน               | เช็ค log ของ container นั้นๆ                                   |
 
 ### SRE Verification Protocol
 
@@ -466,6 +468,6 @@ LIMIT 10;"
 
 **IMS Admin Manual — Version 1.1**
 
-*For IT Team & MIS-G*
+_For IT Team & MIS-G_
 
 </div>

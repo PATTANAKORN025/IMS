@@ -31,7 +31,7 @@
 
 ### Single Instance Deployment
 
-```
+```text
 ┌─────────────┐  ┌─────────────┐  ┌─────────────┐
 │ Node-RED │────│ PgBouncer │────│ TimescaleDB │
 │ (1 instance)│  │ (1 instance)│  │ (1 instance)│
@@ -41,13 +41,13 @@
 
 ### Current Capacity
 
-| Metric | Value | Tested |
-|---|---|---|
-| **Load Test (K6)** | 1,000 VUs | Passed |
-| **Iterations** | ~65,000 in 2 min | Verified |
-| **p95 Latency** | ~156ms | Measured |
-| **Data Points/Hour** | ~600 per machine | Calculated |
-| **Storage/Hour** | ~50 KB per machine | Verified |
+| Metric               | Value              | Tested     |
+| -------------------- | ------------------ | ---------- |
+| **Load Test (K6)**   | 1,000 VUs          | Passed     |
+| **Iterations**       | ~65,000 in 2 min   | Verified   |
+| **p95 Latency**      | ~156ms             | Measured   |
+| **Data Points/Hour** | ~600 per machine   | Calculated |
+| **Storage/Hour**     | ~50 KB per machine | Verified   |
 
 ---
 
@@ -55,7 +55,7 @@
 
 ### Ceiling Calculation
 
-```
+```text
 Current Capacity:
 - Node-RED: 1 instance, 5 parallel walkers
 - Each walker: 1 SNMP session per poll cycle
@@ -73,14 +73,14 @@ Ceiling: ~500 machines at 10s poll interval
 
 ### Scaling Triggers
 
-| Metric | Current | Warning | Critical | Action |
-|---|---|---|---|---|
-| **Node-RED Memory** | ~150MB | >512MB | >1GB | Shard walkers across instances |
-| **PgBouncer Connections** | 20-50 | >200 | >500 | Increase pool size or add replica |
-| **TimescaleDB Disk** | ~1GB/day | >100GB | >500GB | Adjust retention or add storage |
-| **K6 p95 Latency** | ~156ms | >500ms | >1s | Investigate bottleneck |
-| **CPU Load (Node-RED)** | <30% | >70% | >90% | Add instances or optimize |
-| **Network Bandwidth** | <10 Mbps | >100 Mbps | >500 Mbps | Upgrade network or compress |
+| Metric                    | Current  | Warning   | Critical  | Action                            |
+| ------------------------- | -------- | --------- | --------- | --------------------------------- |
+| **Node-RED Memory**       | ~150MB   | >512MB    | >1GB      | Shard walkers across instances    |
+| **PgBouncer Connections** | 20-50    | >200      | >500      | Increase pool size or add replica |
+| **TimescaleDB Disk**      | ~1GB/day | >100GB    | >500GB    | Adjust retention or add storage   |
+| **K6 p95 Latency**        | ~156ms   | >500ms    | >1s       | Investigate bottleneck            |
+| **CPU Load (Node-RED)**   | <30%     | >70%      | >90%      | Add instances or optimize         |
+| **Network Bandwidth**     | <10 Mbps | >100 Mbps | >500 Mbps | Upgrade network or compress       |
 
 ---
 
@@ -93,40 +93,42 @@ Ceiling: ~500 machines at 10s poll interval
 ```yaml
 # docker-compose.yaml additions
 services:
- node-red:
- deploy:
-  resources:
-  limits:
-   memory: 1G
-   cpus: '2.0'
- environment:
-  - NODE_OPTIONS=--max-old-space-size=800
+  node-red:
+  deploy:
+    resources:
+    limits:
+      memory: 1G
+      cpus: "2.0"
+  environment:
+    - NODE_OPTIONS=--max-old-space-size=800
 
- timescaledb:
- deploy:
-  resources:
-  limits:
-   memory: 4G
-   cpus: '4.0'
- command: >
-  postgres
-  -c shared_buffers=2GB
-  -c work_mem=256MB
-  -c max_parallel_workers_per_gather=4
+  timescaledb:
+  deploy:
+    resources:
+    limits:
+      memory: 4G
+      cpus: "4.0"
+  command: >
+    postgres
+    -c shared_buffers=2GB
+    -c work_mem=256MB
+    -c max_parallel_workers_per_gather=4
 
- pgbouncer:
- environment:
-  - DEFAULT_POOL_SIZE=50
-  - MAX_CLIENT_CONN=500
-  - RESERVE_POOL_SIZE=10
+  pgbouncer:
+  environment:
+    - DEFAULT_POOL_SIZE=50
+    - MAX_CLIENT_CONN=500
+    - RESERVE_POOL_SIZE=10
 ```
 
 **Benefits:**
+
 - No code changes required
 - Minimal risk
 - Quick implementation
 
 **Limitations:**
+
 - Single point of failure
 - Hardware ceiling reached eventually
 
@@ -134,7 +136,7 @@ services:
 
 **When to use:** 100-500 machines, need high availability.
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │      Load Balancer (nginx)      │
 └─────────────────────────────────────────────────────────────────┘
@@ -159,6 +161,7 @@ services:
 ```
 
 **Implementation:**
+
 ```javascript
 // Device Registry sharding logic
 const shardCount = 3;
@@ -166,18 +169,20 @@ const shardIndex = hash(machine_id) % shardCount;
 
 // Each Node-RED instance only processes its shard
 if (shardIndex === MY_SHARD_INDEX) {
- // Process this machine
+  // Process this machine
 } else {
- // Skip - another instance handles this
+  // Skip - another instance handles this
 }
 ```
 
 **Benefits:**
+
 - Linear scalability
 - High availability (no single point of failure)
 - Independent scaling of collectors
 
 **Limitations:**
+
 - Requires load balancer
 - More complex deployment
 - State management across instances
@@ -186,7 +191,7 @@ if (shardIndex === MY_SHARD_INDEX) {
 
 **When to use:** Enterprise scale, need dedicated monitoring stack.
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │     Telegraf Fleet (1000+ agents)     │
 │ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐   │
@@ -209,12 +214,14 @@ if (shardIndex === MY_SHARD_INDEX) {
 ```
 
 **Benefits:**
+
 - Purpose-built for metrics collection
 - Lighter resource usage than Node-RED
 - Better horizontal scaling
 - Industry-standard tooling
 
 **Limitations:**
+
 - Requires significant rewrite
 - Loss of Node-RED visual pipeline
 - Higher operational complexity
@@ -265,15 +272,15 @@ client_idle_timeout = 0
 ```javascript
 // settings.js optimizations
 module.exports = {
- flowFile: 'flows.json',
- credentialSecret: process.env.CREDENTIAL_SECRET,
- editorTheme: {
-  projects: {
-   enabled: false // Disable for performance
-  }
- },
- // Increase memory limit
- max_old_space_size: 800
+  flowFile: "flows.json",
+  credentialSecret: process.env.CREDENTIAL_SECRET,
+  editorTheme: {
+    projects: {
+      enabled: false, // Disable for performance
+    },
+  },
+  // Increase memory limit
+  max_old_space_size: 800,
 };
 ```
 
@@ -283,12 +290,12 @@ module.exports = {
 
 ### Current Configuration
 
-| Data Type | Retention | Reason |
-|---|---|---|
-| **Raw Telemetry** | 30 days | Manufacturing QA cycle |
-| **Minute Aggregates** | 1 year | Long-term trending |
-| **Hour Aggregates** | 2 years | Capacity planning |
-| **Alert History** | 90 days | Incident investigation |
+| Data Type             | Retention | Reason                 |
+| --------------------- | --------- | ---------------------- |
+| **Raw Telemetry**     | 30 days   | Manufacturing QA cycle |
+| **Minute Aggregates** | 1 year    | Long-term trending     |
+| **Hour Aggregates**   | 2 years   | Capacity planning      |
+| **Alert History**     | 90 days   | Incident investigation |
 
 ### Retention Management
 
@@ -310,12 +317,12 @@ SELECT add_retention_policy('public.ldi_metrics', INTERVAL '30 days');
 
 ### Scaling Considerations
 
-| Scale | Machines | Storage/Day | Storage/Month | Recommended Retention |
-|---|---|---|---|---|
-| **Small** | 1-10 | ~1 MB | ~30 MB | 30 days |
-| **Medium** | 10-50 | ~10 MB | ~300 MB | 30 days |
-| **Large** | 50-200 | ~50 MB | ~1.5 GB | 30 days |
-| **Enterprise** | 200-1000 | ~500 MB | ~15 GB | 30 days (raw), 1 year (aggregates) |
+| Scale          | Machines | Storage/Day | Storage/Month | Recommended Retention              |
+| -------------- | -------- | ----------- | ------------- | ---------------------------------- |
+| **Small**      | 1-10     | ~1 MB       | ~30 MB        | 30 days                            |
+| **Medium**     | 10-50    | ~10 MB      | ~300 MB       | 30 days                            |
+| **Large**      | 50-200   | ~50 MB      | ~1.5 GB       | 30 days                            |
+| **Enterprise** | 200-1000 | ~500 MB     | ~15 GB        | 30 days (raw), 1 year (aggregates) |
 
 ---
 
@@ -323,26 +330,26 @@ SELECT add_retention_policy('public.ldi_metrics', INTERVAL '30 days');
 
 ### Infrastructure Costs (Cloud Deployment)
 
-| Component | Small (10 machines) | Medium (100 machines) | Enterprise (1000 machines) |
-|---|---|---|---|
-| **Compute (Node-RED)** | $50/mo | $200/mo | $1,000/mo |
-| **Database (TimescaleDB)** | $100/mo | $500/mo | $3,000/mo |
-| **Storage** | $10/mo | $50/mo | $500/mo |
-| **Network** | $20/mo | $100/mo | $500/mo |
-| **Total** | **$180/mo** | **$850/mo** | **$5,000/mo** |
+| Component                  | Small (10 machines) | Medium (100 machines) | Enterprise (1000 machines) |
+| -------------------------- | ------------------- | --------------------- | -------------------------- |
+| **Compute (Node-RED)**     | $50/mo              | $200/mo               | $1,000/mo                  |
+| **Database (TimescaleDB)** | $100/mo             | $500/mo               | $3,000/mo                  |
+| **Storage**                | $10/mo              | $50/mo                | $500/mo                    |
+| **Network**                | $20/mo              | $100/mo               | $500/mo                    |
+| **Total**                  | **$180/mo**         | **$850/mo**           | **$5,000/mo**              |
 
 ### On-Premise Costs
 
-| Component | Small | Medium | Enterprise |
-|---|---|---|---|
-| **Server Hardware** | $2,000 | $10,000 | $50,000 |
-| **Network Switch** | $500 | $2,000 | $10,000 |
-| **Annual Maintenance** | $500 | $2,000 | $10,000 |
-| **Total Year 1** | **$3,000** | **$14,000** | **$70,000** |
+| Component              | Small      | Medium      | Enterprise  |
+| ---------------------- | ---------- | ----------- | ----------- |
+| **Server Hardware**    | $2,000     | $10,000     | $50,000     |
+| **Network Switch**     | $500       | $2,000      | $10,000     |
+| **Annual Maintenance** | $500       | $2,000      | $10,000     |
+| **Total Year 1**       | **$3,000** | **$14,000** | **$70,000** |
 
 ### ROI Calculation
 
-```
+```text
 Current Manual Monitoring Cost:
 - 2 staff × 8 hours/day × $25/hour × 30 days = $12,000/month
 
@@ -362,6 +369,6 @@ ROI: 850% (Year 1)
 
 **IMS Scaling Plan — Version 1.0**
 
-*Designed for 1-1000+ Machine Scale*
+_Designed for 1-1000+ Machine Scale_
 
 </div>

@@ -8,10 +8,10 @@
 
 ## 1. Migration SQL
 
-| File | What it does |
-|---|---|
-| [`database/migrations/069-ldi-alarm-debounce-and-link-basis.sql`](../../database/migrations/069-ldi-alarm-debounce-and-link-basis.sql) (new) | Creates `public.ldi_alarm_state` (debounce state: `equipmentid`, `errorcode`, `first_fired`, `last_fired`, `fire_count`); adds `ldi_alarm_log.link_basis` (`causal` \| `nearest`); updates `v_ldi_alarm_context` to expose `link_basis` as a trailing column (`CREATE OR REPLACE VIEW` cannot reorder existing columns, so it's appended, not inserted inline). |
-| [`database/migrations/036-ldi-alarm-master-mock.sql`](../../database/migrations/036-ldi-alarm-master-mock.sql) (edited — this file is re-run on every `mock` switch, unlike normal incremental migrations, so editing it in place is the established convention, not a violation of the "never edit a merged migration" rule) | Adds 2 real Critical-severity vendor codes (`01180016` Emergency Stop, `0C020014` Safety sensor triggered) to the mock catalog, taking it from 19 to 21 codes. |
+| File                                                                                                                                                                                                                                                                                                                          | What it does                                                                                                                                                                                                                                                                                                                                                    |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`database/migrations/069-ldi-alarm-debounce-and-link-basis.sql`](../../database/migrations/069-ldi-alarm-debounce-and-link-basis.sql) (new)                                                                                                                                                                                  | Creates `public.ldi_alarm_state` (debounce state: `equipmentid`, `errorcode`, `first_fired`, `last_fired`, `fire_count`); adds `ldi_alarm_log.link_basis` (`causal` \| `nearest`); updates `v_ldi_alarm_context` to expose `link_basis` as a trailing column (`CREATE OR REPLACE VIEW` cannot reorder existing columns, so it's appended, not inserted inline). |
+| [`database/migrations/036-ldi-alarm-master-mock.sql`](../../database/migrations/036-ldi-alarm-master-mock.sql) (edited — this file is re-run on every `mock` switch, unlike normal incremental migrations, so editing it in place is the established convention, not a violation of the "never edit a merged migration" rule) | Adds 2 real Critical-severity vendor codes (`01180016` Emergency Stop, `0C020014` Safety sensor triggered) to the mock catalog, taking it from 19 to 21 codes.                                                                                                                                                                                                  |
 
 Both applied live: `docker exec ims-timescaledb psql ... < 069-...sql` (clean apply, `CREATE TABLE`/`ALTER TABLE`/`CREATE VIEW`/`GRANT`), then `bash scripts/switch-data-mode.sh mock` (re-seeds 036, confirmed `INSERT 0 21`).
 
@@ -21,14 +21,14 @@ Raw `git diff` on this file is unreadable — every node's function body is one 
 
 **Summary of what changed, per finding:**
 
-| Finding | Change | Where |
-|---|---|---|
-| Static miscalibration (root cause of #5 frequency) | `LDI-02.temp_mu` 26.49→21.72 (was outside the 20-24 spec band by construction); DF-OUTER/SM `air_vacuum` hardcoded `0.0` (always >-8, a regression of migration 054) → real per-machine nominal (-12.9 to -14.6) + `vac_sd: 0.45`, now a genuine OU process instead of a flat constant | `ldisim_gen`, `P` table |
-| #1 drift | New `driftStep()` state machine (`nominal→drifting→faulted→serviced→cooldown`), independent per machine × {vac, temp, rh, align}, `DRIFT_CFG` timing/magnitude table | `ldisim_gen` |
-| #5 fault frequency | New `calibrate()` clamps PE/JE (mean,sd) so nominal P(\|x\|>10) is a rare tail event, not baseline-guaranteed (e.g. a channel with mean=-14.76, sd=21.32 was already miscalibrated against the ±10 spec) | `ldisim_gen` |
-| #6 burst/flood | New `ldi_alarm_state` debounce table; `almsim_gen` checks/skips codes still in a 12-minute cooldown; `almsim_db` upserts state after every insert | `almsim_gen`, `almsim_db` |
-| #7 correlation semantics | `newRow()` now takes an explicit `linkBasis` param; condition-driven/critical codes pass `'causal'`, noise codes pass `'nearest'`, written to the new `link_basis` column instead of being inferred from whether `related_log_id` happens to be null | `almsim_gen`, `almsim_db` |
-| #8 critical distribution | New `RARE_CRITICAL_CODES`/`RARE_CRITICAL_PROB` branch, independent of the noise/condition pools | `almsim_gen` |
+| Finding                                            | Change                                                                                                                                                                                                                                                                                 | Where                     |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
+| Static miscalibration (root cause of #5 frequency) | `LDI-02.temp_mu` 26.49→21.72 (was outside the 20-24 spec band by construction); DF-OUTER/SM `air_vacuum` hardcoded `0.0` (always >-8, a regression of migration 054) → real per-machine nominal (-12.9 to -14.6) + `vac_sd: 0.45`, now a genuine OU process instead of a flat constant | `ldisim_gen`, `P` table   |
+| #1 drift                                           | New `driftStep()` state machine (`nominal→drifting→faulted→serviced→cooldown`), independent per machine × {vac, temp, rh, align}, `DRIFT_CFG` timing/magnitude table                                                                                                                   | `ldisim_gen`              |
+| #5 fault frequency                                 | New `calibrate()` clamps PE/JE (mean,sd) so nominal P(\|x\|>10) is a rare tail event, not baseline-guaranteed (e.g. a channel with mean=-14.76, sd=21.32 was already miscalibrated against the ±10 spec)                                                                               | `ldisim_gen`              |
+| #6 burst/flood                                     | New `ldi_alarm_state` debounce table; `almsim_gen` checks/skips codes still in a 12-minute cooldown; `almsim_db` upserts state after every insert                                                                                                                                      | `almsim_gen`, `almsim_db` |
+| #7 correlation semantics                           | `newRow()` now takes an explicit `linkBasis` param; condition-driven/critical codes pass `'causal'`, noise codes pass `'nearest'`, written to the new `link_basis` column instead of being inferred from whether `related_log_id` happens to be null                                   | `almsim_gen`, `almsim_db` |
+| #8 critical distribution                           | New `RARE_CRITICAL_CODES`/`RARE_CRITICAL_PROB` branch, independent of the noise/condition pools                                                                                                                                                                                        | `almsim_gen`              |
 
 <details>
 <summary><strong>Full diff (455 lines) — click to expand</strong></summary>
@@ -136,7 +136,7 @@ Raw `git diff` on this file is unreadable — every node's function body is one 
 + align: { onsetProb: 0.00002, driftMin: 15, driftMax: 35, faultMin: 10, faultMax: 20, cooldownMin: 120, cooldownMax: 360,
 +    targetFn: () => (Math.random() < 0.5 ? 1 : -1) * (13 + Math.random() * 8) }
 +};
- 
+
  const st = flow.get('sim_state') || {};
  const now = Date.now();
 @@ -37,17 +124,20 @@
@@ -212,7 +212,7 @@ Raw `git diff` on this file is unreadable — every node's function body is one 
 +const RARE_CRITICAL_PROB = 0.00002; // per machine per 10s tick
  const RATE_PER_TICK = 0.01194 * 20 * (15 / 20); // unchanged overall pacing, noise share only
 +const COOLDOWN_MIN = 12; // debounce window: suppress re-fire of the same (machine, code) within this many minutes
- 
+
  function pick(table) { ... }
  function poissonCount(rate) { ... }
 -function newRow(eq, code, ts, relatedLogId) {
@@ -224,10 +224,10 @@ Raw `git diff` on this file is unreadable — every node's function body is one 
 +  link_basis: linkBasis
   };
  }
- 
+
 -const rows = [];
  const now = Date.now();
- 
+
 -// ── background noise (unconditioned, real historical distribution) ──
 -const nNoise = poissonCount(RATE_PER_TICK);
 -for (let k = 0; k < nNoise; k++) {
@@ -244,7 +244,7 @@ Raw `git diff` on this file is unreadable — every node's function body is one 
 +  if (debounced(eq, code)) continue;
 +  rows.push(newRow(eq, code, new Date(now - Math.floor(Math.random() * 9000)), null, 'nearest'));
 + }
- 
+
 -// ── condition-driven alarms ... ──
 -const sql = ` ... `;
 -pool.query(sql, [], function (err, result) {
@@ -336,6 +336,7 @@ Raw `git diff` on this file is unreadable — every node's function body is one 
 </details>
 
 Two supporting lint fixes were required for CI to stay green (both files previously parsed only `NOISE_CUM`/`ALIGN_CODES`, missing the new `RARE_CRITICAL_CODES` array, and `orphan-object-linter.js` only scanned the stale `nodered_data/flows/` directory, not the real `nodered_data/flows.json`):
+
 - `tests/lint/alarm-sync-linter.js`, `tests/lint/rca-mapping-coverage.js` — added `RARE_CRITICAL_CODES` parsing.
 - `tests/lint/orphan-object-linter.js` — added `nodered_data/flows.json` to its reference-search scope (was invisible to it entirely, a pre-existing gap this change exposed).
 

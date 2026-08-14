@@ -64,19 +64,19 @@ watch -n 5 "curl -s http://localhost:1880/metrics 2>/dev/null | grep ims_circuit
 
 ## Expected Results at Each Phase
 
-| Phase | VUs | Expected Duration | Expected Success Rate |
-|-------|-----|-------------------|----------------------|
-| Warm-up (0→50) | 1-50 | < 200ms | > 99% |
-| Sustained (50) | 50 | < 300ms | > 99% |
-| Stress (50→200) | 50-200 | < 500ms | > 95% |
-| Peak (200) | 200 | < 800ms | > 95% |
-| Cool-down (200→0) | 200→0 | < 500ms | > 95% |
+| Phase             | VUs    | Expected Duration | Expected Success Rate |
+| ----------------- | ------ | ----------------- | --------------------- |
+| Warm-up (0→50)    | 1-50   | < 200ms           | > 99%                 |
+| Sustained (50)    | 50     | < 300ms           | > 99%                 |
+| Stress (50→200)   | 50-200 | < 500ms           | > 95%                 |
+| Peak (200)        | 200    | < 800ms           | > 95%                 |
+| Cool-down (200→0) | 200→0  | < 500ms           | > 95%                 |
 
 ## Bottleneck Indicators
 
-| Symptom | Likely Bottleneck | Fix |
-|---------|-------------------|-----|
-| Duration spikes > 2s | PgBouncer pool exhaustion | Increase MAX_CLIENT_CONN |
-| CPU > 80% on timescaledb | Query overload | Add indexes, tune work_mem |
-| Circuit breaker trips | Device timeout cascade | Already tuned (threshold=2) |
-| Net IO spike on node-red | Parser CPU-bound | Profile parseAll hotpath |
+| Symptom                  | Likely Bottleneck         | Fix                         |
+| ------------------------ | ------------------------- | --------------------------- |
+| Duration spikes > 2s     | PgBouncer pool exhaustion | Increase MAX_CLIENT_CONN    |
+| CPU > 80% on timescaledb | Query overload            | Add indexes, tune work_mem  |
+| Circuit breaker trips    | Device timeout cascade    | Already tuned (threshold=2) |
+| Net IO spike on node-red | Parser CPU-bound          | Profile parseAll hotpath    |

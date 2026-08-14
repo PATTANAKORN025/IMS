@@ -4,7 +4,7 @@
 >
 > **Excluded from re-flagging (already audited and fixed in a prior pass this session):** `docs/architecture/ARCHITECTURE.md`, `docs/architecture/SECURITY_MODEL.md`, `docs/user/USER_MANUAL.md`, `docs/operations/ALARM_PLAYBOOK.md`, `docs/architecture/IMS_PLATFORM_BOOK.md`, `docs/architecture/DASHBOARD_INVENTORY.md` and `DATABASE_SCHEMA.md` (both auto-generated, current).
 >
-> **Ground truth used:** 12 Grafana dashboards (4 infra + 8 manufacturing, including the new `ims-ldi-alarm-console` and pre-existing `ims-ldi-alarm-dictionary`); 12 docker-compose services (11 long-running + 1 one-shot `db-migrate`), including the new `alarm-api` and `proxy`; migrations 013–078 (53 files); Grafana has no host port of its own anymore (fronted by `proxy`); `scripts/dr-test.sh` implements row-count *bracketing*, not exact match.
+> **Ground truth used:** 12 Grafana dashboards (4 infra + 8 manufacturing, including the new `ims-ldi-alarm-console` and pre-existing `ims-ldi-alarm-dictionary`); 12 docker-compose services (11 long-running + 1 one-shot `db-migrate`), including the new `alarm-api` and `proxy`; migrations 013–078 (53 files); Grafana has no host port of its own anymore (fronted by `proxy`); `scripts/dr-test.sh` implements row-count _bracketing_, not exact match.
 
 ---
 
@@ -16,7 +16,7 @@ Should reflect: Grafana has no host port of its own — `proxy` (nginx) is now t
 
 **`docs/operations/DR_TEST_PLAN.md:9`** — Drill 1's stated pass criterion contradicts both the actual implementation and this repo's own other documentation.
 Current text: "compares row counts on `devices`/`ldi_data`/`ldi_alarm_log` between live and restored... Pass criterion: **exact row-count match**."
-Should reflect: `scripts/dr-test.sh` (lines 46-96) explicitly implements and labels *bracketing* — `VERDICT: PASS -- restored row counts fall within the [before-dump, after-dump] live bracket`, not exact match. `docs/operations/BACKUP_RESTORE.md` (not in this audit's flag list, but cross-checked) explicitly documents that exact-match was a real bug found during this system's own DR testing, since this is a live-ingesting system where counts always drift between dump and restore. An operator following `DR_TEST_PLAN.md`'s literal stated criterion during a real drill could misjudge a genuinely-passing restore as FAIL.
+Should reflect: `scripts/dr-test.sh` (lines 46-96) explicitly implements and labels _bracketing_ — `VERDICT: PASS -- restored row counts fall within the [before-dump, after-dump] live bracket`, not exact match. `docs/operations/BACKUP_RESTORE.md` (not in this audit's flag list, but cross-checked) explicitly documents that exact-match was a real bug found during this system's own DR testing, since this is a live-ingesting system where counts always drift between dump and restore. An operator following `DR_TEST_PLAN.md`'s literal stated criterion during a real drill could misjudge a genuinely-passing restore as FAIL.
 
 **`docs/operations/TROUBLESHOOTING.md:107-403`** — This file contains a second, structurally distinct "Incident Response Runbook" concatenated after its own troubleshooting content (line 107: `# Incident Response Runbook`), with a **different severity taxonomy** than the real `docs/operations/INCIDENT_RESPONSE.md` file.
 Current text: `TROUBLESHOOTING.md` lines 136-142 define severity as **Critical / Warning / Info** (response times <15min/<1hr/<4hr); the actual `docs/operations/INCIDENT_RESPONSE.md` (a separate, real, provenance-backed file with worked examples from this system's real operational history) defines severity as **SEV-1 / SEV-2 / SEV-3 / SEV-4**. These do not map cleanly onto each other and give conflicting escalation guidance for the same incident.
@@ -74,7 +74,7 @@ Verified against the full `docker-compose.prod.yaml` (43 lines): there is no por
 - `docs/architecture/GRAFANA_DESIGN_SYSTEM.md`'s "3 dashboards" kiosk-ceiling claim (NOC, Easy Overview, Andon) — verified against `tests/lint/dashboard-linter.js`'s `MAX_HEIGHT` object; accurate.
 - `docs/architecture/DATA_FLOW.md`, `docs/product/CONTEXT.md` — both already say "12 dashboards" correctly.
 - All `http://localhost:3000/d/...` links across `SOP_OPERATOR.md`, `ONBOARDING_SCRIPT.md`, `LDI_VALIDATION_PROTOCOL.md`, `README.md` — not broken; `proxy` transparently forwards `GET` traffic to Grafana on the same port, so these URLs still resolve correctly for an end user in a browser.
-- `docs/architecture/FUTURE_ANALYTICS.md`'s "AI-Assisted" mention — correctly contextual (explains what the panel was renamed *from*), not a live claim.
+- `docs/architecture/FUTURE_ANALYTICS.md`'s "AI-Assisted" mention — correctly contextual (explains what the panel was renamed _from_), not a live claim.
 - `docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md:19`'s "10 Grafana dashboards" — inside a section explicitly labeled "Baseline (verified 2026-08-10)," a dated point-in-time snapshot by the file's own convention (same category as `docs/archive/` and `docs/audit/`) — correctly left as historical record, not live drift.
 - Migration-number citations spot-checked in `EAP_ARCHITECTURE.md` (067), `MANUFACTURING_DOMAIN.md` (013, 064, 067), `DATA_RETENTION.md` (016), `DATA_FLOW.md` (065) — all exist and match their described content.
 - `docs/operations/BACKUP_RESTORE.md`, `docs/operations/RELEASE_CHECKLIST.md`, `docs/operations/SCALING_PLAN.md`, `docs/operations/LDI_VALIDATION_PROTOCOL.md`, `docs/architecture/EAP_ARCHITECTURE.md`, `docs/architecture/MANUFACTURING_DOMAIN.md`, `docs/architecture/OWNERSHIP.md`, `docs/architecture/DATA_RETENTION.md`, `docs/architecture/ALARM_DETAIL_STYLE_GUIDE.md`, `docs/architecture/ARCHITECTURE_DIAGRAM.md`, `docs/architecture/LDI_RCA_GUIDE.md`, `docs/architecture/LDI_SPC_GUIDE.md`, `docs/architecture/PANEL_TOKENS.md`, `docs/business/BUSINESS_VALUE_ROI.md` (already dashboard-count-corrected by a prior commit), `docs/DOCUMENTATION_QUALITY_REPORT.md`, `docs/product/ONBOARDING_SCRIPT.md`, `docs/REAL-DATA-IMPORT.md`, `CHANGELOG.md`, `ABOUT-ME.md`, `START.md`, `AGENTS.md` — read/grepped for the audit's known-changed-facts (alarm-api, proxy, dashboard/migration/service counts, OEE-as-live, Andon interactivity claims); no discrepancies found relative to current repo state.
@@ -84,10 +84,10 @@ Verified against the full `docker-compose.prod.yaml` (43 lines): there is no por
 ## Summary
 
 | Severity | Count |
-|---|---|
-| P0 | 3 |
-| P1 | 7 |
-| P2 | 3 |
-| P3 | 1 |
+| -------- | ----- |
+| P0       | 3     |
+| P1       | 7     |
+| P2       | 3     |
+| P3       | 1     |
 
 **Status: all P0/P1/P2/P3 findings in this report fixed 2026-08-13** (commit `docs: reconcile runtime architecture and DR guidance`), except the pre-existing `TROUBLESHOOTING.md`/`INCIDENT_RESPONSE.md` duplication was resolved by removing the duplicate content from `TROUBLESHOOTING.md` in favor of a pointer, not by editing `INCIDENT_RESPONSE.md` (which was already correct). This report is left in place as the record of what was found and fixed, not deleted after the fact.

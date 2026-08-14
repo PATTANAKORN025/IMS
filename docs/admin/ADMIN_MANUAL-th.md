@@ -32,20 +32,20 @@
 
 ระบบใช้ Docker Compose 12 services (11 long-running + 1 one-shot migration runner):
 
-| Container | Service | Port | Purpose |
-|---|---|---|---|
-| `ims-timescaledb` | TimescaleDB | 5432 (loopback) | Time-series database |
-| `ims-pgbouncer` | PgBouncer | 5432 (internal) | Connection pooler |
-| `ims-db-migrate` | Migration runner | — (one-shot) | รัน `database/migrations/*.sql`, block `node-red` และ `alarm-api` |
-| `ims-node-red` | Node-RED | 1880 (loopback) | Data pipeline |
-| `ims-proxy` | nginx proxy | **3000** | Entry point หลักของ Grafana และ `alarm-api`. กั้น `/alarm-api/` ด้วย `auth_request` |
-| `ims-grafana` | Grafana | internal | Dashboard — เข้าผ่าน `ims-proxy` |
-| `ims-alarm-api` | alarm-api | internal | Write path สำหรับ `public.ldi_alarm_lifecycle`. เข้าผ่าน `ims-proxy` |
-| `ims-grafana-renderer` | Grafana Renderer | 8081 (internal) | Render PNG สำหรับ alert |
-| `ims-prometheus` | Prometheus | 9090 (loopback) | Metrics & alerting |
-| `ims-alertmanager` | Alertmanager | 9093 (loopback) | Alert routing |
-| `ims-blackbox` | Blackbox Exporter | 9115 (loopback) | SLA probes |
-| `ims-snmpsim` | SNMP Simulator | 161/udp | Dev testing |
+| Container              | Service           | Port            | Purpose                                                                             |
+| ---------------------- | ----------------- | --------------- | ----------------------------------------------------------------------------------- |
+| `ims-timescaledb`      | TimescaleDB       | 5432 (loopback) | Time-series database                                                                |
+| `ims-pgbouncer`        | PgBouncer         | 5432 (internal) | Connection pooler                                                                   |
+| `ims-db-migrate`       | Migration runner  | — (one-shot)    | รัน `database/migrations/*.sql`, block `node-red` และ `alarm-api`                   |
+| `ims-node-red`         | Node-RED          | 1880 (loopback) | Data pipeline                                                                       |
+| `ims-proxy`            | nginx proxy       | **3000**        | Entry point หลักของ Grafana และ `alarm-api`. กั้น `/alarm-api/` ด้วย `auth_request` |
+| `ims-grafana`          | Grafana           | internal        | Dashboard — เข้าผ่าน `ims-proxy`                                                    |
+| `ims-alarm-api`        | alarm-api         | internal        | Write path สำหรับ `public.ldi_alarm_lifecycle`. เข้าผ่าน `ims-proxy`                |
+| `ims-grafana-renderer` | Grafana Renderer  | 8081 (internal) | Render PNG สำหรับ alert                                                             |
+| `ims-prometheus`       | Prometheus        | 9090 (loopback) | Metrics & alerting                                                                  |
+| `ims-alertmanager`     | Alertmanager      | 9093 (loopback) | Alert routing                                                                       |
+| `ims-blackbox`         | Blackbox Exporter | 9115 (loopback) | SLA probes                                                                          |
+| `ims-snmpsim`          | SNMP Simulator    | 161/udp         | Dev testing                                                                         |
 
 > `ims-db-migrate` จบด้วยสถานะ 0 เมื่อรัน migration เสร็จ. สถานะ `Exited (0)` ใน `docker compose ps` คือปกติ. `node-red` และ `alarm-api` จะไม่เริ่มทำงานจนกว่า service นี้จะเสร็จ.
 
@@ -80,7 +80,9 @@ docker compose logs -f --tail 50 pgbouncer
 docker stats --no-stream
 ```
 
-> **Note:** หลัง `docker compose down -v` รอ 40 วินาทีให้ระบบเริ่มทำงานทั้งหมดก่อนตรวจสอบ.
+> [!NOTE]
+>
+> > หลัง `docker compose down -v` รอ 40 วินาทีให้ระบบเริ่มทำงานทั้งหมดก่อนตรวจสอบ.
 
 ### Service Health Checks
 
@@ -118,14 +120,14 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c \
 
 ## Pre-Production Security Checklist
 
-> **CRITICAL:** ก่อนขึ้น production ต้องเปลี่ยน default credentials ทั้งหมด. 
+> **CRITICAL:** ก่อนขึ้น production ต้องเปลี่ยน default credentials ทั้งหมด.
 
-| Credential | Default Value | Location | Action Required |
-|---|---|---|---|
-| `INGEST_API_KEY` | `ims-secret-key` | `.env` + `docker-compose.yaml` | **CHANGE** — ป้องกัน inject telemetry ปลอม |
-| `POSTGRES_PASSWORD` | `change-me-please` | `.env` | **CHANGE** — Database superuser |
-| `GRAFANA_ADMIN_PASSWORD` | `change-me-please` | `.env` | **CHANGE** — Dashboard admin |
-| `ALARM_API_DB_PASSWORD` | `change-me-please` | `.env` | **CHANGE** — สิทธิ์ของ `alarm_api_writer` |
+| Credential               | Default Value      | Location                       | Action Required                            |
+| ------------------------ | ------------------ | ------------------------------ | ------------------------------------------ |
+| `INGEST_API_KEY`         | `ims-secret-key`   | `.env` + `docker-compose.yaml` | **CHANGE** — ป้องกัน inject telemetry ปลอม |
+| `POSTGRES_PASSWORD`      | `change-me-please` | `.env`                         | **CHANGE** — Database superuser            |
+| `GRAFANA_ADMIN_PASSWORD` | `change-me-please` | `.env`                         | **CHANGE** — Dashboard admin               |
+| `ALARM_API_DB_PASSWORD`  | `change-me-please` | `.env`                         | **CHANGE** — สิทธิ์ของ `alarm_api_writer`  |
 
 ### How to Rotate
 
@@ -272,12 +274,12 @@ docker compose exec prometheus promtool check rules /etc/prometheus/rules/ims-al
 
 ### Inhibition Rules
 
-| Source Alert | Suppressed Alerts | Scope |
-|---|---|---|
-| `InterfaceDown` (critical) | Warning ทั้งหมด | Same machine |
-| `ServiceDown` (critical) | Warning ทั้งหมด | Same machine |
-| `NodeREDDown` | `TelemetryGap` | Global |
-| `Critical` | `Warning`, `Info` | Same alertname + machine |
+| Source Alert               | Suppressed Alerts | Scope                    |
+| -------------------------- | ----------------- | ------------------------ |
+| `InterfaceDown` (critical) | Warning ทั้งหมด   | Same machine             |
+| `ServiceDown` (critical)   | Warning ทั้งหมด   | Same machine             |
+| `NodeREDDown`              | `TelemetryGap`    | Global                   |
+| `Critical`                 | `Warning`, `Info` | Same alertname + machine |
 
 ---
 
@@ -285,14 +287,14 @@ docker compose exec prometheus promtool check rules /etc/prometheus/rules/ims-al
 
 ### Common Issues & Solutions
 
-| Issue | Cause | Fix |
-|---|---|---|
-| Grafana "No Data" | PgBouncer เต็ม, DB ล่ม | `docker restart ims-pgbouncer`, เช็ค disk |
-| Alert ไม่แจ้งเตือน | Webhook ขาด | เช็ค Node-RED log (`POST/alert-webhook`) |
-| Bandwidth กระโดด Tbps | 32-bit Counter Wrap | เช็ค 64-bit HC support ของอุปกรณ์ |
-| Node-RED ไม่รัน | Flow JSON ผิด | `docker compose logs --tail=50 node-red` |
-| Continuous Aggregate ว่าง | ต้อง refresh | `CALL refresh_continuous_aggregate('sys_hourly', NULL, NULL);` |
-| Container แจ้ง "Restarting" | Config ผิด, port ชน | เช็ค log ของ container นั้น |
+| Issue                       | Cause                  | Fix                                                            |
+| --------------------------- | ---------------------- | -------------------------------------------------------------- |
+| Grafana "No Data"           | PgBouncer เต็ม, DB ล่ม | `docker restart ims-pgbouncer`, เช็ค disk                      |
+| Alert ไม่แจ้งเตือน          | Webhook ขาด            | เช็ค Node-RED log (`POST/alert-webhook`)                       |
+| Bandwidth กระโดด Tbps       | 32-bit Counter Wrap    | เช็ค 64-bit HC support ของอุปกรณ์                              |
+| Node-RED ไม่รัน             | Flow JSON ผิด          | `docker compose logs --tail=50 node-red`                       |
+| Continuous Aggregate ว่าง   | ต้อง refresh           | `CALL refresh_continuous_aggregate('sys_hourly', NULL, NULL);` |
+| Container แจ้ง "Restarting" | Config ผิด, port ชน    | เช็ค log ของ container นั้น                                    |
 
 ### SRE Verification Protocol
 
@@ -422,6 +424,6 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c "SELECT query, calls
 
 **IMS Admin Manual — Version 1.1**
 
-*For IT Team & MIS-G*
+_For IT Team & MIS-G_
 
 </div>

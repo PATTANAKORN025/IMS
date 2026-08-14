@@ -25,7 +25,7 @@ docker exec -i ims-timescaledb psql -U "$POSTGRES_USER" -d ims_dr_test < backup.
 
 ## Verification: row-count bracketing, not exact equality
 
-This is a **live-ingesting system** — the simulator writes continuously. A naive "restored count == live count" check will produce a false failure, because a few rows land between when the dump snapshot was taken and when you check. `scripts/dr-test.sh` handles this correctly: it captures row counts *before* and *after* the dump, then verifies the restored count falls inside that bracket (inclusive) rather than expecting exact equality. This was a real bug caught during this system's own DR testing — the first drill run produced a false FAIL because the script checked live counts only after the dump completed.
+This is a **live-ingesting system** — the simulator writes continuously. A naive "restored count == live count" check will produce a false failure, because a few rows land between when the dump snapshot was taken and when you check. `scripts/dr-test.sh` handles this correctly: it captures row counts _before_ and _after_ the dump, then verifies the restored count falls inside that bracket (inclusive) rather than expecting exact equality. This was a real bug caught during this system's own DR testing — the first drill run produced a false FAIL because the script checked live counts only after the dump completed.
 
 ```bash
 ./scripts/dr-test.sh backup-restore
@@ -33,7 +33,7 @@ This is a **live-ingesting system** — the simulator writes continuously. A nai
 
 Runs the full drill end-to-end: dump, bracket the live count, restore into a throwaway `ims_dr_test` database (**never touches the live database**), verify, then drop the throwaway database. Real result, 2026-08-10: **PASS** — `devices=1025 ldi_data=52795→52796 (bracket) alarm_log=10405`, restored count `52795` fell inside the bracket.
 
-## What backup/restore does *not* cover
+## What backup/restore does _not_ cover
 
 - **Continuous aggregates and materialized views are not automatically repopulated by a plain restore** — `pg_dump`'s output includes their definitions, but a fresh restore target needs the TimescaleDB extension and background job scheduler running before the CAGGs will refresh. For a full environment rebuild (not just data), see the Full-Stack Recreate drill in `docs/operations/DR_TEST_PLAN.md`.
 - **Grafana dashboards, alert rules, and library panels** are file-provisioned (`monitoring/grafana/`), not stored in the database — they come back automatically on container start from the repo's own tracked files, not from a database backup.

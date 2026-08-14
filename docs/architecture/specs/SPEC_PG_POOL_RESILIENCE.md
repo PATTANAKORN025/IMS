@@ -11,7 +11,7 @@
 unexpected restart at `2026-08-14T05:51:52Z`, about 1 hour into the
 run -- nothing this session did caused it:
 
-```
+```text
 2026-08-14T05:05:14Z 1324 0 0 no  1 27
 2026-08-14T05:51:52Z NaN  0 0 yes 0 28
 2026-08-14T06:05:14Z 604  0 0 no  1 28
@@ -20,7 +20,7 @@ run -- nothing this session did caused it:
 `public.container_restart_audit` (built earlier this session for
 exactly this kind of investigation) confirms which containers:
 
-```
+```text
 ims-alarm-api | die  | 2026-08-14 05:51:37+00
 ims-alarm-api | start | 2026-08-14 05:51:38+00
 ims-node-red | die  | 2026-08-14 05:51:38+00
@@ -29,7 +29,7 @@ ims-node-red | start | 2026-08-14 05:51:39+00
 
 `docker logs ims-node-red` for that window shows the actual crash:
 
-```
+```text
 14 Aug 05:51:35 - [error] [function:Auth & Validate] LDI staging INSERT failed: client_idle_timeout
 14 Aug 05:51:35 - [red] Uncaught Exception:
 14 Aug 05:51:35 - [error] error: client_idle_timeout
@@ -88,17 +88,22 @@ next client instead of crashing the process:
 
 ```js
 // services/alarm-api/server.js
-const pool = new Pool({ /* ... existing config ... */ });
-pool.on('error', (err) => {
- console.error('pg pool idle-client error (non-fatal, pool recovers):', err.message);
+const pool = new Pool({/* ... existing config ... */});
+pool.on("error", (err) => {
+  console.error(
+    "pg pool idle-client error (non-fatal, pool recovers):",
+    err.message,
+  );
 });
 ```
 
 ```js
 // node-red: wherever global.set('pgPool', ...) constructs the shared
 // pool (likely a startup/global-config function node) -- same pattern:
-pgPool.on('error', (err) => {
- node.warn('pg pool idle-client error (non-fatal, pool recovers): ' + err.message);
+pgPool.on("error", (err) => {
+  node.warn(
+    "pg pool idle-client error (non-fatal, pool recovers): " + err.message,
+  );
 });
 ```
 
@@ -112,7 +117,7 @@ standard safeguard.
 it (`0`) or raising it, given both `node-red` and `alarm-api` hold
 long-lived pooled connections that may legitimately sit idle past 5
 minutes between LDI batches. The `on('error')` handler makes the
-*crash* stop; it doesn't address *why* connections sit idle long
+_crash_ stop; it doesn't address _why_ connections sit idle long
 enough to hit the timeout in the first place. Worth measuring actual
 idle gaps (real evidence, not a guess) before deciding whether to also
 touch the PgBouncer config -- and touching PgBouncer config requires a
@@ -122,27 +127,27 @@ lifts regardless.
 ## Rollout plan
 
 1. Add the `pool.on('error', ...)` handler to both `server.js` and the
-  node-red global pool setup -- two small, isolated changes.
+   node-red global pool setup -- two small, isolated changes.
 2. Redeploy (`docker compose restart node-red alarm-api`) -- **not
-  before the soak freeze lifts**, since this itself is a restart.
+   before the soak freeze lifts**, since this itself is a restart.
 3. Re-run `tests/e2e/ingestion-latency-check.js` to confirm nothing
-  regressed.
+   regressed.
 4. Start a fresh soak attempt with this fix in place -- if the fix is
-  correct, `client_idle_timeout` drops should stop appearing as
-  `any_container_restarted=yes` events entirely (the pool logs a
-  warning and keeps running instead).
+   correct, `client_idle_timeout` drops should stop appearing as
+   `any_container_restarted=yes` events entirely (the pool logs a
+   warning and keeps running instead).
 
 ## Testing plan
 
 - Unit/manual: force a `client_idle_timeout` by holding a pooled
- connection open past 300s in a throwaway test, confirm the process
- does NOT crash and the next query still succeeds.
+  connection open past 300s in a throwaway test, confirm the process
+  does NOT crash and the next query still succeeds.
 - Regression: full existing test suite (`Unit Tests`, `Parser v2
  Tests` per the pre-commit hook) -- this change touches shared pool
- setup, low risk but should not be assumed risk-free.
+  setup, low risk but should not be assumed risk-free.
 - Soak: the real test is time -- a subsequent soak attempt running
- past 5 minutes of any idle gap without a restart event is the actual
- proof this fix works, more convincing than any unit test could be.
+  past 5 minutes of any idle gap without a restart event is the actual
+  proof this fix works, more convincing than any unit test could be.
 
 ## Priority
 

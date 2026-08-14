@@ -20,7 +20,7 @@ The alarm pipeline's **data-integrity plumbing is excellent**: every alarm code 
 
 **Verified: PASS, 0 orphans.**
 
-```
+```text
 $ node tests/lint/alarm-sync-linter.js
 [+] Simulator (nodered_data/flows.json): Found 19 alarm codes
 [+] Master (live DB, ldi_alarm_ms_code): Found 19 alarm codes
@@ -156,7 +156,7 @@ Reviewed all 43 Critical rows in the real catalog (`database/migrations/061-ldi-
 
 - **Keyword false positives.** `0103000A` "Get the automatic line arm safety position abnormality" is classified Critical purely because the message contains the substring "safety" — but "safety position" here is a named motion-control reference position, not a report of an actual safety hazard. The keyword regex can't distinguish "safety" as a hazard descriptor from "safety" as a proper-noun component of an unrelated technical term.
 - **Type-override contradictions.** Every `alarm_type='E'` row is unconditionally Critical (rule step 2), regardless of message content — producing alarms whose own text is `'Driver Warning'` (`0118000A`) and `'Servo Processor Warning'` (`01180012`) but whose assigned severity is Critical. An operator or auditor reading the alarm text next to its severity badge sees the word "Warning" attached to the platform's highest severity tier — a direct, self-contradictory signal in the data itself, not a hypothetical.
-- **Debug-leaked phrasing survives into the top tier.** `01180026`'s Critical-severity message reads *"The platform AsyncMoves too many times, up to 5 times, for specific errors, see the Tauren log"* — internal component naming and a pointer to an internal log, not operator-facing alarm language, at the most safety-critical severity level in the taxonomy.
+- **Debug-leaked phrasing survives into the top tier.** `01180026`'s Critical-severity message reads _"The platform AsyncMoves too many times, up to 5 times, for specific errors, see the Tauren log"_ — internal component naming and a pointer to an internal log, not operator-facing alarm language, at the most safety-critical severity level in the taxonomy.
 
 All 43 rows do correctly resolve via the documented precedence order (keyword check before type check before soft-keyword check) — there is no logic bug, only classification judgment calls that don't hold up under review for the reasons above.
 
@@ -164,13 +164,13 @@ All 43 rows do correctly resolve via the documented precedence order (keyword ch
 
 **Verified: real inconsistency — three "Critical Alarms" panels, three different scopes, one true meaning, and (in live data) zero actual Critical alarms among any of them.**
 
-| Dashboard | Panel title | Time window | Live value |
-|---|---|---|---|
-| `ims-easy-overview.json` | "◉ Critical Alarms (1h)" | last 1 hour | **23** |
-| `ims-ldi-manufacturing.json` | "◉ Critical Alarms" | none (`NO_TIMEFILTER_INTENTIONAL`, full dataset) | **564** |
-| `ims-ldi-operator-andon.json` | "◉ Critical Alarm Records (master-code matched)" | none (`NO_TIMEFILTER_INTENTIONAL`, full dataset) | **564** |
+| Dashboard                     | Panel title                                      | Time window                                      | Live value |
+| ----------------------------- | ------------------------------------------------ | ------------------------------------------------ | ---------- |
+| `ims-easy-overview.json`      | "◉ Critical Alarms (1h)"                         | last 1 hour                                      | **23**     |
+| `ims-ldi-manufacturing.json`  | "◉ Critical Alarms"                              | none (`NO_TIMEFILTER_INTENTIONAL`, full dataset) | **564**    |
+| `ims-ldi-operator-andon.json` | "◉ Critical Alarm Records (master-code matched)" | none (`NO_TIMEFILTER_INTENTIONAL`, full dataset) | **564**    |
 
-All three run the identical filter `m.severity IN ('Critical', 'Major')` — none of them count Critical alone, despite the title. A user glancing between the NOC easy-overview and the manufacturing dashboard would see "Critical Alarms: 23" on one screen and "Critical Alarms: 564" on the other at the same moment, for two structurally different reasons (different severity scope disguised as the same label, *and* a 1-hour window vs. all-time). This directly violates `GRAFANA_DESIGN_SYSTEM.md`'s own stated principles — §1 rule 3 ("3-Second Rule": a viewer should know the state without reading labels) and rule 4 ("Consistency > Novelty": the same panel concept must look and behave the same everywhere it appears).
+All three run the identical filter `m.severity IN ('Critical', 'Major')` — none of them count Critical alone, despite the title. A user glancing between the NOC easy-overview and the manufacturing dashboard would see "Critical Alarms: 23" on one screen and "Critical Alarms: 564" on the other at the same moment, for two structurally different reasons (different severity scope disguised as the same label, _and_ a 1-hour window vs. all-time). This directly violates `GRAFANA_DESIGN_SYSTEM.md`'s own stated principles — §1 rule 3 ("3-Second Rule": a viewer should know the state without reading labels) and rule 4 ("Consistency > Novelty": the same panel concept must look and behave the same everywhere it appears).
 
 ```sql
 SELECT severity, COUNT(*) FROM ldi_alarm_log a JOIN ldi_alarm_ms_code m
@@ -186,12 +186,12 @@ Given §8's finding, **all 564 events counted by every one of these "Critical" p
 
 Every severity value-mapping across all 6 alarm-facing dashboards was extracted programmatically and diffed against `GRAFANA_DESIGN_SYSTEM.md` §2.1:
 
-| Severity | Approved token | Approved hex | Found in dashboards |
-|---|---|---|---|
-| Critical | `critical` | `#EF4444` | `#EF4444` — 100% match, all 6 files |
-| Major | `warning` | `#F59E0B` | `#F59E0B` — 100% match, all 6 files |
-| Minor | `severity-minor` | `#EAB308` | `#EAB308` — 100% match, all files that expose Minor |
-| Warning | `accent` | `#3B82F6` | `#3B82F6` — 100% match, all files that expose Warning |
+| Severity | Approved token   | Approved hex | Found in dashboards                                   |
+| -------- | ---------------- | ------------ | ----------------------------------------------------- |
+| Critical | `critical`       | `#EF4444`    | `#EF4444` — 100% match, all 6 files                   |
+| Major    | `warning`        | `#F59E0B`    | `#F59E0B` — 100% match, all 6 files                   |
+| Minor    | `severity-minor` | `#EAB308`    | `#EAB308` — 100% match, all files that expose Minor   |
+| Warning  | `accent`         | `#3B82F6`    | `#3B82F6` — 100% match, all files that expose Warning |
 
 No stray hex literals, no per-dashboard drift. `dashboard-linter.js` Check 15 (which enforces this table structurally) was not re-run destructively in this pass but its logic was independently re-verified by direct extraction — same result. This is the one area of the alarm pipeline with no findings at all.
 
@@ -199,18 +199,18 @@ No stray hex literals, no per-dashboard drift. `dashboard-linter.js` Check 15 (w
 
 ## Scoring
 
-| # | Check | Verdict | Score /10 |
-|---|---|---|---|
-| 1 | AlarmId existence | Pass, 0 orphans | 10 |
-| 2 | AlarmType/Severity consistency | Internally consistent | 8 |
-| 3 | AlarmMsg quality | Pass, clean | 10 |
-| 4 | AlarmDetail completeness | Complete but schema-leaky phrasing | 8 |
-| 5 | Frequency distribution | Noise weights correct; condition-driven codes chronically dominant (91.4%) | 4 |
-| 6 | Burst/flood behavior | No debounce/latching; sustained flooding on specific machines | 3 |
-| 7 | Telemetry correlation (`related_log_id`) | Math correct for condition-driven codes; `match_type` mislabels noise-code links, visible on a live panel | 4 |
-| 8 | Severity rationalization (top Critical codes) | 0 Critical active; real catalog has keyword false-positives + type-override contradictions | 4 |
-| 9 | Cross-dashboard consistency | 3 panels, 3 scopes, 1 mislabeled metric, currently 0% accurate | 3 |
-| 10 | Color-token consistency | Pass, 0 drift | 10 |
+| #   | Check                                         | Verdict                                                                                                   | Score /10 |
+| --- | --------------------------------------------- | --------------------------------------------------------------------------------------------------------- | --------- |
+| 1   | AlarmId existence                             | Pass, 0 orphans                                                                                           | 10        |
+| 2   | AlarmType/Severity consistency                | Internally consistent                                                                                     | 8         |
+| 3   | AlarmMsg quality                              | Pass, clean                                                                                               | 10        |
+| 4   | AlarmDetail completeness                      | Complete but schema-leaky phrasing                                                                        | 8         |
+| 5   | Frequency distribution                        | Noise weights correct; condition-driven codes chronically dominant (91.4%)                                | 4         |
+| 6   | Burst/flood behavior                          | No debounce/latching; sustained flooding on specific machines                                             | 3         |
+| 7   | Telemetry correlation (`related_log_id`)      | Math correct for condition-driven codes; `match_type` mislabels noise-code links, visible on a live panel | 4         |
+| 8   | Severity rationalization (top Critical codes) | 0 Critical active; real catalog has keyword false-positives + type-override contradictions                | 4         |
+| 9   | Cross-dashboard consistency                   | 3 panels, 3 scopes, 1 mislabeled metric, currently 0% accurate                                            | 3         |
+| 10  | Color-token consistency                       | Pass, 0 drift                                                                                             | 10        |
 
 **Unweighted average: 6.4/10 → Final realism score: 58/100.**
 
@@ -233,7 +233,7 @@ The data-integrity layer (referential integrity, message hygiene, color governan
 
 ## Recommended simulator parameter changes
 
-*(Recommendations only — not applied in this pass, per the audit-only constraint.)*
+_(Recommendations only — not applied in this pass, per the audit-only constraint.)_
 
 1. **Narrow the telemetry noise bands** (or widen the OOS thresholds to match the simulator's actual designed baseline) so PE/JE, vacuum, and environment out-of-spec rates drop from 23–45% to a low single-digit chronic rate, with genuine excursions modeled as discrete, time-boxed fault windows per machine rather than a near-permanent condition.
 2. **Add a debounce/cooldown** to condition-driven alarm firing (e.g., suppress re-firing the same code for the same machine within N minutes of its last occurrence, or move to a latch-until-cleared model) to replace the current "25% chance every 10s while the condition holds" pattern.

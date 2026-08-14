@@ -22,7 +22,15 @@ Nothing here proposes touching it.
 `nodered_data/flows.json`, node `almsim_gen`, function `generate()`:
 
 ```js
-rows.push(newRow(eq, code, new Date(now - Math.floor(Math.random() * 9000)), null, 'nearest'));
+rows.push(
+  newRow(
+    eq,
+    code,
+    new Date(now - Math.floor(Math.random() * 9000)),
+    null,
+    "nearest",
+  ),
+);
 ```
 
 Background noise-code alarms get `logdate` backdated by random
@@ -36,16 +44,24 @@ condition-driven branch already does:
 
 ```js
 // before
-rows.push(newRow(eq, code, new Date(now - Math.floor(Math.random() * 9000)), null, 'nearest'));
+rows.push(
+  newRow(
+    eq,
+    code,
+    new Date(now - Math.floor(Math.random() * 9000)),
+    null,
+    "nearest",
+  ),
+);
 // after
-rows.push(newRow(eq, code, new Date(now), null, 'nearest'));
+rows.push(newRow(eq, code, new Date(now), null, "nearest"));
 ```
 
 **Why this is safe to simplify rather than "improve":** the backdating
 was never validated against anything real -- no citation, no vendor
 spec, no measured real-world alarm-reporting-delay distribution
 backing the `random(0,9000)` range. It's fabricated jitter that
-happens to look plausible. Removing it is not a realism *regression*;
+happens to look plausible. Removing it is not a realism _regression_;
 it removes an unfounded claim. If real alarm-reporting-delay data
 becomes available later, that's a separate, evidence-backed item, not
 a revival of this one.
@@ -67,27 +83,27 @@ distribution, no existing reference implementation in this repo to
 extend). What this spec commits to instead:
 
 - **Per-variable design questions to answer before implementing**, one
- at a time, each needs a real answer not a guess:
- - Temperature/humidity: what's the real sensor noise floor for this
+  at a time, each needs a real answer not a guess:
+- Temperature/humidity: what's the real sensor noise floor for this
   hardware class? (Spec sheet, if available; else a documented
   reasonable assumption, explicitly flagged as an assumption.)
- - Vacuum: same question, plus whether drift correlates with duty
+- Vacuum: same question, plus whether drift correlates with duty
   cycle (real vacuum systems often do).
- - PE/JE: these already drive alarm correlation (`ALIGN_CODES`) --
+- PE/JE: these already drive alarm correlation (`ALIGN_CODES`) --
   any added noise must not break that correlation's signal-to-noise
   ratio, or it silently defeats the RCA guide's own claims.
- - Micro-stop: currently absent entirely from the simulator (no
+- Micro-stop: currently absent entirely from the simulator (no
   `micro_stop` or downtime-event field found in `almsim_gen` or
   `ldisim_gen` this pass) -- this is a **new mechanism**, not a
   tuning change to an existing one. Needs its own mini-design: what
   table/column represents it, how it interacts with OEE calculations
   that already exist (`ims-ldi-manufacturing`'s OEE section).
- - Warm-up drift: needs a definition of "warm-up window" (time since
+- Warm-up drift: needs a definition of "warm-up window" (time since
   last state change to RUN?) before any drift curve can be designed
   against it.
 - **Do not implement any of the above without running it through the
- brainstorming skill's design process first** -- this item has real
- unresolved design questions, unlike Item 1's one-line fix.
+  brainstorming skill's design process first** -- this item has real
+  unresolved design questions, unlike Item 1's one-line fix.
 
 ## Item 3: Re-run the alarm fidelity audit
 
@@ -101,7 +117,7 @@ meaningfully above 58/100, that changes how urgent Item 2 actually is.
 
 ## Item 4: Telemetry generator keeps ~25-45% of readings out-of-spec
 
-From the 58/100 audit: this is *why* condition-driven alarms fire
+From the 58/100 audit: this is _why_ condition-driven alarms fire
 almost continuously (91.4% of all alarms were condition-driven at
 audit time) instead of as discrete events. Tied to Item 3's re-audit --
 if the debounce fix already suppressed the visible symptom (repeated

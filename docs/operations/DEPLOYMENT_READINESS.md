@@ -29,27 +29,28 @@
 
 ### Current Stack Versions
 
-| Component | Current | Latest | Risk | Notes |
-|---|---|---|---|---|
-| **Node-RED** | 4.0.5 | 5.0 | ️ HIGH | 2 major versions behind, requires Node.js 22.9+ |
-| **TimescaleDB** | PostgreSQL 16 | PG 17 | LOW | v16 still supported until 2028 |
-| **Grafana** | 11.x | 11.x | NONE | Current version |
-| **Prometheus** | v2.55.x | 3.x | LOW | v2.x still maintained |
-| **K6** | unspecified | current | NONE | Works fine |
-| **Docker** | v4.0+ | v4.0+ | NONE | Stable |
+| Component       | Current       | Latest  | Risk  | Notes                                           |
+| --------------- | ------------- | ------- | ----- | ----------------------------------------------- |
+| **Node-RED**    | 4.0.5         | 5.0     | ️ HIGH | 2 major versions behind, requires Node.js 22.9+ |
+| **TimescaleDB** | PostgreSQL 16 | PG 17   | LOW   | v16 still supported until 2028                  |
+| **Grafana**     | 11.x          | 11.x    | NONE  | Current version                                 |
+| **Prometheus**  | v2.55.x       | 3.x     | LOW   | v2.x still maintained                           |
+| **K6**          | unspecified   | current | NONE  | Works fine                                      |
+| **Docker**      | v4.0+         | v4.0+   | NONE  | Stable                                          |
 
 ### Node-RED Upgrade Path
 
 > ️ **WARNING**: Node-RED 5.0 (released June 9, 2026) is the biggest Editor change in history.
 
-| Requirement | Current | Required for v5.0 |
-|---|---|---|
-| Node.js | 18.x | 22.9+ |
-| Docker Base Image | node:18-alpine | node:22-alpine |
-| Editor UI | Legacy | New React-based |
-| Flow Compatibility | | ️ Test first |
+| Requirement        | Current        | Required for v5.0 |
+| ------------------ | -------------- | ----------------- |
+| Node.js            | 18.x           | 22.9+             |
+| Docker Base Image  | node:18-alpine | node:22-alpine    |
+| Editor UI          | Legacy         | New React-based   |
+| Flow Compatibility |                | ️ Test first       |
 
 **Recommended Upgrade Path:**
+
 1. Test in staging environment first
 2. Read official upgrade guide thoroughly
 3. Backup all flows before upgrade
@@ -61,15 +62,16 @@
 
 ### Phase 1: Network Preparation
 
-| # | Task | Status | Owner |
-|---|---|---|---|
-| 1 | Obtain target machine IP addresses | | Network Team |
-| 2 | Confirm SNMP community strings | | Security Team |
-| 3 | Verify SNMP enabled on targets | | Server Team |
-| 4 | Verify UDP 161 not blocked by firewall | | Network Team |
-| 5 | Test network connectivity (ping) | | IT Team |
+| #   | Task                                   | Status | Owner         |
+| --- | -------------------------------------- | ------ | ------------- |
+| 1   | Obtain target machine IP addresses     |        | Network Team  |
+| 2   | Confirm SNMP community strings         |        | Security Team |
+| 3   | Verify SNMP enabled on targets         |        | Server Team   |
+| 4   | Verify UDP 161 not blocked by firewall |        | Network Team  |
+| 5   | Test network connectivity (ping)       |        | IT Team       |
 
 **Windows SNMP Enablement:**
+
 ```powershell
 # Enable SNMP via Windows Features
 Enable-WindowsOptionalFeature -Online -FeatureName "SNMP" -All
@@ -78,6 +80,7 @@ Enable-WindowsOptionalFeature -Online -FeatureName "SNMP" -All
 ```
 
 **Linux SNMP Enablement:**
+
 ```bash
 # Debian/Ubuntu
 sudo apt update && sudo apt install snmpd
@@ -89,31 +92,31 @@ sudo systemctl start snmpd
 
 ### Phase 2: Docker Deployment
 
-| # | Task | Status | Command |
-|---|---|---|---|
-| 1 | Clone repository | | `git clone https://github.com/PATTANAKORN025/IMS.git` |
-| 2 | Create secrets | | `mkdir -p secrets && echo "password" > secrets/postgres_password.txt` |
-| 3 | Copy environment | | `cp .env.example .env` |
-| 4 | Start services | | `docker compose up -d` |
-| 5 | Wait for startup | | `sleep 40` |
-| 6 | Verify containers | | `docker compose ps` |
+| #   | Task              | Status | Command                                                               |
+| --- | ----------------- | ------ | --------------------------------------------------------------------- |
+| 1   | Clone repository  |        | `git clone https://github.com/PATTANAKORN025/IMS.git`                 |
+| 2   | Create secrets    |        | `mkdir -p secrets && echo "password" > secrets/postgres_password.txt` |
+| 3   | Copy environment  |        | `cp .env.example .env`                                                |
+| 4   | Start services    |        | `docker compose up -d`                                                |
+| 5   | Wait for startup  |        | `sleep 40`                                                            |
+| 6   | Verify containers |        | `docker compose ps`                                                   |
 
 ### Phase 3: Device Registration
 
-| # | Task | Status | Command |
-|---|---|---|---|
-| 1 | Update `public.devices` table | | `INSERT INTO public.devices (device_id, hostname, ip_address, snmp_community, snmp_port, enabled) VALUES (...)` |
-| 2 | Test SNMP connectivity | | `snmpwalk -v2c -c <community> <ip> 1.3.6.1.2.1.1` |
-| 3 | Verify data flow | | Check Grafana dashboards |
+| #   | Task                          | Status | Command                                                                                                         |
+| --- | ----------------------------- | ------ | --------------------------------------------------------------------------------------------------------------- |
+| 1   | Update `public.devices` table |        | `INSERT INTO public.devices (device_id, hostname, ip_address, snmp_community, snmp_port, enabled) VALUES (...)` |
+| 2   | Test SNMP connectivity        |        | `snmpwalk -v2c -c <community> <ip> 1.3.6.1.2.1.1`                                                               |
+| 3   | Verify data flow              |        | Check Grafana dashboards                                                                                        |
 
 ### Phase 4: Security Hardening
 
-| # | Task | Status | Reference |
-|---|---|---|---|
-| 1 | Remove PgBouncer host port | | Never published one in base `docker-compose.yaml` -- not a prod-overlay change |
-| 2 | Enable Node-RED adminAuth | | Generate bcrypt hash |
-| 3 | Grafana not directly host-reachable | | No host port in base compose; `proxy` (nginx) is the sole entry point, fronting Grafana + `alarm-api` |
-| 4 | Review SECURITY.md | | See security checklist |
+| #   | Task                                | Status | Reference                                                                                             |
+| --- | ----------------------------------- | ------ | ----------------------------------------------------------------------------------------------------- |
+| 1   | Remove PgBouncer host port          |        | Never published one in base `docker-compose.yaml` -- not a prod-overlay change                        |
+| 2   | Enable Node-RED adminAuth           |        | Generate bcrypt hash                                                                                  |
+| 3   | Grafana not directly host-reachable |        | No host port in base compose; `proxy` (nginx) is the sole entry point, fronting Grafana + `alarm-api` |
+| 4   | Review SECURITY.md                  |        | See security checklist                                                                                |
 
 ---
 
@@ -121,14 +124,14 @@ sudo systemctl start snmpd
 
 ### Priority-Based Failure Analysis
 
-| Priority | Issue | Symptom | Diagnosis | Fix |
-|---|---|---|---|---|
-| **P1** | SNMP service disabled | All walkers return empty/timeout | `snmpwalk` returns nothing | Enable SNMP in Windows Features or `apt install snmpd` |
-| **P2** | Firewall blocking UDP 161 | Connection timeout after 3s | `telnet <ip> 161` fails | Open UDP 161 between Node-RED container and target |
-| **P3** | Community string mismatch | Authentication failure | `snmpwalk` returns "No such name" | Match flow config to target's configured community |
-| **P4** | Real OID ≠ simulated OID | Zero data for LDI metrics | LDI panels show "No Data" | Request real MIB from vendor, update walker OIDs |
-| **P5** | Host hardcode `ims-snmpsim` | System reads simulator even with real device | Data shows simulator values | Use device registry (Stage 4) or update walker config |
-| **P6** | Factory network latency | Timeouts on 3s timeout | Intermittent data gaps | Increase SNMP timeout to 5-10s for remote sites |
+| Priority | Issue                       | Symptom                                      | Diagnosis                         | Fix                                                    |
+| -------- | --------------------------- | -------------------------------------------- | --------------------------------- | ------------------------------------------------------ |
+| **P1**   | SNMP service disabled       | All walkers return empty/timeout             | `snmpwalk` returns nothing        | Enable SNMP in Windows Features or `apt install snmpd` |
+| **P2**   | Firewall blocking UDP 161   | Connection timeout after 3s                  | `telnet <ip> 161` fails           | Open UDP 161 between Node-RED container and target     |
+| **P3**   | Community string mismatch   | Authentication failure                       | `snmpwalk` returns "No such name" | Match flow config to target's configured community     |
+| **P4**   | Real OID ≠ simulated OID    | Zero data for LDI metrics                    | LDI panels show "No Data"         | Request real MIB from vendor, update walker OIDs       |
+| **P5**   | Host hardcode `ims-snmpsim` | System reads simulator even with real device | Data shows simulator values       | Use device registry (Stage 4) or update walker config  |
+| **P6**   | Factory network latency     | Timeouts on 3s timeout                       | Intermittent data gaps            | Increase SNMP timeout to 5-10s for remote sites        |
 
 ### Quick Diagnostic Commands
 
@@ -157,21 +160,21 @@ session.get(['1.3.6.1.2.1.1.1.0'], (err, varbinds) => {
 
 ### Machine Type Assessment
 
-| Machine Type | Simulated vs Real | MIB Standard | Confidence | Notes |
-|---|---|---|---|---|
-| **Ubuntu (SNMP)** | Standard MIBs | HOST-RESOURCES-MIB | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) HIGH | Highly likely to match |
-| **Windows (SNMP)** | Standard MIBs | HOST-RESOURCES-MIB | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) HIGH | Highly likely to match |
-| **LDI (YSPhotec)** | Custom `.9999` MIB | Private Enterprise | **UNPROVEN** | Entirely assumed |
+| Machine Type       | Simulated vs Real  | MIB Standard       | Confidence                                                               | Notes                  |
+| ------------------ | ------------------ | ------------------ | ------------------------------------------------------------------------ | ---------------------- |
+| **Ubuntu (SNMP)**  | Standard MIBs      | HOST-RESOURCES-MIB | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) HIGH | Highly likely to match |
+| **Windows (SNMP)** | Standard MIBs      | HOST-RESOURCES-MIB | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) HIGH | Highly likely to match |
+| **LDI (YSPhotec)** | Custom `.9999` MIB | Private Enterprise | **UNPROVEN**                                                             | Entirely assumed       |
 
 ### LDI Machine Considerations
 
 > ️ **CRITICAL**: YSPhotec machines are controlled via vendor (Bender) system.
 
-| Question | Answer | Action Required |
-|---|---|---|
-| Does LDI support SNMP? | Unknown | Confirm with vendor/Engineering team |
-| What are the real OIDs? | Unknown | Request real MIB file from vendor |
-| Are values ÷100? | Assumed | Verify actual value formats |
+| Question                | Answer   | Action Required                            |
+| ----------------------- | -------- | ------------------------------------------ |
+| Does LDI support SNMP?  | Unknown  | Confirm with vendor/Engineering team       |
+| What are the real OIDs? | Unknown  | Request real MIB file from vendor          |
+| Are values ÷100?        | Assumed  | Verify actual value formats                |
 | Is SNMP gateway needed? | Possible | Evaluate PLC-to-SNMP gateway or Bender API |
 
 **Do not assume SNMP is available until confirmed with vendor.**
@@ -182,33 +185,33 @@ session.get(['1.3.6.1.2.1.1.1.0'], (err, varbinds) => {
 
 ### Day Before Go-Live
 
-| # | Task | Owner | Sign-off |
-|---|---|---|---|
-| 1 | All pre-deployment tasks complete | IT Team | |
-| 2 | Backup existing monitoring (if any) | IT Team | |
-| 3 | Notify stakeholders of maintenance window | IT Manager | |
-| 4 | Prepare rollback plan | IT Team | |
+| #   | Task                                      | Owner      | Sign-off |
+| --- | ----------------------------------------- | ---------- | -------- |
+| 1   | All pre-deployment tasks complete         | IT Team    |          |
+| 2   | Backup existing monitoring (if any)       | IT Team    |          |
+| 3   | Notify stakeholders of maintenance window | IT Manager |          |
+| 4   | Prepare rollback plan                     | IT Team    |          |
 
 ### Go-Live Day
 
-| # | Task | Time | Owner |
-|---|---|---|---|
-| 1 | Start Docker stack | T+0 | IT Team |
-| 2 | Wait 40 seconds for startup | T+40s | — |
-| 3 | Verify all containers running | T+45s | IT Team |
-| 4 | Verify data flow | T+90s | IT Team |
-| 5 | Verify dashboards load | T+2min | IT Team |
-| 6 | Test alerting (simulate alert) | T+5min | IT Team |
-| 7 | Monitor for 24 hours | T+24h | NOC Team |
+| #   | Task                           | Time   | Owner    |
+| --- | ------------------------------ | ------ | -------- |
+| 1   | Start Docker stack             | T+0    | IT Team  |
+| 2   | Wait 40 seconds for startup    | T+40s  | —        |
+| 3   | Verify all containers running  | T+45s  | IT Team  |
+| 4   | Verify data flow               | T+90s  | IT Team  |
+| 5   | Verify dashboards load         | T+2min | IT Team  |
+| 6   | Test alerting (simulate alert) | T+5min | IT Team  |
+| 7   | Monitor for 24 hours           | T+24h  | NOC Team |
 
 ### Day After Go-Live
 
-| # | Task | Owner |
-|---|---|---|
-| 1 | Review 24-hour monitoring data | IT Team |
-| 2 | Address any false-positive alerts | IT Team |
-| 3 | Document any issues encountered | IT Team |
-| 4 | Schedule 1-week review meeting | IT Manager |
+| #   | Task                              | Owner      |
+| --- | --------------------------------- | ---------- |
+| 1   | Review 24-hour monitoring data    | IT Team    |
+| 2   | Address any false-positive alerts | IT Team    |
+| 3   | Document any issues encountered   | IT Team    |
+| 4   | Schedule 1-week review meeting    | IT Manager |
 
 ---
 
@@ -216,6 +219,6 @@ session.get(['1.3.6.1.2.1.1.1.0'], (err, varbinds) => {
 
 **IMS Deployment Readiness — Version 1.0**
 
-*Assessed for Production Deployment*
+_Assessed for Production Deployment_
 
 </div>

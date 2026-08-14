@@ -4,7 +4,7 @@
 > `public.ldi_alarm_ms_code` catalog. No runtime system touched. This
 > is a taxonomy/coverage review, not a re-run of
 > `docs/audit/LDI_ALARM_FIDELITY_AUDIT.md` (2026-08-11) -- that audit
-> covers simulator *behavior*; this one covers the *catalog data*
+> covers simulator _behavior_; this one covers the _catalog data_
 > itself. See `docs/operations/SOP_COMPLETION_REVIEW.md` for the
 > overlapping SOP-linkage finding, not repeated here.
 
@@ -15,17 +15,17 @@ SELECT severity, count(*) FROM public.ldi_alarm_ms_code GROUP BY severity ORDER 
 ```
 
 | Severity | Count | % of 1,820 |
-|---|---|---|
-| Major | 1,431 | 78.6% |
-| Warning | 201 | 11.0% |
-| Minor | 145 | 8.0% |
-| Critical | 43 | 2.4% |
+| -------- | ----- | ---------- |
+| Major    | 1,431 | 78.6%      |
+| Warning  | 201   | 11.0%      |
+| Minor    | 145   | 8.0%       |
+| Critical | 43    | 2.4%       |
 
 Real vendor-derived distribution (imported per the 892-row real export
 merge + earlier 1,820-code catalog work), not simulator output. The
 2.4% Critical share is a genuine taxonomy property of the source data,
 separate from the fidelity audit's earlier finding that the
-*simulator* couldn't reach Critical severity before Phase F added
+_simulator_ couldn't reach Critical severity before Phase F added
 `RARE_CRITICAL_CODES` -- that finding was about simulator behavior,
 not catalog composition; the catalog always had real Critical codes,
 the simulator just wasn't using any until Phase F.
@@ -65,7 +65,7 @@ SELECT count(*) FILTER (WHERE alarm_type IS NOT NULL AND alarm_type <> '') FROM 
 
 ## Simulator-to-catalog sync
 
-```
+```text
 $ node tests/lint/alarm-sync-linter.js
 [+] Simulator (nodered_data/flows.json): Found 21 alarm codes
 [+] Master (live DB, ldi_alarm_ms_code): Found 1820 alarm codes
@@ -81,13 +81,13 @@ not assumed from the older audit.
 ## What this review does not cover
 
 - Whether the 1,795 non-curated codes' `alarm_msg`/`alarm_detail` text
- is itself accurate to the real vendor source -- that was the import
- process's job (892-row merge, 1,820-code catalog build), not
- re-verified here.
-- Alarm *behavior* (firing rate, debounce effectiveness, correlation
- quality) -- that's `LDI_ALARM_FIDELITY_AUDIT.md`'s scope, and its
- score (58/100) is known-stale per `BACKLOG_SIMULATOR_REALISM_AND_ALERT_HYGIENE.md`,
- not re-run here since this review is catalog-data-only.
+  is itself accurate to the real vendor source -- that was the import
+  process's job (892-row merge, 1,820-code catalog build), not
+  re-verified here.
+- Alarm _behavior_ (firing rate, debounce effectiveness, correlation
+  quality) -- that's `LDI_ALARM_FIDELITY_AUDIT.md`'s scope, and its
+  score (58/100) is known-stale per `BACKLOG_SIMULATOR_REALISM_AND_ALERT_HYGIENE.md`,
+  not re-run here since this review is catalog-data-only.
 
 ## Summary
 

@@ -6,7 +6,7 @@
 > Source of truth: the live database's own `information_schema` and
 > `timescaledb_information.*` catalogs — queried directly, never
 > hand-typed. A CI check (`node scripts/generate-schema-inventory.js
-> --check`) fails the build if this file doesn't match what the database
+--check`) fails the build if this file doesn't match what the database
 > currently reports. Requires the `timescaledb` container to be running
 > and fully migrated.
 >
@@ -14,32 +14,32 @@
 
 ## Tables
 
-| Table | Columns | Hypertable? |
-|---|---|---|
-| `container_restart_audit` | 6 | — |
-| `devices` | 12 | — |
-| `ingest_staging` | 9 | — |
-| `ldi_alarm_lifecycle` | 9 | — |
-| `ldi_alarm_log` | 10 | Yes |
-| `ldi_alarm_ms_code` | 10 | — |
-| `ldi_alarm_state` | 5 | — |
-| `ldi_data` | 37 | Yes |
-| `ldi_metrics` | 10 | Yes |
-| `net_metrics` | 11 | Yes |
-| `schema_migrations` | 4 | — |
-| `sys_metrics` | 15 | Yes |
+| Table                     | Columns | Hypertable? |
+| ------------------------- | ------- | ----------- |
+| `container_restart_audit` | 6       | —           |
+| `devices`                 | 12      | —           |
+| `ingest_staging`          | 9       | —           |
+| `ldi_alarm_lifecycle`     | 9       | —           |
+| `ldi_alarm_log`           | 10      | Yes         |
+| `ldi_alarm_ms_code`       | 10      | —           |
+| `ldi_alarm_state`         | 5       | —           |
+| `ldi_data`                | 37      | Yes         |
+| `ldi_metrics`             | 10      | Yes         |
+| `net_metrics`             | 11      | Yes         |
+| `schema_migrations`       | 4       | —           |
+| `sys_metrics`             | 15      | Yes         |
 
 ## Continuous Aggregates (TimescaleDB)
 
-| Continuous Aggregate | Materialized Hypertable |
-|---|---|
-| `ldi_data_15m` | `_materialized_hypertable_19` |
-| `ldi_data_1h` | `_materialized_hypertable_20` |
-| `ldi_data_1m` | `_materialized_hypertable_18` |
-| `ldi_data_hourly` | `_materialized_hypertable_17` |
-| `ldi_hourly` | `_materialized_hypertable_6` |
-| `net_hourly` | `_materialized_hypertable_5` |
-| `sys_hourly` | `_materialized_hypertable_4` |
+| Continuous Aggregate | Materialized Hypertable       |
+| -------------------- | ----------------------------- |
+| `ldi_data_15m`       | `_materialized_hypertable_19` |
+| `ldi_data_1h`        | `_materialized_hypertable_20` |
+| `ldi_data_1m`        | `_materialized_hypertable_18` |
+| `ldi_data_hourly`    | `_materialized_hypertable_17` |
+| `ldi_hourly`         | `_materialized_hypertable_6`  |
+| `net_hourly`         | `_materialized_hypertable_5`  |
+| `sys_hourly`         | `_materialized_hypertable_4`  |
 
 ## Materialized Views (plain PostgreSQL, refreshed via TimescaleDB background jobs)
 
