@@ -267,7 +267,7 @@ IMS/
 │   └── settings.js                    #   functionGlobalContext，认证配置
 ├── postgres/                          # 数据库初始化
 │   └── init/                          #   001-init-timescaledb.sql（模式 + 视图）
-├── database/migrations/               #   55 个排序的迁移文件 (013-080，部分编号跳过/存档)，由 db-migrate 应用
+├── database/migrations/               #   56 个排序的迁移文件 (013-081，部分编号跳过/存档)，由 db-migrate 应用
 ├── tests/                             # 测试套件
 │   ├── k6/                            #   K6 管道压力测试
 │   ├── unit/                          #   解析器与计数器单元测试
