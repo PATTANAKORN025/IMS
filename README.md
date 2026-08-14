@@ -1,80 +1,37 @@
 <div align="center">
   <br/>
-  <img src="assets/ims-logo.jpg" alt="IMS Logo" width="140" style="border-radius: 24px; box-shadow: 0 12px 40px rgba(0, 242, 254, 0.5);" />
-  <h1 align="center" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; letter-spacing: 4px; margin-top: 20px;">INDUSTRIAL MONITORING SYSTEM (IMS)</h1>
+  <img src="assets/ims-logo.jpg" alt="IMS Logo" width="130" style="border-radius: 24px; box-shadow: 0 12px 40px rgba(0, 242, 254, 0.4);" />
+  <h1 align="center" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; letter-spacing: 4px; margin-top: 24px; margin-bottom: 8px;">INDUSTRIAL MONITORING SYSTEM (IMS)</h1>
 </div>
 
 <div align="center">
-  <p style="font-size: 16px;">
-    <a href="README.md">🇬🇧 <b>English</b></a> &nbsp;&nbsp;•&nbsp;&nbsp;
-    <a href="README-th.md">🇹🇭 <b>ไทย</b></a> &nbsp;&nbsp;•&nbsp;&nbsp;
-    <a href="README-zh-CN.md">🇨🇳 <b>中文</b></a>
+  <a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.demolab.com?font=Orbitron&weight=600&size=22&duration=4000&pause=2000&color=00F2FE&center=true&repeat=true&width=800&height=50&lines=High-Precision%20Manufacturing%20Telemetry;Statistical%20Process%20Control;Zero-Latency%20Digital%20Twin%20Architecture;1000%2B%20Node%20Fleet%20Health%20Envelope" alt="Typing SVG" /></a>
+</div>
+
+<div align="center">
+  <p style="font-size: 14px; margin-top: -10px;">
+    <a href="README.md" style="text-decoration: none;">🇬🇧 <b>English</b></a> &nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;
+    <a href="README-th.md" style="text-decoration: none;">🇹🇭 <b>ไทย</b></a> &nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;
+    <a href="README-zh-CN.md" style="text-decoration: none;">🇨🇳 <b>中文</b></a>
   </p>
 </div>
 
 <br/>
 
 <div align="center">
-  <blockquote style="border-left: 4px solid #00F2FE; background: rgba(0, 242, 254, 0.05); padding: 16px; border-radius: 8px;">
-    <b style="font-size: 18px;">High-Precision Manufacturing Telemetry & Statistical Process Control</b><br/>
-    <i style="color: #10B981;">Zero-Latency Digital Twin Architecture for 1,000+ Nodes</i>
-  </blockquote>
-</div>
-
-<br/>
-
-<div align="center">
-  <!-- Status Badges -->
+  <!-- Minimalist Essential Badges -->
   <a href="https://github.com/PATTANAKORN025/IMS/releases"><img src="https://img.shields.io/badge/Release-v1.0-00F2FE?style=for-the-badge&logo=github&logoColor=white" alt="Release"/></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-00F2FE?style=for-the-badge&logo=opensourceinitiative&logoColor=white" alt="License"/></a>
   <a href="#quick-start"><img src="https://img.shields.io/badge/Build-100%25_Passing-10B981?style=for-the-badge&logo=githubactions&logoColor=white" alt="Build" /></a>
   <a href="#quick-start"><img src="https://img.shields.io/badge/K6_Stress_Test-Passed-7B61FF?style=for-the-badge&logo=k6&logoColor=white" alt="K6" /></a>
   <br/><br/>
-  <!-- Tech Badges -->
-  <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker"/></a>
-  <a href="https://nodered.org/"><img src="https://img.shields.io/badge/Node--RED-v4.x-8F0000?style=for-the-badge&logo=nodered&logoColor=white" alt="Node-RED"/></a>
-  <a href="https://www.timescale.com/"><img src="https://img.shields.io/badge/TimescaleDB-2.x-F59E0B?style=for-the-badge&logo=postgresql&logoColor=white" alt="TimescaleDB"/></a>
-  <a href="https://grafana.com/"><img src="https://img.shields.io/badge/Grafana-v11+-F46800?style=for-the-badge&logo=grafana&logoColor=white" alt="Grafana"/></a>
+  <!-- Elegant Call to Action Buttons -->
+  <a href="docs/architecture/IMS_PLATFORM_BOOK.md"><img src="https://img.shields.io/badge/ENTER_PLATFORM_BOOK-030407?style=for-the-badge&logo=gitbook&logoColor=00F2FE&labelColor=030407&color=00F2FE"></a>
+  &nbsp;
+  <a href="docs/architecture/ARCHITECTURE.md"><img src="https://img.shields.io/badge/READ_ARCHITECTURE-030407?style=for-the-badge&logo=amazonaws&logoColor=10B981&labelColor=030407&color=10B981"></a>
 </div>
 
 <br/>
-
-<div align="center">
-  <div align="center">
-  <img src="assets/noc-overview.png" alt="NOC Overview" width="95%" style="border-radius:16px; box-shadow: 0 16px 48px rgba(0,0,0,0.5);" />
-  <br/><br/>
-  <kbd style="font-size: 14px; padding: 4px 12px; background: rgba(0, 242, 254, 0.1); color: #00F2FE; border: 1px solid #00F2FE;">NOC Overview</kbd><br/>
-  <sub style="color: #9CA3AF;">Flagship Fleet Health Envelope</sub>
-</div>
-
-<br/><br/>
-
-<table style="border:none; border-collapse:collapse; width:100%;">
-<tr>
-<td align="center" style="border:none; padding:16px; width:50%; vertical-align: top;">
- <img src="assets/engineering-drilldown.png" alt="Engineering Drill-Down" width="100%" style="border-radius:12px; box-shadow: 0 8px 24px rgba(0,0,0,0.4);" /><br/><br/>
- <kbd>Engineering Drill-Down</kbd><br/><sub style="color: #9CA3AF;">Per-Machine Diagnostics</sub>
-</td>
-<td align="center" style="border:none; padding:16px; width:50%; vertical-align: top;">
- <img src="assets/ldi-manufacturing.png" alt="LDI Command Center" width="100%" style="border-radius:12px; box-shadow: 0 8px 24px rgba(0,0,0,0.4);" /><br/><br/>
- <kbd>LDI Manufacturing</kbd><br/><sub style="color: #9CA3AF;">Command Center</sub>
-</td>
-</tr>
-<tr>
-<td align="center" style="border:none; padding:16px; width:50%; vertical-align: top;">
- <img src="assets/capacity-planning.png" alt="Capacity Planning" width="100%" style="border-radius:12px; box-shadow: 0 8px 24px rgba(0,0,0,0.4);" /><br/><br/>
- <kbd>Capacity Planning</kbd><br/><sub style="color: #9CA3AF;">Predictive Forecasting</sub>
-</td>
-<td align="center" style="border:none; padding:16px; width:50%; vertical-align: top;">
- <img src="assets/ldi-andon.png" alt="Operator Andon Board" width="100%" style="border-radius:12px; box-shadow: 0 8px 24px rgba(0,0,0,0.4);" /><br/><br/>
- <kbd>Operator Andon</kbd><br/><sub style="color: #9CA3AF;">Real-time Line Alerts</sub>
-</td>
-</tr>
-</table>
-</div>
-
-<br/>
-<hr style="height: 1px; border: none; background: linear-gradient(to right, transparent, #3B82F6, transparent);" />
+<hr style="height: 1px; border: none; background: linear-gradient(to right, transparent, rgba(59, 130, 246, 0.5), transparent);" />
 <br/>
 ## System Overview
 
