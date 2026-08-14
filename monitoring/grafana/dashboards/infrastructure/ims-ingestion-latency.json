@@ -44,7 +44,7 @@
       "title": "◉ ldi_data",
       "type": "stat",
       "datasource": { "uid": "timescaledb" },
-      "gridPos": { "x": 0, "y": 4, "w": 5, "h": 6 },
+      "gridPos": { "x": 0, "y": 4, "w": 4, "h": 6 },
       "fieldConfig": {
         "defaults": {
           "unit": "ms",
@@ -79,10 +79,10 @@
     },
     {
       "id": 2,
-      "title": "◉ ldi_alarm_log",
+      "title": "◉ ldi_alarm_log (causal)",
       "type": "stat",
       "datasource": { "uid": "timescaledb" },
-      "gridPos": { "x": 5, "y": 4, "w": 5, "h": 6 },
+      "gridPos": { "x": 4, "y": 4, "w": 4, "h": 6 },
       "fieldConfig": {
         "defaults": {
           "unit": "ms",
@@ -91,8 +91,8 @@
             "mode": "absolute",
             "steps": [
               { "color": "green", "value": null },
-              { "color": "yellow", "value": 500 },
-              { "color": "red", "value": 5000 }
+              { "color": "yellow", "value": 50 },
+              { "color": "red", "value": 200 }
             ]
           },
           "color": { "mode": "thresholds" }
@@ -110,17 +110,53 @@
           "refId": "A",
           "datasource": { "uid": "timescaledb" },
           "format": "table",
-          "rawSql": "SELECT percentile_cont(0.95) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (ingest_ts - logdate)) * 1000) AS value FROM public.ldi_alarm_log WHERE ingest_ts IS NOT NULL AND logdate > NOW() - INTERVAL '15 minutes'"
+          "rawSql": "SELECT percentile_cont(0.95) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (ingest_ts - logdate)) * 1000) AS value FROM public.ldi_alarm_log WHERE ingest_ts IS NOT NULL AND logdate > NOW() - INTERVAL '15 minutes' AND link_basis = 'causal'"
         }
       ],
-      "description": "P95 source_ts -> ingest_ts latency, alarm events, last 15 minutes. Alarms are rare/debounced by design -- low sample count in a quiet window is expected, not a bug."
+      "description": "P95 source_ts -> ingest_ts latency, condition-driven alarms only (logdate = real telemetry-query-resolve time, not backdated). This is the real alarm ingest latency. Alarms are rare/debounced by design -- low sample count in a quiet window is expected, not a bug."
+    },
+    {
+      "id": 6,
+      "title": "◉ ldi_alarm_log (nearest)",
+      "type": "stat",
+      "datasource": { "uid": "timescaledb" },
+      "gridPos": { "x": 8, "y": 4, "w": 4, "h": 6 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": null }
+            ]
+          },
+          "color": { "mode": "thresholds" }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "textMode": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "values": false }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "uid": "timescaledb" },
+          "format": "table",
+          "rawSql": "SELECT percentile_cont(0.95) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (ingest_ts - logdate)) * 1000) AS value FROM public.ldi_alarm_log WHERE ingest_ts IS NOT NULL AND logdate > NOW() - INTERVAL '15 minutes' AND link_basis = 'nearest'"
+        }
+      ],
+      "description": "NOT real pipeline latency -- background noise-code alarms get logdate intentionally backdated by the simulator (almsim_gen, up to 9000ms) to fake a realistic detection delay. This panel measures that simulated delay, not ingestion speed. See 'causal' panel for real latency. No color thresholds (blue = informational only, not a pass/fail signal)."
     },
     {
       "id": 3,
       "title": "◉ sys_metrics",
       "type": "stat",
       "datasource": { "uid": "timescaledb" },
-      "gridPos": { "x": 10, "y": 4, "w": 5, "h": 6 },
+      "gridPos": { "x": 12, "y": 4, "w": 4, "h": 6 },
       "fieldConfig": {
         "defaults": {
           "unit": "ms",
@@ -158,7 +194,7 @@
       "title": "◉ net_metrics",
       "type": "stat",
       "datasource": { "uid": "timescaledb" },
-      "gridPos": { "x": 15, "y": 4, "w": 5, "h": 6 },
+      "gridPos": { "x": 16, "y": 4, "w": 4, "h": 6 },
       "fieldConfig": {
         "defaults": {
           "unit": "ms",

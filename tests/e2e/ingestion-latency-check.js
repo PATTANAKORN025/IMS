@@ -22,6 +22,12 @@
  * dashboard, a config choice visible in each dashboard's own JSON, not
  * a pipeline latency to report a percentile for).
  *
+ * ldi_alarm_log is reported split by link_basis: 'causal' rows have a
+ * real logdate and measure true ingest latency; 'nearest' (background
+ * noise-code) rows have logdate intentionally backdated by the
+ * simulator and measure a fake detection delay, not the pipeline. See
+ * docs/evidence/ALARM_LATENCY_MEASUREMENT_NOTE.md.
+ *
  * Usage:
  *   node tests/e2e/ingestion-latency-check.js
  *   LATENCY_WINDOW="1 hour" node tests/e2e/ingestion-latency-check.js
@@ -68,18 +74,46 @@ console.log(`Window: last ${WINDOW}, real EXPLAIN ANALYZE + committed ingest_ts 
 
 console.log('-- Stage 1: source -> commit latency (ingest_ts - source_ts) --');
 let anyData = false;
-for (const t of TABLES) {
+
+function latencyRow(table, sourceCol, extraWhere) {
   const sql = `
     SELECT
       count(*),
-      round(percentile_cont(0.50) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (ingest_ts - ${t.sourceCol}))) * 1000)::text,
-      round(percentile_cont(0.95) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (ingest_ts - ${t.sourceCol}))) * 1000)::text,
-      round(percentile_cont(0.99) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (ingest_ts - ${t.sourceCol}))) * 1000)::text
-    FROM public.${t.name}
-    WHERE ingest_ts IS NOT NULL AND ${t.sourceCol} > NOW() - INTERVAL '${WINDOW}';
+      round(percentile_cont(0.50) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (ingest_ts - ${sourceCol}))) * 1000)::text,
+      round(percentile_cont(0.95) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (ingest_ts - ${sourceCol}))) * 1000)::text,
+      round(percentile_cont(0.99) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (ingest_ts - ${sourceCol}))) * 1000)::text
+    FROM public.${table}
+    WHERE ingest_ts IS NOT NULL AND ${sourceCol} > NOW() - INTERVAL '${WINDOW}'${extraWhere ? ' AND ' + extraWhere : ''};
   `;
   const row = psql(sql);
-  const [n, p50, p95, p99] = row.split('\x01').map(s => (s || '').trim());
+  return row.split('\x01').map(s => (s || '').trim());
+}
+
+for (const t of TABLES) {
+  if (t.name === 'ldi_alarm_log') {
+    // Measurement-integrity split (2026-08-14): background noise-code alarms
+    // get logdate intentionally backdated by the simulator (almsim_gen, up
+    // to 9000ms) to fake a realistic detection delay -- that is NOT pipeline
+    // latency. link_basis='causal' rows have a real logdate (query-resolve
+    // time) and are the true measure of alarm ingest speed. See
+    // docs/evidence/ALARM_LATENCY_MEASUREMENT_NOTE.md.
+    const [nc, p50c, p95c, p99c] = latencyRow(t.name, t.sourceCol, "link_basis = 'causal'");
+    const [nn, p50n, p95n, p99n] = latencyRow(t.name, t.sourceCol, "link_basis = 'nearest'");
+    if (Number(nc) > 0) {
+      anyData = true;
+      console.log(`  ${'ldi_alarm_log (causal)'.padEnd(26)} n=${nc.padStart(6)}  P50=${(p50c || '?').padStart(5)}ms  P95=${(p95c || '?').padStart(5)}ms  P99=${(p99c || '?').padStart(5)}ms  <- real pipeline latency`);
+    } else {
+      console.log(`  ${'ldi_alarm_log (causal)'.padEnd(26)} n=0 (no ingest_ts rows in window)`);
+    }
+    if (Number(nn) > 0) {
+      anyData = true;
+      console.log(`  ${'ldi_alarm_log (nearest)'.padEnd(26)} n=${nn.padStart(6)}  P50=${(p50n || '?').padStart(5)}ms  P95=${(p95n || '?').padStart(5)}ms  P99=${(p99n || '?').padStart(5)}ms  <- includes simulated delay, NOT pipeline latency`);
+    } else {
+      console.log(`  ${'ldi_alarm_log (nearest)'.padEnd(26)} n=0 (no ingest_ts rows in window)`);
+    }
+    continue;
+  }
+  const [n, p50, p95, p99] = latencyRow(t.name, t.sourceCol);
   if (Number(n) > 0) {
     anyData = true;
     console.log(`  ${t.name.padEnd(15)} n=${n.padStart(6)}  P50=${(p50 || '?').padStart(5)}ms  P95=${(p95 || '?').padStart(5)}ms  P99=${(p99 || '?').padStart(5)}ms`);
