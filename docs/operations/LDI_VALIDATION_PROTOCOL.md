@@ -106,12 +106,12 @@ _Status: Both scripts are real, runnable, and pass against their own (not the ea
 
 - _Pass Criteria:_ The [LDI Operator Andon](http://localhost:3000/d/ims-ldi-operator-andon/set2-operator-andon) board must show that machine as `NO_DATA` (gray) within roughly one refresh cycle plus processing -- the board's refresh interval is **5 seconds** (not 10s), and the status tile reads `v_ldi_machine_latest_full`'s `is_stale` flag (no reading in the last 5 minutes = `NO_DATA`), so the realistic pass window is closer to **~7-10 seconds**, not 12.
 
-2. **Yield Anomaly Test:** Inject a dummy high-temperature value into a test LDI unit.
+1. **Yield Anomaly Test:** Inject a dummy high-temperature value into a test LDI unit.
 
 - _Pass Criteria:_ [LDI Engineering Analytics](http://localhost:3000/d/ims-ldi-engineering-analytics/set2-engineering-analytics)'s temperature panel must show the excursion. **Do not test for a "Z-Score Anomaly spike" here** -- there is no Z-Score/statistical-anomaly panel on this dashboard (checked the live JSON; Z-Score panels only exist on the infra-focused Capacity Planning and Engineering Drill-Down dashboards, for CPU/temperature, not LDI-specific metrics). The real LDI temperature alert is a **fixed threshold** Grafana native rule, "LDI Temperature High — above 24°C spec limit" (`monitoring/grafana/provisioning/alerting/ldi-rules.yml`) -- confirm _that_ rule fires instead.
 - _Pass Criteria (alert delivery):_ Confirm Alertmanager routes the alert and Node-RED's `alerting.json` flow formats a LINE Messaging API / MS Teams payload (check the flow's debug output / Node-RED log for the formatted message). **Do not gate sign-off on an actual LINE/Teams message arriving** -- `LINE_CHANNEL_ACCESS_TOKEN` and `TEAMS_WEBHOOK_URL` are absent from this repo's `.env` by design (real credentials can't be shipped in the repo), so end-to-end delivery is architecturally impossible until an operator configures real credentials per `docs/admin/ADMIN_MANUAL.md`'s Pre-Production Security Checklist. Treat "payload correctly formatted, delivery correctly attempted and logged" as the actual pass bar for this repo's default state.
 
-3. **Data Readiness Sync:** Open [LDI Data Readiness](http://localhost:3000/d/ldi-data-readiness/ldi-data-readiness).
+1. **Data Readiness Sync:** Open [LDI Data Readiness](http://localhost:3000/d/ldi-data-readiness/ldi-data-readiness).
 
 - _Pass Criteria:_ There is no single "Data Completeness Ratio" metric -- check the actual panels: **Telemetry Age**, **Alarm Age**, **Machine ID Match**, **Alarm Master Match**, **Board ID Completeness**, **PE / JE4 Coverage**, plus the Machine Data Coverage Matrix and the two "Mapping Gaps (Global)" tables. All should show green / zero-gap for a clean sign-off.
 

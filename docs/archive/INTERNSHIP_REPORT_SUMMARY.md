@@ -398,11 +398,11 @@ fs.writeFileSync('flows-ubuntu.json', JSON.stringify(flows));
 
 โครงการ IMS ประสบความสำเร็จตามวัตถุประสงค์ทั้ง 5 ข้อ:
 
-1.  **Real-time Monitoring** — ระบบ monitoring แบบ end-to-end ที่ทำงานได้จริง
-2.  **Health Monitoring** — ตรวจสอบ server, network, services อย่างต่อเนื่อง
-3.  **Downtime Reduction** — ลด MTTD จาก 30+ นาที เหลือ < 1 นาที
-4.  **Visibility Dashboard** — 4 dashboards ที่เข้าใจง่ายและให้ข้อมูลครบถ้วน
-5.  **Internship Training** — นักศึกษาได้เรียนรู้เครื่องมือ monitoring สมัยใหม่
+1. **Real-time Monitoring** — ระบบ monitoring แบบ end-to-end ที่ทำงานได้จริง
+2. **Health Monitoring** — ตรวจสอบ server, network, services อย่างต่อเนื่อง
+3. **Downtime Reduction** — ลด MTTD จาก 30+ นาที เหลือ < 1 นาที
+4. **Visibility Dashboard** — 4 dashboards ที่เข้าใจง่ายและให้ข้อมูลครบถ้วน
+5. **Internship Training** — นักศึกษาได้เรียนรู้เครื่องมือ monitoring สมัยใหม่
 
 ### คุณค่าที่มอบให้กับองค์กร
 

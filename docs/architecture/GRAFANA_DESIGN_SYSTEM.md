@@ -185,7 +185,7 @@ added.
 | Pie/Donut                  | 6–8             | 8      |
 
 - ห้ามผสม height ต่างกันในแถวเดียวกัน (ทำให้ grid ดูเอียง) — ถ้า panel สูงไม่เท่ากัน ให้แยกคนละแถว
-- ใช้ **Row** เสมอเพื่อแบ่งโซนความหมาย ตั้งชื่อ row ให้สื่อ (`️ Compute`, ` Network`, `️ Environmental`) พร้อม emoji ตัวเดียวเป็น visual anchor
+- ใช้ **Row** เสมอเพื่อแบ่งโซนความหมาย ตั้งชื่อ row ให้สื่อ (`️ Compute`, `Network`, `️ Environmental`) พร้อม emoji ตัวเดียวเป็น visual anchor
 - Row ที่ไม่ critical → `collapsed: true` เป็นค่าเริ่มต้น
 - **Panel density (2026-08-08):** dashboard ที่มี panel มากกว่า ~8 ตัวเรียงแนวตั้งแบบไม่มี row (สังเกตได้จาก `IMS LDI - Engineering Analytics & SPC` ที่เคยสูง 126 grid units) ต้องจัดกลุ่มเป็น row ตามโซนความหมาย แล้ว collapse ทุก row ยกเว้น row แรก/สำคัญที่สุด — เหลือแค่ header list สั้นๆ ให้เห็นภาพรวมทันที ไม่ต้อง scroll มหาศาล เนื้อหาทั้งหมดยังอยู่ครบ แค่ซ่อนไว้หลัง header ที่คลิกขยายได้
 - **Kiosk no-scroll ceiling (2026-08-08):** 3 dashboards are glance/kiosk boards per §1 principle 5 ("progressive disclosure" — NOC and Easy Overview answer "is everything OK," Andon is the factory-floor wall display) and carry a hard 20-grid-unit ceiling in `tests/lint/dashboard-linter.js`'s `MAX_HEIGHT`, enforced as an error, not a warning. All 3 use the same pattern: only the single most decision-relevant row stays expanded (Andon's KPI strip + machine tiles, NOC's alert list, Easy Overview's KPI strip) — everything else is a collapsed row, content still fully present, one click away. Engineering/Capacity/Machine-Snapshot/Manufacturing are deliberately deep-dive dashboards under the same principle and are NOT in `MAX_HEIGHT` — forcing them to 20u would fight their actual purpose, not serve it.

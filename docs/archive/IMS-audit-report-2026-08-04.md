@@ -366,15 +366,15 @@ docker run --rm ... gitleaks detect ... || true
 
 ### Short-term (This Month)
 
-4. **Move CI secrets** — ใช้ GitHub Secrets แทน hardcoded
-5. **Gitignore new files** — เพิ่ม `.opencode/`, `.mcp.json` ลง .gitignore
-6. **Verify migrations** — รัน migration 028, 030, 031, 040 ด้วยมือ
+1. **Move CI secrets** — ใช้ GitHub Secrets แทน hardcoded
+2. **Gitignore new files** — เพิ่ม `.opencode/`, `.mcp.json` ลง .gitignore
+3. **Verify migrations** — รัน migration 028, 030, 031, 040 ด้วยมือ
 
 ### Long-term (Next Quarter)
 
-7. **Add E2E tests** — เพิ่ม end-to-end tests ใน CI
-8. **SNMPv3 migration** — เปลี่ยนจาก v2c เป็น v3
-9. **Audit logging** — เพิ่ม audit trail สำหรับ admin actions
+1. **Add E2E tests** — เพิ่ม end-to-end tests ใน CI
+2. **SNMPv3 migration** — เปลี่ยนจาก v2c เป็น v3
+3. **Audit logging** — เพิ่ม audit trail สำหรับ admin actions
 
 ---
 
