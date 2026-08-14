@@ -284,7 +284,7 @@ module.exports = {
 
 | Data Type | Retention | Reason |
 |---|---|---|
-| **Raw Telemetry** | 90 days | Manufacturing QA cycle (30-60 days) |
+| **Raw Telemetry** | 30 days | Manufacturing QA cycle |
 | **Minute Aggregates** | 1 year | Long-term trending |
 | **Hour Aggregates** | 2 years | Capacity planning |
 | **Alert History** | 90 days | Incident investigation |
@@ -292,7 +292,7 @@ module.exports = {
 ### Retention Management
 
 ```sql
--- Drop raw data older than 90 days
+-- Drop raw data older than 30 days
 SELECT drop_chunks('public.sys_metrics', INTERVAL '30 days');
 
 -- Drop raw data older than 30 days (net_metrics)
@@ -311,9 +311,9 @@ SELECT add_retention_policy('public.ldi_metrics', INTERVAL '30 days');
 
 | Scale | Machines | Storage/Day | Storage/Month | Recommended Retention |
 |---|---|---|---|---|
-| **Small** | 1-10 | ~1 MB | ~30 MB | 90 days |
-| **Medium** | 10-50 | ~10 MB | ~300 MB | 90 days |
-| **Large** | 50-200 | ~50 MB | ~1.5 GB | 60 days |
+| **Small** | 1-10 | ~1 MB | ~30 MB | 30 days |
+| **Medium** | 10-50 | ~10 MB | ~300 MB | 30 days |
+| **Large** | 50-200 | ~50 MB | ~1.5 GB | 30 days |
 | **Enterprise** | 200-1000 | ~500 MB | ~15 GB | 30 days (raw), 1 year (aggregates) |
 
 ---

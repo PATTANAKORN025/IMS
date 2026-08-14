@@ -143,38 +143,38 @@ open http://localhost:3000
 ```mermaid
 flowchart LR
     subgraph Collection ["采集 (Collection)"]
-        J[Juniper EX4000\n78 个接口] -->|SNMP v2c| W[Node-RED\n顺序异步批处理]
-        S[Linux 服务器\n1000+ 个节点] -->|SNMP v2c| W
+        J["Juniper EX4000\n78 个接口"] -->|SNMP v2c| W["Node-RED\n顺序异步批处理"]
+        S["Linux 服务器\n1000+ 个节点"] -->|SNMP v2c| W
     end
 
     subgraph Processing ["V10 流水线处理 (Processing)"]
         W -->|fork_5_ways| CPU[CPU 遍历器]
-        W -->|fork_5_ways| NET[网络遍历器\nifTable + ifXTable]
+        W -->|fork_5_ways| NET["网络遍历器\nifTable + ifXTable"]
         W -->|fork_5_ways| STO[存储遍历器]
         W -->|fork_5_ways| TMP[温度遍历器]
-        CPU --> P[有状态解析器\n每设备流上下文]
+        CPU --> P["有状态解析器\n每设备流上下文"]
         NET --> P
         STO --> P
         TMP --> P
     end
 
     subgraph Storage ["存储 (Storage)"]
-        P -->|批量 INSERT 10s| B[PgBouncer\n事务池]
-        B --> T[(TimescaleDB\n超表)]
-        T --> CAGG[连续聚合 (Continuous Aggregates)\n每小时 → 每天 → 每周]
+        P -->|批量 INSERT 10s| B["PgBouncer\n事务池"]
+        B --> T["(TimescaleDB\n超表)"]
+        T --> CAGG["连续聚合<br>每小时 → 每天 → 每周"]
     end
 
     subgraph Visualization ["可视化 (Visualization)"]
-        T --> G1[NOC 概览\n15 个面板]
-        T --> G2[工程\n25 个面板]
-        T --> G3[容量\n16 个面板]
-        T --> G4[元监控\n15 个面板]
+        T --> G1["NOC 概览\n15 个面板"]
+        T --> G2["工程\n25 个面板"]
+        T --> G3["容量\n16 个面板"]
+        T --> G4["元监控\n15 个面板"]
     end
 
     subgraph Alerting ["警报 (Alerting)"]
-        T --> PR[Prometheus\n/metrics 抓取]
-        PR --> AM[Alertmanager\n抑制规则]
-        AM --> WEB[LINE Messaging API\n+ MS Teams Webhooks]
+        T --> PR["Prometheus\n/metrics 抓取"]
+        PR --> AM["Alertmanager\n抑制规则"]
+        AM --> WEB["LINE Messaging API\n+ MS Teams Webhooks"]
     end
 
     style Collection fill:#1a1f2e,stroke:#3B82F6,color:#e2e8f0

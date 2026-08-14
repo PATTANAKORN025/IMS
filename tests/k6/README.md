@@ -134,6 +134,6 @@ Results are saved to `tests/k6/*-results.json`:
 
 **IMS K6 Testing — Version 1.0**
 
-*1,000 VUs | 0% Failure | Production Ready*
+*1,000 VUs | 0% Failure | verified*
 
 </div>

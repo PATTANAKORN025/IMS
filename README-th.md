@@ -143,38 +143,38 @@ open http://localhost:3000
 ```mermaid
 flowchart LR
     subgraph Collection ["Collection"]
-        J[Juniper EX4000\n78 interfaces] -->|SNMP v2c| W[Node-RED\nSequential Async Bulk]
-        S[Linux Servers\n1000+ nodes] -->|SNMP v2c| W
+        J["Juniper EX4000\n78 interfaces"] -->|SNMP v2c| W["Node-RED\nSequential Async Bulk"]
+        S["Linux Servers\n1000+ nodes"] -->|SNMP v2c| W
     end
 
     subgraph Processing ["V10 Streaming Pipeline"]
         W -->|fork_5_ways| CPU[CPU Walker]
-        W -->|fork_5_ways| NET[Network Walker\nifTable + ifXTable]
+        W -->|fork_5_ways| NET["Network Walker\nifTable + ifXTable"]
         W -->|fork_5_ways| STO[Storage Walker]
         W -->|fork_5_ways| TMP[Temp Walker]
-        CPU --> P[Stateful Parser\nper-device flow context]
+        CPU --> P["Stateful Parser\nper-device flow context"]
         NET --> P
         STO --> P
         TMP --> P
     end
 
     subgraph Storage ["Storage"]
-        P -->|Batch INSERT 10s| B[PgBouncer\nTransaction Pool]
-        B --> T[(TimescaleDB\nHypertables)]
-        T --> CAGG[CAGGs\nHourly → Daily → Weekly]
+        P -->|Batch INSERT 10s| B["PgBouncer\nTransaction Pool"]
+        B --> T["(TimescaleDB\nHypertables)"]
+        T --> CAGG["CAGGs\nHourly → Daily → Weekly"]
     end
 
     subgraph Visualization ["Visualization"]
-        T --> G1[NOC Overview\n15 panels]
-        T --> G2[Engineering\n25 panels]
-        T --> G3[Capacity\n16 panels]
-        T --> G4[Meta-Monitor\n15 panels]
+        T --> G1["NOC Overview\n15 panels"]
+        T --> G2["Engineering\n25 panels"]
+        T --> G3["Capacity\n16 panels"]
+        T --> G4["Meta-Monitor\n15 panels"]
     end
 
     subgraph Alerting ["Alerting"]
-        T --> PR[Prometheus\n/metrics scrape]
-        PR --> AM[Alertmanager\nInhibition Rules]
-        AM --> WEB[LINE Messaging API\n+ MS Teams Webhooks]
+        T --> PR["Prometheus\n/metrics scrape"]
+        PR --> AM["Alertmanager\nInhibition Rules"]
+        AM --> WEB["LINE Messaging API\n+ MS Teams Webhooks"]
     end
 
     style Collection fill:#1a1f2e,stroke:#3B82F6,color:#e2e8f0
