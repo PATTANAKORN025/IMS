@@ -117,16 +117,16 @@ Results are saved to `tests/k6/*-results.json`:
 
 ### Environment Variables
 
-| Variable           | Default               | Description                      |
-| ------------------ | --------------------- | -------------------------------- |
-| `SERVER_COUNT`     | 100                   | Number of simulated servers      |
-| `WRITE_INTERVAL`   | 10                    | Seconds between writes           |
-| `CONCURRENT_USERS` | 50                    | Number of concurrent query users |
-| `TARGET_SERVERS`   | 100                   | Servers for pipeline test        |
-| `PGHOST`           | localhost             | PostgreSQL host                  |
-| `PGPORT`           | 6432                  | PgBouncer port                   |
-| `GRAFANA_URL`      | http://localhost:3000 | Grafana URL                      |
-| `NODERED_URL`      | http://localhost:1880 | Node-RED URL                     |
+| Variable           | Default                 | Description                      |
+| ------------------ | ----------------------- | -------------------------------- |
+| `SERVER_COUNT`     | 100                     | Number of simulated servers      |
+| `WRITE_INTERVAL`   | 10                      | Seconds between writes           |
+| `CONCURRENT_USERS` | 50                      | Number of concurrent query users |
+| `TARGET_SERVERS`   | 100                     | Servers for pipeline test        |
+| `PGHOST`           | localhost               | PostgreSQL host                  |
+| `PGPORT`           | 6432                    | PgBouncer port                   |
+| `GRAFANA_URL`      | <http://localhost:3000> | Grafana URL                      |
+| `NODERED_URL`      | <http://localhost:1880> | Node-RED URL                     |
 
 ---
 

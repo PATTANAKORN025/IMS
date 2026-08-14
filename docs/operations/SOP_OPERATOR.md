@@ -16,7 +16,7 @@
 - `90% - 94%`: ![Warning](https://img.shields.io/badge/Status-Warning-yellow) Warning. Check the "Top 10 Critical Nodes" panel.
 - `< 90%`: Critical. Escalate immediately to Level 2 (SRE/Engineering).
 
-3. **Verify LDI Fleet:** Open the [LDI Manufacturing](http://localhost:3000/d/ims-ldi-manufacturing) dashboard. Ensure no machines are currently marked "OFFLINE" in red.
+1. **Verify LDI Fleet:** Open the [LDI Manufacturing](http://localhost:3000/d/ims-ldi-manufacturing) dashboard. Ensure no machines are currently marked "OFFLINE" in red.
 
 ---
 
@@ -34,19 +34,19 @@ The **Operator Andon Dashboard** is your primary tool. It operates on a strict T
 - **Visuals:** A panel turns yellow (e.g., "Yield Drop Warning", "Temp Rising").
 - **Action:**
 
-1.  Click the yellow panel to open the [LDI Machine Snapshot](http://localhost:3000/d/ims-ldi-machine-snapshot).
-2.  Verify the specific metric (e.g., Laser Temp is 42°C, limit is 45°C).
-3.  Notify the Line Supervisor via Walkie-Talkie/LINE. Mention the Machine ID.
+1. Click the yellow panel to open the [LDI Machine Snapshot](http://localhost:3000/d/ims-ldi-machine-snapshot).
+2. Verify the specific metric (e.g., Laser Temp is 42°C, limit is 45°C).
+3. Notify the Line Supervisor via Walkie-Talkie/LINE. Mention the Machine ID.
 
 ### Red State (Critical / Stop Line)
 
 - **Visuals:** Panel turns red and pulses. Background may flash.
 - **Action:**
 
-1.  **STOP THE LINE.** Halt loading PCBs into the affected LDI machine immediately.
-2.  Press the physical Emergency Stop if there is a safety risk.
-3.  Announce "LDI-[Machine-ID] DOWN" in the Operations LINE Group.
-4.  Refer to the [ALARM PLAYBOOK](ALARM_PLAYBOOK.md) for the specific error code displayed on the screen.
+1. **STOP THE LINE.** Halt loading PCBs into the affected LDI machine immediately.
+2. Press the physical Emergency Stop if there is a safety risk.
+3. Announce "LDI-[Machine-ID] DOWN" in the Operations LINE Group.
+4. Refer to the [ALARM PLAYBOOK](ALARM_PLAYBOOK.md) for the specific error code displayed on the screen.
 
 ---
 

@@ -192,7 +192,7 @@ LDI-05..10:  Vacuum "ALL ZERO - VERIFY"
 Donut legend: "value value value"  ← ไม่มีชื่อ series
 ```
 
-** ที่แก้ได้ดีแล้ว:** `µm`, `°C`, `%H`, `mm/s`, `kPa`, `mJ/cm²` แสดงถูกต้องทุกจุดใน
+**ที่แก้ได้ดีแล้ว:** `µm`, `°C`, `%H`, `mm/s`, `kPa`, `mJ/cm²` แสดงถูกต้องทุกจุดใน
 Machine Snapshot และ Manufacturing — บั๊ก `lengthum` หายไปหมดแล้ว
 
 ---

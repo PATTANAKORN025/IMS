@@ -203,13 +203,13 @@ Not yet a CI gate: true visual/screenshot regression (baseline-image diffing). `
 
 ## References
 
-| Resource                   | Link                                                      |
-| -------------------------- | --------------------------------------------------------- |
-| TimescaleDB Documentation  | https://docs.timescale.com/                               |
-| Node-RED Documentation     | https://nodered.org/docs/                                 |
-| Grafana Documentation      | https://grafana.com/docs/                                 |
-| Prometheus Documentation   | https://prometheus.io/docs/                               |
-| Alertmanager Documentation | https://prometheus.io/docs/alerting/latest/configuration/ |
-| LINE Messaging API         | https://developers.line.biz/en/docs/messaging-api/        |
+| Resource                   | Link                                                        |
+| -------------------------- | ----------------------------------------------------------- |
+| TimescaleDB Documentation  | <https://docs.timescale.com/>                               |
+| Node-RED Documentation     | <https://nodered.org/docs/>                                 |
+| Grafana Documentation      | <https://grafana.com/docs/>                                 |
+| Prometheus Documentation   | <https://prometheus.io/docs/>                               |
+| Alertmanager Documentation | <https://prometheus.io/docs/alerting/latest/configuration/> |
+| LINE Messaging API         | <https://developers.line.biz/en/docs/messaging-api/>        |
 
 Related docs in this repo: `GRAFANA_DESIGN_SYSTEM.md` (color/token conventions), `../operations/TROUBLESHOOTING.md`, `../audits/IMS-SYSTEM-AUDIT-REPORT.md` (the audit that prompted this rewrite).

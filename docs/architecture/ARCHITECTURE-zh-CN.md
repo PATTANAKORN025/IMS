@@ -195,13 +195,13 @@ NOC 概览在本次会话中从 LDI/制造内容中拆分出来（它此前包�
 
 ## 参考资料
 
-| Resource                   | Link                                                      |
-| -------------------------- | --------------------------------------------------------- |
-| TimescaleDB Documentation  | https://docs.timescale.com/                               |
-| Node-RED Documentation     | https://nodered.org/docs/                                 |
-| Grafana Documentation      | https://grafana.com/docs/                                 |
-| Prometheus Documentation   | https://prometheus.io/docs/                               |
-| Alertmanager Documentation | https://prometheus.io/docs/alerting/latest/configuration/ |
-| LINE Messaging API         | https://developers.line.biz/en/docs/messaging-api/        |
+| Resource                   | Link                                                        |
+| -------------------------- | ----------------------------------------------------------- |
+| TimescaleDB Documentation  | <https://docs.timescale.com/>                               |
+| Node-RED Documentation     | <https://nodered.org/docs/>                                 |
+| Grafana Documentation      | <https://grafana.com/docs/>                                 |
+| Prometheus Documentation   | <https://prometheus.io/docs/>                               |
+| Alertmanager Documentation | <https://prometheus.io/docs/alerting/latest/configuration/> |
+| LINE Messaging API         | <https://developers.line.biz/en/docs/messaging-api/>        |
 
 本仓库相关文档：`GRAFANA_DESIGN_SYSTEM.md`（颜色/标记约定），`../operations/TROUBLESHOOTING.md`，`../audits/IMS-SYSTEM-AUDIT-REPORT.md`（促成此次重写的审计报告）。

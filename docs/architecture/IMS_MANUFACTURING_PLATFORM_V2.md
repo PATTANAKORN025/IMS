@@ -101,9 +101,9 @@ Sequenced **after** sections 1–4 land, so it documents the settled structure o
 - **Soak test:** tooling exists (`scripts/soak-test-report.sh`) but has never produced a real report. Run it for a real window (target: 24h minimum, ideally 72h) against the running stack and attach the actual `--summarize` output as evidence.
 - **DR test:** does not exist. Build a DR runbook + script modeled on the soak-test tooling's pattern (`scripts/dr-test.sh` + `docs/operations/DR_TEST_PLAN.md`), covering:
 
-1.  Backup/restore drill (`pg_dump` → drop/recreate → restore → row-count + spot-check parity).
-2.  Single-container-loss recovery (kill `ims-timescaledb` / `ims-node-red` mid-flight, measure automatic recovery — this directly exercises the Node-RED pool-reconnect watchdog fixed earlier this session).
-3.  Full-stack recreate from `docker-compose.yaml` + latest backup on a clean volume set, timed.
+1. Backup/restore drill (`pg_dump` → drop/recreate → restore → row-count + spot-check parity).
+2. Single-container-loss recovery (kill `ims-timescaledb` / `ims-node-red` mid-flight, measure automatic recovery — this directly exercises the Node-RED pool-reconnect watchdog fixed earlier this session).
+3. Full-stack recreate from `docker-compose.yaml` + latest backup on a clean volume set, timed.
 
 - Execute it for real against this environment and attach real timings/output, not a hypothetical runbook.
 

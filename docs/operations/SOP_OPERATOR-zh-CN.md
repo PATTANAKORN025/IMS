@@ -16,7 +16,7 @@
 - `90% - 94%`: ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 警告。检查 "Top 10 Critical Nodes" 面板。
 - `< 90%`: 严重。立即升级至 2 级 (SRE/Engineering)。
 
-3. **验证 LDI 机群:** 打开 [LDI Manufacturing](http://localhost:3000/d/ims-ldi-manufacturing) 仪表板。确保没有机器标记为红色 "OFFLINE"。
+1. **验证 LDI 机群:** 打开 [LDI Manufacturing](http://localhost:3000/d/ims-ldi-manufacturing) 仪表板。确保没有机器标记为红色 "OFFLINE"。
 
 ---
 
@@ -34,19 +34,19 @@
 - **视觉:** 面板变黄 (例如 "Yield Drop Warning", "Temp Rising")。
 - **操作:**
 
-1.  点击黄色面板打开 [LDI Machine Snapshot](http://localhost:3000/d/ims-ldi-machine-snapshot)。
-2.  验证具体指标 (例如激光温度为 42°C，限制为 45°C)。
-3.  通过对讲机/LINE 通知产线主管。说明机器 ID。
+1. 点击黄色面板打开 [LDI Machine Snapshot](http://localhost:3000/d/ims-ldi-machine-snapshot)。
+2. 验证具体指标 (例如激光温度为 42°C，限制为 45°C)。
+3. 通过对讲机/LINE 通知产线主管。说明机器 ID。
 
 ### 红灯状态 (严重 / 停线)
 
 - **视觉:** 面板变红并闪烁。背景可能闪烁。
 - **操作:**
 
-1.  **停线。** 立即停止向受影响的 LDI 机器装载 PCB。
-2.  存在安全风险时按下紧急停止按钮。
-3.  在操作 LINE 群组中宣布 "LDI-[Machine-ID] DOWN"。
-4.  参阅 [ALARM PLAYBOOK](ALARM_PLAYBOOK.md) 了解屏幕上显示的具体错误代码。
+1. **停线。** 立即停止向受影响的 LDI 机器装载 PCB。
+2. 存在安全风险时按下紧急停止按钮。
+3. 在操作 LINE 群组中宣布 "LDI-[Machine-ID] DOWN"。
+4. 参阅 [ALARM PLAYBOOK](ALARM_PLAYBOOK.md) 了解屏幕上显示的具体错误代码。
 
 ---
 
