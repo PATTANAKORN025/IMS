@@ -1,0 +1,52 @@
+{
+  "terms": [
+    {
+      "english": "TimescaleDB",
+      "thai": "TimescaleDB",
+      "chinese": "TimescaleDB",
+      "notes": "Keep as English"
+    },
+    {
+      "english": "Node-RED",
+      "thai": "Node-RED",
+      "chinese": "Node-RED",
+      "notes": "Keep as English"
+    },
+    {
+      "english": "Continuous Aggregates",
+      "thai": "Continuous Aggregates",
+      "chinese": "连续聚合 (Continuous Aggregates)",
+      "notes": "Include English in parentheses for Chinese"
+    },
+    {
+      "english": "LDI (Laser Direct Imaging)",
+      "thai": "LDI (Laser Direct Imaging)",
+      "chinese": "LDI (激光直接成像)",
+      "notes": "Keep acronym, translate expansion"
+    },
+    {
+      "english": "Ornstein-Uhlenbeck",
+      "thai": "Ornstein-Uhlenbeck",
+      "chinese": "Ornstein-Uhlenbeck",
+      "notes": "Keep as English"
+    },
+    {
+      "english": "Statistical Process Control (SPC)",
+      "thai": "Statistical Process Control (SPC)",
+      "chinese": "统计过程控制 (SPC)",
+      "notes": "Keep acronym"
+    },
+    {
+      "english": "Alertmanager",
+      "thai": "Alertmanager",
+      "chinese": "Alertmanager",
+      "notes": "Keep as English"
+    },
+    {
+      "english": "PgBouncer",
+      "thai": "PgBouncer",
+      "chinese": "PgBouncer",
+      "notes": "Keep as English"
+    }
+  ]
+}

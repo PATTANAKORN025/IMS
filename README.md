@@ -1,4 +1,22 @@
 <div align="center">
+  <img src="assets/meowrch.png" alt="IMS Logo" width="120" />
+</div>
+
+<h1 align="center">Industrial Monitoring System (IMS)</h1>
+
+<div align="center">
+  <p>
+    🇬🇧 <b>English</b> |
+    <a href="README-th.md">🇹🇭 ไทย</a> |
+    <a href="README-zh-CN.md">🇨🇳 中文</a>
+  </p>
+</div>
+
+<div align="center">
+  <strong>High-Precision Manufacturing Telemetry & Statistical Process Control</strong>
+</div>
+
+<div align="center">
     <img src="assets/apex-ldi-noc-banner.jpg" alt="APEX Circuit LDI NOC Banner" width="100%" style="border-radius:12px; box-shadow: 0 8px 32px rgba(0,242,254,0.3); margin-bottom: 24px;" />
     <br/>
     <br/>
