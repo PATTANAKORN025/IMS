@@ -9,6 +9,7 @@
 ## End-to-end: both pipelines
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
 flowchart TB
  subgraph INFRA["Infrastructure pipeline"]
   DEV["Servers / network devices\n(SNMP v2c)"] -->|"poll every 30s"| WALK["ingestion.json\nfork_5_ways -> sre_parser"]
@@ -47,6 +48,7 @@ flowchart TB
 Raw `ldi_data` feeds two independent aggregation paths, each serving a different purpose — don't assume they're redundant:
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
 flowchart LR
  RAW[("ldi_data\nraw, 7d compression\n180d retention")]
 
@@ -64,6 +66,7 @@ flowchart LR
 ## Alarm master + severity
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
 flowchart LR
  ALMSIM["ldi_alarm_simulator.json"] --> ALOG[("ldi_alarm_log\nevent stream\n365d retention")]
  MASTER[("ldi_alarm_ms_code\ncode + severity + msg\n1,820+ codes, 19 simulator-active")] -.->|"FK: alarm_code"| ALOG
