@@ -57,13 +57,13 @@
 
 ### 2.2 สิ่งที่ต้องทำต่อ (Backlog)
 
-| #   | Item                                                                   | Priority | Effort | Impact                                                                                |
-| --- | ---------------------------------------------------------------------- | -------- | ------ | ------------------------------------------------------------------------------------- |
-| 1   | **CI/CD Pipeline** — GitHub Actions สำหรับ flows.json deploy           | P0       | Medium | สูงมาก                                                                                |
-| 2   | **K6 Stress Test** — 10,000 req/sec → PgBouncer throughput ceiling     | P0       | Medium | สูงมาก                                                                                |
-| 3   | **Disk Forecasting** — predictive disk-full panel ใน Capacity Planning | ️ P1      | Low    | <img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /> กลาง |
-| 4   | **Connect Real Servers** — swap simulator IPs ใน Node-RED              | ️ P1      | High   | สูงมาก                                                                                |
-| 5   | **Webhook Alerts** — configure real LINE Notify / Slack webhook        | ️ P1      | Low    | <img src="docs/assets/icons/target.svg" width="18" height="18" align="center" /> กลาง |
+| #   | Item                                                                   | Priority | Effort | Impact                                                                                      |
+| --- | ---------------------------------------------------------------------- | -------- | ------ | ------------------------------------------------------------------------------------------- |
+| 1   | **CI/CD Pipeline** — GitHub Actions สำหรับ flows.json deploy           | P0       | Medium | สูงมาก                                                                                      |
+| 2   | **K6 Stress Test** — 10,000 req/sec → PgBouncer throughput ceiling     | P0       | Medium | สูงมาก                                                                                      |
+| 3   | **Disk Forecasting** — predictive disk-full panel ใน Capacity Planning | ️ P1      | Low    | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> กลาง |
+| 4   | **Connect Real Servers** — swap simulator IPs ใน Node-RED              | ️ P1      | High   | สูงมาก                                                                                      |
+| 5   | **Webhook Alerts** — configure real LINE Notify / Slack webhook        | ️ P1      | Low    | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> กลาง |
 
 ### 2.3 Known Issues (จาก SECURITY.md)
 
