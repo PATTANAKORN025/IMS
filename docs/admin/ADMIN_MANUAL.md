@@ -15,7 +15,7 @@
 
 ---
 
-##  Table of Contents
+## Table of Contents
 
 1. [System Management](#-system-management)
 2. [Adding New Devices](#-adding-new-devices)
@@ -26,7 +26,7 @@
 
 ---
 
-##  System Management
+## System Management
 
 ### Container Overview
 
@@ -80,7 +80,7 @@ docker compose logs -f --tail 50 pgbouncer
 docker stats --no-stream
 ```
 
->  **Note:** หลัง `docker compose down -v` ต้องรอ 40 วินาทีให้ระบบทั้งหมด startup ก่อนตรวจสอบ
+> **Note:** หลัง `docker compose down -v` ต้องรอ 40 วินาทีให้ระบบทั้งหมด startup ก่อนตรวจสอบ
 
 ### Service Health Checks
 
@@ -110,13 +110,13 @@ curl -s http://localhost:9093/-/healthy
 bash scripts/migrate.sh
 
 # Expect this exact line on a healthy, up-to-date database:
-#   Pending: 0  Applied: 0  Failed: 0
+# Pending: 0 Applied: 0 Failed: 0
 # "Pending: N" means N migration files exist that schema_migrations doesn't
 # have a row for yet -- scripts/migrate.sh will apply them in order.
 
 # Check what's actually been applied
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
-  "SELECT version, filename, applied_at FROM public.schema_migrations ORDER BY version DESC LIMIT 10;"
+ "SELECT version, filename, applied_at FROM public.schema_migrations ORDER BY version DESC LIMIT 10;"
 ```
 
 All migrations are written to be idempotent (`CREATE ... IF NOT EXISTS`, guarded `DO $$ ... $$` blocks) so re-running `scripts/migrate.sh` against an already-current database is always a safe no-op. See `docs/architecture/ARCHITECTURE.md`'s "Migration Governance" section for why there is deliberately exactly one migration runner, not three.
@@ -151,9 +151,9 @@ sed -i "s/^ALARM_API_DB_PASSWORD=.*/ALARM_API_DB_PASSWORD=$NEW_ALARM_API_DB_PASS
 
 # 3. Update grafana_reader and alarm_api_writer DB passwords
 docker compose exec -T timescaledb psql -U ims_admin -d ims \
-  -c "ALTER ROLE grafana_reader WITH PASSWORD '$NEW_DB_PASS';"
+ -c "ALTER ROLE grafana_reader WITH PASSWORD '$NEW_DB_PASS';"
 docker compose exec -T timescaledb psql -U ims_admin -d ims \
-  -c "ALTER ROLE alarm_api_writer WITH PASSWORD '$NEW_ALARM_API_DB_PASS';"
+ -c "ALTER ROLE alarm_api_writer WITH PASSWORD '$NEW_ALARM_API_DB_PASS';"
 
 # 4. Restart all services (pgbouncer re-seeds its userlist.txt from .env on start)
 docker compose up -d
@@ -161,9 +161,9 @@ docker compose up -d
 # 5. Verify
 curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/health
 curl -s -X POST http://localhost:1880/inject \
-  -H "Content-Type: application/json" \
-  -H "x-api-key: $NEW_API_KEY" \
-  -d '{"machine_id":"TEST"}'
+ -H "Content-Type: application/json" \
+ -H "x-api-key: $NEW_API_KEY" \
+ -d '{"machine_id":"TEST"}'
 ```
 
 ### Verification Commands
@@ -171,7 +171,7 @@ curl -s -X POST http://localhost:1880/inject \
 ```bash
 # Confirm INGEST_API_KEY is enforced (should return 401 without key)
 curl -s -w "\nHTTP: %{http_code}" -X POST http://localhost:1880/inject \
-  -H "Content-Type: application/json" -d '{"machine_id":"TEST"}'
+ -H "Content-Type: application/json" -d '{"machine_id":"TEST"}'
 # Expected: HTTP 401
 
 # Confirm Grafana requires login
@@ -181,7 +181,7 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/dashboards
 
 ---
 
-##  Adding New Devices
+## Adding New Devices
 
 ### Step 1: Register in Database
 
@@ -208,9 +208,9 @@ docker exec ims-node-red node -e "
 const snmp = require('net-snmp');
 const session = snmp.createSession('192.168.1.100', 'public', {port: 161, timeout: 5000});
 session.get(['1.3.6.1.2.1.1.1.0'], (err, varbinds) => {
-    if (err) console.error('ERROR:', err.message);
-    else console.log('OK:', varbinds[0].value.toString());
-    session.close();
+  if (err) console.error('ERROR:', err.message);
+  else console.log('OK:', varbinds[0].value.toString());
+  session.close();
 });
 "
 ```
@@ -223,10 +223,10 @@ sleep 30
 
 # ตรวจสอบข้อมูล
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
-  "SELECT device_id, COUNT(*) as rows, MAX(s.time) as latest
-   FROM public.sys_metrics s
-   WHERE device_id = 'NEW-MACHINE-01'
-   GROUP BY device_id;"
+ "SELECT device_id, COUNT(*) as rows, MAX(s.time) as latest
+  FROM public.sys_metrics s
+  WHERE device_id = 'NEW-MACHINE-01'
+  GROUP BY device_id;"
 ```
 
 ### Step 4: Add Dashboard Panel (Optional)
@@ -252,27 +252,27 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c \
 
 ```yaml
 - alert: HighCpuLoad
-  # เปลี่ยนจาก 80% เป็น 85%
-  expr: avg_over_time(cpu_load_percent[5m]) > 85
-  for: 5m
-  labels:
-    severity: warning
-  annotations:
-    summary: "High CPU load on {{ $labels.machine_id }}"
-    description: "CPU load {{ $value }}% exceeds threshold 85%"
+ # เปลี่ยนจาก 80% เป็น 85%
+ expr: avg_over_time(cpu_load_percent[5m]) > 85
+ for: 5m
+ labels:
+  severity: warning
+ annotations:
+  summary: "High CPU load on {{ $labels.machine_id }}"
+  description: "CPU load {{ $value }}% exceeds threshold 85%"
 ```
 
 **ตัวอย่าง: เพิ่ม Alert ใหม่สำหรับ LDI Vibration:**
 
 ```yaml
 - alert: LDI_Vibration_Critical
-  expr: ldi_vibration > 10.0
-  for: 5m
-  labels:
-    severity: critical
-  annotations:
-    summary: "LDI vibration critical on {{ $labels.machine_id }}"
-    description: "Vibration {{ $value }} mm/s exceeds threshold 10.0"
+ expr: ldi_vibration > 10.0
+ for: 5m
+ labels:
+  severity: critical
+ annotations:
+  summary: "LDI vibration critical on {{ $labels.machine_id }}"
+  description: "Vibration {{ $value }} mm/s exceeds threshold 10.0"
 ```
 
 ### Reload Configuration
@@ -298,7 +298,7 @@ docker compose exec prometheus promtool check rules /etc/prometheus/rules/ims-al
 
 ---
 
-##  Troubleshooting
+## Troubleshooting
 
 ### Common Issues & Solutions
 
@@ -351,7 +351,7 @@ print(f'Prometheus: {ups}/{total} targets UP')
 
 ---
 
-##  Backup & Recovery
+## Backup & Recovery
 
 ### Database Backup
 
@@ -397,7 +397,7 @@ cp -r monitoring/grafana/dashboards/ monitoring/grafana/dashboards.bak/
 
 ---
 
-##  Performance Monitoring
+## Performance Monitoring
 
 ### System Metrics
 
@@ -418,7 +418,7 @@ SELECT pg_size_pretty(pg_database_size('ims')) as database_size;"
 # Table sizes
 docker compose exec timescaledb psql -U ims_admin -d ims -c "
 SELECT relname as table_name,
-       pg_size_pretty(pg_total_relation_size(relid)) as total_size
+    pg_size_pretty(pg_total_relation_size(relid)) as total_size
 FROM pg_catalog.pg_statio_user_tables
 ORDER BY pg_total_relation_size(relid) DESC;"
 ```

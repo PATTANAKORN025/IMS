@@ -9,11 +9,11 @@ This file defines the canonical units, ranges, and thresholds for key metrics ac
 - **Min**: `18`
 - **Max**: `28`
 - **Thresholds**: 
-  - `Red`: `< 19`
-  - `Amber`: `19`
-  - `Green`: `20-24`
-  - `Amber`: `24`
-  - `Red`: `> 25`
+ - `Red`: `< 19`
+ - `Amber`: `19`
+ - `Green`: `20-24`
+ - `Amber`: `24`
+ - `Red`: `> 25`
 
 ## Humidity
 - **Metric Match**: `humid` (case-insensitive in title or panel fields)
@@ -22,11 +22,11 @@ This file defines the canonical units, ranges, and thresholds for key metrics ac
 - **Min**: `40`
 - **Max**: `70`
 - **Thresholds**: 
-  - `Red`: `< 45`
-  - `Amber`: `45`
-  - `Green`: `50-60`
-  - `Amber`: `60`
-  - `Red`: `> 65`
+ - `Red`: `< 45`
+ - `Amber`: `45`
+ - `Green`: `50-60`
+ - `Amber`: `60`
+ - `Red`: `> 65`
 
 ## PE / Dosage / Scale
 `"lengthum"` is **not** a valid Grafana unit ID — Grafana can't resolve it, so it
@@ -43,12 +43,12 @@ that actually matches what the panel displays:
 
 ## Z-Score
 - **Metric Match**: `z-score` (case-insensitive) — checked *before* the Temperature/
-  Humidity match, since a panel titled e.g. "Temperature Z-Score Anomaly" is a
-  Z-Score, not a raw-temperature readout, and must not inherit the Temperature
-  token's `celsius`/`18-28` range.
+ Humidity match, since a panel titled e.g. "Temperature Z-Score Anomaly" is a
+ Z-Score, not a raw-temperature readout, and must not inherit the Temperature
+ token's `celsius`/`18-28` range.
 - **Unit**: `none`
 - **Decimals**: `2`
 - **Thresholds**:
-  - `Green`: `< 2`
-  - `Amber`: `2`
-  - `Red`: `> 3`
+ - `Green`: `< 2`
+ - `Amber`: `2`
+ - `Red`: `> 3`

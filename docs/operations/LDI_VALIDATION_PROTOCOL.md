@@ -6,7 +6,7 @@
 
 ---
 
-## 🟢 Phase 1: Data Integrity & Parser Verification (Unit Testing)
+## ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) Phase 1: Data Integrity & Parser Verification (Unit Testing)
 
 **The Goal:** Ensure that corrupted, missing, or malformed JSON payloads from the physical LDI machines do not crash the Node-RED pipeline or corrupt the database.
 
@@ -18,17 +18,17 @@
 **The Evidence (re-run 2026-08-10, verbatim test names confirmed present in `tests/unit/v2-parser.test.js`):**
 ```text
 TEST 1: Empty Payload Timeout Simulation
-   LDI: empty payload preserves zero state
-   parseAll skips null/undefined items gracefully
-   parseAll throws on non-iterable payload (parser guard catches this)
+  LDI: empty payload preserves zero state
+  parseAll skips null/undefined items gracefully
+  parseAll throws on non-iterable payload (parser guard catches this)
 
 TEST 2: 32-bit Counter Wraparound Math
-   32-bit wrap: counter 4294967295 → 100 calculates correct positive delta
-   Cold-start: first poll returns 0 Mbps (no prev data)
+  32-bit wrap: counter 4294967295 → 100 calculates correct positive delta
+  Cold-start: first poll returns 0 Mbps (no prev data)
 
 TEST 3: Boundary Validations & Sanity Caps
-   Temperature clamped at max 150°C
-   sanitize escapes SQL injection attempts
+  Temperature clamped at max 150°C
+  sanitize escapes SQL injection attempts
 
 ==================================================
 RESULTS: 27 passed, 0 failed out of 27
@@ -49,19 +49,19 @@ For full pipeline coverage, the same phase should also be considered to include 
 
 ---
 
-## 🟢 Phase 2: Dashboard Integrity (Visual & Schema Linter)
+## ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) Phase 2: Dashboard Integrity (Visual & Schema Linter)
 
 **The Goal:** Ensure the 5 LDI-suite dashboards (`ims-ldi-manufacturing`, `ims-ldi-operator-andon`, `ims-ldi-engineering-analytics`, `ims-ldi-machine-snapshot`, `ldi-data-readiness`) render without overlapping panels, off-palette colors, or broken SQL queries.
 
 **The Method:** Run the real lint suite directly (this is what actually enforces the checklist below -- `make validate-dashboards` only checks for one narrow class of corrupted hex-code text and does **not** invoke either linter, so don't rely on it for a validation sign-off):
 ```bash
-node tests/lint/dashboard-linter.js       # grid overlap, color tokens, contrast, panel structure
-node tests/lint/alarm-sync-linter.js      # simulator alarm codes resolve against the live Alarm Master
-node tests/lint/orphan-object-linter.js   # every DB object is referenced by something
-node tests/lint/query-budget-linter.js    # no raw-table range scans
-node tests/lint/rca-mapping-coverage.js   # every alarm category maps to an RCA bucket
-node scripts/generate-dashboard-inventory.js --check   # panel counts match the dashboard JSON
-node scripts/generate-schema-inventory.js --check      # schema doc matches the live database
+node tests/lint/dashboard-linter.js    # grid overlap, color tokens, contrast, panel structure
+node tests/lint/alarm-sync-linter.js   # simulator alarm codes resolve against the live Alarm Master
+node tests/lint/orphan-object-linter.js  # every DB object is referenced by something
+node tests/lint/query-budget-linter.js  # no raw-table range scans
+node tests/lint/rca-mapping-coverage.js  # every alarm category maps to an RCA bucket
+node scripts/generate-dashboard-inventory.js --check  # panel counts match the dashboard JSON
+node scripts/generate-schema-inventory.js --check   # schema doc matches the live database
 ```
 
 **The Checklist:**
@@ -73,7 +73,7 @@ node scripts/generate-schema-inventory.js --check      # schema doc matches the 
 
 ---
 
-## 🟡 Phase 3: High-Load Stress Testing (K6 Pipeline Simulation)
+## ![Warning](https://img.shields.io/badge/Status-Warning-yellow) Phase 3: High-Load Stress Testing (K6 Pipeline Simulation)
 
 **The Goal:** Verify that the Node-RED ingestion layer and PgBouncer can handle sustained concurrent load without dropping data or exceeding acceptable latency.
 
@@ -91,21 +91,21 @@ For a more adversarial run (used in CI, `.github/workflows/ci.yml`), `tests/k6/c
 
 ---
 
-## 🟡 Phase 4: Production Rollout (End-to-End Live Test)
+## ![Warning](https://img.shields.io/badge/Status-Warning-yellow) Phase 4: Production Rollout (End-to-End Live Test)
 
 **The Goal:** The final human-in-the-loop verification on the factory floor.
 
 **The Method (Standard Operating Procedure):**
 
 1. **Operator Andon Test:** Unplug the network cable from a non-production LDI machine (e.g. `LDI-01` -- real machine IDs are `LDI-01` through `LDI-10`, two-digit, not `LDI-001`).
-   - *Pass Criteria:* The [LDI Operator Andon](http://localhost:3000/d/ims-ldi-operator-andon/set2-operator-andon) board must show that machine as `NO_DATA` (gray) within roughly one refresh cycle plus processing -- the board's refresh interval is **5 seconds** (not 10s), and the status tile reads `v_ldi_machine_latest_full`'s `is_stale` flag (no reading in the last 5 minutes = `NO_DATA`), so the realistic pass window is closer to **~7-10 seconds**, not 12.
+  - *Pass Criteria:* The [LDI Operator Andon](http://localhost:3000/d/ims-ldi-operator-andon/set2-operator-andon) board must show that machine as `NO_DATA` (gray) within roughly one refresh cycle plus processing -- the board's refresh interval is **5 seconds** (not 10s), and the status tile reads `v_ldi_machine_latest_full`'s `is_stale` flag (no reading in the last 5 minutes = `NO_DATA`), so the realistic pass window is closer to **~7-10 seconds**, not 12.
 
 2. **Yield Anomaly Test:** Inject a dummy high-temperature value into a test LDI unit.
-   - *Pass Criteria:* [LDI Engineering Analytics](http://localhost:3000/d/ims-ldi-engineering-analytics/set2-engineering-analytics)'s temperature panel must show the excursion. **Do not test for a "Z-Score Anomaly spike" here** -- there is no Z-Score/statistical-anomaly panel on this dashboard (checked the live JSON; Z-Score panels only exist on the infra-focused Capacity Planning and Engineering Drill-Down dashboards, for CPU/temperature, not LDI-specific metrics). The real LDI temperature alert is a **fixed threshold** Grafana native rule, "LDI Temperature High — above 24°C spec limit" (`monitoring/grafana/provisioning/alerting/ldi-rules.yml`) -- confirm *that* rule fires instead.
-   - *Pass Criteria (alert delivery):* Confirm Alertmanager routes the alert and Node-RED's `alerting.json` flow formats a LINE Messaging API / MS Teams payload (check the flow's debug output / Node-RED log for the formatted message). **Do not gate sign-off on an actual LINE/Teams message arriving** -- `LINE_CHANNEL_ACCESS_TOKEN` and `TEAMS_WEBHOOK_URL` are absent from this repo's `.env` by design (real credentials can't be shipped in the repo), so end-to-end delivery is architecturally impossible until an operator configures real credentials per `docs/admin/ADMIN_MANUAL.md`'s Pre-Production Security Checklist. Treat "payload correctly formatted, delivery correctly attempted and logged" as the actual pass bar for this repo's default state.
+  - *Pass Criteria:* [LDI Engineering Analytics](http://localhost:3000/d/ims-ldi-engineering-analytics/set2-engineering-analytics)'s temperature panel must show the excursion. **Do not test for a "Z-Score Anomaly spike" here** -- there is no Z-Score/statistical-anomaly panel on this dashboard (checked the live JSON; Z-Score panels only exist on the infra-focused Capacity Planning and Engineering Drill-Down dashboards, for CPU/temperature, not LDI-specific metrics). The real LDI temperature alert is a **fixed threshold** Grafana native rule, "LDI Temperature High — above 24°C spec limit" (`monitoring/grafana/provisioning/alerting/ldi-rules.yml`) -- confirm *that* rule fires instead.
+  - *Pass Criteria (alert delivery):* Confirm Alertmanager routes the alert and Node-RED's `alerting.json` flow formats a LINE Messaging API / MS Teams payload (check the flow's debug output / Node-RED log for the formatted message). **Do not gate sign-off on an actual LINE/Teams message arriving** -- `LINE_CHANNEL_ACCESS_TOKEN` and `TEAMS_WEBHOOK_URL` are absent from this repo's `.env` by design (real credentials can't be shipped in the repo), so end-to-end delivery is architecturally impossible until an operator configures real credentials per `docs/admin/ADMIN_MANUAL.md`'s Pre-Production Security Checklist. Treat "payload correctly formatted, delivery correctly attempted and logged" as the actual pass bar for this repo's default state.
 
 3. **Data Readiness Sync:** Open [LDI Data Readiness](http://localhost:3000/d/ldi-data-readiness/ldi-data-readiness).
-   - *Pass Criteria:* There is no single "Data Completeness Ratio" metric -- check the actual panels: **Telemetry Age**, **Alarm Age**, **Machine ID Match**, **Alarm Master Match**, **Board ID Completeness**, **PE / JE4 Coverage**, plus the Machine Data Coverage Matrix and the two "Mapping Gaps (Global)" tables. All should show green / zero-gap for a clean sign-off.
+  - *Pass Criteria:* There is no single "Data Completeness Ratio" metric -- check the actual panels: **Telemetry Age**, **Alarm Age**, **Machine ID Match**, **Alarm Master Match**, **Board ID Completeness**, **PE / JE4 Coverage**, plus the Machine Data Coverage Matrix and the two "Mapping Gaps (Global)" tables. All should show green / zero-gap for a clean sign-off.
 
 *Status: Procedure corrected and ready for execution. Not yet run end-to-end on real hardware as of this document's date.*
 

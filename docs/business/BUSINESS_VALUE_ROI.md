@@ -1,4 +1,4 @@
-#  Business Value & ROI Analysis
+# Business Value & ROI Analysis
 
 > **เอกสารสรุปผลกระทบทางธุรกิจสำหรับผู้บริหาร**
 > โครงการ IMS — APEX Circuit
@@ -27,7 +27,7 @@
 
 ## 2. Problem → Solution Matrix
 
-###  Before (ปัญหาเดิม)
+### Before (ปัญหาเดิม)
 
 | Problem | Impact | Daily Cost |
 |---|---|---|
@@ -36,7 +36,7 @@
 | **Manual Data Entry** | Human error ~15% | ไม่สามารถ trend ได้ |
 | **Reactive Maintenance** | รอของเสียก่อนค่อยซ่อม | Unplanned downtime |
 
-### 🟢 After (วิธีแก้ปัญหา)
+### ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) After (วิธีแก้ปัญหา)
 
 | Solution | Result | Impact |
 |---|---|---|

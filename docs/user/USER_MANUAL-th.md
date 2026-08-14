@@ -45,19 +45,19 @@
 ```
  IMS Dashboards
 ├── Infrastructure (เซิร์ฟเวอร์/เครือข่าย)
-│   ├──  NOC Overview            — ภาพรวมระดับบริหารสำหรับ fleet (เฉพาะ infra -- LDI อยู่ด้านล่าง)
-│   ├──  Engineering Drill-Down  — เจาะลึกระดับเซิร์ฟเวอร์: CPU/RAM/ดิสก์/ความร้อน/เครือข่าย
-│   ├──  Capacity Planning       — พยากรณ์เชิงเส้น (จำนวนวันก่อนที่ดิสก์/RAM จะเต็ม)
-│   └──  Meta-Monitoring         — สุขภาพของตัวไปป์ไลน์เอง (แถว/วินาที, ความสำเร็จของ batch, คิวการส่งซ้ำ)
+│  ├── NOC Overview      — ภาพรวมระดับบริหารสำหรับ fleet (เฉพาะ infra -- LDI อยู่ด้านล่าง)
+│  ├── Engineering Drill-Down — เจาะลึกระดับเซิร์ฟเวอร์: CPU/RAM/ดิสก์/ความร้อน/เครือข่าย
+│  ├── Capacity Planning    — พยากรณ์เชิงเส้น (จำนวนวันก่อนที่ดิสก์/RAM จะเต็ม)
+│  └── Meta-Monitoring     — สุขภาพของตัวไปป์ไลน์เอง (แถว/วินาที, ความสำเร็จของ batch, คิวการส่งซ้ำ)
 └── LDI Manufacturing (เครื่องฉายแสง PCB เลเซอร์ LDI)
-    ├──  Easy Overview           — ภาพรวม fleet แบบไม่ต้องตั้งค่า ไม่ต้องตั้งตัวกรอง
-    ├──  LDI Manufacturing       — KPI ระดับผู้บริหาร + telemetry เครื่อง + แถบการแจ้งเตือน (ศูนย์ควบคุมหลัก)
-    ├──  LDI Operator Andon      — จอตั้งพื้นหน้างาน, 1280x720, ไม่มีการเลื่อนหน้าจอ, ดูได้อย่างเดียว (ไม่มีส่วนอินเทอร์แอคทีฟ)
-    ├──  LDI Alarm Console       — กระบวนการรับทราบ/แก้ไขปัญหา เป็นส่วนเสริมของจอ Andon ที่ดูได้อย่างเดียว
-    ├──  LDI Alarm Dictionary    — คู่มืออ้างอิง: ความหมายการแจ้งเตือนของผู้ผลิตฉบับเต็ม + เหตุการณ์ล่าสุด
-    ├──  LDI Engineering Analytics — จัดอันดับ Cpk/SPC, ทดสอบสาเหตุที่แท้จริง, การกระจายตัวของ PE/JE
-    ├──  LDI Machine Snapshot    — คลิกที่การแจ้งเตือน/บันทึก เพื่อดูข้อมูล ณ เสี้ยววินาทีนั้น
-    └──  LDI Data Readiness      — แดชบอร์ดตรวจสอบคุณภาพข้อมูลด้วยตัวเอง (เปอร์เซ็นต์ความครอบคลุม, ช่องโหว่)
+  ├── Easy Overview      — ภาพรวม fleet แบบไม่ต้องตั้งค่า ไม่ต้องตั้งตัวกรอง
+  ├── LDI Manufacturing    — KPI ระดับผู้บริหาร + telemetry เครื่อง + แถบการแจ้งเตือน (ศูนย์ควบคุมหลัก)
+  ├── LDI Operator Andon   — จอตั้งพื้นหน้างาน, 1280x720, ไม่มีการเลื่อนหน้าจอ, ดูได้อย่างเดียว (ไม่มีส่วนอินเทอร์แอคทีฟ)
+  ├── LDI Alarm Console    — กระบวนการรับทราบ/แก้ไขปัญหา เป็นส่วนเสริมของจอ Andon ที่ดูได้อย่างเดียว
+  ├── LDI Alarm Dictionary  — คู่มืออ้างอิง: ความหมายการแจ้งเตือนของผู้ผลิตฉบับเต็ม + เหตุการณ์ล่าสุด
+  ├── LDI Engineering Analytics — จัดอันดับ Cpk/SPC, ทดสอบสาเหตุที่แท้จริง, การกระจายตัวของ PE/JE
+  ├── LDI Machine Snapshot  — คลิกที่การแจ้งเตือน/บันทึก เพื่อดูข้อมูล ณ เสี้ยววินาทีนั้น
+  └── LDI Data Readiness   — แดชบอร์ดตรวจสอบคุณภาพข้อมูลด้วยตัวเอง (เปอร์เซ็นต์ความครอบคลุม, ช่องโหว่)
 ```
 
 ---
@@ -70,24 +70,24 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│   IMS NOC Overview                                            │
+│  IMS NOC Overview                      │
 ├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌───────────┐ │
-│  │ ทั้งหมด       │ │ ปกติ         │ │ เตือน         │ │ วิกฤต       │ │
-│  │ เครื่อง: 5      │ │ เครื่อง: 4      │ │ แจ้งเตือน: 1    │ │ แจ้งเตือน: 0    │ │
-│  │   🟢        │ │    🟢       │ │    🟡       │ │         │ │
-│  └─────────────┘ └─────────────┘ └─────────────┘ └───────────┘ │
-│                                                                 │
-│  ┌───────────────────────────────────────────────────────────┐ │
-│  │  การใช้งาน CPU ของ Fleet (1 ชั่วโมงล่าสุด)                         │ │
-│  │  [กราฟเส้นแสดง CPU ของทุกเครื่องตามเวลา]                        │ │
-│  └───────────────────────────────────────────────────────────┘ │
-│                                                                 │
-│  ┌───────────────────────────────────────────────────────────┐ │
-│  │  การแจ้งเตือนที่ทำงานอยู่                                       │ │
-│  │  [ตารางแสดงการแจ้งเตือนที่เกิดพร้อมความรุนแรง]                  │ │
-│  └───────────────────────────────────────────────────────────┘ │
+│                                 │
+│ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌───────────┐ │
+│ │ ทั้งหมด    │ │ ปกติ     │ │ เตือน     │ │ วิกฤต    │ │
+│ │ เครื่อง: 5   │ │ เครื่อง: 4   │ │ แจ้งเตือน: 1  │ │ แจ้งเตือน: 0  │ │
+│ │  ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen)    │ │  ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen)    │ │  ![Warning](https://img.shields.io/badge/Status-Warning-yellow)    │ │     │ │
+│ └─────────────┘ └─────────────┘ └─────────────┘ └───────────┘ │
+│                                 │
+│ ┌───────────────────────────────────────────────────────────┐ │
+│ │ การใช้งาน CPU ของ Fleet (1 ชั่วโมงล่าสุด)             │ │
+│ │ [กราฟเส้นแสดง CPU ของทุกเครื่องตามเวลา]            │ │
+│ └───────────────────────────────────────────────────────────┘ │
+│                                 │
+│ ┌───────────────────────────────────────────────────────────┐ │
+│ │ การแจ้งเตือนที่ทำงานอยู่                    │ │
+│ │ [ตารางแสดงการแจ้งเตือนที่เกิดพร้อมความรุนแรง]         │ │
+│ └───────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -97,11 +97,11 @@
 
 | Panel | ตัวชี้วัด (Metrics) | การใช้สี |
 |---|---|---|
-| **CPU Usage** | `cpu_load_percent` ต่อ core | 🟢 < 60%, 🟡 60-80%,  > 80% |
-| **Memory Usage** | `ram_used_mb / ram_total_mb` | 🟢 < 70%, 🟡 70-85%,  > 85% |
-| **Disk Usage** | `disk_used_gb / disk_total_gb` | 🟢 < 70%, 🟡 70-80%,  > 80% |
+| **CPU Usage** | `cpu_load_percent` ต่อ core | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) < 60%, ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 60-80%, > 80% |
+| **Memory Usage** | `ram_used_mb / ram_total_mb` | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) < 70%, ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 70-85%, > 85% |
+| **Disk Usage** | `disk_used_gb / disk_total_gb` | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) < 70%, ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 70-80%, > 80% |
 | **Network Traffic** | `rx_mbps`, `tx_mbps` ต่อ interface | สีน้ำเงิน = ดาวน์โหลด (RX), สีฟ้า = อัปโหลด (TX) |
-| **Temperature** | `temp_c` | 🟢 < 65°C, 🟡 65-80°C,  > 80°C |
+| **Temperature** | `temp_c` | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) < 65°C, ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 65-80°C, > 80°C |
 
 ### 3. Engineering Drilldown Dashboard
 
@@ -109,44 +109,44 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│   Engineering Drilldown — [เลือกเครื่อง ▼]                       │
+│  Engineering Drilldown — [เลือกเครื่อง ▼]            │
 ├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ┌───────────────────────────────────────────────────────────┐ │
-│  │  การรับส่งข้อมูลผ่านเครือข่าย (แบบผีเสื้อสมมาตร)                      │ │
-│  │  ┌─────────────────────────────────────────────────────┐  │ │
-│  │  │     ▲ eth0 RX: ████████████ 2.4 Gbps               │  │ │
-│  │  │     │ wlan0 RX: ██████ 800 Mbps                     │  │ │
-│  │  │  ───┼────────────────────────────────── 0 Mbps      │  │ │
-│  │  │     │ wlan0 TX: ████ 400 Mbps                       │  │ │
-│  │  │     ▼ eth0 TX: ████████ 1.6 Gbps                   │  │ │
-│  │  └─────────────────────────────────────────────────────┘  │ │
-│  └───────────────────────────────────────────────────────────┘ │
-│                                                                 │
-│  ┌──────────────────────┐ ┌──────────────────────────────────┐ │
-│  │  อุณหภูมิ CPU           │ │  การใช้งานดิสก์                     │ │
-│  │  [มาตรวัด: 72°C]       │ │  [แท่ง: /dev/sda1 45%, sdb1 62%] │ │
-│  └──────────────────────┘ └──────────────────────────────────┘ │
-│                                                                 │
-│  ┌───────────────────────────────────────────────────────────┐ │
-│  │  คุณภาพ LDI แบบกระจาย (PE เทียบกับ JE)                         │ │
-│  │  ┌─────────────────────────────────────────────────────┐  │ │
-│  │  │  PE (µm)                                            │  │ │
-│  │  │   15 ┤         ╱ กล่องเกณฑ์ความคลาดเคลื่อน                │  │ │
-│  │  │      │  ·  · ╱· · ·                                │  │ │
-│  │  │    0 ┤──╱────────────────── 0                       │  │ │
-│  │  │      │ ╱· · · ·                                    │  │ │
-│  │  │  -15 ┤╱         (โซนสีเขียว ±10µm)                     │  │ │
-│  │  │      └─┬────┬────┬────┬────┬─                      │  │ │
-│  │  │       -15   -5    0    5   15  JE (µm)             │  │ │
-│  │  └─────────────────────────────────────────────────────┘  │ │
-│  └───────────────────────────────────────────────────────────┘ │
-│                                                                 │
-│  ┌───────────────────────────────────────────────────────────┐ │
-│  │  LDI Manufacturing Telemetry                              │ │
-│  │  ผลผลิต: 1250 units/hr | PE: 0.85 | JE: 0.92               │ │
-│  │  ความชื้น: 65% | พลังงาน: 2400W | การสั่นสะเทือน: 2.1 mm/s    │ │
-│  └───────────────────────────────────────────────────────────┘ │
+│                                 │
+│ ┌───────────────────────────────────────────────────────────┐ │
+│ │ การรับส่งข้อมูลผ่านเครือข่าย (แบบผีเสื้อสมมาตร)           │ │
+│ │ ┌─────────────────────────────────────────────────────┐ │ │
+│ │ │   ▲ eth0 RX: ████████████ 2.4 Gbps        │ │ │
+│ │ │   │ wlan0 RX: ██████ 800 Mbps           │ │ │
+│ │ │ ───┼────────────────────────────────── 0 Mbps   │ │ │
+│ │ │   │ wlan0 TX: ████ 400 Mbps            │ │ │
+│ │ │   ▼ eth0 TX: ████████ 1.6 Gbps          │ │ │
+│ │ └─────────────────────────────────────────────────────┘ │ │
+│ └───────────────────────────────────────────────────────────┘ │
+│                                 │
+│ ┌──────────────────────┐ ┌──────────────────────────────────┐ │
+│ │ อุณหภูมิ CPU      │ │ การใช้งานดิสก์           │ │
+│ │ [มาตรวัด: 72°C]    │ │ [แท่ง: /dev/sda1 45%, sdb1 62%] │ │
+│ └──────────────────────┘ └──────────────────────────────────┘ │
+│                                 │
+│ ┌───────────────────────────────────────────────────────────┐ │
+│ │ คุณภาพ LDI แบบกระจาย (PE เทียบกับ JE)             │ │
+│ │ ┌─────────────────────────────────────────────────────┐ │ │
+│ │ │ PE (µm)                      │ │ │
+│ │ │  15 ┤     ╱ กล่องเกณฑ์ความคลาดเคลื่อน        │ │ │
+│ │ │   │ · · ╱· · ·                │ │ │
+│ │ │  0 ┤──╱────────────────── 0            │ │ │
+│ │ │   │ ╱· · · ·                  │ │ │
+│ │ │ -15 ┤╱     (โซนสีเขียว ±10µm)           │ │ │
+│ │ │   └─┬────┬────┬────┬────┬─           │ │ │
+│ │ │    -15  -5  0  5  15 JE (µm)       │ │ │
+│ │ └─────────────────────────────────────────────────────┘ │ │
+│ └───────────────────────────────────────────────────────────┘ │
+│                                 │
+│ ┌───────────────────────────────────────────────────────────┐ │
+│ │ LDI Manufacturing Telemetry               │ │
+│ │ ผลผลิต: 1250 units/hr | PE: 0.85 | JE: 0.92        │ │
+│ │ ความชื้น: 65% | พลังงาน: 2400W | การสั่นสะเทือน: 2.1 mm/s  │ │
+│ └───────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -156,8 +156,8 @@
 
 | โซน | สี | ความหมาย |
 |---|---|---|
-| ภายใน ±10µm | 🟢 เขียว | ปกติ — หัวเลเซอร์ทำงานถูกต้อง |
-| ภายนอก ±10µm |  แดง | ผิดปกติ — หัวเลเซอร์เริ่มมีปัญหา |
+| ภายใน ±10µm | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) เขียว | ปกติ — หัวเลเซอร์ทำงานถูกต้อง |
+| ภายนอก ±10µm | แดง | ผิดปกติ — หัวเลเซอร์เริ่มมีปัญหา |
 
 **วิธีใช้:**
 - จุดที่อยู่ในกรอบสีเขียว = คุณภาพ PCB อยู่ในเกณฑ์
@@ -243,10 +243,10 @@
 ```
 เครื่อง: server-01
 โหลด CPU: 72% (เตือน)
-├── Core 1: 85%  ️
-├── Core 2: 45%  
-├── Core 3: 78%  ️
-└── Core 4: 80%  ️
+├── Core 1: 85% ️
+├── Core 2: 45% 
+├── Core 3: 78% ️
+└── Core 4: 80% ️
 → Core 1, 3, 4 กำลังถูกใช้งานหนัก ตรวจสอบว่ามีกระบวนการ (process) ใดกำลังทำงานอยู่
 ```
 
@@ -282,10 +282,10 @@
 ```
 เครื่อง: server-01
 ┌─────────┬──────────┬──────────┬──────────┬──────────┬────────┐
-│อินเตอร์เฟส │ RX Mbps  │ TX Mbps  │ Error    │ Drop     │ สถานะ   │
+│อินเตอร์เฟส │ RX Mbps │ TX Mbps │ Error  │ Drop   │ สถานะ  │
 ├─────────┼──────────┼──────────┼──────────┼──────────┼────────┤
-│ eth0    │ 1200     │ 850      │ 0        │ 0        │  UP  │
-│ wlan0   │ 320      │ 180      │ 0        │ 12       │  UP  │
+│ eth0  │ 1200   │ 850   │ 0    │ 0    │ UP │
+│ wlan0  │ 320   │ 180   │ 0    │ 12    │ UP │
 └─────────┴──────────┴──────────┴──────────┴──────────┴────────┘
 → wlan0 มีการตกหล่น 12 แพ็กเก็ต — ตรวจสอบสัญญาณเครือข่ายไร้สาย
 ```
@@ -322,13 +322,13 @@
 
 | ระดับ | สี | เวลาตอบสนอง | ตัวอย่าง |
 |---|---|---|---|
-| **วิกฤต (Critical)** |  แดง | ทันที (< 15 นาที) | InterfaceDown, ServiceDown, CriticalCPU |
-| **เตือน (Warning)** | 🟡 เหลือง | เร็ว (< 1 ชั่วโมง) | HighCPU, HighMemory, DiskSpaceLow |
-| **ข้อมูล (Info)** |  น้ำเงิน | ตามปกติ (< 4 ชั่วโมง) | TelemetryGap, PredictiveDiskFull |
+| **วิกฤต (Critical)** | แดง | ทันที (< 15 นาที) | InterfaceDown, ServiceDown, CriticalCPU |
+| **เตือน (Warning)** | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) เหลือง | เร็ว (< 1 ชั่วโมง) | HighCPU, HighMemory, DiskSpaceLow |
+| **ข้อมูล (Info)** | น้ำเงิน | ตามปกติ (< 4 ชั่วโมง) | TelemetryGap, PredictiveDiskFull |
 
 ### คู่มือรับมือกับเหตุการณ์ขัดข้อง (Incident Response Playbook)
 
-####  สถานการณ์ที่ 1: InterfaceDown (วิกฤต)
+#### สถานการณ์ที่ 1: InterfaceDown (วิกฤต)
 
 ```
 อาการ:
@@ -401,7 +401,7 @@
 - หากถึงขั้นวิกฤต (> 95%) → ต้องเคลียร์ข้อมูลทันที
 ```
 
-####  สถานการณ์ที่ 4: ServiceDown (วิกฤต)
+#### สถานการณ์ที่ 4: ServiceDown (วิกฤต)
 
 ```
 อาการ:
@@ -427,7 +427,7 @@
 - หากเป็นปัญหาระดับระบบหลัก → ติดต่อแอดมินระบบ
 ```
 
-#### 🟡 สถานการณ์ที่ 5: PipelineDataStalled (เตือน)
+#### ![Warning](https://img.shields.io/badge/Status-Warning-yellow) สถานการณ์ที่ 5: PipelineDataStalled (เตือน)
 
 ```
 อาการ:
@@ -476,16 +476,16 @@ docker compose exec prometheus wget -qO- "http://localhost:9090/api/v1/alerts"
 ```bash
 # ดู telemetry ล่าสุด (5 นาทีล่าสุด)
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
-  "SELECT device_id, time, cpu_load_percent, temp_c
-   FROM public.sys_metrics
-   WHERE time > NOW() - INTERVAL '5 minutes'
-   ORDER BY time DESC LIMIT 10;"
+ "SELECT device_id, time, cpu_load_percent, temp_c
+  FROM public.sys_metrics
+  WHERE time > NOW() - INTERVAL '5 minutes'
+  ORDER BY time DESC LIMIT 10;"
 
 # ดูค่า interface
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
-  "SELECT device_id, iface_name, rx_mbps, tx_mbps
-   FROM public.net_metrics
-   ORDER BY time DESC LIMIT 1;"
+ "SELECT device_id, iface_name, rx_mbps, tx_mbps
+  FROM public.net_metrics
+  ORDER BY time DESC LIMIT 1;"
 ```
 
 ### การรีสตาร์ทเซอร์วิส
@@ -536,14 +536,14 @@ docker compose ps --format "table {{.Name}}\t{{.Status}}"
 
 echo "=== Data Flow ==="
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
-  "SELECT device_id, COUNT(*) as rows, MAX(time) as latest
-   FROM public.sys_metrics
-   WHERE time > NOW() - INTERVAL '5 minutes'
-   GROUP BY device_id;"
+ "SELECT device_id, COUNT(*) as rows, MAX(time) as latest
+  FROM public.sys_metrics
+  WHERE time > NOW() - INTERVAL '5 minutes'
+  GROUP BY device_id;"
 
 echo "=== Alerts ==="
 docker compose exec prometheus wget -qO- "http://localhost:9090/api/v1/alerts" 2>&1 | \
-  python -c "import sys,json; d=json.load(sys.stdin); print(f'{len(d[\"data\"][\"alerts\"])} active alerts')"
+ python -c "import sys,json; d=json.load(sys.stdin); print(f'{len(d[\"data\"][\"alerts\"])} active alerts')"
 ```
 
 ---
@@ -567,14 +567,14 @@ docker compose exec prometheus wget -qO- "http://localhost:9090/api/v1/alerts" 2
 
 | ตัวชี้วัด | ปกติ | เตือน | วิกฤต |
 |---|---|---|---|
-| **CPU** | 🟢 เขียว | 🟡 เหลือง → ส้ม |  แดง |
-| **Memory** | 🟢 เขียว | 🟡 ม่วง → ส้มเข้ม |  แดง |
-| **Disk** | 🟢 เขียว | 🟡 ฟ้า (Cyan) → น้ำเงิน |  แดง |
-| **Network RX** |  น้ำเงินเข้ม (#1F60C4) | — |  แดง |
-| **Network TX** |  สีฟ้าอ่อน (#5794F2) | — |  แดง |
-| **Temperature** | 🟢 เขียว | 🟡 เหลือง |  แดง |
-| **Errors** | — | — |  แดง (#C4162A) |
-| **Drops** | — | 🟠 ส้ม (#FF9830) |  แดง |
+| **CPU** | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) เขียว | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) เหลือง → ส้ม | แดง |
+| **Memory** | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) เขียว | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) ม่วง → ส้มเข้ม | แดง |
+| **Disk** | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) เขียว | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) ฟ้า (Cyan) → น้ำเงิน | แดง |
+| **Network RX** | น้ำเงินเข้ม (#1F60C4) | — | แดง |
+| **Network TX** | สีฟ้าอ่อน (#5794F2) | — | แดง |
+| **Temperature** | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) เขียว | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) เหลือง | แดง |
+| **Errors** | — | — | แดง (#C4162A) |
+| **Drops** | — | ![Warning](https://img.shields.io/badge/Status-Warning-orange) ส้ม (#FF9830) | แดง |
 
 ### ติดต่อผู้ดูแล
 

@@ -1,4 +1,4 @@
-# 🛠️ System Administration & SRE Guide
+# <img src="docs/assets/icons/wrench.svg" width="18" height="18" align="center" />️ System Administration & SRE Guide
 
 > **IMS系统IT运维手册 (MIS-G)**
 > 涵盖Docker管理、设备注册、告警管理、故障排除
@@ -15,7 +15,7 @@
 
 ---
 
-## 📋 Table of Contents
+## Table of Contents
 
 1. [System Management](#-system-management)
 2. [Adding New Devices](#-adding-new-devices)
@@ -26,7 +26,7 @@
 
 ---
 
-## ⚙️ System Management
+## ️ System Management
 
 ### Container Overview
 
@@ -111,12 +111,12 @@ bash scripts/migrate.sh
 
 # 检查当前迁移状态
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
-  "SELECT version, filename, applied_at FROM public.schema_migrations ORDER BY version DESC LIMIT 10;"
+ "SELECT version, filename, applied_at FROM public.schema_migrations ORDER BY version DESC LIMIT 10;"
 ```
 
 ---
 
-## 🔒 Pre-Production Security Checklist
+## Pre-Production Security Checklist
 
 > **CRITICAL:** 部署到生产环境前，必须修改所有默认凭证。
 
@@ -144,9 +144,9 @@ sed -i "s/^ALARM_API_DB_PASSWORD=.*/ALARM_API_DB_PASSWORD=$NEW_ALARM_API_DB_PASS
 
 # 3. 更新数据库用户密码
 docker compose exec -T timescaledb psql -U ims_admin -d ims \
-  -c "ALTER ROLE grafana_reader WITH PASSWORD '$NEW_DB_PASS';"
+ -c "ALTER ROLE grafana_reader WITH PASSWORD '$NEW_DB_PASS';"
 docker compose exec -T timescaledb psql -U ims_admin -d ims \
-  -c "ALTER ROLE alarm_api_writer WITH PASSWORD '$NEW_ALARM_API_DB_PASS';"
+ -c "ALTER ROLE alarm_api_writer WITH PASSWORD '$NEW_ALARM_API_DB_PASS';"
 
 # 4. 重启服务
 docker compose up -d
@@ -154,9 +154,9 @@ docker compose up -d
 # 5. 验证
 curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/health
 curl -s -X POST http://localhost:1880/inject \
-  -H "Content-Type: application/json" \
-  -H "x-api-key: $NEW_API_KEY" \
-  -d '{"machine_id":"TEST"}'
+ -H "Content-Type: application/json" \
+ -H "x-api-key: $NEW_API_KEY" \
+ -d '{"machine_id":"TEST"}'
 ```
 
 ### Verification Commands
@@ -164,7 +164,7 @@ curl -s -X POST http://localhost:1880/inject \
 ```bash
 # 验证 API Key
 curl -s -w "\nHTTP: %{http_code}" -X POST http://localhost:1880/inject \
-  -H "Content-Type: application/json" -d '{"machine_id":"TEST"}'
+ -H "Content-Type: application/json" -d '{"machine_id":"TEST"}'
 # 期望: HTTP 401
 
 # 验证 Grafana 认证
@@ -174,7 +174,7 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/dashboards
 
 ---
 
-## 📡 Adding New Devices
+## Adding New Devices
 
 ### Step 1: Register in Database
 
@@ -201,9 +201,9 @@ docker exec ims-node-red node -e "
 const snmp = require('net-snmp');
 const session = snmp.createSession('192.168.1.100', 'public', {port: 161, timeout: 5000});
 session.get(['1.3.6.1.2.1.1.1.0'], (err, varbinds) => {
-    if (err) console.error('ERROR:', err.message);
-    else console.log('OK:', varbinds[0].value.toString());
-    session.close();
+  if (err) console.error('ERROR:', err.message);
+  else console.log('OK:', varbinds[0].value.toString());
+  session.close();
 });
 "
 ```
@@ -216,10 +216,10 @@ sleep 30
 
 # 验证数据写入
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
-  "SELECT device_id, COUNT(*) as rows, MAX(s.time) as latest
-   FROM public.sys_metrics s
-   WHERE device_id = 'NEW-MACHINE-01'
-   GROUP BY device_id;"
+ "SELECT device_id, COUNT(*) as rows, MAX(s.time) as latest
+  FROM public.sys_metrics s
+  WHERE device_id = 'NEW-MACHINE-01'
+  GROUP BY device_id;"
 ```
 
 ### Step 4: Add Dashboard Panel (Optional)
@@ -231,7 +231,7 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c \
 
 ---
 
-## 🚨 Alert Management
+## Alert Management
 
 ### Alert Rules Location
 
@@ -241,23 +241,23 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c \
 
 ```yaml
 - alert: HighCpuLoad
-  # 阈值 80% 改为 85%
-  expr: avg_over_time(cpu_load_percent[5m]) > 85
-  for: 5m
-  labels:
-    severity: warning
-  annotations:
-    summary: "High CPU load on {{ $labels.machine_id }}"
-    description: "CPU load {{ $value }}% exceeds threshold 85%"
+ # 阈值 80% 改为 85%
+ expr: avg_over_time(cpu_load_percent[5m]) > 85
+ for: 5m
+ labels:
+  severity: warning
+ annotations:
+  summary: "High CPU load on {{ $labels.machine_id }}"
+  description: "CPU load {{ $value }}% exceeds threshold 85%"
 
 - alert: LDI_Vibration_Critical
-  expr: ldi_vibration > 10.0
-  for: 5m
-  labels:
-    severity: critical
-  annotations:
-    summary: "LDI vibration critical on {{ $labels.machine_id }}"
-    description: "Vibration {{ $value }} mm/s exceeds threshold 10.0"
+ expr: ldi_vibration > 10.0
+ for: 5m
+ labels:
+  severity: critical
+ annotations:
+  summary: "LDI vibration critical on {{ $labels.machine_id }}"
+  description: "Vibration {{ $value }} mm/s exceeds threshold 10.0"
 ```
 
 ### Reload Configuration
@@ -283,7 +283,7 @@ docker compose exec prometheus promtool check rules /etc/prometheus/rules/ims-al
 
 ---
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### Common Issues & Solutions
 
@@ -336,7 +336,7 @@ print(f'Prometheus: {ups}/{total} targets UP')
 
 ---
 
-## 💾 Backup & Recovery
+## Backup & Recovery
 
 ### Database Backup
 
@@ -375,7 +375,7 @@ cp -r monitoring/grafana/dashboards/ monitoring/grafana/dashboards.bak/
 
 ---
 
-## 📊 Performance Monitoring
+## <img src="docs/assets/icons/activity.svg" width="18" height="18" align="center" /> Performance Monitoring
 
 ### System Metrics
 

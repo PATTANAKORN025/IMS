@@ -1,4 +1,4 @@
-#  IMS Onboarding: Video Walkthrough & GIF Script
+# IMS Onboarding: Video Walkthrough & GIF Script
 
 > **Objective:** This document serves as the storyboard and script for creating the official IMS Video Walkthrough and UI GIFs. Since the UI is a Cyberpunk HUD, motion and animation are key selling points.
 

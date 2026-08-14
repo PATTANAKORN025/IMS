@@ -1,4 +1,4 @@
-#  Contributing to IMS
+# Contributing to IMS
 
 > **Guidelines สำหรับการร่วมพัฒนา IMS**
 
@@ -13,7 +13,7 @@
 
 ---
 
-##  Development Workflow
+## Development Workflow
 
 1. Fork the repository
 2. Create a feature branch from `main`
@@ -23,7 +23,7 @@
 
 ---
 
-##  Project Conventions
+## Project Conventions
 
 ### Node-RED Flows
 
@@ -35,7 +35,7 @@
 ```bash
 # Validate every source flow file is syntactically valid JSON
 for f in nodered_data/flows/*.json; do
-  node -e "const j=JSON.parse(require('fs').readFileSync('$f','utf8')); console.log('Valid:', j.length, 'nodes —', '$f')"
+ node -e "const j=JSON.parse(require('fs').readFileSync('$f','utf8')); console.log('Valid:', j.length, 'nodes —', '$f')"
 done
 ```
 
@@ -63,7 +63,7 @@ done
 
 ---
 
-##  Commit Messages
+## Commit Messages
 
 Follow [Conventional Commits](https://www.conventionalcommits.org/):
 
@@ -80,18 +80,18 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/):
 ### Branch Naming
 
 ```
-feat/<topic>      # New features
-fix/<topic>       # Bug fixes
-chore/<topic>     # Maintenance
-docs/<topic>      # Documentation
-refactor/<topic>  # Code restructuring
-test/<topic>      # Tests
-security/<topic>  # Security fixes
+feat/<topic>   # New features
+fix/<topic>    # Bug fixes
+chore/<topic>   # Maintenance
+docs/<topic>   # Documentation
+refactor/<topic> # Code restructuring
+test/<topic>   # Tests
+security/<topic> # Security fixes
 ```
 
 ---
 
-##  Testing
+## Testing
 
 ```bash
 # Unit tests (5 files, 99 assertions)
@@ -116,39 +116,39 @@ node tests/e2e/golden-dataset-spc.js
 
 ---
 
-##  Project Structure
+## Project Structure
 
 ```
 IMS/
-├── docker-compose.yaml          # Main orchestration
+├── docker-compose.yaml     # Main orchestration
 ├── nodered_data/
-│   ├── flows/                   # Node-RED flows, split by concern (Source of Truth)
-│   ├── lib/                     # circuit-breaker.js, parser.js, snmp-normalize.js, units.js
-│   ├── flows.json               # Built by scripts/build-flows.js from flows/*.json -- don't hand-edit
-│   ├── Dockerfile               # Custom build: installs npm dependencies
-│   └── settings.js              # Runtime settings
-├── postgres/init/               # DB schema bootstrap (fresh-deploy path)
-├── database/migrations/         # TimescaleDB migrations, applied by the db-migrate service
+│  ├── flows/          # Node-RED flows, split by concern (Source of Truth)
+│  ├── lib/           # circuit-breaker.js, parser.js, snmp-normalize.js, units.js
+│  ├── flows.json        # Built by scripts/build-flows.js from flows/*.json -- don't hand-edit
+│  ├── Dockerfile        # Custom build: installs npm dependencies
+│  └── settings.js       # Runtime settings
+├── postgres/init/        # DB schema bootstrap (fresh-deploy path)
+├── database/migrations/     # TimescaleDB migrations, applied by the db-migrate service
 ├── monitoring/
-│   ├── grafana/dashboards/
-│   │   ├── infrastructure/      # NOC, Capacity, Engineering Drill-Down, Meta-Monitoring (4)
-│   │   └── manufacturing/       # LDI Manufacturing, Andon, Engineering Analytics, Machine
-│   │                            #   Snapshot, Data Readiness, Fleet at a Glance (6)
-│   ├── grafana/library-panels/  # Shared Grafana Library Panels
-│   └── prometheus/rules/        # Alert rules
-├── scripts/                     # Utility scripts
+│  ├── grafana/dashboards/
+│  │  ├── infrastructure/   # NOC, Capacity, Engineering Drill-Down, Meta-Monitoring (4)
+│  │  └── manufacturing/    # LDI Manufacturing, Andon, Engineering Analytics, Machine
+│  │              #  Snapshot, Data Readiness, Fleet at a Glance (6)
+│  ├── grafana/library-panels/ # Shared Grafana Library Panels
+│  └── prometheus/rules/    # Alert rules
+├── scripts/           # Utility scripts
 ├── tests/
-│   ├── lint/                    # Dashboard/alarm/query-budget/RCA/orphan linters
-│   ├── unit/                    # Parser & counter unit tests
-│   ├── e2e/                     # Panel data, query timing, golden-dataset checks
-│   ├── k6/                      # Load tests
-│   └── playwright/              # Visual/layout regression
-└── docs/                        # Documentation -- start at docs/architecture/IMS_PLATFORM_BOOK.md
+│  ├── lint/          # Dashboard/alarm/query-budget/RCA/orphan linters
+│  ├── unit/          # Parser & counter unit tests
+│  ├── e2e/           # Panel data, query timing, golden-dataset checks
+│  ├── k6/           # Load tests
+│  └── playwright/       # Visual/layout regression
+└── docs/            # Documentation -- start at docs/architecture/IMS_PLATFORM_BOOK.md
 ```
 
 ---
 
-##  Code Review Checklist
+## Code Review Checklist
 
 - [ ] No secrets or credentials in code
 - [ ] SQL uses `sanitize()` (from `nodered_data/lib/parser.js`) for user inputs

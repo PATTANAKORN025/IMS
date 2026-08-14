@@ -1,4 +1,4 @@
-#  IMS — User Manual
+# IMS — User Manual
 
 > **คู่มือการใช้งานสำหรับ IT Support และ NOC Team**
 > อธิบายวิธีอ่าน Dashboard, ตีความ metrics, และตอบสนองต่อ alerts
@@ -15,7 +15,7 @@
 
 ---
 
-##  Table of Contents
+## Table of Contents
 
 1. [Getting Started](#-getting-started)
 2. [Grafana Dashboard Guide](#-grafana-dashboard-guide)
@@ -27,7 +27,7 @@
 
 ---
 
-##  Getting Started
+## Getting Started
 
 ### Accessing the System
 
@@ -45,24 +45,24 @@
 ```
  IMS Dashboards
 ├── Infrastructure (servers/network)
-│   ├──  NOC Overview            — Executive fleet envelope (infra only -- LDI lives below)
-│   ├──  Engineering Drill-Down  — Per-server deep dive: CPU/RAM/disk/temp/network
-│   ├──  Capacity Planning       — Linear-regression forecasting (days until disk/RAM full)
-│   └──  Meta-Monitoring         — The pipeline's own health (rows/sec, batch success, retry queue)
+│  ├── NOC Overview      — Executive fleet envelope (infra only -- LDI lives below)
+│  ├── Engineering Drill-Down — Per-server deep dive: CPU/RAM/disk/temp/network
+│  ├── Capacity Planning    — Linear-regression forecasting (days until disk/RAM full)
+│  └── Meta-Monitoring     — The pipeline's own health (rows/sec, batch success, retry queue)
 └── LDI Manufacturing (PCB laser direct imaging fleet)
-    ├──  Easy Overview           — Zero-config whole-fleet glance, no filters to set
-    ├──  LDI Manufacturing       — Executive KPIs + machine telemetry + alarm stream (main command center)
-    ├──  LDI Operator Andon      — Factory-floor kiosk, 1280x720, zero-scroll, read-only (no interactive elements)
-    ├──  LDI Alarm Console       — Interactive Acknowledge/Resolve workflow, companion to the read-only Andon board
-    ├──  LDI Alarm Dictionary    — Reference lookup: full vendor alarm definitions + recent occurrences
-    ├──  LDI Engineering Analytics — Cpk/SPC ranking, RCA Truth Test, PE/JE distributions
-    ├──  LDI Machine Snapshot    — Click any alarm/log to inspect the exact millisecond
-    └──  LDI Data Readiness      — Self-auditing data-quality dashboard (coverage %, gaps)
+  ├── Easy Overview      — Zero-config whole-fleet glance, no filters to set
+  ├── LDI Manufacturing    — Executive KPIs + machine telemetry + alarm stream (main command center)
+  ├── LDI Operator Andon   — Factory-floor kiosk, 1280x720, zero-scroll, read-only (no interactive elements)
+  ├── LDI Alarm Console    — Interactive Acknowledge/Resolve workflow, companion to the read-only Andon board
+  ├── LDI Alarm Dictionary  — Reference lookup: full vendor alarm definitions + recent occurrences
+  ├── LDI Engineering Analytics — Cpk/SPC ranking, RCA Truth Test, PE/JE distributions
+  ├── LDI Machine Snapshot  — Click any alarm/log to inspect the exact millisecond
+  └── LDI Data Readiness   — Self-auditing data-quality dashboard (coverage %, gaps)
 ```
 
 ---
 
-##  Grafana Dashboard Guide
+## Grafana Dashboard Guide
 
 ### 1. NOC Overview Dashboard
 
@@ -70,24 +70,24 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│   IMS NOC Overview                                            │
+│  IMS NOC Overview                      │
 ├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌───────────┐ │
-│  │ Total       │ │ Healthy     │ │ Warning     │ │ Critical  │ │
-│  │ Machines: 5 │ │ Machines: 4 │ │ Alerts: 1   │ │ Alerts: 0 │ │
-│  │   🟢        │ │    🟢       │ │    🟡       │ │         │ │
-│  └─────────────┘ └─────────────┘ └─────────────┘ └───────────┘ │
-│                                                                 │
-│  ┌───────────────────────────────────────────────────────────┐ │
-│  │  Fleet CPU Usage (Last 1 Hour)                            │ │
-│  │  [Line chart showing all machines CPU over time]          │ │
-│  └───────────────────────────────────────────────────────────┘ │
-│                                                                 │
-│  ┌───────────────────────────────────────────────────────────┐ │
-│  │  Active Alerts                                            │ │
-│  │  [Table of current firing alerts with severity]           │ │
-│  └───────────────────────────────────────────────────────────┘ │
+│                                 │
+│ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌───────────┐ │
+│ │ Total    │ │ Healthy   │ │ Warning   │ │ Critical │ │
+│ │ Machines: 5 │ │ Machines: 4 │ │ Alerts: 1  │ │ Alerts: 0 │ │
+│ │  ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen)    │ │  ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen)    │ │  ![Warning](https://img.shields.io/badge/Status-Warning-yellow)    │ │     │ │
+│ └─────────────┘ └─────────────┘ └─────────────┘ └───────────┘ │
+│                                 │
+│ ┌───────────────────────────────────────────────────────────┐ │
+│ │ Fleet CPU Usage (Last 1 Hour)              │ │
+│ │ [Line chart showing all machines CPU over time]     │ │
+│ └───────────────────────────────────────────────────────────┘ │
+│                                 │
+│ ┌───────────────────────────────────────────────────────────┐ │
+│ │ Active Alerts                      │ │
+│ │ [Table of current firing alerts with severity]      │ │
+│ └───────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -97,11 +97,11 @@
 
 | Panel | Metrics | Color Coding |
 |---|---|---|
-| **CPU Usage** | `cpu_load_percent` per core | 🟢 < 60%, 🟡 60-80%,  > 80% |
-| **Memory Usage** | `ram_used_mb / ram_total_mb` | 🟢 < 70%, 🟡 70-85%,  > 85% |
-| **Disk Usage** | `disk_used_gb / disk_total_gb` | 🟢 < 70%, 🟡 70-80%,  > 80% |
+| **CPU Usage** | `cpu_load_percent` per core | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) < 60%, ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 60-80%, > 80% |
+| **Memory Usage** | `ram_used_mb / ram_total_mb` | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) < 70%, ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 70-85%, > 85% |
+| **Disk Usage** | `disk_used_gb / disk_total_gb` | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) < 70%, ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 70-80%, > 80% |
 | **Network Traffic** | `rx_mbps`, `tx_mbps` per interface | Blue = RX, Light Blue = TX |
-| **Temperature** | `temp_c` | 🟢 < 65°C, 🟡 65-80°C,  > 80°C |
+| **Temperature** | `temp_c` | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) < 65°C, ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 65-80°C, > 80°C |
 
 ### 3. Engineering Drilldown Dashboard
 
@@ -109,44 +109,44 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│   Engineering Drilldown — [Select Machine ▼]                  │
+│  Engineering Drilldown — [Select Machine ▼]         │
 ├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ┌───────────────────────────────────────────────────────────┐ │
-│  │  Network Interface Traffic (Symmetrical Butterfly)        │ │
-│  │  ┌─────────────────────────────────────────────────────┐  │ │
-│  │  │     ▲ eth0 RX: ████████████ 2.4 Gbps               │  │ │
-│  │  │     │ wlan0 RX: ██████ 800 Mbps                     │  │ │
-│  │  │  ───┼────────────────────────────────── 0 Mbps      │  │ │
-│  │  │     │ wlan0 TX: ████ 400 Mbps                       │  │ │
-│  │  │     ▼ eth0 TX: ████████ 1.6 Gbps                   │  │ │
-│  │  └─────────────────────────────────────────────────────┘  │ │
-│  └───────────────────────────────────────────────────────────┘ │
-│                                                                 │
-│  ┌──────────────────────┐ ┌──────────────────────────────────┐ │
-│  │  CPU Temperature      │ │  Disk Usage                      │ │
-│  │  [Gauge: 72°C]       │ │  [Bar: /dev/sda1 45%, sdb1 62%] │ │
-│  └──────────────────────┘ └──────────────────────────────────┘ │
-│                                                                 │
-│  ┌───────────────────────────────────────────────────────────┐ │
-│  │  LDI Quality Scatter (PE vs JE)                           │ │
-│  │  ┌─────────────────────────────────────────────────────┐  │ │
-│  │  │  PE (µm)                                            │  │ │
-│  │  │   15 ┤         ╱ Tolerance Box                      │  │ │
-│  │  │      │  ·  · ╱· · ·                                │  │ │
-│  │  │    0 ┤──╱────────────────── 0                       │  │ │
-│  │  │      │ ╱· · · ·                                    │  │ │
-│  │  │  -15 ┤╱         (green zone ±10µm)                 │  │ │
-│  │  │      └─┬────┬────┬────┬────┬─                      │  │ │
-│  │  │       -15   -5    0    5   15  JE (µm)             │  │ │
-│  │  └─────────────────────────────────────────────────────┘  │ │
-│  └───────────────────────────────────────────────────────────┘ │
-│                                                                 │
-│  ┌───────────────────────────────────────────────────────────┐ │
-│  │  LDI Manufacturing Telemetry                              │ │
-│  │  Throughput: 1250 units/hr | PE: 0.85 | JE: 0.92          │ │
-│  │  Humidity: 65% | Power: 2400W | Vibration: 2.1 mm/s       │ │
-│  └───────────────────────────────────────────────────────────┘ │
+│                                 │
+│ ┌───────────────────────────────────────────────────────────┐ │
+│ │ Network Interface Traffic (Symmetrical Butterfly)    │ │
+│ │ ┌─────────────────────────────────────────────────────┐ │ │
+│ │ │   ▲ eth0 RX: ████████████ 2.4 Gbps        │ │ │
+│ │ │   │ wlan0 RX: ██████ 800 Mbps           │ │ │
+│ │ │ ───┼────────────────────────────────── 0 Mbps   │ │ │
+│ │ │   │ wlan0 TX: ████ 400 Mbps            │ │ │
+│ │ │   ▼ eth0 TX: ████████ 1.6 Gbps          │ │ │
+│ │ └─────────────────────────────────────────────────────┘ │ │
+│ └───────────────────────────────────────────────────────────┘ │
+│                                 │
+│ ┌──────────────────────┐ ┌──────────────────────────────────┐ │
+│ │ CPU Temperature   │ │ Disk Usage           │ │
+│ │ [Gauge: 72°C]    │ │ [Bar: /dev/sda1 45%, sdb1 62%] │ │
+│ └──────────────────────┘ └──────────────────────────────────┘ │
+│                                 │
+│ ┌───────────────────────────────────────────────────────────┐ │
+│ │ LDI Quality Scatter (PE vs JE)              │ │
+│ │ ┌─────────────────────────────────────────────────────┐ │ │
+│ │ │ PE (µm)                      │ │ │
+│ │ │  15 ┤     ╱ Tolerance Box           │ │ │
+│ │ │   │ · · ╱· · ·                │ │ │
+│ │ │  0 ┤──╱────────────────── 0            │ │ │
+│ │ │   │ ╱· · · ·                  │ │ │
+│ │ │ -15 ┤╱     (green zone ±10µm)         │ │ │
+│ │ │   └─┬────┬────┬────┬────┬─           │ │ │
+│ │ │    -15  -5  0  5  15 JE (µm)       │ │ │
+│ │ └─────────────────────────────────────────────────────┘ │ │
+│ └───────────────────────────────────────────────────────────┘ │
+│                                 │
+│ ┌───────────────────────────────────────────────────────────┐ │
+│ │ LDI Manufacturing Telemetry               │ │
+│ │ Throughput: 1250 units/hr | PE: 0.85 | JE: 0.92     │ │
+│ │ Humidity: 65% | Power: 2400W | Vibration: 2.1 mm/s    │ │
+│ └───────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -156,8 +156,8 @@
 
 | Zone | Color | Meaning |
 |---|---|---|
-| Inside ±10µm | 🟢 Green | ปกติ — หัวเลเซอร์ทำงานถูกต้อง |
-| Outside ±10µm |  Red | ผิดปกติ — หัวเลเซอร์เริ่มมีปัญหา |
+| Inside ±10µm | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) Green | ปกติ — หัวเลเซอร์ทำงานถูกต้อง |
+| Outside ±10µm | Red | ผิดปกติ — หัวเลเซอร์เริ่มมีปัญหา |
 
 **วิธีใช้:**
 - จุดที่อยู่ในกรอบสีเขียว = คุณภาพ PCB อยู่ในเกณฑ์
@@ -225,7 +225,7 @@ Deep-dive rows (Production & Compliance, Process Metrics, Analytics & SPC, Syste
 
 ---
 
-##  Reading Metrics
+## Reading Metrics
 
 ### CPU Metrics
 
@@ -243,10 +243,10 @@ Deep-dive rows (Production & Compliance, Process Metrics, Analytics & SPC, Syste
 ```
 Machine: server-01
 CPU Load: 72% (Warning)
-├── Core 1: 85%  ️
-├── Core 2: 45%  
-├── Core 3: 78%  ️
-└── Core 4: 80%  ️
+├── Core 1: 85% ️
+├── Core 2: 45% 
+├── Core 3: 78% ️
+└── Core 4: 80% ️
 → Core 1, 3, 4 กำลังถูกใช้งานหนัก ตรวจสอบว่ามี process ไหนกำลัง run อยู่
 ```
 
@@ -282,10 +282,10 @@ CPU Load: 72% (Warning)
 ```
 Machine: server-01
 ┌─────────┬──────────┬──────────┬──────────┬──────────┬────────┐
-│Interface│ RX Mbps  │ TX Mbps  │ Errors   │ Drops    │ Status │
+│Interface│ RX Mbps │ TX Mbps │ Errors  │ Drops  │ Status │
 ├─────────┼──────────┼──────────┼──────────┼──────────┼────────┤
-│ eth0    │ 1200     │ 850      │ 0        │ 0        │  UP  │
-│ wlan0   │ 320      │ 180      │ 0        │ 12       │  UP  │
+│ eth0  │ 1200   │ 850   │ 0    │ 0    │ UP │
+│ wlan0  │ 320   │ 180   │ 0    │ 12    │ UP │
 └─────────┴──────────┴──────────┴──────────┴──────────┴────────┘
 → wlan0 มี drops 12 packets — ตรวจสอบ wireless signal
 ```
@@ -316,19 +316,19 @@ Machine: server-01
 
 ---
 
-##  Alert Response Procedures
+## Alert Response Procedures
 
 ### Alert Severity Levels
 
 | Level | Color | Response Time | Example |
 |---|---|---|---|
-| **Critical** |  Red | ทันที (< 15 นาที) | InterfaceDown, ServiceDown, CriticalCPU |
-| **Warning** | 🟡 Yellow | เร็ว (< 1 ชั่วโมง) | HighCPU, HighMemory, DiskSpaceLow |
-| **Info** |  Blue | ตามปกติ (< 4 ชั่วโมง) | TelemetryGap, PredictiveDiskFull |
+| **Critical** | Red | ทันที (< 15 นาที) | InterfaceDown, ServiceDown, CriticalCPU |
+| **Warning** | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) Yellow | เร็ว (< 1 ชั่วโมง) | HighCPU, HighMemory, DiskSpaceLow |
+| **Info** | Blue | ตามปกติ (< 4 ชั่วโมง) | TelemetryGap, PredictiveDiskFull |
 
 ### Incident Response Playbook
 
-####  Scenario 1: InterfaceDown (Critical)
+#### Scenario 1: InterfaceDown (Critical)
 
 ```
 Symptoms:
@@ -401,7 +401,7 @@ Escalation:
 - If critical (> 95%) → immediate cleanup required
 ```
 
-####  Scenario 4: ServiceDown (Critical)
+#### Scenario 4: ServiceDown (Critical)
 
 ```
 Symptoms:
@@ -427,7 +427,7 @@ Escalation:
 - If system-level issue → contact system admin
 ```
 
-#### 🟡 Scenario 5: PipelineDataStalled (Warning)
+#### ![Warning](https://img.shields.io/badge/Status-Warning-yellow) Scenario 5: PipelineDataStalled (Warning)
 
 ```
 Symptoms:
@@ -453,7 +453,7 @@ Escalation:
 
 ---
 
-##  Common Operations
+## Common Operations
 
 ### Check System Status
 
@@ -476,16 +476,16 @@ docker compose exec prometheus wget -qO- "http://localhost:9090/api/v1/alerts"
 ```bash
 # Recent telemetry (last 5 minutes)
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
-  "SELECT device_id, time, cpu_load_percent, temp_c
-   FROM public.sys_metrics
-   WHERE time > NOW() - INTERVAL '5 minutes'
-   ORDER BY time DESC LIMIT 10;"
+ "SELECT device_id, time, cpu_load_percent, temp_c
+  FROM public.sys_metrics
+  WHERE time > NOW() - INTERVAL '5 minutes'
+  ORDER BY time DESC LIMIT 10;"
 
 # Check interface metrics
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
-  "SELECT device_id, iface_name, rx_mbps, tx_mbps
-   FROM public.net_metrics
-   ORDER BY time DESC LIMIT 1;"
+ "SELECT device_id, iface_name, rx_mbps, tx_mbps
+  FROM public.net_metrics
+  ORDER BY time DESC LIMIT 1;"
 ```
 
 ### Restart Services
@@ -503,7 +503,7 @@ docker compose restart node-red grafana alertmanager prometheus
 
 ---
 
-##  Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -536,19 +536,19 @@ docker compose ps --format "table {{.Name}}\t{{.Status}}"
 
 echo "=== Data Flow ==="
 docker compose exec timescaledb psql -U ims_admin -d ims -c \
-  "SELECT device_id, COUNT(*) as rows, MAX(time) as latest
-   FROM public.sys_metrics
-   WHERE time > NOW() - INTERVAL '5 minutes'
-   GROUP BY device_id;"
+ "SELECT device_id, COUNT(*) as rows, MAX(time) as latest
+  FROM public.sys_metrics
+  WHERE time > NOW() - INTERVAL '5 minutes'
+  GROUP BY device_id;"
 
 echo "=== Alerts ==="
 docker compose exec prometheus wget -qO- "http://localhost:9090/api/v1/alerts" 2>&1 | \
-  python -c "import sys,json; d=json.load(sys.stdin); print(f'{len(d[\"data\"][\"alerts\"])} active alerts')"
+ python -c "import sys,json; d=json.load(sys.stdin); print(f'{len(d[\"data\"][\"alerts\"])} active alerts')"
 ```
 
 ---
 
-##  Quick Reference
+## Quick Reference
 
 ### Keyboard Shortcuts (Grafana)
 
@@ -567,14 +567,14 @@ docker compose exec prometheus wget -qO- "http://localhost:9090/api/v1/alerts" 2
 
 | Metric | Healthy | Warning | Critical |
 |---|---|---|---|
-| **CPU** | 🟢 Green | 🟡 Yellow → Orange |  Red |
-| **Memory** | 🟢 Green | 🟡 Purple → Dark Orange |  Red |
-| **Disk** | 🟢 Green | 🟡 Cyan → Blue |  Red |
-| **Network RX** |  Dark Blue (#1F60C4) | — |  Red |
-| **Network TX** |  Light Blue (#5794F2) | — |  Red |
-| **Temperature** | 🟢 Green | 🟡 Yellow |  Red |
-| **Errors** | — | — |  Red (#C4162A) |
-| **Drops** | — | 🟠 Orange (#FF9830) |  Red |
+| **CPU** | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) Green | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) Yellow → Orange | Red |
+| **Memory** | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) Green | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) Purple → Dark Orange | Red |
+| **Disk** | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) Green | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) Cyan → Blue | Red |
+| **Network RX** | Dark Blue (#1F60C4) | — | Red |
+| **Network TX** | Light Blue (#5794F2) | — | Red |
+| **Temperature** | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) Green | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) Yellow | Red |
+| **Errors** | — | — | Red (#C4162A) |
+| **Drops** | — | ![Warning](https://img.shields.io/badge/Status-Warning-orange) Orange (#FF9830) | Red |
 
 ### Alert Contacts
 

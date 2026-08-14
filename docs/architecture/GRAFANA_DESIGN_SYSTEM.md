@@ -66,13 +66,13 @@ every §2.1 token against a solid fill:
 
 | Token | Hex | White-text ratio | AA large (≥3:1) | AA normal (≥4.5:1) |
 |---|---|---|---|---|
-| `ok` | `#22C55E` | 2.28 |  |  |
-| `warning` | `#F59E0B` | 2.15 |  |  |
-| `critical` | `#EF4444` | 3.76 |  |  |
-| `info` | `#00F2FE` | 1.39 |  |  |
-| `accent` | `#3B82F6` | 3.68 |  |  |
-| `no_data` | `#64748B` | 4.76 |  |  |
-| `severity-minor` | `#EAB308` | 1.92 |  |  |
+| `ok` | `#22C55E` | 2.28 | | |
+| `warning` | `#F59E0B` | 2.15 | | |
+| `critical` | `#EF4444` | 3.76 | | |
+| `info` | `#00F2FE` | 1.39 | | |
+| `accent` | `#3B82F6` | 3.68 | | |
+| `no_data` | `#64748B` | 4.76 | | |
+| `severity-minor` | `#EAB308` | 1.92 | | |
 
 **Fix applied, not just documented:** every stat/gauge/bargauge panel using
 `colorMode: "background"` (31 panels) was switched to `colorMode: "value"` —
@@ -161,13 +161,13 @@ added.
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│ Row 1: KPI Strip        [4][4][4][4][4][4]  h=4      │  ← ตัวเลขเดียว บอกสถานะรวม
+│ Row 1: KPI Strip    [4][4][4][4][4][4] h=4   │ ← ตัวเลขเดียว บอกสถานะรวม
 ├─────────────────────────────────────────────────────┤
-│ Row 2: Alert + Status   [Alert List: 8][Table: 16] h=8│  ← สิ่งที่ต้องดูก่อนอย่างอื่น
+│ Row 2: Alert + Status  [Alert List: 8][Table: 16] h=8│ ← สิ่งที่ต้องดูก่อนอย่างอื่น
 ├─────────────────────────────────────────────────────┤
-│ Row 3: Trends (collapsible row ตาม domain)   h=8-10  │  ← 1-2 timeseries ต่อแถว กว้าง 12-24
+│ Row 3: Trends (collapsible row ตาม domain)  h=8-10 │ ← 1-2 timeseries ต่อแถว กว้าง 12-24
 ├─────────────────────────────────────────────────────┤
-│ Row N: Deep Debug (collapsed by default)     h=8     │  ← raw table, ไม่ critical
+│ Row N: Deep Debug (collapsed by default)   h=8   │ ← raw table, ไม่ critical
 └─────────────────────────────────────────────────────┘
 ```
 
@@ -229,22 +229,22 @@ being sound — the defect was pure theming, not the chart choice itself.
 Every `getOption` function on this system MUST:
 
 - Set `tooltip.backgroundColor`/`borderColor`/`textStyle.color` explicitly
-  to the dark-panel palette (`rgba(18,22,26,0.95)` / `rgba(255,255,255,0.12)`
-  / `#E8EDF2`) — never leave ECharts' light-mode tooltip default active.
+ to the dark-panel palette (`rgba(18,22,26,0.95)` / `rgba(255,255,255,0.12)`
+ / `#E8EDF2`) — never leave ECharts' light-mode tooltip default active.
 - **Not** assign each series its own bright hue just because there are many
-  of them. For "N similar things over time" charts (e.g. 10 machines' raw
-  samples), render all N in one muted neutral tone (`#8B98A9`) and reserve
-  color for what's actually a verdict — e.g. the one machine currently
-  outside its control limits gets `critical` red, everything else stays
-  gray. This is the same §2.1 principle ("color has one meaning") applied
-  to a plugin that doesn't enforce it for you.
+ of them. For "N similar things over time" charts (e.g. 10 machines' raw
+ samples), render all N in one muted neutral tone (`#8B98A9`) and reserve
+ color for what's actually a verdict — e.g. the one machine currently
+ outside its control limits gets `critical` red, everything else stays
+ gray. This is the same §2.1 principle ("color has one meaning") applied
+ to a plugin that doesn't enforce it for you.
 - When two categories genuinely need to stay visually distinct (e.g. PE vs
-  JE box plot) but neither is a verdict, pick two tokens from the
-  **neutral-readout family** (`info` `#00F2FE`, `accent` `#3B82F6`) — not a
-  warning/critical token, and not an arbitrary non-token hex.
+ JE box plot) but neither is a verdict, pick two tokens from the
+ **neutral-readout family** (`info` `#00F2FE`, `accent` `#3B82F6`) — not a
+ warning/critical token, and not an arbitrary non-token hex.
 - Style `xAxis`/`yAxis`/`legend` text color to `rgba(224,224,224,0.85)` and
-  grid/split lines to `rgba(255,255,255,0.06-0.15)`, matching the rest of
-  the system's restrained-gridline convention (§9 visual-noise rule).
+ grid/split lines to `rgba(255,255,255,0.06-0.15)`, matching the rest of
+ the system's restrained-gridline convention (§9 visual-noise rule).
 
 Reference implementations: `ims-ldi-engineering-analytics.json` panels 17
 (Thickness Control Chart) and 12 (PE/JE Box Plot).
@@ -265,7 +265,7 @@ Reference implementations: `ims-ldi-engineering-analytics.json` panels 17
 
 Panel ที่ปรากฏซ้ำมากกว่า 1 dashboard **ต้อง**เป็น Library Panel (แก้ที่เดียว อัปเดตทุกที่) — **แต่เฉพาะกรณีที่ SQL/business logic ตรงกันจริงๆ**, ไม่ใช่แค่ชื่อ panel คล้ายกัน:
 
-- **Fleet Health Score** (stat) —  true library panel, `ims-lib-fleet-health-score`. Confirmed byte-identical query (`SELECT value FROM public.v_fleet_score`) between `ims-capacity-planning.json` and `ims-noc-overview.json` before merging.
+- **Fleet Health Score** (stat) — true library panel, `ims-lib-fleet-health-score`. Confirmed byte-identical query (`SELECT value FROM public.v_fleet_score`) between `ims-capacity-planning.json` and `ims-noc-overview.json` before merging.
 - **Availability / Critical Alarms / Running / Yield** — ️ audited 2026-08-08, found NOT duplicates despite similar names: each dashboard's version has a genuinely different SQL scope (e.g. Manufacturing's Yield panel adds a `machine_id` template filter and a period-over-period "Delta %" calc that Easy Overview's simpler version doesn't have; Andon/Manufacturing/Easy-Overview's "Availability"/"Running" panels differ in whether they filter by `machine_id` and which compression-chunk workaround they carry). Forcing these into one shared panel would mean changing what each dashboard actually computes — out of scope here (business logic is explicitly off-limits for this pass). If a real business decision is made later to standardize these to one canonical query/filter scope, redo this audit then and promote the survivors to library panels using the same mechanism.
 
 **How this actually works in this repo (Grafana 13.1.1 has no file-based provisioning for library panels — only datasources/dashboards/alerting/plugins get that; verified empirically, not by trusting the Grafana docs' provisioning section):**

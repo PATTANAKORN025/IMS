@@ -57,7 +57,7 @@ Raw `git diff` on this file is unreadable — every node's function body is one 
  // DESIGN_STRESS: exercises layout edge cases (real dropouts, long strings,
  // spec-boundary values, extra machines) that realistic mock data rarely hits.
 @@ -29,6 +40,82 @@
-     return prev + THETA * (mu - prev) * DT + sigma * Math.sqrt(DT) * gauss();
+   return prev + THETA * (mu - prev) * DT + sigma * Math.sqrt(DT) * gauss();
  }
  function r(x, n) { const p = Math.pow(10, n); return Math.round(x * p) / p; }
 +function randMs(minMin, maxMin) { return (minMin + Math.random() * (maxMin - minMin)) * 60000; }
@@ -72,17 +72,17 @@ Raw `git diff` on this file is unreadable — every node's function body is one 
 +// modeled explicitly via the drift lifecycle below, not baseline noise. ──
 +const PE_JE_LIMIT = 10;
 +function calibrate(meanSd) {
-+    const mean = Math.max(-0.5 * PE_JE_LIMIT, Math.min(0.5 * PE_JE_LIMIT, meanSd[0]));
-+    const sd = Math.min(meanSd[1], Math.max(0.3, (PE_JE_LIMIT - Math.abs(mean)) / 3.2));
-+    return [mean, sd];
++  const mean = Math.max(-0.5 * PE_JE_LIMIT, Math.min(0.5 * PE_JE_LIMIT, meanSd[0]));
++  const sd = Math.min(meanSd[1], Math.max(0.3, (PE_JE_LIMIT - Math.abs(mean)) / 3.2));
++  return [mean, sd];
 +}
 +const PCAL = {};
 +for (const id of Object.keys(P)) {
-+    const p = P[id];
-+    PCAL[id] = {
-+        pe: p.pe ? p.pe.map(ch => ch ? calibrate(ch) : null) : null,
-+        je: p.je.map(ch => ch ? calibrate(ch) : null)
-+    };
++  const p = P[id];
++  PCAL[id] = {
++    pe: p.pe ? p.pe.map(ch => ch ? calibrate(ch) : null) : null,
++    je: p.je.map(ch => ch ? calibrate(ch) : null)
++  };
 +}
 +
 +// ── Drift lifecycle: nominal -> drifting -> faulted -> serviced -> cooldown.
@@ -94,47 +94,47 @@ Raw `git diff` on this file is unreadable — every node's function body is one 
 +// once 'serviced' -- discrete, bounded fault episodes instead of a
 +// permanent condition (LDI Alarm Fidelity Audit finding #5/#6). ──
 +function driftStep(d, now, cfg) {
-+    if (!d) d = { phase: 'nominal', bias: 0, cooldownUntil: 0 };
-+    switch (d.phase) {
-+        case 'drifting': {
-+            const frac = Math.min(1, (now - d.driftStart) / (d.until - d.driftStart));
-+            d.bias = d.target * frac;
-+            if (now >= d.until) { d.phase = 'faulted'; d.until = now + randMs(cfg.faultMin, cfg.faultMax); }
-+            break;
-+        }
-+        case 'faulted':
-+            d.bias = d.target;
-+            if (now >= d.until) { d.phase = 'serviced'; }
-+            break;
-+        case 'serviced':
-+            d.bias = 0;
-+            d.cooldownUntil = now + randMs(cfg.cooldownMin, cfg.cooldownMax);
-+            d.phase = 'nominal';
-+            break;
-+        default: // nominal
-+            d.bias = 0;
-+            if (now >= d.cooldownUntil && Math.random() < cfg.onsetProb) {
-+                d.phase = 'drifting';
-+                d.driftStart = now;
-+                d.until = now + randMs(cfg.driftMin, cfg.driftMax);
-+                d.target = cfg.targetFn();
-+            }
++  if (!d) d = { phase: 'nominal', bias: 0, cooldownUntil: 0 };
++  switch (d.phase) {
++    case 'drifting': {
++      const frac = Math.min(1, (now - d.driftStart) / (d.until - d.driftStart));
++      d.bias = d.target * frac;
++      if (now >= d.until) { d.phase = 'faulted'; d.until = now + randMs(cfg.faultMin, cfg.faultMax); }
++      break;
 +    }
-+    return d;
++    case 'faulted':
++      d.bias = d.target;
++      if (now >= d.until) { d.phase = 'serviced'; }
++      break;
++    case 'serviced':
++      d.bias = 0;
++      d.cooldownUntil = now + randMs(cfg.cooldownMin, cfg.cooldownMax);
++      d.phase = 'nominal';
++      break;
++    default: // nominal
++      d.bias = 0;
++      if (now >= d.cooldownUntil && Math.random() < cfg.onsetProb) {
++        d.phase = 'drifting';
++        d.driftStart = now;
++        d.until = now + randMs(cfg.driftMin, cfg.driftMax);
++        d.target = cfg.targetFn();
++      }
++  }
++  return d;
 +}
 +// onsetProb is per 2s tick. vac/env ~= 1 onset / ~1.3 days per machine;
 +// align ~= 1 onset / ~19h per machine (registration drift is the most
 +// common real LDI fault mode) -- fleet-wide that's ~20-30 discrete fault
 +// episodes/day, each producing a handful of debounced alarms while active.
 +const DRIFT_CFG = {
-+    vac:   { onsetProb: 0.000015, driftMin: 20, driftMax: 45, faultMin: 15, faultMax: 30, cooldownMin: 180, cooldownMax: 480,
-+             targetFn: () => (Math.random() < 0.5 ? 1 : -1) * (11 + Math.random() * 8) },
-+    temp:  { onsetProb: 0.000012, driftMin: 15, driftMax: 40, faultMin: 10, faultMax: 25, cooldownMin: 180, cooldownMax: 480,
-+             targetFn: () => (Math.random() < 0.5 ? 1 : -1) * (4.5 + Math.random() * 3) },
-+    rh:    { onsetProb: 0.000012, driftMin: 15, driftMax: 40, faultMin: 10, faultMax: 25, cooldownMin: 180, cooldownMax: 480,
-+             targetFn: () => (Math.random() < 0.5 ? 1 : -1) * (9 + Math.random() * 6) },
-+    align: { onsetProb: 0.00002, driftMin: 15, driftMax: 35, faultMin: 10, faultMax: 20, cooldownMin: 120, cooldownMax: 360,
-+             targetFn: () => (Math.random() < 0.5 ? 1 : -1) * (13 + Math.random() * 8) }
++  vac:  { onsetProb: 0.000015, driftMin: 20, driftMax: 45, faultMin: 15, faultMax: 30, cooldownMin: 180, cooldownMax: 480,
++       targetFn: () => (Math.random() < 0.5 ? 1 : -1) * (11 + Math.random() * 8) },
++  temp: { onsetProb: 0.000012, driftMin: 15, driftMax: 40, faultMin: 10, faultMax: 25, cooldownMin: 180, cooldownMax: 480,
++       targetFn: () => (Math.random() < 0.5 ? 1 : -1) * (4.5 + Math.random() * 3) },
++  rh:  { onsetProb: 0.000012, driftMin: 15, driftMax: 40, faultMin: 10, faultMax: 25, cooldownMin: 180, cooldownMax: 480,
++       targetFn: () => (Math.random() < 0.5 ? 1 : -1) * (9 + Math.random() * 6) },
++  align: { onsetProb: 0.00002, driftMin: 15, driftMax: 35, faultMin: 10, faultMax: 20, cooldownMin: 120, cooldownMax: 360,
++       targetFn: () => (Math.random() < 0.5 ? 1 : -1) * (13 + Math.random() * 8) }
 +};
  
  const st = flow.get('sim_state') || {};
@@ -142,52 +142,52 @@ Raw `git diff` on this file is unreadable — every node's function body is one 
 @@ -37,17 +124,20 @@
  const ALL_IDS = Object.keys(P).concat(Object.keys(STRESS_MACHINES));
  for (const id of ALL_IDS) {
-     const p = P[STRESS_MACHINES[id] || id];
-+    const pcal = PCAL[STRESS_MACHINES[id] || id];
-     let s = st[id];
-     if (!s) {
--        s = { temp: p.temp_mu, rh: p.rh_mu, board: 1,
-+        s = { temp: p.temp_mu, rh: p.rh_mu, vac: p.vac, board: 1,
-               ...
--              acc: 0, gapTicks: 0, speedFaultTicks: 0 };
-+              acc: 0, gapTicks: 0, speedFaultTicks: 0,
-+              drift: { vac: null, temp: null, rh: null, align: null } };
-     }
-+    if (!s.drift) s.drift = { vac: null, temp: null, rh: null, align: null };
-     ...
--    // ── OU drift ของสภาพแวดล้อม ──
--    s.temp = ou(s.temp, p.temp_mu, p.temp_sd);
--    s.rh   = ou(s.rh,   p.rh_mu,   p.rh_sd);
-+    // ── drift lifecycle step (independent per fault type) ──
-+    s.drift.vac = driftStep(s.drift.vac, now, DRIFT_CFG.vac);
-+    s.drift.temp = driftStep(s.drift.temp, now, DRIFT_CFG.temp);
-+    s.drift.rh = driftStep(s.drift.rh, now, DRIFT_CFG.rh);
-+    s.drift.align = driftStep(s.drift.align, now, DRIFT_CFG.align);
+   const p = P[STRESS_MACHINES[id] || id];
++  const pcal = PCAL[STRESS_MACHINES[id] || id];
+   let s = st[id];
+   if (!s) {
+-    s = { temp: p.temp_mu, rh: p.rh_mu, board: 1,
++    s = { temp: p.temp_mu, rh: p.rh_mu, vac: p.vac, board: 1,
+        ...
+-       acc: 0, gapTicks: 0, speedFaultTicks: 0 };
++       acc: 0, gapTicks: 0, speedFaultTicks: 0,
++       drift: { vac: null, temp: null, rh: null, align: null } };
+   }
++  if (!s.drift) s.drift = { vac: null, temp: null, rh: null, align: null };
+   ...
+-  // ── OU drift ของสภาพแวดล้อม ──
+-  s.temp = ou(s.temp, p.temp_mu, p.temp_sd);
+-  s.rh  = ou(s.rh,  p.rh_mu,  p.rh_sd);
++  // ── drift lifecycle step (independent per fault type) ──
++  s.drift.vac = driftStep(s.drift.vac, now, DRIFT_CFG.vac);
++  s.drift.temp = driftStep(s.drift.temp, now, DRIFT_CFG.temp);
++  s.drift.rh = driftStep(s.drift.rh, now, DRIFT_CFG.rh);
++  s.drift.align = driftStep(s.drift.align, now, DRIFT_CFG.align);
 +
-+    // ── OU drift ของสภาพแวดล้อม + vacuum (all three now real OU processes,
-+    //    not a flat constant -- see header comment) ──
-+    s.temp = ou(s.temp, p.temp_mu + s.drift.temp.bias, p.temp_sd);
-+    s.rh   = ou(s.rh,   p.rh_mu + s.drift.rh.bias, p.rh_sd);
-+    s.vac  = ou(s.vac,  p.vac + s.drift.vac.bias, p.vac_sd);
++  // ── OU drift ของสภาพแวดล้อม + vacuum (all three now real OU processes,
++  //  not a flat constant -- see header comment) ──
++  s.temp = ou(s.temp, p.temp_mu + s.drift.temp.bias, p.temp_sd);
++  s.rh  = ou(s.rh,  p.rh_mu + s.drift.rh.bias, p.rh_sd);
++  s.vac = ou(s.vac, p.vac + s.drift.vac.bias, p.vac_sd);
+   ...
+-    air_vacuum: p.vac,      // ← DF OUTER/SM = 0 พอดี (ทดสอบบั๊ก zero-coercion)
++    air_vacuum: dropout ? 0 : r(s.vac, 2),
+   ...
++  const alignBias = s.drift.align.bias;
+-  if (p.pe) {
++  if (pcal.pe) {
      ...
--        air_vacuum: p.vac,            // ← DF OUTER/SM = 0 พอดี (ทดสอบบั๊ก zero-coercion)
-+        air_vacuum: dropout ? 0 : r(s.vac, 2),
+-      out[a] = p.pe[a][0] + za * p.pe[a][1];
+-      out[b] = p.pe[b][0] + zb * p.pe[b][1];
++      out[a] = pcal.pe[a][0] + za * pcal.pe[a][1] + (a === 0 ? alignBias : 0);
++      out[b] = pcal.pe[b][0] + zb * pcal.pe[b][1] + (b === 0 ? alignBias : 0);
      ...
-+    const alignBias = s.drift.align.bias;
--    if (p.pe) {
-+    if (pcal.pe) {
-         ...
--            out[a] = p.pe[a][0] + za * p.pe[a][1];
--            out[b] = p.pe[b][0] + zb * p.pe[b][1];
-+            out[a] = pcal.pe[a][0] + za * pcal.pe[a][1] + (a === 0 ? alignBias : 0);
-+            out[b] = pcal.pe[b][0] + zb * pcal.pe[b][1] + (b === 0 ? alignBias : 0);
-         ...
-     for (let k = 0; k < 4; k++) {
--        const j = p.je[k];
--        rec['je_' + (k + 1)] = j ? r(Math.max(0, j[0] + Math.abs(gauss()) * j[1]), 1) : null;
-+        const j = pcal.je[k];
-+        rec['je_' + (k + 1)] = j ? r(Math.max(0, j[0] + Math.abs(gauss()) * j[1] + (k === 0 ? Math.abs(alignBias) : 0)), 1) : null;
-     }
+   for (let k = 0; k < 4; k++) {
+-    const j = p.je[k];
+-    rec['je_' + (k + 1)] = j ? r(Math.max(0, j[0] + Math.abs(gauss()) * j[1]), 1) : null;
++    const j = pcal.je[k];
++    rec['je_' + (k + 1)] = j ? r(Math.max(0, j[0] + Math.abs(gauss()) * j[1] + (k === 0 ? Math.abs(alignBias) : 0)), 1) : null;
+   }
 
 === nodered_data/flows.json :: node 'almsim_gen' ===
 @@ -13,28 +14,24 @@
@@ -217,12 +217,12 @@ Raw `git diff` on this file is unreadable — every node's function body is one 
  function poissonCount(rate) { ... }
 -function newRow(eq, code, ts, relatedLogId) {
 +function newRow(eq, code, ts, relatedLogId, linkBasis) {
-     return {
-         ...
--        related_log_id: relatedLogId || null
-+        related_log_id: relatedLogId || null,
-+        link_basis: linkBasis
-     };
+   return {
+     ...
+-    related_log_id: relatedLogId || null
++    related_log_id: relatedLogId || null,
++    link_basis: linkBasis
+   };
  }
  
 -const rows = [];
@@ -231,73 +231,73 @@ Raw `git diff` on this file is unreadable — every node's function body is one 
 -// ── background noise (unconditioned, real historical distribution) ──
 -const nNoise = poissonCount(RATE_PER_TICK);
 -for (let k = 0; k < nNoise; k++) {
--    rows.push(newRow(pick(MACHINES), pick(NOISE_CUM), new Date(now - Math.floor(Math.random() * 9000))));
+-  rows.push(newRow(pick(MACHINES), pick(NOISE_CUM), new Date(now - Math.floor(Math.random() * 9000))));
 -}
 +function generate(cooldownSet) {
-+    const rows = [];
-+    const debounced = (eq, code) => cooldownSet.has(eq + '|' + code);
++  const rows = [];
++  const debounced = (eq, code) => cooldownSet.has(eq + '|' + code);
 +
-+    // ── background noise ──
-+    const nNoise = poissonCount(RATE_PER_TICK);
-+    for (let k = 0; k < nNoise; k++) {
-+        const eq = pick(MACHINES), code = pick(NOISE_CUM);
-+        if (debounced(eq, code)) continue;
-+        rows.push(newRow(eq, code, new Date(now - Math.floor(Math.random() * 9000)), null, 'nearest'));
-+    }
++  // ── background noise ──
++  const nNoise = poissonCount(RATE_PER_TICK);
++  for (let k = 0; k < nNoise; k++) {
++    const eq = pick(MACHINES), code = pick(NOISE_CUM);
++    if (debounced(eq, code)) continue;
++    rows.push(newRow(eq, code, new Date(now - Math.floor(Math.random() * 9000)), null, 'nearest'));
++  }
  
 -// ── condition-driven alarms ... ──
 -const sql = ` ... `;
 -pool.query(sql, [], function (err, result) {
--    if (err) { node.error(...); return; }
--    const ts = new Date();
--    const fires = () => Math.random() < 0.25;
--    for (const r of (result.rows || [])) {
--        if (...) { rows.push(newRow(r.eqp_id, '91008', ts, r.log_id)); }
--        if (...) { rows.push(newRow(r.eqp_id, ALIGN_CODES[...], ts, r.log_id)); }
--        if (...) { rows.push(newRow(r.eqp_id, '70004', ts, r.log_id)); }
--        if (...) { rows.push(newRow(r.eqp_id, '91009', ts, r.log_id)); }
-+    // ── rare genuine-Critical events, independent of telemetry state ──
-+    for (const [eq] of MACHINES) {
-+        if (Math.random() < RARE_CRITICAL_PROB) {
-+            const code = RARE_CRITICAL_CODES[Math.floor(Math.random() * RARE_CRITICAL_CODES.length)];
-+            if (!debounced(eq, code)) rows.push(newRow(eq, code, new Date(now), null, 'nearest'));
-         }
+-  if (err) { node.error(...); return; }
+-  const ts = new Date();
+-  const fires = () => Math.random() < 0.25;
+-  for (const r of (result.rows || [])) {
+-    if (...) { rows.push(newRow(r.eqp_id, '91008', ts, r.log_id)); }
+-    if (...) { rows.push(newRow(r.eqp_id, ALIGN_CODES[...], ts, r.log_id)); }
+-    if (...) { rows.push(newRow(r.eqp_id, '70004', ts, r.log_id)); }
+-    if (...) { rows.push(newRow(r.eqp_id, '91009', ts, r.log_id)); }
++  // ── rare genuine-Critical events, independent of telemetry state ──
++  for (const [eq] of MACHINES) {
++    if (Math.random() < RARE_CRITICAL_PROB) {
++      const code = RARE_CRITICAL_CODES[Math.floor(Math.random() * RARE_CRITICAL_CODES.length)];
++      if (!debounced(eq, code)) rows.push(newRow(eq, code, new Date(now), null, 'nearest'));
      }
--    if (rows.length === 0) { node.status(...); return; }
--    node.status(...);
--    node.send({ payload: rows });
+   }
+-  if (rows.length === 0) { node.status(...); return; }
+-  node.status(...);
+-  node.send({ payload: rows });
 -});
 +
-+    const sql = ` ... unchanged ... `;
-+    return new Promise((resolve) => {
-+        pool.query(sql, [], function (err, result) {
-+            if (err) { node.error(...); resolve(rows); return; }
-+            const ts = new Date();
-+            const fires = () => Math.random() < 0.25;
-+            for (const r of (result.rows || [])) {
-+                if (...) { if (!debounced(r.eqp_id, '91008')) rows.push(newRow(r.eqp_id, '91008', ts, r.log_id, 'causal')); }
-+                if (...) { const code = ALIGN_CODES[...]; if (!debounced(r.eqp_id, code)) rows.push(newRow(r.eqp_id, code, ts, r.log_id, 'causal')); }
-+                if (...) { if (!debounced(r.eqp_id, '70004')) rows.push(newRow(r.eqp_id, '70004', ts, r.log_id, 'causal')); }
-+                if (...) { if (!debounced(r.eqp_id, '91009')) rows.push(newRow(r.eqp_id, '91009', ts, r.log_id, 'causal')); }
-+            }
-+            resolve(rows);
-+        });
++  const sql = ` ... unchanged ... `;
++  return new Promise((resolve) => {
++    pool.query(sql, [], function (err, result) {
++      if (err) { node.error(...); resolve(rows); return; }
++      const ts = new Date();
++      const fires = () => Math.random() < 0.25;
++      for (const r of (result.rows || [])) {
++        if (...) { if (!debounced(r.eqp_id, '91008')) rows.push(newRow(r.eqp_id, '91008', ts, r.log_id, 'causal')); }
++        if (...) { const code = ALIGN_CODES[...]; if (!debounced(r.eqp_id, code)) rows.push(newRow(r.eqp_id, code, ts, r.log_id, 'causal')); }
++        if (...) { if (!debounced(r.eqp_id, '70004')) rows.push(newRow(r.eqp_id, '70004', ts, r.log_id, 'causal')); }
++        if (...) { if (!debounced(r.eqp_id, '91009')) rows.push(newRow(r.eqp_id, '91009', ts, r.log_id, 'causal')); }
++      }
++      resolve(rows);
 +    });
++  });
 +}
 +
 +// debounce lookup: which (machine, code) pairs are still within cooldown
 +pool.query(
-+    `SELECT equipmentid, errorcode FROM public.ldi_alarm_state WHERE last_fired > NOW() - INTERVAL '${COOLDOWN_MIN} minutes'`,
-+    [],
-+    function (err, result) {
-+        if (err) { node.error('Alarm sim debounce query failed: ' + err.message); return; }
-+        const cooldownSet = new Set((result.rows || []).map(r => r.equipmentid + '|' + r.errorcode));
-+        generate(cooldownSet).then(rows => {
-+            if (rows.length === 0) { node.status({ fill: 'grey', shape: 'ring', text: 'no alarm' }); return; }
-+            node.status({ fill: 'yellow', shape: 'dot', text: rows.length + ' alarm: ' + rows.map(r => r.errorcode).join(',') });
-+            node.send({ payload: rows });
-+        });
-+    }
++  `SELECT equipmentid, errorcode FROM public.ldi_alarm_state WHERE last_fired > NOW() - INTERVAL '${COOLDOWN_MIN} minutes'`,
++  [],
++  function (err, result) {
++    if (err) { node.error('Alarm sim debounce query failed: ' + err.message); return; }
++    const cooldownSet = new Set((result.rows || []).map(r => r.equipmentid + '|' + r.errorcode));
++    generate(cooldownSet).then(rows => {
++      if (rows.length === 0) { node.status({ fill: 'grey', shape: 'ring', text: 'no alarm' }); return; }
++      node.status({ fill: 'yellow', shape: 'dot', text: rows.length + ' alarm: ' + rows.map(r => r.errorcode).join(',') });
++      node.send({ payload: rows });
++    });
++  }
 +);
  return null;
 
@@ -313,20 +313,20 @@ Raw `git diff` on this file is unreadable — every node's function body is one 
  for (const r of rows) for (const c of cols) params.push(r[c]);
 @@ -11,5 +10,21 @@
  pool.query(sql, params, function (err) {
-     if (err) { node.error('Alarm sim INSERT failed: ' + err.message); return; }
-     node.log('Alarm sim: inserted ' + rows.length);
+   if (err) { node.error('Alarm sim INSERT failed: ' + err.message); return; }
+   node.log('Alarm sim: inserted ' + rows.length);
 +
-+    // LDI Alarm Fidelity Audit fix #6 (burst/flood): record/refresh debounce
-+    // state for every (machine, code) that fired this tick.
-+    const pairs = [...new Set(rows.map(r => r.equipmentid + '|' + r.errorcode))].map(k => k.split('|'));
-+    if (pairs.length === 0) return;
-+    const stateVals = [];
-+    const statePh = pairs.map((p, i) => { stateVals.push(p[0], p[1]); return '($' + (i*2+1) + ',$' + (i*2+2) + ',NOW(),NOW(),1)'; }).join(',');
-+    const stateSql = 'INSERT INTO public.ldi_alarm_state (equipmentid, errorcode, first_fired, last_fired, fire_count) VALUES ' +
-+        statePh + ' ON CONFLICT (equipmentid, errorcode) DO UPDATE SET last_fired = EXCLUDED.last_fired, fire_count = ldi_alarm_state.fire_count + 1';
-+    pool.query(stateSql, stateVals, function (err2) {
-+        if (err2) node.error('Alarm sim debounce state upsert failed: ' + err2.message);
-+    });
++  // LDI Alarm Fidelity Audit fix #6 (burst/flood): record/refresh debounce
++  // state for every (machine, code) that fired this tick.
++  const pairs = [...new Set(rows.map(r => r.equipmentid + '|' + r.errorcode))].map(k => k.split('|'));
++  if (pairs.length === 0) return;
++  const stateVals = [];
++  const statePh = pairs.map((p, i) => { stateVals.push(p[0], p[1]); return '($' + (i*2+1) + ',$' + (i*2+2) + ',NOW(),NOW(),1)'; }).join(',');
++  const stateSql = 'INSERT INTO public.ldi_alarm_state (equipmentid, errorcode, first_fired, last_fired, fire_count) VALUES ' +
++    statePh + ' ON CONFLICT (equipmentid, errorcode) DO UPDATE SET last_fired = EXCLUDED.last_fired, fire_count = ldi_alarm_state.fire_count + 1';
++  pool.query(stateSql, stateVals, function (err2) {
++    if (err2) node.error('Alarm sim debounce state upsert failed: ' + err2.message);
++  });
  });
  return null;
 ```
