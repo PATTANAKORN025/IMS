@@ -1,0 +1,62 @@
+
+> ims-node-red  | 13 Aug 08:58:51 - [info] [function:Insert to ldi_alarm_log] Alarm sim: inserted 1
+> ims-node-red  | 13 Aug 08:59:11 - [info] [function:Insert to ldi_alarm_log] Alarm sim: inserted 1
+> ims-node-red  | 13 Aug 08:59:21 - [info] [function:Insert to ldi_alarm_log] Alarm sim: inserted 1
+> ims-node-red  | 13 Aug 08:59:41 - [info] [function:Insert to ldi_alarm_log] Alarm sim: inserted 1
+> ims-node-red  | 13 Aug 09:00:31 - [info] [function:Insert to ldi_alarm_log] Alarm sim: inserted 1
+> ims-node-red  | 13 Aug 09:00:41 - [info] [function:Insert to ldi_alarm_log] Alarm sim: inserted 2
+> ims-node-red  | 13 Aug 09:01:21 - [info] [function:Insert to ldi_alarm_log] Alarm sim: inserted 1
+  ims-node-red  | 13 Aug 09:01:42 - [info] [function:SRE AIOps Parser v9 (Batch)] Batch INSERT [sys] ok: 4 rows
+  ims-node-red  | 13 Aug 09:01:47 - [info] [debug:Alert Log] 
+  ims-node-red  | 🔔 *IMS SYSTEM ALERT [FIRING]* 🔔
+  ims-node-red  | 
+  ims-node-red  | 🔥 *PipelineDataStalled*
+> ims-node-red  | 13 Aug 09:02:21 - [info] [function:Insert to ldi_alarm_log] Alarm sim: inserted 2
+  ims-node-red  | 13 Aug 09:02:26 - [info] [function:SRE AIOps Parser v9 (Batch)] Batch INSERT [sys] ok: 4 rows
+  ims-node-red  | 13 Aug 09:02:34 - [info] [function:SRE AIOps Parser v9 (Batch)] Batch INSERT [sys] ok: 4 rows
+  ims-node-red  | 13 Aug 09:02:44 - [info] [function:SRE AIOps Parser v9 (Batch)] Batch INSERT [sys] ok: 4 rows
+  ims-node-red  | 13 Aug 09:02:52 - [info] [function:SRE AIOps Parser v9 (Batch)] Batch INSERT [sys] ok: 4 rows
+  ims-node-red  | 13 Aug 09:03:01 - [info] [function:Load Device Registry] Device registry loaded: 25 devices
+> ims-node-red  | 13 Aug 09:03:31 - [info] [function:Insert to ldi_alarm_log] Alarm sim: inserted 1
+  ims-node-red  | 13 Aug 09:03:38 - [info] [function:SRE AIOps Parser v9 (Batch)] Batch INSERT [sys] ok: 4 rows
+  ims-node-red  | 13 Aug 09:03:47 - [info] [function:SRE AIOps Parser v9 (Batch)] Batch INSERT [sys] ok: 4 rows
+  ims-node-red  | 13 Aug 09:03:47 - [info] [debug:Alert Log] 
+  ims-node-red  | 🔔 *IMS SYSTEM ALERT [FIRING]* 🔔
+  ims-node-red  | 
+> ims-node-red  | 13 Aug 09:06:11 - [info] [function:Insert to ldi_alarm_log] Alarm sim: inserted 1
+  ims-node-red  | 13 Aug 09:06:16 - [info] [function:SRE AIOps Parser v9 (Batch)] Batch INSERT [sys] ok: 3 rows
+  ims-node-red  | 13 Aug 09:06:28 - [info] [function:SRE AIOps Parser v9 (Batch)] Batch INSERT [sys] ok: 3 rows
+  ims-node-red  | 13 Aug 09:06:37 - [info] [function:SRE AIOps Parser v9 (Batch)] Batch INSERT [sys] ok: 3 rows
+  ims-node-red  | 13 Aug 09:06:47 - [info] [debug:Alert Log] 
+  ims-node-red  | 🔔 *IMS SYSTEM ALERT [RESOLVED]* 🔔
+> ims-node-red  | 13 Aug 09:07:31 - [info] [function:Insert to ldi_alarm_log] Alarm sim: inserted 1
+  ims-node-red  | 13 Aug 09:07:38 - [info] [function:SRE AIOps Parser v9 (Batch)] Batch INSERT [sys] ok: 3 rows
+  ims-node-red  | 13 Aug 09:07:49 - [info] [function:SRE AIOps Parser v9 (Batch)] Batch INSERT [sys] ok: 3 rows
+  ims-node-red  | 13 Aug 09:07:58 - [info] [function:SRE AIOps Parser v9 (Batch)] Batch INSERT [sys] ok: 3 rows
+  ims-node-red  | 13 Aug 09:08:01 - [info] [function:Load Device Registry] Device registry loaded: 25 devices
+  ims-node-red  | 13 Aug 09:08:10 - [info] [function:SRE AIOps Parser v9 (Batch)] Batch INSERT [sys] ok: 3 rows
+> ims-node-red  | 13 Aug 09:28:19 - [info] [function:Insert to ldi_alarm_log] Alarm sim: inserted 1
+> ims-node-red  | 13 Aug 09:28:29 - [info] [function:Insert to ldi_alarm_log] Alarm sim: inserted 1
+> ims-node-red  | 13 Aug 09:28:59 - [info] [function:Insert to ldi_alarm_log] Alarm sim: inserted 1
+> ims-node-red  | 13 Aug 09:30:49 - [info] [function:Insert to ldi_alarm_log] Alarm sim: inserted 1
+> ims-node-red  | 13 Aug 09:31:19 - [info] [function:Insert to ldi_alarm_log] Alarm sim: inserted 1
+  ims-node-red  | 13 Aug 09:31:57 - [info] [function:SRE AIOps Parser v9 (Batch)] Batch INSERT [sys] ok: 4 rows
+  ims-node-red  | 13 Aug 09:32:08 - [info] [function:SRE AIOps Parser v9 (Batch)] Batch INSERT [sys] ok: 4 rows
+  ims-node-red  | 13 Aug 09:32:18 - [info] [function:SRE AIOps Parser v9 (Batch)] Batch INSERT [sys] ok: 4 rows
+  ims-node-red  | 13 Aug 09:32:28 - [info] [function:SRE AIOps Parser v9 (Batch)] Batch INSERT [sys] ok: 4 rows
+  ims-node-red  | 13 Aug 09:32:38 - [info] [function:SRE AIOps Parser v9 (Batch)] Batch INSERT [sys] ok: 4 rows
+> ims-node-red  | 13 Aug 09:33:39 - [info] [function:Insert to ldi_alarm_log] Alarm sim: inserted 1
+  ims-node-red  | 13 Aug 09:33:39 - [info] [function:SRE AIOps Parser v9 (Batch)] Batch INSERT [sys] ok: 4 rows
+> ims-node-red  | 13 Aug 09:33:49 - [info] [function:Insert to ldi_alarm_log] Alarm sim: inserted 1
+  ims-node-red  | 13 Aug 09:33:50 - [info] [function:SRE AIOps Parser v9 (Batch)] Batch INSERT [sys] ok: 4 rows
+  ims-node-red  | 13 Aug 09:34:00 - [info] [function:SRE AIOps Parser v9 (Batch)] Batch INSERT [sys] ok: 4 rows
+  ims-node-red  | 13 Aug 09:34:10 - [info] [function:SRE AIOps Parser v9 (Batch)] Batch INSERT [sys] ok: 4 rows
+> ims-node-red  | 13 Aug 09:34:19 - [info] [function:Insert to ldi_alarm_log] Alarm sim: inserted 1
+  ims-node-red  | 13 Aug 09:34:20 - [info] [function:SRE AIOps Parser v9 (Batch)] Batch INSERT [sys] ok: 4 rows
+  ims-node-red  | 13 Aug 09:34:30 - [info] [function:SRE AIOps Parser v9 (Batch)] Batch INSERT [sys] ok: 4 rows
+  ims-node-red  | 13 Aug 09:34:41 - [info] [function:SRE AIOps Parser v9 (Batch)] Batch INSERT [sys] ok: 4 rows
+  ims-node-red  | 13 Aug 09:34:51 - [info] [function:SRE AIOps Parser v9 (Batch)] Batch INSERT [sys] ok: 4 rows
+> ims-node-red  | 13 Aug 09:34:59 - [info] [function:Insert to ldi_alarm_log] Alarm sim: inserted 1
+  ims-node-red  | 13 Aug 09:35:01 - [info] [function:SRE AIOps Parser v9 (Batch)] Batch INSERT [sys] ok: 4 rows
+  ims-node-red  | 13 Aug 09:35:11 - [info] [function:SRE AIOps Parser v9 (Batch)] Batch INSERT [sys] ok: 4 rows
+

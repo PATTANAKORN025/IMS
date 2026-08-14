@@ -1,0 +1,4 @@
+ view_name | schedule_interval | config 
+-----------+-------------------+--------
+(0 rows)
+
