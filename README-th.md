@@ -267,7 +267,7 @@ IMS/
 │   └── settings.js                    #   functionGlobalContext, การตั้งค่าการพิสูจน์ตัวตน (auth)
 ├── postgres/                          # การกำหนดค่าฐานข้อมูลเริ่มต้น
 │   └── init/                          #   001-init-timescaledb.sql (schema + views)
-├── database/migrations/               #   54 ไฟล์ไมเกรชันตามลำดับ (013-079, บางตัวเลขถูกข้าม/เก็บถาวร), ประยุกต์ใช้โดย db-migrate
+├── database/migrations/               #   55 ไฟล์ไมเกรชันตามลำดับ (013-080, บางตัวเลขถูกข้าม/เก็บถาวร), ประยุกต์ใช้โดย db-migrate
 ├── tests/                             # ชุดทดสอบ
 │   ├── k6/                            #   ทดสอบความเครียดไปป์ไลน์ด้วย K6
 │   ├── unit/                          #   Unit tests สำหรับ Parser และ counter
