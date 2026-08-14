@@ -1,3 +1,11 @@
+<div align="center">
+  <p>
+    🇬🇧 <b>English</b> |
+    <a href="ARCHITECTURE-th.md">🇹🇭 ไทย</a> |
+    <a href="ARCHITECTURE-zh-CN.md">🇨🇳 中文</a>
+  </p>
+</div>
+
 # IMS System Architecture
 
 > Single source of truth for system topology, data flow, and operational architecture. Rewritten 2026-08-05 after the previous version was found to be two different, self-contradictory architecture docs concatenated together, describing a dashboard count and ingestion path that no longer matched the live system (see `IMS-SYSTEM-AUDIT-REPORT.md` P1-2). Every claim below was verified directly against the running system or the tracked source files, not carried over from the prior doc.
