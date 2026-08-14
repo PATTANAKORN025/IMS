@@ -317,6 +317,7 @@ IMS/
 | เอกสาร | คำอธิบาย |
 |:---:|---|
 | [**Architecture**](docs/architecture/ARCHITECTURE.md) | บริบทของระบบ, ADRs, สถาปัตยกรรมสตรีมมิ่ง, กลยุทธ์ CAGG |
+| [**Data Fidelity & Scaling**](docs/architecture/DATA_FIDELITY_AND_SCALING-th.md) | การจัดการ Latency ระดับมิลลิวินาที, ความสมจริงของ Simulator, ลด Alert Fatigue และ Data Drift |
 | [**Visual Architecture**](docs/architecture/ARCHITECTURE_DIAGRAM.md) | ไดอะแกรม Mermaid C4 Model และ sequence flows |
 | [**Data Flow**](docs/architecture/DATA_FLOW.md) | ไดอะแกรมไปป์ไลน์แบบ end-to-end, ลำดับการรวมข้อมูลของ CAGG จริง |
 | [**Database Schema**](docs/architecture/DATABASE_SCHEMA.md) | การอ้างอิงตาราง/คอลัมน์/มุมมองที่สร้างอัตโนมัติ (ตรวจสอบโดย CI) |

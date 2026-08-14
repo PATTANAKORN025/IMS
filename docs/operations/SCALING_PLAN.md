@@ -23,6 +23,7 @@
 4. [Performance Tuning](#-performance-tuning)
 5. [Retention Policy](#-retention-policy)
 6. [Cost Estimation](#-cost-estimation)
+7. [Data Fidelity & Scale Management (Architectural Details)](../architecture/DATA_FIDELITY_AND_SCALING-th.md)
 
 ---
 
