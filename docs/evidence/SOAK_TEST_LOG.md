@@ -32,10 +32,16 @@ The restart-detection logic compared `docker inspect --format='{{.RestartCount}}
 
 **Root-cause fixed**: `scripts/soak-test-report.sh` now tracks `docker inspect --format='{{.State.StartedAt}}'` alongside `RestartCount` and flags `restarted=yes` if either changes -- `StartedAt` changes on every restart regardless of cause. Verified live: forcing a stale state file correctly produced `restarted=yes` on the next sample (`docs/evidence/soak-log-2026-08-13-attempt4-contaminated-by-undetected-manual-restarts.tsv`, last row).
 
-## Attempt 5 (started 2026-08-14T02:50:39Z) — in progress
+## Attempt 5 (2026-08-14T02:50:39Z → 04:35:14Z, ~1h45m, 8 samples) — INVALID, contaminated by ingestion-durability fix work
 
-Log reset: Attempt 4's log archived above, fresh log started at `scripts/soak-test-reports/soak-log.tsv`, restart-state files (`.restart_*`) cleared so the new detection logic starts from a clean baseline rather than false-flagging the format change as a restart.
+Raw data: `docs/evidence/soak-log-2026-08-14-attempt5-contaminated-by-ingestion-durability-fix.tsv`.
 
-Collection mechanism: Windows Scheduled Task `IMS-SoakTest` (already existed, enabled since 2026-08-10T15:35:12+07:00, fires every 15 minutes independent of any chat session).
+Clean for its first ~1h44m (7 samples, `restarted=no` throughout). Contaminated at the 8th sample (`2026-08-14T04:35:14Z`, `any_container_restarted=yes`) by `docker compose restart node-red`, run deliberately while deploying migration 081 (`ingest_ts`) and iterating on the `sre_parser` INSERT fix (see the `feat(e2e): real end-to-end ingestion latency measurement` and `feat: add read-only ingestion latency dashboard` commits). Several further `node-red` restarts followed in the same session while root-causing a live type-mismatch regression. User explicitly approved starting this work over letting the soak clock run ("Start queue work now, accept soak reset") — the reset is intentional, not a failure of the soak mechanism itself. Archived, not deleted, same reasoning as Attempts 1-4.
 
-No further intentional container restarts planned during this window. Re-run `bash scripts/soak-test-report.sh --summarize` after 72h real elapsed time (target: 2026-08-17T02:50Z or later) for the actual verdict.
+## Attempt 6 (started 2026-08-14T04:48:35Z) — in progress
+
+Log reset: Attempt 5's log archived above, fresh log started at `scripts/soak-test-reports/soak-log.tsv`, restart-state files (`.restart_*`) cleared so the new detection logic starts from a clean baseline rather than false-flagging the reset as a restart.
+
+Collection mechanism unchanged: Windows Scheduled Task `IMS-SoakTest` (fires every 15 minutes independent of any chat session).
+
+Ingestion-durability workstream (staging table, `ingest_ts`, latency script/dashboard) is now complete and stable — no further intentional container restarts planned during this window. Re-run `bash scripts/soak-test-report.sh --summarize` after 72h real elapsed time (target: 2026-08-17T04:48Z or later) for the actual verdict.
