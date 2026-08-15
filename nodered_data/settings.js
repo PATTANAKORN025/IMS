@@ -14,6 +14,19 @@ const adminAuth = {
     }],
 };
 
+const sharedPgPool = new (require('pg').Pool)({
+    host: process.env.PGHOST || 'ims-timescaledb',
+    port: parseInt(process.env.PGPORT) || 5432,
+    database: process.env.PGDATABASE || 'ims',
+    user: process.env.PGUSER || 'ims_admin',
+    password: process.env.PGPASSWORD || (() => { throw new Error("PGPASSWORD is required"); })(),
+    max: 50,
+    idleTimeoutMillis: 30000
+});
+sharedPgPool.on('error', (err) => {
+    console.error('pg pool idle-client error (non-fatal, pool recovers):', err.message);
+});
+
 module.exports = {
     flowFile: 'flows.json',
     adminAuth: adminAuth,
@@ -29,15 +42,7 @@ module.exports = {
         fs: require('fs'),
         circuitBreaker: require('./lib/circuit-breaker'),
         parser: require('./lib/parser'),
-        pgPool: new (require('pg').Pool)({
-            host: process.env.PGHOST || 'ims-timescaledb',
-            port: parseInt(process.env.PGPORT) || 5432,
-            database: process.env.PGDATABASE || 'ims',
-            user: process.env.PGUSER || 'ims_admin',
-            password: process.env.PGPASSWORD || (() => { throw new Error("PGPASSWORD is required"); })(),
-            max: 50,
-            idleTimeoutMillis: 30000
-        }),
+        pgPool: sharedPgPool,
     },
     exportGlobalContextKeys: false,
     diagnostics: { enabled: true, ui: true },

@@ -1,6 +1,6 @@
 # Spec: PG Pool Error-Handling Resilience
 
-> Status: **spec only, not implemented.** Found during the 2026-08-14
+> Status: **deployed 2026-08-15.** See Results section at the bottom. Found during the 2026-08-14
 > Evidence Review pass, read-only (log/config reads only, no runtime
 > touched). This is the highest-priority item to come out of that
 > review -- a real bug that just contaminated Soak Attempt 6.
@@ -159,3 +159,11 @@ active bug actively invalidating the one criterion
 engineering effort alone -- every day this isn't fixed is a day the
 soak clock can get reset by something that isn't even this session's
 own activity.
+
+## Results
+
+Deployed exactly per the rollout plan: `pool.on('error', ...)` added to both `services/alarm-api/server.js` (inline after `new Pool({...})`) and `nodered_data/settings.js` (the pool construction was extracted from an inline object-literal property into a named `sharedPgPool` const specifically so `.on('error', ...)` could be attached before it's referenced in `functionGlobalContext.pgPool` -- a small structural change, same pool config/behavior, not a functional change beyond adding the handler). Isolated diff: 2 files, 18 insertions / 9 deletions total (mostly the settings.js restructure).
+
+Deployed via `docker compose restart node-red alarm-api` at 2026-08-15T05:59:41Z (both services, since both needed the fix -- not splittable into a narrower single-service restart this time). Both came back clean: `docker logs` shows normal startup (`Started flows`, `alarm-api listening on :4000`), no errors. Regression check per the rollout plan's step 3 (`tests/e2e/ingestion-latency-check.js`) re-run post-deploy: `ldi_data` P95 8ms (previously 22ms in an earlier-session measurement, well within normal variation, not a regression), `sys_metrics`/`net_metrics`/`ldi_metrics` still ~0-1ms, `ldi_alarm_log (nearest)`'s known simulated-delay artifact unchanged (unrelated to this fix). Unit tests: `parser.test.js` and `v2-parser.test.js` both pass, 0 regressions.
+
+**What this deployment does NOT yet prove, stated plainly per the testing plan's own honesty bar**: the actual `client_idle_timeout` crash scenario (PgBouncer forcibly closing an idle pooled connection after 300s) was not directly forced and observed surviving in this pass -- that requires either a dedicated 5+-minute forced-idle test or waiting for the fix to encounter a real idle gap during normal operation. The endurance run started immediately after this deploy (`SOAK_TEST_LOG.md` Attempt 10) is exactly that real-world proof accumulating over time: if the fix is correct, `client_idle_timeout` drops during the multi-hour run will show up as a harmless log line, not an `any_container_restarted=yes` event. This is also `FAULT_INJECTION_PLAN.md` scenario 3's job once explicitly approved to run.

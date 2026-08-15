@@ -15,6 +15,10 @@ const pool = new Pool({
   max: 10,
 });
 
+pool.on('error', (err) => {
+  console.error('pg pool idle-client error (non-fatal, pool recovers):', err.message);
+});
+
 const app = express();
 app.use(express.json());
 
