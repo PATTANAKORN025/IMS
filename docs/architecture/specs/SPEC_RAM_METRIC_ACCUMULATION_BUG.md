@@ -1,6 +1,6 @@
 # RAM Metric Accumulation Bug — Root Cause + Fix Design
 
-**Status:** Root-caused, NOT deployed. Requires a Node-RED redeploy/restart to take effect, which the standing soak-test freeze blocks. Do not deploy until the freeze lifts.
+**Status: Fixed and deployed 2026-08-15 (P0.1 of the Reliability Test Suite).** See Results section at the bottom.
 
 **Priority:** High — actively producing a wrong "everything is critical" signal on every infrastructure dashboard that shows Fleet Health Score or RAM %, right now, for every device.
 
@@ -40,12 +40,29 @@ Two independent problems, both need fixing:
 
 2. **The 1TB clamp is a symptom-hider, not a fix.** Once (1) is fixed, legitimate RAM totals will no longer exceed 1TB in normal operation, so the clamp becomes inert (harmless to leave as a defensive backstop) -- no change strictly required here, but worth a comment noting it's a last-resort sanity bound now, not a normal code path.
 
-## Rollout (deferred)
+## Rollout
 
-Same discipline as `SPEC_PG_POOL_RESILIENCE.md`: this lives in `nodered_data/lib/parser.js`, which `ims-node-red`'s function nodes load via `global.get('parser')` at flow deploy time -- editing the file will NOT hot-reload the way Grafana dashboard JSON does; it requires a Node-RED deploy/restart to take effect. Per the standing freeze, do not deploy until a soak attempt completes cleanly or the freeze is explicitly lifted.
+Deployed via `docker compose restart node-red` (single-service, same narrow-blast-radius pattern as Phase A1) at 2026-08-15T04:13:49Z. `nodered_data/lib/parser.js` is `require()`'d once into `functionGlobalContext.parser` by `nodered_data/settings.js` at process start, confirmed via direct read of `settings.js` line 31 before deploying -- a restart is both necessary and sufficient to pick up the fix.
 
-When deployed: verify all 4 (or however many by then) devices' `ram_used_mb`/`ram_total_mb` diverge from each other and from `1048576` within a few poll cycles, and that `Fleet Health Score` on both `ims-capacity` and `ims-noc-overview` moves off `0%`.
+## Results
 
-## Scope note
+Pre-fix baseline (captured moments before restart): `ERP-MASTER-WINDOWS`, `LDI-A01`, `LDI-A02` all pinned at `ram_used_mb = ram_total_mb = 1048576`. `ERP-MASTER-UBUNTU` was mid-climb at `637440/679936` (93.7%) -- itself corroborating evidence for the accumulation theory, since it hadn't yet re-saturated to the ceiling since the A1 restart reset all devices' `flow` context to zero.
 
-`disk_used_gb == disk_total_gb` for `ERP-MASTER-UBUNTU` (12500/12500, literally 100% disk) was also observed in the same query and looks suspicious on its own, but is NOT explained by this bug (disk doesn't accumulate). Not investigated further here -- flagged for a separate pass, not blocking this fix.
+Post-fix, measured over 3 consecutive polling cycles (04:15:03 → 04:16:03Z, 30s apart):
+
+| Device | RAM used/total | % | Stable across 3 cycles? |
+| --- | --- | --- | --- |
+| ERP-MASTER-UBUNTU | 7680/8192 MB | 93.75% | Yes, identical all 3 samples |
+| ERP-MASTER-WINDOWS | 15360/32768 MB | 46.9% | Yes |
+| LDI-A01 | 15360/16384 MB | 93.75% | Yes |
+| LDI-A02 | 15360/16384 MB | 93.75% | Yes |
+
+No device shows `1048576` anymore. No device is climbing. Values differ meaningfully across devices (46.9%-93.75%), not collapsed to one shared number -- confirms this is now a real per-device snapshot, not an accumulated artifact.
+
+**CPU/disk/temp unaffected, confirmed by direct comparison against the same rows**: `cpu_load_percent` (50 / 88.25 / 83.75 / 83.75) and `temp_c` (65 / 95 / 92 / 92) match this session's earlier pre-fix baseline exactly. `disk_total_gb`/`disk_used_gb` also unchanged -- `ERP-MASTER-UBUNTU` still shows the separate, already-diagnosed `12500/12500` (100%) disk bug (`READ_ONLY_AUDIT_2026-08-15.md` §3c, fixed separately as P0.2) -- proving this RAM fix touched only what it was supposed to touch.
+
+Unit tests re-run post-edit, pre-deploy: `tests/unit/parser.test.js` (22/22) and `tests/unit/v2-parser.test.js` (27/27) both pass, including the existing "RAM total capped at 1TB" and "RAM used never exceeds RAM total" boundary tests -- confirms the defensive clamp (kept, not removed -- see point 2 above) still behaves correctly and this fix didn't regress it.
+
+## Scope note (resolved)
+
+`disk_used_gb == disk_total_gb` for `ERP-MASTER-UBUNTU`, flagged here as a "not investigated" scope note -- root-caused separately in `READ_ONLY_AUDIT_2026-08-15.md` §3c (a `.snmprec` config bug, not related to this RAM accumulation issue) and fixed as P0.2.
