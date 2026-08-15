@@ -77,7 +77,7 @@
       "type": "text",
       "title": "",
       "options": {
-        "content": "<style>\n[class*=\"-panel-container\"] {\n  background: rgba(10, 13, 16, 0.7) !important;\n  border: 1px solid rgba(0, 242, 254, 0.15) !important;\n  border-radius: 12px !important;\n  box-shadow: 0 4px 24px -4px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.05) !important;\n  transition: all 0.2s ease-in-out !important;\n}\n[class*=\"-panel-container\"]:hover {\n  border-color: rgba(0, 242, 254, 0.5) !important;\n  box-shadow: 0 8px 32px 0 rgba(0, 242, 254, 0.15) !important;\n  backdrop-filter: blur(10px) !important;\n}\n[class*=\"-panel-title\"] {\n  color: #E8EDF2 !important;\n  font-weight: 600 !important;\n  text-transform: uppercase !important;\n  letter-spacing: 1px !important;\n  font-size: 11px !important;\n}\n</style>",
+        "content": "<style>\n/* Base Panel Styling - Matte Glass / Premium Enterprise */\n[class*=\"-panel-container\"] {\n  background: rgba(18, 22, 26, 0.8) !important;\n  border: 1px solid rgba(255, 255, 255, 0.05) !important;\n  border-radius: 8px !important;\n  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;\n  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;\n}\n\n[class*=\"-panel-container\"]:hover {\n  border-color: rgba(255, 255, 255, 0.12) !important;\n  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;\n  transform: translateY(-2px) !important;\n  backdrop-filter: blur(12px) !important;\n}\n\n/* Typography Overhaul */\n[class*=\"-panel-title\"] {\n  color: #F8FAFC !important;\n  font-family: 'Inter', 'Roboto Mono', sans-serif !important;\n  font-weight: 500 !important;\n  text-transform: uppercase !important;\n  letter-spacing: 0.1em !important;\n  font-size: 11px !important;\n}\n\n[class*=\"-panel-header\"] {\n  padding-bottom: 8px !important;\n}\n\n/* Header Specific Styling */\n.ims-brand-container {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  padding: 12px 24px;\n  background: linear-gradient(90deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.6) 100%);\n  border-radius: 6px;\n  border-left: 4px solid #3B82F6;\n  margin-bottom: -10px;\n}\n\n.ims-logo-text {\n  font-size: 24px;\n  font-weight: 700;\n  letter-spacing: 2px;\n  color: #F8FAFC;\n  font-family: 'Inter', sans-serif;\n  margin: 0;\n  line-height: 1;\n}\n\n.ims-logo-sub {\n  font-size: 10px;\n  color: #94A3B8;\n  letter-spacing: 3px;\n  text-transform: uppercase;\n  margin-top: 4px;\n  margin-bottom: 0;\n}\n\n.ims-dash-title {\n  font-size: 18px;\n  color: #E2E8F0;\n  font-weight: 400;\n  letter-spacing: 1px;\n}\n\n.ims-status-dot {\n  height: 8px;\n  width: 8px;\n  background-color: #22C55E;\n  border-radius: 50%;\n  display: inline-block;\n  margin-right: 8px;\n  box-shadow: 0 0 8px #22C55E;\n}\n\n.ims-status-text {\n  font-size: 12px;\n  color: #94A3B8;\n  text-transform: uppercase;\n  letter-spacing: 1px;\n}\n</style>\n\n<div class=\"ims-brand-container\">\n  <div>\n    <h1 class=\"ims-logo-text\">IMS</h1>\n    <div class=\"ims-logo-sub\">Industrial Monitoring System</div>\n  </div>\n  <div class=\"ims-dash-title\">\n    IMS AIOps & Capacity Forecast\n  </div>\n  <div>\n    <span class=\"ims-status-dot\"></span><span class=\"ims-status-text\">System Optimal</span>\n  </div>\n</div>",
         "mode": "html"
       },
       "gridPos": {
@@ -652,12 +652,23 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "red", "value": null },
-              { "color": "yellow", "value": 70 },
-              { "color": "green", "value": 90 }
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 70
+              },
+              {
+                "color": "green",
+                "value": 90
+              }
             ]
           },
-          "color": { "mode": "thresholds" }
+          "color": {
+            "mode": "thresholds"
+          }
         }
       },
       "options": {
@@ -666,14 +677,18 @@
         "justifyMode": "center",
         "textMode": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "values": false
         }
       },
       "targets": [
         {
           "refId": "A",
-          "datasource": { "uid": "timescaledb" },
+          "datasource": {
+            "uid": "timescaledb"
+          },
           "format": "table",
           "rawSql": "WITH latest AS (SELECT device_id, disk_used_gb / NULLIF(disk_total_gb, 0) * 100 AS disk_pct, ram_used_mb / NULLIF(ram_total_mb, 0) * 100 AS ram_pct, cpu_load_percent AS cpu_pct FROM public.sys_metrics WHERE \"time\" > NOW() - INTERVAL '5 minutes') SELECT 'Fleet Score' AS metric, ROUND(AVG(CASE WHEN disk_pct > 90 OR ram_pct > 95 OR cpu_pct > 90 THEN 0 WHEN disk_pct > 80 OR ram_pct > 85 OR cpu_pct > 80 THEN 50 ELSE 100 END), 1) AS value FROM latest"
         }
