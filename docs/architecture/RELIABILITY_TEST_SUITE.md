@@ -14,9 +14,11 @@
 | P0 | Ubuntu disk simulator fix | Unrealistic disk simulation | **Done** -- `SPEC_UBUNTU_DISK_SNMPREC_FIX.md`, 100% pinned → 37.2%, healthy 36-69% band, history preserved, snmpsim-only restart |
 | P0 | Timestamp integrity | Support millisecond-resolution evidence | **Done** -- `SPEC_TIMESTAMP_INTEGRITY.md`. Real finding: `ldi_data`/`ldi_alarm_log` are millisecond (JS `Date`), not microsecond despite schema; `sys_metrics`/`net_metrics`/`ldi_metrics` genuinely microsecond (Postgres `NOW()`). 0 future/out-of-order timestamps. Noise-code backdating confirmed still present (known, unfixed P1 item) |
 | P1 | Alarm hygiene | Reduce alert noise | Items 2, 4 **done** (verified live, screenshot-confirmed) -- renamed 2 mislabeled panels, added stuck-OPEN (548 found, real gap) + orphan (0, clean) checks. Items 1 (MTTA/MTTR dashboard), 3 (move Heartbeat), 5 (debounce load test) still open, larger builds |
-| P1 | Fault injection | Prove recovery | Not started |
-| P1 | Scale test 4→500 devices | Prove scalability | Not started |
-| P1 | 2h endurance | Stability | Not started |
+| P1 | Historical data integrity | Reconcile all gaps | **Done** -- `HISTORICAL_DATA_RECONCILIATION_2026-08-15.md`. Named gap: full-stack, ~15h39m, root cause UNKNOWN (forensic tooling didn't exist yet at the time -- not guessed, stated honestly). 0 NULLs across 5 critical fields checked |
+| P1 | Simulator realism (full audit) | Evidence-based realism scoring | Not started -- large build (per-parameter classification across 10+ signals). `LDI_ALARM_FIDELITY_AUDIT.md` (2026-08-11, 58/100) + this session's partial re-checks (debounce/Critical-severity now fixed) exist but a full re-run wasn't done in this pass |
+| P1 | Fault injection | Prove recovery | **Not started -- deliberately paused for a risk check-in.** Involves stopping PostgreSQL/Node-RED/alarm-api/PgBouncer/snmpsim, per your own "stop and report before destructive/high-risk changes" rule |
+| P1 | Scale test 4→500 devices | Prove scalability | **Not started -- deliberately paused for a risk check-in.** Requires building out simulated-device generation capacity and sustained load against the DB -- a real build, not a quick fix |
+| P1 | 2h endurance | Stability | **Not started -- needs 2 real wall-clock hours**, can't be compressed into this session |
 | P2 | 6h endurance | Release confidence | Not started |
 | P2 | 12h endurance | Final confidence | Not started |
 | P3 | 72h soak | Optional evidence | Demoted from gate to optional final check |
