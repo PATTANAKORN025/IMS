@@ -1,0 +1,3 @@
+timestamp	inserts_total	inserts_failed_total	buffer_overflows_total	any_container_restarted	non_watchdog_alerts_firing	db_size_mb
+2026-08-15T05:34:03Z	59994	0	0	no	3	67
+2026-08-15T05:49:03Z	60474	0	0	no	2	68
