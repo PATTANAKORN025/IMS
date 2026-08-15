@@ -1,5 +1,9 @@
 <div align="center">
   <br/>
+  <a href="https://github.com/PATTANAKORN025/IMS">
+    <img src="assets/meowrch.png" alt="IMS Mascot" width="140" style="border-radius: 50%; box-shadow: 0 8px 24px rgba(0, 242, 254, 0.4); margin-bottom: 16px;" />
+  </a>
+  <br/>
   <img src="https://thesvg.org/icons/postgresql/default.svg" width="48" alt="PostgreSQL" /> &nbsp;&nbsp;&nbsp;&nbsp;
   <img src="https://thesvg.org/icons/grafana/default.svg" width="48" alt="Grafana" /> &nbsp;&nbsp;&nbsp;&nbsp;
   <img src="https://thesvg.org/icons/docker/default.svg" width="48" alt="Docker" /> &nbsp;&nbsp;&nbsp;&nbsp;
@@ -15,9 +19,9 @@
 
 <div align="center">
  <p>
-  <img src="https://hatscripts.github.io/circle-flags/flags/gb.svg" width="18" align="center"/> <b>English</b> |
-  <a href="README-th.md"><img src="https://hatscripts.github.io/circle-flags/flags/th.svg" width="18" align="center"/> ไทย</a> |
-  <a href="README-zh-CN.md"><img src="https://hatscripts.github.io/circle-flags/flags/tw.svg" width="18" align="center"/> 中文</a>
+  <a href="README.md"><img src="https://hatscripts.github.io/circle-flags/flags/gb.svg" width="18" align="center"/> <b>English</b></a> |
+  <a href="README-th.md"><img src="https://hatscripts.github.io/circle-flags/flags/th.svg" width="18" align="center"/> <b>ไทย</b></a> |
+  <a href="README-zh-CN.md"><img src="https://hatscripts.github.io/circle-flags/flags/tw.svg" width="18" align="center"/> <b>中文</b></a>
  </p>
 </div>
 
@@ -26,7 +30,9 @@
 </div>
 
 <div align="center">
-  
+  <img src="assets/apex-ldi-noc-banner.jpg" alt="APEX Circuit LDI NOC Banner" width="100%" style="border-radius:12px; box-shadow: 0 16px 64px rgba(0,0,0,0.6); margin-bottom: 24px; border: 1px solid rgba(0,242,254,0.1);" />
+  <br/>
+  <br/>
   <a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.demolab.com?font=Orbitron&weight=600&size=36&duration=4000&pause=2000&color=00F2FE&center=true&repeat=true&width=1000&height=60&lines=APEX+Circuit+IMS+|+System+Initializing...;Advanced+Manufacturing+Intelligence+%26+NOC;Zero-Latency+Digital+Twin+Architecture" alt="Typing SVG" /></a>
 </div>
 
