@@ -14,10 +14,15 @@
       "type": "text",
       "title": "",
       "options": {
-        "content": "<style>\n[class*=\"-panel-container\"] {\n  background: rgba(10, 13, 16, 0.7) !important;\n  border: 1px solid rgba(0, 242, 254, 0.15) !important;\n  border-radius: 12px !important;\n  box-shadow: 0 4px 24px -4px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.05) !important;\n  transition: all 0.2s ease-in-out !important;\n}\n[class*=\"-panel-container\"]:hover {\n  border-color: rgba(0, 242, 254, 0.5) !important;\n  box-shadow: 0 8px 32px 0 rgba(0, 242, 254, 0.15) !important;\n  backdrop-filter: blur(10px) !important;\n}\n[class*=\"-panel-title\"] {\n  color: #E8EDF2 !important;\n  font-weight: 600 !important;\n  text-transform: uppercase !important;\n  letter-spacing: 1px !important;\n  font-size: 11px !important;\n}\n</style>",
+        "content": "<style>\n/* Base Panel Styling - Matte Glass / Premium Enterprise */\n[class*=\"-panel-container\"] {\n  background: rgba(18, 22, 26, 0.8) !important;\n  border: 1px solid rgba(255, 255, 255, 0.05) !important;\n  border-radius: 8px !important;\n  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;\n  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;\n}\n\n[class*=\"-panel-container\"]:hover {\n  border-color: rgba(255, 255, 255, 0.12) !important;\n  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;\n  transform: translateY(-2px) !important;\n  backdrop-filter: blur(12px) !important;\n}\n\n/* Typography Overhaul */\n[class*=\"-panel-title\"] {\n  color: #F8FAFC !important;\n  font-family: 'Inter', 'Roboto Mono', sans-serif !important;\n  font-weight: 500 !important;\n  text-transform: uppercase !important;\n  letter-spacing: 0.1em !important;\n  font-size: 11px !important;\n}\n\n[class*=\"-panel-header\"] {\n  padding-bottom: 8px !important;\n}\n\n/* Header Specific Styling */\n.ims-brand-container {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  padding: 12px 24px;\n  background: linear-gradient(90deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.6) 100%);\n  border-radius: 6px;\n  border-left: 4px solid #3B82F6;\n  margin-bottom: -10px;\n}\n\n.ims-logo-text {\n  font-size: 24px;\n  font-weight: 700;\n  letter-spacing: 2px;\n  color: #F8FAFC;\n  font-family: 'Inter', sans-serif;\n  margin: 0;\n  line-height: 1;\n}\n\n.ims-logo-sub {\n  font-size: 10px;\n  color: #94A3B8;\n  letter-spacing: 3px;\n  text-transform: uppercase;\n  margin-top: 4px;\n  margin-bottom: 0;\n}\n\n.ims-dash-title {\n  font-size: 18px;\n  color: #E2E8F0;\n  font-weight: 400;\n  letter-spacing: 1px;\n}\n\n.ims-status-dot {\n  height: 8px;\n  width: 8px;\n  background-color: #22C55E;\n  border-radius: 50%;\n  display: inline-block;\n  margin-right: 8px;\n  box-shadow: 0 0 8px #22C55E;\n}\n\n.ims-status-text {\n  font-size: 12px;\n  color: #94A3B8;\n  text-transform: uppercase;\n  letter-spacing: 1px;\n}\n</style>\n\n<div class=\"ims-brand-container\">\n  <div>\n    <h1 class=\"ims-logo-text\">IMS</h1>\n    <div class=\"ims-logo-sub\">Industrial Monitoring System</div>\n  </div>\n  <div class=\"ims-dash-title\">\n    IMS Ingestion Latency\n  </div>\n  <div>\n    <span class=\"ims-status-dot\"></span><span class=\"ims-status-text\">System Optimal</span>\n  </div>\n</div>",
         "mode": "html"
       },
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
       "transparent": true
     },
     {
@@ -28,12 +33,22 @@
         "mode": "markdown",
         "content": "Read-only. Source -> commit latency, real values from `ingest_ts` (migration 081), no simulated data. Does **not** show time-until-next-dashboard-refresh -- that's a per-dashboard config choice (5s-5m), not a pipeline latency. See `tests/e2e/ingestion-latency-check.js` for the same measurement as a scriptable evidence artifact."
       },
-      "gridPos": { "h": 2, "w": 24, "x": 0, "y": 1 },
+      "gridPos": {
+        "h": 2,
+        "w": 24,
+        "x": 0,
+        "y": 1
+      },
       "transparent": true
     },
     {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 3 },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 3
+      },
       "id": 100,
       "title": "◈ SOURCE → COMMIT LATENCY (P95, last 15m)",
       "type": "row",
@@ -43,8 +58,15 @@
       "id": 1,
       "title": "◉ ldi_data",
       "type": "stat",
-      "datasource": { "uid": "timescaledb" },
-      "gridPos": { "x": 0, "y": 4, "w": 4, "h": 6 },
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 4,
+        "h": 6
+      },
       "fieldConfig": {
         "defaults": {
           "unit": "ms",
@@ -52,12 +74,23 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 50 },
-              { "color": "red", "value": 200 }
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 200
+              }
             ]
           },
-          "color": { "mode": "thresholds" }
+          "color": {
+            "mode": "thresholds"
+          }
         }
       },
       "options": {
@@ -65,12 +98,19 @@
         "graphMode": "none",
         "justifyMode": "center",
         "textMode": "auto",
-        "reduceOptions": { "calcs": ["lastNotNull"], "values": false }
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        }
       },
       "targets": [
         {
           "refId": "A",
-          "datasource": { "uid": "timescaledb" },
+          "datasource": {
+            "uid": "timescaledb"
+          },
           "format": "table",
           "rawSql": "SELECT percentile_cont(0.95) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (ingest_ts - \"time\")) * 1000) AS value FROM public.ldi_data WHERE ingest_ts IS NOT NULL AND \"time\" > NOW() - INTERVAL '15 minutes'"
         }
@@ -81,8 +121,15 @@
       "id": 2,
       "title": "◉ ldi_alarm_log (causal)",
       "type": "stat",
-      "datasource": { "uid": "timescaledb" },
-      "gridPos": { "x": 4, "y": 4, "w": 4, "h": 6 },
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 4,
+        "y": 4,
+        "w": 4,
+        "h": 6
+      },
       "fieldConfig": {
         "defaults": {
           "unit": "ms",
@@ -90,12 +137,23 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 50 },
-              { "color": "red", "value": 200 }
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 200
+              }
             ]
           },
-          "color": { "mode": "thresholds" }
+          "color": {
+            "mode": "thresholds"
+          }
         }
       },
       "options": {
@@ -103,12 +161,19 @@
         "graphMode": "none",
         "justifyMode": "center",
         "textMode": "auto",
-        "reduceOptions": { "calcs": ["lastNotNull"], "values": false }
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        }
       },
       "targets": [
         {
           "refId": "A",
-          "datasource": { "uid": "timescaledb" },
+          "datasource": {
+            "uid": "timescaledb"
+          },
           "format": "table",
           "rawSql": "SELECT percentile_cont(0.95) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (ingest_ts - logdate)) * 1000) AS value FROM public.ldi_alarm_log WHERE ingest_ts IS NOT NULL AND logdate > NOW() - INTERVAL '15 minutes' AND link_basis = 'causal'"
         }
@@ -119,8 +184,15 @@
       "id": 6,
       "title": "◉ ldi_alarm_log (nearest)",
       "type": "stat",
-      "datasource": { "uid": "timescaledb" },
-      "gridPos": { "x": 8, "y": 4, "w": 4, "h": 6 },
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 4,
+        "w": 4,
+        "h": 6
+      },
       "fieldConfig": {
         "defaults": {
           "unit": "ms",
@@ -128,10 +200,15 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "blue", "value": null }
+              {
+                "color": "blue",
+                "value": null
+              }
             ]
           },
-          "color": { "mode": "thresholds" }
+          "color": {
+            "mode": "thresholds"
+          }
         }
       },
       "options": {
@@ -139,12 +216,19 @@
         "graphMode": "none",
         "justifyMode": "center",
         "textMode": "auto",
-        "reduceOptions": { "calcs": ["lastNotNull"], "values": false }
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        }
       },
       "targets": [
         {
           "refId": "A",
-          "datasource": { "uid": "timescaledb" },
+          "datasource": {
+            "uid": "timescaledb"
+          },
           "format": "table",
           "rawSql": "SELECT percentile_cont(0.95) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (ingest_ts - logdate)) * 1000) AS value FROM public.ldi_alarm_log WHERE ingest_ts IS NOT NULL AND logdate > NOW() - INTERVAL '15 minutes' AND link_basis = 'nearest'"
         }
@@ -155,8 +239,15 @@
       "id": 3,
       "title": "◉ sys_metrics",
       "type": "stat",
-      "datasource": { "uid": "timescaledb" },
-      "gridPos": { "x": 12, "y": 4, "w": 4, "h": 6 },
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 4,
+        "w": 4,
+        "h": 6
+      },
       "fieldConfig": {
         "defaults": {
           "unit": "ms",
@@ -164,12 +255,23 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 50 },
-              { "color": "red", "value": 200 }
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 200
+              }
             ]
           },
-          "color": { "mode": "thresholds" }
+          "color": {
+            "mode": "thresholds"
+          }
         }
       },
       "options": {
@@ -177,12 +279,19 @@
         "graphMode": "none",
         "justifyMode": "center",
         "textMode": "auto",
-        "reduceOptions": { "calcs": ["lastNotNull"], "values": false }
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        }
       },
       "targets": [
         {
           "refId": "A",
-          "datasource": { "uid": "timescaledb" },
+          "datasource": {
+            "uid": "timescaledb"
+          },
           "format": "table",
           "rawSql": "SELECT percentile_cont(0.95) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (ingest_ts - \"time\")) * 1000) AS value FROM public.sys_metrics WHERE ingest_ts IS NOT NULL AND \"time\" > NOW() - INTERVAL '15 minutes'"
         }
@@ -193,8 +302,15 @@
       "id": 4,
       "title": "◉ net_metrics",
       "type": "stat",
-      "datasource": { "uid": "timescaledb" },
-      "gridPos": { "x": 16, "y": 4, "w": 4, "h": 6 },
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 4,
+        "w": 4,
+        "h": 6
+      },
       "fieldConfig": {
         "defaults": {
           "unit": "ms",
@@ -202,12 +318,23 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 50 },
-              { "color": "red", "value": 200 }
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 200
+              }
             ]
           },
-          "color": { "mode": "thresholds" }
+          "color": {
+            "mode": "thresholds"
+          }
         }
       },
       "options": {
@@ -215,12 +342,19 @@
         "graphMode": "none",
         "justifyMode": "center",
         "textMode": "auto",
-        "reduceOptions": { "calcs": ["lastNotNull"], "values": false }
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        }
       },
       "targets": [
         {
           "refId": "A",
-          "datasource": { "uid": "timescaledb" },
+          "datasource": {
+            "uid": "timescaledb"
+          },
           "format": "table",
           "rawSql": "SELECT percentile_cont(0.95) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (ingest_ts - \"time\")) * 1000) AS value FROM public.net_metrics WHERE ingest_ts IS NOT NULL AND \"time\" > NOW() - INTERVAL '15 minutes'"
         }
@@ -231,8 +365,15 @@
       "id": 5,
       "title": "◉ ldi_metrics",
       "type": "stat",
-      "datasource": { "uid": "timescaledb" },
-      "gridPos": { "x": 20, "y": 4, "w": 4, "h": 6 },
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 20,
+        "y": 4,
+        "w": 4,
+        "h": 6
+      },
       "fieldConfig": {
         "defaults": {
           "unit": "ms",
@@ -240,12 +381,23 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 50 },
-              { "color": "red", "value": 200 }
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 200
+              }
             ]
           },
-          "color": { "mode": "thresholds" }
+          "color": {
+            "mode": "thresholds"
+          }
         }
       },
       "options": {
@@ -253,12 +405,19 @@
         "graphMode": "none",
         "justifyMode": "center",
         "textMode": "auto",
-        "reduceOptions": { "calcs": ["lastNotNull"], "values": false }
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        }
       },
       "targets": [
         {
           "refId": "A",
-          "datasource": { "uid": "timescaledb" },
+          "datasource": {
+            "uid": "timescaledb"
+          },
           "format": "table",
           "rawSql": "SELECT percentile_cont(0.95) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (ingest_ts - \"time\")) * 1000) AS value FROM public.ldi_metrics WHERE ingest_ts IS NOT NULL AND \"time\" > NOW() - INTERVAL '15 minutes'"
         }
@@ -267,7 +426,12 @@
     },
     {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 10 },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 10
+      },
       "id": 200,
       "title": "◈ LDI DATA LATENCY TREND (P50/P95/P99)",
       "type": "row",
@@ -277,8 +441,15 @@
       "id": 10,
       "title": "◈ ldi_data: source → commit latency over time",
       "type": "timeseries",
-      "datasource": { "uid": "timescaledb" },
-      "gridPos": { "x": 0, "y": 11, "w": 24, "h": 9 },
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 11,
+        "w": 24,
+        "h": 9
+      },
       "fieldConfig": {
         "defaults": {
           "unit": "ms",
@@ -293,25 +464,41 @@
         }
       },
       "options": {
-        "tooltip": { "mode": "multi" },
-        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "mean", "max"] }
+        "tooltip": {
+          "mode": "multi"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "mean",
+            "max"
+          ]
+        }
       },
       "targets": [
         {
           "refId": "P50",
-          "datasource": { "uid": "timescaledb" },
+          "datasource": {
+            "uid": "timescaledb"
+          },
           "format": "time_series",
           "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: ldi_data_1m CAGG has no ingest_ts column (checked live, information_schema.columns) -- this panel's whole purpose is measuring ingest_ts, so raw ldi_data is unavoidable, not a tiering-contract oversight */ SELECT time_bucket('1 minute', \"time\") AS time, 'P50' AS metric, percentile_cont(0.5) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (ingest_ts - \"time\")) * 1000) AS value FROM public.ldi_data WHERE ingest_ts IS NOT NULL AND $__timeFilter(\"time\") GROUP BY 1 ORDER BY 1"
         },
         {
           "refId": "P95",
-          "datasource": { "uid": "timescaledb" },
+          "datasource": {
+            "uid": "timescaledb"
+          },
           "format": "time_series",
           "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: see P50 target, ldi_data_1m has no ingest_ts */ SELECT time_bucket('1 minute', \"time\") AS time, 'P95' AS metric, percentile_cont(0.95) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (ingest_ts - \"time\")) * 1000) AS value FROM public.ldi_data WHERE ingest_ts IS NOT NULL AND $__timeFilter(\"time\") GROUP BY 1 ORDER BY 1"
         },
         {
           "refId": "P99",
-          "datasource": { "uid": "timescaledb" },
+          "datasource": {
+            "uid": "timescaledb"
+          },
           "format": "time_series",
           "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: see P50 target, ldi_data_1m has no ingest_ts */ SELECT time_bucket('1 minute', \"time\") AS time, 'P99' AS metric, percentile_cont(0.99) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (ingest_ts - \"time\")) * 1000) AS value FROM public.ldi_data WHERE ingest_ts IS NOT NULL AND $__timeFilter(\"time\") GROUP BY 1 ORDER BY 1"
         }
@@ -320,7 +507,12 @@
     },
     {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 20 },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 20
+      },
       "id": 300,
       "title": "◈ INFRA TELEMETRY LATENCY TREND (P95, all 3 SNMP tables)",
       "type": "row",
@@ -330,8 +522,15 @@
       "id": 11,
       "title": "◈ sys/net/ldi_metrics: P95 source → commit latency over time",
       "type": "timeseries",
-      "datasource": { "uid": "timescaledb" },
-      "gridPos": { "x": 0, "y": 21, "w": 24, "h": 9 },
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 21,
+        "w": 24,
+        "h": 9
+      },
       "fieldConfig": {
         "defaults": {
           "unit": "ms",
@@ -346,25 +545,41 @@
         }
       },
       "options": {
-        "tooltip": { "mode": "multi" },
-        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "mean", "max"] }
+        "tooltip": {
+          "mode": "multi"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "mean",
+            "max"
+          ]
+        }
       },
       "targets": [
         {
           "refId": "SYS",
-          "datasource": { "uid": "timescaledb" },
+          "datasource": {
+            "uid": "timescaledb"
+          },
           "format": "time_series",
           "rawSql": "SELECT time_bucket('1 minute', \"time\") AS time, 'sys_metrics' AS metric, percentile_cont(0.95) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (ingest_ts - \"time\")) * 1000) AS value FROM public.sys_metrics WHERE ingest_ts IS NOT NULL AND $__timeFilter(\"time\") GROUP BY 1 ORDER BY 1"
         },
         {
           "refId": "NET",
-          "datasource": { "uid": "timescaledb" },
+          "datasource": {
+            "uid": "timescaledb"
+          },
           "format": "time_series",
           "rawSql": "SELECT time_bucket('1 minute', \"time\") AS time, 'net_metrics' AS metric, percentile_cont(0.95) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (ingest_ts - \"time\")) * 1000) AS value FROM public.net_metrics WHERE ingest_ts IS NOT NULL AND $__timeFilter(\"time\") GROUP BY 1 ORDER BY 1"
         },
         {
           "refId": "LDIM",
-          "datasource": { "uid": "timescaledb" },
+          "datasource": {
+            "uid": "timescaledb"
+          },
           "format": "time_series",
           "rawSql": "SELECT time_bucket('1 minute', \"time\") AS time, 'ldi_metrics' AS metric, percentile_cont(0.95) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (ingest_ts - \"time\")) * 1000) AS value FROM public.ldi_metrics WHERE ingest_ts IS NOT NULL AND $__timeFilter(\"time\") GROUP BY 1 ORDER BY 1"
         }
@@ -374,8 +589,16 @@
   ],
   "refresh": "30s",
   "schemaVersion": 39,
-  "tags": ["ims", "latency", "ingestion", "infrastructure", "evidence"],
-  "templating": { "list": [] },
+  "tags": [
+    "ims",
+    "latency",
+    "ingestion",
+    "infrastructure",
+    "evidence"
+  ],
+  "templating": {
+    "list": []
+  },
   "time": {
     "from": "now-1h",
     "to": "now"
