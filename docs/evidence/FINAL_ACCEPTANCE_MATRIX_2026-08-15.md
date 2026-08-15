@@ -34,7 +34,7 @@
 
 ## Known unresolved risks (not fixed in this program, stated plainly)
 
-1. **PgBouncer `client_idle_timeout` pool-crash bug** (`SPEC_PG_POOL_RESILIENCE.md`) -- root-caused, fix designed, **not deployed**. This is the highest-priority undeployed fix; every fault-injection scenario touching PostgreSQL/PgBouncer is explicitly gated on it shipping first.
+1. **PgBouncer `client_idle_timeout` pool-crash bug** (`SPEC_PG_POOL_RESILIENCE.md`) -- **fixed and deployed 2026-08-15** (`fe7fa87`). `pool.on('error', ...)` added to both `node-red` and `alarm-api`, 0 regression. The actual idle-timeout-survival scenario itself isn't independently forced-and-proven yet -- that's Soak Attempt 10 (in progress) and Fault Injection scenario 3's job.
 2. **Phase A1 cycle-gate race condition** (`SCALE_TEST_2026-08-15.md`) -- new, found only under scale-test concurrency, doesn't affect the real fleet's actual operating pattern, not yet fixed.
 3. **Humidity out-of-spec rate** (9.85%, machine-specific) -- the one parameter the earlier telemetry recalibration (whoever/whenever it happened) apparently missed.
 4. **Alarm Console has zero engagement** -- not a system defect, but a real operational fact: MTTA/MTTR cannot be validated until someone actually uses the Ack/Resolve workflow.
