@@ -1,5 +1,14 @@
 <div align="center">
- <img src="assets/meowrch.png" alt="IMS Logo" width="120" />
+  <br/>
+  <img src="https://thesvg.org/icons/postgresql/default.svg" width="48" alt="PostgreSQL" /> &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="https://thesvg.org/icons/grafana/default.svg" width="48" alt="Grafana" /> &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="https://thesvg.org/icons/docker/default.svg" width="48" alt="Docker" /> &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="https://thesvg.org/icons/nodedotjs/default.svg" width="48" alt="Node.js" /> &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="https://thesvg.org/icons/python/default.svg" width="48" alt="Python" /> &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="https://thesvg.org/icons/typescript/default.svg" width="48" alt="TypeScript" /> &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="https://thesvg.org/icons/linux/default.svg" width="48" alt="Linux" />
+  <br/>
+  <br/>
 </div>
 
 <h1 align="center">Industrial Monitoring System (IMS)</h1>
@@ -17,9 +26,7 @@
 </div>
 
 <div align="center">
-  <img src="assets/apex-ldi-noc-banner.jpg" alt="APEX Circuit LDI NOC Banner" width="100%" style="border-radius:12px; box-shadow: 0 8px 32px rgba(0,242,254,0.3); margin-bottom: 24px;" />
-  <br/>
-  <br/>
+  
   <a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.demolab.com?font=Orbitron&weight=600&size=36&duration=4000&pause=2000&color=00F2FE&center=true&repeat=true&width=1000&height=60&lines=APEX+Circuit+IMS+|+System+Initializing...;Advanced+Manufacturing+Intelligence+%26+NOC;Zero-Latency+Digital+Twin+Architecture" alt="Typing SVG" /></a>
 </div>
 
