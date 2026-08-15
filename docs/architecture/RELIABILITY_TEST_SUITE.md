@@ -11,7 +11,7 @@
 | P0 | `sys_metrics` duplicate-insert fix | 67% data duplication | **Done** -- `SPEC_SYS_METRICS_DUPLICATE_INSERT.md`, verified 66.9%→0.0% |
 | P0 | Data integrity validation | Must prove no data loss | **Done** (34-min window) -- `DATA_INTEGRITY_VALIDATION_2026-08-15.md`; endurance items re-check over longer windows |
 | P0 | RAM accumulation fix | Incorrect metric | **Done** -- `SPEC_RAM_METRIC_ACCUMULATION_BUG.md`, verified stable/realistic across 3 devices, no side effects |
-| P0 | Ubuntu disk simulator fix | Unrealistic disk simulation | In progress |
+| P0 | Ubuntu disk simulator fix | Unrealistic disk simulation | **Done** -- `SPEC_UBUNTU_DISK_SNMPREC_FIX.md`, 100% pinned → 37.2%, healthy 36-69% band, history preserved, snmpsim-only restart |
 | P0 | Timestamp integrity | Support millisecond-resolution evidence | Not started |
 | P1 | Alarm hygiene | Reduce alert noise | Spec'd, not started -- `SPEC_ALERT_HYGIENE.md` |
 | P1 | Fault injection | Prove recovery | Not started |
