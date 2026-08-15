@@ -9,7 +9,7 @@
 | Priority | Task | Reason | Status |
 | --- | --- | --- | --- |
 | P0 | `sys_metrics` duplicate-insert fix | 67% data duplication | **Done** -- `SPEC_SYS_METRICS_DUPLICATE_INSERT.md`, verified 66.9%→0.0% |
-| P0 | Data integrity validation | Must prove no data loss | In progress |
+| P0 | Data integrity validation | Must prove no data loss | **Done** (34-min window) -- `DATA_INTEGRITY_VALIDATION_2026-08-15.md`; endurance items re-check over longer windows |
 | P0 | RAM accumulation fix | Incorrect metric | Spec'd, not deployed -- `SPEC_RAM_METRIC_ACCUMULATION_BUG.md` |
 | P0 | Ubuntu disk simulator fix | Unrealistic disk simulation | Root-caused, not deployed -- `READ_ONLY_AUDIT_2026-08-15.md` §3c |
 | P0 | Timestamp integrity | Support millisecond-resolution evidence | Not started |
