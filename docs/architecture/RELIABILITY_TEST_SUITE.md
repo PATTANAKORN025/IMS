@@ -18,9 +18,9 @@
 | P1 | Simulator realism (full audit) | Evidence-based realism scoring | **Done** -- `SIMULATOR_REALISM_AUDIT_2026-08-15.md`. Major finding: vacuum/temp/PE/JE OOS rates all dropped from 23-45% to ~0-0.7% since the 2026-08-11 audit (previously undocumented fix), flipping the alarm mix from 91.4% condition-driven to 19.3% (realistic, noise-dominant). One remaining gap found: humidity still 9.85% OOS, machine-specific (3 of 10 machines), same recalibration not yet applied there |
 | P1 | Fault injection | Prove recovery | **Plan complete, zero execution** -- `FAULT_INJECTION_PLAN.md`, 7 scenarios with exact failure/duration/expected behavior/rollback/success/data-loss/safety-boundary. 2 of 7 flagged as not-yet-ready (network interruption mechanism unconfirmed; slow-DB injection has no safe mechanism identified). PgBouncer/PostgreSQL scenarios explicitly gated on SPEC_PG_POOL_RESILIENCE.md shipping first |
 | P1 | Scale test 4→500 devices | Prove scalability | **Done** -- `SCALE_TEST_2026-08-15.md`. 100% success through 250 devices (P95 10ms→1.09s inflection between 100-250), 96.32% at 500 (real failures start). Bottleneck confirmed as Node-RED CPU (peaked 118-135%), not the DB (TimescaleDB <10% CPU throughout, PgBouncer <2%) -- no broker needed, matches instruction. New finding: a concurrency race in the Phase A1 cycle-gate, only triggered under overlapping-poll conditions this test's concurrency created -- doesn't affect the real fleet's actual 30s-cadence operation, not yet fixed |
-| P1 | 2h endurance | Stability | **Not started -- needs 2 real wall-clock hours**, can't be compressed into this session |
-| P2 | 6h endurance | Release confidence | Not started |
-| P2 | 12h endurance | Final confidence | Not started |
+| P1 | 2h endurance | Stability | **In progress** -- Attempt 9 started (`SOAK_TEST_LOG.md`), after finding and fixing a real blocker: the `IMS-SoakTest` scheduled task's repetition window had silently expired (`StopAtDurationEnd: True`, 4-day window closed 2026-08-14), explaining Attempt 8's total silence. Fixed with a 365-day window. Needs 2 real wall-clock hours to complete -- can't be compressed |
+| P2 | 6h endurance | Release confidence | Same continuous run as the 2h checkpoint above, not yet reached |
+| P2 | 12h endurance | Final confidence | Same continuous run, not yet reached |
 | P3 | 72h soak | Optional evidence | Demoted from gate to optional final check |
 
 ## Working rules (carried forward from Phase A1)
