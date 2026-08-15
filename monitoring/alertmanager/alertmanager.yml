@@ -22,13 +22,19 @@ route:
       repeat_interval: 1m
 
     # Critical: page immediately, short repeat for awareness
+    # continue: true removed (2026-08-15, reliability pass) -- it was a
+    # no-op today (no later sibling route also matches severity="critical"),
+    # but a latent duplicate-notification risk: ims-slack-critical and
+    # ims-webhook-default both resolve to the identical URL
+    # (http://node-red:1880/alert-webhook), undeduplicated at the
+    # destination -- any future route added below that also matched
+    # severity="critical" would double-POST the same alert transition.
     - matchers:
         - severity="critical"
       receiver: 'ims-slack-critical'
       group_wait: 10s
       group_interval: 5m
       repeat_interval: 30m
-      continue: true
 
     # Warning: standard NOC notification
     - matchers:
