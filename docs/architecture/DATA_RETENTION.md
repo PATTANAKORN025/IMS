@@ -27,7 +27,7 @@ FROM timescaledb_information.jobs j WHERE j.proc_name = 'policy_retention';
 
 Raw `ldi_data` is compressed after 7 days (still queryable, just column-compressed for storage efficiency) and physically dropped after 180 days. Its rollup chain (`ldi_data_1m` → `15m` → `1h`) and the separate `ldi_data_hourly` view retain much longer (30 days / 90 days / 2 years / 2 years respectively), so historical trend analysis remains possible well past the point raw samples are gone — see `docs/architecture/DATA_FLOW.md` for how the rollup chain fits together.
 
-## ️ Governance gap: `postgres/init/` and `database/migrations/` disagree
+## Governance gap: `postgres/init/` and `database/migrations/` disagree
 
 **Found during this documentation pass, not fixed (docs-only scope).** Two different code paths set retention policy for the _same_ tables to _different_ values:
 

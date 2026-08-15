@@ -16,7 +16,7 @@ A comprehensive audit across 7 project domains identified a total of **12 issues
 | -------- | ----- | ------------------------- |
 | CRITICAL | 1 | Immediate resolution required |
 | HIGH | 2 | Must resolve prior to production deployment |
-| ️ MEDIUM | 4 | Resolve according to priority |
+| MEDIUM | 4 | Resolve according to priority |
 | LOW | 5 | Documented, non-urgent |
 
 **Overall Score: 7/10** — The system exhibits solid stability, but contains security vulnerabilities that require remediation.
@@ -91,11 +91,11 @@ A comprehensive audit across 7 project domains identified a total of **12 issues
 1. Add instructions in `README.md` specifying the requirement to generate a hash prior to executing `make up`.
 2. Consider implementing a default hash (for development only) in `.env.example`.
 
-**Status:** ️ Partially mitigated (fail-safe is already in place)
+**Status:** Partially mitigated (fail-safe is already in place)
 
 ---
 
-## 4. ️ MEDIUM: Hardcoded Test Keys in CI
+## 4. MEDIUM: Hardcoded Test Keys in CI
 
 **Issue:** `INGEST_API_KEY: ims-secret-key` is hardcoded in `.github/workflows/ci.yml`.
 
@@ -114,11 +114,11 @@ A comprehensive audit across 7 project domains identified a total of **12 issues
 1. Utilize GitHub Secrets instead: `${{ secrets.INGEST_API_KEY }}`.
 2. Alternatively, accept this as a designated test key strictly decoupled from production.
 
-**Status:** ️ Known, acceptable for CI
+**Status:** Known, acceptable for CI
 
 ---
 
-## 5. ️ MEDIUM: K6 Test Hardcoded Passwords
+## 5. MEDIUM: K6 Test Hardcoded Passwords
 
 **Issue:** `.github/workflows/k6-test.yml` contains hardcoded test passwords.
 
@@ -137,11 +137,11 @@ echo "test-password" > secrets/grafana_admin_password.txt
 - Low — Isolated to the CI environment.
 - However, if the repository becomes public, these passwords will be exposed.
 
-**Status:** ️ Known, acceptable for CI
+**Status:** Known, acceptable for CI
 
 ---
 
-## 6. ️ MEDIUM: `dashboard.html` XSS Risk
+## 6. MEDIUM: `dashboard.html` XSS Risk
 
 **Issue:** `dashboard.html` utilizes `innerHTML` 24+ times.
 
@@ -160,7 +160,7 @@ echo "test-password" > secrets/grafana_admin_password.txt
 
 ---
 
-## 7. ️ MEDIUM: SNMP Simulator Exposed on 0.0.0.0
+## 7. MEDIUM: SNMP Simulator Exposed on 0.0.0.0
 
 **Issue:** `docker-compose.yaml` contains `--agent-udpv4-endpoint=0.0.0.0:${SNMP_PORT:-161}`.
 
@@ -287,15 +287,15 @@ docker run --rm ... gitleaks detect ... || true
 - Node-RED admin auth
 - Leaked GitHub token
 - Hardcoded test keys (acceptable for CI)
-- ️ No audit logging
+- No audit logging
 
 ### Database Score: 8/10
 
 - Idempotent migrations (IF NOT EXISTS)
 - Continuous Aggregates
 - Retention policies
-- ️ Some migrations with 0 statements (should verify)
-- ️ Column type changes (REAL vs DOUBLE PRECISION)
+- Some migrations with 0 statements (should verify)
+- Column type changes (REAL vs DOUBLE PRECISION)
 
 ### Node-RED Score: 8/10
 
@@ -303,14 +303,14 @@ docker run --rm ... gitleaks detect ... || true
 - Retry queue
 - Error handlers
 - 5 walkers per device
-- ️ Parser complexity (stateful, hard to debug)
+- Parser complexity (stateful, hard to debug)
 
 ### Grafana Score: 9/10
 
 - Correct datasource UIDs
 - Proper panel counts
 - No gridPos overlap (linter checks)
-- ️ Some dashboards use `-- Grafana --` datasource (internal)
+- Some dashboards use `-- Grafana --` datasource (internal)
 
 ### CI/CD Score: 7/10
 
@@ -320,7 +320,7 @@ docker run --rm ... gitleaks detect ... || true
 - K6 stress test
 - No auto-deploy
 - No auto-rollback
-- ️ `|| true` on chaos tests
+- `|| true` on chaos tests
 
 ### Docker Score: 9/10
 
@@ -328,7 +328,7 @@ docker run --rm ... gitleaks detect ... || true
 - Health checks
 - Restart policies
 - Logging configuration
-- ️ SNMP simulator on 0.0.0.0 (internal only)
+- SNMP simulator on 0.0.0.0 (internal only)
 
 ### Tests Score: 7/10
 
@@ -336,8 +336,8 @@ docker run --rm ... gitleaks detect ... || true
 - K6 stress tests
 - Dashboard linter
 - Visual regression (Playwright)
-- ️ No E2E tests in CI (only smoke)
-- ️ No integration tests with real DB
+- No E2E tests in CI (only smoke)
+- No integration tests with real DB
 
 ---
 
@@ -348,11 +348,11 @@ docker run --rm ... gitleaks detect ... || true
 | 1 | Revoke leaked GitHub token | CRITICAL | 5 min | Prevent unauthorized access |
 | 2 | Add auto-rollback to CI/CD | HIGH | 2 hrs | Prevent broken deployments |
 | 3 | Add `.env.example` instructions | HIGH | 10 min | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Prevent Node-RED crashes |
-| 4 | Move CI keys to GitHub Secrets | ️ MEDIUM | 30 min | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Security best practice |
-| 5 | Add `.opencode/` to .gitignore | ️ MEDIUM | 5 min | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Clean git state |
-| 6 | Add `.mcp.json` to .gitignore | ️ MEDIUM | 5 min | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Clean git state |
-| 7 | Verify zero-statement migrations | ️ LOW | 30 min | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Data integrity |
-| 8 | Review gitleaks `\|\| true` | ️ LOW | 15 min | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Security visibility |
+| 4 | Move CI keys to GitHub Secrets | MEDIUM | 30 min | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Security best practice |
+| 5 | Add `.opencode/` to .gitignore | MEDIUM | 5 min | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Clean git state |
+| 6 | Add `.mcp.json` to .gitignore | MEDIUM | 5 min | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Clean git state |
+| 7 | Verify zero-statement migrations | LOW | 30 min | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Data integrity |
+| 8 | Review gitleaks `\|\| true` | LOW | 15 min | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Security visibility |
 
 ---
 

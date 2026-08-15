@@ -17,11 +17,11 @@
 
 ## Table of Contents
 
-1. [Version Compatibility](#-version-compatibility)
-2. [Pre-Deployment Checklist](#-pre-deployment-checklist)
-3. [Real-World Troubleshooting](#-real-world-troubleshooting)
-4. [Data Format Confidence](#-data-format-confidence)
-5. [Go-Live Checklist](#-go-live-checklist)
+1. [Version Compatibility](#version-compatibility)
+2. [Pre-Deployment Checklist](#pre-deployment-checklist)
+3. [Real-World Troubleshooting](#real-world-troubleshooting)
+4. [Data Format Confidence](#data-format-confidence)
+5. [Go-Live Checklist](#go-live-checklist)
 
 ---
 
@@ -31,7 +31,7 @@
 
 | Component       | Current       | Latest  | Risk  | Notes                                           |
 | --------------- | ------------- | ------- | ----- | ----------------------------------------------- |
-| **Node-RED**    | 4.0.5         | 5.0     | ️ HIGH | 2 major versions behind, requires Node.js 22.9+ |
+| **Node-RED**    | 4.0.5         | 5.0     | HIGH | 2 major versions behind, requires Node.js 22.9+ |
 | **TimescaleDB** | PostgreSQL 16 | PG 17   | LOW   | v16 still supported until 2028                  |
 | **Grafana**     | 11.x          | 11.x    | NONE  | Current version                                 |
 | **Prometheus**  | v2.55.x       | 3.x     | LOW   | v2.x still maintained                           |
@@ -40,14 +40,14 @@
 
 ### Node-RED Upgrade Path
 
-> ️ **WARNING**: Node-RED 5.0 (released June 9, 2026) is the biggest Editor change in history.
+> **WARNING**: Node-RED 5.0 (released June 9, 2026) is the biggest Editor change in history.
 
 | Requirement        | Current        | Required for v5.0 |
 | ------------------ | -------------- | ----------------- |
 | Node.js            | 18.x           | 22.9+             |
 | Docker Base Image  | node:18-alpine | node:22-alpine    |
 | Editor UI          | Legacy         | New React-based   |
-| Flow Compatibility |                | ️ Test first       |
+| Flow Compatibility |                | Test first       |
 
 **Recommended Upgrade Path:**
 
@@ -168,7 +168,7 @@ session.get(['1.3.6.1.2.1.1.1.0'], (err, varbinds) => {
 
 ### LDI Machine Considerations
 
-> ️ **CRITICAL**: YSPhotec machines are controlled via vendor (Bender) system.
+> **CRITICAL**: YSPhotec machines are controlled via vendor (Bender) system.
 
 | Question                | Answer   | Action Required                            |
 | ----------------------- | -------- | ------------------------------------------ |

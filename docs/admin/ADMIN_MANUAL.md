@@ -1,4 +1,4 @@
-# ️ System Administration & SRE Guide
+# System Administration & SRE Guide
 
 > **Administration Manual for the IT Team (MIS-G) for IMS Maintenance**
 > Covers Docker management, device registration, alert management, and troubleshooting.
@@ -17,12 +17,12 @@
 
 ## Table of Contents
 
-1. [System Management](#-system-management)
-2. [Adding New Devices](#-adding-new-devices)
-3. [Alert Management](#-alert-management)
-4. [Troubleshooting](#-troubleshooting)
-5. [Backup & Recovery](#-backup--recovery)
-6. [Performance Monitoring](#-performance-monitoring)
+1. [System Management](#system-management)
+2. [Adding New Devices](#adding-new-devices)
+3. [Alert Management](#alert-management)
+4. [Troubleshooting](#troubleshooting)
+5. [Backup & Recovery](#backup--recovery)
+6. [Performance Monitoring](#performance-monitoring)
 
 ---
 
@@ -242,7 +242,7 @@ If a dedicated dashboard is required for the new machine:
 
 ---
 
-## ️ Alert Management
+## Alert Management
 
 ### Alert Rules Location
 

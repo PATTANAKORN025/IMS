@@ -17,17 +17,17 @@
 
 ## Table of Contents
 
-1. [Current Architecture](#-current-architecture)
-2. [Capacity Analysis](#-capacity-analysis)
-3. [Scaling Options](#-scaling-options)
-4. [Performance Tuning](#-performance-tuning)
-5. [Retention Policy](#-retention-policy)
-6. [Cost Estimation](#-cost-estimation)
+1. [Current Architecture](#current-architecture)
+2. [Capacity Analysis](#capacity-analysis)
+3. [Scaling Options](#scaling-options)
+4. [Performance Tuning](#performance-tuning)
+5. [Retention Policy](#retention-policy)
+6. [Cost Estimation](#cost-estimation)
 7. [Data Fidelity & Scale Management (Architectural Details)](../architecture/DATA_FIDELITY_AND_SCALING-th.md)
 
 ---
 
-## ️ Current Architecture
+## Current Architecture
 
 ### Single Instance Deployment
 
@@ -286,7 +286,7 @@ module.exports = {
 
 ---
 
-## ️ Retention Policy
+## Retention Policy
 
 ### Current Configuration
 

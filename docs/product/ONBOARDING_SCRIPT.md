@@ -4,7 +4,7 @@
 
 ---
 
-## ️ Tooling Recommendations
+## Tooling Recommendations
 
 To record the onboarding assets, use the following tools:
 
@@ -14,7 +14,7 @@ To record the onboarding assets, use the following tools:
 
 ---
 
-## ️ Scene 1: The NOC Overview (The "Wow" Factor)
+## Scene 1: The NOC Overview (The "Wow" Factor)
 
 **Asset Type:** 15-second loopable GIF (`hero-noc.gif`)
 **Target Location:** Top of `README.md` (replacing the static banner if desired).
@@ -29,7 +29,7 @@ To record the onboarding assets, use the following tools:
 
 ---
 
-## ️ Scene 2: The Drill-Down Workflow (Troubleshooting)
+## Scene 2: The Drill-Down Workflow (Troubleshooting)
 
 **Asset Type:** 45-second Video with Voiceover / Text overlays (`drilldown-tutorial.mp4`).
 **Target Location:** `docs/product/ONBOARDING.md`
@@ -46,7 +46,7 @@ To record the onboarding assets, use the following tools:
 
 ---
 
-## ️ Scene 3: Predictive Capacity Planning (AIOps)
+## Scene 3: Predictive Capacity Planning (AIOps)
 
 **Asset Type:** 10-second GIF (`predictive-aiops.gif`).
 **Target Location:** Features section of `README.md`.
@@ -59,7 +59,7 @@ To record the onboarding assets, use the following tools:
 
 ---
 
-## ️ Scene 4: Operator Andon Board (Factory Floor)
+## Scene 4: Operator Andon Board (Factory Floor)
 
 **Asset Type:** 5-second GIF (`andon-board.gif`).
 **Target Location:** `SOP_OPERATOR.md`

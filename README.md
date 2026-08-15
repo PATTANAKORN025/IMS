@@ -330,7 +330,7 @@ IMS/
 |                [**LDI RCA Guide**](docs/architecture/LDI_RCA_GUIDE.md)                | Root-cause correlation (Lift/Confidence) methodology                   |
 |       [**LDI Validation Protocol**](docs/operations/LDI_VALIDATION_PROTOCOL.md)       | 4-phase production sign-off procedure                                  |
 
-### <img src="docs/assets/icons/layers.svg" width="18" height="18" align="center" />️ Core Architecture & Security
+### <img src="docs/assets/icons/layers.svg" width="18" height="18" align="center" /> Core Architecture & Security
 
 |                                 Document                                 | Description                                                 |
 | :----------------------------------------------------------------------: | ----------------------------------------------------------- |
@@ -344,7 +344,7 @@ IMS/
 |     [**Design System**](docs/architecture/GRAFANA_DESIGN_SYSTEM.md)      | Semantic color palette, typography, threshold contracts     |
 |   [**Dashboard Inventory**](docs/architecture/DASHBOARD_INVENTORY.md)    | Auto-generated dashboard/panel-count table (CI-checked)     |
 
-### ️ Operations & SRE Playbooks
+### Operations & SRE Playbooks
 
 |                               Document                                | Description                                                     |
 | :-------------------------------------------------------------------: | --------------------------------------------------------------- |

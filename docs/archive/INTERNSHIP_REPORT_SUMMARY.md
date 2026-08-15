@@ -19,14 +19,14 @@
 
 ## Table of Contents
 
-1. [Executive Summary](#-executive-summary)
-2. [Project Objectives & Achievement](#-project-objectives--achievement)
-3. [Learning Outcomes](#-learning-outcomes)
-4. [Technical Skills Acquired](#-technical-skills-acquired)
-5. [Business Value Delivered](#-business-value-delivered)
-6. [Challenges & Solutions](#-challenges--solutions)
-7. [Future Recommendations](#-future-recommendations)
-8. [Conclusion](#-conclusion)
+1. [Executive Summary](#executive-summary)
+2. [Project Objectives & Achievement](#project-objectives--achievement)
+3. [Learning Outcomes](#learning-outcomes)
+4. [Technical Skills Acquired](#technical-skills-acquired)
+5. [Business Value Delivered](#business-value-delivered)
+6. [Challenges & Solutions](#challenges--solutions)
+7. [Future Recommendations](#future-recommendations)
+8. [Conclusion](#conclusion)
 
 ---
 

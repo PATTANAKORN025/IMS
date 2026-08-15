@@ -3,7 +3,7 @@
 > **Baseline reference.** This is the canonical style for `ldi_alarm_ms_code` alarm-knowledge text — English, operator/engineer-facing, functional (not a copy of the raw vendor AlarmMsg). Every future rewrite, in any simulator, migration, or dashboard, should follow this pattern and be added here, not invented ad hoc.
 >
 > **v1.0** (2026-08-11): 15 codes, single-statement `alarm_detail` only.
-> **v1.1** (2026-08-11): all 21 mock-catalog codes now have English `alarm_detail` (10 more translated from Thai); added structured `cause` / `impact` / `recovery_action` fields for all 25 codes covered so far (the 21 mock codes minus none, plus 4 real-only Critical codes not in the mock catalog); added a `sop_reference` field (schema-ready, intentionally empty — see [§7](#7-sop--work-instruction-references-not-yet-populated)).
+> **v1.1** (2026-08-11): all 21 mock-catalog codes now have English `alarm_detail` (10 more translated from Thai); added structured `cause` / `impact` / `recovery_action` fields for all 25 codes covered so far (the 21 mock codes minus none, plus 4 real-only Critical codes not in the mock catalog); added a `sop_reference` field (schema-ready, intentionally empty — see [§7](#7-sop--work-instruction-references--not-yet-populated)).
 >
 > See [§8 Freeze & scope](#8-freeze--scope) for exactly what is and isn't covered, and [§9 Open request](#9-open-request-vendor-catalog-for-the-11-gap-codes) for what's blocked on external input.
 
