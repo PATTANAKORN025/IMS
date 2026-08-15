@@ -15,6 +15,13 @@
 > Soak Attempt 6 on its own (not dev activity) and can keep doing so
 > to every subsequent attempt until fixed. Deploy that fix first, once
 > the freeze lifts, before anything in Tracks A or B.
+>
+> **Second superseding item, added 2026-08-15**: `SPEC_RAM_METRIC_ACCUMULATION_BUG.md`.
+> Found during the No-Data-panel dashboard audit -- every device's RAM
+> metric accumulates additively across poll cycles instead of resetting,
+> saturating at a 1TB safety clamp and pinning Fleet Health Score at a
+> permanent 0% on every infrastructure dashboard. Deploy alongside the
+> pg-pool fix (same Node-RED redeploy window) once the freeze lifts.
 
 ## Why these two, together
 
