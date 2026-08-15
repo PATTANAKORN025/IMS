@@ -282,7 +282,7 @@ IMS/
 │  ├── architecture/         #  ARCHITECTURE.md, GRAFANA_DESIGN_SYSTEM.md
 │  ├── operations/          #  TROUBLESHOOTING.md, SCALING_PLAN.md
 │  ├── audits/            #  审计报告与技术简报
-│  └── product/            #  PRODUCT.md, CONTEXT.md
+│  └── product/            #  PRODUCT.md, ONBOARDING_SCRIPT.md
 └── .mimocode/skills/         # 24 个用于 DevOps 自动化的自定义技能
 ```
 
