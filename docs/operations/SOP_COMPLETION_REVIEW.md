@@ -13,8 +13,8 @@ linked to two dashboard URLs that don't match the real dashboard
 
 | Link text              | Broken URL used                | Real uid          |
 | ---------------------- | ------------------------------ | ----------------- |
-| Engineering Drill-Down | `/d/ims-engineering-drilldown` | `ims-engineering` |
-| Capacity Planning      | `/d/ims-capacity-planning`     | `ims-capacity`    |
+| Engineering Drill-Down | `/d/ims-engineering` | `ims-engineering` |
+| Capacity Planning      | `/d/ims-capacity`     | `ims-capacity`    |
 
 Both were wrong identically across all three language files -- same
 mistake propagated through translation, not three independent errors.

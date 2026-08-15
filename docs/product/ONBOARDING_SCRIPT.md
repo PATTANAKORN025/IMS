@@ -17,7 +17,7 @@ To record the onboarding assets, use the following tools:
 ## ️ Scene 1: The NOC Overview (The "Wow" Factor)
 
 **Asset Type:** 15-second loopable GIF (`hero-noc.gif`)
-**Target Location:** Top of [README.md](../../README.md) (replacing the static banner if desired).
+**Target Location:** Top of `README.md` (replacing the static banner if desired).
 
 **Action Script:**
 
@@ -32,7 +32,7 @@ To record the onboarding assets, use the following tools:
 ## ️ Scene 2: The Drill-Down Workflow (Troubleshooting)
 
 **Asset Type:** 45-second Video with Voiceover / Text overlays (`drilldown-tutorial.mp4`).
-**Target Location:** [USER_MANUAL.md](../user/USER_MANUAL.md)
+**Target Location:** `docs/product/ONBOARDING.md`
 
 **Action Script:**
 
@@ -49,11 +49,11 @@ To record the onboarding assets, use the following tools:
 ## ️ Scene 3: Predictive Capacity Planning (AIOps)
 
 **Asset Type:** 10-second GIF (`predictive-aiops.gif`).
-**Target Location:** Features section of [README.md](../../README.md).
+**Target Location:** Features section of `README.md`.
 
 **Action Script:**
 
-1. Open [Capacity Planning](http://localhost:3000/d/ims-capacity-planning).
+1. Open [Capacity Planning](http://localhost:3000/d/ims-capacity).
 2. Focus the recording box strictly on the **Days Until Full** gauge and the **Linear Regression Forecast** graph.
 3. Hover over the intersection point where the trend line hits 100%. The tooltip should clearly say "Estimated Full Date: Oct 12, 2026".
 
@@ -62,7 +62,7 @@ To record the onboarding assets, use the following tools:
 ## ️ Scene 4: Operator Andon Board (Factory Floor)
 
 **Asset Type:** 5-second GIF (`andon-board.gif`).
-**Target Location:** [SOP_OPERATOR.md](../operations/SOP_OPERATOR.md)
+**Target Location:** `SOP_OPERATOR.md`
 
 **Action Script:**
 
