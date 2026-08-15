@@ -32,22 +32,39 @@ let errors = 0;
 
 function lintFile(filePath) {
   const file = path.basename(filePath);
-  const doc = yaml.load(fs.readFileSync(filePath, 'utf8'));
+  let doc;
+  try {
+    doc = yaml.load(fs.readFileSync(filePath, 'utf8'));
+  } catch (err) {
+    errors++;
+    console.error(`  ERROR  ${file} — failed to read/parse YAML: ${err.message}`);
+    return;
+  }
+  if (!doc || typeof doc !== 'object') {
+    errors++;
+    console.error(`  ERROR  ${file} — parsed to ${doc === null ? 'null' : typeof doc}, expected an object with a "groups" key`);
+    return;
+  }
 
-  for (const group of doc.groups || []) {
-    for (const rule of group.rules || []) {
-      for (const step of rule.data || []) {
-        const model = step.model || {};
-        const sql = model.rawSql;
-        if (!sql) continue; // e.g. __expr__ reduce/threshold steps, no SQL
-        if (model.format !== 'time_series') continue; // table-format: no time column, not applicable
+  try {
+    for (const group of doc.groups || []) {
+      for (const rule of group.rules || []) {
+        for (const step of rule.data || []) {
+          const model = step.model || {};
+          const sql = model.rawSql;
+          if (!sql) continue; // e.g. __expr__ reduce/threshold steps, no SQL
+          if (model.format !== 'time_series') continue; // table-format: no time column, not applicable
 
-        if (!/\bORDER\s+BY\b/i.test(sql)) {
-          errors++;
-          console.error(`  ERROR  ${file} [${rule.uid}] "${rule.title}" refId=${step.refId} — format: time_series query has no ORDER BY. Row order from Postgres is unguaranteed; add ORDER BY 1 (or the time column) even for currently-single-row results.`);
+          if (!/\bORDER\s+BY\b/i.test(sql)) {
+            errors++;
+            console.error(`  ERROR  ${file} [${rule.uid}] "${rule.title}" refId=${step.refId} — format: time_series query has no ORDER BY. Row order from Postgres is unguaranteed; add ORDER BY 1 (or the time column) even for currently-single-row results.`);
+          }
         }
       }
     }
+  } catch (err) {
+    errors++;
+    console.error(`  ERROR  ${file} — unexpected structure while walking groups/rules/data: ${err.message}`);
   }
 }
 
