@@ -17,13 +17,13 @@
 
 ## Table of Contents
 
-1. [Getting Started](#-getting-started)
-2. [Grafana Dashboard Guide](#-grafana-dashboard-guide)
-3. [Reading Metrics](#-reading-metrics)
-4. [Alert Response Procedures](#-alert-response-procedures)
-5. [Common Operations](#-common-operations)
-6. [Troubleshooting](#-troubleshooting)
-7. [Quick Reference](#-quick-reference)
+1. [Getting Started](#getting-started)
+2. [Grafana Dashboard Guide](#grafana-dashboard-guide)
+3. [Reading Metrics](#reading-metrics)
+4. [Alert Response Procedures](#alert-response-procedures)
+5. [Common Operations](#common-operations)
+6. [Troubleshooting](#troubleshooting)
+7. [Quick Reference](#quick-reference)
 
 ---
 
@@ -246,10 +246,10 @@ Utilized to detect board-key duplication, verify overall coverage %, and validat
 ```text
 Machine: server-01
 CPU Load: 72% (Warning)
-├── Core 1: 85% ️
+├── Core 1: 85%
 ├── Core 2: 45%
-├── Core 3: 78% ️
-└── Core 4: 80% ️
+├── Core 3: 78%
+└── Core 4: 80%
 → Cores 1, 3, and 4 are under heavy load; investigate running processes.
 ```
 
@@ -361,7 +361,7 @@ Escalation:
 - If switch port is down → contact data center team
 ```
 
-#### ️ Scenario 2: HighCPUUsage (Warning)
+#### Scenario 2: HighCPUUsage (Warning)
 
 ```text
 Symptoms:
@@ -385,7 +385,7 @@ Escalation:
 - If affecting other services → consider scaling
 ```
 
-#### ️ Scenario 3: DiskSpaceLow (Warning)
+#### Scenario 3: DiskSpaceLow (Warning)
 
 ```text
 Symptoms:

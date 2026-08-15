@@ -1,4 +1,4 @@
-# <img src="docs/assets/icons/wrench.svg" width="18" height="18" align="center" />️ System Administration & SRE Guide
+# <img src="docs/assets/icons/wrench.svg" width="18" height="18" align="center" /> System Administration & SRE Guide
 
 > **IMS系统IT运维手册 (MIS-G)**
 > 涵盖Docker管理、设备注册、告警管理、故障排除
@@ -17,16 +17,16 @@
 
 ## Table of Contents
 
-1. [System Management](#-system-management)
-2. [Adding New Devices](#-adding-new-devices)
-3. [Alert Management](#-alert-management)
-4. [Troubleshooting](#-troubleshooting)
-5. [Backup & Recovery](#-backup--recovery)
+1. [System Management](#system-management)
+2. [Adding New Devices](#adding-new-devices)
+3. [Alert Management](#alert-management)
+4. [Troubleshooting](#troubleshooting)
+5. [Backup & Recovery](#backup--recovery)
 6. [Performance Monitoring](#-performance-monitoring)
 
 ---
 
-## ️ System Management
+## System Management
 
 ### Container Overview
 

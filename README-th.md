@@ -312,7 +312,7 @@ IMS/
 |                [**LDI RCA Guide**](docs/architecture/LDI_RCA_GUIDE.md)                | ระเบียบวิธีความสัมพันธ์ระดับรากฐานของสาเหตุ (Root-cause correlation: Lift/Confidence) |
 |       [**LDI Validation Protocol**](docs/operations/LDI_VALIDATION_PROTOCOL.md)       | ขั้นตอนการอนุมัติขั้นโปรดักชัน 4 เฟส                                                  |
 
-### <img src="docs/assets/icons/layers.svg" width="18" height="18" align="center" />️ สถาปัตยกรรมหลักและความปลอดภัย (Core Architecture & Security)
+### <img src="docs/assets/icons/layers.svg" width="18" height="18" align="center" /> สถาปัตยกรรมหลักและความปลอดภัย (Core Architecture & Security)
 
 |                                  เอกสาร                                  | คำอธิบาย                                                        |
 | :----------------------------------------------------------------------: | --------------------------------------------------------------- |
@@ -326,7 +326,7 @@ IMS/
 |     [**Design System**](docs/architecture/GRAFANA_DESIGN_SYSTEM.md)      | พาเล็ตสีเพื่อสื่อความหมาย, รูปแบบตัวอักษร, เงื่อนไขขีดจำกัด     |
 |   [**Dashboard Inventory**](docs/architecture/DASHBOARD_INVENTORY.md)    | ตารางจำนวนแดชบอร์ด/พาเนลที่ถูกสร้างอัตโนมัติ (ตรวจสอบโดย CI)    |
 
-### ️ ปฏิบัติการและคู่มือการดูแลระบบ (Operations & SRE Playbooks)
+### ปฏิบัติการและคู่มือการดูแลระบบ (Operations & SRE Playbooks)
 
 |                                เอกสาร                                 | คำอธิบาย                                                               |
 | :-------------------------------------------------------------------: | ---------------------------------------------------------------------- |
