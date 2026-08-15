@@ -1,0 +1,638 @@
+{
+  "id": null,
+  "uid": "ims-ldi-alarm-response",
+  "title": "IMS LDI - Alarm Response (MTTA/MTTR)",
+  "description": "Is the team responding to alarms fast enough? Real MTTA/MTTR from public.ldi_alarm_lifecycle -- no simulated data. Shift lead / manufacturing owner audience, same as Manufacturing Command Center.",
+  "tags": [
+    "LDI",
+    "alarms",
+    "MTTA",
+    "MTTR",
+    "manufacturing"
+  ],
+  "timezone": "UTC",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "graphTooltip": 1,
+  "fiscalYearStartMonth": 0,
+  "liveNow": false,
+  "refresh": "1m",
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "timepicker": {},
+  "annotations": {
+    "list": []
+  },
+  "links": [],
+  "templating": {
+    "list": []
+  },
+  "panels": [
+    {
+      "id": 9999,
+      "type": "text",
+      "title": "",
+      "options": {
+        "content": "<style>\n[class*=\"-panel-container\"] {\n  background: rgba(10, 13, 16, 0.7) !important;\n  border: 1px solid rgba(0, 242, 254, 0.15) !important;\n  border-radius: 12px !important;\n  box-shadow: 0 4px 24px -4px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.05) !important;\n  transition: all 0.2s ease-in-out !important;\n}\n[class*=\"-panel-container\"]:hover {\n  border-color: rgba(0, 242, 254, 0.5) !important;\n  box-shadow: 0 8px 32px 0 rgba(0, 242, 254, 0.15) !important;\n  backdrop-filter: blur(10px) !important;\n}\n[class*=\"-panel-title\"] {\n  color: #E8EDF2 !important;\n  font-weight: 600 !important;\n  text-transform: uppercase !important;\n  letter-spacing: 1px !important;\n  font-size: 11px !important;\n}\n</style>",
+        "mode": "html"
+      },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "transparent": true
+    },
+    {
+      "id": 0,
+      "type": "text",
+      "title": "",
+      "description": "Honesty caveat -- read before citing any MTTA/MTTR figure from this dashboard.",
+      "options": {
+        "content": "**Real caveat, stated up front, not discovered during use**: MTTA/MTTR are meaningless in mock-simulator mode unless someone is actually clicking Acknowledge/Resolve on the [Alarm Console](/d/ims-ldi-alarm-console) regularly. As of this dashboard's build (2026-08-15), `public.ldi_alarm_lifecycle` spans ~2 days and 782 rows -- **every single one is still status `OPEN`**. Zero rows have ever been acknowledged or resolved. Every MTTA/MTTR panel below will show `NO_DATA` until real operator interaction happens -- that's an honest reflection of current usage, not a broken dashboard. The one panel with real signal today is the bottom triage table, which shows currently-open alarms by how long they've been waiting.",
+        "mode": "markdown"
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 24,
+        "x": 0,
+        "y": 1
+      }
+    },
+    {
+      "id": 1,
+      "title": "◉ MTTA (Acknowledge, 24h)",
+      "description": "Mean time to acknowledge, last 24 hours. AVG(acknowledged_at - logdate) over rows where acknowledged_at is set.",
+      "type": "stat",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 0,
+        "y": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "timescaledb"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: 24h window is expressed in the WHERE clause itself, not a dashboard time-range dependency */\nSELECT ROUND((EXTRACT(EPOCH FROM AVG(acknowledged_at - logdate)) / 60)::NUMERIC, 1) AS value\nFROM public.ldi_alarm_lifecycle\nWHERE acknowledged_at IS NOT NULL\n  AND logdate > NOW() - INTERVAL '24 hours';",
+          "refId": "A",
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "m",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#22C55E",
+                "value": null
+              },
+              {
+                "color": "#F59E0B",
+                "value": 15
+              },
+              {
+                "color": "#EF4444",
+                "value": 60
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "#64748B",
+                  "text": "NO_DATA",
+                  "index": 0
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value_and_name",
+        "noValue": "NO_DATA",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "◉ MTTR (Resolve, 24h)",
+      "description": "Mean time to resolve, last 24 hours. AVG(resolved_at - logdate) over rows where resolved_at is set.",
+      "type": "stat",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 6,
+        "y": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "timescaledb"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: 24h window is expressed in the WHERE clause itself, not a dashboard time-range dependency */\nSELECT ROUND((EXTRACT(EPOCH FROM AVG(resolved_at - logdate)) / 60)::NUMERIC, 1) AS value\nFROM public.ldi_alarm_lifecycle\nWHERE resolved_at IS NOT NULL\n  AND logdate > NOW() - INTERVAL '24 hours';",
+          "refId": "A",
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "m",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#22C55E",
+                "value": null
+              },
+              {
+                "color": "#F59E0B",
+                "value": 30
+              },
+              {
+                "color": "#EF4444",
+                "value": 120
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "#64748B",
+                  "text": "NO_DATA",
+                  "index": 0
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value_and_name",
+        "noValue": "NO_DATA",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "◉ MTTA (Acknowledge, All-Time)",
+      "description": "Mean time to acknowledge across the full table history, not just 24h -- gives the 24h panel context once real data exists.",
+      "type": "stat",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 12,
+        "y": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "timescaledb"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope by design */\nSELECT ROUND((EXTRACT(EPOCH FROM AVG(acknowledged_at - logdate)) / 60)::NUMERIC, 1) AS value\nFROM public.ldi_alarm_lifecycle\nWHERE acknowledged_at IS NOT NULL;",
+          "refId": "A",
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "m",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#22C55E",
+                "value": null
+              },
+              {
+                "color": "#F59E0B",
+                "value": 15
+              },
+              {
+                "color": "#EF4444",
+                "value": 60
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "#64748B",
+                  "text": "NO_DATA",
+                  "index": 0
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value_and_name",
+        "noValue": "NO_DATA",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "◉ MTTR (Resolve, All-Time)",
+      "description": "Mean time to resolve across the full table history, not just 24h -- gives the 24h panel context once real data exists.",
+      "type": "stat",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 18,
+        "y": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "timescaledb"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope by design */\nSELECT ROUND((EXTRACT(EPOCH FROM AVG(resolved_at - logdate)) / 60)::NUMERIC, 1) AS value\nFROM public.ldi_alarm_lifecycle\nWHERE resolved_at IS NOT NULL;",
+          "refId": "A",
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "m",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#22C55E",
+                "value": null
+              },
+              {
+                "color": "#F59E0B",
+                "value": 30
+              },
+              {
+                "color": "#EF4444",
+                "value": 120
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "#64748B",
+                  "text": "NO_DATA",
+                  "index": 0
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value_and_name",
+        "noValue": "NO_DATA",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "◈ Daily MTTA / MTTR Trend",
+      "description": "Daily-bucketed mean acknowledge/resolve time over the selected range. Will render empty until real Acknowledge/Resolve activity accumulates -- not an error state.",
+      "type": "timeseries",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 10
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "timescaledb"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT time_bucket('1 day', logdate) AS time,\n  ROUND((EXTRACT(EPOCH FROM AVG(acknowledged_at - logdate)) / 60)::NUMERIC, 1) AS \"MTTA (min)\"\nFROM public.ldi_alarm_lifecycle\nWHERE acknowledged_at IS NOT NULL\n  AND $__timeFilter(logdate)\nGROUP BY 1\nORDER BY 1;",
+          "refId": "A",
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "timescaledb"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT time_bucket('1 day', logdate) AS time,\n  ROUND((EXTRACT(EPOCH FROM AVG(resolved_at - logdate)) / 60)::NUMERIC, 1) AS \"MTTR (min)\"\nFROM public.ldi_alarm_lifecycle\nWHERE resolved_at IS NOT NULL\n  AND $__timeFilter(logdate)\nGROUP BY 1\nORDER BY 1;",
+          "refId": "B",
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "m",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "gradientMode": "opacity",
+            "pointSize": 5,
+            "showPoints": "auto",
+            "spanNulls": false
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "MTTA (min)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#3B82F6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "MTTR (min)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#F59E0B"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "connectNullPoints": true,
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "◈ Currently Open — Longest Waiting (Triage)",
+      "description": "Real signal today, unlike the panels above: every currently-OPEN alarm, oldest first. Wait time = NOW() - logdate, not a historical MTTA measurement -- this is 'what needs attention right now', not 'how fast did we respond historically'.",
+      "type": "table",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 18
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "timescaledb"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: this is a live triage queue, not a historical trend -- always shows current state */\nSELECT a.equipmentid AS \"Machine\",\n  m.severity AS \"Severity\",\n  m.alarm_msg AS \"Alarm\",\n  l.logdate AS \"Fired At\",\n  ROUND((EXTRACT(EPOCH FROM (NOW() - l.logdate)) / 60)::NUMERIC, 1) AS \"Waiting (min)\"\nFROM public.ldi_alarm_lifecycle l\nJOIN public.ldi_alarm_log a ON a.logdate = l.logdate AND a.logid = l.logid\nLEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\nWHERE l.status = 'OPEN'\nORDER BY l.logdate ASC\nLIMIT 20;",
+          "refId": "A",
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Severity"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "basic"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "Critical": {
+                        "color": "#EF4444",
+                        "index": 0
+                      },
+                      "Major": {
+                        "color": "#F59E0B",
+                        "index": 1
+                      },
+                      "Minor": {
+                        "color": "#EAB308",
+                        "index": 2
+                      },
+                      "Warning": {
+                        "color": "#3B82F6",
+                        "index": 3
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "sortBy": []
+      }
+    }
+  ]
+}
