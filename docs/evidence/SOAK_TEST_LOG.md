@@ -46,10 +46,24 @@ Clean for its first ~1h03m, then `any_container_restarted=yes` at `2026-08-14T05
 
 **This is a real, previously-undiagnosed bug** that may explain instability in earlier soak attempts and possibly the original 16-hour event this session's observability effort was built to investigate (not confirmed -- Docker log retention didn't preserve that far back -- but the failure signature matches). It is the highest-priority item in the current backlog specifically because it can invalidate a soak attempt without anyone touching anything.
 
-## Attempt 7 (started 2026-08-14T07:34:17Z) — in progress
+## Attempt 7 (2026-08-14T07:34:17Z → 08:20:14Z, ~46min, 4 samples) — INVALID, host powered off mid-window
 
-Log reset: Attempt 6's log archived above, fresh log started at `scripts/soak-test-reports/soak-log.tsv`, restart-state files (`.restart_*`) cleared. No fix for the pg-pool crash bug has been deployed yet -- per the standing freeze, no runtime system is being touched until a soak attempt completes cleanly or the freeze is explicitly lifted. This means Attempt 7 carries the same real risk of hitting the same `client_idle_timeout` crash as Attempt 6 did; that is expected and accepted, not overlooked -- fixing it now would itself be a restart, which the freeze exists to prevent.
+Raw data: `docs/evidence/soak-log-2026-08-14-attempt7-contaminated-by-host-shutdown.tsv`.
 
-Collection mechanism unchanged: Windows Scheduled Task `IMS-SoakTest` (fires every 15 minutes independent of any chat session).
+Clean for all 4 samples it collected (`restarted=no` throughout, db_size_mb growing 34→36 normally). Then nothing -- the `IMS-SoakTest` scheduled task's `LastRunTime` is `2026-08-14T15:20:13+07:00` (matches the last sample) and `NumberOfMissedRuns: 1` when queried afterward. Host `LastBootUpTime` (`wmic os get lastbootuptime`) is `2026-08-15T08:09:30+07:00` = `2026-08-15T01:09:30Z` -- **~17 hours after** the last sample. Every `ims-*` container's `StartedAt` clusters at `2026-08-15T01:15:45Z`-`01:17:26Z`, seconds after that boot, consistent with Docker's `restart: unless-stopped` policy bringing the stack back up after the host itself restarted. Cause of the host going down (sleep, Windows Update, manual shutdown) not established -- Windows Event Log wasn't checked -- but the fact pattern (task simply stopped firing, then a fresh boot timestamp, then every container starting within 2 seconds of each other and of that boot) is a host power event, not a container-level crash.
 
-Re-run `bash scripts/soak-test-report.sh --summarize` after 72h real elapsed time (target: 2026-08-17T07:34Z or later) for the actual verdict.
+**Why this still counts as INVALID rather than "4 clean samples toward the total":** the soak test's claim is *continuous* unattended monitoring with zero unexpected restarts. A ~17-hour gap where nothing was being sampled and the machine was off is a gap in evidence, not evidence of a clean 17 hours -- can't rule out anything happened in that window. Scheduled task confirmed still `Enabled: True`, `StartWhenAvailable: True`, trigger intact, so it will resume on its own; no fix needed for the task itself.
+
+Two containers unrelated to the IMS stack were also observed running at the same boot (`ghcr.io/github/github-mcp-server`, `mcp/sonarqube`) -- these are this session's own MCP tool containers (GitHub MCP server, SonarQube MCP), not a second unexplained process. Noted only because they showed up in the same `docker ps` sweep and were briefly suspected of being another concurrent-workspace signal; ruled out.
+
+No fix for the Attempt 6 pg-pool crash bug has been deployed yet -- per the standing freeze, no runtime system was touched to investigate or close out this attempt (all commands above were read-only: `docker ps`, `docker inspect`, `Get-ScheduledTask*`, `wmic`). Archived, not deleted, same reasoning as Attempts 1-6.
+
+## Attempt 8 (started 2026-08-15T01:49Z*) — in progress
+
+*Approximate -- first post-reboot sample will set the real start timestamp in the log.
+
+Log reset: Attempt 7's log archived above, fresh log started at `scripts/soak-test-reports/soak-log.tsv`, restart-state files (`.restart_*`) cleared. Same known, undeployed risk as Attempt 7 carried forward: the Attempt 6 pg-pool `client_idle_timeout` crash bug (`SPEC_PG_POOL_RESILIENCE.md`) is still live in the running containers.
+
+Collection mechanism unchanged: Windows Scheduled Task `IMS-SoakTest`, confirmed `Enabled: True` post-reboot, will resume its 15-minute cadence on its own.
+
+Re-run `bash scripts/soak-test-report.sh --summarize` after 72h real elapsed time from the first Attempt 8 sample for the actual verdict. Given Attempt 7's failure mode (silent host power event), treat any future multi-sample gap in the live log as reason to check `Get-ScheduledTaskInfo -TaskName IMS-SoakTest` and `wmic os get lastbootuptime` before assuming the clock is still running clean.
