@@ -282,7 +282,7 @@ IMS/
 │  ├── architecture/         #  ARCHITECTURE.md, GRAFANA_DESIGN_SYSTEM.md
 │  ├── operations/          #  TROUBLESHOOTING.md, SCALING_PLAN.md
 │  ├── audits/            #  รายงานการตรวจสอบและสรุปผลทางเทคนิค
-│  └── product/            #  PRODUCT.md, CONTEXT.md
+│  └── product/            #  PRODUCT.md, ONBOARDING_SCRIPT.md
 └── .mimocode/skills/         # 24 ทักษะแบบกำหนดเองสำหรับ DevOps automation
 ```
 

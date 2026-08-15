@@ -300,7 +300,7 @@ IMS/
 │  ├── architecture/         #  ARCHITECTURE.md, GRAFANA_DESIGN_SYSTEM.md
 │  ├── operations/          #  TROUBLESHOOTING.md, SCALING_PLAN.md
 │  ├── audits/            #  Audit reports and technical debriefs
-│  └── product/            #  PRODUCT.md, CONTEXT.md
+│  └── product/            #  PRODUCT.md, ONBOARDING_SCRIPT.md
 └── .mimocode/skills/         # 24 custom skills for DevOps automation
 ```
 
