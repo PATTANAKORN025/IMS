@@ -291,7 +291,7 @@
     },
     {
       "id": 4,
-      "title": "◉ Critical Alarms (1h)",
+      "title": "◉ Critical/Major Alarms (1h)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
