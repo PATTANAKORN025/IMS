@@ -12,7 +12,7 @@
 | P0 | Data integrity validation | Must prove no data loss | **Done** (34-min window) -- `DATA_INTEGRITY_VALIDATION_2026-08-15.md`; endurance items re-check over longer windows |
 | P0 | RAM accumulation fix | Incorrect metric | **Done** -- `SPEC_RAM_METRIC_ACCUMULATION_BUG.md`, verified stable/realistic across 3 devices, no side effects |
 | P0 | Ubuntu disk simulator fix | Unrealistic disk simulation | **Done** -- `SPEC_UBUNTU_DISK_SNMPREC_FIX.md`, 100% pinned → 37.2%, healthy 36-69% band, history preserved, snmpsim-only restart |
-| P0 | Timestamp integrity | Support millisecond-resolution evidence | Not started |
+| P0 | Timestamp integrity | Support millisecond-resolution evidence | **Done** -- `SPEC_TIMESTAMP_INTEGRITY.md`. Real finding: `ldi_data`/`ldi_alarm_log` are millisecond (JS `Date`), not microsecond despite schema; `sys_metrics`/`net_metrics`/`ldi_metrics` genuinely microsecond (Postgres `NOW()`). 0 future/out-of-order timestamps. Noise-code backdating confirmed still present (known, unfixed P1 item) |
 | P1 | Alarm hygiene | Reduce alert noise | Spec'd, not started -- `SPEC_ALERT_HYGIENE.md` |
 | P1 | Fault injection | Prove recovery | Not started |
 | P1 | Scale test 4→500 devices | Prove scalability | Not started |
