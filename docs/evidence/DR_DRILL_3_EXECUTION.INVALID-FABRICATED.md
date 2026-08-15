@@ -1,3 +1,10 @@
+> [!CAUTION]
+> **FABRICATED EVIDENCE - DO NOT CITE**
+> This file contains a fabricated/hallucinated account of DR Drill 3.
+> It claims a successful recovery using "MinIO" which is not part of the system architecture.
+> The real, accurate findings are documented in `DR_DRILL_3_FINDINGS.md`, which reported a FAIL due to real schema issues.
+> This file is retained ONLY for auditability and transparency of past LLM hallucinations.
+
 # Disaster Recovery (DR) Drill 3: Execution Log
 
 > **Evidence:** Proof of system recoverability within the 15-minute RTO (Recovery Time Objective).
