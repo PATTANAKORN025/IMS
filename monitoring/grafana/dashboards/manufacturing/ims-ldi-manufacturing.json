@@ -1110,7 +1110,7 @@
     },
     {
       "id": 5,
-      "title": "◉ Critical Alarms",
+      "title": "◉ Critical/Major Alarms",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"

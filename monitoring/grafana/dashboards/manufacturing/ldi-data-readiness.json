@@ -1296,6 +1296,210 @@
           "sort": "none"
         }
       }
+    },
+    {
+      "id": 15,
+      "title": "◉ Stuck OPEN Alarms (>4h)",
+      "description": "Alarms still in status OPEN more than 4 hours after firing -- never acknowledged at all. A real operational gap (not a data-integrity bug): either nobody has seen it, or the alarm-console workflow silently failed for it. Threshold (4h) is a starting point, not a sourced SLA -- revisit once real operator response-time data exists.",
+      "type": "stat",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 4,
+        "x": 8,
+        "y": 61
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "timescaledb"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*)::NUMERIC AS value\nFROM public.ldi_alarm_lifecycle l\nJOIN public.ldi_alarm_log a ON a.logdate = l.logdate AND a.logid = l.logid\nWHERE a.equipmentid IN (${machine_id:sqlstring})\n  AND l.status = 'OPEN'\n  AND l.logdate < NOW() - INTERVAL '4 hours';",
+          "refId": "A",
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#22C55E",
+                "value": null
+              },
+              {
+                "color": "#F59E0B",
+                "value": 1
+              },
+              {
+                "color": "#EF4444",
+                "value": 5
+              }
+            ]
+          },
+          "custom": {
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 15,
+            "lineWidth": 2
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "#64748B",
+                  "text": "NO_DATA",
+                  "index": 0
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value_and_name",
+        "wideLayout": true,
+        "text": {
+          "titleSize": 14,
+          "valueSize": 48
+        },
+        "noValue": "NO_DATA",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      }
+    },
+    {
+      "id": 16,
+      "title": "◉ Orphaned Lifecycle Rows",
+      "description": "ldi_alarm_lifecycle rows whose (logdate, logid) has no matching ldi_alarm_log row. Shouldn't happen -- migration 077's FK constraint should prevent it -- but this readiness dashboard exists precisely to catch 'shouldn't happen' cases with evidence instead of assumption. Not filtered by machine, since an orphan has no reachable equipmentid to filter on.",
+      "type": "stat",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 4,
+        "x": 12,
+        "y": 61
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "timescaledb"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: full dataset scope, orphan-detection has no meaningful time window */\nSELECT COUNT(*)::NUMERIC AS value\nFROM public.ldi_alarm_lifecycle l\nLEFT JOIN public.ldi_alarm_log a ON a.logdate = l.logdate AND a.logid = l.logid\nWHERE a.logid IS NULL;",
+          "refId": "A",
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#22C55E",
+                "value": null
+              },
+              {
+                "color": "#EF4444",
+                "value": 1
+              }
+            ]
+          },
+          "custom": {
+            "gradientMode": "opacity",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 15,
+            "lineWidth": 2
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "#64748B",
+                  "text": "NO_DATA",
+                  "index": 0
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value_and_name",
+        "wideLayout": true,
+        "text": {
+          "titleSize": 14,
+          "valueSize": 48
+        },
+        "noValue": "NO_DATA",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      }
     }
   ]
 }
