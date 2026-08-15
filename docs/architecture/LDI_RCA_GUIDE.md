@@ -31,18 +31,25 @@ A Lift of 1.0 means the alarm has no predictive relationship to the parameter (i
 | **Materialized?**    | Yes (migration 064, 60s refresh)                                  | Yes (migration 064, 60s refresh)                                                                               |
 | **Where it's read**  | LDI Manufacturing's "Top Correlated Alarms (24h)" panel           | LDI Engineering Analytics's "RCA Truth Test" panel                                                             |
 
-## Current live figures (snapshot, 2026-08-10 — see caveat below)
+## Current live figures (snapshot, 2026-08-15T02:35Z — see caveat below)
 
 ```text
-Alarm Category         Alarm-Window % Baseline % Lift Event Count Confidence
-MOTION (70004)            100.0  0.4 250.00   56 OK
-VACUUM (91009)            100.0  14.2 7.04   2493 OK
-THERMAL (91008)            73.1  16.6 4.40   1924 OK
-HUMIDITY (91008)            44.0  10.1 4.36   1924 OK
-ALIGNMENT/PE-JE (90001,90004,90005,90012,90013)    100.0  44.9 2.23   5201 OK
+Alarm Category                                    Alarm-Window % Baseline % Lift    Event Count Confidence
+VACUUM (91009)                                                 -        0.0    -              0 LOW SAMPLE (n<30)
+THERMAL (91008)                                              0.0        0.0    -            105 OK
+MOTION (70004)                                              100.0        0.3 333.33            6 LOW SAMPLE (n<30)
+ALIGNMENT/PE-JE (90001,90004,90005,90012,90013)              100.0        0.5 200.00           17 LOW SAMPLE (n<30)
+HUMIDITY (91008)                                              100.0        9.9  10.10          105 OK
 ```
 
-**This is a point-in-time snapshot, not a permanent fact.** Lift figures on this live-ingesting mock system drift as the data window rolls and the simulator continues generating events — a figure measured today will not exactly match a figure measured next week. Re-run `SELECT * FROM public.v_ldi_rca_truth_test ORDER BY "Lift" DESC;` for current numbers before citing one in a report. (An earlier version of `ARCHITECTURE.md` cited VACUUM at "7,352x" — that was accurate when measured 2026-08-07, and is not accurate now; this guide replaces that stale reference.)
+**Read this snapshot in context: it was taken ~1h25m after a full host/container reset** (see `docs/evidence/SOAK_TEST_LOG.md` Attempt 7 closeout), not after days of steady-state running like the 2026-08-10 snapshot this replaces. That explains the shape of these numbers, honestly:
+
+- **VACUUM has 0 events** and no computable Lift yet — the vacuum weak-fault injection (see "Why VACUUM needed a specific fix" below) is a rare event; it simply hasn't fired since the reset. This is a real current gap, not a broken correlation — re-check after VACUUM accumulates events.
+- **THERMAL has 105 events but 0.0%/0.0% and no computable Lift** — both the alarm-window and the baseline currently show 0% temperature-out-of-spec, so there's no variation yet for Lift to measure (105 THERMAL alarms fired on the HUMIDITY flag being out of spec, not the TEMP flag — see the `HUMIDITY (91008)` row, same underlying alarm code, different flag).
+- **MOTION and ALIGNMENT/PE-JE show real, large Lift values (333x, 200x) but both are LOW SAMPLE (n<30)** — directionally consistent with the 2026-08-10 snapshot's correlation existing, but not yet statistically solid this soon after reset.
+- **HUMIDITY is the only category with both a computed Lift and `OK` confidence** (10.10, n=105) — this one is on solid statistical ground already.
+
+**This is a point-in-time snapshot, not a permanent fact.** Lift figures on this live-ingesting mock system drift as the data window rolls, the simulator continues generating events, and (as this snapshot shows) as elapsed time since the last reset accumulates. Re-run `SELECT * FROM public.v_ldi_rca_truth_test ORDER BY "Lift" DESC;` for current numbers before citing one in a report — do not reuse either this snapshot or the 2026-08-10 one it replaces as if it were current. (An earlier version of `ARCHITECTURE.md` cited VACUUM at "7,352x" — that was accurate when measured 2026-08-07, and was already stale by 2026-08-10; the 2026-08-10 snapshot itself is now superseded by the numbers above for the same reason.)
 
 ## Why VACUUM (91009) needed a specific fix
 
