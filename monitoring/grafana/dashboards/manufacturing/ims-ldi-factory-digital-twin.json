@@ -1,0 +1,262 @@
+{
+  "description": "TASK 2 POC — 2-machine Canvas proof-of-concept for the future 10-machine Factory Digital Twin. Proves the Canvas mechanism (rectangle/text/metric-value/icon elements, field-bound colors driven by fieldConfig.defaults overrides with mappings, and drill-down links) works end-to-end against real data before scaling to the full 10-machine / 5-zone build. Fixed node positions (not a templated repeat) — each node's query target is hardcoded to one literal eqp_id, same pattern the full plan's Task 4/5 design will use. Machines shown: LDI-01 (real state OK at build time) and LDI-02 (real state ALARM at build time, real Major alarm within the last 5 minutes) — picked because they were genuinely different live states, not simulated. State classification (0=NO_DATA, 1=IDLE, 2=OK, 3=ALARM) copied verbatim from ims-ldi-operator-andon.json panel id 1000's CASE logic.",
+  "schemaVersion": 39,
+  "liveNow": true,
+  "style": "dark",
+  "editable": true,
+  "graphTooltip": 0,
+  "templating": {
+    "list": []
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "canvas",
+      "title": "Factory Digital Twin POC — LDI-01 / LDI-02",
+      "description": "2-node Canvas POC. Each node = rectangle body (background color bound to that machine's real state field via a byName fieldConfig override with value mappings) + text label (bound to real eqp_id) + metric-value readout (bound to real board_no) + icon (color bound to the same state field) + a drill-down link to ims-ldi-machine-snapshot using the exact URL convention proven in ims-ldi-operator-andon.json's Action Queue \"Machine\" column override. Query targets: refId A = LDI-01 (hardcoded literal eqp_id), refId B = LDI-02 (hardcoded literal eqp_id), both LIMIT 1 latest-value shape against public.v_ldi_machine_latest_full joined to the alarm tables, same shape as Andon panel 1000.",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 14
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#64748b",
+                "value": null
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "state_1"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": { "color": "#64748b", "text": "NO_DATA" },
+                      "1": { "color": "#f59e0b", "text": "IDLE" },
+                      "2": { "color": "#22c55e", "text": "OK" },
+                      "3": { "color": "#ef4444", "text": "ALARM" }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "#64748b", "value": null }
+                  ]
+                }
+              },
+              {
+                "id": "color",
+                "value": { "mode": "thresholds" }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "state_2"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": { "color": "#64748b", "text": "NO_DATA" },
+                      "1": { "color": "#f59e0b", "text": "IDLE" },
+                      "2": { "color": "#22c55e", "text": "OK" },
+                      "3": { "color": "#ef4444", "text": "ALARM" }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "#64748b", "value": null }
+                  ]
+                }
+              },
+              {
+                "id": "color",
+                "value": { "mode": "thresholds" }
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "uid": "timescaledb" },
+          "format": "table",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: always the true latest row for this one hardcoded machine -- same latest-value shape and same ALARM/OK/IDLE/NO_DATA CASE logic as ims-ldi-operator-andon.json panel id 1000, copied verbatim. Node 1 = LDI-01 (fixed literal, not templated -- Canvas has no repeat mechanism, this dashboard has fixed node positions per the Task 2 POC brief). */\nSELECT\n  v.eqp_id AS eqp_id_1,\n  CASE\n    WHEN EXISTS (\n      SELECT 1 FROM public.ldi_alarm_log a\n      JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\n      WHERE a.equipmentid = v.eqp_id AND m.severity IN ('Critical', 'Major')\n        AND a.logdate > NOW() - INTERVAL '5 minutes'\n    ) THEN 3\n    WHEN NOT v.has_data OR v.is_stale THEN 0\n    WHEN v.state THEN 2\n    ELSE 1\n  END AS state_1,\n  v.board_no AS board_1,\n  v.total_board AS total_board_1\nFROM public.v_ldi_machine_latest_full v\nWHERE v.eqp_id = 'LDI-01'\nLIMIT 1"
+        },
+        {
+          "refId": "B",
+          "datasource": { "uid": "timescaledb" },
+          "format": "table",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: always the true latest row for this one hardcoded machine -- same latest-value shape and same ALARM/OK/IDLE/NO_DATA CASE logic as ims-ldi-operator-andon.json panel id 1000, copied verbatim. Node 2 = LDI-02 (fixed literal, not templated). */\nSELECT\n  v.eqp_id AS eqp_id_2,\n  CASE\n    WHEN EXISTS (\n      SELECT 1 FROM public.ldi_alarm_log a\n      JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\n      WHERE a.equipmentid = v.eqp_id AND m.severity IN ('Critical', 'Major')\n        AND a.logdate > NOW() - INTERVAL '5 minutes'\n    ) THEN 3\n    WHEN NOT v.has_data OR v.is_stale THEN 0\n    WHEN v.state THEN 2\n    ELSE 1\n  END AS state_2,\n  v.board_no AS board_2,\n  v.total_board AS total_board_2\nFROM public.v_ldi_machine_latest_full v\nWHERE v.eqp_id = 'LDI-02'\nLIMIT 1"
+        }
+      ],
+      "options": {
+        "root": {
+          "type": "frame",
+          "name": "root",
+          "elements": [
+            {
+              "type": "rectangle",
+              "name": "machine-LDI-01-body",
+              "placement": { "top": 40, "left": 40, "width": 220, "height": 140, "rotation": 0 },
+              "background": {
+                "color": { "mode": "field", "field": "state_1", "fixed": "#64748b" }
+              },
+              "border": {
+                "color": { "mode": "fixed", "fixed": "#1F2937" },
+                "width": 2
+              },
+              "links": [
+                {
+                  "title": "Open Machine Snapshot for LDI-01",
+                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-01&var-factory=2&var-mo=MO-813166&var-event_time_ms=1786950345690&from=${__from}&to=${__to}",
+                  "targetBlank": false
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "name": "machine-LDI-01-label",
+              "placement": { "top": 50, "left": 50, "width": 200, "height": 30, "rotation": 0 },
+              "config": {
+                "text": { "mode": "field", "field": "eqp_id_1", "fixed": "LDI-01" },
+                "color": { "mode": "fixed", "fixed": "#FFFFFF" },
+                "size": 16,
+                "align": "center",
+                "valign": "middle"
+              },
+              "background": { "color": { "mode": "fixed", "fixed": "transparent" } }
+            },
+            {
+              "type": "metric-value",
+              "name": "machine-LDI-01-metric",
+              "placement": { "top": 90, "left": 50, "width": 200, "height": 40, "rotation": 0 },
+              "config": {
+                "text": { "mode": "field", "field": "board_1" },
+                "color": { "mode": "fixed", "fixed": "#FFFFFF" },
+                "size": 22
+              }
+            },
+            {
+              "type": "icon",
+              "name": "machine-LDI-01-icon",
+              "placement": { "top": 140, "left": 130, "width": 40, "height": 40, "rotation": 0 },
+              "config": {
+                "path": { "mode": "fixed", "fixed": "img/icons/unicons/circle.svg" },
+                "color": { "mode": "field", "field": "state_1", "fixed": "#FFFFFF" }
+              }
+            },
+            {
+              "type": "rectangle",
+              "name": "machine-LDI-02-body",
+              "placement": { "top": 40, "left": 320, "width": 220, "height": 140, "rotation": 0 },
+              "background": {
+                "color": { "mode": "field", "field": "state_2", "fixed": "#64748b" }
+              },
+              "border": {
+                "color": { "mode": "fixed", "fixed": "#1F2937" },
+                "width": 2
+              },
+              "links": [
+                {
+                  "title": "Open Machine Snapshot for LDI-02",
+                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-02&var-factory=2&var-mo=MO-843764&var-event_time_ms=1786950345690&from=${__from}&to=${__to}",
+                  "targetBlank": false
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "name": "machine-LDI-02-label",
+              "placement": { "top": 50, "left": 330, "width": 200, "height": 30, "rotation": 0 },
+              "config": {
+                "text": { "mode": "field", "field": "eqp_id_2", "fixed": "LDI-02" },
+                "color": { "mode": "fixed", "fixed": "#FFFFFF" },
+                "size": 16,
+                "align": "center",
+                "valign": "middle"
+              },
+              "background": { "color": { "mode": "fixed", "fixed": "transparent" } }
+            },
+            {
+              "type": "metric-value",
+              "name": "machine-LDI-02-metric",
+              "placement": { "top": 90, "left": 330, "width": 200, "height": 40, "rotation": 0 },
+              "config": {
+                "text": { "mode": "field", "field": "board_2" },
+                "color": { "mode": "fixed", "fixed": "#FFFFFF" },
+                "size": 22
+              }
+            },
+            {
+              "type": "icon",
+              "name": "machine-LDI-02-icon",
+              "placement": { "top": 140, "left": 410, "width": 40, "height": 40, "rotation": 0 },
+              "config": {
+                "path": { "mode": "fixed", "fixed": "img/icons/unicons/circle.svg" },
+                "color": { "mode": "field", "field": "state_2", "fixed": "#FFFFFF" }
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "fiscalYearStartMonth": 0,
+  "links": [],
+  "id": null,
+  "uid": "ims-ldi-factory-digital-twin",
+  "title": "IMS LDI - Factory Digital Twin",
+  "version": 1,
+  "time": {
+    "from": "now-2h",
+    "to": "now"
+  },
+  "timezone": "UTC",
+  "refresh": "30s",
+  "tags": [
+    "IMS",
+    "LDI",
+    "real-data",
+    "current-database",
+    "manufacturing",
+    "poc"
+  ]
+}
