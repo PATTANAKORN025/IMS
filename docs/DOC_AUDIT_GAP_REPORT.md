@@ -4,7 +4,7 @@
 >
 > **Excluded from re-flagging (already audited and fixed in a prior pass this session):** `docs/architecture/ARCHITECTURE.md`, `docs/architecture/SECURITY_MODEL.md`, `docs/user/USER_MANUAL.md`, `docs/operations/ALARM_PLAYBOOK.md`, `docs/architecture/IMS_PLATFORM_BOOK.md`, `docs/architecture/DASHBOARD_INVENTORY.md` and `DATABASE_SCHEMA.md` (both auto-generated, current).
 >
-> **Ground truth used:** 12 Grafana dashboards (4 infra + 8 manufacturing, including the new `ims-ldi-alarm-console` and pre-existing `ims-ldi-alarm-dictionary`); 12 docker-compose services (11 long-running + 1 one-shot `db-migrate`), including the new `alarm-api` and `proxy`; migrations 013–078 (53 files); Grafana has no host port of its own anymore (fronted by `proxy`); `scripts/dr-test.sh` implements row-count _bracketing_, not exact match.
+> **Ground truth used:** 14 Grafana dashboards (6 infra + 8 manufacturing, including the new `ims-ldi-alarm-console` and pre-existing `ims-ldi-alarm-dictionary`); 13 docker-compose services (12 long-running + 1 one-shot `db-migrate`), including the new `alarm-api` and `proxy`; migrations 013–078 (53 files); Grafana has no host port of its own anymore (fronted by `proxy`); `scripts/dr-test.sh` implements row-count _bracketing_, not exact match.
 
 ---
 

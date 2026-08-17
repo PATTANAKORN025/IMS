@@ -16,7 +16,7 @@
 
 ## System Context
 
-IMS is a Docker Compose stack with **two independent telemetry pipelines** feeding one shared TimescaleDB, visualized across **12 Grafana dashboards** with alerting through both Grafana's native alert engine and Prometheus/Alertmanager.
+IMS is a Docker Compose stack with **two independent telemetry pipelines** feeding one shared TimescaleDB, visualized across **14 Grafana dashboards** with alerting through both Grafana's native alert engine and Prometheus/Alertmanager.
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
@@ -45,7 +45,7 @@ flowchart TB
  style LEGACY fill:#1e293b,stroke:#F59E0B,color:#e2e8f0
 ```
 
-**Why two pipelines exist:** the legacy SNMP pipeline (`ingestion.json`) was the system's original design — poll SNMP-speaking devices, parse via a stateful `sre_parser`, insert into `sys_metrics`/`net_metrics`/`ldi_metrics`. LDI manufacturing telemetry was later given its own, higher-fidelity pipeline (`ldi_data`, fed by HTTP POST rather than SNMP) because the manufacturing dashboards need per-sample PE/JE/Cpk precision that the k6-synthetic `ldi_metrics` table was never designed to carry. **All 12 Grafana dashboards' LDI/manufacturing content reads from `ldi_data`, not `ldi_metrics`.** `ldi_metrics` still exists and is still written to (via `ingestion.json`'s SRE parser), but several of its LDI-specific columns (`throughput`, `power_watt`, `vibration`) are confirmed to always be `0` for LDI-class devices — a known gap in that pipeline, not in `ldi_data`. See "Known Gaps" below.
+**Why two pipelines exist:** the legacy SNMP pipeline (`ingestion.json`) was the system's original design — poll SNMP-speaking devices, parse via a stateful `sre_parser`, insert into `sys_metrics`/`net_metrics`/`ldi_metrics`. LDI manufacturing telemetry was later given its own, higher-fidelity pipeline (`ldi_data`, fed by HTTP POST rather than SNMP) because the manufacturing dashboards need per-sample PE/JE/Cpk precision that the k6-synthetic `ldi_metrics` table was never designed to carry. **All 14 Grafana dashboards' LDI/manufacturing content reads from `ldi_data`, not `ldi_metrics`.** `ldi_metrics` still exists and is still written to (via `ingestion.json`'s SRE parser), but several of its LDI-specific columns (`throughput`, `power_watt`, `vibration`) are confirmed to always be `0` for LDI-class devices — a known gap in that pipeline, not in `ldi_data`. See "Known Gaps" below.
 
 ---
 

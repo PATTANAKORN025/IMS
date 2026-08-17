@@ -46,7 +46,7 @@ Moved to a new, git-tracked `docs/archive/` (not the repo's existing `ARCHIVES/`
 | `safeStr()`                                                                    | `sanitize()`                                      | 1 file (2 mentions)  |
 | LINE Notify (discontinued 2025)                                                | LINE Messaging API                                | 4 files              |
 | Slack (never actually integrated)                                              | LINE Messaging API + MS Teams                     | 4 files              |
-| "12 Grafana dashboards" / "4 dashboards" / "4 infrastructure, 8 manufacturing" | 12 dashboards, 4 infrastructure + 8 manufacturing | 6 files              |
+| "12 Grafana dashboards" / "4 dashboards" / "4 infrastructure, 8 manufacturing" | 14 dashboards, 6 infrastructure + 8 manufacturing | 6 files              |
 | Fictional alarm codes (`SYS-001` etc.)                                         | Real numeric codes from `ldi_alarm_ms_code`       | 1 file, full rewrite |
 
 A canonical glossary (IMS, LDI, EAP, SPC, RCA, Andon, CAGG, Cpk, Lift) now lives in `docs/architecture/IMS_PLATFORM_BOOK.md`.
