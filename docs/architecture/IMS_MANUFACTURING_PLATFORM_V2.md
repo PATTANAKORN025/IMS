@@ -272,7 +272,7 @@ Given Drill 2 just demonstrated that automatic recovery in this environment is l
 
 **What shipped:** `README.md`'s documentation table now links `IMS_MANUFACTURING_PLATFORM_V2.md`, `MANUFACTURING_DOMAIN.md`, `EAP_ARCHITECTURE.md`, `OWNERSHIP.md`. `ARCHITECTURE.md`'s Known Gaps section gained a pointer bullet to all four rather than duplicating their content.
 
-**Drift caught and fixed as a direct consequence of Phase A (not scope creep):** `README.md` line 160 said "12 dashboards — 4 infrastructure, 8 LDI manufacturing," which became wrong the moment Phase A's corrected 4/6 split shipped. Fixed in the same edit. No other pre-existing README/ARCHITECTURE staleness (e.g. the "12 Grafana dashboards" count in `ARCHITECTURE.md`'s System Context, which predates this work and is unrelated to it) was touched — that's outside Phase C's charter of "cross-link the new docs, don't duplicate or rewrite existing content."
+**Drift caught and fixed as a direct consequence of Phase A (not scope creep):** `README.md` line 160 said "14 dashboards — 6 infrastructure, 8 LDI manufacturing," which became wrong the moment Phase A's corrected 4/6 split shipped. Fixed in the same edit. No other pre-existing README/ARCHITECTURE staleness (e.g. the "14 Grafana dashboards" count in `ARCHITECTURE.md`'s System Context, which predates this work and is unrelated to it) was touched — that's outside Phase C's charter of "cross-link the new docs, don't duplicate or rewrite existing content."
 
 **Test evidence:**
 
