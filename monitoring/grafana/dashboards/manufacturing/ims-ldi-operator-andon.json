@@ -1,5 +1,5 @@
 {
-  "description": "Factory floor kiosk. ISA-101 compliant. Zero interaction, zero scrolling. 1280x720. Redesigned from an earlier 1920x1080 layout (System Audit Phase 5): template-variable pickers and the drill-down links row are hidden (hide:2 / links:[]) since a kiosk display has no one to interact with them; Temperature/Humidity compliance trend charts and the PE/JE-vs-spec bargauge were dropped from this variant after measuring that a 10-row Live Production table alone already consumes the full available height at Grafana's minimum table row size -- both are still on ims-ldi-manufacturing.json and ims-ldi-engineering-analytics.json for drill-down.",
+  "description": "Factory floor kiosk. ISA-101 compliant. Zero interaction, zero scrolling. 1280x720. Redesigned from an earlier 1920x1080 layout (System Audit Phase 5): template-variable pickers and the drill-down links row are hidden (hide:2 / links:[]) since a kiosk display has no one to interact with them. Temperature/Humidity compliance trend charts (panels 12/13) were re-added 2026-08-17 as h4/w12 state-timelines (down from the h12/w8 originals on ims-ldi-manufacturing.json), stacked above the Action Queue table (also h4, down from h6) -- both compressed to fit tests/lint/dashboard-linter.js's kiosk height ceiling (20 grid units) alongside every other panel. PE/JE-vs-spec bargauge was never added here (still ims-ldi-manufacturing.json / ims-ldi-engineering-analytics.json drill-down only) -- no remaining room within the height budget.",
   "schemaVersion": 39,
   "liveNow": true,
   "style": "dark",
@@ -102,7 +102,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 10,
+        "y": 12,
         "w": 2,
         "h": 4
       },
@@ -195,7 +195,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 14,
+        "y": 16,
         "w": 2,
         "h": 3
       },
@@ -647,7 +647,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 18,
+        "y": 19,
         "w": 1,
         "h": 1
       },
@@ -683,6 +683,188 @@
       }
     },
     {
+      "id": 12,
+      "title": "◈ Temperature Compliance (22±2°C)",
+      "type": "state-timeline",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 12,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "color": "#EF4444",
+                  "index": 0,
+                  "text": "CRIT"
+                },
+                "1": {
+                  "color": "#F59E0B",
+                  "index": 1,
+                  "text": "WARN"
+                },
+                "2": {
+                  "color": "#22C55E",
+                  "index": 2,
+                  "text": "OK"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#EF4444",
+                "value": null
+              },
+              {
+                "color": "#F59E0B",
+                "value": 1
+              },
+              {
+                "color": "#22C55E",
+                "value": 2
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "celsius",
+          "decimals": 1,
+          "min": 18,
+          "max": 28,
+          "custom": {
+            "lineWidth": 0,
+            "fillOpacity": 100
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "showValue": "auto",
+        "mergeValues": true,
+        "alignValue": "center",
+        "rowHeight": 0.9,
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT time, eqp_id AS metric, CASE WHEN temperature BETWEEN 20 AND 24 THEN 2 WHEN temperature BETWEEN 19 AND 25 THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) AND temperature IS NOT NULL ORDER BY time ASC",
+          "format": "time_series",
+          "legendFormat": "{{metric}}"
+        }
+      ],
+      "description": "Per-machine temperature compliance over time. Green = in spec (20-24C). Copied from IMS LDI - Manufacturing Command Center, resized h12->h6 to fit the Andon Board's fixed 1280x720 zero-scroll budget (replaces the Action Queue table slot)."
+    },
+    {
+      "id": 13,
+      "title": "◈ Humidity Compliance (55±5%)",
+      "type": "state-timeline",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 4,
+        "w": 12,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "color": "#EF4444",
+                  "index": 0,
+                  "text": "CRIT"
+                },
+                "1": {
+                  "color": "#F59E0B",
+                  "index": 1,
+                  "text": "WARN"
+                },
+                "2": {
+                  "color": "#22C55E",
+                  "index": 2,
+                  "text": "OK"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#EF4444",
+                "value": null
+              },
+              {
+                "color": "#F59E0B",
+                "value": 1
+              },
+              {
+                "color": "#22C55E",
+                "value": 2
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "humidity",
+          "decimals": 1,
+          "min": 40,
+          "max": 70,
+          "custom": {
+            "lineWidth": 0,
+            "fillOpacity": 100
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "showValue": "auto",
+        "mergeValues": true,
+        "alignValue": "center",
+        "rowHeight": 0.9,
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT time, eqp_id AS metric, CASE WHEN humidity BETWEEN 50 AND 60 THEN 2 WHEN humidity BETWEEN 45 AND 65 THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) AND humidity IS NOT NULL ORDER BY time ASC",
+          "format": "time_series",
+          "legendFormat": "{{metric}}"
+        }
+      ],
+      "description": "Per-machine humidity compliance over time. Green = in spec (50-60% RH). Copied from IMS LDI - Manufacturing Command Center, resized h12->h6 to fit the Andon Board's fixed 1280x720 zero-scroll budget (replaces the Action Queue table slot)."
+    },
+    {
       "id": 8,
       "title": "◈ Action Queue (Critical/Major, last 5 min)",
       "type": "table",
@@ -691,9 +873,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 4,
+        "y": 8,
         "w": 24,
-        "h": 6
+        "h": 4
       },
       "options": {
         "showHeader": true,
@@ -936,7 +1118,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH real_alarms AS (\n  SELECT a.equipmentid AS \"Machine\",\n         m.severity AS \"Severity\",\n         l.status AS \"Status\",\n         m.alarm_type AS \"Alarm Type\",\n         m.alarm_msg AS \"Alarm Msg\",\n         m.alarm_detail AS \"Alarm Detail\",\n         a.factory AS \"Factory\",\n         d.mo AS \"MO\",\n         a.logdate AS \"When\",\n         (EXTRACT(EPOCH FROM a.logdate) * 1000)::BIGINT AS \"When_ms\",\n         CASE\n           WHEN NOW() - a.logdate < INTERVAL '1 hour'\n             THEN GREATEST(EXTRACT(MINUTE FROM (NOW() - a.logdate))::INT, 0)::TEXT || 'm'\n           ELSE EXTRACT(HOUR FROM (NOW() - a.logdate))::INT || 'h' || LPAD(EXTRACT(MINUTE FROM (NOW() - a.logdate))::INT::TEXT, 2, '0') || 'm'\n         END AS \"Elapsed\",\n         /* Owner: static category->team mapping over the real RCA taxonomy\n            (public.v_ldi_alarm_category, 14 live categories) -- proposed\n            defaults, not yet operator-confirmed org routing. */\n         CASE COALESCE(c.category, 'UNCLASSIFIED')\n           WHEN 'VACUUM' THEN 'Maintenance'\n           WHEN 'CAMERA' THEN 'Maintenance'\n           WHEN 'MOTION' THEN 'Maintenance'\n           WHEN 'MOTOR' THEN 'Maintenance'\n           WHEN 'ENVIRONMENT' THEN 'Facility'\n           WHEN 'NETWORK' THEN 'Automation'\n           WHEN 'PLC' THEN 'Automation'\n           WHEN 'COMMUNICATION' THEN 'Automation'\n           WHEN 'DATABASE' THEN 'IT'\n           WHEN 'ALIGNMENT' THEN 'Process Engineering'\n           WHEN 'CALIBRATION' THEN 'Process Engineering'\n           WHEN 'REGISTRATION' THEN 'Process Engineering'\n           WHEN 'PROCESS' THEN 'Process Engineering'\n           ELSE 'Maintenance'\n         END AS \"Owner\"\n  FROM public.ldi_alarm_log a\n  JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\n  LEFT JOIN public.ldi_data d ON d.log_id = a.related_log_id\n  LEFT JOIN public.v_ldi_alarm_category c ON c.alarm_code = a.errorcode::TEXT\n  LEFT JOIN public.ldi_alarm_lifecycle l ON l.logdate = a.logdate AND l.logid = a.logid\n  WHERE m.severity IN ('Critical', 'Major')\n    AND a.logdate > NOW() - INTERVAL '5 minutes'\n    AND a.equipmentid IN (${machine_id:sqlstring})\n    AND l.status IS DISTINCT FROM 'RESOLVED'\n), with_action AS (\n  SELECT \"Machine\",\"Severity\",\"Status\",\"Alarm Type\",\"Alarm Msg\",\"Alarm Detail\",\"Factory\",\"MO\",\"When\",\"When_ms\",\"Elapsed\",\"Owner\",\n    CASE \"Owner\"\n      WHEN 'Maintenance' THEN 'CALL MAINT'\n      WHEN 'Facility' THEN 'CHECK HVAC'\n      WHEN 'Automation' THEN 'CHECK AUTOMATION'\n      WHEN 'IT' THEN 'CALL IT'\n      WHEN 'Process Engineering' THEN 'CHECK PROCESS'\n    END AS \"Action\"\n  FROM real_alarms\n), combined AS (\n  SELECT * FROM with_action\n  UNION ALL\n  SELECT NULL,'NONE','NONE',NULL,'NO ACTIVE CRITICAL/MAJOR ALARMS',NULL,NULL,NULL,NOW(),0,NULL,NULL,NULL\n  WHERE NOT EXISTS (SELECT 1 FROM with_action)\n)\nSELECT * FROM combined\nORDER BY (CASE \"Severity\" WHEN 'Critical' THEN 0 WHEN 'Major' THEN 1 WHEN 'NONE' THEN 2 ELSE 3 END), \"When\" DESC\nLIMIT 50;",
+          "rawSql": "WITH real_alarms AS (\n  SELECT a.equipmentid AS \"Machine\",\n         m.severity AS \"Severity\",\n         l.status AS \"Status\",\n         m.alarm_type AS \"Alarm Type\",\n         m.alarm_msg AS \"Alarm Msg\",\n         m.alarm_detail AS \"Alarm Detail\",\n         a.factory AS \"Factory\",\n         d.mo AS \"MO\",\n         a.logdate AS \"When\",\n         (EXTRACT(EPOCH FROM a.logdate) * 1000)::BIGINT AS \"When_ms\",\n         CASE\n           WHEN NOW() - a.logdate < INTERVAL '1 hour'\n             THEN GREATEST(EXTRACT(MINUTE FROM (NOW() - a.logdate))::INT, 0)::TEXT || 'm'\n           ELSE EXTRACT(HOUR FROM (NOW() - a.logdate))::INT || 'h' || LPAD(EXTRACT(MINUTE FROM (NOW() - a.logdate))::INT::TEXT, 2, '0') || 'm'\n         END AS \"Elapsed\",\n         CASE COALESCE(c.category, 'UNCLASSIFIED')\n           WHEN 'VACUUM' THEN 'Maintenance'\n           WHEN 'CAMERA' THEN 'Maintenance'\n           WHEN 'MOTION' THEN 'Maintenance'\n           WHEN 'MOTOR' THEN 'Maintenance'\n           WHEN 'ENVIRONMENT' THEN 'Facility'\n           WHEN 'NETWORK' THEN 'Automation'\n           WHEN 'PLC' THEN 'Automation'\n           WHEN 'COMMUNICATION' THEN 'Automation'\n           WHEN 'DATABASE' THEN 'IT'\n           WHEN 'ALIGNMENT' THEN 'Process Engineering'\n           WHEN 'CALIBRATION' THEN 'Process Engineering'\n           WHEN 'REGISTRATION' THEN 'Process Engineering'\n           WHEN 'PROCESS' THEN 'Process Engineering'\n           ELSE 'Maintenance'\n         END AS \"Owner\"\n  FROM public.ldi_alarm_log a\n  JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\n  LEFT JOIN public.ldi_data d ON d.log_id = a.related_log_id\n  LEFT JOIN public.v_ldi_alarm_category c ON c.alarm_code = a.errorcode::TEXT\n  LEFT JOIN public.ldi_alarm_lifecycle l ON l.logdate = a.logdate AND l.logid = a.logid\n  WHERE m.severity IN ('Critical', 'Major')\n    AND a.logdate > NOW() - INTERVAL '5 minutes'\n    AND a.equipmentid IN (${machine_id:sqlstring})\n    AND l.status IS DISTINCT FROM 'RESOLVED'\n), with_action AS (\n  SELECT \"Machine\",\"Severity\",\"Status\",\"Alarm Type\",\"Alarm Msg\",\"Alarm Detail\",\"Factory\",\"MO\",\"When\",\"When_ms\",\"Elapsed\",\"Owner\",\n    CASE \"Owner\"\n      WHEN 'Maintenance' THEN 'CALL MAINT'\n      WHEN 'Facility' THEN 'CHECK HVAC'\n      WHEN 'Automation' THEN 'CHECK AUTOMATION'\n      WHEN 'IT' THEN 'CALL IT'\n      WHEN 'Process Engineering' THEN 'CHECK PROCESS'\n    END AS \"Action\"\n  FROM real_alarms\n), combined AS (\n  SELECT * FROM with_action\n  UNION ALL\n  SELECT NULL,'NONE','NONE',NULL,'NO ACTIVE CRITICAL/MAJOR ALARMS',NULL,NULL,NULL,NOW(),0,NULL,NULL,NULL\n  WHERE NOT EXISTS (SELECT 1 FROM with_action)\n)\nSELECT * FROM combined\nORDER BY (CASE \"Severity\" WHEN 'Critical' THEN 0 WHEN 'Major' THEN 1 WHEN 'NONE' THEN 2 ELSE 3 END), \"When\" DESC\nLIMIT 50;",
           "format": "table"
         }
       ],
