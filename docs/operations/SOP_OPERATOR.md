@@ -21,9 +21,9 @@ Before accepting the shift, the incoming operator must verify the baseline healt
 
 1. **Login & Authenticate:** Open the [IMS NOC Overview](http://localhost:3000/d/ims-noc-overview) dashboard on the primary wall display.
 2. **Verify Fleet Health Score** (Top Left panel):
-   - `> 95%`: ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) **Nominal**. Accept shift.
-   - `90% - 94%`: ![Warning](https://img.shields.io/badge/Status-Warning-yellow) **Warning**. Check the "Top 10 Critical Nodes" panel. Request verbal briefing from outgoing shift regarding these nodes.
-   - `< 90%`: ![Critical](https://img.shields.io/badge/Status-Critical-red) **Critical**. Do not accept shift without L2 (Engineering) presence. Escalate immediately.
+   - `> 95%`: <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Healthy **Nominal**. Accept shift.
+   - `90% - 94%`: <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Warning **Warning**. Check the "Top 10 Critical Nodes" panel. Request verbal briefing from outgoing shift regarding these nodes.
+   - `< 90%`: <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Critical **Critical**. Do not accept shift without L2 (Engineering) presence. Escalate immediately.
 3. **Verify LDI Fleet Status:** Open the [LDI Manufacturing](http://localhost:3000/d/ims-ldi-manufacturing) dashboard. Ensure no machines are unexpectedly marked "OFFLINE" in red.
 
 ---
@@ -32,12 +32,12 @@ Before accepting the shift, the incoming operator must verify the baseline healt
 
 The **Operator Andon Dashboard** operates on a strict Traffic Light protocol. Do not attempt to debug algorithms; react to the colors.
 
-### ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) Green State (Nominal Operation)
+### <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Healthy Green State (Nominal Operation)
 
 - **Visuals:** All panels are green. No flashing.
 - **Action:** Continue standard PCB loading/unloading operations. Maintain situational awareness.
 
-### ![Warning](https://img.shields.io/badge/Status-Warning-yellow) Yellow State (Pre-emptive Warning)
+### <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Warning Yellow State (Pre-emptive Warning)
 
 - **Visuals:** A panel turns yellow (e.g., "Yield Drop Warning", "Temp Rising").
 - **Action Workflow:**
@@ -46,7 +46,7 @@ The **Operator Andon Dashboard** operates on a strict Traffic Light protocol. Do
   3. **Communication Script:** Notify the Line Supervisor via Walkie-Talkie or the designated Operations LINE Group:
      > _"Warning: Machine LDI-[ID] is showing [Metric] at [Value]. Monitoring closely."_
 
-### ![Critical](https://img.shields.io/badge/Status-Critical-red) Red State (Critical Excursion / Stop Line)
+### <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Critical Red State (Critical Excursion / Stop Line)
 
 - **Visuals:** Panel turns red and pulses. Background may flash.
 - **Action Workflow:**

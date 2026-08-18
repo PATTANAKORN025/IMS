@@ -7,9 +7,9 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/Version-1.0.0-blue)
-![Release](https://img.shields.io/badge/Release-Production-brightgreen)
-![Date](https://img.shields.io/badge/Date-2026--06--29-orange)
+<img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Version:** 1.0.0
+<img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Release:** Production
+<img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Date:** 2026
 
 </div>
 

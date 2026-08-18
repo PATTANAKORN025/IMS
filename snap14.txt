@@ -1,0 +1,876 @@
+- generic [ref=f166e8]:
+  - link "Skip to main content" [ref=f166e9] [cursor=pointer]:
+    - /url: "#pageContent"
+  - banner [ref=f166e11]:
+    - generic [ref=f166e12]:
+      - generic [ref=f166e13]:
+        - button "Main menu" [ref=f166e14] [cursor=pointer]
+        - link [ref=f166e19] [cursor=pointer]:
+          - /url: /
+          - img "Grafana" [ref=f166e20]
+        - navigation "Breadcrumbs" [ref=f166e21]:
+          - list [ref=f166e22]:
+            - listitem [ref=f166e23]:
+              - link "Dashboards" [ref=f166e24] [cursor=pointer]:
+                - /url: /dashboards
+            - listitem [ref=f166e28]:
+              - link "IMS Manufacturing" [ref=f166e29] [cursor=pointer]:
+                - /url: /dashboards/f/bfv1kji55k1z4a/ims-manufacturing
+            - listitem [ref=f166e33]:
+              - generic "IMS LDI - Manufacturing Command Center" [ref=f166e34]
+        - button "Unmark \"IMS LDI - Manufacturing Command Center\" as favorite" [pressed] [ref=f166e35] [cursor=pointer]
+      - generic [ref=f166e38]:
+        - generic [ref=f166e40]:
+          - button "Search..." [ref=f166e44] [cursor=pointer]
+          - generic [ref=f166e45]: ctrl+k
+        - button "New" [ref=f166e47] [cursor=pointer]
+        - button "Help" [ref=f166e53] [cursor=pointer]
+        - button "Profile" [ref=f166e57] [cursor=pointer]:
+          - img "User avatar" [ref=f166e58]
+  - main [ref=f166e61]:
+    - log [ref=f166e62]
+    - generic [ref=f166e65]:
+      - generic [ref=f166e67]:
+        - generic [ref=f166e68]:
+          - generic [ref=f166e69]:
+            - generic [ref=f166e70]:
+              - button "Move 3h backward" [ref=f166e71] [cursor=pointer]
+              - 'button "Time range selected: Last 6 hours" [ref=f166e74] [cursor=pointer]':
+                - generic [ref=f166e78]:
+                  - generic [ref=f166e79]: Last 6 hours
+                  - generic [ref=f166e80]: UTC
+              - button "Move time range forwards" [ref=f166e83] [cursor=pointer]
+              - button "Zoom out time range" [ref=f166e86] [cursor=pointer]
+            - generic [ref=f166e89]:
+              - button "Refresh" [ref=f166e1124] [cursor=pointer]
+              - button "Choose refresh time interval with current interval 1 minute selected" [ref=f166e96] [cursor=pointer]:
+                - generic [ref=f166e97]: 1m
+          - generic [ref=f166e100]:
+            - generic [ref=f166e101]:
+              - button "Copy link" [ref=f166e102] [cursor=pointer]
+              - button "Share" [ref=f166e105] [cursor=pointer]
+            - button "Enter edit mode" [ref=f166e108] [cursor=pointer]:
+              - generic [ref=f166e111]: Edit
+        - generic [ref=f166e112]:
+          - generic [ref=f166e113]: Factory
+          - generic [ref=f166e114] [cursor=pointer]:
+            - log [ref=f166e116]
+            - generic [ref=f166e117]:
+              - generic [ref=f166e118]:
+                - generic [ref=f166e119]:
+                  - generic [ref=f166e120]: All
+                  - button "Remove" [ref=f166e121]
+                - combobox "Factory" [ref=f166e125]
+              - button "Clear value" [ref=f166e127]
+        - generic [ref=f166e131]:
+          - generic [ref=f166e132]: MO
+          - generic [ref=f166e133] [cursor=pointer]:
+            - log [ref=f166e135]
+            - generic [ref=f166e136]:
+              - generic [ref=f166e137]:
+                - generic [ref=f166e138]:
+                  - generic [ref=f166e139]: All
+                  - button "Remove" [ref=f166e140]
+                - combobox "MO" [ref=f166e144]
+              - button "Clear value" [ref=f166e146]
+        - generic [ref=f166e150]:
+          - generic [ref=f166e151]: Machine
+          - generic [ref=f166e152] [cursor=pointer]:
+            - log [ref=f166e154]
+            - generic [ref=f166e155]:
+              - generic [ref=f166e156]:
+                - generic [ref=f166e157]:
+                  - generic [ref=f166e158]: All
+                  - button "Remove" [ref=f166e159]
+                - combobox "Machine" [ref=f166e163]
+              - button "Clear value" [ref=f166e165]
+        - generic [ref=f166e170]:
+          - generic [ref=f166e171]: Annotations & Alerts (Built-in)
+          - generic [ref=f166e173]:
+            - switch "Annotations & Alerts (Built-in)" [checked] [ref=f166e174]
+            - generic [ref=f166e175] [cursor=pointer]
+        - generic [ref=f166e176]:
+          - link "Engineering Analytics & SPC" [ref=f166e178] [cursor=pointer]:
+            - /url: /d/ims-ldi-engineering-analytics/set2-engineering?from=1787021247673&to=1787042847673&var-factory=$__all&var-mo=$__all&var-machine_id=$__all
+          - link "Operator Andon Board" [ref=f166e183] [cursor=pointer]:
+            - /url: /d/ims-ldi-operator-andon/set2-operator-andon?from=1787021247673&to=1787042847673&var-factory=$__all&var-mo=$__all&var-machine_id=$__all
+          - link "Incident Snapshot" [ref=f166e188] [cursor=pointer]:
+            - /url: /d/ims-ldi-machine-snapshot/set2-machine-snapshot?from=1787021247673&to=1787042847673&var-factory=$__all&var-mo=$__all&var-machine_id=$__all
+      - generic [ref=f166e192]:
+        - generic [ref=f166e194]:
+          - generic [ref=f166e212]:
+            - button "Collapse row ◈ PRODUCTION" [expanded] [ref=f166e214] [cursor=pointer]:
+              - generic [ref=f166e217]: ◈ PRODUCTION
+            - generic [ref=f166e222]:
+              - region [ref=f166e228]:
+                - heading "◉ Estimated Yield (%)" [level=2] [ref=f166e231]
+                - generic "value" [ref=f166e239]: 100.0%
+              - region [ref=f166e248]:
+                - heading "◉ Running" [level=2] [ref=f166e251]
+                - generic "value" [ref=f166e259]: "10"
+              - region [ref=f166e268]:
+                - heading "◉ Fleet Status" [level=2] [ref=f166e271]
+                - generic "value" [ref=f166e279]: 23 reg / 10 rpt
+          - generic [ref=f166e283]:
+            - button "Collapse row ◈ QUALITY" [expanded] [ref=f166e285] [cursor=pointer]:
+              - generic [ref=f166e288]: ◈ QUALITY
+            - generic [ref=f166e293]:
+              - region [ref=f166e299]:
+                - heading "◉ Avg Cpk (Fleet)" [level=2] [ref=f166e302]
+                - generic "value" [ref=f166e310]: "5.17"
+              - region [ref=f166e319]:
+                - heading "◉ Worst Cpk (Fleet, 24h)" [level=2] [ref=f166e322]
+                - grid [ref=f166e328]:
+                  - row [ref=f166e329]:
+                    - columnheader [ref=f166e330] [cursor=pointer]:
+                      - generic [ref=f166e331]:
+                        - button "Machine" [ref=f166e332]
+                        - button "Filter Machine" [ref=f166e333]
+                    - columnheader [ref=f166e337] [cursor=pointer]:
+                      - generic [ref=f166e338]:
+                        - button "Worst Cpk" [ref=f166e339]
+                        - button "Filter Worst Cpk" [ref=f166e340]
+                  - row [ref=f166e344]:
+                    - gridcell "LDI-09" [ref=f166e345]:
+                      - generic "view data links and actions" [ref=f166e346] [cursor=pointer]: LDI-09
+                    - gridcell "2.20" [ref=f166e347]
+              - region [ref=f166e353]:
+                - heading "◉ JE Pass Rate (Fleet, 24h)" [level=2] [ref=f166e356]
+                - generic "value" [ref=f166e364]: 100.0%
+              - region [ref=f166e373]:
+                - heading "◈ PE Limit Used" [level=2] [ref=f166e376]
+                - generic "value" [ref=f166e384]: 10.50 µm
+          - generic [ref=f166e388]:
+            - button "Collapse row ◈ RISK" [expanded] [ref=f166e390] [cursor=pointer]:
+              - generic [ref=f166e393]: ◈ RISK
+            - generic [ref=f166e398]:
+              - region [ref=f166e404]:
+                - heading "◉ Fleet Availability (%)" [level=2] [ref=f166e407]
+                - generic "value" [ref=f166e415]: 100.0%
+              - region [ref=f166e424]:
+                - heading "◉ Critical/Major Alarms" [level=2] [ref=f166e427]
+                - link "1 K" [ref=f166e435] [cursor=pointer]:
+                  - /url: /d/ims-ldi-alarm-console/ims-ldi-alarm-console?var-factory=$__all&var-machine_id=$__all&from=1787021247673&to=1787042847673
+                  - generic "value" [ref=f166e436]: 1 K
+              - region [ref=f166e445]:
+                - heading "◉ Avg Temperature" [level=2] [ref=f166e448]
+                - generic "value" [ref=f166e456]: 21.8 °C
+              - region [ref=f166e465]:
+                - heading "◉ Avg Humidity" [level=2] [ref=f166e468]
+                - generic "value" [ref=f166e476]: 53.8 %H
+          - generic [ref=f166e480]:
+            - button "Collapse row ◈ PRODUCTION &amp; COMPLIANCE" [expanded] [ref=f166e482] [cursor=pointer]:
+              - generic [ref=f166e485]: ◈ PRODUCTION & COMPLIANCE
+            - generic [ref=f166e490]:
+              - region [ref=f166e496]:
+                - heading "◈ Production & Process Table" [level=2] [ref=f166e499]
+                - grid [ref=f166e505]:
+                  - row [ref=f166e506]:
+                    - columnheader [ref=f166e507] [cursor=pointer]:
+                      - generic [ref=f166e508]:
+                        - button "Machine" [ref=f166e509]
+                        - button "Filter Machine" [ref=f166e512]
+                    - columnheader [ref=f166e516] [cursor=pointer]:
+                      - generic [ref=f166e517]:
+                        - button "Job (MO)" [ref=f166e518]
+                        - button "Filter Job (MO)" [ref=f166e519]
+                    - columnheader [ref=f166e523] [cursor=pointer]:
+                      - generic [ref=f166e524]:
+                        - button "Part (FPN)" [ref=f166e525]
+                        - button "Filter Part (FPN)" [ref=f166e526]
+                    - columnheader [ref=f166e530] [cursor=pointer]:
+                      - generic [ref=f166e531]:
+                        - button "Layer" [ref=f166e532]
+                        - button "Filter Layer" [ref=f166e533]
+                    - columnheader [ref=f166e537] [cursor=pointer]:
+                      - generic [ref=f166e538]:
+                        - button "Progress" [ref=f166e539]
+                        - button "Filter Progress" [ref=f166e540]
+                    - columnheader [ref=f166e544] [cursor=pointer]:
+                      - generic [ref=f166e545]:
+                        - button "Temp (°C)" [ref=f166e546]
+                        - button "Filter Temp (°C)" [ref=f166e547]
+                    - columnheader [ref=f166e551] [cursor=pointer]:
+                      - generic [ref=f166e552]:
+                        - button "Humidity (%RH)" [ref=f166e553]
+                        - button "Filter Humidity (%RH)" [ref=f166e554]
+                    - columnheader [ref=f166e558] [cursor=pointer]:
+                      - generic [ref=f166e559]:
+                        - button "Scan Speed (mm/s)" [ref=f166e560]
+                        - button "Filter Scan Speed (mm&#x2F;s)" [ref=f166e561]
+                    - columnheader [ref=f166e565] [cursor=pointer]:
+                      - generic [ref=f166e566]:
+                        - button "Thickness (mm)" [ref=f166e567]
+                        - button "Filter Thickness (mm)" [ref=f166e568]
+                  - row [ref=f166e572]:
+                    - gridcell "LDI-10" [ref=f166e573]:
+                      - generic "view data links and actions" [ref=f166e574] [cursor=pointer]: LDI-10
+                    - gridcell "MO-750607" [ref=f166e575]
+                    - gridcell "PN-N670" [ref=f166e576]
+                    - gridcell "mk-solder-a" [ref=f166e577]
+                    - gridcell "150/200" [ref=f166e578]
+                    - gridcell "22.2" [ref=f166e579]
+                    - gridcell "54.8" [ref=f166e580]
+                    - gridcell "116" [ref=f166e581]
+                    - gridcell "1.14" [ref=f166e582]
+                  - row [ref=f166e583]:
+                    - gridcell "LDI-09" [ref=f166e584]:
+                      - generic "view data links and actions" [ref=f166e585] [cursor=pointer]: LDI-09
+                    - gridcell "MO-141562" [ref=f166e586]
+                    - gridcell "PN-M294" [ref=f166e587]
+                    - gridcell "mk-solder-b" [ref=f166e588]
+                    - gridcell "150/173" [ref=f166e589]
+                    - gridcell "22.1" [ref=f166e590]
+                    - gridcell "55.6" [ref=f166e591]
+                    - gridcell "116" [ref=f166e592]
+                    - gridcell "1.17" [ref=f166e593]
+                  - row [ref=f166e594]:
+                    - gridcell "LDI-08" [ref=f166e595]:
+                      - generic "view data links and actions" [ref=f166e596] [cursor=pointer]: LDI-08
+                    - gridcell "MO-426554" [ref=f166e597]
+                    - gridcell "PN-J406" [ref=f166e598]
+                    - gridcell "mk-solder-a" [ref=f166e599]
+                    - gridcell "168/211" [ref=f166e600]
+                    - gridcell "22.3" [ref=f166e601]
+                    - gridcell "53.1" [ref=f166e602]
+                    - gridcell "102" [ref=f166e603]
+                    - gridcell "1.05" [ref=f166e604]
+                  - row [ref=f166e605]:
+                    - gridcell "LDI-07" [ref=f166e606]:
+                      - generic "view data links and actions" [ref=f166e607] [cursor=pointer]: LDI-07
+                    - gridcell "MO-272998" [ref=f166e608]
+                    - gridcell "PN-C801" [ref=f166e609]
+                    - gridcell "mk-solder-a" [ref=f166e610]
+                    - gridcell "17/206" [ref=f166e611]
+                    - gridcell "22.3" [ref=f166e612]
+                    - gridcell "56.4" [ref=f166e613]
+                    - gridcell "105" [ref=f166e614]
+                    - gridcell "0.876" [ref=f166e615]
+                  - row [ref=f166e616]:
+                    - gridcell "LDI-06" [ref=f166e617]:
+                      - generic "view data links and actions" [ref=f166e618] [cursor=pointer]: LDI-06
+                    - gridcell "MO-824246" [ref=f166e619]
+                    - gridcell "PN-B483" [ref=f166e620]
+                    - gridcell "mk-outer-a" [ref=f166e621]
+                    - gridcell "147/229" [ref=f166e622]
+                    - gridcell "21.8" [ref=f166e623]
+                    - gridcell "53" [ref=f166e624]
+                    - gridcell "435" [ref=f166e625]
+                    - gridcell "1.18" [ref=f166e626]
+                  - row [ref=f166e627]:
+                    - gridcell "LDI-05" [ref=f166e628]:
+                      - generic "view data links and actions" [ref=f166e629] [cursor=pointer]: LDI-05
+                    - gridcell "MO-748700" [ref=f166e630]
+                    - gridcell "PN-J107" [ref=f166e631]
+                    - gridcell "mk-outer-a" [ref=f166e632]
+                    - gridcell "79/235" [ref=f166e633]
+                    - gridcell "22.4" [ref=f166e634]
+                    - gridcell "51.5" [ref=f166e635]
+                    - gridcell "435" [ref=f166e636]
+                    - gridcell "0.943" [ref=f166e637]
+                  - row [ref=f166e638]:
+                    - gridcell "LDI-04" [ref=f166e639]:
+                      - generic "view data links and actions" [ref=f166e640] [cursor=pointer]: LDI-04
+                    - gridcell "MO-925925" [ref=f166e641]
+                    - gridcell "PN-A637" [ref=f166e642]
+                    - gridcell "mk-inner-a" [ref=f166e643]
+                    - gridcell "4/227" [ref=f166e644]
+                    - gridcell "22.7" [ref=f166e645]
+                    - gridcell "53.2" [ref=f166e646]
+                    - gridcell "270" [ref=f166e647]
+                    - gridcell "0.264" [ref=f166e648]
+                  - row [ref=f166e649]:
+                    - gridcell "LDI-03" [ref=f166e650]:
+                      - generic "view data links and actions" [ref=f166e651] [cursor=pointer]: LDI-03
+                    - gridcell "MO-921356" [ref=f166e652]
+                    - gridcell "PN-Q510" [ref=f166e653]
+                    - gridcell "mk-inner-b" [ref=f166e654]
+                    - gridcell "235/235" [ref=f166e655]
+                    - gridcell "20.9" [ref=f166e656]
+                    - gridcell "57.3" [ref=f166e657]
+                    - gridcell "260" [ref=f166e658]
+                    - gridcell "0.264" [ref=f166e659]
+                  - row [ref=f166e660]:
+                    - gridcell "LDI-02" [ref=f166e661]:
+                      - generic "view data links and actions" [ref=f166e662] [cursor=pointer]: LDI-02
+                    - gridcell "MO-832564" [ref=f166e663]
+                    - gridcell "PN-T774" [ref=f166e664]
+                    - gridcell "mk-inner-b" [ref=f166e665]
+                    - gridcell "35/127" [ref=f166e666]
+                    - gridcell "21.9" [ref=f166e667]
+                    - gridcell "53.2" [ref=f166e668]
+                    - gridcell "220" [ref=f166e669]
+                    - gridcell "0.260" [ref=f166e670]
+                  - row [ref=f166e671]:
+                    - gridcell "LDI-01" [ref=f166e672]:
+                      - generic "view data links and actions" [ref=f166e673] [cursor=pointer]: LDI-01
+                    - gridcell "MO-104639" [ref=f166e674]
+                    - gridcell "PN-C853" [ref=f166e675]
+                    - gridcell "mk-inner-a" [ref=f166e676]
+                    - gridcell "32/166" [ref=f166e677]
+                    - gridcell "21.1" [ref=f166e678]
+                    - gridcell "58.1" [ref=f166e679]
+                    - gridcell "220" [ref=f166e680]
+                    - gridcell "0.327" [ref=f166e681]
+              - region [ref=f166e687]:
+                - heading "◈ Temperature Compliance (22±2°C)" [level=2] [ref=f166e690]
+                - list [ref=f166e713]:
+                  - listitem [ref=f166e714]:
+                    - button "All series selected" [disabled] [ref=f166e718] [cursor=pointer]: < 1.0 °C
+                  - listitem [ref=f166e719]:
+                    - button "All series selected" [disabled] [ref=f166e723] [cursor=pointer]: 1.0 °C+
+                  - listitem [ref=f166e724]:
+                    - button "All series selected" [disabled] [ref=f166e728] [cursor=pointer]: 2.0 °C+
+              - region [ref=f166e734]:
+                - heading "◈ Humidity Compliance (55±5%)" [level=2] [ref=f166e737]
+                - list [ref=f166e760]:
+                  - listitem [ref=f166e761]:
+                    - button "All series selected" [disabled] [ref=f166e765] [cursor=pointer]: < 1.0 %H
+                  - listitem [ref=f166e766]:
+                    - button "All series selected" [disabled] [ref=f166e770] [cursor=pointer]: 1.0 %H+
+                  - listitem [ref=f166e771]:
+                    - button "All series selected" [disabled] [ref=f166e775] [cursor=pointer]: 2.0 %H+
+          - generic [ref=f166e776]:
+            - button "Collapse row ◈ ANALYTICS &amp; SPC" [expanded] [ref=f166e778] [cursor=pointer]:
+              - generic [ref=f166e781]: ◈ ANALYTICS & SPC
+            - generic [ref=f166e786]:
+              - region [ref=f166e792]:
+                - heading "◈ Calculated Time per Board" [level=2] [ref=f166e795]
+                - generic [ref=f166e816]:
+                  - generic:
+                    - generic:
+                      - generic: 7.28 s
+                      - generic: 37.2 s
+              - region [ref=f166e822]:
+                - 'heading "◈ Z-Score: temperature" [level=2] [ref=f166e825]'
+                - table [ref=f166e845]:
+                  - rowgroup [ref=f166e846]:
+                    - row [ref=f166e847]:
+                      - columnheader "Series color" [ref=f166e848]
+                      - columnheader "Name" [ref=f166e850] [cursor=pointer]
+                      - columnheader "Last *" [ref=f166e851] [cursor=pointer]
+                      - columnheader "Min" [ref=f166e852] [cursor=pointer]
+                      - columnheader "Max" [ref=f166e853] [cursor=pointer]
+                      - columnheader "Mean" [ref=f166e854] [cursor=pointer]
+                  - rowgroup [ref=f166e855]:
+                    - row [ref=f166e856]:
+                      - cell [ref=f166e857]:
+                        - button "Edit color for LDI-01" [ref=f166e858] [cursor=pointer]
+                      - cell [ref=f166e859]:
+                        - button "LDI-01" [ref=f166e860] [cursor=pointer]
+                      - cell "-0.36" [ref=f166e861]
+                      - cell "-2.63" [ref=f166e862]
+                      - cell "3.06" [ref=f166e863]
+                      - cell "0.00" [ref=f166e864]
+                    - row [ref=f166e865]:
+                      - cell [ref=f166e866]:
+                        - button "Edit color for LDI-02" [ref=f166e867] [cursor=pointer]
+                      - cell [ref=f166e868]:
+                        - button "LDI-02" [ref=f166e869] [cursor=pointer]
+                      - cell "1.04" [ref=f166e870]
+                      - cell "-11.63" [ref=f166e871]
+                      - cell "2.24" [ref=f166e872]
+                      - cell "0.00" [ref=f166e873]
+                    - row [ref=f166e874]:
+                      - cell [ref=f166e875]:
+                        - button "Edit color for LDI-03" [ref=f166e876] [cursor=pointer]
+                      - cell [ref=f166e877]:
+                        - button "LDI-03" [ref=f166e878] [cursor=pointer]
+                      - cell "-0.16" [ref=f166e879]
+                      - cell "-2.35" [ref=f166e880]
+                      - cell "2.95" [ref=f166e881]
+                      - cell "0.00" [ref=f166e882]
+                    - row [ref=f166e883]:
+                      - cell [ref=f166e884]:
+                        - button "Edit color for LDI-04" [ref=f166e885] [cursor=pointer]
+                      - cell [ref=f166e886]:
+                        - button "LDI-04" [ref=f166e887] [cursor=pointer]
+                      - cell "2.08" [ref=f166e888]
+                      - cell "-3.63" [ref=f166e889]
+                      - cell "2.74" [ref=f166e890]
+                      - cell "-0.02" [ref=f166e891]
+                    - row [ref=f166e892]:
+                      - cell [ref=f166e893]:
+                        - button "Edit color for LDI-05" [ref=f166e894] [cursor=pointer]
+                      - cell [ref=f166e895]:
+                        - button "LDI-05" [ref=f166e896] [cursor=pointer]
+                      - cell "-0.38" [ref=f166e897]
+                      - cell "-9.04" [ref=f166e898]
+                      - cell "2.72" [ref=f166e899]
+                      - cell "0.01" [ref=f166e900]
+                    - row [ref=f166e901]:
+                      - cell [ref=f166e902]:
+                        - button "Edit color for LDI-06" [ref=f166e903] [cursor=pointer]
+                      - cell [ref=f166e904]:
+                        - button "LDI-06" [ref=f166e905] [cursor=pointer]
+                      - cell "-0.13" [ref=f166e906]
+                      - cell "-9.81" [ref=f166e907]
+                      - cell "2.54" [ref=f166e908]
+                      - cell "-0.01" [ref=f166e909]
+                    - row [ref=f166e910]:
+                      - cell [ref=f166e911]:
+                        - button "Edit color for LDI-07" [ref=f166e912] [cursor=pointer]
+                      - cell [ref=f166e913]:
+                        - button "LDI-07" [ref=f166e914] [cursor=pointer]
+                      - cell "-0.02" [ref=f166e915]
+                      - cell "-16.81" [ref=f166e916]
+                      - cell "0.66" [ref=f166e917]
+                      - cell "0.00" [ref=f166e918]
+                    - row [ref=f166e919]:
+                      - cell [ref=f166e920]:
+                        - button "Edit color for LDI-08" [ref=f166e921] [cursor=pointer]
+                      - cell [ref=f166e922]:
+                        - button "LDI-08" [ref=f166e923] [cursor=pointer]
+                      - cell "-1.29" [ref=f166e924]
+                      - cell "-2.49" [ref=f166e925]
+                      - cell "2.74" [ref=f166e926]
+                      - cell "0.00" [ref=f166e927]
+                    - row [ref=f166e928]:
+                      - cell [ref=f166e929]:
+                        - button "Edit color for LDI-09" [ref=f166e930] [cursor=pointer]
+                      - cell [ref=f166e931]:
+                        - button "LDI-09" [ref=f166e932] [cursor=pointer]
+                      - cell "1.26" [ref=f166e933]
+                      - cell "-3.06" [ref=f166e934]
+                      - cell "2.35" [ref=f166e935]
+                      - cell "0.00" [ref=f166e936]
+                    - row [ref=f166e937]:
+                      - cell [ref=f166e938]:
+                        - button "Edit color for LDI-10" [ref=f166e939] [cursor=pointer]
+                      - cell [ref=f166e940]:
+                        - button "LDI-10" [ref=f166e941] [cursor=pointer]
+                      - cell "-1.36" [ref=f166e942]
+                      - cell "-2.62" [ref=f166e943]
+                      - cell "2.42" [ref=f166e944]
+                      - cell "0.00" [ref=f166e945]
+          - generic [ref=f166e946]:
+            - button "Collapse row ◈ SYSTEM ALARMS" [expanded] [ref=f166e948] [cursor=pointer]:
+              - generic [ref=f166e951]: ◈ SYSTEM ALARMS
+            - region [ref=f166e962]:
+              - heading "◈ Recent Alarm Events (Last 50)" [level=2] [ref=f166e965]
+              - grid [ref=f166e1130]:
+                - row [ref=f166e1131]:
+                  - columnheader [ref=f166e1132] [cursor=pointer]:
+                    - generic [ref=f166e1133]:
+                      - button "Time" [ref=f166e1134]
+                      - button "Filter Time" [ref=f166e1137]
+                  - columnheader [ref=f166e1141] [cursor=pointer]:
+                    - generic [ref=f166e1142]:
+                      - button "Machine" [ref=f166e1143]
+                      - button "Filter Machine" [ref=f166e1144]
+                  - columnheader [ref=f166e1148] [cursor=pointer]:
+                    - generic [ref=f166e1149]:
+                      - button "Alarm Event ID" [ref=f166e1150]
+                      - button "Filter Alarm Event ID" [ref=f166e1151]
+                  - columnheader [ref=f166e1155] [cursor=pointer]:
+                    - generic [ref=f166e1156]:
+                      - button "Alarm Code" [ref=f166e1157]
+                      - button "Filter Alarm Code" [ref=f166e1158]
+                  - columnheader [ref=f166e1162] [cursor=pointer]:
+                    - generic [ref=f166e1163]:
+                      - button "Severity" [ref=f166e1164]
+                      - button "Filter Severity" [ref=f166e1165]
+                  - columnheader [ref=f166e1169] [cursor=pointer]:
+                    - generic [ref=f166e1170]:
+                      - button "Message" [ref=f166e1171]
+                      - button "Filter Message" [ref=f166e1172]
+                  - columnheader [ref=f166e1176] [cursor=pointer]:
+                    - generic [ref=f166e1177]:
+                      - button "Detail" [ref=f166e1178]
+                      - button "Filter Detail" [ref=f166e1179]
+                  - columnheader [ref=f166e1183] [cursor=pointer]:
+                    - generic [ref=f166e1184]:
+                      - button "Subsystem" [ref=f166e1185]
+                      - button "Filter Subsystem" [ref=f166e1186]
+                  - columnheader [ref=f166e1190] [cursor=pointer]:
+                    - generic [ref=f166e1191]:
+                      - button "Process" [ref=f166e1192]
+                      - button "Filter Process" [ref=f166e1193]
+                  - columnheader [ref=f166e1197] [cursor=pointer]:
+                    - generic [ref=f166e1198]:
+                      - button "Quality Impact" [ref=f166e1199]
+                      - button "Filter Quality Impact" [ref=f166e1200]
+                  - columnheader [ref=f166e1204] [cursor=pointer]:
+                    - generic [ref=f166e1205]:
+                      - button "Job (MO)" [ref=f166e1206]
+                      - button "Filter Job (MO)" [ref=f166e1207]
+                  - columnheader [ref=f166e1211] [cursor=pointer]:
+                    - generic [ref=f166e1212]:
+                      - button "Board" [ref=f166e1213]
+                      - button "Filter Board" [ref=f166e1214]
+                  - columnheader [ref=f166e1218] [cursor=pointer]:
+                    - generic [ref=f166e1219]:
+                      - button "Telemetry Event ID" [ref=f166e1220]
+                      - button "Filter Telemetry Event ID" [ref=f166e1221]
+                  - columnheader [ref=f166e1225] [cursor=pointer]:
+                    - generic [ref=f166e1226]:
+                      - button "Match" [ref=f166e1227]
+                      - button "Filter Match" [ref=f166e1228]
+                - row [ref=f166e1232]:
+                  - gridcell "2026-08-18 08:46:46" [ref=f166e1233]
+                  - gridcell [ref=f166e1234]:
+                    - link "LDI-03" [ref=f166e1235] [cursor=pointer]:
+                      - /url: /d/ims-ldi-alarm-console/ims-ldi-alarm-console?var-factory=$__all&var-mo=MO-921356&var-machine_id=LDI-03&from=1787021247673&to=1787042847673
+                  - gridcell "SIM-ALM-1787042806378-LDI-03-80001-320199" [ref=f166e1236]
+                  - gridcell [ref=f166e1237]:
+                    - link "80001" [ref=f166e1238] [cursor=pointer]:
+                      - /url: /d/ims-ldi-alarm-dictionary/alarm-dictionary?var-alarm_code=80001
+                  - gridcell "Warning" [ref=f166e1239]
+                  - gridcell "Waiting for subdrawing preparation data timeout" [ref=f166e1240]
+                  - gridcell "The station waited too long for the subdrawing (job image) preparation data to arrive. Check the job data source and network path feeding this station." [ref=f166e1241]
+                  - gridcell "COMMUNICATION" [ref=f166e1242]
+                  - gridcell "DF INNER" [ref=f166e1243]
+                  - gridcell "Within Spec" [ref=f166e1244]
+                  - gridcell "MO-921356" [ref=f166e1245]
+                  - gridcell "231/235" [ref=f166e1246]
+                  - gridcell "SIM-03-1787042807993-231" [ref=f166e1247]
+                  - gridcell "exact" [ref=f166e1248]
+                - row [ref=f166e1249]:
+                  - gridcell "2026-08-18 08:45:17" [ref=f166e1250]
+                  - gridcell [ref=f166e1251]:
+                    - link "LDI-03" [ref=f166e1252] [cursor=pointer]:
+                      - /url: /d/ims-ldi-alarm-console/ims-ldi-alarm-console?var-factory=$__all&var-mo=MO-921356&var-machine_id=LDI-03&from=1787021247673&to=1787042847673
+                  - gridcell "SIM-ALM-1787042717618-LDI-03-01130002-275310" [ref=f166e1253]
+                  - gridcell [ref=f166e1254]:
+                    - link "01130002" [ref=f166e1255] [cursor=pointer]:
+                      - /url: /d/ims-ldi-alarm-dictionary/alarm-dictionary?var-alarm_code=01130002
+                  - gridcell "Major" [ref=f166e1256]
+                  - gridcell "Communication abnormality" [ref=f166e1257]
+                  - gridcell "Communication between two connected devices on this station failed or became unstable. Check the physical connection and communication settings between the affected devices." [ref=f166e1258]
+                  - gridcell "COMMUNICATION" [ref=f166e1259]
+                  - gridcell "DF INNER" [ref=f166e1260]
+                  - gridcell "Within Spec" [ref=f166e1261]
+                  - gridcell "MO-921356" [ref=f166e1262]
+                  - gridcell "221/235" [ref=f166e1263]
+                  - gridcell "SIM-03-1787042715949-221" [ref=f166e1264]
+                  - gridcell "exact" [ref=f166e1265]
+                - row [ref=f166e1266]:
+                  - gridcell "2026-08-18 08:45:11" [ref=f166e1267]
+                  - gridcell [ref=f166e1268]:
+                    - link "LDI-02" [ref=f166e1269] [cursor=pointer]:
+                      - /url: /d/ims-ldi-alarm-console/ims-ldi-alarm-console?var-factory=$__all&var-mo=MO-832564&var-machine_id=LDI-02&from=1787021247673&to=1787042847673
+                  - gridcell "SIM-ALM-1787042711717-LDI-02-91008-648064" [ref=f166e1270]
+                  - gridcell [ref=f166e1271]:
+                    - link "91008" [ref=f166e1272] [cursor=pointer]:
+                      - /url: /d/ims-ldi-alarm-dictionary/alarm-dictionary?var-alarm_code=91008
+                  - gridcell "Warning" [ref=f166e1273]
+                  - gridcell "abnormal temperature and humidity" [ref=f166e1274]
+                  - gridcell "The cleanroom temperature or humidity reading is outside the configured process window (22±2°C / 55±5% RH). Check the HVAC system and the sensor for this station before resuming production." [ref=f166e1275]
+                  - gridcell "ENVIRONMENT" [ref=f166e1276]
+                  - gridcell "DF INNER" [ref=f166e1277]
+                  - gridcell "Humidity Out of Spec" [ref=f166e1278]
+                  - gridcell "MO-832564" [ref=f166e1279]
+                  - gridcell "12/127" [ref=f166e1280]
+                  - gridcell "SIM-02-1787042705936-12" [ref=f166e1281]
+                  - gridcell "exact" [ref=f166e1282]
+                - row [ref=f166e1283]:
+                  - gridcell "2026-08-18 08:45:07" [ref=f166e1284]
+                  - gridcell [ref=f166e1285]:
+                    - link "LDI-02" [ref=f166e1286] [cursor=pointer]:
+                      - /url: /d/ims-ldi-alarm-console/ims-ldi-alarm-console?var-factory=$__all&var-mo=MO-832564&var-machine_id=LDI-02&from=1787021247673&to=1787042847673
+                  - gridcell "SIM-ALM-1787042707824-LDI-02-010E0064-580532" [ref=f166e1287]
+                  - gridcell [ref=f166e1288]:
+                    - link "010E0064" [ref=f166e1289] [cursor=pointer]:
+                      - /url: /d/ims-ldi-alarm-dictionary/alarm-dictionary?var-alarm_code=010E0064
+                  - gridcell "Major" [ref=f166e1290]
+                  - gridcell "Motor type undefined" [ref=f166e1291]
+                  - gridcell "The system has no motor type configured for this axis. Check the axis configuration and set the correct motor type before continuing." [ref=f166e1292]
+                  - gridcell "CONFIGURATION" [ref=f166e1293]
+                  - gridcell "DF INNER" [ref=f166e1294]
+                  - gridcell "Humidity Out of Spec" [ref=f166e1295]
+                  - gridcell "MO-832564" [ref=f166e1296]
+                  - gridcell "12/127" [ref=f166e1297]
+                  - gridcell "SIM-02-1787042705936-12" [ref=f166e1298]
+                  - gridcell "exact" [ref=f166e1299]
+                - row [ref=f166e1300]:
+                  - gridcell "2026-08-18 08:44:50" [ref=f166e1301]
+                  - gridcell [ref=f166e1302]:
+                    - link "LDI-05" [ref=f166e1303] [cursor=pointer]:
+                      - /url: /d/ims-ldi-alarm-console/ims-ldi-alarm-console?var-factory=$__all&var-mo=MO-748700&var-machine_id=LDI-05&from=1787021247673&to=1787042847673
+                  - gridcell "SIM-ALM-1787042690124-LDI-05-0106000C-193669" [ref=f166e1304]
+                  - gridcell [ref=f166e1305]:
+                    - link "0106000C" [ref=f166e1306] [cursor=pointer]:
+                      - /url: /d/ims-ldi-alarm-dictionary/alarm-dictionary?var-alarm_code=0106000C
+                  - gridcell "Major" [ref=f166e1307]
+                  - gridcell "Failed to stop camera" [ref=f166e1308]
+                  - gridcell "The system could not stop the camera when commanded. Retry the stop command; if it persists, check the camera's connection and power." [ref=f166e1309]
+                  - gridcell "COMMUNICATION" [ref=f166e1310]
+                  - gridcell "DF OUTER" [ref=f166e1311]
+                  - gridcell "Within Spec" [ref=f166e1312]
+                  - gridcell "MO-748700" [ref=f166e1313]
+                  - gridcell "52/235" [ref=f166e1314]
+                  - gridcell "SIM-05-1787042687925-52" [ref=f166e1315]
+                  - gridcell "exact" [ref=f166e1316]
+                - row [ref=f166e1317]:
+                  - gridcell "2026-08-18 08:44:28" [ref=f166e1318]
+                  - gridcell [ref=f166e1319]:
+                    - link "LDI-02" [ref=f166e1320] [cursor=pointer]:
+                      - /url: /d/ims-ldi-alarm-console/ims-ldi-alarm-console?var-factory=$__all&var-mo=MO-832564&var-machine_id=LDI-02&from=1787021247673&to=1787042847673
+                  - gridcell "SIM-ALM-1787042668063-LDI-02-01060013-620553" [ref=f166e1321]
+                  - gridcell [ref=f166e1322]:
+                    - link "01060013" [ref=f166e1323] [cursor=pointer]:
+                      - /url: /d/ims-ldi-alarm-dictionary/alarm-dictionary?var-alarm_code=01060013
+                  - gridcell "Major" [ref=f166e1324]
+                  - gridcell "Found the same IP" [ref=f166e1325]
+                  - gridcell "A duplicate IP address was detected on the camera/device network, most likely from a network configuration error. Check the IP settings of all cameras and devices on this station's network segment." [ref=f166e1326]
+                  - gridcell "COMMUNICATION" [ref=f166e1327]
+                  - gridcell "DF INNER" [ref=f166e1328]
+                  - gridcell "Within Spec" [ref=f166e1329]
+                  - gridcell "MO-832564" [ref=f166e1330]
+                  - gridcell "6/127" [ref=f166e1331]
+                  - gridcell "SIM-02-1787042669916-6" [ref=f166e1332]
+                  - gridcell "exact" [ref=f166e1333]
+                - row [ref=f166e1334]:
+                  - gridcell "2026-08-18 08:44:19" [ref=f166e1335]
+                  - gridcell [ref=f166e1336]:
+                    - link "LDI-06" [ref=f166e1337] [cursor=pointer]:
+                      - /url: /d/ims-ldi-alarm-console/ims-ldi-alarm-console?var-factory=$__all&var-mo=MO-824246&var-machine_id=LDI-06&from=1787021247673&to=1787042847673
+                  - gridcell "SIM-ALM-1787042659579-LDI-06-010E0064-114610" [ref=f166e1338]
+                  - gridcell [ref=f166e1339]:
+                    - link "010E0064" [ref=f166e1340] [cursor=pointer]:
+                      - /url: /d/ims-ldi-alarm-dictionary/alarm-dictionary?var-alarm_code=010E0064
+                  - gridcell "Major" [ref=f166e1341]
+                  - gridcell "Motor type undefined" [ref=f166e1342]
+                  - gridcell "The system has no motor type configured for this axis. Check the axis configuration and set the correct motor type before continuing." [ref=f166e1343]
+                  - gridcell "CONFIGURATION" [ref=f166e1344]
+                  - gridcell "DF OUTER" [ref=f166e1345]
+                  - gridcell "PE/JE Out of Spec" [ref=f166e1346]
+                  - gridcell "MO-824246" [ref=f166e1347]
+                  - gridcell "115/229" [ref=f166e1348]
+                  - gridcell "SIM-06-1787042657909-115" [ref=f166e1349]
+                  - gridcell "exact" [ref=f166e1350]
+                - row [ref=f166e1351]:
+                  - gridcell "2026-08-18 08:43:38" [ref=f166e1352]
+                  - gridcell [ref=f166e1353]:
+                    - link "LDI-02" [ref=f166e1354] [cursor=pointer]:
+                      - /url: /d/ims-ldi-alarm-console/ims-ldi-alarm-console?var-factory=$__all&var-mo=MO-964971&var-machine_id=LDI-02&from=1787021247673&to=1787042847673
+                  - gridcell "SIM-ALM-1787042618163-LDI-02-0106001C-685121" [ref=f166e1355]
+                  - gridcell [ref=f166e1356]:
+                    - link "0106001C" [ref=f166e1357] [cursor=pointer]:
+                      - /url: /d/ims-ldi-alarm-dictionary/alarm-dictionary?var-alarm_code=0106001C
+                  - gridcell "Major" [ref=f166e1358]
+                  - gridcell "stop trigger wait signal time out" [ref=f166e1359]
+                  - gridcell "The camera did not receive its stop-trigger signal within the expected time. Check the trigger source and cabling for this station." [ref=f166e1360]
+                  - gridcell "COMMUNICATION" [ref=f166e1361]
+                  - gridcell "DF INNER" [ref=f166e1362]
+                  - gridcell "Within Spec" [ref=f166e1363]
+                  - gridcell "MO-964971" [ref=f166e1364]
+                  - gridcell "235/238" [ref=f166e1365]
+                  - gridcell "SIM-02-1787042615886-235" [ref=f166e1366]
+                  - gridcell "exact" [ref=f166e1367]
+                - row [ref=f166e1368]:
+                  - gridcell "2026-08-18 08:43:30" [ref=f166e1369]
+                  - gridcell [ref=f166e1370]:
+                    - link "LDI-06" [ref=f166e1371] [cursor=pointer]:
+                      - /url: /d/ims-ldi-alarm-console/ims-ldi-alarm-console?var-factory=$__all&var-mo=MO-824246&var-machine_id=LDI-06&from=1787021247673&to=1787042847673
+                  - gridcell "SIM-ALM-1787042610127-LDI-06-97005-760111" [ref=f166e1372]
+                  - gridcell [ref=f166e1373]:
+                    - link "97005" [ref=f166e1374] [cursor=pointer]:
+                      - /url: /d/ims-ldi-alarm-dictionary/alarm-dictionary?var-alarm_code=97005
+                  - gridcell "Warning" [ref=f166e1375]
+                  - gridcell "Database connection exception" [ref=f166e1376]
+                  - gridcell "The station's connection to the database became abnormal or was lost. Check the database server status and this station's network path to it." [ref=f166e1377]
+                  - gridcell "COMMUNICATION" [ref=f166e1378]
+                  - gridcell "DF OUTER" [ref=f166e1379]
+                  - gridcell "PE/JE Out of Spec" [ref=f166e1380]
+                  - gridcell "MO-824246" [ref=f166e1381]
+                  - gridcell "107/229" [ref=f166e1382]
+                  - gridcell "SIM-06-1787042609885-107" [ref=f166e1383]
+                  - gridcell "exact" [ref=f166e1384]
+                - row [ref=f166e1385]:
+                  - gridcell "2026-08-18 08:43:11" [ref=f166e1386]
+                  - gridcell [ref=f166e1387]:
+                    - link "LDI-06" [ref=f166e1388] [cursor=pointer]:
+                      - /url: /d/ims-ldi-alarm-console/ims-ldi-alarm-console?var-factory=$__all&var-mo=MO-824246&var-machine_id=LDI-06&from=1787021247673&to=1787042847673
+                  - gridcell "SIM-ALM-1787042591718-LDI-06-90004-654946" [ref=f166e1389]
+                  - gridcell [ref=f166e1390]:
+                    - link "90004" [ref=f166e1391] [cursor=pointer]:
+                      - /url: /d/ims-ldi-alarm-dictionary/alarm-dictionary?var-alarm_code=90004
+                  - gridcell "Warning" [ref=f166e1392]
+                  - gridcell "Outer alignment to the grip point failed" [ref=f166e1393]
+                  - gridcell "The outer-layer alignment routine could not register the board to the mechanical grip point within tolerance. Check the alignment marks for contamination or damage and confirm the grip mechanism is seated correctly." [ref=f166e1394]
+                  - gridcell "ALIGNMENT" [ref=f166e1395]
+                  - gridcell "DF OUTER" [ref=f166e1396]
+                  - gridcell "PE/JE Out of Spec" [ref=f166e1397]
+                  - gridcell "MO-824246" [ref=f166e1398]
+                  - gridcell "103/229" [ref=f166e1399]
+                  - gridcell "SIM-06-1787042587872-103" [ref=f166e1400]
+                  - gridcell "exact" [ref=f166e1401]
+                - row [ref=f166e1402]:
+                  - gridcell "2026-08-18 08:42:31" [ref=f166e1403]
+                  - gridcell [ref=f166e1404]:
+                    - link "LDI-01" [ref=f166e1405] [cursor=pointer]:
+                      - /url: /d/ims-ldi-alarm-console/ims-ldi-alarm-console?var-factory=$__all&var-mo=MO-358778&var-machine_id=LDI-01&from=1787021247673&to=1787042847673
+                  - gridcell "SIM-ALM-1787042551719-LDI-01-91008-368810" [ref=f166e1406]
+                  - gridcell [ref=f166e1407]:
+                    - link "91008" [ref=f166e1408] [cursor=pointer]:
+                      - /url: /d/ims-ldi-alarm-dictionary/alarm-dictionary?var-alarm_code=91008
+                  - gridcell "Warning" [ref=f166e1409]
+                  - gridcell "abnormal temperature and humidity" [ref=f166e1410]
+                  - gridcell "The cleanroom temperature or humidity reading is outside the configured process window (22±2°C / 55±5% RH). Check the HVAC system and the sensor for this station before resuming production." [ref=f166e1411]
+                  - gridcell "ENVIRONMENT" [ref=f166e1412]
+                  - gridcell "DF INNER" [ref=f166e1413]
+                  - gridcell "Humidity Out of Spec" [ref=f166e1414]
+                  - gridcell "MO-358778" [ref=f166e1415]
+                  - gridcell "179/196" [ref=f166e1416]
+                  - gridcell "SIM-01-1787042547850-179" [ref=f166e1417]
+                  - gridcell "exact" [ref=f166e1418]
+                - row [ref=f166e1419]:
+                  - gridcell "2026-08-18 08:41:31" [ref=f166e1420]
+                  - gridcell [ref=f166e1421]:
+                    - link "LDI-05" [ref=f166e1422] [cursor=pointer]:
+                      - /url: /d/ims-ldi-alarm-console/ims-ldi-alarm-console?var-factory=$__all&var-mo=MO-748700&var-machine_id=LDI-05&from=1787021247673&to=1787042847673
+                  - gridcell "SIM-ALM-1787042491720-LDI-05-91008-255451" [ref=f166e1423]
+                  - gridcell [ref=f166e1424]:
+                    - link "91008" [ref=f166e1425] [cursor=pointer]:
+                      - /url: /d/ims-ldi-alarm-dictionary/alarm-dictionary?var-alarm_code=91008
+                  - gridcell "Warning" [ref=f166e1426]
+                  - gridcell "abnormal temperature and humidity" [ref=f166e1427]
+                  - gridcell "The cleanroom temperature or humidity reading is outside the configured process window (22±2°C / 55±5% RH). Check the HVAC system and the sensor for this station before resuming production." [ref=f166e1428]
+                  - gridcell "ENVIRONMENT" [ref=f166e1429]
+                  - gridcell "DF OUTER" [ref=f166e1430]
+                  - gridcell "Humidity Out of Spec" [ref=f166e1431]
+                  - gridcell "MO-748700" [ref=f166e1432]
+                  - gridcell "17/235" [ref=f166e1433]
+                  - gridcell "SIM-05-1787042485819-17" [ref=f166e1434]
+                  - gridcell "exact" [ref=f166e1435]
+                - row [ref=f166e1436]:
+                  - gridcell "2026-08-18 08:40:49" [ref=f166e1437]
+                  - gridcell [ref=f166e1438]:
+                    - link "LDI-03" [ref=f166e1439] [cursor=pointer]:
+                      - /url: /d/ims-ldi-alarm-console/ims-ldi-alarm-console?var-factory=$__all&var-mo=MO-921356&var-machine_id=LDI-03&from=1787021247673&to=1787042847673
+                  - gridcell "SIM-ALM-1787042449455-LDI-03-10006-243825" [ref=f166e1440]
+                  - gridcell [ref=f166e1441]:
+                    - link "10006" [ref=f166e1442] [cursor=pointer]:
+                      - /url: /d/ims-ldi-alarm-dictionary/alarm-dictionary?var-alarm_code=10006
+                  - gridcell "Major" [ref=f166e1443]
+                  - gridcell "Failed in setting the DMD to the protection mode" [ref=f166e1444]
+                  - gridcell "The exposure head's imaging device (DMD) could not be switched into its protective state before an unsafe condition. Retry the operation; if it persists, check the DMD controller connection and power." [ref=f166e1445]
+                  - gridcell "OPTICS" [ref=f166e1446]
+                  - gridcell "DF INNER" [ref=f166e1447]
+                  - gridcell "Within Spec" [ref=f166e1448]
+                  - gridcell "MO-921356" [ref=f166e1449]
+                  - gridcell "192/235" [ref=f166e1450]
+                  - gridcell "SIM-03-1787042449802-192" [ref=f166e1451]
+                  - gridcell "exact" [ref=f166e1452]
+                - row [ref=f166e1453]:
+                  - gridcell "2026-08-18 08:40:46" [ref=f166e1454]
+                  - gridcell [ref=f166e1455]:
+                    - link "LDI-05" [ref=f166e1456] [cursor=pointer]:
+                      - /url: /d/ims-ldi-alarm-console/ims-ldi-alarm-console?var-factory=$__all&var-mo=MO-748700&var-machine_id=LDI-05&from=1787021247673&to=1787042847673
+                  - gridcell "SIM-ALM-1787042446196-LDI-05-93004-611145" [ref=f166e1457]
+                  - gridcell [ref=f166e1458]:
+                    - link "93004" [ref=f166e1459] [cursor=pointer]:
+                      - /url: /d/ims-ldi-alarm-dictionary/alarm-dictionary?var-alarm_code=93004
+                  - gridcell "Warning" [ref=f166e1460]
+                  - gridcell "Calibration exception (a calibration does not enter the calibration process)" [ref=f166e1461]
+                  - gridcell "A scheduled or requested calibration cycle did not complete -- the machine did not enter the calibration process within the expected time. Check that no job is queued or running, then retry the calibration." [ref=f166e1462]
+                  - gridcell "CALIBRATION" [ref=f166e1463]
+                  - gridcell "DF OUTER" [ref=f166e1464]
+                  - gridcell "Within Spec" [ref=f166e1465]
+                  - gridcell "MO-748700" [ref=f166e1466]
+                  - gridcell "10/235" [ref=f166e1467]
+                  - gridcell "SIM-05-1787042443799-10" [ref=f166e1468]
+                  - gridcell "exact" [ref=f166e1469]
+          - generic [ref=f166e971]:
+            - button "Collapse row ◈ RCA &#x2F; FLEET SUMMARY" [expanded] [ref=f166e973] [cursor=pointer]:
+              - generic [ref=f166e976]: ◈ RCA / FLEET SUMMARY
+            - region [ref=f166e987]:
+              - heading "◉ Top Correlated Alarms (24h)" [level=2] [ref=f166e990]
+              - grid [ref=f166e1470]:
+                - row [ref=f166e1471]:
+                  - columnheader [ref=f166e1472] [cursor=pointer]:
+                    - generic [ref=f166e1473]:
+                      - button "Alarm Category" [ref=f166e1474]
+                      - button "Filter Alarm Category" [ref=f166e1475]
+                  - columnheader [ref=f166e1479] [cursor=pointer]:
+                    - generic [ref=f166e1480]:
+                      - button "Alarm-Window %" [ref=f166e1481]
+                      - button "Filter Alarm-Window %" [ref=f166e1482]
+                  - columnheader [ref=f166e1486] [cursor=pointer]:
+                    - generic [ref=f166e1487]:
+                      - button "Baseline %" [ref=f166e1488]
+                      - button "Filter Baseline %" [ref=f166e1489]
+                  - columnheader [ref=f166e1493] [cursor=pointer]:
+                    - generic [ref=f166e1494]:
+                      - button "Lift" [ref=f166e1495]
+                      - button "Filter Lift" [ref=f166e1496]
+                  - columnheader [ref=f166e1500] [cursor=pointer]:
+                    - generic [ref=f166e1501]:
+                      - button "Event Count" [ref=f166e1502]
+                      - button "Filter Event Count" [ref=f166e1503]
+                  - columnheader [ref=f166e1507] [cursor=pointer]:
+                    - generic [ref=f166e1508]:
+                      - button "Confidence" [ref=f166e1509]
+                      - button "Filter Confidence" [ref=f166e1510]
+                - row [ref=f166e1514]:
+                  - gridcell [ref=f166e1515]:
+                    - link "MOTION (70004)" [ref=f166e1516] [cursor=pointer]:
+                      - /url: /d/ims-ldi-alarm-console/ims-ldi-alarm-console?var-factory=$__all&from=1787021247673&to=1787042847673
+                  - gridcell "100.0%" [ref=f166e1517]
+                  - gridcell "0.2%" [ref=f166e1518]
+                  - gridcell "500.00" [ref=f166e1519]
+                  - gridcell "6" [ref=f166e1520]
+                  - gridcell "LOW SAMPLE (n<30)" [ref=f166e1521]
+                - row [ref=f166e1522]:
+                  - gridcell [ref=f166e1523]:
+                    - link "ALIGNMENT/PE-JE (90001,90004,90005,90012,90013)" [ref=f166e1524] [cursor=pointer]:
+                      - /url: /d/ims-ldi-alarm-console/ims-ldi-alarm-console?var-factory=$__all&from=1787021247673&to=1787042847673
+                  - gridcell "100.0%" [ref=f166e1525]
+                  - gridcell "0.6%" [ref=f166e1526]
+                  - gridcell "166.67" [ref=f166e1527]
+                  - gridcell "10" [ref=f166e1528]
+                  - gridcell "LOW SAMPLE (n<30)" [ref=f166e1529]
+                - row [ref=f166e1530]:
+                  - gridcell [ref=f166e1531]:
+                    - link "THERMAL (91008)" [ref=f166e1532] [cursor=pointer]:
+                      - /url: /d/ims-ldi-alarm-console/ims-ldi-alarm-console?var-factory=$__all&from=1787021247673&to=1787042847673
+                  - gridcell "1.1%" [ref=f166e1533]
+                  - gridcell "0.4%" [ref=f166e1534]
+                  - gridcell "2.75" [ref=f166e1535]
+                  - gridcell "92" [ref=f166e1536]
+                  - gridcell "OK" [ref=f166e1537]
+                - row [ref=f166e1538]:
+                  - gridcell [ref=f166e1539]:
+                    - link "HUMIDITY (91008)" [ref=f166e1540] [cursor=pointer]:
+                      - /url: /d/ims-ldi-alarm-console/ims-ldi-alarm-console?var-factory=$__all&from=1787021247673&to=1787042847673
+                  - gridcell "98.9%" [ref=f166e1541]
+                  - gridcell "9.7%" [ref=f166e1542]
+                  - gridcell "10.20" [ref=f166e1543]
+                  - gridcell "92" [ref=f166e1544]
+                  - gridcell "OK" [ref=f166e1545]
+          - generic [ref=f166e996]:
+            - button "Collapse row ◈ CYCLE TIME &amp; TRACEABILITY" [expanded] [ref=f166e998] [cursor=pointer]:
+              - generic [ref=f166e1001]: ◈ CYCLE TIME & TRACEABILITY
+            - generic [ref=f166e1006]:
+              - region [ref=f166e1012]:
+                - heading "◉ Avg Cycle Time (Fleet)" [level=2] [ref=f166e1015]
+              - region [ref=f166e1026]:
+                - heading "◈ Board Traceability" [level=2] [ref=f166e1029]
+          - generic [ref=f166e1035]:
+            - button "Collapse row ◈ DIGITAL TWIN ENTRY" [expanded] [ref=f166e1037] [cursor=pointer]:
+              - generic [ref=f166e1040]: ◈ DIGITAL TWIN ENTRY
+            - generic [ref=f166e1045]:
+              - region [ref=f166e1051]:
+                - heading "→ 2D Digital Twin (Canvas)" [level=2] [ref=f166e1054]
+                - generic [ref=f166e1063]:
+                  - heading "2D Digital Twin (Canvas)" [level=3] [ref=f166e1064]
+                  - paragraph [ref=f166e1065]: Grafana-native factory layout -- 10 machines across 5 zones, live status, same Grafana session/auth.
+                  - paragraph [ref=f166e1066]:
+                    - link "Open 2D Digital Twin →" [ref=f166e1067] [cursor=pointer]:
+                      - /url: /d/ims-ldi-factory-digital-twin/ims-ldi-factory-digital-twin
+              - region [ref=f166e1073]:
+                - heading "→ 3D Factory Digital Twin" [level=2] [ref=f166e1076]
+                - generic [ref=f166e1085]:
+                  - heading "3D Factory Digital Twin" [level=3] [ref=f166e1086]
+                  - paragraph [ref=f166e1087]: Spatial walkthrough of the factory floor (separate app, same Grafana session/auth, read-only).
+                  - paragraph [ref=f166e1088]:
+                    - link "Open 3D Digital Twin (opens in new tab) →" [ref=f166e1089] [cursor=pointer]:
+                      - /url: /factory-twin-3d/
+              - region "◉ Pipeline Heartbeat" [ref=f166e1095]:
+                - generic [ref=f166e1097]:
+                  - heading "◉ Pipeline Heartbeat" [level=2]
+        - generic [ref=f166e1105]:
+          - button "Export" [ref=f166e1106] [cursor=pointer]
+          - button "Outline" [ref=f166e1110] [cursor=pointer]
+          - button "Hide" [ref=f166e1119] [cursor=pointer]

@@ -19,8 +19,8 @@
 1. **เข้าสู่ระบบ:** เปิดแดชบอร์ด [IMS NOC Overview](http://localhost:3000/d/ims-noc-overview) บนจอแสดงผลหลัก
 2. **ตรวจสอบสถานะ:** ดูที่ **Fleet Health Score** (บนซ้าย)
 
-- `> 95%`: ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) ปกติ ทำงานตามปกติ
-- `90% - 94%`: ![Warning](https://img.shields.io/badge/Status-Warning-yellow) คำเตือน ตรวจสอบพาเนล "Top 10 Critical Nodes"
+- `> 95%`: <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Healthy ปกติ ทำงานตามปกติ
+- `90% - 94%`: <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Warning คำเตือน ตรวจสอบพาเนล "Top 10 Critical Nodes"
 - `< 90%`: วิกฤต ส่งเรื่องให้ระดับ 2 (SRE/Engineering) ทันที
 
 1. **ตรวจสอบกลุ่ม LDI:** เปิดแดชบอร์ด [LDI Manufacturing](http://localhost:3000/d/ims-ldi-manufacturing) ตรวจสอบให้แน่ใจว่าไม่มีเครื่องใดขึ้นสถานะ "OFFLINE" สีแดง
@@ -31,12 +31,12 @@
 
 **Operator Andon Dashboard** คือเครื่องมือหลัก ทำงานด้วยระบบไฟจราจรอย่างเคร่งครัด
 
-### ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) สถานะสีเขียว (ปกติ)
+### <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Healthy สถานะสีเขียว (ปกติ)
 
 - **สิ่งที่เห็น:** ทุกพาเนลเป็นสีเขียว ไม่กะพริบ
 - **การกระทำ:** ไม่ต้องทำอะไร โหลด/เอาออก PCB ตามปกติ
 
-### ![Warning](https://img.shields.io/badge/Status-Warning-yellow) สถานะสีเหลือง (คำเตือน)
+### <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Warning สถานะสีเหลือง (คำเตือน)
 
 - **สิ่งที่เห็น:** พาเนลเปลี่ยนเป็นสีเหลือง (เช่น "Yield Drop Warning", "Temp Rising")
 - **การกระทำ:**

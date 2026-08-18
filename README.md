@@ -26,9 +26,9 @@
 
 <div align="center">
  <p>
-  <a href="README.md"><img src="https://hatscripts.github.io/circle-flags/flags/gb.svg" width="18" align="center"/> <b>English</b></a> |
-  <a href="README-th.md"><img src="https://hatscripts.github.io/circle-flags/flags/th.svg" width="18" align="center"/> <b>ไทย</b></a> |
-  <a href="README-zh-CN.md"><img src="https://hatscripts.github.io/circle-flags/flags/tw.svg" width="18" align="center"/> <b>中文</b></a>
+  <a href="README.md"><img src="https://thesvg.org/icons/globe/default.svg" width="16" align="center"/> <b>English</b></a> |
+  <a href="README-th.md"><img src="https://thesvg.org/icons/globe/default.svg" width="16" align="center"/> <b>ไทย</b></a> |
+  <a href="README-zh-CN.md"><img src="https://thesvg.org/icons/globe/default.svg" width="16" align="center"/> <b>中文</b></a>
  </p>
 </div>
 
@@ -43,28 +43,28 @@
 > **Provenance:** Architecture and capabilities updated and verified against the live system on 2026-08-10.
 
 <div align="center">
-  <img src="assets/apex-ldi-noc-banner.jpg" alt="APEX Circuit LDI NOC Banner" width="100%" style="border-radius:12px; box-shadow: 0 16px 64px rgba(0,0,0,0.6); margin-bottom: 24px; border: 1px solid rgba(0,242,254,0.1);" />
+  <img src="assets/apex-ldi-noc-banner_animated.gif" alt="APEX Circuit LDI NOC Banner" width="100%" style="border-radius:12px; box-shadow: 0 16px 64px rgba(0,0,0,0.6); margin-bottom: 24px; border: 1px solid rgba(0,242,254,0.1);" />
   <br/>
   <br/>
-  <a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.demolab.com?font=Orbitron&weight=600&size=36&duration=4000&pause=2000&color=00F2FE&center=true&repeat=true&width=1000&height=60&lines=APEX+Circuit+IMS+|+System+Initializing...;Advanced+Manufacturing+Intelligence+%26+NOC;High-Fidelity+Digital+Twin+Architecture" alt="Typing SVG" /></a>
+  <img src="assets/apex-ldi-noc-banner_animated.gif" alt="APEX Circuit LDI NOC Banner" width="100%" style="border-radius:12px; box-shadow: 0 16px 64px rgba(0,0,0,0.6); margin-bottom: 24px; border: 1px solid rgba(0,242,254,0.1);" />
 </div>
 
 <div align="center">
-  <a href="#quick-start"><img src="https://img.shields.io/badge/-Release_v1.0-030407?style=for-the-badge&logo=github&logoColor=10B981" alt="Release"/></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/-MIT_License-030407?style=for-the-badge&logo=opensourceinitiative&logoColor=00F2FE" alt="License"/></a>
-  <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/-Docker_Ready-030407?style=for-the-badge&logo=docker&logoColor=2496ED" alt="Docker"/></a>
-  <a href="https://grafana.com/"><img src="https://img.shields.io/badge/-Grafana_v11+-030407?style=for-the-badge&logo=grafana&logoColor=F46800" alt="Grafana"/></a>
-  <a href="https://nodered.org/"><img src="https://img.shields.io/badge/-Node--RED_v4+-030407?style=for-the-badge&logo=nodered&logoColor=8F0000" alt="Node-RED"/></a>
-  <a href="https://www.timescale.com/"><img src="https://img.shields.io/badge/-TimescaleDB_2.x-030407?style=for-the-badge&logo=postgresql&logoColor=F59E0B" alt="TimescaleDB"/></a>
+  <a href="#quick-start"><img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **-Release v1.0-030407**</a>
+  <a href="LICENSE"><img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **-MIT License-030407**</a>
+  <a href="https://www.docker.com/"><img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **-Docker Ready-030407**</a>
+  <a href="https://grafana.com/"><img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **-Grafana v11+-030407**</a>
+  <a href="https://nodered.org/"><img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **-Node-RED v4+-030407**</a>
+  <a href="https://www.timescale.com/"><img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **-TimescaleDB 2.x-030407**</a>
   <br>
-  <a href="#quick-start"><img src="https://img.shields.io/badge/Status-Tests_Passing-10B981?style=for-the-badge&logoColor=white" alt="Tests" /></a>
-  <a href="#quick-start"><img src="https://img.shields.io/badge/K6-Stress--Tested-030407?style=for-the-badge&logo=k6&logoColor=7B61FF" alt="K6" /></a>
-  <a href="data-generators/"><img src="https://img.shields.io/badge/Data-Digital_Twin-030407?style=for-the-badge&logo=python&logoColor=00C7B7" alt="Synthetic Data" /></a>
+  <a href="#quick-start"><img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Tests Passing</a>
+  <a href="#quick-start"><img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **K6:** Stress</a>
+  <a href="data-generators/"><img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Data:** Digital Twin</a>
 </div>
 
 <div align="center" justify-content="space-between">
-  <a href="./docs/architecture/IMS_PLATFORM_BOOK.md"><img src="https://img.shields.io/badge/PLATFORM_BOOK-ENTER-blue?color=00F2FE&labelColor=030407&style=for-the-badge"></a>
-  <a href="./docs/architecture/ARCHITECTURE.md"><img src="https://img.shields.io/badge/ARCHITECTURE-READ-blue?color=10B981&labelColor=030407&style=for-the-badge"></a>
+  <a href="./docs/architecture/IMS_PLATFORM_BOOK.md"><img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **PLATFORM BOOK:** ENTER</a>
+  <a href="./docs/architecture/ARCHITECTURE.md"><img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **ARCHITECTURE:** READ</a>
 </div>
 
 <br/>
@@ -83,29 +83,29 @@
 
 <tr>
 <td align="center" style="border:none; padding:8px; width:33%;">
- <img src="assets/noc-overview.png" alt="NOC Overview" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
+ <img src="assets/noc-overview_animated.gif" alt="NOC Overview" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
  <sub><b>NOC Overview</b> — Fleet Health Envelope</sub>
 </td>
 <td align="center" style="border:none; padding:8px; width:33%;">
- <img src="assets/engineering-drilldown.png" alt="Engineering Drill-Down" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
+ <img src="assets/engineering-drilldown_animated.gif" alt="Engineering Drill-Down" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
  <sub><b>Engineering Drill-Down</b> — Per-Machine Diagnostics</sub>
 </td>
 <td align="center" style="border:none; padding:8px; width:33%;">
- <img src="assets/capacity-planning.png" alt="Capacity Planning" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
+ <img src="assets/capacity-planning_animated.gif" alt="Capacity Planning" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
  <sub><b>Capacity Planning</b> — Predictive Forecasting</sub>
 </td>
 </tr>
 <tr>
 <td align="center" style="border:none; padding:8px; width:33%;">
- <img src="assets/ldi-manufacturing.png" alt="LDI Manufacturing Command Center" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
+ <img src="assets/ldi-manufacturing_animated.gif" alt="LDI Manufacturing Command Center" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
  <sub><b>LDI Manufacturing</b> — Command Center</sub>
 </td>
 <td align="center" style="border:none; padding:8px; width:33%;">
- <img src="assets/ldi-andon.png" alt="LDI Operator Andon Board" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
+ <img src="assets/ldi-andon_animated.gif" alt="LDI Operator Andon Board" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
  <sub><b>LDI Andon Board</b> — Operator Floor View</sub>
 </td>
 <td align="center" style="border:none; padding:8px; width:33%;">
- <img src="assets/ldi-engineering.png" alt="LDI Engineering Analytics" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
+ <img src="assets/ldi-engineering_animated.gif" alt="LDI Engineering Analytics" width="100%" style="border-radius:8px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);" /><br/>
  <sub><b>LDI Engineering</b> — Yield & SPC Analytics</sub>
 </td>
 </tr>
