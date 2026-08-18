@@ -8,11 +8,11 @@ Unlike the repo's local, gitignored `ARCHIVES/` directory (cold storage for supe
 
 | File                              | Date       | What it was                                  |
 | --------------------------------- | ---------- | -------------------------------------------- |
-| `IMS-audit-report-2026-08-04.md`  | 2026-08-04 | Comprehensive audit report                   |
-| `IMS-FULL-SYSTEM-AUDIT.md`        | 2026-08-05 | Full-system audit report                     |
-| `IMS-WORLD-CLASS-AUDIT-REPORT.md` | 2026-08-05 | Follow-on world-class audit report           |
-| `world-class-audit-report.md`     | 2026-08-04 | LDI dashboards production audit              |
-| `phase2-baseline-metrics.md`      | 2026-08-04 | Pre-redesign query-timing baseline           |
-| `phase2-benchmark-report.md`      | 2026-08-05 | Post-redesign benchmark report               |
-| `IMS-master-development-plan.md`  | 2026-08-04 | Development plan snapshot                    |
+| `IMS_AUDIT_REPORT_2026_08_04.md`  | 2026-08-04 | Comprehensive audit report                   |
+| `IMS_FULL_SYSTEM_AUDIT.md`        | 2026-08-05 | Full-system audit report                     |
+| `IMS_WORLD_CLASS_AUDIT_REPORT.md` | 2026-08-05 | Follow-on world-class audit report           |
+| `WORLD_CLASS_AUDIT_REPORT.md`     | 2026-08-04 | LDI dashboards production audit              |
+| `PHASE_2_BASELINE_METRICS.md`     | 2026-08-04 | Pre-redesign query-timing baseline           |
+| `PHASE_2_BENCHMARK_REPORT.md`     | 2026-08-05 | Post-redesign benchmark report               |
+| `IMS_MASTER_DEVELOPMENT_PLAN.md`  | 2026-08-04 | Development plan snapshot                    |
 | `INTERNSHIP_REPORT_SUMMARY.md`    | June 2026  | Academic/internship evaluation retrospective |
