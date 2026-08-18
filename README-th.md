@@ -104,7 +104,7 @@
 </tr>
 </table>
 
-> 🌌 **สำรวจระบบนิเวศแดชบอร์ด:** ดูรายละเอียดเพิ่มเติมใน [15-Dashboard Macro-to-Micro Architecture Guide](docs/product/DASHBOARD_ECOSYSTEM.md) เพื่อเจาะลึกว่า IMS ย่อขนาดจากการติดตามตัวชี้วัดธุรกิจระดับ C-Level ลงไปจนถึงข้อมูลการวินิจฉัยในระดับเซ็นเซอร์ได้อย่างไร
+> 🌌 **สำรวจระบบนิเวศแดชบอร์ด:** ดูรายละเอียดเพิ่มเติมใน [15-Dashboard Macro-to-Micro Architecture Guide](docs/product/DASHBOARD_ECOSYSTEM-th.md) เพื่อเจาะลึกว่า IMS ย่อขนาดจากการติดตามตัวชี้วัดธุรกิจระดับ C-Level ลงไปจนถึงข้อมูลการวินิจฉัยในระดับเซ็นเซอร์ได้อย่างไร
 
 <br/>
 
