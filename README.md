@@ -104,6 +104,8 @@
 </tr>
 </table>
 
+> 🌌 **Explore the Ecosystem:** View the full [15-Dashboard Macro-to-Micro Architecture Guide](docs/product/DASHBOARD_ECOSYSTEM.md) for a deep dive into how IMS scales from C-Level business metrics down to sensor-level diagnostic data.
+
 <br/>
 
 ---

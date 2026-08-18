@@ -9,12 +9,14 @@ Welcome to the **Product** directory. This section contains documentation relate
 flowchart LR
   ROOT["docs/product"]
   ROOT --> F0["CONTEXT"]
-  ROOT --> F1["ONBOARDING_SCRIPT"]
-  ROOT --> F2["PRODUCT"]
+  ROOT --> F1["DASHBOARD_ECOSYSTEM"]
+  ROOT --> F2["ONBOARDING_SCRIPT"]
+  ROOT --> F3["PRODUCT"]
 ```
 
 ## 📄 File Index
 
 - [CONTEXT.md](CONTEXT.md)
+- [DASHBOARD_ECOSYSTEM.md](DASHBOARD_ECOSYSTEM.md)
 - [ONBOARDING_SCRIPT.md](ONBOARDING_SCRIPT.md)
 - [PRODUCT.md](PRODUCT.md)
