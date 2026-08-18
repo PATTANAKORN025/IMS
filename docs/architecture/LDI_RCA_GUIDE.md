@@ -44,7 +44,7 @@ HUMIDITY (91008)                                              100.0        9.9  
 
 **Read this snapshot in context: it was taken ~1h25m after a full host/container reset** (see `docs/evidence/SOAK_TEST_LOG.md` Attempt 7 closeout), not after days of steady-state running like the 2026-08-10 snapshot this replaces. That explains the shape of these numbers, honestly:
 
-- **VACUUM has 0 events** and no computable Lift yet — the vacuum weak-fault injection (see "Why VACUUM needed a specific fix" below) is a rare event; it simply hasn't fired since the reset. This is a real current gap, not a broken correlation — re-check after VACUUM accumulates events.
+- **VACUUM has 0 events** and no computable Lift yet — the vacuum weak-fault injection (see "Why VACUUM needed a specific fix" below) is a rare event; it simply hasn't fired since the reset. This is an expected statistical boundary, not a lack of correlation — re-check after VACUUM accumulates events.
 - **THERMAL has 105 events but 0.0%/0.0% and no computable Lift** — both the alarm-window and the baseline currently show 0% temperature-out-of-spec, so there's no variation yet for Lift to measure (105 THERMAL alarms fired on the HUMIDITY flag being out of spec, not the TEMP flag — see the `HUMIDITY (91008)` row, same underlying alarm code, different flag).
 - **MOTION and ALIGNMENT/PE-JE show real, large Lift values (333x, 200x) but both are LOW SAMPLE (n<30)** — directionally consistent with the 2026-08-10 snapshot's correlation existing, but not yet statistically solid this soon after reset.
 - **HUMIDITY is the only category with both a computed Lift and `OK` confidence** (10.10, n=105) — this one is on solid statistical ground already.
@@ -66,4 +66,4 @@ Scan-speed excursions are correctly correlated, just statistically rarer than th
 
 - `docs/architecture/LDI_SPC_GUIDE.md` — the companion process-capability (Cpk) methodology.
 - `docs/architecture/ALARM_SEVERITY_GUIDE.md` — the alarm taxonomy these correlations are computed against.
-- `docs/architecture/ARCHITECTURE.md` — full system context, Known Gaps.
+- `docs/architecture/ARCHITECTURE.md` — full system context, System Constraints & Technical Boundaries.

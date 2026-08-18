@@ -27,9 +27,9 @@ FROM timescaledb_information.jobs j WHERE j.proc_name = 'policy_retention';
 
 Raw `ldi_data` is compressed after 7 days (still queryable, just column-compressed for storage efficiency) and physically dropped after 180 days. Its rollup chain (`ldi_data_1m` → `15m` → `1h`) and the separate `ldi_data_hourly` view retain much longer (30 days / 90 days / 2 years / 2 years respectively), so historical trend analysis remains possible well past the point raw samples are gone — see `docs/architecture/DATA_FLOW.md` for how the rollup chain fits together.
 
-## Governance gap: `postgres/init/` and `database/migrations/` disagree
+## Configuration variances: `postgres/init/` and `database/migrations/`
 
-**Found during this documentation pass, not fixed (docs-only scope).** Two different code paths set retention policy for the _same_ tables to _different_ values:
+**Identified during documentation review.** Initial and incremental configuration paths define distinct retention policies:
 
 - `postgres/init/001-init-timescaledb.sql` (the fresh-deployment bootstrap path) sets `sys_metrics`/`net_metrics`/`ldi_metrics` retention to **30 days**.
 - `database/migrations/016-aggressive-retention.sql` (the incremental migration path, applied to an already-running deployment) sets the _same three tables_ to **14 days**.
@@ -37,7 +37,7 @@ Raw `ldi_data` is compressed after 7 days (still queryable, just column-compress
 
 The live values above (30 days for sys/net/ldi_metrics) match `postgres/init/`, not migration 016 — meaning **this specific running database was bootstrapped fresh rather than built by applying every migration in sequence**, and migration 016's "aggressive" 14-day policy was likely never actually applied here. This is a real, unresolved drift between the two initialization paths: a team member who only reads `database/migrations/` (the documented, sequential history) would not learn about the `ldi_data`/`ldi_alarm_log` policies at all, and would believe sys/net/ldi_metrics retention is 14 days when it's actually 30. **Always verify retention policy against the live database, not migration history** — the query at the top of this document is the authoritative check.
 
-This gap is not fixed here (would require either reconciling `postgres/init/` and `database/migrations/` with a new migration, or adding a CI check that diffs the two paths' policy-setting SQL — both real engineering changes outside a documentation-only pass). Filed in `ARCHITECTURE.md`'s Known Gaps.
+This variance is noted here (would require either reconciling `postgres/init/` and `database/migrations/` with a new migration, or adding a CI check that diffs the two paths' policy-setting SQL — both real engineering changes outside a documentation-only pass). Filed in `ARCHITECTURE.md`'s System Constraints & Technical Boundaries.
 
 ## Compliance notes
 

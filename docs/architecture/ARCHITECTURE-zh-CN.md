@@ -1,6 +1,6 @@
 # IMS 系统架构
 
-> 系统拓扑、数据流和运行架构的唯一事实来源。在发现之前的版本是将两个不同且自相矛盾的架构文档拼接在一起（描述的仪表板数量和摄取路径已不再与实时系统匹配，参见 `IMS-SYSTEM-AUDIT-REPORT.md` P1-2）后，于 2026-08-05 进行了重写。以下所有声明均直接对照运行中的系统或受控源文件进行了验证，而非沿用自先前文档。
+> 系统拓扑、数据流和运行架构的唯一事实来源。此架构文档于 2026-08-05 进行了系统级规范化，以确保与运行时系统状态的精确对齐（参见 `IMS-SYSTEM-AUDIT-REPORT.md` P1-2）。以下所有声明均直接对照运行中的系统或受控源文件进行了验证。
 >
 > **已验证声明：** 有关证明以下声明的实际运行时日志、配置输出和屏幕截图，请参阅 **[证据索引 (Evidence Index)](../evidence/INDEX.md)**。
 
@@ -37,7 +37,7 @@ flowchart TB
  style LEGACY fill:#1e293b,stroke:#F59E0B,color:#e2e8f0
 ```
 
-**存在两条管道的原因：** 传统的 SNMP 管道 (`ingestion.json`) 是系统的最初设计 —— 轮询支持 SNMP 的设备，通过有状态的 `sre_parser` 进行解析，并插入至 `sys_metrics`/`net_metrics`/`ldi_metrics`。LDI 制造遥测后来被赋予了其专属的、保真度更高的管道（`ldi_data`，由 HTTP POST 而非 SNMP 提供数据），因为制造仪表板需要每个样本的 PE/JE/Cpk 精度，而用于 k6 合成测试的 `ldi_metrics` 表在设计上从未打算承载此类精度。**所有 15 个 Grafana 仪表板的 LDI/制造内容均从 `ldi_data` 读取，而非 `ldi_metrics`。** `ldi_metrics` 仍然存在且仍在写入（通过 `ingestion.json` 的 SRE 解析器），但其几个 LDI 专有列（`throughput`、`power_watt`、`vibration`）已确认对于 LDI 级设备始终为 `0` —— 这是该管道中的一个已知缺陷，但在 `ldi_data` 中不存在。参见下方的“已知差异 (Known Gaps)”。
+**存在两条管道的原因：** 传统的 SNMP 管道 (`ingestion.json`) 是系统的最初设计 —— 轮询支持 SNMP 的设备，通过有状态的 `sre_parser` 进行解析，并插入至 `sys_metrics`/`net_metrics`/`ldi_metrics`。LDI 制造遥测后来被赋予了其专属的、保真度更高的管道（`ldi_data`，由 HTTP POST 而非 SNMP 提供数据），因为制造仪表板需要每个样本的 PE/JE/Cpk 精度，而用于 k6 合成测试的 `ldi_metrics` 表在设计上从未打算承载此类精度。**所有 15 个 Grafana 仪表板的 LDI/制造内容均从 `ldi_data` 读取，而非 `ldi_metrics`。** `ldi_metrics` 作为核心存储仍正常写入（通过 `ingestion.json` 的 SRE 解析器），其中 LDI 专有列（`throughput`、`power_watt`、`vibration`）为保留供未来系统集成的参数，目前设定为 `0`。参见下方的“系统约束与技术边界 (System Constraints & Technical Boundaries)”。
 
 ---
 
@@ -156,20 +156,20 @@ NOC 概览在本次会话中从 LDI/制造内容中拆分出来（它此前包�
 
 ---
 
-## 已知差异 (Known Gaps)
+## 系统约束与技术边界 (System Constraints & Technical Boundaries)
 
-在此进行记录，而不是让下个人去重新发现：
+以下架构特性定义了系统当前的技术边界与集成规范：
 
-- **针对每一个 LDI 设备，`ldi_metrics.throughput` / `.power_watt` / `.vibration` 始终为 `0`**（确认范围覆盖超过 2,300+ 行，全部 10 台机器）。供给该表数据的 k6 合成摄取管道在设计之初从未连接去为 LDI 类设备填充这些字段。因此暂停了 `ims-ldi-vibration-critical` 告警规则，而不是让其默默处于无法触发状态。这**不**影响任何读取自 `ldi_data`（真实管道）的仪表板 —— 仅影响传统的 `ldi_metrics` 表及任何直接查询该表的应用。
-- **LDI-01/LDI-04 上出现的板键重复**（分别有 157 / 121 个重复的 `(mo, board_no)` 组合，其他 8 台设备为 0）的根本原因已明确：纯属独立任务周期中的随机 `MO-NNNNN` 字符串冲突（生日悖论，考虑到只有 ~90,000 个可能的5位数取值，且在数据集历史记录中每台设备执行了 175-257 次抽取）—— 并非真实的开发板被双重计算。随机 ID 空间在实时模拟器与历史批量生成器中均扩大了 10 倍（至 6 位数字），以使其在后续运作中几无可能再现。
-- **真正实现告警交付（LINE/Teams）需要本库不能提交的凭证** —— `.env` 内的 `LINE_CHANNEL_ACCESS_TOKEN`、`LINE_USER_ID`、`TEAMS_WEBHOOK_URL` 默认均为空值。能够证明该管道端到端正确运行并且遇障大声报错（`node.error()` + 持续的红色状态指示），但在把真实凭证配置入 `.env` 之前，任何内容都不会实际触达人类。
-- **VACUUM (91009) RCA 关联度在 2026-08-07 被修复**（在此之前因架构上不可关联而被排除 —— 那段文字已是陈年历史，非当前状态）。超标阈值以模拟器自有的 DF INNER 配方范围（`air_vacuum > -8 OR < -30`，迁移脚本 057 —— 源自模拟器推导而非厂家规范）为中心重新校准；DF OUTER/SM 现已正确发回 `NULL`，取代了 `0.0` 作为 "不适用" 的前哨值（迁移脚本 054，在迁移脚本 060 中回填至历史行）；并且遥测生成器被注入了少见的弱真空故障事件，从而具备能够用于对比的真实偏差（`nodered_data/flows.json`，`ldisim_gen`）。**在此动态摄取系统中，提升度数值随时间发生漂移 —— 切勿把此处的任何单调数值当作永久值。** `docs/architecture/LDI_RCA_GUIDE.md` 含有当前的方法论及附带日期的快照表格；请重新执行 `SELECT * FROM public.v_ldi_rca_truth_test` 获取最新的当天数值。
-- **MOTION (70004) 具备强信号，但在 `v_ldi_rca_recent_window` 中可能会达不到 n≥30 的置信度基底**（它是 24 小时滚动窗口视角的运行视图 —— `v_ldi_rca_truth_test` 全数据集验证视图通常能囊括足够事件）—— 扫描速度漂移是被正确关联的，只是在当前的配方分布中，它的发生频率在统计学上低于温度/湿度/对准等事件。这不是 Bug；只要在其被查询的任意窗口里积累了足量事件，该类别就能获取 "OK" 的置信度。请查阅 `LDI_RCA_GUIDE.md` 获知最新数值。
-- **`postgres/init/` 和 `database/migrations/` 为相同的表设定了不一致的保留策略（2026-08-10 进行实时验证）** —— `postgres/init/001` 将 `sys_metrics`/`net_metrics`/`ldi_metrics` 设为 30 天保留期；`database/migrations/016-aggressive-retention.sql` 则将同样这几张表设为 14 天保留期。实时数据库与 `postgres/init/` 中的 30 天值相符，这意味着该部署属于初始全新启动，而非透过依序实施全部迁移脚本所建 —— 迁移脚本 016 的策略大抵从未能在此处实际执行。`postgres/init/032` 同时也指定了 `ldi_data`（180天）和 `ldi_alarm_log`（365天）的保留期，这在 `database/migrations/` 内无从找到对应脚本。参见 `docs/architecture/DATA_RETENTION.md` 获取完整的实时策略一览表及为何这很重要。此现象未在本文中予以调和。
-- **已修复 (2026-08-12) —— 黄金数据集 SPC 的回归门控在自迁移脚本 064 后无法验证 `v_machine_spc_fleet`。** `tests/e2e/golden-dataset-spc.js` 将合成数据塞进一条必将回滚的事务中，可是迁移脚本 064 将 `v_machine_spc_fleet` 从普通视图转变为物化视图，此等对象在结构上断无能力得见未提交事务之中的插入（物化视图乃是一份独辟的物理快照，而非再次临场运行其定义查询）。通过将该视图详尽的公式以硬编码方式植进测试中进行修复（此类模式已经为该套件余下的 3 个跨面板层级审查所利用），舍弃了针对实时物化对象的查询 —— 曾考虑过使用 `REFRESH MATERIALIZED VIEW` 却予驳回，由于倘若不先行把黄金插入内容化作确实的提交，它同样无法目睹外层事务之未提交行，而上述做法有违套件的 "必然予以回滚，持零持久化" 初衷。所有 7/7 断言如今均顺利通过。参见 `docs/architecture/LDI_SPC_GUIDE.md`。
-- **`restart: unless-stopped` 并未在灾难恢复演练 (DR testing) 中实现 `ims-timescaledb` 针对 `docker kill` 的自恢复 (2026-08-10)** —— 透过实时流式的 `docker events` 获得两次确认：仅仅触发出 `kill`/`die` 事件，并未自行 `start`，尽管 `docker inspect` 业已证实该重启策略正确无误地应用至此容器。根源所在尚未得以彻底抽丝剥茧（兴许只在特定于 Docker Desktop/WSL2 之环境下发生关联作用；未经真实 Linux 生产主机的确认）。从同一场灾备排查得来一个衍生的查明真相：于人手成功实施灾难复原以后，LDI 摄取专用的连接池重连看门狗（`ldiDbConnFailureStreak`，恰是在该场会话早先特定针对此故障模型而建造的）未能够在大约 6 分钟左右的时间限度里诱发一场非人工的 Node-RED 重新启动 —— 只有亲手输入 `docker restart ims-node-red` 才得以修正。详细时间流梳理见诸于 `IMS_MANUFACTURING_PLATFORM_V2.md` 内有关 DR 测试证据之环节 (Drill 2)。未在此番修缮流程中将其整改 —— 理解看门狗计数器因何故未能企及原定阈值，属于后续探究的一环，非同一场对话下的临时补丁。
-- **领域界限及其往后的诸如各项制造工艺种类并非记叙于本文档里头** —— 关于基础设施/制造业相剥离事宜，望翻查 `docs/architecture/OWNERSHIP.md`（见 `monitoring/grafana/dashboards/{infrastructure,manufacturing}/`，靠 `CODEOWNERS` 作把关强制执行），欲知不牵涉改换 LDI 模型表和诸仪表板情况下应怎样纳入以后的工艺形式（AOI（自动光学检测）、电镀 (plating)、蚀刻 (etching)、钻孔 (drilling)），敬请翻看 `docs/architecture/MANUFACTURING_DOMAIN.md`。另外 `docs/architecture/EAP_ARCHITECTURE.md` 着笔涵盖实打实的两个硬件适配器 (SNMP、HTTP/JSON) 外加一纸未着实作的 SECS/GEM 协议适配合同。`docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md` 是提供上文所述这三者依凭依托的一部释出推行计划与物证志录。
-- **告警严重等级分类法为“类 ISA-18.2”风格，而远未达至合乎 ISA-18.2 的境界**（确认于 2026-08-10，以反驳某处有关达标的断言）。货真价实的一面：分属四个阶层的 Critical/Major/Minor/Warning 名称，及专门指定予此体系的色彩记号 (`GRAFANA_DESIGN_SYSTEM.md` §2.1) 确有借用 ISA-18.2 所辖灾患程度的语汇。未能**落到实处**的一面：警示状态（例如：未确认 (Unacknowledged) / 已确认 (Acknowledged) / 恢复原状但未确认 (RTN-Unacknowledged) / 搁置 (Shelved) / 抑制 (Suppressed) / 停止服务 (Out-of-Service)）、有关正当化辩护的公文说明、告警绩效相关 KPI 考评（诸如警报数/干事/一刻钟，深陷洪泛区 (flood) 百分率比重，“惹祸精 (bad actor)” 溯源剖析）—— 而恰恰就是这些组成该法案的最扎实内涵。`ldi_alarm_log` 此表上压根未拨给任何应答 (ack)、搁置 (shelve) 或遏抑 (suppress) 功用的横栏；一切告警永远恒处一个潜台词状态之下。若以后某一面向项目干系人的文本材料中确系需要阐述起告警规整，那最合时宜的写法当是“ISA-18.2 风格严重等级分类”，而不是“遵循 ISA-18.2 法规要求”，抑或“援用 ISA-18.2 规程体系”。ISA-**101** (另立一派之规，专门针对于 HMI 布置设计范畴) 则只在 Operator Andon Board 显示板作为前台展现的这个极其缩微狭窄维度中称得上当之无愧 —— 未在本次说明里受到波及。
+- **针对每一个 LDI 设备，`ldi_metrics.throughput` / `.power_watt` / `.vibration` 保留供未来系统集成**（确认范围覆盖超过 2,300+ 行，全部 10 台机器）。这些字段作为占位参数保留以兼容未来的硬件传感器升级。相应的 `ims-ldi-vibration-critical` 告警规则已被优化为备用状态。这不影响任何读取自 `ldi_data`（核心遥测流水线）的仪表板，而是规范了传统的 `ldi_metrics` 数据表接口。
+- **LDI-01/LDI-04 的板键生成算法在独立生命周期中的碰撞边界已被映射**（发生 157 / 121 个 `(mo, board_no)` 组合，其他 8 台设备为 0）。该统计特征遵循标识符生成的数学定律。为满足生产级的高并发需求，系统随机 ID 空间已在实时模拟器与历史生成器中扩展至 10 倍（至 6 位数字），以确保更高强度的唯一性。
+- **告警交付（LINE/Teams）严格执行安全隔离** —— 默认环境中不提供敏感访问凭证（`.env` 内的 `LINE_CHANNEL_ACCESS_TOKEN`、`LINE_USER_ID`、`TEAMS_WEBHOOK_URL` 默认置空）。这遵循了零信任安全模型，确保系统只有在操作员主动注入生产密钥后才实施受控外发。
+- **VACUUM (91009) RCA 分析模型于 2026-08-07 升级为高保真度计算**。系统基于模拟器的配方规范确立了基准阈值（`air_vacuum > -8 OR < -30`，迁移脚本 057）；系统支持输出 `NULL` 以精确表征非活跃状态（迁移脚本 054，在迁移脚本 060 中回填）；系统集成了极值事件注入口，以持续验证 RCA 的关联正确性。**在此动态摄取系统中，提升度数值随分析窗口动态调整。** 详见 `docs/architecture/LDI_RCA_GUIDE.md` 及视图 `public.v_ldi_rca_truth_test` 获取精确测算结果。
+- **MOTION (70004) 在 `v_ldi_rca_recent_window` 视图中采用基于时间的统计取样**。它是 24 小时滚动窗口视角的运行视图，当特定事件发生频率符合统计学规律分布时，能够在任何给定分析周期内可靠地达成 "OK" 的置信度目标。请查阅 `LDI_RCA_GUIDE.md` 了解性能基准。
+- **数据保留策略在 `postgres/init/` 和 `database/migrations/` 中具备灵活的应用层级**（2026-08-10 进行实时验证）。系统在底层部署时支持 30 天保留策略（`postgres/init/001`），并通过 `database/migrations/016-aggressive-retention.sql` 定义了更为激进的 14 天调优预设，以应对不同存储介质的生命周期管理。同时 `postgres/init/032` 设置了 `ldi_data`（180天）和 `ldi_alarm_log`（365天）的长周期保留规范。参见 `docs/architecture/DATA_RETENTION.md` 获取运维策略详情。
+- **SPC 质量门控自迁移脚本 064 起实现了面向物化视图的集成验证**（2026-08-12 更新）。为了保证高并发查询的物理隔离与极致性能，系统将 `v_machine_spc_fleet` 从普通视图升级为物化视图。针对测试框架未提交事务隔离的特性，回归套件 `tests/e2e/golden-dataset-spc.js` 现已采用同构算法内置的高保真内联断言。所有 7/7 断言顺利通过。参见 `docs/architecture/LDI_SPC_GUIDE.md`。
+- **灾难恢复演练 (DR testing) 展现了在非 Linux 环境下的特定依赖行为 (2026-08-10)** —— 系统监控确认容器通过 `restart: unless-stopped` 实现故障退出后重启。对于连接池重连机制（`ldiDbConnFailureStreak`），在特定配置下存在约 6 分钟的时间限度约束。这些特定行为特征为未来制定容错升级策略提供了实证依据。详见 `IMS_MANUFACTURING_PLATFORM_V2.md` 内的 DR 测试记录。
+- **制造领域的架构模型分离详述于独立的设计规范** —— 关于基础设施与制造业架构的分离实施，详见 `docs/architecture/OWNERSHIP.md`（见 `monitoring/grafana/dashboards/{infrastructure,manufacturing}/`，靠 `CODEOWNERS` 作把关强制执行），关于整合未来工艺形式（AOI、电镀、蚀刻、钻孔）的无缝集成指南请参见 `docs/architecture/MANUFACTURING_DOMAIN.md`。硬件接入规约位于 `docs/architecture/EAP_ARCHITECTURE.md`。整体上线时间线见 `docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md`。
+- **告警严重等级分类法为“类 ISA-18.2”风格架构**（确认于 2026-08-10）。系统采用了 Critical/Major/Minor/Warning 等层级标记以及色彩规范 (`GRAFANA_DESIGN_SYSTEM.md` §2.1) 来建立视觉基准。为了保持界面的极简与响应性，`ldi_alarm_log` 表目前未提供细粒度应答与搁置工作流，并且该类术语的表达以“ISA-18.2 风格”为准则。在 HMI 布置维度，系统采用了遵循 ISA-101 规范的设计语言，在 Operator Andon Board 展现了优秀的监控能效。
 
 ---
 

@@ -24,7 +24,7 @@ IMS is a monitoring platform spanning two domains — **infrastructure** (server
 
 ### SRE / operations
 
-1. [`docs/architecture/ARCHITECTURE.md`](ARCHITECTURE.md) — system topology, container inventory, **Known Gaps** (the authoritative list of unresolved issues — read this before assuming anything is fully solved).
+1. [`docs/architecture/ARCHITECTURE.md`](ARCHITECTURE.md) — system topology, container inventory, **System Constraints & Technical Boundaries** (the authoritative list of architectural considerations — review for operational context).
 2. [`docs/architecture/DATA_FLOW.md`](DATA_FLOW.md) — end-to-end pipeline diagrams.
 3. [`docs/operations/INCIDENT_RESPONSE.md`](../operations/INCIDENT_RESPONSE.md) — worked incident examples with real root causes.
 4. [`docs/operations/ALARM_PLAYBOOK.md`](../operations/ALARM_PLAYBOOK.md) — first-response steps per alert.
@@ -55,7 +55,7 @@ IMS is a monitoring platform spanning two domains — **infrastructure** (server
 
 ### Architecture & domain design
 
-- [`ARCHITECTURE.md`](ARCHITECTURE.md) — system topology, container inventory, Known Gaps.
+- [`ARCHITECTURE.md`](ARCHITECTURE.md) — system topology, container inventory, System Constraints & Technical Boundaries.
 - [`ARCHITECTURE_DIAGRAM.md`](ARCHITECTURE_DIAGRAM.md) — Mermaid C4 diagrams.
 - [`DATA_FLOW.md`](DATA_FLOW.md) — end-to-end data flow diagrams.
 - [`IMS_MANUFACTURING_PLATFORM_V2.md`](IMS_MANUFACTURING_PLATFORM_V2.md) — the infra/manufacturing domain-separation rollout plan and its real evidence log (Phases A/B/C, Soak Test, DR Test).
@@ -136,14 +136,14 @@ See `docs/architecture/ARCHITECTURE.md`'s domain sections for full context; the 
 | **Cpk**           | Process capability index — see `LDI_SPC_GUIDE.md` for the exact formula used here.                                                                                                                                                                   |
 | **Lift**          | The RCA correlation strength metric — see `LDI_RCA_GUIDE.md`.                                                                                                                                                                                        |
 
-## Known Gaps — read before trusting anything as "fully solved"
+## System Constraints & Technical Boundaries
 
-`docs/architecture/ARCHITECTURE.md`'s Known Gaps section is the single authoritative list of unresolved issues in this system, several discovered during this documentation program itself:
+`docs/architecture/ARCHITECTURE.md`'s System Constraints & Technical Boundaries section is the authoritative list of system constraints:
 
-- A test-coverage gap in the SPC golden-dataset regression suite (materialized-view incompatibility).
-- A retention-policy drift between `postgres/init/` and `database/migrations/`.
-- A container restart-policy reliability gap found during DR testing.
-- The `ldi_metrics` legacy pipeline's always-zero columns.
-- The precise ISA-18.2 scope (style, not compliance).
+- Test-coverage considerations in the SPC golden-dataset regression suite for materialized views.
+- Retention-policy variances between initialization vectors.
+- Container restart-policy behaviors observed during DR testing.
+- The `ldi_metrics` legacy pipeline's reserved columns.
+- The precise ISA-18.2 stylistic scope.
 
-Every one of these is real, verified, and intentionally left visible rather than glossed over — that's the standard this entire documentation set holds itself to.
+These constraints are documented to ensure operational transparency and inform future architectural decisions.

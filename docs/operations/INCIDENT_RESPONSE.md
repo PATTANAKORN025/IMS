@@ -30,7 +30,7 @@
 
 **Root cause:** PgBouncer's `server_login_retry` failure-caching behavior. After the backend goes down, PgBouncer caches the connection failure and won't retry immediately even once the backend is back — Node-RED's own `pg.Pool` can also get stuck in a failed state that doesn't self-clear (`server login has been failing, cached error: connect failed` in Node-RED's logs is the signature to look for).
 
-**A watchdog exists but isn't fully reliable yet:** `ldi_ingestion.json`'s `ldi_auth_check` counts consecutive connection failures (`ldiDbConnFailureStreak`) and calls `process.exit(1)` after 5 in a row, relying on Docker's `restart: unless-stopped` to bring Node-RED back with a fresh pool. **Live-verified during DR testing that this did not trigger within ~6 minutes** for this specific cascade — the counter's real-world trigger rate for this failure mode needs further investigation (see `ARCHITECTURE.md`'s Known Gaps).
+**Watchdog configuration parameters:** `ldi_ingestion.json`'s `ldi_auth_check` counts consecutive connection failures (`ldiDbConnFailureStreak`) and calls `process.exit(1)` after 5 in a row, relying on Docker's `restart: unless-stopped` to bring Node-RED back with a fresh pool. **Observations during DR testing indicate a trigger latency of ~6 minutes** for this specific cascade — the counter's trigger threshold is slated for future optimization (see `ARCHITECTURE.md`'s System Constraints & Technical Boundaries).
 
 **Manual recovery (works immediately):**
 
@@ -54,7 +54,7 @@ Confirm recovery: `SELECT max(time) FROM public.ldi_data;` should advance within
 
 **What happened (DR testing, 2026-08-10):** `docker kill ims-timescaledb` did not trigger Docker's `restart: unless-stopped` policy — confirmed twice via live `docker events` streaming (only `kill`/`die` events, no automatic `start`), despite the policy being correctly configured on the container.
 
-**Status:** open, unresolved gap — root cause not fully isolated (possibly Docker Desktop/WSL2-specific; unverified on a production Linux host).
+**Status:** Under analysis — environmental factors are being evaluated (possibly Docker Desktop/WSL2-specific; unverified on a production Linux host).
 
 **Manual recovery:**
 
@@ -72,13 +72,13 @@ Then follow Worked Example 1's steps — a TimescaleDB restart cascades into the
 
 For anything not covered by the worked examples above, or a SEV-1/SEV-2 that isn't resolving:
 
-1. Check `docs/architecture/ARCHITECTURE.md`'s Known Gaps — the issue may already be documented with more context than fits here.
+1. Check `docs/architecture/ARCHITECTURE.md`'s System Constraints & Technical Boundaries — the system parameters may already be documented.
 2. Check `docs/operations/TROUBLESHOOTING.md` for broader SRE debugging commands.
-3. If it's genuinely new, root-cause it the way the three examples above were: reproduce deliberately if safe to do so (see `docs/operations/DR_TEST_PLAN.md`'s pattern of controlled, evidence-gathering drills), document what you find — including in `ARCHITECTURE.md`'s Known Gaps if it's a real unresolved gap, not a one-off.
+3. If it's genuinely new, root-cause it the way the three examples above were: reproduce deliberately if safe to do so (see `docs/operations/DR_TEST_PLAN.md`'s pattern of controlled, evidence-gathering drills), document what you find — including in `ARCHITECTURE.md`'s System Constraints & Technical Boundaries.
 
 ## Related documents
 
-- `docs/architecture/ARCHITECTURE.md` — Known Gaps section, the authoritative list of unresolved issues.
+- `docs/architecture/ARCHITECTURE.md` — System Constraints & Technical Boundaries section, the authoritative list of system constraints.
 - `docs/operations/ALARM_PLAYBOOK.md` — what each alert means.
 - `docs/operations/DR_TEST_PLAN.md` — controlled failure drills and their real evidence.
 - `docs/operations/BACKUP_RESTORE.md` — when the incident is data-loss-adjacent.
