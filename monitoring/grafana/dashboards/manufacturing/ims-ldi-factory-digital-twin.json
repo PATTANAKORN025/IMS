@@ -1,5 +1,5 @@
 {
-  "description": "TASK 2 POC — 2-machine Canvas proof-of-concept for the future 10-machine Factory Digital Twin. Proves the Canvas mechanism (rectangle/text/metric-value/icon elements, field-bound colors driven by fieldConfig.defaults overrides with mappings, and drill-down links) works end-to-end against real data before scaling to the full 10-machine / 5-zone build. Fixed node positions (not a templated repeat) — each node's query target is hardcoded to one literal eqp_id, same pattern the full plan's Task 4/5 design will use. Machines shown: LDI-01 (real state OK at build time) and LDI-02 (real state ALARM at build time, real Major alarm within the last 5 minutes) — picked because they were genuinely different live states, not simulated. State classification (0=NO_DATA, 1=IDLE, 2=OK, 3=ALARM) copied verbatim from ims-ldi-operator-andon.json panel id 1000's CASE logic.",
+  "description": "TASK 3 -- Full 10-machine Canvas Factory Digital Twin, scaled from the Task 2 2-machine POC. Shows all 10 real reporting LDI machines (LDI-01..LDI-10) grouped into their 5 real zones (public.devices.location), 2 machines per zone. The 5 dark zone-container rectangles are a pure layout/grouping visual (canvas panel positioning only) -- their placement does NOT represent real physical factory floor-plan geometry, and their neutral color (#1E293B) is deliberately distinct from all 4 semantic machine-state tokens so a zone block can never be mistaken for having a machine-state itself. Each machine node: rectangle body (background color field-bound to that machine's real state via a byName fieldConfig override with value mappings, exactly the Task 2 POC mechanism), text label (real eqp_id), icon (SVG glyph field-bound via config.path -- swaps shape by state; field-bound icon FILL/COLOR was proven non-functional on this Grafana build in the POC and is not attempted here), metric-value (real board_no / total_board), a small MO line (real current mo), and a small alarm badge (active Critical/Major count + Owner + Elapsed, blank when no active unresolved alarm -- same category-to-team Owner mapping and Elapsed formatting as ims-ldi-operator-andon.json's Action Queue panel, additionally scoped to real operator lifecycle status <> RESOLVED). Drill-down: each node links to Machine Snapshot with only var-machine_id and var-factory as real literal values; var-mo/var-event_time_ms are intentionally omitted so the target dashboard's own variable defaults (mo defaults to $__all, event_time_ms defaults to 0 which collapses log_id's ORDER BY to plain time DESC) resolve to the machine's latest event across all MOs -- avoiding the stale-literal problem the POC disclosed. Status board, not an analytics dashboard -- no SPC/RCA/SLA data shown.",
   "schemaVersion": 39,
   "liveNow": true,
   "style": "dark",
@@ -12,8 +12,8 @@
     {
       "id": 1,
       "type": "canvas",
-      "title": "Factory Digital Twin POC — LDI-01 / LDI-02",
-      "description": "2-node Canvas POC. Each node = rectangle body (background color bound to that machine's real state field via a byName fieldConfig override with value mappings) + text label (bound to real eqp_id) + metric-value readout (bound to real board_no) + icon (color bound to the same state field) + a drill-down link to ims-ldi-machine-snapshot using the exact URL convention proven in ims-ldi-operator-andon.json's Action Queue \"Machine\" column override. Query targets: refId A = LDI-01 (hardcoded literal eqp_id), refId B = LDI-02 (hardcoded literal eqp_id), both LIMIT 1 latest-value shape against public.v_ldi_machine_latest_full joined to the alarm tables, same shape as Andon panel 1000.",
+      "title": "IMS LDI Factory Digital Twin - 5 Zones x 2 Machines",
+      "description": "10-node Canvas factory digital twin. 5 zone containers (layout grouping only, not floor-plan geometry) x 2 machine nodes each. Each node = rectangle body (state color) + text label (eqp_id) + icon (state-glyph via config.path field-binding) + metric-value (board_no/total_board) + MO line + alarm badge (count/Owner/Elapsed, blank when clear). Query targets: refId A..J, one hardcoded literal eqp_id each, LIMIT-1 latest-value shape against public.v_ldi_machine_latest_full joined to the alarm tables, same shape as Andon panel 1000 and the Task 2 POC.",
       "datasource": {
         "uid": "timescaledb"
       },
@@ -21,7 +21,7 @@
         "x": 0,
         "y": 0,
         "w": 24,
-        "h": 14
+        "h": 20
       },
       "fieldConfig": {
         "defaults": {
@@ -53,10 +53,22 @@
                   {
                     "type": "value",
                     "options": {
-                      "0": { "color": "#64748b", "text": "NO_DATA" },
-                      "1": { "color": "#f59e0b", "text": "IDLE" },
-                      "2": { "color": "#22c55e", "text": "OK" },
-                      "3": { "color": "#ef4444", "text": "ALARM" }
+                      "0": {
+                        "color": "#64748b",
+                        "text": "NO_DATA"
+                      },
+                      "1": {
+                        "color": "#f59e0b",
+                        "text": "IDLE"
+                      },
+                      "2": {
+                        "color": "#22c55e",
+                        "text": "OK"
+                      },
+                      "3": {
+                        "color": "#ef4444",
+                        "text": "ALARM"
+                      }
                     }
                   }
                 ]
@@ -66,13 +78,18 @@
                 "value": {
                   "mode": "absolute",
                   "steps": [
-                    { "color": "#64748b", "value": null }
+                    {
+                      "color": "#64748b",
+                      "value": null
+                    }
                   ]
                 }
               },
               {
                 "id": "color",
-                "value": { "mode": "thresholds" }
+                "value": {
+                  "mode": "thresholds"
+                }
               }
             ]
           },
@@ -88,10 +105,22 @@
                   {
                     "type": "value",
                     "options": {
-                      "0": { "color": "#64748b", "text": "NO_DATA" },
-                      "1": { "color": "#f59e0b", "text": "IDLE" },
-                      "2": { "color": "#22c55e", "text": "OK" },
-                      "3": { "color": "#ef4444", "text": "ALARM" }
+                      "0": {
+                        "color": "#64748b",
+                        "text": "NO_DATA"
+                      },
+                      "1": {
+                        "color": "#f59e0b",
+                        "text": "IDLE"
+                      },
+                      "2": {
+                        "color": "#22c55e",
+                        "text": "OK"
+                      },
+                      "3": {
+                        "color": "#ef4444",
+                        "text": "ALARM"
+                      }
                     }
                   }
                 ]
@@ -101,13 +130,434 @@
                 "value": {
                   "mode": "absolute",
                   "steps": [
-                    { "color": "#64748b", "value": null }
+                    {
+                      "color": "#64748b",
+                      "value": null
+                    }
                   ]
                 }
               },
               {
                 "id": "color",
-                "value": { "mode": "thresholds" }
+                "value": {
+                  "mode": "thresholds"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "state_3"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": {
+                        "color": "#64748b",
+                        "text": "NO_DATA"
+                      },
+                      "1": {
+                        "color": "#f59e0b",
+                        "text": "IDLE"
+                      },
+                      "2": {
+                        "color": "#22c55e",
+                        "text": "OK"
+                      },
+                      "3": {
+                        "color": "#ef4444",
+                        "text": "ALARM"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#64748b",
+                      "value": null
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "state_4"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": {
+                        "color": "#64748b",
+                        "text": "NO_DATA"
+                      },
+                      "1": {
+                        "color": "#f59e0b",
+                        "text": "IDLE"
+                      },
+                      "2": {
+                        "color": "#22c55e",
+                        "text": "OK"
+                      },
+                      "3": {
+                        "color": "#ef4444",
+                        "text": "ALARM"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#64748b",
+                      "value": null
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "state_5"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": {
+                        "color": "#64748b",
+                        "text": "NO_DATA"
+                      },
+                      "1": {
+                        "color": "#f59e0b",
+                        "text": "IDLE"
+                      },
+                      "2": {
+                        "color": "#22c55e",
+                        "text": "OK"
+                      },
+                      "3": {
+                        "color": "#ef4444",
+                        "text": "ALARM"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#64748b",
+                      "value": null
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "state_6"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": {
+                        "color": "#64748b",
+                        "text": "NO_DATA"
+                      },
+                      "1": {
+                        "color": "#f59e0b",
+                        "text": "IDLE"
+                      },
+                      "2": {
+                        "color": "#22c55e",
+                        "text": "OK"
+                      },
+                      "3": {
+                        "color": "#ef4444",
+                        "text": "ALARM"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#64748b",
+                      "value": null
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "state_7"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": {
+                        "color": "#64748b",
+                        "text": "NO_DATA"
+                      },
+                      "1": {
+                        "color": "#f59e0b",
+                        "text": "IDLE"
+                      },
+                      "2": {
+                        "color": "#22c55e",
+                        "text": "OK"
+                      },
+                      "3": {
+                        "color": "#ef4444",
+                        "text": "ALARM"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#64748b",
+                      "value": null
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "state_8"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": {
+                        "color": "#64748b",
+                        "text": "NO_DATA"
+                      },
+                      "1": {
+                        "color": "#f59e0b",
+                        "text": "IDLE"
+                      },
+                      "2": {
+                        "color": "#22c55e",
+                        "text": "OK"
+                      },
+                      "3": {
+                        "color": "#ef4444",
+                        "text": "ALARM"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#64748b",
+                      "value": null
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "state_9"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": {
+                        "color": "#64748b",
+                        "text": "NO_DATA"
+                      },
+                      "1": {
+                        "color": "#f59e0b",
+                        "text": "IDLE"
+                      },
+                      "2": {
+                        "color": "#22c55e",
+                        "text": "OK"
+                      },
+                      "3": {
+                        "color": "#ef4444",
+                        "text": "ALARM"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#64748b",
+                      "value": null
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "state_10"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": {
+                        "color": "#64748b",
+                        "text": "NO_DATA"
+                      },
+                      "1": {
+                        "color": "#f59e0b",
+                        "text": "IDLE"
+                      },
+                      "2": {
+                        "color": "#22c55e",
+                        "text": "OK"
+                      },
+                      "3": {
+                        "color": "#ef4444",
+                        "text": "ALARM"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#64748b",
+                      "value": null
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
               }
             ]
           }
@@ -116,15 +566,83 @@
       "targets": [
         {
           "refId": "A",
-          "datasource": { "uid": "timescaledb" },
+          "datasource": {
+            "uid": "timescaledb"
+          },
           "format": "table",
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: always the true latest row for this one hardcoded machine -- same latest-value shape and same ALARM/OK/IDLE/NO_DATA CASE logic as ims-ldi-operator-andon.json panel id 1000, copied verbatim. Node 1 = LDI-01 (fixed literal, not templated -- Canvas has no repeat mechanism, this dashboard has fixed node positions per the Task 2 POC brief). */\nSELECT\n  v.eqp_id AS eqp_id_1,\n  CASE\n    WHEN EXISTS (\n      SELECT 1 FROM public.ldi_alarm_log a\n      JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\n      WHERE a.equipmentid = v.eqp_id AND m.severity IN ('Critical', 'Major')\n        AND a.logdate > NOW() - INTERVAL '5 minutes'\n    ) THEN 3\n    WHEN NOT v.has_data OR v.is_stale THEN 0\n    WHEN v.state THEN 2\n    ELSE 1\n  END AS state_1,\n  v.board_no AS board_1,\n  v.total_board AS total_board_1\nFROM public.v_ldi_machine_latest_full v\nWHERE v.eqp_id = 'LDI-01'\nLIMIT 1"
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: always the true latest row for this one hardcoded machine -- same latest-value shape and same ALARM/OK/IDLE/NO_DATA CASE logic as ims-ldi-operator-andon.json panel id 1000, copied verbatim (state CASE not modified). Node 1 = LDI-01 (fixed literal, not templated -- Canvas has no repeat mechanism, fixed node positions, same reasoning as the Task 2 POC and Andon's own docs on why its repeat mechanism doesn't apply here). icon_path_1 swaps the icon SVG glyph by state (field-bound icon FILL color proven non-functional on this Grafana build in the Task 2 POC fix round 2; path-swap is the working substitute, do not re-attempt fill/color field-binding). badge_1 carries active Critical/Major alarm count + Owner + Elapsed, same query shape (category->team mapping, Elapsed formatting) as ims-ldi-operator-andon.json's Action Queue panel, additionally filtered on real operator lifecycle status <> RESOLVED (public.ldi_alarm_lifecycle) so a badge clears once someone actually resolves the alarm via the alarm-api service. */\nWITH s AS (\n  SELECT\n    v.eqp_id,\n    v.mo,\n    v.board_no,\n    v.total_board,\n    CASE\n      WHEN EXISTS (\n        SELECT 1 FROM public.ldi_alarm_log a\n        JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\n        WHERE a.equipmentid = v.eqp_id AND m.severity IN ('Critical', 'Major')\n          AND a.logdate > NOW() - INTERVAL '5 minutes'\n      ) THEN 3\n      WHEN NOT v.has_data OR v.is_stale THEN 0\n      WHEN v.state THEN 2\n      ELSE 1\n    END AS st\n  FROM public.v_ldi_machine_latest_full v\n  WHERE v.eqp_id = 'LDI-01'\n  LIMIT 1\n),\nalarm_raw AS (\n  SELECT\n    CASE m.severity WHEN 'Critical' THEN 0 WHEN 'Major' THEN 1 ELSE 2 END AS sev_rank,\n    a.logdate,\n    CASE COALESCE(c.category, 'UNCLASSIFIED')\n        WHEN 'VACUUM' THEN 'Maintenance'\n        WHEN 'CAMERA' THEN 'Maintenance'\n        WHEN 'MOTION' THEN 'Maintenance'\n        WHEN 'MOTOR' THEN 'Maintenance'\n        WHEN 'ENVIRONMENT' THEN 'Facility'\n        WHEN 'NETWORK' THEN 'Automation'\n        WHEN 'PLC' THEN 'Automation'\n        WHEN 'COMMUNICATION' THEN 'Automation'\n        WHEN 'DATABASE' THEN 'IT'\n        WHEN 'ALIGNMENT' THEN 'Process Engineering'\n        WHEN 'CALIBRATION' THEN 'Process Engineering'\n        WHEN 'REGISTRATION' THEN 'Process Engineering'\n        WHEN 'PROCESS' THEN 'Process Engineering'\n        ELSE 'Maintenance'\n      END AS owner,\n    CASE\n        WHEN NOW() - a.logdate < INTERVAL '1 hour'\n          THEN GREATEST(EXTRACT(MINUTE FROM (NOW() - a.logdate))::INT, 0)::TEXT || 'm'\n        ELSE EXTRACT(HOUR FROM (NOW() - a.logdate))::INT || 'h' || LPAD(EXTRACT(MINUTE FROM (NOW() - a.logdate))::INT::TEXT, 2, '0') || 'm'\n      END AS elapsed\n  FROM public.ldi_alarm_log a\n  JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\n  LEFT JOIN public.v_ldi_alarm_category c ON c.alarm_code = a.errorcode::TEXT\n  LEFT JOIN public.ldi_alarm_lifecycle l ON l.logdate = a.logdate AND l.logid = a.logid\n  WHERE a.equipmentid = 'LDI-01'\n    AND m.severity IN ('Critical', 'Major')\n    AND a.logdate > NOW() - INTERVAL '5 minutes'\n    AND l.status IS DISTINCT FROM 'RESOLVED'\n),\nalarm_ctx AS (\n  SELECT\n    COUNT(*)::INT AS n,\n    (ARRAY_AGG(owner ORDER BY sev_rank, logdate DESC))[1] AS owner,\n    (ARRAY_AGG(elapsed ORDER BY sev_rank, logdate DESC))[1] AS elapsed\n  FROM alarm_raw\n)\nSELECT\n  s.eqp_id AS eqp_id_1,\n  s.st AS state_1,\n  CASE s.st\n    WHEN 3 THEN 'img/icons/unicons/exclamation-triangle.svg'\n    WHEN 0 THEN 'img/icons/unicons/question-circle.svg'\n    WHEN 1 THEN 'img/icons/unicons/pause-circle.svg'\n    ELSE 'img/icons/unicons/check-circle.svg'\n  END AS icon_path_1,\n  COALESCE(s.board_no::TEXT, '—') || ' / ' || COALESCE(s.total_board::TEXT, '—') AS board_total_1,\n  COALESCE(s.mo, '—') AS mo_1,\n  CASE\n    WHEN alarm_ctx.n = 0 OR alarm_ctx.n IS NULL THEN '—'\n    ELSE alarm_ctx.n::TEXT || (CASE WHEN alarm_ctx.n = 1 THEN ' ALARM · ' ELSE ' ALARMS · ' END) || alarm_ctx.owner || ' · ' || alarm_ctx.elapsed\n  END AS badge_1\nFROM s CROSS JOIN alarm_ctx"
         },
         {
           "refId": "B",
-          "datasource": { "uid": "timescaledb" },
+          "datasource": {
+            "uid": "timescaledb"
+          },
           "format": "table",
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: always the true latest row for this one hardcoded machine -- same latest-value shape and same ALARM/OK/IDLE/NO_DATA CASE logic as ims-ldi-operator-andon.json panel id 1000, copied verbatim. Node 2 = LDI-02 (fixed literal, not templated). */\nSELECT\n  v.eqp_id AS eqp_id_2,\n  CASE\n    WHEN EXISTS (\n      SELECT 1 FROM public.ldi_alarm_log a\n      JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\n      WHERE a.equipmentid = v.eqp_id AND m.severity IN ('Critical', 'Major')\n        AND a.logdate > NOW() - INTERVAL '5 minutes'\n    ) THEN 3\n    WHEN NOT v.has_data OR v.is_stale THEN 0\n    WHEN v.state THEN 2\n    ELSE 1\n  END AS state_2,\n  v.board_no AS board_2,\n  v.total_board AS total_board_2\nFROM public.v_ldi_machine_latest_full v\nWHERE v.eqp_id = 'LDI-02'\nLIMIT 1"
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: always the true latest row for this one hardcoded machine -- same latest-value shape and same ALARM/OK/IDLE/NO_DATA CASE logic as ims-ldi-operator-andon.json panel id 1000, copied verbatim (state CASE not modified). Node 2 = LDI-02 (fixed literal, not templated -- Canvas has no repeat mechanism, fixed node positions, same reasoning as the Task 2 POC and Andon's own docs on why its repeat mechanism doesn't apply here). icon_path_2 swaps the icon SVG glyph by state (field-bound icon FILL color proven non-functional on this Grafana build in the Task 2 POC fix round 2; path-swap is the working substitute, do not re-attempt fill/color field-binding). badge_2 carries active Critical/Major alarm count + Owner + Elapsed, same query shape (category->team mapping, Elapsed formatting) as ims-ldi-operator-andon.json's Action Queue panel, additionally filtered on real operator lifecycle status <> RESOLVED (public.ldi_alarm_lifecycle) so a badge clears once someone actually resolves the alarm via the alarm-api service. */\nWITH s AS (\n  SELECT\n    v.eqp_id,\n    v.mo,\n    v.board_no,\n    v.total_board,\n    CASE\n      WHEN EXISTS (\n        SELECT 1 FROM public.ldi_alarm_log a\n        JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\n        WHERE a.equipmentid = v.eqp_id AND m.severity IN ('Critical', 'Major')\n          AND a.logdate > NOW() - INTERVAL '5 minutes'\n      ) THEN 3\n      WHEN NOT v.has_data OR v.is_stale THEN 0\n      WHEN v.state THEN 2\n      ELSE 1\n    END AS st\n  FROM public.v_ldi_machine_latest_full v\n  WHERE v.eqp_id = 'LDI-02'\n  LIMIT 1\n),\nalarm_raw AS (\n  SELECT\n    CASE m.severity WHEN 'Critical' THEN 0 WHEN 'Major' THEN 1 ELSE 2 END AS sev_rank,\n    a.logdate,\n    CASE COALESCE(c.category, 'UNCLASSIFIED')\n        WHEN 'VACUUM' THEN 'Maintenance'\n        WHEN 'CAMERA' THEN 'Maintenance'\n        WHEN 'MOTION' THEN 'Maintenance'\n        WHEN 'MOTOR' THEN 'Maintenance'\n        WHEN 'ENVIRONMENT' THEN 'Facility'\n        WHEN 'NETWORK' THEN 'Automation'\n        WHEN 'PLC' THEN 'Automation'\n        WHEN 'COMMUNICATION' THEN 'Automation'\n        WHEN 'DATABASE' THEN 'IT'\n        WHEN 'ALIGNMENT' THEN 'Process Engineering'\n        WHEN 'CALIBRATION' THEN 'Process Engineering'\n        WHEN 'REGISTRATION' THEN 'Process Engineering'\n        WHEN 'PROCESS' THEN 'Process Engineering'\n        ELSE 'Maintenance'\n      END AS owner,\n    CASE\n        WHEN NOW() - a.logdate < INTERVAL '1 hour'\n          THEN GREATEST(EXTRACT(MINUTE FROM (NOW() - a.logdate))::INT, 0)::TEXT || 'm'\n        ELSE EXTRACT(HOUR FROM (NOW() - a.logdate))::INT || 'h' || LPAD(EXTRACT(MINUTE FROM (NOW() - a.logdate))::INT::TEXT, 2, '0') || 'm'\n      END AS elapsed\n  FROM public.ldi_alarm_log a\n  JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\n  LEFT JOIN public.v_ldi_alarm_category c ON c.alarm_code = a.errorcode::TEXT\n  LEFT JOIN public.ldi_alarm_lifecycle l ON l.logdate = a.logdate AND l.logid = a.logid\n  WHERE a.equipmentid = 'LDI-02'\n    AND m.severity IN ('Critical', 'Major')\n    AND a.logdate > NOW() - INTERVAL '5 minutes'\n    AND l.status IS DISTINCT FROM 'RESOLVED'\n),\nalarm_ctx AS (\n  SELECT\n    COUNT(*)::INT AS n,\n    (ARRAY_AGG(owner ORDER BY sev_rank, logdate DESC))[1] AS owner,\n    (ARRAY_AGG(elapsed ORDER BY sev_rank, logdate DESC))[1] AS elapsed\n  FROM alarm_raw\n)\nSELECT\n  s.eqp_id AS eqp_id_2,\n  s.st AS state_2,\n  CASE s.st\n    WHEN 3 THEN 'img/icons/unicons/exclamation-triangle.svg'\n    WHEN 0 THEN 'img/icons/unicons/question-circle.svg'\n    WHEN 1 THEN 'img/icons/unicons/pause-circle.svg'\n    ELSE 'img/icons/unicons/check-circle.svg'\n  END AS icon_path_2,\n  COALESCE(s.board_no::TEXT, '—') || ' / ' || COALESCE(s.total_board::TEXT, '—') AS board_total_2,\n  COALESCE(s.mo, '—') AS mo_2,\n  CASE\n    WHEN alarm_ctx.n = 0 OR alarm_ctx.n IS NULL THEN '—'\n    ELSE alarm_ctx.n::TEXT || (CASE WHEN alarm_ctx.n = 1 THEN ' ALARM · ' ELSE ' ALARMS · ' END) || alarm_ctx.owner || ' · ' || alarm_ctx.elapsed\n  END AS badge_2\nFROM s CROSS JOIN alarm_ctx"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "format": "table",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: always the true latest row for this one hardcoded machine -- same latest-value shape and same ALARM/OK/IDLE/NO_DATA CASE logic as ims-ldi-operator-andon.json panel id 1000, copied verbatim (state CASE not modified). Node 3 = LDI-03 (fixed literal, not templated -- Canvas has no repeat mechanism, fixed node positions, same reasoning as the Task 2 POC and Andon's own docs on why its repeat mechanism doesn't apply here). icon_path_3 swaps the icon SVG glyph by state (field-bound icon FILL color proven non-functional on this Grafana build in the Task 2 POC fix round 2; path-swap is the working substitute, do not re-attempt fill/color field-binding). badge_3 carries active Critical/Major alarm count + Owner + Elapsed, same query shape (category->team mapping, Elapsed formatting) as ims-ldi-operator-andon.json's Action Queue panel, additionally filtered on real operator lifecycle status <> RESOLVED (public.ldi_alarm_lifecycle) so a badge clears once someone actually resolves the alarm via the alarm-api service. */\nWITH s AS (\n  SELECT\n    v.eqp_id,\n    v.mo,\n    v.board_no,\n    v.total_board,\n    CASE\n      WHEN EXISTS (\n        SELECT 1 FROM public.ldi_alarm_log a\n        JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\n        WHERE a.equipmentid = v.eqp_id AND m.severity IN ('Critical', 'Major')\n          AND a.logdate > NOW() - INTERVAL '5 minutes'\n      ) THEN 3\n      WHEN NOT v.has_data OR v.is_stale THEN 0\n      WHEN v.state THEN 2\n      ELSE 1\n    END AS st\n  FROM public.v_ldi_machine_latest_full v\n  WHERE v.eqp_id = 'LDI-03'\n  LIMIT 1\n),\nalarm_raw AS (\n  SELECT\n    CASE m.severity WHEN 'Critical' THEN 0 WHEN 'Major' THEN 1 ELSE 2 END AS sev_rank,\n    a.logdate,\n    CASE COALESCE(c.category, 'UNCLASSIFIED')\n        WHEN 'VACUUM' THEN 'Maintenance'\n        WHEN 'CAMERA' THEN 'Maintenance'\n        WHEN 'MOTION' THEN 'Maintenance'\n        WHEN 'MOTOR' THEN 'Maintenance'\n        WHEN 'ENVIRONMENT' THEN 'Facility'\n        WHEN 'NETWORK' THEN 'Automation'\n        WHEN 'PLC' THEN 'Automation'\n        WHEN 'COMMUNICATION' THEN 'Automation'\n        WHEN 'DATABASE' THEN 'IT'\n        WHEN 'ALIGNMENT' THEN 'Process Engineering'\n        WHEN 'CALIBRATION' THEN 'Process Engineering'\n        WHEN 'REGISTRATION' THEN 'Process Engineering'\n        WHEN 'PROCESS' THEN 'Process Engineering'\n        ELSE 'Maintenance'\n      END AS owner,\n    CASE\n        WHEN NOW() - a.logdate < INTERVAL '1 hour'\n          THEN GREATEST(EXTRACT(MINUTE FROM (NOW() - a.logdate))::INT, 0)::TEXT || 'm'\n        ELSE EXTRACT(HOUR FROM (NOW() - a.logdate))::INT || 'h' || LPAD(EXTRACT(MINUTE FROM (NOW() - a.logdate))::INT::TEXT, 2, '0') || 'm'\n      END AS elapsed\n  FROM public.ldi_alarm_log a\n  JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\n  LEFT JOIN public.v_ldi_alarm_category c ON c.alarm_code = a.errorcode::TEXT\n  LEFT JOIN public.ldi_alarm_lifecycle l ON l.logdate = a.logdate AND l.logid = a.logid\n  WHERE a.equipmentid = 'LDI-03'\n    AND m.severity IN ('Critical', 'Major')\n    AND a.logdate > NOW() - INTERVAL '5 minutes'\n    AND l.status IS DISTINCT FROM 'RESOLVED'\n),\nalarm_ctx AS (\n  SELECT\n    COUNT(*)::INT AS n,\n    (ARRAY_AGG(owner ORDER BY sev_rank, logdate DESC))[1] AS owner,\n    (ARRAY_AGG(elapsed ORDER BY sev_rank, logdate DESC))[1] AS elapsed\n  FROM alarm_raw\n)\nSELECT\n  s.eqp_id AS eqp_id_3,\n  s.st AS state_3,\n  CASE s.st\n    WHEN 3 THEN 'img/icons/unicons/exclamation-triangle.svg'\n    WHEN 0 THEN 'img/icons/unicons/question-circle.svg'\n    WHEN 1 THEN 'img/icons/unicons/pause-circle.svg'\n    ELSE 'img/icons/unicons/check-circle.svg'\n  END AS icon_path_3,\n  COALESCE(s.board_no::TEXT, '—') || ' / ' || COALESCE(s.total_board::TEXT, '—') AS board_total_3,\n  COALESCE(s.mo, '—') AS mo_3,\n  CASE\n    WHEN alarm_ctx.n = 0 OR alarm_ctx.n IS NULL THEN '—'\n    ELSE alarm_ctx.n::TEXT || (CASE WHEN alarm_ctx.n = 1 THEN ' ALARM · ' ELSE ' ALARMS · ' END) || alarm_ctx.owner || ' · ' || alarm_ctx.elapsed\n  END AS badge_3\nFROM s CROSS JOIN alarm_ctx"
+        },
+        {
+          "refId": "D",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "format": "table",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: always the true latest row for this one hardcoded machine -- same latest-value shape and same ALARM/OK/IDLE/NO_DATA CASE logic as ims-ldi-operator-andon.json panel id 1000, copied verbatim (state CASE not modified). Node 4 = LDI-04 (fixed literal, not templated -- Canvas has no repeat mechanism, fixed node positions, same reasoning as the Task 2 POC and Andon's own docs on why its repeat mechanism doesn't apply here). icon_path_4 swaps the icon SVG glyph by state (field-bound icon FILL color proven non-functional on this Grafana build in the Task 2 POC fix round 2; path-swap is the working substitute, do not re-attempt fill/color field-binding). badge_4 carries active Critical/Major alarm count + Owner + Elapsed, same query shape (category->team mapping, Elapsed formatting) as ims-ldi-operator-andon.json's Action Queue panel, additionally filtered on real operator lifecycle status <> RESOLVED (public.ldi_alarm_lifecycle) so a badge clears once someone actually resolves the alarm via the alarm-api service. */\nWITH s AS (\n  SELECT\n    v.eqp_id,\n    v.mo,\n    v.board_no,\n    v.total_board,\n    CASE\n      WHEN EXISTS (\n        SELECT 1 FROM public.ldi_alarm_log a\n        JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\n        WHERE a.equipmentid = v.eqp_id AND m.severity IN ('Critical', 'Major')\n          AND a.logdate > NOW() - INTERVAL '5 minutes'\n      ) THEN 3\n      WHEN NOT v.has_data OR v.is_stale THEN 0\n      WHEN v.state THEN 2\n      ELSE 1\n    END AS st\n  FROM public.v_ldi_machine_latest_full v\n  WHERE v.eqp_id = 'LDI-04'\n  LIMIT 1\n),\nalarm_raw AS (\n  SELECT\n    CASE m.severity WHEN 'Critical' THEN 0 WHEN 'Major' THEN 1 ELSE 2 END AS sev_rank,\n    a.logdate,\n    CASE COALESCE(c.category, 'UNCLASSIFIED')\n        WHEN 'VACUUM' THEN 'Maintenance'\n        WHEN 'CAMERA' THEN 'Maintenance'\n        WHEN 'MOTION' THEN 'Maintenance'\n        WHEN 'MOTOR' THEN 'Maintenance'\n        WHEN 'ENVIRONMENT' THEN 'Facility'\n        WHEN 'NETWORK' THEN 'Automation'\n        WHEN 'PLC' THEN 'Automation'\n        WHEN 'COMMUNICATION' THEN 'Automation'\n        WHEN 'DATABASE' THEN 'IT'\n        WHEN 'ALIGNMENT' THEN 'Process Engineering'\n        WHEN 'CALIBRATION' THEN 'Process Engineering'\n        WHEN 'REGISTRATION' THEN 'Process Engineering'\n        WHEN 'PROCESS' THEN 'Process Engineering'\n        ELSE 'Maintenance'\n      END AS owner,\n    CASE\n        WHEN NOW() - a.logdate < INTERVAL '1 hour'\n          THEN GREATEST(EXTRACT(MINUTE FROM (NOW() - a.logdate))::INT, 0)::TEXT || 'm'\n        ELSE EXTRACT(HOUR FROM (NOW() - a.logdate))::INT || 'h' || LPAD(EXTRACT(MINUTE FROM (NOW() - a.logdate))::INT::TEXT, 2, '0') || 'm'\n      END AS elapsed\n  FROM public.ldi_alarm_log a\n  JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\n  LEFT JOIN public.v_ldi_alarm_category c ON c.alarm_code = a.errorcode::TEXT\n  LEFT JOIN public.ldi_alarm_lifecycle l ON l.logdate = a.logdate AND l.logid = a.logid\n  WHERE a.equipmentid = 'LDI-04'\n    AND m.severity IN ('Critical', 'Major')\n    AND a.logdate > NOW() - INTERVAL '5 minutes'\n    AND l.status IS DISTINCT FROM 'RESOLVED'\n),\nalarm_ctx AS (\n  SELECT\n    COUNT(*)::INT AS n,\n    (ARRAY_AGG(owner ORDER BY sev_rank, logdate DESC))[1] AS owner,\n    (ARRAY_AGG(elapsed ORDER BY sev_rank, logdate DESC))[1] AS elapsed\n  FROM alarm_raw\n)\nSELECT\n  s.eqp_id AS eqp_id_4,\n  s.st AS state_4,\n  CASE s.st\n    WHEN 3 THEN 'img/icons/unicons/exclamation-triangle.svg'\n    WHEN 0 THEN 'img/icons/unicons/question-circle.svg'\n    WHEN 1 THEN 'img/icons/unicons/pause-circle.svg'\n    ELSE 'img/icons/unicons/check-circle.svg'\n  END AS icon_path_4,\n  COALESCE(s.board_no::TEXT, '—') || ' / ' || COALESCE(s.total_board::TEXT, '—') AS board_total_4,\n  COALESCE(s.mo, '—') AS mo_4,\n  CASE\n    WHEN alarm_ctx.n = 0 OR alarm_ctx.n IS NULL THEN '—'\n    ELSE alarm_ctx.n::TEXT || (CASE WHEN alarm_ctx.n = 1 THEN ' ALARM · ' ELSE ' ALARMS · ' END) || alarm_ctx.owner || ' · ' || alarm_ctx.elapsed\n  END AS badge_4\nFROM s CROSS JOIN alarm_ctx"
+        },
+        {
+          "refId": "E",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "format": "table",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: always the true latest row for this one hardcoded machine -- same latest-value shape and same ALARM/OK/IDLE/NO_DATA CASE logic as ims-ldi-operator-andon.json panel id 1000, copied verbatim (state CASE not modified). Node 5 = LDI-05 (fixed literal, not templated -- Canvas has no repeat mechanism, fixed node positions, same reasoning as the Task 2 POC and Andon's own docs on why its repeat mechanism doesn't apply here). icon_path_5 swaps the icon SVG glyph by state (field-bound icon FILL color proven non-functional on this Grafana build in the Task 2 POC fix round 2; path-swap is the working substitute, do not re-attempt fill/color field-binding). badge_5 carries active Critical/Major alarm count + Owner + Elapsed, same query shape (category->team mapping, Elapsed formatting) as ims-ldi-operator-andon.json's Action Queue panel, additionally filtered on real operator lifecycle status <> RESOLVED (public.ldi_alarm_lifecycle) so a badge clears once someone actually resolves the alarm via the alarm-api service. */\nWITH s AS (\n  SELECT\n    v.eqp_id,\n    v.mo,\n    v.board_no,\n    v.total_board,\n    CASE\n      WHEN EXISTS (\n        SELECT 1 FROM public.ldi_alarm_log a\n        JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\n        WHERE a.equipmentid = v.eqp_id AND m.severity IN ('Critical', 'Major')\n          AND a.logdate > NOW() - INTERVAL '5 minutes'\n      ) THEN 3\n      WHEN NOT v.has_data OR v.is_stale THEN 0\n      WHEN v.state THEN 2\n      ELSE 1\n    END AS st\n  FROM public.v_ldi_machine_latest_full v\n  WHERE v.eqp_id = 'LDI-05'\n  LIMIT 1\n),\nalarm_raw AS (\n  SELECT\n    CASE m.severity WHEN 'Critical' THEN 0 WHEN 'Major' THEN 1 ELSE 2 END AS sev_rank,\n    a.logdate,\n    CASE COALESCE(c.category, 'UNCLASSIFIED')\n        WHEN 'VACUUM' THEN 'Maintenance'\n        WHEN 'CAMERA' THEN 'Maintenance'\n        WHEN 'MOTION' THEN 'Maintenance'\n        WHEN 'MOTOR' THEN 'Maintenance'\n        WHEN 'ENVIRONMENT' THEN 'Facility'\n        WHEN 'NETWORK' THEN 'Automation'\n        WHEN 'PLC' THEN 'Automation'\n        WHEN 'COMMUNICATION' THEN 'Automation'\n        WHEN 'DATABASE' THEN 'IT'\n        WHEN 'ALIGNMENT' THEN 'Process Engineering'\n        WHEN 'CALIBRATION' THEN 'Process Engineering'\n        WHEN 'REGISTRATION' THEN 'Process Engineering'\n        WHEN 'PROCESS' THEN 'Process Engineering'\n        ELSE 'Maintenance'\n      END AS owner,\n    CASE\n        WHEN NOW() - a.logdate < INTERVAL '1 hour'\n          THEN GREATEST(EXTRACT(MINUTE FROM (NOW() - a.logdate))::INT, 0)::TEXT || 'm'\n        ELSE EXTRACT(HOUR FROM (NOW() - a.logdate))::INT || 'h' || LPAD(EXTRACT(MINUTE FROM (NOW() - a.logdate))::INT::TEXT, 2, '0') || 'm'\n      END AS elapsed\n  FROM public.ldi_alarm_log a\n  JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\n  LEFT JOIN public.v_ldi_alarm_category c ON c.alarm_code = a.errorcode::TEXT\n  LEFT JOIN public.ldi_alarm_lifecycle l ON l.logdate = a.logdate AND l.logid = a.logid\n  WHERE a.equipmentid = 'LDI-05'\n    AND m.severity IN ('Critical', 'Major')\n    AND a.logdate > NOW() - INTERVAL '5 minutes'\n    AND l.status IS DISTINCT FROM 'RESOLVED'\n),\nalarm_ctx AS (\n  SELECT\n    COUNT(*)::INT AS n,\n    (ARRAY_AGG(owner ORDER BY sev_rank, logdate DESC))[1] AS owner,\n    (ARRAY_AGG(elapsed ORDER BY sev_rank, logdate DESC))[1] AS elapsed\n  FROM alarm_raw\n)\nSELECT\n  s.eqp_id AS eqp_id_5,\n  s.st AS state_5,\n  CASE s.st\n    WHEN 3 THEN 'img/icons/unicons/exclamation-triangle.svg'\n    WHEN 0 THEN 'img/icons/unicons/question-circle.svg'\n    WHEN 1 THEN 'img/icons/unicons/pause-circle.svg'\n    ELSE 'img/icons/unicons/check-circle.svg'\n  END AS icon_path_5,\n  COALESCE(s.board_no::TEXT, '—') || ' / ' || COALESCE(s.total_board::TEXT, '—') AS board_total_5,\n  COALESCE(s.mo, '—') AS mo_5,\n  CASE\n    WHEN alarm_ctx.n = 0 OR alarm_ctx.n IS NULL THEN '—'\n    ELSE alarm_ctx.n::TEXT || (CASE WHEN alarm_ctx.n = 1 THEN ' ALARM · ' ELSE ' ALARMS · ' END) || alarm_ctx.owner || ' · ' || alarm_ctx.elapsed\n  END AS badge_5\nFROM s CROSS JOIN alarm_ctx"
+        },
+        {
+          "refId": "F",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "format": "table",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: always the true latest row for this one hardcoded machine -- same latest-value shape and same ALARM/OK/IDLE/NO_DATA CASE logic as ims-ldi-operator-andon.json panel id 1000, copied verbatim (state CASE not modified). Node 6 = LDI-06 (fixed literal, not templated -- Canvas has no repeat mechanism, fixed node positions, same reasoning as the Task 2 POC and Andon's own docs on why its repeat mechanism doesn't apply here). icon_path_6 swaps the icon SVG glyph by state (field-bound icon FILL color proven non-functional on this Grafana build in the Task 2 POC fix round 2; path-swap is the working substitute, do not re-attempt fill/color field-binding). badge_6 carries active Critical/Major alarm count + Owner + Elapsed, same query shape (category->team mapping, Elapsed formatting) as ims-ldi-operator-andon.json's Action Queue panel, additionally filtered on real operator lifecycle status <> RESOLVED (public.ldi_alarm_lifecycle) so a badge clears once someone actually resolves the alarm via the alarm-api service. */\nWITH s AS (\n  SELECT\n    v.eqp_id,\n    v.mo,\n    v.board_no,\n    v.total_board,\n    CASE\n      WHEN EXISTS (\n        SELECT 1 FROM public.ldi_alarm_log a\n        JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\n        WHERE a.equipmentid = v.eqp_id AND m.severity IN ('Critical', 'Major')\n          AND a.logdate > NOW() - INTERVAL '5 minutes'\n      ) THEN 3\n      WHEN NOT v.has_data OR v.is_stale THEN 0\n      WHEN v.state THEN 2\n      ELSE 1\n    END AS st\n  FROM public.v_ldi_machine_latest_full v\n  WHERE v.eqp_id = 'LDI-06'\n  LIMIT 1\n),\nalarm_raw AS (\n  SELECT\n    CASE m.severity WHEN 'Critical' THEN 0 WHEN 'Major' THEN 1 ELSE 2 END AS sev_rank,\n    a.logdate,\n    CASE COALESCE(c.category, 'UNCLASSIFIED')\n        WHEN 'VACUUM' THEN 'Maintenance'\n        WHEN 'CAMERA' THEN 'Maintenance'\n        WHEN 'MOTION' THEN 'Maintenance'\n        WHEN 'MOTOR' THEN 'Maintenance'\n        WHEN 'ENVIRONMENT' THEN 'Facility'\n        WHEN 'NETWORK' THEN 'Automation'\n        WHEN 'PLC' THEN 'Automation'\n        WHEN 'COMMUNICATION' THEN 'Automation'\n        WHEN 'DATABASE' THEN 'IT'\n        WHEN 'ALIGNMENT' THEN 'Process Engineering'\n        WHEN 'CALIBRATION' THEN 'Process Engineering'\n        WHEN 'REGISTRATION' THEN 'Process Engineering'\n        WHEN 'PROCESS' THEN 'Process Engineering'\n        ELSE 'Maintenance'\n      END AS owner,\n    CASE\n        WHEN NOW() - a.logdate < INTERVAL '1 hour'\n          THEN GREATEST(EXTRACT(MINUTE FROM (NOW() - a.logdate))::INT, 0)::TEXT || 'm'\n        ELSE EXTRACT(HOUR FROM (NOW() - a.logdate))::INT || 'h' || LPAD(EXTRACT(MINUTE FROM (NOW() - a.logdate))::INT::TEXT, 2, '0') || 'm'\n      END AS elapsed\n  FROM public.ldi_alarm_log a\n  JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\n  LEFT JOIN public.v_ldi_alarm_category c ON c.alarm_code = a.errorcode::TEXT\n  LEFT JOIN public.ldi_alarm_lifecycle l ON l.logdate = a.logdate AND l.logid = a.logid\n  WHERE a.equipmentid = 'LDI-06'\n    AND m.severity IN ('Critical', 'Major')\n    AND a.logdate > NOW() - INTERVAL '5 minutes'\n    AND l.status IS DISTINCT FROM 'RESOLVED'\n),\nalarm_ctx AS (\n  SELECT\n    COUNT(*)::INT AS n,\n    (ARRAY_AGG(owner ORDER BY sev_rank, logdate DESC))[1] AS owner,\n    (ARRAY_AGG(elapsed ORDER BY sev_rank, logdate DESC))[1] AS elapsed\n  FROM alarm_raw\n)\nSELECT\n  s.eqp_id AS eqp_id_6,\n  s.st AS state_6,\n  CASE s.st\n    WHEN 3 THEN 'img/icons/unicons/exclamation-triangle.svg'\n    WHEN 0 THEN 'img/icons/unicons/question-circle.svg'\n    WHEN 1 THEN 'img/icons/unicons/pause-circle.svg'\n    ELSE 'img/icons/unicons/check-circle.svg'\n  END AS icon_path_6,\n  COALESCE(s.board_no::TEXT, '—') || ' / ' || COALESCE(s.total_board::TEXT, '—') AS board_total_6,\n  COALESCE(s.mo, '—') AS mo_6,\n  CASE\n    WHEN alarm_ctx.n = 0 OR alarm_ctx.n IS NULL THEN '—'\n    ELSE alarm_ctx.n::TEXT || (CASE WHEN alarm_ctx.n = 1 THEN ' ALARM · ' ELSE ' ALARMS · ' END) || alarm_ctx.owner || ' · ' || alarm_ctx.elapsed\n  END AS badge_6\nFROM s CROSS JOIN alarm_ctx"
+        },
+        {
+          "refId": "G",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "format": "table",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: always the true latest row for this one hardcoded machine -- same latest-value shape and same ALARM/OK/IDLE/NO_DATA CASE logic as ims-ldi-operator-andon.json panel id 1000, copied verbatim (state CASE not modified). Node 7 = LDI-07 (fixed literal, not templated -- Canvas has no repeat mechanism, fixed node positions, same reasoning as the Task 2 POC and Andon's own docs on why its repeat mechanism doesn't apply here). icon_path_7 swaps the icon SVG glyph by state (field-bound icon FILL color proven non-functional on this Grafana build in the Task 2 POC fix round 2; path-swap is the working substitute, do not re-attempt fill/color field-binding). badge_7 carries active Critical/Major alarm count + Owner + Elapsed, same query shape (category->team mapping, Elapsed formatting) as ims-ldi-operator-andon.json's Action Queue panel, additionally filtered on real operator lifecycle status <> RESOLVED (public.ldi_alarm_lifecycle) so a badge clears once someone actually resolves the alarm via the alarm-api service. */\nWITH s AS (\n  SELECT\n    v.eqp_id,\n    v.mo,\n    v.board_no,\n    v.total_board,\n    CASE\n      WHEN EXISTS (\n        SELECT 1 FROM public.ldi_alarm_log a\n        JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\n        WHERE a.equipmentid = v.eqp_id AND m.severity IN ('Critical', 'Major')\n          AND a.logdate > NOW() - INTERVAL '5 minutes'\n      ) THEN 3\n      WHEN NOT v.has_data OR v.is_stale THEN 0\n      WHEN v.state THEN 2\n      ELSE 1\n    END AS st\n  FROM public.v_ldi_machine_latest_full v\n  WHERE v.eqp_id = 'LDI-07'\n  LIMIT 1\n),\nalarm_raw AS (\n  SELECT\n    CASE m.severity WHEN 'Critical' THEN 0 WHEN 'Major' THEN 1 ELSE 2 END AS sev_rank,\n    a.logdate,\n    CASE COALESCE(c.category, 'UNCLASSIFIED')\n        WHEN 'VACUUM' THEN 'Maintenance'\n        WHEN 'CAMERA' THEN 'Maintenance'\n        WHEN 'MOTION' THEN 'Maintenance'\n        WHEN 'MOTOR' THEN 'Maintenance'\n        WHEN 'ENVIRONMENT' THEN 'Facility'\n        WHEN 'NETWORK' THEN 'Automation'\n        WHEN 'PLC' THEN 'Automation'\n        WHEN 'COMMUNICATION' THEN 'Automation'\n        WHEN 'DATABASE' THEN 'IT'\n        WHEN 'ALIGNMENT' THEN 'Process Engineering'\n        WHEN 'CALIBRATION' THEN 'Process Engineering'\n        WHEN 'REGISTRATION' THEN 'Process Engineering'\n        WHEN 'PROCESS' THEN 'Process Engineering'\n        ELSE 'Maintenance'\n      END AS owner,\n    CASE\n        WHEN NOW() - a.logdate < INTERVAL '1 hour'\n          THEN GREATEST(EXTRACT(MINUTE FROM (NOW() - a.logdate))::INT, 0)::TEXT || 'm'\n        ELSE EXTRACT(HOUR FROM (NOW() - a.logdate))::INT || 'h' || LPAD(EXTRACT(MINUTE FROM (NOW() - a.logdate))::INT::TEXT, 2, '0') || 'm'\n      END AS elapsed\n  FROM public.ldi_alarm_log a\n  JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\n  LEFT JOIN public.v_ldi_alarm_category c ON c.alarm_code = a.errorcode::TEXT\n  LEFT JOIN public.ldi_alarm_lifecycle l ON l.logdate = a.logdate AND l.logid = a.logid\n  WHERE a.equipmentid = 'LDI-07'\n    AND m.severity IN ('Critical', 'Major')\n    AND a.logdate > NOW() - INTERVAL '5 minutes'\n    AND l.status IS DISTINCT FROM 'RESOLVED'\n),\nalarm_ctx AS (\n  SELECT\n    COUNT(*)::INT AS n,\n    (ARRAY_AGG(owner ORDER BY sev_rank, logdate DESC))[1] AS owner,\n    (ARRAY_AGG(elapsed ORDER BY sev_rank, logdate DESC))[1] AS elapsed\n  FROM alarm_raw\n)\nSELECT\n  s.eqp_id AS eqp_id_7,\n  s.st AS state_7,\n  CASE s.st\n    WHEN 3 THEN 'img/icons/unicons/exclamation-triangle.svg'\n    WHEN 0 THEN 'img/icons/unicons/question-circle.svg'\n    WHEN 1 THEN 'img/icons/unicons/pause-circle.svg'\n    ELSE 'img/icons/unicons/check-circle.svg'\n  END AS icon_path_7,\n  COALESCE(s.board_no::TEXT, '—') || ' / ' || COALESCE(s.total_board::TEXT, '—') AS board_total_7,\n  COALESCE(s.mo, '—') AS mo_7,\n  CASE\n    WHEN alarm_ctx.n = 0 OR alarm_ctx.n IS NULL THEN '—'\n    ELSE alarm_ctx.n::TEXT || (CASE WHEN alarm_ctx.n = 1 THEN ' ALARM · ' ELSE ' ALARMS · ' END) || alarm_ctx.owner || ' · ' || alarm_ctx.elapsed\n  END AS badge_7\nFROM s CROSS JOIN alarm_ctx"
+        },
+        {
+          "refId": "H",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "format": "table",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: always the true latest row for this one hardcoded machine -- same latest-value shape and same ALARM/OK/IDLE/NO_DATA CASE logic as ims-ldi-operator-andon.json panel id 1000, copied verbatim (state CASE not modified). Node 8 = LDI-08 (fixed literal, not templated -- Canvas has no repeat mechanism, fixed node positions, same reasoning as the Task 2 POC and Andon's own docs on why its repeat mechanism doesn't apply here). icon_path_8 swaps the icon SVG glyph by state (field-bound icon FILL color proven non-functional on this Grafana build in the Task 2 POC fix round 2; path-swap is the working substitute, do not re-attempt fill/color field-binding). badge_8 carries active Critical/Major alarm count + Owner + Elapsed, same query shape (category->team mapping, Elapsed formatting) as ims-ldi-operator-andon.json's Action Queue panel, additionally filtered on real operator lifecycle status <> RESOLVED (public.ldi_alarm_lifecycle) so a badge clears once someone actually resolves the alarm via the alarm-api service. */\nWITH s AS (\n  SELECT\n    v.eqp_id,\n    v.mo,\n    v.board_no,\n    v.total_board,\n    CASE\n      WHEN EXISTS (\n        SELECT 1 FROM public.ldi_alarm_log a\n        JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\n        WHERE a.equipmentid = v.eqp_id AND m.severity IN ('Critical', 'Major')\n          AND a.logdate > NOW() - INTERVAL '5 minutes'\n      ) THEN 3\n      WHEN NOT v.has_data OR v.is_stale THEN 0\n      WHEN v.state THEN 2\n      ELSE 1\n    END AS st\n  FROM public.v_ldi_machine_latest_full v\n  WHERE v.eqp_id = 'LDI-08'\n  LIMIT 1\n),\nalarm_raw AS (\n  SELECT\n    CASE m.severity WHEN 'Critical' THEN 0 WHEN 'Major' THEN 1 ELSE 2 END AS sev_rank,\n    a.logdate,\n    CASE COALESCE(c.category, 'UNCLASSIFIED')\n        WHEN 'VACUUM' THEN 'Maintenance'\n        WHEN 'CAMERA' THEN 'Maintenance'\n        WHEN 'MOTION' THEN 'Maintenance'\n        WHEN 'MOTOR' THEN 'Maintenance'\n        WHEN 'ENVIRONMENT' THEN 'Facility'\n        WHEN 'NETWORK' THEN 'Automation'\n        WHEN 'PLC' THEN 'Automation'\n        WHEN 'COMMUNICATION' THEN 'Automation'\n        WHEN 'DATABASE' THEN 'IT'\n        WHEN 'ALIGNMENT' THEN 'Process Engineering'\n        WHEN 'CALIBRATION' THEN 'Process Engineering'\n        WHEN 'REGISTRATION' THEN 'Process Engineering'\n        WHEN 'PROCESS' THEN 'Process Engineering'\n        ELSE 'Maintenance'\n      END AS owner,\n    CASE\n        WHEN NOW() - a.logdate < INTERVAL '1 hour'\n          THEN GREATEST(EXTRACT(MINUTE FROM (NOW() - a.logdate))::INT, 0)::TEXT || 'm'\n        ELSE EXTRACT(HOUR FROM (NOW() - a.logdate))::INT || 'h' || LPAD(EXTRACT(MINUTE FROM (NOW() - a.logdate))::INT::TEXT, 2, '0') || 'm'\n      END AS elapsed\n  FROM public.ldi_alarm_log a\n  JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\n  LEFT JOIN public.v_ldi_alarm_category c ON c.alarm_code = a.errorcode::TEXT\n  LEFT JOIN public.ldi_alarm_lifecycle l ON l.logdate = a.logdate AND l.logid = a.logid\n  WHERE a.equipmentid = 'LDI-08'\n    AND m.severity IN ('Critical', 'Major')\n    AND a.logdate > NOW() - INTERVAL '5 minutes'\n    AND l.status IS DISTINCT FROM 'RESOLVED'\n),\nalarm_ctx AS (\n  SELECT\n    COUNT(*)::INT AS n,\n    (ARRAY_AGG(owner ORDER BY sev_rank, logdate DESC))[1] AS owner,\n    (ARRAY_AGG(elapsed ORDER BY sev_rank, logdate DESC))[1] AS elapsed\n  FROM alarm_raw\n)\nSELECT\n  s.eqp_id AS eqp_id_8,\n  s.st AS state_8,\n  CASE s.st\n    WHEN 3 THEN 'img/icons/unicons/exclamation-triangle.svg'\n    WHEN 0 THEN 'img/icons/unicons/question-circle.svg'\n    WHEN 1 THEN 'img/icons/unicons/pause-circle.svg'\n    ELSE 'img/icons/unicons/check-circle.svg'\n  END AS icon_path_8,\n  COALESCE(s.board_no::TEXT, '—') || ' / ' || COALESCE(s.total_board::TEXT, '—') AS board_total_8,\n  COALESCE(s.mo, '—') AS mo_8,\n  CASE\n    WHEN alarm_ctx.n = 0 OR alarm_ctx.n IS NULL THEN '—'\n    ELSE alarm_ctx.n::TEXT || (CASE WHEN alarm_ctx.n = 1 THEN ' ALARM · ' ELSE ' ALARMS · ' END) || alarm_ctx.owner || ' · ' || alarm_ctx.elapsed\n  END AS badge_8\nFROM s CROSS JOIN alarm_ctx"
+        },
+        {
+          "refId": "I",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "format": "table",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: always the true latest row for this one hardcoded machine -- same latest-value shape and same ALARM/OK/IDLE/NO_DATA CASE logic as ims-ldi-operator-andon.json panel id 1000, copied verbatim (state CASE not modified). Node 9 = LDI-09 (fixed literal, not templated -- Canvas has no repeat mechanism, fixed node positions, same reasoning as the Task 2 POC and Andon's own docs on why its repeat mechanism doesn't apply here). icon_path_9 swaps the icon SVG glyph by state (field-bound icon FILL color proven non-functional on this Grafana build in the Task 2 POC fix round 2; path-swap is the working substitute, do not re-attempt fill/color field-binding). badge_9 carries active Critical/Major alarm count + Owner + Elapsed, same query shape (category->team mapping, Elapsed formatting) as ims-ldi-operator-andon.json's Action Queue panel, additionally filtered on real operator lifecycle status <> RESOLVED (public.ldi_alarm_lifecycle) so a badge clears once someone actually resolves the alarm via the alarm-api service. */\nWITH s AS (\n  SELECT\n    v.eqp_id,\n    v.mo,\n    v.board_no,\n    v.total_board,\n    CASE\n      WHEN EXISTS (\n        SELECT 1 FROM public.ldi_alarm_log a\n        JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\n        WHERE a.equipmentid = v.eqp_id AND m.severity IN ('Critical', 'Major')\n          AND a.logdate > NOW() - INTERVAL '5 minutes'\n      ) THEN 3\n      WHEN NOT v.has_data OR v.is_stale THEN 0\n      WHEN v.state THEN 2\n      ELSE 1\n    END AS st\n  FROM public.v_ldi_machine_latest_full v\n  WHERE v.eqp_id = 'LDI-09'\n  LIMIT 1\n),\nalarm_raw AS (\n  SELECT\n    CASE m.severity WHEN 'Critical' THEN 0 WHEN 'Major' THEN 1 ELSE 2 END AS sev_rank,\n    a.logdate,\n    CASE COALESCE(c.category, 'UNCLASSIFIED')\n        WHEN 'VACUUM' THEN 'Maintenance'\n        WHEN 'CAMERA' THEN 'Maintenance'\n        WHEN 'MOTION' THEN 'Maintenance'\n        WHEN 'MOTOR' THEN 'Maintenance'\n        WHEN 'ENVIRONMENT' THEN 'Facility'\n        WHEN 'NETWORK' THEN 'Automation'\n        WHEN 'PLC' THEN 'Automation'\n        WHEN 'COMMUNICATION' THEN 'Automation'\n        WHEN 'DATABASE' THEN 'IT'\n        WHEN 'ALIGNMENT' THEN 'Process Engineering'\n        WHEN 'CALIBRATION' THEN 'Process Engineering'\n        WHEN 'REGISTRATION' THEN 'Process Engineering'\n        WHEN 'PROCESS' THEN 'Process Engineering'\n        ELSE 'Maintenance'\n      END AS owner,\n    CASE\n        WHEN NOW() - a.logdate < INTERVAL '1 hour'\n          THEN GREATEST(EXTRACT(MINUTE FROM (NOW() - a.logdate))::INT, 0)::TEXT || 'm'\n        ELSE EXTRACT(HOUR FROM (NOW() - a.logdate))::INT || 'h' || LPAD(EXTRACT(MINUTE FROM (NOW() - a.logdate))::INT::TEXT, 2, '0') || 'm'\n      END AS elapsed\n  FROM public.ldi_alarm_log a\n  JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\n  LEFT JOIN public.v_ldi_alarm_category c ON c.alarm_code = a.errorcode::TEXT\n  LEFT JOIN public.ldi_alarm_lifecycle l ON l.logdate = a.logdate AND l.logid = a.logid\n  WHERE a.equipmentid = 'LDI-09'\n    AND m.severity IN ('Critical', 'Major')\n    AND a.logdate > NOW() - INTERVAL '5 minutes'\n    AND l.status IS DISTINCT FROM 'RESOLVED'\n),\nalarm_ctx AS (\n  SELECT\n    COUNT(*)::INT AS n,\n    (ARRAY_AGG(owner ORDER BY sev_rank, logdate DESC))[1] AS owner,\n    (ARRAY_AGG(elapsed ORDER BY sev_rank, logdate DESC))[1] AS elapsed\n  FROM alarm_raw\n)\nSELECT\n  s.eqp_id AS eqp_id_9,\n  s.st AS state_9,\n  CASE s.st\n    WHEN 3 THEN 'img/icons/unicons/exclamation-triangle.svg'\n    WHEN 0 THEN 'img/icons/unicons/question-circle.svg'\n    WHEN 1 THEN 'img/icons/unicons/pause-circle.svg'\n    ELSE 'img/icons/unicons/check-circle.svg'\n  END AS icon_path_9,\n  COALESCE(s.board_no::TEXT, '—') || ' / ' || COALESCE(s.total_board::TEXT, '—') AS board_total_9,\n  COALESCE(s.mo, '—') AS mo_9,\n  CASE\n    WHEN alarm_ctx.n = 0 OR alarm_ctx.n IS NULL THEN '—'\n    ELSE alarm_ctx.n::TEXT || (CASE WHEN alarm_ctx.n = 1 THEN ' ALARM · ' ELSE ' ALARMS · ' END) || alarm_ctx.owner || ' · ' || alarm_ctx.elapsed\n  END AS badge_9\nFROM s CROSS JOIN alarm_ctx"
+        },
+        {
+          "refId": "J",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "format": "table",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: always the true latest row for this one hardcoded machine -- same latest-value shape and same ALARM/OK/IDLE/NO_DATA CASE logic as ims-ldi-operator-andon.json panel id 1000, copied verbatim (state CASE not modified). Node 10 = LDI-10 (fixed literal, not templated -- Canvas has no repeat mechanism, fixed node positions, same reasoning as the Task 2 POC and Andon's own docs on why its repeat mechanism doesn't apply here). icon_path_10 swaps the icon SVG glyph by state (field-bound icon FILL color proven non-functional on this Grafana build in the Task 2 POC fix round 2; path-swap is the working substitute, do not re-attempt fill/color field-binding). badge_10 carries active Critical/Major alarm count + Owner + Elapsed, same query shape (category->team mapping, Elapsed formatting) as ims-ldi-operator-andon.json's Action Queue panel, additionally filtered on real operator lifecycle status <> RESOLVED (public.ldi_alarm_lifecycle) so a badge clears once someone actually resolves the alarm via the alarm-api service. */\nWITH s AS (\n  SELECT\n    v.eqp_id,\n    v.mo,\n    v.board_no,\n    v.total_board,\n    CASE\n      WHEN EXISTS (\n        SELECT 1 FROM public.ldi_alarm_log a\n        JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\n        WHERE a.equipmentid = v.eqp_id AND m.severity IN ('Critical', 'Major')\n          AND a.logdate > NOW() - INTERVAL '5 minutes'\n      ) THEN 3\n      WHEN NOT v.has_data OR v.is_stale THEN 0\n      WHEN v.state THEN 2\n      ELSE 1\n    END AS st\n  FROM public.v_ldi_machine_latest_full v\n  WHERE v.eqp_id = 'LDI-10'\n  LIMIT 1\n),\nalarm_raw AS (\n  SELECT\n    CASE m.severity WHEN 'Critical' THEN 0 WHEN 'Major' THEN 1 ELSE 2 END AS sev_rank,\n    a.logdate,\n    CASE COALESCE(c.category, 'UNCLASSIFIED')\n        WHEN 'VACUUM' THEN 'Maintenance'\n        WHEN 'CAMERA' THEN 'Maintenance'\n        WHEN 'MOTION' THEN 'Maintenance'\n        WHEN 'MOTOR' THEN 'Maintenance'\n        WHEN 'ENVIRONMENT' THEN 'Facility'\n        WHEN 'NETWORK' THEN 'Automation'\n        WHEN 'PLC' THEN 'Automation'\n        WHEN 'COMMUNICATION' THEN 'Automation'\n        WHEN 'DATABASE' THEN 'IT'\n        WHEN 'ALIGNMENT' THEN 'Process Engineering'\n        WHEN 'CALIBRATION' THEN 'Process Engineering'\n        WHEN 'REGISTRATION' THEN 'Process Engineering'\n        WHEN 'PROCESS' THEN 'Process Engineering'\n        ELSE 'Maintenance'\n      END AS owner,\n    CASE\n        WHEN NOW() - a.logdate < INTERVAL '1 hour'\n          THEN GREATEST(EXTRACT(MINUTE FROM (NOW() - a.logdate))::INT, 0)::TEXT || 'm'\n        ELSE EXTRACT(HOUR FROM (NOW() - a.logdate))::INT || 'h' || LPAD(EXTRACT(MINUTE FROM (NOW() - a.logdate))::INT::TEXT, 2, '0') || 'm'\n      END AS elapsed\n  FROM public.ldi_alarm_log a\n  JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\n  LEFT JOIN public.v_ldi_alarm_category c ON c.alarm_code = a.errorcode::TEXT\n  LEFT JOIN public.ldi_alarm_lifecycle l ON l.logdate = a.logdate AND l.logid = a.logid\n  WHERE a.equipmentid = 'LDI-10'\n    AND m.severity IN ('Critical', 'Major')\n    AND a.logdate > NOW() - INTERVAL '5 minutes'\n    AND l.status IS DISTINCT FROM 'RESOLVED'\n),\nalarm_ctx AS (\n  SELECT\n    COUNT(*)::INT AS n,\n    (ARRAY_AGG(owner ORDER BY sev_rank, logdate DESC))[1] AS owner,\n    (ARRAY_AGG(elapsed ORDER BY sev_rank, logdate DESC))[1] AS elapsed\n  FROM alarm_raw\n)\nSELECT\n  s.eqp_id AS eqp_id_10,\n  s.st AS state_10,\n  CASE s.st\n    WHEN 3 THEN 'img/icons/unicons/exclamation-triangle.svg'\n    WHEN 0 THEN 'img/icons/unicons/question-circle.svg'\n    WHEN 1 THEN 'img/icons/unicons/pause-circle.svg'\n    ELSE 'img/icons/unicons/check-circle.svg'\n  END AS icon_path_10,\n  COALESCE(s.board_no::TEXT, '—') || ' / ' || COALESCE(s.total_board::TEXT, '—') AS board_total_10,\n  COALESCE(s.mo, '—') AS mo_10,\n  CASE\n    WHEN alarm_ctx.n = 0 OR alarm_ctx.n IS NULL THEN '—'\n    ELSE alarm_ctx.n::TEXT || (CASE WHEN alarm_ctx.n = 1 THEN ' ALARM · ' ELSE ' ALARMS · ' END) || alarm_ctx.owner || ' · ' || alarm_ctx.elapsed\n  END AS badge_10\nFROM s CROSS JOIN alarm_ctx"
         }
       ],
       "options": {
@@ -134,19 +652,86 @@
           "elements": [
             {
               "type": "rectangle",
-              "name": "machine-LDI-01-body",
-              "placement": { "top": 40, "left": 40, "width": 220, "height": 140, "rotation": 0 },
+              "name": "zone-1-container",
+              "placement": {
+                "top": 4,
+                "left": 20,
+                "width": 236,
+                "height": 482,
+                "rotation": 0
+              },
               "background": {
-                "color": { "mode": "field", "field": "state_1", "fixed": "#64748b" }
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#1E293B"
+                }
               },
               "border": {
-                "color": { "mode": "fixed", "fixed": "#1F2937" },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#0F172A"
+                },
+                "width": 1
+              }
+            },
+            {
+              "type": "text",
+              "name": "zone-1-label",
+              "placement": {
+                "top": 10,
+                "left": 20,
+                "width": 236,
+                "height": 24,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "fixed",
+                  "fixed": "Site A - Zone 1"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#E2E8F0"
+                },
+                "size": 13,
+                "align": "center",
+                "valign": "middle"
+              },
+              "background": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "transparent"
+                }
+              }
+            },
+            {
+              "type": "rectangle",
+              "name": "machine-LDI-01-body",
+              "placement": {
+                "top": 46,
+                "left": 28,
+                "width": 220,
+                "height": 210,
+                "rotation": 0
+              },
+              "background": {
+                "color": {
+                  "mode": "field",
+                  "field": "state_1",
+                  "fixed": "#64748b"
+                }
+              },
+              "border": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#1F2937"
+                },
                 "width": 2
               },
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-01",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-01&var-factory=2&var-mo=MO-813166&var-event_time_ms=1786950345690&from=${__from}&to=${__to}",
+                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-01&var-factory=2&from=${__from}&to=${__to}",
                   "targetBlank": false
                 }
               ]
@@ -154,50 +739,175 @@
             {
               "type": "text",
               "name": "machine-LDI-01-label",
-              "placement": { "top": 50, "left": 50, "width": 200, "height": 30, "rotation": 0 },
+              "placement": {
+                "top": 54,
+                "left": 34,
+                "width": 208,
+                "height": 26,
+                "rotation": 0
+              },
               "config": {
-                "text": { "mode": "field", "field": "eqp_id_1", "fixed": "LDI-01" },
-                "color": { "mode": "fixed", "fixed": "#FFFFFF" },
-                "size": 16,
+                "text": {
+                  "mode": "field",
+                  "field": "eqp_id_1",
+                  "fixed": "LDI-01"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#FFFFFF"
+                },
+                "size": 18,
                 "align": "center",
                 "valign": "middle"
               },
-              "background": { "color": { "mode": "fixed", "fixed": "transparent" } }
-            },
-            {
-              "type": "metric-value",
-              "name": "machine-LDI-01-metric",
-              "placement": { "top": 90, "left": 50, "width": 200, "height": 40, "rotation": 0 },
-              "config": {
-                "text": { "mode": "field", "field": "board_1" },
-                "color": { "mode": "fixed", "fixed": "#FFFFFF" },
-                "size": 22
+              "background": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "transparent"
+                }
               }
             },
             {
               "type": "icon",
               "name": "machine-LDI-01-icon",
-              "placement": { "top": 140, "left": 130, "width": 40, "height": 40, "rotation": 0 },
+              "placement": {
+                "top": 84,
+                "left": 118,
+                "width": 40,
+                "height": 40,
+                "rotation": 0
+              },
               "config": {
-                "path": { "mode": "fixed", "fixed": "img/icons/unicons/circle.svg" },
-                "color": { "mode": "field", "field": "state_1", "fixed": "#FFFFFF" }
+                "path": {
+                  "mode": "field",
+                  "field": "icon_path_1",
+                  "fixed": "img/icons/unicons/question-circle.svg"
+                },
+                "fill": {
+                  "mode": "fixed",
+                  "fixed": "#FFFFFF"
+                },
+                "stroke": {
+                  "color": {
+                    "mode": "fixed",
+                    "fixed": "#FFFFFF"
+                  },
+                  "width": 2
+                }
+              }
+            },
+            {
+              "type": "metric-value",
+              "name": "machine-LDI-01-metric",
+              "placement": {
+                "top": 128,
+                "left": 34,
+                "width": 208,
+                "height": 32,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "field",
+                  "field": "board_total_1"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#FFFFFF"
+                },
+                "size": 18
+              }
+            },
+            {
+              "type": "text",
+              "name": "machine-LDI-01-mo",
+              "placement": {
+                "top": 164,
+                "left": 34,
+                "width": 208,
+                "height": 18,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "field",
+                  "field": "mo_1",
+                  "fixed": "—"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#CBD5E1"
+                },
+                "size": 11,
+                "align": "center",
+                "valign": "middle"
+              },
+              "background": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "transparent"
+                }
+              }
+            },
+            {
+              "type": "text",
+              "name": "machine-LDI-01-badge",
+              "placement": {
+                "top": 186,
+                "left": 34,
+                "width": 208,
+                "height": 36,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "field",
+                  "field": "badge_1",
+                  "fixed": "—"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#F1F5F9"
+                },
+                "size": 10,
+                "align": "center",
+                "valign": "top"
+              },
+              "background": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "transparent"
+                }
               }
             },
             {
               "type": "rectangle",
               "name": "machine-LDI-02-body",
-              "placement": { "top": 40, "left": 320, "width": 220, "height": 140, "rotation": 0 },
+              "placement": {
+                "top": 266,
+                "left": 28,
+                "width": 220,
+                "height": 210,
+                "rotation": 0
+              },
               "background": {
-                "color": { "mode": "field", "field": "state_2", "fixed": "#64748b" }
+                "color": {
+                  "mode": "field",
+                  "field": "state_2",
+                  "fixed": "#64748b"
+                }
               },
               "border": {
-                "color": { "mode": "fixed", "fixed": "#1F2937" },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#1F2937"
+                },
                 "width": 2
               },
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-02",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-02&var-factory=2&var-mo=MO-843764&var-event_time_ms=1786950345690&from=${__from}&to=${__to}",
+                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-02&var-factory=2&from=${__from}&to=${__to}",
                   "targetBlank": false
                 }
               ]
@@ -205,33 +915,1769 @@
             {
               "type": "text",
               "name": "machine-LDI-02-label",
-              "placement": { "top": 50, "left": 330, "width": 200, "height": 30, "rotation": 0 },
+              "placement": {
+                "top": 274,
+                "left": 34,
+                "width": 208,
+                "height": 26,
+                "rotation": 0
+              },
               "config": {
-                "text": { "mode": "field", "field": "eqp_id_2", "fixed": "LDI-02" },
-                "color": { "mode": "fixed", "fixed": "#FFFFFF" },
-                "size": 16,
+                "text": {
+                  "mode": "field",
+                  "field": "eqp_id_2",
+                  "fixed": "LDI-02"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#FFFFFF"
+                },
+                "size": 18,
                 "align": "center",
                 "valign": "middle"
               },
-              "background": { "color": { "mode": "fixed", "fixed": "transparent" } }
-            },
-            {
-              "type": "metric-value",
-              "name": "machine-LDI-02-metric",
-              "placement": { "top": 90, "left": 330, "width": 200, "height": 40, "rotation": 0 },
-              "config": {
-                "text": { "mode": "field", "field": "board_2" },
-                "color": { "mode": "fixed", "fixed": "#FFFFFF" },
-                "size": 22
+              "background": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "transparent"
+                }
               }
             },
             {
               "type": "icon",
               "name": "machine-LDI-02-icon",
-              "placement": { "top": 140, "left": 410, "width": 40, "height": 40, "rotation": 0 },
+              "placement": {
+                "top": 304,
+                "left": 118,
+                "width": 40,
+                "height": 40,
+                "rotation": 0
+              },
               "config": {
-                "path": { "mode": "fixed", "fixed": "img/icons/unicons/circle.svg" },
-                "color": { "mode": "field", "field": "state_2", "fixed": "#FFFFFF" }
+                "path": {
+                  "mode": "field",
+                  "field": "icon_path_2",
+                  "fixed": "img/icons/unicons/question-circle.svg"
+                },
+                "fill": {
+                  "mode": "fixed",
+                  "fixed": "#FFFFFF"
+                },
+                "stroke": {
+                  "color": {
+                    "mode": "fixed",
+                    "fixed": "#FFFFFF"
+                  },
+                  "width": 2
+                }
+              }
+            },
+            {
+              "type": "metric-value",
+              "name": "machine-LDI-02-metric",
+              "placement": {
+                "top": 348,
+                "left": 34,
+                "width": 208,
+                "height": 32,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "field",
+                  "field": "board_total_2"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#FFFFFF"
+                },
+                "size": 18
+              }
+            },
+            {
+              "type": "text",
+              "name": "machine-LDI-02-mo",
+              "placement": {
+                "top": 384,
+                "left": 34,
+                "width": 208,
+                "height": 18,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "field",
+                  "field": "mo_2",
+                  "fixed": "—"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#CBD5E1"
+                },
+                "size": 11,
+                "align": "center",
+                "valign": "middle"
+              },
+              "background": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "transparent"
+                }
+              }
+            },
+            {
+              "type": "text",
+              "name": "machine-LDI-02-badge",
+              "placement": {
+                "top": 406,
+                "left": 34,
+                "width": 208,
+                "height": 36,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "field",
+                  "field": "badge_2",
+                  "fixed": "—"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#F1F5F9"
+                },
+                "size": 10,
+                "align": "center",
+                "valign": "top"
+              },
+              "background": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "transparent"
+                }
+              }
+            },
+            {
+              "type": "rectangle",
+              "name": "zone-2-container",
+              "placement": {
+                "top": 4,
+                "left": 270,
+                "width": 236,
+                "height": 482,
+                "rotation": 0
+              },
+              "background": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#1E293B"
+                }
+              },
+              "border": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#0F172A"
+                },
+                "width": 1
+              }
+            },
+            {
+              "type": "text",
+              "name": "zone-2-label",
+              "placement": {
+                "top": 10,
+                "left": 270,
+                "width": 236,
+                "height": 24,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "fixed",
+                  "fixed": "Site B - Zone 1"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#E2E8F0"
+                },
+                "size": 13,
+                "align": "center",
+                "valign": "middle"
+              },
+              "background": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "transparent"
+                }
+              }
+            },
+            {
+              "type": "rectangle",
+              "name": "machine-LDI-03-body",
+              "placement": {
+                "top": 46,
+                "left": 278,
+                "width": 220,
+                "height": 210,
+                "rotation": 0
+              },
+              "background": {
+                "color": {
+                  "mode": "field",
+                  "field": "state_3",
+                  "fixed": "#64748b"
+                }
+              },
+              "border": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#1F2937"
+                },
+                "width": 2
+              },
+              "links": [
+                {
+                  "title": "Open Machine Snapshot for LDI-03",
+                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-03&var-factory=3&from=${__from}&to=${__to}",
+                  "targetBlank": false
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "name": "machine-LDI-03-label",
+              "placement": {
+                "top": 54,
+                "left": 284,
+                "width": 208,
+                "height": 26,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "field",
+                  "field": "eqp_id_3",
+                  "fixed": "LDI-03"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#FFFFFF"
+                },
+                "size": 18,
+                "align": "center",
+                "valign": "middle"
+              },
+              "background": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "transparent"
+                }
+              }
+            },
+            {
+              "type": "icon",
+              "name": "machine-LDI-03-icon",
+              "placement": {
+                "top": 84,
+                "left": 368,
+                "width": 40,
+                "height": 40,
+                "rotation": 0
+              },
+              "config": {
+                "path": {
+                  "mode": "field",
+                  "field": "icon_path_3",
+                  "fixed": "img/icons/unicons/question-circle.svg"
+                },
+                "fill": {
+                  "mode": "fixed",
+                  "fixed": "#FFFFFF"
+                },
+                "stroke": {
+                  "color": {
+                    "mode": "fixed",
+                    "fixed": "#FFFFFF"
+                  },
+                  "width": 2
+                }
+              }
+            },
+            {
+              "type": "metric-value",
+              "name": "machine-LDI-03-metric",
+              "placement": {
+                "top": 128,
+                "left": 284,
+                "width": 208,
+                "height": 32,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "field",
+                  "field": "board_total_3"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#FFFFFF"
+                },
+                "size": 18
+              }
+            },
+            {
+              "type": "text",
+              "name": "machine-LDI-03-mo",
+              "placement": {
+                "top": 164,
+                "left": 284,
+                "width": 208,
+                "height": 18,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "field",
+                  "field": "mo_3",
+                  "fixed": "—"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#CBD5E1"
+                },
+                "size": 11,
+                "align": "center",
+                "valign": "middle"
+              },
+              "background": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "transparent"
+                }
+              }
+            },
+            {
+              "type": "text",
+              "name": "machine-LDI-03-badge",
+              "placement": {
+                "top": 186,
+                "left": 284,
+                "width": 208,
+                "height": 36,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "field",
+                  "field": "badge_3",
+                  "fixed": "—"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#F1F5F9"
+                },
+                "size": 10,
+                "align": "center",
+                "valign": "top"
+              },
+              "background": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "transparent"
+                }
+              }
+            },
+            {
+              "type": "rectangle",
+              "name": "machine-LDI-04-body",
+              "placement": {
+                "top": 266,
+                "left": 278,
+                "width": 220,
+                "height": 210,
+                "rotation": 0
+              },
+              "background": {
+                "color": {
+                  "mode": "field",
+                  "field": "state_4",
+                  "fixed": "#64748b"
+                }
+              },
+              "border": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#1F2937"
+                },
+                "width": 2
+              },
+              "links": [
+                {
+                  "title": "Open Machine Snapshot for LDI-04",
+                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-04&var-factory=3&from=${__from}&to=${__to}",
+                  "targetBlank": false
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "name": "machine-LDI-04-label",
+              "placement": {
+                "top": 274,
+                "left": 284,
+                "width": 208,
+                "height": 26,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "field",
+                  "field": "eqp_id_4",
+                  "fixed": "LDI-04"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#FFFFFF"
+                },
+                "size": 18,
+                "align": "center",
+                "valign": "middle"
+              },
+              "background": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "transparent"
+                }
+              }
+            },
+            {
+              "type": "icon",
+              "name": "machine-LDI-04-icon",
+              "placement": {
+                "top": 304,
+                "left": 368,
+                "width": 40,
+                "height": 40,
+                "rotation": 0
+              },
+              "config": {
+                "path": {
+                  "mode": "field",
+                  "field": "icon_path_4",
+                  "fixed": "img/icons/unicons/question-circle.svg"
+                },
+                "fill": {
+                  "mode": "fixed",
+                  "fixed": "#FFFFFF"
+                },
+                "stroke": {
+                  "color": {
+                    "mode": "fixed",
+                    "fixed": "#FFFFFF"
+                  },
+                  "width": 2
+                }
+              }
+            },
+            {
+              "type": "metric-value",
+              "name": "machine-LDI-04-metric",
+              "placement": {
+                "top": 348,
+                "left": 284,
+                "width": 208,
+                "height": 32,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "field",
+                  "field": "board_total_4"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#FFFFFF"
+                },
+                "size": 18
+              }
+            },
+            {
+              "type": "text",
+              "name": "machine-LDI-04-mo",
+              "placement": {
+                "top": 384,
+                "left": 284,
+                "width": 208,
+                "height": 18,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "field",
+                  "field": "mo_4",
+                  "fixed": "—"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#CBD5E1"
+                },
+                "size": 11,
+                "align": "center",
+                "valign": "middle"
+              },
+              "background": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "transparent"
+                }
+              }
+            },
+            {
+              "type": "text",
+              "name": "machine-LDI-04-badge",
+              "placement": {
+                "top": 406,
+                "left": 284,
+                "width": 208,
+                "height": 36,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "field",
+                  "field": "badge_4",
+                  "fixed": "—"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#F1F5F9"
+                },
+                "size": 10,
+                "align": "center",
+                "valign": "top"
+              },
+              "background": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "transparent"
+                }
+              }
+            },
+            {
+              "type": "rectangle",
+              "name": "zone-3-container",
+              "placement": {
+                "top": 4,
+                "left": 520,
+                "width": 236,
+                "height": 482,
+                "rotation": 0
+              },
+              "background": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#1E293B"
+                }
+              },
+              "border": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#0F172A"
+                },
+                "width": 1
+              }
+            },
+            {
+              "type": "text",
+              "name": "zone-3-label",
+              "placement": {
+                "top": 10,
+                "left": 520,
+                "width": 236,
+                "height": 24,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "fixed",
+                  "fixed": "Site A - Zone 2"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#E2E8F0"
+                },
+                "size": 13,
+                "align": "center",
+                "valign": "middle"
+              },
+              "background": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "transparent"
+                }
+              }
+            },
+            {
+              "type": "rectangle",
+              "name": "machine-LDI-05-body",
+              "placement": {
+                "top": 46,
+                "left": 528,
+                "width": 220,
+                "height": 210,
+                "rotation": 0
+              },
+              "background": {
+                "color": {
+                  "mode": "field",
+                  "field": "state_5",
+                  "fixed": "#64748b"
+                }
+              },
+              "border": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#1F2937"
+                },
+                "width": 2
+              },
+              "links": [
+                {
+                  "title": "Open Machine Snapshot for LDI-05",
+                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-05&var-factory=2&from=${__from}&to=${__to}",
+                  "targetBlank": false
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "name": "machine-LDI-05-label",
+              "placement": {
+                "top": 54,
+                "left": 534,
+                "width": 208,
+                "height": 26,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "field",
+                  "field": "eqp_id_5",
+                  "fixed": "LDI-05"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#FFFFFF"
+                },
+                "size": 18,
+                "align": "center",
+                "valign": "middle"
+              },
+              "background": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "transparent"
+                }
+              }
+            },
+            {
+              "type": "icon",
+              "name": "machine-LDI-05-icon",
+              "placement": {
+                "top": 84,
+                "left": 618,
+                "width": 40,
+                "height": 40,
+                "rotation": 0
+              },
+              "config": {
+                "path": {
+                  "mode": "field",
+                  "field": "icon_path_5",
+                  "fixed": "img/icons/unicons/question-circle.svg"
+                },
+                "fill": {
+                  "mode": "fixed",
+                  "fixed": "#FFFFFF"
+                },
+                "stroke": {
+                  "color": {
+                    "mode": "fixed",
+                    "fixed": "#FFFFFF"
+                  },
+                  "width": 2
+                }
+              }
+            },
+            {
+              "type": "metric-value",
+              "name": "machine-LDI-05-metric",
+              "placement": {
+                "top": 128,
+                "left": 534,
+                "width": 208,
+                "height": 32,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "field",
+                  "field": "board_total_5"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#FFFFFF"
+                },
+                "size": 18
+              }
+            },
+            {
+              "type": "text",
+              "name": "machine-LDI-05-mo",
+              "placement": {
+                "top": 164,
+                "left": 534,
+                "width": 208,
+                "height": 18,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "field",
+                  "field": "mo_5",
+                  "fixed": "—"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#CBD5E1"
+                },
+                "size": 11,
+                "align": "center",
+                "valign": "middle"
+              },
+              "background": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "transparent"
+                }
+              }
+            },
+            {
+              "type": "text",
+              "name": "machine-LDI-05-badge",
+              "placement": {
+                "top": 186,
+                "left": 534,
+                "width": 208,
+                "height": 36,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "field",
+                  "field": "badge_5",
+                  "fixed": "—"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#F1F5F9"
+                },
+                "size": 10,
+                "align": "center",
+                "valign": "top"
+              },
+              "background": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "transparent"
+                }
+              }
+            },
+            {
+              "type": "rectangle",
+              "name": "machine-LDI-06-body",
+              "placement": {
+                "top": 266,
+                "left": 528,
+                "width": 220,
+                "height": 210,
+                "rotation": 0
+              },
+              "background": {
+                "color": {
+                  "mode": "field",
+                  "field": "state_6",
+                  "fixed": "#64748b"
+                }
+              },
+              "border": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#1F2937"
+                },
+                "width": 2
+              },
+              "links": [
+                {
+                  "title": "Open Machine Snapshot for LDI-06",
+                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-06&var-factory=2&from=${__from}&to=${__to}",
+                  "targetBlank": false
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "name": "machine-LDI-06-label",
+              "placement": {
+                "top": 274,
+                "left": 534,
+                "width": 208,
+                "height": 26,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "field",
+                  "field": "eqp_id_6",
+                  "fixed": "LDI-06"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#FFFFFF"
+                },
+                "size": 18,
+                "align": "center",
+                "valign": "middle"
+              },
+              "background": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "transparent"
+                }
+              }
+            },
+            {
+              "type": "icon",
+              "name": "machine-LDI-06-icon",
+              "placement": {
+                "top": 304,
+                "left": 618,
+                "width": 40,
+                "height": 40,
+                "rotation": 0
+              },
+              "config": {
+                "path": {
+                  "mode": "field",
+                  "field": "icon_path_6",
+                  "fixed": "img/icons/unicons/question-circle.svg"
+                },
+                "fill": {
+                  "mode": "fixed",
+                  "fixed": "#FFFFFF"
+                },
+                "stroke": {
+                  "color": {
+                    "mode": "fixed",
+                    "fixed": "#FFFFFF"
+                  },
+                  "width": 2
+                }
+              }
+            },
+            {
+              "type": "metric-value",
+              "name": "machine-LDI-06-metric",
+              "placement": {
+                "top": 348,
+                "left": 534,
+                "width": 208,
+                "height": 32,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "field",
+                  "field": "board_total_6"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#FFFFFF"
+                },
+                "size": 18
+              }
+            },
+            {
+              "type": "text",
+              "name": "machine-LDI-06-mo",
+              "placement": {
+                "top": 384,
+                "left": 534,
+                "width": 208,
+                "height": 18,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "field",
+                  "field": "mo_6",
+                  "fixed": "—"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#CBD5E1"
+                },
+                "size": 11,
+                "align": "center",
+                "valign": "middle"
+              },
+              "background": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "transparent"
+                }
+              }
+            },
+            {
+              "type": "text",
+              "name": "machine-LDI-06-badge",
+              "placement": {
+                "top": 406,
+                "left": 534,
+                "width": 208,
+                "height": 36,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "field",
+                  "field": "badge_6",
+                  "fixed": "—"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#F1F5F9"
+                },
+                "size": 10,
+                "align": "center",
+                "valign": "top"
+              },
+              "background": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "transparent"
+                }
+              }
+            },
+            {
+              "type": "rectangle",
+              "name": "zone-4-container",
+              "placement": {
+                "top": 4,
+                "left": 770,
+                "width": 236,
+                "height": 482,
+                "rotation": 0
+              },
+              "background": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#1E293B"
+                }
+              },
+              "border": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#0F172A"
+                },
+                "width": 1
+              }
+            },
+            {
+              "type": "text",
+              "name": "zone-4-label",
+              "placement": {
+                "top": 10,
+                "left": 770,
+                "width": 236,
+                "height": 24,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "fixed",
+                  "fixed": "Site A - Zone 3"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#E2E8F0"
+                },
+                "size": 13,
+                "align": "center",
+                "valign": "middle"
+              },
+              "background": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "transparent"
+                }
+              }
+            },
+            {
+              "type": "rectangle",
+              "name": "machine-LDI-07-body",
+              "placement": {
+                "top": 46,
+                "left": 778,
+                "width": 220,
+                "height": 210,
+                "rotation": 0
+              },
+              "background": {
+                "color": {
+                  "mode": "field",
+                  "field": "state_7",
+                  "fixed": "#64748b"
+                }
+              },
+              "border": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#1F2937"
+                },
+                "width": 2
+              },
+              "links": [
+                {
+                  "title": "Open Machine Snapshot for LDI-07",
+                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-07&var-factory=2&from=${__from}&to=${__to}",
+                  "targetBlank": false
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "name": "machine-LDI-07-label",
+              "placement": {
+                "top": 54,
+                "left": 784,
+                "width": 208,
+                "height": 26,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "field",
+                  "field": "eqp_id_7",
+                  "fixed": "LDI-07"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#FFFFFF"
+                },
+                "size": 18,
+                "align": "center",
+                "valign": "middle"
+              },
+              "background": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "transparent"
+                }
+              }
+            },
+            {
+              "type": "icon",
+              "name": "machine-LDI-07-icon",
+              "placement": {
+                "top": 84,
+                "left": 868,
+                "width": 40,
+                "height": 40,
+                "rotation": 0
+              },
+              "config": {
+                "path": {
+                  "mode": "field",
+                  "field": "icon_path_7",
+                  "fixed": "img/icons/unicons/question-circle.svg"
+                },
+                "fill": {
+                  "mode": "fixed",
+                  "fixed": "#FFFFFF"
+                },
+                "stroke": {
+                  "color": {
+                    "mode": "fixed",
+                    "fixed": "#FFFFFF"
+                  },
+                  "width": 2
+                }
+              }
+            },
+            {
+              "type": "metric-value",
+              "name": "machine-LDI-07-metric",
+              "placement": {
+                "top": 128,
+                "left": 784,
+                "width": 208,
+                "height": 32,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "field",
+                  "field": "board_total_7"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#FFFFFF"
+                },
+                "size": 18
+              }
+            },
+            {
+              "type": "text",
+              "name": "machine-LDI-07-mo",
+              "placement": {
+                "top": 164,
+                "left": 784,
+                "width": 208,
+                "height": 18,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "field",
+                  "field": "mo_7",
+                  "fixed": "—"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#CBD5E1"
+                },
+                "size": 11,
+                "align": "center",
+                "valign": "middle"
+              },
+              "background": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "transparent"
+                }
+              }
+            },
+            {
+              "type": "text",
+              "name": "machine-LDI-07-badge",
+              "placement": {
+                "top": 186,
+                "left": 784,
+                "width": 208,
+                "height": 36,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "field",
+                  "field": "badge_7",
+                  "fixed": "—"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#F1F5F9"
+                },
+                "size": 10,
+                "align": "center",
+                "valign": "top"
+              },
+              "background": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "transparent"
+                }
+              }
+            },
+            {
+              "type": "rectangle",
+              "name": "machine-LDI-08-body",
+              "placement": {
+                "top": 266,
+                "left": 778,
+                "width": 220,
+                "height": 210,
+                "rotation": 0
+              },
+              "background": {
+                "color": {
+                  "mode": "field",
+                  "field": "state_8",
+                  "fixed": "#64748b"
+                }
+              },
+              "border": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#1F2937"
+                },
+                "width": 2
+              },
+              "links": [
+                {
+                  "title": "Open Machine Snapshot for LDI-08",
+                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-08&var-factory=2&from=${__from}&to=${__to}",
+                  "targetBlank": false
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "name": "machine-LDI-08-label",
+              "placement": {
+                "top": 274,
+                "left": 784,
+                "width": 208,
+                "height": 26,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "field",
+                  "field": "eqp_id_8",
+                  "fixed": "LDI-08"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#FFFFFF"
+                },
+                "size": 18,
+                "align": "center",
+                "valign": "middle"
+              },
+              "background": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "transparent"
+                }
+              }
+            },
+            {
+              "type": "icon",
+              "name": "machine-LDI-08-icon",
+              "placement": {
+                "top": 304,
+                "left": 868,
+                "width": 40,
+                "height": 40,
+                "rotation": 0
+              },
+              "config": {
+                "path": {
+                  "mode": "field",
+                  "field": "icon_path_8",
+                  "fixed": "img/icons/unicons/question-circle.svg"
+                },
+                "fill": {
+                  "mode": "fixed",
+                  "fixed": "#FFFFFF"
+                },
+                "stroke": {
+                  "color": {
+                    "mode": "fixed",
+                    "fixed": "#FFFFFF"
+                  },
+                  "width": 2
+                }
+              }
+            },
+            {
+              "type": "metric-value",
+              "name": "machine-LDI-08-metric",
+              "placement": {
+                "top": 348,
+                "left": 784,
+                "width": 208,
+                "height": 32,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "field",
+                  "field": "board_total_8"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#FFFFFF"
+                },
+                "size": 18
+              }
+            },
+            {
+              "type": "text",
+              "name": "machine-LDI-08-mo",
+              "placement": {
+                "top": 384,
+                "left": 784,
+                "width": 208,
+                "height": 18,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "field",
+                  "field": "mo_8",
+                  "fixed": "—"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#CBD5E1"
+                },
+                "size": 11,
+                "align": "center",
+                "valign": "middle"
+              },
+              "background": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "transparent"
+                }
+              }
+            },
+            {
+              "type": "text",
+              "name": "machine-LDI-08-badge",
+              "placement": {
+                "top": 406,
+                "left": 784,
+                "width": 208,
+                "height": 36,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "field",
+                  "field": "badge_8",
+                  "fixed": "—"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#F1F5F9"
+                },
+                "size": 10,
+                "align": "center",
+                "valign": "top"
+              },
+              "background": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "transparent"
+                }
+              }
+            },
+            {
+              "type": "rectangle",
+              "name": "zone-5-container",
+              "placement": {
+                "top": 4,
+                "left": 1020,
+                "width": 236,
+                "height": 482,
+                "rotation": 0
+              },
+              "background": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#1E293B"
+                }
+              },
+              "border": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#0F172A"
+                },
+                "width": 1
+              }
+            },
+            {
+              "type": "text",
+              "name": "zone-5-label",
+              "placement": {
+                "top": 10,
+                "left": 1020,
+                "width": 236,
+                "height": 24,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "fixed",
+                  "fixed": "Site B - Zone 2"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#E2E8F0"
+                },
+                "size": 13,
+                "align": "center",
+                "valign": "middle"
+              },
+              "background": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "transparent"
+                }
+              }
+            },
+            {
+              "type": "rectangle",
+              "name": "machine-LDI-09-body",
+              "placement": {
+                "top": 46,
+                "left": 1028,
+                "width": 220,
+                "height": 210,
+                "rotation": 0
+              },
+              "background": {
+                "color": {
+                  "mode": "field",
+                  "field": "state_9",
+                  "fixed": "#64748b"
+                }
+              },
+              "border": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#1F2937"
+                },
+                "width": 2
+              },
+              "links": [
+                {
+                  "title": "Open Machine Snapshot for LDI-09",
+                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-09&var-factory=3&from=${__from}&to=${__to}",
+                  "targetBlank": false
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "name": "machine-LDI-09-label",
+              "placement": {
+                "top": 54,
+                "left": 1034,
+                "width": 208,
+                "height": 26,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "field",
+                  "field": "eqp_id_9",
+                  "fixed": "LDI-09"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#FFFFFF"
+                },
+                "size": 18,
+                "align": "center",
+                "valign": "middle"
+              },
+              "background": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "transparent"
+                }
+              }
+            },
+            {
+              "type": "icon",
+              "name": "machine-LDI-09-icon",
+              "placement": {
+                "top": 84,
+                "left": 1118,
+                "width": 40,
+                "height": 40,
+                "rotation": 0
+              },
+              "config": {
+                "path": {
+                  "mode": "field",
+                  "field": "icon_path_9",
+                  "fixed": "img/icons/unicons/question-circle.svg"
+                },
+                "fill": {
+                  "mode": "fixed",
+                  "fixed": "#FFFFFF"
+                },
+                "stroke": {
+                  "color": {
+                    "mode": "fixed",
+                    "fixed": "#FFFFFF"
+                  },
+                  "width": 2
+                }
+              }
+            },
+            {
+              "type": "metric-value",
+              "name": "machine-LDI-09-metric",
+              "placement": {
+                "top": 128,
+                "left": 1034,
+                "width": 208,
+                "height": 32,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "field",
+                  "field": "board_total_9"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#FFFFFF"
+                },
+                "size": 18
+              }
+            },
+            {
+              "type": "text",
+              "name": "machine-LDI-09-mo",
+              "placement": {
+                "top": 164,
+                "left": 1034,
+                "width": 208,
+                "height": 18,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "field",
+                  "field": "mo_9",
+                  "fixed": "—"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#CBD5E1"
+                },
+                "size": 11,
+                "align": "center",
+                "valign": "middle"
+              },
+              "background": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "transparent"
+                }
+              }
+            },
+            {
+              "type": "text",
+              "name": "machine-LDI-09-badge",
+              "placement": {
+                "top": 186,
+                "left": 1034,
+                "width": 208,
+                "height": 36,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "field",
+                  "field": "badge_9",
+                  "fixed": "—"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#F1F5F9"
+                },
+                "size": 10,
+                "align": "center",
+                "valign": "top"
+              },
+              "background": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "transparent"
+                }
+              }
+            },
+            {
+              "type": "rectangle",
+              "name": "machine-LDI-10-body",
+              "placement": {
+                "top": 266,
+                "left": 1028,
+                "width": 220,
+                "height": 210,
+                "rotation": 0
+              },
+              "background": {
+                "color": {
+                  "mode": "field",
+                  "field": "state_10",
+                  "fixed": "#64748b"
+                }
+              },
+              "border": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#1F2937"
+                },
+                "width": 2
+              },
+              "links": [
+                {
+                  "title": "Open Machine Snapshot for LDI-10",
+                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-10&var-factory=3&from=${__from}&to=${__to}",
+                  "targetBlank": false
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "name": "machine-LDI-10-label",
+              "placement": {
+                "top": 274,
+                "left": 1034,
+                "width": 208,
+                "height": 26,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "field",
+                  "field": "eqp_id_10",
+                  "fixed": "LDI-10"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#FFFFFF"
+                },
+                "size": 18,
+                "align": "center",
+                "valign": "middle"
+              },
+              "background": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "transparent"
+                }
+              }
+            },
+            {
+              "type": "icon",
+              "name": "machine-LDI-10-icon",
+              "placement": {
+                "top": 304,
+                "left": 1118,
+                "width": 40,
+                "height": 40,
+                "rotation": 0
+              },
+              "config": {
+                "path": {
+                  "mode": "field",
+                  "field": "icon_path_10",
+                  "fixed": "img/icons/unicons/question-circle.svg"
+                },
+                "fill": {
+                  "mode": "fixed",
+                  "fixed": "#FFFFFF"
+                },
+                "stroke": {
+                  "color": {
+                    "mode": "fixed",
+                    "fixed": "#FFFFFF"
+                  },
+                  "width": 2
+                }
+              }
+            },
+            {
+              "type": "metric-value",
+              "name": "machine-LDI-10-metric",
+              "placement": {
+                "top": 348,
+                "left": 1034,
+                "width": 208,
+                "height": 32,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "field",
+                  "field": "board_total_10"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#FFFFFF"
+                },
+                "size": 18
+              }
+            },
+            {
+              "type": "text",
+              "name": "machine-LDI-10-mo",
+              "placement": {
+                "top": 384,
+                "left": 1034,
+                "width": 208,
+                "height": 18,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "field",
+                  "field": "mo_10",
+                  "fixed": "—"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#CBD5E1"
+                },
+                "size": 11,
+                "align": "center",
+                "valign": "middle"
+              },
+              "background": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "transparent"
+                }
+              }
+            },
+            {
+              "type": "text",
+              "name": "machine-LDI-10-badge",
+              "placement": {
+                "top": 406,
+                "left": 1034,
+                "width": 208,
+                "height": 36,
+                "rotation": 0
+              },
+              "config": {
+                "text": {
+                  "mode": "field",
+                  "field": "badge_10",
+                  "fixed": "—"
+                },
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "#F1F5F9"
+                },
+                "size": 10,
+                "align": "center",
+                "valign": "top"
+              },
+              "background": {
+                "color": {
+                  "mode": "fixed",
+                  "fixed": "transparent"
+                }
               }
             }
           ]
@@ -256,7 +2702,6 @@
     "LDI",
     "real-data",
     "current-database",
-    "manufacturing",
-    "poc"
+    "manufacturing"
   ]
 }

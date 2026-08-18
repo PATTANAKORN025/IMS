@@ -8,7 +8,7 @@
 
 ## 系统上下文
 
-IMS 是一个 Docker Compose 技术栈，包含**两条独立的遥测管道**，它们向同一个共享的 TimescaleDB 提供数据，跨 **12 个 Grafana 仪表板**进行可视化，并通过 Grafana 原生告警引擎和 Prometheus/Alertmanager 发出告警。
+IMS 是一个 Docker Compose 技术栈，包含**两条独立的遥测管道**，它们向同一个共享的 TimescaleDB 提供数据，跨 **15 个 Grafana 仪表板**进行可视化，并通过 Grafana 原生告警引擎和 Prometheus/Alertmanager 发出告警。
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
@@ -24,7 +24,7 @@ flowchart TB
   NR --> SYSMETRICS[("public.sys_metrics\npublic.net_metrics\npublic.ldi_metrics")]
  end
 
- LDIDATA --> GRAFANA["Grafana\n12个仪表板"]
+ LDIDATA --> GRAFANA["Grafana\n15个仪表板"]
  ALARMLOG --> GRAFANA
  SYSMETRICS --> GRAFANA
  SYSMETRICS --> PROM["Prometheus"]
@@ -37,7 +37,7 @@ flowchart TB
  style LEGACY fill:#1e293b,stroke:#F59E0B,color:#e2e8f0
 ```
 
-**存在两条管道的原因：** 传统的 SNMP 管道 (`ingestion.json`) 是系统的最初设计 —— 轮询支持 SNMP 的设备，通过有状态的 `sre_parser` 进行解析，并插入至 `sys_metrics`/`net_metrics`/`ldi_metrics`。LDI 制造遥测后来被赋予了其专属的、保真度更高的管道（`ldi_data`，由 HTTP POST 而非 SNMP 提供数据），因为制造仪表板需要每个样本的 PE/JE/Cpk 精度，而用于 k6 合成测试的 `ldi_metrics` 表在设计上从未打算承载此类精度。**所有 12 个 Grafana 仪表板的 LDI/制造内容均从 `ldi_data` 读取，而非 `ldi_metrics`。** `ldi_metrics` 仍然存在且仍在写入（通过 `ingestion.json` 的 SRE 解析器），但其几个 LDI 专有列（`throughput`、`power_watt`、`vibration`）已确认对于 LDI 级设备始终为 `0` —— 这是该管道中的一个已知缺陷，但在 `ldi_data` 中不存在。参见下方的“已知差异 (Known Gaps)”。
+**存在两条管道的原因：** 传统的 SNMP 管道 (`ingestion.json`) 是系统的最初设计 —— 轮询支持 SNMP 的设备，通过有状态的 `sre_parser` 进行解析，并插入至 `sys_metrics`/`net_metrics`/`ldi_metrics`。LDI 制造遥测后来被赋予了其专属的、保真度更高的管道（`ldi_data`，由 HTTP POST 而非 SNMP 提供数据），因为制造仪表板需要每个样本的 PE/JE/Cpk 精度，而用于 k6 合成测试的 `ldi_metrics` 表在设计上从未打算承载此类精度。**所有 15 个 Grafana 仪表板的 LDI/制造内容均从 `ldi_data` 读取，而非 `ldi_metrics`。** `ldi_metrics` 仍然存在且仍在写入（通过 `ingestion.json` 的 SRE 解析器），但其几个 LDI 专有列（`throughput`、`power_watt`、`vibration`）已确认对于 LDI 级设备始终为 `0` —— 这是该管道中的一个已知缺陷，但在 `ldi_data` 中不存在。参见下方的“已知差异 (Known Gaps)”。
 
 ---
 
