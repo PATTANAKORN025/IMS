@@ -223,7 +223,7 @@ flowchart LR
 3. **解析 (Parsing)** — `sre_parser` 在流上下文 (`dev_state_<deviceId>`) 中维护每个设备的状态，并在 `batch_buf_<deviceId>` 中缓冲数据行。离线心跳（`_walker: "offline"`）在设备发生故障时立即将所有指标归零。
 4. **存储 (Storage)** — 定时控制的独立刷新：只有在各自缓冲区有数据行时，每种表类型 (sys/net/ldi) 才会执行插入操作。部分遍历器故障不会阻塞不相关的数据写入。
 5. **连续聚合 (Continuous Aggregates)** — 每小时聚合每 30 分钟刷新一次。每天/每周聚合由每小时数据汇总而来。实时保留（已针对运行中的数据库进行验证，而非迁移历史记录——有关两者之间的偏差记录，请参阅 `docs/architecture/DATA_RETENTION.md`）：原始的 `sys_metrics`/`net_metrics`/`ldi_metrics` 保留 30 天，`ldi_data` 保留 180 天，每小时汇总数据保留 2 年。
-6. **可视化 (Visualization)** — 跨越 2 个领域的 12 个仪表板：4 个基础设施域（NOC 概览、工程向下钻取、AIOps 与容量、元监控） + 8 个制造域（简易概览、LDI 制造、操作员安灯看板、警报控制台、警报字典、工程分析与 SPC、机器快照、数据就绪度）。
+6. **可视化 (Visualization)** — 跨越 2 个领域的 15 个仪表板：5 个基础设施域（NOC 概览、工程向下钻取、AIOps 与容量、元监控、摄取延迟） + 10 个制造域（简易概览、LDI 制造、操作员安灯看板、警报控制台、警报字典、警报响应 (MTTA/MTTR)、工程分析与 SPC、机器快照、数据就绪度、工厂数字孪生）。
 7. **警报 (Alerting)** — Prometheus 抓取 `/metrics`，Alertmanager 路由至 LINE Messaging API + 带有运行手册链接的 MS Teams（实际交付需要操作员配置的凭据，设计上默认缺失）。通过基于 TimescaleDB 的 Grafana SQL 实现 Z-Score 异常检测。
 
 </details>
@@ -231,7 +231,7 @@ flowchart LR
 <details>
 <summary><b>仪表板架构</b></summary>
 
-12 个仪表板 — 4 个基础设施域，8 个制造域（`monitoring/grafana/dashboards/{infrastructure,manufacturing}/`，配置到单独的 Grafana 文件夹中——有关领域边界请参阅 **[所有权](docs/architecture/OWNERSHIP.md)**）。包含面板计数和描述的完整表格：**[仪表板清单](docs/architecture/DASHBOARD_INVENTORY.md)** — 由仪表板 JSON 本身自动生成 (`node scripts/generate-dashboard-inventory.js`)，并经过 CI 检查，因此它不会像手动输入的表格那样与真实的仪表板发生静默偏差。
+15 个仪表板 — 5 个基础设施域，10 个制造域（`monitoring/grafana/dashboards/{infrastructure,manufacturing}/`，配置到单独的 Grafana 文件夹中——有关领域边界请参阅 **[所有权](docs/architecture/OWNERSHIP.md)**）。包含面板计数和描述的完整表格：**[仪表板清单](docs/architecture/DASHBOARD_INVENTORY.md)** — 由仪表板 JSON 本身自动生成 (`node scripts/generate-dashboard-inventory.js`)，并经过 CI 检查，因此它不会像手动输入的表格那样与真实的仪表板发生静默偏差。
 
 **设计系统：** 赛博朋克 HUD（Cyberpunk HUD） — `#030407` 背景，Tailwind 调色板（`#10B981` 健康，`#F59E0B` 警告，`#EF4444` 严重，`#3B82F6` 强调），统计值使用 Roboto Mono 字体，玻璃拟态面板，Grid-24 无重叠布局。
 
@@ -263,7 +263,7 @@ open "http://localhost:3000/playlists/play/1?kiosk=tv&autofitpanels"
 | **编排**     | Docker Compose            | 具有开发/生产覆盖配置的 7 服务容器堆栈                             |
 | **采集**     | Node-RED + net-snmp       | 顺序异步批量 SNMP 遍历，5 线程并行遍历器                           |
 | **数据库**   | TimescaleDB (PostgreSQL)  | 具有连续聚合 (Continuous Aggregates) 的超表，7 天后达到 90% 压缩率 |
-| **可视化**   | Grafana 13.1.1            | 12 个仪表板（4 个基础设施 + 8 个制造），状态时间线异常             |
+| **可视化**   | Grafana 13.1.1            | 15 个仪表板（5 个基础设施 + 10 个制造），状态时间线异常             |
 | **警报**     | Prometheus + Alertmanager | 指标抓取，抑制规则，LINE Messaging API + MS Teams webhooks         |
 | **负载测试** | K6                        | 管道压力测试（50→200 虚拟用户），阈值 p95<500ms                    |
 | **SLA 探测** | Blackbox Exporter         | HTTP/TCP/ICMP 端点监控                                             |

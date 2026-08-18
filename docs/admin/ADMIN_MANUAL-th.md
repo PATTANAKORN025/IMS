@@ -30,7 +30,7 @@
 
 ### Container Overview
 
-ระบบใช้ Docker Compose 13 services (12 long-running + 1 one-shot migration runner):
+ระบบใช้ Docker Compose 14 services (13 long-running + 1 one-shot migration runner):
 
 | Container              | Service           | Port            | Purpose                                                                             |
 | ---------------------- | ----------------- | --------------- | ----------------------------------------------------------------------------------- |

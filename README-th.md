@@ -223,7 +223,7 @@ flowchart LR
 3. **Parsing** — `sre_parser` จะรักษาสถานะแบบรายอุปกรณ์ไว้ใน flow context (`dev_state_<deviceId>`), และบัฟเฟอร์แถวข้อมูลใน `batch_buf_<deviceId>` สัญญาณชีพแบบออฟไลน์ (`_walker: "offline"`) จะลบเมทริกซ์ทั้งหมดเป็นศูนย์ทันทีเมื่ออุปกรณ์ล้มเหลว
 4. **Storage** — การฟลัชอิสระที่ควบคุมด้วยตัวจับเวลา: แต่ละประเภทตาราง (sys/net/ldi) จะ insert ก็ต่อเมื่อบัฟเฟอร์มีแถวข้อมูล ความล้มเหลวบางส่วนของ walker จะไม่บล็อกการเขียนข้อมูลที่ไม่เกี่ยวข้องกัน
 5. **Continuous Aggregation** — CAGGs รายชั่วโมงจะรีเฟรชทุกๆ 30 นาที การสรุปผลรายวัน/รายสัปดาห์จะรวมข้อมูลจากรายชั่วโมง ระยะเวลาการเก็บรักษาข้อมูลจริง (ถูกตรวจสอบกับฐานข้อมูลที่รันอยู่ ไม่ใช่ประวัติการย้ายข้อมูล -- ดู `docs/architecture/DATA_RETENTION.md` สำหรับเอกสารระบุความแตกต่างระหว่างสองสิ่งนี้): ข้อมูลดิบ `sys_metrics`/`net_metrics`/`ldi_metrics` 30 วัน, `ldi_data` 180 วัน, และข้อมูลสรุปรายชั่วโมง 2 ปี
-6. **Visualization** — 12 แดชบอร์ดแบ่งตาม 2 โดเมน: 4 โครงสร้างพื้นฐาน (NOC Overview, Engineering Drill-Down, AIOps & Capacity, Meta-Monitoring) + 8 การผลิต (Easy Overview, LDI Manufacturing, Operator Andon, Alarm Console, Alarm Dictionary, Engineering Analytics & SPC, Machine Snapshot, Data Readiness)
+6. **Visualization** — 15 แดชบอร์ดแบ่งตาม 2 โดเมน: 5 โครงสร้างพื้นฐาน (NOC Overview, Engineering Drill-Down, AIOps & Capacity, Meta-Monitoring, Ingestion Latency) + 10 การผลิต (Easy Overview, LDI Manufacturing, Operator Andon, Alarm Console, Alarm Dictionary, Alarm Response (MTTA/MTTR), Engineering Analytics & SPC, Machine Snapshot, Data Readiness, Factory Digital Twin)
 7. **Alerting** — Prometheus สแครป `/metrics`, Alertmanager ทำการกำหนดเส้นทางไปยัง LINE Messaging API + MS Teams พร้อมลิงก์ runbook (การส่งจริงต้องการการกำหนดค่า credentials จากโอเปอเรเตอร์ ซึ่งออกแบบมาให้ไม่มีให้แต่เริ่มต้น) ความผิดปกติด้วย Z-Score ทำการแจ้งเตือนผ่าน Grafana SQL บน TimescaleDB
 
 </details>
@@ -231,7 +231,7 @@ flowchart LR
 <details>
 <summary><b>สถาปัตยกรรมแดชบอร์ด (Dashboard Architecture)</b></summary>
 
-12 แดชบอร์ด — 4 โครงสร้างพื้นฐาน, 8 การผลิต (`monitoring/grafana/dashboards/{infrastructure,manufacturing}/`, จัดเตรียมไว้ในโฟลเดอร์ Grafana ที่แยกจากกัน — ดู **[Ownership](docs/architecture/OWNERSHIP.md)** สำหรับขอบเขตโดเมน) ตารางฉบับเต็มพร้อมจำนวนพาเนลและคำอธิบาย: **[Dashboard Inventory](docs/architecture/DASHBOARD_INVENTORY.md)** — ถูกสร้างอัตโนมัติจากไฟล์ JSON ของแดชบอร์ดเอง (`node scripts/generate-dashboard-inventory.js`), มีการตรวจสอบโดย CI เพื่อไม่ให้ข้อมูลคลาดเคลื่อนจากแดชบอร์ดจริงในแบบที่การพิมพ์ตารางด้วยมืออาจเกิดขึ้นได้
+15 แดชบอร์ด — 5 โครงสร้างพื้นฐาน, 10 การผลิต (`monitoring/grafana/dashboards/{infrastructure,manufacturing}/`, จัดเตรียมไว้ในโฟลเดอร์ Grafana ที่แยกจากกัน — ดู **[Ownership](docs/architecture/OWNERSHIP.md)** สำหรับขอบเขตโดเมน) ตารางฉบับเต็มพร้อมจำนวนพาเนลและคำอธิบาย: **[Dashboard Inventory](docs/architecture/DASHBOARD_INVENTORY.md)** — ถูกสร้างอัตโนมัติจากไฟล์ JSON ของแดชบอร์ดเอง (`node scripts/generate-dashboard-inventory.js`), มีการตรวจสอบโดย CI เพื่อไม่ให้ข้อมูลคลาดเคลื่อนจากแดชบอร์ดจริงในแบบที่การพิมพ์ตารางด้วยมืออาจเกิดขึ้นได้
 
 **ระบบการออกแบบ (Design System):** Cyberpunk HUD — พื้นหลัง `#030407`, พาเล็ตสีแบบ Tailwind (`#10B981` Healthy, `#F59E0B` Warning, `#EF4444` Critical, `#3B82F6` Accent), ฟอนต์ Roboto Mono สำหรับค่าสถิติ, พาเนลแบบ glassmorphism, โครงร่างแบบ Grid-24 ป้องกันการทับซ้อน
 
@@ -263,7 +263,7 @@ open "http://localhost:3000/playlists/play/1?kiosk=tv&autofitpanels"
 | **Orchestration** | Docker Compose            | คอนเทนเนอร์สแต็ก 7 บริการ พร้อมโอเวอร์เลย์สำหรับ dev/prod                                        |
 | **Collection**    | Node-RED + net-snmp       | การดึงข้อมูล SNMP ปริมาณมากแบบตามลำดับ (Sequential async bulk SNMP walks), walker แบบขนาน 5-เธรด |
 | **Database**      | TimescaleDB (PostgreSQL)  | Hypertables พร้อมด้วย Continuous Aggregates, การบีบอัดข้อมูล 90% หลัง 7 วัน                      |
-| **Visualization** | Grafana 13.1.1            | 12 แดชบอร์ด (4 โครงสร้างพื้นฐาน + 8 การผลิต), ระบบเตือนความผิดปกติด้วย state-timeline            |
+| **Visualization** | Grafana 13.1.1            | 15 แดชบอร์ด (5 โครงสร้างพื้นฐาน + 10 การผลิต), ระบบเตือนความผิดปกติด้วย state-timeline            |
 | **Alerting**      | Prometheus + Alertmanager | การสแครปเมทริกซ์, inhibition rules, LINE Messaging API + MS Teams webhooks                       |
 | **Load Testing**  | K6                        | การทดสอบความเครียดไปป์ไลน์ (50→200 VUs), ขีดจำกัด p95<500ms                                      |
 | **SLA Probing**   | Blackbox Exporter         | การตรวจสอบ endpoint ผ่าน HTTP/TCP/ICMP                                                           |
