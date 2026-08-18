@@ -43,7 +43,7 @@
 > **Provenance:** Architecture and capabilities updated and verified against the live system on 2026-08-10.
 
 <div align="center">
-  <img src="assets/apex-ldi-noc-banner.jpg" alt="APEX Circuit LDI NOC Banner" width="100%" style="border-radius:12px; box-shadow: 0 16px 64px rgba(0,0,0,0.6); margin-bottom: 24px; border: 1px solid rgba(0,242,254,0.1);" />
+  <img src="assets/apex-ldi-noc-banner.gif" alt="APEX Circuit LDI NOC Banner" width="100%" style="border-radius:12px; box-shadow: 0 16px 64px rgba(0,0,0,0.6); margin-bottom: 24px; border: 1px solid rgba(0,242,254,0.1);" />
   <br/>
   <br/>
   > <img src="docs/assets/icons/activity.svg" width="18" align="center"/> **APEX Circuit IMS | Advanced Manufacturing Intelligence & NOC**
