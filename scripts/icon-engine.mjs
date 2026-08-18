@@ -13,17 +13,41 @@ const badgeLogoToSlug = {
     'opensourceinitiative': 'open-source-initiative'
 };
 
+const genericIconMapping = {
+    'activity': 'datadog',
+    'aperture': 'unsplash',
+    'book': 'gitbook',
+    'briefcase': 'upwork',
+    'circle-check': 'checkmarx',
+    'check-circle': 'checkmarx',
+    'clock': 'clockify',
+    'compass': 'safari',
+    'crosshair': 'target',
+    'factory': 'factorio',
+    'file-text': 'gitbook',
+    'folder': 'dropbox',
+    'globe': 'internetexplorer',
+    'home': 'homebridge',
+    'layers': 'stackshare',
+    'map': 'safari',
+    'server': 'redis',
+    'users': 'discord',
+    'wrench': 'ifixit',
+    'zoom-in': 'algolia'
+};
+
 const generatedIcons = new Set();
 const ICONS_DIR = path.join(process.cwd(), 'docs/assets/icons');
 
-async function getIconSvg(slug) {
+async function getIconSvg(originalSlug) {
+    let slug = genericIconMapping[originalSlug] || originalSlug;
     try {
         const mod = await import(`@thesvg/icons/${slug}`);
         return mod.svg;
     } catch (e) {
-        console.warn(`[IconEngine] Could not find icon: ${slug}, falling back to check-circle`);
+        console.warn(`[IconEngine] Could not find icon: ${slug}, falling back to checkmarx`);
         try {
-            const fallback = await import(`@thesvg/icons/check-circle`);
+            const fallback = await import(`@thesvg/icons/checkmarx`);
             return fallback.svg;
         } catch(e2) {
             return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor"/></svg>`;
@@ -119,11 +143,11 @@ async function processFile(filePath) {
         content = content.replace(m[0], replacement);
     }
 
-    const manualIcons = ['aperture', 'globe', 'server', 'folder', 'compass', 'crosshair', 'map', 'zoom-in', 'file-text', 'briefcase', 'factory', 'layers', 'users'];
-    for (const icon of manualIcons) {
-        if (content.includes(`icons/${icon}.svg`)) {
-            await ensureIconExists(icon);
-        }
+    const localSvgRegex = /docs\/assets\/icons\/([a-zA-Z0-9_-]+)\.svg/g;
+    let localMatches = [...content.matchAll(localSvgRegex)];
+    for (const m of localMatches) {
+        const slug = m[1];
+        await ensureIconExists(slug);
     }
 
     const typingSvgRegex = /<a href="https:\/\/git\.io\/typing-svg">.*?<\/a\s*>/gs;
