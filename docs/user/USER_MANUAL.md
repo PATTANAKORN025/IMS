@@ -40,7 +40,7 @@
 
 ### Dashboard Overview
 
-Upon accessing Grafana, 12 distinct dashboards are available:
+Upon accessing Grafana, 15 distinct dashboards are available:
 
 ```text
  IMS Dashboards

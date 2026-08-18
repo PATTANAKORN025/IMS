@@ -8,7 +8,7 @@
 
 ## บริบทของระบบ (System Context)
 
-IMS เป็น Docker Compose stack ที่มี **ไปป์ไลน์ข้อมูลเทเลเมทรีที่เป็นอิสระต่อกันสองชุด** ซึ่งส่งข้อมูลไปยัง TimescaleDB ฐานข้อมูลเดียวที่ใช้งานร่วมกัน แสดงผลผ่าน **Grafana แดชบอร์ด 12 ตัว** พร้อมการแจ้งเตือนผ่านทั้งระบบแจ้งเตือนดั้งเดิมของ Grafana และ Prometheus/Alertmanager
+IMS เป็น Docker Compose stack ที่มี **ไปป์ไลน์ข้อมูลเทเลเมทรีที่เป็นอิสระต่อกันสองชุด** ซึ่งส่งข้อมูลไปยัง TimescaleDB ฐานข้อมูลเดียวที่ใช้งานร่วมกัน แสดงผลผ่าน **Grafana แดชบอร์ด 15 ตัว** พร้อมการแจ้งเตือนผ่านทั้งระบบแจ้งเตือนดั้งเดิมของ Grafana และ Prometheus/Alertmanager
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
@@ -24,7 +24,7 @@ flowchart TB
   NR --> SYSMETRICS[("public.sys_metrics\npublic.net_metrics\npublic.ldi_metrics")]
  end
 
- LDIDATA --> GRAFANA["Grafana\n12 dashboards"]
+ LDIDATA --> GRAFANA["Grafana\n15 dashboards"]
  ALARMLOG --> GRAFANA
  SYSMETRICS --> GRAFANA
  SYSMETRICS --> PROM["Prometheus"]
@@ -37,7 +37,7 @@ flowchart TB
  style LEGACY fill:#1e293b,stroke:#F59E0B,color:#e2e8f0
 ```
 
-**ทำไมถึงมีไปป์ไลน์สองชุด:** ไปป์ไลน์ SNMP แบบดั้งเดิม (`ingestion.json`) คือการออกแบบดั้งเดิมของระบบ — คือการดึงข้อมูลจากอุปกรณ์ที่สื่อสารด้วย SNMP, แปลงข้อมูลผ่าน `sre_parser` แบบเก็บสถานะ, จากนั้น insert ลงใน `sys_metrics`/`net_metrics`/`ldi_metrics` ภายหลังเทเลเมทรีการผลิตของเครื่อง LDI ได้ถูกสร้างเป็นไปป์ไลน์ของตัวเองที่มีความละเอียดสูงกว่า (นำเข้า `ldi_data`, ส่งผ่าน HTTP POST แทน SNMP) เนื่องจากแดชบอร์ดด้านการผลิตต้องการความแม่นยำระดับตัวอย่างในเรื่อง PE/JE/Cpk ซึ่งตาราง `ldi_metrics` ที่ได้จากการจำลองด้วย k6 ไม่ได้ถูกออกแบบมาเพื่อรองรับข้อมูลระดับนี้ **เนื้อหาด้าน LDI/การผลิตของ Grafana แดชบอร์ดทั้ง 12 ตัว อ่านข้อมูลจาก `ldi_data` ไม่ใช่ `ldi_metrics`** ตาราง `ldi_metrics` ยังคงมีอยู่และยังมีการบันทึกข้อมูล (ผ่าน SRE parser ของ `ingestion.json`) แต่พารามิเตอร์บางตัวที่เป็นข้อมูลเฉพาะของเครื่อง LDI (`throughput`, `power_watt`, `vibration`) ได้รับการยืนยันแล้วว่ามีค่าเป็น `0` เสมอสำหรับอุปกรณ์ประเภท LDI — ถือเป็นช่องโหว่ที่ทราบกันในไปป์ไลน์นั้น ไม่ใช่ช่องโหว่ใน `ldi_data` ดูส่วน "ช่องโหว่ที่ทราบแล้ว (Known Gaps)" ด้านล่าง
+**ทำไมถึงมีไปป์ไลน์สองชุด:** ไปป์ไลน์ SNMP แบบดั้งเดิม (`ingestion.json`) คือการออกแบบดั้งเดิมของระบบ — คือการดึงข้อมูลจากอุปกรณ์ที่สื่อสารด้วย SNMP, แปลงข้อมูลผ่าน `sre_parser` แบบเก็บสถานะ, จากนั้น insert ลงใน `sys_metrics`/`net_metrics`/`ldi_metrics` ภายหลังเทเลเมทรีการผลิตของเครื่อง LDI ได้ถูกสร้างเป็นไปป์ไลน์ของตัวเองที่มีความละเอียดสูงกว่า (นำเข้า `ldi_data`, ส่งผ่าน HTTP POST แทน SNMP) เนื่องจากแดชบอร์ดด้านการผลิตต้องการความแม่นยำระดับตัวอย่างในเรื่อง PE/JE/Cpk ซึ่งตาราง `ldi_metrics` ที่ได้จากการจำลองด้วย k6 ไม่ได้ถูกออกแบบมาเพื่อรองรับข้อมูลระดับนี้ **เนื้อหาด้าน LDI/การผลิตของ Grafana แดชบอร์ดทั้ง 15 ตัว อ่านข้อมูลจาก `ldi_data` ไม่ใช่ `ldi_metrics`** ตาราง `ldi_metrics` ยังคงมีอยู่และยังมีการบันทึกข้อมูล (ผ่าน SRE parser ของ `ingestion.json`) แต่พารามิเตอร์บางตัวที่เป็นข้อมูลเฉพาะของเครื่อง LDI (`throughput`, `power_watt`, `vibration`) ได้รับการยืนยันแล้วว่ามีค่าเป็น `0` เสมอสำหรับอุปกรณ์ประเภท LDI — ถือเป็นช่องโหว่ที่ทราบกันในไปป์ไลน์นั้น ไม่ใช่ช่องโหว่ใน `ldi_data` ดูส่วน "ช่องโหว่ที่ทราบแล้ว (Known Gaps)" ด้านล่าง
 
 ---
 

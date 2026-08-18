@@ -279,6 +279,8 @@ services:
         condition: service_healthy
       alarm-api:
         condition: service_healthy
+      factory-twin-3d:
+        condition: service_healthy
     networks:
       - ims-internal
     logging: *default-logging
@@ -404,6 +406,45 @@ services:
           memory: 64M
     healthcheck:
       test: ["CMD-SHELL", "node -e \"require('http').get('http://127.0.0.1:4000/healthz',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))\""]
+      <<: *healthcheck-defaults
+    depends_on:
+      pgbouncer:
+        condition: service_healthy
+      db-migrate:
+        condition: service_completed_successfully
+    networks:
+      - ims-internal
+    logging: *default-logging
+
+  # ── Factory 3D Digital Twin (Task 4.1 POC -- LDI-01 only, read-only) ──
+  factory-twin-3d:
+    build:
+      context: ./services/factory-twin-3d
+    container_name: ims-factory-twin-3d
+    <<: *default-restart
+    init: true
+    environment:
+      PGHOST: ims-pgbouncer
+      PGPORT: "5432"
+      PGDATABASE: ${POSTGRES_DB}
+      # Read-only service, no write path -- reuses the existing grafana_reader
+      # role (postgres/init/002-grafana-readonly.sql) instead of provisioning
+      # a new DB role/migration for a 1-machine POC (see Task 4.1 brief's
+      # scope-minimization decision).
+      PGUSER: ${GRAFANA_DB_USER:?GRAFANA_DB_USER required in .env}
+      PGPASSWORD: ${GRAFANA_DB_PASSWORD:?GRAFANA_DB_PASSWORD required in .env}
+      PORT: "4100"
+    # No host port published -- reachable only through the proxy service's
+    # /factory-twin-3d/ path, which is auth_request-gated on Grafana's own
+    # session, same pattern as alarm-api.
+    deploy:
+      resources:
+        limits: *resource-small
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://127.0.0.1:4100/healthz',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))\""]
       <<: *healthcheck-defaults
     depends_on:
       pgbouncer:

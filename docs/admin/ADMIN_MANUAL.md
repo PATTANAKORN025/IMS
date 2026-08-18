@@ -30,7 +30,7 @@
 
 ### Container Overview
 
-The system operates entirely on Docker Compose, comprising a total of 12 services (11 long-running services and 1 one-shot migration runner that exits upon completion):
+The system operates entirely on Docker Compose, comprising a total of 13 services (12 long-running services and 1 one-shot migration runner that exits upon completion):
 
 | Container              | Service                | Port                        | Purpose                                                                                                                                           |
 | ---------------------- | ---------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |

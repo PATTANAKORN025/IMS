@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>IMS Factory 3D Digital Twin — 10 Machines</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #0f172a;
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      overflow: hidden;
+    }
+    #scene {
+      position: fixed;
+      inset: 0;
+    }
+    #scene canvas {
+      display: block;
+    }
+
+    /* Binding requirement (design spec §19): visible on-screen banner
+       whenever any rendered placement is simulated. This POC's one
+       placement is always simulated (hardcoded constant, see server.js),
+       so the banner is always shown -- not conditional in this build, but
+       still driven off the API's is_simulated field so it would correctly
+       disappear once /api/placement ever returns a real one. */
+    #simulated-banner {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 10;
+      background: #f59e0b;
+      color: #1c1305;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 0.04em;
+      text-align: center;
+      padding: 8px 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+    }
+
+    #hud {
+      position: fixed;
+      top: 44px;
+      left: 16px;
+      bottom: 16px;
+      z-index: 10;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 14px 18px;
+      color: #e2e8f0;
+      width: 280px;
+      font-size: 14px;
+      line-height: 1.5;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    #hud h1 {
+      font-size: 15px;
+      margin: 0 0 4px 0;
+      color: #f8fafc;
+    }
+    #summary-line {
+      color: #94a3b8;
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+    #machine-list {
+      overflow-y: auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-right: 4px;
+    }
+    .machine-row {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 8px 10px;
+    }
+    .machine-row-top {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+    .machine-id {
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .mini-pill {
+      display: inline-block;
+      padding: 1px 8px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 10px;
+      color: #0f172a;
+    }
+    .machine-row-detail {
+      display: flex;
+      justify-content: space-between;
+      color: #94a3b8;
+      font-size: 12px;
+    }
+    .machine-row-alarm {
+      margin-top: 2px;
+      font-size: 11px;
+      color: #cbd5e1;
+    }
+    #hud .hint {
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid #334155;
+      color: #94a3b8;
+      font-size: 12px;
+    }
+    #hud .error {
+      color: #ef4444;
+      font-weight: 600;
+    }
+
+    /* Accessibility fallback (design §16): the same real per-machine data
+       (state/board/MO/alarm for all 10 machines) is also available as
+       plain HTML text in #machine-list, not locked inside the WebGL
+       canvas -- a screen reader can read the HUD list even though it
+       can't meaningfully describe the 3D scene itself. */
+  </style>
+</head>
+<body>
+  <div id="simulated-banner">SIMULATED LAYOUT — machine positions are placeholders, not real surveyed coordinates</div>
+
+  <div id="hud">
+    <h1>IMS Factory 3D Digital Twin</h1>
+    <div id="summary-line">Loading…</div>
+    <div id="machine-list"></div>
+    <div class="hint">Click a box in the scene to open that machine's Machine Snapshot drill-down. Live data polls every 5s.</div>
+    <div id="status-line" class="hint"></div>
+  </div>
+
+  <div id="scene"></div>
+
+  <!-- Relative paths (no leading "/") throughout this page and app.js's
+       fetch calls, deliberately -- this page is served under nginx's
+       /factory-twin-3d/ prefix (proxy/nginx.conf), which strips the prefix
+       on proxy_pass. An absolute "/app.js" would resolve against the site
+       root and hit Grafana's own location block instead of this service. -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "./vendor/three/three.module.js",
+        "three/addons/": "./vendor/three/examples/jsm/"
+      }
+    }
+  </script>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

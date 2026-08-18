@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>TEST/SYNTHETIC — Factory Twin 3D Perf Harness</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #0f172a;
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      overflow: hidden;
+    }
+    #scene {
+      position: fixed;
+      inset: 0;
+    }
+    #scene canvas {
+      display: block;
+    }
+
+    /* Task 4.3 perf brief §2: every synthetic UI surface must be
+       unambiguously marked TEST/SYNTHETIC. This banner is unconditional,
+       not data-driven -- this whole page only ever renders synthetic
+       procedurally generated boxes, never real /api/state or
+       /api/placement data (no fetch() call to those endpoints anywhere
+       in this file or perf-harness.js). */
+    #synthetic-banner {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 10;
+      background: #dc2626;
+      color: #fff1f2;
+      font-weight: 800;
+      font-size: 14px;
+      letter-spacing: 0.04em;
+      text-align: center;
+      padding: 8px 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+    }
+
+    #hud {
+      position: fixed;
+      top: 44px;
+      left: 16px;
+      z-index: 10;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid #dc2626;
+      border-radius: 8px;
+      padding: 14px 18px;
+      color: #e2e8f0;
+      width: 340px;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    #hud h1 {
+      font-size: 15px;
+      margin: 0 0 4px 0;
+      color: #fecaca;
+    }
+    #hud .controls {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin: 8px 0;
+    }
+    #hud button {
+      background: #1e293b;
+      border: 1px solid #475569;
+      color: #e2e8f0;
+      padding: 4px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    #hud button.active {
+      background: #dc2626;
+      border-color: #dc2626;
+      color: #fff;
+    }
+    #metrics {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid #334155;
+      font-family: ui-monospace, monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <div id="synthetic-banner">TEST / SYNTHETIC DATA — client-side rendering-scale harness, NOT connected to /api/state or /api/placement, NOT production</div>
+
+  <div id="hud">
+    <h1>Factory Twin 3D — Perf Harness (SYNTHETIC)</h1>
+    <div>Procedurally generated TEST-SYNTH-#### boxes. Rendering-layer only, zero network calls to real endpoints.</div>
+    <div class="controls">
+      <button data-n="10">N=10</button>
+      <button data-n="100">N=100</button>
+      <button data-n="250">N=250</button>
+      <button data-n="500">N=500</button>
+    </div>
+    <div id="metrics">Loading…</div>
+  </div>
+
+  <div id="scene"></div>
+
+  <!-- Same relative-path/importmap convention as index.html, deliberately
+       reused so this harness exercises the identical vendored-Three.js
+       serving path, not a different one. -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "./vendor/three/three.module.js",
+        "three/addons/": "./vendor/three/examples/jsm/"
+      }
+    }
+  </script>
+  <script type="module" src="./perf-harness.js"></script>
+</body>
+</html>

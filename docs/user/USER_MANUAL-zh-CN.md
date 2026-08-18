@@ -40,7 +40,7 @@
 
 ### 仪表盘概览
 
-登录 Grafana 后，您将看到 12 个仪表盘：
+登录 Grafana 后，您将看到 15 个仪表盘：
 
 ```text
  IMS Dashboards
