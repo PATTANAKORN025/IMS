@@ -126,4 +126,4 @@ This file is SRE debugging commands only. For severity classification, escalatio
 
 ---
 
-[⬅️ Back to IMS Platform Book](../architecture/IMS_PLATFORM_BOOK.md) | [🏠 Main Repository](../../README.md)
+[⬅️ Back to IMS Platform Book](../architecture/IMS_PLATFORM_BOOK.md) | [<img src="../../docs/assets/icons/home.svg" width="18" align="center" /> Main Repository](../../README.md)

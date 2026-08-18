@@ -127,6 +127,6 @@ These monitor **IMS's own pipeline health**, not machine or server state — "is
 
 ---
 
-[⬅️ Back to IMS Platform Book](../architecture/IMS_PLATFORM_BOOK.md) | [🏠 Main Repository](../../README.md)
+[⬅️ Back to IMS Platform Book](../architecture/IMS_PLATFORM_BOOK.md) | [<img src="../../docs/assets/icons/home.svg" width="18" align="center" /> Main Repository](../../README.md)
 
 _Version 2.0, corrected 2026-08-10 — see `docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md` for the broader documentation program this fix was part of._

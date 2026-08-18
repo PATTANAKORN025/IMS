@@ -5,11 +5,11 @@
 </div>
 <br/>
 
-# 📁 Audit Documentation
+# <img src="../../docs/assets/icons/folder.svg" width="18" align="center" /> Audit Documentation
 
 Welcome to the **Audit** directory. This section contains documentation related to IMS audit processes.
 
-## 🗺️ Directory Map
+## <img src="../../docs/assets/icons/map.svg" width="18" align="center" />️ Directory Map
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
@@ -22,7 +22,7 @@ flowchart LR
   ROOT --> F4["SIMULATOR_REALISM_AUDIT_2026-08-15"]
 ```
 
-## 📄 File Index
+## <img src="../../docs/assets/icons/file-text.svg" width="18" align="center" /> File Index
 
 - [ALARM_TAXONOMY_REVIEW_2026-08-14.md](ALARM_TAXONOMY_REVIEW_2026-08-14.md)
 - [LDI_ALARM_FIDELITY_AUDIT.md](LDI_ALARM_FIDELITY_AUDIT.md)

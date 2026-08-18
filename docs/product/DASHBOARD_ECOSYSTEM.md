@@ -5,7 +5,7 @@
 </div>
 <br/>
 
-# 🌌 IMS Dashboard Ecosystem: The Macro-to-Micro Architecture
+# <img src="../../docs/assets/icons/aperture.svg" width="18" align="center" /> IMS Dashboard Ecosystem: The Macro-to-Micro Architecture
 
 **Industrial Monitoring System (IMS)** utilizes a 15-dashboard "Cyberpunk HUD" ecosystem designed to completely eliminate alarm fatigue and bridge the gap between enterprise IT and physical Operational Technology (OT).
 
@@ -13,11 +13,11 @@ This document serves as the master catalog, structurally organized by **Altitude
 
 ---
 
-## 🧭 The 5-Tier Altitude Matrix
+## <img src="../../docs/assets/icons/compass.svg" width="18" align="center" /> The 5-Tier Altitude Matrix
 
 The ecosystem scales dynamically from the 30,000-foot executive view down to the sub-surface protocol level.
 
-### 🌍 Tier 1: Executive & Fleet Command (30,000 ft - MACRO)
+### <img src="../../docs/assets/icons/globe.svg" width="18" align="center" /> Tier 1: Executive & Fleet Command (30,000 ft - MACRO)
 
 _Goal: Instant glance-value for business leaders and NOC commanders. Focuses on holistic health, up/down states, and overarching OEE._
 _Audience: C-Level Executives, Plant Managers, NOC Commanders_
@@ -47,7 +47,7 @@ _Audience: IT Directors, Maintenance Planners, SREs_
    - **Purpose:** "Monitoring the monitor."
    - **Key Metrics:** Node-RED ingestion pipeline throughput, SNMP walker circuit breaker states, and TimescaleDB query budgets. Ensures the IMS platform itself never fails silently.
 
-### 🚁 Tier 3: Engineering & Deep Analytics (1,000 ft)
+### <img src="../../docs/assets/icons/crosshair.svg" width="18" align="center" /> Tier 3: Engineering & Deep Analytics (1,000 ft)
 
 _Goal: Root cause correlation between IT infrastructure limits and OT manufacturing yields._
 _Audience: SysAdmins, Process Engineers, Data Scientists_
@@ -62,7 +62,7 @@ _Audience: SysAdmins, Process Engineers, Data Scientists_
    - **Purpose:** Microsecond lag tracking.
    - **Key Metrics:** Measures the exact propagation delay between a sensor pinging on the factory floor and the data being successfully committed to PostgreSQL via PgBouncer.
 
-### 🏢 Tier 4: Tactical Operations (Ground Level)
+### <img src="../../docs/assets/icons/server.svg" width="18" align="center" /> Tier 4: Tactical Operations (Ground Level)
 
 _Goal: Binary, zero-latency decision making for the personnel operating the physical hardware._
 _Audience: Floor Operators, Line Supervisors, Quality Inspectors_
@@ -77,7 +77,7 @@ _Audience: Floor Operators, Line Supervisors, Quality Inspectors_
     - **Purpose:** Data integrity verification.
     - **Key Metrics:** Tracks null values, schema corruption, and sensor offline states at the raw ingestion layer before the data reaches aggregation.
 
-### 🔬 Tier 5: Incident Management & Resolution (Sub-Surface - MICRO)
+### <img src="../../docs/assets/icons/zoom-in.svg" width="18" align="center" /> Tier 5: Incident Management & Resolution (Sub-Surface - MICRO)
 
 _Goal: Triaging, acknowledging, and permanently resolving anomalies using standardized playbooks._
 _Audience: L1/L2 Support Teams, Incident Commanders_
