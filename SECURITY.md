@@ -7,9 +7,9 @@
 
 <div align="center">
 
-![Security](https://img.shields.io/badge/Security-Policy-red)
-![Status](https://img.shields.io/badge/Status-Staging-yellow)
-![Updated](https://img.shields.io/badge/Updated-2026--08--04-brightgreen)
+<img src="docs/assets/icons/check-circle.svg" width="14" align="center"/> **Security:** Policy
+<img src="docs/assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Staging
+<img src="docs/assets/icons/check-circle.svg" width="14" align="center"/> **Updated:** 2026-08-04
 
 </div>
 
