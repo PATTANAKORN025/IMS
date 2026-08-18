@@ -15,9 +15,9 @@
 
 <div align="center">
 
-<img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Value:** High Impact
-<img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **ROI:** 850%+
-<img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Cost:** Zero License
+![Value](https://img.shields.io/badge/Value-High%20Impact-brightgreen)
+![ROI](https://img.shields.io/badge/ROI-850%25+-blue)
+![License](https://img.shields.io/badge/Cost-Zero%20License-purple)
 
 </div>
 
@@ -42,7 +42,7 @@ The system leverages an **Open-Source Stack** architecture that has passed Load 
 | **Manual Data Entry**         | Human error ~15%                                 | Impossible to track trends     |
 | **Reactive Maintenance**      | Waiting for defects before repairing             | Unplanned downtime             |
 
-### <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Healthy After (Solutions)
+### ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) After (Solutions)
 
 | Solution                         | Result                                                                                                                                                                                                                                                                                                                    | Impact                                                                       |
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |

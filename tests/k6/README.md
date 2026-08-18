@@ -6,9 +6,9 @@
 
 <div align="center">
 
-<img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **K6:** Load Testing
-<img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** 1K VUs Passed
-<img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Failure:** 0%
+![K6](https://img.shields.io/badge/K6-Load%20Testing-red)
+![Status](https://img.shields.io/badge/Status-1K%20VUs%20Passed-brightgreen)
+![Failure](https://img.shields.io/badge/Failure-0%25-green)
 
 </div>
 

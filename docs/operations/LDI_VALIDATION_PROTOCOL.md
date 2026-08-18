@@ -13,7 +13,7 @@
 
 ---
 
-## <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Healthy Phase 1: Data Integrity & Parser Verification (Unit Testing)
+## ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) Phase 1: Data Integrity & Parser Verification (Unit Testing)
 
 **The Goal:** Ensure that corrupted, missing, or malformed JSON payloads from the physical LDI machines do not crash the Node-RED pipeline or corrupt the database.
 
@@ -58,7 +58,7 @@ _Status: 100% PASSED (99/99 across all five unit-test files)._
 
 ---
 
-## <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Healthy Phase 2: Dashboard Integrity (Visual & Schema Linter)
+## ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) Phase 2: Dashboard Integrity (Visual & Schema Linter)
 
 **The Goal:** Ensure the 5 LDI-suite dashboards (`ims-ldi-manufacturing`, `ims-ldi-operator-andon`, `ims-ldi-engineering-analytics`, `ims-ldi-machine-snapshot`, `ldi-data-readiness`) render without overlapping panels, off-palette colors, or broken SQL queries.
 
@@ -84,7 +84,7 @@ _Status: 100% PASSED (0 errors across all 5 linters + both inventory checks)._
 
 ---
 
-## <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Warning Phase 3: High-Load Stress Testing (K6 Pipeline Simulation)
+## ![Warning](https://img.shields.io/badge/Status-Warning-yellow) Phase 3: High-Load Stress Testing (K6 Pipeline Simulation)
 
 **The Goal:** Verify that the Node-RED ingestion layer and PgBouncer can handle sustained concurrent load without dropping data or exceeding acceptable latency.
 
@@ -103,7 +103,7 @@ _Status: Both scripts are real, runnable, and pass against their own (not the ea
 
 ---
 
-## <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Warning Phase 4: Production Rollout (End-to-End Live Test)
+## ![Warning](https://img.shields.io/badge/Status-Warning-yellow) Phase 4: Production Rollout (End-to-End Live Test)
 
 **The Goal:** The final human-in-the-loop verification on the factory floor.
 

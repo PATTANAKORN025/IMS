@@ -19,8 +19,8 @@
 1. **登录:** 在主屏幕打开 [IMS NOC Overview](http://localhost:3000/d/ims-noc-overview) 仪表板。
 2. **健康检查:** 查看 **Fleet Health Score** (左上角)。
 
-- `> 95%`: <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Healthy 正常。继续日常工作。
-- `90% - 94%`: <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Warning 警告。检查 "Top 10 Critical Nodes" 面板。
+- `> 95%`: ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) 正常。继续日常工作。
+- `90% - 94%`: ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 警告。检查 "Top 10 Critical Nodes" 面板。
 - `< 90%`: 严重。立即升级至 2 级 (SRE/Engineering)。
 
 1. **验证 LDI 机群:** 打开 [LDI Manufacturing](http://localhost:3000/d/ims-ldi-manufacturing) 仪表板。确保没有机器标记为红色 "OFFLINE"。
@@ -31,12 +31,12 @@
 
 **Operator Andon Dashboard** 是主要工具。严格执行红绿灯协议。
 
-### <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Healthy 绿灯状态 (正常)
+### ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) 绿灯状态 (正常)
 
 - **视觉:** 所有面板呈绿色。无闪烁。
 - **操作:** 无需操作。继续常规机器上下料。
 
-### <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Warning 黄灯状态 (警告)
+### ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 黄灯状态 (警告)
 
 - **视觉:** 面板变黄 (例如 "Yield Drop Warning", "Temp Rising")。
 - **操作:**

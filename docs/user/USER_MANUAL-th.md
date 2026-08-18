@@ -14,9 +14,9 @@
 
 <div align="center">
 
-<img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Manual:** คู่มือผู้ใช้
-<img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Version:** 1.1
-<img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Audience:** IT Support
+![Manual](https://img.shields.io/badge/Manual-คู่มือผู้ใช้-green)
+![Version](https://img.shields.io/badge/Version-1.1-blue)
+![Audience](https://img.shields.io/badge/Audience-IT%20Support-purple)
 
 </div>
 
@@ -83,7 +83,7 @@
 │ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌───────────┐ │
 │ │ ทั้งหมด  │ │ ปกติ   │ │ เตือน   │ │ วิกฤต  │ │
 │ │ เครื่อง: 5  │ │ เครื่อง: 4  │ │ แจ้งเตือน: 1 │ │ แจ้งเตือน: 0 │ │
-│ │ <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Healthy  │ │ <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Healthy  │ │ <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Warning  │ │   │ │
+│ │ ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen)  │ │ ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen)  │ │ ![Warning](https://img.shields.io/badge/Status-Warning-yellow)  │ │   │ │
 │ └─────────────┘ └─────────────┘ └─────────────┘ └───────────┘ │
 │                 │
 │ ┌───────────────────────────────────────────────────────────┐ │
@@ -102,13 +102,13 @@
 
 **จุดประสงค์**: ภาพรวม health ของ servers ทั้งหมด — panel ประเภทนี้กระจายอยู่บน **NOC Overview** (fleet envelope) และ **Engineering Drill-Down** (per-server deep dive), ไม่ใช่ dashboard แยกต่างหาก
 
-| Panel               | ตัวชี้วัด (Metrics)                | การใช้สี                                                                                                                                                                                                                                          |
-| ------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **CPU Usage**       | `cpu_load_percent` ต่อ core        | <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Healthy < 60%, <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Warning 60-80%, > 80%    |
-| **Memory Usage**    | `ram_used_mb / ram_total_mb`       | <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Healthy < 70%, <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Warning 70-85%, > 85%    |
-| **Disk Usage**      | `disk_used_gb / disk_total_gb`     | <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Healthy < 70%, <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Warning 70-80%, > 80%    |
-| **Network Traffic** | `rx_mbps`, `tx_mbps` ต่อ interface | สีน้ำเงิน = ดาวน์โหลด (RX), สีฟ้า = อัปโหลด (TX)                                                                                                                                                                                                  |
-| **Temperature**     | `temp_c`                           | <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Healthy < 65°C, <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Warning 65-80°C, > 80°C |
+| Panel               | ตัวชี้วัด (Metrics)                | การใช้สี                                                                                                                                                   |
+| ------------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **CPU Usage**       | `cpu_load_percent` ต่อ core        | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) < 60%, ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 60-80%, > 80%    |
+| **Memory Usage**    | `ram_used_mb / ram_total_mb`       | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) < 70%, ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 70-85%, > 85%    |
+| **Disk Usage**      | `disk_used_gb / disk_total_gb`     | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) < 70%, ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 70-80%, > 80%    |
+| **Network Traffic** | `rx_mbps`, `tx_mbps` ต่อ interface | สีน้ำเงิน = ดาวน์โหลด (RX), สีฟ้า = อัปโหลด (TX)                                                                                                           |
+| **Temperature**     | `temp_c`                           | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) < 65°C, ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 65-80°C, > 80°C |
 
 ### 3. Engineering Drilldown Dashboard
 
@@ -161,10 +161,10 @@
 
 กราฟ Scatter Plot แสดง PE (Position Error) vs JE (Judgment Error) ในหน่วย µm:
 
-| โซน          | สี                                                                                                                 | ความหมาย                         |
-| ------------ | ------------------------------------------------------------------------------------------------------------------ | -------------------------------- |
-| ภายใน ±10µm  | <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Healthy เขียว | ปกติ — หัวเลเซอร์ทำงานถูกต้อง    |
-| ภายนอก ±10µm | แดง                                                                                                                | ผิดปกติ — หัวเลเซอร์เริ่มมีปัญหา |
+| โซน          | สี                                                                        | ความหมาย                         |
+| ------------ | ------------------------------------------------------------------------- | -------------------------------- |
+| ภายใน ±10µm  | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) เขียว | ปกติ — หัวเลเซอร์ทำงานถูกต้อง    |
+| ภายนอก ±10µm | แดง                                                                       | ผิดปกติ — หัวเลเซอร์เริ่มมีปัญหา |
 
 **วิธีใช้:**
 
@@ -335,11 +335,11 @@
 
 ### ระดับความรุนแรงของการแจ้งเตือน
 
-| ระดับ                | สี                                                                                                                  | เวลาตอบสนอง           | ตัวอย่าง                                |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------- | --------------------- | --------------------------------------- |
-| **วิกฤต (Critical)** | แดง                                                                                                                 | ทันที (< 15 นาที)     | InterfaceDown, ServiceDown, CriticalCPU |
-| **เตือน (Warning)**  | <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Warning เหลือง | เร็ว (< 1 ชั่วโมง)    | HighCPU, HighMemory, DiskSpaceLow       |
-| **ข้อมูล (Info)**    | น้ำเงิน                                                                                                             | ตามปกติ (< 4 ชั่วโมง) | TelemetryGap, PredictiveDiskFull        |
+| ระดับ                | สี                                                                    | เวลาตอบสนอง           | ตัวอย่าง                                |
+| -------------------- | --------------------------------------------------------------------- | --------------------- | --------------------------------------- |
+| **วิกฤต (Critical)** | แดง                                                                   | ทันที (< 15 นาที)     | InterfaceDown, ServiceDown, CriticalCPU |
+| **เตือน (Warning)**  | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) เหลือง | เร็ว (< 1 ชั่วโมง)    | HighCPU, HighMemory, DiskSpaceLow       |
+| **ข้อมูล (Info)**    | น้ำเงิน                                                               | ตามปกติ (< 4 ชั่วโมง) | TelemetryGap, PredictiveDiskFull        |
 
 ### คู่มือรับมือกับเหตุการณ์ขัดข้อง (Incident Response Playbook)
 
@@ -442,7 +442,7 @@
 - หากเป็นปัญหาระดับระบบหลัก → ติดต่อแอดมินระบบ
 ```
 
-#### <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Warning สถานการณ์ที่ 5: PipelineDataStalled (เตือน)
+#### ![Warning](https://img.shields.io/badge/Status-Warning-yellow) สถานการณ์ที่ 5: PipelineDataStalled (เตือน)
 
 ```text
 อาการ:
@@ -580,16 +580,16 @@ docker compose exec prometheus wget -qO- "http://localhost:9090/api/v1/alerts" 2
 
 ### อ้างอิงการใช้สี (Color Coding)
 
-| ตัวชี้วัด       | ปกติ                                                                                                               | เตือน                                                                                                                             | วิกฤต         |
-| --------------- | ------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- | ------------- |
-| **CPU**         | <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Healthy เขียว | <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Warning เหลือง → ส้ม         | แดง           |
-| **Memory**      | <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Healthy เขียว | <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Warning ม่วง → ส้มเข้ม       | แดง           |
-| **Disk**        | <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Healthy เขียว | <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Warning ฟ้า (Cyan) → น้ำเงิน | แดง           |
-| **Network RX**  | น้ำเงินเข้ม (#1F60C4)                                                                                              | —                                                                                                                                 | แดง           |
-| **Network TX**  | สีฟ้าอ่อน (#5794F2)                                                                                                | —                                                                                                                                 | แดง           |
-| **Temperature** | <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Healthy เขียว | <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Warning เหลือง               | แดง           |
-| **Errors**      | —                                                                                                                  | —                                                                                                                                 | แดง (#C4162A) |
-| **Drops**       | —                                                                                                                  | <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Warning ส้ม (#FF9830)        | แดง           |
+| ตัวชี้วัด       | ปกติ                                                                      | เตือน                                                                               | วิกฤต         |
+| --------------- | ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ------------- |
+| **CPU**         | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) เขียว | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) เหลือง → ส้ม         | แดง           |
+| **Memory**      | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) เขียว | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) ม่วง → ส้มเข้ม       | แดง           |
+| **Disk**        | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) เขียว | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) ฟ้า (Cyan) → น้ำเงิน | แดง           |
+| **Network RX**  | น้ำเงินเข้ม (#1F60C4)                                                     | —                                                                                   | แดง           |
+| **Network TX**  | สีฟ้าอ่อน (#5794F2)                                                       | —                                                                                   | แดง           |
+| **Temperature** | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) เขียว | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) เหลือง               | แดง           |
+| **Errors**      | —                                                                         | —                                                                                   | แดง (#C4162A) |
+| **Drops**       | —                                                                         | ![Warning](https://img.shields.io/badge/Status-Warning-orange) ส้ม (#FF9830)        | แดง           |
 
 ### ติดต่อผู้ดูแล
 
