@@ -64,11 +64,13 @@
 
 ## 系统概述
 
-**IMS（工业监控系统，Industrial Monitoring System）** 是一个跨越基础设施和制造领域的遥测监控平台。它基于 Node-RED、TimescaleDB 和 Grafana 构建，将 IT 指标（服务器、网络交换机）和 OT 数据（LDI 制造机器）集成到单个由 PostgreSQL 支持的存储库中。
+**IMS（工业监控系统，Industrial Monitoring System）** 弥合了高精度制造与企业 IT 之间的鸿沟。它是一个基于 Node-RED、TimescaleDB 和 Grafana 构建的遥测监控平台，将 IT 基础设施指标（如服务器、网络交换机）与 OT（操作技术）数据集成到一个由 PostgreSQL 支持的统一存储库中。
 
-**规模与范围：** 设计用于监控 1000 多个基础设施节点以及高精度 LDI（激光直接成像）制造设备。它实现了统计过程控制 (SPC) 方法和 Z-Score 异常检测以进行主动警报。
+**工厂车间现实 (OT)：** 在先进的 PCB 制造中，激光直接成像 (LDI) 机器需要零延迟决策。激光温度或真空压力的微小变化都可能立即导致对准错误 (Registration Error)，从而产生昂贵的废品。操作员需要即时的颜色编码安灯看板 (Andon Board)，以便在统计过程控制 (SPC) 限制（如 Cpk）降至可接受阈值以下时停止生产线。
 
-性能依赖于 TimescaleDB 的连续聚合 (Continuous Aggregates) 进行仪表板渲染，以及基于状态的 Node-RED 管道进行数据摄取。
+**IT/OT 融合 (The Convergence)：** IMS 通过将传统的 IT 严谨性与 OT 现实相结合来提供这种可见性。它在监控 1000 多个基础设施节点（服务器、网络交换机、摄取延迟）的健康状况的同时，并排监控 LDI 机器遥测数据。当 LDI 对准失败时，工程师可以使用相同的单一管理平台 (Single Pane of Glass) 立即将其与网络中断或服务器 CPU 峰值相关联。
+
+**架构设计 (IT)：** 在底层，性能由管理异步数据摄取的基于状态的 Node-RED 管道和处理连接池的 PgBouncer 驱动。TimescaleDB 承担繁重的工作——实时计算滚动 3&sigma; 基线（Z-Scores）和连续聚合 (Continuous Aggregates)，确保 Grafana 即使在查询数百万行历史遥测数据时也能在亚秒级渲染仪表板。
 
 <table style="border:none; border-collapse:collapse; width:100%;">
 
@@ -131,10 +133,15 @@
 
 ---
 
-## 快速入门（本地模拟器环境）
+## 快速入门（快速启动：两条路径）
 
 > [!NOTE]
-> **模拟器边界：** 以下快速入门使用内置的 SNMP/HTTP 数据模拟器 (`ims-snmpsim`) 在本地运行 IMS 堆栈。它 **不会** 连接到真实的工厂设备或外部网络设备。该模拟器生成逼真的、有界限的遥测和警报序列，用于开发和验证目的。
+> **模拟器边界 (Simulator Boundary)：** 这两条路径都使用内置的 SNMP/HTTP 数据模拟器 (`ims-snmpsim`) 在本地运行 IMS 堆栈。它们 **不会** 连接到真实的工厂设备或外部网络设备。该模拟器生成逼真的、有界限的遥测和警报序列以进行验证。
+
+请根据您的角色和您想要实现的目标选择您的路径：
+
+### 路径 A：系统评估之旅 (The Evaluator Tour)
+*专为希望查看仪表板和工作流程的经理、UI/UX 审阅者和系统评估者而设计。*
 
 ```bash
 git clone https://github.com/PATTANAKORN025/IMS.git
@@ -144,14 +151,27 @@ make up      # docker compose up -d (启动包含模拟器的堆栈)
 sleep 40 && make verify
 open http://localhost:3000
 ```
-
+> **您将看到什么：** 温和的模拟（~10-15 行/分钟），让您点击查看 LDI 制造指挥中心、操作员安灯看板，并查看实时的 Cpk 能力图表。
 > **已验证：** `docker compose ps` 于 2026-08-13 运行，已存档于 [`docs/evidence/runtime/compose-ps-20260813.txt`](docs/evidence/runtime/compose-ps-20260813.txt)。
 
-### 已知限制
+### 路径 B：性能试验场 (The Performance Proving Ground)
+*专为希望在极端 IT/OT 负载下验证系统“实际性能”的 SRE、DBA 和系统架构师设计。*
 
-- 模拟的 LDI 工作负载每分钟生成约 10-15 行数据；负载测试需要运行显式的 K6 压力测试框架来模拟生产环境的 1000 节点规模。
+```bash
+git clone https://github.com/PATTANAKORN025/IMS.git
+cd IMS
+cp .env.example .env
+make up-prod   # 以生产级资源分配启动堆栈
+make test-load # 启动 K6 压力测试框架
+```
+> **您将看到什么：** K6 框架将模拟 1000 个节点的基础设施环境，猛烈冲击 Node-RED 摄取端点，并测试 TimescaleDB 的连续聚合极限。您可以在 `IMS Meta-Monitoring` 仪表板上实时监控摄取延迟和 PgBouncer 队列深度。
+
+<details>
+<summary><b>已知限制和手动配置</b></summary>
+
 - Nginx 反向代理配置为 `localhost`，在生产环境中需要手动部署证书。
 - 除非在 `.env` 文件中提供显式令牌，否则 Grafana Alertmanager 集成 (LINE/Teams) 将静默失败。
+</details>
 
 ### 验证与证据
 
