@@ -14,9 +14,9 @@
 
 <div align="center">
 
-![Scale](https://img.shields.io/badge/Scale-1--1000%2B%20Machines-blue)
-![Current](https://img.shields.io/badge/Current-Tested%201K%20VUs-brightgreen)
-![Ceiling](https://img.shields.io/badge/Ceiling-~500%20Machines-yellow)
+<img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Scale:** 1-1000+ Machines
+<img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Current:** Tested 1K VUs
+<img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Ceiling:** ~500 Machines
 
 </div>
 

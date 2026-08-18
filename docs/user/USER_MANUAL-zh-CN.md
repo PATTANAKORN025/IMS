@@ -14,9 +14,9 @@
 
 <div align="center">
 
-![Manual](https://img.shields.io/badge/Manual-User%20Guide-green)
-![Version](https://img.shields.io/badge/Version-1.1-blue)
-![Audience](https://img.shields.io/badge/Audience-IT%20Support-purple)
+<img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Manual:** User Guide
+<img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Version:** 1.1
+<img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Audience:** IT Support
 
 </div>
 
@@ -83,7 +83,7 @@
 │ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌───────────┐ │
 │ │ Total  │ │ Healthy  │ │ Warning  │ │ Critical │ │
 │ │ Machines: 5 │ │ Machines: 4 │ │ Alerts: 1 │ │ Alerts: 0 │ │
-│ │ ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen)  │ │ ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen)  │ │ ![Warning](https://img.shields.io/badge/Status-Warning-yellow)  │ │   │ │
+│ │ <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Healthy  │ │ <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Healthy  │ │ <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Warning  │ │   │ │
 │ └─────────────┘ └─────────────┘ └─────────────┘ └───────────┘ │
 │                 │
 │ ┌───────────────────────────────────────────────────────────┐ │
@@ -102,13 +102,13 @@
 
 **目的**：所有服务器的健康概览 — 此类面板分布在 **NOC 概览** (设备包络) 和 **工程深入分析** (单台服务器深入分析) 上，而不是单独的仪表盘
 
-| 面板           | 指标                           | 颜色编码                                                                                                                                                   |
-| -------------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **CPU 使用率** | 每核心 `cpu_load_percent`      | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) < 60%, ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 60-80%, > 80%    |
-| **内存使用率** | `ram_used_mb / ram_total_mb`   | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) < 70%, ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 70-85%, > 85%    |
-| **磁盘使用率** | `disk_used_gb / disk_total_gb` | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) < 70%, ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 70-80%, > 80%    |
-| **网络流量**   | 每接口 `rx_mbps`, `tx_mbps`    | 蓝色 = RX, 浅蓝色 = TX                                                                                                                                     |
-| **温度**       | `temp_c`                       | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) < 65°C, ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 65-80°C, > 80°C |
+| 面板           | 指标                           | 颜色编码                                                                                                                                                                                                        |
+| -------------- | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **CPU 使用率** | 每核心 `cpu_load_percent`      | <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Healthy < 60%, <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Warning 60-80%, > 80%    |
+| **内存使用率** | `ram_used_mb / ram_total_mb`   | <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Healthy < 70%, <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Warning 70-85%, > 85%    |
+| **磁盘使用率** | `disk_used_gb / disk_total_gb` | <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Healthy < 70%, <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Warning 70-80%, > 80%    |
+| **网络流量**   | 每接口 `rx_mbps`, `tx_mbps`    | 蓝色 = RX, 浅蓝色 = TX                                                                                                                                                                                          |
+| **温度**       | `temp_c`                       | <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Healthy < 65°C, <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Warning 65-80°C, > 80°C |
 
 ### 3. 工程深入分析仪表盘
 
@@ -161,10 +161,10 @@
 
 散点图显示 PE (位置误差) vs JE (判断误差)，单位为 µm：
 
-| 区域     | 颜色                                                                     | 含义                      |
-| -------- | ------------------------------------------------------------------------ | ------------------------- |
-| ±10µm 内 | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) 绿色 | 正常 — 激光头工作正常     |
-| ±10µm 外 | 红色                                                                     | 异常 — 激光头开始出现问题 |
+| 区域     | 颜色                                                                                             | 含义                      |
+| -------- | ------------------------------------------------------------------------------------------------ | ------------------------- |
+| ±10µm 内 | <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Healthy 绿色 | 正常 — 激光头工作正常     |
+| ±10µm 外 | 红色                                                                                             | 异常 — 激光头开始出现问题 |
 
 **使用方法：**
 
@@ -335,11 +335,11 @@ Machine: server-01
 
 ### 警报严重级别
 
-| 级别                | 颜色                                                                | 响应时间         | 示例                                    |
-| ------------------- | ------------------------------------------------------------------- | ---------------- | --------------------------------------- |
-| **严重 (Critical)** | 红色                                                                | 立即 (< 15 分钟) | InterfaceDown, ServiceDown, CriticalCPU |
-| **警告 (Warning)**  | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 黄色 | 尽快 (< 1 小时)  | HighCPU, HighMemory, DiskSpaceLow       |
-| **信息 (Info)**     | 蓝色                                                                | 正常 (< 4 小时)  | TelemetryGap, PredictiveDiskFull        |
+| 级别                | 颜色                                                                                             | 响应时间         | 示例                                    |
+| ------------------- | ------------------------------------------------------------------------------------------------ | ---------------- | --------------------------------------- |
+| **严重 (Critical)** | 红色                                                                                             | 立即 (< 15 分钟) | InterfaceDown, ServiceDown, CriticalCPU |
+| **警告 (Warning)**  | <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Warning 黄色 | 尽快 (< 1 小时)  | HighCPU, HighMemory, DiskSpaceLow       |
+| **信息 (Info)**     | 蓝色                                                                                             | 正常 (< 4 小时)  | TelemetryGap, PredictiveDiskFull        |
 
 ### 事故响应剧本
 
@@ -442,7 +442,7 @@ Machine: server-01
 - 如果是系统级问题 → 联系系统管理员
 ```
 
-#### ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 场景 5: PipelineDataStalled (警告)
+#### <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Warning 场景 5: PipelineDataStalled (警告)
 
 ```text
 症状:
@@ -580,16 +580,16 @@ docker compose exec prometheus wget -qO- "http://localhost:9090/api/v1/alerts" 2
 
 ### 颜色编码参考
 
-| 指标             | 健康                                                                     | 警告                                                                          | 严重           |
-| ---------------- | ------------------------------------------------------------------------ | ----------------------------------------------------------------------------- | -------------- |
-| **CPU**          | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) 绿色 | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 黄色 → 橙色    | 红色           |
-| **内存**         | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) 绿色 | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 紫色 → 深橙色  | 红色           |
-| **磁盘**         | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) 绿色 | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 青色 → 蓝色    | 红色           |
-| **网络 RX**      | 深蓝色 (#1F60C4)                                                         | —                                                                             | 红色           |
-| **网络 TX**      | 浅蓝色 (#5794F2)                                                         | —                                                                             | 红色           |
-| **温度**         | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) 绿色 | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 黄色           | 红色           |
-| **错误**         | —                                                                        | —                                                                             | 红色 (#C4162A) |
-| **丢包 (Drops)** | —                                                                        | ![Warning](https://img.shields.io/badge/Status-Warning-orange) 橙色 (#FF9830) | 红色           |
+| 指标             | 健康                                                                                             | 警告                                                                                                       | 严重           |
+| ---------------- | ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- | -------------- |
+| **CPU**          | <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Healthy 绿色 | <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Warning 黄色 → 橙色    | 红色           |
+| **内存**         | <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Healthy 绿色 | <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Warning 紫色 → 深橙色  | 红色           |
+| **磁盘**         | <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Healthy 绿色 | <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Warning 青色 → 蓝色    | 红色           |
+| **网络 RX**      | 深蓝色 (#1F60C4)                                                                                 | —                                                                                                          | 红色           |
+| **网络 TX**      | 浅蓝色 (#5794F2)                                                                                 | —                                                                                                          | 红色           |
+| **温度**         | <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Healthy 绿色 | <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Warning 黄色           | 红色           |
+| **错误**         | —                                                                                                | —                                                                                                          | 红色 (#C4162A) |
+| **丢包 (Drops)** | —                                                                                                | <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Warning 橙色 (#FF9830) | 红色           |
 
 ### 警报联系人
 

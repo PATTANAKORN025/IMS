@@ -11,13 +11,13 @@
     <img src="assets/meowrch.png" alt="IMS Mascot" width="140" style="border-radius: 50%; box-shadow: 0 8px 24px rgba(0, 242, 254, 0.4); margin-bottom: 16px;" />
   </a>
   <br/>
-  <img src="https://thesvg.org/icons/postgresql/default.svg" width="48" alt="PostgreSQL" /> &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="https://thesvg.org/icons/grafana/default.svg" width="48" alt="Grafana" /> &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="https://thesvg.org/icons/docker/default.svg" width="48" alt="Docker" /> &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="https://thesvg.org/icons/nodedotjs/default.svg" width="48" alt="Node.js" /> &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="https://thesvg.org/icons/python/default.svg" width="48" alt="Python" /> &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="https://thesvg.org/icons/typescript/default.svg" width="48" alt="TypeScript" /> &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="https://thesvg.org/icons/linux/default.svg" width="48" alt="Linux" />
+  <img src="docs/assets/icons/postgresql.svg" width="48" alt="PostgreSQL" /> &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="docs/assets/icons/grafana.svg" width="48" alt="Grafana" /> &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="docs/assets/icons/docker.svg" width="48" alt="Docker" /> &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="docs/assets/icons/nodedotjs.svg" width="48" alt="Node.js" /> &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="docs/assets/icons/python.svg" width="48" alt="Python" /> &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="docs/assets/icons/typescript.svg" width="48" alt="TypeScript" /> &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="docs/assets/icons/linux.svg" width="48" alt="Linux" />
   <br/>
   <br/>
 </div>
@@ -26,9 +26,9 @@
 
 <div align="center">
  <p>
-  <a href="README.md"><img src="https://hatscripts.github.io/circle-flags/flags/gb.svg" width="18" align="center"/> <b>English</b></a> |
-  <a href="README-th.md"><img src="https://hatscripts.github.io/circle-flags/flags/th.svg" width="18" align="center"/> <b>ไทย</b></a> |
-  <a href="README-zh-CN.md"><img src="https://hatscripts.github.io/circle-flags/flags/tw.svg" width="18" align="center"/> <b>中文</b></a>
+  <a href="README.md"><img src="docs/assets/icons/globe.svg" width="16" align="center"/> <b>English</b></a> |
+  <a href="README-th.md"><img src="docs/assets/icons/globe.svg" width="16" align="center"/> <b>ไทย</b></a> |
+  <a href="README-zh-CN.md"><img src="docs/assets/icons/globe.svg" width="16" align="center"/> <b>中文</b></a>
  </p>
 </div>
 
@@ -46,25 +46,25 @@
   <img src="assets/apex-ldi-noc-banner.jpg" alt="APEX Circuit LDI NOC Banner" width="100%" style="border-radius:12px; box-shadow: 0 16px 64px rgba(0,0,0,0.6); margin-bottom: 24px; border: 1px solid rgba(0,242,254,0.1);" />
   <br/>
   <br/>
-  <a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.demolab.com?font=Orbitron&weight=600&size=36&duration=4000&pause=2000&color=00F2FE&center=true&repeat=true&width=1000&height=60&lines=APEX+Circuit+IMS+|+System+Initializing...;Advanced+Manufacturing+Intelligence+%26+NOC;High-Fidelity+Digital+Twin+Architecture" alt="Typing SVG" /></a>
+  > <img src="docs/assets/icons/activity.svg" width="18" align="center"/> **APEX Circuit IMS | Advanced Manufacturing Intelligence & NOC**
 </div>
 
 <div align="center">
-  <a href="#quick-start"><img src="https://img.shields.io/badge/-Release_v1.0-030407?style=for-the-badge&logo=github&logoColor=10B981" alt="Release"/></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/-MIT_License-030407?style=for-the-badge&logo=opensourceinitiative&logoColor=00F2FE" alt="License"/></a>
-  <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/-Docker_Ready-030407?style=for-the-badge&logo=docker&logoColor=2496ED" alt="Docker"/></a>
-  <a href="https://grafana.com/"><img src="https://img.shields.io/badge/-Grafana_v11+-030407?style=for-the-badge&logo=grafana&logoColor=F46800" alt="Grafana"/></a>
-  <a href="https://nodered.org/"><img src="https://img.shields.io/badge/-Node--RED_v4+-030407?style=for-the-badge&logo=nodered&logoColor=8F0000" alt="Node-RED"/></a>
-  <a href="https://www.timescale.com/"><img src="https://img.shields.io/badge/-TimescaleDB_2.x-030407?style=for-the-badge&logo=postgresql&logoColor=F59E0B" alt="TimescaleDB"/></a>
+  <a href="#quick-start"><img src="docs/assets/icons/github.svg" width="14" align="center"/> **Release v1.0**</a>
+  <a href="LICENSE"><img src="docs/assets/icons/open-source-initiative.svg" width="14" align="center"/> **MIT License**</a>
+  <a href="https://www.docker.com/"><img src="docs/assets/icons/docker.svg" width="14" align="center"/> **Docker Ready**</a>
+  <a href="https://grafana.com/"><img src="docs/assets/icons/grafana.svg" width="14" align="center"/> **Grafana v11+**</a>
+  <a href="https://nodered.org/"><img src="docs/assets/icons/node-red.svg" width="14" align="center"/> **Node-RED v4+**</a>
+  <a href="https://www.timescale.com/"><img src="docs/assets/icons/postgresql.svg" width="14" align="center"/> **TimescaleDB 2.x**</a>
   <br>
-  <a href="#quick-start"><img src="https://img.shields.io/badge/Status-Tests_Passing-10B981?style=for-the-badge&logoColor=white" alt="Tests" /></a>
-  <a href="#quick-start"><img src="https://img.shields.io/badge/K6-Stress--Tested-030407?style=for-the-badge&logo=k6&logoColor=7B61FF" alt="K6" /></a>
-  <a href="data-generators/"><img src="https://img.shields.io/badge/Data-Digital_Twin-030407?style=for-the-badge&logo=python&logoColor=00C7B7" alt="Synthetic Data" /></a>
+  <a href="#quick-start"><img src="docs/assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Tests Passing</a>
+  <a href="#quick-start"><img src="docs/assets/icons/k6.svg" width="14" align="center"/> **K6:** Stress-Tested</a>
+  <a href="data-generators/"><img src="docs/assets/icons/python.svg" width="14" align="center"/> **Data:** Digital Twin</a>
 </div>
 
 <div align="center" justify-content="space-between">
-  <a href="./docs/architecture/IMS_PLATFORM_BOOK.md"><img src="https://img.shields.io/badge/PLATFORM_BOOK-ENTER-blue?color=00F2FE&labelColor=030407&style=for-the-badge"></a>
-  <a href="./docs/architecture/ARCHITECTURE.md"><img src="https://img.shields.io/badge/ARCHITECTURE-READ-blue?color=10B981&labelColor=030407&style=for-the-badge"></a>
+  <a href="./docs/architecture/IMS_PLATFORM_BOOK.md"><img src="docs/assets/icons/check-circle.svg" width="14" align="center"/> **PLATFORM BOOK:** ENTER</a>
+  <a href="./docs/architecture/ARCHITECTURE.md"><img src="docs/assets/icons/check-circle.svg" width="14" align="center"/> **ARCHITECTURE:** READ</a>
 </div>
 
 <br/>

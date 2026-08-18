@@ -6,8 +6,8 @@
 
 <div align="center">
 
-![Contributing](https://img.shields.io/badge/Contributing-Guide-blue)
-![License](https://img.shields.io/badge/License-MIT-green)
+<img src="docs/assets/icons/check-circle.svg" width="14" align="center"/> **Contributing:** Guide
+<img src="docs/assets/icons/check-circle.svg" width="14" align="center"/> **License:** MIT
 
 </div>
 

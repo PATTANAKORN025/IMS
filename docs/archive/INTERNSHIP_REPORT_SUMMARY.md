@@ -16,9 +16,9 @@
 
 <div align="center">
 
-![Internship](https://img.shields.io/badge/Internship-Development%20Project-blue)
-![Academic](https://img.shields.io/badge/Academic-Review-green)
-![Business](https://img.shields.io/badge/Business-Value-purple)
+<img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Internship:** Development Project
+<img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Academic:** Review
+<img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Business:** Value
 
 </div>
 

@@ -14,9 +14,9 @@
 
 <div align="center">
 
-![Admin](https://img.shields.io/badge/Admin-SRE%20Guide-green)
-![Version](https://img.shields.io/badge/Version-1.1-blue)
-![Audience](https://img.shields.io/badge/Audience-IT%20Team-purple)
+<img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Admin:** SRE Guide
+<img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Version:** 1.1
+<img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Audience:** IT Team
 
 </div>
 
