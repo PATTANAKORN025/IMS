@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # 数据保真度与规模管理架构 (Data Fidelity & Scale Management)
 
 本文档描述了 IMS 系统在支持 1,000+ 台设备时的架构挑战与解决方案 (Architectural Solutions)，重点关注保持毫秒级数据保真度、防止警报疲劳 (Alert Fatigue) 的警报管理，以及模拟数据与真实数据之间的一致性。

@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../../../docs/README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # Spec: sys_metrics Duplicate-Insert Fix (Phase A1)
 
 **Status: deployed 2026-08-15, measurement in progress.** Approved by the user ahead of Soak Attempt 8 completing, on the reasoning that soaking a known-broken ingestion path for 72h produces evidence of the wrong thing. This ends Soak Attempt 8 -- see `docs/evidence/SOAK_TEST_LOG.md`.

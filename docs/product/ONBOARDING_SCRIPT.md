@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # IMS Onboarding: Video Walkthrough & GIF Script
 
 > **Objective:** This document serves as the storyboard and script for creating the official IMS Video Walkthrough and UI GIFs. Since the UI is a Cyberpunk HUD, motion and animation are key selling points.

@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # Evidence-Driven Reliability Test Suite
 
 > Replaces the original "wait 72h for a clean soak, then batch-fix" plan. Decided 2026-08-15, after Phase A1 (`sys_metrics` duplicate-insert fix) proved that soaking a known-broken ingestion path for 72h produces evidence of the wrong thing.

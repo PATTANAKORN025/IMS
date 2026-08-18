@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # IMS 警报与报警响应手册
 
 > **目标：** 将一线响应步骤与本系统实际生成的警报和报警代码映射。下述所有代码和规则名称均于 2026-08-10 直接对照实时数据库和配置的警报规则文件进行了核对——这取代了早期使用虚构代码（`SYS-001`、`NET-002`、`LDI-001`）（这些代码在系统中从未存在过）的版本。

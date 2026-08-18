@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # ขั้นตอนการปฏิบัติงานมาตรฐาน (SOP) สำหรับผู้ปฏิบัติงาน IMS
 
 > **บทบาท:** ผู้ปฏิบัติงานหน้างาน LDI / ฝ่ายสนับสนุน NOC ระดับ 1

@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../../../docs/README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # IMS LDI Manufacturing Command Center — Next-Phase Implementation Plan
 
 Status: **Plan only. No implementation.** Builds on the approved audit/spec (`docs/superpowers/specs/2026-08-18-manufacturing-command-center-next-phase-design.md`). Every finding below was verified against the live database and live repository this session (`docker compose exec timescaledb psql`, `node tests/lint/*.js`, direct JSON/SQL reads) — nothing here is assumed or carried forward unverified from the audit.

@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # Simulator Realism Audit (P1, Reliability Test Suite)
 
 > Full re-run of `LDI_ALARM_FIDELITY_AUDIT.md`'s methodology (2026-08-11) against the current live dataset. Every number below is a fresh live query, not a re-citation of the 2026-08-11 figures. Classifications use the taxonomy: fixed recipe/setpoint, normal variation, controlled drift, transient fault, rare fault, simulator artifact, actual defect.

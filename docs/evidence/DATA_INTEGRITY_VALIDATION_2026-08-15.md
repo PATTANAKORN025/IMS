@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # Data Integrity Validation (P0, Reliability Test Suite)
 
 > "Must prove no data loss." Read-only, no container touch. Window: 2026-08-15T03:31:22Z → 04:05:21Z (~34 min), immediately following the Phase A1 `sys_metrics` fix -- chosen deliberately so this validation covers the fixed pipeline, not the pre-fix one.

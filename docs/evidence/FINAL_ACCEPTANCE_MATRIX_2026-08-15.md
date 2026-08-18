@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # Final Acceptance Matrix
 
 > No metric below is claimed "100% real" or "100% accurate" -- wording follows: verified, observed, measured, unknown, insufficient sample, simulated, inferred, not yet validated. Every row cites the evidence doc it came from; none are asserted from memory.

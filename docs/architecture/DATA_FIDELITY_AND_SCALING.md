@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # Data Fidelity & Scale Management Architecture
 
 This document outlines the architectural challenges and solutions for the IMS system as it scales to support 1,000+ devices. The primary focus is maintaining millisecond-level data accuracy, preventing alert fatigue, and ensuring simulator realism compared to real-world environments.

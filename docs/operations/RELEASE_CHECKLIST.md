@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # Release Checklist
 
 > Run through this before tagging a production release (i.e. before merging to `main` in a way that triggers `semantic-release`, or before manually cutting a tag). This is the recurring "is this commit safe to ship" gate — for the one-time initial production rollout, see [`DEPLOYMENT_READINESS.md`](DEPLOYMENT_READINESS.md)'s Go-Live Checklist instead.

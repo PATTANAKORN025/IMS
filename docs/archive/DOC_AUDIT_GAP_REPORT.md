@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # Documentation Audit — Gap Report
 
 > **Scope:** All current (non-`docs/archive/`) documentation, audited against the actual repo state — `docker-compose.yaml`, `docker-compose.prod.yaml`, `database/migrations/` (53 files, through 078), `scripts/`, `monitoring/` configs, and the 12 live dashboard JSON files. Read-only audit; no files were edited to produce this report.

@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # IMS 平台指南
 
 > **所有 IMS 文档的起点。** 这是一个导航枢纽，而不是它所链接的文档的副本 —— 每个主题仅存放在一个位置，而本指南指向它。如果这里的内容与它所链接的文档不一致，则以链接的文档为准；本指南是地图，而不是领土本身。

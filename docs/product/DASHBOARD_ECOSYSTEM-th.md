@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # 🌌 ระบบนิเวศแดชบอร์ด IMS: สถาปัตยกรรมจากระดับมหภาคสู่ระดับจุลภาค (Macro-to-Micro)
 
 **Industrial Monitoring System (IMS)** ขับเคลื่อนด้วยระบบนิเวศแดชบอร์ดสไตล์ "Cyberpunk HUD" จำนวน 15 หน้า ซึ่งถูกออกแบบมาเพื่อขจัดปัญหาภาวะความเหนื่อยล้าจากการแจ้งเตือน (Alarm Fatigue) อย่างเด็ดขาด และเชื่อมประสานช่องว่างระหว่างระบบโครงสร้างพื้นฐานไอทีระดับองค์กร (Enterprise IT) กับเทคโนโลยีปฏิบัติการเชิงกายภาพ (OT)

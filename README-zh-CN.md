@@ -143,7 +143,8 @@
 请根据您的角色和您想要实现的目标选择您的路径：
 
 ### 路径 A：系统评估之旅 (The Evaluator Tour)
-*专为希望查看仪表板和工作流程的经理、UI/UX 审阅者和系统评估者而设计。*
+
+_专为希望查看仪表板和工作流程的经理、UI/UX 审阅者和系统评估者而设计。_
 
 ```bash
 git clone https://github.com/PATTANAKORN025/IMS.git
@@ -153,11 +154,13 @@ make up      # docker compose up -d (启动包含模拟器的堆栈)
 sleep 40 && make verify
 open http://localhost:3000
 ```
+
 > **您将看到什么：** 温和的模拟（~10-15 行/分钟），让您点击查看 LDI 制造指挥中心、操作员安灯看板，并查看实时的 Cpk 能力图表。
 > **已验证：** `docker compose ps` 于 2026-08-13 运行，已存档于 [`docs/evidence/runtime/compose-ps-20260813.txt`](docs/evidence/runtime/compose-ps-20260813.txt)。
 
 ### 路径 B：性能试验场 (The Performance Proving Ground)
-*专为希望在极端 IT/OT 负载下验证系统“实际性能”的 SRE、DBA 和系统架构师设计。*
+
+_专为希望在极端 IT/OT 负载下验证系统“实际性能”的 SRE、DBA 和系统架构师设计。_
 
 ```bash
 git clone https://github.com/PATTANAKORN025/IMS.git
@@ -166,6 +169,7 @@ cp .env.example .env
 make up-prod   # 以生产级资源分配启动堆栈
 make test-load # 启动 K6 压力测试框架
 ```
+
 > **您将看到什么：** K6 框架将模拟 1000 个节点的基础设施环境，猛烈冲击 Node-RED 摄取端点，并测试 TimescaleDB 的连续聚合极限。您可以在 `IMS Meta-Monitoring` 仪表板上实时监控摄取延迟和 PgBouncer 队列深度。
 
 <details>
@@ -173,6 +177,7 @@ make test-load # 启动 K6 压力测试框架
 
 - Nginx 反向代理配置为 `localhost`，在生产环境中需要手动部署证书。
 - 除非在 `.env` 文件中提供显式令牌，否则 Grafana Alertmanager 集成 (LINE/Teams) 将静默失败。
+
 </details>
 
 ### 验证与证据
@@ -291,7 +296,7 @@ open "http://localhost:3000/playlists/play/1?kiosk=tv&autofitpanels"
 | **编排**     | Docker Compose            | 具有开发/生产覆盖配置的 7 服务容器堆栈                             |
 | **采集**     | Node-RED + net-snmp       | 顺序异步批量 SNMP 遍历，5 线程并行遍历器                           |
 | **数据库**   | TimescaleDB (PostgreSQL)  | 具有连续聚合 (Continuous Aggregates) 的超表，7 天后达到 90% 压缩率 |
-| **可视化**   | Grafana 13.1.1            | 15 个仪表板（5 个基础设施 + 10 个制造），状态时间线异常             |
+| **可视化**   | Grafana 13.1.1            | 15 个仪表板（5 个基础设施 + 10 个制造），状态时间线异常            |
 | **警报**     | Prometheus + Alertmanager | 指标抓取，抑制规则，LINE Messaging API + MS Teams webhooks         |
 | **负载测试** | K6                        | 管道压力测试（50→200 虚拟用户），阈值 p95<500ms                    |
 | **SLA 探测** | Blackbox Exporter         | HTTP/TCP/ICMP 端点监控                                             |

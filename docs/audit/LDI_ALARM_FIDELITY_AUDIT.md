@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # LDI Alarm Fidelity Audit
 
 > Scope: the LDI alarm simulation pipeline — `nodered_data/flows.json` (node `almsim_gen`), `public.ldi_alarm_ms_code` (Alarm Master), `public.ldi_alarm_log`, `public.v_ldi_alarm_context`, `public.v_ldi_alarm_category`, and every alarm-facing panel in `monitoring/grafana/dashboards/manufacturing/*.json`.

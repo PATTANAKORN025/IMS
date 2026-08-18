@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # Alarm Detail Style Guide — v1.1
 
 > **Baseline reference.** This is the canonical style for `ldi_alarm_ms_code` alarm-knowledge text — English, operator/engineer-facing, functional (not a copy of the raw vendor AlarmMsg). Every future rewrite, in any simulator, migration, or dashboard, should follow this pattern and be added here, not invented ad hoc.

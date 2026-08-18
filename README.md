@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="./README.md"><img src="./docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="./docs/README.md"><img src="./docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 <div align="center">
   <br/>
   <a href="https://github.com/PATTANAKORN025/IMS">
@@ -56,8 +63,8 @@
 </div>
 
 <div align="center" justify-content="space-between">
-  <a href="docs/architecture/IMS_PLATFORM_BOOK.md"><img src="https://img.shields.io/badge/PLATFORM_BOOK-ENTER-blue?color=00F2FE&labelColor=030407&style=for-the-badge"></a>
-  <a href="docs/architecture/ARCHITECTURE.md"><img src="https://img.shields.io/badge/ARCHITECTURE-READ-blue?color=10B981&labelColor=030407&style=for-the-badge"></a>
+  <a href="./docs/architecture/IMS_PLATFORM_BOOK.md"><img src="https://img.shields.io/badge/PLATFORM_BOOK-ENTER-blue?color=00F2FE&labelColor=030407&style=for-the-badge"></a>
+  <a href="./docs/architecture/ARCHITECTURE.md"><img src="https://img.shields.io/badge/ARCHITECTURE-READ-blue?color=10B981&labelColor=030407&style=for-the-badge"></a>
 </div>
 
 <br/>
@@ -143,7 +150,8 @@
 Choose your path based on your role and what you want to achieve:
 
 ### Path A: The Evaluator Tour (UI & Workflow)
-*Designed for Managers, UI/UX Reviewers, and System Evaluators wanting to see the dashboards in action.*
+
+_Designed for Managers, UI/UX Reviewers, and System Evaluators wanting to see the dashboards in action._
 
 ```bash
 git clone https://github.com/PATTANAKORN025/IMS.git
@@ -153,11 +161,13 @@ make up      # docker compose up -d (starts stack with simulator)
 sleep 40 && make verify
 open http://localhost:3000
 ```
+
 > **What to expect:** A gentle simulation (~10-15 rows/min) allowing you to click through the LDI Manufacturing Command Center, view the Operator Andon Board, and see real-time Cpk capability charts.
 > **Verified:** `docker compose ps` on 2026-08-13, archived in [`docs/evidence/runtime/compose-ps-20260813.txt`](docs/evidence/runtime/compose-ps-20260813.txt).
 
 ### Path B: The Performance Proving Ground (Stress Test)
-*Designed for SREs, DBAs, and Architects who want to verify the system's actual performance under extreme IT/OT loads.*
+
+_Designed for SREs, DBAs, and Architects who want to verify the system's actual performance under extreme IT/OT loads._
 
 ```bash
 git clone https://github.com/PATTANAKORN025/IMS.git
@@ -166,6 +176,7 @@ cp .env.example .env
 make up-prod   # Launches the stack with production-grade resource allocations
 make test-load # Fires the K6 stress test framework
 ```
+
 > **What to expect:** The K6 framework will simulate a 1,000-node infrastructure environment, slamming the Node-RED ingestion endpoints and testing TimescaleDB's continuous aggregation limits. You can monitor ingestion latency and PgBouncer queue depths live on the `IMS Meta-Monitoring` dashboard.
 
 <details>
@@ -173,6 +184,7 @@ make test-load # Fires the K6 stress test framework
 
 - Nginx reverse-proxy is configured for `localhost` and requires manual certificate deployment for production environments.
 - Grafana Alertmanager integrations (LINE/Teams) will fail silently until explicit tokens are provided in the `.env` file.
+
 </details>
 
 ### Verification & Evidence
@@ -286,15 +298,15 @@ open "http://localhost:3000/playlists/play/1?kiosk=tv&autofitpanels"
 <details>
 <summary><b>Tech Stack</b></summary>
 
-| Layer             | Technology                | Purpose                                                                      |
-| ----------------- | ------------------------- | ---------------------------------------------------------------------------- |
-| **Orchestration** | Docker Compose            | 7-service container stack with dev/prod overlays                             |
-| **Collection**    | Node-RED + net-snmp       | Sequential async bulk SNMP walks, 5-thread parallel walker                   |
-| **Database**      | TimescaleDB (PostgreSQL)  | Hypertables with CAGGs, 90% compression after 7d                             |
+| Layer             | Technology                | Purpose                                                                       |
+| ----------------- | ------------------------- | ----------------------------------------------------------------------------- |
+| **Orchestration** | Docker Compose            | 7-service container stack with dev/prod overlays                              |
+| **Collection**    | Node-RED + net-snmp       | Sequential async bulk SNMP walks, 5-thread parallel walker                    |
+| **Database**      | TimescaleDB (PostgreSQL)  | Hypertables with CAGGs, 90% compression after 7d                              |
 | **Visualization** | Grafana 13.1.1            | 15 dashboards (5 infrastructure + 10 manufacturing), state-timeline anomalies |
-| **Alerting**      | Prometheus + Alertmanager | Metric scraping, inhibition rules, LINE Messaging API + MS Teams webhooks    |
-| **Load Testing**  | K6                        | Pipeline stress (50→200 VUs), threshold p95<500ms                            |
-| **SLA Probing**   | Blackbox Exporter         | HTTP/TCP/ICMP endpoint monitoring                                            |
+| **Alerting**      | Prometheus + Alertmanager | Metric scraping, inhibition rules, LINE Messaging API + MS Teams webhooks     |
+| **Load Testing**  | K6                        | Pipeline stress (50→200 VUs), threshold p95<500ms                             |
+| **SLA Probing**   | Blackbox Exporter         | HTTP/TCP/ICMP endpoint monitoring                                             |
 
 </details>
 
@@ -353,7 +365,7 @@ IMS/
 
 <div align="center">
 
-### <img src="docs/assets/icons/briefcase.svg" width="18" height="18" align="center" /> Executive & Business Strategy
+### <img src="./docs/assets/icons/briefcase.svg" width="18" height="18" align="center" /> Executive & Business Strategy
 
 |                                 Document                                 | Description                                                             |
 | :----------------------------------------------------------------------: | ----------------------------------------------------------------------- |
@@ -361,7 +373,7 @@ IMS/
 | [**Platform Book (start here)**](docs/architecture/IMS_PLATFORM_BOOK.md) | Navigational hub for the entire documentation set, terminology glossary |
 |              [**Product Context**](docs/product/PRODUCT.md)              | Product purpose, target audience, and positioning                       |
 
-### <img src="docs/assets/icons/factory.svg" width="18" height="18" align="center" /> Manufacturing & LDI Intelligence
+### <img src="./docs/assets/icons/factory.svg" width="18" height="18" align="center" /> Manufacturing & LDI Intelligence
 
 |                                       Document                                        | Description                                                            |
 | :-----------------------------------------------------------------------------------: | ---------------------------------------------------------------------- |
@@ -371,7 +383,7 @@ IMS/
 |                [**LDI RCA Guide**](docs/architecture/LDI_RCA_GUIDE.md)                | Root-cause correlation (Lift/Confidence) methodology                   |
 |       [**LDI Validation Protocol**](docs/operations/LDI_VALIDATION_PROTOCOL.md)       | 4-phase production sign-off procedure                                  |
 
-### <img src="docs/assets/icons/layers.svg" width="18" height="18" align="center" /> Core Architecture & Security
+### <img src="./docs/assets/icons/layers.svg" width="18" height="18" align="center" /> Core Architecture & Security
 
 |                                 Document                                 | Description                                                 |
 | :----------------------------------------------------------------------: | ----------------------------------------------------------- |
@@ -401,7 +413,7 @@ IMS/
 |     [**Release Checklist**](docs/operations/RELEASE_CHECKLIST.md)     | What to verify before tagging a release                         |
 |       [**Troubleshooting**](docs/operations/TROUBLESHOOTING.md)       | Common issues, debugging commands, recovery procedures          |
 
-### <img src="docs/assets/icons/users.svg" width="18" height="18" align="center" /> Community & Reference
+### <img src="./docs/assets/icons/users.svg" width="18" height="18" align="center" /> Community & Reference
 
 |                             Document                             | Description                                               |
 | :--------------------------------------------------------------: | --------------------------------------------------------- |

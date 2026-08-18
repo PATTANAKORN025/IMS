@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # Repository Ownership
 
 > Per `docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md` §4 (confirmed 2026-08-10): this repo **stays single-repo** — a multi-repo split was explicitly ruled out as not justified for a repo this size with one owner. This doc gives the internal directory/domain boundary that `.github/CODEOWNERS` enforces, so a future second owner has a real handoff boundary instead of a flat wildcard.

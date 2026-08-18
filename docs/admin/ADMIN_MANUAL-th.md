@@ -1,4 +1,11 @@
-# <img src="docs/assets/icons/wrench.svg" width="18" height="18" align="center" /> System Administration & SRE Guide
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
+# <img src="../../docs/assets/icons/wrench.svg" width="18" height="18" align="center" /> System Administration & SRE Guide
 
 > **คู่มือสำหรับทีม IT (MIS-G) ดูแลระบบ IMS**
 > ครอบคลุม Docker management, device registration, alert management, troubleshooting
@@ -376,7 +383,7 @@ cp -r monitoring/grafana/dashboards/ monitoring/grafana/dashboards.bak/
 
 ---
 
-## <img src="docs/assets/icons/activity.svg" width="18" height="18" align="center" /> Performance Monitoring
+## <img src="../../docs/assets/icons/activity.svg" width="18" height="18" align="center" /> Performance Monitoring
 
 ### System Metrics
 

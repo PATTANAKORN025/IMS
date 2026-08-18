@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # Read-Only Audit — Alarm Hygiene + RAM Bug Scope + Historical-Data Integrity + Simulator Realism
 
 > **Audit only. Zero files modified, zero commits, zero container touches.** Ordered by the user explicitly to run during Soak Attempt 8 without disturbing it. Everything below is either a live query result, a live dashboard/screenshot check, or a static file read — no number is estimated or carried over from a prior pass without being re-verified against the live system.

@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # Future Analytics — Roadmap Concepts (Not Implemented)
 
 > Everything in this document is a **roadmap idea**, not a shipped capability.
@@ -10,7 +17,7 @@
 ## Why this file exists
 
 `ims-ldi-engineering-analytics.json`'s "Advanced Diagnostics" row was
-originally titled "<img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> AI-Assisted Advanced Diagnostics (Predictive & RCA)",
+originally titled "<img src="../../docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> AI-Assisted Advanced Diagnostics (Predictive & RCA)",
 with a sub-panel subtitled "(Predictive Drift)" and a description claiming
 the panel was "for predictive analytics." None of that was true: the panel
 is a rolling simple moving average against dynamic control limits (rolling
