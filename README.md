@@ -64,11 +64,13 @@
 
 ## System Overview
 
-**IMS (Industrial Monitoring System)** is a telemetry monitoring platform spanning infrastructure and manufacturing domains. Built on Node-RED, TimescaleDB, and Grafana, it integrates IT metrics (servers, network switches) and OT data (LDI manufacturing machines) into a single PostgreSQL-backed repository.
+**IMS (Industrial Monitoring System)** bridges the gap between high-precision manufacturing and enterprise IT. It is a telemetry monitoring platform built on Node-RED, TimescaleDB, and Grafana, integrating IT infrastructure metrics with OT (Operational Technology) data into a single, unified PostgreSQL-backed repository.
 
-**Scale and Scope:** Designed to monitor 1000+ infrastructure nodes alongside high-precision LDI (Laser Direct Imaging) manufacturing equipment. It implements Statistical Process Control (SPC) methodologies and Z-Score anomaly detection for proactive alerting.
+**The Factory Floor Reality (OT):** In advanced PCB manufacturing, Laser Direct Imaging (LDI) machines require zero-latency decision making. A shift in laser temperature or vacuum pressure can instantly cause registration errors, producing expensive scrap. Operators need immediate, color-coded Andon boards to stop the line when Statistical Process Control (SPC) limits (like Cpk) drop below acceptable thresholds.
 
-Performance relies on TimescaleDB continuous aggregates for dashboard rendering and a stateful Node-RED pipeline for data ingestion.
+**The Convergence (IT/OT):** IMS provides this visibility by blending traditional IT rigor with OT realities. It monitors the health of 1,000+ infrastructure nodes (servers, network switches, ingestion latency) side-by-side with LDI machine telemetry. When an LDI alignment fails, engineers can instantly correlate it against network drops or server CPU spikes using the same single pane of glass.
+
+**The Architecture (IT):** Under the hood, performance is driven by a stateful Node-RED pipeline managing async data ingestion and PgBouncer handling connection pooling. TimescaleDB performs the heavy lifting—computing rolling 3&sigma; baselines (Z-Scores) and continuous aggregates on the fly, ensuring Grafana renders sub-second dashboards even when querying millions of historical telemetry rows.
 
 <table style="border:none; border-collapse:collapse; width:100%;">
 
@@ -131,10 +133,15 @@ Performance relies on TimescaleDB continuous aggregates for dashboard rendering 
 
 ---
 
-## Quick Start (Local Simulator Environment)
+## Quick Start (Two Paths)
 
 > [!NOTE]
-> **Simulator Boundary:** The following quick start runs the IMS stack locally using a builtin SNMP/HTTP data simulator (`ims-snmpsim`). It **does not** connect to real factory equipment or external network devices. The simulator generates realistic, bounded telemetry and alarm sequences for development and validation purposes.
+> **Simulator Boundary:** Both paths run the IMS stack locally using a built-in SNMP/HTTP data simulator (`ims-snmpsim`). They **do not** connect to real factory equipment or external network devices. The simulator generates realistic, bounded telemetry and alarm sequences for validation.
+
+Choose your path based on your role and what you want to achieve:
+
+### Path A: The Evaluator Tour (UI & Workflow)
+*Designed for Managers, UI/UX Reviewers, and System Evaluators wanting to see the dashboards in action.*
 
 ```bash
 git clone https://github.com/PATTANAKORN025/IMS.git
@@ -144,14 +151,27 @@ make up      # docker compose up -d (starts stack with simulator)
 sleep 40 && make verify
 open http://localhost:3000
 ```
-
+> **What to expect:** A gentle simulation (~10-15 rows/min) allowing you to click through the LDI Manufacturing Command Center, view the Operator Andon Board, and see real-time Cpk capability charts.
 > **Verified:** `docker compose ps` on 2026-08-13, archived in [`docs/evidence/runtime/compose-ps-20260813.txt`](docs/evidence/runtime/compose-ps-20260813.txt).
 
-### Known Limitations
+### Path B: The Performance Proving Ground (Stress Test)
+*Designed for SREs, DBAs, and Architects who want to verify the system's actual performance under extreme IT/OT loads.*
 
-- The simulated LDI workload generates ~10-15 rows per minute; load testing requires running the explicit K6 stress test framework to simulate production 1000-node scale.
+```bash
+git clone https://github.com/PATTANAKORN025/IMS.git
+cd IMS
+cp .env.example .env
+make up-prod   # Launches the stack with production-grade resource allocations
+make test-load # Fires the K6 stress test framework
+```
+> **What to expect:** The K6 framework will simulate a 1,000-node infrastructure environment, slamming the Node-RED ingestion endpoints and testing TimescaleDB's continuous aggregation limits. You can monitor ingestion latency and PgBouncer queue depths live on the `IMS Meta-Monitoring` dashboard.
+
+<details>
+<summary><b>Known Limitations & Manual Configuration</b></summary>
+
 - Nginx reverse-proxy is configured for `localhost` and requires manual certificate deployment for production environments.
 - Grafana Alertmanager integrations (LINE/Teams) will fail silently until explicit tokens are provided in the `.env` file.
+</details>
 
 ### Verification & Evidence
 
