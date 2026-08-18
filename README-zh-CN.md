@@ -104,6 +104,8 @@
 </tr>
 </table>
 
+> 🌌 **探索生态系统：** 查看完整的 [15-Dashboard Macro-to-Micro Architecture Guide](docs/product/DASHBOARD_ECOSYSTEM.md)（15 仪表板宏观到微观架构指南），深入了解 IMS 如何从 C 级业务指标一直缩放到传感器级诊断数据。
+
 <br/>
 
 ---
