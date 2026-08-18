@@ -29,16 +29,16 @@ the two-table split had become a documentation fiction, not a real design bounda
 Merged into one table, applied to **all 15 dashboards** including the LDI kiosk set.
 No dashboard is exempt.
 
-| Token            | Hex Code  | Meaning                           | Used For                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| ---------------- | --------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ok`             | `#22C55E` | Healthy / Normal                  | Healthy, running, PASS, Capable+ thresholds — any "this is fine" verdict                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| `warning`        | `#F59E0B` | Monitor / Non-urgent              | IDLE, Marginal, warning thresholds                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| `critical`       | `#EF4444` | Danger / Immediate action required| OUT OF SPEC, critical thresholds, error states                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| `info`           | `#00F2FE` | General data / Non-verdict        | Plain KPI numbers, machine-name labels, non-alerting stats                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `accent`         | `#3B82F6` | Highlight / Active UI elements    | Navigation highlights, interactive elements                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| `no_data`        | `#64748B` | Specifically NO_DATA              | A genuine gap in reporting — a _different claim_ than `critical` ("confirmed bad"). "We don't know" ≠ "something is wrong." Every stat/gauge/bargauge panel must carry an explicit `type: "special", options.match: "null+nan"` mapping to this color (or, for panels that convert no-rows into a sentinel value in SQL, a matching value-mapping to the text `NO_DATA`) — Grafana does not fall back to a neutral color on its own. `noValue` text must be the literal string `NO_DATA` everywhere (not `N/A`/`-`/Grafana's raw "No data"), except where a panel's fallback is a legitimate zero-count business value or already carries a more specific semantic label (e.g. NOC's `AWAITING TELEMETRY`). |
-| `forecast`       | `#4A5568` | Forecast / Regression (dashed line)| Forecast, regression, trend projection — dashed line only                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `severity-minor` | `#EAB308` | 4th alarm-severity tier           | ISA-18.2 "Minor" severity specifically, distinct from `warning`/Major — the two are deliberately different shades so a 4-level severity scale (Critical/Major/Minor/Warning) stays visually distinguishable. Not part of the core 6; only used in alarm-severity value mappings.                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Token            | Hex Code  | Meaning                             | Used For                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ---------------- | --------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ok`             | `#22C55E` | Healthy / Normal                    | Healthy, running, PASS, Capable+ thresholds — any "this is fine" verdict                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `warning`        | `#F59E0B` | Monitor / Non-urgent                | IDLE, Marginal, warning thresholds                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `critical`       | `#EF4444` | Danger / Immediate action required  | OUT OF SPEC, critical thresholds, error states                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `info`           | `#00F2FE` | General data / Non-verdict          | Plain KPI numbers, machine-name labels, non-alerting stats                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `accent`         | `#3B82F6` | Highlight / Active UI elements      | Navigation highlights, interactive elements                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `no_data`        | `#64748B` | Specifically NO_DATA                | A genuine gap in reporting — a _different claim_ than `critical` ("confirmed bad"). "We don't know" ≠ "something is wrong." Every stat/gauge/bargauge panel must carry an explicit `type: "special", options.match: "null+nan"` mapping to this color (or, for panels that convert no-rows into a sentinel value in SQL, a matching value-mapping to the text `NO_DATA`) — Grafana does not fall back to a neutral color on its own. `noValue` text must be the literal string `NO_DATA` everywhere (not `N/A`/`-`/Grafana's raw "No data"), except where a panel's fallback is a legitimate zero-count business value or already carries a more specific semantic label (e.g. NOC's `AWAITING TELEMETRY`). |
+| `forecast`       | `#4A5568` | Forecast / Regression (dashed line) | Forecast, regression, trend projection — dashed line only                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `severity-minor` | `#EAB308` | 4th alarm-severity tier             | ISA-18.2 "Minor" severity specifically, distinct from `warning`/Major — the two are deliberately different shades so a 4-level severity scale (Critical/Major/Minor/Warning) stays visually distinguishable. Not part of the core 6; only used in alarm-severity value mappings.                                                                                                                                                                                                                                                                                                                                                                                                                            |
 
 **Strict Rules:**
 
@@ -107,13 +107,13 @@ added.
 
 ### 2.2 Threshold Contract (Must be identical across all panels measuring the same metric)
 
-| Metric             | Warning | Critical | Notes                               |
-| ------------------ | ------- | -------- | ----------------------------------- |
-| CPU Load %         | 80      | 90       |                                     |
-| RAM Used %         | 85      | 95       |                                     |
-| Disk Used %        | 80      | 90       |                                     |
-| Temperature °C     | 45      | 55       | Adjust to actual machine specs when known |
-| LDI PE (µm, abs)   | 10      | 15       | According to tolerances agreed with QA |
+| Metric             | Warning | Critical | Notes                                      |
+| ------------------ | ------- | -------- | ------------------------------------------ |
+| CPU Load %         | 80      | 90       |                                            |
+| RAM Used %         | 85      | 95       |                                            |
+| Disk Used %        | 80      | 90       |                                            |
+| Temperature °C     | 45      | 55       | Adjust to actual machine specs when known  |
+| LDI PE (µm, abs)   | 10      | 15       | According to tolerances agreed with QA     |
 | Fleet Health Score | < 70    | < 50     | Continuous scale 0–100 (no step functions) |
 
 These figures must be **written once** and reused via the field config template, rather than typing thresholds repeatedly across every panel — if a value needs to change, change it in one place and save it as a Library Panel field config.
@@ -122,17 +122,17 @@ These figures must be **written once** and reused via the field config template,
 
 ## 3. Typography & Number Formatting
 
-| Element                                | Rule                                                                                                                                                       |
-| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Panel title                            | Short ≤ 4 words, Title Case, do not include units in the name (units belong in axis/legend).                                                               |
-| Panel description                      | Always include for every panel, explaining "what this is + how it is calculated", displayed via hover (ⓘ icon).                                            |
+| Element                                | Rule                                                                                                                                                                                |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Panel title                            | Short ≤ 4 words, Title Case, do not include units in the name (units belong in axis/legend).                                                                                        |
+| Panel description                      | Always include for every panel, explaining "what this is + how it is calculated", displayed via hover (ⓘ icon).                                                                     |
 | Stat value font size (NOC / kiosk row) | ≥ 56px for the top row KPIs of NOC Overview and Andon Board (increased from the original 32px — read from further away on large NOC/kiosk screens), paired with `titleSize` ≥ 16px. |
-| Stat value font size (Others)          | ≥ 32px for general KPIs.                                                                                                                                   |
-| Table `cellHeight` (NOC / kiosk)       | Always `lg` for main tables on NOC Overview and Andon Board — the default `sm` is too small to read from a distance.                                       |
-| Unit                                   | Always configure for every field, do not leave raw numbers (`%`, `°C`, `GB`, `Mbps`).                                                                      |
-| Decimal                                | 1 decimal place is sufficient for % and temperature, 0 decimal places for counts.                                                                          |
-| Time                                   | `dateTimeFromNow` for "last seen" (e.g., "12s ago"), absolute time reserved only for tooltips.                                                             |
-| Sentinel values                        | Special values (e.g., 9999 = no growth) must always have a text value mapping; never show raw numbers that look like bugs.                                 |
+| Stat value font size (Others)          | ≥ 32px for general KPIs.                                                                                                                                                            |
+| Table `cellHeight` (NOC / kiosk)       | Always `lg` for main tables on NOC Overview and Andon Board — the default `sm` is too small to read from a distance.                                                                |
+| Unit                                   | Always configure for every field, do not leave raw numbers (`%`, `°C`, `GB`, `Mbps`).                                                                                               |
+| Decimal                                | 1 decimal place is sufficient for % and temperature, 0 decimal places for counts.                                                                                                   |
+| Time                                   | `dateTimeFromNow` for "last seen" (e.g., "12s ago"), absolute time reserved only for tooltips.                                                                                      |
+| Sentinel values                        | Special values (e.g., 9999 = no growth) must always have a text value mapping; never show raw numbers that look like bugs.                                                          |
 
 ---
 
@@ -140,18 +140,18 @@ These figures must be **written once** and reused via the field config template,
 
 Choose panel types based on the **nature of the data**, not out of habit:
 
-| Data Type                               | Use Panel                           | Example in IMS                  |
-| --------------------------------------- | ----------------------------------- | ------------------------------- |
-| Single latest value + side-by-side trend| **Stat** (`graphMode: area`)        | Latest CPU, Latest RAM          |
-| Capped values requiring "amount remaining"| **Bar Gauge** / **Gauge**           | RAM %, Disk %                   |
-| Numerous statuses over time             | **State Timeline**                  | Fleet uptime 24h                |
-| Continuous trends, multi-series comparison| **Time Series**                     | CPU/RAM/Network history         |
-| Proportions of a whole at a point in time| **Pie / Donut**                     | Traffic breakdown per interface |
-| Detailed table with multiple fields     | **Table** + gauge cell + color text | Server Fleet Status             |
-| Correlation between 2 variables         | **XY Chart**                        | CPU vs Temperature              |
-| Actively firing alerts                  | **Alert List**                      | Top row of NOC                  |
-| Runbook descriptions/links              | **Text (Markdown)**                 | Notes beneath a row             |
-| Spatial locations on the factory floor  | **Geomap (custom image)**           | Physical machine layout by production area |
+| Data Type                                  | Use Panel                           | Example in IMS                             |
+| ------------------------------------------ | ----------------------------------- | ------------------------------------------ |
+| Single latest value + side-by-side trend   | **Stat** (`graphMode: area`)        | Latest CPU, Latest RAM                     |
+| Capped values requiring "amount remaining" | **Bar Gauge** / **Gauge**           | RAM %, Disk %                              |
+| Numerous statuses over time                | **State Timeline**                  | Fleet uptime 24h                           |
+| Continuous trends, multi-series comparison | **Time Series**                     | CPU/RAM/Network history                    |
+| Proportions of a whole at a point in time  | **Pie / Donut**                     | Traffic breakdown per interface            |
+| Detailed table with multiple fields        | **Table** + gauge cell + color text | Server Fleet Status                        |
+| Correlation between 2 variables            | **XY Chart**                        | CPU vs Temperature                         |
+| Actively firing alerts                     | **Alert List**                      | Top row of NOC                             |
+| Runbook descriptions/links                 | **Text (Markdown)**                 | Notes beneath a row                        |
+| Spatial locations on the factory floor     | **Geomap (custom image)**           | Physical machine layout by production area |
 
 **Prohibition:** Do not cram time series into small stat panels (6×6) because there will be no room to read the axes — if a trend is needed in a small space, use a stat + sparkline instead.
 
@@ -175,15 +175,15 @@ Choose panel types based on the **nature of the data**, not out of habit:
 
 ### 5.2 Width/Height Rules
 
-| Panel type                 | Width (Columns) | Height |
-| -------------------------- | --------------- | ------ |
-| Stat (KPI)                 | 4–6             | 4      |
-| Gauge / Bar Gauge          | 6–8             | 6      |
-| Primary Time Series        | 12–24           | 8      |
+| Panel type                         | Width (Columns) | Height |
+| ---------------------------------- | --------------- | ------ |
+| Stat (KPI)                         | 4–6             | 4      |
+| Gauge / Bar Gauge                  | 6–8             | 6      |
+| Primary Time Series                | 12–24           | 8      |
 | Secondary Time Series (comparison) | 12              | 8      |
-| Table                      | 16–24           | 8–10   |
-| Alert List                 | 8               | 8      |
-| Pie/Donut                  | 6–8             | 8      |
+| Table                              | 16–24           | 8–10   |
+| Alert List                         | 8               | 8      |
+| Pie/Donut                          | 6–8             | 8      |
 
 - Do not mix different heights within the same row (this makes the grid look misaligned) — if panels have unequal heights, separate them into different rows.
 - Always use a **Row** to partition semantic zones. Give rows descriptive names (`Compute`, `Network`, `Environmental`) paired with a single emoji as a visual anchor.
@@ -197,14 +197,14 @@ Choose panel types based on the **nature of the data**, not out of habit:
 
 Configure **dashboard settings** identically across all files:
 
-| Setting                                   | Value                                                       | Rationale                                                       |
-| ----------------------------------------- | ----------------------------------------------------------- | --------------------------------------------------------------- |
-| Graph tooltip                             | `Shared crosshair`                                          | Dragging the cursor syncs the time position across all panels — feels like a unified system. |
-| Tooltip mode (for multi-series panels)    | `multi`                                                     | Displays values for all series simultaneously at that point.    |
-| `spanNulls`                               | `60000` (1 minute), not `true`                              | Gaps in the graph represent actual events (outages) and must be visible, not masked by interpolated lines. |
-| Default time range                        | NOC: `now-6h` / Engineering: `now-6h` / Capacity: `now-30d` | Aligns with the actual usage behavior of each page; not universally defaulted. |
-| Refresh rate                              | NOC/Engineering: `10s` / Capacity: `5m`                     | Aligns with actual data mutation frequency; prevents unnecessary queries. |
-| `allowUiUpdates` (provider)               | `false`                                                     | Enforces dashboard-as-code, preventing drift from git.          |
+| Setting                                | Value                                                       | Rationale                                                                                                  |
+| -------------------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Graph tooltip                          | `Shared crosshair`                                          | Dragging the cursor syncs the time position across all panels — feels like a unified system.               |
+| Tooltip mode (for multi-series panels) | `multi`                                                     | Displays values for all series simultaneously at that point.                                               |
+| `spanNulls`                            | `60000` (1 minute), not `true`                              | Gaps in the graph represent actual events (outages) and must be visible, not masked by interpolated lines. |
+| Default time range                     | NOC: `now-6h` / Engineering: `now-6h` / Capacity: `now-30d` | Aligns with the actual usage behavior of each page; not universally defaulted.                             |
+| Refresh rate                           | NOC/Engineering: `10s` / Capacity: `5m`                     | Aligns with actual data mutation frequency; prevents unnecessary queries.                                  |
+| `allowUiUpdates` (provider)            | `false`                                                     | Enforces dashboard-as-code, preventing drift from git.                                                     |
 
 ---
 
@@ -257,9 +257,9 @@ Reference implementations: `ims-ldi-engineering-analytics.json` panels 17
 
 > Populate this table once the list of physical machines slated for production deployment is known. Do not create fixed color overrides anywhere else except by referencing this table.
 
-| Machine ID              | Color | Notes    |
-| ----------------------- | ----- | -------- |
-| _(Awaiting machine data)_ |     |          |
+| Machine ID                | Color | Notes |
+| ------------------------- | ----- | ----- |
+| _(Awaiting machine data)_ |       |       |
 
 ---
 

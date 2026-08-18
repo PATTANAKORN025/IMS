@@ -22,6 +22,7 @@ web
 ## Users
 
 Primary: Two distinct operator populations.
+
 - **NOC Operators:** Monitoring servers and network devices across data centers.
   - **Environment:** 24/7 shifts.
   - **Needs:** Rapid visibility into device health, network bandwidth, and temperature anomalies.
@@ -29,7 +30,8 @@ Primary: Two distinct operator populations.
   - **Environment:** Factory floor.
   - **Needs:** Live Andon-board status, SPC/Cpk process capability, and RCA (Root-Cause Analysis) correlation between alarms and parameters.
 
-Secondary: 
+Secondary:
+
 - **SRE and DevOps Engineers:** Performing root cause analysis, capacity planning, and pipeline debugging across both domains.
 
 ## Product Purpose
@@ -37,16 +39,19 @@ Secondary:
 Provide a single-pane-of-glass monitoring system spanning two domains — infrastructure and manufacturing — each with its own telemetry pipeline, dashboard set, and alerting.
 
 **Infrastructure Domain:**
+
 - **Ingestion:** SNMP metrics from servers/network devices via Node-RED into TimescaleDB.
 - **Visualization:** 5 Dashboards (NOC Overview, Engineering Drill-Down, Capacity Forecast, Meta-Monitoring, Ingestion Latency).
 - **AIOps:** Z-Score anomaly detection, circuit breaker degradation, predictive capacity forecasting.
 
 **Manufacturing Domain:**
+
 - **Ingestion:** LDI machine telemetry (position/judgment error, thickness, scan speed, resist dosage) via HTTP/JSON.
 - **Visualization:** 10 Dashboards (Easy Overview, Manufacturing Command Center, Operator Andon Board, Alarm Console, Alarm Dictionary, Engineering Analytics & SPC, Machine Snapshot, Data Readiness, Factory Digital Twin, Alarm Response).
 - **Analytics:** Real SPC (Cpk process capability) and RCA (alarm-to-parameter correlation) analytics.
 
 **Alerting & Success Criteria:**
+
 - **Notifications:** LINE Messaging API and MS Teams with direct runbook links.
 - **Success Criteria:** Comprehensive visibility — critical devices, machines, and anomalies are visible within seconds.
 
@@ -79,4 +84,5 @@ Industrial-grade monitoring that understands both server and network switch hard
 WCAG 2.1 AA compliance target. Color combinations meet 4.5:1 contrast ratio against dark backgrounds. All critical alerts have text labels alongside color indicators (not color-only). Reduced motion support via CSS `prefers-reduced-motion`. Screen reader compatibility for panel descriptions and alert annotations.
 
 ---
+
 [⬅️ Back to Main Repository](../../README.md)

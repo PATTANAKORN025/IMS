@@ -14,7 +14,7 @@ Added a per-device cycle-gate in `sre_parser`, keyed off `flow` context (`sys_cy
 
 - On each `cpu`/`storage`/`temp` completion, mark that type seen in the pending cycle object instead of pushing immediately.
 - Push the row (and reset the cycle) once **all 3** types have reported since the last push.
-- **Safety timeout, 35 seconds** (`SYS_CYCLE_TIMEOUT_MS`, slightly above the 30s poll interval): if one walker type never reports (permanently down, misconfigured target, etc.), push whatever's been collected anyway rather than waiting forever. This is deliberate -- trading a possibly-incomplete row for guaranteed *no silent data loss* is the right tradeoff per the stated priority order (duplicate-elimination must not create a new loss failure mode).
+- **Safety timeout, 35 seconds** (`SYS_CYCLE_TIMEOUT_MS`, slightly above the 30s poll interval): if one walker type never reports (permanently down, misconfigured target, etc.), push whatever's been collected anyway rather than waiting forever. This is deliberate -- trading a possibly-incomplete row for guaranteed _no silent data loss_ is the right tradeoff per the stated priority order (duplicate-elimination must not create a new loss failure mode).
 
 Diff is a single isolated line replacement plus one new constant -- nothing else in `sre_parser` touched, per the explicit instruction not to bundle this with the RAM/disk/alarm fixes.
 
@@ -38,15 +38,15 @@ Deployed via `docker compose restart node-red` at 2026-08-15T03:31:09Z (`Started
 
 **Direct log proof of the bug, captured moments before the fix landed** -- the pre-restart tail of `docker logs ims-node-red` shows, repeatedly, every ~10s (`BATCH_INTERVAL_SEC`), 4 lines like `Batch INSERT [sys] ok: 3 rows` (one per device) -- literal confirmation of the exact mechanism diagnosed, not just a DB-side inference. Post-restart, the identical log line reads `Batch INSERT [sys] ok: 1 rows`, once per device, every ~30s (matching `inject_fleet`'s real poll cadence) instead of every ~10s -- the cycle-gate is visibly doing what it was designed to do.
 
-| Metric | Before | After |
-| --- | --- | --- |
-| Duplicate rate (`COUNT(*) - COUNT(DISTINCT (device_id,time))`) | 66.9% (8,911 / 13,317 rows, full history) | **0.0%** (0 / 28 rows, post-fix window) |
-| Rows per `(device_id, time)` pair | always 3 or 4, never 1 | **always exactly 1** (28/28 pairs) |
-| Distinct `time` values per device | collapsed (shared `NOW()` per flush) | **1:1** with row count (7 rows = 7 distinct times, all 4 devices) |
-| Sample-to-sample gap (completeness) | not measured pre-fix (masked by duplication) | **29.99s avg, 29.988s-30.014s range**, matches the 30s poll trigger almost exactly, no gaps observed |
-| Ingest latency (`ingest_ts - time`) | not comparable (shared `time`, meaningless delta) | **0.31-0.36ms average**, sub-millisecond and tight across all 4 devices |
-| Pipeline errors/crashes since restart | -- | **0** (`docker logs` grepped for error/fail/crash) |
-| `ims-node-red` resource use | -- | 1.14% CPU, 63MiB / 2GiB memory -- no regression |
+| Metric                                                         | Before                                            | After                                                                                                |
+| -------------------------------------------------------------- | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Duplicate rate (`COUNT(*) - COUNT(DISTINCT (device_id,time))`) | 66.9% (8,911 / 13,317 rows, full history)         | **0.0%** (0 / 28 rows, post-fix window)                                                              |
+| Rows per `(device_id, time)` pair                              | always 3 or 4, never 1                            | **always exactly 1** (28/28 pairs)                                                                   |
+| Distinct `time` values per device                              | collapsed (shared `NOW()` per flush)              | **1:1** with row count (7 rows = 7 distinct times, all 4 devices)                                    |
+| Sample-to-sample gap (completeness)                            | not measured pre-fix (masked by duplication)      | **29.99s avg, 29.988s-30.014s range**, matches the 30s poll trigger almost exactly, no gaps observed |
+| Ingest latency (`ingest_ts - time`)                            | not comparable (shared `time`, meaningless delta) | **0.31-0.36ms average**, sub-millisecond and tight across all 4 devices                              |
+| Pipeline errors/crashes since restart                          | --                                                | **0** (`docker logs` grepped for error/fail/crash)                                                   |
+| `ims-node-red` resource use                                    | --                                                | 1.14% CPU, 63MiB / 2GiB memory -- no regression                                                      |
 
 **Every dimension in the measurement plan passed.** No silent data loss observed (30s cadence held with no missed samples in the window), no duplication, timestamp resolution fully restored, latency bounded and small, pipeline stable, resource footprint unchanged.
 

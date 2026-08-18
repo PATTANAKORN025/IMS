@@ -49,8 +49,7 @@ flowchart TB
 
 **Boundary 3 — Equipment Integration Layer (forward-looking, not built).** Per `docs/architecture/EAP_ARCHITECTURE.md`, the day a real SECS/GEM-speaking tool is connected via the unimplemented third adapter, that connection crosses into the plant-floor equipment network — a genuinely new external trust boundary. Requires its own hardening review (credential handling, network segmentation) before any real equipment is wired in. Not designed yet because nothing exists to design it against.
 
-**`IMS_PGBOUNCER_MAX_CLIENT_CONN`**: Do not arbitrarily raise. Memory limits must scale alongside it (`1 connection ≈ 2MB`). 
-
+**`IMS_PGBOUNCER_MAX_CLIENT_CONN`**: Do not arbitrarily raise. Memory limits must scale alongside it (`1 connection ≈ 2MB`).
 
 ## Authentication per adapter
 
@@ -82,4 +81,5 @@ SNMPv2c's community-string auth is inherently weaker than SNMPv3 (no encryption,
 - `docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md` §8 — where this trust-boundary framing originated.
 
 ---
+
 [⬅️ Back to IMS Platform Book](IMS_PLATFORM_BOOK.md) | [🏠 Main Repository](../../README.md)

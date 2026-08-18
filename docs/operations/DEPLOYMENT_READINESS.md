@@ -29,14 +29,14 @@
 
 ### Current Stack Versions
 
-| Component       | Current       | Latest  | Risk  | Notes                                           |
-| --------------- | ------------- | ------- | ----- | ----------------------------------------------- |
+| Component       | Current       | Latest  | Risk | Notes                                           |
+| --------------- | ------------- | ------- | ---- | ----------------------------------------------- |
 | **Node-RED**    | 4.0.5         | 5.0     | HIGH | 2 major versions behind, requires Node.js 22.9+ |
-| **TimescaleDB** | PostgreSQL 16 | PG 17   | LOW   | v16 still supported until 2028                  |
-| **Grafana**     | 11.x          | 11.x    | NONE  | Current version                                 |
-| **Prometheus**  | v2.55.x       | 3.x     | LOW   | v2.x still maintained                           |
-| **K6**          | unspecified   | current | NONE  | Works fine                                      |
-| **Docker**      | v4.0+         | v4.0+   | NONE  | Stable                                          |
+| **TimescaleDB** | PostgreSQL 16 | PG 17   | LOW  | v16 still supported until 2028                  |
+| **Grafana**     | 11.x          | 11.x    | NONE | Current version                                 |
+| **Prometheus**  | v2.55.x       | 3.x     | LOW  | v2.x still maintained                           |
+| **K6**          | unspecified   | current | NONE | Works fine                                      |
+| **Docker**      | v4.0+         | v4.0+   | NONE | Stable                                          |
 
 ### Node-RED Upgrade Path
 
@@ -47,7 +47,7 @@
 | Node.js            | 18.x           | 22.9+             |
 | Docker Base Image  | node:18-alpine | node:22-alpine    |
 | Editor UI          | Legacy         | New React-based   |
-| Flow Compatibility |                | Test first       |
+| Flow Compatibility |                | Test first        |
 
 **Recommended Upgrade Path:**
 

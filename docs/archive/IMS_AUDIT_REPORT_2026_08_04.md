@@ -12,12 +12,12 @@
 
 A comprehensive audit across 7 project domains identified a total of **12 issues**, categorized as follows:
 
-| Severity | Count | Status |
-| -------- | ----- | ------------------------- |
-| CRITICAL | 1 | Immediate resolution required |
-| HIGH | 2 | Must resolve prior to production deployment |
-| MEDIUM | 4 | Resolve according to priority |
-| LOW | 5 | Documented, non-urgent |
+| Severity | Count | Status                                      |
+| -------- | ----- | ------------------------------------------- |
+| CRITICAL | 1     | Immediate resolution required               |
+| HIGH     | 2     | Must resolve prior to production deployment |
+| MEDIUM   | 4     | Resolve according to priority               |
+| LOW      | 5     | Documented, non-urgent                      |
 
 **Overall Score: 7/10** — The system exhibits solid stability, but contains security vulnerabilities that require remediation.
 
@@ -343,16 +343,16 @@ docker run --rm ... gitleaks detect ... || true
 
 ## Priority Fix Order
 
-| # | Issue | Severity | Effort | Impact |
-| --- | -------------------------------- | -------- | ------ | ------------------------------------------------------------------------------------------------------------- |
-| 1 | Revoke leaked GitHub token | CRITICAL | 5 min | Prevent unauthorized access |
-| 2 | Add auto-rollback to CI/CD | HIGH | 2 hrs | Prevent broken deployments |
-| 3 | Add `.env.example` instructions | HIGH | 10 min | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Prevent Node-RED crashes |
-| 4 | Move CI keys to GitHub Secrets | MEDIUM | 30 min | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Security best practice |
-| 5 | Add `.opencode/` to .gitignore | MEDIUM | 5 min | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Clean git state |
-| 6 | Add `.mcp.json` to .gitignore | MEDIUM | 5 min | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Clean git state |
-| 7 | Verify zero-statement migrations | LOW | 30 min | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Data integrity |
-| 8 | Review gitleaks `\|\| true` | LOW | 15 min | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Security visibility |
+| #   | Issue                            | Severity | Effort | Impact                                                                                                          |
+| --- | -------------------------------- | -------- | ------ | --------------------------------------------------------------------------------------------------------------- |
+| 1   | Revoke leaked GitHub token       | CRITICAL | 5 min  | Prevent unauthorized access                                                                                     |
+| 2   | Add auto-rollback to CI/CD       | HIGH     | 2 hrs  | Prevent broken deployments                                                                                      |
+| 3   | Add `.env.example` instructions  | HIGH     | 10 min | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Prevent Node-RED crashes |
+| 4   | Move CI keys to GitHub Secrets   | MEDIUM   | 30 min | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Security best practice   |
+| 5   | Add `.opencode/` to .gitignore   | MEDIUM   | 5 min  | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Clean git state          |
+| 6   | Add `.mcp.json` to .gitignore    | MEDIUM   | 5 min  | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Clean git state          |
+| 7   | Verify zero-statement migrations | LOW      | 30 min | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Data integrity           |
+| 8   | Review gitleaks `\|\| true`      | LOW      | 15 min | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Security visibility      |
 
 ---
 

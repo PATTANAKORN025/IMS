@@ -8,12 +8,12 @@ For each ingestion table, either (a) row-count-vs-expected against a known fixed
 
 ## `sys_metrics` (fixed-interval, 30s via `inject_fleet`)
 
-| Device | Rows | Expected (window / 30s) |
-| --- | --- | --- |
-| ERP-MASTER-UBUNTU | 66 | 66.0003 |
-| ERP-MASTER-WINDOWS | 66 | 65.9991 |
-| EXPOSURE LDI-2 | 66 | 65.9988 |
-| EXPOSURE LDI-2B | 66 | 65.9990 |
+| Device             | Rows | Expected (window / 30s) |
+| ------------------ | ---- | ----------------------- |
+| ERP-MASTER-UBUNTU  | 66   | 66.0003                 |
+| ERP-MASTER-WINDOWS | 66   | 65.9991                 |
+| EXPOSURE LDI-2     | 66   | 65.9988                 |
+| EXPOSURE LDI-2B    | 66   | 65.9990                 |
 
 Exact match, all 4 devices. **No loss, no residual duplication** (consistent with A1's own measurement).
 
@@ -25,13 +25,13 @@ Exact match, all 4 devices. **No loss, no residual duplication** (consistent wit
 
 **First pass was wrong and is recorded here on purpose, not quietly fixed**: assumed a uniform 2s cadence (from the `ldisim_tick` inject node) and got numbers that looked like 3.5%-34% of "expected" -- alarming on its face. That assumption was false: `ldisim_tick` drives the simulator's internal clock for all 10 machines, not a 1:1 "one row per machine per tick." Re-checked with gap-distribution analysis instead of an assumed rate:
 
-| Machine | Rows | Min gap | Avg gap | Max gap |
-| --- | --- | --- | --- | --- |
-| LDI-01/02 | 337 | 5.998s | 6.026s | 8.007s |
-| LDI-03/04 | 221 | 7.999s | 9.181s | 10.008s |
-| LDI-05/06 | 348-350 | ~4.0s | ~5.8s | ~6.0s |
-| LDI-07/08 | 74 | 26.007s | 27.039s | 28.019s |
-| LDI-09/10 | 33 | 58.020s | 58.814s | 60.031s |
+| Machine   | Rows    | Min gap | Avg gap | Max gap |
+| --------- | ------- | ------- | ------- | ------- |
+| LDI-01/02 | 337     | 5.998s  | 6.026s  | 8.007s  |
+| LDI-03/04 | 221     | 7.999s  | 9.181s  | 10.008s |
+| LDI-05/06 | 348-350 | ~4.0s   | ~5.8s   | ~6.0s   |
+| LDI-07/08 | 74      | 26.007s | 27.039s | 28.019s |
+| LDI-09/10 | 33      | 58.020s | 58.814s | 60.031s |
 
 Each machine has its own **tight, internally consistent** cadence (min ≈ avg ≈ max, no long-tail outliers) -- different machines genuinely sample at different real rates (consistent with the readiness dashboard's earlier finding of differing per-machine telemetry-row throughput, itself tied to process/recipe type -- "DF INNER" vs "SM" etc). No gap suggests a dropped sample. **Clean, once measured the right way.**
 

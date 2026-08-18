@@ -7,6 +7,7 @@
 ## 0. Non-negotiables carried over from the 2D twin work
 
 These held for every task in the 2D build and hold here unchanged:
+
 - No mock data presented as real. Where this design uses placeholder coordinates, every one of them is labeled SIMULATED, never asserted as a real machine position.
 - No external Grafana plugins. Confirmed this session: Grafana 13.1.1 core has no 3D-capable panel type (`canvas` is 2D only). This is the reason §1 below concludes a 3D twin cannot live inside Grafana.
 - Real machine state/alarm/production data only, sourced from the same tables/views already proven this session (`v_ldi_machine_latest_full`, `ldi_alarm_log`, `ldi_alarm_ms_code`, `ldi_alarm_lifecycle`).
@@ -19,7 +20,7 @@ These held for every task in the 2D build and hold here unchanged:
 
 **Decision: separate Web 3D application, linked/embedded from Grafana, not built inside Grafana.**
 
-Real constraint, not a preference: Grafana's only spatial panel is `canvas` (confirmed core/internal this session via `GET /api/plugins`), and Canvas is a 2D absolute-positioning system — it has no 3D scene graph, no camera, no depth, no lighting. There is no Grafana core panel type capable of 3D rendering. The only way to get 3D *inside* Grafana would be an external community panel plugin, which the standing constraint ("no external plugins") forbids outright — this isn't a workaround-able limitation, it's a closed door by design.
+Real constraint, not a preference: Grafana's only spatial panel is `canvas` (confirmed core/internal this session via `GET /api/plugins`), and Canvas is a 2D absolute-positioning system — it has no 3D scene graph, no camera, no depth, no lighting. There is no Grafana core panel type capable of 3D rendering. The only way to get 3D _inside_ Grafana would be an external community panel plugin, which the standing constraint ("no external plugins") forbids outright — this isn't a workaround-able limitation, it's a closed door by design.
 
 **Real precedent already in this repo for "separate service, same-origin, session-authenticated":** `services/alarm-api` — an Express + `pg` service, proxied through `proxy/nginx.conf` at `/alarm-api/`, gated by `auth_request` against Grafana's own `/api/user` session check (`proxy/nginx.conf` lines ~20-30). No new auth system, reuses the login the operator already did. The 3D twin should follow this exact pattern: `services/factory-twin-3d/`, proxied at `/factory-twin-3d/` (or similar path), same `auth_request` gate. This is not a new architectural idea — it's the one pattern this repo has already built, tested, and proven once.
 
@@ -33,7 +34,7 @@ The 2D Canvas twin remains the primary operator/C-Level status board (fast, alwa
 
 Reasoning, not asserted as fact beyond what's checkable: Three.js is the de facto standard for browser-based 3D visualization, has no server-side rendering requirement (fits the "separate lightweight service" model in §1), and — critically for §12 (performance at scale) — supports `InstancedMesh` for rendering hundreds of identical machine geometries in a single draw call, which directly matters once this scales past 10 machines.
 
-This repo has zero existing frontend framework precedent (`package.json` at the repo root has no frontend deps; no `src/`, no React/Vue/Svelte anywhere). This is a genuinely new piece of the stack, not a variant of something already here — flagged plainly, not minimized. `services/alarm-api`'s `package.json` (Express + `pg` only) is the closest precedent, for the *backend* half only.
+This repo has zero existing frontend framework precedent (`package.json` at the repo root has no frontend deps; no `src/`, no React/Vue/Svelte anywhere). This is a genuinely new piece of the stack, not a variant of something already here — flagged plainly, not minimized. `services/alarm-api`'s `package.json` (Express + `pg` only) is the closest precedent, for the _backend_ half only.
 
 Alternative considered and rejected for this phase: a full game-engine export (Unity WebGL, Unreal Pixel Streaming) — far higher operational cost (build pipeline, GPU-backed streaming servers for Pixel Streaming) for a factory-status visualization that doesn't need game-engine-grade rendering. Three.js is the right size for this problem.
 
@@ -92,6 +93,7 @@ CREATE TABLE public.device_3d_placement (
 ## 5. Simulated → real coordinate migration, without rewriting telemetry/query logic
 
 This is the entire reason §3/§4 are separate tables from `devices`/`ldi_data`/`v_ldi_machine_latest_full`. The 3D renderer's data flow is two independent queries:
+
 1. **Placement** (rare-changing): `SELECT device_id, pos_x, pos_y, pos_z, rot_x, rot_y, rot_z, scale, is_simulated FROM device_3d_placement` — this is the ONLY query that changes when real coordinates arrive.
 2. **State/telemetry** (frequently-changing): the exact same `v_ldi_machine_latest_full` + alarm-table queries already proven in the 2D twin — untouched.
 
@@ -110,6 +112,7 @@ The `factory_layout_hierarchy`/`device_3d_placement` schema in §3/§4 has no ha
 ## 7. Real-time machine state, alarms, production progress, board_no/total_board, MO, compliance
 
 All of this is **already real and already proven** — no new query design needed, only a new transport (§13) to get the same data into a Three.js scene instead of a Canvas panel:
+
 - State (0/1/2/3 NO_DATA/IDLE/OK/ALARM): same CASE logic as Andon panel 1000 and the 2D twin, unchanged.
 - Board progress: `board_no`/`total_board` from `v_ldi_machine_latest_full`, unchanged.
 - MO: same view, unchanged.
@@ -143,6 +146,7 @@ No CAD file, photo-derived model, or vendor spec for real machine geometry exist
 ## 11. Camera / navigation UX for C-Level, NOC, and operators
 
 Three audiences, three different real needs (same segmentation the 2D twin already used for its "C-Level first glance vs. operator drill-down" design):
+
 - **C-Level / kiosk / NOC wall**: a fixed, auto-rotating or static overview camera (top-down or 3/4 isometric angle over the whole factory), zero interaction required — mirrors the 2D twin's "zero interaction" Andon-style kiosk mode. No navigation controls shown.
 - **Operator / engineer, interactive session**: standard orbit controls (Three.js `OrbitControls` — drag to rotate, scroll to zoom, right-drag to pan), plus a "reset view" and a per-zone "fly to" shortcut (click a zone label to snap the camera to that zone, avoiding a large factory becoming disorienting to navigate manually).
 - Both modes read the exact same underlying scene/data — camera mode is a UI toggle, not a different data path.
@@ -153,7 +157,7 @@ Three audiences, three different real needs (same segmentation the 2D twin alrea
 
 - **10 machines** (current real reporting fleet): no special handling needed — even naive per-machine `Mesh` objects render trivially at this scale.
 - **100+ machines**: switch machine geometry rendering to `THREE.InstancedMesh` (one draw call for all instances of the same placeholder geometry, per-instance color/transform via instance attributes) — this is the standard Three.js technique for "many copies of the same simple shape," directly applicable since §9 recommends simple parametric geometry.
-- **500+ machines**: per §6, this is already past the point where the *ingestion pipeline* (not this twin) starts dropping/timing out per the real scale-test evidence — the 3D twin's own rendering cost at 500 instanced meshes is not the bottleneck at that scale, the upstream data pipeline is. Frustum culling (Three.js does this by default) and, if needed, level-of-detail (LOD) swapping for off-screen/distant zones are the next lever if profiling shows otherwise — not designed further here since there's no real 500-machine scenario to profile against yet (only the real 10).
+- **500+ machines**: per §6, this is already past the point where the _ingestion pipeline_ (not this twin) starts dropping/timing out per the real scale-test evidence — the 3D twin's own rendering cost at 500 instanced meshes is not the bottleneck at that scale, the upstream data pipeline is. Frustum culling (Three.js does this by default) and, if needed, level-of-detail (LOD) swapping for off-screen/distant zones are the next lever if profiling shows otherwise — not designed further here since there's no real 500-machine scenario to profile against yet (only the real 10).
 - Query-side: every state/alarm/production query stays in the same `LIMIT 1`/`DISTINCT ON` latest-value shape already proven in the 2D twin (§7) — this is what keeps query cost flat regardless of scene complexity.
 
 ---
@@ -161,8 +165,9 @@ Three audiences, three different real needs (same segmentation the 2D twin alrea
 ## 13. Data / query architecture and Grafana integration
 
 **New service: `services/factory-twin-3d/`** (naming to match `services/alarm-api`'s convention), following the exact same shape:
+
 - Backend: Express (or equivalent minimal Node HTTP server) + `pg`, serving (a) the static Three.js frontend bundle, and (b) a small read-only JSON API: `GET /api/placement` (device_3d_placement + hierarchy join), `GET /api/state` (the same latest-value state/alarm/production queries as §7, returning JSON instead of a Grafana panel's `table` format).
-- No write endpoints in this service — unlike `alarm-api` (which has a real write path for ack/resolve), this twin is read-only. Any future "acknowledge from the 3D view" feature would be a call *into* the existing `alarm-api`, not a new write path here — reuse, not duplicate.
+- No write endpoints in this service — unlike `alarm-api` (which has a real write path for ack/resolve), this twin is read-only. Any future "acknowledge from the 3D view" feature would be a call _into_ the existing `alarm-api`, not a new write path here — reuse, not duplicate.
 - Proxied through `proxy/nginx.conf` at a new `location /factory-twin-3d/ { auth_request /auth-check; proxy_pass http://factory-twin-3d:<port>/; ... }` block, copying `alarm-api`'s existing block verbatim in shape.
 - Polling or a lightweight WebSocket/SSE push for state updates — given the 2D twin's proven `refresh: "5s"` cadence is already adequate for this data's real update frequency (simulator writes continuously but not sub-second), a simple `setInterval` poll of `/api/state` every 5s is sufficient and matches existing dashboard refresh conventions; a push mechanism is not justified by any real requirement gathered so far.
 
@@ -183,6 +188,7 @@ Reuse `proxy/nginx.conf`'s existing `auth_request` pattern exactly (§1, §13) �
 ## 16. Accessibility and responsive display strategy
 
 Honest limitation, not glossed over: a 3D WebGL scene is inherently harder to make screen-reader-accessible than the 2D twin's Canvas panel (which at least has real DOM-adjacent text elements Grafana can expose). Concrete mitigations, not a claim of full accessibility parity:
+
 - Every machine's real state/label/alarm data is ALSO available as a plain HTML sidebar/list view (same data, non-3D rendering) toggleable alongside the 3D scene — this is the actual accessibility fallback, not an afterthought bolted onto the 3D view itself.
 - Color is never the only signal (same rule the 2D twin already follows: state color + icon shape together, not color alone) — carries into the 3D view as color + label text + (optionally) icon sprite.
 - Responsive: below a real usability threshold width (e.g. mobile), fall back entirely to the plain list/sidebar view rather than trying to render a usable 3D scene on a small touch screen — a 3D factory scene is not a realistic phone-UI target, don't pretend otherwise.
@@ -192,6 +198,7 @@ Honest limitation, not glossed over: a 3D WebGL scene is inherently harder to ma
 ## 17. How the future real factory layout will be imported/maintained
 
 Three real sourcing paths, in order of realism given nothing exists yet:
+
 1. **Manual survey entry**: a simple admin form/spreadsheet import writing directly into `device_3d_placement` (§4) — lowest effort, most likely first real path, doesn't require any CAD tooling.
 2. **CAD/floor-plan import**: if a real architectural CAD file (DWG/DXF/IFC) becomes available, a one-time conversion script extracts real x/y coordinates per machine (matched by a real asset tag/`device_id` cross-reference the facilities team would need to provide) into the same `device_3d_placement` table — same schema, different `source` value.
 3. **Ongoing maintenance**: `updated_at` + `source` columns (§4) mean re-surveys/corrections are just `UPDATE`s, with the existing row's history not retained unless a future requirement asks for placement history (not designed here, no real need identified yet — YAGNI).
@@ -202,19 +209,19 @@ No path here is designed as automatic/self-discovering (e.g. no BLE/UWB real-tim
 
 ## 18. What is real data, simulated data, and future data — explicit
 
-| Data | Status now | Source |
-|---|---|---|
-| Machine state (0/1/2/3) | **Real** | `v_ldi_machine_latest_full` + alarm tables, unchanged from 2D twin |
-| `board_no`/`total_board` | **Real** | Same view |
-| Current MO | **Real** | Same view |
-| Alarm count/owner/elapsed | **Real** | Same query shape as 2D twin |
-| Environmental compliance | **Real** | Same query as Andon/2D twin |
-| Which 10 machines exist, which 5 zones | **Real** | `devices`, confirmed reporting machines only |
-| Machine x/y/z position | **Simulated** (deterministic grid, §4) | `device_3d_placement.is_simulated = TRUE` until real data arrives |
-| Building/floor names | **Not yet populated** (schema supports it, no data) | `factory_layout_hierarchy`, nullable until known |
-| Machine-to-machine connections | **Not modeled** (§10) | No real data exists; not fabricated |
-| 3D machine geometry (shape/size) | **Placeholder** (§9) | Simple parametric box, not a real CAD/photo-derived model |
-| Everything else (§7) | **Real** | Identical queries to the proven 2D twin |
+| Data                                   | Status now                                          | Source                                                             |
+| -------------------------------------- | --------------------------------------------------- | ------------------------------------------------------------------ |
+| Machine state (0/1/2/3)                | **Real**                                            | `v_ldi_machine_latest_full` + alarm tables, unchanged from 2D twin |
+| `board_no`/`total_board`               | **Real**                                            | Same view                                                          |
+| Current MO                             | **Real**                                            | Same view                                                          |
+| Alarm count/owner/elapsed              | **Real**                                            | Same query shape as 2D twin                                        |
+| Environmental compliance               | **Real**                                            | Same query as Andon/2D twin                                        |
+| Which 10 machines exist, which 5 zones | **Real**                                            | `devices`, confirmed reporting machines only                       |
+| Machine x/y/z position                 | **Simulated** (deterministic grid, §4)              | `device_3d_placement.is_simulated = TRUE` until real data arrives  |
+| Building/floor names                   | **Not yet populated** (schema supports it, no data) | `factory_layout_hierarchy`, nullable until known                   |
+| Machine-to-machine connections         | **Not modeled** (§10)                               | No real data exists; not fabricated                                |
+| 3D machine geometry (shape/size)       | **Placeholder** (§9)                                | Simple parametric box, not a real CAD/photo-derived model          |
+| Everything else (§7)                   | **Real**                                            | Identical queries to the proven 2D twin                            |
 
 ---
 
@@ -227,24 +234,29 @@ Restated plainly since it's load-bearing: nothing built under this design may pr
 ## 20. Acceptance criteria and migration plan
 
 **Acceptance criteria for Task 4.1 (1-machine 3D POC):**
+
 - [ ] One real machine (its real state/board_no/mo/alarm data, live-queried) renders in a Three.js scene at a simulated position, clearly marked simulated.
 - [ ] Clicking the machine opens the real Machine Snapshot drill-down with correct `var-machine_id`/`var-factory` (browser-verifiable this time, unlike Canvas — see §8).
 - [ ] `services/factory-twin-3d/` exists, proxied through nginx with the same `auth_request` gate as `alarm-api`.
 - [ ] No existing dashboard/service modified.
 
 **Acceptance criteria for Task 4.2 (10-machine 3D twin):**
+
 - [ ] All 10 real machines, in their real 5 zones (per `factory_layout_hierarchy` seeded from real `devices.location`), simulated positions within each zone.
 - [ ] State/alarm/production data matches the same live-query standard as the 2D twin (real-time correctness, independently re-verifiable).
 - [ ] Simulated-layout banner visible per §19.
 
 **Acceptance criteria for Task 4.3 (performance test):**
+
 - [ ] Real render/frame-time measurement at 10 machines (already-real fleet) plus a synthetic scale test at 100/500 simulated machines (following §12's `InstancedMesh` strategy) — measured, not assumed.
 - [ ] Query latency for `/api/state` measured against the same 300ms budget used throughout this session's work.
 
 **Acceptance criteria for Task 4.4 (drill-down integration):**
+
 - [ ] Click-to-Machine-Snapshot verified in an actual browser session for all 10 machines (this is achievable here in a way it wasn't for Grafana Canvas — flag prominently if a browser tool still isn't available when this task runs, and fall back to the same structural-only verification the 2D twin used).
 
 **Migration plan (the STOP → "waiting for real layout" step in the user's flow):**
+
 1. Tasks 4.1-4.4 ship with `device_3d_placement.is_simulated = TRUE` for all rows, deterministic grid per §4.
 2. Work stops. No further 3D tasks proceed until a real factory layout source (§17) is actually supplied.
 3. When real coordinates arrive: run the §17 import path, `UPDATE device_3d_placement SET is_simulated = FALSE, source = '<real source>'` per row. Zero changes to telemetry queries (§5), zero changes to the rendering/interaction code built in 4.1-4.4 — only the data changes, and the simulated-layout banner (§19) disappears once every visible row is real.

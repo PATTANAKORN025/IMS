@@ -28,22 +28,22 @@ The system leverages an **Open-Source Stack** architecture that has passed Load 
 
 ### Before (Legacy Problems)
 
-| Problem                     | Impact                      | Daily Cost                     |
-| --------------------------- | --------------------------- | ------------------------------ |
+| Problem                       | Impact                                           | Daily Cost                     |
+| ----------------------------- | ------------------------------------------------ | ------------------------------ |
 | **Delayed Manual Visibility** | Requires walking rounds to check physical gauges | 2 staff × 4 rounds = 8 hrs/day |
-| **Slow Downtime Detection** | 2-4 hours to detect failure | Accumulated defective yields   |
-| **Manual Data Entry**       | Human error ~15%            | Impossible to track trends     |
-| **Reactive Maintenance**    | Waiting for defects before repairing | Unplanned downtime             |
+| **Slow Downtime Detection**   | 2-4 hours to detect failure                      | Accumulated defective yields   |
+| **Manual Data Entry**         | Human error ~15%                                 | Impossible to track trends     |
+| **Reactive Maintenance**      | Waiting for defects before repairing             | Unplanned downtime             |
 
 ### ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) After (Solutions)
 
-| Solution                         | Result                                                                                                                                                                                                                                                  | Impact                                                                       |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| **Continuous SNMP Polling**      | Every 30 seconds, automated telemetry collection                                                                                                                                                                                                                        | Eliminates manual sampling sweeps                                                           |
-| **Z-Score Statistical Alerting** | Detects 3σ anomalies before machine failure                                                                                                                                                                                                             | Proactive maintenance                                                        |
+| Solution                         | Result                                                                                                                                                                                                                                                                                                                    | Impact                                                                       |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| **Continuous SNMP Polling**      | Every 30 seconds, automated telemetry collection                                                                                                                                                                                                                                                                          | Eliminates manual sampling sweeps                                            |
+| **Z-Score Statistical Alerting** | Detects 3σ anomalies before machine failure                                                                                                                                                                                                                                                                               | Proactive maintenance                                                        |
 | **15 Dashboards**                | 5 infrastructure (NOC, Engineering Drill-Down, Capacity, Meta-Monitoring, Ingestion Latency) + 10 manufacturing (Easy Overview, Alarm Console, Alarm Dictionary, Alarm Response (MTTA/MTTR), Engineering Analytics, Machine Snapshot, Manufacturing Command Center, Operator Andon, Data Readiness, Factory Digital Twin) | Full visibility across both infrastructure and the manufacturing line itself |
-| **LINE/Teams Webhooks**          | Alert formatting and delivery-attempt logic is complete and correct; real delivery requires operator-configured credentials (`LINE_CHANNEL_ACCESS_TOKEN`, `TEAMS_WEBHOOK_URL`) not shipped in this repo                                                 | Faster response once configured                                              |
-| **Predictive Analytics**         | Linear regression forecasting                                                                                                                                                                                                                           | Prevent failures                                                             |
+| **LINE/Teams Webhooks**          | Alert formatting and delivery-attempt logic is complete and correct; real delivery requires operator-configured credentials (`LINE_CHANNEL_ACCESS_TOKEN`, `TEAMS_WEBHOOK_URL`) not shipped in this repo                                                                                                                   | Faster response once configured                                              |
+| **Predictive Analytics**         | Linear regression forecasting                                                                                                                                                                                                                                                                                             | Prevent failures                                                             |
 
 ---
 
@@ -51,23 +51,23 @@ The system leverages an **Open-Source Stack** architecture that has passed Load 
 
 ### Before vs After Comparison
 
-| Metric                  | Before (Manual)            | After (IMS)              | Improvement             |
-| ----------------------- | -------------------------- | ------------------------ | ----------------------- |
-| **Time to Detect**      | 1-4 hours                  | **< 10 seconds**         | 99.97% faster           |
-| **Mean Time to Repair** | > 2 hours                  | **~15 minutes**          | 87.5% reduction         |
-| **Manual Labor**        | 8 hrs/day (2 staff)        | **Eliminated routine checks**            | 2,920 hrs/year saved    |
-| **Data Accuracy**       | ~85% (human error)         | **99.9%**                | +17.5% accuracy         |
-| **Data Granularity**    | 6 readings/day             | **2,880 readings/day**   | 480x more data          |
-| **Maintenance Mode**    | Reactive (fix when broken) | **Predictive (prevent)** | Proactive maintenance sharply mitigates downtime |
+| Metric                  | Before (Manual)            | After (IMS)                   | Improvement                                      |
+| ----------------------- | -------------------------- | ----------------------------- | ------------------------------------------------ |
+| **Time to Detect**      | 1-4 hours                  | **< 10 seconds**              | 99.97% faster                                    |
+| **Mean Time to Repair** | > 2 hours                  | **~15 minutes**               | 87.5% reduction                                  |
+| **Manual Labor**        | 8 hrs/day (2 staff)        | **Eliminated routine checks** | 2,920 hrs/year saved                             |
+| **Data Accuracy**       | ~85% (human error)         | **99.9%**                     | +17.5% accuracy                                  |
+| **Data Granularity**    | 6 readings/day             | **2,880 readings/day**        | 480x more data                                   |
+| **Maintenance Mode**    | Reactive (fix when broken) | **Predictive (prevent)**      | Proactive maintenance sharply mitigates downtime |
 
 ### Annual Cost Savings
 
-| Category                 | Before                      | After            | Savings/Year   |
-| ------------------------ | --------------------------- | ---------------- | -------------- |
-| **License Fees**         | THB 3,000,000-10,000,000       | THB 0 (Open-Source) | **THB 3-10M**     |
+| Category                 | Before                            | After               | Savings/Year      |
+| ------------------------ | --------------------------------- | ------------------- | ----------------- |
+| **License Fees**         | THB 3,000,000-10,000,000          | THB 0 (Open-Source) | **THB 3-10M**     |
 | **Manual Labor**         | THB 730,000 (2,920 hrs × THB 250) | THB 0               | **THB 730K**      |
-| **Downtime Cost**        | THB 500,000/incident × N       | Near zero        | **THB 2-5M**      |
-| **Total Annual Savings** |                             |                  | **THB 5.7-15.7M** |
+| **Downtime Cost**        | THB 500,000/incident × N          | Near zero           | **THB 2-5M**      |
+| **Total Annual Savings** |                                   |                     | **THB 5.7-15.7M** |
 
 ### Payback Period
 
@@ -87,7 +87,7 @@ ROI: 2,750% (Year 1)
 | **Docker Stack**     | 12 containers, fully orchestrated                                                                                                                                                                                                                |
 | **Telemetry Schema** | Two independent pipelines — infrastructure (`sys_metrics`/`net_metrics`/`ldi_metrics`) and LDI manufacturing (`ldi_data`, 34 columns: PE1-6, JE1-4, thickness, scan_speed, resist_dosage, and more) — see `docs/architecture/DATABASE_SCHEMA.md` |
 | **Alert Rules**      | 30 rules: 6 LDI-specific + 11 infrastructure (Grafana native), 13 pipeline/platform meta-monitoring rules (Prometheus/Alertmanager)                                                                                                              |
-| **Dashboards**       | 15 dashboards (5 infrastructure + 10 manufacturing)                                                                                                                                                                                               |
+| **Dashboards**       | 15 dashboards (5 infrastructure + 10 manufacturing)                                                                                                                                                                                              |
 | **Load Test**        | Up to 1,000 VUs (`chaos-stress.js`, deliberate 5% fault injection, >90% success threshold); `pipeline-stress.js` targets >95% success — not a 0%-failure guarantee, a defined acceptable-failure budget                                          |
 | **CI/CD**            | GitHub Actions with security scanning (Gitleaks)                                                                                                                                                                                                 |
 | **Documentation**    | 40+ documents across architecture, operations, user/admin manuals, and enterprise guides                                                                                                                                                         |
@@ -117,13 +117,13 @@ ROI: 2,750% (Year 1)
 
 ## 6. Strategic Value
 
-| Dimension       | Value                               |
-| --------------- | ----------------------------------- |
-| **Operational** | Reduced MTTR from 2 hours to 15 minutes |
-| **Financial**   | Saves THB 5.7-15.7M annually           |
+| Dimension       | Value                                           |
+| --------------- | ----------------------------------------------- |
+| **Operational** | Reduced MTTR from 2 hours to 15 minutes         |
+| **Financial**   | Saves THB 5.7-15.7M annually                    |
 | **Knowledge**   | Established a comprehensive documentation suite |
-| **Scalability** | Supports 1-1,000+ machines          |
-| **Compliance**  | Audit trail, SLA reporting ready    |
+| **Scalability** | Supports 1-1,000+ machines                      |
+| **Compliance**  | Audit trail, SLA reporting ready                |
 
 ---
 
@@ -136,4 +136,5 @@ ROI: 2,750% (Year 1)
 </div>
 
 ---
+
 [⬅️ Back to Main Repository](../../README.md)
