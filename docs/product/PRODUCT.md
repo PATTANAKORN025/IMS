@@ -1,8 +1,10 @@
 # Product
 
-## Executive Business Value
+> **Audience:** Plant Managers, Product Owners, Sales/Marketing.
+> **Objective:** Defines the product vision, brand personality, and high-level platform capabilities.
+> **Provenance:** Validated against the live monitoring system and business objectives on 2026-08-10.
 
-The IMS (Industrial Monitoring System) bridges the critical visibility gap between traditional IT infrastructure and PCB manufacturing floor operations. By replacing reactive manual inspection with real-time, automated telemetry, IMS acts as a direct multiplier for operational efficiency and equipment uptime.
+The IMS (Industrial Monitoring System) bridges the critical visibility gap between traditional IT infrastructure and PCB manufacturing floor operations. By replacing reactive manual inspection with continuous, automated telemetry, IMS acts as a direct multiplier for operational efficiency and equipment uptime.
 
 - **Risk Mitigation:** Prevents catastrophic failures via sub-10-second anomaly detection (Z-Score AIOps) before hardware thresholds are breached.
 - **Cost Avoidance:** Zero-license open-source architecture eliminates the massive recurring fees (THB 3M-10M annually) typical of enterprise monitoring software.
@@ -19,11 +21,11 @@ web
 
 ## Users
 
-Primary: two distinct operator populations. (1) NOC operators monitoring servers and network devices across data centers — 24/7 shifts, need instant visibility into device health, network bandwidth, and temperature anomalies. (2) LDI manufacturing floor operators and process engineers monitoring the LDI (Laser Direct Imaging) PCB production line — need real-time Andon-board machine status, SPC/Cpk process capability, and RCA (root-cause) correlation between alarms and process parameters. Secondary: SRE and DevOps engineers performing root cause analysis, capacity planning, and pipeline debugging across both domains.
+Primary: two distinct operator populations. (1) NOC operators monitoring servers and network devices across data centers — 24/7 shifts, need rapid visibility into device health, network bandwidth, and temperature anomalies. (2) LDI manufacturing floor operators and process engineers monitoring the LDI (Laser Direct Imaging) PCB production line — need live Andon-board machine status, SPC/Cpk process capability, and RCA (root-cause) correlation between alarms and process parameters. Secondary: SRE and DevOps engineers performing root cause analysis, capacity planning, and pipeline debugging across both domains.
 
 ## Product Purpose
 
-Provide a single-pane-of-glass monitoring system spanning two domains — infrastructure and manufacturing — each with its own telemetry pipeline, dashboard set, and alerting. The infrastructure side ingests SNMP metrics from servers and network devices via Node-RED into TimescaleDB, visualized through 4 dashboards (NOC Overview, Engineering Drill-Down, Capacity Forecast, Meta-Monitoring). The manufacturing side ingests LDI machine telemetry (position/judgment error, thickness, scan speed, resist dosage, and more) via HTTP/JSON, visualized through 8 dashboards (Easy Overview, Manufacturing Command Center, Operator Andon Board, Alarm Console, Alarm Dictionary, Engineering Analytics & SPC, Machine Snapshot, Data Readiness) with real SPC (Cpk process capability) and RCA (alarm-to-parameter correlation) analytics. It includes AIOps features (Z-Score anomaly detection on the infrastructure side, circuit breaker failover, predictive capacity forecasting) and alerting via LINE Messaging API and MS Teams with runbook links. Success means zero blind spots — every device, every machine, every anomaly visible within seconds.
+Provide a single-pane-of-glass monitoring system spanning two domains — infrastructure and manufacturing — each with its own telemetry pipeline, dashboard set, and alerting. The infrastructure side ingests SNMP metrics from servers and network devices via Node-RED into TimescaleDB, visualized through 5 dashboards (NOC Overview, Engineering Drill-Down, Capacity Forecast, Meta-Monitoring, Ingestion Latency). The manufacturing side ingests LDI machine telemetry (position/judgment error, thickness, scan speed, resist dosage, and more) via HTTP/JSON, visualized through 10 dashboards (Easy Overview, Manufacturing Command Center, Operator Andon Board, Alarm Console, Alarm Dictionary, Engineering Analytics & SPC, Machine Snapshot, Data Readiness, Factory Digital Twin, Alarm Response) with real SPC (Cpk process capability) and RCA (alarm-to-parameter correlation) analytics. It includes AIOps features (Z-Score anomaly detection on the infrastructure side, circuit breaker degradation, predictive capacity forecasting) and alerting via LINE Messaging API and MS Teams with runbook links. Success means comprehensive visibility — critical devices, machines, and anomalies are visible within seconds.
 
 ## Positioning
 
@@ -52,3 +54,6 @@ Industrial-grade monitoring that understands both server and network switch hard
 ## Accessibility & Inclusion
 
 WCAG 2.1 AA compliance target. Color combinations meet 4.5:1 contrast ratio against dark backgrounds. All critical alerts have text labels alongside color indicators (not color-only). Reduced motion support via CSS `prefers-reduced-motion`. Screen reader compatibility for panel descriptions and alert annotations.
+
+---
+[⬅️ Back to Main Repository](../../README.md)

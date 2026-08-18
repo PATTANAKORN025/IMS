@@ -29,11 +29,17 @@
  <strong>High-Precision Manufacturing Telemetry & Statistical Process Control</strong>
 </div>
 
+<br/>
+
+> **受众:** 开源社区、系统评估人员、部署工程师。
+> **目标:** IMS 代码库的主要入口点，概述功能、架构和部署步骤。
+> **出处:** 架构和功能于 2026-08-10 针对实时系统进行了更新和验证。
+
 <div align="center">
   <img src="assets/apex-ldi-noc-banner.jpg" alt="APEX Circuit LDI NOC Banner" width="100%" style="border-radius:12px; box-shadow: 0 16px 64px rgba(0,0,0,0.6); margin-bottom: 24px; border: 1px solid rgba(0,242,254,0.1);" />
   <br/>
   <br/>
-  <a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.demolab.com?font=Orbitron&weight=600&size=36&duration=4000&pause=2000&color=00F2FE&center=true&repeat=true&width=1000&height=60&lines=APEX+Circuit+IMS+|+System+Initializing...;Advanced+Manufacturing+Intelligence+%26+NOC;Zero-Latency+Digital+Twin+Architecture" alt="Typing SVG" /></a>
+  <a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.demolab.com?font=Orbitron&weight=600&size=36&duration=4000&pause=2000&color=00F2FE&center=true&repeat=true&width=1000&height=60&lines=APEX+Circuit+IMS+|+System+Initializing...;Advanced+Manufacturing+Intelligence+%26+NOC;High-Fidelity+Digital+Twin+Architecture" alt="Typing SVG" /></a>
 </div>
 
 <div align="center">
@@ -44,7 +50,7 @@
   <a href="https://nodered.org/"><img src="https://img.shields.io/badge/-Node--RED_v4+-030407?style=for-the-badge&logo=nodered&logoColor=8F0000" alt="Node-RED"/></a>
   <a href="https://www.timescale.com/"><img src="https://img.shields.io/badge/-TimescaleDB_2.x-030407?style=for-the-badge&logo=postgresql&logoColor=F59E0B" alt="TimescaleDB"/></a>
   <br>
-  <a href="#quick-start"><img src="https://img.shields.io/badge/Status-100%25_Passing-10B981?style=for-the-badge&logoColor=white" alt="Tests" /></a>
+  <a href="#quick-start"><img src="https://img.shields.io/badge/Status-Tests_Passing-10B981?style=for-the-badge&logoColor=white" alt="Tests" /></a>
   <a href="#quick-start"><img src="https://img.shields.io/badge/K6-Stress--Tested-030407?style=for-the-badge&logo=k6&logoColor=7B61FF" alt="K6" /></a>
   <a href="data-generators/"><img src="https://img.shields.io/badge/Data-Digital_Twin-030407?style=for-the-badge&logo=python&logoColor=00C7B7" alt="Synthetic Data" /></a>
 </div>

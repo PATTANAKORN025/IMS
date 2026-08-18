@@ -1,10 +1,12 @@
 # IMS Platform Book
 
-> **The starting point for all IMS documentation.** This is a navigational hub, not a duplicate of the documents it links to — each topic lives in exactly one place, and this book points to it. If something here disagrees with the document it links to, the linked document is authoritative; this book is the map, not the territory.
->
-> **Provenance:** compiled 2026-08-10, after a full documentation audit and rewrite (`docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md`'s rollout, plus the broader Enterprise Documentation Program this book itself is part of). Every fact cited directly in this book (not just linked) was verified against the live system on that date.
+> **Audience:** All IMS stakeholders (Developers, SREs, Plant Managers, QA).
+> **Objective:** The central navigational hub for the entire documentation suite. If something here disagrees with a linked document, the linked document is authoritative.
+> **Provenance:** Verified against the live system on 2026-08-10 during the Enterprise Documentation Program.
 
 ---
+
+[⬅️ Back to Main Repository](../../README.md)
 
 ## Executive summary
 

@@ -11,7 +11,7 @@
 > (`node scripts/generate-dashboard-inventory.js --check`) fails the build
 > if this file doesn't match what the dashboards currently say.
 >
-> Last generated: 2026-08-18 | Total dashboards: 15 | Total panels: 178
+> Last generated: 2026-08-18 | Total dashboards: 15 | Total panels: 187
 
 ## Infrastructure (5)
 
@@ -34,6 +34,6 @@
 | `ims-ldi-engineering-analytics` | IMS LDI - Engineering Analytics & SPC | 16 | Layer 3 Process Timeline: synchronized multi-parameter RCA. temperature → humidity → scan_speed → air_vacuum → scale_x/y → pe_1~6 → je_1~4 → state. Shared crosshair + tooltip. Fixed axis scaling. |
 | `ims-ldi-factory-digital-twin` | IMS LDI - Factory Digital Twin | 1 | TASK 3 -- Full 10-machine Canvas Factory Digital Twin, scaled from the Task 2 2-machine POC. Shows all 10 real reporting LDI machines (LDI-01..LDI-10) grouped into their 5 real zones (public.devices.location), 2 machi... |
 | `ims-ldi-machine-snapshot` | IMS LDI - Machine Snapshot | 14 | 360° machine snapshot at the exact millisecond clicked from Process Timeline. Shows job context, physical variables, PE alignment, Cpk, and alarm proximity. |
-| `ims-ldi-manufacturing` | IMS LDI - Manufacturing Command Center | 21 | 4-Layer RCA Dashboard: Executive HUD + Machine Telemetry + Production Context + Alarm Stream. Schema-driven naming. Shared crosshair. Fixed axis scaling. |
+| `ims-ldi-manufacturing` | IMS LDI - Manufacturing Command Center | 30 | 4-Layer RCA Dashboard: Executive HUD + Machine Telemetry + Production Context + Alarm Stream. Schema-driven naming. Shared crosshair. Fixed axis scaling. |
 | `ims-ldi-operator-andon` | IMS LDI - Operator Andon Board | 11 | Factory floor kiosk. ISA-101 compliant. Zero interaction, zero scrolling. 1280x720. Redesigned from an earlier 1920x1080 layout (System Audit Phase 5): template-variable pickers and the drill-down links row are hidden... |
 | `ldi-data-readiness` | LDI Data Readiness & Integration Gaps (Real Database) | 17 | Evidence-based readiness dashboard using only current PostgreSQL rows. No simulated data. |

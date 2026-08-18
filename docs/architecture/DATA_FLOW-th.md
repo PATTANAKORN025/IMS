@@ -56,12 +56,12 @@ flowchart LR
  M1 -->|"15m rollup"| M15[("ldi_data_15m\n90d retention")]
  M15 -->|"1h rollup"| M1H[("ldi_data_1h\n2yr retention")]
 
- RAW -->|"direct hourly analytics\n(avg_max_pe, peak_pe, etc.)\nreal-time aggregation ON"| MHOURLY[("ldi_data_hourly\n2yr retention")]
+ RAW -->|"direct hourly analytics\n(avg_max_pe, peak_pe, etc.)\ncontinuous aggregation ON"| MHOURLY[("ldi_data_hourly\n2yr retention")]
 
  RAW -->|"materialized, 60s refresh"| SPCVIEW["v_machine_spc_fleet\nv_ldi_rca_recent_window\nv_ldi_rca_truth_test"]
 ```
 
-`ldi_data_1m → 15m → 1h` คือการทำ Rollup แบบต่อเนื่อง (Chained Rollup) (แต่ละระดับจะรวบรวมข้อมูลจากระดับที่ต่ำกว่า) เพื่อประสิทธิภาพในการคิวรีข้อมูลตามช่วงเวลาบน Dashboard ส่วน `ldi_data_hourly` เป็น View แบบรายชั่วโมงที่ _แยกต่างหาก_ และถูกสร้างขึ้นมาโดยเฉพาะ ซึ่งคำนวณโดยตรงจากข้อมูลดิบพร้อมคอลัมน์สำหรับการวิเคราะห์ของตัวเอง (เช่น `avg_max_pe`, `peak_pe` และอื่นๆ) และมีการเปิดใช้งาน `timescaledb.materialized_only = false` (การรวมข้อมูลแบบเรียลไทม์ (Real-time Aggregation) — Migration 065) เนื่องจากเมทริกซ์เฉพาะเหล่านั้นจำเป็นต้องสะท้อนข้อมูลของช่วงเวลาปัจจุบันในชั่วโมงนั้นๆ โดยไม่ต้องรอรอบการ Refresh ครั้งต่อไป
+`ldi_data_1m → 15m → 1h` คือการทำ Rollup แบบต่อเนื่อง (Chained Rollup) (แต่ละระดับจะรวบรวมข้อมูลจากระดับที่ต่ำกว่า) เพื่อประสิทธิภาพในการคิวรีข้อมูลตามช่วงเวลาบน Dashboard ส่วน `ldi_data_hourly` เป็น View แบบรายชั่วโมงที่ _แยกต่างหาก_ และถูกสร้างขึ้นมาโดยเฉพาะ ซึ่งคำนวณโดยตรงจากข้อมูลดิบพร้อมคอลัมน์สำหรับการวิเคราะห์ของตัวเอง (เช่น `avg_max_pe`, `peak_pe` และอื่นๆ) และมีการเปิดใช้งาน `timescaledb.materialized_only = false` (การรวมข้อมูลแบบต่อเนื่อง Continuous Aggregation — Migration 065) เนื่องจากเมทริกซ์เฉพาะเหล่านั้นจำเป็นต้องสะท้อนข้อมูลของช่วงเวลาปัจจุบันในชั่วโมงนั้นๆ โดยไม่ต้องรอรอบการ Refresh ครั้งต่อไป
 
 ## ข้อมูล Master ของ Alarm และระดับความรุนแรง (Severity)
 

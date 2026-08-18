@@ -1,8 +1,8 @@
 # LDI Alarm Severity Guide
 
-> **Audience:** process engineering, QA/audit, SRE/operations, plant management.
->
-> **Provenance:** the severity tiers, color mapping, and compliance scope below were checked directly against the live database, `dashboard-linter.js`'s approved token list, and real dashboard JSON value-mappings on 2026-08-10.
+> **Audience:** Process Engineering, QA/Audit, SRE/Operations, Plant Management.
+> **Objective:** Defines the 4-tier alarm severity taxonomy, visual color mapping, and the limits of ISA-18.2 compliance.
+> **Provenance:** Checked directly against the live database, `dashboard-linter.js`, and real dashboard JSON value-mappings on 2026-08-10.
 
 ---
 
@@ -27,11 +27,12 @@ The severity naming and color convention above borrow ISA-18.2's vocabulary. **T
 
 What's **not** implemented — the actual substance of the standard:
 
-- **Alarm states.** ISA-18.2 defines a state model (Unacknowledged, Acknowledged, RTN-Unacknowledged, Shelved, Suppressed, Out-of-Service). `ldi_alarm_log` has no ack/shelve/suppress column at all — every alarm is permanently in one implicit state.
-- **Rationalization documentation.** No per-alarm rationalization record (why this alarm exists, its consequence, operator response) exists.
-- **Alarm performance KPIs.** No alarms/operator/10-min tracking, no % time in flood, no "bad actor" analysis.
+- **Alarm states:** ISA-18.2 defines a state model (Unacknowledged, Acknowledged, Shelved, etc.). `ldi_alarm_log` has no ack/shelve/suppress column. Every alarm is permanently in one implicit state.
+- **Rationalization documentation:** No per-alarm rationalization record exists (why this alarm exists, consequence, response).
+- **Alarm performance KPIs:** No tracking of alarms/operator/10-min, % time in flood, or "bad actor" analysis.
 
-If a stakeholder-facing document ever needs to describe alarm management, say **"ISA-18.2-style severity taxonomy,"** not "ISA-18.2 compliant" or "using the ISA-18.2 standard." (ISA-**101**, a separate standard for HMI design, is correctly and narrowly claimed elsewhere for the Operator Andon Board's kiosk layout only — not affected by this note.)
+> [!NOTE]
+> If a stakeholder-facing document needs to describe alarm management, use the term **"ISA-18.2-style severity taxonomy"**, not "ISA-18.2 compliant". (Note: ISA-101, a separate standard for HMI design, *is* correctly implemented for the Operator Andon Board).
 
 ## Where severity is used
 
@@ -46,4 +47,7 @@ If a stakeholder-facing document ever needs to describe alarm management, say **
 
 - `docs/operations/ALARM_PLAYBOOK.md` — practical first-response runbook for the codes that actually fire.
 - `docs/architecture/LDI_RCA_GUIDE.md` — how alarm categories correlate with process parameters.
-- `docs/architecture/GRAFANA_DESIGN_SYSTEM.md` §2.1 — the full approved color token set, not just the 4 alarm-severity ones.
+- `docs/architecture/GRAFANA_DESIGN_SYSTEM.md` §2.1 — the full approved color token set.
+
+---
+[⬅️ Back to IMS Platform Book](IMS_PLATFORM_BOOK.md) | [🏠 Main Repository](../../README.md)

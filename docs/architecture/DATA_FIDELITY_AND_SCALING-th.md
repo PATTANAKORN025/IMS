@@ -75,7 +75,7 @@ TimescaleDB ใช้ Continuous Aggregates (CAGGs) เพื่อสรุป�
 2. **Data Interpolation ใน Grafana:**
    หากเกิด Gap ของข้อมูลเนื่องจาก Network Drop การเขียน Query ใน Grafana จะใช้ฟังก์ชัน `interpolate()` หรือการเติม `$__interval` ลงใน TimescaleDB เพื่อไม่ให้กราฟขาดตอนโดยไม่ตั้งใจ
 3. **Reconciliation Audits:**
-   มี Script ตรวจสอบเทียบความแตกต่างระหว่าง CAGG tables และ Raw tables เพื่อยืนยันว่าข้อมูลตรงกัน 100%
+   มี Script ตรวจสอบเทียบความแตกต่างระหว่าง CAGG tables และ Raw tables เพื่อยืนยันความถูกต้องของข้อมูล (Data Parity)
 
 ---
 

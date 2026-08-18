@@ -1,79 +1,90 @@
 # IMS Operator Standard Operating Procedure (SOP)
 
-> **Role:** LDI Factory Floor Operator / NOC Level 1 Support
+> **Audience:** Factory Floor Operators, NOC Level 1 Support.
 > **Objective:** Daily operation, monitoring, and first-line response using the IMS Grafana HUD.
+> **Provenance:** Validated against live production workflows on 2026-08-10.
 
 ---
 
-## 1. Beginning of Shift (08:00 / 20:00)
+## 1. Shift Handover & Initialization (08:00 / 20:00)
 
-### 1.1 Shift Handover Checklist
+### 1.1 Pre-Flight Checklist
+Before accepting the shift, the incoming operator must verify the baseline health of the platform:
 
-1. **Login:** Open the [IMS NOC Overview](http://localhost:3000/d/ims-noc-overview) dashboard on the primary wall display.
-2. **Health Check:** Look at the **Fleet Health Score** (Top Left).
-
-- `> 95%`: ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) Nominal. Proceed with normal duties.
-- `90% - 94%`: ![Warning](https://img.shields.io/badge/Status-Warning-yellow) Warning. Check the "Top 10 Critical Nodes" panel.
-- `< 90%`: Critical. Escalate immediately to Level 2 (SRE/Engineering).
-
-1. **Verify LDI Fleet:** Open the [LDI Manufacturing](http://localhost:3000/d/ims-ldi-manufacturing) dashboard. Ensure no machines are currently marked "OFFLINE" in red.
+1. **Login & Authenticate:** Open the [IMS NOC Overview](http://localhost:3000/d/ims-noc-overview) dashboard on the primary wall display.
+2. **Verify Fleet Health Score** (Top Left panel):
+   - `> 95%`: ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) **Nominal**. Accept shift.
+   - `90% - 94%`: ![Warning](https://img.shields.io/badge/Status-Warning-yellow) **Warning**. Check the "Top 10 Critical Nodes" panel. Request verbal briefing from outgoing shift regarding these nodes.
+   - `< 90%`: ![Critical](https://img.shields.io/badge/Status-Critical-red) **Critical**. Do not accept shift without L2 (Engineering) presence. Escalate immediately.
+3. **Verify LDI Fleet Status:** Open the [LDI Manufacturing](http://localhost:3000/d/ims-ldi-manufacturing) dashboard. Ensure no machines are unexpectedly marked "OFFLINE" in red.
 
 ---
 
 ## 2. Routine Monitoring & Andon Response
 
-The **Operator Andon Dashboard** is your primary tool. It operates on a strict Traffic Light protocol.
+The **Operator Andon Dashboard** operates on a strict Traffic Light protocol. Do not attempt to debug algorithms; react to the colors.
 
-### ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) Green State (Normal)
-
+### ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) Green State (Nominal Operation)
 - **Visuals:** All panels are green. No flashing.
-- **Action:** No action required. Continue physical machine loading/unloading operations.
+- **Action:** Continue standard PCB loading/unloading operations. Maintain situational awareness.
 
-### ![Warning](https://img.shields.io/badge/Status-Warning-yellow) Yellow State (Warning)
-
+### ![Warning](https://img.shields.io/badge/Status-Warning-yellow) Yellow State (Pre-emptive Warning)
 - **Visuals:** A panel turns yellow (e.g., "Yield Drop Warning", "Temp Rising").
-- **Action:**
+- **Action Workflow:**
+  1. Click the yellow panel to immediately jump to the [LDI Machine Snapshot](http://localhost:3000/d/ims-ldi-machine-snapshot).
+  2. Identify the specific metric excursion (e.g., "Laser Temp is 42°C, approaching 45°C limit").
+  3. **Communication Script:** Notify the Line Supervisor via Walkie-Talkie or the designated Operations LINE Group: 
+     > *"Warning: Machine LDI-[ID] is showing [Metric] at [Value]. Monitoring closely."*
 
-1. Click the yellow panel to open the [LDI Machine Snapshot](http://localhost:3000/d/ims-ldi-machine-snapshot).
-2. Verify the specific metric (e.g., Laser Temp is 42°C, limit is 45°C).
-3. Notify the Line Supervisor via Walkie-Talkie/LINE. Mention the Machine ID.
-
-### Red State (Critical / Stop Line)
-
+### ![Critical](https://img.shields.io/badge/Status-Critical-red) Red State (Critical Excursion / Stop Line)
 - **Visuals:** Panel turns red and pulses. Background may flash.
-- **Action:**
-
-1. **STOP THE LINE.** Halt loading PCBs into the affected LDI machine immediately.
-2. Press the physical Emergency Stop if there is a safety risk.
-3. Announce "LDI-[Machine-ID] DOWN" in the Operations LINE Group.
-4. Refer to the [ALARM PLAYBOOK](ALARM_PLAYBOOK.md) for the specific error code displayed on the screen.
-
----
-
-## 3. How to Find Specific Information
-
-### Q: "A supervisor wants to know why Machine LDI-05 is slow."
-
-1. Open the [Engineering Drill-Down](http://localhost:3000/d/ims-engineering) dashboard.
-2. In the top-left dropdown (Variable), select `LDI-05`.
-3. Check the **CPU / RAM / Yield** timeseries panels for sudden drops (Z-Score anomalies).
-
-### Q: "Is the monitoring system itself broken?"
-
-1. Open the [Meta-Monitoring](http://localhost:3000/d/ims-meta-monitoring) dashboard.
-2. Check the **Node-RED Ingestion Rate**. If it is exactly `0 rows/sec` for more than 1 minute, the monitoring pipeline is down. Call IT/DevOps.
+- **Action Workflow:**
+  1. **STOP THE LINE.** Halt loading PCBs into the affected LDI machine immediately.
+  2. **Safety First:** Press the physical Emergency Stop (E-Stop) if there is any immediate safety or severe equipment damage risk.
+  3. **Communication Script:** Announce immediately in the Operations LINE Group:
+     > *"CRITICAL: LDI-[Machine-ID] DOWN. Error: [Metric/Alarm Code]. Line stopped."*
+  4. Refer to the [ALARM PLAYBOOK](ALARM_PLAYBOOK.md) for the specific fault code displayed on the console.
 
 ---
 
-## 4. End of Shift (19:30 / 07:30)
+## 3. Escalation Matrix (Time-To-Escalate SLAs)
 
-### 4.1 Daily Reporting
+When an issue occurs, adhere strictly to these Time-To-Escalate (TTE) limits. Do not attempt to "hero debug" beyond your authorized time window.
 
+| Event Type | Initial Response (L1 Operator) | TTE to L2 (Line Supervisor) | TTE to L3 (SRE / Plant Engineer) |
+| :--- | :--- | :--- | :--- |
+| **Single Machine Yellow** | Monitor & Document | 15 Minutes | 60 Minutes (if unresolved) |
+| **Single Machine Red** | Stop Line & Log Alarm | Immediate (0 Min) | 15 Minutes |
+| **Multiple Machines Red** | Stop Affected Lines | Immediate (0 Min) | Immediate (0 Min) |
+| **IMS HUD Unresponsive** | Refresh Browser | 5 Minutes | 15 Minutes |
+| **Node-RED Ingestion 0 rows/s**| Ping IT | Immediate (0 Min) | Immediate (0 Min) |
+
+---
+
+## 4. End of Incident Recovery Checklist
+
+When Engineering resolves a Red State, the Operator must formally clear the machine for production:
+1. **Verify Dashboard:** Confirm the specific LDI machine panel on the Andon board has returned to Green.
+2. **Acknowledge Resolution:** Open the `IMS LDI - Alarm Console` and mark the alarm as "Resolved".
+3. **Communication Script:** Announce in the Operations LINE Group:
+   > *"RECOVERY: LDI-[Machine-ID] cleared by [Engineer Name]. Resuming production."*
+4. **Resume Loading:** Restart the standard loading sequence.
+
+---
+
+## 5. End of Shift (19:30 / 07:30)
+
+### 5.1 Shift Closing Protocol
 1. Open the [Capacity Planning](http://localhost:3000/d/ims-capacity) dashboard.
-2. Note any machines showing **"Days Until Full < 7"**.
-3. Record the Average Fleet Health Score for the shift in the shift-log book.
-4. Pass on any persistent Yellow/Warning states to the incoming shift operator.
+2. Record any machines showing **"Days Until Full < 7"** in the daily shift log.
+3. Record the End-of-Shift Average Fleet Health Score.
+4. Conduct verbal handover with the incoming operator, explicitly noting any unresolved Yellow states.
 
 ---
 
-_Version: 1.0.0 | Last Updated: 2026-08-10_
+## Related Documents
+- [INCIDENT RESPONSE](INCIDENT_RESPONSE.md) — Major incident procedures.
+- [ALARM PLAYBOOK](ALARM_PLAYBOOK.md) — Specific machine error codes.
+
+---
+[⬅️ Back to IMS Platform Book](../architecture/IMS_PLATFORM_BOOK.md) | [🏠 Main Repository](../../README.md)

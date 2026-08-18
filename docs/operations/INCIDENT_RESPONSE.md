@@ -1,8 +1,8 @@
 # Incident Response
 
-> **Audience:** SRE/operations.
->
-> **Provenance:** the worked examples below are real incidents from this system's own operational history (root-caused and, where noted, fixed) — not hypothetical scenarios.
+> **Audience:** SRE/Operations, On-call Engineers.
+> **Objective:** Provides a severity framework and specific worked examples for recovering from system incidents.
+> **Provenance:** The worked examples below are real incidents from this system's own operational history (root-caused and, where noted, fixed) — not hypothetical scenarios.
 
 ---
 
@@ -83,3 +83,6 @@ For anything not covered by the worked examples above, or a SEV-1/SEV-2 that isn
 - `docs/operations/DR_TEST_PLAN.md` — controlled failure drills and their real evidence.
 - `docs/operations/BACKUP_RESTORE.md` — when the incident is data-loss-adjacent.
 - `docs/operations/TROUBLESHOOTING.md` — general SRE debugging commands.
+
+---
+[⬅️ Back to IMS Platform Book](../architecture/IMS_PLATFORM_BOOK.md) | [🏠 Main Repository](../../README.md)
