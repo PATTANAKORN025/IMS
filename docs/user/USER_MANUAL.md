@@ -14,9 +14,9 @@
 
 <div align="center">
 
-<img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Manual:** User Guide
-<img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Version:** 1.1
-<img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Audience:** IT Support
+![Manual](https://img.shields.io/badge/Manual-User%20Guide-green)
+![Version](https://img.shields.io/badge/Version-1.1-blue)
+![Audience](https://img.shields.io/badge/Audience-IT%20Support-purple)
 
 </div>
 
@@ -83,7 +83,7 @@ Upon accessing Grafana, 15 distinct dashboards are available:
 │ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌───────────┐ │
 │ │ Total  │ │ Healthy  │ │ Warning  │ │ Critical │ │
 │ │ Machines: 5 │ │ Machines: 4 │ │ Alerts: 1 │ │ Alerts: 0 │ │
-│ │ <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Healthy  │ │ <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Healthy  │ │ <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Warning  │ │   │ │
+│ │ ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen)  │ │ ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen)  │ │ ![Warning](https://img.shields.io/badge/Status-Warning-yellow)  │ │   │ │
 │ └─────────────┘ └─────────────┘ └─────────────┘ └───────────┘ │
 │                 │
 │ ┌───────────────────────────────────────────────────────────┐ │
@@ -102,13 +102,13 @@ Upon accessing Grafana, 15 distinct dashboards are available:
 
 **Purpose**: Comprehensive health overview of all servers — these panel types are distributed across the **NOC Overview** (fleet envelope) and **Engineering Drill-Down** (per-server deep dive) dashboards; they do not constitute a standalone dashboard.
 
-| Panel               | Metrics                            | Color Coding                                                                                                                                                                                                                                      |
-| ------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **CPU Usage**       | `cpu_load_percent` per core        | <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Healthy < 60%, <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Warning 60-80%, > 80%    |
-| **Memory Usage**    | `ram_used_mb / ram_total_mb`       | <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Healthy < 70%, <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Warning 70-85%, > 85%    |
-| **Disk Usage**      | `disk_used_gb / disk_total_gb`     | <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Healthy < 70%, <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Warning 70-80%, > 80%    |
-| **Network Traffic** | `rx_mbps`, `tx_mbps` per interface | Blue = RX, Light Blue = TX                                                                                                                                                                                                                        |
-| **Temperature**     | `temp_c`                           | <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Healthy < 65°C, <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Warning 65-80°C, > 80°C |
+| Panel               | Metrics                            | Color Coding                                                                                                                                               |
+| ------------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **CPU Usage**       | `cpu_load_percent` per core        | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) < 60%, ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 60-80%, > 80%    |
+| **Memory Usage**    | `ram_used_mb / ram_total_mb`       | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) < 70%, ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 70-85%, > 85%    |
+| **Disk Usage**      | `disk_used_gb / disk_total_gb`     | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) < 70%, ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 70-80%, > 80%    |
+| **Network Traffic** | `rx_mbps`, `tx_mbps` per interface | Blue = RX, Light Blue = TX                                                                                                                                 |
+| **Temperature**     | `temp_c`                           | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) < 65°C, ![Warning](https://img.shields.io/badge/Status-Warning-yellow) 65-80°C, > 80°C |
 
 ### 3. Engineering Drilldown Dashboard
 
@@ -161,10 +161,10 @@ Upon accessing Grafana, 15 distinct dashboards are available:
 
 The Scatter Plot illustrates PE (Position Error) vs JE (Judgment Error) measured in µm:
 
-| Zone          | Color                                                                                                              | Meaning                                         |
-| ------------- | ------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------- |
-| Inside ±10µm  | <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Healthy Green | Normal — The laser head is functioning properly |
-| Outside ±10µm | Red                                                                                                                | Abnormal — The laser head requires inspection   |
+| Zone          | Color                                                                     | Meaning                                         |
+| ------------- | ------------------------------------------------------------------------- | ----------------------------------------------- |
+| Inside ±10µm  | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) Green | Normal — The laser head is functioning properly |
+| Outside ±10µm | Red                                                                       | Abnormal — The laser head requires inspection   |
 
 **Instructions:**
 
@@ -335,11 +335,11 @@ Machine: server-01
 
 ### Alert Severity Levels
 
-| Level        | Color                                                                                                               | Response Time                 | Example                                 |
-| ------------ | ------------------------------------------------------------------------------------------------------------------- | ----------------------------- | --------------------------------------- |
-| **Critical** | Red                                                                                                                 | Immediate (< 15 minutes)      | InterfaceDown, ServiceDown, CriticalCPU |
-| **Warning**  | <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Warning Yellow | Prompt (< 1 hour)             | HighCPU, HighMemory, DiskSpaceLow       |
-| **Info**     | Blue                                                                                                                | Standard priority (< 4 hours) | TelemetryGap, PredictiveDiskFull        |
+| Level        | Color                                                                 | Response Time                 | Example                                 |
+| ------------ | --------------------------------------------------------------------- | ----------------------------- | --------------------------------------- |
+| **Critical** | Red                                                                   | Immediate (< 15 minutes)      | InterfaceDown, ServiceDown, CriticalCPU |
+| **Warning**  | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) Yellow | Prompt (< 1 hour)             | HighCPU, HighMemory, DiskSpaceLow       |
+| **Info**     | Blue                                                                  | Standard priority (< 4 hours) | TelemetryGap, PredictiveDiskFull        |
 
 ### Incident Response Playbook
 
@@ -442,7 +442,7 @@ Escalation:
 - If system-level issue → contact system admin
 ```
 
-#### <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Warning Scenario 5: PipelineDataStalled (Warning)
+#### ![Warning](https://img.shields.io/badge/Status-Warning-yellow) Scenario 5: PipelineDataStalled (Warning)
 
 ```text
 Symptoms:
@@ -580,16 +580,16 @@ docker compose exec prometheus wget -qO- "http://localhost:9090/api/v1/alerts" 2
 
 ### Color Coding Reference
 
-| Metric          | Healthy                                                                                                            | Warning                                                                                                                           | Critical      |
-| --------------- | ------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- | ------------- |
-| **CPU**         | <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Healthy Green | <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Warning Yellow → Orange      | Red           |
-| **Memory**      | <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Healthy Green | <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Warning Purple → Dark Orange | Red           |
-| **Disk**        | <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Healthy Green | <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Warning Cyan → Blue          | Red           |
-| **Network RX**  | Dark Blue (#1F60C4)                                                                                                | —                                                                                                                                 | Red           |
-| **Network TX**  | Light Blue (#5794F2)                                                                                               | —                                                                                                                                 | Red           |
-| **Temperature** | <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Healthy Green | <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Warning Yellow               | Red           |
-| **Errors**      | —                                                                                                                  | —                                                                                                                                 | Red (#C4162A) |
-| **Drops**       | —                                                                                                                  | <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Warning Orange (#FF9830)     | Red           |
+| Metric          | Healthy                                                                   | Warning                                                                             | Critical      |
+| --------------- | ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ------------- |
+| **CPU**         | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) Green | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) Yellow → Orange      | Red           |
+| **Memory**      | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) Green | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) Purple → Dark Orange | Red           |
+| **Disk**        | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) Green | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) Cyan → Blue          | Red           |
+| **Network RX**  | Dark Blue (#1F60C4)                                                       | —                                                                                   | Red           |
+| **Network TX**  | Light Blue (#5794F2)                                                      | —                                                                                   | Red           |
+| **Temperature** | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) Green | ![Warning](https://img.shields.io/badge/Status-Warning-yellow) Yellow               | Red           |
+| **Errors**      | —                                                                         | —                                                                                   | Red (#C4162A) |
+| **Drops**       | —                                                                         | ![Warning](https://img.shields.io/badge/Status-Warning-orange) Orange (#FF9830)     | Red           |
 
 ### Alert Contacts
 

@@ -7,9 +7,9 @@
 
 <div align="center">
 
-<img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Security:** Policy
-<img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Staging
-<img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Updated:** 2026
+![Security](https://img.shields.io/badge/Security-Policy-red)
+![Status](https://img.shields.io/badge/Status-Staging-yellow)
+![Updated](https://img.shields.io/badge/Updated-2026--08--04-brightgreen)
 
 </div>
 
