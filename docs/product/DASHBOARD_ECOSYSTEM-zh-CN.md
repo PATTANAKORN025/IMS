@@ -5,7 +5,7 @@
 </div>
 <br/>
 
-# 🌌 IMS 仪表板生态系统：宏观到微观架构
+# <img src="../../docs/assets/icons/aperture.svg" width="18" align="center" /> IMS 仪表板生态系统：宏观到微观架构
 
 **IMS（工业监控系统，Industrial Monitoring System）** 利用了包含 15 个仪表板的 "赛博朋克 HUD (Cyberpunk HUD)" 生态系统，旨在彻底消除警报疲劳，并弥合企业 IT 与物理操作技术 (OT) 之间的鸿沟。
 
@@ -13,11 +13,11 @@
 
 ---
 
-## 🧭 5 层高度矩阵 (The 5-Tier Altitude Matrix)
+## <img src="../../docs/assets/icons/compass.svg" width="18" align="center" /> 5 层高度矩阵 (The 5-Tier Altitude Matrix)
 
 该生态系统从 30,000 英尺的高管视角动态向下缩放，一直到地表以下的协议层。
 
-### 🌍 级别 1：高管与舰队指挥 (30,000 英尺 - 宏观 MACRO)
+### <img src="../../docs/assets/icons/globe.svg" width="18" align="center" /> 级别 1：高管与舰队指挥 (30,000 英尺 - 宏观 MACRO)
 
 _目标：为业务领导者和 NOC 指挥官提供即时的一瞥价值 (Glance-value)。重点关注整体健康状况、开启/关闭状态以及整体设备效率 (OEE)。_
 _受众：C 级高管、工厂经理、NOC 指挥官_
@@ -47,7 +47,7 @@ _受众：IT 部门主管、维护规划员、SRE（站点可靠性工程师）_
    - **目的：** “监控整个监控系统本身”。
    - **关键指标：** Node-RED 摄取管道吞吐量，SNMP walker 断路器 (Circuit Breaker) 状态，以及 TimescaleDB 查询预算。确保 IMS 平台本身永远不会发生静默故障。
 
-### 🚁 级别 3：工程与深度分析 (1,000 英尺)
+### <img src="../../docs/assets/icons/crosshair.svg" width="18" align="center" /> 级别 3：工程与深度分析 (1,000 英尺)
 
 _目标：建立 IT 基础设施限制与 OT 制造良率之间的根本原因关联 (Root Cause Correlation)。_
 _受众：系统管理员 (SysAdmins)、过程工程师、数据科学家_
@@ -62,7 +62,7 @@ _受众：系统管理员 (SysAdmins)、过程工程师、数据科学家_
    - **目的：** 微秒级延迟跟踪。
    - **关键指标：** 测量从工厂车间传感器发出信号，到数据通过 PgBouncer 成功提交到 PostgreSQL 之间的确切传播延迟 (Propagation delay)。
 
-### 🏢 级别 4：战术操作 (地面级别)
+### <img src="../../docs/assets/icons/server.svg" width="18" align="center" /> 级别 4：战术操作 (地面级别)
 
 _目标：为操作物理硬件的人员提供二进制的、零延迟的决策支持。_
 _受众：车间操作员、生产线主管、质量检验员_
@@ -77,7 +77,7 @@ _受众：车间操作员、生产线主管、质量检验员_
     - **目的：** 数据完整性验证 (Data Integrity Verification)。
     - **关键指标：** 在数据进入聚合阶段之前，于原始摄取层监控空值 (Null values)、架构损坏 (Schema corruption) 以及传感器离线状态。
 
-### 🔬 级别 5：事件管理与解决 (地表以下 - 微观 MICRO)
+### <img src="../../docs/assets/icons/zoom-in.svg" width="18" align="center" /> 级别 5：事件管理与解决 (地表以下 - 微观 MICRO)
 
 _目标：使用标准化剧本 (Playbooks) 对异常进行分诊 (Triaging)、确认并永久解决。_
 _受众：L1/L2 支持团队、事件指挥官 (Incident Commanders)_

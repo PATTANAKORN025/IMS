@@ -89,4 +89,4 @@ SNMPv2c's community-string auth is inherently weaker than SNMPv3 (no encryption,
 
 ---
 
-[⬅️ Back to IMS Platform Book](IMS_PLATFORM_BOOK.md) | [🏠 Main Repository](../../README.md)
+[⬅️ Back to IMS Platform Book](IMS_PLATFORM_BOOK.md) | [<img src="../../docs/assets/icons/home.svg" width="18" align="center" /> Main Repository](../../README.md)

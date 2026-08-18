@@ -93,4 +93,4 @@ For anything not covered by the worked examples above, or a SEV-1/SEV-2 that isn
 
 ---
 
-[⬅️ Back to IMS Platform Book](../architecture/IMS_PLATFORM_BOOK.md) | [🏠 Main Repository](../../README.md)
+[⬅️ Back to IMS Platform Book](../architecture/IMS_PLATFORM_BOOK.md) | [<img src="../../docs/assets/icons/home.svg" width="18" align="center" /> Main Repository](../../README.md)

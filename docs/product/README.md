@@ -5,11 +5,11 @@
 </div>
 <br/>
 
-# 📁 Product Documentation
+# <img src="../../docs/assets/icons/folder.svg" width="18" align="center" /> Product Documentation
 
 Welcome to the **Product** directory. This section contains documentation related to IMS product processes.
 
-## 🗺️ Directory Map
+## <img src="../../docs/assets/icons/map.svg" width="18" align="center" />️ Directory Map
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
@@ -23,7 +23,7 @@ flowchart LR
   ROOT --> F5["PRODUCT"]
 ```
 
-## 📄 File Index
+## <img src="../../docs/assets/icons/file-text.svg" width="18" align="center" /> File Index
 
 - [CONTEXT.md](CONTEXT.md)
 - [DASHBOARD_ECOSYSTEM-th.md](DASHBOARD_ECOSYSTEM-th.md)

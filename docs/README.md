@@ -16,7 +16,7 @@
 > [!TIP]
 > **Welcome to the IMS Knowledge Base.** This repository contains World-Class, engineering-grade documentation for every aspect of the APEX Circuit Industrial Monitoring System. All documents are written with zero hyperbole, optimized for low cognitive load, and structured from Macro to Micro.
 
-## 📚 Table of Contents
+## <img src="../docs/assets/icons/book.svg" width="18" align="center" /> Table of Contents
 
 ### 1. Product & Architecture
 
