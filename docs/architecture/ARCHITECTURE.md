@@ -46,6 +46,7 @@ flowchart TB
 ```
 
 **Why two pipelines exist:**
+
 - **Legacy SNMP Pipeline (`ingestion.json`):** The system's original design. Polls SNMP devices, parses via a stateful `sre_parser`, and inserts into `sys_metrics` / `net_metrics` / `ldi_metrics`.
 - **LDI Manufacturing Pipeline (`ldi_data`):** Added later for higher-fidelity telemetry via HTTP POST. Required because manufacturing dashboards need per-sample PE/JE/Cpk precision that the synthetic `ldi_metrics` table could not support.
 

@@ -42,21 +42,21 @@ No duplicate-notification risk found on the LDI-alarm side -- those alarms don't
 
 ## Alarm-storm detection — **already exists, confirmed working, no new mechanism built**
 
-The 12-minute cooldown debounce (`public.ldi_alarm_state`, migration 069) *is* the storm/flood guard -- confirmed via the code's own comment in `nodered_data/flows.json`: "debounce below is the primary flood guard." Building a separate storm-detector would duplicate existing, working infrastructure -- goes against the instruction to prefer the existing architecture over adding new mechanisms. Evidence it works: same 1/549 figure as the debounce-verification item above.
+The 12-minute cooldown debounce (`public.ldi_alarm_state`, migration 069) _is_ the storm/flood guard -- confirmed via the code's own comment in `nodered_data/flows.json`: "debounce below is the primary flood guard." Building a separate storm-detector would duplicate existing, working infrastructure -- goes against the instruction to prefer the existing architecture over adding new mechanisms. Evidence it works: same 1/549 figure as the debounce-verification item above.
 
 ## Escalation semantics — **gap confirmed, not built**
 
-Grepped `nodered_data/flows.json` for any escalation logic: 0 matches. What exists instead is Alertmanager's `repeat_interval` (re-notify an unresolved alert every 30m for critical, 2h for warning, 4h default) -- this is periodic re-notification on the *same* channel at the *same* severity, not escalation (routing to a different/higher-urgency channel, or increasing severity, as time passes unacknowledged). **No escalation mechanism exists in this system today.** This is a real, confirmed gap, not built in this pass -- it's a genuine new feature (needs a design: what triggers escalation, what channel does it escalate to, does it interact with the MTTA data this pass just made visible) rather than a fix, and deserves its own design pass rather than a rushed addition here.
+Grepped `nodered_data/flows.json` for any escalation logic: 0 matches. What exists instead is Alertmanager's `repeat_interval` (re-notify an unresolved alert every 30m for critical, 2h for warning, 4h default) -- this is periodic re-notification on the _same_ channel at the _same_ severity, not escalation (routing to a different/higher-urgency channel, or increasing severity, as time passes unacknowledged). **No escalation mechanism exists in this system today.** This is a real, confirmed gap, not built in this pass -- it's a genuine new feature (needs a design: what triggers escalation, what channel does it escalate to, does it interact with the MTTA data this pass just made visible) rather than a fix, and deserves its own design pass rather than a rushed addition here.
 
 ## Validation summary (per the acceptance checklist)
 
-| Check | Result |
-| --- | --- |
-| Notification volume | Not independently re-measured (LINE/Teams delivery is unconfigured in this environment -- `TEAMS_WEBHOOK_URL`/`LINE_CHANNEL_ACCESS_TOKEN` not set, confirmed via node-red logs) -- the alertmanager fix addresses a structural risk, not an observed volume problem |
-| Duplicate rate (notifications) | 1 real latent bug found and fixed (alertmanager `continue: true`); no active duplication observed |
-| Alarm persistence / recovery | Not re-measured this pass -- covered by the existing debounce/flood evidence above |
-| Severity correctness | Not re-audited this pass -- covered by the earlier fidelity-audit re-check (Critical-severity alarms now real and firing, `READ_ONLY_AUDIT_2026-08-15.md`) |
-| Lifecycle completeness | **Directly measured while building the MTTA/MTTR dashboard**: 782/782 lifecycle rows are `OPEN`, 0 `ACKNOWLEDGED`, 0 `RESOLVED` -- a real, previously-undocumented operational gap, now visible on a dashboard instead of buried in a table |
+| Check                          | Result                                                                                                                                                                                                                                                              |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Notification volume            | Not independently re-measured (LINE/Teams delivery is unconfigured in this environment -- `TEAMS_WEBHOOK_URL`/`LINE_CHANNEL_ACCESS_TOKEN` not set, confirmed via node-red logs) -- the alertmanager fix addresses a structural risk, not an observed volume problem |
+| Duplicate rate (notifications) | 1 real latent bug found and fixed (alertmanager `continue: true`); no active duplication observed                                                                                                                                                                   |
+| Alarm persistence / recovery   | Not re-measured this pass -- covered by the existing debounce/flood evidence above                                                                                                                                                                                  |
+| Severity correctness           | Not re-audited this pass -- covered by the earlier fidelity-audit re-check (Critical-severity alarms now real and firing, `READ_ONLY_AUDIT_2026-08-15.md`)                                                                                                          |
+| Lifecycle completeness         | **Directly measured while building the MTTA/MTTR dashboard**: 782/782 lifecycle rows are `OPEN`, 0 `ACKNOWLEDGED`, 0 `RESOLVED` -- a real, previously-undocumented operational gap, now visible on a dashboard instead of buried in a table                         |
 
 ## Remaining alarm-hygiene work (not done this pass)
 

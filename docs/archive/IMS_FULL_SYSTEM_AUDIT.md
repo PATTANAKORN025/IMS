@@ -8,10 +8,10 @@
 
 ## Methodology
 
-| Layer | Method | Coverage |
-| --------------------------- | ------------------------------------- | ------------------------------------ |
-| **A. Static** | Reviewing SQL / JSON / Flow code | 9 dashboards · 126 panels · 65 nodes |
-| **B. Automated** | 19 unit tests · 12 linter checks | Schema, layout, alarm synchronization |
+| Layer                     | Method                                | Coverage                              |
+| ------------------------- | ------------------------------------- | ------------------------------------- |
+| **A. Static**             | Reviewing SQL / JSON / Flow code      | 9 dashboards · 126 panels · 65 nodes  |
+| **B. Automated**          | 19 unit tests · 12 linter checks      | Schema, layout, alarm synchronization |
 | **C. Visual (New Layer)** | Inspecting 8 live rendered dashboards | Elements undetected by Layers A and B |
 
 **Key Methodological Finding:** Layer C identified **12 defects that completely bypassed Layers A and B**.
@@ -24,10 +24,10 @@ This occurs because queries with correct syntax and matching schemas can still y
 
 ## P0-1 · Yield Metrics for the Same System Diverge by 87 Percentage Points Across Two Interfaces
 
-| Dashboard | Displayed Value | Underlying Formula |
-| ----------------- | ---------------------------- | ----------------------------------------- |
-| **NOC Overview** | **87.10%** (Red — Critical) | `ABS(pe_1) > 10 OR ABS(je_1) > 10` |
-| **Manufacturing** | **99.6%** (Green — Excellent)| `GREATEST(ABS(pe_1..pe_6)) <= pe_setting` |
+| Dashboard         | Displayed Value               | Underlying Formula                        |
+| ----------------- | ----------------------------- | ----------------------------------------- |
+| **NOC Overview**  | **87.10%** (Red — Critical)   | `ABS(pe_1) > 10 OR ABS(je_1) > 10`        |
+| **Manufacturing** | **99.6%** (Green — Excellent) | `GREATEST(ABS(pe_1..pe_6)) <= pe_setting` |
 
 **Root Cause — Three Fundamental Discrepancies in Logic:**
 
@@ -60,13 +60,13 @@ Subsequently, both dashboards will query this centralized view — **The metrics
 
 Evidence from Engineering Analytics & SPC:
 
-| Alarm Category | Alarm-Window % | Baseline % | **Lift** | Events | Interpretation |
-| ---------------- | -------------- | ---------- | -------- | ------ | ----------------- |
-| ALIGNMENT/PE-JE | 49.0% | 44.8% | **1.09** | 251 | Statistically insignificant |
-| VACUUM (91009) | 96.8% | 100.0% | **0.97** | 95 | **Sub-1 ratio** |
-| THERMAL (91008) | 13.8% | 16.6% | **0.83** | 29 | Sub-1 ratio |
-| HUMIDITY (91008) | 3.4% | 9.9% | **0.34** | 29 | Significantly Sub-1 |
-| MOTION (70004) | 0.0% | 0.0% | **0.00** | 19 | Insufficient data |
+| Alarm Category   | Alarm-Window % | Baseline % | **Lift** | Events | Interpretation              |
+| ---------------- | -------------- | ---------- | -------- | ------ | --------------------------- |
+| ALIGNMENT/PE-JE  | 49.0%          | 44.8%      | **1.09** | 251    | Statistically insignificant |
+| VACUUM (91009)   | 96.8%          | 100.0%     | **0.97** | 95     | **Sub-1 ratio**             |
+| THERMAL (91008)  | 13.8%          | 16.6%      | **0.83** | 29     | Sub-1 ratio                 |
+| HUMIDITY (91008) | 3.4%           | 9.9%       | **0.34** | 29     | Significantly Sub-1         |
+| MOTION (70004)   | 0.0%           | 0.0%       | **0.00** | 19     | Insufficient data           |
 
 **Interpretation:** A `Lift = 1` indicates zero correlation. A `Lift < 1` indicates an **inverse** correlation.
 
@@ -142,13 +142,13 @@ Evidence from LDI Data Readiness (this specific dashboard performs exceptionally
 
 ## Genuine Issues Detected Autonomously by the System
 
-| Metric | Value | Assessment |
-| ------------------------- | ------------- | -------------------------------------------------------------------------------------------------------------------- |
-| Machine ID Match | **100%** | Successfully resolved from the previous 20% baseline |
-| Alarm Master Match | **100%** | Successfully resolved from the previous 0% baseline |
-| Telemetry Age / Alarm Age | 0.0 hour | Telemetry is live |
-| **Board ID Completeness** | **8.0%** | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Accurately reflects ground truth where data is 100% NULL |
-| **PE / JE4 Coverage** | **45% / 45%** | Correct (The DF INNER process does not measure PE) |
+| Metric                    | Value         | Assessment                                                                                                                                      |
+| ------------------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Machine ID Match          | **100%**      | Successfully resolved from the previous 20% baseline                                                                                            |
+| Alarm Master Match        | **100%**      | Successfully resolved from the previous 0% baseline                                                                                             |
+| Telemetry Age / Alarm Age | 0.0 hour      | Telemetry is live                                                                                                                               |
+| **Board ID Completeness** | **8.0%**      | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Accurately reflects ground truth where data is 100% NULL |
+| **PE / JE4 Coverage**     | **45% / 45%** | Correct (The DF INNER process does not measure PE)                                                                                              |
 
 ## Duplicate Board Keys — Isolated exclusively to 2 machines
 
@@ -198,13 +198,13 @@ Machine Snapshot and Manufacturing interfaces — The `lengthum` bug has been co
 
 # Highly Functional Components (Do Not Modify)
 
-| Dashboard | Status | Evidence |
-| --------------------- | ------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| **Machine Snapshot** | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Perfect | All panels populated · Units 100% accurate · PE/JE PASS functioning · Cpk isolates PE/JE · Millisecond-precision event timeline |
-| **Manufacturing** | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Excellent | Full KPI coverage · Populated tabular data · Dominant green compliance indicators · Footer RCA summary |
-| **Engineering & SPC** | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Solid | 6+4 PE/JE trajectories successfully uncoupled · Overlaid PE vs JE histograms · Validated Cpk PE 1.253 / JE 2.710 |
-| **Data Readiness** | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Outstanding | Successfully identified 3 legitimate data anomalies autonomously |
-| **Andon** | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Partially Functional | KPIs + 10 machine tiles operate flawlessly · However, 2 panels remain unpopulated |
+| Dashboard             | Status                                                                                                      | Evidence                                                                                                                        |
+| --------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| **Machine Snapshot**  | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Perfect              | All panels populated · Units 100% accurate · PE/JE PASS functioning · Cpk isolates PE/JE · Millisecond-precision event timeline |
+| **Manufacturing**     | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Excellent            | Full KPI coverage · Populated tabular data · Dominant green compliance indicators · Footer RCA summary                          |
+| **Engineering & SPC** | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Solid                | 6+4 PE/JE trajectories successfully uncoupled · Overlaid PE vs JE histograms · Validated Cpk PE 1.253 / JE 2.710                |
+| **Data Readiness**    | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Outstanding          | Successfully identified 3 legitimate data anomalies autonomously                                                                |
+| **Andon**             | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Partially Functional | KPIs + 10 machine tiles operate flawlessly · However, 2 panels remain unpopulated                                               |
 
 **Most Impressive Achievement:** The Machine Capability Ranking displays **Cpk (PE) 1.253 and Cpk (JE) 2.710
 in isolated, dedicated columns** alongside Worst Cpk and Confidence intervals — Conclusively proving that the architectural decoupling of the JE base from PE operates flawlessly as designed.
@@ -222,7 +222,8 @@ The system currently possesses comprehensive unit tests and linters, but **lacks
 // Execute the actual SQL query for every panel against the database and verify row yields
 for (const panel of allPanels) {
   const rows = await pg.query(resolveMacros(panel.rawSql));
-  if (rows.length === 0) fail(`${dashboard}/${panel.title}: query returned 0 rows`);
+  if (rows.length === 0)
+    fail(`${dashboard}/${panel.title}: query returned 0 rows`);
   if (panel.type === "timeseries" && !rows.fields.includes("time"))
     fail(`${dashboard}/${panel.title}: timeseries lacks a 'time' column`);
 }
@@ -245,15 +246,15 @@ for (const panel of allPanels) {
 
 # Execution Priority Sequence
 
-| # | Task | Severity | Beneficiary |
-| --- | --------------------------------------------- | ----------------------------------------------------------------------------------------- | ---------------------------------------- |
-| 1 | **Consolidate Yield Logic into a Centralized View** | P0 | Executives — Eradicates conflicting metrics |
-| 2 | **Bind Simulator Alarms to Parameter Anomalies** | P0 | Process Engineers — Enables RCA validation |
-| 3 | Resolve 2 unpopulated panels in Andon | P1 | Shop-floor Operators |
-| 4 | Resolve 15 "No data" panels | P1 | All Stakeholders |
-| 5 | Investigate duplicate board keys (LDI-01/04) | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> P2 | QA — Mitigates skewed board counts |
-| 6 | Integrate E2E panel-data verification into CI | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> P2 | Development Team — Prevents regression |
-| 7 | Rectify currency units + donut legend formatting | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> P3 | General interface polish |
+| #   | Task                                                | Severity                                                                                  | Beneficiary                                 |
+| --- | --------------------------------------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------- |
+| 1   | **Consolidate Yield Logic into a Centralized View** | P0                                                                                        | Executives — Eradicates conflicting metrics |
+| 2   | **Bind Simulator Alarms to Parameter Anomalies**    | P0                                                                                        | Process Engineers — Enables RCA validation  |
+| 3   | Resolve 2 unpopulated panels in Andon               | P1                                                                                        | Shop-floor Operators                        |
+| 4   | Resolve 15 "No data" panels                         | P1                                                                                        | All Stakeholders                            |
+| 5   | Investigate duplicate board keys (LDI-01/04)        | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> P2 | QA — Mitigates skewed board counts          |
+| 6   | Integrate E2E panel-data verification into CI       | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> P2 | Development Team — Prevents regression      |
+| 7   | Rectify currency units + donut legend formatting    | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> P3 | General interface polish                    |
 
 ---
 

@@ -26,18 +26,18 @@ This is not a from-scratch design. The single biggest audit finding is that most
 
 15 dashboards, 178 panels total. The 10 in the "LDI Manufacturing" group are the relevant surface for this phase:
 
-| UID | Purpose (as documented) | Relevant to phase item |
-|---|---|---|
-| `ims-ldi-manufacturing` | 4-Layer RCA: Executive HUD + Telemetry + Production Context + Alarm Stream, 21 panels | 1, 2, 3, 4, 9 |
-| `ims-easy-overview` | Fleet-wide, zero-config, built on governed views/functions | 1 |
-| `ims-ldi-operator-andon` | TV-wall kiosk, 1280×720, zero interaction | 1, 7 |
-| `ims-ldi-alarm-console` | Interactive ack/resolve, writes `ldi_alarm_lifecycle` | 4, 8 |
-| `ims-ldi-alarm-response` | Real MTTA/MTTR from `ldi_alarm_lifecycle` | 4, 8 |
-| `ims-ldi-alarm-dictionary` | Alarm-code reference lookup, drill-in only | 4 |
-| `ims-ldi-engineering-analytics` | Layer-3 RCA + SPC control charts, CUSUM/Nelson Rules | 3, 8 |
-| `ims-ldi-machine-snapshot` | 360° per-machine snapshot at a clicked timestamp | 7, 9 |
-| `ims-ldi-factory-digital-twin` | 2D Canvas twin, 10 machines / 5 zones | 5, 7, 9 |
-| `ldi-data-readiness` | Evidence-based DB readiness, no simulated data | (support only) |
+| UID                             | Purpose (as documented)                                                               | Relevant to phase item |
+| ------------------------------- | ------------------------------------------------------------------------------------- | ---------------------- |
+| `ims-ldi-manufacturing`         | 4-Layer RCA: Executive HUD + Telemetry + Production Context + Alarm Stream, 21 panels | 1, 2, 3, 4, 9          |
+| `ims-easy-overview`             | Fleet-wide, zero-config, built on governed views/functions                            | 1                      |
+| `ims-ldi-operator-andon`        | TV-wall kiosk, 1280×720, zero interaction                                             | 1, 7                   |
+| `ims-ldi-alarm-console`         | Interactive ack/resolve, writes `ldi_alarm_lifecycle`                                 | 4, 8                   |
+| `ims-ldi-alarm-response`        | Real MTTA/MTTR from `ldi_alarm_lifecycle`                                             | 4, 8                   |
+| `ims-ldi-alarm-dictionary`      | Alarm-code reference lookup, drill-in only                                            | 4                      |
+| `ims-ldi-engineering-analytics` | Layer-3 RCA + SPC control charts, CUSUM/Nelson Rules                                  | 3, 8                   |
+| `ims-ldi-machine-snapshot`      | 360° per-machine snapshot at a clicked timestamp                                      | 7, 9                   |
+| `ims-ldi-factory-digital-twin`  | 2D Canvas twin, 10 machines / 5 zones                                                 | 5, 7, 9                |
+| `ldi-data-readiness`            | Evidence-based DB readiness, no simulated data                                        | (support only)         |
 
 Plus, outside the dashboard layer: `services/factory-twin-3d/` (3D twin, just frozen, item 6), `services/alarm-api/` (ack/resolve write endpoints, item 4/8).
 
@@ -51,19 +51,19 @@ Plus, outside the dashboard layer: `services/factory-twin-3d/` (3D twin, just fr
 - `◈ RCA FLEET SUMMARY` (row id 10006)
 - `◈ CYCLE TIME & TRACEABILITY` (row id 10013)
 
-These map almost one-to-one onto phase items 2, 3, 4, 8, 9. Each row has `collapsed: false` but its content panels live only in a stale `panels: [...]` array nested *inside* the row object — a structure Grafana only renders when a row is `collapsed: true`. With `collapsed: false`, Grafana expects those panels as siblings in the dashboard's top-level `panels[]` array with their own `gridPos`; they are not there. **Net effect: 9 fully-built panels exist in the JSON and are invisible in the live dashboard.** Confirmed directly (not inferred) by parsing the JSON and diffing `panels[]` (flat, 21 entries, matches the inventory's panel count) against each row's orphaned `panels` sub-array:
+These map almost one-to-one onto phase items 2, 3, 4, 8, 9. Each row has `collapsed: false` but its content panels live only in a stale `panels: [...]` array nested _inside_ the row object — a structure Grafana only renders when a row is `collapsed: true`. With `collapsed: false`, Grafana expects those panels as siblings in the dashboard's top-level `panels[]` array with their own `gridPos`; they are not there. **Net effect: 9 fully-built panels exist in the JSON and are invisible in the live dashboard.** Confirmed directly (not inferred) by parsing the JSON and diffing `panels[]` (flat, 21 entries, matches the inventory's panel count) against each row's orphaned `panels` sub-array:
 
-| Row | Orphaned panel | Type |
-|---|---|---|
-| PRODUCTION & COMPLIANCE | Production & Process Table | table |
-| | Temperature Compliance (22±2°C) | state-timeline |
-| | Humidity Compliance (55±5%) | state-timeline |
-| ANALYTICS & SPC | Calculated Time per Board | heatmap |
-| | Z-Score: temperature | timeseries |
-| SYSTEM ALARMS | Recent Alarm Events (Last 50) | table |
-| RCA FLEET SUMMARY | Top Correlated Alarms (24h) | table |
-| CYCLE TIME & TRACEABILITY | Avg Cycle Time (Fleet) | stat |
-| | Board Traceability | table |
+| Row                       | Orphaned panel                  | Type           |
+| ------------------------- | ------------------------------- | -------------- |
+| PRODUCTION & COMPLIANCE   | Production & Process Table      | table          |
+|                           | Temperature Compliance (22±2°C) | state-timeline |
+|                           | Humidity Compliance (55±5%)     | state-timeline |
+| ANALYTICS & SPC           | Calculated Time per Board       | heatmap        |
+|                           | Z-Score: temperature            | timeseries     |
+| SYSTEM ALARMS             | Recent Alarm Events (Last 50)   | table          |
+| RCA FLEET SUMMARY         | Top Correlated Alarms (24h)     | table          |
+| CYCLE TIME & TRACEABILITY | Avg Cycle Time (Fleet)          | stat           |
+|                           | Board Traceability              | table          |
 
 The dashboard currently renders only its top section (Executive HUD: PRODUCTION / QUALITY / RISK rows, 13 stat/table panels, y=0–15) plus one Pipeline Heartbeat panel — everything below y=16 is empty screen space in the live dashboard despite 9 fully-specified panels sitting unused in the file. This is very likely leftover from a row-collapse/expand edit that didn't re-flatten the panel array. It was not touched or fixed by this document — verification only.
 
@@ -84,6 +84,7 @@ The dashboard currently renders only its top section (Executive HUD: PRODUCTION 
 ### 1.5 Finding D — the traceability chain (item 9) exists as disconnected fragments, not one path
 
 Real pieces, each independently confirmed present and populated this session or in adjacent tasks:
+
 - **Factory → Zone**: `public.devices.location` — exactly 5 real string values, no numeric/x-y coordinate columns. This is the same zone model both the 2D and 3D twins use.
 - **Zone → Machine**: `public.devices.device_id`, `device_type='ldi'`, 10 of 23 registered rows actually reporting (`LDI-01`..`LDI-10`).
 - **Machine → Alarm**: `ldi_alarm_log.equipmentid` → `ldi_alarm_ms_code` → `ldi_alarm_lifecycle` (by `logid`+`logdate`) → `v_ldi_alarm_category`.
@@ -95,9 +96,11 @@ No dashboard currently presents these as one connected click-path (Factory → Z
 ### 1.6 Finding E — operator drill-down (item 7) convention is already proven, twice
 
 Both twins and the Action Queue / Alarm Console pattern converge on the same URL contract, independently verified across four SDD tasks this session:
+
 ```
 /d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=<eqp_id>&var-factory=<factory>&from=...&to=...
 ```
+
 Omitting `var-mo`/`var-event_time_ms` deliberately resolves Machine Snapshot's own variable defaults to "latest event, all MOs" (verified against `ims-ldi-machine-snapshot.json`'s variable query logic three separate times: 2D POC, 2D full build, 3D POC). This is the standing convention — the next phase should reuse it verbatim for any new drill-down entry point (C-Level overview → zone, zone → machine, etc.), not invent a second convention.
 
 ### 1.7 Finding F — 2D and 3D twins are both real, both frozen/stable, and currently isolated from the Command Center
@@ -121,7 +124,7 @@ Given Finding A, the first concrete task of the next phase's implementation (not
 ### 2.2 Per-item design direction
 
 1. **C-Level factory overview** — new top section (or new dashboard — open question, see §3) one level above `ims-easy-overview`'s fleet-glance: factory/zone rollup (5 zones), not per-machine. Reuses `v_ldi_machine_latest_full` + `devices.location` grouping already proven in both twins.
-2. **Production & Compliance** — repair the existing orphaned row first (Production & Process Table, Temp/Humidity Compliance timelines — the same panel *type* already proven working on Operator Andon). Verify the orphaned panels' queries still match current schema before restoring.
+2. **Production & Compliance** — repair the existing orphaned row first (Production & Process Table, Temp/Humidity Compliance timelines — the same panel _type_ already proven working on Operator Andon). Verify the orphaned panels' queries still match current schema before restoring.
 3. **Analytics & SPC** — repair the orphaned row (Calculated Time per Board, Z-Score temperature) as the Command Center's summary layer, backed by `v_machine_spc_fleet` (already 1-minute-refreshed) for fleet Cpk, with a documented "see Engineering Analytics for full SPC control charts" drill-out rather than duplicating that dashboard's depth.
 4. **System Alarms** — repair the orphaned "Recent Alarm Events" table; decide whether Command Center should also embed Alarm Console's ack/resolve affordance or stay read-only-status with a drill-out link (open question, §3) — Andon Board's existing "read-only status, separate interactive Alarm Console" split is the established precedent to follow unless there's a reason to diverge.
 5. **2D Factory Digital Twin integration** — add a real navigation link (not embedding — Canvas panels are heavy and the twin is already a full dashboard) from Command Center to `ims-ldi-factory-digital-twin`, and vice versa if useful. No new query work needed; the twin's data is already equivalent to what Command Center's per-machine layer shows.
@@ -133,7 +136,7 @@ Given Finding A, the first concrete task of the next phase's implementation (not
 ### 2.3 Explicitly deferred / out of scope for the next phase's implementation plan
 
 - No 3D twin changes (frozen, per explicit instruction).
-- No new database migration assumed necessary yet — every finding above points at *existing* views/functions/tables; if the implementation plan later finds a genuine data gap, that should be flagged explicitly then, not assumed now.
+- No new database migration assumed necessary yet — every finding above points at _existing_ views/functions/tables; if the implementation plan later finds a genuine data gap, that should be flagged explicitly then, not assumed now.
 - No CAD models, no machine-to-machine process connections, no invented factory coordinates (standing constraints, unchanged).
 - No decision yet on dashboard topology (one Command Center dashboard grown further vs. a new C-Level dashboard vs. restructuring existing ones) — see open questions below; this is a design choice for the next planning pass, not decided by this audit.
 

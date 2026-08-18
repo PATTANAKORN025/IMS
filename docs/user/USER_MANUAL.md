@@ -205,11 +205,11 @@ Displays Fleet Availability, Critical Alarm count, Environmental Compliance %, M
 
 **Purpose**: Comprehensive in-depth analysis for engineering personnel — Cpk/SPC ranking, RCA Truth Test, and PE/JE spatial distributions.
 
-| Section                     | Content                                                                                             |
-| --------------------------- | --------------------------------------------------------------------------------------------------- |
-| **Environmental**           | Temperature vs Humidity, synchronized across all machines simultaneously                            |
-| **SPC Control Charts**      | Thickness Control Chart (mean ± 3σ), Scale X/Y Control Chart                                        |
-| **Variation Analysis**      | PE/JE Standard Deviation by Machine, PE/JE Error Distribution (Box Plot)                            |
+| Section                     | Content                                                                                           |
+| --------------------------- | ------------------------------------------------------------------------------------------------- |
+| **Environmental**           | Temperature vs Humidity, synchronized across all machines simultaneously                          |
+| **SPC Control Charts**      | Thickness Control Chart (mean ± 3σ), Scale X/Y Control Chart                                      |
+| **Variation Analysis**      | PE/JE Standard Deviation by Machine, PE/JE Error Distribution (Box Plot)                          |
 | **RCA / Alarm Correlation** | RCA Truth Test — Lift/Confidence metrics categorized by alarm type (Thermal/Humidity/Vacuum/etc.) |
 
 ### 9. LDI Machine Snapshot

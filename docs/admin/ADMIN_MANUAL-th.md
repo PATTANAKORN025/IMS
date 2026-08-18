@@ -120,7 +120,8 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c \
 
 ## Pre-Production Security Checklist
 
-> **CRITICAL:** ก่อนขึ้น production ต้องเปลี่ยน default credentials ทั้งหมด.
+> [!CAUTION]
+> ก่อนขึ้น production ต้องเปลี่ยน default credentials ทั้งหมด.
 
 | Credential               | Default Value      | Location                       | Action Required                            |
 | ------------------------ | ------------------ | ------------------------------ | ------------------------------------------ |

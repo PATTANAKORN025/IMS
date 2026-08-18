@@ -8,11 +8,11 @@
 
 **Full-stack, not partial**: `ldi_data` and `ldi_alarm_log` show the identical pattern --
 
-| Table | Last before gap | First after gap |
-| --- | --- | --- |
-| `sys_metrics` | 09:38:54.73 | 01:18:00.21 |
-| `ldi_data` | 09:38:53.45 | 01:14:05.17 |
-| `ldi_alarm_log` | 09:38:33.65 | 01:14:06.86 |
+| Table           | Last before gap | First after gap |
+| --------------- | --------------- | --------------- |
+| `sys_metrics`   | 09:38:54.73     | 01:18:00.21     |
+| `ldi_data`      | 09:38:53.45     | 01:14:05.17     |
+| `ldi_alarm_log` | 09:38:33.65     | 01:14:06.86     |
 
 All 3 independent tables stop within 21 seconds of each other and resume within ~4 minutes of each other. This is strong evidence of a single event affecting the whole stack simultaneously (host power-cycle, full `docker compose down`/`up`, or similar), not an independent per-table or per-service failure.
 
@@ -24,14 +24,14 @@ All 3 independent tables stop within 21 seconds of each other and resume within 
 
 ## General integrity sweep
 
-| Check | Result |
-| --- | --- |
-| Future timestamps (`time`/`logdate` > `NOW()`) | 0 across `ldi_data`, `sys_metrics`, `ldi_alarm_log` (measured in `SPEC_TIMESTAMP_INTEGRITY.md`, P0.3) |
-| Out-of-order events (`ingest_ts` < event time) | 0 across `ldi_data`, `ldi_alarm_log` (same source) |
-| Duplicate rows | `sys_metrics`: was 66.9%, fixed to 0% (Phase A1). `ldi_data`, `ldi_alarm_log`, `net_metrics`: confirmed 0 duplicates (`READ_ONLY_AUDIT_2026-08-15.md` §3) |
-| Impossible values (RAM/disk > 100%, negative values, etc.) | RAM was pinned at exactly 100% for every device -- fixed, P0.1. Disk was pinned at exactly 100% for `ERP-MASTER-UBUNTU` -- fixed, P0.2. No negative-value or >100% findings beyond these two, which are now both fixed |
-| NULL critical fields | Checked: `ldi_alarm_log.equipmentid`/`.errorcode`, `sys_metrics.device_id`, `net_metrics.device_id`, `ldi_data.eqp_id` -- **0 NULLs across all 5 fields, all tables** |
-| Machine mapping failures | Covered by the existing `ldi-data-readiness` dashboard's "Machine ID Mapping Gaps" and "Alarm Code Mapping Gaps" panels (both confirmed populated with real, non-error data in this session's earlier work) -- not re-run fresh in this pass, referencing existing live evidence |
+| Check                                                      | Result                                                                                                                                                                                                                                                                           |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Future timestamps (`time`/`logdate` > `NOW()`)             | 0 across `ldi_data`, `sys_metrics`, `ldi_alarm_log` (measured in `SPEC_TIMESTAMP_INTEGRITY.md`, P0.3)                                                                                                                                                                            |
+| Out-of-order events (`ingest_ts` < event time)             | 0 across `ldi_data`, `ldi_alarm_log` (same source)                                                                                                                                                                                                                               |
+| Duplicate rows                                             | `sys_metrics`: was 66.9%, fixed to 0% (Phase A1). `ldi_data`, `ldi_alarm_log`, `net_metrics`: confirmed 0 duplicates (`READ_ONLY_AUDIT_2026-08-15.md` §3)                                                                                                                        |
+| Impossible values (RAM/disk > 100%, negative values, etc.) | RAM was pinned at exactly 100% for every device -- fixed, P0.1. Disk was pinned at exactly 100% for `ERP-MASTER-UBUNTU` -- fixed, P0.2. No negative-value or >100% findings beyond these two, which are now both fixed                                                           |
+| NULL critical fields                                       | Checked: `ldi_alarm_log.equipmentid`/`.errorcode`, `sys_metrics.device_id`, `net_metrics.device_id`, `ldi_data.eqp_id` -- **0 NULLs across all 5 fields, all tables**                                                                                                            |
+| Machine mapping failures                                   | Covered by the existing `ldi-data-readiness` dashboard's "Machine ID Mapping Gaps" and "Alarm Code Mapping Gaps" panels (both confirmed populated with real, non-error data in this session's earlier work) -- not re-run fresh in this pass, referencing existing live evidence |
 
 ## Reconciliation summary
 

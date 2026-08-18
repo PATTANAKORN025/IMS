@@ -53,4 +53,5 @@ DR testing on 2026-08-10 identified specific recovery behaviors with `restart: u
 - `docs/operations/INCIDENT_RESPONSE.md` — what to do when this actually happens.
 
 ---
+
 [⬅️ Back to IMS Platform Book](../architecture/IMS_PLATFORM_BOOK.md) | [🏠 Main Repository](../../README.md)

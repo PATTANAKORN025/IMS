@@ -26,7 +26,7 @@
 - Line 15: `let ramTotalMb = state.ram_total || 0, ramUsedMb = state.ram_used || 0, ...` -- RAM accumulators are **seeded from the previous poll cycle's state**, not zeroed.
 - Line 31 (inside `if (type === 'storage')`): `ramTotalMb += bytesTotal / 1048576; ramUsedMb += bytesUsed / 1048576;` -- each poll cycle **adds** this cycle's RAM-classified storage-table bytes onto whatever was already accumulated from every prior cycle. Disk, by contrast, does a straight replacement two lines later (`diskTotalGb = largestDiskBytes / 1073741824`), not `+=` -- that asymmetry is why disk isn't stuck and RAM is.
 - Same line, later: `ramTotalMb = Math.min(ramTotalMb, 1048576);` -- a 1TB sanity ceiling, evidently added as a defensive clamp against garbage SNMP data. Because `ramTotalMb` grows unboundedly every poll (never resets), it eventually exceeds this ceiling and gets clamped to exactly `1048576`.
-- Line 33 (return statement): `ramUsedMb: Math.max(0, Math.min(ramTotalMb, ...ramUsedMb...))` -- re-clamps `ramUsedMb` against the *already-clamped* `ramTotalMb`. Once `ramTotalMb` has saturated at `1048576`, `ramUsedMb` (which grew in lockstep, roughly proportionally) also gets clamped down to `1048576` on the same line. Both values land on the identical number -- self-reinforcing, because next cycle reads `state.ram_total` back out at `1048576` and adds more on top, immediately re-clamping to `1048576` again. Once a device hits the ceiling once, it is stuck there permanently until Node-RED restarts and `state` resets.
+- Line 33 (return statement): `ramUsedMb: Math.max(0, Math.min(ramTotalMb, ...ramUsedMb...))` -- re-clamps `ramUsedMb` against the _already-clamped_ `ramTotalMb`. Once `ramTotalMb` has saturated at `1048576`, `ramUsedMb` (which grew in lockstep, roughly proportionally) also gets clamped down to `1048576` on the same line. Both values land on the identical number -- self-reinforcing, because next cycle reads `state.ram_total` back out at `1048576` and adds more on top, immediately re-clamping to `1048576` again. Once a device hits the ceiling once, it is stuck there permanently until Node-RED restarts and `state` resets.
 
 This fully explains the observed data: every device that's been polling long enough has saturated at 100% "RAM used," which is why `Fleet Health Score`'s `CASE WHEN ... ram_pct > 95 ... THEN 0` branch fires for every device, every time, driving the fleet score to a permanent `0%`.
 
@@ -34,7 +34,7 @@ This fully explains the observed data: every device that's been polling long eno
 
 Two independent problems, both need fixing:
 
-1. **Don't seed from previous state.** RAM accumulators should start at `0` each poll cycle for storage-type SNMP walks, the same way disk's `largestDiskBytes` does (`let largestDiskBytes = 0` is local to the cycle). Line 15's `state.ram_total || 0` / `state.ram_used || 0` seeding exists so a value survives across polls that *don't* include a storage walk (`isEmpty` walker-type branches already zero these out deliberately for `walkerType === 'storage'` -- see line just above, `if (walkerType === 'storage') { state.ram_total = 0; ... }`). The bug is that the *populated* path (the one this bug lives in) uses `+=` instead of `=` when a storage walk succeeds, so it compounds instead of replacing.
+1. **Don't seed from previous state.** RAM accumulators should start at `0` each poll cycle for storage-type SNMP walks, the same way disk's `largestDiskBytes` does (`let largestDiskBytes = 0` is local to the cycle). Line 15's `state.ram_total || 0` / `state.ram_used || 0` seeding exists so a value survives across polls that _don't_ include a storage walk (`isEmpty` walker-type branches already zero these out deliberately for `walkerType === 'storage'` -- see line just above, `if (walkerType === 'storage') { state.ram_total = 0; ... }`). The bug is that the _populated_ path (the one this bug lives in) uses `+=` instead of `=` when a storage walk succeeds, so it compounds instead of replacing.
 
    Fix: change `ramTotalMb += bytesTotal / 1048576; ramUsedMb += bytesUsed / 1048576;` to `ramTotalMb = bytesTotal / 1048576; ramUsedMb = bytesUsed / 1048576;` (drop the seed-from-state read for these two variables specifically, or reset them to `0` right before the storage loop instead of seeding from `state.ram_total`/`state.ram_used`).
 
@@ -50,12 +50,12 @@ Pre-fix baseline (captured moments before restart): `ERP-MASTER-WINDOWS`, `LDI-A
 
 Post-fix, measured over 3 consecutive polling cycles (04:15:03 → 04:16:03Z, 30s apart):
 
-| Device | RAM used/total | % | Stable across 3 cycles? |
-| --- | --- | --- | --- |
-| ERP-MASTER-UBUNTU | 7680/8192 MB | 93.75% | Yes, identical all 3 samples |
-| ERP-MASTER-WINDOWS | 15360/32768 MB | 46.9% | Yes |
-| LDI-A01 | 15360/16384 MB | 93.75% | Yes |
-| LDI-A02 | 15360/16384 MB | 93.75% | Yes |
+| Device             | RAM used/total | %      | Stable across 3 cycles?      |
+| ------------------ | -------------- | ------ | ---------------------------- |
+| ERP-MASTER-UBUNTU  | 7680/8192 MB   | 93.75% | Yes, identical all 3 samples |
+| ERP-MASTER-WINDOWS | 15360/32768 MB | 46.9%  | Yes                          |
+| LDI-A01     | 15360/16384 MB | 93.75% | Yes                          |
+| LDI-A02    | 15360/16384 MB | 93.75% | Yes                          |
 
 No device shows `1048576` anymore. No device is climbing. Values differ meaningfully across devices (46.9%-93.75%), not collapsed to one shared number -- confirms this is now a real per-device snapshot, not an accumulated artifact.
 

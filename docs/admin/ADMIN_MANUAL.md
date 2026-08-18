@@ -127,7 +127,8 @@ All migrations are written to be idempotent (`CREATE ... IF NOT EXISTS`, guarded
 
 ## Pre-Production Security Checklist
 
-> **CRITICAL:** Before deploying to production, ALL default credentials MUST be changed. Failure to do so exposes the system to unauthorized access.
+> [!CAUTION]
+> Before deploying to production, ALL default credentials MUST be changed. Failure to do so exposes the system to unauthorized access.
 
 | Credential               | Default Value      | Location                                            | Action Required                                                                                                                                                                                |
 | ------------------------ | ------------------ | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

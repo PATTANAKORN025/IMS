@@ -120,7 +120,8 @@ docker compose exec timescaledb psql -U ims_admin -d ims -c \
 
 ## Pre-Production Security Checklist
 
-> **CRITICAL:** 部署到生产环境前，必须修改所有默认凭证。
+> [!CAUTION]
+> 部署到生产环境前，必须修改所有默认凭证。
 
 | Credential               | Default Value      | Location                       | Action Required                          |
 | ------------------------ | ------------------ | ------------------------------ | ---------------------------------------- |

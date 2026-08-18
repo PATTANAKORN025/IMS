@@ -123,18 +123,18 @@ IMS 是一个跨越两个领域的监控平台 —— **基础设施**（服务�
 
 有关完整上下文，请参阅 `docs/architecture/ARCHITECTURE.md` 的领域部分；简明词汇表如下：
 
-| 术语              | 含义                                                                                                                                                                                                                                              |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **IMS**           | 整体平台 —— 包含基础设施与 LDI 制造领域。                                                                                                                                                                        |
-| **LDI**           | 激光直接成像 (Laser Direct Imaging) —— 本系统制造领域监控的 PCB 曝光过程。                                                                                                                                                         |
-| **EAP**           | 设备自动化程序 (Equipment Automation Program) —— 类似 SECS/GEM 风格的设备集成（参见 `EAP_ARCHITECTURE.md`）；并非“企业应用平台 (Enterprise Application Platform)”。                                                                                                              |
-| **SPC**           | 统计过程控制 (Statistical Process Control) —— 基于 Cpk 的过程能力跟踪（参见 `LDI_SPC_GUIDE.md`）。                                                                                                                                                        |
-| **RCA**           | 根本原因分析 (Root Cause Analysis) —— 通过提升度 (Lift) 指标建立的告警与过程参数之间的相关性（参见 `LDI_RCA_GUIDE.md`），而非设备故障诊断。                                                                                                            |
+| 术语              | 含义                                                                                                                                                                                                                           |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **IMS**           | 整体平台 —— 包含基础设施与 LDI 制造领域。                                                                                                                                                                                      |
+| **LDI**           | 激光直接成像 (Laser Direct Imaging) —— 本系统制造领域监控的 PCB 曝光过程。                                                                                                                                                     |
+| **EAP**           | 设备自动化程序 (Equipment Automation Program) —— 类似 SECS/GEM 风格的设备集成（参见 `EAP_ARCHITECTURE.md`）；并非“企业应用平台 (Enterprise Application Platform)”。                                                            |
+| **SPC**           | 统计过程控制 (Statistical Process Control) —— 基于 Cpk 的过程能力跟踪（参见 `LDI_SPC_GUIDE.md`）。                                                                                                                             |
+| **RCA**           | 根本原因分析 (Root Cause Analysis) —— 通过提升度 (Lift) 指标建立的告警与过程参数之间的相关性（参见 `LDI_RCA_GUIDE.md`），而非设备故障诊断。                                                                                    |
 | **Andon**         | 操作员安灯看板 (Operator Andon Board) —— 一个一目了然、仅显示状态的车间显示器，基于 ISA-101 (HMI 设计) 标准，注意不要与 ISA-18.2（告警管理）混淆。故意设计为非交互式（电视墙 kiosk）；请参阅告警控制台以了解操作员的写入路径。 |
-| **Alarm Console** | 告警控制台 (`IMS LDI - Alarm Console`) —— 实际执行确认 (Acknowledge) / 解决 (Resolve) 操作的仪表板，通过 `services/alarm-api` 写入 `public.ldi_alarm_lifecycle` 表。它是只读的安灯看板的配套设施，而不是替代品。                     |
-| **CAGG**          | TimescaleDB 连续聚合 (Continuous Aggregate) —— 一种增量更新的预计算汇总（参见 `DATA_FLOW.md` 中的汇总链）。                                                                                                                             |
-| **Cpk**           | 过程能力指数 (Process capability index) —— 此处使用的精确公式请参见 `LDI_SPC_GUIDE.md`。                                                                                                                                                                   |
-| **Lift**          | 提升度 —— RCA 相关强度指标，请参见 `LDI_RCA_GUIDE.md`。                                                                                                                                                                                        |
+| **Alarm Console** | 告警控制台 (`IMS LDI - Alarm Console`) —— 实际执行确认 (Acknowledge) / 解决 (Resolve) 操作的仪表板，通过 `services/alarm-api` 写入 `public.ldi_alarm_lifecycle` 表。它是只读的安灯看板的配套设施，而不是替代品。               |
+| **CAGG**          | TimescaleDB 连续聚合 (Continuous Aggregate) —— 一种增量更新的预计算汇总（参见 `DATA_FLOW.md` 中的汇总链）。                                                                                                                    |
+| **Cpk**           | 过程能力指数 (Process capability index) —— 此处使用的精确公式请参见 `LDI_SPC_GUIDE.md`。                                                                                                                                       |
+| **Lift**          | 提升度 —— RCA 相关强度指标，请参见 `LDI_RCA_GUIDE.md`。                                                                                                                                                                        |
 
 ## 系统约束与技术边界 (System Constraints & Technical Boundaries)
 

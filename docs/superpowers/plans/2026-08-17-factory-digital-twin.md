@@ -32,9 +32,11 @@
 Grafana's Canvas panel JSON schema (element types, `root.elements[]` shape, per-element data-binding) has changed across Grafana versions. Rather than hand-author element JSON from memory and risk a schema mismatch, capture the real schema from this exact Grafana instance (13.1.1) first, the same "verify against the live system, don't assume" discipline used earlier this session for the render-API kiosk params.
 
 **Files:**
+
 - Create (temporary, not committed): a throwaway dashboard via the Grafana UI/API, exported and inspected, then deleted. Nothing under `monitoring/grafana/dashboards/` is touched by this task.
 
 **Interfaces:**
+
 - Produces: a verified reference snippet (saved to the plan executor's scratch space, not the repo) showing the real `type: canvas` panel JSON — specifically the `options.root.elements[]` array shape for a `rectangle` element (background color bound to a field) and a `text`/`metric-value` element (text bound to a field), and the `links[]` structure Canvas elements use for drill-down.
 
 - [ ] **Step 1: Create a minimal throwaway canvas panel via the Grafana API**
@@ -90,9 +92,11 @@ No commit — this task touches only live Grafana state (deleted at the end) and
 ## Task 2: Scaffold the dashboard file — metadata, templating, style panel
 
 **Files:**
+
 - Create: `monitoring/grafana/dashboards/manufacturing/ims-ldi-factory-digital-twin.json`
 
 **Interfaces:**
+
 - Produces: dashboard `uid: "ims-ldi-factory-digital-twin"`, template variables `$factory` and `$mo` (hidden, `hide: 2`, same query shape as Andon's), a header text panel (id 9999) for card-border styling **without** the undocumented `<style>` CSS-injection trick Andon uses — use the panel's own `fieldConfig`/`options` for background instead, or omit decorative styling entirely. This satisfies "no undocumented CSS" by construction rather than by exemption.
 
 - [ ] **Step 1: Write the dashboard shell**
@@ -109,27 +113,51 @@ No commit — this task touches only live Grafana state (deleted at the end) and
         "name": "factory",
         "label": "Factory",
         "type": "query",
-        "datasource": {"uid": "timescaledb"},
+        "datasource": { "uid": "timescaledb" },
         "query": "SELECT DISTINCT factory AS __text, factory AS __value FROM public.ldi_data ORDER BY factory",
         "definition": "SELECT DISTINCT factory AS __text, factory AS __value FROM public.ldi_data ORDER BY factory",
-        "current": {"selected": true, "text": "All", "value": "$__all"},
-        "multi": true, "includeAll": true, "options": [], "refresh": 1, "sort": 1, "hide": 2,
-        "regex": "", "skipUrlSync": false
+        "current": { "selected": true, "text": "All", "value": "$__all" },
+        "multi": true,
+        "includeAll": true,
+        "options": [],
+        "refresh": 1,
+        "sort": 1,
+        "hide": 2,
+        "regex": "",
+        "skipUrlSync": false
       },
       {
         "name": "mo",
         "label": "MO",
         "type": "query",
-        "datasource": {"uid": "timescaledb"},
+        "datasource": { "uid": "timescaledb" },
         "query": "SELECT DISTINCT mo AS __text, mo AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) ORDER BY mo",
         "definition": "SELECT DISTINCT mo AS __text, mo AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) ORDER BY mo",
-        "current": {"selected": true, "text": "All", "value": "$__all"},
-        "multi": true, "includeAll": true, "options": [], "refresh": 1, "sort": 1, "hide": 2,
-        "regex": "", "skipUrlSync": false
+        "current": { "selected": true, "text": "All", "value": "$__all" },
+        "multi": true,
+        "includeAll": true,
+        "options": [],
+        "refresh": 1,
+        "sort": 1,
+        "hide": 2,
+        "regex": "",
+        "skipUrlSync": false
       }
     ]
   },
-  "annotations": {"list": [{"builtIn": 1, "datasource": {"type": "grafana", "uid": "-- Grafana --"}, "enable": true, "hide": false, "iconColor": "rgba(255, 96, 96, 1)", "name": "Annotations & Alerts", "type": "dashboard"}]},
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": false,
+        "iconColor": "rgba(255, 96, 96, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
   "panels": [],
   "fiscalYearStartMonth": 0,
   "links": [],
@@ -137,10 +165,18 @@ No commit — this task touches only live Grafana state (deleted at the end) and
   "uid": "ims-ldi-factory-digital-twin",
   "title": "IMS LDI - Factory Digital Twin",
   "version": 1,
-  "time": {"from": "now-2h", "to": "now"},
+  "time": { "from": "now-2h", "to": "now" },
   "timezone": "UTC",
   "refresh": "5s",
-  "tags": ["IMS", "LDI", "set-2", "real-data", "current-database", "manufacturing", "digital-twin"]
+  "tags": [
+    "IMS",
+    "LDI",
+    "set-2",
+    "real-data",
+    "current-database",
+    "manufacturing",
+    "digital-twin"
+  ]
 }
 ```
 
@@ -166,9 +202,11 @@ git commit -m "feat(grafana): scaffold Factory Digital Twin dashboard shell"
 ## Task 3: Top strip — 4 C-Level stat panels (reused queries only)
 
 **Files:**
+
 - Modify: `monitoring/grafana/dashboards/manufacturing/ims-ldi-factory-digital-twin.json`
 
 **Interfaces:**
+
 - Consumes: `$factory`, `$mo` from Task 2.
 - Produces: panel ids 1 (Fleet Availability), 2 (Active Critical/Major Alarms), 3 (Not-Producing), 4 (Environmental Compliance), all at `y:1, h:3`, all `type: stat`, `x` positions `0/6/14/19` matching Andon's exact top-row layout (`w:6/8/5/5` = 24).
 
@@ -176,22 +214,61 @@ git commit -m "feat(grafana): scaffold Factory Digital Twin dashboard shell"
 
 ```json
 {
-  "id": 1, "title": "◉ Fleet Availability", "type": "stat",
-  "datasource": {"uid": "timescaledb"},
-  "gridPos": {"x": 0, "y": 1, "w": 6, "h": 3},
-  "fieldConfig": {"defaults": {
-    "thresholds": {"mode": "absolute", "steps": [{"color": "#EF4444", "value": null}, {"color": "#22C55E", "value": 100}]},
-    "color": {"mode": "fixed", "fixedColor": "#00F2FE"},
-    "unit": "percent", "decimals": 0, "min": 0, "max": 100,
-    "custom": {"gradientMode": "opacity", "lineInterpolation": "smooth", "fillOpacity": 15, "lineWidth": 2},
-    "mappings": [{"type": "special", "options": {"match": "null+nan", "result": {"color": "#64748B", "text": "NO_DATA", "index": 0}}}]
-  }, "overrides": []},
-  "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "center",
-    "reduceOptions": {"calcs": ["lastNotNull"], "values": false},
-    "text": {"valueSize": 56, "titleSize": 16}, "noValue": "NO_DATA", "textMode": "value",
-    "tooltip": {"mode": "single", "sort": "none"}},
-  "targets": [{"refId": "A", "datasource": {"uid": "timescaledb"}, "format": "table",
-    "rawSql": "WITH machines AS (\n  SELECT device_id AS eqp_id FROM public.devices WHERE device_type='ldi' AND enabled\n)\nSELECT ROUND((COUNT(*) FILTER (WHERE l.state = true) * 100.0 / NULLIF(COUNT(*), 0))::NUMERIC, 0) AS value\nFROM machines m\nLEFT JOIN LATERAL (\n  SELECT state FROM public.ldi_data d\n  WHERE d.eqp_id = m.eqp_id AND $__timeFilter(d.time) AND d.factory IN (${factory:sqlstring}) AND d.mo IN (${mo:sqlstring})\n  ORDER BY d.time DESC LIMIT 1\n) l ON true"}],
+  "id": 1,
+  "title": "◉ Fleet Availability",
+  "type": "stat",
+  "datasource": { "uid": "timescaledb" },
+  "gridPos": { "x": 0, "y": 1, "w": 6, "h": 3 },
+  "fieldConfig": {
+    "defaults": {
+      "thresholds": {
+        "mode": "absolute",
+        "steps": [
+          { "color": "#EF4444", "value": null },
+          { "color": "#22C55E", "value": 100 }
+        ]
+      },
+      "color": { "mode": "fixed", "fixedColor": "#00F2FE" },
+      "unit": "percent",
+      "decimals": 0,
+      "min": 0,
+      "max": 100,
+      "custom": {
+        "gradientMode": "opacity",
+        "lineInterpolation": "smooth",
+        "fillOpacity": 15,
+        "lineWidth": 2
+      },
+      "mappings": [
+        {
+          "type": "special",
+          "options": {
+            "match": "null+nan",
+            "result": { "color": "#64748B", "text": "NO_DATA", "index": 0 }
+          }
+        }
+      ]
+    },
+    "overrides": []
+  },
+  "options": {
+    "colorMode": "value",
+    "graphMode": "area",
+    "justifyMode": "center",
+    "reduceOptions": { "calcs": ["lastNotNull"], "values": false },
+    "text": { "valueSize": 56, "titleSize": 16 },
+    "noValue": "NO_DATA",
+    "textMode": "value",
+    "tooltip": { "mode": "single", "sort": "none" }
+  },
+  "targets": [
+    {
+      "refId": "A",
+      "datasource": { "uid": "timescaledb" },
+      "format": "table",
+      "rawSql": "WITH machines AS (\n  SELECT device_id AS eqp_id FROM public.devices WHERE device_type='ldi' AND enabled\n)\nSELECT ROUND((COUNT(*) FILTER (WHERE l.state = true) * 100.0 / NULLIF(COUNT(*), 0))::NUMERIC, 0) AS value\nFROM machines m\nLEFT JOIN LATERAL (\n  SELECT state FROM public.ldi_data d\n  WHERE d.eqp_id = m.eqp_id AND $__timeFilter(d.time) AND d.factory IN (${factory:sqlstring}) AND d.mo IN (${mo:sqlstring})\n  ORDER BY d.time DESC LIMIT 1\n) l ON true"
+    }
+  ],
   "description": "Percent of the full registered+enabled LDI fleet (23 registered, 10 actually reporting) currently OK. Identical query to IMS LDI - Operator Andon Board panel 1 -- reused, not reinvented."
 }
 ```
@@ -200,21 +277,58 @@ git commit -m "feat(grafana): scaffold Factory Digital Twin dashboard shell"
 
 ```json
 {
-  "id": 2, "title": "◉ Active Critical/Major Alarms", "type": "stat",
-  "datasource": {"uid": "timescaledb"},
-  "gridPos": {"x": 6, "y": 1, "w": 8, "h": 3},
-  "fieldConfig": {"defaults": {
-    "thresholds": {"mode": "absolute", "steps": [{"color": "#22C55E", "value": null}, {"color": "#EF4444", "value": 1}]},
-    "color": {"mode": "thresholds"}, "unit": "short",
-    "custom": {"gradientMode": "opacity", "lineInterpolation": "smooth", "fillOpacity": 15, "lineWidth": 2},
-    "mappings": [{"type": "special", "options": {"match": "null+nan", "result": {"color": "#64748B", "text": "NO_DATA", "index": 0}}}]
-  }, "overrides": []},
-  "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "center",
-    "reduceOptions": {"calcs": ["lastNotNull"], "values": false},
-    "text": {"valueSize": 56, "titleSize": 16}, "noValue": "NO_DATA", "textMode": "value",
-    "tooltip": {"mode": "single", "sort": "none"}},
-  "targets": [{"refId": "A", "datasource": {"uid": "timescaledb"}, "format": "table",
-    "rawSql": "SELECT COUNT(*)::NUMERIC AS value\nFROM public.ldi_alarm_log a\nJOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\nLEFT JOIN public.ldi_alarm_lifecycle l ON l.logdate = a.logdate AND l.logid = a.logid\nWHERE m.severity IN ('Critical', 'Major')\n  AND l.status IS DISTINCT FROM 'RESOLVED';"}],
+  "id": 2,
+  "title": "◉ Active Critical/Major Alarms",
+  "type": "stat",
+  "datasource": { "uid": "timescaledb" },
+  "gridPos": { "x": 6, "y": 1, "w": 8, "h": 3 },
+  "fieldConfig": {
+    "defaults": {
+      "thresholds": {
+        "mode": "absolute",
+        "steps": [
+          { "color": "#22C55E", "value": null },
+          { "color": "#EF4444", "value": 1 }
+        ]
+      },
+      "color": { "mode": "thresholds" },
+      "unit": "short",
+      "custom": {
+        "gradientMode": "opacity",
+        "lineInterpolation": "smooth",
+        "fillOpacity": 15,
+        "lineWidth": 2
+      },
+      "mappings": [
+        {
+          "type": "special",
+          "options": {
+            "match": "null+nan",
+            "result": { "color": "#64748B", "text": "NO_DATA", "index": 0 }
+          }
+        }
+      ]
+    },
+    "overrides": []
+  },
+  "options": {
+    "colorMode": "value",
+    "graphMode": "area",
+    "justifyMode": "center",
+    "reduceOptions": { "calcs": ["lastNotNull"], "values": false },
+    "text": { "valueSize": 56, "titleSize": 16 },
+    "noValue": "NO_DATA",
+    "textMode": "value",
+    "tooltip": { "mode": "single", "sort": "none" }
+  },
+  "targets": [
+    {
+      "refId": "A",
+      "datasource": { "uid": "timescaledb" },
+      "format": "table",
+      "rawSql": "SELECT COUNT(*)::NUMERIC AS value\nFROM public.ldi_alarm_log a\nJOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\nLEFT JOIN public.ldi_alarm_lifecycle l ON l.logdate = a.logdate AND l.logid = a.logid\nWHERE m.severity IN ('Critical', 'Major')\n  AND l.status IS DISTINCT FROM 'RESOLVED';"
+    }
+  ],
   "description": "Active (not RESOLVED) Critical/Major alarms fleet-wide, via public.ldi_alarm_lifecycle. Identical query shape to Andon panel 2."
 }
 ```
@@ -223,21 +337,60 @@ git commit -m "feat(grafana): scaffold Factory Digital Twin dashboard shell"
 
 ```json
 {
-  "id": 3, "title": "◉ Not-Producing (of 10)", "type": "stat",
-  "datasource": {"uid": "timescaledb"},
-  "gridPos": {"x": 14, "y": 1, "w": 5, "h": 3},
-  "fieldConfig": {"defaults": {
-    "thresholds": {"mode": "absolute", "steps": [{"color": "#22C55E", "value": null}, {"color": "#F59E0B", "value": 1}, {"color": "#EF4444", "value": 3}]},
-    "color": {"mode": "thresholds"}, "unit": "short", "decimals": 0,
-    "custom": {"gradientMode": "opacity", "lineInterpolation": "smooth", "fillOpacity": 15, "lineWidth": 2},
-    "mappings": [{"type": "special", "options": {"match": "null+nan", "result": {"color": "#64748B", "text": "NO_DATA", "index": 0}}}]
-  }, "overrides": []},
-  "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "center",
-    "reduceOptions": {"calcs": ["lastNotNull"], "values": false},
-    "text": {"valueSize": 56, "titleSize": 16}, "noValue": "NO_DATA", "textMode": "value",
-    "tooltip": {"mode": "single", "sort": "none"}},
-  "targets": [{"refId": "A", "datasource": {"uid": "timescaledb"}, "format": "table",
-    "rawSql": "SELECT COUNT(*) FILTER (WHERE\n  NOT v.has_data OR v.is_stale OR NOT v.state OR EXISTS (\n    SELECT 1 FROM public.ldi_alarm_log a\n    JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\n    WHERE a.equipmentid = v.eqp_id AND m.severity IN ('Critical', 'Major')\n      AND a.logdate > NOW() - INTERVAL '5 minutes'\n  )\n) AS value\nFROM public.v_ldi_machine_latest_full v\nWHERE v.eqp_id IN ('LDI-01','LDI-02','LDI-03','LDI-04','LDI-05','LDI-06','LDI-07','LDI-08','LDI-09','LDI-10')"}],
+  "id": 3,
+  "title": "◉ Not-Producing (of 10)",
+  "type": "stat",
+  "datasource": { "uid": "timescaledb" },
+  "gridPos": { "x": 14, "y": 1, "w": 5, "h": 3 },
+  "fieldConfig": {
+    "defaults": {
+      "thresholds": {
+        "mode": "absolute",
+        "steps": [
+          { "color": "#22C55E", "value": null },
+          { "color": "#F59E0B", "value": 1 },
+          { "color": "#EF4444", "value": 3 }
+        ]
+      },
+      "color": { "mode": "thresholds" },
+      "unit": "short",
+      "decimals": 0,
+      "custom": {
+        "gradientMode": "opacity",
+        "lineInterpolation": "smooth",
+        "fillOpacity": 15,
+        "lineWidth": 2
+      },
+      "mappings": [
+        {
+          "type": "special",
+          "options": {
+            "match": "null+nan",
+            "result": { "color": "#64748B", "text": "NO_DATA", "index": 0 }
+          }
+        }
+      ]
+    },
+    "overrides": []
+  },
+  "options": {
+    "colorMode": "value",
+    "graphMode": "area",
+    "justifyMode": "center",
+    "reduceOptions": { "calcs": ["lastNotNull"], "values": false },
+    "text": { "valueSize": 56, "titleSize": 16 },
+    "noValue": "NO_DATA",
+    "textMode": "value",
+    "tooltip": { "mode": "single", "sort": "none" }
+  },
+  "targets": [
+    {
+      "refId": "A",
+      "datasource": { "uid": "timescaledb" },
+      "format": "table",
+      "rawSql": "SELECT COUNT(*) FILTER (WHERE\n  NOT v.has_data OR v.is_stale OR NOT v.state OR EXISTS (\n    SELECT 1 FROM public.ldi_alarm_log a\n    JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\n    WHERE a.equipmentid = v.eqp_id AND m.severity IN ('Critical', 'Major')\n      AND a.logdate > NOW() - INTERVAL '5 minutes'\n  )\n) AS value\nFROM public.v_ldi_machine_latest_full v\nWHERE v.eqp_id IN ('LDI-01','LDI-02','LDI-03','LDI-04','LDI-05','LDI-06','LDI-07','LDI-08','LDI-09','LDI-10')"
+    }
+  ],
   "description": "Count of the 10 real reporting machines currently NOT producing (NO_DATA, stale, idle, or actively alarming). Same classification logic as each canvas node's state, aggregated. Production-impact proxy for C-Level -- not a revenue/board-count estimate, which this system has no data to support."
 }
 ```
@@ -246,21 +399,62 @@ git commit -m "feat(grafana): scaffold Factory Digital Twin dashboard shell"
 
 ```json
 {
-  "id": 4, "title": "◉ Environmental Compliance", "type": "stat",
-  "datasource": {"uid": "timescaledb"},
-  "gridPos": {"x": 19, "y": 1, "w": 5, "h": 3},
-  "fieldConfig": {"defaults": {
-    "thresholds": {"mode": "absolute", "steps": [{"color": "#EF4444", "value": null}, {"color": "#F59E0B", "value": 80}, {"color": "#22C55E", "value": 95}]},
-    "color": {"mode": "fixed", "fixedColor": "#00F2FE"}, "unit": "percent", "decimals": 0, "min": 0, "max": 100,
-    "custom": {"gradientMode": "opacity", "lineInterpolation": "smooth", "fillOpacity": 15, "lineWidth": 2},
-    "mappings": [{"type": "special", "options": {"match": "null+nan", "result": {"color": "#64748B", "text": "NO_DATA", "index": 0}}}]
-  }, "overrides": []},
-  "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "center",
-    "reduceOptions": {"calcs": ["lastNotNull"], "values": false},
-    "text": {"valueSize": 56, "titleSize": 16}, "noValue": "NO_DATA", "textMode": "value",
-    "tooltip": {"mode": "single", "sort": "none"}},
-  "targets": [{"refId": "A", "datasource": {"uid": "timescaledb"}, "format": "table",
-    "rawSql": "SELECT ROUND((COUNT(DISTINCT eqp_id) FILTER (WHERE temperature BETWEEN 20 AND 24 AND humidity BETWEEN 50 AND 60) * 100.0 / NULLIF(COUNT(DISTINCT eqp_id), 0))::NUMERIC, 0) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND $__timeFilter(time) AND temperature IS NOT NULL AND humidity IS NOT NULL"}],
+  "id": 4,
+  "title": "◉ Environmental Compliance",
+  "type": "stat",
+  "datasource": { "uid": "timescaledb" },
+  "gridPos": { "x": 19, "y": 1, "w": 5, "h": 3 },
+  "fieldConfig": {
+    "defaults": {
+      "thresholds": {
+        "mode": "absolute",
+        "steps": [
+          { "color": "#EF4444", "value": null },
+          { "color": "#F59E0B", "value": 80 },
+          { "color": "#22C55E", "value": 95 }
+        ]
+      },
+      "color": { "mode": "fixed", "fixedColor": "#00F2FE" },
+      "unit": "percent",
+      "decimals": 0,
+      "min": 0,
+      "max": 100,
+      "custom": {
+        "gradientMode": "opacity",
+        "lineInterpolation": "smooth",
+        "fillOpacity": 15,
+        "lineWidth": 2
+      },
+      "mappings": [
+        {
+          "type": "special",
+          "options": {
+            "match": "null+nan",
+            "result": { "color": "#64748B", "text": "NO_DATA", "index": 0 }
+          }
+        }
+      ]
+    },
+    "overrides": []
+  },
+  "options": {
+    "colorMode": "value",
+    "graphMode": "area",
+    "justifyMode": "center",
+    "reduceOptions": { "calcs": ["lastNotNull"], "values": false },
+    "text": { "valueSize": 56, "titleSize": 16 },
+    "noValue": "NO_DATA",
+    "textMode": "value",
+    "tooltip": { "mode": "single", "sort": "none" }
+  },
+  "targets": [
+    {
+      "refId": "A",
+      "datasource": { "uid": "timescaledb" },
+      "format": "table",
+      "rawSql": "SELECT ROUND((COUNT(DISTINCT eqp_id) FILTER (WHERE temperature BETWEEN 20 AND 24 AND humidity BETWEEN 50 AND 60) * 100.0 / NULLIF(COUNT(DISTINCT eqp_id), 0))::NUMERIC, 0) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND $__timeFilter(time) AND temperature IS NOT NULL AND humidity IS NOT NULL"
+    }
+  ],
   "description": "Environmental Compliance: percentage of machines within safe temperature AND humidity. Identical query to Andon panel 3."
 }
 ```
@@ -311,9 +505,11 @@ git commit -m "feat(grafana): add Factory Digital Twin top stat strip"
 TDD-style: write and run each query against the real DB before it goes anywhere near a panel, per this session's evidence discipline (query-tiering + 300ms budget must be true before the query gets embedded, not discovered after).
 
 **Files:**
+
 - None yet (validation only — output feeds Task 5).
 
 **Interfaces:**
+
 - Produces: 10 validated "state" queries (one per `eqp_id`) and 10 validated "alarm detail" queries, confirmed `LIMIT 1`/aggregate shape, confirmed <300ms, ready to paste as Canvas element query targets in Task 5.
 
 - [ ] **Step 1: Write the canonical per-machine state query (LDI-01 instance) — reuses `v_ldi_machine_latest_full`, same columns Andon already surfaces (`mo`, `board_no`, `total_board`, `log_id`, `has_data`, `is_stale`, `state`), same 0/1/2/3 classification as Andon panel 1000**
@@ -429,9 +625,11 @@ No commit — this task is query validation only, output consumed by Task 5.
 ## Task 5: Canvas panel — 5 zone blocks + 10 machine nodes
 
 **Files:**
+
 - Modify: `monitoring/grafana/dashboards/manufacturing/ims-ldi-factory-digital-twin.json`
 
 **Interfaces:**
+
 - Consumes: the verified schema from Task 1, the 20 validated query targets (10 state + 10 alarm-detail) from Task 4.
 - Produces: panel id 100 (`type: canvas`), `gridPos {x:0, y:4, w:24, h:16}`, containing `options.root.elements` = 5 zone-label rectangles + 10 machine-node groups (each a rectangle + text, bound per Task 1's verified schema).
 
@@ -442,12 +640,17 @@ No commit — this task is query validation only, output consumed by Task 5.
   "id": 100,
   "title": "◈ Factory Floor",
   "type": "canvas",
-  "datasource": {"uid": "timescaledb"},
-  "gridPos": {"x": 0, "y": 4, "w": 24, "h": 16},
+  "datasource": { "uid": "timescaledb" },
+  "gridPos": { "x": 0, "y": 4, "w": 24, "h": 16 },
   "targets": [
-    {"refId": "A", "datasource": {"uid": "timescaledb"}, "format": "table", "rawSql": "SELECT 'LDI-01' AS eqp_id, v.mo, v.board_no, v.total_board, v.log_id, CASE WHEN EXISTS (SELECT 1 FROM public.ldi_alarm_log a JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT WHERE a.equipmentid = v.eqp_id AND m.severity IN ('Critical', 'Major') AND a.logdate > NOW() - INTERVAL '5 minutes') THEN 3 WHEN NOT v.has_data OR v.is_stale THEN 0 WHEN v.state THEN 2 ELSE 1 END AS node_state FROM public.v_ldi_machine_latest_full v WHERE v.eqp_id = 'LDI-01'"}
+    {
+      "refId": "A",
+      "datasource": { "uid": "timescaledb" },
+      "format": "table",
+      "rawSql": "SELECT 'LDI-01' AS eqp_id, v.mo, v.board_no, v.total_board, v.log_id, CASE WHEN EXISTS (SELECT 1 FROM public.ldi_alarm_log a JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT WHERE a.equipmentid = v.eqp_id AND m.severity IN ('Critical', 'Major') AND a.logdate > NOW() - INTERVAL '5 minutes') THEN 3 WHEN NOT v.has_data OR v.is_stale THEN 0 WHEN v.state THEN 2 ELSE 1 END AS node_state FROM public.v_ldi_machine_latest_full v WHERE v.eqp_id = 'LDI-01'"
+    }
   ],
-  "options": {"root": {"elements": []}},
+  "options": { "root": { "elements": [] } },
   "description": "Factory Digital Twin canvas: 5 real zones (public.devices.location), 10 real reporting machines. Node fill color = state (0/1/2/3 -> NO_DATA/IDLE/OK/ALARM), same classification and color tokens as IMS LDI - Operator Andon Board. board_id not shown (empty in 100% of real rows) -- log_id is the real traceability key. No mock data; every field traces to public.ldi_data / public.ldi_alarm_log / public.v_ldi_machine_latest_full."
 }
 ```
@@ -461,12 +664,13 @@ For each zone, add a `rectangle` element per Task 1's verified schema: fixed (no
 - [ ] **Step 3: Add the 10 machine-node elements — one rectangle (fill bound to `node_state` field via Task 1's real binding mechanism, using the exact color tokens below) + one text element (bound to `eqp_id`+`mo`) + one text element (bound to `board_no`/`total_board`) per machine, positioned inside its real zone's rectangle from Step 2**
 
 Color token table (matches `GRAFANA_DESIGN_SYSTEM.md` §2.1, identical to Andon):
-| `node_state` | Color | Meaning |
-|---|---|---|
-| 0 | `#64748B` | NO_DATA |
-| 1 | `#F59E0B` | IDLE |
-| 2 | `#22C55E` | OK |
-| 3 | `#EF4444` | ALARM |
+
+| `node_state` | Color     | Meaning |
+| ------------ | --------- | ------- |
+| 0            | `#64748B` | NO_DATA |
+| 1            | `#F59E0B` | IDLE    |
+| 2            | `#22C55E` | OK      |
+| 3            | `#EF4444` | ALARM   |
 
 - [ ] **Step 4: Validate JSON**
 
@@ -486,9 +690,11 @@ git commit -m "feat(grafana): add Factory Digital Twin canvas with 5 zones and 1
 ## Task 6: Drill-down links per node
 
 **Files:**
+
 - Modify: `monitoring/grafana/dashboards/manufacturing/ims-ldi-factory-digital-twin.json`
 
 **Interfaces:**
+
 - Consumes: Task 1's verified `links[]` schema, Task 5's 10 machine-node elements.
 - Produces: every one of the 10 machine-node rectangle elements has exactly one link to Machine Snapshot.
 
@@ -531,9 +737,11 @@ git commit -m "feat(grafana): add drill-down links to Factory Digital Twin nodes
 ## Task 7: Tooltips (Owner / Elapsed / Event ID) + color legend
 
 **Files:**
+
 - Modify: `monitoring/grafana/dashboards/manufacturing/ims-ldi-factory-digital-twin.json`
 
 **Interfaces:**
+
 - Consumes: Task 4's alarm-detail query fields (`owner`, `elapsed`), Task 5's `log_id` field.
 - Produces: each machine node's tooltip config bound to `owner`/`elapsed`/`log_id`; one static legend element on the canvas.
 
@@ -559,6 +767,7 @@ git commit -m "feat(grafana): add tooltips and color legend to Factory Digital T
 ## Task 8: Confirm Manufacturing and Andon files are untouched
 
 **Files:**
+
 - None modified — verification only.
 
 - [ ] **Step 1: Diff both protected files against `origin/main`**
@@ -576,6 +785,7 @@ No commit — this is a negative-result verification step.
 ## Task 9: Lint and query-budget validation
 
 **Files:**
+
 - None modified — validation only.
 
 - [ ] **Step 1: Dashboard linter**
@@ -617,6 +827,7 @@ No commit — validation only, failures get fixed in the task that introduced th
 ## Task 10: Dashboard inventory regeneration
 
 **Files:**
+
 - Modify: `docs/architecture/DASHBOARD_INVENTORY.md` (generated, not hand-edited)
 
 - [ ] **Step 1: Regenerate**
@@ -649,6 +860,7 @@ git commit -m "docs: regenerate dashboard inventory for Factory Digital Twin"
 Same method used this session to catch the Andon Board's toolbar-height and `autofitpanels` discoveries — grid-unit math alone is not sufficient evidence of "fits without scrolling."
 
 **Files:**
+
 - None modified — validation only.
 
 - [ ] **Step 1: Wait for the file-based provisioner to pick up the new dashboard (30s poll interval, `monitoring/grafana/provisioning/dashboards/dashboards.yml`)**
@@ -692,6 +904,7 @@ No commit — evidence-gathering only.
 ## Task 12: Final full-suite check
 
 **Files:**
+
 - None modified — validation only.
 
 - [ ] **Step 1: Re-run every check from Tasks 8–9 together, plus the full test suite if one exists for dashboards**
@@ -716,6 +929,7 @@ No commit — final gate before considering the feature done.
 Per the user's explicit ranking, 3D is the next phase, not this one. This task records what would actually need to change, so the eventual 3D work starts from real constraints instead of rediscovering them.
 
 **Files:**
+
 - Modify: `docs/superpowers/specs/2026-08-17-factory-digital-twin-design.md` (append a section)
 
 - [ ] **Step 1: Append a "Future: 3D Digital Twin migration path" section noting concretely, without inventing a plan for it:**

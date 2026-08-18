@@ -32,7 +32,7 @@ What's **not** implemented — the actual substance of the standard:
 - **Alarm performance KPIs:** No tracking of alarms/operator/10-min, % time in flood, or "bad actor" analysis.
 
 > [!NOTE]
-> If a stakeholder-facing document needs to describe alarm management, use the term **"ISA-18.2-style severity taxonomy"**, not "ISA-18.2 compliant". (Note: ISA-101, a separate standard for HMI design, *is* correctly implemented for the Operator Andon Board).
+> If a stakeholder-facing document needs to describe alarm management, use the term **"ISA-18.2-style severity taxonomy"**, not "ISA-18.2 compliant". (Note: ISA-101, a separate standard for HMI design, _is_ correctly implemented for the Operator Andon Board).
 
 ## Where severity is used
 
@@ -50,4 +50,5 @@ What's **not** implemented — the actual substance of the standard:
 - `docs/architecture/GRAFANA_DESIGN_SYSTEM.md` §2.1 — the full approved color token set.
 
 ---
+
 [⬅️ Back to IMS Platform Book](IMS_PLATFORM_BOOK.md) | [🏠 Main Repository](../../README.md)

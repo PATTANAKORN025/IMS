@@ -137,7 +137,7 @@ Raw `git diff` on this file is unreadable — every node's function body is one 
 + align: { onsetProb: 0.00002, driftMin: 15, driftMax: 35, faultMin: 10, faultMax: 20, cooldownMin: 120, cooldownMax: 360,
 +    targetFn: () => (Math.random() < 0.5 ? 1 : -1) * (13 + Math.random() * 8) }
 +};
- 
+
  const st = flow.get('sim_state') || {};
  const now = Date.now();
 @@ -37,17 +124,20 @@
@@ -189,7 +189,7 @@ Raw `git diff` on this file is unreadable — every node's function body is one 
 +  const j = pcal.je[k];
 +  rec['je_' + (k + 1)] = j ? r(Math.max(0, j[0] + Math.abs(gauss()) * j[1] + (k === 0 ? Math.abs(alignBias) : 0)), 1) : null;
   }
- 
+
 === nodered_data/flows.json :: node 'almsim_gen' ===
 @@ -13,28 +14,24 @@
  // equipment/calibration faults) + condition-driven codes (fired only
@@ -213,7 +213,7 @@ Raw `git diff` on this file is unreadable — every node's function body is one 
 +const RARE_CRITICAL_PROB = 0.00002; // per machine per 10s tick
  const RATE_PER_TICK = 0.01194 * 20 * (15 / 20); // unchanged overall pacing, noise share only
 +const COOLDOWN_MIN = 12; // debounce window: suppress re-fire of the same (machine, code) within this many minutes
- 
+
  function pick(table) { ... }
  function poissonCount(rate) { ... }
 -function newRow(eq, code, ts, relatedLogId) {
@@ -225,10 +225,10 @@ Raw `git diff` on this file is unreadable — every node's function body is one 
 +  link_basis: linkBasis
   };
  }
- 
+
 -const rows = [];
  const now = Date.now();
- 
+
 -// ── background noise (unconditioned, real historical distribution) ──
 -const nNoise = poissonCount(RATE_PER_TICK);
 -for (let k = 0; k < nNoise; k++) {
@@ -245,7 +245,7 @@ Raw `git diff` on this file is unreadable — every node's function body is one 
 +  if (debounced(eq, code)) continue;
 +  rows.push(newRow(eq, code, new Date(now - Math.floor(Math.random() * 9000)), null, 'nearest'));
 + }
- 
+
 -// ── condition-driven alarms ... ──
 -const sql = ` ... `;
 -pool.query(sql, [], function (err, result) {
@@ -301,7 +301,7 @@ Raw `git diff` on this file is unreadable — every node's function body is one 
 + }
 +);
  return null;
- 
+
 === nodered_data/flows.json :: node 'almsim_db' ===
 @@ -1,8 +1,7 @@
  const pool = global.get('pgPool');

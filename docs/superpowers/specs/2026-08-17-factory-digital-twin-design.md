@@ -44,14 +44,14 @@ detail dashboards.
    `Site A - Zone 3`, `Site B - Zone 1`, `Site B - Zone 2`. There is no
    x/y or lat/long column anywhere in the schema. Chosen layout: 5 labeled
    zone blocks on the canvas, machines placed in a grid inside their real
-   zone (user-approved option). Node *position* is manual canvas config
-   (like Andon's repeat-panel tile order); node *status* is a live query.
+   zone (user-approved option). Node _position_ is manual canvas config
+   (like Andon's repeat-panel tile order); node _status_ is a live query.
    These are different things and must not be conflated in the panel JSON
    or its description.
 
 3. **23 registered `device_type='ldi'` rows, only 10 actually report.**
    `SELECT eqp_id, COUNT(*) FROM ldi_data WHERE time > NOW() - INTERVAL
-   '24 hours' GROUP BY eqp_id` returns exactly `LDI-01`..`LDI-10`. The other
+'24 hours' GROUP BY eqp_id` returns exactly `LDI-01`..`LDI-10`. The other
    13 (`LDI-B07` legacy, `LDI-B05/LD2`, `LDI-B01/LD2`, `LDI-A01`,
    `LDI-A02`, `LDI-A03/02`, `LDI-A05/02`, `LDI-B03/2`) are
    `enabled=true` in the registry but never write to `ldi_data` — dead/alias
@@ -61,7 +61,7 @@ detail dashboards.
 
 4. **`board_id` is empty on 100% of real rows.**
    `SELECT COUNT(DISTINCT board_id) FROM ldi_data WHERE time > NOW() -
-   INTERVAL '24 hours'` → 1 distinct value across 19,043 rows (empty
+INTERVAL '24 hours'` → 1 distinct value across 19,043 rows (empty
    string). The "board_id must be unique" requirement cannot be honestly
    satisfied — the column isn't populated by the real ingestion pipeline.
    **Decision (user-approved): use `log_id` instead** — verified 100%
@@ -117,17 +117,19 @@ detail dashboards.
 **File**: `monitoring/grafana/dashboards/manufacturing/ims-ldi-factory-digital-twin.json` (new file only)
 
 **Top strip — C-Level, single glance, <5s**:
-| Stat | Query source | Reused from |
-|---|---|---|
-| Fleet Availability % | registered+enabled LDI fleet, reporting AND running | Andon panel 1, verbatim |
-| Active Critical/Major Alarms | `ldi_alarm_lifecycle`, status ≠ RESOLVED | Andon panel 2, verbatim |
-| Not-Producing count | machines currently ALARM+IDLE+NO_DATA (production-impact proxy) | new query, same state classification as Andon's per-machine tiles, aggregated |
-| Environmental Compliance % | temp 20-24°C AND humidity 50-60%RH, fleet-wide | Andon panel 3, verbatim |
+
+| Stat                         | Query source                                                    | Reused from                                                                   |
+| ---------------------------- | --------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Fleet Availability %         | registered+enabled LDI fleet, reporting AND running             | Andon panel 1, verbatim                                                       |
+| Active Critical/Major Alarms | `ldi_alarm_lifecycle`, status ≠ RESOLVED                        | Andon panel 2, verbatim                                                       |
+| Not-Producing count          | machines currently ALARM+IDLE+NO_DATA (production-impact proxy) | new query, same state classification as Andon's per-machine tiles, aggregated |
+| Environmental Compliance %   | temp 20-24°C AND humidity 50-60%RH, fleet-wide                  | Andon panel 3, verbatim                                                       |
 
 **Canvas — 5 zone blocks, 10 machine nodes**:
+
 - Fill color = machine state (`0/1/2/3` → NO_DATA/IDLE/OK/ALARM), same
   color tokens and query as Andon's per-machine repeat tiles (`v_ldi_machine_latest_full`
-  + active-alarm override).
+  - active-alarm override).
 - Label = machine_id + current MO.
 - Board progress = `board_no/total_board` from latest row.
 - Alarm badge = active Critical/Major count for that specific machine
@@ -146,26 +148,26 @@ same tokens used everywhere else in this repo, not a new palette.
 
 ## Acceptance criteria — traceability
 
-| Checkbox | Satisfied by |
-|---|---|
-| C-Level: Production status within 5s | Top strip, 4 stats, single glance |
-| C-Level: machines with problems | Canvas node color + alarm badge |
-| C-Level: production impact | Not-Producing count stat |
-| C-Level: compliance risk | Environmental Compliance % stat |
-| Operator: what each machine needs to do | Node label = current MO |
-| Operator: which alarms need managing | Alarm badge, click-through |
-| Operator: owner | Tooltip, reused Owner mapping |
-| Operator: SLA | **Gap** — shown as Elapsed, not SLA (see above) |
-| Operator: drill-down | Every node clickable → Machine Snapshot |
-| Engineering: Machine snapshot enabled | Drill-down target |
-| Engineering: raw telemetry traceable | Machine Snapshot → Process Timeline (existing) |
-| Engineering: alarm traceable | Machine Snapshot alarm context (existing) |
-| Engineering: RCA traceable | `v_ldi_alarm_category`, same as Action Queue Owner logic |
-| Data: no mock | All queries against real `ldi_data`/`ldi_alarm_log`/`ldi_alarm_lifecycle` |
-| Data: timestamp traceable | Same `time`/`ingest_ts` columns already audited this session |
-| Data: board_id unique | **Gap** — substituted with `log_id` (see above) |
-| Data: machine_id unique | `devices.device_id` is the primary key |
-| Data: budget query passed | `query-budget-linter.js` + `tests/smoke/query-budget-check.sh`, 300ms target |
+| Checkbox                                | Satisfied by                                                                 |
+| --------------------------------------- | ---------------------------------------------------------------------------- |
+| C-Level: Production status within 5s    | Top strip, 4 stats, single glance                                            |
+| C-Level: machines with problems         | Canvas node color + alarm badge                                              |
+| C-Level: production impact              | Not-Producing count stat                                                     |
+| C-Level: compliance risk                | Environmental Compliance % stat                                              |
+| Operator: what each machine needs to do | Node label = current MO                                                      |
+| Operator: which alarms need managing    | Alarm badge, click-through                                                   |
+| Operator: owner                         | Tooltip, reused Owner mapping                                                |
+| Operator: SLA                           | **Gap** — shown as Elapsed, not SLA (see above)                              |
+| Operator: drill-down                    | Every node clickable → Machine Snapshot                                      |
+| Engineering: Machine snapshot enabled   | Drill-down target                                                            |
+| Engineering: raw telemetry traceable    | Machine Snapshot → Process Timeline (existing)                               |
+| Engineering: alarm traceable            | Machine Snapshot alarm context (existing)                                    |
+| Engineering: RCA traceable              | `v_ldi_alarm_category`, same as Action Queue Owner logic                     |
+| Data: no mock                           | All queries against real `ldi_data`/`ldi_alarm_log`/`ldi_alarm_lifecycle`    |
+| Data: timestamp traceable               | Same `time`/`ingest_ts` columns already audited this session                 |
+| Data: board_id unique                   | **Gap** — substituted with `log_id` (see above)                              |
+| Data: machine_id unique                 | `devices.device_id` is the primary key                                       |
+| Data: budget query passed               | `query-budget-linter.js` + `tests/smoke/query-budget-check.sh`, 300ms target |
 
 ## Performance Validation (before calling this done)
 

@@ -42,13 +42,13 @@ The IMS initiative constitutes an end-to-end monitoring architecture engineered 
 
 ### Deliverable Outcomes
 
-| Metric | Pre-Project Baseline | Post-Project Achievement | Delta |
-| ------------------------------- | ------------- | ----------------------- | -------- |
-| **Monitoring Coverage** | 0% | 100% (5 servers) | +100% |
-| **Mean Time to Detect (MTTD)** | 30+ minutes | < 1 minute | -97% |
-| **Mean Time to Respond (MTTR)** | 2+ hours | < 15 minutes | -87% |
-| **Visibility** | Manual checks | Real-time dashboards | +100% |
-| **Alerting** | None | Automated multi-channel | +100% |
+| Metric                          | Pre-Project Baseline | Post-Project Achievement | Delta |
+| ------------------------------- | -------------------- | ------------------------ | ----- |
+| **Monitoring Coverage**         | 0%                   | 100% (5 servers)         | +100% |
+| **Mean Time to Detect (MTTD)**  | 30+ minutes          | < 1 minute               | -97%  |
+| **Mean Time to Respond (MTTR)** | 2+ hours             | < 15 minutes             | -87%  |
+| **Visibility**                  | Manual checks        | Real-time dashboards     | +100% |
+| **Alerting**                    | None                 | Automated multi-channel  | +100% |
 
 ---
 
@@ -141,13 +141,13 @@ The IMS initiative constitutes an end-to-end monitoring architecture engineered 
 
 **Acquired Knowledge:**
 
-| Topic | Detail | Proficiency Level |
-| --------------------- | --------------------------------------------------- | --------------- |
-| **SNMP Architecture** | Manager-Agent model, MIB structure, OID hierarchy | Advanced |
-| **SNMP v2c** | Community strings, GET/GETNEXT/WALK operations | Advanced |
-| **SNMP v3** | USM, authentication, encryption (Production standard) | Intermediate |
-| **MIB Browsing** | HOST-RESOURCES-MIB, IF-MIB, UCD-SNMP-MIB | Advanced |
-| **Custom MIB** | Designing private OIDs for LDI manufacturing hardware | Intermediate |
+| Topic                 | Detail                                                | Proficiency Level |
+| --------------------- | ----------------------------------------------------- | ----------------- |
+| **SNMP Architecture** | Manager-Agent model, MIB structure, OID hierarchy     | Advanced          |
+| **SNMP v2c**          | Community strings, GET/GETNEXT/WALK operations        | Advanced          |
+| **SNMP v3**           | USM, authentication, encryption (Production standard) | Intermediate      |
+| **MIB Browsing**      | HOST-RESOURCES-MIB, IF-MIB, UCD-SNMP-MIB              | Advanced          |
+| **Custom MIB**        | Designing private OIDs for LDI manufacturing hardware | Intermediate      |
 
 **Project Application:**
 
@@ -159,13 +159,13 @@ The IMS initiative constitutes an end-to-end monitoring architecture engineered 
 
 **Acquired Knowledge:**
 
-| Topic | Detail | Proficiency Level |
-| ------------------------- | ----------------------------------------------------- | --------------- |
-| **Node-RED Architecture** | Flow-based programming, function nodes, join barriers | Advanced |
-| **Parallel Processing** | 5-thread walker architecture, fork-join pattern | Advanced |
-| **Error Handling** | try-catch, session.on('error'), bypass_error wires | Advanced |
-| **Flow Context** | global.get/set, flow.get/set, precise memory management | Intermediate |
-| **JSON Manipulation** | JSON.parse/stringify, meticulous `\n` escape preservation | Advanced |
+| Topic                     | Detail                                                    | Proficiency Level |
+| ------------------------- | --------------------------------------------------------- | ----------------- |
+| **Node-RED Architecture** | Flow-based programming, function nodes, join barriers     | Advanced          |
+| **Parallel Processing**   | 5-thread walker architecture, fork-join pattern           | Advanced          |
+| **Error Handling**        | try-catch, session.on('error'), bypass_error wires        | Advanced          |
+| **Flow Context**          | global.get/set, flow.get/set, precise memory management   | Intermediate      |
+| **JSON Manipulation**     | JSON.parse/stringify, meticulous `\n` escape preservation | Advanced          |
 
 **Project Application:**
 
@@ -178,13 +178,13 @@ The IMS initiative constitutes an end-to-end monitoring architecture engineered 
 
 **Acquired Knowledge:**
 
-| Topic | Detail | Proficiency Level |
-| --------------------------- | ------------------------------------------------------ | --------------- |
-| **PostgreSQL Fundamentals** | Complex SQL, schema design, index optimization, complex joins | Advanced |
-| **TimescaleDB Extension** | Hypertables, continuous aggregates, optimized time buckets | Advanced |
-| **JSONB Operations** | jsonb_each, CROSS JOIN LATERAL, complex per-interface queries | Intermediate |
-| **Data Modeling** | Time-series architectural patterns, normalization vs denormalization strategies | Intermediate |
-| **Migration Management** | Idempotent SQL scripts, ALTER TABLE operations, cagg recreation lifecycles | Intermediate |
+| Topic                       | Detail                                                                          | Proficiency Level |
+| --------------------------- | ------------------------------------------------------------------------------- | ----------------- |
+| **PostgreSQL Fundamentals** | Complex SQL, schema design, index optimization, complex joins                   | Advanced          |
+| **TimescaleDB Extension**   | Hypertables, continuous aggregates, optimized time buckets                      | Advanced          |
+| **JSONB Operations**        | jsonb_each, CROSS JOIN LATERAL, complex per-interface queries                   | Intermediate      |
+| **Data Modeling**           | Time-series architectural patterns, normalization vs denormalization strategies | Intermediate      |
+| **Migration Management**    | Idempotent SQL scripts, ALTER TABLE operations, cagg recreation lifecycles      | Intermediate      |
 
 **Project Application:**
 
@@ -197,13 +197,13 @@ The IMS initiative constitutes an end-to-end monitoring architecture engineered 
 
 **Acquired Knowledge:**
 
-| Topic | Detail | Proficiency Level |
-| -------------------------- | -------------------------------------------------- | --------------- |
-| **Grafana Architecture** | Dashboard data models, complex panel types, advanced datasource configuration | Advanced |
-| **SQL Query Design** | Advanced PostgreSQL queries, JSONB extraction techniques, precise time bucket utilization | Advanced |
-| **Panel Configuration** | Strategic color coding, dynamic thresholds, optimized legends, intelligent tooltips | Advanced |
-| **Dashboard Organization** | Rows, repeat functionalities, dynamic variables, contextual drill-down links | Intermediate |
-| **Alerting in Grafana** | Alert rules, notification channel provisioning, as-code provisioning strategies | Intermediate |
+| Topic                      | Detail                                                                                    | Proficiency Level |
+| -------------------------- | ----------------------------------------------------------------------------------------- | ----------------- |
+| **Grafana Architecture**   | Dashboard data models, complex panel types, advanced datasource configuration             | Advanced          |
+| **SQL Query Design**       | Advanced PostgreSQL queries, JSONB extraction techniques, precise time bucket utilization | Advanced          |
+| **Panel Configuration**    | Strategic color coding, dynamic thresholds, optimized legends, intelligent tooltips       | Advanced          |
+| **Dashboard Organization** | Rows, repeat functionalities, dynamic variables, contextual drill-down links              | Intermediate      |
+| **Alerting in Grafana**    | Alert rules, notification channel provisioning, as-code provisioning strategies           | Intermediate      |
 
 **Project Application:**
 
@@ -216,13 +216,13 @@ The IMS initiative constitutes an end-to-end monitoring architecture engineered 
 
 **Acquired Knowledge:**
 
-| Topic | Detail | Proficiency Level |
-| -------------------- | ------------------------------------------------ | --------------- |
-| **Docker** | Container lifecycles, compose strategies, secure networking, robust secrets management | Advanced |
-| **Docker Compose** | Multi-service orchestration, dynamic profiles, hierarchical overrides | Advanced |
-| **Git Workflow** | Advanced branching models, conventional commits, rigorous PR processes | Advanced |
-| **CI/CD** | GitHub Actions workflows, automated security scanning pipelines, robust smoke tests | Intermediate |
-| **Monitoring Stack** | Prometheus, Alertmanager, Blackbox Exporter configuration | Intermediate |
+| Topic                | Detail                                                                                 | Proficiency Level |
+| -------------------- | -------------------------------------------------------------------------------------- | ----------------- |
+| **Docker**           | Container lifecycles, compose strategies, secure networking, robust secrets management | Advanced          |
+| **Docker Compose**   | Multi-service orchestration, dynamic profiles, hierarchical overrides                  | Advanced          |
+| **Git Workflow**     | Advanced branching models, conventional commits, rigorous PR processes                 | Advanced          |
+| **CI/CD**            | GitHub Actions workflows, automated security scanning pipelines, robust smoke tests    | Intermediate      |
+| **Monitoring Stack** | Prometheus, Alertmanager, Blackbox Exporter configuration                              | Intermediate      |
 
 **Project Application:**
 
@@ -237,37 +237,37 @@ The IMS initiative constitutes an end-to-end monitoring architecture engineered 
 
 ### Programming Languages
 
-| Language | Usage in Project | Proficiency |
-| -------------- | ---------------------------------------------------- | ------------ |
-| **JavaScript** | Node-RED function node development, flow modification scripting | Advanced |
-| **SQL** | PostgreSQL query engineering, hypertable schema design, cagg creation | Advanced |
-| **Bash** | Docker command execution, deployment automation scripting | Intermediate |
-| **PowerShell** | Windows development environment workflows, flow JSON editing | Intermediate |
-| **Python** | JSON validation pipelines, data analysis scripting | Intermediate |
+| Language       | Usage in Project                                                      | Proficiency  |
+| -------------- | --------------------------------------------------------------------- | ------------ |
+| **JavaScript** | Node-RED function node development, flow modification scripting       | Advanced     |
+| **SQL**        | PostgreSQL query engineering, hypertable schema design, cagg creation | Advanced     |
+| **Bash**       | Docker command execution, deployment automation scripting             | Intermediate |
+| **PowerShell** | Windows development environment workflows, flow JSON editing          | Intermediate |
+| **Python**     | JSON validation pipelines, data analysis scripting                    | Intermediate |
 
 ### Tools & Technologies
 
-| Category | Tools | Proficiency |
+| Category             | Tools                                       | Proficiency  |
 | -------------------- | ------------------------------------------- | ------------ |
-| **Containerization** | Docker, Docker Compose | Advanced |
-| **Data Pipeline** | Node-RED | Advanced |
-| **Database** | PostgreSQL, TimescaleDB, PgBouncer | Advanced |
-| **Visualization** | Grafana | Advanced |
-| **Monitoring** | Prometheus, Alertmanager, Blackbox Exporter | Intermediate |
-| **Network Protocol** | SNMP v2c/v3, `net-snmp` library | Advanced |
-| **Version Control** | Git, GitHub, Conventional Commits | Advanced |
-| **CI/CD** | GitHub Actions, Gitleaks | Intermediate |
-| **Load Testing** | K6 | Intermediate |
+| **Containerization** | Docker, Docker Compose                      | Advanced     |
+| **Data Pipeline**    | Node-RED                                    | Advanced     |
+| **Database**         | PostgreSQL, TimescaleDB, PgBouncer          | Advanced     |
+| **Visualization**    | Grafana                                     | Advanced     |
+| **Monitoring**       | Prometheus, Alertmanager, Blackbox Exporter | Intermediate |
+| **Network Protocol** | SNMP v2c/v3, `net-snmp` library             | Advanced     |
+| **Version Control**  | Git, GitHub, Conventional Commits           | Advanced     |
+| **CI/CD**            | GitHub Actions, Gitleaks                    | Intermediate |
+| **Load Testing**     | K6                                          | Intermediate |
 
 ### Soft Skills
 
-| Skill | Development Application |
-| ---------------------- | ---------------------------------------------------------------------- |
-| **Problem Solving** | Debugging highly complex architectural issues (counter wraparound, barrier timeouts, flow corruption) |
-| **Documentation** | Engineering a comprehensive, 4-file documentation suite |
-| **Code Review** | Executing rigorous review and debugging of team members' code |
-| **Knowledge Transfer** | Facilitating continuous knowledge transfer via structured pair programming |
-| **Project Management** | Utilizing advanced task tracking and rigorous milestone management methodologies |
+| Skill                  | Development Application                                                                               |
+| ---------------------- | ----------------------------------------------------------------------------------------------------- |
+| **Problem Solving**    | Debugging highly complex architectural issues (counter wraparound, barrier timeouts, flow corruption) |
+| **Documentation**      | Engineering a comprehensive, 4-file documentation suite                                               |
+| **Code Review**        | Executing rigorous review and debugging of team members' code                                         |
+| **Knowledge Transfer** | Facilitating continuous knowledge transfer via structured pair programming                            |
+| **Project Management** | Utilizing advanced task tracking and rigorous milestone management methodologies                      |
 
 ---
 
@@ -275,34 +275,34 @@ The IMS initiative constitutes an end-to-end monitoring architecture engineered 
 
 ### Quantitative Value
 
-| Metric | Pre-IMS Baseline | Post-IMS Achievement | Delta |
-| ------------------------------- | ---------- | -------------------- | ----------- |
-| **Monitoring Coverage** | 0% | 100% | +100% |
-| **Mean Time to Detect (MTTD)** | 30+ min | < 1 min | -97% |
-| **Mean Time to Respond (MTTR)** | 2+ hours | < 15 min | -87% |
-| **False Positive Rate** | N/A | < 5% | — |
-| **Alert Noise Reduction** | N/A | 80% (via advanced inhibition rules)| — |
-| **Dashboard Load Time** | N/A | < 2 seconds | — |
-| **Data Retention** | 0 days | 30+ days | +30 days |
-| **Scalability** | 0 machines | 1-1000+ machines | +1000x |
+| Metric                          | Pre-IMS Baseline | Post-IMS Achievement                | Delta    |
+| ------------------------------- | ---------------- | ----------------------------------- | -------- |
+| **Monitoring Coverage**         | 0%               | 100%                                | +100%    |
+| **Mean Time to Detect (MTTD)**  | 30+ min          | < 1 min                             | -97%     |
+| **Mean Time to Respond (MTTR)** | 2+ hours         | < 15 min                            | -87%     |
+| **False Positive Rate**         | N/A              | < 5%                                | —        |
+| **Alert Noise Reduction**       | N/A              | 80% (via advanced inhibition rules) | —        |
+| **Dashboard Load Time**         | N/A              | < 2 seconds                         | —        |
+| **Data Retention**              | 0 days           | 30+ days                            | +30 days |
+| **Scalability**                 | 0 machines       | 1-1000+ machines                    | +1000x   |
 
 ### Qualitative Value
 
-| Value | Description |
-| ------------------------ | ------------------------------------------------- |
-| **Proactive Monitoring** | Detects anomalies comprehensively before they manifest as service-impacting incidents |
-| **Real-time Visibility** | Equips the IT team with a holistic, real-time perspective of the entire infrastructure |
-| **Reduced Downtime** | Slashes downtime duration dramatically via highly automated, precise alerting |
-| **Knowledge Base** | Establishes a highly technical, comprehensive documentation suite for engineering teams |
-| **Training Platform** | Functions as a robust, industry-grade platform for training future cohorts of interns |
+| Value                    | Description                                                                             |
+| ------------------------ | --------------------------------------------------------------------------------------- |
+| **Proactive Monitoring** | Detects anomalies comprehensively before they manifest as service-impacting incidents   |
+| **Real-time Visibility** | Equips the IT team with a holistic, real-time perspective of the entire infrastructure  |
+| **Reduced Downtime**     | Slashes downtime duration dramatically via highly automated, precise alerting           |
+| **Knowledge Base**       | Establishes a highly technical, comprehensive documentation suite for engineering teams |
+| **Training Platform**    | Functions as a robust, industry-grade platform for training future cohorts of interns   |
 
 ### Cost Savings
 
-| Category | Savings | Calculation |
-| ----------------------- | ---------------------- | ------------------------------------ |
-| **Manual Monitoring** | 20 hours/month | 10 hours × 2 staff members × $25/hour |
+| Category                | Savings                | Calculation                                                     |
+| ----------------------- | ---------------------- | --------------------------------------------------------------- |
+| **Manual Monitoring**   | 20 hours/month         | 10 hours × 2 staff members × $25/hour                           |
 | **Downtime Prevention** | $5,000-50,000/incident | Industry average costs associated with critical server downtime |
-| **Knowledge Transfer** | Invaluable | Permanent training infrastructure for all future interns |
+| **Knowledge Transfer**  | Invaluable             | Permanent training infrastructure for all future interns        |
 
 ---
 
@@ -365,30 +365,30 @@ fs.writeFileSync('flows-ubuntu.json', JSON.stringify(flows));
 
 ### Short-term (1-3 Months)
 
-| Recommendation | Priority | Impact |
-| ----------------------------- | -------- | ------------------------------------------------- |
-| **SNMP v3 Implementation** | High | Security — A strict mandatory requirement for production deployment |
-| **Alert Template Fix** | Medium | UX — Rectify the ubiquitous `[no value]` artifact in alert messages |
-| **Z-Score Anomaly Detection** | High | AIOps — Translate the existing conceptual comments into functional PromQL rules |
-| **K6 Load Testing** | Medium | Performance — Execute rigorous scale testing targeting 1000+ simulated VUs |
+| Recommendation                | Priority | Impact                                                                          |
+| ----------------------------- | -------- | ------------------------------------------------------------------------------- |
+| **SNMP v3 Implementation**    | High     | Security — A strict mandatory requirement for production deployment             |
+| **Alert Template Fix**        | Medium   | UX — Rectify the ubiquitous `[no value]` artifact in alert messages             |
+| **Z-Score Anomaly Detection** | High     | AIOps — Translate the existing conceptual comments into functional PromQL rules |
+| **K6 Load Testing**           | Medium   | Performance — Execute rigorous scale testing targeting 1000+ simulated VUs      |
 
 ### Medium-term (3-6 Months)
 
-| Recommendation | Priority | Impact |
-| -------------------------------- | -------- | ------------------------------------------------ |
-| **Machine Learning Integration** | High | Predictive — Deploy Prophet/ARIMA models for advanced capacity forecasting |
-| **Multi-tenant Support** | Medium | Scalability — Architect robust segregation of monitoring data by department |
-| **Mobile Dashboard** | Low | UX — Engineer mobile-optimized dashboard viewport configurations |
-| **API Gateway** | Medium | Integration — Deploy a robust REST API layer enabling secure third-party consumption |
+| Recommendation                   | Priority | Impact                                                                               |
+| -------------------------------- | -------- | ------------------------------------------------------------------------------------ |
+| **Machine Learning Integration** | High     | Predictive — Deploy Prophet/ARIMA models for advanced capacity forecasting           |
+| **Multi-tenant Support**         | Medium   | Scalability — Architect robust segregation of monitoring data by department          |
+| **Mobile Dashboard**             | Low      | UX — Engineer mobile-optimized dashboard viewport configurations                     |
+| **API Gateway**                  | Medium   | Integration — Deploy a robust REST API layer enabling secure third-party consumption |
 
 ### Long-term (6-12 Months)
 
-| Recommendation | Priority | Impact |
-| ------------------------ | -------- | -------------------------------------- |
-| **Kubernetes Migration** | High | Scalability — Mandatory architectural evolution for supporting 1000+ physical machines |
-| **Federated Monitoring** | High | Enterprise — Enable highly resilient, distributed multi-site monitoring architectures |
-| **AI-powered Alerting** | High | AIOps — Implement dynamic, self-learning alert threshold algorithms |
-| **Compliance Reporting** | Medium | Governance — Automate the generation of rigorous audit trails and SLA compliance reports |
+| Recommendation           | Priority | Impact                                                                                   |
+| ------------------------ | -------- | ---------------------------------------------------------------------------------------- |
+| **Kubernetes Migration** | High     | Scalability — Mandatory architectural evolution for supporting 1000+ physical machines   |
+| **Federated Monitoring** | High     | Enterprise — Enable highly resilient, distributed multi-site monitoring architectures    |
+| **AI-powered Alerting**  | High     | AIOps — Implement dynamic, self-learning alert threshold algorithms                      |
+| **Compliance Reporting** | Medium   | Governance — Automate the generation of rigorous audit trails and SLA compliance reports |
 
 ---
 
@@ -406,12 +406,12 @@ The IMS initiative has successfully achieved all 5 core strategic objectives:
 
 ### Value Delivered to the Organization
 
-| Value Type | Details |
-| ------------- | ------------------------------------------------------------------- |
+| Value Type    | Details                                                                                                   |
+| ------------- | --------------------------------------------------------------------------------------------------------- |
 | **Technical** | A highly functional monitoring system, dramatically reduced downtime, and unprecedented system visibility |
-| **Knowledge** | A comprehensive documentation suite, reusable skill library, and permanent training platform |
-| **Financial** | Eradicated manual monitoring costs and systematically prevented exorbitant downtime-related losses |
-| **Strategic** | Established a robust foundation for AIOps, predictive maintenance, and limitless enterprise scaling |
+| **Knowledge** | A comprehensive documentation suite, reusable skill library, and permanent training platform              |
+| **Financial** | Eradicated manual monitoring costs and systematically prevented exorbitant downtime-related losses        |
+| **Strategic** | Established a robust foundation for AIOps, predictive maintenance, and limitless enterprise scaling       |
 
 ### Acknowledgements
 

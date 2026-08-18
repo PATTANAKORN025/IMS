@@ -55,13 +55,13 @@
 
 ## 3. Grafana 原生警报规则 — 基础设施 (`rules.yml`)
 
-| 规则                                                            | 范围                                                                                                                                                                                                                     |
-| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| High CPU / RAM / Disk Usage                                     | 服务器/工作站资源阈值。                                                                                                                                                                                                  |
-| High Temperature                                                | 服务器机箱温度。                                                                                                                                                                                                         |
-| High Network Error Rate / Network Packet Drops / Interface Down | 网络接口健康状况。                                                                                                                                                                                                       |
-| Bandwidth Saturation Forecast                                   | 预测性——容量呈饱和趋势，尚未突破。                                                                                                                                                                                       |
-| CPU Z-Score Anomaly (>3σ) / Temperature Z-Score Anomaly (>3σ)   | 统计异常检测——仅限基础设施。**LDI 侧没有等效的 Z-Score 面板**（见上文的 `LDI Temperature High`，它采用固定阈值替代）。                                                                                                   |
+| 规则                                                            | 范围                                                                                                                                                                                               |
+| --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| High CPU / RAM / Disk Usage                                     | 服务器/工作站资源阈值。                                                                                                                                                                            |
+| High Temperature                                                | 服务器机箱温度。                                                                                                                                                                                   |
+| High Network Error Rate / Network Packet Drops / Interface Down | 网络接口健康状况。                                                                                                                                                                                 |
+| Bandwidth Saturation Forecast                                   | 预测性——容量呈饱和趋势，尚未突破。                                                                                                                                                                 |
+| CPU Z-Score Anomaly (>3σ) / Temperature Z-Score Anomaly (>3σ)   | 统计异常检测——仅限基础设施。**LDI 侧没有等效的 Z-Score 面板**（见上文的 `LDI Temperature High`，它采用固定阈值替代）。                                                                             |
 | LDI Vibration Critical                                          | **备用状态。** 当前版本中每台 LDI 设备的 `ldi_metrics.vibration` 保留供未来系统集成（当前设定为 `0`，参见 `ARCHITECTURE.md` 的系统约束与技术边界）。该规则目前处于休眠状态，以兼容当前传感器规范。 |
 
 从 `NOC Overview` 或 `Engineering Drill-Down` 开始调查基础设施警报。
@@ -75,7 +75,7 @@
 | `PrometheusDown` / `AlertmanagerDown` / `TargetDown` / `HighScrapeErrors` | 监控堆栈自身的组件不健康。                                                                          | 执行 `docker ps` 检查受影响的容器；见 `INCIDENT_RESPONSE.md`。                                                 |
 | `ServiceDown` / `ServiceHighLatency` / `SLABreachWarning`                 | 针对监控端点（例如 Grafana 的 `/api/health`）的 blackbox-exporter 探针失败。                        | 直接检查目标服务；注意，这可能是故意重建容器的瞬时假象——见 `DR_TEST_PLAN.md` 演练 2 寻找真实示例。             |
 | `SSLCertExpiring`                                                         | 监控端点的 TLS 证书即将过期。                                                                       | 在过期前续期。                                                                                                 |
-| `Watchdog`                                                                | 持续触发的心跳，确认 Alertmanager 的路由工作正常——**并非** 真实事故。在扫描实际触发的警报时排除它。 | 不适用 - 正常工作 |
+| `Watchdog`                                                                | 持续触发的心跳，确认 Alertmanager 的路由工作正常——**并非** 真实事故。在扫描实际触发的警报时排除它。 | 不适用 - 正常工作                                                                                              |
 | `PipelineDataStalled` / `PipelineDataDegraded` / `PipelineHighErrorRate`  | Node-RED 摄取管道健康状况——遥测数据流停滞/降级/错误率高。                                           | `Meta-Monitoring` 仪表板；检查 `ims-node-red` 日志寻找特定的故障特征（见 `INCIDENT_RESPONSE.md` 的工作示例）。 |
 | `CircuitBreakerOpen`                                                      | 设备的 SNMP 断路器跳闸（多次失败后由 CLOSED 变为 OPEN）。                                           | 检查特定设备的连通性；断路器在冷却后自动复位为 HALF_OPEN。                                                     |
 

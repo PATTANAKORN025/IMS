@@ -1,6 +1,6 @@
 # 🌌 IMS Dashboard Ecosystem: The Macro-to-Micro Architecture
 
-**Industrial Monitoring System (IMS)** utilizes a 15-dashboard "Cyberpunk HUD" ecosystem designed to completely eliminate alarm fatigue and bridge the gap between enterprise IT and physical Operational Technology (OT). 
+**Industrial Monitoring System (IMS)** utilizes a 15-dashboard "Cyberpunk HUD" ecosystem designed to completely eliminate alarm fatigue and bridge the gap between enterprise IT and physical Operational Technology (OT).
 
 This document serves as the master catalog, structurally organized by **Altitude (Macro to Micro)**—ensuring the right data reaches the right persona at the exact moment of decision.
 
@@ -11,8 +11,9 @@ This document serves as the master catalog, structurally organized by **Altitude
 The ecosystem scales dynamically from the 30,000-foot executive view down to the sub-surface protocol level.
 
 ### 🌍 Tier 1: Executive & Fleet Command (30,000 ft - MACRO)
-*Goal: Instant glance-value for business leaders and NOC commanders. Focuses on holistic health, up/down states, and overarching OEE.*
-*Audience: C-Level Executives, Plant Managers, NOC Commanders*
+
+_Goal: Instant glance-value for business leaders and NOC commanders. Focuses on holistic health, up/down states, and overarching OEE._
+_Audience: C-Level Executives, Plant Managers, NOC Commanders_
 
 1. **IMS Easy Overview** (`ims-easy-overview.json`)
    - **Purpose:** Simplified business-level KPI tracking.
@@ -25,8 +26,9 @@ The ecosystem scales dynamically from the 30,000-foot executive view down to the
    - **Key Metrics:** Real-time Overall Equipment Effectiveness (OEE), physical yield rates, and production bottlenecks across the entire Laser Direct Imaging (LDI) fleet.
 
 ### ✈️ Tier 2: System Health & Predictability (10,000 ft)
-*Goal: Predictive Operations (AIOps). Fixing problems days before they manifest as outages.*
-*Audience: IT Directors, Maintenance Planners, SREs*
+
+_Goal: Predictive Operations (AIOps). Fixing problems days before they manifest as outages._
+_Audience: IT Directors, Maintenance Planners, SREs_
 
 4. **LDI Factory Digital Twin** (`ims-ldi-factory-digital-twin.json`)
    - **Purpose:** Real-time physical proxy of the PCB production floor.
@@ -39,8 +41,9 @@ The ecosystem scales dynamically from the 30,000-foot executive view down to the
    - **Key Metrics:** Node-RED ingestion pipeline throughput, SNMP walker circuit breaker states, and TimescaleDB query budgets. Ensures the IMS platform itself never fails silently.
 
 ### 🚁 Tier 3: Engineering & Deep Analytics (1,000 ft)
-*Goal: Root cause correlation between IT infrastructure limits and OT manufacturing yields.*
-*Audience: SysAdmins, Process Engineers, Data Scientists*
+
+_Goal: Root cause correlation between IT infrastructure limits and OT manufacturing yields._
+_Audience: SysAdmins, Process Engineers, Data Scientists_
 
 7. **IMS Engineering Drill-Down** (`ims-engineering-drilldown.json`)
    - **Purpose:** The ultimate Swiss-Army knife for SysAdmins.
@@ -53,8 +56,9 @@ The ecosystem scales dynamically from the 30,000-foot executive view down to the
    - **Key Metrics:** Measures the exact propagation delay between a sensor pinging on the factory floor and the data being successfully committed to PostgreSQL via PgBouncer.
 
 ### 🏢 Tier 4: Tactical Operations (Ground Level)
-*Goal: Binary, zero-latency decision making for the personnel operating the physical hardware.*
-*Audience: Floor Operators, Line Supervisors, Quality Inspectors*
+
+_Goal: Binary, zero-latency decision making for the personnel operating the physical hardware._
+_Audience: Floor Operators, Line Supervisors, Quality Inspectors_
 
 10. **LDI Machine Snapshot** (`ims-ldi-machine-snapshot.json`)
     - **Purpose:** Live heartbeat of a single, specified LDI machine.
@@ -67,8 +71,9 @@ The ecosystem scales dynamically from the 30,000-foot executive view down to the
     - **Key Metrics:** Tracks null values, schema corruption, and sensor offline states at the raw ingestion layer before the data reaches aggregation.
 
 ### 🔬 Tier 5: Incident Management & Resolution (Sub-Surface - MICRO)
-*Goal: Triaging, acknowledging, and permanently resolving anomalies using standardized playbooks.*
-*Audience: L1/L2 Support Teams, Incident Commanders*
+
+_Goal: Triaging, acknowledging, and permanently resolving anomalies using standardized playbooks._
+_Audience: L1/L2 Support Teams, Incident Commanders_
 
 13. **LDI Alarm Console** (`ims-ldi-alarm-console.json`)
     - **Purpose:** Live event triaging.

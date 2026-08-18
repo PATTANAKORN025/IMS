@@ -24,12 +24,12 @@ Also double-checked RAM's entries on the same file while investigating: `size=83
 
 ## Results
 
-| | Before | After |
-| --- | --- | --- |
-| `ERP-MASTER-UBUNTU` disk | 12500/12500 GB, pinned 100% | **15974.31/42915.34 GB, 37.2%** |
-| `ERP-MASTER-WINDOWS` disk (control, untouched file) | -- | 62398.71/186264.51 GB, 33.5% -- independently varying, confirms this fix didn't affect the other profile |
-| Historical rows | 3,484 rows at `12500/12500`, spanning 2026-08-13T09:04:44Z → 2026-08-15T04:18:37Z (last pre-fix sample) | **Unchanged, still present** -- confirmed no history was rewritten, this is a forward-only fix |
-| Parser logic | -- | **Not touched** -- fix is entirely in the `.snmprec` config file, per the instruction not to hide bad simulator input behind parser changes |
+|                                                     | Before                                                                                                  | After                                                                                                                                       |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ERP-MASTER-UBUNTU` disk                            | 12500/12500 GB, pinned 100%                                                                             | **15974.31/42915.34 GB, 37.2%**                                                                                                             |
+| `ERP-MASTER-WINDOWS` disk (control, untouched file) | --                                                                                                      | 62398.71/186264.51 GB, 33.5% -- independently varying, confirms this fix didn't affect the other profile                                    |
+| Historical rows                                     | 3,484 rows at `12500/12500`, spanning 2026-08-13T09:04:44Z → 2026-08-15T04:18:37Z (last pre-fix sample) | **Unchanged, still present** -- confirmed no history was rewritten, this is a forward-only fix                                              |
+| Parser logic                                        | --                                                                                                      | **Not touched** -- fix is entirely in the `.snmprec` config file, per the instruction not to hide bad simulator input behind parser changes |
 
 One transient `0/0` row observed at 04:19:03Z during the ~1s window while `snmpsim` was restarting (device briefly unreachable, correctly logged as zero by the existing `isEmpty` handling, not fabricated) -- expected, not a defect.
 
