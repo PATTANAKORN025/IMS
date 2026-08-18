@@ -21,11 +21,34 @@ web
 
 ## Users
 
-Primary: two distinct operator populations. (1) NOC operators monitoring servers and network devices across data centers — 24/7 shifts, need rapid visibility into device health, network bandwidth, and temperature anomalies. (2) LDI manufacturing floor operators and process engineers monitoring the LDI (Laser Direct Imaging) PCB production line — need live Andon-board machine status, SPC/Cpk process capability, and RCA (root-cause) correlation between alarms and process parameters. Secondary: SRE and DevOps engineers performing root cause analysis, capacity planning, and pipeline debugging across both domains.
+Primary: Two distinct operator populations.
+- **NOC Operators:** Monitoring servers and network devices across data centers.
+  - **Environment:** 24/7 shifts.
+  - **Needs:** Rapid visibility into device health, network bandwidth, and temperature anomalies.
+- **LDI Floor Operators & Process Engineers:** Monitoring the PCB production line.
+  - **Environment:** Factory floor.
+  - **Needs:** Live Andon-board status, SPC/Cpk process capability, and RCA (Root-Cause Analysis) correlation between alarms and parameters.
+
+Secondary: 
+- **SRE and DevOps Engineers:** Performing root cause analysis, capacity planning, and pipeline debugging across both domains.
 
 ## Product Purpose
 
-Provide a single-pane-of-glass monitoring system spanning two domains — infrastructure and manufacturing — each with its own telemetry pipeline, dashboard set, and alerting. The infrastructure side ingests SNMP metrics from servers and network devices via Node-RED into TimescaleDB, visualized through 5 dashboards (NOC Overview, Engineering Drill-Down, Capacity Forecast, Meta-Monitoring, Ingestion Latency). The manufacturing side ingests LDI machine telemetry (position/judgment error, thickness, scan speed, resist dosage, and more) via HTTP/JSON, visualized through 10 dashboards (Easy Overview, Manufacturing Command Center, Operator Andon Board, Alarm Console, Alarm Dictionary, Engineering Analytics & SPC, Machine Snapshot, Data Readiness, Factory Digital Twin, Alarm Response) with real SPC (Cpk process capability) and RCA (alarm-to-parameter correlation) analytics. It includes AIOps features (Z-Score anomaly detection on the infrastructure side, circuit breaker degradation, predictive capacity forecasting) and alerting via LINE Messaging API and MS Teams with runbook links. Success means comprehensive visibility — critical devices, machines, and anomalies are visible within seconds.
+Provide a single-pane-of-glass monitoring system spanning two domains — infrastructure and manufacturing — each with its own telemetry pipeline, dashboard set, and alerting.
+
+**Infrastructure Domain:**
+- **Ingestion:** SNMP metrics from servers/network devices via Node-RED into TimescaleDB.
+- **Visualization:** 5 Dashboards (NOC Overview, Engineering Drill-Down, Capacity Forecast, Meta-Monitoring, Ingestion Latency).
+- **AIOps:** Z-Score anomaly detection, circuit breaker degradation, predictive capacity forecasting.
+
+**Manufacturing Domain:**
+- **Ingestion:** LDI machine telemetry (position/judgment error, thickness, scan speed, resist dosage) via HTTP/JSON.
+- **Visualization:** 10 Dashboards (Easy Overview, Manufacturing Command Center, Operator Andon Board, Alarm Console, Alarm Dictionary, Engineering Analytics & SPC, Machine Snapshot, Data Readiness, Factory Digital Twin, Alarm Response).
+- **Analytics:** Real SPC (Cpk process capability) and RCA (alarm-to-parameter correlation) analytics.
+
+**Alerting & Success Criteria:**
+- **Notifications:** LINE Messaging API and MS Teams with direct runbook links.
+- **Success Criteria:** Comprehensive visibility — critical devices, machines, and anomalies are visible within seconds.
 
 ## Positioning
 
