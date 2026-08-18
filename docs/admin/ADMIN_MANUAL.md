@@ -30,7 +30,7 @@
 
 ### Container Overview
 
-The system operates entirely on Docker Compose, comprising a total of 13 services (12 long-running services and 1 one-shot migration runner that exits upon completion):
+The system operates entirely on Docker Compose, comprising a total of 14 services (13 long-running services and 1 one-shot migration runner that exits upon completion):
 
 | Container              | Service                | Port                        | Purpose                                                                                                                                           |
 | ---------------------- | ---------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -322,7 +322,7 @@ docker compose down -v && docker compose up -d
 # 2. Wait 40 seconds
 sleep 40
 
-# 3. Verify containers (11 long-running + ims-db-migrate which should be Exited (0))
+# 3. Verify containers (13 long-running + ims-db-migrate which should be Exited (0))
 docker compose ps
 
 # 4. Verify data flow
