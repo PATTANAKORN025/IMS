@@ -43,21 +43,39 @@
 </div>
 
 <div align="center">
-  <a href="#quick-start"><img src="docs/assets/icons/github.svg" width="14" align="center"/> **Release v1.0**</a>
-  <a href="LICENSE"><img src="docs/assets/icons/open-source-initiative.svg" width="14" align="center"/> **MIT License**</a>
-  <a href="https://www.docker.com/"><img src="docs/assets/icons/docker.svg" width="14" align="center"/> **Docker Ready**</a>
-  <a href="https://grafana.com/"><img src="docs/assets/icons/grafana.svg" width="14" align="center"/> **Grafana v11+**</a>
-  <a href="https://nodered.org/"><img src="docs/assets/icons/node-red.svg" width="14" align="center"/> **Node-RED v4+**</a>
-  <a href="https://www.timescale.com/"><img src="docs/assets/icons/postgresql.svg" width="14" align="center"/> **TimescaleDB 2.x**</a>
-  <br>
-  <a href="#quick-start"><img src="docs/assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Tests Passing</a>
-  <a href="#quick-start"><img src="docs/assets/icons/k6.svg" width="14" align="center"/> **K6:** Stress-Tested</a>
-  <a href="data-generators/"><img src="docs/assets/icons/python.svg" width="14" align="center"/> **Data:** Digital Twin</a>
+  <a href="#quick-start"><img src="docs/assets/icons/github.svg" width="16" align="center" alt="Release"/> <b>Release v1.0</b></a> &nbsp;•&nbsp;
+  <a href="LICENSE"><img src="docs/assets/icons/open-source-initiative.svg" width="16" align="center" alt="License"/> <b>MIT License</b></a> &nbsp;•&nbsp;
+  <a href="https://www.docker.com/"><img src="docs/assets/icons/docker.svg" width="16" align="center" alt="Docker"/> <b>Docker Ready</b></a> &nbsp;•&nbsp;
+  <a href="https://grafana.com/"><img src="docs/assets/icons/grafana.svg" width="16" align="center" alt="Grafana"/> <b>Grafana v11+</b></a> &nbsp;•&nbsp;
+  <a href="https://nodered.org/"><img src="docs/assets/icons/node-red.svg" width="16" align="center" alt="Node-RED"/> <b>Node-RED v4+</b></a> &nbsp;•&nbsp;
+  <a href="https://www.timescale.com/"><img src="docs/assets/icons/postgresql.svg" width="16" align="center" alt="TimescaleDB"/> <b>TimescaleDB 2.x</b></a>
+  <br/><br/>
+  <a href="#quick-start"><img src="docs/assets/icons/check-circle.svg" width="16" align="center" alt="Status"/> <b>Status:</b> Tests Passing</a> &nbsp;•&nbsp;
+  <a href="#quick-start"><img src="docs/assets/icons/k6.svg" width="16" align="center" alt="K6"/> <b>K6:</b> Stress-Tested</a> &nbsp;•&nbsp;
+  <a href="data-generators/"><img src="docs/assets/icons/python.svg" width="16" align="center" alt="Data"/> <b>Data:</b> Digital Twin</a>
 </div>
 
-<div align="center" justify-content="space-between">
-  <a href="docs/architecture/IMS_PLATFORM_BOOK.md"><img src="docs/assets/icons/check-circle.svg" width="14" align="center"/> **PLATFORM BOOK:** ENTER</a>
-  <a href="docs/architecture/ARCHITECTURE.md"><img src="docs/assets/icons/check-circle.svg" width="14" align="center"/> **ARCHITECTURE:** READ</a>
+<br/>
+
+<div align="center">
+  <table>
+    <tr>
+      <td align="center" width="250">
+        <a href="docs/architecture/IMS_PLATFORM_BOOK.md" style="text-decoration:none;">
+          <img src="docs/assets/icons/book.svg" width="32" align="center" alt="Platform Book"/><br/>
+          <b>PLATFORM BOOK</b><br/>
+          <sub>ENTER</sub>
+        </a>
+      </td>
+      <td align="center" width="250">
+        <a href="docs/architecture/ARCHITECTURE.md" style="text-decoration:none;">
+          <img src="docs/assets/icons/server.svg" width="32" align="center" alt="Architecture"/><br/>
+          <b>ARCHITECTURE</b><br/>
+          <sub>READ</sub>
+        </a>
+      </td>
+    </tr>
+  </table>
 </div>
 
 <br/>
