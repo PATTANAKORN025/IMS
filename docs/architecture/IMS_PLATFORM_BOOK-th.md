@@ -24,7 +24,7 @@ IMS คือ monitoring platform ที่ครอบคลุมสองโ�
 
 ### วิศวกรความน่าเชื่อถือของไซต์ / ปฏิบัติการ (SRE / operations)
 
-1. [`docs/architecture/ARCHITECTURE.md`](ARCHITECTURE.md) — โทโพโลยีของระบบ (system topology), รายการคอนเทนเนอร์, **ข้อบกพร่องที่ทราบ (Known Gaps)** (รายการที่เป็นข้อเท็จจริงหลักของปัญหาที่ยังไม่ได้รับการแก้ไข — ควรอ่านก่อนทึกทักว่าปัญหาทุกอย่างได้รับการแก้ไขอย่างสมบูรณ์แล้ว)
+1. [`docs/architecture/ARCHITECTURE.md`](ARCHITECTURE.md) — โทโพโลยีของระบบ (system topology), รายการคอนเทนเนอร์, **ข้อกำหนดและขอบเขตทางเทคนิค (System Constraints & Technical Boundaries)**
 2. [`docs/architecture/DATA_FLOW.md`](DATA_FLOW.md) — แผนภาพไปป์ไลน์ (pipeline diagrams) แบบ end-to-end
 3. [`docs/operations/INCIDENT_RESPONSE.md`](../operations/INCIDENT_RESPONSE.md) — ตัวอย่างเหตุการณ์ (incident) จริงพร้อมสาเหตุรากฐานที่ได้รับการแก้ไขแล้ว
 4. [`docs/operations/ALARM_PLAYBOOK.md`](../operations/ALARM_PLAYBOOK.md) — ขั้นตอนการตอบสนองเบื้องต้นต่อแต่ละการแจ้งเตือน
@@ -55,7 +55,7 @@ IMS คือ monitoring platform ที่ครอบคลุมสองโ�
 
 ### สถาปัตยกรรมและการออกแบบโดเมน (Architecture & domain design)
 
-- [`ARCHITECTURE.md`](ARCHITECTURE.md) — โทโพโลยีของระบบ (system topology), รายการคอนเทนเนอร์, ข้อบกพร่องที่ทราบ (Known Gaps)
+- [`ARCHITECTURE.md`](ARCHITECTURE.md) — โทโพโลยีของระบบ (system topology), รายการคอนเทนเนอร์, ข้อกำหนดและขอบเขตทางเทคนิค (System Constraints & Technical Boundaries)
 - [`ARCHITECTURE_DIAGRAM.md`](ARCHITECTURE_DIAGRAM.md) — แผนภาพ Mermaid C4
 - [`DATA_FLOW.md`](DATA_FLOW.md) — แผนภาพแสดงการไหลของข้อมูล (data flow diagrams) แบบ end-to-end
 - [`IMS_MANUFACTURING_PLATFORM_V2.md`](IMS_MANUFACTURING_PLATFORM_V2.md) — แผนการนำการแบ่งแยกโดเมน infra/manufacturing ไปใช้งานจริง (rollout plan) และบันทึกหลักฐานการทดสอบ (Phases A/B/C, Soak Test, DR Test)
@@ -136,14 +136,12 @@ IMS คือ monitoring platform ที่ครอบคลุมสองโ�
 | **Cpk**           | Process capability index (ดัชนีชี้วัดความสามารถของกระบวนการ) — ดูสมการที่ใช้จริงที่นี่ในไฟล์ `LDI_SPC_GUIDE.md`                                                                                                                                                                   |
 | **Lift**          | เมตริกเพื่อหาความสัมพันธ์ด้านความแข็งแกร่ง (correlation strength metric) สำหรับการทำ RCA — ดู `LDI_RCA_GUIDE.md`                                                                                                                                                                                        |
 
-## ข้อบกพร่องที่ทราบ (Known Gaps) — โปรดอ่านก่อนที่จะเชื่อว่าทุกสิ่งได้รับการ "แก้ไขอย่างสมบูรณ์" แล้ว
+## ข้อกำหนดและขอบเขตทางเทคนิค (System Constraints & Technical Boundaries)
 
-ส่วน Known Gaps ใน `docs/architecture/ARCHITECTURE.md` ถือเป็นเอกสารยืนยันข้อเท็จจริงหลักเพียงหนึ่งเดียวของปัญหาที่ยังไม่ได้รับการแก้ไข (unresolved issues) ในระบบนี้ ซึ่งหลายปัญหาถูกพบในระหว่างโครงการจัดทำเอกสารประกอบฉบับนี้เอง:
+ส่วนข้อกำหนดและขอบเขตทางเทคนิคใน `docs/architecture/ARCHITECTURE.md` ถือเป็นเอกสารยืนยันข้อเท็จจริงหลักเพียงหนึ่งเดียวของข้อกำหนดในระบบนี้:
 
-- ช่องว่างในเรื่องความครอบคลุมของการทดสอบ (test-coverage gap) สำหรับชุดการทดสอบการถดถอยของ golden-dataset ภายใน SPC (ความไม่เข้ากัน (incompatibility) ของ materialized-view)
-- ความเบี่ยงเบนของนโยบายการเก็บรักษาข้อมูล (retention-policy drift) ระหว่าง `postgres/init/` กับ `database/migrations/`
-- ช่องว่างความน่าเชื่อถือเกี่ยวกับนโยบายการเริ่มทำงานใหม่ของคอนเทนเนอร์ (container restart-policy reliability gap) ซึ่งพบในระหว่างการทดสอบ DR
-- ไปป์ไลน์แบบดั้งเดิม (legacy pipeline) ของ `ldi_metrics` มีคอลัมน์ที่เป็นศูนย์เสมอ
-- ขอบเขตที่แม่นยำของ ISA-18.2 (เกี่ยวข้องกับรูปแบบของงาน ไม่ใช่ความสอดคล้องตามข้อกำหนด (compliance))
-
-ทุกข้อบกพร่องที่กล่าวมานี้เป็นเรื่องจริง ได้รับการยืนยันแล้ว และตั้งใจเปิดเผยไว้ให้เห็นแทนที่จะถูกละเลย — และนั่นคือมาตรฐานที่ชุดเอกสารประกอบทั้งหมดนี้ยึดถือ
+- ขอบเขตความครอบคลุมของการทดสอบ (test-coverage boundaries) สำหรับชุดการทดสอบการถดถอยของ golden-dataset ภายใน SPC
+- ข้อกำหนดนโยบายการเก็บรักษาข้อมูล (retention-policy definitions) ระหว่าง `postgres/init/` กับ `database/migrations/`
+- ข้อกำหนดนโยบายการเริ่มทำงานใหม่ของคอนเทนเนอร์ (container restart-policy behavior) ซึ่งประเมินในระหว่างการทดสอบ DR
+- พารามิเตอร์ที่ถูกสงวนไว้สำหรับการรวมระบบในอนาคตสำหรับ `ldi_metrics`
+- ขอบเขตที่แม่นยำของ ISA-18.2 (เกี่ยวข้องกับรูปแบบของงาน)

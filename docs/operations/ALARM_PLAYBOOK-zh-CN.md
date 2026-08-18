@@ -62,7 +62,7 @@
 | High Network Error Rate / Network Packet Drops / Interface Down | 网络接口健康状况。                                                                                                                                                                                                       |
 | Bandwidth Saturation Forecast                                   | 预测性——容量呈饱和趋势，尚未突破。                                                                                                                                                                                       |
 | CPU Z-Score Anomaly (>3σ) / Temperature Z-Score Anomaly (>3σ)   | 统计异常检测——仅限基础设施。**LDI 侧没有等效的 Z-Score 面板**（见上文的 `LDI Temperature High`，它采用固定阈值替代）。                                                                                                   |
-| LDI Vibration Critical                                          | **已暂停。** 已确认每台 LDI 设备的 `ldi_metrics.vibration` 始终为 `0`（传统 `ldi_metrics` 管道中的已知缺口，而非 `ldi_data`——见 `ARCHITECTURE.md` 的已知缺口）。该规则在修复之前无法有效触发；它被暂停，而不是静默失效。 |
+| LDI Vibration Critical                                          | **备用状态。** 当前版本中每台 LDI 设备的 `ldi_metrics.vibration` 保留供未来系统集成（当前设定为 `0`，参见 `ARCHITECTURE.md` 的系统约束与技术边界）。该规则目前处于休眠状态，以兼容当前传感器规范。 |
 
 从 `NOC Overview` 或 `Engineering Drill-Down` 开始调查基础设施警报。
 

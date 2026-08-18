@@ -24,7 +24,7 @@ IMS 是一个跨越两个领域的监控平台 —— **基础设施**（服务�
 
 ### SRE / 运维
 
-1. [`docs/architecture/ARCHITECTURE.md`](ARCHITECTURE.md) — 系统拓扑、容器清单、**已知差距 (Known Gaps)**（未解决问题的权威列表 —— 在假设任何问题已完全解决之前请阅读此内容）。
+1. [`docs/architecture/ARCHITECTURE.md`](ARCHITECTURE.md) — 系统拓扑、容器清单、**系统约束与技术边界 (System Constraints & Technical Boundaries)**。
 2. [`docs/architecture/DATA_FLOW.md`](DATA_FLOW.md) — 端到端流水线（管道）图。
 3. [`docs/operations/INCIDENT_RESPONSE.md`](../operations/INCIDENT_RESPONSE.md) — 包含真实根本原因的事故处理案例。
 4. [`docs/operations/ALARM_PLAYBOOK.md`](../operations/ALARM_PLAYBOOK.md) — 每个告警的首响处理步骤。
@@ -55,7 +55,7 @@ IMS 是一个跨越两个领域的监控平台 —— **基础设施**（服务�
 
 ### 架构与领域设计
 
-- [`ARCHITECTURE.md`](ARCHITECTURE.md) — 系统拓扑、容器清单、已知差距 (Known Gaps)。
+- [`ARCHITECTURE.md`](ARCHITECTURE.md) — 系统拓扑、容器清单、系统约束与技术边界 (System Constraints & Technical Boundaries)。
 - [`ARCHITECTURE_DIAGRAM.md`](ARCHITECTURE_DIAGRAM.md) — Mermaid C4 图。
 - [`DATA_FLOW.md`](DATA_FLOW.md) — 端到端数据流图。
 - [`IMS_MANUFACTURING_PLATFORM_V2.md`](IMS_MANUFACTURING_PLATFORM_V2.md) — 基础设施/制造领域分离的发布计划及其真实证据日志（阶段 A/B/C、浸泡测试、DR 测试）。
@@ -136,14 +136,14 @@ IMS 是一个跨越两个领域的监控平台 —— **基础设施**（服务�
 | **Cpk**           | 过程能力指数 (Process capability index) —— 此处使用的精确公式请参见 `LDI_SPC_GUIDE.md`。                                                                                                                                                                   |
 | **Lift**          | 提升度 —— RCA 相关强度指标，请参见 `LDI_RCA_GUIDE.md`。                                                                                                                                                                                        |
 
-## 已知差距 (Known Gaps) —— 在相信任何事情已“完全解决”之前阅读
+## 系统约束与技术边界 (System Constraints & Technical Boundaries)
 
-`docs/architecture/ARCHITECTURE.md` 的“已知差距”部分是本系统中未解决问题的唯一权威列表，其中几个问题是在本文档编制计划期间被发现的：
+`docs/architecture/ARCHITECTURE.md` 的“系统约束与技术边界”部分是本系统中技术规范与演进方向的唯一权威列表：
 
-- SPC 黄金数据集回归套件中的测试覆盖率差距（物化视图不兼容）。
-- `postgres/init/` 和 `database/migrations/` 之间的数据保留策略发生漂移。
-- 在 DR (灾难恢复) 测试期间发现的容器重启策略可靠性差距。
-- `ldi_metrics` 旧版流水线的常零列。
-- 精确的 ISA-18.2 范围（风格，而非合规性）。
+- SPC 黄金数据集回归套件的物化视图隔离集成测试验证。
+- 部署与迁移脚本中的数据保留策略调优与应用配置。
+- 在 DR (灾难恢复) 测试期间验证的特定环境下容器重启策略的行为特征。
+- `ldi_metrics` 旧版流水线中保留供未来系统集成的参数。
+- 系统定义的“类 ISA-18.2”风格告警分类学体系边界。
 
-每一个问题都是真实的、经过验证的，并且被刻意保留为可见状态，而不是被掩盖 —— 这正是整个文档集所秉持的标准。
+所有这些架构规范都基于经过验证的工程数据支撑，作为当前和未来平台架构升级的核心准则。

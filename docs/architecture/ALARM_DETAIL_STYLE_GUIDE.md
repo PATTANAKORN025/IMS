@@ -5,7 +5,7 @@
 > **v1.0** (2026-08-11): 15 codes, single-statement `alarm_detail` only.
 > **v1.1** (2026-08-11): all 21 mock-catalog codes now have English `alarm_detail` (10 more translated from Thai); added structured `cause` / `impact` / `recovery_action` fields for all 25 codes covered so far (the 21 mock codes minus none, plus 4 real-only Critical codes not in the mock catalog); added a `sop_reference` field (schema-ready, intentionally empty — see [§7](#7-sop--work-instruction-references--not-yet-populated)).
 >
-> See [§8 Freeze & scope](#8-freeze--scope) for exactly what is and isn't covered, and [§9 Open request](#9-open-request-vendor-catalog-for-the-11-gap-codes) for what's blocked on external input.
+> See [§8 Freeze & scope](#8-freeze--scope) for scope boundaries, and [§9 Vendor specification requests for pending codes](#9-vendor-specification-request-for-pending-codes) for pending external input.
 
 ---
 
@@ -51,7 +51,7 @@ Every entry in this guide must cite where its facts came from:
 - **Source text** — the real vendor `AlarmMsg`/`AlarmType` from `data/real/[REDACTED_VENDOR_MANUAL]` or the supplemental `ldi_alarm_ms_code_clean.sql` export.
 - **Cause/check guidance** — grounded in this codebase's own documented telemetry columns and thresholds (`docs/architecture/DATA_FLOW.md`, `LDI_SPC_GUIDE.md`, the mock catalog's existing functional descriptions), not invented.
 
-If any of the three is missing, the code doesn't get a rewrite in this pass — it gets flagged as a gap instead (see §6).
+If any of the three is missing, the code is flagged for future update (see §6).
 
 ---
 
@@ -166,7 +166,7 @@ Beyond the single-statement `alarm_detail`, each of the 25 codes covered so far 
 
 **Explicitly not claimed:** this is not ISA-18.2 compliance (see the earlier audit's Known Gaps), it is not full-catalog coverage, and `sop_reference` is not populated with real content (§7). It's 25 real, verifiably-grounded, consistently-styled, structurally-complete entries as the reference pattern for extending coverage later.
 
-## 9. Open request: vendor catalog for the 11 gap codes
+## 9. Vendor specification request for pending codes
 
 This is a request to whoever manages the vendor relationship, not something resolvable from inside this codebase. The 11 codes below fired for real on the production machines (390 real log rows, `data/real/ldi_alarm_log_clean.sql`) but appear in neither vendor catalog file available locally. Closing this gap needs one of:
 

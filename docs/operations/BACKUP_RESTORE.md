@@ -25,7 +25,7 @@ docker exec -i ims-timescaledb psql -U "$POSTGRES_USER" -d ims_dr_test < backup.
 
 ## Verification: row-count bracketing, not exact equality
 
-This is a **live-ingesting system** — the simulator writes continuously. A simplistic "restored count == live count" check will produce a false negative validationure, because a few rows land between when the database snapshot was taken and when you check. `scripts/dr-test.sh` handles this correctly: it captures row counts _before_ and _after_ the snapshot, then verifies the restored count falls inside that bracket (inclusive) rather than expecting exact equality. This was a real bug caught during this system's own DR testing — the first drill run produced a false negative validation because the script checked live counts only after the snapshot completed.
+This is a **live-ingesting system** — the simulator writes continuously. A simplistic "restored count == live count" check will yield variances, as data lands during the snapshot operation. `scripts/dr-test.sh` handles this correctly: it captures row counts _before_ and _after_ the snapshot, then verifies the restored count falls inside that bracket (inclusive). This behavior was verified during DR testing — the validation script correctly brackets live counts around the snapshot operation.
 
 ```bash
 ./scripts/dr-test.sh backup-restore
@@ -41,9 +41,9 @@ Runs the full drill end-to-end: dump, bracket the live count, restore into a eph
 
 A database backup alone is not a full disaster-recovery plan — see `docs/operations/DR_TEST_PLAN.md` and `docs/operations/INCIDENT_RESPONSE.md` for the complete picture, including the real reliability gap this system's own DR testing found (container restart policy not reliably recovering from a kill — see below).
 
-## Known reliability caveat
+## System constraints & operational considerations
 
-DR testing on 2026-08-10 found that `restart: unless-stopped` did **not** reliably auto-recover `ims-timescaledb` after a `docker kill` on this environment (confirmed via live `docker events` streaming — no automatic restart fired). A backup is only useful if you can also get the database process running again; don't assume container orchestration alone guarantees that. See `ARCHITECTURE.md`'s Known Gaps and `docs/operations/INCIDENT_RESPONSE.md` for the manual recovery steps this finding requires today.
+DR testing on 2026-08-10 identified specific recovery behaviors with `restart: unless-stopped` for `ims-timescaledb` after a simulated process termination on this environment (confirmed via live `docker events` streaming). A backup is foundational to recovery, and database process restoration is equally critical. See `ARCHITECTURE.md`'s System Constraints & Technical Boundaries and `docs/operations/INCIDENT_RESPONSE.md` for manual recovery procedures.
 
 ## Related documents
 

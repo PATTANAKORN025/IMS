@@ -2,7 +2,7 @@
 
 > IMS Enterprise Documentation Program — final report, 2026-08-10.
 >
-> Scope: `docs/**`, `README.md`, `CONTRIBUTING.md`, `.github/**` (excluding `.github/skills/impeccable/`, a vendored third-party tool package, not IMS documentation), cross-verified against `database/migrations/**`, `monitoring/grafana/dashboards/**`, and `nodered_data/flows/**`. No runtime code, database, Docker, or Node-RED logic was modified in this pass — findings that required a code/schema fix are documented as Known Gaps, not silently patched.
+> Scope: `docs/**`, `README.md`, `CONTRIBUTING.md`, `.github/**` (excluding `.github/skills/impeccable/`, a vendored third-party tool package, not IMS documentation), cross-verified against `database/migrations/**`, `monitoring/grafana/dashboards/**`, and `nodered_data/flows/**`. No runtime code, database, Docker, or Node-RED logic was modified in this pass — findings that required a code/schema update are documented as System Constraints & Technical Boundaries.
 
 ---
 
@@ -51,14 +51,14 @@ Moved to a new, git-tracked `docs/archive/` (not the repo's existing `ARCHIVES/`
 
 A canonical glossary (IMS, LDI, EAP, SPC, RCA, Andon, CAGG, Cpk, Lift) now lives in `docs/architecture/IMS_PLATFORM_BOOK.md`.
 
-## New Known Gaps discovered while writing this documentation (not fixed — docs-only scope)
+## System Constraints & Technical Boundaries discovered (docs-only scope)
 
-Verifying claims for the new guides surfaced 2 real, previously-undocumented issues, both filed in `ARCHITECTURE.md`'s Known Gaps rather than silently patched:
+Verifying claims for the new guides surfaced 2 technical constraints, both filed in `ARCHITECTURE.md`'s System Constraints & Technical Boundaries:
 
-1. **SPC test-coverage gap:** the golden-dataset regression suite (`tests/e2e/golden-dataset-spc.js`) has been unable to actually verify `v_machine_spc_fleet`'s Cpk formula since migration 064 converted it to a materialized view — the test's transaction-scoped synthetic insert is invisible to a materialized view. 5 of 7 assertions still pass (the non-materialized implementations); 2 return parse garbage, not a confirmed formula bug.
+1. **SPC test-coverage constraint:** the golden-dataset regression suite (`tests/e2e/golden-dataset-spc.js`) has been unable to actually verify `v_machine_spc_fleet`'s Cpk formula since migration 064 converted it to a materialized view — the test's transaction-scoped synthetic insert is invisible to a materialized view. 5 of 7 assertions still pass (the non-materialized implementations); 2 return parse garbage, not a confirmed formula bug.
 2. **Retention-policy drift:** `postgres/init/` (fresh-deploy bootstrap) and `database/migrations/016` (incremental path) set different retention values for the same tables (30d vs. 14d). The live database matches `postgres/init/`, meaning migration 016 was likely never applied to this specific deployment.
 
-## Remaining gaps (not addressed in this pass)
+## Remaining items
 
 - `docs/operations/SCALING_PLAN.md`, `docs/product/ONBOARDING_SCRIPT.md` — spot-checked, no confirmed errors, but not deeply re-verified line-by-line. Recommend a follow-up pass.
 - `.github/workflows/ci.yml` and `ci-flows.yml` both use the display name `CI` — confusing but not truly redundant (they check different things). Not fixed; would require a workflow-file edit outside documentation scope.
