@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # IMS 系统架构
 
 > 系统拓扑、数据流和运行架构的唯一事实来源。此架构文档于 2026-08-05 进行了系统级规范化，以确保与运行时系统状态的精确对齐（参见 `IMS-SYSTEM-AUDIT-REPORT.md` P1-2）。以下所有声明均直接对照运行中的系统或受控源文件进行了验证。

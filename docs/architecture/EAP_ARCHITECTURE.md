@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # Equipment Integration Layer Architecture (EAP)
 
 > **EAP = Equipment Automation Program** — SECS/GEM-style equipment integration, per the scope confirmed 2026-08-10 (not "Enterprise Application Platform"). See `docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md` §3 for the plan this doc fulfills.

@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # IMS — Master Development Plan
 
 > **ARCHIVED — historical snapshot, dated 2026-08-04.** Not living documentation; numbers below (dashboard counts, migration counts, panel counts, etc.) reflect the system as it existed on that date and are known to be stale relative to the current system. Kept for historical record per docs/archive/README.md. For current information, see docs/architecture/ARCHITECTURE.md and docs/architecture/DASHBOARD_INVENTORY.md.
@@ -57,13 +64,13 @@
 
 ### 2.2 Pending Backlog Items
 
-| #   | Item                                                                         | Priority | Effort | Impact                                                                                          |
-| --- | ---------------------------------------------------------------------------- | -------- | ------ | ----------------------------------------------------------------------------------------------- |
-| 1   | **CI/CD Pipeline** — GitHub Actions for automated `flows.json` deployment    | P0       | Medium | Critical                                                                                        |
-| 2   | **K6 Stress Test** — 10,000 req/sec → Ascertain PgBouncer throughput ceiling | P0       | Medium | Critical                                                                                        |
-| 3   | **Disk Forecasting** — Predictive disk-full panel within Capacity Planning   | P1       | Low    | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Moderate |
-| 4   | **Connect Real Servers** — Swap simulator IPs within Node-RED                | P1       | High   | Critical                                                                                        |
-| 5   | **Webhook Alerts** — Configure legitimate LINE Notify / Slack webhooks       | P1       | Low    | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Moderate |
+| #   | Item                                                                         | Priority | Effort | Impact                                                                                                |
+| --- | ---------------------------------------------------------------------------- | -------- | ------ | ----------------------------------------------------------------------------------------------------- |
+| 1   | **CI/CD Pipeline** — GitHub Actions for automated `flows.json` deployment    | P0       | Medium | Critical                                                                                              |
+| 2   | **K6 Stress Test** — 10,000 req/sec → Ascertain PgBouncer throughput ceiling | P0       | Medium | Critical                                                                                              |
+| 3   | **Disk Forecasting** — Predictive disk-full panel within Capacity Planning   | P1       | Low    | <img src="../../docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Moderate |
+| 4   | **Connect Real Servers** — Swap simulator IPs within Node-RED                | P1       | High   | Critical                                                                                              |
+| 5   | **Webhook Alerts** — Configure legitimate LINE Notify / Slack webhooks       | P1       | Low    | <img src="../../docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Moderate |
 
 ### 2.3 Known Issues (Sourced from SECURITY.md)
 

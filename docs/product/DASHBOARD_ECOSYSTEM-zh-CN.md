@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # 🌌 IMS 仪表板生态系统：宏观到微观架构
 
 **IMS（工业监控系统，Industrial Monitoring System）** 利用了包含 15 个仪表板的 "赛博朋克 HUD (Cyberpunk HUD)" 生态系统，旨在彻底消除警报疲劳，并弥合企业 IT 与物理操作技术 (OT) 之间的鸿沟。

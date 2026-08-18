@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # LDI Simulator Behavioral Redesign — Results
 
 > Implements the 6-point design approved 2026-08-11 in response to `docs/audit/LDI_ALARM_FIDELITY_AUDIT.md` (realism score 58/100): **drift, fault frequency, burst behavior, debounce, correlation semantics, critical-event distribution.**

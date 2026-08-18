@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # IMS Platform Book
 
 > **จุดเริ่มต้นสำหรับเอกสารประกอบ IMS ทั้งหมด** เอกสารฉบับนี้เป็นศูนย์รวมสำหรับการนำทาง (navigational hub) ไม่ใช่การคัดลอกเอกสารที่อ้างอิงถึง — แต่ละหัวข้อจะถูกจัดเก็บไว้ในที่เดียว และสมุดฉบับนี้จะเชื่อมโยงไปยังตำแหน่งนั้น หากมีข้อมูลใดในเอกสารฉบับนี้ไม่ตรงกับเอกสารที่เชื่อมโยงไป ให้ถือว่าเอกสารปลายทางเป็นข้อเท็จจริงหลัก (authoritative) สมุดฉบับนี้ทำหน้าที่เป็นเพียงแผนที่ ไม่ใช่พื้นที่จริง

@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # LDI System Validation & Readiness Protocol
 
 > **Objective:** Certify the LDI (Laser Direct Imaging) monitoring ecosystem for production deployment. This protocol verifies Data Integrity, Visual Accuracy, System Stability, and Operator Readiness.

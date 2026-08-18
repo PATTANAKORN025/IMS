@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # สถาปัตยกรรมการจัดการความละเอียดของข้อมูลและการขยายระบบ (Data Fidelity & Scale Management)
 
 เอกสารฉบับนี้อธิบายถึงความท้าทายเชิงสถาปัตยกรรมและแนวทางการแก้ปัญหา (Architectural Solutions) ของระบบ IMS เมื่อต้องรองรับอุปกรณ์ระดับ 1,000+ เครื่อง โดยเน้นที่การรักษาความถูกต้องของข้อมูลระดับมิลลิวินาที การจัดการการแจ้งเตือนไม่ให้เกิด Alert Fatigue และความสอดคล้องระหว่างข้อมูลจำลองกับข้อมูลจริง

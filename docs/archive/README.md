@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # Archive
 
 Historical, point-in-time snapshots — audit reports, benchmark reports, and development plans from earlier in the project. Kept for historical record, not as living documentation. Every file here carries a banner stating its date and that its numbers (dashboard counts, migration counts, panel counts, etc.) reflect the system as it existed on that date, not the current system.

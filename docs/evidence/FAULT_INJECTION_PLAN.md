@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # Fault Injection Plan
 
 > **Plan only. Nothing in this document has been executed.** Per the explicit instruction: complete and review this plan before any destructive test runs. Requires a separate, explicit go-ahead per scenario before execution -- this plan does not constitute approval to run any of it.

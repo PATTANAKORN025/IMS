@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # Controlled Scale Test (P1, Reliability Test Suite)
 
 > Uses the existing k6 infrastructure (`tests/k6/pipeline-stress.js`), no new broker/tooling added, per the explicit instruction to use the current architecture first. `TARGET_SERVERS` env var drives the tier; the script's own staged ramp (30s→min(target,20), 1m→min(target,50), 1m→target, 30s→0) runs regardless of tier, so each run takes ~3 minutes wall-clock.

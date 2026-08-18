@@ -143,7 +143,8 @@
 เลือกเส้นทางตามบทบาทและสิ่งที่คุณต้องการบรรลุผล:
 
 ### เส้นทาง A: สำหรับผู้ประเมินระบบ (The Evaluator Tour)
-*ออกแบบมาสำหรับผู้จัดการ, ผู้รีวิว UI/UX และผู้ประเมินระบบที่ต้องการเห็นการทำงานของแดชบอร์ดและเวิร์กโฟลว์*
+
+_ออกแบบมาสำหรับผู้จัดการ, ผู้รีวิว UI/UX และผู้ประเมินระบบที่ต้องการเห็นการทำงานของแดชบอร์ดและเวิร์กโฟลว์_
 
 ```bash
 git clone https://github.com/PATTANAKORN025/IMS.git
@@ -153,11 +154,13 @@ make up      # docker compose up -d (เริ่มการทำงานส�
 sleep 40 && make verify
 open http://localhost:3000
 ```
+
 > **สิ่งที่จะได้พบ:** ระบบจำลองข้อมูลแบบเบาบาง (~10-15 แถว/นาที) ช่วยให้คุณคลิกดูศูนย์บัญชาการผลิต LDI, แดชบอร์ด Andon Board ของ Operator และดูแผนภูมิสมรรถนะ Cpk แบบเรียลไทม์ได้อย่างลื่นไหล
 > **ตรวจสอบแล้ว:** รัน `docker compose ps` เมื่อ 2026-08-13, เก็บถาวรไว้ที่ [`docs/evidence/runtime/compose-ps-20260813.txt`](docs/evidence/runtime/compose-ps-20260813.txt)
 
 ### เส้นทาง B: สำหรับวิศวกรผู้ทดสอบสมรรถนะ (The Performance Proving Ground)
-*ออกแบบมาสำหรับ SREs, DBAs และ System Architects ที่ต้องการตรวจสอบ "สมรรถนะจริง" (Actual Performance) ของระบบภายใต้ภาระงาน IT/OT ที่หนาแน่น*
+
+_ออกแบบมาสำหรับ SREs, DBAs และ System Architects ที่ต้องการตรวจสอบ "สมรรถนะจริง" (Actual Performance) ของระบบภายใต้ภาระงาน IT/OT ที่หนาแน่น_
 
 ```bash
 git clone https://github.com/PATTANAKORN025/IMS.git
@@ -166,6 +169,7 @@ cp .env.example .env
 make up-prod   # เปิดตัวสแต็กด้วยการจัดสรรทรัพยากรระดับโปรดักชัน
 make test-load # เริ่มการทำงานเฟรมเวิร์กโหลดเทสต์ K6
 ```
+
 > **สิ่งที่จะได้พบ:** เฟรมเวิร์ก K6 จะจำลองสภาวะการทำงานของโหนดโครงสร้างพื้นฐานกว่า 1,000 โหนด ซึ่งจะอัดข้อมูลเข้าสู่จุดรับข้อมูล Node-RED อย่างหนัก และทดสอบขีดจำกัด Continuous Aggregation ของ TimescaleDB คุณสามารถตรวจสอบความหน่วง (Latency) และคิวการเชื่อมต่อ (Queue Depths) ของ PgBouncer ได้แบบสดๆ บนแดชบอร์ด `IMS Meta-Monitoring`
 
 <details>
@@ -173,6 +177,7 @@ make test-load # เริ่มการทำงานเฟรมเวิร
 
 - Nginx reverse-proxy ถูกตั้งค่าไว้สำหรับ `localhost` และต้องมีการปรับใช้ใบรับรอง (certificate) แบบแมนนวลสำหรับสภาพแวดล้อมโปรดักชัน
 - การบูรณาการ Grafana Alertmanager (LINE/Teams) จะล้มเหลวแบบเงียบๆ จนกว่าจะมีการระบุโทเค็นอย่างชัดเจนในไฟล์ `.env`
+
 </details>
 
 ### การตรวจสอบและหลักฐาน
@@ -291,7 +296,7 @@ open "http://localhost:3000/playlists/play/1?kiosk=tv&autofitpanels"
 | **Orchestration** | Docker Compose            | คอนเทนเนอร์สแต็ก 7 บริการ พร้อมโอเวอร์เลย์สำหรับ dev/prod                                        |
 | **Collection**    | Node-RED + net-snmp       | การดึงข้อมูล SNMP ปริมาณมากแบบตามลำดับ (Sequential async bulk SNMP walks), walker แบบขนาน 5-เธรด |
 | **Database**      | TimescaleDB (PostgreSQL)  | Hypertables พร้อมด้วย Continuous Aggregates, การบีบอัดข้อมูล 90% หลัง 7 วัน                      |
-| **Visualization** | Grafana 13.1.1            | 15 แดชบอร์ด (5 โครงสร้างพื้นฐาน + 10 การผลิต), ระบบเตือนความผิดปกติด้วย state-timeline            |
+| **Visualization** | Grafana 13.1.1            | 15 แดชบอร์ด (5 โครงสร้างพื้นฐาน + 10 การผลิต), ระบบเตือนความผิดปกติด้วย state-timeline           |
 | **Alerting**      | Prometheus + Alertmanager | การสแครปเมทริกซ์, inhibition rules, LINE Messaging API + MS Teams webhooks                       |
 | **Load Testing**  | K6                        | การทดสอบความเครียดไปป์ไลน์ (50→200 VUs), ขีดจำกัด p95<500ms                                      |
 | **SLA Probing**   | Blackbox Exporter         | การตรวจสอบ endpoint ผ่าน HTTP/TCP/ICMP                                                           |

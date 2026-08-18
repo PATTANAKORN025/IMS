@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # IMS — Comprehensive Audit Report
 
 > **ARCHIVED — historical snapshot, dated 2026-08-04.** Not living documentation; numbers below (dashboard counts, migration counts, panel counts, etc.) reflect the system as it existed on that date and are known to be stale relative to the current system. Kept for historical record per docs/archive/README.md. For current information, see docs/architecture/ARCHITECTURE.md and docs/architecture/DASHBOARD_INVENTORY.md.
@@ -343,16 +350,16 @@ docker run --rm ... gitleaks detect ... || true
 
 ## Priority Fix Order
 
-| #   | Issue                            | Severity | Effort | Impact                                                                                                          |
-| --- | -------------------------------- | -------- | ------ | --------------------------------------------------------------------------------------------------------------- |
-| 1   | Revoke leaked GitHub token       | CRITICAL | 5 min  | Prevent unauthorized access                                                                                     |
-| 2   | Add auto-rollback to CI/CD       | HIGH     | 2 hrs  | Prevent broken deployments                                                                                      |
-| 3   | Add `.env.example` instructions  | HIGH     | 10 min | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Prevent Node-RED crashes |
-| 4   | Move CI keys to GitHub Secrets   | MEDIUM   | 30 min | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Security best practice   |
-| 5   | Add `.opencode/` to .gitignore   | MEDIUM   | 5 min  | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Clean git state          |
-| 6   | Add `.mcp.json` to .gitignore    | MEDIUM   | 5 min  | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Clean git state          |
-| 7   | Verify zero-statement migrations | LOW      | 30 min | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Data integrity           |
-| 8   | Review gitleaks `\|\| true`      | LOW      | 15 min | <img src="docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Security visibility      |
+| #   | Issue                            | Severity | Effort | Impact                                                                                                                |
+| --- | -------------------------------- | -------- | ------ | --------------------------------------------------------------------------------------------------------------------- |
+| 1   | Revoke leaked GitHub token       | CRITICAL | 5 min  | Prevent unauthorized access                                                                                           |
+| 2   | Add auto-rollback to CI/CD       | HIGH     | 2 hrs  | Prevent broken deployments                                                                                            |
+| 3   | Add `.env.example` instructions  | HIGH     | 10 min | <img src="../../docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Prevent Node-RED crashes |
+| 4   | Move CI keys to GitHub Secrets   | MEDIUM   | 30 min | <img src="../../docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Security best practice   |
+| 5   | Add `.opencode/` to .gitignore   | MEDIUM   | 5 min  | <img src="../../docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Clean git state          |
+| 6   | Add `.mcp.json` to .gitignore    | MEDIUM   | 5 min  | <img src="../../docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Clean git state          |
+| 7   | Verify zero-statement migrations | LOW      | 30 min | <img src="../../docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Data integrity           |
+| 8   | Review gitleaks `\|\| true`      | LOW      | 15 min | <img src="../../docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Security visibility      |
 
 ---
 

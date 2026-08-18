@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../../../docs/README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # IMS LDI Manufacturing Command Center — Next-Phase Audit & Design
 
 Status: **Design/spec only. No implementation.** Written after the 3D Factory Digital Twin was frozen as a validated baseline (Tasks 4.1–4.4, all reviewed/approved, uncommitted, not touched further by this document).

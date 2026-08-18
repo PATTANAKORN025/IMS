@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # Data Flow
 
 > **กลุ่มเป้าหมาย (Audience):** วิศวกร SRE/ทีมปฏิบัติการ (Operations), นักพัฒนาที่เข้ามาร่วมทีมใหม่, ทีม QA/ทีมตรวจสอบระบบ (Audit)

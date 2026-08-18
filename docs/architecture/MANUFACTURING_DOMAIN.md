@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # Manufacturing Domain Architecture
 
 > **Purpose:** document the generic pattern behind IMS's one existing manufacturing process (LDI) so the _next_ process type (AOI, plating, etching, or drilling) is additive — a new migration, a new alarm master, a new dashboard trio — rather than a rewrite of the schema or dashboards that already exist.

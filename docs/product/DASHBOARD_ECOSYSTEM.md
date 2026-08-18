@@ -1,3 +1,10 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
 # 🌌 IMS Dashboard Ecosystem: The Macro-to-Micro Architecture
 
 **Industrial Monitoring System (IMS)** utilizes a 15-dashboard "Cyberpunk HUD" ecosystem designed to completely eliminate alarm fatigue and bridge the gap between enterprise IT and physical Operational Technology (OT).
