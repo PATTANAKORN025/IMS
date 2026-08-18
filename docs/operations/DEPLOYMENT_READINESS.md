@@ -14,9 +14,9 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)
-![Version](https://img.shields.io/badge/Version-1.0.0-blue)
-![Assessed](https://img.shields.io/badge/Last%20Assessed-2026--06--29-orange)
+<img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Production Ready
+<img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Version:** 1.0.0
+<img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Last Assessed:** 2026
 
 </div>
 
@@ -167,11 +167,11 @@ session.get(['1.3.6.1.2.1.1.1.0'], (err, varbinds) => {
 
 ### Machine Type Assessment
 
-| Machine Type       | Simulated vs Real  | MIB Standard       | Confidence                                                               | Notes                  |
-| ------------------ | ------------------ | ------------------ | ------------------------------------------------------------------------ | ---------------------- |
-| **Ubuntu (SNMP)**  | Standard MIBs      | HOST-RESOURCES-MIB | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) HIGH | Highly likely to match |
-| **Windows (SNMP)** | Standard MIBs      | HOST-RESOURCES-MIB | ![Healthy](https://img.shields.io/badge/Status-Healthy-brightgreen) HIGH | Highly likely to match |
-| **LDI (YSPhotec)** | Custom `.9999` MIB | Private Enterprise | **UNPROVEN**                                                             | Entirely assumed       |
+| Machine Type       | Simulated vs Real  | MIB Standard       | Confidence                                                                                                        | Notes                  |
+| ------------------ | ------------------ | ------------------ | ----------------------------------------------------------------------------------------------------------------- | ---------------------- |
+| **Ubuntu (SNMP)**  | Standard MIBs      | HOST-RESOURCES-MIB | <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Healthy HIGH | Highly likely to match |
+| **Windows (SNMP)** | Standard MIBs      | HOST-RESOURCES-MIB | <img src="https://thesvg.org/icons/check-circle/default.svg" width="14" align="center"/> **Status:** Healthy HIGH | Highly likely to match |
+| **LDI (YSPhotec)** | Custom `.9999` MIB | Private Enterprise | **UNPROVEN**                                                                                                      | Entirely assumed       |
 
 ### LDI Machine Considerations
 
