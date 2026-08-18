@@ -38,9 +38,9 @@ To record the onboarding assets, use the following tools:
 
 1. Start on the NOC Overview. Notice a red anomaly on the **Network Bandwidth** chart.
 2. **Click** the anomaly. (This triggers a Grafana Data Link).
-3. The screen transitions instantly to the **Engineering Drill-Down** dashboard.
+3. The screen transitions smoothly to the **Engineering Drill-Down** dashboard.
 4. Open the top-left `$machine_id` dropdown and type `SRV-901`.
-5. The entire dashboard re-renders instantly (powered by TimescaleDB CAGGs).
+5. The entire dashboard re-renders rapidly (powered by TimescaleDB CAGGs).
 6. Hover over the **Z-Score Anomaly** chart showing the exact moment the CPU spiked.
 7. End scene.
 

@@ -178,9 +178,9 @@ The Scatter Plot illustrates PE (Position Error) vs JE (Judgment Error) measured
 
 ### 5. Easy Overview Dashboard
 
-**Purpose**: Instantmatic overview of the entire LDI fleet requiring zero configuration — no template variables, no filters; immediately visible upon loading.
+**Purpose**: Rapid overview of the entire LDI fleet requiring zero configuration — no template variables, no filters; immediately visible upon loading.
 
-Every metric on this dashboard is sourced from the exact same shared views/functions utilized by other dashboards (`v_ldi_machine_latest_full`, `v_ldi_alarm_context`, `f_ldi_yield_pct`, `v_machine_spc_fleet`) — thereby guaranteeing zero data discrepancy across dashboards, as no redundant isolated queries are executed.
+Every metric on this dashboard is sourced from the exact same shared views/functions utilized by other dashboards (`v_ldi_machine_latest_full`, `v_ldi_alarm_context`, `f_ldi_yield_pct`, `v_machine_spc_fleet`) — thereby ensuring strong data consistency across dashboards, as no redundant isolated queries are executed.
 
 ### 6. LDI Manufacturing Command Center
 

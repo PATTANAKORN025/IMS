@@ -1,8 +1,8 @@
 # Security Model
 
-> **Audience:** SRE/operations, QA/audit, security review.
->
-> This document is the **architectural trust-boundary view**. `SECURITY.md` (repo root) is the authoritative security _policy_ — known limitations, hardening checklist, secrets handling. Read both; they don't duplicate each other.
+> **Audience:** SRE/Operations, QA/Audit, Security Review.
+> **Objective:** The architectural trust-boundary view of IMS. (Note: Read `SECURITY.md` in the repo root for the authoritative security policy).
+> **Provenance:** Verified against the live docker-compose and proxy configs on 2026-08-10.
 
 ---
 
@@ -49,6 +49,9 @@ flowchart TB
 
 **Boundary 3 — Equipment Integration Layer (forward-looking, not built).** Per `docs/architecture/EAP_ARCHITECTURE.md`, the day a real SECS/GEM-speaking tool is connected via the unimplemented third adapter, that connection crosses into the plant-floor equipment network — a genuinely new external trust boundary. Requires its own hardening review (credential handling, network segmentation) before any real equipment is wired in. Not designed yet because nothing exists to design it against.
 
+**`IMS_PGBOUNCER_MAX_CLIENT_CONN`**: Do not arbitrarily raise. Memory limits must scale alongside it (`1 connection ≈ 2MB`). 
+
+
 ## Authentication per adapter
 
 | Adapter                                | Mechanism                                                                                                                                   | Where enforced                                                                                |
@@ -77,3 +80,6 @@ SNMPv2c's community-string auth is inherently weaker than SNMPv3 (no encryption,
 - `docs/architecture/OWNERSHIP.md` — the infra/manufacturing domain boundary.
 - `docs/architecture/EAP_ARCHITECTURE.md` — the equipment-adapter pattern and Boundary 3's full context.
 - `docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md` §8 — where this trust-boundary framing originated.
+
+---
+[⬅️ Back to IMS Platform Book](IMS_PLATFORM_BOOK.md) | [🏠 Main Repository](../../README.md)

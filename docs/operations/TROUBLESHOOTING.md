@@ -1,6 +1,8 @@
 # IMS Troubleshooting Guide
 
-> SRE Runbook for operating the IMS monitoring stack at 3 AM.
+> **Audience:** SRE/Operations, On-call Engineers.
+> **Objective:** SRE Runbook for operating and diagnosing the IMS monitoring stack.
+> **Provenance:** Verified against the live docker-compose and monitoring stack on 2026-08-10.
 
 ## Quick Health Check
 
@@ -114,3 +116,6 @@ make deploy-flows
 ## Incident Response
 
 This file is SRE debugging commands only. For severity classification, escalation, and step-by-step incident playbooks, see `docs/operations/INCIDENT_RESPONSE.md` — the authoritative runbook, with worked examples from this system's real operational history. (An earlier version of this file duplicated that content with a different, conflicting severity scale; removed 2026-08-13 to stop the two documents disagreeing.)
+
+---
+[⬅️ Back to IMS Platform Book](../architecture/IMS_PLATFORM_BOOK.md) | [🏠 Main Repository](../../README.md)

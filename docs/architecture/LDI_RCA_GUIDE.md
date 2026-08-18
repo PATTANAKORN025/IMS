@@ -1,8 +1,8 @@
 # LDI RCA (Root Cause Analysis) Guide
 
-> **Audience:** process engineering, QA/audit, SRE/operations.
->
-> **Provenance:** every formula and figure below was checked directly against the live migrations and database on 2026-08-10.
+> **Audience:** Process Engineering, QA/Audit, SRE/Operations.
+> **Objective:** Explains the Root Cause Analysis (RCA) correlation methodology (Lift and Confidence) for alarms.
+> **Provenance:** Every formula and figure below was checked directly against the live migrations and database on 2026-08-10.
 
 ---
 
@@ -20,6 +20,40 @@ Confidence = "OK" if event_count >= 30, else "LOW SAMPLE (n<30)"
 ```
 
 A Lift of 1.0 means the alarm has no predictive relationship to the parameter (it's out-of-spec exactly as often around this alarm as anywhere else). Lift > 1 means the parameter is genuinely more likely to be out of spec when this alarm fires — the higher, the stronger the correlation. The `n < 30` confidence floor exists because Lift on a handful of events is not statistically meaningful.
+
+---
+
+## Root Cause Analysis Workflow (DMAIC-Lite)
+
+When an alarm exhibits high correlation (Lift > 10, Confidence = OK) with an out-of-spec parameter, Engineering must execute this structured RCA workflow to find the physical fault.
+
+### 1. Define & Measure
+1. **Identify Target:** Open the `LDI Manufacturing` dashboard and check the **"Top Correlated Alarms (24h)"** panel.
+2. **Quantify:** Note the specific Alarm Category and the correlated parameter (e.g., *THERMAL alarm correlated with HUMIDITY out of spec*).
+3. **Verify:** Jump to `LDI Machine Snapshot` to verify that the parameter is physically drifting on the specific machines throwing the alarm.
+
+### 2. Analyze (5-Why Physical Inspection)
+Do not just reset the alarm. Go to the physical machine and ask "Why?" until the root hardware or process fault is found.
+*Example for Humidity Correlation:*
+- **Why did the alarm fire?** The humidity sensor reported 65% (Limit: 50%).
+- **Why is humidity high?** The cleanroom sector B HVAC return vent is blocked.
+- **Why is it blocked?** Maintenance left filter packaging in the plenum.
+
+### 3. Improve & Control (Resolution & Documentation)
+Once the physical root cause is resolved, you must document the finding to close the loop.
+
+**Standardized RCA Outcome Format:**
+Log the following in the shift ticket/Jira/ServiceNow:
+```text
+[RCA REPORT]
+Alarm Category: <Category> (Code: <Code>)
+Correlated Parameter: <Parameter> (Lift: <X>)
+Root Cause Identified: <Physical Fault>
+Action Taken: <Resolution Steps>
+Verification: <e.g., Humidity dropped to 45% after 15 mins. Alarm cleared.>
+```
+
+---
 
 ## Two views, two purposes — don't confuse them
 
@@ -65,5 +99,9 @@ Scan-speed excursions are correctly correlated, just statistically rarer than th
 ## Related documents
 
 - `docs/architecture/LDI_SPC_GUIDE.md` — the companion process-capability (Cpk) methodology.
+- `docs/operations/LDI_VALIDATION_PROTOCOL.md` — RCA truth-test assertions in the live-validation script (`tests/e2e/panel-data-check.js`).
 - `docs/architecture/ALARM_SEVERITY_GUIDE.md` — the alarm taxonomy these correlations are computed against.
 - `docs/architecture/ARCHITECTURE.md` — full system context, System Constraints & Technical Boundaries.
+
+---
+[⬅️ Back to IMS Platform Book](IMS_PLATFORM_BOOK.md) | [🏠 Main Repository](../../README.md)

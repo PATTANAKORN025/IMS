@@ -1,8 +1,8 @@
 # Backup & Restore
 
-> **Audience:** SRE/operations, QA/audit.
->
-> **Provenance:** the procedure below is `scripts/dr-test.sh`'s `backup-restore` drill, real-executed and evidence-recorded in `docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md`'s DR Test section on 2026-08-10 — not a hypothetical runbook.
+> **Audience:** SRE/Operations, QA/Audit.
+> **Objective:** Provides verified procedures for backing up and restoring the database.
+> **Provenance:** The procedure below is `scripts/dr-test.sh`'s `backup-restore` drill, real-executed and evidence-recorded on 2026-08-10.
 
 ---
 
@@ -48,6 +48,9 @@ DR testing on 2026-08-10 identified specific recovery behaviors with `restart: u
 ## Related documents
 
 - `docs/operations/DR_TEST_PLAN.md` — the full 3-drill DR test plan (backup/restore is Drill 1).
-- `docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md` — real evidence log for all 3 drills.
+- `docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md` — the original evidence records for these drills.
 - `docs/architecture/DATA_RETENTION.md` — retention policy is not a backup strategy; know the difference.
 - `docs/operations/INCIDENT_RESPONSE.md` — what to do when this actually happens.
+
+---
+[⬅️ Back to IMS Platform Book](../architecture/IMS_PLATFORM_BOOK.md) | [🏠 Main Repository](../../README.md)

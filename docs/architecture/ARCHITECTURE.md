@@ -8,9 +8,9 @@
 
 # IMS System Architecture
 
-> Single source of truth for system topology, data flow, and operational architecture. Rewritten 2026-08-05 after the previous version was found to be two different, self-contradictory architecture docs concatenated together, describing a dashboard count and ingestion path that no longer matched the live system (see `IMS-SYSTEM-AUDIT-REPORT.md` P1-2). Every claim below was verified directly against the running system or the tracked source files, not carried over from the prior doc.
->
-> **Verified Claims:** For actual runtime logs, configuration outputs, and screenshots proving the statements below, see the **[Evidence Index](../evidence/INDEX.md)**.
+> **Audience:** System Architects, SREs, and Backend Developers.
+> **Objective:** Single source of truth for system topology, data flow, and operational architecture.
+> **Provenance:** Verified directly against the live system on 2026-08-05. For actual runtime logs and screenshots proving the statements below, see the **[Evidence Index](../evidence/INDEX.md)**.
 
 ---
 
@@ -45,7 +45,12 @@ flowchart TB
  style LEGACY fill:#1e293b,stroke:#F59E0B,color:#e2e8f0
 ```
 
-**Why two pipelines exist:** the legacy SNMP pipeline (`ingestion.json`) was the system's original design — poll SNMP-speaking devices, parse via a stateful `sre_parser`, insert into `sys_metrics`/`net_metrics`/`ldi_metrics`. LDI manufacturing telemetry was later given its own, higher-fidelity pipeline (`ldi_data`, fed by HTTP POST rather than SNMP) because the manufacturing dashboards need per-sample PE/JE/Cpk precision that the k6-synthetic `ldi_metrics` table was never designed to carry. **All 14 Grafana dashboards' LDI/manufacturing content reads from `ldi_data`, not `ldi_metrics`.** `ldi_metrics` still exists and is still written to (via `ingestion.json`'s SRE parser), but several of its LDI-specific columns (`throughput`, `power_watt`, `vibration`) are confirmed to always be `0` for LDI-class devices — a system constraint in that pipeline, not in `ldi_data`. See "System Constraints & Technical Boundaries" below.
+**Why two pipelines exist:**
+- **Legacy SNMP Pipeline (`ingestion.json`):** The system's original design. Polls SNMP devices, parses via a stateful `sre_parser`, and inserts into `sys_metrics` / `net_metrics` / `ldi_metrics`.
+- **LDI Manufacturing Pipeline (`ldi_data`):** Added later for higher-fidelity telemetry via HTTP POST. Required because manufacturing dashboards need per-sample PE/JE/Cpk precision that the synthetic `ldi_metrics` table could not support.
+
+> [!NOTE]
+> **All 14 Grafana dashboards' LDI content reads from `ldi_data`, not `ldi_metrics`.** While `ldi_metrics` still receives data, LDI-specific columns (`throughput`, `power_watt`, `vibration`) are mathematically constrained to `0` for LDI-class devices. See "System Constraints & Technical Boundaries" below.
 
 ---
 

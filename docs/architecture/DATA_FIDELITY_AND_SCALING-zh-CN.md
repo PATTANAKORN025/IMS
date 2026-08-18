@@ -75,7 +75,7 @@ TimescaleDB 使用连续聚合 (Continuous Aggregates, CAGGs) 预先汇总 (Roll
 2. **Grafana 中的数据插值 (Data Interpolation):**
    如果因网络丢包导致数据间隙 (Gap)，Grafana 中的查询将使用 `interpolate()` 函数或在 TimescaleDB 中填充 `$__interval`，以防止图表出现意外中断。
 3. **对账审计 (Reconciliation Audits):**
-   通过脚本检查 CAGG 表和原始数据 (Raw tables) 之间的差异，以确保数据 100% 匹配。
+   通过脚本检查 CAGG 表和原始数据 (Raw tables) 之间的差异，以确保数据高度一致。
 
 ---
 

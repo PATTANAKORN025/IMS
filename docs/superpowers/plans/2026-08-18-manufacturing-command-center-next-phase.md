@@ -1,0 +1,189 @@
+# IMS LDI Manufacturing Command Center — Next-Phase Implementation Plan
+
+Status: **Plan only. No implementation.** Builds on the approved audit/spec (`docs/superpowers/specs/2026-08-18-manufacturing-command-center-next-phase-design.md`). Every finding below was verified against the live database and live repository this session (`docker compose exec timescaledb psql`, `node tests/lint/*.js`, direct JSON/SQL reads) — nothing here is assumed or carried forward unverified from the audit.
+
+---
+
+## Resolution of the 5 open questions
+
+### Q1 — Dashboard topology
+
+**Decision: Manufacturing Command Center gets a new top section, not a new dashboard.** Reasoning, evidence-based:
+
+- `ims-ldi-manufacturing.json` already has an Executive HUD (rows PRODUCTION/QUALITY/RISK, y=0–15) that is exactly C-Level-shaped: 3 rows, 13 stat/table panels, no per-machine drill grid. It just isn't labeled or positioned as one.
+- The 9 orphaned panels (Finding A of the audit) already cover Production & Compliance, Analytics & SPC, System Alarms, RCA Fleet Summary, and Cycle Time & Traceability at exactly the y=16+ position — i.e. the file's own row ordering already encodes "C-Level glance first, operational/analytical detail after," it just never got wired up.
+- A brand-new dashboard would either duplicate the Executive HUD's 13 panels (violates "no duplicated dashboards" / "no duplicated business logic") or leave the new C-Level view disconnected from the operational detail directly beneath it in the same file.
+
+**Final hierarchy:**
+```
+IMS LDI - Manufacturing Command Center  (repaired, reordered)
+├─ C-LEVEL AT A GLANCE          [existing Executive HUD, relabeled/regrouped — no new panels]
+│   PRODUCTION / QUALITY / RISK rows (13 panels, already live)
+├─ PRODUCTION & COMPLIANCE      [repair 3 orphaned panels]
+├─ SYSTEM ALARMS                [repair 1 orphaned panel + add impact summary, item 8]
+├─ ANALYTICS & SPC              [repair 2 orphaned panels, summary-only — drill-out to Engineering Analytics]
+├─ TRACEABILITY                 [repair "Board Traceability" + "Avg Cycle Time", becomes the Traceability section]
+└─ (drill-out links, not embedded panels) → 2D Twin, 3D Twin, Machine Snapshot, Alarm Console, Engineering Analytics, Alarm Response
+```
+"RCA FLEET SUMMARY" (Top Correlated Alarms) is folded into the SYSTEM ALARMS section rather than kept as its own row — it's alarm-impact data (item 8), and a 6th top-level row would push total height past what a single scrolling command-center dashboard should carry before it just becomes Engineering Analytics again. This is a naming/grouping change only; the underlying panel (id 21) is untouched.
+
+`ims-easy-overview` stays as-is (zero-config ops fast path, different audience/use-case, already distinct and working — not touched, not duplicated).
+
+### Q2 — Alarm interactivity
+
+**Decision: Command Center stays read-only status; Alarm Console remains the sole write surface.** Evidence: this is the exact precedent already established and proven for Operator Andon Board (`ims-ldi-operator-andon.json`'s own description: "read-only, ... Companion to the read-only IMS LDI - Operator Andon Board (TV-wall kiosk, no interactive elements)" vs. `ims-ldi-alarm-console.json`: "Interactive alarm acknowledge/resolve workflow"). Diverging from this would mean two different dashboards independently writing to `ldi_alarm_lifecycle` via two different UI surfaces — more surface area for the same write path, no new capability.
+
+- **C-Level minimum useful alarm view**: count + severity (existing "Critical/Major Alarms" stat, already live) plus the repaired "Top Correlated Alarms" summary (item 8) — answers "how many, how bad, and which categories are actually hurting production" without exposing ack/resolve controls.
+- **Operator action workflow**: unchanged — `ims-ldi-alarm-console.json`'s `marcusolsson-dynamictext-panel` → `services/alarm-api` `POST /alarms/ack` / `POST /alarms/resolve` → `public.ldi_alarm_lifecycle`. No new states invented; `OPEN → ACK → RESOLVED` (the only states the `status` column and `alarm-api` currently support) stays exactly as-is.
+- Command Center's "Recent Alarm Events" (repaired panel 14) and Andon's "Action Queue" both read `v_ldi_alarm_context`/lifecycle-derived data but serve different purposes (full recent history vs. active-now queue) — not a duplicate, same relationship these two panels already have today.
+
+### Q3 — 2D vs 3D canonical drill-in
+
+**Decision: both stay, entered for different reasons, no third layout invented.**
+
+| Use case | Entry point | Why |
+|---|---|---|
+| "What's the fleet doing right now, at a glance, from a link in the Command Center" | **2D Canvas twin** | Already a Grafana-native dashboard — same auth, same nav chrome, same link mechanics as every other dashboard link in this repo. Lower interaction cost (no separate app/session concept, no 3D scene load). |
+| "I want to spatially explore / present the factory visually (e.g. a TV wall, a walkthrough, a demo)" | **3D web twin** | Its own value is the spatial/visual framing (Task 4.1–4.4's whole point) — that's a distinct use case from "one more link in a Grafana nav," not a replacement for it. |
+
+Both link out from the new TRACEABILITY section (and optionally the C-Level section) as two explicit, separately-labeled links — no switcher UI, no embedding (Canvas panels and a separate Three.js app are both too heavy/differently-chromed to embed cleanly in an iframe panel, and neither twin was designed for iframe embedding). **No fake physical coordinates are introduced by this integration** — both twins already use `is_simulated`/no-coordinates and simulated-grid placement respectively; linking to them changes nothing about their data model. 3D twin stays frozen — this plan proposes zero code changes to `services/factory-twin-3d/`, only a link *to* it from Command Center.
+
+### Q4 — Traceability UX
+
+**Full path and what backs each hop, verified against live schema/views this session:**
+
+```
+Factory → Zone → Machine → Alarm → Production → Machine Snapshot → Raw Record
+```
+
+| Hop | Backing (verified live) | Implementable now? |
+|---|---|---|
+| Factory → Zone | `public.devices.location` (5 real string values, no coordinates) | Yes — same grouping both twins already use |
+| Zone → Machine | `public.devices.device_id` WHERE `device_type='ldi'` AND `enabled`, filtered to the 10 real reporting machines | Yes — proven query shape (panel 6, verified live, 61.6ms) |
+| Machine → Alarm | `v_ldi_alarm_context` (28 columns incl. `severity`, `alarm_id`, `related_log_id`, spec-flags — confirmed live, richer than the audit doc's original read of an older migration) | Yes — verified live, 36.4ms for last-50 |
+| Alarm → Production | `v_ldi_alarm_context`'s spec-flags (row-level) + `v_ldi_rca_recent_window` (category-level lift/confidence, materialized, 1-min refresh, verified live at 1.5ms) | Yes — both verified live |
+| Production → Machine Snapshot | Existing drill-down convention: `/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=...&var-factory=...`, `var-mo`/`var-event_time_ms` omitted so defaults resolve to latest/all-MO (verified 4 separate times across this session's SDD tasks) | Yes — reuse verbatim, zero new work |
+| Machine Snapshot → Raw Record | Machine Snapshot's own "Event Timeline around Selected Log ID" panel already exists (panel 12 in that dashboard) and Command Center's repaired "Board Traceability" panel exposes `log_id` directly | Yes — both ends already exist |
+
+**from/to context preservation**: every drill-down target above is a standard Grafana dashboard link, which preserves `from`/`to` automatically unless a link explicitly overrides it — the established convention (confirmed against `ims-ldi-machine-snapshot.json`'s variable defaults, same check repeated across Tasks 2–4.2) is to *omit* `var-mo`/`var-event_time_ms` specifically so the target resolves to "latest," while still carrying the real `var-machine_id`/`var-factory` and the dashboard's time range. New links added by this plan follow the same pattern — no new link convention invented.
+
+**Conclusion**: every hop in the requested path is backed by real, already-verified data. This is 100% a navigation/link-wiring plan, not a new-query plan (with the caveat that the "Alarm → Production" summary panel, item 8, needs new panel *presentation* using an existing query — see Panel Recovery Matrix, panel 21).
+
+### Q5 — Orphaned panel validation
+
+**Methodology**: extracted each of the 9 orphaned panels' exact `rawSql` from the live `ims-ldi-manufacturing.json`, ran each (with representative parameter substitution) directly against the live database via `docker compose exec timescaledb psql ... EXPLAIN (ANALYZE, BUFFERS, TIMING)`, at both a 1-hour and 24-hour window, and — for the two panels carrying a `QUERY_BUDGET_EXEMPT` comment claiming budget violation — also at full unbounded range (current `ldi_data` = 97,401 rows total, all chunks). Also independently discovered: neither `tests/lint/dashboard-linter.js` nor `tests/lint/query-budget-linter.js` currently inspects any of these 9 panels at all — both linters only walk the dashboard's flat top-level `panels[]` array and explicitly `continue` past `type === 'row'` without recursing into a row's nested `panels[]` (confirmed by reading `query-budget-linter.js` source directly, and by re-running it against this exact file: `0 errors, 0 warnings` despite panels below that do contain range-scan-shaped raw-`ldi_data` queries). **This means these 9 panels have never actually been checked by CI, orphaned or not** — a second, independent reason (beyond Finding A's rendering bug) that "trust but re-verify" applies before recovery.
+
+## C. Panel Recovery Matrix
+
+| # | Panel | Verdict | Evidence |
+|---|---|---|---|
+| 6 | Production & Process Table | **VALID** | Live-tested, 61.6ms, all referenced columns/views (`v_ldi_machine_latest_full`, `devices.enabled`) confirmed present. |
+| 7 | Temperature Compliance (state-timeline) | **VALID** | Live-tested, 1h window, 1.9ms. Identical shape already proven in production on Operator Andon Board this session. |
+| 8 | Humidity Compliance (state-timeline) | **VALID** | Same as #7. |
+| 12 | Calculated Time per Board (heatmap) | **VALID BUT NEEDS REFACTOR** | Functionally correct today (61.6ms→46.5ms even unbounded across all 97,401 rows — the panel's own `QUERY_BUDGET_EXEMPT` comment claiming "exceeds 80ms budget... 300K+ rows" no longer matches current measured reality at current data volume, 97,401 rows). But it is a raw-`ldi_data` range-scan shape (uses `date_bin`, functionally identical to `time_bucket` but written differently enough to also dodge the linter's `time_bucket(` regex — a second, independent linter-blindspot beyond the row-nesting bug) with no `LIMIT`/tiering guard. `total_time` is **not** present in `ldi_data_1m`/`_15m`/`_1h` (confirmed via `\d public.ldi_data_1m`), so a straight swap to the CAGG tier isn't possible without a migration adding an `avg_total_time` column to those views. Recommend: either (a) add `avg_total_time` to the CAGG tier in a future migration and repoint this panel, or (b) keep it on raw `ldi_data` but add an explicit `NO_TIMEFILTER_INTENTIONAL`-style justification comment reflecting the *current* measured cost (not the stale one) plus a hard time-range cap, so it's at least linter-visible and honestly documented. Either way this is a **pre-recovery task**, not a blocker — the panel works correctly right now. |
+| 13 | Z-Score: temperature (timeseries) | **VALID BUT NEEDS REFACTOR** | Live-tested, 24h window, 33.2ms — correct today. Genuine `time_bucket()` + `$__timeFilter` range scan against raw `ldi_data` — exactly the shape the tiering contract exists to prevent, and would have been caught by the linter had it not been orphaned. `avg_temperature` **is** present in `ldi_data_1m` (confirmed via `\d`), so this one has a clean, available refactor path: repoint to `ldi_data_1m` (bucket already 1-minute, matches the panel's own `time_bucket('1 minute', ...)`) before recovery, and the Z-Score math (subtracting a per-`eqp_id` mean/stddev computed over the same window) carries over unchanged. |
+| 14 | Recent Alarm Events (table) | **VALID** | Live-tested, 36.4ms. `v_ldi_alarm_context` has been extended by 9 migrations since the audit doc's initial (stale, single-migration) read — re-verified live and confirmed to have all 28 columns the panel references, including `alarm_id`/`severity`/`match_type`/`related_log_id` that an earlier, shallower read of this view's original definition would have missed. |
+| 21 | Top Correlated Alarms (24h) | **VALID** | Live-tested, 1.5ms. Reads `v_ldi_rca_recent_window`, a materialized view refreshed every 60s by a TimescaleDB background job (migration 064) — column names (`alarm_category`/`alarm_window_pct`/`baseline_pct`/`lift`/`event_count`/`confidence`) confirmed to match the panel's `SELECT` list exactly. This is the panel that answers item 8 (production impact of alarms) directly and should anchor the new SYSTEM ALARMS section's impact summary. |
+| 22 | Avg Cycle Time (Fleet, stat) | **VALID BUT NEEDS REFACTOR — DUPLICATE-ADJACENT** | Live-tested, 24h, 8.2ms. Same raw-`ldi_data`/`total_time` refactor caveat as panel 12 (same underlying data, same missing-from-CAGG blocker). Additionally: this is the *exact same aggregate* (`AVG(total_time)` over the same filtered `ldi_data` rows) as panel 12, just collapsed to a single fleet-wide number instead of grouped by machine+5min bucket. Not a bug, but recommend deriving panel 22's number from panel 12's already-computed per-bucket data at recovery time (or documenting explicitly that they intentionally share underlying logic at two granularities) rather than issuing the identical scan twice per dashboard load — a real, evidence-based "share business logic instead of duplicating it" opportunity the "no duplicated business logic" constraint asks for. |
+| 23 | Board Traceability (table) | **VALID BUT NEEDS REFACTOR (linter-visibility only)** | Live-tested, 24h, 0.4ms (very cheap — `LIMIT 200` + time-descending index scan, chunk exclusion working well, confirmed via `EXPLAIN`: most chunks show "never executed"). Needs raw `ldi_data` (per-event `board_no`/`log_id`/`pe_*`/`je_*` aren't in any CAGG tier, correctly so — this is genuinely a specific-event lookup, the tiering contract's own stated exemption case). Functionally and architecturally fine as-is; recommend only adding an explicit `NO_TIMEFILTER_INTENTIONAL`-or-equivalent marker comment so it's honestly linter-visible instead of accidentally invisible (it currently evades both the row-nesting bug *and* the linter's narrow `time_bucket(`-only detection, since it uses plain `ORDER BY ... LIMIT 200` — a real, independent linter gap worth a one-line comment fix even though the query itself needs no logic change). |
+
+**Verdicts used**: no panel is UNSAFE/EXPENSIVE, STALE/BROKEN, or a straight DUPLICATE at current measured evidence. Nothing recommended for deletion. Every "NEEDS REFACTOR" is scoped to a specific, named fix, not a vague concern.
+
+---
+
+## A. Current-state architecture
+
+- **Data plane**: TimescaleDB (`public.ldi_data` hypertable, 97,401 rows currently, chunked; `ldi_data_1m`/`_15m`/`_1h` continuous aggregates for range queries; `public.devices` for the factory/zone/machine identity model — 5 real `location` zone values, 10 of 23 `device_type='ldi'` rows actually reporting).
+- **Alarm plane**: `ldi_alarm_log`/`ldi_alarm_ms_code` (raw + dictionary) → `v_ldi_alarm_context` (28-column, telemetry-joined, actively maintained across 9+ migrations) → `v_ldi_alarm_category` (category rollup) → `v_ldi_rca_recent_window`/`v_ldi_rca_truth_test` (materialized, 1-min-refreshed lift/confidence stats) → `ldi_alarm_lifecycle` (ack/resolve state, written only via `services/alarm-api`).
+- **SPC plane**: `v_machine_spc_fleet` (materialized, 1-min-refreshed, fleet Cpk/pass-rate summary) feeding `ims-easy-overview`; deep per-parameter control charts (CUSUM, Nelson Rules) live only in `ims-ldi-engineering-analytics.json`.
+- **Presentation plane**: 10 Grafana dashboards (`docs/architecture/DASHBOARD_INVENTORY.md`, regenerated, never hand-edited) + `services/factory-twin-3d/` (Express + Three.js, frozen, `auth_request`-gated via the same nginx pattern as `alarm-api`).
+- **Known defect** (Finding A, re-confirmed this session): `ims-ldi-manufacturing.json` has 9 fully-built panels orphaned under 5 `collapsed:false` rows whose content lives only in a stale nested `panels[]` array Grafana never renders in that state — invisible both to users and to both repo linters.
+
+## B. Target dashboard topology
+
+See Q1 above — one repaired `ims-ldi-manufacturing.json` with 5 sections (C-LEVEL AT A GLANCE, PRODUCTION & COMPLIANCE, SYSTEM ALARMS, ANALYTICS & SPC, TRACEABILITY) plus explicit drill-out links to the 2D twin, 3D twin, Machine Snapshot, Alarm Console, Alarm Response, and Engineering Analytics. No new dashboard file. No dashboard deleted or merged.
+
+## D. Production & Compliance design
+
+Repair panels 6/7/8 as designed (Panel Recovery Matrix: all VALID, no refactor needed) into a live `PRODUCTION & COMPLIANCE` row directly below the C-Level section. Reuses the exact state-timeline pattern already proven live on Operator Andon Board — no new panel type, no new query pattern.
+
+## E. Analytics & SPC design
+
+Repair panel 13 (needs `ldi_data_1m` repoint first) and panel 12 (needs either a CAGG column addition or an honestly-updated exemption comment — implementer's choice, documented either way) as a **summary-only** row: fleet-level Z-Score and cycle-time heatmap, explicitly framed (via panel description, matching this repo's existing documentation convention) as "see Engineering Analytics for full SPC control charts, CUSUM, and Nelson Rules" rather than duplicating that dashboard's depth — directly satisfies the audit's "preserve Engineering/Analytics detail as drill-down rather than duplicating it" instruction.
+
+## F. System Alarm design
+
+Repair panel 14 (Recent Alarm Events, VALID as-is) as the primary table. Add panel 21 (Top Correlated Alarms, VALID as-is) as the production-impact summary — this single panel is the concrete answer to item 8, using data that already exists and is already refreshed every 60 seconds; no new correlation logic is written.
+
+## G. RCA design
+
+No new RCA computation. `v_ldi_rca_truth_test`/`v_ldi_rca_recent_window` (materialized, migration 064) already compute alarm-category lift vs. baseline with a `LOW SAMPLE (n<30)` confidence flag. Command Center surfaces the recent-window version (panel 21); Engineering Analytics keeps ownership of deeper RCA (Nelson Rules, CUSUM) — same "summary here, depth there" principle as item 3.
+
+## H. Traceability/drill-down design
+
+See Q4's full table. Implementation is link-wiring: repair panel 23 (Board Traceability) and panel 22 (Avg Cycle Time), add a `TRACEABILITY` row containing both plus explicit outbound links (2D twin, 3D twin, Machine Snapshot) using the standing `var-machine_id`+`var-factory` convention with `var-mo`/`var-event_time_ms` omitted, exactly as proven across this session's SDD tasks.
+
+## I. 2D Digital Twin integration
+
+Add one outbound dashboard link from Command Center's TRACEABILITY (and optionally C-Level) section to `ims-ldi-factory-digital-twin`. Zero changes to `ims-ldi-factory-digital-twin.json` itself. No embedding (Canvas panel weight/chrome doesn't suit iframe embedding, and this repo's precedent throughout is dashboard-to-dashboard links, not embedding).
+
+## J. 3D Digital Twin integration
+
+Add one outbound link from the same section to `/factory-twin-3d/` (already `auth_request`-gated on the shared Grafana session — no new auth work, confirmed live multiple times across Tasks 4.1/4.2/4.4). **Zero changes to `services/factory-twin-3d/` code, config, or infra** — the freeze holds; this is a link added to a *different* file (`ims-ldi-manufacturing.json`).
+
+## K. C-Level UX
+
+Relabel/regroup the existing Executive HUD (PRODUCTION/QUALITY/RISK rows) under a single `C-LEVEL AT A GLANCE` heading at the top of the dashboard, unchanged panel content — pure grouping/labeling change, zero query changes, since these 13 panels are already live and already C-Level-appropriate (fleet-wide stats, no per-machine grid).
+
+## L. Operator UX
+
+Operator-facing status/action flow is unchanged: Andon Board (status, TV-wall) + Alarm Console (ack/resolve) stay the operator's actual working surfaces, per Q2. Command Center's new sections are a manufacturing-owner/shift-lead view (matching `ims-ldi-alarm-response.json`'s stated audience), not a replacement for the operator kiosk.
+
+## M. Performance/query budget
+
+All 9 orphaned panels individually measured this session at 1h/24h (and unbounded for the two flagged ones): worst case observed 61.6ms (panel 6), best 0.2–1.9ms. All comfortably inside the repo's 300ms hard budget at current data volume (97,401 rows). Two panels (12, 22) carry an architectural caveat (raw-table range scan without a CAGG-tier equivalent for `total_time`) that should be resolved or explicitly re-documented before recovery, not because they're currently slow, but because they bypass the tiering contract's intent and are invisible to both linters in their current form.
+
+## N. Accessibility
+
+No new accessibility surface introduced — all recovered panels reuse existing, already-shipped panel types (table, state-timeline, heatmap, timeseries, stat) with the same theming/contrast conventions already in use across every other dashboard in this repo. No new custom visualization, no new plugin (satisfies "no external Grafana plugins").
+
+## O. Validation/test strategy
+
+1. Re-run `tests/lint/dashboard-linter.js` and `tests/lint/query-budget-linter.js` after recovery — note that both currently have a real blind spot for row-nested panels (documented above); recovering the panels into the flat `panels[]` array is itself what makes them lint-visible for the first time, so a clean linter pass post-recovery is a meaningful signal it wasn't previously.
+2. Re-run every Panel Recovery Matrix query live post-recovery (`EXPLAIN ANALYZE`) to confirm no regression from the pre-recovery numbers captured in this plan.
+3. Real-browser render check (same `kiosk=1` render-API method used throughout this session — `kiosk=tv` is documented-but-non-functional for chrome-hiding in this environment, already independently confirmed multiple times) to visually confirm all 5 sections actually appear, not just parse correctly.
+4. Click-verify every new outbound link (2D twin, 3D twin, Machine Snapshot, Alarm Console, Alarm Response, Engineering Analytics) via Playwright, same standard used for every drill-down claim this session — no "the URL looks right" without an actual navigation.
+5. Confirm `git diff --stat` scope: only `ims-ldi-manufacturing.json` should change in the dashboard layer; `ims-ldi-operator-andon.json`, `ims-ldi-factory-digital-twin.json`, and everything under `services/factory-twin-3d/` must show zero diff.
+
+## P. Rollback strategy
+
+`ims-ldi-manufacturing.json` is currently uncommitted along with the rest of this session's work (standing no-commit rule). Rollback during implementation is a plain `git checkout -- monitoring/grafana/dashboards/manufacturing/ims-ldi-manufacturing.json` against the last-known-good state, no migration to reverse (this plan proposes zero required migrations — see Q5's panel 12/22 caveat, which has a no-migration fallback option). If a future task does add the optional `avg_total_time` CAGG column, that migration should be additive-only (new column, no existing column altered) so it can be left in place harmlessly even if the dashboard change is rolled back.
+
+## Q. Implementation phases
+
+1. **Phase 1 — Panel repair (no new panels)**: fix the row-nesting bug (flatten panels 6,7,8,12,13,14,21,22,23 into the top-level `panels[]` array with correct `gridPos`), re-verify each query live, resolve panels 12/22's architectural caveat (pick migration-or-documentation path), fix panel 23's linter-visibility gap. This alone closes most of items 2/3/4/8/9.
+2. **Phase 2 — Regrouping**: relabel the Executive HUD as `C-LEVEL AT A GLANCE`, reorganize row order/titles per the target topology (§B) — no panel content changes.
+3. **Phase 3 — Drill-down/link wiring**: add outbound links (2D twin, 3D twin, Machine Snapshot, Alarm Console, Alarm Response, Engineering Analytics) from the appropriate sections, using the proven `var-machine_id`+`var-factory` convention.
+4. **Phase 4 — Validation**: full linter + live-query + Playwright click-verification pass per §O, evidence report, review, stop for approval — same SDD discipline as the 3D twin effort.
+
+Each phase should be its own SDD task (brief → implement → independent review → evidence report → stop), matching this session's established pattern — not a single unreviewed pass.
+
+## R. Risk register
+
+| Risk | Likelihood | Impact | Mitigation |
+|---|---|---|---|
+| Row-flatten edit accidentally drops/duplicates a panel | Medium (manual JSON restructuring) | Medium | `git diff` panel-count check before/after against this plan's known-9 baseline; dashboard-linter panel-count is auto-generated and CI-checked (`DASHBOARD_INVENTORY.md --check`) |
+| Panel 12/22 refactor (if migration path chosen) touches a hypertable CAGG definition | Low | Medium (any CAGG change is more invasive than a dashboard edit) | Prefer the documentation-only fallback (re-confirm/update the exemption comment) unless a future task specifically justifies the migration; this plan does not mandate the migration |
+| Recovered panels reveal a real production issue that was silently invisible (e.g. an actual alarm-correlation finding) | Low-Medium | Informational, not a defect | Expected and fine — the whole point of repairing observability panels is that they might show something real; not a rollback trigger |
+| New outbound links break if target dashboard UIDs/slugs ever change | Low | Low | Same risk every existing drill-down link in this repo already carries; no new exposure |
+| Concurrent/external commit process (recurring hazard, observed repeatedly this session) commits mid-task | Medium (observed 3+ times already) | Low (never lost work, always flagged) | Same handling as every prior task: verify nothing lost, flag to user, don't treat as a blocker |
+
+---
+
+## Final recommendation
+
+**Topology**: repair `ims-ldi-manufacturing.json` in place — do not create a new dashboard. The file already contains a correctly-ordered, C-Level-first structure; it's broken, not missing.
+
+**Implementation order**: Phase 1 (panel repair) first and alone justifies most of this effort — it recovers 9 already-designed, already-verified-live panels for the cost of a JSON structural fix plus two small, well-scoped query caveats. Phase 2 (regrouping) is cosmetic and cheap, do it right after. Phase 3 (link wiring) is the actual "integration" work the phase's name promises, and depends on Phase 1/2 being in place first so links land in the right sections. Phase 4 (validation) is non-negotiable given the discovery that both linters currently can't see any of these panels — a clean post-recovery lint pass is the first real signal this dashboard's SPC/alarm/traceability panels have ever been checked.
+
+Recommend starting implementation with Phase 1 as a single SDD task, stopping for review before Phase 2, same discipline as every task this session.
