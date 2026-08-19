@@ -340,7 +340,7 @@ IMS/
 │  └── settings.js          #  functionGlobalContext, auth config
 ├── postgres/             # Database initialization
 │  └── init/             #  001-init-timescaledb.sql (schema + views)
-├── database/migrations/        #  56 sequenced migration files (013-081, some numbers skipped/archived), applied by db-migrate
+├── database/migrations/        #  57 sequenced migration files (013-082, some numbers skipped/archived), applied by db-migrate
 ├── tests/               # Test suites
 │  ├── k6/              #  K6 pipeline stress test
 │  ├── unit/             #  Parser & counter unit tests
@@ -430,9 +430,35 @@ IMS/
 
 ---
 
+## <img src="docs/assets/icons/activity.svg" width="24" align="center" /> Maintainer Metrics & Activity
+
+<div align="center">
+  <a href="https://github.com/PATTANAKORN025">
+    <img src="https://github-readme-stats.vercel.app/api?username=PATTANAKORN025&show_icons=true&theme=radical&hide_border=true&bg_color=030407&title_color=00F2FE&icon_color=10B981&text_color=e2e8f0" alt="PATTANAKORN025's GitHub Stats" />
+  </a>
+  <a href="https://github.com/PATTANAKORN025">
+    <img src="https://github-readme-streak-stats.herokuapp.com/?user=PATTANAKORN025&theme=radical&hide_border=true&background=030407&ring=00F2FE&fire=EF4444&currStreakNum=e2e8f0&sideLabels=e2e8f0&sideNums=e2e8f0&dates=e2e8f0" alt="PATTANAKORN025's GitHub Streak" />
+  </a>
+  <br/>
+  <br/>
+  <a href="https://github.com/PATTANAKORN025">
+    <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=PATTANAKORN025&layout=compact&theme=radical&hide_border=true&bg_color=030407&title_color=00F2FE&text_color=e2e8f0" alt="Top Languages" />
+  </a>
+</div>
+
+<br/>
+
+### <img src="docs/assets/icons/file-text.svg" width="18" align="center" /> Latest Updates & Blog Posts
+
+<!-- BLOG-POST-LIST:START -->
+*Stay tuned for technical deep dives and platform updates.*
+<!-- BLOG-POST-LIST:END -->
+
+---
+
 <div align="center">
 
-**Built with precision. Designed for uptime.**
+**Built with precision Designed for uptime.**
 
 [MIT License](LICENSE) — 2026 IMS Contributors
 
