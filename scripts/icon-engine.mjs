@@ -110,75 +110,11 @@ async function processFile(filePath) {
     let content = fs.readFileSync(filePath, 'utf8');
     let original = content;
 
-    const flagRegex = /<img src="https:\/\/hatscripts\.github\.io\/circle-flags\/flags\/[^"]+".*?>/g;
-    if (flagRegex.test(content)) {
-        await ensureIconExists('globe');
-        const iconPath = getRelativeIconPath(filePath, 'globe');
-        content = content.replace(flagRegex, `<img src="${iconPath}" width="16" align="center"/>`);
-    }
-
-    const badgeRegexHtml = /<img src="(https:\/\/img\.shields\.io\/badge\/[^"]+)"[^>]*>/g;
-    const badgeRegexMd = /!\[.*?\]\((https:\/\/img\.shields\.io\/badge\/[^\)]+)\)/g;
-
-    async function replaceBadge(match, url) {
-        let slug = 'check-circle';
-        const logoMatch = url.match(/logo=([a-zA-Z0-9_-]+)/);
-        if (logoMatch) {
-            slug = badgeLogoToSlug[logoMatch[1].toLowerCase()] || logoMatch[1].toLowerCase();
-        }
-
-        await ensureIconExists(slug);
-        const iconPath = getRelativeIconPath(filePath, slug);
-        
-        const pathOnly = url.split('?')[0];
-        const badgeData = pathOnly.split('badge/')[1] || '';
-        
-        let msg = '';
-        
-        const parts = badgeData.split(/(?<!-)-(?!-)/); 
-        if (parts.length >= 2) {
-            parts.pop(); 
-            if (parts.length === 2 && parts[0] === '') {
-                msg = decodeBadgeText(parts[1]);
-                return `<img src="${iconPath}" width="14" align="center"/> **${msg}**`;
-            } else if (parts.length === 2) {
-                const label = decodeBadgeText(parts[0]);
-                const text = decodeBadgeText(parts[1]);
-                return `<img src="${iconPath}" width="14" align="center"/> **${label}:** ${text}`;
-            } else {
-                msg = decodeBadgeText(parts.join(' - '));
-                return `<img src="${iconPath}" width="14" align="center"/> **${msg}**`;
-            }
-        } else {
-            msg = decodeBadgeText(parts[0]);
-            return `<img src="${iconPath}" width="14" align="center"/> **${msg}**`;
-        }
-    }
-
-    let htmlMatches = [...content.matchAll(badgeRegexHtml)];
-    for (const m of htmlMatches) {
-        const replacement = await replaceBadge(m[0], m[1]);
-        content = content.replace(m[0], replacement);
-    }
-    
-    let mdMatches = [...content.matchAll(badgeRegexMd)];
-    for (const m of mdMatches) {
-        const replacement = await replaceBadge(m[0], m[1]);
-        content = content.replace(m[0], replacement);
-    }
-
     const localSvgRegex = /docs\/assets\/icons\/([a-zA-Z0-9_-]+)\.svg/g;
     let localMatches = [...content.matchAll(localSvgRegex)];
     for (const m of localMatches) {
         const slug = m[1];
         await ensureIconExists(slug);
-    }
-
-    const typingSvgRegex = /<a href="https:\/\/git\.io\/typing-svg">.*?<\/a\s*>/gs;
-    if (typingSvgRegex.test(content)) {
-        await ensureIconExists('activity');
-        const iconPath = getRelativeIconPath(filePath, 'activity');
-        content = content.replace(typingSvgRegex, `> <img src="${iconPath}" width="18" align="center"/> **APEX Circuit IMS | Advanced Manufacturing Intelligence & NOC**`);
     }
 
     const rawSvgRegex = /<img src="https:\/\/thesvg\.org\/icons\/([^\/]+)\/default\.svg"[^>]*>/g;
