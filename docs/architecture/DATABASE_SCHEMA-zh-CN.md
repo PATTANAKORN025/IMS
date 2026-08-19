@@ -12,7 +12,7 @@
 >
 > 事实来源 (Source of truth)：实时数据库本身的 `information_schema` 和 `timescaledb_information.*` 目录 — 直接通过查询获取，绝不手动输入。如果此文件与数据库当前报告的内容不一致，CI 检查 (`node scripts/generate-schema-inventory.js --check`) 将导致构建失败。要求 `timescaledb` 容器正在运行且已完全迁移。
 >
-> 最后生成时间: 2026-08-14 | 已应用迁移: 56 (013-081) | 数据表: 12 | 连续聚合 (Continuous aggregates): 7 | 普通视图 (Plain views): 11 | 物化视图 (Materialized views): 3
+> 最后生成时间: 2026-08-19 | 已应用迁移: 57 (013-082) | 数据表: 12 | 连续聚合 (Continuous aggregates): 7 | 普通视图 (Plain views): 11 | 物化视图 (Materialized views): 3
 
 ## 数据表 (Tables)
 

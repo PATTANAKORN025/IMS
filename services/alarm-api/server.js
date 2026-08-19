@@ -6,6 +6,15 @@ const { Pool } = require('pg');
 const PORT = process.env.PORT || 4000;
 const ALLOWED_ORIGIN = process.env.ALARM_API_ALLOWED_ORIGIN || '*';
 
+// idleTimeoutMillis must stay well below pgbouncer's CLIENT_IDLE_TIMEOUT
+// (docker-compose.yaml, currently 300s): pgbouncer force-closes an idle
+// backend connection with a FATAL client_idle_timeout error once it hits
+// that ceiling, and that server-initiated kill has repeatedly crashed this
+// process (see docs/architecture -- three occurrences, 2026-08-14/18/19,
+// all during low-traffic overnight windows long enough for a pooled client
+// to sit idle past 300s). Closing idle clients from the app side first, at
+// a fraction of pgbouncer's timeout, means pg-pool retires them itself
+// (a clean disconnect, not an error) before pgbouncer ever gets the chance.
 const pool = new Pool({
   host: process.env.PGHOST || 'ims-pgbouncer',
   port: Number(process.env.PGPORT || 5432),
@@ -13,10 +22,28 @@ const pool = new Pool({
   user: process.env.PGUSER,
   password: process.env.PGPASSWORD,
   max: 10,
+  idleTimeoutMillis: 60_000,
 });
 
 pool.on('error', (err) => {
   console.error('pg pool idle-client error (non-fatal, pool recovers):', err.message);
+});
+
+// Defense in depth: pg-pool's idle-client error relay (Client.idleListener
+// -> pool.emit('error')) has, in this environment, still reached Node's
+// default "unhandled 'error' event" crash path despite pool.on('error')
+// above being registered at module load -- root cause not fully pinned
+// down, but idleTimeoutMillis should make it moot going forward. This
+// process is in an undefined state after any uncaught exception (Node's
+// own guidance): log it clearly, then exit -- don't keep serving requests
+// on a possibly-corrupt event loop. `restart: unless-stopped` + the
+// healthcheck already recover cleanly and quickly from a process exit
+// (proven for the original crash, see SPEC_PG_POOL_RESILIENCE.md), so
+// exiting loses nothing and avoids masking a recurring problem behind a
+// silent log line.
+process.on('uncaughtException', (err) => {
+  console.error('uncaughtException (alarm-api exiting for restart):', err);
+  process.exit(1);
 });
 
 const app = express();
