@@ -12,7 +12,7 @@
 >
 > แหล่งข้อมูลอ้างอิงหลัก (Source of truth): แค็ตตาล็อก `information_schema` และ `timescaledb_information.*` ของฐานข้อมูลจริง — โดยการดึงข้อมูลด้วยคิวรีโดยตรง และไม่มีการพิมพ์ด้วยตนเอง การตรวจสอบของ CI (`node scripts/generate-schema-inventory.js --check`) จะทำให้การบิลด์ล้มเหลวหากไฟล์นี้ไม่ตรงกับสิ่งที่ฐานข้อมูลรายงานในปัจจุบัน จำเป็นต้องให้คอนเทนเนอร์ `timescaledb` ทำงานอยู่และผ่านการไมเกรตอย่างสมบูรณ์
 >
-> สร้างล่าสุด: 2026-08-14 | การไมเกรตที่ใช้: 56 (013-081) | ตาราง: 12 | Continuous aggregates: 7 | มุมมองปกติ (Plain views): 11 | Materialized views: 3
+> สร้างล่าสุด: 2026-08-19 | การไมเกรตที่ใช้: 57 (013-082) | ตาราง: 12 | Continuous aggregates: 7 | มุมมองปกติ (Plain views): 11 | Materialized views: 3
 
 ## ตาราง (Tables)
 

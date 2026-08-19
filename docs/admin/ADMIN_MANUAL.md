@@ -112,7 +112,7 @@ curl -s http://localhost:9093/-/healthy
 
 ### Database Migrations
 
-`database/migrations/` currently has 56 sequenced files (`013` through `081`, with some numbers skipped/archived — earlier numbers `001-012` were folded into `postgres/init/001-init-timescaledb.sql`, the fresh-deploy bootstrap path). Applied automatically by the one-shot `ims-db-migrate` service on every `docker compose up`; `node-red` and `alarm-api` won't start until it exits successfully.
+`database/migrations/` currently has 57 sequenced files (`013` through `082`, with some numbers skipped/archived — earlier numbers `001-012` were folded into `postgres/init/001-init-timescaledb.sql`, the fresh-deploy bootstrap path). Applied automatically by the one-shot `ims-db-migrate` service on every `docker compose up`; `node-red` and `alarm-api` won't start until it exits successfully.
 
 ```bash
 # Manually re-run migrations without bringing up the rest of the stack

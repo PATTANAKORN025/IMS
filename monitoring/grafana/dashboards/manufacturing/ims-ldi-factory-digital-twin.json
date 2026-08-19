@@ -646,6 +646,9 @@
         }
       ],
       "options": {
+        "inlineEditing": false,
+        "showAdvancedTypes": false,
+        "oneClickMode": "link",
         "root": {
           "type": "frame",
           "name": "root",

@@ -43,7 +43,7 @@ done
 
 - 所有对象都位于 `public` 模式 (schema) 中。
 - 当针对该用例已经存在连续聚合 (continuous aggregate) 或物化视图时，永远不要从仪表板直接查询原始超表 (`ldi_data`, `sys_metrics`, `net_metrics`) — 有关当前视图/连续聚合清单，请参阅 `docs/architecture/DATABASE_SCHEMA.md`。`tests/lint/query-budget-linter.js` 强制执行此规则。
-- 每次迁移 (migration) 都是 `database/migrations/` 目录下一个按顺序编号的新文件（当前为 013–081，由 `db-migrate` 服务按顺序应用）。**迁移被合并后，切勿编辑或重新编号** — 修正应该始终是*下一个*数字。有关完整的版本控制策略，请参阅 `docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md` §7。
+- 每次迁移 (migration) 都是 `database/migrations/` 目录下一个按顺序编号的新文件（当前为 013–082，由 `db-migrate` 服务按顺序应用）。**迁移被合并后，切勿编辑或重新编号** — 修正应该始终是*下一个*数字。有关完整的版本控制策略，请参阅 `docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md` §7。
 - 对于任何到达 SQL 的用户提供字符串，必须使用 `sanitize()`（来自 `nodered_data/lib/parser.js`，通过 `global.get('parser')` 导出）— 对 SQL 注入零容忍。
 
 ### Grafana

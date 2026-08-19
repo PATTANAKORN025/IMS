@@ -43,7 +43,7 @@ done
 
 - ออบเจกต์ทั้งหมดอยู่ใน schema `public`
 - ห้าม query raw hypertables (`ldi_data`, `sys_metrics`, `net_metrics`) โดยตรงจาก dashboard เมื่อมี continuous aggregate หรือ materialized view อยู่แล้วสำหรับกรณีใช้งานนั้น — ดู `docs/architecture/DATABASE_SCHEMA.md` สำหรับรายการ view/CAGG ปัจจุบัน `tests/lint/query-budget-linter.js` จะบังคับใช้กฎข้อนี้
-- ทุกการย้ายฐานข้อมูล (migration) จะเป็นไฟล์ใหม่ที่มีหมายเลขเรียงลำดับใน `database/migrations/` (ปัจจุบัน 013–081 ซึ่งจะถูกนำไปใช้ตามลำดับโดยบริการ `db-migrate`) **ห้ามแก้ไขหรือเปลี่ยนหมายเลขการ migration หลังจากที่ merge แล้ว** — การแก้ไขจะต้องใช้หมายเลข _ถัดไป_ เสมอ ดูนโยบายการจัดการเวอร์ชันฉบับเต็มได้ที่ `docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md` §7
+- ทุกการย้ายฐานข้อมูล (migration) จะเป็นไฟล์ใหม่ที่มีหมายเลขเรียงลำดับใน `database/migrations/` (ปัจจุบัน 013–082 ซึ่งจะถูกนำไปใช้ตามลำดับโดยบริการ `db-migrate`) **ห้ามแก้ไขหรือเปลี่ยนหมายเลขการ migration หลังจากที่ merge แล้ว** — การแก้ไขจะต้องใช้หมายเลข _ถัดไป_ เสมอ ดูนโยบายการจัดการเวอร์ชันฉบับเต็มได้ที่ `docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md` §7
 - ใช้ `sanitize()` (จาก `nodered_data/lib/parser.js` ซึ่ง export ผ่าน `global.get('parser')`) สำหรับสตริงจากผู้ใช้ใดๆ ที่ส่งไปถึง SQL — ไม่อนุญาตให้มีช่องโหว่ SQL injection โดยเด็ดขาด
 
 ### Grafana
