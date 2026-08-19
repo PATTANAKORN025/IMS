@@ -21,7 +21,7 @@
  <p>
   <a href="README.md"><img src="docs/assets/icons/gb.svg" width="18" align="center"/> <b>English</b></a> |
   <a href="README-th.md"><img src="docs/assets/icons/th.svg" width="18" align="center"/> <b>ไทย</b></a> |
-  <a href="README-zh-CN.md"><img src="docs/assets/icons/cn.svg" width="18" align="center"/> <b>中文</b></a>
+  <a href="README-zh-CN.md"><img src="docs/assets/icons/tw.svg" width="18" align="center"/> <b>中文</b></a>
  </p>
 </div>
 
