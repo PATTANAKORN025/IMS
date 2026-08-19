@@ -122,7 +122,7 @@ IMS 是一个跨越两个领域的监控平台 —— **基础设施**（服务�
 ### 历史记录
 
 - [`../archive/`](../archive/) — 带日期的特定时间点快照（审计报告、基准测试报告、实习回顾）。不是动态文档 —— 见 `docs/archive/README.md`。
-- [`../DOCUMENTATION_QUALITY_REPORT.md`](../DOCUMENTATION_QUALITY_REPORT.md) — 与本指南本身一起生成的审计/重写报告。
+- [`../archive/DOCUMENTATION_QUALITY_REPORT.md`](../archive/DOCUMENTATION_QUALITY_REPORT.md) — 与本指南本身一起生成的审计/重写报告。
 
 ---
 
