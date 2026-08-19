@@ -50,39 +50,23 @@
 </div>
 
 <div align="center">
-  <a href="#quick-start"><img src="docs/assets/icons/github.svg" width="16" align="center"/> <b>Release v1.0</b></a> &nbsp;•&nbsp;
-  <a href="LICENSE"><img src="docs/assets/icons/open-source-initiative.svg" width="16" align="center"/> <b>MIT License</b></a> &nbsp;•&nbsp;
-  <a href="https://www.docker.com/"><img src="docs/assets/icons/docker.svg" width="16" align="center"/> <b>Docker Ready</b></a> &nbsp;•&nbsp;
-  <a href="https://grafana.com/"><img src="docs/assets/icons/grafana.svg" width="16" align="center"/> <b>Grafana v11+</b></a> &nbsp;•&nbsp;
-  <a href="https://nodered.org/"><img src="docs/assets/icons/node-red.svg" width="16" align="center"/> <b>Node-RED v4+</b></a> &nbsp;•&nbsp;
-  <a href="https://www.timescale.com/"><img src="docs/assets/icons/postgresql.svg" width="16" align="center"/> <b>TimescaleDB 2.x</b></a>
-  <br/><br/>
-  <a href="#quick-start"><img src="docs/assets/icons/check-circle.svg" width="16" align="center"/> <b>Status:</b> Tests Passing</a> &nbsp;•&nbsp;
-  <a href="#quick-start"><img src="docs/assets/icons/k6.svg" width="16" align="center"/> <b>K6:</b> Stress-Tested</a> &nbsp;•&nbsp;
-  <a href="data-generators/"><img src="docs/assets/icons/python.svg" width="16" align="center"/> <b>Data:</b> Digital Twin</a>
+  <a href="#quick-start"><img src="https://img.shields.io/badge/-Release_v1.0-030407?style=for-the-badge&logo=github&logoColor=10B981" alt="Release"/></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/-MIT_License-030407?style=for-the-badge&logo=opensourceinitiative&logoColor=00F2FE" alt="License"/></a>
+  <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/-Docker_Ready-030407?style=for-the-badge&logo=docker&logoColor=2496ED" alt="Docker"/></a>
+  <a href="https://grafana.com/"><img src="https://img.shields.io/badge/-Grafana_v11+-030407?style=for-the-badge&logo=grafana&logoColor=F46800" alt="Grafana"/></a>
+  <a href="https://nodered.org/"><img src="https://img.shields.io/badge/-Node--RED_v4+-030407?style=for-the-badge&logo=nodered&logoColor=8F0000" alt="Node-RED"/></a>
+  <a href="https://www.timescale.com/"><img src="https://img.shields.io/badge/-TimescaleDB_2.x-030407?style=for-the-badge&logo=postgresql&logoColor=F59E0B" alt="TimescaleDB"/></a>
+  <br>
+  <a href="#quick-start"><img src="https://img.shields.io/badge/Status-Tests_Passing-10B981?style=for-the-badge&logoColor=white" alt="Tests" /></a>
+  <a href="#quick-start"><img src="https://img.shields.io/badge/K6-Stress--Tested-030407?style=for-the-badge&logo=k6&logoColor=7B61FF" alt="K6" /></a>
+  <a href="data-generators/"><img src="https://img.shields.io/badge/Data-Digital_Twin-030407?style=for-the-badge&logo=python&logoColor=00C7B7" alt="Synthetic Data" /></a>
 </div>
 
 <br/>
 
-<div align="center">
-  <table>
-    <tr>
-      <td align="center" width="250">
-        <a href="./docs/architecture/IMS_PLATFORM_BOOK.md" style="text-decoration:none;">
-          <img src="docs/assets/icons/book.svg" width="32" align="center"/><br/>
-          <b>PLATFORM BOOK</b><br/>
-          <sub>ENTER</sub>
-        </a>
-      </td>
-      <td align="center" width="250">
-        <a href="./docs/architecture/ARCHITECTURE.md" style="text-decoration:none;">
-          <img src="docs/assets/icons/server.svg" width="32" align="center"/><br/>
-          <b>ARCHITECTURE</b><br/>
-          <sub>READ</sub>
-        </a>
-      </td>
-    </tr>
-  </table>
+<div align="center" justify-content="space-between">
+  <a href="./docs/architecture/IMS_PLATFORM_BOOK.md"><img src="https://img.shields.io/badge/PLATFORM_BOOK-ENTER-blue?color=00F2FE&labelColor=030407&style=for-the-badge"></a>
+  <a href="./docs/architecture/ARCHITECTURE.md"><img src="https://img.shields.io/badge/ARCHITECTURE-READ-blue?color=10B981&labelColor=030407&style=for-the-badge"></a>
 </div>
 
 <br/>
