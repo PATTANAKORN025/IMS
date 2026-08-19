@@ -7,9 +7,9 @@
 
 <div align="center">
  <p>
- <img src="../assets/icons/globe.svg" width="16" align="center"/> <b>English</b> |
- <a href="ARCHITECTURE-th.md"><img src="../assets/icons/globe.svg" width="16" align="center"/> ไทย</a> |
- <a href="ARCHITECTURE-zh-CN.md"><img src="../assets/icons/globe.svg" width="16" align="center"/> 中文</a>
+ <img src="../assets/icons/gb.svg" width="16" align="center"/> <b>English</b> |
+ <a href="ARCHITECTURE-th.md"><img src="../assets/icons/th.svg" width="16" align="center"/> <b>ไทย</b></a> |
+ <a href="ARCHITECTURE-zh-CN.md"><img src="../assets/icons/tw.svg" width="16" align="center"/> <b>中文</b></a>
  </p>
 </div>
 
