@@ -124,7 +124,7 @@ IMS is a monitoring platform spanning two domains — **infrastructure** (server
 ### Historical record
 
 - [`../archive/`](../archive/) — dated point-in-time snapshots (audit reports, benchmark reports, an internship retrospective). Not living documentation — see `docs/archive/README.md`.
-- [`../DOCUMENTATION_QUALITY_REPORT.md`](../DOCUMENTATION_QUALITY_REPORT.md) — the audit/rewrite report this book itself was produced alongside.
+- [`../archive/DOCUMENTATION_QUALITY_REPORT.md`](../archive/DOCUMENTATION_QUALITY_REPORT.md) — the audit/rewrite report this book itself was produced alongside.
 
 ---
 

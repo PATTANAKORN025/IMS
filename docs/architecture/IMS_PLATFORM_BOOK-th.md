@@ -122,7 +122,7 @@ IMS คือ monitoring platform ที่ครอบคลุมสองโ�
 ### บันทึกประวัติศาสตร์ (Historical record)
 
 - [`../archive/`](../archive/) — ภาพรวม (snapshots) ณ เวลาต่างๆ ที่ลงวันที่ไว้ (รายงานการตรวจสอบ (audit reports), รายงานผลการประเมินเทียบเคียง (benchmark reports), บทสรุปผลการฝึกงานของนักศึกษาฝึกงาน) ไฟล์เหล่านี้ไม่ใช่เอกสารที่ยังใช้งานอยู่ (Not living documentation) — ดู `docs/archive/README.md`
-- [`../DOCUMENTATION_QUALITY_REPORT.md`](../DOCUMENTATION_QUALITY_REPORT.md) — รายงานการตรวจสอบ/เขียนเอกสารใหม่ ซึ่งเป็นต้นกำเนิดของการทำสมุดฉบับนี้
+- [`../archive/DOCUMENTATION_QUALITY_REPORT.md`](../archive/DOCUMENTATION_QUALITY_REPORT.md) — รายงานการตรวจสอบ/เขียนเอกสารใหม่ ซึ่งเป็นต้นกำเนิดของการทำสมุดฉบับนี้
 
 ---
 
