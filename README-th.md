@@ -19,9 +19,9 @@
 
 <div align="center">
  <p>
-  <a href="README.md"><img src="docs/assets/icons/globe.svg" width="16" align="center"/> <b>English</b></a> |
-  <a href="README-th.md"><img src="docs/assets/icons/globe.svg" width="16" align="center"/> <b>ไทย</b></a> |
-  <a href="README-zh-CN.md"><img src="docs/assets/icons/globe.svg" width="16" align="center"/> <b>中文</b></a>
+  <a href="README.md"><img src="docs/assets/icons/gb.svg" width="18" align="center"/> <b>English</b></a> |
+  <a href="README-th.md"><img src="docs/assets/icons/th.svg" width="18" align="center"/> <b>ไทย</b></a> |
+  <a href="README-zh-CN.md"><img src="docs/assets/icons/cn.svg" width="18" align="center"/> <b>中文</b></a>
  </p>
 </div>
 
@@ -39,20 +39,20 @@
   <img src="assets/apex-ldi-noc-banner.gif" alt="APEX Circuit LDI NOC Banner" width="100%" style="border-radius:12px; box-shadow: 0 16px 64px rgba(0,0,0,0.6); margin-bottom: 24px; border: 1px solid rgba(0,242,254,0.1);" />
   <br/>
   <br/>
-  > <img src="docs/assets/icons/activity.svg" width="18" align="center"/> **APEX Circuit IMS | Advanced Manufacturing Intelligence & NOC**
+  <a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.demolab.com?font=Orbitron&weight=600&size=36&duration=4000&pause=2000&color=00F2FE&center=true&repeat=true&width=1000&height=60&lines=APEX+Circuit+IMS+|+System+Initializing...;Advanced+Manufacturing+Intelligence+%26+NOC;High-Fidelity+Digital+Twin+Architecture" alt="Typing SVG" /></a>
 </div>
 
 <div align="center">
-  <a href="#quick-start"><img src="docs/assets/icons/github.svg" width="16" align="center" alt="Release"/> <b>Release v1.0</b></a> &nbsp;•&nbsp;
-  <a href="LICENSE"><img src="docs/assets/icons/open-source-initiative.svg" width="16" align="center" alt="License"/> <b>MIT License</b></a> &nbsp;•&nbsp;
-  <a href="https://www.docker.com/"><img src="docs/assets/icons/docker.svg" width="16" align="center" alt="Docker"/> <b>Docker Ready</b></a> &nbsp;•&nbsp;
-  <a href="https://grafana.com/"><img src="docs/assets/icons/grafana.svg" width="16" align="center" alt="Grafana"/> <b>Grafana v11+</b></a> &nbsp;•&nbsp;
-  <a href="https://nodered.org/"><img src="docs/assets/icons/node-red.svg" width="16" align="center" alt="Node-RED"/> <b>Node-RED v4+</b></a> &nbsp;•&nbsp;
-  <a href="https://www.timescale.com/"><img src="docs/assets/icons/postgresql.svg" width="16" align="center" alt="TimescaleDB"/> <b>TimescaleDB 2.x</b></a>
+  <a href="#quick-start"><img src="docs/assets/icons/github.svg" width="16" align="center"/> <b>Release v1.0</b></a> &nbsp;•&nbsp;
+  <a href="LICENSE"><img src="docs/assets/icons/open-source-initiative.svg" width="16" align="center"/> <b>MIT License</b></a> &nbsp;•&nbsp;
+  <a href="https://www.docker.com/"><img src="docs/assets/icons/docker.svg" width="16" align="center"/> <b>Docker Ready</b></a> &nbsp;•&nbsp;
+  <a href="https://grafana.com/"><img src="docs/assets/icons/grafana.svg" width="16" align="center"/> <b>Grafana v11+</b></a> &nbsp;•&nbsp;
+  <a href="https://nodered.org/"><img src="docs/assets/icons/node-red.svg" width="16" align="center"/> <b>Node-RED v4+</b></a> &nbsp;•&nbsp;
+  <a href="https://www.timescale.com/"><img src="docs/assets/icons/postgresql.svg" width="16" align="center"/> <b>TimescaleDB 2.x</b></a>
   <br/><br/>
-  <a href="#quick-start"><img src="docs/assets/icons/check-circle.svg" width="16" align="center" alt="Status"/> <b>Status:</b> Tests Passing</a> &nbsp;•&nbsp;
-  <a href="#quick-start"><img src="docs/assets/icons/k6.svg" width="16" align="center" alt="K6"/> <b>K6:</b> Stress-Tested</a> &nbsp;•&nbsp;
-  <a href="data-generators/"><img src="docs/assets/icons/python.svg" width="16" align="center" alt="Data"/> <b>Data:</b> Digital Twin</a>
+  <a href="#quick-start"><img src="docs/assets/icons/check-circle.svg" width="16" align="center"/> <b>Status:</b> Tests Passing</a> &nbsp;•&nbsp;
+  <a href="#quick-start"><img src="docs/assets/icons/k6.svg" width="16" align="center"/> <b>K6:</b> Stress-Tested</a> &nbsp;•&nbsp;
+  <a href="data-generators/"><img src="docs/assets/icons/python.svg" width="16" align="center"/> <b>Data:</b> Digital Twin</a>
 </div>
 
 <br/>
@@ -62,14 +62,14 @@
     <tr>
       <td align="center" width="250">
         <a href="docs/architecture/IMS_PLATFORM_BOOK.md" style="text-decoration:none;">
-          <img src="docs/assets/icons/book.svg" width="32" align="center" alt="Platform Book"/><br/>
+          <img src="docs/assets/icons/book.svg" width="32" align="center"/><br/>
           <b>PLATFORM BOOK</b><br/>
           <sub>ENTER</sub>
         </a>
       </td>
       <td align="center" width="250">
         <a href="docs/architecture/ARCHITECTURE.md" style="text-decoration:none;">
-          <img src="docs/assets/icons/server.svg" width="32" align="center" alt="Architecture"/><br/>
+          <img src="docs/assets/icons/server.svg" width="32" align="center"/><br/>
           <b>ARCHITECTURE</b><br/>
           <sub>READ</sub>
         </a>
