@@ -630,9 +630,9 @@
         "max": 10,
         "idle": 10000,
         "connectionTimeout": 10000,
-        "user": "ims_admin",
-        "userFieldType": "str",
-        "password": "change-me-please",
-        "passwordFieldType": "str"
+        "user": "PGUSER",
+        "userFieldType": "env",
+        "password": "PGPASSWORD",
+        "passwordFieldType": "env"
     }
 ]
