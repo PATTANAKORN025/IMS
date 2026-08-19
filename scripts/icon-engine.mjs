@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { optimize } from 'svgo';
 
 // Mapping rules for dynamic icon discovery
 const badgeLogoToSlug = {
@@ -65,9 +66,32 @@ async function ensureIconExists(slug) {
     const svgPath = path.join(ICONS_DIR, `${slug}.svg`);
     const svgContent = await getIconSvg(slug);
     
-    fs.writeFileSync(svgPath, svgContent, 'utf8');
+    // World-Class Professional SVG Optimization via SVGO
+    const optimized = optimize(svgContent, {
+        path: svgPath,
+        multipass: true,
+        plugins: [
+            'preset-default',
+            'removeTitle',
+            'removeDesc',
+            'removeDimensions',
+            'sortAttrs',
+            {
+                name: 'addAttributesToSVGElement',
+                params: {
+                    attributes: [
+                        { 'aria-hidden': 'true' },
+                        { 'role': 'img' },
+                        { 'focusable': 'false' }
+                    ]
+                }
+            }
+        ],
+    });
+    
+    fs.writeFileSync(svgPath, optimized.data, 'utf8');
     generatedIcons.add(slug);
-    console.log(`[IconEngine] Generated: ${slug}.svg`);
+    console.log(`[IconEngine] Generated & Optimized: ${slug}.svg`);
 }
 
 function getRelativeIconPath(filePath, slug) {
