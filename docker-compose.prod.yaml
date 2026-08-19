@@ -17,7 +17,7 @@ services:
   grafana:
     environment:
       - GF_LOG_LEVEL=warn
-      - GF_PANELS_DISABLE_SANITIZE_HTML=false
+      - GF_PANELS_DISABLE_SANITIZE_HTML=false\n      - GF_SECURITY_COOKIE_SECURE=true\n      - GF_SECURITY_STRICT_TRANSPORT_SECURITY=true
     deploy:
       resources:
         limits:
