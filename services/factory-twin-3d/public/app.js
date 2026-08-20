@@ -167,7 +167,21 @@ function drillDownUrl(deviceId) {
   // "everything looks fine" values instead of the alarm moment.
   if (state && state.alarm && state.alarm.related_log_id) {
     url += `&var-log_id=${encodeURIComponent(state.alarm.related_log_id)}`;
-    if (state.alarm.logdate_ms) url += `&var-event_time_ms=${encodeURIComponent(state.alarm.logdate_ms)}`;
+    if (state.alarm.logdate_ms) {
+      // var-clicked_series MUST be sent alongside var-event_time_ms: every
+      // panel keyed on "was a specific point clicked" branches on
+      // event_time_ms > 0 to decide whether to read the machine from
+      // clicked_series (split_part(x, ' - ', 1) -- ims-ldi-engineering-
+      // analytics.json's own data links set this to the plain machine ID,
+      // e.g. "LDI-03", confirmed live: split_part('LDI-03', ' - ', 1) =
+      // 'LDI-03' unchanged) or from machine_id. Sending event_time_ms alone
+      // (as this function did before) leaves clicked_series at its default
+      // '__none__', so that branch matches zero machines -- confirmed live:
+      // Process Capability / Alarm Context / Event Timeline all silently
+      // returned 0 rows (NO_DATA) until this was added.
+      url += `&var-event_time_ms=${encodeURIComponent(state.alarm.logdate_ms)}`;
+      url += `&var-clicked_series=${encodeURIComponent(deviceId)}`;
+    }
   }
   return url;
 }
