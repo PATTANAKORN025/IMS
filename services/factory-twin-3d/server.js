@@ -169,6 +169,8 @@ alarm_raw AS (
     a.equipmentid,
     CASE m.severity WHEN 'Critical' THEN 0 WHEN 'Major' THEN 1 ELSE 2 END AS sev_rank,
     a.logdate,
+    a.related_log_id,
+    (EXTRACT(EPOCH FROM a.logdate) * 1000)::BIGINT AS logdate_ms,
     ${CATEGORY_OWNER_CASE} AS owner,
     CASE
         WHEN NOW() - a.logdate < INTERVAL '1 hour'
@@ -189,7 +191,12 @@ alarm_ctx AS (
     equipmentid,
     COUNT(*)::INT AS n,
     (ARRAY_AGG(owner ORDER BY sev_rank, logdate DESC))[1] AS owner,
-    (ARRAY_AGG(elapsed ORDER BY sev_rank, logdate DESC))[1] AS elapsed
+    (ARRAY_AGG(elapsed ORDER BY sev_rank, logdate DESC))[1] AS elapsed,
+    -- related_log_id/logdate_ms of the SAME top-ranked alarm owner/elapsed
+    -- picks -- so the drill-down link lands on the exact event the HUD
+    -- text describes, not just any alarm for that machine.
+    (ARRAY_AGG(related_log_id ORDER BY sev_rank, logdate DESC))[1] AS related_log_id,
+    (ARRAY_AGG(logdate_ms ORDER BY sev_rank, logdate DESC))[1] AS logdate_ms
   FROM alarm_raw
   GROUP BY equipmentid
 )
@@ -202,7 +209,9 @@ SELECT
   s.factory,
   COALESCE(alarm_ctx.n, 0) AS alarm_count,
   alarm_ctx.owner AS alarm_owner,
-  alarm_ctx.elapsed AS alarm_elapsed
+  alarm_ctx.elapsed AS alarm_elapsed,
+  alarm_ctx.related_log_id AS alarm_related_log_id,
+  alarm_ctx.logdate_ms AS alarm_logdate_ms
 FROM s
 LEFT JOIN alarm_ctx ON alarm_ctx.equipmentid = s.eqp_id
 ORDER BY s.eqp_id`;
@@ -222,7 +231,13 @@ app.get('/api/state', async (req, res) => {
       factory: row.factory,
       alarm:
         row.alarm_count > 0
-          ? { count: row.alarm_count, owner: row.alarm_owner, elapsed: row.alarm_elapsed }
+          ? {
+              count: row.alarm_count,
+              owner: row.alarm_owner,
+              elapsed: row.alarm_elapsed,
+              related_log_id: row.alarm_related_log_id,
+              logdate_ms: row.alarm_logdate_ms,
+            }
           : null,
     }));
     res.status(200).json({
