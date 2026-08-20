@@ -44,7 +44,7 @@
 
 <div align="center">
   <a href="#quick-start"><img src="https://img.shields.io/badge/-Release_v1.0-030407?style=for-the-badge&logo=github&logoColor=10B981" alt="Release"/></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/-MIT_License-030407?style=for-the-badge&logo=opensourceinitiative&logoColor=00F2FE" alt="License"/></a>
+  <a href="../LICENSE"><img src="https://img.shields.io/badge/-MIT_License-030407?style=for-the-badge&logo=opensourceinitiative&logoColor=00F2FE" alt="License"/></a>
   <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/-Docker_Ready-030407?style=for-the-badge&logo=docker&logoColor=2496ED" alt="Docker"/></a>
   <a href="https://grafana.com/"><img src="https://img.shields.io/badge/-Grafana_v11+-030407?style=for-the-badge&logo=grafana&logoColor=F46800" alt="Grafana"/></a>
   <a href="https://nodered.org/"><img src="https://img.shields.io/badge/-Node--RED_v4+-030407?style=for-the-badge&logo=nodered&logoColor=8F0000" alt="Node-RED"/></a>
@@ -52,7 +52,7 @@
   <br>
   <a href="#quick-start"><img src="https://img.shields.io/badge/Status-Tests_Passing-10B981?style=for-the-badge&logoColor=white" alt="Tests" /></a>
   <a href="#quick-start"><img src="https://img.shields.io/badge/K6-Stress--Tested-030407?style=for-the-badge&logo=k6&logoColor=7B61FF" alt="K6" /></a>
-  <a href="data-generators"><img src="https://img.shields.io/badge/Data-Digital_Twin-030407?style=for-the-badge&logo=python&logoColor=00C7B7" alt="Synthetic Data" /></a>
+  <a href="../data-generators"><img src="https://img.shields.io/badge/Data-Digital_Twin-030407?style=for-the-badge&logo=python&logoColor=00C7B7" alt="Synthetic Data" /></a>
 </div>
 
 <br/>
@@ -119,7 +119,7 @@
 <td align="center" width="33%">
  <h3>遥测数据摄取</h3>
  并行 Node-RED walkers 利用顺序批量 SNMP 轮询和 HTTP 端点，通过 PgBouncer 事务池将数据持久化到 TimescaleDB。<br/><br/>
- **已验证：** [nodered-ingestion-20260813.txt](docs/evidence/runtime/nodered-ingestion-20260813.txt)
+ **已验证：** [nodered-ingestion-20260813.txt](../docs/evidence/runtime/nodered-ingestion-20260813.txt)
 </td>
 <td align="center" width="33%">
  <h3>统计过程控制 (SPC)</h3>
@@ -128,7 +128,7 @@
 <td align="center" width="33%">
  <h3>连续聚合</h3>
  由 TimescaleDB 自动计算每小时、每天和每周的汇总，以便在较长时间范围内保持 Grafana 亚秒级的呈现时间。<br/><br/>
- **已验证：** [cagg-policies-20260813.txt](docs/evidence/runtime/cagg-policies-20260813.txt)
+ **已验证：** [cagg-policies-20260813.txt](../docs/evidence/runtime/cagg-policies-20260813.txt)
 </td>
 </tr>
 </table>
@@ -158,7 +158,7 @@ open http://localhost:3000
 ```
 
 > **期待什么：** 温和的模拟（约 10-15 行/分钟），让您点击 LDI 制造指挥中心，查看操作员安灯板，并查看实时 Cpk 能力图表。
-> **已验证：** `docker compose ps` 在 2026-08-13 的结果，存档在 [`docs/evidence/runtime/compose-ps-20260813.txt`](docs/evidence/runtime/compose-ps-20260813.txt) 中。
+> **已验证：** `docker compose ps` 在 2026-08-13 的结果，存档在 [`docs/evidence/runtime/compose-ps-20260813.txt`](../docs/evidence/runtime/compose-ps-20260813.txt) 中。
 
 ### 路径 B：性能试验场（压力测试）
 
@@ -427,6 +427,6 @@ IMS/
 
 **以精密制造。为正常运行而设计。**
 
-[MIT License](LICENSE) — 2026 IMS 贡献者
+[MIT License](../LICENSE) — 2026 IMS 贡献者
 
 </div>

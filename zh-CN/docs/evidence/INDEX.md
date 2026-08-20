@@ -15,9 +15,9 @@
 
 | Capability Claim                     | Evidence Location                                                                  | Description                                                                                                                                     |
 | ------------------------------------ | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Local Simulator Environment**      | [`runtime/compose-ps-20260813.txt`](runtime/compose-ps-20260813.txt)               | `docker compose ps` 的输出，验证系统完全在使用 `ims-snmpsim` 的受控环境中运行，而不依赖外部生产环境。                                               |
-| **Telemetry Ingestion via Node-RED** | [`runtime/nodered-ingestion-20260813.txt`](runtime/nodered-ingestion-20260813.txt) | 日志摘录，显示通过 Node-RED 批量 SNMP 轮询成功向 `sys_metrics` 和 `ldi_alarm_log` 执行了 `Batch INSERT` 操作。                                    |
-| **Continuous Aggregation**           | [`runtime/cagg-policies-20260813.txt`](runtime/cagg-policies-20260813.txt)         | TimescaleDB 持续聚合（Continuous Aggregates）注册表的输出，证明数据库中存在每小时、每天和每周的数据汇总（rollups）。                               |
+| **Local Simulator Environment**      | [`runtime/compose-ps-20260813.txt`](../../../docs/evidence/runtime/compose-ps-20260813.txt)               | `docker compose ps` 的输出，验证系统完全在使用 `ims-snmpsim` 的受控环境中运行，而不依赖外部生产环境。                                               |
+| **Telemetry Ingestion via Node-RED** | [`runtime/nodered-ingestion-20260813.txt`](../../../docs/evidence/runtime/nodered-ingestion-20260813.txt) | 日志摘录，显示通过 Node-RED 批量 SNMP 轮询成功向 `sys_metrics` 和 `ldi_alarm_log` 执行了 `Batch INSERT` 操作。                                    |
+| **Continuous Aggregation**           | [`runtime/cagg-policies-20260813.txt`](../../../docs/evidence/runtime/cagg-policies-20260813.txt)         | TimescaleDB 持续聚合（Continuous Aggregates）注册表的输出，证明数据库中存在每小时、每天和每周的数据汇总（rollups）。                               |
 
 ## Verification Procedures
 
