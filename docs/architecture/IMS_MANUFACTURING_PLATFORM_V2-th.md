@@ -163,4 +163,153 @@
 
 หลักฐานของแต่ละเฟสแนบอยู่ (หรือลิงก์เข้า) กับเอกสารนี้ ก่อนไปทำงานในเฟสถัดไป
 
-*(บันทึกย่อการทดสอบและการดำเนินการเฟส A, B, C ต่อเนื่องได้แสดงหลักฐานที่ประสบผลสำเร็จแล้ว ณ วันที่ 2026-08-10, 2026-08-12)*
+---
+
+## การทดสอบระบบทนทาน (Soak Test) — สถานะ (เริ่ม 2026-08-10, ยังเปิดอยู่ — ยังไม่ถึง 72 ชม.)
+
+**นิยามข้อจำกัด:** `scripts/soak-test-report.sh` ระบุในส่วนหัวของตัวเอง -- "ไม่ได้รันการทดสอบ 72 ชั่วโมงด้วยตัวเอง" การทดสอบ soak ต้องใช้เวลาจริงในการรัน stack ที่ทำงานอยู่โดยไม่แตะต้อง; ไม่มีการเรียกเครื่องมือใด ๆ ที่สามารถสร้างเวลานั้นได้ การปิดเฟสนี้ด้วยผลลัพธ์ pass/fail จริงต้องรอให้เวลาจริงผ่านไป
+
+**ผลลัพธ์จริงจาก `--summarize`, รัน 2026-08-12T13:05Z (ผ่านไป 52.5 ชม., `IMS-SoakTest` scheduled task รันทุก 15 นาที):**
+
+```text
+═══════════════════════════════════════════════════
+ IMS Soak Test Summary
+═══════════════════════════════════════════════════
+Samples: 57 Window: 2026-08-10T08:34:21Z -> 2026-08-12T13:05:15Z (52.5h elapsed)
+Window length: NOT YET 72h -- keep this script running periodically and re-summarize later.
+
+Ingest failures ever nonzero in a sample: max=NaN (want 0)
+Buffer overflows ever nonzero in a sample: max=NaN (want 0)
+Samples where any container had restarted since last sample: 4 (want 0)
+Samples with >=1 non-Watchdog alert firing: 37 (want 0)
+DB size drift: NaNMB -> 157MB
+
+VERDICT: FAIL -- see nonzero counters above
+```
+
+**นี่สะท้อนเกณฑ์ชั่วคราว** ได้สืบค้นสาเหตุของค่าที่ผิดปกติ 3 ตัวแทนที่จะแค่อ้างอิงตัวเลข:
+
+- **ค่า `NaN` เป็นผลจากสคริปต์ ไม่ใช่หลักฐานของความล้มเหลว:** 24 จาก 57 ตัวอย่างมี `NaN` สำหรับ inserts/failures/overflows/db_size (สองช่วง: 2026-08-11T14:00-17:20 และ 2026-08-12T08:05-10:35, แต่ละช่วง ~2.5-3.5 ชม. ของตัวอย่างต่อเนื่อง) เพราะ `node-red:1880/metrics` หรือ `psql` size query ไม่ตอบสนองในเวลาเก็บข้อมูล `sort -n` จัดเรียงสตริง `"NaN"` ไว้ท้ายสุด ดังนั้น `MAX_FAILED`/`MAX_OVERFLOW` จึงแสดง `NaN` แม้ว่าทุกตัวอย่าง _ที่เป็นตัวเลข_ ในบันทึกจะแสดง `0` สำหรับทั้งคู่ เป็นช่องว่างในการเก็บข้อมูล ไม่ใช่หลักฐานว่าการนำเข้าข้อมูลล้มเหลว
+- **`ANY_RESTART=4`, ทั้งหมดเกิดก่อนงานของวันนี้**, ยืนยันจาก timestamp: `2026-08-11T04:22:14Z`, `2026-08-11T05:45:06Z`, `2026-08-12T08:05:15Z`, `2026-08-12T10:50:14Z` ไม่มีตัวใดตรงกับการทดสอบ DR ของเซสชันนี้ (ซึ่งรันราว ~2026-08-12T12:57-13:03Z) -- DR drills ใช้ `docker start` หลัง `docker kill` ซึ่งไม่เพิ่ม `RestartCount` ของ Docker เอง นี่คือ 4 เหตุการณ์ restart จริงตลอด 52.5 ชม. ที่ต้องสืบสวนเป็นรายกรณี
+- **`ANY_FIRING=37` ตัวอย่างที่มี >=1 non-Watchdog alert ทำงาน** -- สาเหตุหลักของ FAIL ยังไม่ได้หาสาเหตุรากในรอบนี้ (ต้องใช้ประวัติ alert ต่อตัวอย่าง ซึ่ง Alertmanager ไม่เก็บย้อนหลังเกินสถานะปัจจุบัน ทำได้เพียงนับยอดรวมใน log นี้) alert ที่ทำงานอยู่ _ตอนนี้_ (`PipelineDataStalled`, critical) น่าจะเป็นผลตกค้างจากการทดสอบ DR container-kill ของเซสชันนี้เมื่อไม่กี่นาทีก่อนการรัน summarize นี้ ซึ่งคาดว่าจะเคลียร์ตัวเองได้ในการเก็บตัวอย่างตามกำหนดการครั้งถัดไป -- แต่นั่นไม่สามารถอธิบายการแจ้งเตือนที่ทำงานในอดีตอีก 36 ครั้งที่เหลือได้ ซึ่งเกิดขึ้นก่อนการทำงานของเซสชันนี้และเป็นข้อค้นพบที่แท้จริงที่ยังต้องแก้ไข
+
+**เพื่อปิดเฟสนี้:** ปล่อยให้ scheduled task ทำงานต่อจนถึง 72 ชม. แล้วรัน `--summarize` อีกครั้ง การแจ้งเตือน 37 ครั้งและการ restart 4 ครั้งเป็นผลการค้นพบจริงที่ต้องสืบสวนแยกต่างหาก
+
+---
+
+## การทดสอบ DR — หลักฐาน (Drill 1-2 ปิดเมื่อ 2026-08-10; Drill 3 ยังไม่รัน)
+
+**สิ่งที่ส่งมอบ:** `scripts/dr-test.sh` (3 drills), `docs/operations/DR_TEST_PLAN.md`
+
+### Drill 1 — Backup / Restore: PASS
+
+การรันครั้งแรกให้ผลลัพธ์ false negative (นับแถวจริงหลัง snapshot ดังนั้นระบบที่กำลังนำเข้าข้อมูลอยู่ได้เพิ่มแถวไปแล้ว — ไม่ใช่ข้อบกพร่องของการกู้คืน) แก้ไขสคริปต์ให้นับแถวก่อนและหลัง snapshot แล้วตรวจสอบว่าจำนวนที่กู้คืนอยู่ในช่วงนั้น รันใหม่:
+
+```text
+devices=1025 ldi_data=52795 ldi_alarm_log=10405 (before snapshot)
+devices=1025 ldi_data=52796 ldi_alarm_log=10405 (after snapshot)
+devices=1025 ldi_data=52795 ldi_alarm_log=10405 (restored, ephemeral isolated database)
+VERDICT: PASS -- snapshot export time: dump 1s, restore 18s, 22,284,869 bytes
+```
+
+### Drill 2 — การกู้คืนจากคอนเทนเนอร์ล้มเหลว (`ims-timescaledb`, `ims-node-red`): หาสาเหตุรากและแก้ไขแล้ว 2026-08-12, ตอนนี้ **PASS**
+
+**การค้นพบเดิม (2026-08-10), ทำซ้ำและหาสาเหตุราก (2026-08-12):** `docker kill ims-timescaledb` (SIGKILL) ถูกรันอีกครั้ง คราวนี้เฝ้าดูเต็ม 5 นาทีผ่าน `docker inspect` polling ซ้ำ ผลลัพธ์: `RestartCount` อยู่ที่ `0` ตลอด 5 นาที — ไม่ใช่ช้า แต่ไม่เคยทำงานเลย ตัดปัญหาการตั้งค่า compose ก่อน: `docker inspect` ยืนยัน `RestartPolicy=unless-stopped, MaximumRetryCount=0` ถูกต้อง สิ่งที่เสียคือเครื่องยนต์ restart-policy ของ Docker Desktop (WSL2 backend, server 29.6.2) ที่ไม่ถูกเรียกใช้หลังจากนั้น
+
+**แก้ไข:** `scripts/container-watchdog.sh` — watchdog ภายนอกที่ poll ทุกคอนเทนเนอร์ที่มี `restart: unless-stopped` และสั่ง `docker start` บนสิ่งที่ไม่ได้ `running` เพื่อชดเชยช่องว่างของเครื่องยนต์ restart ของ Docker
+
+**รันซ้ำกับ watchdog ที่ทำงานอยู่ (`--loop 5`), 2026-08-12, 6 trials ข้ามคอนเทนเนอร์สำคัญทั้งสอง:**
+
+```text
+timescaledb: PASS -- recovered in 6s
+node-red: PASS -- recovered in 6s
+timescaledb: PASS -- recovered in 8s
+node-red: PASS -- recovered in 3s
+timescaledb: PASS -- recovered in 5s
+node-red: PASS -- recovered in 6s
+```
+
+6/6 PASS, กู้คืนในหลักวินาทีเดียวทุกครั้ง **ช่องว่าง restart-policy ของ Docker Desktop ไม่ได้ถูกแก้ไข** (อยู่นอกเหนือการควบคุมของ repo นี้) — สิ่งที่เปลี่ยนคือสภาพแวดล้อมนี้มีมาตรการชดเชยที่ทำงานได้จริง
+
+**การค้นพบที่สอง ผลกระทบต่อเนื่อง:** หลังจาก `docker start` TimescaleDB กลับมาปกติ การนำเข้าข้อมูล LDI **ไม่** กู้คืนตัวเองเป็นเวลาหลายนาที — เป็นพฤติกรรม `server_login_retry` failure-caching ของ PgBouncer watchdog (`ldiDbConnFailureStreak`, เกณฑ์ 5 ครั้งต่อเนื่อง) **ไม่** กระตุ้นการ restart Node-RED อัตโนมัติภายใน ~6 นาทีที่สังเกต — `max(ldi_data.time)` ค้างที่ timestamp ของเหตุขัดข้องจนกว่าจะรัน `docker restart ims-node-red` ด้วยตนเอง **บันทึกเป็นข้อจำกัดสำหรับการทำซ้ำในอนาคต**
+
+**สิ่งที่ทำงานถูกต้อง:** ไปป์ไลน์การแจ้งเตือน Blackbox exporter ตรวจจับ `timescaledb:5432` ล่มได้ถูกต้อง, Alertmanager ส่งต่อ, และ flow การส่งแจ้งเตือนของ Node-RED บันทึก notification "ServiceDown" ถูกต้อง (LINE/Teams ข้าม — ไม่มี credentials ตามที่ออกแบบ)
+
+**`scripts/dr-test.sh` ปรับปรุงจากผลนี้:** drill container-loss ตอนนี้ fallback เป็น `docker start` ด้วยตนเองถ้า restart policy ไม่ทำงานภายใน 120s
+
+**เวลาหยุดทำงานจริงทั้งหมดจาก drill นี้:** timescaledb ~2-3 นาทีต่อ kill (2 kills) + ~6 นาทีช่องว่างกู้คืน ingestion = ประมาณ 10 นาทีของ downtime จริงในสภาพแวดล้อม dev นี้ กู้คืนเต็มที่และยืนยันแล้ว (0 lint errors, 0 e2e errors หลังกู้คืน)
+
+### Drill 3 — Full-Stack Recreate: **ยังไม่รัน**
+
+เนื่องจาก Drill 2 แสดงให้เห็นว่าการกู้คืนอัตโนมัติในสภาพแวดล้อมนี้เชื่อถือได้น้อยกว่าที่คาด การรัน drill ลบ volume ทั้งหมดโดยไม่ยืนยันก่อนจะเพิ่มความเสี่ยง เลื่อนออกไปรอการยืนยันอย่างชัดเจน — ดู `scripts/dr-test.sh full-recreate --confirm-destroy` เมื่อพร้อม
+
+---
+
+## การทดสอบ DR — หลักฐาน
+
+---
+
+## Phase A — หลักฐาน (ปิดเมื่อ 2026-08-10)
+
+**สิ่งที่ส่งมอบ:** แดชบอร์ดแยกทางกายภาพเข้า `monitoring/grafana/dashboards/{infrastructure,manufacturing}/`, Grafana provisioning providers 2 ตัว (โฟลเดอร์ `IMS Infrastructure`, `IMS Manufacturing`), แท็กโดเมน `manufacturing`/`infrastructure` บนแดชบอร์ดทั้ง 15 รายการ, `dashboard-linter.js` Check 18 บังคับการตรงกันของแท็ก/โฟลเดอร์, migrations `067`+`068` เพิ่ม `devices.process_type`, และ `MANUFACTURING_DOMAIN.md`
+
+**การแก้ไขระหว่างการดำเนินการ:** แผนร่างของ §1 จัดประเภท `ims-easy-overview.json` ผิดเป็น Infrastructure จากชื่อเรื่อง ("Fleet at a Glance") คำอธิบายจริงและ panels (`v_ldi_machine_latest_full`, `v_ldi_alarm_context`, `f_ldi_yield_pct` — ทั้งหมดเฉพาะ LDI) ยืนยันว่าเป็นเนื้อหา Manufacturing; `scripts/generate-dashboard-inventory.js` ที่มีอยู่ก่อนมี `LDI_UID_EXTRAS` allowlist ที่ตรงกันอยู่แล้ว แก้ไขก่อนดำเนินการ (4 infra / 8 manufacturing, ไม่ใช่ 5/5)
+
+**บั๊กที่พบและแก้ไขระหว่างการดำเนินการ:** migration `067` `ADD COLUMN process_type TEXT DEFAULT 'ldi'` backfill ค่าเริ่มต้นไปยัง _ทุก_ แถว ไม่ใช่แค่ `device_type='ldi'` — ตรวจสอบจริงผ่าน `SELECT device_type, process_type, count(*) ... GROUP BY 1,2` ซึ่งแสดง 1002 แถว `device_type='server'` ที่มี `process_type='ldi'` ผิด แก้ไขด้วย migration `068` (ลบค่าเริ่มต้น, null ค่า backfill ที่ผิด) ตรวจสอบใหม่: `ldi/ldi: 23 rows`, `server/NULL: 1002 rows` — ถูกต้อง
+
+**หลักฐานการทดสอบ (คำสั่งทั้งหมดรันกับ stack จริง, 2026-08-10):**
+
+| การตรวจสอบ | ผลลัพธ์ |
+| --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `node tests/lint/dashboard-linter.js` (รวม Check 18 ใหม่) | 0 errors, 0 warnings |
+| `node tests/lint/alarm-sync-linter.js` | 19/19 codes resolve |
+| `node tests/lint/orphan-object-linter.js` | 0 orphans / 31 checked |
+| `node tests/lint/query-budget-linter.js` | 0 errors, 0 warnings |
+| `node tests/lint/rca-mapping-coverage.js` | 100% coverage |
+| `node scripts/generate-dashboard-inventory.js --check` | up to date |
+| `node scripts/generate-schema-inventory.js --check` | up to date |
+| 5 unit test files (`boundary-validation`, `parser`, `counter-wraparound`, `v2-parser`, `circuit-breaker`) | 99/99 passed |
+| `node tests/e2e/panel-data-check.js` | 73 passed, 2 pre-existing warnings (0-row edge cases ไม่เกี่ยวกับการเปลี่ยนแปลงนี้), 0 errors |
+| `node tests/e2e/query-timing-check.js` | 47 queries measured, P95 22.48ms (budget 80ms), 0 errors |
+| โครงสร้างโฟลเดอร์ Grafana (live, หลัง `docker compose up -d grafana`) | ยืนยันผ่าน API + Playwright screenshot: `IMS` (library panels เท่านั้น), `IMS Infrastructure` (4 dashboards), `IMS Manufacturing` (6 dashboards) |
+| ข้อมูลจริง `devices.process_type` | `ldi/ldi: 23`, `server/NULL: 1002` — ถูกต้องหลังแก้ไข `068` |
+
+**ยังไม่ได้ commit/push** — รอการตรวจทานหลักฐานนี้
+
+---
+
+## Phase C — หลักฐาน (ปิดเมื่อ 2026-08-10)
+
+**สิ่งที่ส่งมอบ:** ตารางเอกสารใน `README.md` ตอนนี้เชื่อมโยงไปยัง `IMS_MANUFACTURING_PLATFORM_V2.md`, `MANUFACTURING_DOMAIN.md`, `EAP_ARCHITECTURE.md`, `OWNERSHIP.md` ส่วน System Constraints & Technical Boundaries ใน `ARCHITECTURE.md` เพิ่มจุดลิงก์ไปยังทั้ง 4 เอกสารแทนที่จะทำซ้ำเนื้อหา
+
+**การเบี่ยงเบนที่พบและแก้ไข (ผลโดยตรงจาก Phase A):** `README.md` บรรทัด 160 ระบุ "14 dashboards — 6 infrastructure, 8 LDI manufacturing" ซึ่งผิดทันทีที่ Phase A แยก 4/6 จริง แก้ไขในการแก้ไขเดียวกัน
+
+**หลักฐานการทดสอบ:**
+
+| การตรวจสอบ | ผลลัพธ์ |
+| ------------------------------------------------------ | ------------------------------------ |
+| ลิงก์เอกสารใหม่ทั้ง 4 ชี้ไปยังไฟล์จริง | `test -f` ทั้ง 4 paths — ยืนยันแล้ว |
+| `node scripts/generate-dashboard-inventory.js --check` | up to date |
+| `node scripts/generate-schema-inventory.js --check` | up to date |
+
+**ยังไม่ได้ commit/push** — รอการตรวจทานหลักฐานนี้
+
+---
+
+## Phase B — หลักฐาน (ปิดเมื่อ 2026-08-10)
+
+**สิ่งที่ส่งมอบ:** `EAP_ARCHITECTURE.md`, `OWNERSHIP.md`, ขยาย `.github/CODEOWNERS` ด้วยเส้นทางตามขอบเขตโดเมน
+
+**การแก้ไขระหว่างการดำเนินการ:** แผนร่างของ §4 (เขียนก่อน Phase A รัน) ระบุเส้นทาง CODEOWNERS เป็น dashboard filename globs (`ims-ldi-*` ฯลฯ) ผลลัพธ์จริงของ Phase A — การแยกไดเรกทอรีทางกายภาพ — ทำให้เส้นทางแบบไดเรกทอรี (`/monitoring/grafana/dashboards/manufacturing/`) ง่ายและแม่นยำกว่า; §4 ด้านบนถูกอัปเดตให้ตรงกับความเป็นจริง
+
+**การอ้างอิงตรวจสอบด้วย grep กับซอร์สโค้ดจริง ไม่ใช่สมมติฐาน:**
+
+| การอ้างอิงใน `EAP_ARCHITECTURE.md` | ตรวจสอบกับ | ผลลัพธ์ |
+| ----------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Adapter 2 (HTTP/JSON) endpoint คือ `POST /ldi-telemetry`, auth ผ่าน `x-api-key` header กับ `INGEST_API_KEY` | `nodered_data/flows/ldi_ingestion.json` | ยืนยัน (`"url": "/ldi-telemetry"`, `msg.req?.headers?.['x-api-key']` ตรวจกับ `global.get('INGEST_API_KEY')`) |
+| Adapter 2 batch insert คือ `INSERT INTO public.ldi_data ... ON CONFLICT (log_id, "time") DO NOTHING` | same file | ยืนยัน, SQL ตรงทุกตัวอักษร |
+| Adapter 1 (SNMP) polls ทุก 30 วินาทีผ่าน `fork_5_ways` | `nodered_data/flows/ingestion.json` | ยืนยัน (`fork_5_ways` node มีอยู่, `"repeat": "30"`) |
+| เส้นทาง CODEOWNERS (`/monitoring/grafana/dashboards/{infrastructure,manufacturing}/`, ชื่อไฟล์ `nodered_data/flows/*.json` 4 ไฟล์) มีอยู่จริง | `ls nodered_data/flows/`, การแยกไดเรกทอรีของ Phase A | ทั้ง 5 เส้นทางยืนยันว่ามีอยู่ |
+| ไวยากรณ์ CODEOWNERS | ตรวจสอบด้วยตนเองกับรูปแบบที่ GitHub กำหนดและบรรทัดที่ทำงานได้ของ repo นี้ | ตรงกันทุกประการ (`<pattern> <owner>`, เส้นทางเริ่มด้วย `/`, last-match-wins) |
+
+**ยังไม่ได้ commit/push** — รอการตรวจทานหลักฐานนี้

@@ -1,97 +1,97 @@
-# 更新日志 (Changelog)
+# Changelog
 
-> **IMS (Infrastructure Monitoring System) 更新日志**
+> **IMS (Infrastructure Monitoring System) 变更日志**
 > 格式参考 [Keep a Changelog](https://keepachangelog.com/)
 
 ---
 
 <div align="center">
 
-<img src="docs/assets/icons/check-circle.svg" width="14" align="center"/> **版本 (Version):** 1.0.0
-<img src="docs/assets/icons/check-circle.svg" width="14" align="center"/> **发布 (Release):** 生产版 (Production)
-<img src="docs/assets/icons/check-circle.svg" width="14" align="center"/> **日期 (Date):** 2026-06-29
+<img src="docs/assets/icons/check-circle.svg" width="14" align="center"/> **Version:** 1.0.0
+<img src="docs/assets/icons/check-circle.svg" width="14" align="center"/> **Release:** Production
+<img src="docs/assets/icons/check-circle.svg" width="14" align="center"/> **Date:** 2026-06-29
 
 </div>
 
 ---
 
-## [1.0.0] — 2026-06-29 (生产版本)
+## [1.0.0] — 2026-06-29 (Production Release)
 
-### 亮点 (Highlights)
+### Highlights
 
-- **5-Thread Parallel Walker** — CPU、存储、网络、温度、LDI
-- **Device Registry** — 数据驱动的设备管理（支持 1-1000+ 台机器）
-- **4 个 Grafana 仪表板** — NOC、系统、工程、容量规划
-- **38 条告警规则** — AIOps、预测性告警、SRE 标准
-- **K6 负载测试** — 1,000 VUs，0% 失败率，p95 < 80ms
-- **CI/CD 管道** — 包含安全扫描的 GitHub Actions
+- **5-Thread Parallel Walker** — CPU, Storage, Network, Temperature, LDI
+- **Device Registry** — 数据库驱动的机器管理 (1-1000+ 台机器)
+- **4 Grafana Dashboards** — NOC, System, Engineering, Capacity Planning
+- **38 Alert Rules** — AIOps, Predictive, SRE 标准
+- **K6 Load Test** — 1,000 VUs, 0% 故障率, p95 < 80ms
+- **CI/CD Pipeline** — 包含安全扫描的 GitHub Actions
 
-### 修复 (Fixed)
+### Fixed
 
-- LDI 企业级 OID 不匹配问题（9999 与 99999）
-- `bypass_error` 节点连线未连接（导致 barrier 超时）
-- `catch_walker` 作用域中缺少 `walk_ldi`
+- LDI 企业级 OID 不匹配 (9999 vs 99999)
+- `bypass_error` 节点连线未连接 (导致屏障超时)
+- `walk_ldi` 缺失于 `catch_walker` 范围
 - `ldiTemp` 已计算但未保存到数据库
-- 64位计数器的溢出翻转（wraparound）启发式算法不正确
-- 告警消息中的表情符号转义序列错误
-- Docker 主机端口冲突问题（snmpsim 1161, pgbouncer 6432）
-- TimescaleDB 数据库迁移的事务不兼容问题
-- 凭据文件持久化导致的遗留问题（即使执行 `docker compose down -v` 之后依然存在）
+- 64 位计数器的计数器循环启发式算法不正确
+- 警报消息中的表情符号转义序列错误
+- Docker 主机端口冲突 (snmpsim 1161, pgbouncer 6432)
+- TimescaleDB 迁移事务不兼容
+- `docker compose down -v` 后陈旧凭证文件的持久化问题
 
-### 新增 (Added)
+### Added
 
-- **Device Registry Pattern** — `public.machines` 表与 SNMP walker 的集成
-- **LINE Notify / MS Teams Webhooks** — 真实的告警通知
-- **数据库迁移系统** — `database/migrations/`，使用幂等 (idempotent) 的 SQL 脚本
-- **23 个单元测试** — 全部通过，涵盖解析逻辑
-- **CI/CD Secret Stubs** — 无需真实凭据即可进行 Compose 验证
-- **Gitleaks 允许名单** — `.env`, `.playwright-mcp/`, `nodered_data/`
-- **备份/恢复脚本** — `scripts/backup-db.sh`, `scripts/restore-db.sh`
-- **SECURITY.md** — 已知限制和安全加固清单
-- **CHANGELOG.md** — 此文件
+- **Device Registry Pattern** — `public.machines` 表与 SNMP walker 集成
+- **LINE Notify / MS Teams Webhooks** — 真实警报通知
+- **Database Migration System** — `database/migrations/` 带有幂等 SQL
+- **23 Unit Tests** — 全部通过，覆盖解析逻辑
+- **CI/CD Secret Stubs** — 无需真实凭证即可验证 Compose
+- **Gitleaks Allowlist** — `.env`, `.playwright-mcp/`, `nodered_data/`
+- **Backup/Restore Scripts** — `scripts/backup-db.sh`, `scripts/restore-db.sh`
+- **SECURITY.md** — 已知限制和强化检查清单
+- **CHANGELOG.md** — 本文件
 - **CONTRIBUTING.md** — 开发指南
 - **LICENSE** — MIT 许可证
-- **Makefile** — 提供 8 个执行目标 (up, down, restart, verify, backup, restore, logs, test)
-- **docker-compose.override.yaml** — 适用于开发的重写配置 (snmpsim)
-- **docker-compose.prod.yaml** — 适用于生产的重写配置
-- **事件响应手册** — `docs/runbooks/incident-response.md`
-- **部署准备就绪评估** — `docs/deployment-readiness.md`
-- **扩展计划** — `docs/scaling-plan.md`
-- **Prometheus Exporter** — Node-RED 自我监控配置
+- **Makefile** — 8 个目标 (up, down, restart, verify, backup, restore, logs, test)
+- **docker-compose.override.yaml** — 开发覆盖 (snmpsim)
+- **docker-compose.prod.yaml** — 生产覆盖
+- **Incident Response Runbook** — `docs/runbooks/incident-response.md`
+- **Deployment Readiness Assessment** — `docs/deployment-readiness.md`
+- **Scaling Plan** — `docs/scaling-plan.md`
+- **Prometheus Exporter** — Node-RED 自监控配置
 
-### 变更 (Changed)
+### Changed
 
-- 将 `docker-compose.yaml` 拆分为 base/dev/prod（基础/开发/生产）
-- 流程统一事实源：`node-red/flows/ingestion.json` 和 `alerting.json`
-- 所有的 walker 都使用 `msg.host`/`msg.community` 来替代硬编码的值
-- 将 `walk_storage` 升级为双引擎（生产环境使用 subtree，开发环境使用 GET）
-- 将 `sysUpTime` OID 添加至 `walk_net_get` 用于检测计数器溢出翻转
+- 将 `docker-compose.yaml` 拆分为 base/dev/prod
+- Flow 的真实数据源：`node-red/flows/ingestion.json` + `alerting.json`
+- 所有 walkers 使用 `msg.host`/`msg.community` 而不是硬编码值
+- `walk_storage` 升级为双引擎 (生产环境中为 subtree，开发环境中为 GET)
+- 将 `sysUpTime` OID 添加到 `walk_net_get` 用于检测计数器循环
 - LDI 列类型从 INT 更改为 DOUBLE PRECISION
-- 将架构升级为 5-Thread Parallel Walker
-- 所有服务仅限内部网络使用（不绑定主机端口）
+- 架构升级为 5 线程并行 Walker
+- 所有服务仅限内部使用 (无主机端口绑定)
 
-### 安全 (Security)
+### Security
 
-- 取消对 `.mimocode/` 和 `.playwright-mcp/` 在 git 中的跟踪
-- 从跟踪的文件中移除了 GitHub PAT
-- 就绪 Node-RED 的 adminAuth 认证配置
-- 不再将 PgBouncer 端口暴露在主机上
+- 取消对 `.mimocode/` 和 `.playwright-mcp/` 的 git 跟踪
+- 从跟踪文件中删除了 GitHub PAT
+- Node-RED adminAuth 配置就绪
+- PgBouncer 端口不再暴露在主机上
 
 ---
 
-## [0.9.0] — 2026-06-24 (重构前基线)
+## [0.9.0] — 2026-06-24 (Pre-Refactor Baseline)
 
-### 新增 (Added)
+### Added
 
-- 5-Thread Bulletproof AIOps 解析器 v7
-- 双引擎 SNMP Walker（仅限网络部分）
-- Alertmanager 抑制规则 (inhibition rules)
+- 5 线程防弹 AIOps 解析器 v7
+- 双引擎 SNMP Walker (仅限网络)
+- Alertmanager 抑制规则
 
 ---
 
 <div align="center">
 
-**IMS 更新日志 — 1.0 版本**
+**IMS Changelog — Version 1.0**
 
 _遵循 [Keep a Changelog](https://keepachangelog.com/) 格式_
 

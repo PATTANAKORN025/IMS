@@ -112,7 +112,7 @@ curl -s http://localhost:9093/-/healthy
 
 ### Database Migrations
 
-`database/migrations/` 包含54个有序文件 (`013` 到 `079`)。由 `ims-db-migrate` 自动应用。
+`database/migrations/` 目前包含 57 个有序文件（`013` 到 `082`，部分编号已跳过/归档 — 早期编号 `001-012` 已合并到 `postgres/init/001-init-timescaledb.sql`，即全新部署的引导路径）。每次 `docker compose up` 时由一次性服务 `ims-db-migrate` 自动应用；`node-red` 和 `alarm-api` 在其成功退出前不会启动。
 
 ```bash
 # 手动运行迁移
@@ -179,7 +179,7 @@ curl -s -w "\nHTTP: %{http_code}" -X POST http://localhost:1880/inject \
 
 # 验证 Grafana 认证
 curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/dashboards
-# 期望: 401
+# 期望: 401 (不能是 200)
 ```
 
 ---
@@ -315,7 +315,7 @@ docker compose down -v && docker compose up -d
 # 2. 等待 40 秒
 sleep 40
 
-# 3. 检查容器状态
+# 3. 检查容器状态（13 个常驻服务 + ims-db-migrate，应处于 Exited (0) 状态）
 docker compose ps
 
 # 4. 检查数据流
