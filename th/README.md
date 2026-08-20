@@ -75,51 +75,6 @@
 **สถาปัตยกรรม (IT):** ภายใต้ระบบ ประสิทธิภาพถูกขับเคลื่อนโดยไพพ์ไลน์แบบ stateful ของ Node-RED ที่จัดการการรับข้อมูลแบบอะซิงโครนัสและ PgBouncer ที่จัดการ connection pooling ส่วน TimescaleDB รับหน้าที่หนัก—คำนวณเบสไลน์ 3&sigma; แบบหมุนเวียน (Z-Scores) และการรวมข้อมูลต่อเนื่องแบบเรียลไทม์ ทำให้มั่นใจว่า Grafana สามารถแสดงผลแดชบอร์ดในระดับเสี้ยววินาที แม้จะสอบถามข้อมูล telemetry ย้อนหลังหลายล้านแถว
 
 
-<details open>
-<summary><b>System Architecture & Topology</b></summary>
-
-```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
-C4Container
- title IMS System Architecture & Topology
-
- Person(admin, "NOC Operator", "Monitors dashboards & responds to alarms.")
- Person(engineer, "Process Engineer", "Analyzes yield & correlates telemetry.")
-
- System_Boundary(ot_it, "Factory Floor & IT Edge") {
-    System_Ext(switches, "Juniper EX Switches", "SNMP Telemetry")
-    System_Ext(servers, "Linux Server Fleet", "SNMP Telemetry")
-    System_Ext(ldi, "LDI Manufacturing", "HTTP/JSON Telemetry")
- }
-
- System_Boundary(ims, "IMS Docker Stack") {
-    Container(nodered, "Node-RED Pipeline", "Node.js", "Sequential bulk ingestion & circuit breaking.")
-    Container(pgbouncer, "PgBouncer", "C", "Connection pooling.")
-    ContainerDb(timescale, "TimescaleDB", "PostgreSQL", "Hyper-scale time-series & CAGGs.")
-    Container(grafana, "Grafana", "Go", "Cyberpunk HUD visualization.")
-    Container(prometheus, "Prometheus", "Go", "Scrapes metrics & evaluates alert rules.")
-    Container(alertmanager, "Alertmanager", "Go", "Deduplication, inhibition & routing.")
- }
-
- System_Ext(line, "LINE / MS Teams", "External Alert Notification")
-
- Rel(admin, grafana, "Views NOC Dashboards", "HTTPS")
- Rel(engineer, grafana, "Views Analytics", "HTTPS")
-
- Rel(switches, nodered, "UDP 161 (SNMP)")
- Rel(servers, nodered, "UDP 161 (SNMP)")
- Rel(ldi, nodered, "HTTP (JSON)")
-
- Rel(nodered, pgbouncer, "Batch INSERTs", "TCP 5432")
- Rel(pgbouncer, timescale, "Transactions", "TCP 5432")
- Rel(grafana, timescale, "SQL Queries", "TCP 5432")
- Rel(prometheus, timescale, "Scrape /metrics", "HTTP")
- Rel(prometheus, alertmanager, "Fires Alerts", "HTTP")
- Rel(alertmanager, line, "Pushes Notifications", "HTTPS")
-```
-
-</details>
-
 <table style="border:none; border-collapse:collapse; width:100%;">
 
 <tr>
