@@ -35,70 +35,125 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/vendor/three/', express.static(path.join(__dirname, 'node_modules', 'three', 'build')));
 app.use('/vendor/three/examples/', express.static(path.join(__dirname, 'node_modules', 'three', 'examples')));
 
-// Task 4.2 scale-up: 10 real reporting machines across their 5 real zones
-// (public.devices.location, re-confirmed this task via psql -- see
-// task-4.2-3d-10machine-report.md's "Real facts" section).
+// Task 4.3 dynamic fleet discovery: the hardcoded 10-machine/2-per-zone
+// layout below (Task 4.2) was built when only 10 LDI devices were assumed
+// to exist. A later audit found public.devices actually has 23 enabled
+// device_type='ldi' rows across the SAME 5 real zones -- some zones hold
+// up to 7 machines, not 2, which the old `machineIndex === 0 ? -4 : 4`
+// ternary can't place (3rd+ machine in a zone would collide with the 2nd).
 //
-// Scope decision, re-evaluated per the Task 4.2 brief (not just carried
-// forward blindly): design spec §4 proposes a device_3d_placement DB table.
-// At 10 rows this is still an in-code config object, not a migration --
-// re-confirmed the decision rather than assuming Task 4.1's precedent still
-// held. Reasoning: (1) design §5's entire point is that placement is a
-// *separate query/concern* from state/telemetry, and that separation is
-// what makes the future simulated->real swap safe -- nothing about that
-// separation requires the placement side to be a SQL table specifically;
-// an in-code object queried by a plain function call is equally separate
-// from STATE_SQL below. (2) Every one of these 10 rows is explicitly
-// simulated (is_simulated: true) and will be wholesale REPLACED, not
-// incrementally edited, once a real factory layout is supplied (design
-// §17) -- there's no real use case yet for SQL-side querying/filtering/
-// updating individual placement rows that a table would earn its keep for.
-// (3) A migration is real, permanent schema surface (a table, a FK to
-// devices, default privileges, a rollback plan) for data that is 100%
-// disclosed as throwaway. If/when Task 4.3+ or the real layout import
-// happens, THAT is the right time to build device_3d_placement for real --
-// building it now for known-fake seed data would be schema debt paid
-// early for no present benefit. Still 10x more data than Task 4.1 had, so
-// this was re-decided, not rubber-stamped -- if a future task needs to
-// filter/join placement server-side in SQL, that's the trigger to build
-// the real table.
+// Still no device_3d_placement DB table (same reasoning as before: every
+// placement is is_simulated: true, disclosed throwaway, wholesale-replaced
+// once a real layout exists -- see design §17). What changes here is WHERE
+// the placement input comes from: devices/zones are now discovered live
+// from `public.devices WHERE device_type='ldi' AND enabled=true` instead
+// of a hardcoded array, so a device added/disabled in that table is
+// reflected without a code change.
 //
-// Deterministic grid formula (design §4's shape, "pos_x = zone_index * 10,
-// pos_y = machine_index_in_zone * 5"), centered around the origin so the
-// default camera framing shows all 5 zones without an initial pan:
-//   pos_x = (zone_index - 2) * 18        -- 18 units between zone clusters
-//   pos_y = (machine_index_in_zone === 0 ? -4 : 4)  -- 8 units within a zone
-// Widened from an earlier 12/6 pass after a real Playwright screenshot
-// showed the zone-label sprites overlapping at that spacing -- re-tuned for
-// legibility, still deterministic/simulated, not a real coordinate.
-// Same 10 machines / 5 zones as the 2D Canvas twin (Task 3), re-verified
-// against public.devices.location this task (not re-derived from memory).
-const ZONES = [
-  { zone: 'Factory 2 - DF INNER', factory: '2', machines: ['LDI-01', 'LDI-02'] },
-  { zone: 'Factory 3 - DF INNER', factory: '3', machines: ['LDI-03', 'LDI-04'] },
-  { zone: 'Factory 2 - DF OUTER', factory: '2', machines: ['LDI-05', 'LDI-06'] },
-  { zone: 'Factory 2 - SM', factory: '2', machines: ['LDI-07', 'LDI-08'] },
-  { zone: 'Factory 3 - SM', factory: '3', machines: ['LDI-09', 'LDI-10'] },
+// Deterministic grid formula, generalized from Task 4.2's fixed 5-zone/
+// 2-machine shape to any zone count and any machines-per-zone count:
+//   pos_x = (zone_index  - (zone_count    - 1) / 2) * 18  -- 18u between zones
+//   pos_y = (machine_index - (machine_count - 1) / 2) * 8  -- 8u within a zone
+// This is an exact generalization, not a redesign: for the original fixed
+// shape (5 zones, 2 machines/zone) it reduces algebraically to Task 4.2's
+// literal (zoneIndex - 2) * 18 and (idx === 0 ? -4 : 4) formulas -- verified
+// bit-identical output for the 10 original machines (see
+// scratchpad test-placements.js run, kept out of the repo as it's a
+// throwaway verification script, not product code).
+//
+// Trade-off, disclosed rather than hidden: because zones now legitimately
+// contain more machines than the old assumption, LDI-01..10's absolute
+// pos_x/pos_y DO shift from Task 4.2's values wherever their real zone grew
+// past 2 machines (e.g. Factory 2 - DF INNER now has 4: EXPOSURE LDI-2/2B
+// plus LDI-01/02). Freezing the old positions instead would mean either
+// hardcoding again (defeats the point) or placing new machines outside
+// their real zone's cluster (worse). Relative ordering (alphabetical by
+// device_id within a zone) and the spacing pattern are preserved; only the
+// absolute offset for machines in a now-larger zone changes.
+const ZONE_ORDER = [
+  'Factory 2 - DF INNER',
+  'Factory 3 - DF INNER',
+  'Factory 2 - DF OUTER',
+  'Factory 2 - SM',
+  'Factory 3 - SM',
 ];
+const ZONE_SPACING_X = 18;
+const MACHINE_SPACING_Y = 8;
+const DEVICE_REFRESH_INTERVAL_MS = 60_000;
 
-const DEVICE_IDS = ZONES.flatMap((z) => z.machines);
+// A zone not in ZONE_ORDER (a future physical zone this code doesn't know
+// about yet) is appended after the known five, sorted alphabetically --
+// keeps placement deterministic and collision-free without needing a code
+// change just to not crash on it.
+function orderedZoneNames(distinctLocations) {
+  const known = ZONE_ORDER.filter((z) => distinctLocations.has(z));
+  const unknown = [...distinctLocations].filter((z) => !ZONE_ORDER.includes(z)).sort();
+  return [...known, ...unknown];
+}
 
-const SIMULATED_PLACEMENTS = ZONES.flatMap((z, zoneIndex) =>
-  z.machines.map((deviceId, machineIndex) => ({
-    device_id: deviceId,
-    zone: z.zone,
-    factory: z.factory,
-    pos_x: (zoneIndex - 2) * 18,
-    pos_y: machineIndex === 0 ? -4 : 4,
-    pos_z: 0,
-    rot_x: 0,
-    rot_y: 0,
-    rot_z: 0,
-    scale: 1.0,
-    is_simulated: true,
-    source: 'simulated_grid',
-  }))
-);
+// Pure and DB-free: same (device_id, location) rows always produce the same
+// placements, regardless of what order the DB returned them in. Grouping
+// by zone then sorting device_id within each zone makes the result
+// independent of input row order.
+function computePlacements(deviceRows) {
+  const byZone = new Map();
+  for (const { device_id, location } of deviceRows) {
+    if (!byZone.has(location)) byZone.set(location, []);
+    byZone.get(location).push(device_id);
+  }
+  const zones = orderedZoneNames(new Set(byZone.keys()));
+  const centerZone = (zones.length - 1) / 2;
+
+  const placements = [];
+  zones.forEach((zone, zoneIndex) => {
+    const machines = [...byZone.get(zone)].sort();
+    const centerMachine = (machines.length - 1) / 2;
+    const factoryMatch = zone.match(/^Factory\s+(\d+)/);
+    const factory = factoryMatch ? factoryMatch[1] : null;
+    machines.forEach((device_id, machineIndex) => {
+      placements.push({
+        device_id,
+        zone,
+        factory,
+        pos_x: (zoneIndex - centerZone) * ZONE_SPACING_X,
+        pos_y: (machineIndex - centerMachine) * MACHINE_SPACING_Y,
+        pos_z: 0,
+        rot_x: 0,
+        rot_y: 0,
+        rot_z: 0,
+        scale: 1.0,
+        is_simulated: true,
+        source: 'simulated_grid',
+      });
+    });
+  });
+  return placements;
+}
+
+async function discoverDevices() {
+  const result = await pool.query(
+    `SELECT device_id, location FROM public.devices WHERE device_type = 'ldi' AND enabled = true ORDER BY location, device_id`
+  );
+  return result.rows;
+}
+
+// In-memory cache refreshed on a timer rather than queried per-request:
+// /api/state is polled frequently by every open kiosk tab, and the device
+// list changes rarely (an enable/disable or a new device row), so paying a
+// DB round trip on every single poll isn't worth it just to react to that
+// instantly. DEVICE_REFRESH_INTERVAL_MS bounds how stale it can get.
+let DEVICE_IDS = [];
+let SIMULATED_PLACEMENTS = [];
+
+async function refreshDevices() {
+  try {
+    const rows = await discoverDevices();
+    DEVICE_IDS = rows.map((r) => r.device_id).sort();
+    SIMULATED_PLACEMENTS = computePlacements(rows);
+  } catch (err) {
+    console.error('device discovery refresh failed (keeping previous list):', err.message);
+  }
+}
 
 // Category -> team ownership mapping, copied verbatim from
 // ims-ldi-factory-digital-twin.json's refId-A query (Task 3 2D twin), which
@@ -263,6 +318,9 @@ app.get('/healthz', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`factory-twin-3d listening on :${PORT}`);
+refreshDevices().then(() => {
+  setInterval(refreshDevices, DEVICE_REFRESH_INTERVAL_MS).unref();
+  app.listen(PORT, () => {
+    console.log(`factory-twin-3d listening on :${PORT} (${DEVICE_IDS.length} LDI devices discovered)`);
+  });
 });
