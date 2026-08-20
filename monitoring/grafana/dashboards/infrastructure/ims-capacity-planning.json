@@ -43,7 +43,7 @@
       {
         "name": "machine_id",
         "type": "query",
-        "query": "SELECT device_id AS __text FROM public.devices WHERE enabled = true AND hostname = 'ims-snmpsim' ORDER BY device_id ASC;",
+        "query": "WITH v AS (\n  SELECT device_id AS __text FROM public.devices WHERE enabled = true AND hostname = 'ims-snmpsim'\n)\nSELECT * FROM v\nUNION ALL\nSELECT NULL WHERE NOT EXISTS (SELECT 1 FROM v)\nORDER BY 1;",
         "datasource": {
           "uid": "timescaledb"
         },

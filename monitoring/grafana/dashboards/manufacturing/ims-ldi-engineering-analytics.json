@@ -13,7 +13,7 @@
         "datasource": {
           "uid": "timescaledb"
         },
-        "query": "SELECT DISTINCT factory AS __text, factory AS __value FROM public.ldi_data ORDER BY factory",
+        "query": "WITH v AS (\n  SELECT DISTINCT factory AS __text, factory AS __value FROM public.ldi_data\n)\nSELECT * FROM v\nUNION ALL\nSELECT NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM v)\nORDER BY 1",
         "definition": "SELECT DISTINCT factory AS __text, factory AS __value FROM public.ldi_data ORDER BY factory",
         "current": {
           "selected": true,
@@ -36,7 +36,7 @@
         "datasource": {
           "uid": "timescaledb"
         },
-        "query": "SELECT DISTINCT process AS __text, process AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) ORDER BY process",
+        "query": "WITH v AS (\n  SELECT DISTINCT process AS __text, process AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring})\n)\nSELECT * FROM v\nUNION ALL\nSELECT NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM v)\nORDER BY 1",
         "definition": "SELECT DISTINCT process AS __text, process AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) ORDER BY process",
         "current": {
           "selected": true,
@@ -59,7 +59,7 @@
         "datasource": {
           "uid": "timescaledb"
         },
-        "query": "SELECT DISTINCT mo AS __text, mo AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) ORDER BY mo",
+        "query": "WITH v AS (\n  SELECT DISTINCT mo AS __text, mo AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring})\n)\nSELECT * FROM v\nUNION ALL\nSELECT NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM v)\nORDER BY 1",
         "definition": "SELECT DISTINCT mo AS __text, mo AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) ORDER BY mo",
         "current": {
           "selected": true,
@@ -82,7 +82,7 @@
         "datasource": {
           "uid": "timescaledb"
         },
-        "query": "SELECT DISTINCT fpn AS __text, fpn AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) ORDER BY fpn",
+        "query": "WITH v AS (\n  SELECT DISTINCT fpn AS __text, fpn AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring})\n)\nSELECT * FROM v\nUNION ALL\nSELECT NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM v)\nORDER BY 1",
         "definition": "SELECT DISTINCT fpn AS __text, fpn AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) ORDER BY fpn",
         "current": {
           "selected": true,
@@ -105,7 +105,7 @@
         "datasource": {
           "uid": "timescaledb"
         },
-        "query": "SELECT DISTINCT layer_name AS __text, layer_name AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) ORDER BY layer_name",
+        "query": "WITH v AS (\n  SELECT DISTINCT layer_name AS __text, layer_name AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring})\n)\nSELECT * FROM v\nUNION ALL\nSELECT NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM v)\nORDER BY 1",
         "definition": "SELECT DISTINCT layer_name AS __text, layer_name AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) ORDER BY layer_name",
         "current": {
           "selected": true,
@@ -128,7 +128,7 @@
         "datasource": {
           "uid": "timescaledb"
         },
-        "query": "SELECT DISTINCT eqp_id AS __text, eqp_id AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) ORDER BY eqp_id",
+        "query": "WITH v AS (\n  SELECT DISTINCT eqp_id AS __text, eqp_id AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring})\n)\nSELECT * FROM v\nUNION ALL\nSELECT NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM v)\nORDER BY 1",
         "definition": "SELECT DISTINCT eqp_id AS __text, eqp_id AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND process IN (${process:sqlstring}) AND mo IN (${mo:sqlstring}) AND fpn IN (${fpn:sqlstring}) AND layer_name IN (${layer:sqlstring}) ORDER BY eqp_id",
         "current": {
           "selected": true,

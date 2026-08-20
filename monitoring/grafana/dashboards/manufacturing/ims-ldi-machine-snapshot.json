@@ -84,7 +84,7 @@
         "datasource": {
           "uid": "timescaledb"
         },
-        "query": "SELECT DISTINCT factory AS __text, factory AS __value FROM public.ldi_data ORDER BY factory",
+        "query": "WITH v AS (\n  SELECT DISTINCT factory AS __text, factory AS __value FROM public.ldi_data\n)\nSELECT * FROM v\nUNION ALL\nSELECT NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM v)\nORDER BY 1",
         "definition": "SELECT DISTINCT factory AS __text, factory AS __value FROM public.ldi_data ORDER BY factory",
         "current": {
           "selected": true,
@@ -107,7 +107,7 @@
         "datasource": {
           "uid": "timescaledb"
         },
-        "query": "SELECT DISTINCT eqp_id AS __text, eqp_id AS __value FROM public.ldi_data WHERE ((${clicked_series:sqlstring} <> '__none__' AND eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)) OR (${clicked_series:sqlstring} = '__none__' AND factory IN (${factory:sqlstring}))) ORDER BY eqp_id",
+        "query": "WITH v AS (\n  SELECT DISTINCT eqp_id AS __text, eqp_id AS __value FROM public.ldi_data WHERE ((${clicked_series:sqlstring} <> '__none__' AND eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)) OR (${clicked_series:sqlstring} = '__none__' AND factory IN (${factory:sqlstring})))\n)\nSELECT * FROM v\nUNION ALL\nSELECT NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM v)\nORDER BY 1",
         "definition": "SELECT DISTINCT eqp_id AS __text, eqp_id AS __value FROM public.ldi_data WHERE ((${clicked_series:sqlstring} <> '__none__' AND eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)) OR (${clicked_series:sqlstring} = '__none__' AND factory IN (${factory:sqlstring}))) ORDER BY eqp_id",
         "current": {
           "selected": true,
@@ -130,7 +130,7 @@
         "datasource": {
           "uid": "timescaledb"
         },
-        "query": "SELECT DISTINCT mo AS __text, mo AS __value FROM public.ldi_data WHERE eqp_id IN (${machine_id:sqlstring}) ORDER BY mo",
+        "query": "WITH v AS (\n  SELECT DISTINCT mo AS __text, mo AS __value FROM public.ldi_data WHERE eqp_id IN (${machine_id:sqlstring})\n)\nSELECT * FROM v\nUNION ALL\nSELECT NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM v)\nORDER BY 1",
         "definition": "SELECT DISTINCT mo AS __text, mo AS __value FROM public.ldi_data WHERE eqp_id IN (${machine_id:sqlstring}) ORDER BY mo",
         "current": {
           "selected": true,
@@ -153,7 +153,7 @@
         "datasource": {
           "uid": "timescaledb"
         },
-        "query": "SELECT log_id AS __text, log_id AS __value FROM public.ldi_data WHERE eqp_id IN (${machine_id:sqlstring}) ORDER BY CASE WHEN ${event_time_ms:sqlstring}::NUMERIC > 0 THEN ABS(EXTRACT(EPOCH FROM (\"time\" - to_timestamp(${event_time_ms:sqlstring}::NUMERIC / 1000.0)))) ELSE 0 END, \"time\" DESC LIMIT CASE WHEN ${event_time_ms:sqlstring}::NUMERIC > 0 THEN 1 ELSE 500 END",
+        "query": "WITH v AS (\n  SELECT log_id AS __text, log_id AS __value FROM public.ldi_data WHERE eqp_id IN (${machine_id:sqlstring})\n  ORDER BY CASE WHEN ${event_time_ms:sqlstring}::NUMERIC > 0 THEN ABS(EXTRACT(EPOCH FROM (\"time\" - to_timestamp(${event_time_ms:sqlstring}::NUMERIC / 1000.0)))) ELSE 0 END, \"time\" DESC\n  LIMIT CASE WHEN ${event_time_ms:sqlstring}::NUMERIC > 0 THEN 1 ELSE 500 END\n)\nSELECT * FROM v\nUNION ALL\nSELECT NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM v)",
         "definition": "SELECT log_id AS __text, log_id AS __value FROM public.ldi_data WHERE eqp_id IN (${machine_id:sqlstring}) ORDER BY CASE WHEN ${event_time_ms:sqlstring}::NUMERIC > 0 THEN ABS(EXTRACT(EPOCH FROM (\"time\" - to_timestamp(${event_time_ms:sqlstring}::NUMERIC / 1000.0)))) ELSE 0 END, \"time\" DESC LIMIT CASE WHEN ${event_time_ms:sqlstring}::NUMERIC > 0 THEN 1 ELSE 500 END",
         "current": {
           "selected": true,
