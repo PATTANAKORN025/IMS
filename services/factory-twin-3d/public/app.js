@@ -159,7 +159,17 @@ const pointer = new THREE.Vector2();
 function drillDownUrl(deviceId) {
   const state = latestStateById.get(deviceId);
   const factory = (state && state.factory) || '2';
-  return `/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=${encodeURIComponent(deviceId)}&var-factory=${encodeURIComponent(factory)}&from=now-6h&to=now`;
+  let url = `/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=${encodeURIComponent(deviceId)}&var-factory=${encodeURIComponent(factory)}&from=now-6h&to=now`;
+  // If this machine currently has an active alarm (the red state), scope
+  // the drill-down to that exact event -- without var-log_id/var-event_time_ms,
+  // Machine Snapshot falls back to its own default (most recent telemetry
+  // row), which can be minutes newer than the alarm and show unrelated
+  // "everything looks fine" values instead of the alarm moment.
+  if (state && state.alarm && state.alarm.related_log_id) {
+    url += `&var-log_id=${encodeURIComponent(state.alarm.related_log_id)}`;
+    if (state.alarm.logdate_ms) url += `&var-event_time_ms=${encodeURIComponent(state.alarm.logdate_ms)}`;
+  }
+  return url;
 }
 
 function pickMachine(event) {
