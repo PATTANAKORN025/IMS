@@ -1,7 +1,7 @@
 <!-- GLOBAL_NAV -->
 <div align="right">
-  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
-  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+  <a href="../../README.md"><img src="../assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../README.md"><img src="../assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
 </div>
 <br/>
 
@@ -103,4 +103,4 @@ This formula is **reimplemented independently in 5 places**, not shared via one 
 
 ---
 
-[⬅️ Back to IMS Platform Book](IMS_PLATFORM_BOOK.md) | [<img src="../../docs/assets/icons/home.svg" width="18" align="center" /> Main Repository](../../README.md)
+[⬅️ Back to IMS Platform Book](IMS_PLATFORM_BOOK.md) | [<img src="../assets/icons/home.svg" width="18" align="center" /> Main Repository](../../README.md)

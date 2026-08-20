@@ -36,16 +36,26 @@ const ROOT = process.cwd();
 // convention as orphan-object-linter.js's EXEMPT set.
 const EXEMPT_FILES = new Set([
   'docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md', // dated "Baseline (verified <date>)" snapshot
+  'th/docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md',
+  'zh-CN/docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md',
   'docs/archive/DOC_AUDIT_GAP_REPORT.md', // this report; quotes stale text as evidence of what was found
-  'docs/archive/DOC_AUDIT_GAP_REPORT-th.md', // translation of the above; same quoted-as-evidence exemption applies
-  'docs/archive/DOC_AUDIT_GAP_REPORT-zh-CN.md', // translation of the above; same quoted-as-evidence exemption applies
+  'th/docs/archive/DOC_AUDIT_GAP_REPORT.md', // translation of the above; same quoted-as-evidence exemption applies
+  'zh-CN/docs/archive/DOC_AUDIT_GAP_REPORT.md', // translation of the above; same quoted-as-evidence exemption applies
   'docs/archive/DOCUMENTATION_QUALITY_REPORT.md', // quotes a past bug's exact wrong text as the record of the fix
-  'docs/archive/DOCUMENTATION_QUALITY_REPORT-th.md', // translation of the above; same quoted-as-evidence exemption applies
-  'docs/archive/DOCUMENTATION_QUALITY_REPORT-zh-CN.md', // translation of the above; same quoted-as-evidence exemption applies
+  'th/docs/archive/DOCUMENTATION_QUALITY_REPORT.md', // translation of the above; same quoted-as-evidence exemption applies
+  'zh-CN/docs/archive/DOCUMENTATION_QUALITY_REPORT.md', // translation of the above; same quoted-as-evidence exemption applies
   'docs/audit/LDI_ALARM_FIDELITY_AUDIT.md',
+  'th/docs/audit/LDI_ALARM_FIDELITY_AUDIT.md',
+  'zh-CN/docs/audit/LDI_ALARM_FIDELITY_AUDIT.md',
   'docs/audit/LDI_SIMULATOR_REDESIGN_RESULTS.md',
+  'th/docs/audit/LDI_SIMULATOR_REDESIGN_RESULTS.md',
+  'zh-CN/docs/audit/LDI_SIMULATOR_REDESIGN_RESULTS.md',
   'docs/evidence/SOAK_TEST_LOG.md',
+  'th/docs/evidence/SOAK_TEST_LOG.md',
+  'zh-CN/docs/evidence/SOAK_TEST_LOG.md',
   'CHANGELOG.md', // every entry is inherently a dated point-in-time record by definition
+  'th/CHANGELOG.md',
+  'zh-CN/CHANGELOG.md',
 ]);
 
 function isExemptPath(relFile) {

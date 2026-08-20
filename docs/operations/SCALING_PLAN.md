@@ -1,7 +1,7 @@
 <!-- GLOBAL_NAV -->
 <div align="right">
-  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
-  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+  <a href="../../README.md"><img src="../assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../README.md"><img src="../assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
 </div>
 <br/>
 
@@ -30,7 +30,7 @@
 4. [Performance Tuning](#performance-tuning)
 5. [Retention Policy](#retention-policy)
 6. [Cost Estimation](#cost-estimation)
-7. [Data Fidelity & Scale Management (Architectural Details)](../architecture/DATA_FIDELITY_AND_SCALING-th.md)
+7. [Data Fidelity & Scale Management (Architectural Details)](../../th/docs/architecture/DATA_FIDELITY_AND_SCALING.md)
 
 ---
 
