@@ -1,15 +1,15 @@
 <!-- GLOBAL_NAV -->
 <div align="right">
-  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
-  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+  <a href="../../README.md"><img src="../assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../README.md"><img src="../assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
 </div>
 <br/>
 
 <div align="center">
  <p>
  <img src="../assets/icons/gb.svg" width="16" align="center"/> <b>English</b> |
- <a href="ARCHITECTURE-th.md"><img src="../assets/icons/th.svg" width="16" align="center"/> <b>ไทย</b></a> |
- <a href="ARCHITECTURE-zh-CN.md"><img src="../assets/icons/tw.svg" width="16" align="center"/> <b>中文</b></a>
+ <a href="../../th/docs/architecture/ARCHITECTURE.md"><img src="../assets/icons/th.svg" width="16" align="center"/> <b>ไทย</b></a> |
+ <a href="../../zh-CN/docs/architecture/ARCHITECTURE.md"><img src="../assets/icons/tw.svg" width="16" align="center"/> <b>中文</b></a>
  </p>
 </div>
 

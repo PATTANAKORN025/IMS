@@ -1,7 +1,7 @@
 <!-- GLOBAL_NAV -->
 <div align="right">
-  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
-  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+  <a href="../../README.md"><img src="../assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../README.md"><img src="../assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
 </div>
 <br/>
 
@@ -143,7 +143,7 @@ PE/JE VS SPEC LIMIT        → Completely devoid of content
 
 ---
 
-# <img src="../../docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> P2 — Auto-Detected Data Quality Issues
+# <img src="../assets/icons/circle-check.svg" width="18" height="18" align="center" /> P2 — Auto-Detected Data Quality Issues
 
 Evidence from LDI Data Readiness (this specific dashboard performs exceptionally well):
 
@@ -154,7 +154,7 @@ Evidence from LDI Data Readiness (this specific dashboard performs exceptionally
 | Machine ID Match          | **100%**      | Successfully resolved from the previous 20% baseline                                                                                                  |
 | Alarm Master Match        | **100%**      | Successfully resolved from the previous 0% baseline                                                                                                   |
 | Telemetry Age / Alarm Age | 0.0 hour      | Telemetry is live                                                                                                                                     |
-| **Board ID Completeness** | **8.0%**      | <img src="../../docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Accurately reflects ground truth where data is 100% NULL |
+| **Board ID Completeness** | **8.0%**      | <img src="../assets/icons/circle-check.svg" width="18" height="18" align="center" /> Accurately reflects ground truth where data is 100% NULL |
 | **PE / JE4 Coverage**     | **45% / 45%** | Correct (The DF INNER process does not measure PE)                                                                                                    |
 
 ## Duplicate Board Keys — Isolated exclusively to 2 machines
@@ -190,7 +190,7 @@ This stems from a NOC bug utilizing a disparate freshness threshold compared to 
 
 ---
 
-# <img src="../../docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> P3 — Units and Formatting
+# <img src="../assets/icons/circle-check.svg" width="18" height="18" align="center" /> P3 — Units and Formatting
 
 ```text
 "255.03 currency-thb"   ← Requires formatting to ฿255.03
@@ -207,11 +207,11 @@ Machine Snapshot and Manufacturing interfaces — The `lengthum` bug has been co
 
 | Dashboard             | Status                                                                                                            | Evidence                                                                                                                        |
 | --------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| **Machine Snapshot**  | <img src="../../docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Perfect              | All panels populated · Units 100% accurate · PE/JE PASS functioning · Cpk isolates PE/JE · Millisecond-precision event timeline |
-| **Manufacturing**     | <img src="../../docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Excellent            | Full KPI coverage · Populated tabular data · Dominant green compliance indicators · Footer RCA summary                          |
-| **Engineering & SPC** | <img src="../../docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Solid                | 6+4 PE/JE trajectories successfully uncoupled · Overlaid PE vs JE histograms · Validated Cpk PE 1.253 / JE 2.710                |
-| **Data Readiness**    | <img src="../../docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Outstanding          | Successfully identified 3 legitimate data anomalies autonomously                                                                |
-| **Andon**             | <img src="../../docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> Partially Functional | KPIs + 10 machine tiles operate flawlessly · However, 2 panels remain unpopulated                                               |
+| **Machine Snapshot**  | <img src="../assets/icons/circle-check.svg" width="18" height="18" align="center" /> Perfect              | All panels populated · Units 100% accurate · PE/JE PASS functioning · Cpk isolates PE/JE · Millisecond-precision event timeline |
+| **Manufacturing**     | <img src="../assets/icons/circle-check.svg" width="18" height="18" align="center" /> Excellent            | Full KPI coverage · Populated tabular data · Dominant green compliance indicators · Footer RCA summary                          |
+| **Engineering & SPC** | <img src="../assets/icons/circle-check.svg" width="18" height="18" align="center" /> Solid                | 6+4 PE/JE trajectories successfully uncoupled · Overlaid PE vs JE histograms · Validated Cpk PE 1.253 / JE 2.710                |
+| **Data Readiness**    | <img src="../assets/icons/circle-check.svg" width="18" height="18" align="center" /> Outstanding          | Successfully identified 3 legitimate data anomalies autonomously                                                                |
+| **Andon**             | <img src="../assets/icons/circle-check.svg" width="18" height="18" align="center" /> Partially Functional | KPIs + 10 machine tiles operate flawlessly · However, 2 panels remain unpopulated                                               |
 
 **Most Impressive Achievement:** The Machine Capability Ranking displays **Cpk (PE) 1.253 and Cpk (JE) 2.710
 in isolated, dedicated columns** alongside Worst Cpk and Confidence intervals — Conclusively proving that the architectural decoupling of the JE base from PE operates flawlessly as designed.
@@ -259,9 +259,9 @@ for (const panel of allPanels) {
 | 2   | **Bind Simulator Alarms to Parameter Anomalies**    | P0                                                                                              | Process Engineers — Enables RCA validation  |
 | 3   | Resolve 2 unpopulated panels in Andon               | P1                                                                                              | Shop-floor Operators                        |
 | 4   | Resolve 15 "No data" panels                         | P1                                                                                              | All Stakeholders                            |
-| 5   | Investigate duplicate board keys (LDI-01/04)        | <img src="../../docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> P2 | QA — Mitigates skewed board counts          |
-| 6   | Integrate E2E panel-data verification into CI       | <img src="../../docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> P2 | Development Team — Prevents regression      |
-| 7   | Rectify currency units + donut legend formatting    | <img src="../../docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> P3 | General interface polish                    |
+| 5   | Investigate duplicate board keys (LDI-01/04)        | <img src="../assets/icons/circle-check.svg" width="18" height="18" align="center" /> P2 | QA — Mitigates skewed board counts          |
+| 6   | Integrate E2E panel-data verification into CI       | <img src="../assets/icons/circle-check.svg" width="18" height="18" align="center" /> P2 | Development Team — Prevents regression      |
+| 7   | Rectify currency units + donut legend formatting    | <img src="../assets/icons/circle-check.svg" width="18" height="18" align="center" /> P3 | General interface polish                    |
 
 ---
 

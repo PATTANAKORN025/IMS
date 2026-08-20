@@ -1,7 +1,7 @@
 <!-- GLOBAL_NAV -->
 <div align="right">
-  <a href="./README.md"><img src="./docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
-  <a href="./docs/README.md"><img src="./docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+  <a href="README.md"><img src="docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="docs/README.md"><img src="docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
 </div>
 <br/>
 
@@ -28,8 +28,8 @@
 <div align="center">
  <p>
   <a href="README.md"><img src="docs/assets/icons/gb.svg" width="18" align="center"/> <b>English</b></a> |
-  <a href="README-th.md"><img src="docs/assets/icons/th.svg" width="18" align="center"/> <b>ไทย</b></a> |
-  <a href="README-zh-CN.md"><img src="docs/assets/icons/tw.svg" width="18" align="center"/> <b>中文</b></a>
+  <a href="th/README.md"><img src="docs/assets/icons/th.svg" width="18" align="center"/> <b>ไทย</b></a> |
+  <a href="zh-CN/README.md"><img src="docs/assets/icons/tw.svg" width="18" align="center"/> <b>中文</b></a>
  </p>
 </div>
 
@@ -60,14 +60,14 @@
   <br>
   <a href="#quick-start"><img src="https://img.shields.io/badge/Status-Tests_Passing-10B981?style=for-the-badge&logoColor=white" alt="Tests" /></a>
   <a href="#quick-start"><img src="https://img.shields.io/badge/K6-Stress--Tested-030407?style=for-the-badge&logo=k6&logoColor=7B61FF" alt="K6" /></a>
-  <a href="data-generators/"><img src="https://img.shields.io/badge/Data-Digital_Twin-030407?style=for-the-badge&logo=python&logoColor=00C7B7" alt="Synthetic Data" /></a>
+  <a href="data-generators"><img src="https://img.shields.io/badge/Data-Digital_Twin-030407?style=for-the-badge&logo=python&logoColor=00C7B7" alt="Synthetic Data" /></a>
 </div>
 
 <br/>
 
 <div align="center" justify-content="space-between">
-  <a href="./docs/architecture/IMS_PLATFORM_BOOK.md"><img src="https://img.shields.io/badge/PLATFORM_BOOK-ENTER-blue?color=00F2FE&labelColor=030407&style=for-the-badge"></a>
-  <a href="./docs/architecture/ARCHITECTURE.md"><img src="https://img.shields.io/badge/ARCHITECTURE-READ-blue?color=10B981&labelColor=030407&style=for-the-badge"></a>
+  <a href="docs/architecture/IMS_PLATFORM_BOOK.md"><img src="https://img.shields.io/badge/PLATFORM_BOOK-ENTER-blue?color=00F2FE&labelColor=030407&style=for-the-badge"></a>
+  <a href="docs/architecture/ARCHITECTURE.md"><img src="https://img.shields.io/badge/ARCHITECTURE-READ-blue?color=10B981&labelColor=030407&style=for-the-badge"></a>
 </div>
 
 <br/>
@@ -114,7 +114,7 @@
 </tr>
 </table>
 
-> <img src="./docs/assets/icons/aperture.svg" width="18" align="center" /> **Explore the Ecosystem:** View the full [15-Dashboard Macro-to-Micro Architecture Guide](docs/product/DASHBOARD_ECOSYSTEM.md) for a deep dive into how IMS scales from C-Level business metrics down to sensor-level diagnostic data.
+> <img src="docs/assets/icons/aperture.svg" width="18" align="center" /> **Explore the Ecosystem:** View the full [15-Dashboard Macro-to-Micro Architecture Guide](docs/product/DASHBOARD_ECOSYSTEM.md) for a deep dive into how IMS scales from C-Level business metrics down to sensor-level diagnostic data.
 
 <br/>
 
@@ -368,7 +368,7 @@ IMS/
 
 <div align="center">
 
-### <img src="./docs/assets/icons/briefcase.svg" width="18" height="18" align="center" /> Executive & Business Strategy
+### <img src="docs/assets/icons/briefcase.svg" width="18" height="18" align="center" /> Executive & Business Strategy
 
 |                                 Document                                 | Description                                                             |
 | :----------------------------------------------------------------------: | ----------------------------------------------------------------------- |
@@ -376,7 +376,7 @@ IMS/
 | [**Platform Book (start here)**](docs/architecture/IMS_PLATFORM_BOOK.md) | Navigational hub for the entire documentation set, terminology glossary |
 |              [**Product Context**](docs/product/PRODUCT.md)              | Product purpose, target audience, and positioning                       |
 
-### <img src="./docs/assets/icons/factory.svg" width="18" height="18" align="center" /> Manufacturing & LDI Intelligence
+### <img src="docs/assets/icons/factory.svg" width="18" height="18" align="center" /> Manufacturing & LDI Intelligence
 
 |                                       Document                                        | Description                                                            |
 | :-----------------------------------------------------------------------------------: | ---------------------------------------------------------------------- |
@@ -386,7 +386,7 @@ IMS/
 |                [**LDI RCA Guide**](docs/architecture/LDI_RCA_GUIDE.md)                | Root-cause correlation (Lift/Confidence) methodology                   |
 |       [**LDI Validation Protocol**](docs/operations/LDI_VALIDATION_PROTOCOL.md)       | 4-phase production sign-off procedure                                  |
 
-### <img src="./docs/assets/icons/layers.svg" width="18" height="18" align="center" /> Core Architecture & Security
+### <img src="docs/assets/icons/layers.svg" width="18" height="18" align="center" /> Core Architecture & Security
 
 |                                 Document                                 | Description                                                 |
 | :----------------------------------------------------------------------: | ----------------------------------------------------------- |
@@ -416,7 +416,7 @@ IMS/
 |     [**Release Checklist**](docs/operations/RELEASE_CHECKLIST.md)     | What to verify before tagging a release                         |
 |       [**Troubleshooting**](docs/operations/TROUBLESHOOTING.md)       | Common issues, debugging commands, recovery procedures          |
 
-### <img src="./docs/assets/icons/users.svg" width="18" height="18" align="center" /> Community & Reference
+### <img src="docs/assets/icons/users.svg" width="18" height="18" align="center" /> Community & Reference
 
 |                             Document                             | Description                                               |
 | :--------------------------------------------------------------: | --------------------------------------------------------- |
