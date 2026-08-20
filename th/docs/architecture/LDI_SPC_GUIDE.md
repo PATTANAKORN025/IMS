@@ -19,9 +19,12 @@ IMS ติดตามความสามารถของกระบวน�
 
 ## สูตร Cpk
 
-```text
-cp = tolerance / (3 * sigma)
-cpk = LEAST( (tolerance - mean) / (3 * sigma), (mean + tolerance) / (3 * sigma) )
+```math
+C_p = \frac{\text{tolerance}}{3\sigma}
+```
+
+```math
+C_{pk} = \min \left( \frac{\text{tolerance} - \mu}{3\sigma}, \frac{\mu + \text{tolerance}}{3\sigma} \right)
 ```
 
 - **ค่าเฉลี่ย (Mean):** ค่าเฉลี่ยของกลุ่มตัวอย่าง (`AVG`)
