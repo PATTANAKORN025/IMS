@@ -29,6 +29,7 @@ console.log("=".repeat(40));
 // 1. Run unit tests
 run("Unit Tests", "node tests/unit/boundary-validation.test.js");
 run("Parser v2 Tests", "node tests/unit/v2-parser.test.js");
+run("Query Budget Linter Tests", "node tests/unit/query-budget-linter.test.js");
 
 // 2. Run Linters
 run("Dashboard Linter", "node tests/lint/dashboard-linter.js");
