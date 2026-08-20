@@ -1,7 +1,7 @@
 <!-- GLOBAL_NAV -->
 <div align="right">
-  <a href="../README.md"><img src="../docs/assets/icons/home.svg" width="16" align="center" /> <b>หน้าหลัก</b></a> &nbsp;|&nbsp;
-  <a href="../docs/README.md"><img src="../docs/assets/icons/book.svg" width="16" align="center" /> <b>ดัชนีเอกสาร</b></a>
+  <a href="README.md"><img src="../docs/assets/icons/home.svg" width="16" align="center" /> <b>หน้าหลัก</b></a> &nbsp;|&nbsp;
+  <a href="docs/README.md"><img src="../docs/assets/icons/book.svg" width="16" align="center" /> <b>ดัชนีเอกสาร</b></a> &nbsp;|&nbsp; <a href="../README.md">🌐 <b>English</b></a> &nbsp;|&nbsp; <a href="README.md">🇹🇭 <b>ภาษาไทย</b></a> &nbsp;|&nbsp; <a href="../zh-CN/README.md">🇨🇳 <b>中文</b></a>
 </div>
 <br/>
 
@@ -27,7 +27,7 @@
 
 <div align="center">
  <p>
-  <a href="../README.md"><img src="../docs/assets/icons/gb.svg" width="18" align="center"/> <b>English</b></a> |
+  <a href="README.md"><img src="../docs/assets/icons/gb.svg" width="18" align="center"/> <b>English</b></a> |
   <a href="README.md"><img src="../docs/assets/icons/th.svg" width="18" align="center"/> <b>ไทย</b></a> |
   <a href="../zh-CN/README.md"><img src="../docs/assets/icons/tw.svg" width="18" align="center"/> <b>中文</b></a>
  </p>
@@ -52,7 +52,7 @@
 
 <div align="center">
   <a href="#quick-start"><img src="https://img.shields.io/badge/-Release_v1.0-030407?style=for-the-badge&logo=github&logoColor=10B981" alt="Release"/></a>
-  <a href="../LICENSE"><img src="https://img.shields.io/badge/-MIT_License-030407?style=for-the-badge&logo=opensourceinitiative&logoColor=00F2FE" alt="License"/></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/-MIT_License-030407?style=for-the-badge&logo=opensourceinitiative&logoColor=00F2FE" alt="License"/></a>
   <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/-Docker_Ready-030407?style=for-the-badge&logo=docker&logoColor=2496ED" alt="Docker"/></a>
   <a href="https://grafana.com/"><img src="https://img.shields.io/badge/-Grafana_v11+-030407?style=for-the-badge&logo=grafana&logoColor=F46800" alt="Grafana"/></a>
   <a href="https://nodered.org/"><img src="https://img.shields.io/badge/-Node--RED_v4+-030407?style=for-the-badge&logo=nodered&logoColor=8F0000" alt="Node-RED"/></a>
@@ -60,14 +60,14 @@
   <br>
   <a href="#quick-start"><img src="https://img.shields.io/badge/Status-Tests_Passing-10B981?style=for-the-badge&logoColor=white" alt="Tests" /></a>
   <a href="#quick-start"><img src="https://img.shields.io/badge/K6-Stress--Tested-030407?style=for-the-badge&logo=k6&logoColor=7B61FF" alt="K6" /></a>
-  <a href="../data-generators"><img src="https://img.shields.io/badge/Data-Digital_Twin-030407?style=for-the-badge&logo=python&logoColor=00C7B7" alt="Synthetic Data" /></a>
+  <a href="data-generators"><img src="https://img.shields.io/badge/Data-Digital_Twin-030407?style=for-the-badge&logo=python&logoColor=00C7B7" alt="Synthetic Data" /></a>
 </div>
 
 <br/>
 
 <div align="center" justify-content="space-between">
-  <a href="../docs/architecture/IMS_PLATFORM_BOOK.md"><img src="https://img.shields.io/badge/PLATFORM_BOOK-ENTER-blue?color=00F2FE&labelColor=030407&style=for-the-badge"></a>
-  <a href="../docs/architecture/ARCHITECTURE.md"><img src="https://img.shields.io/badge/ARCHITECTURE-READ-blue?color=10B981&labelColor=030407&style=for-the-badge"></a>
+  <a href="docs/architecture/IMS_PLATFORM_BOOK.md"><img src="https://img.shields.io/badge/PLATFORM_BOOK-ENTER-blue?color=00F2FE&labelColor=030407&style=for-the-badge"></a>
+  <a href="docs/architecture/ARCHITECTURE.md"><img src="https://img.shields.io/badge/ARCHITECTURE-READ-blue?color=10B981&labelColor=030407&style=for-the-badge"></a>
 </div>
 
 <br/>
@@ -114,7 +114,7 @@
 </tr>
 </table>
 
-> <img src="../docs/assets/icons/aperture.svg" width="18" align="center" /> **สำรวจระบบนิเวศ:** ดู [คู่มือสถาปัตยกรรมระดับมหภาคถึงระดับจุลภาคที่มีแดชบอร์ด 15 อัน](../docs/product/DASHBOARD_ECOSYSTEM.md) เพื่อเจาะลึกว่า IMS สามารถปรับขยายจากตัวชี้วัดธุรกิจระดับ C-Level ลงไปยังข้อมูลการวินิจฉัยระดับเซนเซอร์ได้อย่างไร
+> <img src="../docs/assets/icons/aperture.svg" width="18" align="center" /> **สำรวจระบบนิเวศ:** ดู [คู่มือสถาปัตยกรรมระดับมหภาคถึงระดับจุลภาคที่มีแดชบอร์ด 15 อัน](docs/product/DASHBOARD_ECOSYSTEM.md) เพื่อเจาะลึกว่า IMS สามารถปรับขยายจากตัวชี้วัดธุรกิจระดับ C-Level ลงไปยังข้อมูลการวินิจฉัยระดับเซนเซอร์ได้อย่างไร
 
 <br/>
 
@@ -127,7 +127,7 @@
 <td align="center" width="33%">
  <h3>การนำเข้าข้อมูล (Telemetry Ingestion)</h3>
  Node-RED walkers แบบคู่ขนานใช้การร้องขอข้อมูล SNMP แบบ sequential bulk และ HTTP endpoints ซึ่งบันทึกข้อมูลลงใน TimescaleDB ผ่าน PgBouncer transaction pooling.<br/><br/>
- **ตรวจสอบแล้ว:** [nodered-ingestion-20260813.txt](../docs/evidence/runtime/nodered-ingestion-20260813.txt)
+ **ตรวจสอบแล้ว:** [nodered-ingestion-20260813.txt](docs/evidence/runtime/nodered-ingestion-20260813.txt)
 </td>
 <td align="center" width="33%">
  <h3>การควบคุมกระบวนการทางสถิติ (SPC)</h3>
@@ -136,7 +136,7 @@
 <td align="center" width="33%">
  <h3>การรวมข้อมูลอย่างต่อเนื่อง (CAGG)</h3>
  การรวบรวมข้อมูลรายชั่วโมง, รายวัน และรายสัปดาห์จะคำนวณโดยอัตโนมัติด้วย TimescaleDB เพื่อรักษาเวลาในการเรนเดอร์ Grafana ให้น้อยกว่าหนึ่งวินาทีครอบคลุมช่วงเวลาที่กว้างขวาง<br/><br/>
- **ตรวจสอบแล้ว:** [cagg-policies-20260813.txt](../docs/evidence/runtime/cagg-policies-20260813.txt)
+ **ตรวจสอบแล้ว:** [cagg-policies-20260813.txt](docs/evidence/runtime/cagg-policies-20260813.txt)
 </td>
 </tr>
 </table>
@@ -166,7 +166,7 @@ open http://localhost:3000
 ```
 
 > **สิ่งที่จะพบ:** การจำลองอย่างนุ่มนวล (~10-15 แถว/นาที) ช่วยให้คุณคลิกดูศูนย์บัญชาการการผลิต LDI (LDI Manufacturing Command Center), ดูบอร์ด Operator Andon และดูกราฟความสามารถ Cpk แบบเรียลไทม์
-> **ตรวจสอบแล้ว:** `docker compose ps` วันที่ 2026-08-13, จัดเก็บใน [`docs/evidence/runtime/compose-ps-20260813.txt`](../docs/evidence/runtime/compose-ps-20260813.txt)
+> **ตรวจสอบแล้ว:** `docker compose ps` วันที่ 2026-08-13, จัดเก็บใน [`docs/evidence/runtime/compose-ps-20260813.txt`](docs/evidence/runtime/compose-ps-20260813.txt)
 
 ### เส้นทาง B: พื้นที่พิสูจน์ประสิทธิภาพ (Stress Test)
 
@@ -192,7 +192,7 @@ make test-load # รันเฟรมเวิร์กการทดสอบ
 
 ### การตรวจสอบและหลักฐาน
 
-การอ้างอิงสถาปัตยกรรมแต่ละข้อมีหลักฐานสนับสนุนจากการผสานรวมอย่างต่อเนื่องหรือสคริปต์การทดสอบที่ชัดเจน สำหรับผลลัพธ์การทดสอบโหลด, หลักฐานการถดถอยของการมองเห็น (visual regression), และการตรวจสอบความถูกต้องของการกู้คืนระบบ (disaster recovery) โปรดดูที่ **[ดัชนีหลักฐาน](../docs/evidence/INDEX.md)**
+การอ้างอิงสถาปัตยกรรมแต่ละข้อมีหลักฐานสนับสนุนจากการผสานรวมอย่างต่อเนื่องหรือสคริปต์การทดสอบที่ชัดเจน สำหรับผลลัพธ์การทดสอบโหลด, หลักฐานการถดถอยของการมองเห็น (visual regression), และการตรวจสอบความถูกต้องของการกู้คืนระบบ (disaster recovery) โปรดดูที่ **[ดัชนีหลักฐาน](docs/evidence/INDEX.md)**
 
 <details>
 <summary><b>คำสั่งที่มีให้</b></summary>
@@ -274,7 +274,7 @@ flowchart LR
 <details>
 <summary><b>สถาปัตยกรรมแดชบอร์ด</b></summary>
 
-15 แดชบอร์ด — 5 ฝั่งโครงสร้างพื้นฐาน, 10 ฝั่งการผลิต (`monitoring/grafana/dashboards/{infrastructure,manufacturing}/`, ถูกจัดเตรียมในโฟลเดอร์ Grafana ที่แยกกัน — ดู **[Ownership](../docs/architecture/OWNERSHIP.md)** สำหรับขอบเขตของโดเมน) ตารางสมบูรณ์พร้อมจำนวนพาเนลและคำอธิบาย: **[Dashboard Inventory](../docs/architecture/DASHBOARD_INVENTORY.md)** — สร้างโดยอัตโนมัติจาก JSON ของแดชบอร์ดเอง (`node scripts/generate-dashboard-inventory.js`), ตรวจสอบด้วย CI ดังนั้นมันจะไม่สามารถเปลี่ยนไปจากแดชบอร์ดจริงได้อย่างเงียบๆ เหมือนตารางที่พิมพ์ด้วยมือ
+15 แดชบอร์ด — 5 ฝั่งโครงสร้างพื้นฐาน, 10 ฝั่งการผลิต (`monitoring/grafana/dashboards/{infrastructure,manufacturing}/`, ถูกจัดเตรียมในโฟลเดอร์ Grafana ที่แยกกัน — ดู **[Ownership](docs/architecture/OWNERSHIP.md)** สำหรับขอบเขตของโดเมน) ตารางสมบูรณ์พร้อมจำนวนพาเนลและคำอธิบาย: **[Dashboard Inventory](docs/architecture/DASHBOARD_INVENTORY.md)** — สร้างโดยอัตโนมัติจาก JSON ของแดชบอร์ดเอง (`node scripts/generate-dashboard-inventory.js`), ตรวจสอบด้วย CI ดังนั้นมันจะไม่สามารถเปลี่ยนไปจากแดชบอร์ดจริงได้อย่างเงียบๆ เหมือนตารางที่พิมพ์ด้วยมือ
 
 **Design System:** Cyberpunk HUD — พื้นหลัง `#030407`, จานสี Tailwind (`#10B981` แข็งแรง, `#F59E0B` คำเตือน, `#EF4444` วิกฤต, `#3B82F6` เน้นย้ำ), แบบอักษร Roboto Mono สำหรับค่าสถิติ, พาเนลโปร่งแสงแบบกระจก, โครงร่าง Grid-24 ที่ไม่ทับซ้อนกัน
 
@@ -323,7 +323,7 @@ open "http://localhost:3000/playlists/play/1?kiosk=tv&autofitpanels"
 - `sys_hourly` / `net_hourly` / `ldi_hourly` / `ldi_data_1m` / `ldi_data_15m` / `ldi_data_1h` / `ldi_data_hourly` — การรวมข้อมูลต่อเนื่อง (continuous aggregates)
 - `v_machine_spc_fleet` / `v_ldi_rca_recent_window` / `v_ldi_rca_truth_test` — materialized views, รีเฟรชทุกๆ 60 วินาที
 
-จำนวนคอลัมน์ที่แน่นอน, รายชื่อ view/CAGG ทั้งหมด, และจำนวนการ migration ที่ทำเสร็จสมบูรณ์: **[Database Schema Inventory](../docs/architecture/DATABASE_SCHEMA.md)** — สร้างอัตโนมัติจาก `information_schema` + `timescaledb_information.*` (`node scripts/generate-schema-inventory.js`), ตรวจสอบด้วย CI ต่อฐานข้อมูลที่กำลังทำงานอยู่
+จำนวนคอลัมน์ที่แน่นอน, รายชื่อ view/CAGG ทั้งหมด, และจำนวนการ migration ที่ทำเสร็จสมบูรณ์: **[Database Schema Inventory](docs/architecture/DATABASE_SCHEMA.md)** — สร้างอัตโนมัติจาก `information_schema` + `timescaledb_information.*` (`node scripts/generate-schema-inventory.js`), ตรวจสอบด้วย CI ต่อฐานข้อมูลที่กำลังทำงานอยู่
 
 </details>
 
@@ -372,60 +372,60 @@ IMS/
 
 |                                 เอกสาร                                 | คำอธิบาย                                                                       |
 | :----------------------------------------------------------------------: | ------------------------------------------------------------------------------ |
-|     [**คุณค่าทางธุรกิจและ ROI**](../docs/business/BUSINESS_VALUE_ROI.md)      | บทสรุปสำหรับผู้บริหาร, การลดต้นทุน, การลด MTTR, และผลกระทบเชิงกลยุทธ์          |
-| [**แพลตฟอร์มบุ๊ก (เริ่มที่นี่)**](../docs/architecture/IMS_PLATFORM_BOOK.md) | ศูนย์กลางนำทางสำหรับเอกสารประกอบทั้งหมด, อภิธานศัพท์                           |
-|              [**บริบทผลิตภัณฑ์**](../docs/product/PRODUCT.md)              | วัตถุประสงค์ของผลิตภัณฑ์, กลุ่มเป้าหมาย, และจุดยืนทางการตลาด                   |
+|     [**คุณค่าทางธุรกิจและ ROI**](docs/business/BUSINESS_VALUE_ROI.md)      | บทสรุปสำหรับผู้บริหาร, การลดต้นทุน, การลด MTTR, และผลกระทบเชิงกลยุทธ์          |
+| [**แพลตฟอร์มบุ๊ก (เริ่มที่นี่)**](docs/architecture/IMS_PLATFORM_BOOK.md) | ศูนย์กลางนำทางสำหรับเอกสารประกอบทั้งหมด, อภิธานศัพท์                           |
+|              [**บริบทผลิตภัณฑ์**](docs/product/PRODUCT.md)              | วัตถุประสงค์ของผลิตภัณฑ์, กลุ่มเป้าหมาย, และจุดยืนทางการตลาด                   |
 
 ### <img src="../docs/assets/icons/factory.svg" width="18" height="18" align="center" /> การผลิต & ข่าวกรอง LDI
 
 |                                       เอกสาร                                        | คำอธิบาย                                                                       |
 | :-----------------------------------------------------------------------------------: | ------------------------------------------------------------------------------ |
-| [**แผนแพลตฟอร์มการผลิต**](../docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md) | การแยกโดเมน Infra/manufacturing, แผนทดสอบความถูกต้อง/การแช่ข้อมูล/กู้คืนระบบ   |
-|         [**โดเมนการผลิต**](../docs/architecture/MANUFACTURING_DOMAIN.md)         | รูปแบบ LDI schema/dashboard และขั้นตอนการเริ่มต้นใช้งาน                        |
-|                [**คู่มือ LDI SPC**](../docs/architecture/LDI_SPC_GUIDE.md)                | วิธีการควบคุมความสามารถกระบวนการ (Cpk) และสูตร                                 |
-|                [**คู่มือ LDI RCA**](../docs/architecture/LDI_RCA_GUIDE.md)                | วิธีการหาความสัมพันธ์ของต้นเหตุ (Lift/Confidence)                              |
-|       [**โปรโตคอลตรวจสอบความถูกต้อง LDI**](../docs/operations/LDI_VALIDATION_PROTOCOL.md)       | ขั้นตอนการลงนามอนุมัติผลิตจริง 4 ระยะ                                          |
+| [**แผนแพลตฟอร์มการผลิต**](docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md) | การแยกโดเมน Infra/manufacturing, แผนทดสอบความถูกต้อง/การแช่ข้อมูล/กู้คืนระบบ   |
+|         [**โดเมนการผลิต**](docs/architecture/MANUFACTURING_DOMAIN.md)         | รูปแบบ LDI schema/dashboard และขั้นตอนการเริ่มต้นใช้งาน                        |
+|                [**คู่มือ LDI SPC**](docs/architecture/LDI_SPC_GUIDE.md)                | วิธีการควบคุมความสามารถกระบวนการ (Cpk) และสูตร                                 |
+|                [**คู่มือ LDI RCA**](docs/architecture/LDI_RCA_GUIDE.md)                | วิธีการหาความสัมพันธ์ของต้นเหตุ (Lift/Confidence)                              |
+|       [**โปรโตคอลตรวจสอบความถูกต้อง LDI**](docs/operations/LDI_VALIDATION_PROTOCOL.md)       | ขั้นตอนการลงนามอนุมัติผลิตจริง 4 ระยะ                                          |
 
 ### <img src="../docs/assets/icons/layers.svg" width="18" height="18" align="center" /> สถาปัตยกรรมหลัก & ความปลอดภัย
 
 |                                 เอกสาร                                 | คำอธิบาย                                                    |
 | :----------------------------------------------------------------------: | ----------------------------------------------------------- |
-|          [**สถาปัตยกรรม**](../docs/architecture/ARCHITECTURE.md)           | บริบทระบบ, ADRs, สถาปัตยกรรมแบบสตรีมมิ่ง, กลยุทธ์ CAGG      |
-|   [**สถาปัตยกรรมแบบรูปภาพ**](../docs/architecture/ARCHITECTURE_DIAGRAM.md)   | แผนภาพรูปแบบ C4 Mermaid Model และกระแสการทำงาน              |
-|             [**การไหลของข้อมูล**](../docs/architecture/DATA_FLOW.md)              | แผนภาพไพพ์ไลน์แบบ End-to-end, ห่วงโซ่รวม CAGG ในความเป็นจริง |
-|       [**โครงสร้างฐานข้อมูล**](../docs/architecture/DATABASE_SCHEMA.md)        | ข้อมูลอ้างอิงตาราง/คอลัมน์/view (สร้างอัตโนมัติและผ่าน CI)  |
-|        [**โมเดลความปลอดภัย**](../docs/architecture/SECURITY_MODEL.md)         | ขอบเขตความไว้วางใจ, การตรวจสอบสิทธิ์ของอะแดปเตอร์, และ RBAC |
-| [**การผสานรวมอุปกรณ์ (EAP)**](../docs/architecture/EAP_ARCHITECTURE.md) | สัญญาอแดปเตอร์ SNMP, HTTP/JSON, และ SECS/GEM                 |
-|             [**ความเป็นเจ้าของ**](../docs/architecture/OWNERSHIP.md)              | การบังคับใช้ขอบเขตโดเมนผ่าน `CODEOWNERS`                    |
-|     [**ระบบการออกแบบ**](../docs/architecture/GRAFANA_DESIGN_SYSTEM.md)      | จานสีตามความหมาย, ตัวพิมพ์, เกณฑ์สัญญาต่างๆ                 |
-|   [**สินค้าคงคลังแดชบอร์ด**](../docs/architecture/DASHBOARD_INVENTORY.md)    | ตารางแดชบอร์ดและแผงที่สร้างโดยอัตโนมัติ (ผ่าน CI)           |
+|          [**สถาปัตยกรรม**](docs/architecture/ARCHITECTURE.md)           | บริบทระบบ, ADRs, สถาปัตยกรรมแบบสตรีมมิ่ง, กลยุทธ์ CAGG      |
+|   [**สถาปัตยกรรมแบบรูปภาพ**](docs/architecture/ARCHITECTURE_DIAGRAM.md)   | แผนภาพรูปแบบ C4 Mermaid Model และกระแสการทำงาน              |
+|             [**การไหลของข้อมูล**](docs/architecture/DATA_FLOW.md)              | แผนภาพไพพ์ไลน์แบบ End-to-end, ห่วงโซ่รวม CAGG ในความเป็นจริง |
+|       [**โครงสร้างฐานข้อมูล**](docs/architecture/DATABASE_SCHEMA.md)        | ข้อมูลอ้างอิงตาราง/คอลัมน์/view (สร้างอัตโนมัติและผ่าน CI)  |
+|        [**โมเดลความปลอดภัย**](docs/architecture/SECURITY_MODEL.md)         | ขอบเขตความไว้วางใจ, การตรวจสอบสิทธิ์ของอะแดปเตอร์, และ RBAC |
+| [**การผสานรวมอุปกรณ์ (EAP)**](docs/architecture/EAP_ARCHITECTURE.md) | สัญญาอแดปเตอร์ SNMP, HTTP/JSON, และ SECS/GEM                 |
+|             [**ความเป็นเจ้าของ**](docs/architecture/OWNERSHIP.md)              | การบังคับใช้ขอบเขตโดเมนผ่าน `CODEOWNERS`                    |
+|     [**ระบบการออกแบบ**](docs/architecture/GRAFANA_DESIGN_SYSTEM.md)      | จานสีตามความหมาย, ตัวพิมพ์, เกณฑ์สัญญาต่างๆ                 |
+|   [**สินค้าคงคลังแดชบอร์ด**](docs/architecture/DASHBOARD_INVENTORY.md)    | ตารางแดชบอร์ดและแผงที่สร้างโดยอัตโนมัติ (ผ่าน CI)           |
 
 ### การดำเนินงาน & SRE Playbooks
 
 |                               เอกสาร                                | คำอธิบาย                                                        |
 | :-------------------------------------------------------------------: | --------------------------------------------------------------- |
-|              [**คู่มือผู้ใช้**](../docs/user/USER_MANUAL.md)              | คู่มือแดชบอร์ด, การอ้างอิงตัวชี้วัด, playbook การตอบสนองการแจ้งเตือน |
-|            [**คู่มือผู้ดูแลระบบ**](../docs/admin/ADMIN_MANUAL.md)             | การจัดการ Container, การลงทะเบียนอุปกรณ์, migration, ข้อมูลสำรอง |
-|          [**SOP ผู้ปฏิบัติงาน**](../docs/operations/SOP_OPERATOR.md)          | ขั้นตอนปฏิบัติมาตรฐานสำหรับพนักงานในโรงงาน / Level 1 NOC        |
-|   [**การแก้ไขปัญหา & สัญญาณเตือน**](../docs/operations/ALARM_PLAYBOOK.md)   | คู่มือแก้ไขโค้ดการแจ้งเตือนและการแก้ไขปัญหา                     |
-|     [**การตอบสนองต่อเหตุการณ์**](../docs/operations/INCIDENT_RESPONSE.md)     | เฟรมเวิร์กความรุนแรง + ตัวอย่างเหตุการณ์จริงที่พบ               |
-| [**คู่มือความรุนแรงของสัญญาเตือน**](../docs/architecture/ALARM_SEVERITY_GUIDE.md) | ระดับความรุนแรง 4 ระดับ, ขอบเขต ISA-18.2                        |
-|       [**สำรองข้อมูล & กู้คืน**](../docs/operations/BACKUP_RESTORE.md)       | หลักฐานทดสอบจาก dr-test.sh, ขั้นตอนปฏิบัติ, และข้อควรระวัง      |
-|          [**แผนทดสอบ DR**](../docs/operations/DR_TEST_PLAN.md)          | แผนการซ้อมทดสอบกู้คืนระบบจากภัยพิบัติ 3 ขั้นตอน                 |
-|       [**การเก็บรักษาข้อมูล**](../docs/architecture/DATA_RETENTION.md)       | นโยบายการเก็บรักษาข้อมูล/บีบอัดข้อมูลแบบสด                     |
-|     [**รายการตรวจสอบรีลีส**](../docs/operations/RELEASE_CHECKLIST.md)     | สิ่งที่ควรตรวจสอบก่อนปล่อยระบบเวอร์ชันใหม่                      |
-|       [**การแก้ไขปัญหา**](../docs/operations/TROUBLESHOOTING.md)       | ปัญหาที่พบบ่อย, คำสั่งดีบัก, ขั้นตอนกู้คืนระบบ                  |
+|              [**คู่มือผู้ใช้**](docs/user/USER_MANUAL.md)              | คู่มือแดชบอร์ด, การอ้างอิงตัวชี้วัด, playbook การตอบสนองการแจ้งเตือน |
+|            [**คู่มือผู้ดูแลระบบ**](docs/admin/ADMIN_MANUAL.md)             | การจัดการ Container, การลงทะเบียนอุปกรณ์, migration, ข้อมูลสำรอง |
+|          [**SOP ผู้ปฏิบัติงาน**](docs/operations/SOP_OPERATOR.md)          | ขั้นตอนปฏิบัติมาตรฐานสำหรับพนักงานในโรงงาน / Level 1 NOC        |
+|   [**การแก้ไขปัญหา & สัญญาณเตือน**](docs/operations/ALARM_PLAYBOOK.md)   | คู่มือแก้ไขโค้ดการแจ้งเตือนและการแก้ไขปัญหา                     |
+|     [**การตอบสนองต่อเหตุการณ์**](docs/operations/INCIDENT_RESPONSE.md)     | เฟรมเวิร์กความรุนแรง + ตัวอย่างเหตุการณ์จริงที่พบ               |
+| [**คู่มือความรุนแรงของสัญญาเตือน**](docs/architecture/ALARM_SEVERITY_GUIDE.md) | ระดับความรุนแรง 4 ระดับ, ขอบเขต ISA-18.2                        |
+|       [**สำรองข้อมูล & กู้คืน**](docs/operations/BACKUP_RESTORE.md)       | หลักฐานทดสอบจาก dr-test.sh, ขั้นตอนปฏิบัติ, และข้อควรระวัง      |
+|          [**แผนทดสอบ DR**](docs/operations/DR_TEST_PLAN.md)          | แผนการซ้อมทดสอบกู้คืนระบบจากภัยพิบัติ 3 ขั้นตอน                 |
+|       [**การเก็บรักษาข้อมูล**](docs/architecture/DATA_RETENTION.md)       | นโยบายการเก็บรักษาข้อมูล/บีบอัดข้อมูลแบบสด                     |
+|     [**รายการตรวจสอบรีลีส**](docs/operations/RELEASE_CHECKLIST.md)     | สิ่งที่ควรตรวจสอบก่อนปล่อยระบบเวอร์ชันใหม่                      |
+|       [**การแก้ไขปัญหา**](docs/operations/TROUBLESHOOTING.md)       | ปัญหาที่พบบ่อย, คำสั่งดีบัก, ขั้นตอนกู้คืนระบบ                  |
 
 ### <img src="../docs/assets/icons/users.svg" width="18" height="18" align="center" /> ชุมชน & ข้อมูลอ้างอิง
 
 |                             เอกสาร                             | คำอธิบาย                                                  |
 | :--------------------------------------------------------------: | --------------------------------------------------------- |
-| [**สคริปต์วิดีโอเริ่มต้นใช้งาน**](../docs/product/ONBOARDING_SCRIPT.md) | สตอรี่บอร์ดและคู่มือสำหรับการบันทึก GIFs/วิดีโอสอนเริ่มต้นใช้งาน |
-|               [**การมีส่วนร่วม**](../CONTRIBUTING.md)                | เวิร์กโฟลว์การพัฒนา, การตั้งชื่อสาขา, ข้อตกลงการคอมมิต          |
-|            [**จรรยาบรรณ**](../CODE_OF_CONDUCT.md)             | มาตรฐานชุมชนและการบังคับใช้                               |
-|                [**นโยบายความปลอดภัย**](../SECURITY.md)                | การรายงานช่องโหว่                                         |
-|      [**รายงานบั๊ก**](../.github/ISSUE_TEMPLATE/bug_report.md)      | รายงานจุดบกพร่องหรือการถดถอย                              |
-| [**ขอฟีเจอร์**](../.github/ISSUE_TEMPLATE/feature_request.md) | แนะนำฟีเจอร์ใหม่                                          |
+| [**สคริปต์วิดีโอเริ่มต้นใช้งาน**](docs/product/ONBOARDING_SCRIPT.md) | สตอรี่บอร์ดและคู่มือสำหรับการบันทึก GIFs/วิดีโอสอนเริ่มต้นใช้งาน |
+|               [**การมีส่วนร่วม**](CONTRIBUTING.md)                | เวิร์กโฟลว์การพัฒนา, การตั้งชื่อสาขา, ข้อตกลงการคอมมิต          |
+|            [**จรรยาบรรณ**](CODE_OF_CONDUCT.md)             | มาตรฐานชุมชนและการบังคับใช้                               |
+|                [**นโยบายความปลอดภัย**](SECURITY.md)                | การรายงานช่องโหว่                                         |
+|      [**รายงานบั๊ก**](.github/ISSUE_TEMPLATE/bug_report.md)      | รายงานจุดบกพร่องหรือการถดถอย                              |
+| [**ขอฟีเจอร์**](.github/ISSUE_TEMPLATE/feature_request.md) | แนะนำฟีเจอร์ใหม่                                          |
 
 </div>
 
@@ -435,6 +435,6 @@ IMS/
 
 **สร้างด้วยความแม่นยำ ออกแบบมาเพื่ออัปไทม์ (uptime)**
 
-[MIT License](../LICENSE) — 2026 ผู้ร่วมให้ข้อมูลของ IMS
+[MIT License](LICENSE) — 2026 ผู้ร่วมให้ข้อมูลของ IMS
 
 </div>

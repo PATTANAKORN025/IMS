@@ -102,9 +102,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 12,
-        "w": 2,
-        "h": 4
+        "y": 15,
+        "w": 24,
+        "h": 3
       },
       "repeat": "machine_id",
       "repeatDirection": "h",
@@ -195,9 +195,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 16,
-        "w": 2,
-        "h": 3
+        "y": 18,
+        "w": 24,
+        "h": 1
       },
       "repeat": "machine_id",
       "repeatDirection": "h",
@@ -693,7 +693,7 @@
         "x": 0,
         "y": 4,
         "w": 12,
-        "h": 4
+        "h": 5
       },
       "fieldConfig": {
         "defaults": {
@@ -784,7 +784,7 @@
         "x": 12,
         "y": 4,
         "w": 12,
-        "h": 4
+        "h": 5
       },
       "fieldConfig": {
         "defaults": {
@@ -873,9 +873,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 8,
+        "y": 9,
         "w": 24,
-        "h": 4
+        "h": 6
       },
       "options": {
         "showHeader": true,

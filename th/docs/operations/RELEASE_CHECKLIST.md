@@ -1,13 +1,13 @@
 <!-- GLOBAL_NAV -->
 <div align="right">
-  <a href="../../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
-  <a href="../../../docs/README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+  <a href="../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
 </div>
 <br/>
 
 # Release Checklist
 
-> ตรวจสอบตามรายการนี้ก่อนการทำ tag สำหรับ production release (เช่น ก่อนการ merge เข้า `main` ในลักษณะที่ทริกเกอร์ `semantic-release` หรือก่อนการตัด tag ด้วยตนเอง) นี่คือด่านตรวจสอบที่เกิดขึ้นเป็นประจำว่า "commit นี้ปลอดภัยที่จะเผยแพร่หรือไม่" — สำหรับการเปิดตัว production เริ่มต้นในครั้งแรก โปรดดูรายการตรวจสอบ Go-Live ใน [`DEPLOYMENT_READINESS.md`](../../../docs/operations/DEPLOYMENT_READINESS.md)
+> ตรวจสอบตามรายการนี้ก่อนการทำ tag สำหรับ production release (เช่น ก่อนการ merge เข้า `main` ในลักษณะที่ทริกเกอร์ `semantic-release` หรือก่อนการตัด tag ด้วยตนเอง) นี่คือด่านตรวจสอบที่เกิดขึ้นเป็นประจำว่า "commit นี้ปลอดภัยที่จะเผยแพร่หรือไม่" — สำหรับการเปิดตัว production เริ่มต้นในครั้งแรก โปรดดูรายการตรวจสอบ Go-Live ใน [`DEPLOYMENT_READINESS.md`](DEPLOYMENT_READINESS.md)
 
 ---
 

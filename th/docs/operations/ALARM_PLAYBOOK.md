@@ -1,7 +1,7 @@
 <!-- GLOBAL_NAV -->
 <div align="right">
-  <a href="../../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>หน้าหลัก</b></a> &nbsp;|&nbsp;
-  <a href="../../../docs/README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>ดัชนีเอกสาร</b></a>
+  <a href="../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>หน้าหลัก</b></a> &nbsp;|&nbsp;
+  <a href="../README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>ดัชนีเอกสาร</b></a>
 </div>
 <br/>
 
@@ -127,6 +127,6 @@
 
 ---
 
-[⬅️ กลับสู่หนังสือแพลตฟอร์ม IMS](../../../docs/architecture/IMS_PLATFORM_BOOK.md) | [<img src="../../../docs/assets/icons/home.svg" width="18" align="center" /> ที่เก็บข้อมูลหลัก](../../../README.md)
+[⬅️ กลับสู่หนังสือแพลตฟอร์ม IMS](../architecture/IMS_PLATFORM_BOOK.md) | [<img src="../../../docs/assets/icons/home.svg" width="18" align="center" /> ที่เก็บข้อมูลหลัก](../../README.md)
 
 _เวอร์ชัน 2.0, แก้ไข 2026-08-10 — ดู `docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md` สำหรับโปรแกรมเอกสารที่กว้างขึ้นซึ่งการแก้ไขนี้เป็นส่วนหนึ่ง_

@@ -1,7 +1,7 @@
 <!-- GLOBAL_NAV -->
 <div align="right">
-  <a href="../../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>首页</b></a> &nbsp;|&nbsp;
-  <a href="../../../docs/README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>文档索引</b></a>
+  <a href="../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>首页</b></a> &nbsp;|&nbsp;
+  <a href="../README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>文档索引</b></a>
 </div>
 <br/>
 
@@ -54,7 +54,7 @@
   2. **安全第一：** 如果存在任何直接的安全风险或严重的设备损坏风险，请按下物理紧急停止 (E-Stop) 按钮。
   3. **沟通话术：** 立即在运营 LINE 群组中宣布：
      > _"严重：LDI-[Machine-ID] 宕机。错误：[Metric/Alarm Code]。产线已停止。"_
-  4. 请参阅 [ALARM PLAYBOOK](../../../docs/operations/ALARM_PLAYBOOK.md) 以了解控制台上显示的具体故障代码。
+  4. 请参阅 [ALARM PLAYBOOK](ALARM_PLAYBOOK.md) 以了解控制台上显示的具体故障代码。
 
 ---
 
@@ -97,9 +97,9 @@
 
 ## 相关文档
 
-- [INCIDENT RESPONSE](../../../docs/operations/INCIDENT_RESPONSE.md) — 重大事件处理程序。
-- [ALARM PLAYBOOK](../../../docs/operations/ALARM_PLAYBOOK.md) — 特定的机器错误代码。
+- [INCIDENT RESPONSE](INCIDENT_RESPONSE.md) — 重大事件处理程序。
+- [ALARM PLAYBOOK](ALARM_PLAYBOOK.md) — 特定的机器错误代码。
 
 ---
 
-[⬅️ 返回 IMS 平台手册](../../../docs/architecture/IMS_PLATFORM_BOOK.md) | [<img src="../../../docs/assets/icons/home.svg" width="18" align="center" /> 主代码库](../../../README.md)
+[⬅️ 返回 IMS 平台手册](../architecture/IMS_PLATFORM_BOOK.md) | [<img src="../../../docs/assets/icons/home.svg" width="18" align="center" /> 主代码库](../../README.md)

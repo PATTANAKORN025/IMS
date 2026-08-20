@@ -27,7 +27,7 @@
 
 ## 检查清单：
 
-- [ ] 我的代码遵循 [贡献指南 (Contributing Guidelines)](../../CONTRIBUTING.md)
+- [ ] 我的代码遵循 [贡献指南 (Contributing Guidelines)](../CONTRIBUTING.md)
 - [ ] 我已经对自己的代码进行了自我审查
 - [ ] 我已经为我的代码添加了注释，特别是在难以理解的地方
 - [ ] 我已对文档进行了相应的更改

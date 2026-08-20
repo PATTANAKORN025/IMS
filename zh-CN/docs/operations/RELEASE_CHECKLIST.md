@@ -1,13 +1,13 @@
 <!-- GLOBAL_NAV -->
 <div align="right">
-  <a href="../../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
-  <a href="../../../docs/README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+  <a href="../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
 </div>
 <br/>
 
 # Release Checklist
 
-> 在标记生产环境发布（即在触发 `semantic-release` 的情况下合并到 `main` 之前，或在手动打 tag 之前）请执行此操作。这是定期发生的“此提交是否安全发布”的关卡 — 对于首次一次性的生产环境推出，请参阅 [`DEPLOYMENT_READINESS.md`](../../../docs/operations/DEPLOYMENT_READINESS.md) 的 Go-Live 清单。
+> 在标记生产环境发布（即在触发 `semantic-release` 的情况下合并到 `main` 之前，或在手动打 tag 之前）请执行此操作。这是定期发生的“此提交是否安全发布”的关卡 — 对于首次一次性的生产环境推出，请参阅 [`DEPLOYMENT_READINESS.md`](DEPLOYMENT_READINESS.md) 的 Go-Live 清单。
 
 ---
 

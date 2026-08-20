@@ -1,7 +1,7 @@
 <!-- GLOBAL_NAV -->
 <div align="right">
-  <a href="../../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
-  <a href="../../../docs/README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+  <a href="../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
 </div>
 <br/>
 
@@ -31,15 +31,15 @@ flowchart LR
 
 ## <img src="../../../docs/assets/icons/file-text.svg" width="18" align="center" /> ดัชนีไฟล์ (File Index)
 
-- [ALARM_LATENCY_MEASUREMENT_NOTE.md](../../../docs/evidence/ALARM_LATENCY_MEASUREMENT_NOTE.md)
-- [DATA_INTEGRITY_VALIDATION_2026-08-15.md](../../../docs/evidence/DATA_INTEGRITY_VALIDATION_2026-08-15.md)
-- [DR_DRILL_3_FINDINGS.md](../../../docs/evidence/DR_DRILL_3_FINDINGS.md)
-- [EVIDENCE_PACK.md](../../../docs/evidence/EVIDENCE_PACK.md)
-- [FAULT_INJECTION_PLAN.md](../../../docs/evidence/FAULT_INJECTION_PLAN.md)
-- [FINAL_ACCEPTANCE_MATRIX_2026-08-15.md](../../../docs/evidence/FINAL_ACCEPTANCE_MATRIX_2026-08-15.md)
-- [HISTORICAL_DATA_RECONCILIATION_2026-08-15.md](../../../docs/evidence/HISTORICAL_DATA_RECONCILIATION_2026-08-15.md)
-- [INDEX.md](../../../docs/evidence/INDEX.md)
-- [SCALE_TEST_2026-08-15.md](../../../docs/evidence/SCALE_TEST_2026-08-15.md)
-- [SOAK_TEST_LOG.md](../../../docs/evidence/SOAK_TEST_LOG.md)
-- [SYSTEM_TRUST_REPORT.md](../../../docs/evidence/SYSTEM_TRUST_REPORT.md)
-- [TV_WALL_FIELD_VALIDATION.md](../../../docs/evidence/TV_WALL_FIELD_VALIDATION.md)
+- [ALARM_LATENCY_MEASUREMENT_NOTE.md](ALARM_LATENCY_MEASUREMENT_NOTE.md)
+- [DATA_INTEGRITY_VALIDATION_2026-08-15.md](DATA_INTEGRITY_VALIDATION_2026-08-15.md)
+- [DR_DRILL_3_FINDINGS.md](DR_DRILL_3_FINDINGS.md)
+- [EVIDENCE_PACK.md](EVIDENCE_PACK.md)
+- [FAULT_INJECTION_PLAN.md](FAULT_INJECTION_PLAN.md)
+- [FINAL_ACCEPTANCE_MATRIX_2026-08-15.md](FINAL_ACCEPTANCE_MATRIX_2026-08-15.md)
+- [HISTORICAL_DATA_RECONCILIATION_2026-08-15.md](HISTORICAL_DATA_RECONCILIATION_2026-08-15.md)
+- [INDEX.md](INDEX.md)
+- [SCALE_TEST_2026-08-15.md](SCALE_TEST_2026-08-15.md)
+- [SOAK_TEST_LOG.md](SOAK_TEST_LOG.md)
+- [SYSTEM_TRUST_REPORT.md](SYSTEM_TRUST_REPORT.md)
+- [TV_WALL_FIELD_VALIDATION.md](TV_WALL_FIELD_VALIDATION.md)

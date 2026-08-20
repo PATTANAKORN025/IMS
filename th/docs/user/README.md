@@ -1,7 +1,7 @@
 <!-- GLOBAL_NAV -->
 <div align="right">
-  <a href="../../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
-  <a href="../../../docs/README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+  <a href="../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
 </div>
 <br/>
 
@@ -24,4 +24,4 @@ flowchart LR
 
 - [USER_MANUAL-th.md](USER_MANUAL.md)
 - [USER_MANUAL-zh-CN.md](../../../zh-CN/docs/user/USER_MANUAL.md)
-- [USER_MANUAL.md](../../../docs/user/USER_MANUAL.md)
+- [USER_MANUAL.md](USER_MANUAL.md)

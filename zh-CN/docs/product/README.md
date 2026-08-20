@@ -1,7 +1,7 @@
 <!-- GLOBAL_NAV -->
 <div align="right">
-  <a href="../../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
-  <a href="../../../docs/README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+  <a href="../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
 </div>
 <br/>
 
@@ -25,9 +25,9 @@ flowchart LR
 
 ## <img src="../../../docs/assets/icons/file-text.svg" width="18" align="center" /> 文件索引
 
-- [CONTEXT.md](../../../docs/product/CONTEXT.md)
+- [CONTEXT.md](CONTEXT.md)
 - [DASHBOARD_ECOSYSTEM-th.md](../../../th/docs/product/DASHBOARD_ECOSYSTEM.md)
 - [DASHBOARD_ECOSYSTEM-zh-CN.md](DASHBOARD_ECOSYSTEM.md)
-- [DASHBOARD_ECOSYSTEM.md](../../../docs/product/DASHBOARD_ECOSYSTEM.md)
-- [ONBOARDING_SCRIPT.md](../../../docs/product/ONBOARDING_SCRIPT.md)
-- [PRODUCT.md](../../../docs/product/PRODUCT.md)
+- [DASHBOARD_ECOSYSTEM.md](DASHBOARD_ECOSYSTEM.md)
+- [ONBOARDING_SCRIPT.md](ONBOARDING_SCRIPT.md)
+- [PRODUCT.md](PRODUCT.md)
