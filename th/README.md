@@ -1,7 +1,7 @@
 <!-- GLOBAL_NAV -->
 <div align="right">
   <a href="README.md"><img src="../docs/assets/icons/home.svg" width="16" align="center" /> <b>หน้าหลัก</b></a> &nbsp;|&nbsp;
-  <a href="docs/README.md"><img src="../docs/assets/icons/book.svg" width="16" align="center" /> <b>ดัชนีเอกสาร</b></a> &nbsp;|&nbsp; <a href="../README.md">🌐 <b>English</b></a> &nbsp;|&nbsp; <a href="README.md">🇹🇭 <b>ภาษาไทย</b></a> &nbsp;|&nbsp; <a href="../zh-CN/README.md">🇨🇳 <b>中文</b></a>
+  <a href="docs/README.md"><img src="../docs/assets/icons/book.svg" width="16" align="center" /> <b>ดัชนีเอกสาร</b></a>
 </div>
 <br/>
 
@@ -24,14 +24,6 @@
 </div>
 
 <h1 align="center">Industrial Monitoring System (IMS)</h1>
-
-<div align="center">
- <p>
-  <a href="README.md"><img src="../docs/assets/icons/gb.svg" width="18" align="center"/> <b>English</b></a> |
-  <a href="README.md"><img src="../docs/assets/icons/th.svg" width="18" align="center"/> <b>ไทย</b></a> |
-  <a href="../zh-CN/README.md"><img src="../docs/assets/icons/tw.svg" width="18" align="center"/> <b>中文</b></a>
- </p>
-</div>
 
 <div align="center">
  <strong>การวัดและส่งข้อมูลทางไกล (Telemetry) ในการผลิตที่แม่นยำสูง และการควบคุมกระบวนการทางสถิติ</strong>
