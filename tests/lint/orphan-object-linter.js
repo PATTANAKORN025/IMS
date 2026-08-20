@@ -35,6 +35,8 @@ const EXEMPT = new Set([
   'ldi_data_15m', 'ldi_data_1h', 'ldi_data_hourly',
   // Postgres/TimescaleDB system objects, not app-created.
   'pg_stat_statements', 'pg_stat_statements_info', 'schema_migrations',
+  // Audit tables populated by system triggers or external agents, no dashboard view needed.
+  'container_restart_audit',
 ]);
 
 function getLiveDbObjects() {
