@@ -8,12 +8,16 @@
  *   ldi_data_1h    -> ranges > 2 days
  *
  * Static analysis only (no DB connection) — flags any panel that queries
- * raw `public.ldi_data` with a RANGE-SCAN shape (time_bucket + $__timeFilter,
- * i.e. "give me a trend over the selected window") instead of a
- * latest-value shape (ORDER BY time DESC LIMIT 1, or a specific log_id/
- * event lookup). A range scan against raw ldi_data is exactly the query
- * shape that gets slow as the table grows — that's what the CAGG tiers
- * exist to prevent.
+ * raw `public.ldi_data` with a RANGE-SCAN shape (time_bucket()/date_bin() +
+ * $__timeFilter, i.e. "give me a trend over the selected window") instead
+ * of a latest-value shape (ORDER BY time DESC LIMIT 1, or a specific
+ * log_id/event lookup). A range scan against raw ldi_data is exactly the
+ * query shape that gets slow as the table grows — that's what the CAGG
+ * tiers exist to prevent. time_bucket() and date_bin() are both flagged:
+ * they're the two bucketing functions this codebase uses interchangeably
+ * for the same range-scan shape (see ims-ldi-manufacturing.json and
+ * ims-ldi-engineering-analytics.json for real date_bin() panels this
+ * linter previously missed entirely).
  *
  * Exemptions (deliberately NOT flagged):
  *   - Cpk/StdDev panels (CROSS JOIN LATERAL unpivot + STDDEV_SAMP) — need
@@ -42,11 +46,26 @@ function isLatestValueShape(sql) {
 }
 
 function isRangeScanShape(sql) {
-  return /time_bucket\(/i.test(sql) && /\$__timeFilter/i.test(sql);
+  return (/time_bucket\(/i.test(sql) || /date_bin\(/i.test(sql)) && /\$__timeFilter/i.test(sql);
 }
 
 function usesStddev(sql) {
   return /STDDEV_SAMP|STDDEV\(/i.test(sql);
+}
+
+// Pure predicate: should this one target's SQL be flagged as an
+// unbudgeted range scan against raw ldi_data? No side effects (no
+// console output, no counter mutation) so this can be unit-tested
+// directly against synthetic SQL fixtures, not just real dashboard files.
+function shouldFlagTarget(panel, sql) {
+  if (panel.type === 'row') return false;
+  if (panel.type === 'state-timeline') return false; // documented exemption
+  if (!sql) return false;
+  if (!/FROM\s+public\.ldi_data\b(?!_)/i.test(sql)) return false; // not raw ldi_data (or is a _1m/_15m/_1h/_hourly CAGG)
+  if (sql.includes('NO_TIMEFILTER_INTENTIONAL')) return false; // established opt-out
+  if (isLatestValueShape(sql)) return false; // legitimate latest-value lookup
+  if (usesStddev(sql)) return false; // Cpk/StdDev, needs raw samples, documented exemption
+  return isRangeScanShape(sql);
 }
 
 function lintDashboard(filePath) {
@@ -54,31 +73,14 @@ function lintDashboard(filePath) {
   const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
 
   for (const panel of data.panels || []) {
-    if (panel.type === 'row') continue;
-    if (panel.type === 'state-timeline') continue; // documented exemption
-
     for (const target of panel.targets || []) {
       const sql = target.rawSql;
-      if (!sql) continue;
-      if (!/FROM\s+public\.ldi_data\b(?!_)/i.test(sql)) continue; // not raw ldi_data (or is a _1m/_15m/_1h/_hourly CAGG)
-      if (sql.includes('NO_TIMEFILTER_INTENTIONAL')) continue; // established opt-out
-      if (isLatestValueShape(sql)) continue; // legitimate latest-value lookup
-      if (usesStddev(sql)) continue; // Cpk/StdDev, needs raw samples, documented exemption
-
-      if (isRangeScanShape(sql)) {
+      if (shouldFlagTarget(panel, sql)) {
         warnings++;
         console.warn(`  WARN   ${file} [panel ${panel.id}] "${panel.title}" [${target.refId}] — range-scan query against raw ldi_data. Per the tiering contract (docs/GRAFANA_DESIGN_SYSTEM.md §10), this should read from ldi_data_1m/_15m/_1h depending on range, unless this is a genuinely bounded/short lookup (add NO_TIMEFILTER_INTENTIONAL or LIMIT 1 if intentional).`);
       }
     }
   }
-}
-
-console.log('IMS Query Budget Linter');
-console.log('='.repeat(50));
-
-if (!fs.existsSync(DASHBOARD_DIR)) {
-  console.error('Dashboard directory not found:', DASHBOARD_DIR);
-  process.exit(1);
 }
 
 function listDashboardJsonFiles(dir) {
@@ -95,22 +97,37 @@ function listDashboardJsonFiles(dir) {
   return out;
 }
 
-const jsonFiles = listDashboardJsonFiles(DASHBOARD_DIR);
+// CLI entry point only -- guarded so `require()`-ing this file for unit
+// tests exercises just the pure functions below, without scanning the
+// real dashboard directory or calling process.exit().
+if (require.main === module) {
+  console.log('IMS Query Budget Linter');
+  console.log('='.repeat(50));
 
-for (const f of jsonFiles) {
-  lintDashboard(path.join(DASHBOARD_DIR, f));
+  if (!fs.existsSync(DASHBOARD_DIR)) {
+    console.error('Dashboard directory not found:', DASHBOARD_DIR);
+    process.exit(1);
+  }
+
+  const jsonFiles = listDashboardJsonFiles(DASHBOARD_DIR);
+
+  for (const f of jsonFiles) {
+    lintDashboard(path.join(DASHBOARD_DIR, f));
+  }
+
+  console.log('='.repeat(50));
+  console.log(`Results: ${errors} errors, ${warnings} warnings`);
+
+  if (errors > 0) {
+    console.error('LINT FAILED — fix errors above');
+    process.exit(1);
+  } else if (warnings > 0) {
+    console.warn('LINT PASSED with warnings — review flagged panels against the tiering contract');
+    process.exit(0);
+  } else {
+    console.log('LINT PASSED — no raw-table range scans found');
+    process.exit(0);
+  }
 }
 
-console.log('='.repeat(50));
-console.log(`Results: ${errors} errors, ${warnings} warnings`);
-
-if (errors > 0) {
-  console.error('LINT FAILED — fix errors above');
-  process.exit(1);
-} else if (warnings > 0) {
-  console.warn('LINT PASSED with warnings — review flagged panels against the tiering contract');
-  process.exit(0);
-} else {
-  console.log('LINT PASSED — no raw-table range scans found');
-  process.exit(0);
-}
+module.exports = { isLatestValueShape, isRangeScanShape, usesStddev, shouldFlagTarget };
