@@ -1,7 +1,7 @@
 <!-- GLOBAL_NAV -->
 <div align="right">
-  <a href="../README.md"><img src="../docs/assets/icons/home.svg" width="16" align="center" /> <b>首页</b></a> &nbsp;|&nbsp;
-  <a href="../docs/README.md"><img src="../docs/assets/icons/book.svg" width="16" align="center" /> <b>文档索引</b></a>
+  <a href="README.md"><img src="../docs/assets/icons/home.svg" width="16" align="center" /> <b>首页</b></a> &nbsp;|&nbsp;
+  <a href="docs/README.md"><img src="../docs/assets/icons/book.svg" width="16" align="center" /> <b>文档索引</b></a> &nbsp;|&nbsp; <a href="../README.md">🌐 <b>English</b></a> &nbsp;|&nbsp; <a href="../th/README.md">🇹🇭 <b>ภาษาไทย</b></a> &nbsp;|&nbsp; <a href="README.md">🇨🇳 <b>中文</b></a>
 </div>
 <br/>
 
@@ -27,7 +27,7 @@
 
 <div align="center">
  <p>
-  <a href="../README.md"><img src="../docs/assets/icons/gb.svg" width="18" align="center"/> <b>English</b></a> |
+  <a href="README.md"><img src="../docs/assets/icons/gb.svg" width="18" align="center"/> <b>English</b></a> |
   <a href="../th/README.md"><img src="../docs/assets/icons/th.svg" width="18" align="center"/> <b>ไทย</b></a> |
   <a href="README.md"><img src="../docs/assets/icons/tw.svg" width="18" align="center"/> <b>中文</b></a>
  </p>
@@ -52,7 +52,7 @@
 
 <div align="center">
   <a href="#quick-start"><img src="https://img.shields.io/badge/-Release_v1.0-030407?style=for-the-badge&logo=github&logoColor=10B981" alt="Release"/></a>
-  <a href="../LICENSE"><img src="https://img.shields.io/badge/-MIT_License-030407?style=for-the-badge&logo=opensourceinitiative&logoColor=00F2FE" alt="License"/></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/-MIT_License-030407?style=for-the-badge&logo=opensourceinitiative&logoColor=00F2FE" alt="License"/></a>
   <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/-Docker_Ready-030407?style=for-the-badge&logo=docker&logoColor=2496ED" alt="Docker"/></a>
   <a href="https://grafana.com/"><img src="https://img.shields.io/badge/-Grafana_v11+-030407?style=for-the-badge&logo=grafana&logoColor=F46800" alt="Grafana"/></a>
   <a href="https://nodered.org/"><img src="https://img.shields.io/badge/-Node--RED_v4+-030407?style=for-the-badge&logo=nodered&logoColor=8F0000" alt="Node-RED"/></a>
@@ -60,14 +60,14 @@
   <br>
   <a href="#quick-start"><img src="https://img.shields.io/badge/Status-Tests_Passing-10B981?style=for-the-badge&logoColor=white" alt="Tests" /></a>
   <a href="#quick-start"><img src="https://img.shields.io/badge/K6-Stress--Tested-030407?style=for-the-badge&logo=k6&logoColor=7B61FF" alt="K6" /></a>
-  <a href="../data-generators"><img src="https://img.shields.io/badge/Data-Digital_Twin-030407?style=for-the-badge&logo=python&logoColor=00C7B7" alt="Synthetic Data" /></a>
+  <a href="data-generators"><img src="https://img.shields.io/badge/Data-Digital_Twin-030407?style=for-the-badge&logo=python&logoColor=00C7B7" alt="Synthetic Data" /></a>
 </div>
 
 <br/>
 
 <div align="center" justify-content="space-between">
-  <a href="../docs/architecture/IMS_PLATFORM_BOOK.md"><img src="https://img.shields.io/badge/PLATFORM_BOOK-ENTER-blue?color=00F2FE&labelColor=030407&style=for-the-badge"></a>
-  <a href="../docs/architecture/ARCHITECTURE.md"><img src="https://img.shields.io/badge/ARCHITECTURE-READ-blue?color=10B981&labelColor=030407&style=for-the-badge"></a>
+  <a href="docs/architecture/IMS_PLATFORM_BOOK.md"><img src="https://img.shields.io/badge/PLATFORM_BOOK-ENTER-blue?color=00F2FE&labelColor=030407&style=for-the-badge"></a>
+  <a href="docs/architecture/ARCHITECTURE.md"><img src="https://img.shields.io/badge/ARCHITECTURE-READ-blue?color=10B981&labelColor=030407&style=for-the-badge"></a>
 </div>
 
 <br/>
@@ -114,7 +114,7 @@
 </tr>
 </table>
 
-> <img src="../docs/assets/icons/aperture.svg" width="18" align="center" /> **探索生态系统：** 查看完整的 [15-仪表板宏观到微观架构指南](../docs/product/DASHBOARD_ECOSYSTEM.md) 以深入了解 IMS 如何从高层级业务指标扩展到传感器级诊断数据。
+> <img src="../docs/assets/icons/aperture.svg" width="18" align="center" /> **探索生态系统：** 查看完整的 [15-仪表板宏观到微观架构指南](docs/product/DASHBOARD_ECOSYSTEM.md) 以深入了解 IMS 如何从高层级业务指标扩展到传感器级诊断数据。
 
 <br/>
 
@@ -127,7 +127,7 @@
 <td align="center" width="33%">
  <h3>遥测数据摄取</h3>
  并行 Node-RED walkers 利用顺序批量 SNMP 轮询和 HTTP 端点，通过 PgBouncer 事务池将数据持久化到 TimescaleDB。<br/><br/>
- **已验证：** [nodered-ingestion-20260813.txt](../docs/evidence/runtime/nodered-ingestion-20260813.txt)
+ **已验证：** [nodered-ingestion-20260813.txt](docs/evidence/runtime/nodered-ingestion-20260813.txt)
 </td>
 <td align="center" width="33%">
  <h3>统计过程控制 (SPC)</h3>
@@ -136,7 +136,7 @@
 <td align="center" width="33%">
  <h3>连续聚合</h3>
  由 TimescaleDB 自动计算每小时、每天和每周的汇总，以便在较长时间范围内保持 Grafana 亚秒级的呈现时间。<br/><br/>
- **已验证：** [cagg-policies-20260813.txt](../docs/evidence/runtime/cagg-policies-20260813.txt)
+ **已验证：** [cagg-policies-20260813.txt](docs/evidence/runtime/cagg-policies-20260813.txt)
 </td>
 </tr>
 </table>
@@ -166,7 +166,7 @@ open http://localhost:3000
 ```
 
 > **期待什么：** 温和的模拟（约 10-15 行/分钟），让您点击 LDI 制造指挥中心，查看操作员安灯板，并查看实时 Cpk 能力图表。
-> **已验证：** `docker compose ps` 在 2026-08-13 的结果，存档在 [`docs/evidence/runtime/compose-ps-20260813.txt`](../docs/evidence/runtime/compose-ps-20260813.txt) 中。
+> **已验证：** `docker compose ps` 在 2026-08-13 的结果，存档在 [`docs/evidence/runtime/compose-ps-20260813.txt`](docs/evidence/runtime/compose-ps-20260813.txt) 中。
 
 ### 路径 B：性能试验场（压力测试）
 
@@ -192,7 +192,7 @@ make test-load # 触发 K6 压力测试框架
 
 ### 验证和证据
 
-每一项架构声明都有持续集成或明确的测试脚本作为后盾。有关负载测试结果、视觉回归证据和灾难恢复验证，请参阅 **[证据索引](../docs/evidence/INDEX.md)**。
+每一项架构声明都有持续集成或明确的测试脚本作为后盾。有关负载测试结果、视觉回归证据和灾难恢复验证，请参阅 **[证据索引](docs/evidence/INDEX.md)**。
 
 <details>
 <summary><b>可用命令</b></summary>
@@ -274,7 +274,7 @@ flowchart LR
 <details>
 <summary><b>仪表板架构</b></summary>
 
-15 个仪表板 — 5 个基础架构，10 个制造 (`monitoring/grafana/dashboards/{infrastructure,manufacturing}/`，分配在不同的 Grafana 文件夹中 — 有关域边界，请参阅 **[所有权](../docs/architecture/OWNERSHIP.md)**)。包含面板计数和描述的完整表格：**[仪表板清单](../docs/architecture/DASHBOARD_INVENTORY.md)** — 从仪表板 JSON 本身自动生成 (`node scripts/generate-dashboard-inventory.js`)，经过 CI 检查，因此它不能像手动输入的表格那样无声地偏离真实的仪表板。
+15 个仪表板 — 5 个基础架构，10 个制造 (`monitoring/grafana/dashboards/{infrastructure,manufacturing}/`，分配在不同的 Grafana 文件夹中 — 有关域边界，请参阅 **[所有权](docs/architecture/OWNERSHIP.md)**)。包含面板计数和描述的完整表格：**[仪表板清单](docs/architecture/DASHBOARD_INVENTORY.md)** — 从仪表板 JSON 本身自动生成 (`node scripts/generate-dashboard-inventory.js`)，经过 CI 检查，因此它不能像手动输入的表格那样无声地偏离真实的仪表板。
 
 **设计系统：** 赛博朋克 HUD — `#030407` 背景，Tailwind 调色板 (`#10B981` 健康，`#F59E0B` 警告，`#EF4444` 关键，`#3B82F6` 重点)，用于统计值的 Roboto Mono，拟物化玻璃面板，Grid-24 无重叠布局。
 
@@ -323,7 +323,7 @@ open "http://localhost:3000/playlists/play/1?kiosk=tv&autofitpanels"
 - `sys_hourly` / `net_hourly` / `ldi_hourly` / `ldi_data_1m` / `ldi_data_15m` / `ldi_data_1h` / `ldi_data_hourly` — 连续聚合
 - `v_machine_spc_fleet` / `v_ldi_rca_recent_window` / `v_ldi_rca_truth_test` — 物化视图，每 60 秒刷新一次
 
-精确的列数、完整的视图/CAGG 列表和应用的迁移计数：**[数据库模式清单](../docs/architecture/DATABASE_SCHEMA.md)** — 从 `information_schema` + `timescaledb_information.*` (`node scripts/generate-schema-inventory.js`) 自动生成，在实时数据库中通过 CI 检查。
+精确的列数、完整的视图/CAGG 列表和应用的迁移计数：**[数据库模式清单](docs/architecture/DATABASE_SCHEMA.md)** — 从 `information_schema` + `timescaledb_information.*` (`node scripts/generate-schema-inventory.js`) 自动生成，在实时数据库中通过 CI 检查。
 
 </details>
 
@@ -372,60 +372,60 @@ IMS/
 
 |                                 文档                                 | 描述                                                             |
 | :----------------------------------------------------------------------: | ----------------------------------------------------------------------- |
-|     [**业务价值与 ROI**](../docs/business/BUSINESS_VALUE_ROI.md)      | 执行摘要，成本节约，MTTR 减少，及战略影响   |
-| [**平台手册 (从这里开始)**](../docs/architecture/IMS_PLATFORM_BOOK.md) | 全套文档的导航枢纽，术语表 |
-|              [**产品背景**](../docs/product/PRODUCT.md)              | 产品目的，目标受众，及产品定位                       |
+|     [**业务价值与 ROI**](docs/business/BUSINESS_VALUE_ROI.md)      | 执行摘要，成本节约，MTTR 减少，及战略影响   |
+| [**平台手册 (从这里开始)**](docs/architecture/IMS_PLATFORM_BOOK.md) | 全套文档的导航枢纽，术语表 |
+|              [**产品背景**](docs/product/PRODUCT.md)              | 产品目的，目标受众，及产品定位                       |
 
 ### <img src="../docs/assets/icons/factory.svg" width="18" height="18" align="center" /> 制造与 LDI 智能
 
 |                                       文档                                        | 描述                                                            |
 | :-----------------------------------------------------------------------------------: | ---------------------------------------------------------------------- |
-| [**制造平台计划**](../docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md) | 基础架构/制造领域分离，验证/浸泡/灾难恢复上线计划 |
-|         [**制造领域**](../docs/architecture/MANUFACTURING_DOMAIN.md)         | LDI 模式/仪表板模式及上线流程                   |
-|                [**LDI SPC 指南**](../docs/architecture/LDI_SPC_GUIDE.md)                | 过程能力 (Cpk) 方法和公式                       |
-|                [**LDI RCA 指南**](../docs/architecture/LDI_RCA_GUIDE.md)                | 根本原因相关性 (提升度/置信度) 方法                   |
-|       [**LDI 验证协议**](../docs/operations/LDI_VALIDATION_PROTOCOL.md)       | 4 阶段生产签收程序                                  |
+| [**制造平台计划**](docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md) | 基础架构/制造领域分离，验证/浸泡/灾难恢复上线计划 |
+|         [**制造领域**](docs/architecture/MANUFACTURING_DOMAIN.md)         | LDI 模式/仪表板模式及上线流程                   |
+|                [**LDI SPC 指南**](docs/architecture/LDI_SPC_GUIDE.md)                | 过程能力 (Cpk) 方法和公式                       |
+|                [**LDI RCA 指南**](docs/architecture/LDI_RCA_GUIDE.md)                | 根本原因相关性 (提升度/置信度) 方法                   |
+|       [**LDI 验证协议**](docs/operations/LDI_VALIDATION_PROTOCOL.md)       | 4 阶段生产签收程序                                  |
 
 ### <img src="../docs/assets/icons/layers.svg" width="18" height="18" align="center" /> 核心架构与安全
 
 |                                 文档                                 | 描述                                                 |
 | :----------------------------------------------------------------------: | ----------------------------------------------------------- |
-|          [**架构**](../docs/architecture/ARCHITECTURE.md)           | 系统上下文，ADRs，流式架构，CAGG 策略 |
-|   [**可视化架构**](../docs/architecture/ARCHITECTURE_DIAGRAM.md)   | Mermaid C4 模型图和序列流                |
-|             [**数据流**](../docs/architecture/DATA_FLOW.md)              | 端到端管道图，实际的 CAGG 汇总链    |
-|       [**数据库模式**](../docs/architecture/DATABASE_SCHEMA.md)        | 自动生成的表/列/视图参考 (经过 CI 检查)     |
-|        [**安全模型**](../docs/architecture/SECURITY_MODEL.md)         | 信任边界，每个适配器的身份验证，及 RBAC      |
-| [**设备集成 (EAP)**](../docs/architecture/EAP_ARCHITECTURE.md) | SNMP、HTTP/JSON 和 SECS/GEM 适配器约定             |
-|             [**所有权**](../docs/architecture/OWNERSHIP.md)              | 通过 `CODEOWNERS` 强制执行域边界                 |
-|     [**设计系统**](../docs/architecture/GRAFANA_DESIGN_SYSTEM.md)      | 语义调色板，排版，阈值约定     |
-|   [**仪表板清单**](../docs/architecture/DASHBOARD_INVENTORY.md)    | 自动生成的仪表板/面板计数表 (经过 CI 检查)     |
+|          [**架构**](docs/architecture/ARCHITECTURE.md)           | 系统上下文，ADRs，流式架构，CAGG 策略 |
+|   [**可视化架构**](docs/architecture/ARCHITECTURE_DIAGRAM.md)   | Mermaid C4 模型图和序列流                |
+|             [**数据流**](docs/architecture/DATA_FLOW.md)              | 端到端管道图，实际的 CAGG 汇总链    |
+|       [**数据库模式**](docs/architecture/DATABASE_SCHEMA.md)        | 自动生成的表/列/视图参考 (经过 CI 检查)     |
+|        [**安全模型**](docs/architecture/SECURITY_MODEL.md)         | 信任边界，每个适配器的身份验证，及 RBAC      |
+| [**设备集成 (EAP)**](docs/architecture/EAP_ARCHITECTURE.md) | SNMP、HTTP/JSON 和 SECS/GEM 适配器约定             |
+|             [**所有权**](docs/architecture/OWNERSHIP.md)              | 通过 `CODEOWNERS` 强制执行域边界                 |
+|     [**设计系统**](docs/architecture/GRAFANA_DESIGN_SYSTEM.md)      | 语义调色板，排版，阈值约定     |
+|   [**仪表板清单**](docs/architecture/DASHBOARD_INVENTORY.md)    | 自动生成的仪表板/面板计数表 (经过 CI 检查)     |
 
 ### 运营与 SRE 手册
 
 |                               文档                                | 描述                                                     |
 | :-------------------------------------------------------------------: | --------------------------------------------------------------- |
-|              [**用户手册**](../docs/user/USER_MANUAL.md)              | 仪表板指南，指标参考，警报响应手册     |
-|            [**管理员手册**](../docs/admin/ADMIN_MANUAL.md)             | 容器操作，设备注册，迁移，备份/恢复 |
-|          [**操作员 SOP**](../docs/operations/SOP_OPERATOR.md)          | 工厂车间 / 1 级 NOC 的标准操作程序   |
-|   [**故障排除和警报**](../docs/operations/ALARM_PLAYBOOK.md)   | 警报代码解析和故障排除手册              |
-|     [**事件响应**](../docs/operations/INCIDENT_RESPONSE.md)     | 严重性框架 + 实际发生的事件示例              |
-| [**警报严重性指南**](../docs/architecture/ALARM_SEVERITY_GUIDE.md) | 4 级严重性分类，ISA-18.2 范围                    |
-|       [**备份和恢复**](../docs/operations/BACKUP_RESTORE.md)       | 真实的 dr-test.sh 证据，程序和注意事项                |
-|          [**灾难恢复测试计划**](../docs/operations/DR_TEST_PLAN.md)          | 3 次演习的灾难恢复测试计划                             |
-|       [**数据保留**](../docs/architecture/DATA_RETENTION.md)       | 实时保留/压缩策略                               |
-|     [**发布检查清单**](../docs/operations/RELEASE_CHECKLIST.md)     | 标记发布版本前需要验证的内容                         |
-|       [**故障排除**](../docs/operations/TROUBLESHOOTING.md)       | 常见问题，调试命令，恢复程序          |
+|              [**用户手册**](docs/user/USER_MANUAL.md)              | 仪表板指南，指标参考，警报响应手册     |
+|            [**管理员手册**](docs/admin/ADMIN_MANUAL.md)             | 容器操作，设备注册，迁移，备份/恢复 |
+|          [**操作员 SOP**](docs/operations/SOP_OPERATOR.md)          | 工厂车间 / 1 级 NOC 的标准操作程序   |
+|   [**故障排除和警报**](docs/operations/ALARM_PLAYBOOK.md)   | 警报代码解析和故障排除手册              |
+|     [**事件响应**](docs/operations/INCIDENT_RESPONSE.md)     | 严重性框架 + 实际发生的事件示例              |
+| [**警报严重性指南**](docs/architecture/ALARM_SEVERITY_GUIDE.md) | 4 级严重性分类，ISA-18.2 范围                    |
+|       [**备份和恢复**](docs/operations/BACKUP_RESTORE.md)       | 真实的 dr-test.sh 证据，程序和注意事项                |
+|          [**灾难恢复测试计划**](docs/operations/DR_TEST_PLAN.md)          | 3 次演习的灾难恢复测试计划                             |
+|       [**数据保留**](docs/architecture/DATA_RETENTION.md)       | 实时保留/压缩策略                               |
+|     [**发布检查清单**](docs/operations/RELEASE_CHECKLIST.md)     | 标记发布版本前需要验证的内容                         |
+|       [**故障排除**](docs/operations/TROUBLESHOOTING.md)       | 常见问题，调试命令，恢复程序          |
 
 ### <img src="../docs/assets/icons/users.svg" width="18" height="18" align="center" /> 社区与参考
 
 |                             文档                             | 描述                                               |
 | :--------------------------------------------------------------: | --------------------------------------------------------- |
-| [**视频入门脚本**](../docs/product/ONBOARDING_SCRIPT.md) | 录制入门 GIF/视频的故事板和指南 |
-|               [**贡献**](../CONTRIBUTING.md)                | 开发工作流程，分支命名，提交约定   |
-|            [**行为准则**](../CODE_OF_CONDUCT.md)             | 社区标准和执行                       |
-|                [**安全策略**](../SECURITY.md)                | 漏洞报告                                   |
-|      [**错误报告**](../.github/ISSUE_TEMPLATE/bug_report.md)      | 报告错误或退化                                |
-| [**功能请求**](../.github/ISSUE_TEMPLATE/feature_request.md) | 建议新功能                                     |
+| [**视频入门脚本**](docs/product/ONBOARDING_SCRIPT.md) | 录制入门 GIF/视频的故事板和指南 |
+|               [**贡献**](CONTRIBUTING.md)                | 开发工作流程，分支命名，提交约定   |
+|            [**行为准则**](CODE_OF_CONDUCT.md)             | 社区标准和执行                       |
+|                [**安全策略**](SECURITY.md)                | 漏洞报告                                   |
+|      [**错误报告**](.github/ISSUE_TEMPLATE/bug_report.md)      | 报告错误或退化                                |
+| [**功能请求**](.github/ISSUE_TEMPLATE/feature_request.md) | 建议新功能                                     |
 
 </div>
 
@@ -435,6 +435,6 @@ IMS/
 
 **以精密制造。为正常运行而设计。**
 
-[MIT License](../LICENSE) — 2026 IMS 贡献者
+[MIT License](LICENSE) — 2026 IMS 贡献者
 
 </div>

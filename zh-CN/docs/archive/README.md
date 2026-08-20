@@ -1,7 +1,7 @@
 <!-- GLOBAL_NAV -->
 <div align="right">
-  <a href="../../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
-  <a href="../../../docs/README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+  <a href="../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
 </div>
 <br/>
 
@@ -9,7 +9,7 @@
 
 历史性的时间点快照 — 包含项目早期的审计报告、基准测试报告和开发计划。保留这些内容仅作历史记录，不作为活动文档。这里的每个文件都有一个横幅，注明其日期，并且其中的数据（仪表板数量、迁移数量、面板数量等）反映的是该日期时的系统状态，而不是当前系统。
 
-有关当前信息，请从 [`docs/architecture/IMS_PLATFORM_BOOK.md`](../../../docs/architecture/IMS_PLATFORM_BOOK.md) 或 [`docs/architecture/ARCHITECTURE.md`](../../../docs/architecture/ARCHITECTURE.md) 开始阅读。
+有关当前信息，请从 [`docs/architecture/IMS_PLATFORM_BOOK.md`](../architecture/IMS_PLATFORM_BOOK.md) 或 [`docs/architecture/ARCHITECTURE.md`](../architecture/ARCHITECTURE.md) 开始阅读。
 
 与仓库本地且被 gitignore 忽略的 `ARCHIVES/` 目录（用于存放被替换的工作文件的冷存储，从不提交）不同，此目录在 git 中被追踪 — 这些是真正值得在团队共享历史中保存的历史记录，而不是草稿材料。
 

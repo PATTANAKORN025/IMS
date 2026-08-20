@@ -1,7 +1,7 @@
 <!-- GLOBAL_NAV -->
 <div align="right">
-  <a href="../../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>หน้าหลัก</b></a> &nbsp;|&nbsp;
-  <a href="../../../docs/README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>ดัชนีเอกสาร</b></a>
+  <a href="../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>หน้าหลัก</b></a> &nbsp;|&nbsp;
+  <a href="../README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>ดัชนีเอกสาร</b></a>
 </div>
 <br/>
 
@@ -54,7 +54,7 @@
   2. **ปลอดภัยไว้ก่อน:** กดปุ่มหยุดฉุกเฉิน (E-Stop) หากมีความเสี่ยงต่อความปลอดภัยในทันทีหรือมีความเสี่ยงต่อความเสียหายของอุปกรณ์อย่างรุนแรง
   3. **สคริปต์การสื่อสาร:** ประกาศในกลุ่ม LINE ปฏิบัติการทันที:
      > _"วิกฤต: LDI-[รหัสเครื่องจักร] ล่ม ข้อผิดพลาด: [เมตริก/รหัสสัญญาณเตือน] สายการผลิตหยุดแล้ว"_
-  4. อ้างอิง [ALARM PLAYBOOK](../../../docs/operations/ALARM_PLAYBOOK.md) สำหรับรหัสข้อบกพร่องเฉพาะที่แสดงบนคอนโซล
+  4. อ้างอิง [ALARM PLAYBOOK](ALARM_PLAYBOOK.md) สำหรับรหัสข้อบกพร่องเฉพาะที่แสดงบนคอนโซล
 
 ---
 
@@ -97,9 +97,9 @@
 
 ## เอกสารที่เกี่ยวข้อง
 
-- [INCIDENT RESPONSE](../../../docs/operations/INCIDENT_RESPONSE.md) — ขั้นตอนการจัดการเหตุการณ์สำคัญ
-- [ALARM PLAYBOOK](../../../docs/operations/ALARM_PLAYBOOK.md) — รหัสข้อผิดพลาดของเครื่องจักรเฉพาะ
+- [INCIDENT RESPONSE](INCIDENT_RESPONSE.md) — ขั้นตอนการจัดการเหตุการณ์สำคัญ
+- [ALARM PLAYBOOK](ALARM_PLAYBOOK.md) — รหัสข้อผิดพลาดของเครื่องจักรเฉพาะ
 
 ---
 
-[⬅️ กลับสู่หนังสือแพลตฟอร์ม IMS](../../../docs/architecture/IMS_PLATFORM_BOOK.md) | [<img src="../../../docs/assets/icons/home.svg" width="18" align="center" /> ที่เก็บข้อมูลหลัก](../../../README.md)
+[⬅️ กลับสู่หนังสือแพลตฟอร์ม IMS](../architecture/IMS_PLATFORM_BOOK.md) | [<img src="../../../docs/assets/icons/home.svg" width="18" align="center" /> ที่เก็บข้อมูลหลัก](../../README.md)

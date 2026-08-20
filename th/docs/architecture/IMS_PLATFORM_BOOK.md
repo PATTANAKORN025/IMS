@@ -1,7 +1,7 @@
 <!-- GLOBAL_NAV -->
 <div align="right">
-  <a href="../../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
-  <a href="../../../docs/README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+  <a href="../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
 </div>
 <br/>
 
@@ -23,38 +23,38 @@ IMS คือ monitoring platform ที่ครอบคลุมสองโ�
 
 ### ผู้จัดการโรงงาน / วิศวกรกระบวนการผลิต (Plant management / process engineering)
 
-1. [`docs/product/PRODUCT.md`](../../../docs/product/PRODUCT.md) — ระบบนี้ทำงานอย่างไรและทำเพื่อใคร
-2. [`docs/architecture/LDI_SPC_GUIDE.md`](../../../docs/architecture/LDI_SPC_GUIDE.md) — ระเบียบวิธีวิจัยเรื่องความสามารถของกระบวนการ (process capability methodology)
-3. [`docs/architecture/LDI_RCA_GUIDE.md`](../../../docs/architecture/LDI_RCA_GUIDE.md) — ระเบียบวิธีวิจัยการหาความสัมพันธ์ของสาเหตุรากฐาน (root-cause correlation methodology)
-4. [`docs/architecture/ALARM_SEVERITY_GUIDE.md`](../../../docs/architecture/ALARM_SEVERITY_GUIDE.md) — อนุกรมวิธานของการแจ้งเตือน (alarm taxonomy)
-5. [`docs/operations/SOP_OPERATOR.md`](../../../docs/operations/SOP_OPERATOR.md) — ขั้นตอนการปฏิบัติงานมาตรฐาน (SOP) สำหรับพนักงานควบคุมเครื่องจักรหน้างาน (floor-operator)
+1. [`docs/product/PRODUCT.md`](../product/PRODUCT.md) — ระบบนี้ทำงานอย่างไรและทำเพื่อใคร
+2. [`docs/architecture/LDI_SPC_GUIDE.md`](LDI_SPC_GUIDE.md) — ระเบียบวิธีวิจัยเรื่องความสามารถของกระบวนการ (process capability methodology)
+3. [`docs/architecture/LDI_RCA_GUIDE.md`](LDI_RCA_GUIDE.md) — ระเบียบวิธีวิจัยการหาความสัมพันธ์ของสาเหตุรากฐาน (root-cause correlation methodology)
+4. [`docs/architecture/ALARM_SEVERITY_GUIDE.md`](ALARM_SEVERITY_GUIDE.md) — อนุกรมวิธานของการแจ้งเตือน (alarm taxonomy)
+5. [`docs/operations/SOP_OPERATOR.md`](../operations/SOP_OPERATOR.md) — ขั้นตอนการปฏิบัติงานมาตรฐาน (SOP) สำหรับพนักงานควบคุมเครื่องจักรหน้างาน (floor-operator)
 
 ### วิศวกรความน่าเชื่อถือของไซต์ / ปฏิบัติการ (SRE / operations)
 
-1. [`docs/architecture/ARCHITECTURE.md`](../../../docs/architecture/ARCHITECTURE.md) — โทโพโลยีของระบบ (system topology), รายการคอนเทนเนอร์, **ข้อกำหนดและขอบเขตทางเทคนิค (System Constraints & Technical Boundaries)**
-2. [`docs/architecture/DATA_FLOW.md`](../../../docs/architecture/DATA_FLOW.md) — แผนภาพไปป์ไลน์ (pipeline diagrams) แบบ end-to-end
-3. [`docs/operations/INCIDENT_RESPONSE.md`](../../../docs/operations/INCIDENT_RESPONSE.md) — ตัวอย่างเหตุการณ์ (incident) จริงพร้อมสาเหตุรากฐานที่ได้รับการแก้ไขแล้ว
-4. [`docs/operations/ALARM_PLAYBOOK.md`](../../../docs/operations/ALARM_PLAYBOOK.md) — ขั้นตอนการตอบสนองเบื้องต้นต่อแต่ละการแจ้งเตือน
-5. [`docs/operations/BACKUP_RESTORE.md`](../../../docs/operations/BACKUP_RESTORE.md) / [`docs/operations/DR_TEST_PLAN.md`](../../../docs/operations/DR_TEST_PLAN.md) — ขั้นตอนการกู้คืนระบบจากภัยพิบัติ (disaster-recovery procedures) ที่ใช้ได้จริงและมีหลักฐานอ้างอิง
-6. [`docs/operations/TROUBLESHOOTING.md`](../../../docs/operations/TROUBLESHOOTING.md) — คำสั่ง debugging เบื้องต้นสำหรับ SRE
-7. [`docs/admin/ADMIN_MANUAL.md`](../../../docs/admin/ADMIN_MANUAL.md) — การจัดการคอนเทนเนอร์ (container ops), การลงทะเบียนอุปกรณ์, การทำไมเกรชัน (migrations)
+1. [`docs/architecture/ARCHITECTURE.md`](ARCHITECTURE.md) — โทโพโลยีของระบบ (system topology), รายการคอนเทนเนอร์, **ข้อกำหนดและขอบเขตทางเทคนิค (System Constraints & Technical Boundaries)**
+2. [`docs/architecture/DATA_FLOW.md`](DATA_FLOW.md) — แผนภาพไปป์ไลน์ (pipeline diagrams) แบบ end-to-end
+3. [`docs/operations/INCIDENT_RESPONSE.md`](../operations/INCIDENT_RESPONSE.md) — ตัวอย่างเหตุการณ์ (incident) จริงพร้อมสาเหตุรากฐานที่ได้รับการแก้ไขแล้ว
+4. [`docs/operations/ALARM_PLAYBOOK.md`](../operations/ALARM_PLAYBOOK.md) — ขั้นตอนการตอบสนองเบื้องต้นต่อแต่ละการแจ้งเตือน
+5. [`docs/operations/BACKUP_RESTORE.md`](../operations/BACKUP_RESTORE.md) / [`docs/operations/DR_TEST_PLAN.md`](../operations/DR_TEST_PLAN.md) — ขั้นตอนการกู้คืนระบบจากภัยพิบัติ (disaster-recovery procedures) ที่ใช้ได้จริงและมีหลักฐานอ้างอิง
+6. [`docs/operations/TROUBLESHOOTING.md`](../operations/TROUBLESHOOTING.md) — คำสั่ง debugging เบื้องต้นสำหรับ SRE
+7. [`docs/admin/ADMIN_MANUAL.md`](../admin/ADMIN_MANUAL.md) — การจัดการคอนเทนเนอร์ (container ops), การลงทะเบียนอุปกรณ์, การทำไมเกรชัน (migrations)
 
 ### การประกันคุณภาพ / การตรวจสอบ / การปฏิบัติตามข้อกำหนด (QA / audit / compliance)
 
-1. [`docs/architecture/DATABASE_SCHEMA.md`](../../../docs/architecture/DATABASE_SCHEMA.md) — เอกสารอ้างอิงของ ตาราง/คอลัมน์/วิว ที่สร้างอัตโนมัติ (auto-generated) และผ่านการตรวจสอบโดย CI (CI-checked)
-2. [`docs/architecture/DASHBOARD_INVENTORY.md`](../../../docs/architecture/DASHBOARD_INVENTORY.md) — เอกสารอ้างอิงของ dashboard/panel ที่สร้างอัตโนมัติและผ่านการตรวจสอบโดย CI
-3. [`docs/architecture/DATA_RETENTION.md`](../../../docs/architecture/DATA_RETENTION.md) — นโยบายการจัดเก็บข้อมูล (retention policy) บนระบบจริง รวมถึงช่องว่างด้านธรรมาภิบาลข้อมูล (governance gap) ที่มีการบันทึกไว้
-4. [`docs/architecture/SECURITY_MODEL.md`](../../../docs/architecture/SECURITY_MODEL.md) + [`SECURITY.md`](../../../SECURITY.md) — ขอบเขตความน่าเชื่อถือ (trust boundaries) และนโยบายความปลอดภัย (security policy)
-5. [`docs/operations/LDI_VALIDATION_PROTOCOL.md`](../../../docs/operations/LDI_VALIDATION_PROTOCOL.md) — ขั้นตอนการอนุมัติเพื่อขึ้นระบบจริง (production sign-off procedure) พร้อมหลักฐานการตรวจสอบจากระบบจริง
-6. [`docs/operations/DEPLOYMENT_READINESS.md`](../../../docs/operations/DEPLOYMENT_READINESS.md), [`RELEASE_CHECKLIST.md`](../../../docs/operations/RELEASE_CHECKLIST.md) — เกณฑ์เงื่อนไขก่อนการรีลีส (pre-release gates)
+1. [`docs/architecture/DATABASE_SCHEMA.md`](DATABASE_SCHEMA.md) — เอกสารอ้างอิงของ ตาราง/คอลัมน์/วิว ที่สร้างอัตโนมัติ (auto-generated) และผ่านการตรวจสอบโดย CI (CI-checked)
+2. [`docs/architecture/DASHBOARD_INVENTORY.md`](DASHBOARD_INVENTORY.md) — เอกสารอ้างอิงของ dashboard/panel ที่สร้างอัตโนมัติและผ่านการตรวจสอบโดย CI
+3. [`docs/architecture/DATA_RETENTION.md`](DATA_RETENTION.md) — นโยบายการจัดเก็บข้อมูล (retention policy) บนระบบจริง รวมถึงช่องว่างด้านธรรมาภิบาลข้อมูล (governance gap) ที่มีการบันทึกไว้
+4. [`docs/architecture/SECURITY_MODEL.md`](SECURITY_MODEL.md) + [`SECURITY.md`](../../SECURITY.md) — ขอบเขตความน่าเชื่อถือ (trust boundaries) และนโยบายความปลอดภัย (security policy)
+5. [`docs/operations/LDI_VALIDATION_PROTOCOL.md`](../operations/LDI_VALIDATION_PROTOCOL.md) — ขั้นตอนการอนุมัติเพื่อขึ้นระบบจริง (production sign-off procedure) พร้อมหลักฐานการตรวจสอบจากระบบจริง
+6. [`docs/operations/DEPLOYMENT_READINESS.md`](../operations/DEPLOYMENT_READINESS.md), [`RELEASE_CHECKLIST.md`](../operations/RELEASE_CHECKLIST.md) — เกณฑ์เงื่อนไขก่อนการรีลีส (pre-release gates)
 
 ### นักพัฒนาใหม่ (New developers)
 
-1. [`CONTRIBUTING.md`](../../../CONTRIBUTING.md) — ขั้นตอนการทำงาน (workflow), ธรรมเนียมปฏิบัติ (conventions), โครงสร้างของโปรเจกต์
-2. [`docs/architecture/ARCHITECTURE.md`](../../../docs/architecture/ARCHITECTURE.md) — ควรอ่านไฟล์นี้ก่อนทำการเปลี่ยนแปลงใดๆ
-3. [`docs/architecture/DATA_FLOW.md`](../../../docs/architecture/DATA_FLOW.md) — ข้อมูลเคลื่อนย้ายได้อย่างไรในความเป็นจริง
-4. [`docs/architecture/OWNERSHIP.md`](../../../docs/architecture/OWNERSHIP.md) — ใครเป็นเจ้าของส่วนไหน
-5. [`docs/architecture/GRAFANA_DESIGN_SYSTEM.md`](../../../docs/architecture/GRAFANA_DESIGN_SYSTEM.md) — ธรรมเนียมปฏิบัติของ dashboard ซึ่งถูกบังคับใช้ (enforced) โดย CI
+1. [`CONTRIBUTING.md`](../../CONTRIBUTING.md) — ขั้นตอนการทำงาน (workflow), ธรรมเนียมปฏิบัติ (conventions), โครงสร้างของโปรเจกต์
+2. [`docs/architecture/ARCHITECTURE.md`](ARCHITECTURE.md) — ควรอ่านไฟล์นี้ก่อนทำการเปลี่ยนแปลงใดๆ
+3. [`docs/architecture/DATA_FLOW.md`](DATA_FLOW.md) — ข้อมูลเคลื่อนย้ายได้อย่างไรในความเป็นจริง
+4. [`docs/architecture/OWNERSHIP.md`](OWNERSHIP.md) — ใครเป็นเจ้าของส่วนไหน
+5. [`docs/architecture/GRAFANA_DESIGN_SYSTEM.md`](GRAFANA_DESIGN_SYSTEM.md) — ธรรมเนียมปฏิบัติของ dashboard ซึ่งถูกบังคับใช้ (enforced) โดย CI
 
 ---
 
@@ -62,67 +62,67 @@ IMS คือ monitoring platform ที่ครอบคลุมสองโ�
 
 ### สถาปัตยกรรมและการออกแบบโดเมน (Architecture & domain design)
 
-- [`ARCHITECTURE.md`](../../../docs/architecture/ARCHITECTURE.md) — โทโพโลยีของระบบ (system topology), รายการคอนเทนเนอร์, ข้อกำหนดและขอบเขตทางเทคนิค (System Constraints & Technical Boundaries)
-- [`ARCHITECTURE_DIAGRAM.md`](../../../docs/architecture/ARCHITECTURE_DIAGRAM.md) — แผนภาพ Mermaid C4
-- [`DATA_FLOW.md`](../../../docs/architecture/DATA_FLOW.md) — แผนภาพแสดงการไหลของข้อมูล (data flow diagrams) แบบ end-to-end
-- [`IMS_MANUFACTURING_PLATFORM_V2.md`](../../../docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md) — แผนการนำการแบ่งแยกโดเมน infra/manufacturing ไปใช้งานจริง (rollout plan) และบันทึกหลักฐานการทดสอบ (Phases A/B/C, Soak Test, DR Test)
-- [`MANUFACTURING_DOMAIN.md`](../../../docs/architecture/MANUFACTURING_DOMAIN.md) — รูปแบบ (pattern) ของ schema และ dashboard สำหรับ LDI และวิธีการออนบอร์ดกระบวนการผลิตประเภทอื่นในอนาคต (AOI, การชุบ (plating), การกัดกรด (etching), การเจาะ (drilling))
-- [`EAP_ARCHITECTURE.md`](../../../docs/architecture/EAP_ARCHITECTURE.md) — อะแดปเตอร์การรวมการทำงานของอุปกรณ์ (equipment integration adapters) (SNMP, HTTP/JSON และ ข้อกำหนดของ SECS/GEM ที่ยังไม่ได้พัฒนาขึ้น (unimplemented))
-- [`OWNERSHIP.md`](../../../docs/architecture/OWNERSHIP.md) — ขอบเขตของโดเมน infra/manufacturing ซึ่งบังคับใช้ผ่าน `CODEOWNERS`
-- [`SECURITY_MODEL.md`](../../../docs/architecture/SECURITY_MODEL.md) — ขอบเขตความน่าเชื่อถือ (trust boundaries)
+- [`ARCHITECTURE.md`](ARCHITECTURE.md) — โทโพโลยีของระบบ (system topology), รายการคอนเทนเนอร์, ข้อกำหนดและขอบเขตทางเทคนิค (System Constraints & Technical Boundaries)
+- [`ARCHITECTURE_DIAGRAM.md`](ARCHITECTURE_DIAGRAM.md) — แผนภาพ Mermaid C4
+- [`DATA_FLOW.md`](DATA_FLOW.md) — แผนภาพแสดงการไหลของข้อมูล (data flow diagrams) แบบ end-to-end
+- [`IMS_MANUFACTURING_PLATFORM_V2.md`](IMS_MANUFACTURING_PLATFORM_V2.md) — แผนการนำการแบ่งแยกโดเมน infra/manufacturing ไปใช้งานจริง (rollout plan) และบันทึกหลักฐานการทดสอบ (Phases A/B/C, Soak Test, DR Test)
+- [`MANUFACTURING_DOMAIN.md`](MANUFACTURING_DOMAIN.md) — รูปแบบ (pattern) ของ schema และ dashboard สำหรับ LDI และวิธีการออนบอร์ดกระบวนการผลิตประเภทอื่นในอนาคต (AOI, การชุบ (plating), การกัดกรด (etching), การเจาะ (drilling))
+- [`EAP_ARCHITECTURE.md`](EAP_ARCHITECTURE.md) — อะแดปเตอร์การรวมการทำงานของอุปกรณ์ (equipment integration adapters) (SNMP, HTTP/JSON และ ข้อกำหนดของ SECS/GEM ที่ยังไม่ได้พัฒนาขึ้น (unimplemented))
+- [`OWNERSHIP.md`](OWNERSHIP.md) — ขอบเขตของโดเมน infra/manufacturing ซึ่งบังคับใช้ผ่าน `CODEOWNERS`
+- [`SECURITY_MODEL.md`](SECURITY_MODEL.md) — ขอบเขตความน่าเชื่อถือ (trust boundaries)
 
 ### คู่มือโดเมนการผลิต (LDI) (Manufacturing (LDI) domain guides)
 
-- [`LDI_SPC_GUIDE.md`](../../../docs/architecture/LDI_SPC_GUIDE.md) — ระเบียบวิธีวิจัยด้านความสามารถของกระบวนการ (Cpk methodology)
-- [`LDI_RCA_GUIDE.md`](../../../docs/architecture/LDI_RCA_GUIDE.md) — ระเบียบวิธีวิจัยความสัมพันธ์ของสาเหตุรากฐาน (Lift/Confidence methodology)
-- [`ALARM_SEVERITY_GUIDE.md`](../../../docs/architecture/ALARM_SEVERITY_GUIDE.md) — อนุกรมวิธานของความรุนแรงระดับ 4-tier (4-tier severity taxonomy) และขอบเขตของ ISA-18.2
-- [`DATA_RETENTION.md`](../../../docs/architecture/DATA_RETENTION.md) — นโยบายการจัดเก็บข้อมูล/การบีบอัดข้อมูล (retention/compression policy) บนระบบจริง
-- [`FUTURE_ANALYTICS.md`](../../../docs/architecture/FUTURE_ANALYTICS.md) — แนวคิดที่มีเฉพาะบน roadmap (การเบี่ยงเบนเชิงพยากรณ์ (predictive drift), การให้คะแนน AI/ความผิดปกติ (anomaly scoring), RCA แบบหลายปัจจัย (multi-factor RCA)) ซึ่งมีการระบุอย่างชัดเจนว่า **ยังไม่ได้ถูกพัฒนา (not implemented)** — จะไม่มีสิ่งใดในไฟล์นี้ที่เป็นเรื่องจริงจนกว่าจะมีการสร้างชุดทดสอบด้วย golden-dataset เฉพาะของสิ่งนั้น ซึ่งต้องมีมาตรฐานเดียวกันกับการคำนวณ SPC/RCA ทุกตัวที่มีการส่งมอบไปแล้ว
+- [`LDI_SPC_GUIDE.md`](LDI_SPC_GUIDE.md) — ระเบียบวิธีวิจัยด้านความสามารถของกระบวนการ (Cpk methodology)
+- [`LDI_RCA_GUIDE.md`](LDI_RCA_GUIDE.md) — ระเบียบวิธีวิจัยความสัมพันธ์ของสาเหตุรากฐาน (Lift/Confidence methodology)
+- [`ALARM_SEVERITY_GUIDE.md`](ALARM_SEVERITY_GUIDE.md) — อนุกรมวิธานของความรุนแรงระดับ 4-tier (4-tier severity taxonomy) และขอบเขตของ ISA-18.2
+- [`DATA_RETENTION.md`](DATA_RETENTION.md) — นโยบายการจัดเก็บข้อมูล/การบีบอัดข้อมูล (retention/compression policy) บนระบบจริง
+- [`FUTURE_ANALYTICS.md`](FUTURE_ANALYTICS.md) — แนวคิดที่มีเฉพาะบน roadmap (การเบี่ยงเบนเชิงพยากรณ์ (predictive drift), การให้คะแนน AI/ความผิดปกติ (anomaly scoring), RCA แบบหลายปัจจัย (multi-factor RCA)) ซึ่งมีการระบุอย่างชัดเจนว่า **ยังไม่ได้ถูกพัฒนา (not implemented)** — จะไม่มีสิ่งใดในไฟล์นี้ที่เป็นเรื่องจริงจนกว่าจะมีการสร้างชุดทดสอบด้วย golden-dataset เฉพาะของสิ่งนั้น ซึ่งต้องมีมาตรฐานเดียวกันกับการคำนวณ SPC/RCA ทุกตัวที่มีการส่งมอบไปแล้ว
 
 ### ระบบการออกแบบ (Design system)
 
-- [`GRAFANA_DESIGN_SYSTEM.md`](../../../docs/architecture/GRAFANA_DESIGN_SYSTEM.md) — โทเค็นสี (color tokens), การจัดการตัวพิมพ์ (typography), ธรรมเนียมปฏิบัติของ panel ซึ่งบังคับใช้โดย `dashboard-linter.js`
-- [`PANEL_TOKENS.md`](../../../docs/architecture/PANEL_TOKENS.md) — ข้อกำหนดรายละเอียดของโทเค็น (token spec) สำหรับหน่วย/ขีดจำกัด (unit/threshold)
+- [`GRAFANA_DESIGN_SYSTEM.md`](GRAFANA_DESIGN_SYSTEM.md) — โทเค็นสี (color tokens), การจัดการตัวพิมพ์ (typography), ธรรมเนียมปฏิบัติของ panel ซึ่งบังคับใช้โดย `dashboard-linter.js`
+- [`PANEL_TOKENS.md`](PANEL_TOKENS.md) — ข้อกำหนดรายละเอียดของโทเค็น (token spec) สำหรับหน่วย/ขีดจำกัด (unit/threshold)
 
 ### เอกสารที่สร้างโดยอัตโนมัติ (ตรวจสอบโดย CI, ห้ามแก้ไขด้วยตนเองเด็ดขาด) (Auto-generated (CI-checked, never hand-edit))
 
-- [`DASHBOARD_INVENTORY.md`](../../../docs/architecture/DASHBOARD_INVENTORY.md) — `node scripts/generate-dashboard-inventory.js`
-- [`DATABASE_SCHEMA.md`](../../../docs/architecture/DATABASE_SCHEMA.md) — `node scripts/generate-schema-inventory.js`
+- [`DASHBOARD_INVENTORY.md`](DASHBOARD_INVENTORY.md) — `node scripts/generate-dashboard-inventory.js`
+- [`DATABASE_SCHEMA.md`](DATABASE_SCHEMA.md) — `node scripts/generate-schema-inventory.js`
 
 ### ฝ่ายปฏิบัติการ (Operations)
 
-- [`../operations/SOP_OPERATOR.md`](../../../docs/operations/SOP_OPERATOR.md) — SOP สำหรับผู้ปฏิบัติงานหน้างาน (floor operator SOP)
-- [`../operations/ALARM_PLAYBOOK.md`](../../../docs/operations/ALARM_PLAYBOOK.md) — การตอบสนองต่อการแจ้งเตือนในขั้นแรก (alert first-response)
-- [`../operations/INCIDENT_RESPONSE.md`](../../../docs/operations/INCIDENT_RESPONSE.md) — โครงร่างระดับความรุนแรงของเหตุการณ์ (incident severity framework) และตัวอย่างที่เกิดขึ้นจริง
-- [`../operations/BACKUP_RESTORE.md`](../../../docs/operations/BACKUP_RESTORE.md) — ขั้นตอนการสำรองข้อมูล/กู้คืนข้อมูล (backup/restore procedure) พร้อมระบุเวลาดำเนินการจริง
-- [`../operations/DR_TEST_PLAN.md`](../../../docs/operations/DR_TEST_PLAN.md) — การซ้อมแผนกู้คืนระบบจากภัยพิบัติ (disaster-recovery drills)
-- [`../operations/TROUBLESHOOTING.md`](../../../docs/operations/TROUBLESHOOTING.md) — การดีบักทั่วไปสำหรับ SRE
-- [`../operations/SCALING_PLAN.md`](../../../docs/operations/SCALING_PLAN.md) — การขยายระบบ (scaling) จากเครื่องจักร 1 เครื่องเป็น 1000+ เครื่อง
-- [`../operations/LDI_VALIDATION_PROTOCOL.md`](../../../docs/operations/LDI_VALIDATION_PROTOCOL.md) — ขั้นตอนการอนุมัติการทำงานจริง (production sign-off procedure)
-- [`../operations/DEPLOYMENT_READINESS.md`](../../../docs/operations/DEPLOYMENT_READINESS.md), [`RELEASE_CHECKLIST.md`](../../../docs/operations/RELEASE_CHECKLIST.md) — เกณฑ์เงื่อนไขก่อนการรีลีส (release gates)
-- [`../REAL-DATA-IMPORT.md`](../../../docs/REAL-DATA-IMPORT.md) — การใช้งานโหมดข้อมูลจริงเปรียบเทียบกับข้อมูลสมมติ (real vs. mock data mode)
+- [`../operations/SOP_OPERATOR.md`](../operations/SOP_OPERATOR.md) — SOP สำหรับผู้ปฏิบัติงานหน้างาน (floor operator SOP)
+- [`../operations/ALARM_PLAYBOOK.md`](../operations/ALARM_PLAYBOOK.md) — การตอบสนองต่อการแจ้งเตือนในขั้นแรก (alert first-response)
+- [`../operations/INCIDENT_RESPONSE.md`](../operations/INCIDENT_RESPONSE.md) — โครงร่างระดับความรุนแรงของเหตุการณ์ (incident severity framework) และตัวอย่างที่เกิดขึ้นจริง
+- [`../operations/BACKUP_RESTORE.md`](../operations/BACKUP_RESTORE.md) — ขั้นตอนการสำรองข้อมูล/กู้คืนข้อมูล (backup/restore procedure) พร้อมระบุเวลาดำเนินการจริง
+- [`../operations/DR_TEST_PLAN.md`](../operations/DR_TEST_PLAN.md) — การซ้อมแผนกู้คืนระบบจากภัยพิบัติ (disaster-recovery drills)
+- [`../operations/TROUBLESHOOTING.md`](../operations/TROUBLESHOOTING.md) — การดีบักทั่วไปสำหรับ SRE
+- [`../operations/SCALING_PLAN.md`](../operations/SCALING_PLAN.md) — การขยายระบบ (scaling) จากเครื่องจักร 1 เครื่องเป็น 1000+ เครื่อง
+- [`../operations/LDI_VALIDATION_PROTOCOL.md`](../operations/LDI_VALIDATION_PROTOCOL.md) — ขั้นตอนการอนุมัติการทำงานจริง (production sign-off procedure)
+- [`../operations/DEPLOYMENT_READINESS.md`](../operations/DEPLOYMENT_READINESS.md), [`RELEASE_CHECKLIST.md`](../operations/RELEASE_CHECKLIST.md) — เกณฑ์เงื่อนไขก่อนการรีลีส (release gates)
+- [`../REAL-DATA-IMPORT.md`](../REAL-DATA-IMPORT.md) — การใช้งานโหมดข้อมูลจริงเปรียบเทียบกับข้อมูลสมมติ (real vs. mock data mode)
 
 ### คู่มือต่างๆ (Manuals)
 
-- [`../user/USER_MANUAL.md`](../../../docs/user/USER_MANUAL.md) — คู่มือแนะนำ dashboard และแหล่งอ้างอิงค่าเมตริก (metric reference)
-- [`../admin/ADMIN_MANUAL.md`](../../../docs/admin/ADMIN_MANUAL.md) — การปฏิบัติการของคอนเทนเนอร์ (container ops), การลงทะเบียนอุปกรณ์, การทำไมเกรชัน (migrations), การสำรองข้อมูล/การกู้คืนข้อมูล (backup/recovery)
+- [`../user/USER_MANUAL.md`](../user/USER_MANUAL.md) — คู่มือแนะนำ dashboard และแหล่งอ้างอิงค่าเมตริก (metric reference)
+- [`../admin/ADMIN_MANUAL.md`](../admin/ADMIN_MANUAL.md) — การปฏิบัติการของคอนเทนเนอร์ (container ops), การลงทะเบียนอุปกรณ์, การทำไมเกรชัน (migrations), การสำรองข้อมูล/การกู้คืนข้อมูล (backup/recovery)
 
 ### ธรรมาภิบาลและกระบวนการ (Governance & process)
 
-- [`../../CONTRIBUTING.md`](../../../CONTRIBUTING.md) — เวิร์กโฟลว์ของการพัฒนา (development workflow)
-- [`../../SECURITY.md`](../../../SECURITY.md) — นโยบายความปลอดภัย (security policy)
-- [`../../.github/CODEOWNERS`](../../../.github/CODEOWNERS) — การบังคับใช้ขอบเขตความเป็นเจ้าของ (enforced ownership boundaries)
+- [`../../CONTRIBUTING.md`](../../CONTRIBUTING.md) — เวิร์กโฟลว์ของการพัฒนา (development workflow)
+- [`../../SECURITY.md`](../../SECURITY.md) — นโยบายความปลอดภัย (security policy)
+- [`../../.github/CODEOWNERS`](../../.github/CODEOWNERS) — การบังคับใช้ขอบเขตความเป็นเจ้าของ (enforced ownership boundaries)
 
 ### บริบทด้านผลิตภัณฑ์และธุรกิจ (Product & business context)
 
-- [`../product/PRODUCT.md`](../../../docs/product/PRODUCT.md) — สรุปรายละเอียดผลิตภัณฑ์ในหนึ่งหน้ากระดาษ (product one-pager)
-- [`../product/ONBOARDING_SCRIPT.md`](../../../docs/product/ONBOARDING_SCRIPT.md) — สตอรี่บอร์ดสำหรับบันทึกวิดีโอ/GIF
-- [`../business/BUSINESS_VALUE_ROI.md`](../../../docs/business/BUSINESS_VALUE_ROI.md) — เรื่องราวสรุปตัวชี้วัดผลตอบแทนจากการลงทุนระดับผู้บริหาร (executive ROI narrative)
+- [`../product/PRODUCT.md`](../product/PRODUCT.md) — สรุปรายละเอียดผลิตภัณฑ์ในหนึ่งหน้ากระดาษ (product one-pager)
+- [`../product/ONBOARDING_SCRIPT.md`](../product/ONBOARDING_SCRIPT.md) — สตอรี่บอร์ดสำหรับบันทึกวิดีโอ/GIF
+- [`../business/BUSINESS_VALUE_ROI.md`](../business/BUSINESS_VALUE_ROI.md) — เรื่องราวสรุปตัวชี้วัดผลตอบแทนจากการลงทุนระดับผู้บริหาร (executive ROI narrative)
 
 ### บันทึกประวัติศาสตร์ (Historical record)
 
-- [`../archive/`](../../../docs/archive) — ภาพรวม (snapshots) ณ เวลาต่างๆ ที่ลงวันที่ไว้ (รายงานการตรวจสอบ (audit reports), รายงานผลการประเมินเทียบเคียง (benchmark reports), บทสรุปผลการฝึกงานของนักศึกษาฝึกงาน) ไฟล์เหล่านี้ไม่ใช่เอกสารที่ยังใช้งานอยู่ (Not living documentation) — ดู `docs/archive/README.md`
-- [`../archive/DOCUMENTATION_QUALITY_REPORT.md`](../../../docs/archive/DOCUMENTATION_QUALITY_REPORT.md) — รายงานการตรวจสอบ/เขียนเอกสารใหม่ ซึ่งเป็นต้นกำเนิดของการทำสมุดฉบับนี้
+- [`../archive/`](../archive) — ภาพรวม (snapshots) ณ เวลาต่างๆ ที่ลงวันที่ไว้ (รายงานการตรวจสอบ (audit reports), รายงานผลการประเมินเทียบเคียง (benchmark reports), บทสรุปผลการฝึกงานของนักศึกษาฝึกงาน) ไฟล์เหล่านี้ไม่ใช่เอกสารที่ยังใช้งานอยู่ (Not living documentation) — ดู `docs/archive/README.md`
+- [`../archive/DOCUMENTATION_QUALITY_REPORT.md`](../archive/DOCUMENTATION_QUALITY_REPORT.md) — รายงานการตรวจสอบ/เขียนเอกสารใหม่ ซึ่งเป็นต้นกำเนิดของการทำสมุดฉบับนี้
 
 ---
 

@@ -1,7 +1,7 @@
 <!-- GLOBAL_NAV -->
 <div align="right">
-  <a href="../../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
-  <a href="../../../docs/README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+  <a href="../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
 </div>
 <br/>
 
@@ -9,7 +9,7 @@
 
 ภาพรวมข้อมูลในอดีต ณ ช่วงเวลาหนึ่ง — รายงานการตรวจสอบระบบ (audit reports), รายงานการวัดประสิทธิภาพ (benchmark reports), และแผนการพัฒนาตั้งแต่ช่วงแรกของโปรเจกต์ ถูกเก็บรักษาไว้เพื่อเป็นบันทึกทางประวัติศาสตร์ ไม่ใช่เอกสารที่ใช้งานอยู่ในปัจจุบัน ทุกไฟล์ที่นี่จะมีแบนเนอร์ระบุวันที่ และตัวเลขต่างๆ (จำนวนแดชบอร์ด, จำนวนการย้ายข้อมูล, จำนวนพาเนล เป็นต้น) จะสะท้อนถึงระบบตามที่เคยเป็นในวันนั้น ไม่ใช่ระบบปัจจุบัน
 
-สำหรับข้อมูลปัจจุบัน โปรดเริ่มต้นที่ [`docs/architecture/IMS_PLATFORM_BOOK.md`](../../../docs/architecture/IMS_PLATFORM_BOOK.md) หรือ [`docs/architecture/ARCHITECTURE.md`](../../../docs/architecture/ARCHITECTURE.md)
+สำหรับข้อมูลปัจจุบัน โปรดเริ่มต้นที่ [`docs/architecture/IMS_PLATFORM_BOOK.md`](../architecture/IMS_PLATFORM_BOOK.md) หรือ [`docs/architecture/ARCHITECTURE.md`](../architecture/ARCHITECTURE.md)
 
 ไดเรกทอรีนี้ถูกติดตามด้วย git แตกต่างจากไดเรกทอรี `ARCHIVES/` บนเครื่องที่ถูกตั้งค่า gitignore (ที่เก็บข้อมูลแบบเย็นสำหรับไฟล์งานที่ถูกแทนที่และไม่เคยถูก commit) — เหล่านี้คือบันทึกประวัติศาสตร์ที่แท้จริงซึ่งควรค่าแก่การเก็บรักษาไว้ในประวัติศาสตร์ที่แชร์ร่วมกันของทีม ไม่ใช่ข้อมูลสำหรับทดลองร่างงาน
 

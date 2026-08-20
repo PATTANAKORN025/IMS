@@ -1,7 +1,7 @@
 <!-- GLOBAL_NAV -->
 <div align="right">
-  <a href="../../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>หน้าแรก</b></a> &nbsp;|&nbsp;
-  <a href="../../../docs/README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>ดัชนีเอกสาร</b></a>
+  <a href="../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>หน้าแรก</b></a> &nbsp;|&nbsp;
+  <a href="../README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>ดัชนีเอกสาร</b></a>
 </div>
 <br/>
 
@@ -20,4 +20,4 @@ flowchart LR
 
 ## <img src="../../../docs/assets/icons/file-text.svg" width="18" align="center" /> ดัชนีไฟล์
 
-- [BUSINESS_VALUE_ROI.md](../../../docs/business/BUSINESS_VALUE_ROI.md)
+- [BUSINESS_VALUE_ROI.md](BUSINESS_VALUE_ROI.md)

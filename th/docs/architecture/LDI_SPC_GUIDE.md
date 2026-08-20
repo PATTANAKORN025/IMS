@@ -1,7 +1,7 @@
 <!-- GLOBAL_NAV -->
 <div align="right">
-  <a href="../../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>หน้าหลัก</b></a> &nbsp;|&nbsp;
-  <a href="../../../docs/README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>ดัชนีเอกสาร</b></a>
+  <a href="../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>หน้าหลัก</b></a> &nbsp;|&nbsp;
+  <a href="../README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>ดัชนีเอกสาร</b></a>
 </div>
 <br/>
 
@@ -103,4 +103,4 @@ cpk = LEAST( (tolerance - mean) / (3 * sigma), (mean + tolerance) / (3 * sigma) 
 
 ---
 
-[⬅️ กลับไปที่ IMS Platform Book](../../../docs/architecture/IMS_PLATFORM_BOOK.md) | [<img src="../../../docs/assets/icons/home.svg" width="18" align="center" /> พื้นที่เก็บข้อมูลหลัก](../../../README.md)
+[⬅️ กลับไปที่ IMS Platform Book](IMS_PLATFORM_BOOK.md) | [<img src="../../../docs/assets/icons/home.svg" width="18" align="center" /> พื้นที่เก็บข้อมูลหลัก](../../README.md)

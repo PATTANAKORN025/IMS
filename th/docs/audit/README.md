@@ -1,7 +1,7 @@
 <!-- GLOBAL_NAV -->
 <div align="right">
-  <a href="../../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
-  <a href="../../../docs/README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+  <a href="../../README.md"><img src="../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../README.md"><img src="../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
 </div>
 <br/>
 
@@ -24,8 +24,8 @@ flowchart LR
 
 ## <img src="../../../docs/assets/icons/file-text.svg" width="18" align="center" /> ดัชนีไฟล์ (File Index)
 
-- [ALARM_TAXONOMY_REVIEW_2026-08-14.md](../../../docs/audit/ALARM_TAXONOMY_REVIEW_2026-08-14.md)
-- [LDI_ALARM_FIDELITY_AUDIT.md](../../../docs/audit/LDI_ALARM_FIDELITY_AUDIT.md)
-- [LDI_SIMULATOR_REDESIGN_RESULTS.md](../../../docs/audit/LDI_SIMULATOR_REDESIGN_RESULTS.md)
-- [READ_ONLY_AUDIT_2026-08-15.md](../../../docs/audit/READ_ONLY_AUDIT_2026-08-15.md)
-- [SIMULATOR_REALISM_AUDIT_2026-08-15.md](../../../docs/audit/SIMULATOR_REALISM_AUDIT_2026-08-15.md)
+- [ALARM_TAXONOMY_REVIEW_2026-08-14.md](ALARM_TAXONOMY_REVIEW_2026-08-14.md)
+- [LDI_ALARM_FIDELITY_AUDIT.md](LDI_ALARM_FIDELITY_AUDIT.md)
+- [LDI_SIMULATOR_REDESIGN_RESULTS.md](LDI_SIMULATOR_REDESIGN_RESULTS.md)
+- [READ_ONLY_AUDIT_2026-08-15.md](READ_ONLY_AUDIT_2026-08-15.md)
+- [SIMULATOR_REALISM_AUDIT_2026-08-15.md](SIMULATOR_REALISM_AUDIT_2026-08-15.md)

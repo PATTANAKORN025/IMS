@@ -1,7 +1,7 @@
 <!-- GLOBAL_NAV -->
 <div align="right">
   <a href="README.md"><img src="docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
-  <a href="docs/README.md"><img src="docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+  <a href="docs/README.md"><img src="docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a> &nbsp;|&nbsp; <a href="README.md">🌐 <b>English</b></a> &nbsp;|&nbsp; <a href="th/README.md">🇹🇭 <b>ภาษาไทย</b></a> &nbsp;|&nbsp; <a href="zh-CN/README.md">🇨🇳 <b>中文</b></a>
 </div>
 <br/>
 
