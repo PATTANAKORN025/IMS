@@ -37,7 +37,7 @@
           "type": "grafana-postgresql-datasource",
           "uid": "timescaledb"
         },
-        "query": "SELECT DISTINCT factory AS __text, factory AS __value FROM public.ldi_data ORDER BY factory",
+        "query": "WITH v AS (\n  SELECT DISTINCT factory AS __text, factory AS __value FROM public.ldi_data\n)\nSELECT * FROM v\nUNION ALL\nSELECT NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM v)\nORDER BY 1",
         "definition": "SELECT DISTINCT factory AS __text, factory AS __value FROM public.ldi_data ORDER BY factory",
         "current": {
           "selected": true,
@@ -61,7 +61,7 @@
           "type": "grafana-postgresql-datasource",
           "uid": "timescaledb"
         },
-        "query": "SELECT DISTINCT eqp_id AS __text, eqp_id AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) ORDER BY eqp_id",
+        "query": "WITH v AS (\n  SELECT DISTINCT eqp_id AS __text, eqp_id AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring})\n)\nSELECT * FROM v\nUNION ALL\nSELECT NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM v)\nORDER BY 1",
         "definition": "SELECT DISTINCT eqp_id AS __text, eqp_id AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) ORDER BY eqp_id",
         "current": {
           "selected": true,
