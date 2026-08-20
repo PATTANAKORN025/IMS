@@ -1,7 +1,8 @@
 <div align="center">
   <br/>
   <a href="https://github.com/PATTANAKORN025/IMS">
-    <img src="assets/meowrch.png" alt="IMS Mascot" width="140" style="border-radius: 50%; box-shadow: 0 8px 24px rgba(0, 242, 254, 0.4); margin-bottom: 16px;" />
+    <img src="assets/meowrch.png" alt="IMS Mascot" width="140" style="border-radius: 50%; box-shadow: 0 8px 24px rgba(0, 242, 254, 0.4); margin-bottom: 16px; margin-right: 20px;" />
+    <img src="assets/apex-logo.svg" alt="APEX Circuit Logo" width="280" style="margin-bottom: 24px;" />
   </a>
   <br/>
   <img src="docs/assets/icons/postgresql.svg" width="48" alt="PostgreSQL" /> &nbsp;&nbsp;&nbsp;&nbsp;
