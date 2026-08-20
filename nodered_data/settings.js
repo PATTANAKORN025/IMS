@@ -37,6 +37,9 @@ module.exports = {
     globalFunctionTimeout: 0,
     functionTimeout: 10,
     functionGlobalContext: {
+        // The LDI ingestion flow validates self-ingest against this global
+        // value, while the simulator reads the same key from the environment.
+        INGEST_API_KEY: process.env.INGEST_API_KEY,
         snmp: require('net-snmp'),
         pg: require('pg'),
         fs: require('fs'),

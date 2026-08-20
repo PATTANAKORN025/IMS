@@ -1,4 +1,8 @@
+# Keep text files normalized while preserving Linux runtime scripts on Windows.
 * text=auto
 *.sh text eol=lf
 *.sql text eol=lf
 *.conf text eol=lf
+
+# Generated Node-RED flow JSON must not produce phantom CRLF diffs.
+nodered_data/flows.json text eol=lf
