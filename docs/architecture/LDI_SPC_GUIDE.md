@@ -19,9 +19,12 @@ IMS tracks process capability (Cpk) for two measured quantities on every LDI exp
 
 ## The Cpk formula
 
-```text
-cp = tolerance / (3 * sigma)
-cpk = LEAST( (tolerance - mean) / (3 * sigma), (mean + tolerance) / (3 * sigma) )
+```math
+C_p = \frac{\text{tolerance}}{3\sigma}
+```
+
+```math
+C_{pk} = \min \left( \frac{\text{tolerance} - \mu}{3\sigma}, \frac{\mu + \text{tolerance}}{3\sigma} \right)
 ```
 
 - **Mean:** Sample average (`AVG`)

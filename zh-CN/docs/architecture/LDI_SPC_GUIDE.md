@@ -19,9 +19,12 @@ IMS 在每次 LDI 曝光中追踪两个测量值的工艺能力 (Cpk)：**PE**�
 
 ## Cpk 公式
 
-```text
-cp = tolerance / (3 * sigma)
-cpk = LEAST( (tolerance - mean) / (3 * sigma), (mean + tolerance) / (3 * sigma) )
+```math
+C_p = \frac{\text{tolerance}}{3\sigma}
+```
+
+```math
+C_{pk} = \min \left( \frac{\text{tolerance} - \mu}{3\sigma}, \frac{\mu + \text{tolerance}}{3\sigma} \right)
 ```
 
 - **平均值 (Mean):** 样本平均值 (`AVG`)

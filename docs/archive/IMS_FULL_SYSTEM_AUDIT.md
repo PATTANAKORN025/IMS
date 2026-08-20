@@ -33,8 +33,8 @@ This occurs because queries with correct syntax and matching schemas can still y
 
 | Dashboard         | Displayed Value               | Underlying Formula                        |
 | ----------------- | ----------------------------- | ----------------------------------------- |
-| **NOC Overview**  | **87.10%** (Red — Critical)   | `ABS(pe_1) > 10 OR ABS(je_1) > 10`        |
-| **Manufacturing** | **99.6%** (Green — Excellent) | `GREATEST(ABS(pe_1..pe_6)) <= pe_setting` |
+| **NOC Overview**  | **87.10%** (Red — Critical)   | `$\max(|pe_1|, |je_1|) > 10$`        |
+| **Manufacturing** | **99.6%** (Green — Excellent) | `$\max(|pe_1|, \dots, |pe_6|) \le pe\_setting$` |
 
 **Root Cause — Three Fundamental Discrepancies in Logic:**
 
