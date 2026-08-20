@@ -1046,7 +1046,7 @@
                 "value": [
                   {
                     "title": "Open Machine Snapshot for ${__value.text}",
-                    "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=${__data.fields.Machine}&var-factory=${__data.fields.Factory}&var-mo=${__data.fields.MO}&var-event_time_ms=${__data.fields.When_ms}&from=${__from}&to=${__to}",
+                    "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=${__data.fields.Machine}&var-factory=${__data.fields.Factory}&var-mo=${__data.fields.MO}&var-event_time_ms=${__data.fields.When_ms}&var-clicked_series=${__data.fields.Machine}&from=${__from}&to=${__to}",
                     "targetBlank": false
                   }
                 ]
@@ -1064,7 +1064,7 @@
                 "value": [
                   {
                     "title": "Open Machine Snapshot for ${__data.fields.Machine}",
-                    "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=${__data.fields.Machine}&var-factory=${__data.fields.Factory}&var-mo=${__data.fields.MO}&var-event_time_ms=${__data.fields.When_ms}&from=${__from}&to=${__to}",
+                    "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=${__data.fields.Machine}&var-factory=${__data.fields.Factory}&var-mo=${__data.fields.MO}&var-event_time_ms=${__data.fields.When_ms}&var-clicked_series=${__data.fields.Machine}&from=${__from}&to=${__to}",
                     "targetBlank": false
                   }
                 ]

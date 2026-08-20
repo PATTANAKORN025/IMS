@@ -1,91 +1,132 @@
 <!-- GLOBAL_NAV -->
 <div align="right">
-  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
-  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>主页</b></a> &nbsp;|&nbsp;
+  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>文档索引</b></a>
 </div>
 <br/>
 
-# IMS 警报与报警响应手册
+# IMS 警报与告警处理手册
 
-> **目标：** 将一线响应步骤与本系统实际生成的警报和报警代码映射。下述所有代码和规则名称均于 2026-08-10 直接对照实时数据库和配置的警报规则文件进行了核对——这取代了早期使用虚构代码（`SYS-001`、`NET-002`、`LDI-001`）（这些代码在系统中从未存在过）的版本。
+> **受众:** SRE/运维人员、工厂车间操作员。
+> **目标:** 针对系统生成的特定告警和警报代码的第一响应者解决步骤。
+> **来源:** 下方每个代码和规则名称均在 2026-08-10 直接根据实时数据库和预配的告警规则文件进行了验证。
 >
-> IMS 拥有 **三个独立的警报层**，且它们使用不同的词汇——切勿混淆：
+> IMS 拥有 **三个不同的告警层**，它们使用不同的词汇——请勿混淆：
 >
-> 1. **LDI 机器报警代码** —— 来自物理/模拟设备本身的数字代码，存储于 `public.ldi_alarm_log`，分类于 `public.ldi_alarm_ms_code`。完整分类见 `ALARM_SEVERITY_GUIDE.md`。
-> 2. **Grafana 原生警报规则** —— Grafana 针对数据库评估的阈值/异常规则，分为 LDI 专用（`monitoring/grafana/provisioning/alerting/ldi-rules.yml`）和基础设施（`rules.yml`）。
-> 3. **Prometheus/Alertmanager 规则** —— 平台本身的元监控（`monitoring/prometheus/rules/ims-alerts.yml`）——用于监控 IMS 管道是否健康，而非“机器是否超标”。
+> 1. **LDI 机器警报代码** — 来自物理/模拟设备本身的数字代码，存储在 `public.ldi_alarm_log` 中，在 `public.ldi_alarm_ms_code` 中分类。有关完整分类法，请参阅 `ALARM_SEVERITY_GUIDE.md`。
+> 2. **Grafana 原生告警规则** — Grafana 本身根据数据库评估的阈值/异常规则，分为特定于 LDI 的 (`monitoring/grafana/provisioning/alerting/ldi-rules.yml`) 和基础设施 (`rules.yml`)。
+> 3. **Prometheus/Alertmanager 规则** — 对平台本身的元监控 (`monitoring/prometheus/rules/ims-alerts.yml`) — 是指 IMS 自己的管道是否健康，而不是“机器是否超出规格”。
 
-这三层通过相同的传输路径路由：Grafana 原生警报直接触发；Prometheus 警报经过 Alertmanager → Node-RED 的 `/alert-webhook`（`nodered_data/flows/alerting.json`），后者格式化为 LINE Messaging API 和 MS Teams 的有效载荷。**向 LINE/Teams 的实际发送需要 `LINE_CHANNEL_ACCESS_TOKEN` 和 `TEAMS_WEBHOOK_URL`，出于设计考虑，这些并未在 `.env` 中提供**——格式化和发送尝试逻辑已证明是正确的，并在失败时大声报错（`node.error()` + Node-RED 中持续的红色状态），但在操作员根据 `docs/admin/ADMIN_MANUAL.md` 配置真实凭据之前，任何信息都不会送达相关人员。
+这三者均通过相同的传递路径进行路由：Grafana 的原生告警直接触发；Prometheus 告警通过 Alertmanager → Node-RED 的 `/alert-webhook` (`nodered_data/flows/alerting.json`) 进行路由，该路径格式化 LINE Messaging API 和 MS Teams 有效负载。**向 LINE/Teams 的实际发送需要 `LINE_CHANNEL_ACCESS_TOKEN` 和 `TEAMS_WEBHOOK_URL`，它们是外部配置参数。** 格式化和发送逻辑经过验证且稳健健壮，会在发生故障时记录状态。将根据 `docs/admin/ADMIN_MANUAL.md` 中的凭据配置路由消息。
 
 ---
 
-## 1. LDI 机器报警代码
+## 1. LDI 机器警报代码
 
-以下 19 个代码是当前 `ldi_alarm_simulator.json` 实际生成的代码（已针对 `ldi_alarm_log` 实时确认）；`ldi_alarm_ms_code` 中的完整目录包含更多代码（从真实的历史导出数据导入），但大多数在模拟器中未激活。这些代码如何与工艺参数相关联，见 `LDI_RCA_GUIDE.md`。
+目前系统正在生成以下 19 个代码。它们按子系统分类，以提供清晰的诊断工作流程。
 
-| 代码       | 严重性 | 消息                         | 首次响应                                                                                                     |
-| ---------- | ------ | ---------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `01060009` | 严重   | 错误的相机序列号             | 相机/视觉子系统故障——检查物理相机连接和机器控制器上的序列号配置。                                            |
-| `0106000C` | 严重   | 无法停止相机                 | 视觉子系统故障——如果重试无法清除，对相机模块重新上电。                                                       |
-| `01060013` | 严重   | 发现相同 IP                  | 机器本地网络上的网络地址冲突——检查是否有重复设备。                                                           |
-| `010E0064` | 严重   | 电机类型未定义               | 运动控制器配置故障——验证电机类型是否在机器配方/配置中设置。                                                  |
-| `01100001` | 严重   | 无法连接到 PLC               | PLC 通信中断——首要检查 PLC 的电源和网络链路。                                                                |
-| `01130002` | 严重   | 通信异常                     | 机器控制器上的通用通信故障——检查电缆和控制器日志。                                                           |
-| `10006`    | 严重   | 无法将成像设备设置为保护模式 | 在安全模式转换期间发生成像设备故障——在清除之前不要恢复曝光。                                                 |
-| `0106001C` | 轻微   | 停止触发等待信号超时         | 停止触发器上的时序/信号问题——通常是瞬态的，监控是否重复发生。                                                |
-| `70004`    | 警告   | 位置同步输出超速             | 扫描速度偏差——见 `LDI_RCA_GUIDE.md` 的 MOTION 类别；与 `ldi_data` 中的 `scan_speed` 相关。                   |
-| `80001`    | 警告   | 等待子图纸准备数据超时       | 上游数据准备延迟，并非机器故障本身——检查该作业的 MES/数据流。                                                |
-| `90001`    | 警告   | 内层与抓取点对齐失败         | 对齐/配准问题——见 `LDI_RCA_GUIDE.md` 的 ALIGNMENT/PE-JE 类别。                                               |
-| `90004`    | 警告   | 外层与抓取点对齐失败         | 与 `90001` 类别相同，针对外层。                                                                              |
-| `90005`    | 警告   | 配准误差（PE/JE）超差        | 直接违反 PE/JE 公差——在 `LDI Engineering Analytics` 中检查特定机器的 SPC 面板。                              |
-| `90012`    | 警告   | 对齐失败，操作员取消曝光     | 操作员取消——与操作员确认这是有意的，而非重复的无声故障。                                                     |
-| `91008`    | 警告   | 环境温度或湿度异常           | 环境偏差——见 `LDI_RCA_GUIDE.md` 的 THERMAL/HUMIDITY 类别；与 `ldi_data` 中的 `temperature`/`humidity` 相关。 |
-| `91009`    | 警告   | 真空压力超出控制范围         | 见 `LDI_RCA_GUIDE.md` 的 VACUUM 类别；与 `air_vacuum` 相关。                                                 |
-| `92013`    | 警告   | 网络连接超时                 | 机器到工厂的网络问题——检查与 SNMP/HTTP 遥测相同网络路径。                                                    |
-| `93004`    | 警告   | 校准周期异常                 | 定期校准未完成——检查机器校准日志。                                                                           |
-| `97005`    | 警告   | 数据库连接异常               | 机器自身的本地缓冲/数据库，非 IMS 的 TimescaleDB——检查机器控制器的本地存储。                                 |
+### 1.1 视觉与对准子系统
 
-**在哪里查看实时数据：** `IMS LDI - Operator Andon Board` 的 Action Queue 面板（只读，5秒刷新）显示尚未解决的关键/严重报警；相应的 SQL 是 `SELECT * FROM public.ldi_alarm_log ORDER BY logdate DESC LIMIT 50;`。**要确认或解决报警**，请使用 `IMS LDI - Alarm Console`——安灯板被有意设计为非交互式的电视墙终端；Alarm Console 是单独的仪表板，这些操作实际上会写入 `public.ldi_alarm_lifecycle`。
+| 代码       | 严重性 | 消息                                          | 首次响应 (L1)                                                                  | 工程工作流程 (L2/L3)                                                 |
+| ---------- | -------- | ------------------------------------------------ | ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
+| `01060009` | Major    | 相机序列号错误                       | 检查物理相机连接。请勿尝试在通电时拔出/重新插入。 | 在机器控制器上验证串行配置。重新初始化视觉模块。 |
+| `0106000C` | Major    | 停止相机失败                            | 通过操作员控制台对相机模块进行重启。                              | 检查帧抓取器日志。硬重置视觉子系统。                       |
+| `90001`    | Warning  | 内层对准夹持点失败       | 检查面板加载是否歪斜。重新加载面板。                                       | 检查配方中的夹持点公差。重新校准对准目标。        |
+| `90004`    | Warning  | 外层对准夹持点失败       | 检查面板加载是否歪斜。重新加载面板。                                       | 同 90001。                                                               |
+| `90005`    | Warning  | 注册误差 (PE/JE) 超出公差      | 暂停加载。打开 [LDI Engineering Analytics] 检查 Cpk。                        | 执行 SPC OCAP (参见 `LDI_SPC_GUIDE.md`)。                                   |
+| `90012`    | Warning  | 对准失败，操作员取消曝光 | 记录在交班日志中。验证下一个面板是否正确加载。                                | 调查操作员是否习惯性取消对准以达到定额。     |
+
+### 1.2 网络与通信子系统
+
+| 代码       | 严重性 | 消息                    | 首次响应 (L1)                                      | 工程工作流程 (L2/L3)                                      |
+| ---------- | -------- | -------------------------- | -------------------------------------------------------- | ----------------------------------------------------------------- |
+| `01060013` | Major    | 发现相同 IP          | 停止产线。这是 IT 问题。                      | 扫描子网查找重复 IP。隔离冲突设备。        |
+| `01100001` | Major    | 连接 PLC 失败   | 检查 PLC 的电源指示灯和以太网链路指示灯。 | 从边缘路由器 Ping PLC。重启 PLC 交换机端口。                |
+| `01130002` | Major    | 通信异常  | 记录具体时间和机器状态。上报。         | 检查控制器日志查找串行/以太网掉线。检查布线。 |
+| `92013`    | Warning  | 网络连接超时 | 从 NOC Ping 机器。                                   | 检查核心交换机上行链路。                                        |
+
+### 1.3 运动与机械子系统
+
+| 代码       | 严重性 | 消息                                         | 首次响应 (L1)                                             | 工程工作流程 (L2/L3)                                                   |
+| ---------- | -------- | ----------------------------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `010E0064` | Major    | 未定义电机类型                            | 请勿尝试手动移动轴。上报。                 | 验证机器的配方/配置中是否设置了电机类型。重新加载配置。        |
+| `10006`    | Major    | 无法将成像设备设置为保护模式 | **请勿恢复曝光。** 立即上报。               | 通过维护界面手动开启保护模式。检查联锁装置。 |
+| `0106001C` | Minor    | 停止触发等待信号超时                | 留意重复发生情况。如果每班发生超过 3 次则记录。 | 检查停止触发器的时序/信号逻辑。清洁传感器头。             |
+| `70004`    | Warning  | 位置同步输出超速          | 检查配方扫描速度。是否异常高？                  | 参见 `LDI_RCA_GUIDE.md` 的 MOTION 类别。重新校准编码器。                   |
+
+### 1.4 环境与系统
+
+| 代码    | 严重性 | 消息                                  | 首次响应 (L1)                                     | 工程工作流程 (L2/L3)                                                    |
+| ------- | -------- | ---------------------------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `80001` | Warning  | 等待子图纸准备数据超时 | 检查该作业的 MES/数据流。等待 5 分钟。       | 调查 CAM/MES 数据生成管道延迟。                               |
+| `91008` | Warning  | 环境温度或湿度异常 | 检查洁净室 HVAC 面板。                             | 参见 `LDI_RCA_GUIDE.md` 的 THERMAL 类别。与设施传感器进行交叉对比。 |
+| `91009` | Warning  | 真空压力失控     | 确保面板平放在平台上。清洁真空孔。 | 参见 `LDI_RCA_GUIDE.md` 的 VACUUM 类别。检查泵密封件。                       |
+| `93004` | Warning  | 校准周期异常              | 在重新校准前，请勿处理生产面板。    | 手动触发校准周期并读取日志。                               |
+| `97005` | Warning  | 数据库连接异常            | 机器自己的本地数据库宕机。上报。           | 检查机器控制器本地存储。                                         |
 
 ---
 
-## 2. Grafana 原生警报规则 — LDI (`ldi-rules.yml`)
+## 2. 授权边界与解决工作流程
 
-| 规则                                             | 含义                                                                                                        | 调查内容                                                          |
-| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| **LDI Quality Drift — Max PE exceeds tolerance** | 机器最差的 PE（位置误差）样本突破了 `pe_setting` 公差。                                                     | `LDI Engineering Analytics` → 受影响机器的 SPC 面板。             |
-| **LDI Process Capability — Cpk below 1.33**      | 基于 PE 的 Cpk 降至 1.33 行业标准能力下限以下。                                                             | 同一个仪表板；检查是单次偏差还是持续漂移——见 `LDI_SPC_GUIDE.md`。 |
-| **LDI Quality Drift — Max JE exceeds tolerance** | 与 PE 漂移相同，针对 JE（判断误差）。                                                                       | 同一个仪表板，JE 面板。                                           |
-| **LDI JE Process Capability — Cpk below 1.33**   | 基于 JE 的 Cpk 低于 1.33。                                                                                  | 同一个仪表板。                                                    |
-| **LDI Machine Alarm — new alarm in database**    | `ldi_alarm_log` 中增加了一行。这是作为兜底的“发生了某事”规则——检查上文第 1 节寻找特定代码。                 | 操作员安灯板。                                                    |
-| **LDI Temperature High — above 24°C spec limit** | 固定阈值规则，并非 Z-Score 异常——见 `LDI_RCA_GUIDE.md` 中的说明，LDI 侧没有统计异常面板，只有这个固定阈值。 | `LDI Engineering Analytics` 温度面板。                            |
+**谁能清除警报？**
 
-## 3. Grafana 原生警报规则 — 基础设施 (`rules.yml`)
+- **操作员 (L1):** _如果_ 物理根本原因已解决 (例如，清除卡住的面板)，则有权清除 `Warning` 和 `Minor` 警报。
+- **工程人员 (L2/L3):** 必须清除所有 `Major` 和 `Critical` 警报。操作员不得覆盖这些警报。
 
-| 规则                                                            | 范围                                                                                                                                                                                               |
-| --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| High CPU / RAM / Disk Usage                                     | 服务器/工作站资源阈值。                                                                                                                                                                            |
-| High Temperature                                                | 服务器机箱温度。                                                                                                                                                                                   |
-| High Network Error Rate / Network Packet Drops / Interface Down | 网络接口健康状况。                                                                                                                                                                                 |
-| Bandwidth Saturation Forecast                                   | 预测性——容量呈饱和趋势，尚未突破。                                                                                                                                                                 |
-| CPU Z-Score Anomaly (>3σ) / Temperature Z-Score Anomaly (>3σ)   | 统计异常检测——仅限基础设施。**LDI 侧没有等效的 Z-Score 面板**（见上文的 `LDI Temperature High`，它采用固定阈值替代）。                                                                             |
-| LDI Vibration Critical                                          | **备用状态。** 当前版本中每台 LDI 设备的 `ldi_metrics.vibration` 保留供未来系统集成（当前设定为 `0`，参见 `ARCHITECTURE.md` 的系统约束与技术边界）。该规则目前处于休眠状态，以兼容当前传感器规范。 |
+**解决验证:**
+警报并不是仅因为警报铃声停止响铃就意味着“已解决”。
+
+1. **清除机器上的物理故障**。
+2. **在 UI 中确认:** 使用 `IMS LDI - Alarm Console` 将警报标记为“Acknowledged”(已确认)，然后标记为“Resolved”(已解决)。
+3. **验证遥测:** 打开 `Operator Andon Board`。验证机器已恢复为绿色状态至少 3 个连续轮询周期 (15 秒)。
+
+**在哪里可以实时查看这些警报:** `IMS LDI - Operator Andon Board` 的操作队列 (Action Queue) 面板 (只读，5 秒刷新) 会显示尚未解决的 Critical/Major 警报。
+
+---
+
+## 2. Grafana 原生告警规则 — LDI (`ldi-rules.yml`)
+
+| 规则                                             | 含义                                                                                                                                                      | 调查                                                                                        |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
+| **LDI Quality Drift — Max PE exceeds tolerance** | 机器最差的 PE (位置误差) 样本超过了其 `pe_setting` 公差。                                                                                  | 针对受影响机器的 `LDI Engineering Analytics` → SPC 面板。                                 |
+| **LDI Process Capability — Cpk below 1.33**      | 基于 PE 的 Cpk 降至 1.33 的行业标准能力下限以下。                                                                                            | 同一仪表板；检查是单次偏离还是持续漂移 — 参见 `LDI_SPC_GUIDE.md`。 |
+| **LDI Quality Drift — Max JE exceeds tolerance** | 与 PE 漂移相同，适用于 JE (判断误差)。                                                                                                                         | 同一仪表板，JE 面板。                                                                         |
+| **LDI JE Process Capability — Cpk below 1.33**   | 基于 JE 的 Cpk 低于 1.33。                                                                                                                                           | 同一仪表板。                                                                                    |
+| **LDI Machine Alarm — new alarm in database**    | `ldi_alarm_log` 中出现了一行新数据。这是捕获“发生了某事”的全面规则 — 请查看上述第 1 节了解具体代码。                                       | 操作员安灯看板 (Operator Andon Board)。                                                                              |
+| **LDI Temperature High — above 24°C spec limit** | 固定阈值规则，不是 Z-Score 异常 — 参见 `LDI_RCA_GUIDE.md` 的说明，LDI 侧没有统计异常面板，只有此固定阈值。 | `LDI Engineering Analytics` 温度面板。                                                     |
+
+## 3. Grafana 原生告警规则 — 基础设施 (`rules.yml`)
+
+| 规则                                                            | 范围                                                                                                                                                                                                                                                              |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| High CPU / RAM / Disk Usage                                     | 服务器/工作站资源阈值。                                                                                                                                                                                                                            |
+| High Temperature                                                | 服务器机箱温度。                                                                                                                                                                                                                                        |
+| High Network Error Rate / Network Packet Drops / Interface Down | 网络接口运行状况。                                                                                                                                                                                                                                          |
+| Bandwidth Saturation Forecast                                   | 预测性 — 容量正趋于饱和，尚未超过。                                                                                                                                                                                                |
+| CPU Z-Score Anomaly (>3σ) / Temperature Z-Score Anomaly (>3σ)   | 统计异常检测 — 仅限基础设施。**LDI 侧没有等效的 Z-Score 面板** (参见上文的 `LDI Temperature High`，它取而代之是一个固定阈值)。                                                                              |
+| LDI Vibration Critical                                          | **已暂停。** `ldi_metrics.vibration` 对于 LDI 设备流式传输为 `0` (遗留的 `ldi_metrics` 管道中的系统限制，而不是 `ldi_data` — 参见 `ARCHITECTURE.md` 的系统约束和技术边界)。该规则已暂停，等待未来的集成。 |
 
 从 `NOC Overview` 或 `Engineering Drill-Down` 开始调查基础设施警报。
 
 ## 4. Prometheus / Alertmanager 规则 (`ims-alerts.yml`)
 
-这些规则监控 **IMS 自身管道的健康状况**，而非机器或服务器状态——即“监控系统本身是否工作”。
+这些监控 **IMS 自身的管道健康状况**，而不是机器或服务器状态 — “监控系统本身是否正常工作”。
 
-| 规则                                                                      | 含义                                                                                                | 首次响应                                                                                                       |
-| ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `PrometheusDown` / `AlertmanagerDown` / `TargetDown` / `HighScrapeErrors` | 监控堆栈自身的组件不健康。                                                                          | 执行 `docker ps` 检查受影响的容器；见 `INCIDENT_RESPONSE.md`。                                                 |
-| `ServiceDown` / `ServiceHighLatency` / `SLABreachWarning`                 | 针对监控端点（例如 Grafana 的 `/api/health`）的 blackbox-exporter 探针失败。                        | 直接检查目标服务；注意，这可能是故意重建容器的瞬时假象——见 `DR_TEST_PLAN.md` 演练 2 寻找真实示例。             |
-| `SSLCertExpiring`                                                         | 监控端点的 TLS 证书即将过期。                                                                       | 在过期前续期。                                                                                                 |
-| `Watchdog`                                                                | 持续触发的心跳，确认 Alertmanager 的路由工作正常——**并非** 真实事故。在扫描实际触发的警报时排除它。 | 不适用 - 正常工作                                                                                              |
-| `PipelineDataStalled` / `PipelineDataDegraded` / `PipelineHighErrorRate`  | Node-RED 摄取管道健康状况——遥测数据流停滞/降级/错误率高。                                           | `Meta-Monitoring` 仪表板；检查 `ims-node-red` 日志寻找特定的故障特征（见 `INCIDENT_RESPONSE.md` 的工作示例）。 |
-| `CircuitBreakerOpen`                                                      | 设备的 SNMP 断路器跳闸（多次失败后由 CLOSED 变为 OPEN）。                                           | 检查特定设备的连通性；断路器在冷却后自动复位为 HALF_OPEN。                                                     |
+| 规则                                                                      | 含义                                                                                                                                            | 首次响应                                                                                                                                                             |
+| ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PrometheusDown` / `AlertmanagerDown` / `TargetDown` / `HighScrapeErrors` | 监控堆栈自身的组件不健康。                                                                                               | 使用 `docker ps` 检查受影响的容器；参见 `INCIDENT_RESPONSE.md`。                                                                                                  |
+| `ServiceDown` / `ServiceHighLatency` / `SLABreachWarning`                 | 针对受监控端点 (例如 Grafana 自己的 `/api/health`) 的 Blackbox-exporter 探针探测失败。                                                  | 直接检查目标服务；请注意，这可能是故意重新创建容器导致的暂时现象 — 有关真实例子，请参阅 `DR_TEST_PLAN.md` 的 Drill 2 证据。 |
+| `SSLCertExpiring`                                                         | 监控的端点的 TLS 证书快到期了。                                                                                                 | 在到期前续期。                                                                                                                                                       |
+| `Watchdog`                                                                | 始终触发的心跳信号，确认 Alertmanager 的路由本身正常工作 — **不是** 真实事件。在扫描实际触发的告警时请将其排除。 | 不适用 - 按预期工作                                                                                                                                                  |
+| `PipelineDataStalled` / `PipelineDataDegraded` / `PipelineHighErrorRate`  | Node-RED 摄取管道健康状况 — 遥测流停滞/降级/高错误率。                                                              | `Meta-Monitoring` 仪表板；检查 `ims-node-red` 日志查找特定的故障签名 (参见 `INCIDENT_RESPONSE.md` 的工作示例)。                                  |
+| `CircuitBreakerOpen`                                                      | 设备的 SNMP 断路器跳闸 (反复失败后从 CLOSED 变为 OPEN)。                                                                     | 检查特定设备的连接；断路器在冷却后会自动重置为 HALF_OPEN。                                                                           |
+
+## 相关文档
+
+- `docs/operations/INCIDENT_RESPONSE.md` — 如果告警指示平台级事件的升级程序。
 
 ---
 
-_版本 2.0，修正于 2026-08-10 ——见 `docs/architecture/IMS_MANUFACT简述_PLATFORM_V2.md` 了解此修复所属的更广泛文档计划。_
+[⬅️ 返回 IMS 平台手册](../architecture/IMS_PLATFORM_BOOK.md) | [<img src="../../docs/assets/icons/home.svg" width="18" align="center" /> 主存储库](../../README.md)
+
+_版本 2.0，于 2026-08-10 修正 — 有关此修复作为其一部分的更广泛文档计划，请参阅 `docs/architecture/IMS_MANUFACTURING_PLATFORM_V2.md`。_
