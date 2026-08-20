@@ -74,6 +74,35 @@
 
 **สถาปัตยกรรม (IT):** ภายใต้ระบบ ประสิทธิภาพถูกขับเคลื่อนโดยไพพ์ไลน์แบบ stateful ของ Node-RED ที่จัดการการรับข้อมูลแบบอะซิงโครนัสและ PgBouncer ที่จัดการ connection pooling ส่วน TimescaleDB รับหน้าที่หนัก—คำนวณเบสไลน์ 3&sigma; แบบหมุนเวียน (Z-Scores) และการรวมข้อมูลต่อเนื่องแบบเรียลไทม์ ทำให้มั่นใจว่า Grafana สามารถแสดงผลแดชบอร์ดในระดับเสี้ยววินาที แม้จะสอบถามข้อมูล telemetry ย้อนหลังหลายล้านแถว
 
+
+<details open>
+<summary><b>System Architecture & Topology</b></summary>
+
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
+C4Container
+ title IMS Manufacturing Telemetry Architecture
+
+ System_Ext(devices, "Edge Devices", "Servers, Switches, LDI Machines")
+
+ System_Boundary(c1, "IMS Docker Stack") {
+ Container(nodered, "Node-RED", "Node.js", "Handles sequential bulk ingestion, parsing, and circuit breaking.")
+ Container(pgbouncer, "PgBouncer", "C", "Connection pooling for TimescaleDB to prevent connection starvation.")
+ ContainerDb(timescale, "TimescaleDB", "PostgreSQL", "Stores hyper-scale time-series data and Continuous Aggregates (CAGGs).")
+ Container(grafana, "Grafana", "Go", "Provides the Cyberpunk HUD visualization layer.")
+ Container(prometheus, "Prometheus", "Go", "Scrapes metrics from TimescaleDB and evaluates alert rules.")
+ Container(alertmanager, "Alertmanager", "Go", "Handles alert deduplication, inhibition, and routing.")
+ }
+
+ Rel(devices, nodered, "Telemetry (SNMP/HTTP)")
+ Rel(nodered, pgbouncer, "Batch INSERTs", "TCP 5432")
+ Rel(pgbouncer, timescale, "SQL Transactions", "TCP 5432")
+ Rel(grafana, timescale, "SQL Queries", "TCP 5432")
+ Rel(prometheus, timescale, "Scrape /metrics", "HTTP")
+```
+
+</details>
+
 <table style="border:none; border-collapse:collapse; width:100%;">
 
 <tr>
