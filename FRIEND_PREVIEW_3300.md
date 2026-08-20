@@ -21,6 +21,26 @@ Docker Compose does not interpret its `$` characters.
 
 The local `.env` file is ignored by Git and must never be committed.
 
+### Mentor database datasource
+
+Grafana can also read the mentor-provided database used by the existing port
+3000 stack. Configure the `MENTOR_LDI_DB_*` variables shown in `.env.example`
+and create the `grafana_mentor_reader` role with SELECT-only grants. The datasource
+UID is `mentor-ldi-readonly`; it is deliberately separate from the preview
+TimescaleDB datasource so the original 15 dashboards remain unchanged.
+
+Create or refresh the role with:
+
+```powershell
+.\scripts\configure-mentor-readonly.ps1
+```
+
+Mentor-backed dashboards are provisioned into the separate
+`Mentor LDI (Read-only)` folder.
+
+The mentor data is historical. Validation dashboards therefore use the actual
+April-July 2026 database period rather than `now-6h`.
+
 ## Start the preview
 
 ```powershell

@@ -23,6 +23,12 @@ services:
 
   grafana:
     container_name: ims-friend-grafana
+    environment:
+      MENTOR_LDI_DB_HOST: "${MENTOR_LDI_DB_HOST:?MENTOR_LDI_DB_HOST required in .env}"
+      MENTOR_LDI_DB_PORT: "${MENTOR_LDI_DB_PORT:?MENTOR_LDI_DB_PORT required in .env}"
+      MENTOR_LDI_DB_NAME: "${MENTOR_LDI_DB_NAME:?MENTOR_LDI_DB_NAME required in .env}"
+      MENTOR_LDI_DB_USER: "${MENTOR_LDI_DB_USER:?MENTOR_LDI_DB_USER required in .env}"
+      MENTOR_LDI_DB_PASSWORD: "${MENTOR_LDI_DB_PASSWORD:?MENTOR_LDI_DB_PASSWORD required in .env}"
 
   proxy:
     container_name: ims-friend-proxy
