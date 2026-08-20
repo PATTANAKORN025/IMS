@@ -15,9 +15,9 @@
 
 | Capability Claim                     | Evidence Location                                                                  | Description                                                                                                                                     |
 | ------------------------------------ | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Local Simulator Environment**      | [`runtime/compose-ps-20260813.txt`](runtime/compose-ps-20260813.txt)               | ผลลัพธ์ของคำสั่ง `docker compose ps` ยืนยันว่าระบบทำงานโดยสมบูรณ์ภายในสภาพแวดล้อมจำลอง (contained) โดยใช้ `ims-snmpsim` ปราศจากการพึ่งพาระบบการผลิตภายนอก |
-| **Telemetry Ingestion via Node-RED** | [`runtime/nodered-ingestion-20260813.txt`](runtime/nodered-ingestion-20260813.txt) | ตัวอย่างบันทึกการทำงาน (Log excerpt) แสดงความสำเร็จของคำสั่ง `Batch INSERT` ลงในตาราง `sys_metrics` และ `ldi_alarm_log` จากการทำ bulk SNMP polling ด้วย Node-RED |
-| **Continuous Aggregation**           | [`runtime/cagg-policies-20260813.txt`](runtime/cagg-policies-20260813.txt)         | ผลลัพธ์จากระเบียน TimescaleDB Continuous Aggregates เป็นการพิสูจน์ว่ามีการรวมข้อมูล (rollups) เป็นรายชั่วโมง, รายวัน และรายสัปดาห์ในฐานข้อมูล |
+| **Local Simulator Environment**      | [`runtime/compose-ps-20260813.txt`](../../../docs/evidence/runtime/compose-ps-20260813.txt)               | ผลลัพธ์ของคำสั่ง `docker compose ps` ยืนยันว่าระบบทำงานโดยสมบูรณ์ภายในสภาพแวดล้อมจำลอง (contained) โดยใช้ `ims-snmpsim` ปราศจากการพึ่งพาระบบการผลิตภายนอก |
+| **Telemetry Ingestion via Node-RED** | [`runtime/nodered-ingestion-20260813.txt`](../../../docs/evidence/runtime/nodered-ingestion-20260813.txt) | ตัวอย่างบันทึกการทำงาน (Log excerpt) แสดงความสำเร็จของคำสั่ง `Batch INSERT` ลงในตาราง `sys_metrics` และ `ldi_alarm_log` จากการทำ bulk SNMP polling ด้วย Node-RED |
+| **Continuous Aggregation**           | [`runtime/cagg-policies-20260813.txt`](../../../docs/evidence/runtime/cagg-policies-20260813.txt)         | ผลลัพธ์จากระเบียน TimescaleDB Continuous Aggregates เป็นการพิสูจน์ว่ามีการรวมข้อมูล (rollups) เป็นรายชั่วโมง, รายวัน และรายสัปดาห์ในฐานข้อมูล |
 
 ## Verification Procedures
 

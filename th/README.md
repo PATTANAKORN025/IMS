@@ -44,7 +44,7 @@
 
 <div align="center">
   <a href="#quick-start"><img src="https://img.shields.io/badge/-Release_v1.0-030407?style=for-the-badge&logo=github&logoColor=10B981" alt="Release"/></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/-MIT_License-030407?style=for-the-badge&logo=opensourceinitiative&logoColor=00F2FE" alt="License"/></a>
+  <a href="../LICENSE"><img src="https://img.shields.io/badge/-MIT_License-030407?style=for-the-badge&logo=opensourceinitiative&logoColor=00F2FE" alt="License"/></a>
   <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/-Docker_Ready-030407?style=for-the-badge&logo=docker&logoColor=2496ED" alt="Docker"/></a>
   <a href="https://grafana.com/"><img src="https://img.shields.io/badge/-Grafana_v11+-030407?style=for-the-badge&logo=grafana&logoColor=F46800" alt="Grafana"/></a>
   <a href="https://nodered.org/"><img src="https://img.shields.io/badge/-Node--RED_v4+-030407?style=for-the-badge&logo=nodered&logoColor=8F0000" alt="Node-RED"/></a>
@@ -52,7 +52,7 @@
   <br>
   <a href="#quick-start"><img src="https://img.shields.io/badge/Status-Tests_Passing-10B981?style=for-the-badge&logoColor=white" alt="Tests" /></a>
   <a href="#quick-start"><img src="https://img.shields.io/badge/K6-Stress--Tested-030407?style=for-the-badge&logo=k6&logoColor=7B61FF" alt="K6" /></a>
-  <a href="data-generators"><img src="https://img.shields.io/badge/Data-Digital_Twin-030407?style=for-the-badge&logo=python&logoColor=00C7B7" alt="Synthetic Data" /></a>
+  <a href="../data-generators"><img src="https://img.shields.io/badge/Data-Digital_Twin-030407?style=for-the-badge&logo=python&logoColor=00C7B7" alt="Synthetic Data" /></a>
 </div>
 
 <br/>
@@ -119,7 +119,7 @@
 <td align="center" width="33%">
  <h3>การนำเข้าข้อมูล (Telemetry Ingestion)</h3>
  Node-RED walkers แบบคู่ขนานใช้การร้องขอข้อมูล SNMP แบบ sequential bulk และ HTTP endpoints ซึ่งบันทึกข้อมูลลงใน TimescaleDB ผ่าน PgBouncer transaction pooling.<br/><br/>
- **ตรวจสอบแล้ว:** [nodered-ingestion-20260813.txt](docs/evidence/runtime/nodered-ingestion-20260813.txt)
+ **ตรวจสอบแล้ว:** [nodered-ingestion-20260813.txt](../docs/evidence/runtime/nodered-ingestion-20260813.txt)
 </td>
 <td align="center" width="33%">
  <h3>การควบคุมกระบวนการทางสถิติ (SPC)</h3>
@@ -128,7 +128,7 @@
 <td align="center" width="33%">
  <h3>การรวมข้อมูลอย่างต่อเนื่อง (CAGG)</h3>
  การรวบรวมข้อมูลรายชั่วโมง, รายวัน และรายสัปดาห์จะคำนวณโดยอัตโนมัติด้วย TimescaleDB เพื่อรักษาเวลาในการเรนเดอร์ Grafana ให้น้อยกว่าหนึ่งวินาทีครอบคลุมช่วงเวลาที่กว้างขวาง<br/><br/>
- **ตรวจสอบแล้ว:** [cagg-policies-20260813.txt](docs/evidence/runtime/cagg-policies-20260813.txt)
+ **ตรวจสอบแล้ว:** [cagg-policies-20260813.txt](../docs/evidence/runtime/cagg-policies-20260813.txt)
 </td>
 </tr>
 </table>
@@ -158,7 +158,7 @@ open http://localhost:3000
 ```
 
 > **สิ่งที่จะพบ:** การจำลองอย่างนุ่มนวล (~10-15 แถว/นาที) ช่วยให้คุณคลิกดูศูนย์บัญชาการการผลิต LDI (LDI Manufacturing Command Center), ดูบอร์ด Operator Andon และดูกราฟความสามารถ Cpk แบบเรียลไทม์
-> **ตรวจสอบแล้ว:** `docker compose ps` วันที่ 2026-08-13, จัดเก็บใน [`docs/evidence/runtime/compose-ps-20260813.txt`](docs/evidence/runtime/compose-ps-20260813.txt)
+> **ตรวจสอบแล้ว:** `docker compose ps` วันที่ 2026-08-13, จัดเก็บใน [`docs/evidence/runtime/compose-ps-20260813.txt`](../docs/evidence/runtime/compose-ps-20260813.txt)
 
 ### เส้นทาง B: พื้นที่พิสูจน์ประสิทธิภาพ (Stress Test)
 
@@ -427,6 +427,6 @@ IMS/
 
 **สร้างด้วยความแม่นยำ ออกแบบมาเพื่ออัปไทม์ (uptime)**
 
-[MIT License](LICENSE) — 2026 ผู้ร่วมให้ข้อมูลของ IMS
+[MIT License](../LICENSE) — 2026 ผู้ร่วมให้ข้อมูลของ IMS
 
 </div>

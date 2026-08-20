@@ -111,7 +111,7 @@ IMS คือ monitoring platform ที่ครอบคลุมสองโ�
 
 - [`../../CONTRIBUTING.md`](../../CONTRIBUTING.md) — เวิร์กโฟลว์ของการพัฒนา (development workflow)
 - [`../../SECURITY.md`](../../SECURITY.md) — นโยบายความปลอดภัย (security policy)
-- [`../../.github/CODEOWNERS`](../../.github/CODEOWNERS) — การบังคับใช้ขอบเขตความเป็นเจ้าของ (enforced ownership boundaries)
+- [`../../.github/CODEOWNERS`](../../../.github/CODEOWNERS) — การบังคับใช้ขอบเขตความเป็นเจ้าของ (enforced ownership boundaries)
 
 ### บริบทด้านผลิตภัณฑ์และธุรกิจ (Product & business context)
 

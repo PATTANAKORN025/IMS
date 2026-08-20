@@ -111,7 +111,7 @@ IMS 是一个跨越两个领域的监控平台 —— **基础设施**（服务�
 
 - [`../../CONTRIBUTING.md`](../../CONTRIBUTING.md) — 开发工作流。
 - [`../../SECURITY.md`](../../SECURITY.md) — 安全策略。
-- [`../../.github/CODEOWNERS`](../../.github/CODEOWNERS) — 强制的所有权边界。
+- [`../../.github/CODEOWNERS`](../../../.github/CODEOWNERS) — 强制的所有权边界。
 
 ### 产品与业务背景
 
