@@ -1,1 +1,1318 @@
-[{"id": "ims-alert-tab", "type": "tab", "label": "IMS Alerting Pipeline", "disabled": false, "info": "Alertmanager webhook \u2192 LINE Messaging API / MS Teams"}, {"id": "22d255c35801cf0d", "type": "group", "z": "ims-alert-tab", "style": {"stroke": "#999999", "stroke-opacity": "1", "fill": "none", "fill-opacity": "1", "label": true, "label-position": "nw", "color": "#a4a4a4"}, "nodes": ["alert_http_in", "alert_respond", "alert_format", "alert_debug", "alert_line_format", "alert_line_notify", "alert_teams_format", "alert_teams_webhook", "alert_catch", "alert_error_debug", "alert_status_line", "alert_status_teams"], "x": 38, "y": 55, "w": 1476, "h": 322}, {"id": "alert_http_in", "type": "http in", "z": "ims-alert-tab", "g": "22d255c35801cf0d", "name": "POST /alert-webhook", "url": "/alert-webhook", "method": "post", "upload": false, "swaggerDoc": "", "x": 164, "y": 144, "wires": [["alert_respond", "alert_format"]]}, {"id": "alert_respond", "type": "http response", "z": "ims-alert-tab", "g": "22d255c35801cf0d", "name": "200 OK", "statusCode": "200", "headers": {"Content-Type": "application/json"}, "x": 396, "y": 96, "wires": []}, {"id": "alert_format", "type": "function", "z": "ims-alert-tab", "g": "22d255c35801cf0d", "name": "Format Alert Text", "func": "const payload = msg.payload;\nif (!payload || !payload.alerts) return null;\n\nconst alerts = payload.alerts;\nlet msgText = '\\ud83d\\udd14 *IMS SYSTEM ALERT [' + (payload.status || 'unknown').toUpperCase() + ']* \\ud83d\\udd14\\n\\n';\n\nfor (let i = 0; i < alerts.length; i++) {\n    const a = alerts[i];\n    const labels = a.labels || {};\n    const annotations = a.annotations || {};\n    \n    let icon = '\\u26a0\\ufe0f';\n    if (labels.severity === 'critical') icon = '\\ud83d\\udd25';\n    if (payload.status === 'resolved') icon = '\\u2705';\n\n    msgText += icon + ' *' + (labels.alertname || 'Unknown Alert') + '*\\n';\n    msgText += '\\ud83d\\udda5\\ufe0f *Host:* ' + (labels.machine_id || labels.instance || 'System') + '\\n';\n    msgText += '\\ud83d\\udcdd *Detail:* ' + (annotations.summary || 'N/A') + '\\n';\n    if (annotations.description) msgText += '\\ud83d\\udca1 *Desc:* ' + annotations.description + '\\n';\n    \n    const startTime = a.startsAt ? new Date(a.startsAt).toLocaleString('th-TH') : 'Unknown';\n    msgText += '\\ud83d\\udd52 *Time:* ' + startTime + '\\n';\n    msgText += '-------------------\\n';\n}\n\nmsg.payload = msgText;\nreturn msg;", "outputs": 1, "timeout": "", "noerr": 0, "initialize": "", "finalize": "", "libs": [], "x": 422, "y": 192, "wires": [["alert_debug", "alert_line_format", "alert_teams_format"]]}, {"id": "alert_debug", "type": "debug", "z": "ims-alert-tab", "g": "22d255c35801cf0d", "name": "Alert Log", "active": true, "tosidebar": true, "console": true, "tostatus": true, "complete": "payload", "targetType": "msg", "x": 1318, "y": 192, "wires": []}, {"id": "alert_line_format", "type": "function", "z": "ims-alert-tab", "g": "22d255c35801cf0d", "name": "Format LINE Messaging API", "func": "const token = env.get('LINE_CHANNEL_ACCESS_TOKEN') || '';\nconst userId = env.get('LINE_USER_ID') || '';\n\nif (!token || !userId) {\n    node.status({ fill: 'red', shape: 'ring', text: 'NOT CONFIGURED' });\n    node.error('LINE Messaging API not configured \u2014 set LINE_CHANNEL_ACCESS_TOKEN and LINE_USER_ID env vars. Alert was NOT delivered.', msg);\n    return null;\n}\nnode.status({});\n\nmsg.headers = {\n    'Authorization': 'Bearer ' + token,\n    'Content-Type': 'application/json'\n};\nmsg.payload = JSON.stringify({\n    to: userId,\n    messages: [{ type: 'text', text: msg.payload }]\n});\nreturn msg;", "outputs": 1, "timeout": "", "noerr": 0, "initialize": "", "finalize": "", "libs": [], "x": 696, "y": 112, "wires": [["alert_line_notify"]]}, {"id": "alert_line_notify", "type": "http request", "z": "ims-alert-tab", "g": "22d255c35801cf0d", "name": "LINE Messaging API", "method": "POST", "ret": "txt", "paytoqs": "ignore", "url": "https://api.line.me/v2/bot/message/push", "tls": "", "persist": false, "proxy": "", "insecureHTTPParser": false, "authType": "", "senderr": false, "headers": [], "x": 1012, "y": 112, "wires": [["alert_status_line"]]}, {"id": "alert_teams_format", "type": "function", "z": "ims-alert-tab", "g": "22d255c35801cf0d", "name": "Format Teams Webhook", "func": "const url = env.get(\"TEAMS_WEBHOOK_URL\") || \"\";\n\nif (!url) {\n    node.status({ fill: \"red\", shape: \"ring\", text: \"NOT CONFIGURED\" });\n    node.error(\"MS Teams webhook not configured \u2014 set TEAMS_WEBHOOK_URL env var. Alert was NOT delivered.\", msg);\n    return null;\n}\nnode.status({});\n\nconst card = {\n    \"type\": \"message\",\n    \"attachments\": [{\n        \"contentType\": \"application/vnd.microsoft.card.adaptive\",\n        \"contentUrl\": null,\n        \"content\": {\n            \"$schema\": \"http://adaptivecards.io/schemas/adaptive-card.json\",\n            \"type\": \"AdaptiveCard\",\n            \"version\": \"1.4\",\n            \"body\": [{\n                \"type\": \"TextBlock\",\n                \"text\": \"IMS System Alert\",\n                \"weight\": \"bolder\",\n                \"size\": \"large\",\n                \"color\": \"attention\"\n            }, {\n                \"type\": \"TextBlock\",\n                \"text\": msg.payload,\n                \"wrap\": true,\n                \"spacing\": \"medium\"\n            }],\n            \"msteams\": {\n                \"entities\": []\n            }\n        }\n    }]\n};\nmsg.payload = JSON.stringify(card);\nmsg.headers = { \"Content-Type\": \"application/json\" };\nmsg.url = url;\nreturn msg;", "outputs": 1, "timeout": "", "noerr": 0, "initialize": "", "finalize": "", "libs": [], "x": 686, "y": 256, "wires": [["alert_teams_webhook"]]}, {"id": "alert_teams_webhook", "type": "http request", "z": "ims-alert-tab", "g": "22d255c35801cf0d", "name": "MS Teams Webhook", "method": "POST", "ret": "txt", "paytoqs": "ignore", "url": "", "tls": "", "persist": false, "proxy": "", "insecureHTTPParser": false, "authType": "", "senderr": false, "headers": [], "x": 1012, "y": 256, "wires": [["alert_status_teams"]]}, {"id": "alert_catch", "type": "catch", "z": "ims-alert-tab", "g": "22d255c35801cf0d", "name": "Catch Alert Errors", "scope": ["alert_format", "alert_line_format", "alert_line_notify", "alert_teams_format", "alert_teams_webhook", "alert_status_line", "alert_status_teams"], "uncaught": false, "x": 144, "y": 336, "wires": [["alert_error_debug"]]}, {"id": "alert_error_debug", "type": "debug", "z": "ims-alert-tab", "g": "22d255c35801cf0d", "name": "Alert Delivery Failure", "active": true, "tosidebar": true, "console": true, "tostatus": true, "complete": "error", "targetType": "msg", "statusVal": "error.message", "statusType": "msg", "x": 1358, "y": 336, "wires": []}, {"id": "alert_status_line", "type": "function", "z": "ims-alert-tab", "g": "22d255c35801cf0d", "name": "Check LINE Status", "func": "if (msg.statusCode && msg.statusCode >= 300) {\n    node.error('LINE delivery failed: HTTP ' + msg.statusCode, msg);\n}\nreturn msg;", "outputs": 1, "timeout": "", "noerr": 0, "initialize": "", "finalize": "", "libs": [], "x": 1338, "y": 112, "wires": [[]]}, {"id": "alert_status_teams", "type": "function", "z": "ims-alert-tab", "g": "22d255c35801cf0d", "name": "Check Teams Status", "func": "if (msg.statusCode && msg.statusCode >= 300) {\n    node.error('Teams delivery failed: HTTP ' + msg.statusCode, msg);\n}\nreturn msg;", "outputs": 1, "timeout": "", "noerr": 0, "initialize": "", "finalize": "", "libs": [], "x": 1340, "y": 256, "wires": [[]]}, {"id": "ims-tab-v5", "type": "tab", "label": "IMS Ingestion Pipeline", "disabled": false, "info": "SNMP walkers \u2192 Parser \u2192 TimescaleDB"}, {"id": "bc78ea85b252a09f", "type": "group", "z": "ims-tab-v5", "style": {"stroke": "#999999", "stroke-opacity": "1", "fill": "none", "fill-opacity": "1", "label": true, "label-position": "nw", "color": "#a4a4a4"}, "nodes": ["retry_timer", "inject_fleet", "generate_fleet_targets", "pace_limiter", "fork_5_ways", "walk_cpu", "walk_storage", "walk_net_get", "walk_temp", "catch_walker", "bypass_error", "walk_ldi", "sre_parser", "db_insert", "debug_ok", "global_catch", "debug_err", "inject_registry", "device_registry", "resolve_device", "catch_db_insert", "retry_store", "debug_retry", "retry_rebuild", "http_inject_in", "http_inject_handler", "http_inject_respond"], "x": 50, "y": 55, "w": 2540, "h": 418}, {"id": "inject_fleet", "type": "inject", "z": "ims-tab-v5", "g": "bc78ea85b252a09f", "name": "Poll Fleet (30s)", "props": [{"p": "payload"}], "repeat": "30", "crontab": "", "once": true, "onceDelay": 5, "topic": "", "payload": "", "payloadType": "date", "x": 176, "y": 192, "wires": [["generate_fleet_targets"]]}, {"id": "generate_fleet_targets", "type": "function", "z": "ims-tab-v5", "g": "bc78ea85b252a09f", "name": "Generate Fleet Targets", "func": "const registry = global.get('deviceRegistry') || {};\nconst msgs = [];\nfor (const deviceId of Object.keys(registry)) {\n    msgs.push({ machine_id: deviceId, topic: deviceId, payload: '' });\n}\nreturn [msgs];", "outputs": 1, "x": 628, "y": 192, "wires": [["pace_limiter"]]}, {"id": "pace_limiter", "type": "delay", "z": "ims-tab-v5", "g": "bc78ea85b252a09f", "name": "Pace 50/sec", "pauseType": "rate", "timeout": "5", "timeoutUnits": "seconds", "rate": "50", "nbRateUnits": "1", "rateUnits": "second", "randomFirst": "1", "randomLast": "5", "randomUnits": "seconds", "drop": false, "allowrate": "", "outputs": 1, "x": 902, "y": 192, "wires": [["resolve_device"]]}, {"id": "fork_5_ways", "type": "function", "z": "ims-tab-v5", "g": "bc78ea85b252a09f", "name": "Fork 5 Walker Threads", "func": "const cb = global.get('circuitBreaker');\nconst mid = msg.machine_id || msg.topic;\nconst base = { host: msg.host, community: msg.community, snmp_port: msg.snmp_port, device_type: msg.device_type || \"server\" };\nconst batchId = flow.get(\"batchId\") || \"batch_0\";\nconst devType = msg.device_type || \"server\";\nconst isSwitch = devType === \"network_switch\";\nconst walkerCount = isSwitch ? 4 : 5;\n\nif (cb && !cb.checkDevice(mid, flow)) {\n    const mk = () => ({ ...base, machine_id: mid, topic: mid, _walker: \"offline\", payload: [], parts: { id: batchId, index: 0, count: 1 } });\n    const msgs = [];\n    for (let i = 0; i < walkerCount; i++) msgs.push(mk());\n    return msgs;\n}\n\nlet idx = 0;\nconst msgs = [];\nconst add = (walker) => { msgs.push({ ...base, machine_id: mid, topic: mid, _walker: walker, payload: \"\", parts: { id: batchId, index: idx++, count: 99 } }); };\nadd(\"cpu\"); add(\"storage\"); add(\"net\"); add(\"temp\");\nif (!isSwitch) { add(\"ldi\"); }\nreturn msgs;", "outputs": 5, "x": 1540, "y": 192, "wires": [["walk_cpu"], ["walk_storage"], ["walk_net_get"], ["walk_temp"], ["walk_ldi"]]}, {"id": "walk_cpu", "type": "function", "z": "ims-tab-v5", "g": "bc78ea85b252a09f", "name": "Walk CPU", "func": "const snmp = global.get(\"snmp\");\nconst normalizeOid = (raw) => Array.isArray(raw) ? raw.join(\".\") : String(raw).replace(/,/g, \".\");\nif (!snmp) { msg.payload = []; return msg; }\n\nconst devType = msg.device_type || \"server\";\nconst msgRef = msg;\nconst nodeRef = node;\n\nif (msg._walker === \"offline\") return msg;\n\nfunction mkSession() {\n    return snmp.createSession(msg.host || \"ims-snmpsim\", msg.community || \"apex_mock\", {\n        port: msg.snmp_port || 161, version: snmp.Version2c, retries: 0, timeout: 6000\n    });\n}\n\nfunction pushIfValid(vb, out) {\n    if (vb.value === null || vb.value === undefined) return;\n    if (vb.type === 129 || vb.type === 128 || vb.type === 130) return;\n    out.push({ oid: normalizeOid(vb.oid), value: vb.value, type: vb.type });\n}\n\n// HOST-RESOURCES-MIB: hrProcessorLoad \u2014 works on both Linux and Juniper\nconst oids = [\n    \"1.3.6.1.2.1.25.3.3.1.2.1\",\n    \"1.3.6.1.2.1.25.3.3.1.2.2\",\n    \"1.3.6.1.2.1.25.3.3.1.2.3\",\n    \"1.3.6.1.2.1.25.3.3.1.2.4\"\n];\ntry {\n    var s = mkSession();\n    s.on(\"error\", function(err) { node.debug(\"CPU SNMP error: \" + err.message); });\n    s.get(oids, function(error, varbinds) {\n        try { s.close(); } catch(e) {}\n        var results = [];\n        if (!error && varbinds) {\n            for (var i = 0; i < varbinds.length; i++) pushIfValid(varbinds[i], results);\n        }\n        msgRef.payload = results;\n        nodeRef.send(msgRef);\n    });\n} catch(e) {\n    msgRef.payload = [];\n    nodeRef.send(msgRef);\n}\nreturn null;", "outputs": 1, "timeout": "15", "x": 1814, "y": 96, "wires": [["sre_parser"]]}, {"id": "walk_storage", "type": "function", "z": "ims-tab-v5", "g": "bc78ea85b252a09f", "name": "Walk Storage", "func": "const snmp = global.get(\"snmp\");\nconst normalizeOid = (raw) => Array.isArray(raw) ? raw.join(\".\") : String(raw).replace(/,/g, \".\");\nif (!snmp) { msg.payload = []; return msg; }\n\nconst devType = msg.device_type || \"server\";\nconst msgRef = msg;\nconst nodeRef = node;\n\nif (msg._walker === \"offline\") return msg;\n\nfunction mkSession() {\n    return snmp.createSession(msg.host || \"ims-snmpsim\", msg.community || \"apex_mock\", {\n        port: msg.snmp_port || 161, version: snmp.Version2c, retries: 0, timeout: 6000\n    });\n}\n\nfunction pushIfValid(vb, out) {\n    if (vb.value === null || vb.value === undefined) return;\n    if (vb.type === 129 || vb.type === 128 || vb.type === 130) return;\n    out.push({ oid: normalizeOid(vb.oid), value: vb.value, type: vb.type });\n}\n\n// Universal HOST-RESOURCES-MIB: hrStorageTable for ALL device types\nvar oids = [\n    \"1.3.6.1.2.1.25.2.3.1.2.1\", \"1.3.6.1.2.1.25.2.3.1.2.2\",\n    \"1.3.6.1.2.1.25.2.3.1.3.1\", \"1.3.6.1.2.1.25.2.3.1.3.2\",\n    \"1.3.6.1.2.1.25.2.3.1.4.1\", \"1.3.6.1.2.1.25.2.3.1.4.2\",\n    \"1.3.6.1.2.1.25.2.3.1.5.1\", \"1.3.6.1.2.1.25.2.3.1.5.2\",\n    \"1.3.6.1.2.1.25.2.3.1.6.1\", \"1.3.6.1.2.1.25.2.3.1.6.2\"\n];\ntry {\n    var s = mkSession();\n    s.on(\"error\", function(err) { node.debug(\"Storage SNMP error: \" + err.message); });\n    s.get(oids, function(error, varbinds) {\n        try { s.close(); } catch(e) {}\n        var results = [];\n        if (!error && varbinds) {\n            for (var i = 0; i < varbinds.length; i++) pushIfValid(varbinds[i], results);\n        }\n        msgRef.payload = results;\n        nodeRef.send(msgRef);\n    });\n} catch(e) {\n    msgRef.payload = [];\n    nodeRef.send(msgRef);\n}\nreturn null;", "outputs": 1, "timeout": "15", "x": 1824, "y": 144, "wires": [["sre_parser"]]}, {"id": "walk_net_get", "type": "function", "z": "ims-tab-v5", "g": "bc78ea85b252a09f", "name": "Walk Network (Dual-Engine)", "func": "const snmp = global.get(\"snmp\");\nconst normalizeOid = (raw) => Array.isArray(raw) ? raw.join(\".\") : String(raw).replace(/,/g, \".\");\nif (!snmp) { msg.payload = []; return msg; }\n\nconst devType = msg.device_type || \"server\";\nconst msgRef = msg;\nconst nodeRef = node;\n\nif (msg._walker === \"offline\") return msg;\n\nfunction mkSession() {\n    return snmp.createSession(msg.host || \"ims-snmpsim\", msg.community || \"apex_mock\", {\n        port: msg.snmp_port || 161, version: snmp.Version2c, retries: 0, timeout: 6000\n    });\n}\n\nfunction subtreeWalk(session, oid, maxReps) {\n    return new Promise(function(resolve) {\n        const buf = [];\n        session.subtree(oid, maxReps,\n            function(vbs) { for (let i = 0; i < vbs.length; i++) buf.push(vbs[i]); },\n            function(err) { resolve(buf); }\n        );\n    });\n}\n\nfunction pushIfValid(vb, out) {\n    if (vb.value === null || vb.value === undefined) return;\n    if (vb.type === 129 || vb.type === 128 || vb.type === 130) return;\n    out.push({ oid: normalizeOid(vb.oid), value: vb.value, type: vb.type });\n}\n\nif (devType === \"network_switch\") {\n    return (async function() {\n        const results = [];\n        let s;\n        try {\n            s = mkSession();\n            s.on(\"error\", function(err) { node.warn(\"NET SESSION ERROR device=\" + msg.machine_id + \": \" + err.message); });\n            const table = await subtreeWalk(s, \"1.3.6.1.2.1.2.2.1\", 50);\n            for (let i = 0; i < table.length; i++) pushIfValid(table[i], results);\n            const xtable = await subtreeWalk(s, \"1.3.6.1.2.1.31.1.1.1\", 50);\n            for (let i = 0; i < xtable.length; i++) pushIfValid(xtable[i], results);\n        } catch(e) {\n            node.debug(\"Network walk exception: \" + e.message);\n        } finally {\n            try { if (s) s.close(); } catch(e) {}\n        }\n        node.debug(\"Net walk: \" + results.length + \" varbinds\");\n        msgRef.payload = results;\n        return msgRef;\n    })();\n}\n\nvar oids = [\n    \"1.3.6.1.2.1.2.2.1.2.1\",\"1.3.6.1.2.1.2.2.1.2.2\",\n    \"1.3.6.1.2.1.2.2.1.5.1\",\"1.3.6.1.2.1.2.2.1.5.2\",\n    \"1.3.6.1.2.1.2.2.1.10.1\",\"1.3.6.1.2.1.2.2.1.10.2\",\n    \"1.3.6.1.2.1.2.2.1.16.1\",\"1.3.6.1.2.1.2.2.1.16.2\",\n    \"1.3.6.1.2.1.2.2.1.14.1\",\"1.3.6.1.2.1.2.2.1.14.2\",\n    \"1.3.6.1.2.1.2.2.1.13.1\",\"1.3.6.1.2.1.2.2.1.13.2\",\n    \"1.3.6.1.2.1.2.2.1.8.1\",\"1.3.6.1.2.1.2.2.1.8.2\"\n];\ntry {\n    var s = mkSession();\n    s.on(\"error\", function(err) { node.warn(\"NET SESSION ERROR device=\" + msg.machine_id + \": \" + err.message); });\n    s.get(oids, function(error, varbinds) {\n        try { s.close(); } catch(e) {}\n        if (error) { node.warn(\"NET GET ERROR device=\" + msg.machine_id + \" host=\" + (msg.host||\"?\") + \" community=\" + (msg.community||\"?\") + \": \" + error.message); msgRef.payload = []; nodeRef.send(msgRef); return; }\n        var results = [];\n        for (var i = 0; i < varbinds.length; i++) pushIfValid(varbinds[i], results);\n        msgRef.payload = results;\n        nodeRef.send(msgRef);\n    });\n} catch(e) {\n    msgRef.payload = [];\n    nodeRef.send(msgRef);\n}\nreturn null;", "outputs": 1, "timeout": "15", "x": 1864, "y": 192, "wires": [["sre_parser"]]}, {"id": "walk_temp", "type": "function", "z": "ims-tab-v5", "g": "bc78ea85b252a09f", "name": "Walk Temperature", "func": "const snmp = global.get(\"snmp\");\nconst normalizeOid = (raw) => Array.isArray(raw) ? raw.join(\".\") : String(raw).replace(/,/g, \".\");\nif (!snmp) { msg.payload = []; return msg; }\n\nconst devType = msg.device_type || \"server\";\nconst msgRef = msg;\nconst nodeRef = node;\n\nif (msg._walker === \"offline\") return msg;\n\nfunction mkSession() {\n    return snmp.createSession(msg.host || \"ims-snmpsim\", msg.community || \"apex_mock\", {\n        port: msg.snmp_port || 161, version: snmp.Version2c, retries: 0, timeout: 6000\n    });\n}\n\nfunction pushIfValid(vb, out) {\n    if (vb.value === null || vb.value === undefined) return;\n    if (vb.type === 129 || vb.type === 128 || vb.type === 130) return;\n    out.push({ oid: normalizeOid(vb.oid), value: vb.value, type: vb.type });\n}\n\nvar oids = devType === 'network_switch'\n    ? [\n        \"1.3.6.1.4.1.2636.3.1.13.1.7.9.1.0.0\",\n        \"1.3.6.1.4.1.2636.3.1.13.1.7.7.1.0.0\"\n      ]\n    : ['1.3.6.1.4.1.2021.13.16.2.1.7.0', '1.3.6.1.4.1.2021.13.16.2.1.7.1'];\ntry {\n    var s = mkSession();\n    s.on(\"error\", function(err) { node.debug(\"Temp SNMP error: \" + err.message); });\n    s.get(oids, function(error, varbinds) {\n        try { s.close(); } catch(e) {}\n        var results = [];\n        if (!error && varbinds) {\n            for (var i = 0; i < varbinds.length; i++) pushIfValid(varbinds[i], results);\n        }\n        msgRef.payload = results;\n        nodeRef.send(msgRef);\n    });\n} catch(e) {\n    msgRef.payload = [];\n    nodeRef.send(msgRef);\n}\nreturn null;", "outputs": 1, "timeout": "10", "x": 1834, "y": 240, "wires": [["sre_parser"]]}, {"id": "catch_walker", "type": "catch", "z": "ims-tab-v5", "g": "bc78ea85b252a09f", "name": "Catch Walker Error", "scope": ["walk_cpu", "walk_storage", "walk_net_get", "walk_temp", "walk_ldi"], "uncaught": false, "x": 184, "y": 336, "wires": [["bypass_error"]]}, {"id": "bypass_error", "type": "function", "z": "ims-tab-v5", "g": "bc78ea85b252a09f", "name": "Bypass Empty", "func": "// Log error \u2014 walker already sent empty payload on error.\n// Do not re-send: would double-count.\nnode.warn('Walker error caught: ' + (msg.error ? msg.error.message : 'unknown'));\nreturn null;", "outputs": 1, "x": 608, "y": 336, "wires": [[]]}, {"id": "walk_ldi", "type": "function", "z": "ims-tab-v5", "g": "bc78ea85b252a09f", "name": "Walk LDI (All 10 OIDs)", "func": "const snmp = global.get('snmp');\nif (!snmp) { msg.payload = []; return msg; }\nconst oids = [\n    '1.3.6.1.4.1.9999.1.1.0',\n    '1.3.6.1.4.1.9999.1.2.0',\n    '1.3.6.1.4.1.9999.1.3.0',\n    '1.3.6.1.4.1.9999.1.4.2',\n    '1.3.6.1.4.1.9999.1.4.5',\n    '1.3.6.1.4.1.9999.1.5.1',\n    '1.3.6.1.4.1.9999.1.6.1',\n    '1.3.6.1.4.1.9999.1.7.1',\n    '1.3.6.1.4.1.9999.2.1.0',\n    '1.3.6.1.4.1.9999.2.2.0'\n];\nconst session = snmp.createSession(msg.host || 'ims-snmpsim', msg.community || 'apex_mock', {port: msg.snmp_port || 161, version: snmp.Version2c,retries:1,timeout:3000});\nsession.on('error', function(err) { node.error('SNMP session error: ' + err.message); });;\nconst nodeRef = node; const msgRef = msg;\nsession.get(oids, function(error, varbinds) {\n    session.close();\n    if (error) { msgRef.payload = []; nodeRef.send(msgRef); return; }\n    const results = [];\n    varbinds.forEach(function(vb) { if (vb.value === null || vb.value === undefined) return; if (vb.type !== 129 && vb.type !== 128 && vb.type !== 130) results.push({oid:vb.oid,value:vb.value,type:vb.type}); });\n    msgRef.payload = results;\n    nodeRef.send(msgRef);\n});\nreturn null;", "outputs": 1, "timeout": "10", "x": 1844, "y": 288, "wires": [["sre_parser"]]}, {"id": "sre_parser", "type": "function", "z": "ims-tab-v5", "g": "bc78ea85b252a09f", "name": "SRE AIOps Parser v9 (Batch)", "func": "const BATCH_INTERVAL_SEC = 10;\nconst BUFFER_MAX = 200;\nconst SYS_CYCLE_TIMEOUT_MS = 35000;\nfunction enforceBufferLimit(buf, type) {\n    if (buf.length >= BUFFER_MAX) {\n        buf.shift();\n        node.warn('BUFFER OVERFLOW: Dropped oldest ' + type + ' metric to prevent OOM.');\n        const m = global.get('pipelineMetrics') || { inserts_ok: 0, inserts_failed: 0, last_flush: 0, devices_polled: 0, buffer_overflows: 0 };\n        m.buffer_overflows = (m.buffer_overflows || 0) + 1;\n        global.set('pipelineMetrics', m);\n    }\n}\n\ntry {\nconst { parseAll, calcNetRate, sanitize, mkIface, safeKey } = global.get('parser');\n    if (!msg.payload || !Array.isArray(msg.payload)) return null;\n    const deviceId = sanitize(msg.topic || msg.machine_id || '');\n    if (!deviceId) return null;\n    const walkerType = msg._walker || 'unknown';\n    const isEmpty = msg.payload.length === 0;\n    const isOffline = walkerType === 'offline';\n\n    // Node-RED's flow.get/set parses a string key as a property-expression --\n    // a bare space (real machine names like \"LDI-A01\") throws\n    // \"Invalid property expression\", silently dropping that device's data\n    // every poll cycle (caught by this function's own try/catch below).\n    // calcNetRate() already guards its own internal keys with safeKey() --\n    // this was missed here when that fix was made. deviceId itself stays\n    // raw (sanitize()'d only) for use as the actual SQL column value.\n    const ctxKey = safeKey(deviceId);\n    const stateKey = 'dev_state_' + ctxKey;\n    let state = flow.get(stateKey) || { cpu_cores: 0, cpu_load: 0, ram_total: 0, ram_used: 0, ram_free: 0, disk_total: 0, disk_used: 0, disk_free: 0, temp: 0, ifaces: {}, ldi: { throughput: 0, temp: 0, humidity: 0, pe: 0, je: 0, power: 0, vibration: 0 } };\n\n    if (isOffline) {\n        state.cpu_cores = 0; state.cpu_load = 0;\n        state.ram_total = 0; state.ram_used = 0; state.ram_free = 0;\n        state.disk_total = 0; state.disk_used = 0; state.disk_free = 0;\n        state.temp = 0;\n        const downIfaces = {};\n        for (const [idx, iface] of Object.entries(state.ifaces)) {\n            if (iface.name) downIfaces[idx] = { name: iface.name, rx64: 0, tx64: 0, rx32: 0, tx32: 0, err: 0, drop: 0, status: 0 };\n        }\n        state.ifaces = downIfaces;\n        state.ldi = { throughput: 0, temp: 0, humidity: 0, pe: 0, je: 0, power: 0, vibration: 0 };\n    } else if (isEmpty) {\n        if (walkerType === 'cpu') { state.cpu_cores = 0; state.cpu_load = 0; state.cpu_metrics = {}; }\n        if (walkerType === 'storage') { state.ram_total = 0; state.ram_used = 0; state.ram_free = 0; state.disk_total = 0; state.disk_used = 0; state.disk_free = 0; }\n        if (walkerType === 'temp') { state.temp = 0; state.temp_metrics = {}; }\n        if (walkerType === 'net') {\n            const downIfaces = {};\n            for (const [idx, iface] of Object.entries(state.ifaces)) {\n                if (iface.name) downIfaces[idx] = { name: iface.name, rx_mbps: 0, tx_mbps: 0, rx_errors: 0, tx_errors: 0, rx_drops: 0, tx_drops: 0, status: 'DOWN' };\n            }\n            state.ifaces = downIfaces;\n        }\n        if (walkerType === 'ldi') { state.ldi = { throughput: 0, temp: 0, humidity: 0, pe: 0, je: 0, power: 0, vibration: 0 }; }\n    } else {\n        const parsed = parseAll(msg.payload, walkerType, state);\n        if (walkerType === 'cpu') { state.cpu_cores = parsed.cpu.coreCount; state.cpu_load = parsed.cpu.loadPercent; state.cpu_metrics = parsed.cpu.cpuMetrics || {}; }\n        if (walkerType === 'storage') { state.ram_total = parsed.disk.ramTotalMb; state.ram_used = parsed.disk.ramUsedMb; state.ram_free = parsed.disk.ramFreeMb; state.disk_total = parsed.disk.totalGb; state.disk_used = parsed.disk.usedGb; state.disk_free = parsed.disk.freeGb; }\n        if (walkerType === 'temp') { state.temp = parsed.temp.maxC; state.temp_metrics = parsed.temp.tempMetrics || {}; }\n        if (walkerType === 'net') { state.ifaces = calcNetRate(deviceId, parsed.ifaces, flow).summary; }\n        if (walkerType === 'ldi') { state.ldi = parsed.ldi; }\n    }\n    flow.set(stateKey, state);\n\n    const now = Date.now();\n    const bufKey = 'batch_buf_' + ctxKey;\n    let buffer = flow.get(bufKey) || { sys: [], net: [], ldi: [], lastFlush: now };\n\n    if (isOffline) {\n        enforceBufferLimit(buffer.sys, 'sys');\n        buffer.sys.push({ device_id: deviceId, cpu_cores: 0, cpu_load_percent: 0, ram_total_mb: 0, ram_used_mb: 0, ram_free_mb: 0, disk_total_gb: 0, disk_used_gb: 0, disk_free_gb: 0, disk_description: '', temp_c: 0 });\n        for (const [name, iface] of Object.entries(state.ifaces)) {\n            enforceBufferLimit(buffer.net, 'net');\n            buffer.net.push({ device_id: deviceId, iface_name: name, rx_mbps: 0, tx_mbps: 0, rx_errors: 0, tx_errors: 0, rx_drops: 0, tx_drops: 0, status: 'DOWN' });\n        }\n        enforceBufferLimit(buffer.ldi, 'ldi');\n        buffer.ldi.push({ device_id: deviceId, throughput: 0, temperature: 0, humidity: 0, pe_1: 0, je_1: 0, power_watt: 0, vibration: 0 });\n    } else {\n        if (walkerType === 'cpu' || walkerType === 'storage' || walkerType === 'temp') { const cycleKey = 'sys_cycle_' + ctxKey; const cycle = flow.get(cycleKey) || {}; cycle[walkerType] = true; if (!cycle.firstSeenAt) cycle.firstSeenAt = now; const allSeen = cycle.cpu && cycle.storage && cycle.temp; const timedOut = (now - cycle.firstSeenAt) > SYS_CYCLE_TIMEOUT_MS; if (allSeen || timedOut) { enforceBufferLimit(buffer.sys, 'sys'); buffer.sys.push({ device_id: deviceId, cpu_cores: state.cpu_cores, cpu_load_percent: state.cpu_load, ram_total_mb: state.ram_total, ram_used_mb: state.ram_used, ram_free_mb: state.ram_free, disk_total_gb: state.disk_total, disk_used_gb: state.disk_used, disk_free_gb: state.disk_free, disk_description: '', temp_c: state.temp }); flow.set(cycleKey, {}); } else { flow.set(cycleKey, cycle); } }\n        if (walkerType === 'net') {\n            for (const [name, iface] of Object.entries(state.ifaces)) {\n                enforceBufferLimit(buffer.net, 'net');\n                buffer.net.push({ device_id: deviceId, iface_name: name, rx_mbps: iface.rx_mbps, tx_mbps: iface.tx_mbps, rx_errors: iface.errors || 0, tx_errors: 0, rx_drops: iface.drops || 0, tx_drops: 0, status: iface.status });\n            }\n        }\n        if (walkerType === 'ldi') { enforceBufferLimit(buffer.ldi, 'ldi'); buffer.ldi.push({ device_id: deviceId, throughput: state.ldi.throughput, temperature: state.ldi.temp, humidity: state.ldi.humidity, pe_1: state.ldi.pe, je_1: state.ldi.je, power_watt: state.ldi.power, vibration: state.ldi.vibration }); }\n    }\n\n    const elapsed = (now - buffer.lastFlush) / 1000;\n    if (elapsed >= BATCH_INTERVAL_SEC) {\n        const pool = global.get('pgPool');\n        if (pool) {\n            const m = global.get('pipelineMetrics') || { inserts_ok: 0, inserts_failed: 0, last_flush: 0, devices_polled: 0 };\n            const queries = buildBatchQueries(buffer.sys, buffer.net, buffer.ldi);\n            for (const q of queries) {\n                pool.query(q.sql, q.params, function(err) {\n                    if (err) { node.error('Batch INSERT [' + q.name + '] failed: ' + err.message); m.inserts_failed += q.count; const cb = global.get('circuitBreaker'); if (cb) cb.recordFailure(deviceId, flow); }\n                    else { node.log('Batch INSERT [' + q.name + '] ok: ' + q.count + ' rows'); m.inserts_ok += q.count; }\n                    global.set('pipelineMetrics', m);\n                });\n            }\n            m.last_flush = Date.now();\n            m.devices_polled++;\n            const cb = global.get('circuitBreaker');\n            if (cb) cb.recordSuccess(deviceId, flow);\n            global.set('pipelineMetrics', m);\n        }\n        flow.set(bufKey, { sys: [], net: [], ldi: [], lastFlush: now });\n    } else {\n        flow.set(bufKey, buffer);\n    }\n    return null;\n} catch (err) {\n    node.error('Parser v10 crash: ' + err.message, msg);\n    return null;\n}\n\nfunction buildBatchQueries(sysRows, netRows, ldiRows) { sysRows = Array.isArray(sysRows) ? sysRows : []; netRows = Array.isArray(netRows) ? netRows : []; ldiRows = Array.isArray(ldiRows) ? ldiRows : [];\n    const queries = [];\n    if (sysRows.length > 0) { const ph = sysRows.map((_, i) => { const b = i * 11; return `(NOW(),$${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7},$${b+8},$${b+9},$${b+10},$${b+11},clock_timestamp())`; }).join(','); const params = []; for (const r of sysRows) { params.push(r.device_id, r.cpu_cores, r.cpu_load_percent, r.ram_total_mb, r.ram_used_mb, r.ram_free_mb, r.disk_total_gb, r.disk_used_gb, r.disk_free_gb, r.disk_description, r.temp_c); } queries.push({ name: 'sys', count: sysRows.length, sql: 'INSERT INTO public.sys_metrics (\"time\",device_id,cpu_cores,cpu_load_percent,ram_total_mb,ram_used_mb,ram_free_mb,disk_total_gb,disk_used_gb,disk_free_gb,disk_description,temp_c,ingest_ts) VALUES ' + ph, params: params }); }\n    if (netRows.length > 0) { const ph = netRows.map((_, i) => { const b = i * 9; return `(NOW(),$${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7},$${b+8},$${b+9},clock_timestamp())`; }).join(','); const params = []; for (const r of netRows) { params.push(r.device_id, r.iface_name, r.rx_mbps, r.tx_mbps, r.rx_errors, r.tx_errors, r.rx_drops, r.tx_drops, r.status); } queries.push({ name: 'net', count: netRows.length, sql: 'INSERT INTO public.net_metrics (\"time\",device_id,iface_name,rx_mbps,tx_mbps,rx_errors,tx_errors,rx_drops,tx_drops,status,ingest_ts) VALUES ' + ph, params: params }); }\n    if (ldiRows.length > 0) { const ph = ldiRows.map((_, i) => { const b = i * 8; return `(NOW(),$${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7},$${b+8},clock_timestamp())`; }).join(','); const params = []; for (const r of ldiRows) { params.push(r.device_id, r.throughput, r.temperature, r.humidity, r.power_watt, r.vibration, r.pe_1, r.je_1); } queries.push({ name: 'ldi', count: ldiRows.length, sql: 'INSERT INTO public.ldi_metrics (\"time\",device_id,throughput,temperature,humidity,power_watt,vibration,pressure,joule_effect,ingest_ts) VALUES ' + ph, params: params }); }\n    return queries;\n}", "outputs": 1, "timeout": "15", "noerr": 0, "x": 2210, "y": 192, "wires": [["db_insert", "debug_ok"]]}, {"id": "db_insert", "type": "postgresql", "z": "ims-tab-v5", "g": "bc78ea85b252a09f", "name": "TimescaleDB", "query": "", "postgreSQLConfig": "pg_config", "split": false, "outputs": 0, "x": 2454, "y": 240, "wires": []}, {"id": "debug_ok", "type": "debug", "z": "ims-tab-v5", "g": "bc78ea85b252a09f", "name": "Telemetry OK", "active": true, "complete": "payload", "targetType": "msg", "x": 2464, "y": 144, "wires": []}, {"id": "global_catch", "type": "catch", "z": "ims-tab-v5", "g": "bc78ea85b252a09f", "name": "Global Catch", "scope": null, "uncaught": false, "x": 166, "y": 432, "wires": [["debug_err"]]}, {"id": "debug_err", "type": "debug", "z": "ims-tab-v5", "g": "bc78ea85b252a09f", "name": "Pipeline Error", "active": true, "tosidebar": true, "console": true, "tostatus": true, "complete": "error.message", "targetType": "msg", "x": 912, "y": 432, "wires": []}, {"id": "inject_registry", "type": "inject", "z": "ims-tab-v5", "g": "bc78ea85b252a09f", "name": "Refresh Device Registry (5min)", "props": [{"p": "payload"}], "repeat": 300, "crontab": "", "once": true, "onceDelay": 5, "topic": "", "payload": "", "payloadType": "date", "x": 226, "y": 96, "wires": [["device_registry"]]}, {"id": "device_registry", "type": "function", "z": "ims-tab-v5", "g": "bc78ea85b252a09f", "name": "Load Device Registry", "func": "const pool = global.get('pgPool');\nif (!pool) { node.error('pgPool not available in global context'); return null; }\nconst sql = \"SELECT device_id AS machine_id, hostname, snmp_community AS community, snmp_port, device_type FROM public.devices WHERE enabled = true AND hostname = 'ims-snmpsim'\";\npool.query(sql, [], function(err, result) {\n    if (err) {\n        if (err.message && err.message.indexOf('does not exist') !== -1) {\n            node.warn('Device Registry: table not ready yet \u2014 retrying in 10s');\n        } else {\n            node.warn('Device Registry: ' + err.message + ' \u2014 using fallback defaults');\n        }\n        return;\n    }\n    const registry = {};\n    if (result && result.rows) {\n        result.rows.forEach(function(row) {\n            registry[row.machine_id] = {\n                hostname: row.hostname || row.machine_id,\n                community: row.community || 'public',\n                snmp_port: row.snmp_port || 161,\n                device_type: row.device_type || 'server'\n            };\n        });\n    }\n    flow.set('batchId', 'batch_' + Date.now());\n    global.set('deviceRegistry', registry);\n    node.log('Device registry loaded: ' + Object.keys(registry).length + ' devices');\n});\nreturn null;", "outputs": 0, "timeout": "", "noerr": 0, "initialize": "", "finalize": "", "libs": [], "x": 628, "y": 96, "wires": []}, {"id": "resolve_device", "type": "function", "z": "ims-tab-v5", "g": "bc78ea85b252a09f", "name": "Resolve Device", "func": "const registry = global.get('deviceRegistry') || {};\nconst mid = msg.machine_id || msg.topic || '';\nconst device = registry[mid];\nif (!device) {\n    msg.host = msg.host || 'ims-snmpsim';\n    msg.community = msg.community || 'apex_mock';\n    msg.snmp_port = msg.snmp_port || 161;\n    msg.device_type = msg.device_type || 'server';\n} else {\n    msg.host = device.hostname;\n    msg.community = device.community;\n    msg.snmp_port = device.snmp_port;\n    msg.device_type = device.device_type || 'server';\n}\nmsg.machine_id = mid;\nmsg.topic = mid;\nreturn msg;", "outputs": 1, "timeout": "", "noerr": 0, "initialize": "", "finalize": "", "libs": [], "x": 1152, "y": 192, "wires": [["fork_5_ways"]]}, {"id": "catch_db_insert", "type": "catch", "z": "ims-tab-v5", "g": "bc78ea85b252a09f", "name": "Catch DB Insert", "scope": ["db_insert"], "x": 176, "y": 384, "wires": [["retry_store"]]}, {"id": "retry_store", "type": "function", "z": "ims-tab-v5", "g": "bc78ea85b252a09f", "name": "Write to Retry Queue", "func": "const fs = global.get('fs');\nconst QUEUE_PATH = '/data/retry_queue.json';\nfs.readFile(QUEUE_PATH, 'utf8', function(readErr, data) {\n    let queue = [];\n    try { if (!readErr && data) queue = JSON.parse(data); } catch(e) { queue = []; }\n    const entry = {\n        timestamp: new Date().toISOString(),\n        retries: 0,\n        sql: msg.query || '',\n        params: msg.params || [],\n        count: msg.count || 0,\n        error: msg.error ? msg.error.message : 'unknown'\n    };\n    const oneHourAgo = Date.now() - 3600000;\n    queue = queue.filter(function(e) { return new Date(e.timestamp).getTime() > oneHourAgo; });\n    if (queue.length >= 500) queue = queue.slice(-499);\n    queue.push(entry);\n    fs.writeFile(QUEUE_PATH, JSON.stringify(queue), 'utf8', function(writeErr) {\n        if (writeErr) node.error('Retry queue write failed: ' + writeErr.message);\n        else node.warn('Retry: queued failed INSERT (#' + queue.length + ')');\n    });\n});\nreturn msg;", "outputs": 1, "timeout": "", "noerr": 0, "initialize": "", "finalize": "", "libs": [], "x": 628, "y": 384, "wires": [["debug_retry"]]}, {"id": "debug_retry", "type": "debug", "z": "ims-tab-v5", "g": "bc78ea85b252a09f", "name": "Retry Queued", "active": true, "tosidebar": true, "console": false, "complete": "payload", "targetType": "msg", "statusVal": "", "statusType": "auto", "x": 912, "y": 384, "wires": []}, {"id": "retry_timer", "type": "inject", "z": "ims-tab-v5", "g": "bc78ea85b252a09f", "name": "Retry Drain (30s)", "props": [{"p": "payload"}], "repeat": "30", "crontab": "", "once": true, "onceDelay": 10, "topic": "", "payload": "drain", "payloadType": "str", "x": 186, "y": 144, "wires": [["retry_rebuild"]]}, {"id": "retry_rebuild", "type": "function", "z": "ims-tab-v5", "g": "bc78ea85b252a09f", "name": "Rebuild & Retry INSERT", "func": "const fs = global.get('fs');\nconst QUEUE_PATH = '/data/retry_queue.json';\nconst MAX_RETRIES = 5;\nconst pool = global.get('pgPool');\nif (msg.payload !== 'drain') return null;\nif (!pool) { node.warn('Retry: pgPool not available'); return null; }\nfs.readFile(QUEUE_PATH, 'utf8', function(readErr, data) {\n    if (readErr || !data) return;\n    let queue = [];\n    try { queue = JSON.parse(data); } catch(e) { return; }\n    if (queue.length === 0) return;\n    const entry = queue.shift();\n    entry.retries++;\n    if (entry.retries > MAX_RETRIES) {\n        node.warn('Retry: dropped after ' + MAX_RETRIES + ' attempts');\n        fs.writeFile(QUEUE_PATH, JSON.stringify(queue), 'utf8', function(){});\n        return;\n    }\n    if (entry.sql && entry.params) {\n        pool.query(entry.sql, entry.params, function(err) {\n            if (err) {\n                node.error('Retry [' + entry.retries + '/' + MAX_RETRIES + '] failed: ' + err.message);\n                queue.unshift(entry);\n            } else {\n                node.log('Retry [' + entry.retries + '/' + MAX_RETRIES + '] ok: ' + entry.count + ' rows');\n            }\n            fs.writeFile(QUEUE_PATH, JSON.stringify(queue), 'utf8', function(){});\n        });\n    } else {\n        node.warn('Retry: entry has no sql/params, skipping');\n        fs.writeFile(QUEUE_PATH, JSON.stringify(queue), 'utf8', function(){});\n    }\n});\nreturn null;", "outputs": 0, "timeout": "", "noerr": 0, "initialize": "", "finalize": "", "libs": [], "x": 638, "y": 144, "wires": []}, {"id": "http_inject_in", "type": "http in", "z": "ims-tab-v5", "g": "bc78ea85b252a09f", "name": "POST /inject", "url": "/inject", "method": "post", "upload": false, "swaggerDoc": "", "x": 166, "y": 240, "wires": [["http_inject_handler"]]}, {"id": "http_inject_handler", "type": "function", "z": "ims-tab-v5", "g": "bc78ea85b252a09f", "name": "Parse K6 Payload", "func": "var expectedKey = env.get('INGEST_API_KEY');\nvar providedKey = msg.req ? msg.req.headers['x-api-key'] : null;\n\n// 1. Auth Check (Send ORIGINAL msg to output 2)\nif (expectedKey && providedKey !== expectedKey) {\n    msg.statusCode = 401;\n    msg.payload = JSON.stringify({ error: 'Unauthorized' });\n    msg.headers = { 'Content-Type': 'application/json' };\n    return [null, msg];\n}\n\nvar body = msg.payload;\nif (typeof body === 'string') {\n    try { body = JSON.parse(body); } catch(e) { body = {}; }\n}\n\nvar machineId = body.machine_id || '';\nif (!machineId) {\n    machineId = 'E2E-SERVER-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0');\n}\nif (machineId.startsWith('K6-SERVER-')) machineId = machineId.replace('K6-SERVER-', 'E2E-SERVER-');\n\n// 2. Prepare Pipeline msg (Safely Clone to drop req/res and prevent memory leaks)\nvar pipelineMsg = {}; // Fix memory leak (no cloneMessage)\npipelineMsg.machine_id = machineId;\npipelineMsg.topic = machineId;\npipelineMsg.payload = '';\n\n// 3. Prepare HTTP Response (Use ORIGINAL msg for output 2)\nmsg.statusCode = 200;\nmsg.payload = JSON.stringify({ ok: true, machine_id: machineId });\nmsg.headers = { 'Content-Type': 'application/json' };\n\nreturn [pipelineMsg, msg];", "outputs": 2, "timeout": "", "noerr": 0, "initialize": "", "finalize": "", "libs": [], "x": 922, "y": 240, "wires": [["resolve_device"], ["http_inject_respond"]]}, {"id": "http_inject_respond", "type": "http response", "z": "ims-tab-v5", "g": "bc78ea85b252a09f", "name": "200 OK", "statusCode": "", "headers": {}, "x": 1132, "y": 288, "wires": []}, {"id": "http_metrics_in", "type": "http in", "z": "ims-tab-v5", "g": "bc78ea85b252a09f", "name": "GET /metrics", "url": "/metrics", "method": "get", "upload": false, "swaggerDoc": "", "x": 166, "y": 288, "wires": [["http_metrics_respond"]]}, {"id": "http_metrics_respond", "type": "function", "z": "ims-tab-v5", "g": "bc78ea85b252a09f", "name": "Render Prometheus Metrics", "func": "const metrics = global.get('pipelineMetrics') || { inserts_ok: 0, inserts_failed: 0, last_flush: 0, devices_polled: 0, buffer_overflows: 0 };\nconst cb = global.get('circuitBreaker');\nconst lines = [\n    '# HELP ims_pipeline_inserts_total Total successful DB inserts',\n    '# TYPE ims_pipeline_inserts_total counter',\n    'ims_pipeline_inserts_total ' + metrics.inserts_ok,\n    '# HELP ims_pipeline_inserts_failed_total Total failed DB inserts',\n    '# TYPE ims_pipeline_inserts_failed_total counter',\n    'ims_pipeline_inserts_failed_total ' + metrics.inserts_failed,\n    '# HELP ims_pipeline_last_flush_timestamp_seconds Last successful flush epoch',\n    '# TYPE ims_pipeline_last_flush_timestamp_seconds gauge',\n    'ims_pipeline_last_flush_timestamp_seconds ' + Math.floor(metrics.last_flush / 1000),\n    '# HELP ims_pipeline_devices_polled_total Devices polled this cycle',\n    '# TYPE ims_pipeline_devices_polled_total gauge',\n    'ims_pipeline_devices_polled_total ' + metrics.devices_polled,\n    '# HELP ims_pipeline_buffer_overflows_total Total records dropped to prevent OOM',\n    '# TYPE ims_pipeline_buffer_overflows_total counter',\n    'ims_pipeline_buffer_overflows_total ' + (metrics.buffer_overflows || 0)\n];\nif (cb) {\n    const cbMetrics = cb.renderMetrics(flow);\n    if (cbMetrics) lines.push(cbMetrics);\n}\nmsg.payload = lines.join('\\n') + '\\n';\nmsg.headers = { 'Content-Type': 'text/plain; version=0.0.4' };\nreturn msg;", "outputs": 1, "timeout": "", "noerr": 0, "initialize": "", "finalize": "", "libs": [], "x": 648, "y": 288, "wires": [["http_metrics_out"]]}, {"id": "http_metrics_out", "type": "http response", "z": "ims-tab-v5", "g": "bc78ea85b252a09f", "name": "200 OK (metrics)", "statusCode": "", "headers": {}, "x": 922, "y": 288, "wires": []}, {"id": "pg_config", "type": "postgreSQLConfig", "name": "IMS Database", "host": "ims-pgbouncer", "hostFieldType": "str", "port": "5432", "portFieldType": "num", "database": "ims", "databaseFieldType": "str", "ssl": false, "sslFieldType": "bool", "max": 10, "idle": 10000, "connectionTimeout": 10000, "user": "ims_admin", "userFieldType": "str", "password": "change-me-please", "passwordFieldType": "str"}, {"id": "almsim_tab", "type": "tab", "label": "LDI Alarm Simulator", "disabled": false, "info": "\u0e08\u0e33\u0e25\u0e2d\u0e07 alarm \u0e14\u0e49\u0e27\u0e22\u0e23\u0e2b\u0e31\u0e2a\u0e41\u0e25\u0e30\u0e04\u0e27\u0e32\u0e21\u0e16\u0e35\u0e48\u0e08\u0e32\u0e01 production log \u0e08\u0e23\u0e34\u0e07 (20 \u0e23\u0e2b\u0e31\u0e2a)\n\u0e1b\u0e34\u0e14\u0e44\u0e14\u0e49\u0e42\u0e14\u0e22 disable tab \u0e19\u0e35\u0e49"}, {"id": "ccae533aefb8eced", "type": "group", "z": "almsim_tab", "style": {"stroke": "#999999", "stroke-opacity": "1", "fill": "none", "fill-opacity": "1", "label": true, "label-position": "nw", "color": "#a4a4a4"}, "nodes": ["almsim_tick", "almsim_gen", "almsim_db", "almsim_catch", "almsim_err"], "x": 34, "y": 39, "w": 1024, "h": 130}, {"id": "almsim_tick", "type": "inject", "z": "almsim_tab", "g": "ccae533aefb8eced", "name": "Tick 10s", "props": [{"p": "payload"}], "repeat": "10", "crontab": "", "once": true, "onceDelay": "25", "topic": "", "payload": "", "payloadType": "date", "x": 140, "y": 80, "wires": [["almsim_gen"]]}, {"id": "almsim_gen", "type": "function", "z": "almsim_tab", "g": "ccae533aefb8eced", "name": "Generate Alarm (correlated + noise)", "func": "\n// World-Class QA (2026-08-07): real-data cutover. Gated by env, not a\n// hardcoded disable, so CI / fresh deployments (no LDI_SIMULATOR_ENABLED\n// set) keep generating mock data by default -- only this specific\n// environment's local .env (gitignored, never committed) turns it off.\nif (env.get('LDI_SIMULATOR_ENABLED') === 'false') {\n    node.status({ fill: 'grey', shape: 'ring', text: 'disabled (real-data mode)' });\n    return null;\n}\n\n\n// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\n// LDI ALARM SIMULATOR \u2014 noise codes (real distribution, uncorrelated\n// equipment/calibration faults) + condition-driven codes (fired only\n// when the matching telemetry parameter is actually out of spec right\n// now, per the same thresholds v_ldi_alarm_context/migration 054+057\n// uses) + a rare genuine-Critical branch.\n//\n// LDI Alarm Fidelity Audit (docs/audit/LDI_ALARM_FIDELITY_AUDIT.md,\n// 2026-08-11) findings addressed here:\n//  - #6 burst/flood: a debounce cooldown (public.ldi_alarm_state) now\n//    suppresses re-firing the same (machine, code) within COOLDOWN_MIN\n//    minutes, so a sustained fault reads as a handful of alarms while\n//    active, not hundreds of near-duplicate rows every 10-40s.\n//  - #7 correlation semantics: every inserted row now carries an explicit\n//    link_basis ('causal' for condition-driven/critical codes whose\n//    related_log_id is the actual triggering telemetry row, 'nearest' for\n//    background noise codes with no designed relationship) instead of\n//    relying on migration 051's trigger to silently backfill both cases\n//    identically.\n//  - #8 severity distribution: RARE_CRITICAL adds real Critical-severity\n//    vendor codes (migration 036) at a low, independent probability so the\n//    top of the severity taxonomy is actually reachable under normal\n//    simulation, not just theoretically defined.\n// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\nconst pool = global.get('pgPool');\nif (!pool) { node.status({ fill: 'red', shape: 'ring', text: 'no pgPool' }); return null; }\n\n// codes with no known telemetry correlation - unconditioned background\n// noise. World-Class QA (2026-08-07): replaced with real codes from the\n// vendor Alarm Master import (migration 061) -- 91012/91017/91020/91024/\n// 93007/91029/97014/20/20021/2 never existed in the real 1,820-code list\n// (invented for early prototyping); swapped 1:1 for real generic-fault\n// codes (camera/PLC/comms/network/DB), keeping the exact same weights.\n// 90013 (5th ALIGN_CODES entry) also didn't exist in the real list --\n// dropped rather than force-substituted, since 4 real alignment codes\n// already cover the category.\nconst NOISE_CUM = [[\"93004\", 24.5], [\"01060009\", 31.3], [\"0106000C\", 38.2],\n    [\"0106001C\", 45.0], [\"01060013\", 51.8], [\"01100001\", 58.7], [\"01130002\", 65.5], [\"010E0064\", 72.4],\n    [\"10006\", 79.2], [\"92013\", 86.0], [\"97005\", 92.9], [\"80001\", 100.0]];\nconst MACHINES = [[\"LDI-01\", 16.6], [\"LDI-02\", 33.2], [\"LDI-03\", 44.1], [\"LDI-04\", 55.0],\n    [\"LDI-05\", 72.2], [\"LDI-06\", 89.3], [\"LDI-07\", 93.0], [\"LDI-08\", 96.7],\n    [\"LDI-09\", 98.4], [\"LDI-10\", 100.0]];\n// alignment codes correlated to PE/JE out-of-tolerance (misalignment <-> PE error)\nconst ALIGN_CODES = [\"90001\", \"90004\", \"90005\", \"90012\"];\n// LDI Alarm Fidelity Audit fix #8: 2 real Critical-severity vendor codes\n// (migration 036), fired independently of the noise/condition pools at a\n// rate calibrated for roughly 1 event per machine per 1-2 days.\nconst RARE_CRITICAL_CODES = [\"01180016\", \"0C020014\"]; // Emergency Stop / Safety sensor triggered\nconst RARE_CRITICAL_PROB = 0.00002; // per machine per 10s tick\nconst RATE_PER_TICK = 0.01194 * 20 * (15 / 20); // unchanged overall pacing, noise share only\nconst COOLDOWN_MIN = 12; // debounce window: suppress re-fire of the same (machine, code) within this many minutes\n\nfunction pick(table) {\n    const x = Math.random() * 100;\n    for (const [v, c] of table) if (x <= c) return v;\n    return table[table.length - 1][0];\n}\nfunction poissonCount(rate) {\n    let n = 0, L = Math.exp(-rate), p = 1;\n    do { p *= Math.random(); n++; } while (p > L);\n    return n - 1;\n}\n// relatedLogId: the literal ldi_data.log_id of the telemetry row that\n// triggered this alarm, when known (condition-driven/critical codes only --\n// noise codes aren't tied to any specific board, so they pass null and let\n// migration 051's trigger fall back to its nearest-match heuristic).\n// linkBasis records which case this is explicitly, rather than leaving it\n// to be inferred from whether related_log_id happens to be null.\nfunction newRow(eq, code, ts, relatedLogId, linkBasis) {\n    return {\n        logid: 'SIM-ALM-' + ts.getTime() + '-' + eq + '-' + code + '-' + Math.floor(Math.random() * 1e6),\n        logdate: ts.toISOString(),\n        errorcode: code,\n        errortime: ts.toISOString().replace('T', ' ').substring(0, 19),\n        equipmentid: eq,\n        factory: Math.random() < 0.75 ? '2' : '3',\n        process: ['DF INNER', 'DF OUTER', 'SM'][Math.floor(Math.random() * 3)],\n        related_log_id: relatedLogId || null,\n        link_basis: linkBasis\n    };\n}\n\nconst now = Date.now();\n\nfunction generate(cooldownSet) {\n    const rows = [];\n    const debounced = (eq, code) => cooldownSet.has(eq + '|' + code);\n\n    // \u2500\u2500 background noise (unconditioned, real historical distribution) \u2500\u2500\n    const nNoise = poissonCount(RATE_PER_TICK);\n    for (let k = 0; k < nNoise; k++) {\n        const eq = pick(MACHINES), code = pick(NOISE_CUM);\n        if (debounced(eq, code)) continue;\n        rows.push(newRow(eq, code, new Date(now - Math.floor(Math.random() * 9000)), null, 'nearest'));\n    }\n\n    // \u2500\u2500 rare genuine-Critical events, independent of telemetry state \u2500\u2500\n    for (const [eq] of MACHINES) {\n        if (Math.random() < RARE_CRITICAL_PROB) {\n            const code = RARE_CRITICAL_CODES[Math.floor(Math.random() * RARE_CRITICAL_CODES.length)];\n            if (!debounced(eq, code)) rows.push(newRow(eq, code, new Date(now), null, 'nearest'));\n        }\n    }\n\n    // \u2500\u2500 condition-driven alarms: only fire when telemetry is actually out of\n    //    spec right now, using the same thresholds as v_ldi_alarm_context \u2500\u2500\n    const sql = `\n        SELECT DISTINCT ON (eqp_id) eqp_id, process, temperature, humidity,\n               pe_1, je_1, scan_speed, air_vacuum, log_id\n        FROM public.ldi_data\n        WHERE time > NOW() - INTERVAL '3 minutes'\n        ORDER BY eqp_id, time DESC`;\n\n    return new Promise((resolve) => {\n        pool.query(sql, [], function (err, result) {\n            if (err) { node.error('Alarm sim telemetry query failed: ' + err.message); resolve(rows); return; }\n            const ts = new Date();\n            // ~25%/tick per condition so a persistently out-of-spec machine\n            // doesn't fire on literally every 10s tick while the fault holds\n            // (debounce below is the primary flood guard; this stays as a\n            // secondary pacing throttle).\n            const fires = () => Math.random() < 0.25;\n            for (const r of (result.rows || [])) {\n                if ((r.temperature < 20 || r.temperature > 24 || r.humidity < 50 || r.humidity > 60) && fires()) {\n                    if (!debounced(r.eqp_id, '91008')) rows.push(newRow(r.eqp_id, '91008', ts, r.log_id, 'causal'));\n                }\n                if ((Math.abs(r.pe_1) > 10 || Math.abs(r.je_1) > 10) && fires()) {\n                    const code = ALIGN_CODES[Math.floor(Math.random() * ALIGN_CODES.length)];\n                    if (!debounced(r.eqp_id, code)) rows.push(newRow(r.eqp_id, code, ts, r.log_id, 'causal'));\n                }\n                if ((r.scan_speed > 450 || r.scan_speed <= 0) && fires()) {\n                    if (!debounced(r.eqp_id, '70004')) rows.push(newRow(r.eqp_id, '70004', ts, r.log_id, 'causal'));\n                }\n                if (r.air_vacuum !== null && (r.air_vacuum > -8 || r.air_vacuum < -30) && fires()) {\n                    if (!debounced(r.eqp_id, '91009')) rows.push(newRow(r.eqp_id, '91009', ts, r.log_id, 'causal'));\n                }\n            }\n            resolve(rows);\n        });\n    });\n}\n\n// debounce lookup: which (machine, code) pairs are still within cooldown\npool.query(\n    `SELECT equipmentid, errorcode FROM public.ldi_alarm_state WHERE last_fired > NOW() - INTERVAL '${COOLDOWN_MIN} minutes'`,\n    [],\n    function (err, result) {\n        if (err) { node.error('Alarm sim debounce query failed: ' + err.message); return; }\n        const cooldownSet = new Set((result.rows || []).map(r => r.equipmentid + '|' + r.errorcode));\n        generate(cooldownSet).then(rows => {\n            if (rows.length === 0) { node.status({ fill: 'grey', shape: 'ring', text: 'no alarm' }); return; }\n            node.status({ fill: 'yellow', shape: 'dot',\n                text: rows.length + ' alarm: ' + rows.map(r => r.errorcode).join(',') });\n            node.send({ payload: rows });\n        });\n    }\n);\nreturn null;\n", "outputs": 1, "noerr": 0, "initialize": "", "finalize": "", "libs": [], "x": 588, "y": 80, "wires": [["almsim_db"]]}, {"id": "almsim_db", "type": "function", "z": "almsim_tab", "g": "ccae533aefb8eced", "name": "Insert to ldi_alarm_log", "func": "const pool = global.get('pgPool');\nconst rows = msg.payload || [];\nif (!pool || rows.length === 0) return null;\nconst cols = ['logid','logdate','errorcode','errortime','equipmentid','factory','process','related_log_id','link_basis'];\nconst ph = rows.map((_, i) => '(' + cols.map((_, j) => '$' + (i * cols.length + j + 1)).join(',') + ')').join(',');\nconst params = [];\nfor (const r of rows) for (const c of cols) params.push(r[c]);\n// ingest_ts set explicitly (not a DB default -- ldi_alarm_log is a\n// compressed hypertable, see migration 081's comment on why).\nconst sql = 'INSERT INTO public.ldi_alarm_log (' + cols.join(',') + ',ingest_ts) VALUES ' +\n    rows.map((_, i) => '(' + cols.map((_, j) => '$' + (i * cols.length + j + 1)).join(',') + ',clock_timestamp())').join(',') +\n    ' ON CONFLICT (logdate, logid) DO NOTHING';\n\nconst earliestSourceTs = rows.reduce((min, r) => (r.errortime < min ? r.errortime : min), rows[0].errortime);\nconst nodeRef = node;\n\n// Stage BEFORE attempting the real insert -- durable write-ahead copy,\n// same pattern as ldi_auth_check (migration 081). A crash between here\n// and the real INSERT's commit leaves this batch recoverable instead of\n// silently gone (previously: any error here just logged and dropped it).\npool.query(\n    `INSERT INTO public.ingest_staging (target_table, payload, source_ts) VALUES ($1, $2, $3) RETURNING id`,\n    ['ldi_alarm_log', JSON.stringify(rows), earliestSourceTs],\n    function (stageErr, stageResult) {\n        if (stageErr) {\n            nodeRef.error('Alarm sim staging INSERT failed: ' + stageErr.message);\n            return;\n        }\n        const stagingId = stageResult.rows[0].id;\n        pool.query(sql, params, function (err) {\n            if (err) {\n                nodeRef.error('Alarm sim INSERT failed: ' + err.message);\n                pool.query(\n                    `UPDATE public.ingest_staging SET attempts = attempts + 1, last_error = $2 WHERE id = $1`,\n                    [stagingId, String(err.message).slice(0, 500)],\n                    () => {}\n                );\n                return;\n            }\n            pool.query(`DELETE FROM public.ingest_staging WHERE id = $1`, [stagingId], () => {});\n            nodeRef.log('Alarm sim: inserted ' + rows.length);\n\n            // LDI Alarm Fidelity Audit fix #6 (burst/flood): record/refresh debounce\n            // state for every (machine, code) that fired this tick, so almsim_gen's\n            // cooldown lookup on the next tick knows to suppress a re-fire.\n            const pairs = [...new Set(rows.map(r => r.equipmentid + '|' + r.errorcode))]\n                .map(k => k.split('|'));\n            if (pairs.length === 0) return;\n            const stateCols = ['equipmentid', 'errorcode'];\n            const stateVals = [];\n            const statePh = pairs.map((p, i) => { stateVals.push(p[0], p[1]); return '($' + (i*2+1) + ',$' + (i*2+2) + ',NOW(),NOW(),1)'; }).join(',');\n            const stateSql = 'INSERT INTO public.ldi_alarm_state (equipmentid, errorcode, first_fired, last_fired, fire_count) VALUES ' +\n                statePh +\n                ' ON CONFLICT (equipmentid, errorcode) DO UPDATE SET last_fired = EXCLUDED.last_fired, fire_count = ldi_alarm_state.fire_count + 1';\n            pool.query(stateSql, stateVals, function (err2) {\n                if (err2) nodeRef.error('Alarm sim debounce state upsert failed: ' + err2.message);\n            });\n        });\n    }\n);\nreturn null;\n", "outputs": 1, "noerr": 0, "x": 932, "y": 80, "wires": [[]]}, {"id": "almsim_catch", "type": "catch", "z": "almsim_tab", "g": "ccae533aefb8eced", "name": "Catch Alarm Sim Errors", "scope": null, "uncaught": false, "x": 180, "y": 128, "wires": [["almsim_err"]]}, {"id": "almsim_err", "type": "function", "z": "almsim_tab", "g": "ccae533aefb8eced", "name": "Log Error", "func": "node.error('Alarm simulator: ' + (msg.error && msg.error.message));\nreturn null;", "outputs": 1, "x": 508, "y": 128, "wires": [[]]}, {"id": "ldi-ingestion-tab", "type": "tab", "label": "IMS LDI Ingestion", "disabled": false, "info": "LDI Manufacturing data ingestion pipeline \u2014 POST /ldi-telemetry"}, {"id": "67fcac2d032db9d1", "type": "group", "z": "ldi-ingestion-tab", "style": {"stroke": "#999999", "stroke-opacity": "1", "fill": "none", "fill-opacity": "1", "label": true, "label-position": "nw", "color": "#a4a4a4"}, "nodes": ["ldi_http_in", "ldi_auth_check", "ldi_db_insert", "ldi_http_response", "ldi_http_error", "ldi_error_handler"], "x": 34, "y": 39, "w": 1168, "h": 130}, {"id": "ldi_http_in", "type": "http in", "z": "ldi-ingestion-tab", "g": "67fcac2d032db9d1", "name": "POST /ldi-telemetry", "url": "/ldi-telemetry", "method": "post", "upload": false, "swaggerDoc": "", "x": 150, "y": 80, "wires": [["ldi_auth_check"]]}, {"id": "ldi_auth_check", "type": "function", "z": "ldi-ingestion-tab", "g": "67fcac2d032db9d1", "name": "Auth & Validate", "func": "const apiKey = global.get('INGEST_API_KEY') || 'ims-secret-key';\nconst incomingKey = msg.req?.headers?.['x-api-key'] || '';\nif (incomingKey !== apiKey) {\n    msg.statusCode = 401;\n    msg.payload = { error: 'Unauthorized' };\n    return msg;\n}\n\nif (!msg.payload || !Array.isArray(msg.payload)) {\n    msg.statusCode = 400;\n    msg.payload = { error: 'Payload must be a JSON array' };\n    return msg;\n}\n\nmsg._ldiBatch = [];\nconst num = v => (v === 0) ? 0 : (Number(v) || null);\nconst int = v => (v === 0) ? 0 : (parseInt(v) || null);\nfor (const item of msg.payload) {\n    if (!item || !item.eqp_id) continue;\n    msg._ldiBatch.push({\n        // Real per-record source timestamp from the producer (ldisim_gen\n        // sets this to when the reading was actually generated). Was\n        // previously discarded in favor of a single server-side NOW()\n        // shared by every row in the batch -- fixed here, see migration 081.\n        time: item.time ? new Date(item.time).toISOString() : new Date().toISOString(),\n        eqp_id: String(item.eqp_id),\n        factory: String(item.factory || ''),\n        process: String(item.process || ''),\n        mo: String(item.mo || ''),\n        fpn: String(item.fpn || ''),\n        layer_name: String(item.layer_name || ''),\n        resist_dosage: num(item.resist_dosage),\n        scale_x: num(item.scale_x),\n        scale_y: num(item.scale_y),\n        temperature: num(item.temperature),\n        humidity: num(item.humidity),\n        scan_speed: num(item.scan_speed),\n        air_vacuum: num(item.air_vacuum),\n        thickness: num(item.thickness),\n        board_no: int(item.board_no),\n        total_board: int(item.total_board),\n        total_time: num(item.total_time),\n        filmno: String(item.filmno || ''),\n        board_id: String(item.board_id || ''),\n        resist: item.resist ? String(item.resist) : null,\n        state: item.state !== false,\n        scale_mode: String(item.scale_mode || ''),\n        pe_1: num(item.pe_1),\n        pe_2: num(item.pe_2),\n        pe_3: num(item.pe_3),\n        pe_4: num(item.pe_4),\n        pe_5: num(item.pe_5),\n        pe_6: num(item.pe_6),\n        je_1: num(item.je_1),\n        je_2: num(item.je_2),\n        je_3: num(item.je_3),\n        je_4: num(item.je_4),\n        pe_setting: num(item.pe_setting),\n        je_setting: num(item.je_setting),\n        log_id: String(item.log_id || '')\n    });\n}\n\n\nif (msg._ldiBatch.length === 0) {\n    msg.statusCode = 200;\n    msg.payload = { message: 'Empty batch' };\n    return msg;\n}\n\nconst cols = [\n    'time', 'factory', 'process', 'eqp_id', 'mo', 'fpn', 'layer_name', 'resist_dosage', 'scale_x', 'scale_y',\n    'temperature', 'humidity', 'scan_speed', 'air_vacuum', 'thickness', 'board_no', 'total_board',\n    'total_time', 'filmno', 'board_id', 'resist', 'state', 'scale_mode',\n    'pe_1', 'pe_2', 'pe_3', 'pe_4', 'pe_5', 'pe_6',\n    'je_1', 'je_2', 'je_3', 'je_4', 'pe_setting', 'je_setting', 'log_id'\n];\n\nlet params = [];\nconst placeholders = msg._ldiBatch.map((row, i) => {\n    const b = i * cols.length;\n    cols.forEach(col => params.push(row[col]));\n    const p = cols.map((_, j) => `$${b + j + 1}`).join(',');\n    return `(${p})`;\n}).join(',');\n\n// ingest_ts: real server commit time, set explicitly (not a DB default --\n// ldi_data is a compressed hypertable, see migration 081's comment on why).\nmsg.query = `INSERT INTO public.ldi_data (${cols.join(',')}, ingest_ts) VALUES ` +\n    msg._ldiBatch.map((_, i) => {\n        const b = i * cols.length;\n        return `(${cols.map((_, j) => `$${b + j + 1}`).join(',')}, clock_timestamp())`;\n    }).join(',') +\n    ` ON CONFLICT (log_id, \"time\") DO NOTHING;`;\nmsg.params = params;\n\n// Earliest source_ts in this batch, for the staging row -- good enough to\n// bound how stale a replay is; per-row fidelity is preserved in the\n// staged payload itself (msg._ldiBatch, which still carries each row's\n// own `time`).\nconst earliestSourceTs = msg._ldiBatch.reduce((min, r) => r.time < min ? r.time : min, msg._ldiBatch[0].time);\n\nconst pool = global.get('pgPool');\nif (!pool) {\n    msg.statusCode = 503;\n    msg.payload = { error: 'DB pool unavailable' };\n    return msg;\n}\n\nconst nodeRef = node;\nconst msgRef = msg;\n\n// Stage BEFORE attempting the real insert -- durable write-ahead copy.\n// A crash between here and the real INSERT's commit leaves this row\n// recoverable (see the staging-replay flow) instead of silently gone.\npool.query(\n    `INSERT INTO public.ingest_staging (target_table, payload, source_ts) VALUES ($1, $2, $3) RETURNING id`,\n    ['ldi_data', JSON.stringify(msgRef._ldiBatch), earliestSourceTs],\n    function (stageErr, stageResult) {\n        if (stageErr) {\n            // Couldn't even stage -- DB is unreachable. Tell the truth: fail\n            // the HTTP call so the caller knows this batch did not land,\n            // rather than the old fire-and-forget 200.\n            nodeRef.error('LDI staging INSERT failed: ' + stageErr.message);\n            msgRef.statusCode = 503;\n            msgRef.payload = { error: 'Staging failed, batch not accepted' };\n            nodeRef.send(msgRef);\n            nodeRef.done();\n            return;\n        }\n        const stagingId = stageResult.rows[0].id;\n        pool.query(msgRef.query, msgRef.params, (err) => {\n            if (err) {\n                nodeRef.error('LDI INSERT failed: ' + err.message);\n                // Auto-recovery watchdog for a specific, live-verified failure mode:\n                // this global pg.Pool can get permanently stuck after a\n                // Postgres/PgBouncer restart or connection blip (\"server login\n                // has been failing, cached error: connect failed\") -- confirmed\n                // 2026-08-10 that PgBouncer itself recovers within 1-3 minutes but\n                // this pool does not follow; only a full Node-RED process restart\n                // clears it. Scoped to this connection-failure signature\n                // specifically (not e.g. constraint violations, which a restart\n                // wouldn't fix and would just mask).\n                if (/server login has been failing|connect failed|ECONNREFUSED|ECONNRESET|timeout expired/i.test(err.message)) {\n                    const streak = (global.get('ldiDbConnFailureStreak') || 0) + 1;\n                    global.set('ldiDbConnFailureStreak', streak);\n                    const FAILURE_THRESHOLD = 5;\n                    if (streak >= FAILURE_THRESHOLD) {\n                        nodeRef.error('LDI INSERT connection failure x' + streak + ' in a row -- restarting process to recover a stuck DB pool');\n                        setTimeout(() => process.exit(1), 500);\n                    }\n                } else {\n                    global.set('ldiDbConnFailureStreak', 0);\n                }\n                // Leave the staged row as 'pending' -- the periodic replay\n                // sweep (ldi_staging_replay) will retry it. Tell the caller\n                // the truth: this batch did not land yet.\n                pool.query(\n                    `UPDATE public.ingest_staging SET attempts = attempts + 1, last_error = $2 WHERE id = $1`,\n                    [stagingId, String(err.message).slice(0, 500)],\n                    () => {}\n                );\n                msgRef.statusCode = 502;\n                msgRef.payload = { error: 'Insert failed, batch staged for retry' };\n                nodeRef.send(msgRef);\n                nodeRef.done();\n                return;\n            }\n            global.set('ldiDbConnFailureStreak', 0);\n            // Confirmed committed -- delete the staged copy.\n            pool.query(`DELETE FROM public.ingest_staging WHERE id = $1`, [stagingId], () => {});\n            msgRef.statusCode = 200;\n            msgRef.payload = { message: 'LDI Batch received', rows: msgRef._ldiBatch.length };\n            nodeRef.send(msgRef);\n            nodeRef.done();\n        });\n    }\n);\nreturn null;\n", "outputs": 1, "timeout": "10", "x": 460, "y": 80, "wires": [["ldi_http_response"]]}, {"id": "ldi_db_insert", "type": "postgresql", "z": "ldi-ingestion-tab", "g": "67fcac2d032db9d1", "name": "TimescaleDB", "query": "", "postgreSQLConfig": "pg_config", "split": false, "outputs": 0, "x": 1106, "y": 80, "wires": []}, {"id": "ldi_http_response", "type": "http response", "z": "ldi-ingestion-tab", "g": "67fcac2d032db9d1", "name": "Response", "statusCode": "200", "headers": {}, "x": 872, "y": 80, "wires": []}, {"id": "ldi_http_error", "type": "catch", "z": "ldi-ingestion-tab", "g": "67fcac2d032db9d1", "name": "Catch LDI Errors", "scope": ["ldi_db_insert"], "x": 140, "y": 128, "wires": [["ldi_error_handler"]]}, {"id": "ldi_error_handler", "type": "function", "z": "ldi-ingestion-tab", "g": "67fcac2d032db9d1", "name": "Error Handler", "func": "const err = msg.error?.message || 'Unknown error';\nnode.error('LDI INSERT failed: ' + err);\nmsg.statusCode = 500;\nmsg.payload = { error: err };\nreturn msg;", "outputs": 1, "x": 460, "y": 128, "wires": [["ldi_http_response"]]}, {"id": "ldisim_tab", "type": "tab", "label": "LDI Live Simulator", "disabled": false, "info": "\u0e08\u0e33\u0e25\u0e2d\u0e07\u0e02\u0e49\u0e2d\u0e21\u0e39\u0e25 LDI \u0e41\u0e1a\u0e1a\u0e40\u0e04\u0e25\u0e37\u0e48\u0e2d\u0e19\u0e44\u0e2b\u0e27\u0e15\u0e48\u0e2d\u0e40\u0e19\u0e37\u0e48\u0e2d\u0e07 \u0e2a\u0e48\u0e07\u0e1c\u0e48\u0e32\u0e19 POST /ldi-telemetry \u0e40\u0e2b\u0e21\u0e37\u0e2d\u0e19\u0e40\u0e04\u0e23\u0e37\u0e48\u0e2d\u0e07\u0e08\u0e23\u0e34\u0e07\n\u0e1b\u0e34\u0e14\u0e44\u0e14\u0e49\u0e42\u0e14\u0e22 disable tab \u0e19\u0e35\u0e49"}, {"id": "57cf447a44c91c05", "type": "group", "z": "ldisim_tab", "style": {"stroke": "#999999", "stroke-opacity": "1", "fill": "none", "fill-opacity": "1", "label": true, "label-position": "nw", "color": "#a4a4a4"}, "nodes": ["ldisim_tick", "ldisim_gen", "ldisim_post", "ldisim_check", "ldisim_catch", "ldisim_err"], "x": 34, "y": 55, "w": 1180, "h": 130}, {"id": "ldisim_tick", "type": "inject", "z": "ldisim_tab", "g": "57cf447a44c91c05", "name": "Tick 2s", "props": [{"p": "payload"}], "repeat": "2", "crontab": "", "once": true, "onceDelay": "15", "topic": "", "payload": "", "payloadType": "date", "x": 140, "y": 96, "wires": [["ldisim_gen"]]}, {"id": "ldisim_gen", "type": "function", "z": "ldisim_tab", "g": "57cf447a44c91c05", "name": "Generate LDI Batch (OU model)", "func": "\n// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\n// LDI LIVE SIMULATOR \u2014 Ornstein-Uhlenbeck mean-reverting sensor model\n// \u0e2a\u0e23\u0e49\u0e32\u0e07\u0e02\u0e49\u0e2d\u0e21\u0e39\u0e25\u0e17\u0e35\u0e48 \"\u0e40\u0e04\u0e25\u0e37\u0e48\u0e2d\u0e19\u0e44\u0e2b\u0e27\u0e15\u0e48\u0e2d\u0e40\u0e19\u0e37\u0e48\u0e2d\u0e07\" \u0e40\u0e2b\u0e21\u0e37\u0e2d\u0e19\u0e40\u0e0b\u0e47\u0e19\u0e40\u0e0b\u0e2d\u0e23\u0e4c\u0e08\u0e23\u0e34\u0e07 \u0e44\u0e21\u0e48\u0e43\u0e0a\u0e48\u0e2a\u0e38\u0e48\u0e21\u0e2d\u0e34\u0e2a\u0e23\u0e30\n//\n// LDI Alarm Fidelity Audit (docs/audit/LDI_ALARM_FIDELITY_AUDIT.md,\n// 2026-08-11) found the fleet was chronically out-of-spec by construction,\n// not intermittently faulted: LDI-02's nominal temp_mu (26.49) was already\n// outside the 20-24 spec band; DF-OUTER/SM air_vacuum was hardcoded to the\n// 0.0 zero-coercion test constant, which is always > -8 (always \"out of\n// spec\"); and pe/je channels were literally memoryless per-tick noise with\n// several channels' configured (mean,sd) already implying a high baseline\n// P(|x|>10). Fixed here, plus a real drift lifecycle (nominal -> drifting\n// -> faulted -> serviced -> cooldown) for vacuum/environment/alignment so\n// faults are discrete, bounded episodes instead of a permanent condition.\n// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\nconst P = {\"LDI-01\":{\"process\":\"DF INNER\",\"share\":0.166,\"temp_mu\":21.19,\"temp_sd\":0.13,\"rh_mu\":56.23,\"rh_sd\":1.63,\"dosage\":69.591,\"scan\":220,\"vac\":-16.08,\"thick_mu\":0.529,\"thick_sd\":0.365,\"pe_setting\":1.79769313486232,\"je_setting\":30,\"scale_mode\":\"FixedScale\",\"factory\":\"2\",\"pe\":null,\"je\":[[7.9,2.22],[4.41,2.29],[10.87,3.01],null],\"layers\":[\"mk-inner-a\",\"mk-inner-b\",\"mk-inner-c\",\"mk-inner-d\"],\"vac_sd\":0.45},\"LDI-02\":{\"process\":\"DF INNER\",\"share\":0.166,\"temp_mu\":21.72,\"temp_sd\":0.09,\"rh_mu\":52.52,\"rh_sd\":1.58,\"dosage\":69.591,\"scan\":220,\"vac\":-17.21,\"thick_mu\":0.528,\"thick_sd\":0.365,\"pe_setting\":1.79769313486232,\"je_setting\":30,\"scale_mode\":\"FixedScale\",\"factory\":\"2\",\"pe\":null,\"je\":[[2.23,0.97],[1.63,1.39],[2.25,1.26],null],\"layers\":[\"mk-inner-a\",\"mk-inner-b\",\"mk-inner-c\",\"mk-inner-d\"],\"vac_sd\":0.45},\"LDI-03\":{\"process\":\"DF INNER\",\"share\":0.109,\"temp_mu\":20.92,\"temp_sd\":0.08,\"rh_mu\":56.7,\"rh_sd\":0.36,\"dosage\":75.708,\"scan\":260,\"vac\":-19.15,\"thick_mu\":0.264,\"thick_sd\":0,\"pe_setting\":30,\"je_setting\":30,\"scale_mode\":\"FixedScale\",\"factory\":\"3\",\"pe\":null,\"je\":[[2.27,0.28],[1.79,0.31],[1.13,0.36],null],\"layers\":[\"mk-inner-a\",\"mk-inner-b\",\"mk-inner-c\",\"mk-inner-d\"],\"vac_sd\":0.45},\"LDI-04\":{\"process\":\"DF INNER\",\"share\":0.109,\"temp_mu\":22.58,\"temp_sd\":0.06,\"rh_mu\":52.69,\"rh_sd\":0.27,\"dosage\":72.904,\"scan\":270,\"vac\":-17.86,\"thick_mu\":0.264,\"thick_sd\":0,\"pe_setting\":1.79769313486232,\"je_setting\":40,\"scale_mode\":\"FixedScale\",\"factory\":\"3\",\"pe\":null,\"je\":[[5.94,1.49],[17.46,1.74],[11.94,1.93],null],\"layers\":[\"mk-inner-a\",\"mk-inner-b\",\"mk-inner-c\",\"mk-inner-d\"],\"vac_sd\":0.45},\"LDI-05\":{\"process\":\"DF OUTER\",\"share\":0.172,\"temp_mu\":22.39,\"temp_sd\":0.14,\"rh_mu\":50.55,\"rh_sd\":0.5,\"dosage\":15,\"scan\":435,\"vac\":-13.4,\"thick_mu\":1.141,\"thick_sd\":0.325,\"pe_setting\":75,\"je_setting\":50,\"scale_mode\":\"Fixed\",\"factory\":\"2\",\"pe\":[[-6.22,12.26],[-5.35,18.69],[-14.76,21.32],[1.23,21.44],[-3.21,18.67],[-5.23,10.92]],\"je\":[[12.63,7.15],[10.72,6.3],[10.27,5.95],[12.01,6.65]],\"layers\":[\"mk-outer-a\",\"mk-outer-b\"],\"vac_sd\":0.45},\"LDI-06\":{\"process\":\"DF OUTER\",\"share\":0.171,\"temp_mu\":21.88,\"temp_sd\":0.1,\"rh_mu\":52.56,\"rh_sd\":0.45,\"dosage\":15,\"scan\":435,\"vac\":-12.9,\"thick_mu\":1.139,\"thick_sd\":0.325,\"pe_setting\":75,\"je_setting\":50,\"scale_mode\":\"Fixed\",\"factory\":\"2\",\"pe\":[[3.56,12.01],[9.55,15.94],[2.93,18.46],[15.06,18.61],[7.23,16.86],[3.51,10.32]],\"je\":[[9.43,5.92],[11.35,7.28],[11.1,7.13],[9.26,5.69]],\"layers\":[\"mk-outer-a\",\"mk-outer-b\"],\"vac_sd\":0.45},\"LDI-07\":{\"process\":\"SM\",\"share\":0.037,\"temp_mu\":22.33,\"temp_sd\":0.08,\"rh_mu\":55.83,\"rh_sd\":0.44,\"dosage\":568,\"scan\":104.7,\"vac\":-14.6,\"thick_mu\":0.986,\"thick_sd\":0.335,\"pe_setting\":50,\"je_setting\":50,\"scale_mode\":\"Auto\",\"factory\":\"2\",\"pe\":[[0.37,2.72],[-13.87,6.56],[-5.44,5.24],[5.91,5.53],[14.22,6.78],[-0.9,2.66]],\"je\":[[9.22,5.03],[9.9,5.06],[5.92,2.63],[5.37,2.49]],\"layers\":[\"mk-solder-a\",\"mk-solder-b\",\"mk-comp-a\"],\"vac_sd\":0.45},\"LDI-08\":{\"process\":\"SM\",\"share\":0.037,\"temp_mu\":22.49,\"temp_sd\":0.09,\"rh_mu\":53.18,\"rh_sd\":0.37,\"dosage\":595.3,\"scan\":101.8,\"vac\":-13.9,\"thick_mu\":0.986,\"thick_sd\":0.336,\"pe_setting\":50,\"je_setting\":50,\"scale_mode\":\"Auto\",\"factory\":\"2\",\"pe\":[[-0.1,5.59],[-9.76,9.65],[-3.48,3.27],[3.16,3.16],[9.52,9.45],[0.46,5.82]],\"je\":[[7.53,5.73],[6.59,3.75],[4.94,2.79],[5.66,5.31]],\"layers\":[\"mk-solder-a\",\"mk-solder-b\",\"mk-comp-a\"],\"vac_sd\":0.45},\"LDI-09\":{\"process\":\"SM\",\"share\":0.017,\"temp_mu\":21.98,\"temp_sd\":0.04,\"rh_mu\":55.63,\"rh_sd\":0.07,\"dosage\":500,\"scan\":115.86,\"vac\":-14.1,\"thick_mu\":1.174,\"thick_sd\":0.05,\"pe_setting\":25,\"je_setting\":25,\"scale_mode\":\"Auto\",\"factory\":\"3\",\"pe\":[[1.37,2.32],[-5.73,4.63],[1.06,3.69],[-1.07,3.7],[5.73,4.64],[-1.36,2.38]],\"je\":[[3.2,2.4],[3.7,2.15],[4.08,2.35],[3.72,2.48]],\"layers\":[\"mk-solder-a\",\"mk-solder-b\",\"mk-comp-a\"],\"vac_sd\":0.45},\"LDI-10\":{\"process\":\"SM\",\"share\":0.017,\"temp_mu\":22.31,\"temp_sd\":0.04,\"rh_mu\":55.03,\"rh_sd\":0.09,\"dosage\":500,\"scan\":115.86,\"vac\":-13.7,\"thick_mu\":1.174,\"thick_sd\":0.05,\"pe_setting\":25,\"je_setting\":25,\"scale_mode\":\"Auto\",\"factory\":\"3\",\"pe\":[[0.69,1.55],[-4.98,2.47],[1.03,2.72],[-1,2.72],[4.96,2.46],[-0.74,1.59]],\"je\":[[2.35,1.36],[2.68,1.53],[3.48,1.3],[3.12,1.33]],\"layers\":[\"mk-solder-a\",\"mk-solder-b\",\"mk-comp-a\"],\"vac_sd\":0.45}};\nconst SENTINEL = 1.79769313486232;\n// DESIGN_STRESS: exercises layout edge cases (real dropouts, long strings,\n// spec-boundary values, extra machines) that realistic mock data rarely hits.\n// DESIGN_ALL_GREEN: forces every machine healthy, to check alert fatigue from\n// an all-green screen. Both are off by default (realistic mode).\nconst STRESS = env.get('DESIGN_STRESS') === 'true';\nconst ALL_GREEN = env.get('DESIGN_ALL_GREEN') === 'true';\nconst GAP_TICKS = 900; // ~30min of missing rows at one tick / 2s\nconst STRESS_MACHINES = STRESS ? { 'LDI-11': 'LDI-01', 'LDI-12': 'LDI-05', 'LDI-13': 'LDI-07' } : {};\n\n// \u2500\u2500 OU process: x[t+1] = x + theta*(mu - x)*dt + sigma*sqrt(dt)*N(0,1) \u2500\u2500\n// theta = \u0e04\u0e27\u0e32\u0e21\u0e40\u0e23\u0e47\u0e27\u0e17\u0e35\u0e48\u0e14\u0e36\u0e07\u0e01\u0e25\u0e31\u0e1a\u0e2a\u0e39\u0e48\u0e04\u0e48\u0e32\u0e40\u0e1b\u0e49\u0e32\u0e2b\u0e21\u0e32\u0e22 (0.15 = \u0e04\u0e48\u0e2d\u0e22\u0e46 \u0e01\u0e25\u0e31\u0e1a ~7 ticks)\n// \u0e1c\u0e25\u0e25\u0e31\u0e1e\u0e18\u0e4c: \u0e04\u0e48\u0e32\u0e44\u0e2b\u0e25\u0e25\u0e37\u0e48\u0e19\u0e15\u0e48\u0e2d\u0e40\u0e19\u0e37\u0e48\u0e2d\u0e07 \u0e21\u0e35 autocorrelation \u0e08\u0e23\u0e34\u0e07 \u0e44\u0e21\u0e48\u0e01\u0e23\u0e30\u0e42\u0e14\u0e14\u0e17\u0e38\u0e01 tick\nconst THETA = 0.15, DT = 1.0;\nfunction gauss() {\n    let u = 0, v = 0;\n    while (u === 0) u = Math.random();\n    while (v === 0) v = Math.random();\n    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);\n}\nfunction ou(prev, mu, sigma) {\n    if (prev === undefined || prev === null) return mu + sigma * gauss();\n    return prev + THETA * (mu - prev) * DT + sigma * Math.sqrt(DT) * gauss();\n}\nfunction r(x, n) { const p = Math.pow(10, n); return Math.round(x * p) / p; }\nfunction randMs(minMin, maxMin) { return (minMin + Math.random() * (maxMin - minMin)) * 60000; }\n\n// \u2500\u2500 PE/JE calibration: several channels' source (mean,sd) pairs implied a\n// high baseline P(|x|>10) against the +/-10 spec purely from the numbers\n// themselves (e.g. a channel with mean=-14.76, sd=21.32 is out of spec on\n// most independent draws). Clamp the effective nominal mean well inside the\n// limit and cap sd so mean+3*sd stays inside it too -- nominal-state OOS\n// becomes a rare tail event (~0.1%/tick) instead of a coin flip, matching a\n// tightly-controlled production process. Real fault episodes are then\n// modeled explicitly via the drift lifecycle below, not baseline noise. \u2500\u2500\nconst PE_JE_LIMIT = 10;\nfunction calibrate(meanSd) {\n    const mean = Math.max(-0.5 * PE_JE_LIMIT, Math.min(0.5 * PE_JE_LIMIT, meanSd[0]));\n    const sd = Math.min(meanSd[1], Math.max(0.3, (PE_JE_LIMIT - Math.abs(mean)) / 3.2));\n    return [mean, sd];\n}\nconst PCAL = {};\nfor (const id of Object.keys(P)) {\n    const p = P[id];\n    PCAL[id] = {\n        pe: p.pe ? p.pe.map(ch => ch ? calibrate(ch) : null) : null,\n        je: p.je.map(ch => ch ? calibrate(ch) : null)\n    };\n}\n\n// \u2500\u2500 Drift lifecycle: nominal -> drifting -> faulted -> serviced -> cooldown.\n// A shared state machine reused for vacuum, environment (temp/humidity) and\n// alignment (pe/je) faults, each with independent per-machine state so\n// unrelated fault types don't all trip together. `bias` is the value added\n// on top of the parameter's calibrated nominal mean; it ramps linearly to\n// its target during 'drifting', holds during 'faulted', then drops to 0\n// once 'serviced' -- discrete, bounded fault episodes instead of a\n// permanent condition (LDI Alarm Fidelity Audit finding #5/#6). \u2500\u2500\nfunction driftStep(d, now, cfg) {\n    if (!d) d = { phase: 'nominal', bias: 0, cooldownUntil: 0 };\n    switch (d.phase) {\n        case 'drifting': {\n            const frac = Math.min(1, (now - d.driftStart) / (d.until - d.driftStart));\n            d.bias = d.target * frac;\n            if (now >= d.until) { d.phase = 'faulted'; d.until = now + randMs(cfg.faultMin, cfg.faultMax); }\n            break;\n        }\n        case 'faulted':\n            d.bias = d.target;\n            if (now >= d.until) { d.phase = 'serviced'; }\n            break;\n        case 'serviced':\n            d.bias = 0;\n            d.cooldownUntil = now + randMs(cfg.cooldownMin, cfg.cooldownMax);\n            d.phase = 'nominal';\n            break;\n        default: // nominal\n            d.bias = 0;\n            if (now >= d.cooldownUntil && Math.random() < cfg.onsetProb) {\n                d.phase = 'drifting';\n                d.driftStart = now;\n                d.until = now + randMs(cfg.driftMin, cfg.driftMax);\n                d.target = cfg.targetFn();\n            }\n    }\n    return d;\n}\n// onsetProb is per 2s tick. vac/env ~= 1 onset / ~1.3 days per machine;\n// align ~= 1 onset / ~19h per machine (registration drift is the most\n// common real LDI fault mode) -- fleet-wide that's ~20-30 discrete fault\n// episodes/day, each producing a handful of debounced alarms while active.\nconst DRIFT_CFG = {\n    vac:   { onsetProb: 0.000015, driftMin: 20, driftMax: 45, faultMin: 15, faultMax: 30, cooldownMin: 180, cooldownMax: 480,\n             targetFn: () => (Math.random() < 0.5 ? 1 : -1) * (11 + Math.random() * 8) },\n    temp:  { onsetProb: 0.000012, driftMin: 15, driftMax: 40, faultMin: 10, faultMax: 25, cooldownMin: 180, cooldownMax: 480,\n             targetFn: () => (Math.random() < 0.5 ? 1 : -1) * (4.5 + Math.random() * 3) },\n    rh:    { onsetProb: 0.000012, driftMin: 15, driftMax: 40, faultMin: 10, faultMax: 25, cooldownMin: 180, cooldownMax: 480,\n             targetFn: () => (Math.random() < 0.5 ? 1 : -1) * (9 + Math.random() * 6) },\n    align: { onsetProb: 0.00002, driftMin: 15, driftMax: 35, faultMin: 10, faultMax: 20, cooldownMin: 120, cooldownMax: 360,\n             targetFn: () => (Math.random() < 0.5 ? 1 : -1) * (13 + Math.random() * 8) }\n};\n\nconst st = flow.get('sim_state') || {};\nconst now = Date.now();\nconst batch = [];\n\nconst ALL_IDS = Object.keys(P).concat(Object.keys(STRESS_MACHINES));\nfor (const id of ALL_IDS) {\n    const p = P[STRESS_MACHINES[id] || id];\n    const pcal = PCAL[STRESS_MACHINES[id] || id];\n    let s = st[id];\n    if (!s) {\n        s = { temp: p.temp_mu, rh: p.rh_mu, vac: p.vac, board: 1,\n              total: 120 + Math.floor(Math.random() * 120),\n              mo: 'MO-' + String(Math.floor(Math.random() * 900000) + 100000),\n              fpn: 'PN-' + String.fromCharCode(65 + Math.floor(Math.random() * 24)) +\n                   String(Math.floor(Math.random() * 900) + 100),\n              layer: p.layers[Math.floor(Math.random() * p.layers.length)],\n              resist: [\"RESIST-A18\", \"RESIST-A22\", \"RESIST-B15\", \"RESIST-B30\", \"RESIST-C12\"][Math.floor(Math.random()*5)],\n              acc: 0, gapTicks: 0, speedFaultTicks: 0,\n              drift: { vac: null, temp: null, rh: null, align: null } };\n    }\n    if (!s.drift) s.drift = { vac: null, temp: null, rh: null, align: null };\n    // \u2500\u2500 \u0e2d\u0e31\u0e15\u0e23\u0e32\u0e01\u0e32\u0e23\u0e1c\u0e25\u0e34\u0e15\u0e15\u0e48\u0e2d\u0e40\u0e04\u0e23\u0e37\u0e48\u0e2d\u0e07\u0e15\u0e32\u0e21\u0e2a\u0e31\u0e14\u0e2a\u0e48\u0e27\u0e19\u0e08\u0e23\u0e34\u0e07 (share) \u2500\u2500\n    // fleet \u0e23\u0e27\u0e21 ~0.5 \u0e41\u0e16\u0e27/\u0e27\u0e34\u0e19\u0e32\u0e17\u0e35 \u2192 \u0e40\u0e04\u0e23\u0e37\u0e48\u0e2d\u0e07 share 0.17 \u0e44\u0e14\u0e49 ~0.085 \u0e41\u0e16\u0e27/\u0e27\u0e34\n    s.acc += p.share * 2.0;              // tick \u0e17\u0e38\u0e01 2 \u0e27\u0e34\n    if (s.acc < 1) { st[id] = s; continue; }\n    s.acc -= 1;\n\n    // \u2500\u2500 DESIGN_STRESS: real multi-tick data gap (row absent, not zeroed) \u2500\u2500\n    if (s.gapTicks > 0) { s.gapTicks -= 1; st[id] = s; continue; }\n    if (STRESS && !ALL_GREEN && Math.random() < 0.0008) s.gapTicks = GAP_TICKS;\n\n    // \u2500\u2500 drift lifecycle step (independent per fault type) \u2500\u2500\n    s.drift.vac = driftStep(s.drift.vac, now, DRIFT_CFG.vac);\n    s.drift.temp = driftStep(s.drift.temp, now, DRIFT_CFG.temp);\n    s.drift.rh = driftStep(s.drift.rh, now, DRIFT_CFG.rh);\n    s.drift.align = driftStep(s.drift.align, now, DRIFT_CFG.align);\n\n    // \u2500\u2500 OU drift \u0e02\u0e2d\u0e07\u0e2a\u0e20\u0e32\u0e1e\u0e41\u0e27\u0e14\u0e25\u0e49\u0e2d\u0e21 + vacuum (all three now real OU processes,\n    //    not a flat constant -- see header comment) \u2500\u2500\n    s.temp = ou(s.temp, p.temp_mu + s.drift.temp.bias, p.temp_sd);\n    s.rh   = ou(s.rh,   p.rh_mu + s.drift.rh.bias, p.rh_sd);\n    s.vac  = ou(s.vac,  p.vac + s.drift.vac.bias, p.vac_sd);\n\n    // \u2500\u2500 \u0e40\u0e2b\u0e15\u0e38\u0e01\u0e32\u0e23\u0e13\u0e4c\u0e2b\u0e32\u0e22\u0e32\u0e01 (\u0e2d\u0e31\u0e15\u0e23\u0e32\u0e15\u0e23\u0e07\u0e01\u0e31\u0e1a\u0e02\u0e2d\u0e07\u0e08\u0e23\u0e34\u0e07 0.02%) \u2500\u2500\n    const dropout = !ALL_GREEN && Math.random() < 0.0002;\n    const stopped = !ALL_GREEN && Math.random() < 0.0002;\n\n    // \u2500\u2500 rare scan-speed fault: transient overspeed excursion (real equipment\n    //    fault mode -- position-sync overspeed, alarm code 70004). Already a\n    //    bounded, low-rate event (audit confirmed 0.38% baseline OOS,\n    //    realistic as-is) -- left unchanged. \u2500\u2500\n    if (s.speedFaultTicks > 0) {\n        s.speedFaultTicks -= 1;\n    } else if (!ALL_GREEN && Math.random() < 0.0003) {\n        s.speedFaultTicks = 5 + Math.floor(Math.random() * 15); // 10-40s\n    }\n    const scanSpeedNow = s.speedFaultTicks > 0 ? r(460 + Math.random() * 60, 1) : p.scan;\n\n    // \u2500\u2500 board cycle: \u0e19\u0e31\u0e1a\u0e02\u0e36\u0e49\u0e19\u0e08\u0e19\u0e04\u0e23\u0e1a\u0e41\u0e25\u0e49\u0e27\u0e40\u0e23\u0e34\u0e48\u0e21 job \u0e43\u0e2b\u0e21\u0e48 \u2500\u2500\n    s.board += 1;\n    if (s.board > s.total) {\n        s.board = 1;\n        s.total = 120 + Math.floor(Math.random() * 120);\n        s.mo = 'MO-' + String(Math.floor(Math.random() * 900000) + 100000);\n        s.fpn = (STRESS && Math.random() < 0.15)\n            ? 'PN-ULTRA-LONG-CUSTOMER-PART-NUMBER-FOR-COLUMN-OVERFLOW-TEST-' + String(Math.floor(Math.random() * 900) + 100)\n            : 'PN-' + String.fromCharCode(65 + Math.floor(Math.random() * 24)) +\n              String(Math.floor(Math.random() * 900) + 100);\n        s.layer = p.layers[Math.floor(Math.random() * p.layers.length)];\n    }\n\n    const rec = {\n        time: new Date(now).toISOString(),\n        eqp_id: id, factory: p.factory, process: p.process,\n        mo: s.mo, fpn: s.fpn, layer_name: s.layer,\n        resist_dosage: p.dosage,      // \u2190 \u0e04\u0e48\u0e32\u0e04\u0e07\u0e17\u0e35\u0e48\u0e15\u0e48\u0e2d\u0e40\u0e04\u0e23\u0e37\u0e48\u0e2d\u0e07 (sd=0 \u0e43\u0e19\u0e02\u0e49\u0e2d\u0e21\u0e39\u0e25\u0e08\u0e23\u0e34\u0e07)\n        scan_speed: scanSpeedNow,     // \u2190 \u0e04\u0e48\u0e32\u0e04\u0e07\u0e17\u0e35\u0e48\u0e15\u0e48\u0e2d\u0e40\u0e04\u0e23\u0e37\u0e48\u0e2d\u0e07 \u0e22\u0e01\u0e40\u0e27\u0e49\u0e19\u0e0a\u0e48\u0e27\u0e07 fault\n        air_vacuum: dropout ? 0 : r(s.vac, 2),\n        scale_x: dropout ? 0 : r(1.000282 + gauss() * 0.000099, 6),\n        scale_y: dropout ? 0 : r(1.000280 + gauss() * 0.000099, 6),\n        temperature: dropout ? 0 : r(s.temp, 1),\n        humidity:    dropout ? 0 : r(s.rh, 1),\n        thickness: r(Math.max(0.26, p.thick_mu + gauss() * p.thick_sd), 3),\n        board_no: s.board, total_board: s.total,\n        total_time: r(Math.max(5, 7 + Math.abs(gauss()) * (p.process === 'SM' ? 18 : 3)), 3),\n        filmno: null, board_id: null,\n        resist: s.resist,             // \u2190 \u0e2a\u0e15\u0e23\u0e34\u0e07 \u0e44\u0e21\u0e48\u0e43\u0e0a\u0e48\u0e15\u0e31\u0e27\u0e40\u0e25\u0e02 (\u0e17\u0e14\u0e2a\u0e2d\u0e1a\u0e1a\u0e31\u0e4a\u0e01 type)\n        state: !stopped,\n        scale_mode: p.scale_mode,\n        pe_setting: p.pe_setting, je_setting: p.je_setting\n    };\n\n    // \u2500\u2500 PE: \u0e27\u0e31\u0e14\u0e40\u0e09\u0e1e\u0e32\u0e30\u0e40\u0e04\u0e23\u0e37\u0e48\u0e2d\u0e07\u0e17\u0e35\u0e48\u0e21\u0e35\u0e2a\u0e40\u0e1b\u0e01\u0e08\u0e23\u0e34\u0e07 + \u0e08\u0e31\u0e1a\u0e04\u0e39\u0e48\u0e2a\u0e21\u0e21\u0e32\u0e15\u0e23 1\u21946, 2\u21945, 3\u21944.\n    //    Channel 1 (index 0) carries the align-fault bias -- it's the only\n    //    channel v_ldi_alarm_context / almsim_gen's threshold check reads\n    //    (pe_1). Calibrated (mean,sd) from PCAL, not the raw source table. \u2500\u2500\n    const alignBias = s.drift.align.bias;\n    if (pcal.pe) {\n        const base = [gauss(), gauss(), gauss()];   // \u0e2a\u0e38\u0e48\u0e21 3 \u0e04\u0e48\u0e32\n        const pairs = [[0, 5], [1, 4], [2, 3]];     // \u0e41\u0e25\u0e49\u0e27\u0e2a\u0e30\u0e17\u0e49\u0e2d\u0e19\u0e40\u0e1b\u0e47\u0e19 6 \u0e08\u0e38\u0e14\n        const out = [0, 0, 0, 0, 0, 0];\n        for (let k = 0; k < 3; k++) {\n            const [a, b] = pairs[k];\n            const za = base[k], zb = -base[k] + gauss() * 0.15;   // \u0e2a\u0e30\u0e17\u0e49\u0e2d\u0e19 + noise \u0e40\u0e25\u0e47\u0e01\u0e19\u0e49\u0e2d\u0e22\n            out[a] = pcal.pe[a][0] + za * pcal.pe[a][1] + (a === 0 ? alignBias : 0);\n            out[b] = pcal.pe[b][0] + zb * pcal.pe[b][1] + (b === 0 ? alignBias : 0);\n        }\n        // \u2500\u2500 DESIGN_STRESS: clamp one sample to the spec boundary to check\n        // whether the value overflows its table cell / badge at the edge \u2500\u2500\n        if (STRESS && !ALL_GREEN && Math.random() < 0.05 && p.pe_setting !== SENTINEL) {\n            out[Math.floor(Math.random() * 6)] = p.pe_setting * (Math.random() < 0.5 ? 1 : -1);\n        }\n        for (let k = 0; k < 6; k++) rec['pe_' + (k + 1)] = r(out[k], 3);\n    } else {\n        for (let k = 1; k <= 6; k++) rec['pe_' + k] = null;   // DF INNER \u0e44\u0e21\u0e48\u0e27\u0e31\u0e14 PE\n    }\n    // \u2500\u2500 JE: je_4 \u0e40\u0e1b\u0e47\u0e19 NULL \u0e04\u0e39\u0e48\u0e01\u0e31\u0e1a PE \u0e40\u0e2a\u0e21\u0e2d. je is a one-sided magnitude\n    //    (always >= 0 per the source formula), so the align-fault only ever\n    //    pushes it up, never negative -- matches its real physical meaning. \u2500\u2500\n    for (let k = 0; k < 4; k++) {\n        const j = pcal.je[k];\n        rec['je_' + (k + 1)] = j ? r(Math.max(0, j[0] + Math.abs(gauss()) * j[1] + (k === 0 ? Math.abs(alignBias) : 0)), 1) : null;\n    }\n    rec.log_id = 'SIM-' + id.slice(-2) + '-' + now + '-' + s.board;\n\n    batch.push(rec);\n    st[id] = s;\n}\n\nflow.set('sim_state', st);\nif (batch.length === 0) return null;\n\nmsg.payload = batch;\nmsg.headers = { 'Content-Type': 'application/json', 'x-api-key': env.get('INGEST_API_KEY') };\nnode.status({ fill: 'green', shape: 'dot', text: batch.length + ' rows @ ' + new Date().toLocaleTimeString() });\nreturn msg;\n", "outputs": 1, "noerr": 0, "initialize": "", "finalize": "", "libs": [], "x": 562, "y": 96, "wires": [["ldisim_post"]]}, {"id": "ldisim_post", "type": "http request", "z": "ldisim_tab", "g": "57cf447a44c91c05", "name": "POST /ldi-telemetry", "method": "POST", "ret": "obj", "paytoqs": "ignore", "url": "http://127.0.0.1:1880/ldi-telemetry", "persist": true, "proxy": "", "insecureHTTPParser": false, "authType": "", "senderr": false, "headers": [], "x": 858, "y": 96, "wires": [["ldisim_check"]]}, {"id": "ldisim_check", "type": "function", "z": "ldisim_tab", "g": "57cf447a44c91c05", "name": "Check Response", "func": "if (msg.statusCode !== 200) {\n    node.error('Simulator ingest failed: HTTP ' + msg.statusCode +\n        ' ' + JSON.stringify(msg.payload), msg);\n    node.status({fill:'red',shape:'ring',text:'HTTP '+msg.statusCode});\n    return null;\n}\nnode.status({fill:'blue',shape:'dot',text:'ok '+(msg.payload && msg.payload.count)});\nreturn null;", "outputs": 1, "x": 1098, "y": 96, "wires": [[]]}, {"id": "ldisim_catch", "type": "catch", "z": "ldisim_tab", "g": "57cf447a44c91c05", "name": "Catch Simulator Errors", "scope": null, "uncaught": false, "x": 180, "y": 144, "wires": [["ldisim_err"]]}, {"id": "ldisim_err", "type": "function", "z": "ldisim_tab", "g": "57cf447a44c91c05", "name": "Log Error", "func": "node.error('LDI simulator: ' + (msg.error && msg.error.message));\nreturn null;", "outputs": 1, "x": 492, "y": 144, "wires": [[]]}]
+[
+    {
+        "id": "ims-alert-tab",
+        "type": "tab",
+        "label": "IMS Alerting Pipeline",
+        "disabled": false,
+        "info": "Alertmanager webhook → LINE Messaging API / MS Teams"
+    },
+    {
+        "id": "22d255c35801cf0d",
+        "type": "group",
+        "z": "ims-alert-tab",
+        "style": {
+            "stroke": "#999999",
+            "stroke-opacity": "1",
+            "fill": "none",
+            "fill-opacity": "1",
+            "label": true,
+            "label-position": "nw",
+            "color": "#a4a4a4"
+        },
+        "nodes": [
+            "alert_http_in",
+            "alert_respond",
+            "alert_format",
+            "alert_debug",
+            "alert_line_format",
+            "alert_line_notify",
+            "alert_teams_format",
+            "alert_teams_webhook",
+            "alert_catch",
+            "alert_error_debug",
+            "alert_status_line",
+            "alert_status_teams"
+        ],
+        "x": 38,
+        "y": 55,
+        "w": 1476,
+        "h": 322
+    },
+    {
+        "id": "alert_http_in",
+        "type": "http in",
+        "z": "ims-alert-tab",
+        "g": "22d255c35801cf0d",
+        "name": "POST /alert-webhook",
+        "url": "/alert-webhook",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 164,
+        "y": 144,
+        "wires": [
+            [
+                "alert_respond",
+                "alert_format"
+            ]
+        ]
+    },
+    {
+        "id": "alert_respond",
+        "type": "http response",
+        "z": "ims-alert-tab",
+        "g": "22d255c35801cf0d",
+        "name": "200 OK",
+        "statusCode": "200",
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "x": 396,
+        "y": 96,
+        "wires": []
+    },
+    {
+        "id": "alert_format",
+        "type": "function",
+        "z": "ims-alert-tab",
+        "g": "22d255c35801cf0d",
+        "name": "Format Alert Text",
+        "func": "const payload = msg.payload;\nif (!payload || !payload.alerts) return null;\n\nconst alerts = payload.alerts;\nlet msgText = '\\ud83d\\udd14 *IMS SYSTEM ALERT [' + (payload.status || 'unknown').toUpperCase() + ']* \\ud83d\\udd14\\n\\n';\n\nfor (let i = 0; i < alerts.length; i++) {\n    const a = alerts[i];\n    const labels = a.labels || {};\n    const annotations = a.annotations || {};\n    \n    let icon = '\\u26a0\\ufe0f';\n    if (labels.severity === 'critical') icon = '\\ud83d\\udd25';\n    if (payload.status === 'resolved') icon = '\\u2705';\n\n    msgText += icon + ' *' + (labels.alertname || 'Unknown Alert') + '*\\n';\n    msgText += '\\ud83d\\udda5\\ufe0f *Host:* ' + (labels.machine_id || labels.instance || 'System') + '\\n';\n    msgText += '\\ud83d\\udcdd *Detail:* ' + (annotations.summary || 'N/A') + '\\n';\n    if (annotations.description) msgText += '\\ud83d\\udca1 *Desc:* ' + annotations.description + '\\n';\n    \n    const startTime = a.startsAt ? new Date(a.startsAt).toLocaleString('th-TH') : 'Unknown';\n    msgText += '\\ud83d\\udd52 *Time:* ' + startTime + '\\n';\n    msgText += '-------------------\\n';\n}\n\nmsg.payload = msgText;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 422,
+        "y": 192,
+        "wires": [
+            [
+                "alert_debug",
+                "alert_line_format",
+                "alert_teams_format"
+            ]
+        ]
+    },
+    {
+        "id": "alert_debug",
+        "type": "debug",
+        "z": "ims-alert-tab",
+        "g": "22d255c35801cf0d",
+        "name": "Alert Log",
+        "active": true,
+        "tosidebar": true,
+        "console": true,
+        "tostatus": true,
+        "complete": "payload",
+        "targetType": "msg",
+        "x": 1318,
+        "y": 192,
+        "wires": []
+    },
+    {
+        "id": "alert_line_format",
+        "type": "function",
+        "z": "ims-alert-tab",
+        "g": "22d255c35801cf0d",
+        "name": "Format LINE Messaging API",
+        "func": "const token = env.get('LINE_CHANNEL_ACCESS_TOKEN') || '';\nconst userId = env.get('LINE_USER_ID') || '';\n\nif (!token || !userId) {\n    node.status({ fill: 'red', shape: 'ring', text: 'NOT CONFIGURED' });\n    node.error('LINE Messaging API not configured — set LINE_CHANNEL_ACCESS_TOKEN and LINE_USER_ID env vars. Alert was NOT delivered.', msg);\n    return null;\n}\nnode.status({});\n\nmsg.headers = {\n    'Authorization': 'Bearer ' + token,\n    'Content-Type': 'application/json'\n};\nmsg.payload = JSON.stringify({\n    to: userId,\n    messages: [{ type: 'text', text: msg.payload }]\n});\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 696,
+        "y": 112,
+        "wires": [
+            [
+                "alert_line_notify"
+            ]
+        ]
+    },
+    {
+        "id": "alert_line_notify",
+        "type": "http request",
+        "z": "ims-alert-tab",
+        "g": "22d255c35801cf0d",
+        "name": "LINE Messaging API",
+        "method": "POST",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "https://api.line.me/v2/bot/message/push",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 1012,
+        "y": 112,
+        "wires": [
+            [
+                "alert_status_line"
+            ]
+        ]
+    },
+    {
+        "id": "alert_teams_format",
+        "type": "function",
+        "z": "ims-alert-tab",
+        "g": "22d255c35801cf0d",
+        "name": "Format Teams Webhook",
+        "func": "const url = env.get(\"TEAMS_WEBHOOK_URL\") || \"\";\n\nif (!url) {\n    node.status({ fill: \"red\", shape: \"ring\", text: \"NOT CONFIGURED\" });\n    node.error(\"MS Teams webhook not configured — set TEAMS_WEBHOOK_URL env var. Alert was NOT delivered.\", msg);\n    return null;\n}\nnode.status({});\n\nconst card = {\n    \"type\": \"message\",\n    \"attachments\": [{\n        \"contentType\": \"application/vnd.microsoft.card.adaptive\",\n        \"contentUrl\": null,\n        \"content\": {\n            \"$schema\": \"http://adaptivecards.io/schemas/adaptive-card.json\",\n            \"type\": \"AdaptiveCard\",\n            \"version\": \"1.4\",\n            \"body\": [{\n                \"type\": \"TextBlock\",\n                \"text\": \"IMS System Alert\",\n                \"weight\": \"bolder\",\n                \"size\": \"large\",\n                \"color\": \"attention\"\n            }, {\n                \"type\": \"TextBlock\",\n                \"text\": msg.payload,\n                \"wrap\": true,\n                \"spacing\": \"medium\"\n            }],\n            \"msteams\": {\n                \"entities\": []\n            }\n        }\n    }]\n};\nmsg.payload = JSON.stringify(card);\nmsg.headers = { \"Content-Type\": \"application/json\" };\nmsg.url = url;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 686,
+        "y": 256,
+        "wires": [
+            [
+                "alert_teams_webhook"
+            ]
+        ]
+    },
+    {
+        "id": "alert_teams_webhook",
+        "type": "http request",
+        "z": "ims-alert-tab",
+        "g": "22d255c35801cf0d",
+        "name": "MS Teams Webhook",
+        "method": "POST",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 1012,
+        "y": 256,
+        "wires": [
+            [
+                "alert_status_teams"
+            ]
+        ]
+    },
+    {
+        "id": "alert_catch",
+        "type": "catch",
+        "z": "ims-alert-tab",
+        "g": "22d255c35801cf0d",
+        "name": "Catch Alert Errors",
+        "scope": [
+            "alert_format",
+            "alert_line_format",
+            "alert_line_notify",
+            "alert_teams_format",
+            "alert_teams_webhook",
+            "alert_status_line",
+            "alert_status_teams"
+        ],
+        "uncaught": false,
+        "x": 144,
+        "y": 336,
+        "wires": [
+            [
+                "alert_error_debug"
+            ]
+        ]
+    },
+    {
+        "id": "alert_error_debug",
+        "type": "debug",
+        "z": "ims-alert-tab",
+        "g": "22d255c35801cf0d",
+        "name": "Alert Delivery Failure",
+        "active": true,
+        "tosidebar": true,
+        "console": true,
+        "tostatus": true,
+        "complete": "error",
+        "targetType": "msg",
+        "statusVal": "error.message",
+        "statusType": "msg",
+        "x": 1358,
+        "y": 336,
+        "wires": []
+    },
+    {
+        "id": "alert_status_line",
+        "type": "function",
+        "z": "ims-alert-tab",
+        "g": "22d255c35801cf0d",
+        "name": "Check LINE Status",
+        "func": "if (msg.statusCode && msg.statusCode >= 300) {\n    node.error('LINE delivery failed: HTTP ' + msg.statusCode, msg);\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1338,
+        "y": 112,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "alert_status_teams",
+        "type": "function",
+        "z": "ims-alert-tab",
+        "g": "22d255c35801cf0d",
+        "name": "Check Teams Status",
+        "func": "if (msg.statusCode && msg.statusCode >= 300) {\n    node.error('Teams delivery failed: HTTP ' + msg.statusCode, msg);\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1340,
+        "y": 256,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "ims-tab-v5",
+        "type": "tab",
+        "label": "IMS Ingestion Pipeline",
+        "disabled": false,
+        "info": "SNMP walkers → Parser → TimescaleDB"
+    },
+    {
+        "id": "bc78ea85b252a09f",
+        "type": "group",
+        "z": "ims-tab-v5",
+        "style": {
+            "stroke": "#999999",
+            "stroke-opacity": "1",
+            "fill": "none",
+            "fill-opacity": "1",
+            "label": true,
+            "label-position": "nw",
+            "color": "#a4a4a4"
+        },
+        "nodes": [
+            "retry_timer",
+            "inject_fleet",
+            "generate_fleet_targets",
+            "pace_limiter",
+            "fork_5_ways",
+            "walk_cpu",
+            "walk_storage",
+            "walk_net_get",
+            "walk_temp",
+            "catch_walker",
+            "bypass_error",
+            "walk_ldi",
+            "sre_parser",
+            "db_insert",
+            "debug_ok",
+            "global_catch",
+            "debug_err",
+            "inject_registry",
+            "device_registry",
+            "resolve_device",
+            "catch_db_insert",
+            "retry_store",
+            "debug_retry",
+            "retry_rebuild",
+            "http_inject_in",
+            "http_inject_handler",
+            "http_inject_respond"
+        ],
+        "x": 50,
+        "y": 55,
+        "w": 2540,
+        "h": 418
+    },
+    {
+        "id": "inject_fleet",
+        "type": "inject",
+        "z": "ims-tab-v5",
+        "g": "bc78ea85b252a09f",
+        "name": "Poll Fleet (30s)",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "30",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 5,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 176,
+        "y": 192,
+        "wires": [
+            [
+                "generate_fleet_targets"
+            ]
+        ]
+    },
+    {
+        "id": "generate_fleet_targets",
+        "type": "function",
+        "z": "ims-tab-v5",
+        "g": "bc78ea85b252a09f",
+        "name": "Generate Fleet Targets",
+        "func": "const registry = global.get('deviceRegistry') || {};\nconst msgs = [];\nfor (const deviceId of Object.keys(registry)) {\n    msgs.push({ machine_id: deviceId, topic: deviceId, payload: '' });\n}\nreturn [msgs];",
+        "outputs": 1,
+        "x": 628,
+        "y": 192,
+        "wires": [
+            [
+                "pace_limiter"
+            ]
+        ]
+    },
+    {
+        "id": "pace_limiter",
+        "type": "delay",
+        "z": "ims-tab-v5",
+        "g": "bc78ea85b252a09f",
+        "name": "Pace 50/sec",
+        "pauseType": "rate",
+        "timeout": "5",
+        "timeoutUnits": "seconds",
+        "rate": "50",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": "",
+        "outputs": 1,
+        "x": 902,
+        "y": 192,
+        "wires": [
+            [
+                "resolve_device"
+            ]
+        ]
+    },
+    {
+        "id": "fork_5_ways",
+        "type": "function",
+        "z": "ims-tab-v5",
+        "g": "bc78ea85b252a09f",
+        "name": "Fork 5 Walker Threads",
+        "func": "const cb = global.get('circuitBreaker');\nconst mid = msg.machine_id || msg.topic;\nconst base = { host: msg.host, community: msg.community, snmp_port: msg.snmp_port, device_type: msg.device_type || \"server\" };\nconst batchId = flow.get(\"batchId\") || \"batch_0\";\nconst devType = msg.device_type || \"server\";\nconst isSwitch = devType === \"network_switch\";\nconst walkerCount = isSwitch ? 4 : 5;\n\nif (cb && !cb.checkDevice(mid, flow)) {\n    const mk = () => ({ ...base, machine_id: mid, topic: mid, _walker: \"offline\", payload: [], parts: { id: batchId, index: 0, count: 1 } });\n    const msgs = [];\n    for (let i = 0; i < walkerCount; i++) msgs.push(mk());\n    return msgs;\n}\n\nlet idx = 0;\nconst msgs = [];\nconst add = (walker) => { msgs.push({ ...base, machine_id: mid, topic: mid, _walker: walker, payload: \"\", parts: { id: batchId, index: idx++, count: 99 } }); };\nadd(\"cpu\"); add(\"storage\"); add(\"net\"); add(\"temp\");\nif (!isSwitch) { add(\"ldi\"); }\nreturn msgs;",
+        "outputs": 5,
+        "x": 1540,
+        "y": 192,
+        "wires": [
+            [
+                "walk_cpu"
+            ],
+            [
+                "walk_storage"
+            ],
+            [
+                "walk_net_get"
+            ],
+            [
+                "walk_temp"
+            ],
+            [
+                "walk_ldi"
+            ]
+        ]
+    },
+    {
+        "id": "walk_cpu",
+        "type": "function",
+        "z": "ims-tab-v5",
+        "g": "bc78ea85b252a09f",
+        "name": "Walk CPU",
+        "func": "const snmp = global.get(\"snmp\");\nconst normalizeOid = (raw) => Array.isArray(raw) ? raw.join(\".\") : String(raw).replace(/,/g, \".\");\nif (!snmp) { msg.payload = []; return msg; }\n\nconst devType = msg.device_type || \"server\";\nconst msgRef = msg;\nconst nodeRef = node;\n\nif (msg._walker === \"offline\") return msg;\n\nfunction mkSession() {\n    return snmp.createSession(msg.host || \"ims-snmpsim\", msg.community || \"apex_mock\", {\n        port: msg.snmp_port || 161, version: snmp.Version2c, retries: 0, timeout: 6000\n    });\n}\n\nfunction pushIfValid(vb, out) {\n    if (vb.value === null || vb.value === undefined) return;\n    if (vb.type === 129 || vb.type === 128 || vb.type === 130) return;\n    out.push({ oid: normalizeOid(vb.oid), value: vb.value, type: vb.type });\n}\n\n// HOST-RESOURCES-MIB: hrProcessorLoad — works on both Linux and Juniper\nconst oids = [\n    \"1.3.6.1.2.1.25.3.3.1.2.1\",\n    \"1.3.6.1.2.1.25.3.3.1.2.2\",\n    \"1.3.6.1.2.1.25.3.3.1.2.3\",\n    \"1.3.6.1.2.1.25.3.3.1.2.4\"\n];\ntry {\n    var s = mkSession();\n    s.on(\"error\", function(err) { node.debug(\"CPU SNMP error: \" + err.message); });\n    s.get(oids, function(error, varbinds) {\n        try { s.close(); } catch(e) {}\n        var results = [];\n        if (!error && varbinds) {\n            for (var i = 0; i < varbinds.length; i++) pushIfValid(varbinds[i], results);\n        }\n        msgRef.payload = results;\n        nodeRef.send(msgRef);\n    });\n} catch(e) {\n    msgRef.payload = [];\n    nodeRef.send(msgRef);\n}\nreturn null;",
+        "outputs": 1,
+        "timeout": "15",
+        "x": 1814,
+        "y": 96,
+        "wires": [
+            [
+                "sre_parser"
+            ]
+        ]
+    },
+    {
+        "id": "walk_storage",
+        "type": "function",
+        "z": "ims-tab-v5",
+        "g": "bc78ea85b252a09f",
+        "name": "Walk Storage",
+        "func": "const snmp = global.get(\"snmp\");\nconst normalizeOid = (raw) => Array.isArray(raw) ? raw.join(\".\") : String(raw).replace(/,/g, \".\");\nif (!snmp) { msg.payload = []; return msg; }\n\nconst devType = msg.device_type || \"server\";\nconst msgRef = msg;\nconst nodeRef = node;\n\nif (msg._walker === \"offline\") return msg;\n\nfunction mkSession() {\n    return snmp.createSession(msg.host || \"ims-snmpsim\", msg.community || \"apex_mock\", {\n        port: msg.snmp_port || 161, version: snmp.Version2c, retries: 0, timeout: 6000\n    });\n}\n\nfunction pushIfValid(vb, out) {\n    if (vb.value === null || vb.value === undefined) return;\n    if (vb.type === 129 || vb.type === 128 || vb.type === 130) return;\n    out.push({ oid: normalizeOid(vb.oid), value: vb.value, type: vb.type });\n}\n\n// Universal HOST-RESOURCES-MIB: hrStorageTable for ALL device types\nvar oids = [\n    \"1.3.6.1.2.1.25.2.3.1.2.1\", \"1.3.6.1.2.1.25.2.3.1.2.2\",\n    \"1.3.6.1.2.1.25.2.3.1.3.1\", \"1.3.6.1.2.1.25.2.3.1.3.2\",\n    \"1.3.6.1.2.1.25.2.3.1.4.1\", \"1.3.6.1.2.1.25.2.3.1.4.2\",\n    \"1.3.6.1.2.1.25.2.3.1.5.1\", \"1.3.6.1.2.1.25.2.3.1.5.2\",\n    \"1.3.6.1.2.1.25.2.3.1.6.1\", \"1.3.6.1.2.1.25.2.3.1.6.2\"\n];\ntry {\n    var s = mkSession();\n    s.on(\"error\", function(err) { node.debug(\"Storage SNMP error: \" + err.message); });\n    s.get(oids, function(error, varbinds) {\n        try { s.close(); } catch(e) {}\n        var results = [];\n        if (!error && varbinds) {\n            for (var i = 0; i < varbinds.length; i++) pushIfValid(varbinds[i], results);\n        }\n        msgRef.payload = results;\n        nodeRef.send(msgRef);\n    });\n} catch(e) {\n    msgRef.payload = [];\n    nodeRef.send(msgRef);\n}\nreturn null;",
+        "outputs": 1,
+        "timeout": "15",
+        "x": 1824,
+        "y": 144,
+        "wires": [
+            [
+                "sre_parser"
+            ]
+        ]
+    },
+    {
+        "id": "walk_net_get",
+        "type": "function",
+        "z": "ims-tab-v5",
+        "g": "bc78ea85b252a09f",
+        "name": "Walk Network (Dual-Engine)",
+        "func": "const snmp = global.get(\"snmp\");\nconst normalizeOid = (raw) => Array.isArray(raw) ? raw.join(\".\") : String(raw).replace(/,/g, \".\");\nif (!snmp) { msg.payload = []; return msg; }\n\nconst devType = msg.device_type || \"server\";\nconst msgRef = msg;\nconst nodeRef = node;\n\nif (msg._walker === \"offline\") return msg;\n\nfunction mkSession() {\n    return snmp.createSession(msg.host || \"ims-snmpsim\", msg.community || \"apex_mock\", {\n        port: msg.snmp_port || 161, version: snmp.Version2c, retries: 0, timeout: 6000\n    });\n}\n\nfunction subtreeWalk(session, oid, maxReps) {\n    return new Promise(function(resolve) {\n        const buf = [];\n        session.subtree(oid, maxReps,\n            function(vbs) { for (let i = 0; i < vbs.length; i++) buf.push(vbs[i]); },\n            function(err) { resolve(buf); }\n        );\n    });\n}\n\nfunction pushIfValid(vb, out) {\n    if (vb.value === null || vb.value === undefined) return;\n    if (vb.type === 129 || vb.type === 128 || vb.type === 130) return;\n    out.push({ oid: normalizeOid(vb.oid), value: vb.value, type: vb.type });\n}\n\nif (devType === \"network_switch\") {\n    return (async function() {\n        const results = [];\n        let s;\n        try {\n            s = mkSession();\n            s.on(\"error\", function(err) { node.debug(\"SNMP session error: \" + err.message); });\n            const table = await subtreeWalk(s, \"1.3.6.1.2.1.2.2.1\", 50);\n            for (let i = 0; i < table.length; i++) pushIfValid(table[i], results);\n            const xtable = await subtreeWalk(s, \"1.3.6.1.2.1.31.1.1.1\", 50);\n            for (let i = 0; i < xtable.length; i++) pushIfValid(xtable[i], results);\n        } catch(e) {\n            node.debug(\"Network walk exception: \" + e.message);\n        } finally {\n            try { if (s) s.close(); } catch(e) {}\n        }\n        node.debug(\"Net walk: \" + results.length + \" varbinds\");\n        msgRef.payload = results;\n        return msgRef;\n    })();\n}\n\nvar oids = [\n    \"1.3.6.1.2.1.2.2.1.2.1\",\"1.3.6.1.2.1.2.2.1.2.2\",\n    \"1.3.6.1.2.1.2.2.1.5.1\",\"1.3.6.1.2.1.2.2.1.5.2\",\n    \"1.3.6.1.2.1.2.2.1.10.1\",\"1.3.6.1.2.1.2.2.1.10.2\",\n    \"1.3.6.1.2.1.2.2.1.16.1\",\"1.3.6.1.2.1.2.2.1.16.2\",\n    \"1.3.6.1.2.1.2.2.1.14.1\",\"1.3.6.1.2.1.2.2.1.14.2\",\n    \"1.3.6.1.2.1.2.2.1.13.1\",\"1.3.6.1.2.1.2.2.1.13.2\",\n    \"1.3.6.1.2.1.2.2.1.8.1\",\"1.3.6.1.2.1.2.2.1.8.2\"\n];\ntry {\n    var s = mkSession();\n    s.on(\"error\", function(err) { node.debug(\"SNMP session error: \" + err.message); });\n    s.get(oids, function(error, varbinds) {\n        try { s.close(); } catch(e) {}\n        if (error) { msgRef.payload = []; nodeRef.send(msgRef); return; }\n        var results = [];\n        for (var i = 0; i < varbinds.length; i++) pushIfValid(varbinds[i], results);\n        msgRef.payload = results;\n        nodeRef.send(msgRef);\n    });\n} catch(e) {\n    msgRef.payload = [];\n    nodeRef.send(msgRef);\n}\nreturn null;",
+        "outputs": 1,
+        "timeout": "15",
+        "x": 1864,
+        "y": 192,
+        "wires": [
+            [
+                "sre_parser"
+            ]
+        ]
+    },
+    {
+        "id": "walk_temp",
+        "type": "function",
+        "z": "ims-tab-v5",
+        "g": "bc78ea85b252a09f",
+        "name": "Walk Temperature",
+        "func": "const snmp = global.get(\"snmp\");\nconst normalizeOid = (raw) => Array.isArray(raw) ? raw.join(\".\") : String(raw).replace(/,/g, \".\");\nif (!snmp) { msg.payload = []; return msg; }\n\nconst devType = msg.device_type || \"server\";\nconst msgRef = msg;\nconst nodeRef = node;\n\nif (msg._walker === \"offline\") return msg;\n\nfunction mkSession() {\n    return snmp.createSession(msg.host || \"ims-snmpsim\", msg.community || \"apex_mock\", {\n        port: msg.snmp_port || 161, version: snmp.Version2c, retries: 0, timeout: 6000\n    });\n}\n\nfunction pushIfValid(vb, out) {\n    if (vb.value === null || vb.value === undefined) return;\n    if (vb.type === 129 || vb.type === 128 || vb.type === 130) return;\n    out.push({ oid: normalizeOid(vb.oid), value: vb.value, type: vb.type });\n}\n\nvar oids = devType === 'network_switch'\n    ? [\n        \"1.3.6.1.4.1.2636.3.1.13.1.7.9.1.0.0\",\n        \"1.3.6.1.4.1.2636.3.1.13.1.7.7.1.0.0\"\n      ]\n    : ['1.3.6.1.4.1.2021.13.16.2.1.7.0', '1.3.6.1.4.1.2021.13.16.2.1.7.1'];\ntry {\n    var s = mkSession();\n    s.on(\"error\", function(err) { node.debug(\"Temp SNMP error: \" + err.message); });\n    s.get(oids, function(error, varbinds) {\n        try { s.close(); } catch(e) {}\n        var results = [];\n        if (!error && varbinds) {\n            for (var i = 0; i < varbinds.length; i++) pushIfValid(varbinds[i], results);\n        }\n        msgRef.payload = results;\n        nodeRef.send(msgRef);\n    });\n} catch(e) {\n    msgRef.payload = [];\n    nodeRef.send(msgRef);\n}\nreturn null;",
+        "outputs": 1,
+        "timeout": "10",
+        "x": 1834,
+        "y": 240,
+        "wires": [
+            [
+                "sre_parser"
+            ]
+        ]
+    },
+    {
+        "id": "catch_walker",
+        "type": "catch",
+        "z": "ims-tab-v5",
+        "g": "bc78ea85b252a09f",
+        "name": "Catch Walker Error",
+        "scope": [
+            "walk_cpu",
+            "walk_storage",
+            "walk_net_get",
+            "walk_temp",
+            "walk_ldi"
+        ],
+        "uncaught": false,
+        "x": 184,
+        "y": 336,
+        "wires": [
+            [
+                "bypass_error"
+            ]
+        ]
+    },
+    {
+        "id": "bypass_error",
+        "type": "function",
+        "z": "ims-tab-v5",
+        "g": "bc78ea85b252a09f",
+        "name": "Bypass Empty",
+        "func": "// Log error — walker already sent empty payload on error.\n// Do not re-send: would double-count.\nnode.warn('Walker error caught: ' + (msg.error ? msg.error.message : 'unknown'));\nreturn null;",
+        "outputs": 1,
+        "x": 608,
+        "y": 336,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "walk_ldi",
+        "type": "function",
+        "z": "ims-tab-v5",
+        "g": "bc78ea85b252a09f",
+        "name": "Walk LDI (All 10 OIDs)",
+        "func": "const snmp = global.get('snmp');\nif (!snmp) { msg.payload = []; return msg; }\nconst oids = [\n    '1.3.6.1.4.1.9999.1.1.0',\n    '1.3.6.1.4.1.9999.1.2.0',\n    '1.3.6.1.4.1.9999.1.3.0',\n    '1.3.6.1.4.1.9999.1.4.2',\n    '1.3.6.1.4.1.9999.1.4.5',\n    '1.3.6.1.4.1.9999.1.5.1',\n    '1.3.6.1.4.1.9999.1.6.1',\n    '1.3.6.1.4.1.9999.1.7.1',\n    '1.3.6.1.4.1.9999.2.1.0',\n    '1.3.6.1.4.1.9999.2.2.0'\n];\nconst session = snmp.createSession(msg.host || 'ims-snmpsim', msg.community || 'apex_mock', {port: msg.snmp_port || 161, version: snmp.Version2c,retries:1,timeout:3000});\nsession.on('error', function(err) { node.error('SNMP session error: ' + err.message); });;\nconst nodeRef = node; const msgRef = msg;\nsession.get(oids, function(error, varbinds) {\n    session.close();\n    if (error) { msgRef.payload = []; nodeRef.send(msgRef); return; }\n    const results = [];\n    varbinds.forEach(function(vb) { if (vb.value === null || vb.value === undefined) return; if (vb.type !== 129 && vb.type !== 128 && vb.type !== 130) results.push({oid:vb.oid,value:vb.value,type:vb.type}); });\n    msgRef.payload = results;\n    nodeRef.send(msgRef);\n});\nreturn null;",
+        "outputs": 1,
+        "timeout": "10",
+        "x": 1844,
+        "y": 288,
+        "wires": [
+            [
+                "sre_parser"
+            ]
+        ]
+    },
+    {
+        "id": "sre_parser",
+        "type": "function",
+        "z": "ims-tab-v5",
+        "g": "bc78ea85b252a09f",
+        "name": "SRE AIOps Parser v9 (Batch)",
+        "func": "const BATCH_INTERVAL_SEC = 10;\nconst BUFFER_MAX = 200;\nfunction enforceBufferLimit(buf, type) {\n    if (buf.length >= BUFFER_MAX) {\n        buf.shift();\n        node.warn('BUFFER OVERFLOW: Dropped oldest ' + type + ' metric to prevent OOM.');\n        const m = global.get('pipelineMetrics') || { inserts_ok: 0, inserts_failed: 0, last_flush: 0, devices_polled: 0, buffer_overflows: 0 };\n        m.buffer_overflows = (m.buffer_overflows || 0) + 1;\n        global.set('pipelineMetrics', m);\n    }\n}\n\ntry {\nconst { parseAll, calcNetRate, sanitize, mkIface, safeKey } = global.get('parser');\n    if (!msg.payload || !Array.isArray(msg.payload)) return null;\n    const deviceId = sanitize(msg.topic || msg.machine_id || '');\n    if (!deviceId) return null;\n    const walkerType = msg._walker || 'unknown';\n    const isEmpty = msg.payload.length === 0;\n    const isOffline = walkerType === 'offline';\n\n    // Node-RED's flow.get/set parses a string key as a property-expression --\n    // a bare space (real machine names like \"LDI-A01\") throws\n    // \"Invalid property expression\", silently dropping that device's data\n    // every poll cycle (caught by this function's own try/catch below).\n    // calcNetRate() already guards its own internal keys with safeKey() --\n    // this was missed here when that fix was made. deviceId itself stays\n    // raw (sanitize()'d only) for use as the actual SQL column value.\n    const ctxKey = safeKey(deviceId);\n    const stateKey = 'dev_state_' + ctxKey;\n    let state = flow.get(stateKey) || { cpu_cores: 0, cpu_load: 0, ram_total: 0, ram_used: 0, ram_free: 0, disk_total: 0, disk_used: 0, disk_free: 0, temp: 0, ifaces: {}, ldi: { throughput: 0, temp: 0, humidity: 0, pe: 0, je: 0, power: 0, vibration: 0 } };\n\n    if (isOffline) {\n        state.cpu_cores = 0; state.cpu_load = 0;\n        state.ram_total = 0; state.ram_used = 0; state.ram_free = 0;\n        state.disk_total = 0; state.disk_used = 0; state.disk_free = 0;\n        state.temp = 0;\n        const downIfaces = {};\n        for (const [idx, iface] of Object.entries(state.ifaces)) {\n            if (iface.name) downIfaces[idx] = { name: iface.name, rx64: 0, tx64: 0, rx32: 0, tx32: 0, err: 0, drop: 0, status: 0 };\n        }\n        state.ifaces = downIfaces;\n        state.ldi = { throughput: 0, temp: 0, humidity: 0, pe: 0, je: 0, power: 0, vibration: 0 };\n    } else if (isEmpty) {\n        if (walkerType === 'cpu') { state.cpu_cores = 0; state.cpu_load = 0; state.cpu_metrics = {}; }\n        if (walkerType === 'storage') { state.ram_total = 0; state.ram_used = 0; state.ram_free = 0; state.disk_total = 0; state.disk_used = 0; state.disk_free = 0; }\n        if (walkerType === 'temp') { state.temp = 0; state.temp_metrics = {}; }\n        if (walkerType === 'net') {\n            const downIfaces = {};\n            for (const [idx, iface] of Object.entries(state.ifaces)) {\n                if (iface.name) downIfaces[idx] = { name: iface.name, rx_mbps: 0, tx_mbps: 0, rx_errors: 0, tx_errors: 0, rx_drops: 0, tx_drops: 0, status: 'DOWN' };\n            }\n            state.ifaces = downIfaces;\n        }\n        if (walkerType === 'ldi') { state.ldi = { throughput: 0, temp: 0, humidity: 0, pe: 0, je: 0, power: 0, vibration: 0 }; }\n    } else {\n        const parsed = parseAll(msg.payload, walkerType, state);\n        if (walkerType === 'cpu') { state.cpu_cores = parsed.cpu.coreCount; state.cpu_load = parsed.cpu.loadPercent; state.cpu_metrics = parsed.cpu.cpuMetrics || {}; }\n        if (walkerType === 'storage') { state.ram_total = parsed.disk.ramTotalMb; state.ram_used = parsed.disk.ramUsedMb; state.ram_free = parsed.disk.ramFreeMb; state.disk_total = parsed.disk.totalGb; state.disk_used = parsed.disk.usedGb; state.disk_free = parsed.disk.freeGb; }\n        if (walkerType === 'temp') { state.temp = parsed.temp.maxC; state.temp_metrics = parsed.temp.tempMetrics || {}; }\n        if (walkerType === 'net') { state.ifaces = calcNetRate(deviceId, parsed.ifaces, flow).summary; }\n        if (walkerType === 'ldi') { state.ldi = parsed.ldi; }\n    }\n    flow.set(stateKey, state);\n\n    const now = Date.now();\n    const bufKey = 'batch_buf_' + ctxKey;\n    let buffer = flow.get(bufKey) || { sys: [], net: [], ldi: [], lastFlush: now };\n\n    if (isOffline) {\n        enforceBufferLimit(buffer.sys, 'sys');\n        buffer.sys.push({ device_id: deviceId, cpu_cores: 0, cpu_load_percent: 0, ram_total_mb: 0, ram_used_mb: 0, ram_free_mb: 0, disk_total_gb: 0, disk_used_gb: 0, disk_free_gb: 0, disk_description: '', temp_c: 0 });\n        for (const [name, iface] of Object.entries(state.ifaces)) {\n            enforceBufferLimit(buffer.net, 'net');\n            buffer.net.push({ device_id: deviceId, iface_name: name, rx_mbps: 0, tx_mbps: 0, rx_errors: 0, tx_errors: 0, rx_drops: 0, tx_drops: 0, status: 'DOWN' });\n        }\n        enforceBufferLimit(buffer.ldi, 'ldi');\n        buffer.ldi.push({ device_id: deviceId, throughput: 0, temperature: 0, humidity: 0, pe_1: 0, je_1: 0, power_watt: 0, vibration: 0 });\n    } else {\n        if (walkerType === 'cpu' || walkerType === 'storage' || walkerType === 'temp') { enforceBufferLimit(buffer.sys, 'sys'); buffer.sys.push({ device_id: deviceId, cpu_cores: state.cpu_cores, cpu_load_percent: state.cpu_load, ram_total_mb: state.ram_total, ram_used_mb: state.ram_used, ram_free_mb: state.ram_free, disk_total_gb: state.disk_total, disk_used_gb: state.disk_used, disk_free_gb: state.disk_free, disk_description: '', temp_c: state.temp }); }\n        if (walkerType === 'net') {\n            for (const [name, iface] of Object.entries(state.ifaces)) {\n                enforceBufferLimit(buffer.net, 'net');\n                buffer.net.push({ device_id: deviceId, iface_name: name, rx_mbps: iface.rx_mbps, tx_mbps: iface.tx_mbps, rx_errors: iface.errors || 0, tx_errors: 0, rx_drops: iface.drops || 0, tx_drops: 0, status: iface.status });\n            }\n        }\n        if (walkerType === 'ldi') { enforceBufferLimit(buffer.ldi, 'ldi'); buffer.ldi.push({ device_id: deviceId, throughput: state.ldi.throughput, temperature: state.ldi.temp, humidity: state.ldi.humidity, pe_1: state.ldi.pe, je_1: state.ldi.je, power_watt: state.ldi.power, vibration: state.ldi.vibration }); }\n    }\n\n    const elapsed = (now - buffer.lastFlush) / 1000;\n    if (elapsed >= BATCH_INTERVAL_SEC) {\n        const pool = global.get('pgPool');\n        if (pool) {\n            const m = global.get('pipelineMetrics') || { inserts_ok: 0, inserts_failed: 0, last_flush: 0, devices_polled: 0 };\n            const queries = buildBatchQueries(buffer.sys, buffer.net, buffer.ldi);\n            for (const q of queries) {\n                pool.query(q.sql, q.params, function(err) {\n                    if (err) { node.error('Batch INSERT [' + q.name + '] failed: ' + err.message); m.inserts_failed += q.count; const cb = global.get('circuitBreaker'); if (cb) cb.recordFailure(deviceId, flow); }\n                    else { node.log('Batch INSERT [' + q.name + '] ok: ' + q.count + ' rows'); m.inserts_ok += q.count; }\n                    global.set('pipelineMetrics', m);\n                });\n            }\n            m.last_flush = Date.now();\n            m.devices_polled++;\n            const cb = global.get('circuitBreaker');\n            if (cb) cb.recordSuccess(deviceId, flow);\n            global.set('pipelineMetrics', m);\n        }\n        flow.set(bufKey, { sys: [], net: [], ldi: [], lastFlush: now });\n    } else {\n        flow.set(bufKey, buffer);\n    }\n    return null;\n} catch (err) {\n    node.error('Parser v10 crash: ' + err.message, msg);\n    return null;\n}\n\nfunction buildBatchQueries(sysRows, netRows, ldiRows) { sysRows = Array.isArray(sysRows) ? sysRows : []; netRows = Array.isArray(netRows) ? netRows : []; ldiRows = Array.isArray(ldiRows) ? ldiRows : [];\n    const queries = [];\n    if (sysRows.length > 0) { const ph = sysRows.map((_, i) => { const b = i * 11; return `(NOW(),$${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7},$${b+8},$${b+9},$${b+10},$${b+11})`; }).join(','); const params = []; for (const r of sysRows) { params.push(r.device_id, r.cpu_cores, r.cpu_load_percent, r.ram_total_mb, r.ram_used_mb, r.ram_free_mb, r.disk_total_gb, r.disk_used_gb, r.disk_free_gb, r.disk_description, r.temp_c); } queries.push({ name: 'sys', count: sysRows.length, sql: 'INSERT INTO public.sys_metrics (\"time\",device_id,cpu_cores,cpu_load_percent,ram_total_mb,ram_used_mb,ram_free_mb,disk_total_gb,disk_used_gb,disk_free_gb,disk_description,temp_c) VALUES ' + ph, params: params }); }\n    if (netRows.length > 0) { const ph = netRows.map((_, i) => { const b = i * 9; return `(NOW(),$${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7},$${b+8},$${b+9})`; }).join(','); const params = []; for (const r of netRows) { params.push(r.device_id, r.iface_name, r.rx_mbps, r.tx_mbps, r.rx_errors, r.tx_errors, r.rx_drops, r.tx_drops, r.status); } queries.push({ name: 'net', count: netRows.length, sql: 'INSERT INTO public.net_metrics (\"time\",device_id,iface_name,rx_mbps,tx_mbps,rx_errors,tx_errors,rx_drops,tx_drops,status) VALUES ' + ph, params: params }); }\n    if (ldiRows.length > 0) { const ph = ldiRows.map((_, i) => { const b = i * 8; return `(NOW(),$${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7},$${b+8})`; }).join(','); const params = []; for (const r of ldiRows) { params.push(r.device_id, r.throughput, r.temperature, r.humidity, r.power_watt, r.vibration, r.pe_1, r.je_1); } queries.push({ name: 'ldi', count: ldiRows.length, sql: 'INSERT INTO public.ldi_metrics (\"time\",device_id,throughput,temperature,humidity,power_watt,vibration,pe_1,je_1) VALUES ' + ph, params: params }); }\n    return queries;\n}",
+        "outputs": 1,
+        "timeout": "15",
+        "noerr": 0,
+        "x": 2210,
+        "y": 192,
+        "wires": [
+            [
+                "db_insert",
+                "debug_ok"
+            ]
+        ]
+    },
+    {
+        "id": "db_insert",
+        "type": "postgresql",
+        "z": "ims-tab-v5",
+        "g": "bc78ea85b252a09f",
+        "name": "TimescaleDB",
+        "query": "",
+        "postgreSQLConfig": "pg_config",
+        "split": false,
+        "outputs": 0,
+        "x": 2454,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "debug_ok",
+        "type": "debug",
+        "z": "ims-tab-v5",
+        "g": "bc78ea85b252a09f",
+        "name": "Telemetry OK",
+        "active": true,
+        "complete": "payload",
+        "targetType": "msg",
+        "x": 2464,
+        "y": 144,
+        "wires": []
+    },
+    {
+        "id": "global_catch",
+        "type": "catch",
+        "z": "ims-tab-v5",
+        "g": "bc78ea85b252a09f",
+        "name": "Global Catch",
+        "scope": null,
+        "uncaught": false,
+        "x": 166,
+        "y": 432,
+        "wires": [
+            [
+                "debug_err"
+            ]
+        ]
+    },
+    {
+        "id": "debug_err",
+        "type": "debug",
+        "z": "ims-tab-v5",
+        "g": "bc78ea85b252a09f",
+        "name": "Pipeline Error",
+        "active": true,
+        "tosidebar": true,
+        "console": true,
+        "tostatus": true,
+        "complete": "error.message",
+        "targetType": "msg",
+        "x": 912,
+        "y": 432,
+        "wires": []
+    },
+    {
+        "id": "inject_registry",
+        "type": "inject",
+        "z": "ims-tab-v5",
+        "g": "bc78ea85b252a09f",
+        "name": "Refresh Device Registry (5min)",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": 300,
+        "crontab": "",
+        "once": true,
+        "onceDelay": 5,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 226,
+        "y": 96,
+        "wires": [
+            [
+                "device_registry"
+            ]
+        ]
+    },
+    {
+        "id": "device_registry",
+        "type": "function",
+        "z": "ims-tab-v5",
+        "g": "bc78ea85b252a09f",
+        "name": "Load Device Registry",
+        "func": "const pool = global.get('pgPool');\nif (!pool) { node.error('pgPool not available in global context'); return null; }\nconst sql = 'SELECT device_id AS machine_id, hostname, snmp_community AS community, snmp_port, device_type FROM public.devices WHERE enabled = true';\npool.query(sql, [], function(err, result) {\n    if (err) {\n        if (err.message && err.message.indexOf('does not exist') !== -1) {\n            node.warn('Device Registry: table not ready yet — retrying in 10s');\n        } else {\n            node.warn('Device Registry: ' + err.message + ' — using fallback defaults');\n        }\n        return;\n    }\n    const registry = {};\n    if (result && result.rows) {\n        result.rows.forEach(function(row) {\n            registry[row.machine_id] = {\n                hostname: row.hostname || row.machine_id,\n                community: row.community || 'public',\n                snmp_port: row.snmp_port || 161,\n                device_type: row.device_type || 'server'\n            };\n        });\n    }\n    flow.set('batchId', 'batch_' + Date.now());\n    global.set('deviceRegistry', registry);\n    node.log('Device registry loaded: ' + Object.keys(registry).length + ' devices');\n});\nreturn null;",
+        "outputs": 0,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 628,
+        "y": 96,
+        "wires": []
+    },
+    {
+        "id": "resolve_device",
+        "type": "function",
+        "z": "ims-tab-v5",
+        "g": "bc78ea85b252a09f",
+        "name": "Resolve Device",
+        "func": "const registry = global.get('deviceRegistry') || {};\nconst mid = msg.machine_id || msg.topic || '';\nconst device = registry[mid];\nif (!device) {\n    msg.host = msg.host || 'ims-snmpsim';\n    msg.community = msg.community || 'apex_mock';\n    msg.snmp_port = msg.snmp_port || 161;\n    msg.device_type = msg.device_type || 'server';\n} else {\n    msg.host = device.hostname;\n    msg.community = device.community;\n    msg.snmp_port = device.snmp_port;\n    msg.device_type = device.device_type || 'server';\n}\nmsg.machine_id = mid;\nmsg.topic = mid;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1152,
+        "y": 192,
+        "wires": [
+            [
+                "fork_5_ways"
+            ]
+        ]
+    },
+    {
+        "id": "catch_db_insert",
+        "type": "catch",
+        "z": "ims-tab-v5",
+        "g": "bc78ea85b252a09f",
+        "name": "Catch DB Insert",
+        "scope": [
+            "db_insert"
+        ],
+        "x": 176,
+        "y": 384,
+        "wires": [
+            [
+                "retry_store"
+            ]
+        ]
+    },
+    {
+        "id": "retry_store",
+        "type": "function",
+        "z": "ims-tab-v5",
+        "g": "bc78ea85b252a09f",
+        "name": "Write to Retry Queue",
+        "func": "const fs = global.get('fs');\nconst QUEUE_PATH = '/data/retry_queue.json';\nfs.readFile(QUEUE_PATH, 'utf8', function(readErr, data) {\n    let queue = [];\n    try { if (!readErr && data) queue = JSON.parse(data); } catch(e) { queue = []; }\n    const entry = {\n        timestamp: new Date().toISOString(),\n        retries: 0,\n        sql: msg.query || '',\n        params: msg.params || [],\n        count: msg.count || 0,\n        error: msg.error ? msg.error.message : 'unknown'\n    };\n    const oneHourAgo = Date.now() - 3600000;\n    queue = queue.filter(function(e) { return new Date(e.timestamp).getTime() > oneHourAgo; });\n    if (queue.length >= 500) queue = queue.slice(-499);\n    queue.push(entry);\n    fs.writeFile(QUEUE_PATH, JSON.stringify(queue), 'utf8', function(writeErr) {\n        if (writeErr) node.error('Retry queue write failed: ' + writeErr.message);\n        else node.warn('Retry: queued failed INSERT (#' + queue.length + ')');\n    });\n});\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 628,
+        "y": 384,
+        "wires": [
+            [
+                "debug_retry"
+            ]
+        ]
+    },
+    {
+        "id": "debug_retry",
+        "type": "debug",
+        "z": "ims-tab-v5",
+        "g": "bc78ea85b252a09f",
+        "name": "Retry Queued",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 912,
+        "y": 384,
+        "wires": []
+    },
+    {
+        "id": "retry_timer",
+        "type": "inject",
+        "z": "ims-tab-v5",
+        "g": "bc78ea85b252a09f",
+        "name": "Retry Drain (30s)",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "30",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 10,
+        "topic": "",
+        "payload": "drain",
+        "payloadType": "str",
+        "x": 186,
+        "y": 144,
+        "wires": [
+            [
+                "retry_rebuild"
+            ]
+        ]
+    },
+    {
+        "id": "retry_rebuild",
+        "type": "function",
+        "z": "ims-tab-v5",
+        "g": "bc78ea85b252a09f",
+        "name": "Rebuild & Retry INSERT",
+        "func": "const fs = global.get('fs');\nconst QUEUE_PATH = '/data/retry_queue.json';\nconst MAX_RETRIES = 5;\nconst pool = global.get('pgPool');\nif (msg.payload !== 'drain') return null;\nif (!pool) { node.warn('Retry: pgPool not available'); return null; }\nfs.readFile(QUEUE_PATH, 'utf8', function(readErr, data) {\n    if (readErr || !data) return;\n    let queue = [];\n    try { queue = JSON.parse(data); } catch(e) { return; }\n    if (queue.length === 0) return;\n    const entry = queue.shift();\n    entry.retries++;\n    if (entry.retries > MAX_RETRIES) {\n        node.warn('Retry: dropped after ' + MAX_RETRIES + ' attempts');\n        fs.writeFile(QUEUE_PATH, JSON.stringify(queue), 'utf8', function(){});\n        return;\n    }\n    if (entry.sql && entry.params) {\n        pool.query(entry.sql, entry.params, function(err) {\n            if (err) {\n                node.error('Retry [' + entry.retries + '/' + MAX_RETRIES + '] failed: ' + err.message);\n                queue.unshift(entry);\n            } else {\n                node.log('Retry [' + entry.retries + '/' + MAX_RETRIES + '] ok: ' + entry.count + ' rows');\n            }\n            fs.writeFile(QUEUE_PATH, JSON.stringify(queue), 'utf8', function(){});\n        });\n    } else {\n        node.warn('Retry: entry has no sql/params, skipping');\n        fs.writeFile(QUEUE_PATH, JSON.stringify(queue), 'utf8', function(){});\n    }\n});\nreturn null;",
+        "outputs": 0,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 638,
+        "y": 144,
+        "wires": []
+    },
+    {
+        "id": "http_inject_in",
+        "type": "http in",
+        "z": "ims-tab-v5",
+        "g": "bc78ea85b252a09f",
+        "name": "POST /inject",
+        "url": "/inject",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 166,
+        "y": 240,
+        "wires": [
+            [
+                "http_inject_handler"
+            ]
+        ]
+    },
+    {
+        "id": "http_inject_handler",
+        "type": "function",
+        "z": "ims-tab-v5",
+        "g": "bc78ea85b252a09f",
+        "name": "Parse K6 Payload",
+        "func": "var expectedKey = env.get('INGEST_API_KEY');\nvar providedKey = msg.req ? msg.req.headers['x-api-key'] : null;\n\n// 1. Auth Check (Send ORIGINAL msg to output 2)\nif (expectedKey && providedKey !== expectedKey) {\n    msg.statusCode = 401;\n    msg.payload = JSON.stringify({ error: 'Unauthorized' });\n    msg.headers = { 'Content-Type': 'application/json' };\n    return [null, msg];\n}\n\nvar body = msg.payload;\nif (typeof body === 'string') {\n    try { body = JSON.parse(body); } catch(e) { body = {}; }\n}\n\nvar machineId = body.machine_id || '';\nif (!machineId) {\n    machineId = 'E2E-SERVER-' + String(Math.floor(Math.random() * 1000)).padStart(3, '0');\n}\nif (machineId.startsWith('K6-SERVER-')) machineId = machineId.replace('K6-SERVER-', 'E2E-SERVER-');\n\n// 2. Prepare Pipeline msg (Safely Clone to drop req/res and prevent memory leaks)\nvar pipelineMsg = {}; // Fix memory leak (no cloneMessage)\npipelineMsg.machine_id = machineId;\npipelineMsg.topic = machineId;\npipelineMsg.payload = '';\n\n// 3. Prepare HTTP Response (Use ORIGINAL msg for output 2)\nmsg.statusCode = 200;\nmsg.payload = JSON.stringify({ ok: true, machine_id: machineId });\nmsg.headers = { 'Content-Type': 'application/json' };\n\nreturn [pipelineMsg, msg];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 922,
+        "y": 240,
+        "wires": [
+            [
+                "resolve_device"
+            ],
+            [
+                "http_inject_respond"
+            ]
+        ]
+    },
+    {
+        "id": "http_inject_respond",
+        "type": "http response",
+        "z": "ims-tab-v5",
+        "g": "bc78ea85b252a09f",
+        "name": "200 OK",
+        "statusCode": "",
+        "headers": {},
+        "x": 1132,
+        "y": 288,
+        "wires": []
+    },
+    {
+        "id": "http_metrics_in",
+        "type": "http in",
+        "z": "ims-tab-v5",
+        "g": "bc78ea85b252a09f",
+        "name": "GET /metrics",
+        "url": "/metrics",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 166,
+        "y": 288,
+        "wires": [
+            [
+                "http_metrics_respond"
+            ]
+        ]
+    },
+    {
+        "id": "http_metrics_respond",
+        "type": "function",
+        "z": "ims-tab-v5",
+        "g": "bc78ea85b252a09f",
+        "name": "Render Prometheus Metrics",
+        "func": "const metrics = global.get('pipelineMetrics') || { inserts_ok: 0, inserts_failed: 0, last_flush: 0, devices_polled: 0, buffer_overflows: 0 };\nconst cb = global.get('circuitBreaker');\nconst lines = [\n    '# HELP ims_pipeline_inserts_total Total successful DB inserts',\n    '# TYPE ims_pipeline_inserts_total counter',\n    'ims_pipeline_inserts_total ' + metrics.inserts_ok,\n    '# HELP ims_pipeline_inserts_failed_total Total failed DB inserts',\n    '# TYPE ims_pipeline_inserts_failed_total counter',\n    'ims_pipeline_inserts_failed_total ' + metrics.inserts_failed,\n    '# HELP ims_pipeline_last_flush_timestamp_seconds Last successful flush epoch',\n    '# TYPE ims_pipeline_last_flush_timestamp_seconds gauge',\n    'ims_pipeline_last_flush_timestamp_seconds ' + Math.floor(metrics.last_flush / 1000),\n    '# HELP ims_pipeline_devices_polled_total Devices polled this cycle',\n    '# TYPE ims_pipeline_devices_polled_total gauge',\n    'ims_pipeline_devices_polled_total ' + metrics.devices_polled,\n    '# HELP ims_pipeline_buffer_overflows_total Total records dropped to prevent OOM',\n    '# TYPE ims_pipeline_buffer_overflows_total counter',\n    'ims_pipeline_buffer_overflows_total ' + (metrics.buffer_overflows || 0)\n];\nif (cb) {\n    const cbMetrics = cb.renderMetrics(flow);\n    if (cbMetrics) lines.push(cbMetrics);\n}\nmsg.payload = lines.join('\\n') + '\\n';\nmsg.headers = { 'Content-Type': 'text/plain; version=0.0.4' };\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 648,
+        "y": 288,
+        "wires": [
+            [
+                "http_metrics_out"
+            ]
+        ]
+    },
+    {
+        "id": "http_metrics_out",
+        "type": "http response",
+        "z": "ims-tab-v5",
+        "g": "bc78ea85b252a09f",
+        "name": "200 OK (metrics)",
+        "statusCode": "",
+        "headers": {},
+        "x": 922,
+        "y": 288,
+        "wires": []
+    },
+    {
+        "id": "pg_config",
+        "type": "postgreSQLConfig",
+        "name": "IMS Database",
+        "host": "ims-pgbouncer",
+        "hostFieldType": "str",
+        "port": "5432",
+        "portFieldType": "num",
+        "database": "ims",
+        "databaseFieldType": "str",
+        "ssl": false,
+        "sslFieldType": "bool",
+        "max": 10,
+        "idle": 10000,
+        "connectionTimeout": 10000,
+        "user": "PGUSER",
+        "userFieldType": "env",
+        "password": "PGPASSWORD",
+        "passwordFieldType": "env"
+    },
+    {
+        "id": "almsim_tab",
+        "type": "tab",
+        "label": "LDI Alarm Simulator",
+        "disabled": false,
+        "info": "จำลอง alarm ด้วยรหัสและความถี่จาก production log จริง (20 รหัส)\nปิดได้โดย disable tab นี้"
+    },
+    {
+        "id": "ccae533aefb8eced",
+        "type": "group",
+        "z": "almsim_tab",
+        "style": {
+            "stroke": "#999999",
+            "stroke-opacity": "1",
+            "fill": "none",
+            "fill-opacity": "1",
+            "label": true,
+            "label-position": "nw",
+            "color": "#a4a4a4"
+        },
+        "nodes": [
+            "almsim_tick",
+            "almsim_gen",
+            "almsim_db",
+            "almsim_catch",
+            "almsim_err"
+        ],
+        "x": 34,
+        "y": 39,
+        "w": 1024,
+        "h": 130
+    },
+    {
+        "id": "almsim_tick",
+        "type": "inject",
+        "z": "almsim_tab",
+        "g": "ccae533aefb8eced",
+        "name": "Tick 10s",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "10",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "25",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 140,
+        "y": 80,
+        "wires": [
+            [
+                "almsim_gen"
+            ]
+        ]
+    },
+    {
+        "id": "almsim_gen",
+        "type": "function",
+        "z": "almsim_tab",
+        "g": "ccae533aefb8eced",
+        "name": "Generate Alarm (correlated + noise)",
+        "func": "// System QA (2026-08-07): real-data cutover. Gated by env, not a\n// hardcoded disable, so CI / fresh deployments (no LDI_SIMULATOR_ENABLED\n// set) keep generating mock data by default -- only this specific\n// environment's local .env (gitignored, never committed) turns it off.\nif (env.get('LDI_SIMULATOR_ENABLED') === 'false') {\n    node.status({ fill: 'grey', shape: 'ring', text: 'disabled (real-data mode)' });\n    return null;\n}\n\n\n// ══════════════════════════════════════════════════════════════════\n// LDI ALARM SIMULATOR — noise codes (real distribution, uncorrelated\n// equipment/calibration faults) + condition-driven codes (fired only\n// when the matching telemetry parameter is actually out of spec right\n// now, per the same thresholds v_ldi_alarm_context/migration 054+057\n// uses).\n//\n// IMS-FULL-SYSTEM-AUDIT.md P0-2: previously every code (including the\n// process-linked ones like 91009/90005/91008/70004) was drawn from a\n// pure Poisson/weighted-random process independent of telemetry, so\n// the RCA Truth Test correctly reported Lift ≈ 1 (no correlation to\n// find, because there was none by construction). Codes with a known\n// real-world parameter link now only fire when that parameter is\n// actually out of spec, so Lift should rise meaningfully (> 2).\n//\n// VACUUM (91009), System QA realism audit 2026-08-06: previously\n// left as pure noise because the -50/-95 kPa threshold it was checked\n// against didn't match ANY simulated value (not even DF INNER's real\n// -16..-19 kPa baseline), so flag_vac_out_of_spec was true for ~100% of\n// all rows regardless of timing -- no alarm-timing strategy could raise\n// Lift above ~1 when the baseline itself was saturated. Migration 057\n// recalibrates the threshold to bound around the simulator's own DF\n// INNER recipe range (simulator-derived, not a sourced vendor spec) and\n// the telemetry generator now injects rare weak-vacuum fault events\n// (ldisim_gen, vacFaultTicks) so there's a real excursion to correlate\n// against. 91009 moves from the noise pool to condition-driven, same\n// pattern as 91008/align/70004.\n// ══════════════════════════════════════════════════════════════════\nconst pool = global.get('pgPool');\nif (!pool) { node.status({ fill: 'red', shape: 'ring', text: 'no pgPool' }); return null; }\n\n// codes with no known telemetry correlation - unconditioned background\n// noise. System QA (2026-08-07): replaced with real codes from the\n// vendor Alarm Master import (migration 061) -- 91012/91017/91020/91024/\n// 93007/91029/97014/20/20021/2 never existed in the real 1,820-code list\n// (invented for early prototyping); swapped 1:1 for real generic-fault\n// codes (camera/PLC/comms/network/DB), keeping the exact same weights.\n// 90013 (5th ALIGN_CODES entry) also didn't exist in the real list --\n// dropped rather than force-substituted, since 4 real alignment codes\n// already cover the category.\nconst NOISE_CUM = [[\"93004\", 24.5], [\"01060009\", 31.3], [\"0106000C\", 38.2],\n    [\"0106001C\", 45.0], [\"01060013\", 51.8], [\"01100001\", 58.7], [\"01130002\", 65.5], [\"010E0064\", 72.4],\n    [\"10006\", 79.2], [\"92013\", 86.0], [\"97005\", 92.9], [\"80001\", 100.0]];\nconst MACHINES = [[\"LDI-01\", 16.6], [\"LDI-02\", 33.2], [\"LDI-03\", 44.1], [\"LDI-04\", 55.0],\n    [\"LDI-05\", 72.2], [\"LDI-06\", 89.3], [\"LDI-07\", 93.0], [\"LDI-08\", 96.7],\n    [\"LDI-09\", 98.4], [\"LDI-10\", 100.0]];\n// alignment codes correlated to PE/JE out-of-tolerance (misalignment <-> PE error)\nconst ALIGN_CODES = [\"90001\", \"90004\", \"90005\", \"90012\"];\nconst RATE_PER_TICK = 0.01194 * 20 * (15 / 20); // unchanged overall pacing, noise share only\n\nfunction pick(table) {\n    const x = Math.random() * 100;\n    for (const [v, c] of table) if (x <= c) return v;\n    return table[table.length - 1][0];\n}\nfunction poissonCount(rate) {\n    let n = 0, L = Math.exp(-rate), p = 1;\n    do { p *= Math.random(); n++; } while (p > L);\n    return n - 1;\n}\n// relatedLogId: the literal ldi_data.log_id of the telemetry row that\n// triggered this alarm, when known (condition-driven codes only -- noise\n// codes aren't tied to any specific board, so they pass null and let\n// migration 051's trigger fall back to its nearest-match heuristic).\n// System Audit Priority 3: production-grade exact event linkage.\nfunction newRow(eq, code, ts, relatedLogId) {\n    return {\n        logid: 'SIM-ALM-' + ts.getTime() + '-' + eq + '-' + code + '-' + Math.floor(Math.random() * 1e6),\n        logdate: ts.toISOString(),\n        errorcode: code,\n        errortime: ts.toISOString().replace('T', ' ').substring(0, 19),\n        equipmentid: eq,\n        factory: Math.random() < 0.75 ? '2' : '3',\n        process: ['DF INNER', 'DF OUTER', 'SM'][Math.floor(Math.random() * 3)],\n        related_log_id: relatedLogId || null\n    };\n}\n\nconst rows = [];\nconst now = Date.now();\n\n// ── background noise (unconditioned, real historical distribution) ──\nconst nNoise = poissonCount(RATE_PER_TICK);\nfor (let k = 0; k < nNoise; k++) {\n    rows.push(newRow(pick(MACHINES), pick(NOISE_CUM), new Date(now - Math.floor(Math.random() * 9000))));\n}\n\n// ── condition-driven alarms: only fire when telemetry is actually out of\n//    spec right now, using the same thresholds as v_ldi_alarm_context ──\nconst sql = `\n    SELECT DISTINCT ON (eqp_id) eqp_id, process, temperature, humidity,\n           pe_1, je_1, scan_speed, air_vacuum, log_id\n    FROM public.ldi_data\n    WHERE time > NOW() - INTERVAL '3 minutes'\n    ORDER BY eqp_id, time DESC`;\n\npool.query(sql, [], function (err, result) {\n    if (err) { node.error('Alarm sim telemetry query failed: ' + err.message); return; }\n    const ts = new Date();\n    // ~25%/tick per condition so a persistently out-of-spec machine doesn't\n    // fire an alarm on literally every 10s tick while the fault holds\n    const fires = () => Math.random() < 0.25;\n    for (const r of (result.rows || [])) {\n        if ((r.temperature < 20 || r.temperature > 24 || r.humidity < 50 || r.humidity > 60) && fires()) {\n            rows.push(newRow(r.eqp_id, '91008', ts, r.log_id));\n        }\n        if ((Math.abs(r.pe_1) > 10 || Math.abs(r.je_1) > 10) && fires()) {\n            rows.push(newRow(r.eqp_id, ALIGN_CODES[Math.floor(Math.random() * ALIGN_CODES.length)], ts, r.log_id));\n        }\n        if ((r.scan_speed > 450 || r.scan_speed <= 0) && fires()) {\n            rows.push(newRow(r.eqp_id, '70004', ts, r.log_id));\n        }\n        if (r.air_vacuum !== null && (r.air_vacuum > -8 || r.air_vacuum < -30) && fires()) {\n            rows.push(newRow(r.eqp_id, '91009', ts, r.log_id));\n        }\n    }\n\n    if (rows.length === 0) { node.status({ fill: 'grey', shape: 'ring', text: 'no alarm' }); return; }\n    node.status({ fill: 'yellow', shape: 'dot',\n        text: rows.length + ' alarm: ' + rows.map(r => r.errorcode).join(',') });\n    node.send({ payload: rows });\n});\nreturn null;\n",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 588,
+        "y": 80,
+        "wires": [
+            [
+                "almsim_db"
+            ]
+        ]
+    },
+    {
+        "id": "almsim_db",
+        "type": "function",
+        "z": "almsim_tab",
+        "g": "ccae533aefb8eced",
+        "name": "Insert to ldi_alarm_log",
+        "func": "\nconst pool = global.get('pgPool');\nconst rows = msg.payload || [];\nif (!pool || rows.length === 0) return null;\nconst cols = ['logid','logdate','errorcode','errortime','equipmentid','factory','process','related_log_id'];\nconst ph = rows.map((_, i) => '(' + cols.map((_, j) => '$' + (i * cols.length + j + 1)).join(',') + ')').join(',');\nconst params = [];\nfor (const r of rows) for (const c of cols) params.push(r[c]);\nconst sql = 'INSERT INTO public.ldi_alarm_log (' + cols.join(',') + ') VALUES ' + ph +\n            ' ON CONFLICT (logdate, logid) DO NOTHING';\npool.query(sql, params, function (err) {\n    if (err) { node.error('Alarm sim INSERT failed: ' + err.message); return; }\n    node.log('Alarm sim: inserted ' + rows.length);\n});\nreturn null;\n",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 932,
+        "y": 80,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "almsim_catch",
+        "type": "catch",
+        "z": "almsim_tab",
+        "g": "ccae533aefb8eced",
+        "name": "Catch Alarm Sim Errors",
+        "scope": null,
+        "uncaught": false,
+        "x": 180,
+        "y": 128,
+        "wires": [
+            [
+                "almsim_err"
+            ]
+        ]
+    },
+    {
+        "id": "almsim_err",
+        "type": "function",
+        "z": "almsim_tab",
+        "g": "ccae533aefb8eced",
+        "name": "Log Error",
+        "func": "node.error('Alarm simulator: ' + (msg.error && msg.error.message));\nreturn null;",
+        "outputs": 1,
+        "x": 508,
+        "y": 128,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "ldi-ingestion-tab",
+        "type": "tab",
+        "label": "IMS LDI Ingestion",
+        "disabled": false,
+        "info": "LDI Manufacturing data ingestion pipeline — POST /ldi-telemetry"
+    },
+    {
+        "id": "67fcac2d032db9d1",
+        "type": "group",
+        "z": "ldi-ingestion-tab",
+        "style": {
+            "stroke": "#999999",
+            "stroke-opacity": "1",
+            "fill": "none",
+            "fill-opacity": "1",
+            "label": true,
+            "label-position": "nw",
+            "color": "#a4a4a4"
+        },
+        "nodes": [
+            "ldi_http_in",
+            "ldi_auth_check",
+            "ldi_db_insert",
+            "ldi_http_response",
+            "ldi_http_error",
+            "ldi_error_handler"
+        ],
+        "x": 34,
+        "y": 39,
+        "w": 1168,
+        "h": 130
+    },
+    {
+        "id": "ldi_http_in",
+        "type": "http in",
+        "z": "ldi-ingestion-tab",
+        "g": "67fcac2d032db9d1",
+        "name": "POST /ldi-telemetry",
+        "url": "/ldi-telemetry",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 150,
+        "y": 80,
+        "wires": [
+            [
+                "ldi_auth_check"
+            ]
+        ]
+    },
+    {
+        "id": "ldi_auth_check",
+        "type": "function",
+        "z": "ldi-ingestion-tab",
+        "g": "67fcac2d032db9d1",
+        "name": "Auth & Validate",
+        "func": "const apiKey = global.get('INGEST_API_KEY') || 'ims-secret-key';\nconst incomingKey = msg.req?.headers?.['x-api-key'] || '';\nif (incomingKey !== apiKey) {\n    msg.statusCode = 401;\n    msg.payload = { error: 'Unauthorized' };\n    return msg;\n}\n\nif (!msg.payload || !Array.isArray(msg.payload)) {\n    msg.statusCode = 400;\n    msg.payload = { error: 'Payload must be a JSON array' };\n    return msg;\n}\n\nmsg._ldiBatch = [];\nconst num = v => (v === 0) ? 0 : (Number(v) || null);\nconst int = v => (v === 0) ? 0 : (parseInt(v) || null);\nfor (const item of msg.payload) {\n    if (!item || !item.eqp_id) continue;\n    msg._ldiBatch.push({\n        eqp_id: String(item.eqp_id),\n        factory: String(item.factory || ''),\n        process: String(item.process || ''),\n        mo: String(item.mo || ''),\n        fpn: String(item.fpn || ''),\n        layer_name: String(item.layer_name || ''),\n        resist_dosage: num(item.resist_dosage),\n        scale_x: num(item.scale_x),\n        scale_y: num(item.scale_y),\n        temperature: num(item.temperature),\n        humidity: num(item.humidity),\n        scan_speed: num(item.scan_speed),\n        air_vacuum: num(item.air_vacuum),\n        thickness: num(item.thickness),\n        board_no: int(item.board_no),\n        total_board: int(item.total_board),\n        total_time: num(item.total_time),\n        filmno: String(item.filmno || ''),\n        board_id: String(item.board_id || ''),\n        resist: item.resist ? String(item.resist) : null,\n        state: item.state !== false,\n        scale_mode: String(item.scale_mode || ''),\n        pe_1: num(item.pe_1),\n        pe_2: num(item.pe_2),\n        pe_3: num(item.pe_3),\n        pe_4: num(item.pe_4),\n        pe_5: num(item.pe_5),\n        pe_6: num(item.pe_6),\n        je_1: num(item.je_1),\n        je_2: num(item.je_2),\n        je_3: num(item.je_3),\n        je_4: num(item.je_4),\n        pe_setting: num(item.pe_setting),\n        je_setting: num(item.je_setting),\n        log_id: String(item.log_id || '')\n    });\n}\n\n\nif (msg._ldiBatch.length === 0) {\n    msg.statusCode = 200;\n    msg.payload = { message: 'Empty batch' };\n    return msg;\n}\n\nconst cols = [\n    'factory', 'process', 'eqp_id', 'mo', 'fpn', 'layer_name', 'resist_dosage', 'scale_x', 'scale_y', \n    'temperature', 'humidity', 'scan_speed', 'air_vacuum', 'thickness', 'board_no', 'total_board', \n    'total_time', 'filmno', 'board_id', 'resist', 'state', 'scale_mode', \n    'pe_1', 'pe_2', 'pe_3', 'pe_4', 'pe_5', 'pe_6', \n    'je_1', 'je_2', 'je_3', 'je_4', 'pe_setting', 'je_setting', 'log_id'\n];\n\nlet params = [];\nconst placeholders = msg._ldiBatch.map((row, i) => {\n    const b = i * cols.length;\n    cols.forEach(col => params.push(row[col]));\n    const p = cols.map((_, j) => `$${b + j + 1}`).join(',');\n    return `(NOW(), ${p})`;\n}).join(',');\n\nmsg.query = `INSERT INTO public.ldi_data (\"time\", ${cols.join(',')}) VALUES ${placeholders} ON CONFLICT (log_id, \"time\") DO NOTHING;`;\nmsg.params = params;\n\n\nconst pool = global.get('pgPool');\nif (pool) {\n    pool.query(msg.query, msg.params, (err) => {\n        if (err) {\n            node.error('LDI INSERT failed: ' + err.message);\n            // Auto-recovery watchdog for a specific, live-verified failure mode:\n            // this global pg.Pool can get permanently stuck after a\n            // Postgres/PgBouncer restart or connection blip (\"server login\n            // has been failing, cached error: connect failed\") -- confirmed\n            // 2026-08-10 that PgBouncer itself recovers within 1-3 minutes but\n            // this pool does not follow; only a full Node-RED process restart\n            // clears it. Scoped to this connection-failure signature\n            // specifically (not e.g. constraint violations, which a restart\n            // wouldn't fix and would just mask).\n            if (/server login has been failing|connect failed|ECONNREFUSED|ECONNRESET|timeout expired/i.test(err.message)) {\n                const streak = (global.get('ldiDbConnFailureStreak') || 0) + 1;\n                global.set('ldiDbConnFailureStreak', streak);\n                const FAILURE_THRESHOLD = 5;\n                if (streak >= FAILURE_THRESHOLD) {\n                    node.error('LDI INSERT connection failure x' + streak + ' in a row -- restarting process to recover a stuck DB pool');\n                    setTimeout(() => process.exit(1), 500);\n                }\n            } else {\n                global.set('ldiDbConnFailureStreak', 0);\n            }\n        } else {\n            global.set('ldiDbConnFailureStreak', 0);\n        }\n    });\n}\n\nmsg.statusCode = 200;\nmsg.payload = { message: \"LDI Batch received\" };\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": "10",
+        "x": 460,
+        "y": 80,
+        "wires": [
+            [
+                "ldi_http_response"
+            ]
+        ]
+    },
+    {
+        "id": "ldi_db_insert",
+        "type": "postgresql",
+        "z": "ldi-ingestion-tab",
+        "g": "67fcac2d032db9d1",
+        "name": "TimescaleDB",
+        "query": "",
+        "postgreSQLConfig": "pg_config",
+        "split": false,
+        "outputs": 0,
+        "x": 1106,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "ldi_http_response",
+        "type": "http response",
+        "z": "ldi-ingestion-tab",
+        "g": "67fcac2d032db9d1",
+        "name": "Response",
+        "statusCode": "200",
+        "headers": {},
+        "x": 872,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "ldi_http_error",
+        "type": "catch",
+        "z": "ldi-ingestion-tab",
+        "g": "67fcac2d032db9d1",
+        "name": "Catch LDI Errors",
+        "scope": [
+            "ldi_db_insert"
+        ],
+        "x": 140,
+        "y": 128,
+        "wires": [
+            [
+                "ldi_error_handler"
+            ]
+        ]
+    },
+    {
+        "id": "ldi_error_handler",
+        "type": "function",
+        "z": "ldi-ingestion-tab",
+        "g": "67fcac2d032db9d1",
+        "name": "Error Handler",
+        "func": "const err = msg.error?.message || 'Unknown error';\nnode.error('LDI INSERT failed: ' + err);\nmsg.statusCode = 500;\nmsg.payload = { error: err };\nreturn msg;",
+        "outputs": 1,
+        "x": 460,
+        "y": 128,
+        "wires": [
+            [
+                "ldi_http_response"
+            ]
+        ]
+    },
+    {
+        "id": "ldisim_tab",
+        "type": "tab",
+        "label": "LDI Live Simulator",
+        "disabled": false,
+        "info": "จำลองข้อมูล LDI แบบเคลื่อนไหวต่อเนื่อง ส่งผ่าน POST /ldi-telemetry เหมือนเครื่องจริง\nปิดได้โดย disable tab นี้"
+    },
+    {
+        "id": "57cf447a44c91c05",
+        "type": "group",
+        "z": "ldisim_tab",
+        "style": {
+            "stroke": "#999999",
+            "stroke-opacity": "1",
+            "fill": "none",
+            "fill-opacity": "1",
+            "label": true,
+            "label-position": "nw",
+            "color": "#a4a4a4"
+        },
+        "nodes": [
+            "ldisim_tick",
+            "ldisim_gen",
+            "ldisim_post",
+            "ldisim_check",
+            "ldisim_catch",
+            "ldisim_err"
+        ],
+        "x": 34,
+        "y": 55,
+        "w": 1180,
+        "h": 130
+    },
+    {
+        "id": "ldisim_tick",
+        "type": "inject",
+        "z": "ldisim_tab",
+        "g": "57cf447a44c91c05",
+        "name": "Tick 2s",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "2",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "15",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 140,
+        "y": 96,
+        "wires": [
+            [
+                "ldisim_gen"
+            ]
+        ]
+    },
+    {
+        "id": "ldisim_gen",
+        "type": "function",
+        "z": "ldisim_tab",
+        "g": "57cf447a44c91c05",
+        "name": "Generate LDI Batch (OU model)",
+        "func": "\n// ══════════════════════════════════════════════════════════════════\n// LDI LIVE SIMULATOR — Ornstein-Uhlenbeck mean-reverting sensor model\n// สร้างข้อมูลที่ \"เคลื่อนไหวต่อเนื่อง\" เหมือนเซ็นเซอร์จริง ไม่ใช่สุ่มอิสระ\n// ══════════════════════════════════════════════════════════════════\nconst P = {\"LDI-01\": {\"process\": \"DF INNER\", \"share\": 0.166, \"temp_mu\": 21.19, \"temp_sd\": 0.13, \"rh_mu\": 56.23, \"rh_sd\": 1.63, \"dosage\": 69.591, \"scan\": 220.0, \"vac\": -16.08, \"thick_mu\": 0.529, \"thick_sd\": 0.365, \"pe_setting\": 1.79769313486232, \"je_setting\": 30.0, \"scale_mode\": \"FixedScale\", \"factory\": \"2\", \"pe\": null, \"je\": [[7.9, 2.22], [4.41, 2.29], [10.87, 3.01], null], \"layers\": [\"mk-inner-a\", \"mk-inner-b\", \"mk-inner-c\", \"mk-inner-d\"]}, \"LDI-02\": {\"process\": \"DF INNER\", \"share\": 0.166, \"temp_mu\": 26.49, \"temp_sd\": 0.09, \"rh_mu\": 52.52, \"rh_sd\": 1.58, \"dosage\": 69.591, \"scan\": 220.0, \"vac\": -17.21, \"thick_mu\": 0.528, \"thick_sd\": 0.365, \"pe_setting\": 1.79769313486232, \"je_setting\": 30.0, \"scale_mode\": \"FixedScale\", \"factory\": \"2\", \"pe\": null, \"je\": [[2.23, 0.97], [1.63, 1.39], [2.25, 1.26], null], \"layers\": [\"mk-inner-a\", \"mk-inner-b\", \"mk-inner-c\", \"mk-inner-d\"]}, \"LDI-03\": {\"process\": \"DF INNER\", \"share\": 0.109, \"temp_mu\": 20.92, \"temp_sd\": 0.08, \"rh_mu\": 56.7, \"rh_sd\": 0.36, \"dosage\": 75.708, \"scan\": 260.0, \"vac\": -19.15, \"thick_mu\": 0.264, \"thick_sd\": 0.0, \"pe_setting\": 30.0, \"je_setting\": 30.0, \"scale_mode\": \"FixedScale\", \"factory\": \"3\", \"pe\": null, \"je\": [[2.27, 0.28], [1.79, 0.31], [1.13, 0.36], null], \"layers\": [\"mk-inner-a\", \"mk-inner-b\", \"mk-inner-c\", \"mk-inner-d\"]}, \"LDI-04\": {\"process\": \"DF INNER\", \"share\": 0.109, \"temp_mu\": 22.58, \"temp_sd\": 0.06, \"rh_mu\": 52.69, \"rh_sd\": 0.27, \"dosage\": 72.904, \"scan\": 270.0, \"vac\": -17.86, \"thick_mu\": 0.264, \"thick_sd\": 0.0, \"pe_setting\": 1.79769313486232, \"je_setting\": 40.0, \"scale_mode\": \"FixedScale\", \"factory\": \"3\", \"pe\": null, \"je\": [[5.94, 1.49], [17.46, 1.74], [11.94, 1.93], null], \"layers\": [\"mk-inner-a\", \"mk-inner-b\", \"mk-inner-c\", \"mk-inner-d\"]}, \"LDI-05\": {\"process\": \"DF OUTER\", \"share\": 0.172, \"temp_mu\": 22.39, \"temp_sd\": 0.14, \"rh_mu\": 50.55, \"rh_sd\": 0.5, \"dosage\": 15.0, \"scan\": 435.0, \"vac\": 0.0, \"thick_mu\": 1.141, \"thick_sd\": 0.325, \"pe_setting\": 75.0, \"je_setting\": 50.0, \"scale_mode\": \"Fixed\", \"factory\": \"2\", \"pe\": [[-6.22, 12.26], [-5.35, 18.69], [-14.76, 21.32], [1.23, 21.44], [-3.21, 18.67], [-5.23, 10.92]], \"je\": [[12.63, 7.15], [10.72, 6.3], [10.27, 5.95], [12.01, 6.65]], \"layers\": [\"mk-outer-a\", \"mk-outer-b\"]}, \"LDI-06\": {\"process\": \"DF OUTER\", \"share\": 0.171, \"temp_mu\": 21.88, \"temp_sd\": 0.1, \"rh_mu\": 52.56, \"rh_sd\": 0.45, \"dosage\": 15.0, \"scan\": 435.0, \"vac\": 0.0, \"thick_mu\": 1.139, \"thick_sd\": 0.325, \"pe_setting\": 75.0, \"je_setting\": 50.0, \"scale_mode\": \"Fixed\", \"factory\": \"2\", \"pe\": [[3.56, 12.01], [9.55, 15.94], [2.93, 18.46], [15.06, 18.61], [7.23, 16.86], [3.51, 10.32]], \"je\": [[9.43, 5.92], [11.35, 7.28], [11.1, 7.13], [9.26, 5.69]], \"layers\": [\"mk-outer-a\", \"mk-outer-b\"]}, \"LDI-07\": {\"process\": \"SM\", \"share\": 0.037, \"temp_mu\": 22.33, \"temp_sd\": 0.08, \"rh_mu\": 55.83, \"rh_sd\": 0.44, \"dosage\": 568.0, \"scan\": 104.7, \"vac\": 0.0, \"thick_mu\": 0.986, \"thick_sd\": 0.335, \"pe_setting\": 50.0, \"je_setting\": 50.0, \"scale_mode\": \"Auto\", \"factory\": \"2\", \"pe\": [[0.37, 2.72], [-13.87, 6.56], [-5.44, 5.24], [5.91, 5.53], [14.22, 6.78], [-0.9, 2.66]], \"je\": [[9.22, 5.03], [9.9, 5.06], [5.92, 2.63], [5.37, 2.49]], \"layers\": [\"mk-solder-a\", \"mk-solder-b\", \"mk-comp-a\"]}, \"LDI-08\": {\"process\": \"SM\", \"share\": 0.037, \"temp_mu\": 22.49, \"temp_sd\": 0.09, \"rh_mu\": 53.18, \"rh_sd\": 0.37, \"dosage\": 595.3, \"scan\": 101.8, \"vac\": 0.0, \"thick_mu\": 0.986, \"thick_sd\": 0.336, \"pe_setting\": 50.0, \"je_setting\": 50.0, \"scale_mode\": \"Auto\", \"factory\": \"2\", \"pe\": [[-0.1, 5.59], [-9.76, 9.65], [-3.48, 3.27], [3.16, 3.16], [9.52, 9.45], [0.46, 5.82]], \"je\": [[7.53, 5.73], [6.59, 3.75], [4.94, 2.79], [5.66, 5.31]], \"layers\": [\"mk-solder-a\", \"mk-solder-b\", \"mk-comp-a\"]}, \"LDI-09\": {\"process\": \"SM\", \"share\": 0.017, \"temp_mu\": 21.98, \"temp_sd\": 0.04, \"rh_mu\": 55.63, \"rh_sd\": 0.07, \"dosage\": 500.0, \"scan\": 115.86, \"vac\": 0.0, \"thick_mu\": 1.174, \"thick_sd\": 0.05, \"pe_setting\": 25.0, \"je_setting\": 25.0, \"scale_mode\": \"Auto\", \"factory\": \"3\", \"pe\": [[1.37, 2.32], [-5.73, 4.63], [1.06, 3.69], [-1.07, 3.7], [5.73, 4.64], [-1.36, 2.38]], \"je\": [[3.2, 2.4], [3.7, 2.15], [4.08, 2.35], [3.72, 2.48]], \"layers\": [\"mk-solder-a\", \"mk-solder-b\", \"mk-comp-a\"]}, \"LDI-10\": {\"process\": \"SM\", \"share\": 0.017, \"temp_mu\": 22.31, \"temp_sd\": 0.04, \"rh_mu\": 55.03, \"rh_sd\": 0.09, \"dosage\": 500.0, \"scan\": 115.86, \"vac\": 0.0, \"thick_mu\": 1.174, \"thick_sd\": 0.05, \"pe_setting\": 25.0, \"je_setting\": 25.0, \"scale_mode\": \"Auto\", \"factory\": \"3\", \"pe\": [[0.69, 1.55], [-4.98, 2.47], [1.03, 2.72], [-1.0, 2.72], [4.96, 2.46], [-0.74, 1.59]], \"je\": [[2.35, 1.36], [2.68, 1.53], [3.48, 1.3], [3.12, 1.33]], \"layers\": [\"mk-solder-a\", \"mk-solder-b\", \"mk-comp-a\"]}};\nconst SENTINEL = 1.79769313486232;\n// DESIGN_STRESS: exercises layout edge cases (real dropouts, long strings,\n// spec-boundary values, extra machines) that realistic mock data rarely hits.\n// DESIGN_ALL_GREEN: forces every machine healthy, to check alert fatigue from\n// an all-green screen. Both are off by default (realistic mode).\nconst STRESS = env.get('DESIGN_STRESS') === 'true';\nconst ALL_GREEN = env.get('DESIGN_ALL_GREEN') === 'true';\nconst GAP_TICKS = 900; // ~30min of missing rows at one tick / 2s\nconst STRESS_MACHINES = STRESS ? { 'LDI-11': 'LDI-01', 'LDI-12': 'LDI-05', 'LDI-13': 'LDI-07' } : {};\n\n// ── OU process: x[t+1] = x + theta*(mu - x)*dt + sigma*sqrt(dt)*N(0,1) ──\n// theta = ความเร็วที่ดึงกลับสู่ค่าเป้าหมาย (0.15 = ค่อยๆ กลับ ~7 ticks)\n// ผลลัพธ์: ค่าไหลลื่นต่อเนื่อง มี autocorrelation จริง ไม่กระโดดทุก tick\nconst THETA = 0.15, DT = 1.0;\nfunction gauss() {\n    let u = 0, v = 0;\n    while (u === 0) u = Math.random();\n    while (v === 0) v = Math.random();\n    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);\n}\nfunction ou(prev, mu, sigma) {\n    if (prev === undefined || prev === null) return mu + sigma * gauss();\n    return prev + THETA * (mu - prev) * DT + sigma * Math.sqrt(DT) * gauss();\n}\nfunction r(x, n) { const p = Math.pow(10, n); return Math.round(x * p) / p; }\n\nconst st = flow.get('sim_state') || {};\nconst now = Date.now();\nconst batch = [];\n\nconst ALL_IDS = Object.keys(P).concat(Object.keys(STRESS_MACHINES));\nfor (const id of ALL_IDS) {\n    const p = P[STRESS_MACHINES[id] || id];\n    let s = st[id];\n    if (!s) {\n        s = { temp: p.temp_mu, rh: p.rh_mu, board: 1,\n              total: 120 + Math.floor(Math.random() * 120),\n              mo: 'MO-' + String(Math.floor(Math.random() * 900000) + 100000),\n              fpn: 'PN-' + String.fromCharCode(65 + Math.floor(Math.random() * 24)) +\n                   String(Math.floor(Math.random() * 900) + 100),\n              layer: p.layers[Math.floor(Math.random() * p.layers.length)],\n              resist: [\"RESIST-A18\", \"RESIST-A22\", \"RESIST-B15\", \"RESIST-B30\", \"RESIST-C12\"][Math.floor(Math.random()*5)],\n              acc: 0, gapTicks: 0, speedFaultTicks: 0 };\n    }\n    // ── อัตราการผลิตต่อเครื่องตามสัดส่วนจริง (share) ──\n    // fleet รวม ~0.5 แถว/วินาที → เครื่อง share 0.17 ได้ ~0.085 แถว/วิ\n    s.acc += p.share * 2.0;              // tick ทุก 2 วิ\n    if (s.acc < 1) { st[id] = s; continue; }\n    s.acc -= 1;\n\n    // ── DESIGN_STRESS: real multi-tick data gap (row absent, not zeroed) ──\n    if (s.gapTicks > 0) { s.gapTicks -= 1; st[id] = s; continue; }\n    if (STRESS && !ALL_GREEN && Math.random() < 0.0008) s.gapTicks = GAP_TICKS;\n\n    // ── OU drift ของสภาพแวดล้อม ──\n    s.temp = ou(s.temp, p.temp_mu, p.temp_sd);\n    s.rh   = ou(s.rh,   p.rh_mu,   p.rh_sd);\n\n    // ── เหตุการณ์หายาก (อัตราตรงกับของจริง 0.02%) ──\n    const dropout = !ALL_GREEN && Math.random() < 0.0002;\n    const stopped = !ALL_GREEN && Math.random() < 0.0002;\n\n    // ── rare scan-speed fault: transient overspeed excursion (real equipment\n    //    fault mode -- position-sync overspeed, alarm code 70004). Without\n    //    this, scan_speed is a fixed recipe constant that never crosses the\n    //    70004 threshold, so RCA correlation for MOTION is structurally\n    //    impossible (0% baseline). ~0.03%/tick -> a few real events/day. ──\n    if (s.speedFaultTicks > 0) {\n        s.speedFaultTicks -= 1;\n    } else if (!ALL_GREEN && Math.random() < 0.0003) {\n        s.speedFaultTicks = 5 + Math.floor(Math.random() * 15); // 10-40s\n    }\n    const scanSpeedNow = s.speedFaultTicks > 0 ? r(460 + Math.random() * 60, 1) : p.scan;\n\n    // ── board cycle: นับขึ้นจนครบแล้วเริ่ม job ใหม่ ──\n    s.board += 1;\n    if (s.board > s.total) {\n        s.board = 1;\n        s.total = 120 + Math.floor(Math.random() * 120);\n        s.mo = 'MO-' + String(Math.floor(Math.random() * 900000) + 100000);\n        s.fpn = (STRESS && Math.random() < 0.15)\n            ? 'PN-ULTRA-LONG-CUSTOMER-PART-NUMBER-FOR-COLUMN-OVERFLOW-TEST-' + String(Math.floor(Math.random() * 900) + 100)\n            : 'PN-' + String.fromCharCode(65 + Math.floor(Math.random() * 24)) +\n              String(Math.floor(Math.random() * 900) + 100);\n        s.layer = p.layers[Math.floor(Math.random() * p.layers.length)];\n    }\n\n    const rec = {\n        time: new Date(now).toISOString(),\n        eqp_id: id, factory: p.factory, process: p.process,\n        mo: s.mo, fpn: s.fpn, layer_name: s.layer,\n        resist_dosage: p.dosage,      // ← ค่าคงที่ต่อเครื่อง (sd=0 ในข้อมูลจริง)\n        scan_speed: scanSpeedNow,     // ← ค่าคงที่ต่อเครื่อง ยกเว้นช่วง fault\n        air_vacuum: p.vac,            // ← DF OUTER/SM = 0 พอดี (ทดสอบบั๊ก zero-coercion)\n        scale_x: dropout ? 0 : r(1.000282 + gauss() * 0.000099, 6),\n        scale_y: dropout ? 0 : r(1.000280 + gauss() * 0.000099, 6),\n        temperature: dropout ? 0 : r(s.temp, 1),\n        humidity:    dropout ? 0 : r(s.rh, 1),\n        thickness: r(Math.max(0.26, p.thick_mu + gauss() * p.thick_sd), 3),\n        board_no: s.board, total_board: s.total,\n        total_time: r(Math.max(5, 7 + Math.abs(gauss()) * (p.process === 'SM' ? 18 : 3)), 3),\n        filmno: null, board_id: null,\n        resist: s.resist,             // ← สตริง ไม่ใช่ตัวเลข (ทดสอบบั๊ก type)\n        state: !stopped,\n        scale_mode: p.scale_mode,\n        pe_setting: p.pe_setting, je_setting: p.je_setting\n    };\n\n    // ── PE: วัดเฉพาะเครื่องที่มีสเปกจริง + จับคู่สมมาตร 1↔6, 2↔5, 3↔4 ──\n    if (p.pe) {\n        const base = [gauss(), gauss(), gauss()];   // สุ่ม 3 ค่า\n        const pairs = [[0, 5], [1, 4], [2, 3]];     // แล้วสะท้อนเป็น 6 จุด\n        const out = [0, 0, 0, 0, 0, 0];\n        for (let k = 0; k < 3; k++) {\n            const [a, b] = pairs[k];\n            const za = base[k], zb = -base[k] + gauss() * 0.15;   // สะท้อน + noise เล็กน้อย\n            out[a] = p.pe[a][0] + za * p.pe[a][1];\n            out[b] = p.pe[b][0] + zb * p.pe[b][1];\n        }\n        // ── DESIGN_STRESS: clamp one sample to the spec boundary to check\n        // whether the value overflows its table cell / badge at the edge ──\n        if (STRESS && !ALL_GREEN && Math.random() < 0.05 && p.pe_setting !== SENTINEL) {\n            out[Math.floor(Math.random() * 6)] = p.pe_setting * (Math.random() < 0.5 ? 1 : -1);\n        }\n        for (let k = 0; k < 6; k++) rec['pe_' + (k + 1)] = r(out[k], 3);\n    } else {\n        for (let k = 1; k <= 6; k++) rec['pe_' + k] = null;   // DF INNER ไม่วัด PE\n    }\n    // ── JE: je_4 เป็น NULL คู่กับ PE เสมอ ──\n    for (let k = 0; k < 4; k++) {\n        const j = p.je[k];\n        rec['je_' + (k + 1)] = j ? r(Math.max(0, j[0] + Math.abs(gauss()) * j[1]), 1) : null;\n    }\n    rec.log_id = 'SIM-' + id.slice(-2) + '-' + now + '-' + s.board;\n\n    batch.push(rec);\n    st[id] = s;\n}\n\nflow.set('sim_state', st);\nif (batch.length === 0) return null;\n\nmsg.payload = batch;\nmsg.headers = { 'Content-Type': 'application/json', 'x-api-key': env.get('INGEST_API_KEY') };\nnode.status({ fill: 'green', shape: 'dot', text: batch.length + ' rows @ ' + new Date().toLocaleTimeString() });\nreturn msg;\n",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 562,
+        "y": 96,
+        "wires": [
+            [
+                "ldisim_post"
+            ]
+        ]
+    },
+    {
+        "id": "ldisim_post",
+        "type": "http request",
+        "z": "ldisim_tab",
+        "g": "57cf447a44c91c05",
+        "name": "POST /ldi-telemetry",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://127.0.0.1:1880/ldi-telemetry",
+        "persist": true,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 858,
+        "y": 96,
+        "wires": [
+            [
+                "ldisim_check"
+            ]
+        ]
+    },
+    {
+        "id": "ldisim_check",
+        "type": "function",
+        "z": "ldisim_tab",
+        "g": "57cf447a44c91c05",
+        "name": "Check Response",
+        "func": "if (msg.statusCode !== 200) {\n    node.error('Simulator ingest failed: HTTP ' + msg.statusCode +\n        ' ' + JSON.stringify(msg.payload), msg);\n    node.status({fill:'red',shape:'ring',text:'HTTP '+msg.statusCode});\n    return null;\n}\nnode.status({fill:'blue',shape:'dot',text:'ok '+(msg.payload && msg.payload.count)});\nreturn null;",
+        "outputs": 1,
+        "x": 1098,
+        "y": 96,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "ldisim_catch",
+        "type": "catch",
+        "z": "ldisim_tab",
+        "g": "57cf447a44c91c05",
+        "name": "Catch Simulator Errors",
+        "scope": null,
+        "uncaught": false,
+        "x": 180,
+        "y": 144,
+        "wires": [
+            [
+                "ldisim_err"
+            ]
+        ]
+    },
+    {
+        "id": "ldisim_err",
+        "type": "function",
+        "z": "ldisim_tab",
+        "g": "57cf447a44c91c05",
+        "name": "Log Error",
+        "func": "node.error('LDI simulator: ' + (msg.error && msg.error.message));\nreturn null;",
+        "outputs": 1,
+        "x": 492,
+        "y": 144,
+        "wires": [
+            []
+        ]
+    }
+]
