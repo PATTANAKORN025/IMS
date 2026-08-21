@@ -118,6 +118,9 @@ jobs:
       - name: Run Circuit Breaker Tests
         run: node tests/unit/circuit-breaker.test.js
 
+      - name: Run Gate Decision Tests
+        run: node tests/unit/gate.test.js
+
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   # Stage 3: Integration & Chaos Test
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

@@ -2,5 +2,10 @@
 ' Wrapping bash.exe directly in a Scheduled Task still flashes a console
 ' window on each trigger; WScript.Shell.Run with windowStyle=0 suppresses it.
 Set shell = CreateObject("WScript.Shell")
-cmd = "C:\Program Files\Git\usr\bin\bash.exe --login -c ""cd 'C:/Projects/IMS' && ./scripts/soak-test-report.sh >> scripts/soak-test-reports/cron.log 2>&1"""
+Set fso = CreateObject("Scripting.FileSystemObject")
+projectDir = fso.GetParentFolderName(fso.GetParentFolderName(WScript.ScriptFullName))
+' Replace backslashes with forward slashes for bash
+projectDir = Replace(projectDir, "\", "/")
+
+cmd = "C:\Program Files\Git\usr\bin\bash.exe --login -c ""cd '" & projectDir & "' && ./scripts/soak-test-report.sh >> scripts/soak-test-reports/cron.log 2>&1"""
 shell.Run cmd, 0, True
