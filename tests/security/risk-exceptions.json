@@ -1,0 +1,12 @@
+{
+  "_comment": "Approved HIGH-severity vulnerability exceptions. A HIGH finding with a valid (non-expired) entry here reports WARN instead of FAIL. CRITICAL findings can never be excepted here -- gate.js treats any blocking CRITICAL FAIL as an automatic NO-GO regardless of this file. Expiry is checked programmatically against the run date; an expired entry reports FAIL, no manual override.",
+  "_schema": {
+    "cve": "CVE identifier or advisory ID",
+    "package": "affected package name",
+    "reason": "why this is being accepted temporarily",
+    "mitigation": "compensating control in place",
+    "owner": "who approved this / is tracking the fix",
+    "expiry": "YYYY-MM-DD -- after this date the exception no longer applies"
+  },
+  "exceptions": []
+}

@@ -105,6 +105,12 @@ docker-compose.override.yaml
 scripts/soak-test-reports/
 scripts/dr-test-reports/
 
+# Per-run raw evidence from tests/*/runner.js (Production Assurance
+# Framework) -- regenerable, grows with every local run. The aggregated
+# report/rendered docs (PRODUCTION-READINESS.md, FAILURE_DETECTION_MATRIX.md)
+# are what's committed as durable evidence, same pattern as the two lines above.
+docs/evidence/runtime/
+
 # Editor/script backup and scratch dumps that turn up locally but were
 # never meant to be committed source.
 *.bak
