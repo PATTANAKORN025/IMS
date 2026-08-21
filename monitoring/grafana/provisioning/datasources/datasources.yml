@@ -31,3 +31,22 @@ datasources:
     jsonData:
       httpMethod: POST
       timeInterval: '15s'
+  - name: Mentor LDI Database (Read-only)
+    uid: mentor-ldi-readonly
+    type: postgres
+    access: proxy
+    url: ${MENTOR_LDI_DB_HOST}:${MENTOR_LDI_DB_PORT}
+    database: ${MENTOR_LDI_DB_NAME}
+    user: ${MENTOR_LDI_DB_USER}
+    editable: false
+    isDefault: false
+    secureJsonData:
+      password: ${MENTOR_LDI_DB_PASSWORD}
+    jsonData:
+      database: ${MENTOR_LDI_DB_NAME}
+      sslmode: disable
+      postgresVersion: 1600
+      timescaledb: false
+      maxOpenConns: 10
+      maxIdleConns: 2
+      connMaxLifetime: 14400

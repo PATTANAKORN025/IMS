@@ -1,0 +1,886 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "description": "Evidence-based readiness dashboard using only current PostgreSQL rows. No simulated data.",
+  "editable": false,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "Open Mentor MIS Command Center",
+      "tooltip": "",
+      "type": "link",
+      "url": "/d/mentor-mis-incident-command/mentor-mis-incident-command"
+    },
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "Open Mentor Machine Snapshot",
+      "tooltip": "",
+      "type": "link",
+      "url": "/d/mentor-ldi-machine-snapshot/mentor-ldi-machine-snapshot"
+    }
+  ],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "mentor-ldi-readonly"
+      },
+      "description": "Hours since the latest real telemetry row. Green is under 1 hour; red is over 24 hours.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 24
+              }
+            ]
+          },
+          "unit": "h"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "mentor-ldi-readonly"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT ROUND(EXTRACT(EPOCH FROM (NOW() - MAX(\"time\"))) / 3600.0, 1) AS value\nFROM public.ldi_data\nWHERE factory IN (${factory:sqlstring})\n  AND eqp_id IN (${machine_id:sqlstring});",
+          "refId": "A",
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "ldi_data.time — Age",
+      "transparent": true,
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "mentor-ldi-readonly"
+      },
+      "description": "Hours since the latest real alarm row for selected telemetry machines.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 24
+              }
+            ]
+          },
+          "unit": "h"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 4,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "mentor-ldi-readonly"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT ROUND(EXTRACT(EPOCH FROM (NOW() - MAX(logdate))) / 3600.0, 1) AS value\nFROM public.ldi_alarm_log\nWHERE factory IN (${factory:sqlstring})\n  AND equipmentid IN (${machine_id:sqlstring})",
+          "refId": "A",
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "ldi_alarm_log.logdate — Age",
+      "transparent": true,
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "mentor-ldi-readonly"
+      },
+      "description": "Percent of selected telemetry machine IDs also found in alarm history.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {},
+          "decimals": 1,
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 80
+              },
+              {
+                "color": "green",
+                "value": 95
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 8,
+        "y": 0
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "mentor-ldi-readonly"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH selected AS (\n  SELECT DISTINCT eqp_id\n  FROM public.ldi_data\n  WHERE factory IN (${factory:sqlstring})\n    AND eqp_id IN (${machine_id:sqlstring})\n)\nSELECT ROUND(100.0 * COUNT(*) FILTER (\n  WHERE EXISTS (SELECT 1 FROM public.ldi_alarm_log a WHERE a.equipmentid = s.eqp_id)\n) / NULLIF(COUNT(*), 0), 1) AS value\nFROM selected s;",
+          "refId": "A",
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "eqp_id ↔ equipmentid",
+      "transparent": true,
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "mentor-ldi-readonly"
+      },
+      "description": "Percent of real alarm rows whose error code can be resolved by the current alarm master.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {},
+          "decimals": 1,
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 80
+              },
+              {
+                "color": "green",
+                "value": 95
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 12,
+        "y": 0
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "mentor-ldi-readonly"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT ROUND(\n  100.0 * COUNT(*) FILTER (WHERE m.alarm_code IS NOT NULL)\n  / NULLIF(COUNT(*), 0),\n  1\n) AS value\nFROM public.ldi_alarm_log a\nLEFT JOIN public.ldi_alarm_ms_code m\n  ON a.errorcode::TEXT = m.alarm_code::TEXT\nWHERE a.factory IN (${factory:sqlstring})\n  AND a.equipmentid IN (${machine_id:sqlstring})",
+          "refId": "A",
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "errorcode ↔ alarm_code",
+      "transparent": true,
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "mentor-ldi-readonly"
+      },
+      "description": "Percent of telemetry rows with a non-null board_id.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {},
+          "decimals": 1,
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 80
+              },
+              {
+                "color": "green",
+                "value": 95
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 16,
+        "y": 0
+      },
+      "id": 5,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "mentor-ldi-readonly"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT ROUND(100.0 * COUNT(board_id) / NULLIF(COUNT(*), 0), 1) AS value\nFROM public.ldi_data\nWHERE factory IN (${factory:sqlstring})\n  AND eqp_id IN (${machine_id:sqlstring});",
+          "refId": "A",
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "board_id — Completeness",
+      "transparent": true,
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "mentor-ldi-readonly"
+      },
+      "description": "Row-level completeness of PE and JE4 for selected machines.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {},
+          "decimals": 1,
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 80
+              },
+              {
+                "color": "green",
+                "value": 95
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 20,
+        "y": 0
+      },
+      "id": 6,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "mentor-ldi-readonly"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  ROUND(100.0 * COUNT(pe_1) / NULLIF(COUNT(*), 0), 1) AS \"PE\",\n  ROUND(100.0 * COUNT(je_4) / NULLIF(COUNT(*), 0), 1) AS \"JE4\"\nFROM public.ldi_data\nWHERE factory IN (${factory:sqlstring})\n  AND eqp_id IN (${machine_id:sqlstring});",
+          "refId": "A",
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "pe_1 + je_4 — Coverage",
+      "transparent": true,
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "mentor-ldi-readonly"
+      },
+      "description": "Actual telemetry rows received in each five-minute bucket. Gaps indicate no stored rows, not simulated downtime.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "rows / 5 min",
+            "axisPlacement": "auto",
+            "axisSoftMax": 200,
+            "axisSoftMin": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 35,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 4,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          },
+          "decimals": 0,
+          "unit": "suffix: rows/5m"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 5
+      },
+      "id": 7,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "mentor-ldi-readonly"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  time_bucket('5 minutes', \"time\") AS \"time\",\n  eqp_id AS metric,\n  COUNT(*)::NUMERIC AS value\nFROM public.ldi_data\nWHERE $__timeFilter(\"time\")\n  AND factory IN (${factory:sqlstring})\n  AND eqp_id IN (${machine_id:sqlstring})\nGROUP BY 1, 2\nORDER BY 1, 2;",
+          "refId": "A",
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "ldi_data — Row Count (5-min)",
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "mentor-ldi-readonly"
+      },
+      "description": "Real row counts and field coverage per selected machine.",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 5
+      },
+      "id": 8,
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true,
+        "sortBy": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "mentor-ldi-readonly"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH telemetry AS (\n  SELECT\n    d.eqp_id,\n    MIN(d.factory) AS factory,\n    MIN(d.process) AS process,\n    COUNT(*) AS telemetry_rows,\n    MAX(d.\"time\") AS latest_telemetry,\n    ROUND(100.0 * COUNT(d.pe_1) / COUNT(*), 1) AS pe_pct,\n    ROUND(100.0 * COUNT(d.je_1) / COUNT(*), 1) AS je13_pct,\n    ROUND(100.0 * COUNT(d.je_4) / COUNT(*), 1) AS je4_pct\n  FROM public.ldi_data d\n  WHERE d.factory IN (${factory:sqlstring})\n    AND d.eqp_id IN (${machine_id:sqlstring})\n  GROUP BY d.eqp_id\n),\nalarms AS (\n  SELECT\n    a.equipmentid AS eqp_id,\n    MIN(a.factory) AS factory,\n    MIN(a.process) AS process,\n    COUNT(*) AS alarm_rows,\n    MAX(a.logdate) AS latest_alarm\n  FROM public.ldi_alarm_log a\n  WHERE a.factory IN (${factory:sqlstring})\n    AND a.equipmentid IN (${machine_id:sqlstring})\n  GROUP BY a.equipmentid\n),\nmachines AS (\n  SELECT eqp_id FROM telemetry\n  UNION\n  SELECT eqp_id FROM alarms\n)\nSELECT\n  x.eqp_id AS \"Machine\",\n  COALESCE(t.factory, a.factory) AS \"Factory\",\n  COALESCE(t.process, a.process) AS \"Process\",\n  COALESCE(t.telemetry_rows, 0) AS \"Telemetry Rows\",\n  t.latest_telemetry AS \"Latest Telemetry\",\n  t.pe_pct AS \"PE %\",\n  t.je13_pct AS \"JE1-3 %\",\n  t.je4_pct AS \"JE4 %\",\n  COALESCE(a.alarm_rows, 0) AS \"Alarm Rows\",\n  a.latest_alarm AS \"Latest Alarm\"\nFROM machines x\nLEFT JOIN telemetry t USING (eqp_id)\nLEFT JOIN alarms a USING (eqp_id)\nORDER BY x.eqp_id",
+          "refId": "A",
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "ldi_data + ldi_alarm_log — Coverage",
+      "transparent": true,
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "mentor-ldi-readonly"
+      },
+      "description": "Global comparison of machine identifiers in telemetry and alarm sources. This intentionally ignores dashboard filters so unmatched IDs stay visible.",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 13
+      },
+      "id": 9,
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true,
+        "sortBy": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "mentor-ldi-readonly"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH telemetry AS (\n  SELECT DISTINCT eqp_id FROM public.ldi_data\n), alarms AS (\n  SELECT DISTINCT equipmentid AS eqp_id FROM public.ldi_alarm_log\n), ids AS (\n  SELECT eqp_id FROM telemetry\n  UNION\n  SELECT eqp_id FROM alarms\n)\nSELECT\n  i.eqp_id AS \"Machine ID\",\n  (t.eqp_id IS NOT NULL) AS \"In Telemetry\",\n  (a.eqp_id IS NOT NULL) AS \"In Alarm\",\n  CASE\n    WHEN t.eqp_id IS NOT NULL AND a.eqp_id IS NOT NULL THEN 'MATCHED'\n    WHEN t.eqp_id IS NULL THEN 'ALARM ONLY'\n    ELSE 'TELEMETRY ONLY'\n  END AS \"Mapping Status\"\nFROM ids i\nLEFT JOIN telemetry t USING (eqp_id)\nLEFT JOIN alarms a USING (eqp_id)\nORDER BY \"Mapping Status\", i.eqp_id;",
+          "refId": "A",
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "eqp_id ↔ equipmentid — Gaps",
+      "transparent": true,
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "mentor-ldi-readonly"
+      },
+      "description": "Every distinct alarm code from the real log and whether it resolves against the supplied alarm master.",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 13
+      },
+      "id": 10,
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true,
+        "sortBy": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "mentor-ldi-readonly"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  a.errorcode::TEXT AS \"Alarm Code\",\n  COUNT(*) AS \"Rows\",\n  CASE WHEN m.alarm_code IS NULL THEN 'UNMAPPED' ELSE 'MATCHED' END AS \"Mapping\",\n  COALESCE(m.alarm_msg, '') AS \"Message\",\n  COALESCE(m.alarm_type, '') AS \"Severity\"\nFROM public.ldi_alarm_log a\nLEFT JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\nGROUP BY a.errorcode, m.alarm_code, m.alarm_msg, m.alarm_type\nORDER BY \"Rows\" DESC;",
+          "refId": "A",
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "errorcode ↔ alarm_code — Gaps",
+      "transparent": true,
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "mentor-ldi-readonly"
+      },
+      "description": "Shows why telemetry rows cannot yet be treated as guaranteed board-completion events: board_id is missing and some MO + board_no keys repeat.",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 22
+      },
+      "id": 11,
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true,
+        "sortBy": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "mentor-ldi-readonly"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  eqp_id AS \"Machine\",\n  COUNT(*) AS \"Telemetry Rows\",\n  COUNT(DISTINCT (mo, board_no)) AS \"Unique MO + Board No\",\n  COUNT(*) - COUNT(DISTINCT (mo, board_no)) AS \"Duplicate Board Keys\",\n  ROUND(100.0 * COUNT(board_id) / COUNT(*), 1) AS \"Board ID %\",\n  COUNT(DISTINCT mo) AS \"Distinct MO\",\n  MIN(board_no) AS \"Min Board No\",\n  MAX(board_no) AS \"Max Board No\"\nFROM public.ldi_data\nWHERE factory IN (${factory:sqlstring})\n  AND eqp_id IN (${machine_id:sqlstring})\nGROUP BY eqp_id\nORDER BY \"Duplicate Board Keys\" DESC, eqp_id;",
+          "refId": "A",
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "mo + board_no + board_id + log_id — Quality",
+      "transparent": true,
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "mentor-ldi-readonly"
+      },
+      "description": "Capability is inferred only from existing rows. ALL ZERO or CONSTANT means verify the machine specification; it is not automatically classified as a fault.",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 22
+      },
+      "id": 12,
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true,
+        "sortBy": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "mentor-ldi-readonly"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  d.eqp_id AS \"Machine\",\n  CASE WHEN COUNT(d.pe_1) > 0 THEN 'AVAILABLE' ELSE 'NO DATA' END AS \"PE1-6\",\n  CASE WHEN COUNT(d.je_1) > 0 THEN 'AVAILABLE' ELSE 'NO DATA' END AS \"JE1-3\",\n  CASE WHEN COUNT(d.je_4) > 0 THEN 'AVAILABLE' ELSE 'NO DATA' END AS \"JE4\",\n  CASE\n    WHEN COUNT(DISTINCT d.air_vacuum) > 1 THEN 'VARIABLE SIGNAL'\n    WHEN COUNT(d.air_vacuum) = 0 THEN 'NO DATA'\n    WHEN BOOL_AND(d.air_vacuum = 0) THEN 'ALL ZERO - VERIFY'\n    ELSE 'CONSTANT - VERIFY'\n  END AS \"Vacuum\",\n  CASE\n    WHEN COUNT(DISTINCT d.scan_speed) > 1 THEN 'VARIABLE SIGNAL'\n    WHEN COUNT(d.scan_speed) = 0 THEN 'NO DATA'\n    ELSE 'CONSTANT - VERIFY'\n  END AS \"Scan Speed\",\n  CASE WHEN MAX(a.equipmentid) IS NOT NULL THEN 'AVAILABLE' ELSE 'NO MATCHING ID' END AS \"Alarm Source\"\nFROM public.ldi_data d\nLEFT JOIN (SELECT DISTINCT equipmentid FROM public.ldi_alarm_log) a ON a.equipmentid = d.eqp_id\nWHERE d.factory IN (${factory:sqlstring})\n  AND d.eqp_id IN (${machine_id:sqlstring})\nGROUP BY d.eqp_id\nORDER BY d.eqp_id;",
+          "refId": "A",
+          "sql": {
+            "columns": [],
+            "groupBy": [],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "ldi_data — Sensor Field Coverage",
+      "transparent": true,
+      "type": "table"
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 39,
+  "tags": [
+    "mentor-db",
+    "read-only",
+    "historical-data"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "mentor-ldi-readonly"
+        },
+        "definition": "SELECT DISTINCT factory AS __text, factory AS __value FROM public.ldi_data ORDER BY factory",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Factory",
+        "multi": true,
+        "name": "factory",
+        "options": [],
+        "query": "SELECT DISTINCT factory AS __text, factory AS __value FROM public.ldi_data ORDER BY factory",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "mentor-ldi-readonly"
+        },
+        "definition": "SELECT machine_id AS __text, machine_id AS __value\nFROM (\n  SELECT DISTINCT d.eqp_id AS machine_id\n  FROM public.ldi_data d\n  WHERE d.factory IN (${factory:sqlstring})\n  UNION\n  SELECT DISTINCT a.equipmentid AS machine_id\n  FROM public.ldi_alarm_log a\n  WHERE a.factory IN (${factory:sqlstring})\n    AND a.equipmentid IS NOT NULL\n) machines\nORDER BY machine_id",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Machine",
+        "multi": true,
+        "name": "machine_id",
+        "options": [],
+        "query": "SELECT machine_id AS __text, machine_id AS __value\nFROM (\n  SELECT DISTINCT d.eqp_id AS machine_id\n  FROM public.ldi_data d\n  WHERE d.factory IN (${factory:sqlstring})\n  UNION\n  SELECT DISTINCT a.equipmentid AS machine_id\n  FROM public.ldi_alarm_log a\n  WHERE a.factory IN (${factory:sqlstring})\n    AND a.equipmentid IS NOT NULL\n) machines\nORDER BY machine_id",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "2026-07-19T21:00:00Z",
+    "to": "2026-07-20T03:00:00Z"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "[Mentor DB] LDI Data Readiness",
+  "uid": "mentor-ldi-data-readiness",
+  "version": 1
+}
