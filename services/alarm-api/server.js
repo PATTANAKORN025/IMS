@@ -4,7 +4,13 @@ const express = require('express');
 const { Pool } = require('pg');
 
 const PORT = process.env.PORT || 4000;
-const ALLOWED_ORIGIN = process.env.ALARM_API_ALLOWED_ORIGIN || '*';
+// No default wildcard: this service is only ever called same-origin (through
+// the proxy at the Grafana origin), which needs no CORS header at all --
+// browsers only consult it for cross-origin requests. Falling back to '*'
+// would have opened cross-origin reads to anyone unless an operator
+// remembered to set ALARM_API_ALLOWED_ORIGIN explicitly; omitting the header
+// when unset denies cross-origin by default instead.
+const ALLOWED_ORIGIN = process.env.ALARM_API_ALLOWED_ORIGIN || null;
 
 // idleTimeoutMillis must stay well below pgbouncer's CLIENT_IDLE_TIMEOUT
 // (docker-compose.yaml, currently 300s): pgbouncer force-closes an idle
@@ -50,9 +56,11 @@ const app = express();
 app.use(express.json());
 
 app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (ALLOWED_ORIGIN) {
+    res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  }
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   next();
 });
