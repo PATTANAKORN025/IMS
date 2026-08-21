@@ -42,14 +42,13 @@ drill_backup_restore() {
     echo "  Drill 1: Backup / Restore"
     echo "═══════════════════════════════════════════════════"
     local t0 t1
+    local before_file="$REPORT_DIR/counts-before-$STAMP.txt"
+    local after_file="$REPORT_DIR/counts-after-$STAMP.txt"
 
-    echo "-> live row counts BEFORE dump (this is a live ingesting system -- counts"
-    echo "   bracket the dump snapshot rather than assuming a single instant)"
-    local before_devices before_ldi_data before_alarm_log
-    before_devices=$(docker exec ims-timescaledb psql -U "$PGUSER" -d "$PGDB" -t -A -c "SELECT count(*) FROM public.devices;")
-    before_ldi_data=$(docker exec ims-timescaledb psql -U "$PGUSER" -d "$PGDB" -t -A -c "SELECT count(*) FROM public.ldi_data;")
-    before_alarm_log=$(docker exec ims-timescaledb psql -U "$PGUSER" -d "$PGDB" -t -A -c "SELECT count(*) FROM public.ldi_alarm_log;")
-    echo "   devices=$before_devices ldi_data=$before_ldi_data ldi_alarm_log=$before_alarm_log"
+    echo "-> live row/chunk counts BEFORE dump (this is a live ingesting system --"
+    echo "   counts bracket the dump snapshot rather than assuming a single instant)"
+    bash scripts/dr-verify-restore.sh ims-timescaledb "$PGUSER" "$PGDB" --dump-counts > "$before_file"
+    echo "   captured $(wc -l < "$before_file") table/chunk counts -> $before_file"
 
     echo "-> pg_dump live '$PGDB' to $BACKUP_FILE"
     t0=$(date +%s)
@@ -60,40 +59,98 @@ drill_backup_restore() {
     dump_bytes=$(wc -c < "$BACKUP_FILE" | tr -d ' ')
     echo "   dump: ${dump_secs}s, ${dump_bytes} bytes"
 
-    echo "-> live row counts AFTER dump (upper bound -- ongoing writes during the"
-    echo "   dump window land here, not in the dump's snapshot)"
-    local after_devices after_ldi_data after_alarm_log
-    after_devices=$(docker exec ims-timescaledb psql -U "$PGUSER" -d "$PGDB" -t -A -c "SELECT count(*) FROM public.devices;")
-    after_ldi_data=$(docker exec ims-timescaledb psql -U "$PGUSER" -d "$PGDB" -t -A -c "SELECT count(*) FROM public.ldi_data;")
-    after_alarm_log=$(docker exec ims-timescaledb psql -U "$PGUSER" -d "$PGDB" -t -A -c "SELECT count(*) FROM public.ldi_alarm_log;")
-    echo "   devices=$after_devices ldi_data=$after_ldi_data ldi_alarm_log=$after_alarm_log"
+    echo "-> live row/chunk counts AFTER dump (upper bound -- ongoing writes during"
+    echo "   the dump window land here, not in the dump's snapshot)"
+    bash scripts/dr-verify-restore.sh ims-timescaledb "$PGUSER" "$PGDB" --dump-counts > "$after_file"
+    echo "   captured $(wc -l < "$after_file") table/chunk counts -> $after_file"
 
     echo "-> restore into throwaway database 'ims_dr_test' (never touches live '$PGDB')"
     docker exec ims-timescaledb psql -U "$PGUSER" -d postgres -c "DROP DATABASE IF EXISTS ims_dr_test;" >/dev/null
     docker exec ims-timescaledb psql -U "$PGUSER" -d postgres -c "CREATE DATABASE ims_dr_test;" >/dev/null
+
+    echo "-> priming ims_dr_test: CREATE EXTENSION timescaledb + timescaledb_pre_restore()"
+    echo "   (undocumented-by-omission gotcha: without this, TimescaleDB's own DDL hooks"
+    echo "   reject pg_dump's literal 'ALTER TABLE ONLY ... ADD CONSTRAINT' on a hypertable"
+    echo "   parent, and per-chunk COPY blocks can outrun _timescaledb_catalog.hypertable"
+    echo "   metadata load order -- both reproduced live, see restore log ERROR lines below"
+    echo "   if this step is skipped)"
+    docker exec ims-timescaledb psql -U "$PGUSER" -d ims_dr_test -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS timescaledb;" >/dev/null
+    docker exec ims-timescaledb psql -U "$PGUSER" -d ims_dr_test -v ON_ERROR_STOP=1 -c "SELECT timescaledb_pre_restore();" >/dev/null
+
     t0=$(date +%s)
     docker exec -i ims-timescaledb psql -U "$PGUSER" -d ims_dr_test < "$BACKUP_FILE" > "$REPORT_DIR/restore-$STAMP.log" 2>&1
     t1=$(date +%s)
     local restore_secs=$((t1 - t0))
     echo "   restore: ${restore_secs}s (full output: $REPORT_DIR/restore-$STAMP.log)"
 
-    echo "-> restored row counts (must match live)"
-    local r_devices r_ldi_data r_alarm_log
-    r_devices=$(docker exec ims-timescaledb psql -U "$PGUSER" -d ims_dr_test -t -A -c "SELECT count(*) FROM public.devices;" 2>/dev/null)
-    r_ldi_data=$(docker exec ims-timescaledb psql -U "$PGUSER" -d ims_dr_test -t -A -c "SELECT count(*) FROM public.ldi_data;" 2>/dev/null)
-    r_alarm_log=$(docker exec ims-timescaledb psql -U "$PGUSER" -d ims_dr_test -t -A -c "SELECT count(*) FROM public.ldi_alarm_log;" 2>/dev/null)
-    echo "   devices=$r_devices ldi_data=$r_ldi_data ldi_alarm_log=$r_alarm_log"
+    echo "-> timescaledb_post_restore() (re-enables background workers, re-points FK"
+    echo "   check triggers, verifies catalog version compatibility)"
+    docker exec ims-timescaledb psql -U "$PGUSER" -d ims_dr_test -v ON_ERROR_STOP=1 -c "SELECT timescaledb_post_restore();" >/dev/null
+
+    echo "-> scanning restore log for SQL errors (row counts alone do not prove a"
+    echo "   structural restore succeeded -- a table can be fully populated by COPY"
+    echo "   while its constraint/index/trigger statements failed separately)"
+    local restore_error_count
+    restore_error_count=$(grep -c "^ERROR:" "$REPORT_DIR/restore-$STAMP.log" || true)
+    echo "   ERROR lines in restore log: $restore_error_count"
+    if [[ "$restore_error_count" -gt 0 ]]; then
+        grep -n "^ERROR:" "$REPORT_DIR/restore-$STAMP.log" | sed 's/^/     /'
+    fi
+
+    echo "-> repairing FK constraints whose REFERENCES target is a hypertable"
+    echo "   (root cause, verified live 2026-08-21: while timescaledb.restoring=on, TimescaleDB's"
+    echo "   DDL hook that normally makes 'ADD CONSTRAINT ... REFERENCES <hypertable>' hypertable-aware"
+    echo "   is bypassed -- pg_dump's literal ALTER TABLE statement then falls back to plain Postgres"
+    echo "   ONLY-semantics validation against the hypertable PARENT's row set, which is always empty"
+    echo "   by design (all rows live in chunks), so the ADD CONSTRAINT fails even though the"
+    echo "   referenced row genuinely exists in the correct chunk. Reproduced deterministically twice;"
+    echo "   confirmed the identical statement succeeds immediately once re-run after"
+    echo "   timescaledb_post_restore() turns restoring back off. This step detects any such FK missing"
+    echo "   from the restored DB and re-applies it now, in normal mode, from the source's own"
+    echo "   pg_get_constraintdef() -- not a hardcoded table/column list, so it covers any future"
+    echo "   FK-to-hypertable relationship, not just today's one instance.)"
+    local ht_fk_defs repaired=0
+    ht_fk_defs=$(docker exec ims-timescaledb psql -U "$PGUSER" -d "$PGDB" -t -A -F'|' -c "
+        SELECT r.relname||'|'||c.conname||'|'||pg_get_constraintdef(c.oid)
+        FROM pg_constraint c
+        JOIN pg_class r ON r.oid=c.conrelid
+        JOIN pg_namespace n ON n.oid=r.relnamespace
+        WHERE c.contype='f' AND n.nspname='public'
+          AND c.confrelid::regclass::text IN (SELECT hypertable_name FROM timescaledb_information.hypertables);")
+    while IFS='|' read -r tbl conname condef; do
+        [[ -z "$tbl" ]] && continue
+        local exists
+        exists=$(docker exec ims-timescaledb psql -U "$PGUSER" -d ims_dr_test -t -A -c "SELECT 1 FROM pg_constraint WHERE conname='$conname' AND conrelid='public.$tbl'::regclass;" 2>/dev/null)
+        if [[ "$exists" != "1" ]]; then
+            echo "   repairing: public.$tbl.$conname"
+            if docker exec ims-timescaledb psql -U "$PGUSER" -d ims_dr_test -v ON_ERROR_STOP=1 -c "ALTER TABLE public.\"$tbl\" ADD CONSTRAINT \"$conname\" $condef;" >>"$REPORT_DIR/restore-$STAMP.log" 2>&1; then
+                repaired=$((repaired + 1))
+            else
+                echo "   FAILED to repair public.$tbl.$conname -- see $REPORT_DIR/restore-$STAMP.log"
+            fi
+        fi
+    done <<< "$ht_fk_defs"
+    echo "   repaired $repaired hypertable-referencing FK constraint(s)"
+
+    echo ""
+    echo "-> structural comparison (source '$PGDB' vs restored 'ims_dr_test')"
+    local structural_pass=1
+    bash scripts/dr-verify-restore.sh ims-timescaledb "$PGUSER" "$PGDB" ims_dr_test "$before_file" "$after_file" \
+        > "$REPORT_DIR/structural-compare-$STAMP.log" 2>&1 || structural_pass=0
+    cat "$REPORT_DIR/structural-compare-$STAMP.log"
 
     echo "-> cleanup: dropping throwaway database"
     docker exec ims-timescaledb psql -U "$PGUSER" -d postgres -c "DROP DATABASE IF EXISTS ims_dr_test;" >/dev/null
 
     echo ""
-    if [[ "$r_devices" -ge "$before_devices" && "$r_devices" -le "$after_devices" \
-       && "$r_ldi_data" -ge "$before_ldi_data" && "$r_ldi_data" -le "$after_ldi_data" \
-       && "$r_alarm_log" -ge "$before_alarm_log" && "$r_alarm_log" -le "$after_alarm_log" ]]; then
-        echo "VERDICT: PASS -- restored row counts fall within the [before-dump, after-dump] live bracket for every table (dump ${dump_secs}s, restore ${restore_secs}s, ${dump_bytes} bytes)"
+    echo "-> raw restore_error_count=$restore_error_count is diagnostic only, not the pass/fail gate:"
+    echo "   the hypertable-referencing-FK error above is expected and auto-repaired by the step"
+    echo "   before this one -- the real gate is whether the repaired end-state actually matches"
+    echo "   the source structurally, which is what the comparison below checks for real."
+    if [[ "$structural_pass" -eq 1 ]]; then
+        echo "VERDICT: PASS -- all structural comparisons passed against the repaired restore (dump ${dump_secs}s, restore ${restore_secs}s, ${dump_bytes} bytes, ${repaired} FK constraint(s) repaired)"
     else
-        echo "VERDICT: FAIL -- restored counts fall outside the live bracket, see above (a real restore defect, not just live-write drift)"
+        echo "VERDICT: FAIL -- structural comparison failed after repair attempt; see $REPORT_DIR/structural-compare-$STAMP.log"
     fi
     echo ""
 }
