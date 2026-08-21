@@ -1,56 +1,92 @@
 import os
-from PIL import Image, ImageDraw, ImageEnhance
+import math
+import random
+from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageChops
 
-img_path = 'assets/apex-ldi-noc-banner.jpg'
-out_path = 'assets/apex-ldi-noc-banner.gif'
+img_path = "assets/apex-ldi-noc-banner.jpg"
+out_path = "assets/apex-ldi-noc-banner.gif"
 
-print("Loading image...")
-img = Image.open(img_path).convert('RGBA')
-width, height = img.size
+print("Loading base image...")
+base_img = Image.open(img_path).convert("RGBA")
+width, height = base_img.size
 
+# Enhance contrast and saturation for a punchy look
+base_img = ImageEnhance.Color(base_img).enhance(1.25)
+base_img = ImageEnhance.Contrast(base_img).enhance(1.15)
+
+# Pre-generate CRT overlay (Subtle scanlines)
+crt_overlay = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+crt_draw = ImageDraw.Draw(crt_overlay)
+for y in range(0, height, 3):
+    crt_draw.line([(0, y), (width, y)], fill=(0, 0, 0, 35), width=1)
+
+# Paste CRT onto base
+base_with_crt = Image.alpha_composite(base_img, crt_overlay)
+
+num_frames = 60 # Ultra-smooth 60 frames
 frames = []
-scanline_height = height // 12
-num_frames = 24
+scanline_height = int(height * 0.20)
 
-print("Generating frames...")
+print("Rendering high-fidelity frames...")
 for i in range(num_frames):
-    frame = Image.new('RGBA', (width, height))
-    frame.paste(img, (0,0))
+    frame = base_with_crt.copy()
+    draw = ImageDraw.Draw(frame, "RGBA")
     
-    draw = ImageDraw.Draw(frame, 'RGBA')
+    progress = i / num_frames
+    y_pos = int(progress * (height + scanline_height)) - scanline_height
     
-    # Calculate scanline position
-    y_pos = int((i / num_frames) * height)
-    
-    # Draw a glowing cyan scanline overlay
-    draw.rectangle([0, y_pos, width, y_pos + scanline_height], fill=(0, 242, 254, 40))
-    draw.line([(0, y_pos), (width, y_pos)], fill=(0, 242, 254, 180), width=3)
-    draw.line([(0, y_pos + scanline_height), (width, y_pos + scanline_height)], fill=(0, 242, 254, 100), width=1)
-    
-    # Optional: slight color shift for glitch effect every few frames
-    if i % 8 == 0:
-        # Create a slightly offset RGB split effect (chromatic aberration)
+    # 1. Draw gradient scanner tail (Cyberpunk Cyan)
+    for offset in range(scanline_height):
+        current_y = y_pos + offset
+        if 0 <= current_y < height:
+            # Exponential fade for a realistic light falloff
+            alpha_ratio = (offset / scanline_height) ** 2
+            alpha = int(120 * alpha_ratio)
+            draw.line([(0, current_y), (width, current_y)], fill=(0, 242, 254, alpha), width=1)
+            
+    # 2. Draw intense leading edge (Laser)
+    edge_y = y_pos + scanline_height
+    if 0 <= edge_y < height:
+        draw.line([(0, edge_y), (width, edge_y)], fill=(0, 242, 254, 255), width=2)
+        draw.line([(0, edge_y-1), (width, edge_y-1)], fill=(255, 255, 255, 220), width=1)
+        
+    # 3. Holographic / Digital Glitch FX (Cinematic)
+    if i in [12, 13, 38, 39, 40, 55]:
+        # Random slice displacement
+        slice_height = random.randint(15, 60)
+        slice_y = random.randint(0, height - slice_height)
+        shift_x = random.randint(10, 40) * random.choice([-1, 1])
+        
+        box = (0, slice_y, width, slice_y + slice_height)
+        region = frame.crop(box)
+        frame.paste(region, (shift_x, slice_y))
+        
+        # Chromatic aberration
         r, g, b, a = frame.split()
-        r = r.transform((width, height), Image.AFFINE, (1, 0, 4, 0, 1, 0))
-        b = b.transform((width, height), Image.AFFINE, (1, 0, -4, 0, 1, 0))
-        frame = Image.merge('RGBA', (r, g, b, a))
+        r = ImageChops.offset(r, random.randint(-6, 6), 0)
+        b = ImageChops.offset(b, random.randint(-6, 6), 0)
+        frame = Image.merge("RGBA", (r, g, b, a))
         
-        # Boost brightness slightly on glitch frames
-        enhancer_brightness = ImageEnhance.Brightness(frame)
-        frame = enhancer_brightness.enhance(1.15)
+        # Flash brightness
+        frame = ImageEnhance.Brightness(frame).enhance(1.4)
         
-    # Convert RGBA back to RGB for GIF (with adaptive palette)
-    # Using P mode for GIF
-    rgb_frame = frame.convert('RGB')
-    frames.append(rgb_frame)
+    # 4. Global Pulsing Grid Data Glow
+    pulse = int(math.sin(progress * math.pi * 6) * 20)
+    if pulse > 0:
+        pulse_overlay = Image.new("RGBA", (width, height), (0, 242, 254, pulse))
+        frame = Image.alpha_composite(frame, pulse_overlay)
 
-print("Saving GIF (this might take a moment)...")
+    # Append final frame
+    frames.append(frame.convert("RGB"))
+
+print("Encoding world-class GIF (25 FPS)...")
 frames[0].save(
     out_path, 
     save_all=True, 
     append_images=frames[1:], 
-    duration=80, 
+    duration=40,
     loop=0,
-    optimize=True
+    optimize=False
 )
-print('GIF banner generated successfully.')
+print("SUCCESS: High-end Cyberpunk NOC Banner saved to " + out_path)
+
