@@ -8,5 +8,33 @@
     "owner": "who approved this / is tracking the fix",
     "expiry": "YYYY-MM-DD -- after this date the exception no longer applies"
   },
-  "exceptions": []
+  "exceptions": [
+    {
+      "cve": "CVE-2026-39821",
+      "package": "stdlib",
+      "reason": "net/http+golang.org/x/net/idna DoS in Grafana's Go runtime, CVSS 8.2, externally reachable pre-auth (proxy publishes 0.0.0.0:3000, no auth_request gate on the route that serves Grafana). No official patched Grafana build exists yet -- verified live 2026-08-21 by pulling and scanning the two newest available tags (13.1.4, latest 13.1.x; 13.2.0, latest minor); both still ship a vulnerable Go stdlib build. Full analysis: docs/evidence/SECURITY_REACHABILITY.md.",
+      "mitigation": "nginx rate limiting (limit_req_zone rate=100r/s, burst=2500 nodelay) + header/URL size cap (large_client_header_buffers 4 16k) added to proxy/nginx.conf 2026-08-21. Verified with real HTTP load, not assumed: 0/2300 requests throttled at a 20-concurrent-kiosk-equivalent burst (matches real browser-measured ~115 requests per dashboard load), genuine 429 rejections confirmed above that threshold (1013/2875 at 25 kiosks) -- proves the limiter is both non-disruptive to real traffic and actually active. Does not close the CVE; bounds exploitation volume and worst-case input size. Full test evidence: docs/evidence/SECURITY_MITIGATION_P7.md.",
+      "images": ["grafana-grafana-13.1.2"],
+      "owner": "MrPATT025 (IMS maintainer)",
+      "expiry": "2026-11-19"
+    },
+    {
+      "cve": "CVE-2026-56853",
+      "package": "stdlib",
+      "reason": "net/http unencrypted-HTTP/2 DoS in Grafana's Go runtime, CVSS 7.5, same reachability facts as CVE-2026-39821 above (same binary, same pre-auth parsing layer, same tags checked with no fix present).",
+      "mitigation": "Same nginx rate limiting as CVE-2026-39821 -- see that entry and docs/evidence/SECURITY_MITIGATION_P7.md for the shared verification evidence.",
+      "images": ["grafana-grafana-13.1.2"],
+      "owner": "MrPATT025 (IMS maintainer)",
+      "expiry": "2026-11-19"
+    },
+    {
+      "cve": "CVE-2026-56860",
+      "package": "stdlib",
+      "reason": "net/url quadratic-complexity DoS in Grafana's Go runtime, CVSS 7.5, same reachability facts as CVE-2026-39821 above -- and the specific CVE the header/URL size cap most directly bounds (limits the worst-case input size the vulnerable parser ever processes from a single request).",
+      "mitigation": "Same nginx rate limiting + large_client_header_buffers cap as CVE-2026-39821 -- see that entry and docs/evidence/SECURITY_MITIGATION_P7.md.",
+      "images": ["grafana-grafana-13.1.2"],
+      "owner": "MrPATT025 (IMS maintainer)",
+      "expiry": "2026-11-19"
+    }
+  ]
 }

@@ -39,12 +39,18 @@ function loadExceptions() {
 // CRITICAL can never be excepted here, full stop -- per explicit policy,
 // only a genuine fix (verified by rescan) resolves a CRITICAL finding.
 // A HIGH finding is only excepted if a valid (non-expired) entry names
-// this exact CVE for this exact package -- "an exception exists somewhere
-// in the file" is not sufficient, that would silently downgrade findings
-// the file was never actually written to cover.
-function isExcepted(exceptions, { severity, cve, pkg }) {
+// this exact CVE for this exact package AND lists this exact image in its
+// "images" scope -- "an exception exists somewhere in the file" is not
+// sufficient, and neither is CVE+package alone: the same CVE ID can
+// appear in multiple images that don't share the mitigation (found live,
+// 2026-08-21 -- a grafana-only nginx rate-limit mitigation was silently
+// also suppressing the same CVE on prometheus/alertmanager/timescaledb,
+// none of which route through the rate-limited nginx location at all).
+function isExcepted(exceptions, { severity, cve, pkg, image }) {
   if (severity !== 'HIGH') return false;
-  return exceptions.some((e) => e.cve === cve && e.package === pkg);
+  return exceptions.some(
+    (e) => e.cve === cve && e.package === pkg && Array.isArray(e.images) && e.images.includes(image)
+  );
 }
 
 function runNpmAudit(dir, evidenceStamp) {
@@ -180,7 +186,7 @@ function runTrivy(image, evidenceStamp) {
         if (vuln.Severity === 'CRITICAL') critical++;
         else if (vuln.Severity === 'HIGH') {
           high++;
-          if (!isExcepted(exceptions, { severity: 'HIGH', cve: vuln.VulnerabilityID, pkg: vuln.PkgName })) {
+          if (!isExcepted(exceptions, { severity: 'HIGH', cve: vuln.VulnerabilityID, pkg: vuln.PkgName, image: label })) {
             unexceptedHigh++;
           }
         }
@@ -278,4 +284,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { run };
+module.exports = { run, isExcepted };

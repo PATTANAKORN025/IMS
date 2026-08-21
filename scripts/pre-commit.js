@@ -31,6 +31,7 @@ run("Unit Tests", "node tests/unit/boundary-validation.test.js");
 run("Parser v2 Tests", "node tests/unit/v2-parser.test.js");
 run("Query Budget Linter Tests", "node tests/unit/query-budget-linter.test.js");
 run("Gate Decision Tests", "node tests/unit/gate.test.js");
+run("Security Exception Matching Tests", "node tests/unit/security-exceptions.test.js");
 
 // 2. Run Linters
 run("Dashboard Linter", "node tests/lint/dashboard-linter.js");

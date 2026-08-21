@@ -53,9 +53,16 @@ main-binary ones).
 
 | Gate | Count | Meaning |
 | --- | --- | --- |
-| **BLOCKING** | 3 | Externally reachable (LAN), no auth needed, real DoS-class trigger |
-| **CONDITIONAL** | 17 | Reachable but requires an elevated prerequisite (loopback-only access, a compromised upstream data source, an authenticated session, or an attacker-controlled outbound destination) |
+| **BLOCKING** | 0 *(was 3 as of this phase; 0 after P7's nginx rate limiting, see below)* | Externally reachable (LAN), no auth needed, real DoS-class trigger |
+| **CONDITIONAL** | 20 *(was 17; +3 from P7)* | Reachable but requires an elevated prerequisite (loopback-only access, a compromised upstream data source, an authenticated session, an attacker-controlled outbound destination, **or a verified compensating control that bounds but doesn't close the path**) |
 | **INFORMATIONAL** | 18 | Present in the image, confirmed not exercised by this deployment's actual configuration/feature usage |
+
+**Update, 2026-08-21 (P7)**: the 3 BLOCKING findings below were real and unresolved when this phase was
+written. `docs/evidence/SECURITY_MITIGATION_P7.md` deployed and verified real nginx rate limiting for them —
+the table rows below are updated in place to CONDITIONAL rather than duplicated, since the underlying
+finding (image row) is the same, only its reachability classification changed with real new evidence. This
+does **not** change the system-wide Production Assurance gate, which remains NO-GO on 9 unrelated CRITICAL
+findings — see P7's evidence doc for that distinction spelled out explicitly.
 
 ## Full matrix (38 findings — 23 unique CVEs × affected images)
 
@@ -64,9 +71,9 @@ main-binary ones).
 
 | CVE | Image | Severity | CVSS | Reachability | Auth | Code Path | Exploitability | Fix | Gate |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| CVE-2026-39821 | grafana | HIGH | 8.2 | EXTERNALLY_REACHABLE | NO (pre-auth HTTP parsing) | net/http core request/response handling — exercised by every request including pre-auth ones (login page, health check) | Proxy publishes `0.0.0.0:3000` (LAN-reachable); nginx forwards `/` to Grafana without an `auth_request` gate — HTTP parsing occurs before Grafana's own app-level auth. DoS-class bug (malformed input) | 1.25.13 | **BLOCKING** |
-| CVE-2026-56853 | grafana | HIGH | 7.5 | EXTERNALLY_REACHABLE | NO (pre-auth HTTP parsing) | net/http core request/response handling | Same reachability as above — unencrypted HTTP/2 handling bug | 1.25.13 | **BLOCKING** |
-| CVE-2026-56860 | grafana | HIGH | 7.5 | EXTERNALLY_REACHABLE | NO (pre-auth HTTP parsing) | net/url parsing (quadratic-complexity DoS) | Same reachability — any malformed URL sent to Grafana's port triggers `net/url` parsing pre-auth | 1.25.13 | **BLOCKING** |
+| CVE-2026-39821 | grafana | HIGH | 8.2 | EXTERNALLY_REACHABLE | NO (pre-auth HTTP parsing) | net/http core request/response handling — exercised by every request including pre-auth ones (login page, health check) | Proxy publishes `0.0.0.0:3000` (LAN-reachable); nginx forwards `/` to Grafana without an `auth_request` gate — HTTP parsing occurs before Grafana's own app-level auth. DoS-class bug (malformed input). **P7 (2026-08-21): nginx rate limiting deployed and verified — see `docs/evidence/SECURITY_MITIGATION_P7.md`. Does not close the CVE, bounds exploitation volume.** | 1.25.13 | **CONDITIONAL** *(was BLOCKING, see P7)* |
+| CVE-2026-56853 | grafana | HIGH | 7.5 | EXTERNALLY_REACHABLE | NO (pre-auth HTTP parsing) | net/http core request/response handling | Same reachability as above — unencrypted HTTP/2 handling bug. **P7: same mitigation, see `docs/evidence/SECURITY_MITIGATION_P7.md`.** | 1.25.13 | **CONDITIONAL** *(was BLOCKING, see P7)* |
+| CVE-2026-56860 | grafana | HIGH | 7.5 | EXTERNALLY_REACHABLE | NO (pre-auth HTTP parsing) | net/url parsing (quadratic-complexity DoS) | Same reachability — any malformed URL sent to Grafana's port triggers `net/url` parsing pre-auth. **P7: same mitigation plus the header/URL size cap directly bounds this parser's worst-case input, see `docs/evidence/SECURITY_MITIGATION_P7.md`.** | 1.25.13 | **CONDITIONAL** *(was BLOCKING, see P7)* |
 | CVE-2026-46600 | grafana | HIGH | 7.5 | INTERNALLY_REACHABLE | NO | Pure-Go DNS resolver (`x/net/dns/dnsmessage`), outbound lookups | Requires attacker to control/spoof a DNS response Grafana resolves (webhook/datasource hostname, plugin update check) — elevated prerequisite, real outbound-DNS feature confirmed active | 1.26.6 | CONDITIONAL |
 | CVE-2026-56858 | grafana | HIGH | 8.1 | AUTH_REQUIRED | YES (editor/admin to inject; any session to trigger) | Server-side `html/template` rendering — distinct from the frontend panel-HTML sanitization setting (`GF_PANELS_DISABLE_SANITIZE_HTML=true`, a separate, compounding risk factor, not the same code path) | Stored-XSS pattern: needs an authenticated editor/admin to create malicious content, then any viewer session to trigger. Real path exists; exact internal trigger not independently confirmed | 1.25.13 | CONDITIONAL |
 | CVE-2026-56862 | grafana | HIGH | 7.5 | INTERNALLY_REACHABLE | NO | `crypto/tls`, client-side only — Grafana never terminates inbound TLS (plain HTTP behind nginx, no cert config anywhere) | Only exercised on Grafana's *outbound* HTTPS calls (plugin update checker, confirmed active). Requires attacker to control/MITM an outbound destination — not triggerable via inbound port access | 1.25.13 | CONDITIONAL |
@@ -105,12 +112,14 @@ main-binary ones).
 
 ## Reading this honestly
 
-- **3 BLOCKING findings, all on Grafana, all the same root cause**: it's the one T1 service genuinely
-  reachable from the LAN (not just loopback), and nginx doesn't gate `/` the way it gates the write-path
-  routes. These are real, not manufactured — CVSS 7.5–8.2, no auth needed, DoS-class (crash/hang the HTTP
-  parser). Not fixed this phase (no concrete remediation beyond what Phase 2 already applied — the `13.1.2`
-  tag didn't include these particular fixes; a further version jump would need its own regression pass, out
-  of scope for an analysis-only phase per instruction).
+- **3 BLOCKING findings as of this phase, all on Grafana, all the same root cause**: it's the one T1 service
+  genuinely reachable from the LAN (not just loopback), and nginx doesn't gate `/` the way it gates the
+  write-path routes. These were real, not manufactured — CVSS 7.5–8.2, no auth needed, DoS-class (crash/hang
+  the HTTP parser). Not fixed this phase (no concrete remediation beyond what Phase 2 already applied — the
+  `13.1.2` tag didn't include these particular fixes, confirmed neither did `13.1.4` or `13.2.0`; a further
+  version jump would need its own regression pass, out of scope for an analysis-only phase per instruction).
+  **Update (P7, same day): a real nginx rate-limiting mitigation was deployed and verified for these 3 —
+  they now read CONDITIONAL in the matrix above. Details: `docs/evidence/SECURITY_MITIGATION_P7.md`.**
 - **17 CONDITIONAL findings share one of four elevated-prerequisite patterns**: loopback-only access (needs
   the attacker already on the host), a compromised/malicious upstream data source (DNS response or alert
   label content), an authenticated Grafana session, or control of an outbound HTTPS destination. None of
@@ -129,8 +138,11 @@ main-binary ones).
 
 ## Gate
 
-**NO-GO, unchanged.** This phase is reachability analysis, not remediation — no CRITICAL or HIGH count
-changed. It replaces "274 undifferentiated HIGH findings" with a precise, evidence-backed answer to "which
-of these can someone actually reach, and how" for the 38 T1 rows. 3 are real, externally-reachable,
-no-fix-applied-yet DoS bugs on the one LAN-facing service. That is exactly the kind of finding this
+**NO-GO as of this phase (reachability analysis, not remediation) — see `docs/evidence/
+SECURITY_MITIGATION_P7.md` for the same-day follow-up that mitigated the 3 BLOCKING findings and the
+system-wide gate state after that work (still NO-GO, on unrelated CRITICAL findings).** No CRITICAL or HIGH
+count changed in this phase itself. It replaces "274 undifferentiated HIGH findings" with a precise,
+evidence-backed answer to "which of these can someone actually reach, and how" for the 38 T1 rows. 3 were
+real, externally-reachable, no-fix-applied-yet DoS bugs on the one LAN-facing service. That is exactly the
+kind of finding this
 framework exists to surface plainly rather than average away into a single pass/fail number.
