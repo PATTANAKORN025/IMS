@@ -26,7 +26,7 @@ groups:
                 WHERE time > NOW() - INTERVAL '5 minutes'
                 GROUP BY device_id
                 HAVING AVG(cpu_load_percent) > 85
-              format: time_series
+              format: table
         noDataState: OK
         execErrState: Error
         for: 5m
@@ -54,7 +54,7 @@ groups:
                 WHERE time > NOW() - INTERVAL '5 minutes'
                 GROUP BY device_id
                 HAVING AVG(ram_used_mb) / NULLIF(AVG(ram_total_mb), 0) * 100 > 90
-              format: time_series
+              format: table
         noDataState: OK
         execErrState: Error
         for: 5m
@@ -82,7 +82,7 @@ groups:
                 WHERE time > NOW() - INTERVAL '10 minutes'
                 GROUP BY device_id
                 HAVING AVG(disk_used_gb) / NULLIF(AVG(disk_total_gb), 0) * 100 > 90
-              format: time_series
+              format: table
         noDataState: OK
         execErrState: Error
         for: 10m
@@ -110,7 +110,7 @@ groups:
                 WHERE time > NOW() - INTERVAL '5 minutes'
                 GROUP BY device_id
                 HAVING MAX(temp_c) > 80
-              format: time_series
+              format: table
         noDataState: OK
         execErrState: Error
         for: 5m
@@ -139,7 +139,7 @@ groups:
                   AND device_id IN (SELECT device_id FROM devices WHERE enabled = true)
                 GROUP BY 1
                 HAVING SUM(rx_errors) > 100
-              format: time_series
+              format: table
         noDataState: OK
         execErrState: Error
         for: 2m
@@ -168,11 +168,11 @@ groups:
                 WHERE time > NOW() - INTERVAL '5 minutes'
                 GROUP BY device_id
                 HAVING AVG(rx_mbps) > 800
-                HAVING COUNT(*) >= 5
+                   AND COUNT(*) >= 5
                    AND regr_slope(rx_mbps, EXTRACT(EPOCH FROM (time - NOW()))) > 0
                    AND regr_slope(rx_mbps, EXTRACT(EPOCH FROM (time - NOW()))) * 3600
                        + regr_intercept(rx_mbps, EXTRACT(EPOCH FROM (time - NOW()))) > 1000
-              format: time_series
+              format: table
         noDataState: OK
         execErrState: Error
         for: 10m
@@ -201,7 +201,7 @@ groups:
                 WHERE time > NOW() - INTERVAL '2 minutes'
                 GROUP BY device_id, iface_name
                 HAVING SUM(CASE WHEN status = 'DOWN' THEN 1 ELSE 0 END) > SUM(CASE WHEN status = 'UP' THEN 1 ELSE 0 END)
-              format: time_series
+              format: table
         noDataState: OK
         execErrState: Error
         for: 1m
@@ -230,7 +230,7 @@ groups:
                 WHERE time > NOW() - INTERVAL '5 minutes'
                 GROUP BY device_id, iface_name
                 HAVING MAX(rx_drops) > 50
-              format: time_series
+              format: table
         noDataState: OK
         execErrState: Error
         for: 2m
@@ -243,6 +243,16 @@ groups:
 
       - uid: ims-ldi-vibration-critical
         title: LDI Vibration Critical
+        # PAUSED: ldi_metrics.vibration is exactly 0 for 100% of rows across
+        # all 10 LDI machines (confirmed live, world-class audit P1-3) --
+        # the k6-synthetic ldi_metrics ingestion pipeline never populates
+        # this field for LDI-class devices (same gap already known for
+        # throughput/power_watt). A "critical" bearing-failure alert that
+        # can structurally never fire is worse than no alert: it implies
+        # vibration is monitored when it isn't. Paused rather than deleted
+        # so it stays visible/discoverable and can be unpaused the moment
+        # real vibration telemetry exists for LDI devices.
+        isPaused: true
         condition: A
         data:
           - refId: A
@@ -259,7 +269,7 @@ groups:
                 WHERE time > NOW() - INTERVAL '5 minutes'
                 GROUP BY device_id
                 HAVING MAX(vibration) > 12
-              format: time_series
+              format: table
         noDataState: OK
         execErrState: Error
         for: 1m
@@ -311,7 +321,7 @@ groups:
                 JOIN stats s ON s.device_id = c.device_id
                 WHERE s.sigma > 0
                   AND ABS((c.current_val - s.mu) / NULLIF(s.sigma, 0)) > 3
-              format: time_series
+              format: table
           - refId: B
             relativeTimeRange:
               from: 300
@@ -319,6 +329,7 @@ groups:
             datasourceUid: __expr__
             model:
               type: threshold
+              expression: A
               conditions:
                 - evaluator:
                     type: gt
@@ -375,7 +386,7 @@ groups:
                 JOIN stats s ON s.device_id = c.device_id
                 WHERE s.sigma > 0
                   AND ABS((c.current_val - s.mu) / NULLIF(s.sigma, 0)) > 3
-              format: time_series
+              format: table
           - refId: B
             relativeTimeRange:
               from: 300
@@ -383,6 +394,7 @@ groups:
             datasourceUid: __expr__
             model:
               type: threshold
+              expression: A
               conditions:
                 - evaluator:
                     type: gt
@@ -397,3 +409,32 @@ groups:
           summary: "Temperature Z-Score anomaly on {{ $labels.metric }} ({{ $values.A }}σ)"
           description: "Temperature deviates >3 standard deviations from 24h rolling average. Possible thermal event."
           runbook: "https://grafana.internal/d/ims-engineering?var-machine_id={{ $labels.metric }}"
+
+      # Machine Offline / Stale: Alert if a machine has not sent telemetry in 5 minutes
+      - uid: ims-ldi-machine-stale
+        title: LDI Machine Offline (Stale)
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: timescaledb
+            model:
+              rawSql: |
+                SELECT
+                  eqp_id AS metric,
+                  1 AS value
+                FROM public.v_ldi_machine_latest_full
+                WHERE is_stale = true AND enabled = true
+              format: table
+        noDataState: OK
+        execErrState: Error
+        for: 1m
+        labels:
+          severity: critical
+          service: ldi
+        annotations:
+          summary: LDI Machine {{ .metric }} is Offline (Stale)
+          description: No telemetry received from {{ .metric }} for over 5 minutes. Check network or machine power.
+          runbook: https://grafana.internal/d/ims-engineering?var-machine_id={{ .metric }}
