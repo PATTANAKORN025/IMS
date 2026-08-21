@@ -619,7 +619,7 @@ ORDER BY event_time DESC;
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'grafana_reader') THEN
-        CREATE ROLE grafana_reader WITH LOGIN PASSWORD 'grafana_secure';
+        CREATE ROLE grafana_reader WITH LOGIN;
     END IF;
 END
 $$;
