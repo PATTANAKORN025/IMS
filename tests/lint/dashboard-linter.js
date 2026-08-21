@@ -4,7 +4,7 @@
  *
  * Checks:
  *   1. No hardcoded IP addresses in rawSql
- *   2. Datasource uid is "timescaledb" (not hardcoded names)
+ *   2. Datasource uid is approved for the dashboard scope (not hardcoded names)
  *   3. All timeseries panels have gradientMode
  *   4. All timeseries panels have legend.displayMode "table"
  *   5. All stat/gauge panels have noValue set
@@ -42,6 +42,14 @@ const fs = require('fs');
 const path = require('path');
 
 const DASHBOARD_DIR = path.join(process.cwd(), 'monitoring', 'grafana', 'dashboards');
+
+// Production dashboards use the primary TimescaleDB datasource. Dashboards
+// under mentor-ldi intentionally use a separately provisioned SELECT-only
+// datasource so the preview cannot mutate the mentor-provided database.
+const APPROVED_DATASOURCE_UIDS = {
+  default: ['timescaledb'],
+  'mentor-ldi': ['mentor-ldi-readonly'],
+};
 
 // Check 17 exceptions: panels intentionally kept at colorMode "background"
 // despite it failing WCAG AA white-text contrast for most §2.1 tokens (see
@@ -263,7 +271,10 @@ function lintDashboard(filePath) {
 
       // Check 12: time_bucket in timeseries queries
       for (const target of (panel.targets || [])) {
-        if (target.rawSql && !target.rawSql.includes('time_bucket') && !target.rawSql.includes('NO_TIMEFILTER_INTENTIONAL')) {
+        if (target.rawSql
+          && !target.rawSql.includes('time_bucket')
+          && !target.rawSql.includes('$__timeGroupAlias')
+          && !target.rawSql.includes('NO_TIMEFILTER_INTENTIONAL')) {
           error(file, pid, 'timeseries panel missing time_bucket downsampling (add NO_TIMEFILTER_INTENTIONAL if intentional)');
         }
       }
@@ -272,8 +283,10 @@ function lintDashboard(filePath) {
     // Check targets
     for (const target of (panel.targets || [])) {
       // Check 2: datasource uid
-      if (target.datasource?.uid && target.datasource.uid !== 'timescaledb') {
-        error(file, pid, `Target datasource uid is "${target.datasource.uid}" — expected "timescaledb"`);
+      const relativeDir = path.relative(DASHBOARD_DIR, filePath).split(path.sep)[0];
+      const approvedUids = APPROVED_DATASOURCE_UIDS[relativeDir] || APPROVED_DATASOURCE_UIDS.default;
+      if (target.datasource?.uid && !approvedUids.includes(target.datasource.uid)) {
+        error(file, pid, `Target datasource uid is "${target.datasource.uid}" — expected one of: ${approvedUids.join(', ')}`);
       }
 
       // Check 1: hardcoded IPs in rawSql

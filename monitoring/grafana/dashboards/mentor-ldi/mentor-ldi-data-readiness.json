@@ -581,7 +581,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\n  date_bin('5 minutes', \"time\", TIMESTAMPTZ '2000-01-01') AS \"time\",\n  eqp_id AS metric,\n  COUNT(*)::NUMERIC AS value\nFROM public.ldi_data\nWHERE $__timeFilter(\"time\")\n  AND factory IN (${factory:sqlstring})\n  AND eqp_id IN (${machine_id:sqlstring})\nGROUP BY 1, 2\nORDER BY 1, 2;",
+          "rawSql": "SELECT\n  time_bucket('5 minutes', \"time\") AS \"time\",\n  eqp_id AS metric,\n  COUNT(*)::NUMERIC AS value\nFROM public.ldi_data\nWHERE $__timeFilter(\"time\")\n  AND factory IN (${factory:sqlstring})\n  AND eqp_id IN (${machine_id:sqlstring})\nGROUP BY 1, 2\nORDER BY 1, 2;",
           "refId": "A",
           "sql": {
             "columns": [],

@@ -347,9 +347,9 @@
           "color": {
             "mode": "thresholds"
           },
-          "decimals": 2,
+          "decimals": 1,
           "max": 28,
-          "min": 16,
+          "min": 18,
           "noValue": "N/A",
           "thresholds": {
             "mode": "absolute",
@@ -435,7 +435,7 @@
           "color": {
             "mode": "thresholds"
           },
-          "decimals": 2,
+          "decimals": 1,
           "max": 70,
           "min": 40,
           "noValue": "N/A",
@@ -464,7 +464,7 @@
               }
             ]
           },
-          "unit": "suffix: %RH"
+          "unit": "humidity"
         }
       },
       "gridPos": {
