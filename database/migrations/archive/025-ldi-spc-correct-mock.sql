@@ -56,8 +56,8 @@ SELECT
   'LOG-' || LPAD(((m.idx * 10000 + x)::TEXT), 7, '0')
 FROM generate_series(1, 60) AS x,
 (VALUES
-  (1, 'LDI-A03'), (3, 'LDI-A02'), (4, 'LDI-A01'),
-  (5, 'LDI-B01'), (7, 'LDI-A05'), (9, 'LDI-B03')
+  (1, 'ldi-a03'), (3, 'LDI-A02'), (4, 'LDI-A01'),
+  (5, 'ldi-b01'), (7, 'ldi-a05'), (9, 'ldi-b03')
 ) AS m(idx, name);
 
 -- ══════════════════════════════════════════════════════════════
@@ -109,7 +109,7 @@ SELECT
   25.0, 25.0,
   'LOG-' || LPAD(((m.idx * 10000 + x)::TEXT), 7, '0')
 FROM generate_series(1, 60) AS x,
-(VALUES (2, 'LDI-A04'), (10, 'LDI-B04')) AS m(idx, name);
+(VALUES (2, 'ldi-a04'), (10, 'ldi-b04')) AS m(idx, name);
 
 -- Alarms when temp > 24.5 (x <= 17)
 INSERT INTO public.ldi_alarm_log (logid, logdate, errorcode, errortime, equipmentid, factory, process)
@@ -120,7 +120,7 @@ SELECT
   (NOW() - (x * INTERVAL '1 minute'))::TEXT,
   m.name, '3', 'SM'
 FROM generate_series(1, 17) AS x,
-(VALUES (2, 'LDI-A04'), (10, 'LDI-B04')) AS m(idx, name);
+(VALUES (2, 'ldi-a04'), (10, 'ldi-b04')) AS m(idx, name);
 
 -- ══════════════════════════════════════════════════════════════
 -- HUMIDITY SPIKE: Hum 55→66%, PE degrades due to moisture
@@ -169,7 +169,7 @@ SELECT
   25.0, 25.0,
   'LOG-' || LPAD(((m.idx * 10000 + x)::TEXT), 7, '0')
 FROM generate_series(1, 60) AS x,
-(VALUES (6, 'LDI-B02'), (8, 'LDI-A06')) AS m(idx, name);
+(VALUES (6, 'ldi-b02'), (8, 'ldi-a06')) AS m(idx, name);
 
 -- Alarms when hum > 62 (x <= 21)
 INSERT INTO public.ldi_alarm_log (logid, logdate, errorcode, errortime, equipmentid, factory, process)
@@ -180,7 +180,7 @@ SELECT
   (NOW() - (x * INTERVAL '1 minute'))::TEXT,
   m.name, '3', 'SM'
 FROM generate_series(1, 21) AS x,
-(VALUES (6, 'LDI-B02'), (8, 'LDI-A06')) AS m(idx, name);
+(VALUES (6, 'ldi-b02'), (8, 'ldi-a06')) AS m(idx, name);
 
 -- Verification
 SELECT eqp_id, COUNT(*) AS rows,

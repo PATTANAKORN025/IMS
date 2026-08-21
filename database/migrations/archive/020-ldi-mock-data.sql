@@ -20,12 +20,12 @@ INSERT INTO public.ldi_alarm_log (logdate, errorcode, equipmentid, factory, proc
 SELECT
   NOW() - (random() * INTERVAL '24 hours') AS logdate,
   (ARRAY[1010001, 1010002, 1010003, 1010004, 1010005])[floor(random() * 5 + 1)::int] AS errorcode,
-  (ARRAY['LDI-B04', 'LDI-B02'])[floor(random() * 2 + 1)::int] AS equipmentid,
+  (ARRAY['ldi-b04', 'ldi-b02'])[floor(random() * 2 + 1)::int] AS equipmentid,
   'FAB-3' AS factory,
   'PCB-Photoresist' AS process
 FROM generate_series(1, 30);
 
--- ── Task 3: Healthy Machine (LDI-B04) ───────────────────
+-- ── Task 3: Healthy Machine (ldi-b04) ───────────────────
 -- 60 rows: 1 per minute for the last hour, temp ~22C, hum ~55%
 INSERT INTO public.ldi_data (
   "time", eqp_id, factory, process, mo, fpn, layer_name,
@@ -37,7 +37,7 @@ INSERT INTO public.ldi_data (
 )
 SELECT
   NOW() - (s * INTERVAL '1 minute') AS "time",
-  'LDI-B04' AS eqp_id,
+  'ldi-b04' AS eqp_id,
   'FAB-3' AS factory,
   'PCB-Photoresist' AS process,
   'MO-2026-' || LPAD((2000 + (s % 50))::TEXT, 4, '0') AS mo,
@@ -74,7 +74,7 @@ SELECT
   100000 + s AS log_id
 FROM generate_series(0, 59) AS s;
 
--- ── Task 4: Anomalous Machine (LDI-B02) ────────────────────
+-- ── Task 4: Anomalous Machine (ldi-b02) ────────────────────
 -- 60 rows: temp drifts from 23.5 to 25.5C, humidity drifts to 62%
 INSERT INTO public.ldi_data (
   "time", eqp_id, factory, process, mo, fpn, layer_name,
@@ -86,7 +86,7 @@ INSERT INTO public.ldi_data (
 )
 SELECT
   NOW() - (s * INTERVAL '1 minute') AS "time",
-  'LDI-B02' AS eqp_id,
+  'ldi-b02' AS eqp_id,
   'FAB-3' AS factory,
   'PCB-Photoresist' AS process,
   'MO-2026-' || LPAD((3000 + (s % 30))::TEXT, 4, '0') AS mo,

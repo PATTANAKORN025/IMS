@@ -1,7 +1,7 @@
 -- ══════════════════════════════════════════════════════════════
 -- LDI High-Fidelity Mock Data — Real Machine Names
--- 10 machines: LDI-A03/02, LDI-A02/2, LDI-B01/LD2,
--- LDI-A05/02, LDI-B03/SM-LDI2
+-- 10 machines: ldi-a03/02, LDI-A02/2, ldi-b01/LD2,
+-- ldi-a05/02, ldi-b03/SM-LDI2
 -- ══════════════════════════════════════════════════════════════
 
 -- 1. PURGE
@@ -14,7 +14,7 @@ VALUES
   ('A002', 'Warning',  '0202', 'Temperature Drift Detected', 'Cleanroom temperature exceeding safe band'),
   ('A003', 'Warning',  '0303', 'Humidity Spike Detected', 'Cleanroom RH exceeding safe band');
 
--- 3. HEALTHY MACHINES (LDI-A03, LDI-A02, LDI-A01, LDI-B01, LDI-A05, LDI-B03)
+-- 3. HEALTHY MACHINES (ldi-a03, LDI-A02, LDI-A01, ldi-b01, ldi-a05, ldi-b03)
 INSERT INTO public.ldi_data (
   "time", factory, process, eqp_id, mo, fpn, layer_name,
   resist_dosage, scale_x, scale_y, temperature, humidity,
@@ -53,15 +53,15 @@ SELECT
   'LOG-' || LPAD(((m.idx * 10000 + x)::TEXT), 7, '0')
 FROM generate_series(1, 60) AS x,
 (VALUES
-  (1, 'LDI-A03'),
+  (1, 'ldi-a03'),
   (3, 'LDI-A02'),
   (4, 'LDI-A01'),
-  (5, 'LDI-B01'),
-  (7, 'LDI-A05'),
-  (9, 'LDI-B03')
+  (5, 'ldi-b01'),
+  (7, 'ldi-a05'),
+  (9, 'ldi-b03')
 ) AS m(idx, name);
 
--- 4. THERMAL DRIFT MACHINES (LDI-A04, LDI-B04)
+-- 4. THERMAL DRIFT MACHINES (ldi-a04, ldi-b04)
 -- Temp climbs 22→25.5 over 60 minutes. Alarms fire when temp > 24.5
 INSERT INTO public.ldi_data (
   "time", factory, process, eqp_id, mo, fpn, layer_name,
@@ -106,7 +106,7 @@ SELECT
   90.0, 85.0,
   'LOG-' || LPAD(((m.idx * 10000 + x)::TEXT), 7, '0')
 FROM generate_series(1, 60) AS x,
-(VALUES (2, 'LDI-A04'), (10, 'LDI-B04')) AS m(idx, name);
+(VALUES (2, 'ldi-a04'), (10, 'ldi-b04')) AS m(idx, name);
 
 -- Thermal drift alarms: fire when temp > 24.5 (approximately minutes 0-20 from breach)
 -- x=1 is oldest (60 min ago), x=60 is newest (now)
@@ -120,9 +120,9 @@ SELECT
   m.name,
   '3', 'SM'
 FROM generate_series(1, 17) AS x,
-(VALUES (2, 'LDI-A04'), (10, 'LDI-B04')) AS m(idx, name);
+(VALUES (2, 'ldi-a04'), (10, 'ldi-b04')) AS m(idx, name);
 
--- 5. HUMIDITY SPIKE MACHINES (LDI-B02, LDI-A06)
+-- 5. HUMIDITY SPIKE MACHINES (ldi-b02, ldi-a06)
 -- Hum climbs 55→66 over 60 minutes. Alarms fire when hum > 62%
 INSERT INTO public.ldi_data (
   "time", factory, process, eqp_id, mo, fpn, layer_name,
@@ -167,7 +167,7 @@ SELECT
   90.0, 85.0,
   'LOG-' || LPAD(((m.idx * 10000 + x)::TEXT), 7, '0')
 FROM generate_series(1, 60) AS x,
-(VALUES (6, 'LDI-B02'), (8, 'LDI-A06')) AS m(idx, name);
+(VALUES (6, 'ldi-b02'), (8, 'ldi-a06')) AS m(idx, name);
 
 -- Humidity spike alarms: fire when hum > 62 (approximately x <= 21)
 -- 55 + (60-x)/60*11 > 62 => (60-x)/60*11 > 7 => (60-x) > 38.2 => x < 21.8 => x <= 21
@@ -180,7 +180,7 @@ SELECT
   m.name,
   '3', 'SM'
 FROM generate_series(1, 21) AS x,
-(VALUES (6, 'LDI-B02'), (8, 'LDI-A06')) AS m(idx, name);
+(VALUES (6, 'ldi-b02'), (8, 'ldi-a06')) AS m(idx, name);
 
 -- 6. VERIFICATION
 SELECT '=== DATA SUMMARY ===' AS report;

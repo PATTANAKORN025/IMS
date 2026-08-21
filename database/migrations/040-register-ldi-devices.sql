@@ -11,10 +11,10 @@
 -- are loaded separately via scripts/import-real-data.sh.
 --
 -- Also adds 3 equipment IDs that appear only in the real alarm log, never
--- in the real telemetry export (LDI-B05, LDI-B06, LDI-B07) --
--- confirmed genuinely distinct from LDI-B01/LD2 by months of
+-- in the real telemetry export (ldi-b05, ldi-b06, LDI-B07) --
+-- confirmed genuinely distinct from ldi-b01/LD2 by months of
 -- concurrent, overlapping alarm activity (rules out "renamed over time").
--- All share factory='3'/process='DF' with LDI-B01/LD2. Registered here
+-- All share factory='3'/process='DF' with ldi-b01/LD2. Registered here
 -- (not only in the import script) so a fresh deploy that later loads real
 -- alarm data doesn't hit an FK violation.
 --
@@ -31,17 +31,17 @@
 INSERT INTO public.devices (device_id, hostname, device_type, enabled, location)
 VALUES
   ('LDI-A01',  'ldi-a01',  'ldi', true, 'Site A - Zone 1'),
-  ('LDI-A02', 'ldi-a02', 'ldi', true, 'Site A - Zone 1'),
-  ('LDI-B01',      'ldi-b01',      'ldi', true, 'Site B - Zone 1'),
-  ('LDI-B02',      'ldi-b02',      'ldi', true, 'Site B - Zone 1'),
-  ('LDI-A03',        'ldi-a03',        'ldi', true, 'Site A - Zone 2'),
-  ('LDI-A04',        'ldi-a04',        'ldi', true, 'Site A - Zone 2'),
-  ('LDI-A05',         'ldi-a05',         'ldi', true, 'Site A - Zone 3'),
-  ('LDI-A06',         'ldi-a06',         'ldi', true, 'Site A - Zone 3'),
-  ('LDI-B03',   'ldi-b03',   'ldi', true, 'Site B - Zone 2'),
-  ('LDI-B04',   'ldi-b04',   'ldi', true, 'Site B - Zone 2'),
-  ('LDI-B05',      'ldi-b05',      'ldi', true, 'Site B - Zone 1'),
-  ('LDI-B06',      'ldi-b06',      'ldi', true, 'Site B - Zone 1'),
+  ('LDI-A02', 'ldi-a01b', 'ldi', true, 'Site A - Zone 1'),
+  ('ldi-b01',      'ldi-b01',      'ldi', true, 'Site B - Zone 1'),
+  ('ldi-b02',      'ldi-b02',      'ldi', true, 'Site B - Zone 1'),
+  ('ldi-a03',        'ldi-a03',        'ldi', true, 'Site A - Zone 2'),
+  ('ldi-a04',        'ldi-a04',        'ldi', true, 'Site A - Zone 2'),
+  ('ldi-a05',         'ldi-a05',         'ldi', true, 'Site A - Zone 3'),
+  ('ldi-a06',         'ldi-a06',         'ldi', true, 'Site A - Zone 3'),
+  ('ldi-b03',   'ldi-b03',   'ldi', true, 'Site B - Zone 2'),
+  ('ldi-b04',   'ldi-b04',   'ldi', true, 'Site B - Zone 2'),
+  ('ldi-b05',      'ldi-b05',      'ldi', true, 'Site B - Zone 1'),
+  ('ldi-b06',      'ldi-b06',      'ldi', true, 'Site B - Zone 1'),
   ('LDI-B07',          'ldi-b07',   'ldi', true, 'Site B - Zone 1'),
   ('LDI-01',          'ldi-01',          'ldi', true, 'Site A - Zone 1'),
   ('LDI-02',          'ldi-02',          'ldi', true, 'Site A - Zone 1'),

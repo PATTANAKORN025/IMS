@@ -15,6 +15,23 @@
 
 ## 目的
 
+“查看工厂正在生产什么、每台机器在做什么、它位于何处、正在发生什么问题，以及这些问题如何影响生产/合规性�<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../../README.md"><img src="../../../../docs/assets/icons/home.svg" width="16" align="center" /> <b>首页</b></a> &nbsp;|&nbsp;
+  <a href="../../README.md"><img src="../../../../docs/assets/icons/book.svg" width="16" align="center" /> <b>文档索引</b></a>
+</div>
+<br/>
+
+# IMS LDI — 工厂数字孪生 (2D Canvas)：设计
+
+> 状态：用户于 2026-08-17 批准，尚未实施。
+> 路线图位置（用户指定的排名，不可重新排序）：
+> 真实数据库 (Real DB) → 机器状态模型 (Machine State Model) → 2D Canvas → 深入分析 (Drill-down) → 生产/合规性 (Production/Compliance) →
+> 性能验证 (Performance Validation) → 3D 数字孪生 (3D Digital Twin)。本规范涵盖直至
+> 性能验证的所有内容。3D 明确不属于此范围。
+
+## 目的
+
 “查看工厂正在生产什么、每台机器在做什么、它位于何处、正在发生什么问题，以及这些问题如何影响生产/合规性。” 这不是一个图表繁多的仪表板，而是一个能够一目了然地呈现工厂运行状态的可视化界面，并提供向下钻取 (drill-down) 至现有详细仪表板的功能。
 
 ## 硬性要求（用户指定，完全保留意图）
@@ -38,7 +55,7 @@
 1. **Canvas 面板是 Grafana 13.1.1 的核心/内置组件** —— 已通过 `GET /api/plugins`，`signature: internal` 确认。无需安装新插件；在架构上满足了“无外部插件”的约束。
 2. **不存在真实的平面图坐标。** `public.devices.location` 仅包含 5 个粗略的区域标签：`Site A - Zone 1`、`Site A - Zone 2`、`Site A - Zone 3`、`Site B - Zone 1`、`Site B - Zone 2`。架构中没有任何 x/y 或经纬度列。选择的布局：画布上有 5 个带标签的区域块，机器以网格形式放置在其真实区域内（用户批准的选项）。节点**位置**是手动配置的画布设置（类似于 Andon 的重复面板块顺序）；节点**状态**是一个实时查询。这两者是不同的事物，绝不能在面板 JSON 及其描述中混为一谈。
 3. **有 23 个注册的 `device_type='ldi'` 数据行，但只有 10 个实际报告数据。**
-   `SELECT eqp_id, COUNT(*) FROM ldi_data WHERE time > NOW() - INTERVAL '24 hours' GROUP BY eqp_id` 恰好返回 `LDI-01`..`LDI-10`。另外 13 个 (`LDI-B07` 遗留, `LDI-B05/LD2`, `LDI-B01/LD2`, `LDI-A01`, `LDI-A02`, `LDI-A03/02`, `LDI-A05/02`, `LDI-B03/2`) 在注册表中是 `enabled=true`，但从未写入 `ldi_data` —— 它们是死条目/别名。画布仅显示 10 台实际报告的机器。这 13 个幽灵注册行是一个预先存在的数据质量问题，不在此仪表板的范围内，在此记录以避免日后被默默“重新发现”。
+   `SELECT eqp_id, COUNT(*) FROM ldi_data WHERE time > NOW() - INTERVAL '24 hours' GROUP BY eqp_id` 恰好返回 `LDI-01`..`LDI-10`。另外 13 个 (`LDI-B07` 遗留, `ldi-b05/LD2`, `ldi-b01/LD2`, `LDI-A01`, `LDI-A02`, `ldi-a03/02`, `ldi-a05/02`, `ldi-b03/2`) 在注册表中是 `enabled=true`，但从未写入 `ldi_data` —— 它们是死条目/别名。画布仅显示 10 台实际报告的机器。这 13 个幽灵注册行是一个预先存在的数据质量问题，不在此仪表板的范围内，在此记录以避免日后被默默“重新发现”。
 4. **100% 的真实数据行中 `board_id` 为空。**
    `SELECT COUNT(DISTINCT board_id) FROM ldi_data WHERE time > NOW() - INTERVAL '24 hours'` → 在 19,043 行中只有 1 个唯一值（空字符串）。字面上的“board_id 必须唯一”要求无法真正满足 —— 真实的摄取管道并未填充此列。
    **决定（用户批准）：使用 `log_id` 代替** —— 已验证在同一窗口期内它是 100% 非空且 100% 唯一的（19,119/19,119）。仪表板在 UI 中将此字段标记为“事件 ID (log_id)”(Event ID)，而不是“电路板 ID”(Board ID)，以避免暗示一种不存在的电路板跟踪能力。

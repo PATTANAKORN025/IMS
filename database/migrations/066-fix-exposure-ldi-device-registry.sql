@@ -9,6 +9,17 @@
 --   hostname       'ldi-a01' / 'ldi-a02' (does not resolve
 --                  on the Docker network -- every simulated device must
 --                  point at the ims-snmpsim container itself; snmpsim
+--                  differentiates -- ══════════════════════════════════════════════════════════════
+-- Migration 066: fix LDI-A01 / LDI-2B device registry entries
+-- ══════════════════════════════════════════════════════════════
+-- These two devices (real machine names containing a space -- see the
+-- migration 065-adjacent parser fix in nodered_data/flows/ingestion.json
+-- and nodered_data/lib/circuit-breaker.js for the crash that was also
+-- blocking them) had registry rows left at schema defaults instead of
+-- pointing at the mock SNMP simulator:
+--   hostname       'ldi-a01' / 'ldi-a01b' (does not resolve
+--                  on the Docker network -- every simulated device must
+--                  point at the ims-snmpsim container itself; snmpsim
 --                  differentiates simulated devices by community string,
 --                  not by hostname/IP, same pattern as the working
 --                  E2E-SERVER-* rows: hostname='ims-snmpsim')

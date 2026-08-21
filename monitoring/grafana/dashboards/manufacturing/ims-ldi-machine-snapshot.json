@@ -111,8 +111,8 @@
         "definition": "SELECT DISTINCT eqp_id AS __text, eqp_id AS __value FROM public.ldi_data WHERE ((${clicked_series:sqlstring} <> '__none__' AND eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)) OR (${clicked_series:sqlstring} = '__none__' AND factory IN (${factory:sqlstring}))) ORDER BY eqp_id",
         "current": {
           "selected": true,
-          "text": "LDI-A03",
-          "value": "LDI-A03"
+          "text": "ldi-a03",
+          "value": "ldi-a03"
         },
         "multi": false,
         "includeAll": false,

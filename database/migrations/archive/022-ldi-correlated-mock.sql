@@ -1,8 +1,8 @@
 -- ══════════════════════════════════════════════════════════════
 -- LDI Correlated Mock Data — The "Masterpiece" Narrative
 -- TRUNCATEs old data. Creates a story:
---   LDI-B04: Perfectly healthy (22.3C, 55%, PE 92%)
---   LDI-B02: Catastrophic breakdown (25.8C, 66%, PE 40%)
+--   ldi-b04: Perfectly healthy (22.3C, 55%, PE 92%)
+--   ldi-b02: Catastrophic breakdown (25.8C, 66%, PE 40%)
 --   with CORRELATED alarms at exact same timestamps.
 -- ══════════════════════════════════════════════════════════════
 
@@ -23,7 +23,7 @@ VALUES
   (1010008, 'Error',    'Film break detected',            'Photoresist film break')
 ON CONFLICT (alarm_code) DO NOTHING;
 
--- ── 2. LDI-B04: PERFECTLY HEALTHY (60 rows) ───────────
+-- ── 2. ldi-b04: PERFECTLY HEALTHY (60 rows) ───────────
 INSERT INTO public.ldi_data (
   "time", eqp_id, factory, process, mo, fpn, layer_name,
   resist_dosage, scale_x, scale_y, temperature, humidity,
@@ -34,7 +34,7 @@ INSERT INTO public.ldi_data (
 )
 SELECT
   NOW() - (s * INTERVAL '1 minute') AS "time",
-  'LDI-B04' AS eqp_id,
+  'ldi-b04' AS eqp_id,
   '3' AS factory, 'SM' AS process,
   'MO-2026-1001' AS mo,
   'FPN-A3-001' AS fpn,
@@ -64,7 +64,7 @@ SELECT
   100000 + s AS log_id
 FROM generate_series(0, 59) AS s;
 
--- ── 3. LDI-B02: CATASTROPHIC BREAKDOWN (60 rows) ──────────
+-- ── 3. ldi-b02: CATASTROPHIC BREAKDOWN (60 rows) ──────────
 -- Temperature ramps from 23.5 to 25.8, Humidity ramps to 66%
 -- PE degrades from 85% to 40%, multiple correlated alarms
 INSERT INTO public.ldi_data (
@@ -77,7 +77,7 @@ INSERT INTO public.ldi_data (
 )
 SELECT
   NOW() - (s * INTERVAL '1 minute') AS "time",
-  'LDI-B02' AS eqp_id,
+  'ldi-b02' AS eqp_id,
   '3' AS factory, 'SM' AS process,
   'MO-2026-2001' AS mo,
   'FPN-B2-001' AS fpn,
@@ -114,7 +114,7 @@ SELECT
   200000 + s AS log_id
 FROM generate_series(0, 59) AS s;
 
--- ── 4. CORRELATED ALARMS for LDI-B02 ──────────────────────
+-- ── 4. CORRELATED ALARMS for ldi-b02 ──────────────────────
 -- Alarms fire at the EXACT SAME timestamps as the telemetry
 -- anomalies. This is the "story" — temp spikes AND alarms together.
 INSERT INTO public.ldi_alarm_log (logdate, errorcode, equipmentid, factory, process)
@@ -131,7 +131,7 @@ SELECT
     WHEN s BETWEEN 55 AND 59 THEN 1010008   -- Film break
     ELSE 1010001
   END AS errorcode,
-  'LDI-B02' AS equipmentid,
+  'ldi-b02' AS equipmentid,
   '3' AS factory,
   'SM' AS process
 FROM generate_series(0, 59) AS s

@@ -9,7 +9,18 @@
 
 本仓库仅跟踪模式 (Schema)、视图 (Views)、函数 (Functions) 和仪表板。真正的 LDI 生产数据（遥测、告警历史以及补充的告警代码导出数据）永远不会被提交——它们只存在于本地的 `data/real/` 目录中（已被 git 忽略），并由 `scripts/import-real-data.sh` 脚本加载到实时数据库中。
 
-CI 和全新的本地开发环境永远不会看到真实数据：默认情况下，Node-RED 模拟器会生成合成的 `ldi_data`/`ldi_alarm_log` 行（除非被覆盖，否则 `LDI_SIMULATOR_ENABLED=true`），并且 `docker-compose.yaml` 会通过已跟踪的迁移脚本播种一组小型的模拟告警代码。真实的设备标识符（例如 `LDI-B01` 这样的机器名称）确实被记录在迁移 040 中——这些是设备参考元数据，而非业务数据。迁移 040 还注册了模拟器写入的 10 个合成的 `LDI-01`..`LDI-10` 设备，因此，无论激活哪种数据模式，这两套设备集都存在于每次部署中（这是迁移 055 的外键约束所要求的）。
+CI 和全新的本地开发环境永远不会看到真实数据：默认情况下，Node-RED 模拟器会生成合成的 `ldi_data`/`ldi_alarm_log` 行（除非被覆盖，否则 `LDI_SIMULATOR_ENABLED=true`），并且 `docker-compose.yaml` 会通过已跟踪的迁移脚本播种一组小型的模拟告警代码�<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
+# 真实数据导入 (Real-data import)
+
+本仓库仅跟踪模式 (Schema)、视图 (Views)、函数 (Functions) 和仪表板。真正的 LDI 生产数据（遥测、告警历史以及补充的告警代码导出数据）永远不会被提交——它们只存在于本地的 `data/real/` 目录中（已被 git 忽略），并由 `scripts/import-real-data.sh` 脚本加载到实时数据库中。
+
+CI 和全新的本地开发环境永远不会看到真实数据：默认情况下，Node-RED 模拟器会生成合成的 `ldi_data`/`ldi_alarm_log` 行（除非被覆盖，否则 `LDI_SIMULATOR_ENABLED=true`），并且 `docker-compose.yaml` 会通过已跟踪的迁移脚本播种一组小型的模拟告警代码。真实的设备标识符（例如 `ldi-b01` 这样的机器名称）确实被记录在迁移 040 中——这些是设备参考元数据，而非业务数据。迁移 040 还注册了模拟器写入的 10 个合成的 `LDI-01`..`LDI-10` 设备，因此，无论激活哪种数据模式，这两套设备集都存在于每次部署中（这是迁移 055 的外键约束所要求的）。
 
 ## 在模拟数据和真实数据之间切换
 
@@ -49,7 +60,7 @@ bash scripts/import-real-data.sh
 
 此操作是幂等的 (idempotent)，可安全地重复运行。它依次执行以下步骤：
 
-1. 注册仅在真实告警日志中出现，而从未在遥测导出中出现的 3 个设备 ID（`LDI-B05`、`LDI-B06`、`LDI-B07`）——对于全新部署，迁移 040 已经涵盖了这些，但在这里再次确认，以防导入操作针对的是早于该迁移的数据库。
+1. 注册仅在真实告警日志中出现，而从未在遥测导出中出现的 3 个设备 ID（`ldi-b05`、`ldi-b06`、`LDI-B07`）——对于全新部署，迁移 040 已经涵盖了这些，但在这里再次确认，以防导入操作针对的是早于该迁移的数据库。
 2. 解压缩 `ldi_data` 的数据块（压缩的数据块会拒绝插入操作），如果 `ldi_data`/`ldi_alarm_log` 非空则将其清空 (`truncate`)，随后加载真实数据行。
 3. 通过 `UPSERT` 将 892 行的告警代码导出合并到 `ldi_alarm_ms_code` 中，使用与迁移 061 中记录的完全相同的规则计算严重性 (`severity`)（基于关键字/AlarmType 进行 Critical/Major/Minor/Warning 分类），从而保证两处来源得到一致处理。
 4. 刷新所有 4 个连续聚合 (continuous aggregates)，重新压缩超过 7 天的数据块，并运行 `ANALYZE`。
