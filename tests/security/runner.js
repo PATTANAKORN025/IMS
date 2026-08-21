@@ -17,13 +17,12 @@ const EVIDENCE_DIR = path.join(REPO_ROOT, 'docs', 'evidence', 'runtime');
 
 const LOCKFILE_DIRS = ['.', 'services/alarm-api', 'services/factory-twin-3d', 'nodered_data'];
 
-const BUILT_IMAGES = ['ims-alarm-api', 'ims-factory-twin-3d', 'ims-node-red'];
+const BUILT_IMAGES = ['ims-alarm-api', 'ims-factory-twin-3d', 'ims-node-red', 'ims-pgbouncer'];
 const PULLED_IMAGES = [
   'timescale/timescaledb:2.29.0-pg16',
-  'grafana/grafana:13.1.1',
-  'prom/prometheus:v3.13.1',
+  'grafana/grafana:13.1.2',
+  'prom/prometheus:v3.13.2',
   'prom/alertmanager:v0.33.1',
-  'edoburu/pgbouncer:v1.25.2-p0',
 ];
 
 function timestamp() {

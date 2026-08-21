@@ -95,7 +95,8 @@ services:
 
   # ── PgBouncer (Connection Pooler) ─────────────────────────
   pgbouncer:
-    image: edoburu/pgbouncer:v1.25.2-p0
+    build:
+      context: ./pgbouncer
     container_name: ims-pgbouncer
     <<: *default-restart
     init: true
@@ -137,7 +138,7 @@ services:
 
   # ── Prometheus ────────────────────────────────────────────
   prometheus:
-    image: prom/prometheus:v3.13.1
+    image: prom/prometheus:v3.13.2
     container_name: ims-prometheus
     <<: *default-restart
     init: true
@@ -197,7 +198,7 @@ services:
 
   # ── Grafana ───────────────────────────────────────────────
   grafana:
-    image: grafana/grafana:13.1.1
+    image: grafana/grafana:13.1.2
     container_name: ims-grafana
     <<: *default-restart
     init: true

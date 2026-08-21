@@ -26,5 +26,7 @@
   },
   "scripts": {
     "prepare": "husky"
-  }
+  },
+  "author": "MIS-G, Apex Circuit (Thailand) Co., Ltd.",
+  "license": "UNLICENSED"
 }
