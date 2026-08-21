@@ -8,108 +8,119 @@ out_path = "assets/apex-ldi-noc-banner.gif"
 
 print("Loading base image...")
 base_img = Image.open(img_path).convert("RGBA")
-orig_width, orig_height = base_img.size
+width, height = base_img.size
 
-# Enhance contrast and saturation for a punchy look
+# Enhance base image for a dark cinematic look
 base_img = ImageEnhance.Color(base_img).enhance(1.3)
 base_img = ImageEnhance.Contrast(base_img).enhance(1.2)
+base_img = ImageEnhance.Brightness(base_img).enhance(0.85)
 
-num_frames = 90 # Extended to 90 frames for a longer, cinematic loop
+# Pre-generate CRT overlay
+crt_overlay = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+crt_draw = ImageDraw.Draw(crt_overlay)
+for y in range(0, height, 3):
+    crt_draw.line([(0, y), (width, y)], fill=(0, 0, 0, 40), width=1)
+
+base_with_crt = Image.alpha_composite(base_img, crt_overlay)
+
+num_frames = 60 # 60 frames for a smooth 2.4 second loop at 25fps
 frames = []
-scanline_height = int(orig_height * 0.15)
 
-print("Rendering cinematic frames with Ken Burns Zoom & Animation...")
+def draw_hud_arc(draw, center, radius, start, end, color, width):
+    draw.arc([center[0]-radius, center[1]-radius, center[0]+radius, center[1]+radius], start, end, fill=color, width=width)
+
+print("Rendering 2.5D Cinematic frames with Data Flow & HUD...")
 for i in range(num_frames):
-    progress = i / float(num_frames)
+    progress = i / num_frames
     
-    # --- 1. Cinematic Zoom (Ken Burns Effect) ---
-    # Zoom from 1.0x to 1.1x smoothly using sine wave for looping
-    zoom_factor = 1.0 + (math.sin(progress * math.pi * 2 - math.pi/2) + 1) / 2 * 0.08
+    # 1. 2.5D Camera Breathing (Zoom and Pan for simulated 3D depth)
+    # Scale fluctuates smoothly between 1.0 and 1.04
+    scale = 1.0 + (math.sin(progress * math.pi * 2) + 1) * 0.02
+    new_w = int(width * scale)
+    new_h = int(height * scale)
     
-    # Calculate crop box for zoom
-    new_w = orig_width / zoom_factor
-    new_h = orig_height / zoom_factor
-    left = (orig_width - new_w) / 2
-    top = (orig_height - new_h) / 2
-    right = left + new_w
-    bottom = top + new_h
+    scaled_img = base_with_crt.resize((new_w, new_h), Image.Resampling.LANCZOS)
     
-    # Crop and resize back to original (Creates Zoom)
-    frame = base_img.crop((left, top, right, bottom)).resize((orig_width, orig_height), Image.Resampling.LANCZOS)
+    # Center crop to simulate camera movement
+    left = (new_w - width) // 2
+    top = (new_h - height) // 2
+    frame = scaled_img.crop((left, top, left + width, top + height))
     
-    # Add subtle CRT scanlines on top of the zoomed image so they stay static
-    crt_overlay = Image.new("RGBA", (orig_width, orig_height), (0, 0, 0, 0))
-    crt_draw = ImageDraw.Draw(crt_overlay)
-    for y in range(0, orig_height, 4):
-        crt_draw.line([(0, y), (orig_width, y)], fill=(0, 0, 0, 45), width=1)
-    frame = Image.alpha_composite(frame, crt_overlay)
-
     draw = ImageDraw.Draw(frame, "RGBA")
     
-    # --- 2. Advanced Cyberpunk Scanner ---
-    # Move scanner down smoothly, repeating twice per loop
-    scanner_prog = (progress * 2) % 1.0
-    y_pos = int(scanner_prog * (orig_height + scanline_height)) - scanline_height
+    # 2. 3D Perspective Data Grid (Floor)
+    grid_y_start = int(height * 0.65)
+    vanishing_x = width // 2
     
-    # Scanner gradient tail
-    for offset in range(scanline_height):
-        current_y = y_pos + offset
-        if 0 <= current_y < orig_height:
-            alpha_ratio = (offset / scanline_height) ** 3 # Steeper curve
-            alpha = int(140 * alpha_ratio)
-            draw.line([(0, current_y), (orig_width, current_y)], fill=(0, 242, 254, alpha), width=1)
+    # Vertical perspective lines
+    for j in range(-12, 13):
+        x_bottom = vanishing_x + j * 150
+        x_top = vanishing_x + j * 20
+        draw.line([(x_top, grid_y_start), (x_bottom, height)], fill=(0, 242, 254, 15), width=1)
+        
+    # Moving horizontal grid lines (flowing towards the viewer)
+    grid_prog = (progress * 4) % 1.0
+    for j in range(1, 8):
+        y_offset = (j + grid_prog) / 8.0
+        # Exponential curve creates the illusion of 3D depth
+        y = grid_y_start + int((y_offset ** 2.5) * (height - grid_y_start))
+        if y < height:
+            alpha = int(80 * y_offset)
+            draw.line([(0, y), (width, y)], fill=(0, 242, 254, alpha), width=1)
             
-    # Scanner leading laser edge
-    edge_y = y_pos + scanline_height
-    if 0 <= edge_y < orig_height:
-        draw.line([(0, edge_y), (orig_width, edge_y)], fill=(0, 242, 254, 255), width=3)
-        draw.line([(0, edge_y-1), (orig_width, edge_y-1)], fill=(255, 255, 255, 255), width=1)
+    # 3. Flowing Data Streams (Particles moving along curves)
+    for j in range(8):
+        stream_prog = (progress + j/8.0) % 1.0
+        x = int(width * 0.1 + stream_prog * width * 0.8)
+        y = int(height * 0.4 + math.sin(stream_prog * math.pi * 4) * 50)
         
-    # --- 3. Digital Glitch FX ---
-    # Glitch intensely on specific beats
-    if i in [15, 16, 60, 61, 85]:
-        slice_height = random.randint(20, 80)
-        slice_y = random.randint(0, orig_height - slice_height)
-        shift_x = random.randint(15, 60) * random.choice([-1, 1])
+        # Glowing particle
+        draw.ellipse([x-3, y-3, x+3, y+3], fill=(255, 255, 255, 255))
+        draw.ellipse([x-6, y-6, x+6, y+6], fill=(0, 242, 254, 150))
+        # Data Trail
+        draw.line([(x-40, y), (x, y)], fill=(0, 242, 254, 80), width=2)
         
-        box = (0, slice_y, orig_width, slice_y + slice_height)
-        region = frame.crop(box)
-        frame.paste(region, (shift_x, slice_y))
+    # 4. Rotating Cyberpunk HUD Elements
+    cx, cy = int(width * 0.85), int(height * 0.25)
+    rot = progress * 360
+    # Outer Ring
+    draw_hud_arc(draw, (cx, cy), 60, rot, rot + 270, (0, 255, 128, 150), 2)
+    # Inner Ring (Counter-rotating)
+    draw_hud_arc(draw, (cx, cy), 45, -rot*1.5, -rot*1.5 + 180, (0, 242, 254, 200), 3)
+    # Crosshair
+    draw.line([(cx-70, cy), (cx-20, cy)], fill=(0, 242, 254, 100), width=1)
+    draw.line([(cx+20, cy), (cx+70, cy)], fill=(0, 242, 254, 100), width=1)
+    draw.line([(cx, cy-70), (cx, cy-20)], fill=(0, 242, 254, 100), width=1)
+    draw.line([(cx, cy+20), (cx, cy+70)], fill=(0, 242, 254, 100), width=1)
+    
+    # 5. Simulated Machine Operation (Blinking Server LEDs)
+    # A realistic command center has lots of tiny blinking lights
+    for m in range(15):
+        # Deterministic random positions based on index
+        random.seed(m)
+        lx = random.randint(int(width*0.1), int(width*0.9))
+        ly = random.randint(int(height*0.3), int(height*0.8))
+        blink_rate = random.randint(2, 6)
         
-        # Intense Chromatic aberration
-        r, g, b, a = frame.split()
-        r = ImageChops.offset(r, random.randint(-10, 10), 0)
-        b = ImageChops.offset(b, random.randint(-10, 10), 0)
-        frame = Image.merge("RGBA", (r, g, b, a))
+        # Restore random state so subsequent calls are truly random
+        random.seed()
         
-        # Brightness strobe
-        frame = ImageEnhance.Brightness(frame).enhance(1.6)
-        
-    # --- 4. Global Data Grid Pulsing ---
-    pulse = int(math.sin(progress * math.pi * 8) * 15)
-    if pulse > 0:
-        pulse_overlay = Image.new("RGBA", (orig_width, orig_height), (0, 242, 254, pulse))
-        frame = Image.alpha_composite(frame, pulse_overlay)
+        # Blink logic
+        if int(progress * 60) % blink_rate == 0:
+            color = (255, 50, 50, 200) if m % 3 == 0 else (50, 255, 50, 200)
+            draw.ellipse([lx, ly, lx+3, ly+3], fill=color)
 
-    # --- 5. UI Element Overlay Simulation ---
-    # Simulate a "LIVE" blinking text in the top right
-    if (i // 10) % 2 == 0:
-        draw.rectangle([orig_width - 90, 20, orig_width - 20, 50], fill=(255, 0, 60, 200))
-        draw.text((orig_width - 70, 27), "LIVE", fill=(255, 255, 255, 255))
-    else:
-        draw.rectangle([orig_width - 90, 20, orig_width - 20, 50], fill=(255, 0, 60, 50))
-        draw.text((orig_width - 70, 27), "LIVE", fill=(255, 255, 255, 100))
-
+    # Convert to standard RGB and append
     frames.append(frame.convert("RGB"))
 
-print("Encoding cinematic GIF (30 FPS, ultra smooth)...")
+print("Encoding world-class 2.5D Cinematic GIF (25 FPS)...")
 frames[0].save(
     out_path, 
     save_all=True, 
     append_images=frames[1:], 
-    duration=33, # ~30 FPS
+    duration=40,
     loop=0,
     optimize=False
 )
-print("SUCCESS: Masterpiece Animated NOC Banner saved to " + out_path)
+print("SUCCESS: 2.5D Cyberpunk NOC Banner saved to " + out_path)
 
