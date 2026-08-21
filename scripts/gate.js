@@ -12,6 +12,17 @@ const { BLOCKED_STATUSES } = require('./assurance-schema');
 function computeVerdict(results) {
   const reasons = [];
 
+  const withEvidence = results.filter((r) => r.status === 'PASS' || r.status === 'WARN' || r.status === 'FAIL');
+  if (withEvidence.length === 0) {
+    return {
+      verdict: 'NO-GO',
+      reasons: [
+        'NO-GO: no requirement in this run produced actual evidence (PASS/WARN/FAIL) -- ' +
+          `everything reported NOT_TESTED or BLOCKED_*; a system cannot be called ready with zero evidence`,
+      ],
+    };
+  }
+
   const blockingCritical = results.filter(
     (r) => r.status === 'FAIL' && r.blocking && /critical/i.test(r.threshold + ' ' + r.actual)
   );

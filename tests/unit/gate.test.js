@@ -66,13 +66,13 @@ test('WARN alone -> CONDITIONAL GO', () => {
   assert.strictEqual(verdict, 'CONDITIONAL GO');
 });
 
-test('blocking BLOCKED_EXTERNAL -> CONDITIONAL GO, never auto-PASS', () => {
-  const { verdict } = computeVerdict([result({ status: 'BLOCKED_EXTERNAL' })]);
+test('blocking BLOCKED_EXTERNAL alongside real evidence -> CONDITIONAL GO, never auto-PASS', () => {
+  const { verdict } = computeVerdict([result({ status: 'BLOCKED_EXTERNAL' }), result({ name: 'has-evidence' })]);
   assert.strictEqual(verdict, 'CONDITIONAL GO');
 });
 
-test('blocking BLOCKED_SCOPE -> CONDITIONAL GO, never auto-PASS', () => {
-  const { verdict } = computeVerdict([result({ status: 'BLOCKED_SCOPE' })]);
+test('blocking BLOCKED_SCOPE alongside real evidence -> CONDITIONAL GO, never auto-PASS', () => {
+  const { verdict } = computeVerdict([result({ status: 'BLOCKED_SCOPE' }), result({ name: 'has-evidence' })]);
   assert.strictEqual(verdict, 'CONDITIONAL GO');
 });
 
@@ -95,6 +95,15 @@ test('one blocking FAIL outweighs many PASS', () => {
 test('reasons array cites the failing result name', () => {
   const { reasons } = computeVerdict([result({ name: 'security.trivy.alarm-api', status: 'FAIL' })]);
   assert.ok(reasons.some((r) => r.includes('security.trivy.alarm-api')), 'reasons should name the failing test');
+});
+
+test('all NOT_TESTED / BLOCKED_* (zero evidence) -> NO-GO, never a bare GO', () => {
+  const { verdict, reasons } = computeVerdict([
+    result({ status: 'NOT_TESTED' }),
+    result({ status: 'BLOCKED_SCOPE', name: 'b' }),
+  ]);
+  assert.strictEqual(verdict, 'NO-GO');
+  assert.ok(reasons.some((r) => /no requirement.*evidence/.test(r)));
 });
 
 test('invalid status throws at construction time (via makeResult), not silently swallowed', () => {

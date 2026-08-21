@@ -1,0 +1,28 @@
+<!-- GLOBAL_NAV -->
+<div align="right">
+  <a href="../../README.md"><img src="../assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../README.md"><img src="../assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+</div>
+<br/>
+
+# Failure Detection Matrix
+
+The real question production-readiness needs to answer isn't "how many tests exist" -- it's: for
+every failure that could actually impact production, do we detect it, alert on it, measure its
+impact, and recover from it, with evidence for each stage? Generated from the same
+`docs/evidence/runtime/production-assurance-*.json` report as PRODUCTION-READINESS.md (profile: `dr`, 2026-08-21T05:53:19.903Z) -- no new tests here, this is a cross-cutting view over the same results.
+
+| Failure Mode | Detected? | Alerted? | Impact Measured? | Recovered? |
+|---|---|---|---|---|
+| Container crash (DB/service) | BLOCKED_SCOPE (resilience.container-loss.detected) | BLOCKED_SCOPE (resilience.container-loss.detected) | BLOCKED_SCOPE (resilience.container-loss.recovery-time) | BLOCKED_SCOPE (resilience.container-loss.recovery-time) |
+| Backup corruption / restore failure | YES (disaster-recovery.backup-restore) | n/a | YES (disaster-recovery.backup-restore) | YES (disaster-recovery.backup-restore) |
+| Dependency CVE (npm) | not run this profile | n/a | not run this profile | n/a |
+| Container image CVE | not run this profile | n/a | not run this profile | n/a |
+| Secret committed to source | not run this profile | n/a | not run this profile | n/a |
+| Ingestion overload (load spike) | not run this profile | n/a | not run this profile | n/a |
+| 23-device fleet: device(s) go silent | not run this profile | n/a | not run this profile | n/a |
+| Ingestion data loss/duplication/reorder | not run this profile | n/a | not run this profile | n/a |
+
+`n/a` = no test in this framework currently answers that stage for that failure mode (a real gap,
+not a pass). `not run this profile` = the profile used for this run didn't include that category --
+re-run with `full` for whole-system coverage.
