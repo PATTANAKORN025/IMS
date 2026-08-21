@@ -33,12 +33,12 @@ x-resource-large: &resource-large
 services:
   # ── TimescaleDB ───────────────────────────────────────────
   timescaledb:
-    image: timescale/timescaledb:2.17.2-pg16
+    image: timescale/timescaledb:2.29.0-pg16
     container_name: ims-timescaledb
     <<: *default-restart
     init: true
     environment:
-      TZ: ${TZ:-Asia/Bangkok}
+      TZ: ${TZ:-UTC}
       POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
       POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
@@ -69,12 +69,14 @@ services:
       - -c
       - effective_io_concurrency=200
       - -c
-      - timezone=${TZ:-Asia/Bangkok}
+      - timezone=${TZ:-UTC}
       - -c
-      - timescaledb.max_background_workers=16
+      - timescaledb.max_background_workers=32
     volumes:
       - timescaledb_data:/var/lib/postgresql/data
       - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "127.0.0.1:${PGPORT:-5432}:5432"
     deploy:
       resources:
         limits: *resource-large
@@ -93,7 +95,7 @@ services:
 
   # ── PgBouncer (Connection Pooler) ─────────────────────────
   pgbouncer:
-    image: edoburu/pgbouncer:latest
+    image: edoburu/pgbouncer:v1.25.2-p0
     container_name: ims-pgbouncer
     <<: *default-restart
     init: true
@@ -107,6 +109,7 @@ services:
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@timescaledb:5432/${POSTGRES_DB}
       GRAFANA_DB_PASSWORD: ${GRAFANA_DB_PASSWORD:?GRAFANA_DB_PASSWORD required in .env}
+      ALARM_API_DB_PASSWORD: ${ALARM_API_DB_PASSWORD:?ALARM_API_DB_PASSWORD required in .env}
       POOL_MODE: transaction
       MAX_CLIENT_CONN: 200
       DEFAULT_POOL_SIZE: 20
@@ -134,7 +137,7 @@ services:
 
   # ── Prometheus ────────────────────────────────────────────
   prometheus:
-    image: prom/prometheus:v2.55.1
+    image: prom/prometheus:v3.13.1
     container_name: ims-prometheus
     <<: *default-restart
     init: true
@@ -167,7 +170,7 @@ services:
 
   # ── Alertmanager ──────────────────────────────────────────
   alertmanager:
-    image: prom/alertmanager:v0.27.0
+    image: prom/alertmanager:v0.33.1
     container_name: ims-alertmanager
     <<: *default-restart
     init: true
@@ -194,13 +197,13 @@ services:
 
   # ── Grafana ───────────────────────────────────────────────
   grafana:
-    image: grafana/grafana-oss:11.1.0
+    image: grafana/grafana:13.1.1
     container_name: ims-grafana
     <<: *default-restart
     init: true
     user: "472:472"
     environment:
-      TZ: ${TZ:-Asia/Bangkok}
+      TZ: ${TZ:-UTC}
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:?set GRAFANA_ADMIN_USER in .env}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD in .env}
       GRAFANA_DB_USER: ${GRAFANA_DB_USER:?GRAFANA_DB_USER required in .env}
@@ -208,19 +211,26 @@ services:
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_AUTH_ANONYMOUS_ENABLED: "false"
       GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:-http://localhost:3000}
-      GF_INSTALL_PLUGINS: "grafana-clock-panel,grafana-piechart-panel"
+      GF_SERVER_ENABLE_GZIP: "true"
+      GF_INSTALL_PLUGINS: "grafana-clock-panel,grafana-piechart-panel,volkovlabs-echarts-panel,marcusolsson-dynamictext-panel,benjaminfourmaux-status-panel"
+      GF_RENDERING_SERVER_URL: http://renderer:8081/render
+      GF_RENDERING_CALLBACK_URL: http://grafana:${GRAFANA_PORT:-3000}/
+      GF_RENDERING_RENDERER_TOKEN: ${GRAFANA_RENDERER_TOKEN:?set GRAFANA_RENDERER_TOKEN in .env}
       GF_PANELS_DISABLE_SANITIZE_HTML: "true"
-      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/ims-noc-overview.json
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/infrastructure/ims-noc-overview.json
       GF_SECURITY_COOKIE_SECURE: "false"
       GF_SECURITY_STRICT_TRANSPORT_SECURITY: "false"
       GF_LOG_LEVEL: "info"
+      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: "ims-3d-panel"
     volumes:
       - grafana_data:/var/lib/grafana
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./monitoring/grafana/grafana.ini:/etc/grafana/grafana.ini:ro
       - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
-    ports:
-      - "${GRAFANA_PORT:-3000}:${GRAFANA_PORT:-3000}"
+      - ./monitoring/grafana/plugins:/var/lib/grafana/plugins
+    # No host port published -- reached only via the proxy service below,
+    # so every request (including to alarm-api) goes through one
+    # same-origin front door and can carry Grafana's session cookie.
     deploy:
       resources:
         limits: *resource-medium
@@ -234,6 +244,8 @@ services:
         condition: service_started
       alertmanager:
         condition: service_started
+      renderer:
+        condition: service_started
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
       interval: 15s
@@ -245,9 +257,58 @@ services:
       - ims-monitoring
     logging: *default-logging
 
+  # ── Proxy (same-origin front door: Grafana + auth-gated alarm-api) ──
+  proxy:
+    image: nginx:1.27-alpine
+    container_name: ims-proxy
+    <<: *default-restart
+    init: true
+    volumes:
+      - ./proxy/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "${GRAFANA_PORT:-3000}:80"
+    deploy:
+      resources:
+        limits: *resource-small
+        reservations:
+          cpus: '0.1'
+          memory: 32M
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:80/api/health || exit 1"]
+      <<: *healthcheck-defaults
+    depends_on:
+      grafana:
+        condition: service_healthy
+      alarm-api:
+        condition: service_healthy
+      factory-twin-3d:
+        condition: service_healthy
+    networks:
+      - ims-internal
+    logging: *default-logging
+
+  # ── Grafana Image Renderer ───────────────────────────────
+  renderer:
+    image: grafana/grafana-image-renderer:latest
+    container_name: ims-grafana-renderer
+    <<: *default-restart
+    environment:
+      TZ: ${TZ:-UTC}
+      ENABLE_METRICS: "false"
+      AUTH_TOKEN: ${GRAFANA_RENDERER_TOKEN:?set GRAFANA_RENDERER_TOKEN in .env}
+    deploy:
+      resources:
+        limits: *resource-medium
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    networks:
+      - ims-internal
+    logging: *default-logging
+
   # ── SNMP Simulator ────────────────────────────────────────
   snmpsim:
-    image: tandrup/snmpsim:latest
+    image: tandrup/snmpsim:v0.4
     container_name: ims-snmpsim
     <<: *default-restart
     init: true
@@ -272,7 +333,7 @@ services:
 
   # ── Blackbox Exporter (Uptime/SLA Probes) ─────────────────
   blackbox-exporter:
-    image: prom/blackbox-exporter:v0.25.0
+    image: prom/blackbox-exporter:v0.28.0
     container_name: ims-blackbox
     <<: *default-restart
     init: true
@@ -296,6 +357,106 @@ services:
       - ims-monitoring
     logging: *default-logging
 
+
+  # ── Database Migrations (one-shot init container) ──────────
+  db-migrate:
+    image: timescale/timescaledb:2.29.0-pg16
+    container_name: ims-db-migrate
+    restart: "no"
+    init: true
+    entrypoint: ["/bin/sh", "/scripts/migrate-entrypoint.sh"]
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      PGHOST: timescaledb
+      ALARM_API_DB_PASSWORD: ${ALARM_API_DB_PASSWORD:?set ALARM_API_DB_PASSWORD in .env}
+    volumes:
+      - ./database/migrations:/migrations:ro
+      - ./scripts/migrate-entrypoint.sh:/scripts/migrate-entrypoint.sh:ro
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    networks:
+      - ims-internal
+    logging: *default-logging
+
+  # ── Alarm API (operator ack/resolve write path) ────────────
+  alarm-api:
+    build:
+      context: ./services/alarm-api
+    container_name: ims-alarm-api
+    <<: *default-restart
+    init: true
+    environment:
+      PGHOST: ims-pgbouncer
+      PGPORT: "5432"
+      PGDATABASE: ${POSTGRES_DB}
+      PGUSER: alarm_api_writer
+      PGPASSWORD: ${ALARM_API_DB_PASSWORD:?set ALARM_API_DB_PASSWORD in .env}
+      ALARM_API_ALLOWED_ORIGIN: ${GRAFANA_ROOT_URL:-http://localhost:3000}
+      PORT: "4000"
+    # No host port published -- reachable only through the proxy service's
+    # /alarm-api/ path, which is auth_request-gated on Grafana's own
+    # session. Direct access to :4000 from outside the docker network is
+    # no longer possible.
+    deploy:
+      resources:
+        limits: *resource-small
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://127.0.0.1:4000/healthz',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))\""]
+      <<: *healthcheck-defaults
+    depends_on:
+      pgbouncer:
+        condition: service_healthy
+      db-migrate:
+        condition: service_completed_successfully
+    networks:
+      - ims-internal
+    logging: *default-logging
+
+  # ── Factory 3D Digital Twin (Task 4.1 POC -- LDI-01 only, read-only) ──
+  factory-twin-3d:
+    build:
+      context: ./services/factory-twin-3d
+    container_name: ims-factory-twin-3d
+    <<: *default-restart
+    init: true
+    environment:
+      PGHOST: ims-pgbouncer
+      PGPORT: "5432"
+      PGDATABASE: ${POSTGRES_DB}
+      # Read-only service, no write path -- reuses the existing grafana_reader
+      # role (postgres/init/002-grafana-readonly.sql) instead of provisioning
+      # a new DB role/migration for a 1-machine POC (see Task 4.1 brief's
+      # scope-minimization decision).
+      PGUSER: ${GRAFANA_DB_USER:?GRAFANA_DB_USER required in .env}
+      PGPASSWORD: ${GRAFANA_DB_PASSWORD:?GRAFANA_DB_PASSWORD required in .env}
+      PORT: "4100"
+    # No host port published -- reachable only through the proxy service's
+    # /factory-twin-3d/ path, which is auth_request-gated on Grafana's own
+    # session, same pattern as alarm-api.
+    deploy:
+      resources:
+        limits: *resource-small
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://127.0.0.1:4100/healthz',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))\""]
+      <<: *healthcheck-defaults
+    depends_on:
+      pgbouncer:
+        condition: service_healthy
+      db-migrate:
+        condition: service_completed_successfully
+    networks:
+      - ims-internal
+    logging: *default-logging
+
   # ── Node-RED ──────────────────────────────────────────────
   node-red:
     build:
@@ -306,7 +467,8 @@ services:
     init: true
     user: "1000:1000"
     environment:
-      TZ: ${TZ:-Asia/Bangkok}
+      TZ: ${TZ:-UTC}
+      NODE_PATH: "/usr/src/node_modules"
       NODE_RED_ENABLE_PROJECTS: "false"
       NODE_OPTIONS: "--max-old-space-size=2048"
       CREDENTIAL_SECRET: ${NODE_RED_CREDENTIAL_SECRET:?set NODE_RED_CREDENTIAL_SECRET in .env}
@@ -321,12 +483,12 @@ services:
       LINE_USER_ID: ${LINE_USER_ID:-}
       TEAMS_WEBHOOK_URL: ${TEAMS_WEBHOOK_URL:-}
       TEAMS_WEBHOOK_TYPE: ${TEAMS_WEBHOOK_TYPE:-AdaptiveCard}
-      INGEST_API_KEY: ${INGEST_API_KEY:-ims-secret-key}
+      INGEST_API_KEY: ${INGEST_API_KEY:?set INGEST_API_KEY in .env}
+      LDI_SIMULATOR_ENABLED: ${LDI_SIMULATOR_ENABLED:-true}
     ports:
       - "127.0.0.1:${NODE_RED_PORT:-1880}:${NODE_RED_PORT:-1880}"
     volumes:
       - ./nodered_data:/data
-      - /etc/localtime:/etc/localtime:ro
     deploy:
       resources:
         limits: *resource-large
@@ -346,8 +508,58 @@ services:
         condition: service_healthy
       grafana:
         condition: service_started
+      db-migrate:
+        condition: service_completed_successfully
     networks:
       - ims-internal
+    logging: *default-logging
+
+  # ── Observability Archiver (durable restart/crash-log evidence) ────
+  # Closes the gap found investigating the 2026-08-13 16h simulator outage:
+  # Docker's own json-file log driver had already rotated past it by the
+  # time anyone looked, and there was no restart record outside the soak
+  # script's own 15-min poll of 3 containers. This subscribes to `docker
+  # events` directly (rotation-independent) and durably records restarts
+  # to both a host file and public.container_restart_audit, plus tails
+  # each critical container's logs into their own non-rotating host file.
+  observability-archiver:
+    image: docker:27-cli
+    container_name: ims-observability-archiver
+    <<: *default-restart
+    init: true
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - "apk add --no-cache postgresql-client jq bash >/dev/null && sh /scripts/observability-archiver.sh"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      PGHOST: timescaledb
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./scripts/observability-archiver.sh:/scripts/observability-archiver.sh:ro
+      - ./ops-logs:/archive
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    networks:
+      - ims-internal
+    logging: *default-logging
+
+  # ── pgAdmin 4 ─────────────────────────────────────────────
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: ims-pgadmin4
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:?set in .env}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:?set in .env}
+    ports:
+      - "5050:80"
+    networks:
+      - ims-internal
+    depends_on:
+      - timescaledb
     logging: *default-logging
 
 volumes:
