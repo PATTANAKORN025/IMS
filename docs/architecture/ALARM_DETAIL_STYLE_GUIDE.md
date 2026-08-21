@@ -55,7 +55,7 @@ Real vendor AlarmMsg text sometimes uses internal component names (`DMD`, `PSO`)
 Every entry in this guide must cite where its facts came from:
 
 - **Frequency** — an exact count from `data/real/ldi_alarm_log_clean.sql` (real historical production log), not an estimate.
-- **Source text** — the real vendor `AlarmMsg`/`AlarmType` from `data/real/[REDACTED_VENDOR_MANUAL]` or the supplemental `ldi_alarm_ms_code_clean.sql` export.
+- **Source text** — the real vendor `AlarmMsg`/`AlarmType` from `data/real/[REDACTED_VENDOR_MANUAL].txt` or the supplemental `[REDACTED_ALARM_FILE].sql` export.
 - **Cause/check guidance** — grounded in this codebase's own documented telemetry columns and thresholds (`docs/architecture/DATA_FLOW.md`, `LDI_SPC_GUIDE.md`, the mock catalog's existing functional descriptions), not invented.
 
 If any of the three is missing, the code is flagged for future update (see §6).
@@ -163,7 +163,7 @@ Beyond the single-statement `alarm_detail`, each of the 25 codes covered so far 
 
 **Real-data ceiling found during v1.0:** the real historical production log (`data/real/ldi_alarm_log_clean.sql`, 10,000 rows, 2026-04-10 to 2026-07-16, confirmed genuine production data — no `SIM-`-prefixed IDs anywhere in the file) recorded **only 20 distinct alarm codes total**, not 50. There is no larger real-frequency dataset available locally to draw a top-50 from.
 
-**Open gap, unchanged in v1.1:** of those 20 real codes, **11 still have no entry in either vendor catalog source** (`[REDACTED_VENDOR_MANUAL]`, 2,190 codes, or the 892-row supplemental `ldi_alarm_ms_code_clean.sql` export): `90013`, `91012`, `91017`, `91020`, `91024`, `93007`, `91029`, `20`, `20021`, `97014`, `2`. These are real production codes (real UUIDs, real dates, 390 of the 10,000 log rows) with zero source text available. They remain unwritten — see §9, this is exactly the gap that request is meant to close.
+**Open gap, unchanged in v1.1:** of those 20 real codes, **11 still have no entry in either vendor catalog source** (`[REDACTED_VENDOR_MANUAL].txt`, 2,190 codes, or the 892-row supplemental `[REDACTED_ALARM_FILE].sql` export): `90013`, `91012`, `91017`, `91020`, `91024`, `93007`, `91029`, `20`, `20021`, `97014`, `2`. These are real production codes (real UUIDs, real dates, 390 of the 10,000 log rows) with zero source text available. They remain unwritten — see §9, this is exactly the gap that request is meant to close.
 
 **Critical-severity codes are not frequency-backed:** the real production log recorded zero Critical-severity alarms in the available window. The 6 Critical entries are real vendor text, hand-selected for clarity of meaning (avoiding codes already flagged in `docs/audit/LDI_ALARM_FIDELITY_AUDIT.md` §8 as keyword-false-positives or self-contradictory type/message pairs), not ranked by occurrence.
 
