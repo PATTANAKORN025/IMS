@@ -5,14 +5,14 @@
  *   docker cp scripts/snmp-discover.js ims-node-red:/tmp/snmp-discover.js
  *   docker exec ims-node-red node /tmp/snmp-discover.js
  *
- * Hardcoded for Juniper EX4000 at 10.0.0.1, community 'NetK@'.
+ * Hardcoded for Juniper EX4000 at 10.0.0.1, community 'apex_mock'.
  * Edit IP/COMMUNITY below before running.
  */
 const snmp = require('net-snmp');
 
 // ── CONFIG ──────────────────────────────────────────────────────────
 var IP = '10.0.0.1';
-var COMMUNITY = 'NetK@';
+var COMMUNITY = 'apex_mock';
 // ────────────────────────────────────────────────────────────────────
 
 var options = {
