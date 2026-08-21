@@ -1,0 +1,36 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+{
+  "manifestVersion": "2.0.0",
+  "signatureType": "community",
+  "signedByOrg": "grafana",
+  "signedByOrgName": "Grafana Labs",
+  "plugin": "marcusolsson-dynamictext-panel",
+  "version": "6.3.0",
+  "time": 1782747715963,
+  "keyId": "7e4d0c6a708866e7",
+  "files": {
+    "LICENSE": "6ec12926d6478d895ccec681c3739c170a88773d6c54d0a57e46682ae6f0adc0",
+    "CHANGELOG.md": "0585bba7c1efed1f1f22b3d875df67fd6043abc339f68c897fd2532e3de969bd",
+    "156.js.map": "4b9b13ded9be00303a0ed3fe902057fb0358e8c70c75478ee37c2431e2f30792",
+    "plugin.json": "11bde33e5c886a564f7ac998a0e53306e908259345bf6b7551394067e0e64a8a",
+    "img/logo.svg": "6154cb94de0f19661bae0c1d6ec12d5526f8bd1ed39ef5a7c335d2e6e4638cc2",
+    "img/screenshot.png": "0ad68126239b57c562effa8540836ad90c59e4dca6adb54b5d87853378af3bd5",
+    "module.js.LICENSE.txt": "446c46382de50c9982f63c41ab612c11dc18292c0c3fd4cb130c8e1d333da63e",
+    "156.js": "2b1d8f1880095cd8f77a3166fe0e31aa410c0ef450e43e1e9c42fd18f18bb141",
+    "README.md": "3df3b3c301132fd44b01c71e94e8ee903aa32fcc0962f82e17dc9657c6fcdcce",
+    "module.js.map": "e09db5958e40d2f7b682361469b421e4ea0bb2aba8407124a43f07619eab82d7",
+    "module.js": "d2f5e0d5e698d32d449797f7d712dd2c3d05c3c8532a5734da0113b4a07c4906"
+  }
+}
+-----BEGIN PGP SIGNATURE-----
+
+wsA/BAETCgBtBYJqQpJECRB+TQxqcIhm50UUAAAAAAAcACBzYWx0QG5vdGF0
+aW9ucy5vcGVucGdwanMub3JnPSexrplUnKI32jDBkROR2NEMFj9VSkDvIo5G
+tXi94H8WIQTzOyW2kQdOhGNlcPN+TQxqcIhm5wAA/gUCCQEb+RQwPNSS9N/L
+eBkXOCM2cgkNxnfovLpJd2c7YJ9RP3e4eW6ssKXiKHbVMXTUaKSYkcwjIeHD
+NVnSQQifvFgOsgIJAb3Hbq+9fcDsdCLiX0efzhDUx/MGinSDO9GXevo3hqoJ
+yu0D1VFDIipaPNbUIsGvk6A49PsdfQBQrajnpuKT7Mvq
+=PIhw
+-----END PGP SIGNATURE-----

@@ -1,0 +1,41 @@
+
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+{
+  "manifestVersion": "2.0.0",
+  "signatureType": "community",
+  "signedByOrg": "benjaminfourmaux",
+  "signedByOrgName": "Tech Ben",
+  "plugin": "benjaminfourmaux-status-panel",
+  "version": "1.1.1",
+  "time": 1748531602673,
+  "keyId": "7e4d0c6a708866e7",
+  "files": {
+    "img/doc-overridden_fields.png": "fd5260f7c4bd45a3befda717616a9ac3a0302269a17a116f459e4ccd51dc6599",
+    "img/doc-options.png": "d3579146111774846e2438c1eeb9a5d8a9470e79f67d69b98449acd600cac15c",
+    "img/doc-thresholds.png": "f6f0eb95d5e4ddd46fb7b7717adbf61cb69c63fa4dcc0352f419c2fa7f1b79ec",
+    "img/logo.svg": "8477aea2bd7840ac2fd3dcdc3ea2ddea75838819073f9a43ccb1f6b922dbdfcb",
+    "img/doc-display_options.png": "7a110b9448710b3e38691ed426e4fe98ac3212a8348822439af0fc2dfc574870",
+    "img/multi-panes.PNG": "6f0cb3fdc3812d2aeb56ffe98cbdf536775fb47d59d174e5bae928a8f2eb4a68",
+    "img/screenshots/card-variants.png": "03475284cc4410af6b1586f95f61480f2ccc8f421ed732a2f731e71849c568de",
+    "img/screenshots/multi-card.png": "5b058c4ff8724d14d2c56abb48efad5050b324526a66ecd9dba035f6757b32ff",
+    "CHANGELOG.md": "4c7b3c0c2dc9c9ef598dcb650d99fd29eb374f0d62aa836d99a0c91d68260e9f",
+    "README.md": "ea0c1a1c6297d275a270356148f0cca781608d8e8c14769a8937eec8d6de0a95",
+    "module.js.map": "62ddca15b525e99ddcf4e1eb869a7038bde81c2d5f3f2d4827a935aa60630c80",
+    "LICENSE": "89d2808a51f347a3c1dd38d456addb5cd5afd9c251e75776681f235f8a8c6e2e",
+    "module.js": "48bbc8f29e6d328c18df5c971994611ac2d870518a2b35f0771bd16872d52a42",
+    "plugin.json": "44b6789137067f4fef5e450651fbc965c9754ec50048a7e17556f9492793cd9c"
+  }
+}
+-----BEGIN PGP SIGNATURE-----
+Version: OpenPGP.js v4.10.11
+Comment: https://openpgpjs.org
+
+wrkEARMKAAYFAmg4eZIAIQkQfk0ManCIZucWIQTzOyW2kQdOhGNlcPN+TQxq
+cIhm51faAgkAwCy3tQqBw0pE+/zG8Bnki3mPppdiE2MKgnNbDMqkd/U8GtpT
+agzk/bIONhI1f9t4Cemzs5UV3ZPWJ6jnr4EY6IMCCQFpuyY0HJ3kFTZsCl1e
+3QdLUdQpQsW7Hgjxs/ltOzggbtI5h2amkLdAyTv4OMZdUnBn1P0TJhpZpKeN
+v4UyM775Eg==
+=0n8V
+-----END PGP SIGNATURE-----

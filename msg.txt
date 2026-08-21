@@ -1,0 +1,6 @@
+chore(branding): enforce formal corporate identity for Apex Circuit
+
+Upgraded repository branding to world-class professional standards by
+explicitly attributing ownership to the MIS-G Department and using the
+full legal entity name Apex Circuit (Thailand) Co., Ltd. across all
+core documentation, licenses, and package manifests.

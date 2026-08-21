@@ -1,0 +1,48 @@
+{
+    "$schema": "https://raw.githubusercontent.com/grafana/grafana/master/docs/sources/developers/plugins/plugin.schema.json",
+    "dependencies": {
+        "grafanaDependency": ">=12.3.0",
+        "plugins": []
+    },
+    "id": "volkovlabs-echarts-panel",
+    "info": {
+        "author": {
+            "name": "Grafana Labs",
+            "url": "https://grafana.com"
+        },
+        "description": "Powerful visualizations powered by Apache ECharts.",
+        "keywords": [
+            "business",
+            "echarts"
+        ],
+        "links": [
+            {
+                "name": "Repository",
+                "url": "https://github.com/grafana/business-charts"
+            },
+            {
+                "name": "Documentation",
+                "url": "https://grafana.com/docs/plugins/volkovlabs-echarts-panel/"
+            }
+        ],
+        "logos": {
+            "large": "img/logo.svg",
+            "small": "img/logo.svg"
+        },
+        "screenshots": [
+            {
+                "name": "Dashboard",
+                "path": "img/dashboard.png"
+            },
+            {
+                "name": "Examples",
+                "path": "img/examples.png"
+            }
+        ],
+        "updated": "2026-05-21",
+        "version": "7.2.5"
+    },
+    "name": "Business Charts",
+    "type": "panel",
+    "buildMode": "production"
+}
