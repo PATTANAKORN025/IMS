@@ -37,14 +37,40 @@ if [[ "${1:-}" == "--summarize" ]]; then
     LAST_EPOCH=$(date -d "$LAST_TS" +%s 2>/dev/null || date -j -f "%Y-%m-%dT%H:%M:%SZ" "$LAST_TS" +%s)
     SPAN_HOURS=$(awk -v a="$FIRST_EPOCH" -v b="$LAST_EPOCH" 'BEGIN{printf "%.1f", (b-a)/3600}')
 
+    # First-to-last span alone doesn't prove continuous coverage -- a log
+    # with 12 samples on day 1 and 1 sample 6 days later spans >72h but has
+    # a 6-day blind spot in between (found live, 2026-08-21: exactly this
+    # log, after this session's earlier work left a gap since 2026-08-15).
+    # A real soak needs no gap larger than a few missed cron ticks, not just
+    # a wide first/last span -- so also track the largest gap between
+    # consecutive samples and gate on that too.
+    MAX_GAP_MIN=0
+    prev_epoch=""
+    while IFS=$'\t' read -r ts _; do
+        [[ "$ts" == "timestamp" || -z "$ts" ]] && continue
+        epoch=$(date -d "$ts" +%s 2>/dev/null || date -j -f "%Y-%m-%dT%H:%M:%SZ" "$ts" +%s)
+        if [[ -n "$prev_epoch" ]]; then
+            gap_min=$(( (epoch - prev_epoch) / 60 ))
+            [[ "$gap_min" -gt "$MAX_GAP_MIN" ]] && MAX_GAP_MIN="$gap_min"
+        fi
+        prev_epoch="$epoch"
+    done < "$LOG_FILE"
+    GAP_LIMIT_MIN=60
+
     echo "═══════════════════════════════════════════════════"
     echo "  IMS Soak Test Summary"
     echo "═══════════════════════════════════════════════════"
     echo "Samples: $N   Window: $FIRST_TS -> $LAST_TS  (${SPAN_HOURS}h elapsed)"
-    if awk -v h="$SPAN_HOURS" 'BEGIN{exit !(h>=72)}'; then
-        echo "Window length: PASS (>= 72h)"
+    echo "Largest gap between consecutive samples: ${MAX_GAP_MIN}min (want <= ${GAP_LIMIT_MIN}min -- a wide"
+    echo "gap means no real coverage during that time, span alone doesn't prove it)"
+    if awk -v h="$SPAN_HOURS" 'BEGIN{exit !(h>=72)}' && [[ "$MAX_GAP_MIN" -le "$GAP_LIMIT_MIN" ]]; then
+        echo "Window length: PASS (>= 72h span, no gap > ${GAP_LIMIT_MIN}min)"
+        WINDOW_OK=1
     else
-        echo "Window length: NOT YET 72h -- keep this script running periodically and re-summarize later."
+        echo "Window length: FAIL -- span >= 72h alone is not enough; needs continuous coverage"
+        echo "(keep this script running periodically -- e.g. every 15min via cron/Scheduled Task --"
+        echo "and re-summarize once there's no gap wider than ${GAP_LIMIT_MIN}min across a 72h+ span)"
+        WINDOW_OK=0
     fi
     echo ""
 
@@ -61,8 +87,10 @@ if [[ "${1:-}" == "--summarize" ]]; then
     echo "Samples with >=1 non-Watchdog alert firing: $ANY_FIRING (want 0)"
     echo "DB size drift: ${MIN_DB_MB}MB -> ${MAX_DB_MB}MB"
     echo ""
-    if [[ "$MAX_FAILED" == "0" && "$MAX_OVERFLOW" == "0" && "$ANY_RESTART" == "0" && "$ANY_FIRING" == "0" ]]; then
-        echo "VERDICT: PASS (pending window length -- see above)"
+    if [[ "$MAX_FAILED" == "0" && "$MAX_OVERFLOW" == "0" && "$ANY_RESTART" == "0" && "$ANY_FIRING" == "0" && "$WINDOW_OK" == "1" ]]; then
+        echo "VERDICT: PASS"
+    elif [[ "$MAX_FAILED" == "0" && "$MAX_OVERFLOW" == "0" && "$ANY_RESTART" == "0" && "$ANY_FIRING" == "0" ]]; then
+        echo "VERDICT: INCOMPLETE -- all health counters clean so far, but window length/continuity not yet satisfied (see above)"
     else
         echo "VERDICT: FAIL -- see nonzero counters above"
     fi
