@@ -63,7 +63,7 @@ Write-Host ""
 # 6. Grafana
 Write-Host "6. Grafana:" -ForegroundColor Yellow
 try {
-    $grafana = Invoke-RestMethod -Uri "http://localhost:3000/api/health" -TimeoutSec 5
+    $grafana = Invoke-RestMethod -Uri "http://127.0.0.1:3000/api/health" -TimeoutSec 5
     if ($grafana.database -eq "ok") {
         Write-Host "   ✅ Grafana OK (Database connection: ok)" -ForegroundColor Green
     } else {
