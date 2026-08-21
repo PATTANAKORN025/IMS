@@ -37,6 +37,17 @@ function loadExceptions() {
   return (data.exceptions || []).filter((e) => e.expiry >= today);
 }
 
+// CRITICAL can never be excepted here, full stop -- per explicit policy,
+// only a genuine fix (verified by rescan) resolves a CRITICAL finding.
+// A HIGH finding is only excepted if a valid (non-expired) entry names
+// this exact CVE for this exact package -- "an exception exists somewhere
+// in the file" is not sufficient, that would silently downgrade findings
+// the file was never actually written to cover.
+function isExcepted(exceptions, { severity, cve, pkg }) {
+  if (severity !== 'HIGH') return false;
+  return exceptions.some((e) => e.cve === cve && e.package === pkg);
+}
+
 function runNpmAudit(dir, evidenceStamp) {
   const t0 = Date.now();
   let json = null;
@@ -72,12 +83,19 @@ function runNpmAudit(dir, evidenceStamp) {
   if (json) {
     const v = json.metadata.vulnerabilities;
     const exceptions = loadExceptions();
-    const unexceptedHigh = v.high; // exceptions are matched by CVE/package at report-render time, not counted out of the raw npm number here -- WARN vs FAIL below still requires a real exception entry to exist for this package
-    actual = `${v.critical} CRITICAL, ${v.high} HIGH, ${v.moderate} MODERATE, ${v.low} LOW (${v.total} total, ${json.metadata.dependencies.prod} prod deps)`;
+    const highNames = Object.values(json.vulnerabilities || {})
+      .filter((x) => x.severity === 'high')
+      .map((x) => x.name);
+    const unexceptedHigh = highNames.filter(
+      (pkg) => !exceptions.some((e) => e.package === pkg) // npm audit's JSON groups by package, not individual CVE ids, at this summary level
+    ).length;
+    actual = `${v.critical} CRITICAL, ${v.high} HIGH (${unexceptedHigh} unapproved), ${v.moderate} MODERATE, ${v.low} LOW (${v.total} total, ${json.metadata.dependencies.prod} prod deps)`;
     if (v.critical > 0) {
       status = 'FAIL';
+    } else if (unexceptedHigh > 0) {
+      status = 'FAIL';
     } else if (v.high > 0) {
-      status = exceptions.length > 0 ? 'WARN' : 'FAIL';
+      status = 'WARN'; // every HIGH here has a matching, valid exception
     } else {
       status = 'PASS';
     }
@@ -154,18 +172,25 @@ function runTrivy(image, evidenceStamp) {
       { encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 }
     );
     const parsed = JSON.parse(raw);
+    const exceptions = loadExceptions();
     let critical = 0;
     let high = 0;
+    let unexceptedHigh = 0;
     for (const result of parsed.Results || []) {
       for (const vuln of result.Vulnerabilities || []) {
         if (vuln.Severity === 'CRITICAL') critical++;
-        else if (vuln.Severity === 'HIGH') high++;
+        else if (vuln.Severity === 'HIGH') {
+          high++;
+          if (!isExcepted(exceptions, { severity: 'HIGH', cve: vuln.VulnerabilityID, pkg: vuln.PkgName })) {
+            unexceptedHigh++;
+          }
+        }
       }
     }
-    const exceptions = loadExceptions();
-    actual = `${critical} CRITICAL, ${high} HIGH`;
-    if (critical > 0) status = 'FAIL';
-    else if (high > 0) status = exceptions.length > 0 ? 'WARN' : 'FAIL';
+    actual = `${critical} CRITICAL, ${high} HIGH (${unexceptedHigh} unapproved)`;
+    if (critical > 0) status = 'FAIL'; // never excepted, regardless of exceptions file content
+    else if (unexceptedHigh > 0) status = 'FAIL';
+    else if (high > 0) status = 'WARN'; // every HIGH here has a matching, valid exception
   } catch (err) {
     raw = (err.stdout || '') + '\n' + (err.stderr || '');
     status = 'BLOCKED_ENVIRONMENT';

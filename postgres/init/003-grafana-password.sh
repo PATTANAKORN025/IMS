@@ -1,7 +1,7 @@
-#!/usr/bin/env bash
+#!/bin/sh
 set -euo pipefail
 
-grafana_db_password="${GRAFANA_DB_PASSWORD:-grafana_secure}"
+grafana_db_password="${GRAFANA_DB_PASSWORD:?set GRAFANA_DB_PASSWORD in .env}"
 
 psql -v ON_ERROR_STOP=1 \
   --username "${POSTGRES_USER}" \

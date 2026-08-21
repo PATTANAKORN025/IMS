@@ -221,11 +221,13 @@ services:
       GF_SECURITY_COOKIE_SECURE: "false"
       GF_SECURITY_STRICT_TRANSPORT_SECURITY: "false"
       GF_LOG_LEVEL: "info"
+      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: "ims-3d-panel"
     volumes:
       - grafana_data:/var/lib/grafana
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./monitoring/grafana/grafana.ini:/etc/grafana/grafana.ini:ro
       - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - ./monitoring/grafana/plugins:/var/lib/grafana/plugins
     # No host port published -- reached only via the proxy service below,
     # so every request (including to alarm-api) goes through one
     # same-origin front door and can carry Grafana's session cookie.
@@ -541,6 +543,22 @@ services:
         condition: service_healthy
     networks:
       - ims-internal
+    logging: *default-logging
+
+  # ── pgAdmin 4 ─────────────────────────────────────────────
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: ims-pgadmin4
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:?set in .env}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:?set in .env}
+    ports:
+      - "5050:80"
+    networks:
+      - ims-internal
+    depends_on:
+      - timescaledb
     logging: *default-logging
 
 volumes:

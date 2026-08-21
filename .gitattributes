@@ -1,6 +1,4 @@
-# Force LF line endings for JSON files that generate phantom CRLF diffs
-# on Windows (git autocrlf converts to CRLF on checkout, Node.js writes LF)
-nodered_data/flows.json text eol=lf
-*
-text=auto
-eol=lf
+* text=auto
+*.sh text eol=lf
+*.sql text eol=lf
+*.conf text eol=lf
