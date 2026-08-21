@@ -102,9 +102,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 12,
-        "w": 2,
-        "h": 4
+        "y": 14,
+        "w": 24,
+        "h": 3
       },
       "repeat": "machine_id",
       "repeatDirection": "h",
@@ -195,8 +195,8 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 16,
-        "w": 2,
+        "y": 17,
+        "w": 24,
         "h": 3
       },
       "repeat": "machine_id",
@@ -218,7 +218,7 @@
               "options": {
                 "match": "null+nan",
                 "result": {
-                  "text": "—"
+                  "text": "\u2014"
                 }
               }
             }
@@ -241,7 +241,7 @@
           "valueSize": 14,
           "titleSize": 0
         },
-        "noValue": "—",
+        "noValue": "\u2014",
         "textMode": "value",
         "tooltip": {
           "mode": "single",
@@ -258,7 +258,7 @@
           "format": "table"
         }
       ],
-      "description": "Current MO (job) running on $machine_id, or — if the machine has no active job / no data. Sits directly under the state tile so every machine shows its job, not just alarming ones."
+      "description": "Current MO (job) running on $machine_id, or \u2014 if the machine has no active job / no data. Sits directly under the state tile so every machine shows its job, not just alarming ones."
     },
     {
       "id": 9999,
@@ -271,14 +271,14 @@
       "gridPos": {
         "x": 0,
         "y": 0,
-        "w": 24,
+        "w": 23,
         "h": 1
       },
       "transparent": true
     },
     {
       "id": 1,
-      "title": "◉ Fleet Availability",
+      "title": "\u25c9 Fleet Availability",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -369,7 +369,7 @@
     },
     {
       "id": 2,
-      "title": "◉ Active Critical/Major Alarms (master-code matched)",
+      "title": "\u25c9 Active Critical/Major Alarms (master-code matched)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -456,7 +456,7 @@
     },
     {
       "id": 3,
-      "title": "◉ Environmental Compliance",
+      "title": "\u25c9 Environmental Compliance",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -551,7 +551,7 @@
     },
     {
       "id": 9,
-      "title": "◉ Machines Running",
+      "title": "\u25c9 Machines Running",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -640,14 +640,14 @@
     },
     {
       "id": 10000,
-      "title": "◉ Pipeline Heartbeat",
+      "title": "\u25c9 Pipeline Heartbeat",
       "type": "volkovlabs-echarts-panel",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 0,
-        "y": 19,
+        "x": 23,
+        "y": 0,
         "w": 1,
         "h": 1
       },
@@ -684,7 +684,7 @@
     },
     {
       "id": 12,
-      "title": "◈ Temperature Compliance (22±2°C)",
+      "title": "\u25c8 Temperature Compliance (22\u00b12\u00b0C)",
       "type": "state-timeline",
       "datasource": {
         "uid": "timescaledb"
@@ -693,7 +693,7 @@
         "x": 0,
         "y": 4,
         "w": 12,
-        "h": 4
+        "h": 6
       },
       "fieldConfig": {
         "defaults": {
@@ -775,7 +775,7 @@
     },
     {
       "id": 13,
-      "title": "◈ Humidity Compliance (55±5%)",
+      "title": "\u25c8 Humidity Compliance (55\u00b15%)",
       "type": "state-timeline",
       "datasource": {
         "uid": "timescaledb"
@@ -784,7 +784,7 @@
         "x": 12,
         "y": 4,
         "w": 12,
-        "h": 4
+        "h": 6
       },
       "fieldConfig": {
         "defaults": {
@@ -866,14 +866,14 @@
     },
     {
       "id": 8,
-      "title": "◈ Action Queue (Critical/Major, last 5 min)",
+      "title": "\u25c8 Action Queue (Critical/Major, last 5 min)",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 0,
-        "y": 8,
+        "y": 10,
         "w": 24,
         "h": 4
       },
@@ -1046,7 +1046,7 @@
                 "value": [
                   {
                     "title": "Open Machine Snapshot for ${__value.text}",
-                    "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=${__data.fields.Machine}&var-factory=${__data.fields.Factory}&var-mo=${__data.fields.MO}&var-event_time_ms=${__data.fields.When_ms}&from=${__from}&to=${__to}",
+                    "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=${__data.fields.Machine}&var-factory=${__data.fields.Factory}&var-mo=${__data.fields.MO}&var-event_time_ms=${__data.fields.When_ms}&var-clicked_series=${__data.fields.Machine}&from=${__from}&to=${__to}",
                     "targetBlank": false
                   }
                 ]
@@ -1064,7 +1064,7 @@
                 "value": [
                   {
                     "title": "Open Machine Snapshot for ${__data.fields.Machine}",
-                    "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=${__data.fields.Machine}&var-factory=${__data.fields.Factory}&var-mo=${__data.fields.MO}&var-event_time_ms=${__data.fields.When_ms}&from=${__from}&to=${__to}",
+                    "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=${__data.fields.Machine}&var-factory=${__data.fields.Factory}&var-mo=${__data.fields.MO}&var-event_time_ms=${__data.fields.When_ms}&var-clicked_series=${__data.fields.Machine}&from=${__from}&to=${__to}",
                     "targetBlank": false
                   }
                 ]
@@ -1118,7 +1118,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "WITH real_alarms AS (\n  SELECT a.equipmentid AS \"Machine\",\n         m.severity AS \"Severity\",\n         l.status AS \"Status\",\n         m.alarm_type AS \"Alarm Type\",\n         m.alarm_msg AS \"Alarm Msg\",\n         m.alarm_detail AS \"Alarm Detail\",\n         /* a.factory (ldi_alarm_log's own column) is unreliable -- confirmed\n            live across all 10 machines (audit: alarm-traceability-\n            consistency-report.md), traced to the alarm simulator writing\n            factory via Math.random() < 0.75, independent of the actual\n            machine. Same fix as ims-ldi-alarm-console.json (Fix 4):\n            prefer the joined ldi_data row, fall back only if that join\n            misses. */\n         COALESCE(d.factory, a.factory) AS \"Factory\",\n         d.mo AS \"MO\",\n         a.logdate AS \"When\",\n         (EXTRACT(EPOCH FROM a.logdate) * 1000)::BIGINT AS \"When_ms\",\n         CASE\n           WHEN NOW() - a.logdate < INTERVAL '1 hour'\n             THEN GREATEST(EXTRACT(MINUTE FROM (NOW() - a.logdate))::INT, 0)::TEXT || 'm'\n           ELSE EXTRACT(HOUR FROM (NOW() - a.logdate))::INT || 'h' || LPAD(EXTRACT(MINUTE FROM (NOW() - a.logdate))::INT::TEXT, 2, '0') || 'm'\n         END AS \"Elapsed\",\n         CASE COALESCE(c.category, 'UNCLASSIFIED')\n           WHEN 'VACUUM' THEN 'Maintenance'\n           WHEN 'CAMERA' THEN 'Maintenance'\n           WHEN 'MOTION' THEN 'Maintenance'\n           WHEN 'MOTOR' THEN 'Maintenance'\n           WHEN 'ENVIRONMENT' THEN 'Facility'\n           WHEN 'NETWORK' THEN 'Automation'\n           WHEN 'PLC' THEN 'Automation'\n           WHEN 'COMMUNICATION' THEN 'Automation'\n           WHEN 'DATABASE' THEN 'IT'\n           WHEN 'ALIGNMENT' THEN 'Process Engineering'\n           WHEN 'CALIBRATION' THEN 'Process Engineering'\n           WHEN 'REGISTRATION' THEN 'Process Engineering'\n           WHEN 'PROCESS' THEN 'Process Engineering'\n           ELSE 'Maintenance'\n         END AS \"Owner\"\n  FROM public.ldi_alarm_log a\n  JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\n  LEFT JOIN public.ldi_data d ON d.log_id = a.related_log_id\n  LEFT JOIN public.v_ldi_alarm_category c ON c.alarm_code = a.errorcode::TEXT\n  LEFT JOIN public.ldi_alarm_lifecycle l ON l.logdate = a.logdate AND l.logid = a.logid\n  WHERE m.severity IN ('Critical', 'Major')\n    AND a.logdate > NOW() - INTERVAL '5 minutes'\n    AND a.equipmentid IN (${machine_id:sqlstring})\n    AND l.status IS DISTINCT FROM 'RESOLVED'\n), with_action AS (\n  SELECT \"Machine\",\"Severity\",\"Status\",\"Alarm Type\",\"Alarm Msg\",\"Alarm Detail\",\"Factory\",\"MO\",\"When\",\"When_ms\",\"Elapsed\",\"Owner\",\n    CASE \"Owner\"\n      WHEN 'Maintenance' THEN 'CALL MAINT'\n      WHEN 'Facility' THEN 'CHECK HVAC'\n      WHEN 'Automation' THEN 'CHECK AUTOMATION'\n      WHEN 'IT' THEN 'CALL IT'\n      WHEN 'Process Engineering' THEN 'CHECK PROCESS'\n    END AS \"Action\"\n  FROM real_alarms\n), combined AS (\n  SELECT * FROM with_action\n  UNION ALL\n  SELECT NULL,'NONE','NONE',NULL,'NO ACTIVE CRITICAL/MAJOR ALARMS',NULL,NULL,NULL,NOW(),0,NULL,NULL,NULL\n  WHERE NOT EXISTS (SELECT 1 FROM with_action)\n)\nSELECT * FROM combined\nORDER BY (CASE \"Severity\" WHEN 'Critical' THEN 0 WHEN 'Major' THEN 1 WHEN 'NONE' THEN 2 ELSE 3 END), \"When\" DESC\nLIMIT 50;",
+          "rawSql": "WITH real_alarms AS (\n  SELECT a.equipmentid AS \"Machine\",\n         m.severity AS \"Severity\",\n         l.status AS \"Status\",\n         m.alarm_type AS \"Alarm Type\",\n         m.alarm_msg AS \"Alarm Msg\",\n         m.alarm_detail AS \"Alarm Detail\",\n         /* a.factory (ldi_alarm_log's own column) is unreliable -- confirmed\n            live across all 10 machines (audit: alarm-traceability-\n            consistency-report.md), traced to the alarm simulator writing\n            factory via Math.random() < 0.75, independent of the actual\n            machine. Same fix as ims-ldi-alarm-console.json (Fix 4):\n            prefer the joined ldi_data row, fall back only if that join\n            misses. */\n         COALESCE(d.factory, a.factory) AS \"Factory\",\n         d.mo AS \"MO\",\n         a.logdate AS \"When\",\n         (EXTRACT(EPOCH FROM a.logdate) * 1000)::BIGINT AS \"When_ms\",\n         CASE\n           WHEN NOW() - a.logdate < INTERVAL '1 hour'\n             THEN GREATEST(EXTRACT(MINUTE FROM (NOW() - a.logdate))::INT, 0)::TEXT || 'm'\n           ELSE EXTRACT(HOUR FROM (NOW() - a.logdate))::INT || 'h' || LPAD(EXTRACT(MINUTE FROM (NOW() - a.logdate))::INT::TEXT, 2, '0') || 'm'\n         END AS \"Elapsed\",\n         CASE COALESCE(c.category, 'UNCLASSIFIED')\n           WHEN 'VACUUM' THEN 'Maintenance'\n           WHEN 'CAMERA' THEN 'Maintenance'\n           WHEN 'MOTION' THEN 'Maintenance'\n           WHEN 'MOTOR' THEN 'Maintenance'\n           WHEN 'ENVIRONMENT' THEN 'Facility'\n           WHEN 'NETWORK' THEN 'Automation'\n           WHEN 'PLC' THEN 'Automation'\n           WHEN 'COMMUNICATION' THEN 'Automation'\n           WHEN 'DATABASE' THEN 'IT'\n           WHEN 'ALIGNMENT' THEN 'Process Engineering'\n           WHEN 'CALIBRATION' THEN 'Process Engineering'\n           WHEN 'REGISTRATION' THEN 'Process Engineering'\n           WHEN 'PROCESS' THEN 'Process Engineering'\n           ELSE 'Maintenance'\n         END AS \"Owner\"\n  FROM public.ldi_alarm_log a\n  JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\n  -- d.\"time\" bound is relative to a.logdate (not wall-clock NOW()), so it's\n  -- correct regardless of how old the alarm is. Same fix and evidence as\n  -- ims-ldi-alarm-console.json's Action Queue query -- see that file's\n  -- comment for the full derivation (measured max gap 134s across 3349\n  -- rows; 10min bound gives ~4.5x safety margin, drops zero rows, lets the\n  -- planner exclude nearly all of this hypertable's chunks instead of all).\n  LEFT JOIN public.ldi_data d ON d.log_id = a.related_log_id\n    AND d.\"time\" BETWEEN a.logdate - INTERVAL '10 minutes' AND a.logdate + INTERVAL '10 minutes'\n  LEFT JOIN public.v_ldi_alarm_category c ON c.alarm_code = a.errorcode::TEXT\n  LEFT JOIN public.ldi_alarm_lifecycle l ON l.logdate = a.logdate AND l.logid = a.logid\n  WHERE m.severity IN ('Critical', 'Major')\n    AND a.logdate > NOW() - INTERVAL '5 minutes'\n    AND a.equipmentid IN (${machine_id:sqlstring})\n    AND l.status IS DISTINCT FROM 'RESOLVED'\n), with_action AS (\n  SELECT \"Machine\",\"Severity\",\"Status\",\"Alarm Type\",\"Alarm Msg\",\"Alarm Detail\",\"Factory\",\"MO\",\"When\",\"When_ms\",\"Elapsed\",\"Owner\",\n    CASE \"Owner\"\n      WHEN 'Maintenance' THEN 'CALL MAINT'\n      WHEN 'Facility' THEN 'CHECK HVAC'\n      WHEN 'Automation' THEN 'CHECK AUTOMATION'\n      WHEN 'IT' THEN 'CALL IT'\n      WHEN 'Process Engineering' THEN 'CHECK PROCESS'\n    END AS \"Action\"\n  FROM real_alarms\n), combined AS (\n  SELECT * FROM with_action\n  UNION ALL\n  SELECT NULL,'NONE','NONE',NULL,'NO ACTIVE CRITICAL/MAJOR ALARMS',NULL,NULL,NULL,NOW(),0,NULL,NULL,NULL\n  WHERE NOT EXISTS (SELECT 1 FROM with_action)\n)\nSELECT * FROM combined\nORDER BY (CASE \"Severity\" WHEN 'Critical' THEN 0 WHEN 'Major' THEN 1 WHEN 'NONE' THEN 2 ELSE 3 END), \"When\" DESC\nLIMIT 50;",
           "format": "table"
         }
       ],

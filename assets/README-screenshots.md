@@ -1,19 +1,19 @@
-![NOC Overview](noc-overview.png)
+![NOC Overview](assets/noc-overview.png)
 
-![Engineering Drill-Down](engineering-drilldown.png)
+![Engineering Drill-Down](assets/engineering-drill-down.png)
 
-![Capacity Planning](capacity-planning.png)
+![Capacity Planning](assets/capacity-planning.png)
 
-![Meta-Monitoring](meta-monitoring.png)
+![Meta-Monitoring](assets/meta-monitoring.png)
 
-![LDI Manufacturing](ldi-manufacturing.png)
+![LDI Manufacturing](assets/ldi-manufacturing.png)
 
-![LDI Engineering Analytics](ldi-engineering.png)
+![LDI Engineering Analytics](assets/ldi-engineering-analytics.png)
 
-![LDI Machine Snapshot](ldi-machine.png)
+![LDI Machine Snapshot](assets/ldi-machine-snapshot.png)
 
-![LDI Operator Andon](ldi-andon.png)
+![LDI Operator Andon](assets/ldi-operator-andon.png)
 
-![LDI Data Readiness](ldi-data-readiness.png)
+![LDI Data Readiness](assets/ldi-data-readiness.png)
 
-![IMS Easy Overview](ims-easy-overview.png)
+![IMS Easy Overview](assets/ims-easy-overview.png)
