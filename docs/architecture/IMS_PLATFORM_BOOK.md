@@ -1,7 +1,7 @@
 <!-- GLOBAL_NAV -->
 <div align="right">
-  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
-  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+  <a href="../../README.md"><img src="../assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../README.md"><img src="../assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
 </div>
 <br/>
 
@@ -123,7 +123,7 @@ IMS is a monitoring platform spanning two domains — **infrastructure** (server
 
 ### Historical record
 
-- [`../archive/`](../archive/) — dated point-in-time snapshots (audit reports, benchmark reports, an internship retrospective). Not living documentation — see `docs/archive/README.md`.
+- [`../archive/`](../archive) — dated point-in-time snapshots (audit reports, benchmark reports, an internship retrospective). Not living documentation — see `docs/archive/README.md`.
 - [`../archive/DOCUMENTATION_QUALITY_REPORT.md`](../archive/DOCUMENTATION_QUALITY_REPORT.md) — the audit/rewrite report this book itself was produced alongside.
 
 ---

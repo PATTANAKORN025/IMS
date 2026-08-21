@@ -1,7 +1,7 @@
 <!-- GLOBAL_NAV -->
 <div align="right">
-  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
-  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+  <a href="../../README.md"><img src="../assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../README.md"><img src="../assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
 </div>
 <br/>
 
@@ -75,28 +75,7 @@ Upon accessing Grafana, 15 distinct dashboards are available:
 
 **Purpose**: High-level overview intended for executives and the NOC team.
 
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│ IMS NOC Overview           │
-├─────────────────────────────────────────────────────────────────┤
-│                 │
-│ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌───────────┐ │
-│ │ Total  │ │ Healthy  │ │ Warning  │ │ Critical │ │
-│ │ Machines: 5 │ │ Machines: 4 │ │ Alerts: 1 │ │ Alerts: 0 │ │
-│ │ <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Healthy  │ │ <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Healthy  │ │ <img src="../assets/icons/check-circle.svg" width="14" align="center"/> **Status:** Warning  │ │   │ │
-│ └─────────────┘ └─────────────┘ └─────────────┘ └───────────┘ │
-│                 │
-│ ┌───────────────────────────────────────────────────────────┐ │
-│ │ Fleet CPU Usage (Last 1 Hour)       │ │
-│ │ [Line chart showing all machines CPU over time]   │ │
-│ └───────────────────────────────────────────────────────────┘ │
-│                 │
-│ ┌───────────────────────────────────────────────────────────┐ │
-│ │ Active Alerts           │ │
-│ │ [Table of current firing alerts with severity]   │ │
-│ └───────────────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────────┘
-```
+![IMS NOC Overview Dashboard](../../assets/noc-overview.png)
 
 ### 2. Server Health Metrics (NOC Overview / Engineering Drill-Down)
 
@@ -114,48 +93,7 @@ Upon accessing Grafana, 15 distinct dashboards are available:
 
 **Purpose**: Detailed analytical deep dive per individual server for engineers.
 
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│ Engineering Drilldown — [Select Machine ▼]     │
-├─────────────────────────────────────────────────────────────────┤
-│                 │
-│ ┌───────────────────────────────────────────────────────────┐ │
-│ │ Network Interface Traffic (Symmetrical Butterfly)  │ │
-│ │ ┌─────────────────────────────────────────────────────┐ │ │
-│ │ │  ▲ eth0 RX: ████████████ 2.4 Gbps    │ │ │
-│ │ │  │ wlan0 RX: ██████ 800 Mbps      │ │ │
-│ │ │ ───┼────────────────────────────────── 0 Mbps  │ │ │
-│ │ │  │ wlan0 TX: ████ 400 Mbps      │ │ │
-│ │ │  ▼ eth0 TX: ████████ 1.6 Gbps     │ │ │
-│ │ └─────────────────────────────────────────────────────┘ │ │
-│ └───────────────────────────────────────────────────────────┘ │
-│                 │
-│ ┌──────────────────────┐ ┌──────────────────────────────────┐ │
-│ │ CPU Temperature  │ │ Disk Usage      │ │
-│ │ [Gauge: 72°C]  │ │ [Bar: /dev/sda1 45%, sdb1 62%] │ │
-│ └──────────────────────┘ └──────────────────────────────────┘ │
-│                 │
-│ ┌───────────────────────────────────────────────────────────┐ │
-│ │ LDI Quality Scatter (PE vs JE)       │ │
-│ │ ┌─────────────────────────────────────────────────────┐ │ │
-│ │ │ PE (µm)           │ │ │
-│ │ │ 15 ┤   ╱ Tolerance Box      │ │ │
-│ │ │  │ · · ╱· · ·        │ │ │
-│ │ │ 0 ┤──╱────────────────── 0      │ │ │
-│ │ │  │ ╱· · · ·         │ │ │
-│ │ │ -15 ┤╱   (green zone ±10µm)     │ │ │
-│ │ │  └─┬────┬────┬────┬────┬─      │ │ │
-│ │ │  -15 -5 0 5 15 JE (µm)    │ │ │
-│ │ └─────────────────────────────────────────────────────┘ │ │
-│ └───────────────────────────────────────────────────────────┘ │
-│                 │
-│ ┌───────────────────────────────────────────────────────────┐ │
-│ │ LDI Manufacturing Telemetry        │ │
-│ │ Throughput: 1250 units/hr | PE: 0.85 | JE: 0.92   │ │
-│ │ Humidity: 65% | Power: 2400W | Vibration: 2.1 mm/s  │ │
-│ └───────────────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────────┘
-```
+![Engineering Drilldown Dashboard](../../assets/engineering-drilldown.png)
 
 **LDI Scatter Plot Tolerance Box:**
 
@@ -292,16 +230,15 @@ CPU Load: 72% (Warning)
 
 **Example:**
 
-```text
-Machine: server-01
-┌─────────┬──────────┬──────────┬──────────┬──────────┬────────┐
-│Interface│ RX Mbps │ TX Mbps │ Errors │ Drops │ Status │
-├─────────┼──────────┼──────────┼──────────┼──────────┼────────┤
-│ eth0 │ 1200  │ 850  │ 0  │ 0  │ UP │
-│ wlan0 │ 320  │ 180  │ 0  │ 12  │ UP │
-└─────────┴──────────┴──────────┴──────────┴──────────┴────────┘
-→ wlan0 registers 12 dropped packets — investigate wireless signal integrity.
-```
+**Machine:** `server-01`
+
+| Interface | RX Mbps | TX Mbps | Errors | Drops | Status |
+| --- | --- | --- | --- | --- | --- |
+| eth0 | 1200 | 850 | 0 | 0 | UP |
+| wlan0 | 320 | 180 | 0 | 12 | UP |
+
+→ *wlan0 registers 12 dropped packets — investigate wireless signal integrity.*
+
 
 ### Disk Metrics
 

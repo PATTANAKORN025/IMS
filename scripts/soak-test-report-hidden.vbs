@@ -4,5 +4,8 @@
 Set shell = CreateObject("WScript.Shell")
 Set fso = CreateObject("Scripting.FileSystemObject")
 projectDir = fso.GetParentFolderName(fso.GetParentFolderName(WScript.ScriptFullName))
-cmd = "C:\Program Files\Git\usr\bin\bash.exe --login -c ""cd '"" & Replace(projectDir, ""\"", ""/"") & ""' && ./scripts/soak-test-report.sh >> scripts/soak-test-reports/cron.log 2>&1"""
+' Replace backslashes with forward slashes for bash
+projectDir = Replace(projectDir, "\", "/")
+
+cmd = "C:\Program Files\Git\usr\bin\bash.exe --login -c ""cd '" & projectDir & "' && ./scripts/soak-test-report.sh >> scripts/soak-test-reports/cron.log 2>&1"""
 shell.Run cmd, 0, True

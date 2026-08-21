@@ -1,15 +1,15 @@
 <!-- GLOBAL_NAV -->
 <div align="right">
-  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
-  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+  <a href="../../README.md"><img src="../assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../README.md"><img src="../assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
 </div>
 <br/>
 
-# <img src="../../docs/assets/icons/folder.svg" width="18" align="center" /> Operations Documentation
+# <img src="../assets/icons/folder.svg" width="18" align="center" /> Operations Documentation
 
 Welcome to the **Operations** directory. This section contains documentation related to IMS operations processes.
 
-## <img src="../../docs/assets/icons/map.svg" width="18" align="center" />️ Directory Map
+## <img src="../assets/icons/map.svg" width="18" align="center" />️ Directory Map
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1e293b', 'primaryTextColor': '#00F2FE', 'primaryBorderColor': '#10B981', 'lineColor': '#00F2FE', 'secondaryColor': '#0f172a', 'tertiaryColor': '#0f172a', 'clusterBkg': '#030407', 'clusterBorder': '#00F2FE'}}}%%
@@ -34,10 +34,10 @@ flowchart LR
   ROOT --> F16["TROUBLESHOOTING"]
 ```
 
-## <img src="../../docs/assets/icons/file-text.svg" width="18" align="center" /> File Index
+## <img src="../assets/icons/file-text.svg" width="18" align="center" /> File Index
 
-- [ALARM_PLAYBOOK-th.md](ALARM_PLAYBOOK-th.md)
-- [ALARM_PLAYBOOK-zh-CN.md](ALARM_PLAYBOOK-zh-CN.md)
+- [ALARM_PLAYBOOK-th.md](../../th/docs/operations/ALARM_PLAYBOOK.md)
+- [ALARM_PLAYBOOK-zh-CN.md](../../zh-CN/docs/operations/ALARM_PLAYBOOK.md)
 - [ALARM_PLAYBOOK.md](ALARM_PLAYBOOK.md)
 - [BACKUP_RESTORE.md](BACKUP_RESTORE.md)
 - [DEPLOYMENT_READINESS.md](DEPLOYMENT_READINESS.md)
@@ -47,9 +47,9 @@ flowchart LR
 - [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md)
 - [SCALING_PLAN.md](SCALING_PLAN.md)
 - [SOP_COMPLETION_REVIEW.md](SOP_COMPLETION_REVIEW.md)
-- [SOP_OPERATOR-th.md](SOP_OPERATOR-th.md)
-- [SOP_OPERATOR-zh-CN.md](SOP_OPERATOR-zh-CN.md)
+- [SOP_OPERATOR-th.md](../../th/docs/operations/SOP_OPERATOR.md)
+- [SOP_OPERATOR-zh-CN.md](../../zh-CN/docs/operations/SOP_OPERATOR.md)
 - [SOP_OPERATOR.md](SOP_OPERATOR.md)
-- [TROUBLESHOOTING-th.md](TROUBLESHOOTING-th.md)
-- [TROUBLESHOOTING-zh-CN.md](TROUBLESHOOTING-zh-CN.md)
+- [TROUBLESHOOTING-th.md](../../th/docs/operations/TROUBLESHOOTING.md)
+- [TROUBLESHOOTING-zh-CN.md](../../zh-CN/docs/operations/TROUBLESHOOTING.md)
 - [TROUBLESHOOTING.md](TROUBLESHOOTING.md)

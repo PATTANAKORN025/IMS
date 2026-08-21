@@ -1,7 +1,7 @@
 <!-- GLOBAL_NAV -->
 <div align="right">
-  <a href="../../README.md"><img src="../../docs/assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
-  <a href="../../docs/README.md"><img src="../../docs/assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
+  <a href="../../README.md"><img src="../assets/icons/home.svg" width="16" align="center" /> <b>Home</b></a> &nbsp;|&nbsp;
+  <a href="../README.md"><img src="../assets/icons/book.svg" width="16" align="center" /> <b>Docs Index</b></a>
 </div>
 <br/>
 
@@ -71,7 +71,7 @@ Individually these are P1-ish misconfigurations. Together they mean: **if someth
 
 ---
 
-## <img src="../../docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> P1 — High
+## <img src="../assets/icons/circle-check.svg" width="18" height="18" align="center" /> P1 — High
 
 ### P1-1 · This session's own schema tuning is dead on arrival for fresh deployments
 
@@ -102,7 +102,7 @@ Runs on every push/PR to `main`. It builds `flows.json` via `node scripts/build-
 
 ---
 
-## <img src="../../docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> P2 — Medium
+## <img src="../assets/icons/circle-check.svg" width="18" height="18" align="center" /> P2 — Medium
 
 | #   | Area                                                                  | Finding                                                                                                                                                                                                                                                                                                                                     |
 | --- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -116,7 +116,7 @@ Runs on every push/PR to `main`. It builds `flows.json` via `node scripts/build-
 
 ---
 
-## <img src="../../docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> P3 — Low
+## <img src="../assets/icons/circle-check.svg" width="18" height="18" align="center" /> P3 — Low
 
 - Prometheus, Alertmanager, Blackbox exporter, SNMP simulator, and the Grafana renderer have no `healthcheck:` block (PgBouncer and Grafana itself do) — inconsistent within an observability stack, and blocks any future `depends_on: condition: service_healthy` gating on them.
 - `contactpoints.yml` comment references a `flows-ubuntu.json` that doesn't exist (current file is `alerting.json`) — stale comment only, the actual webhook wiring is correct.
@@ -158,11 +158,11 @@ Runs on every push/PR to `main`. It builds `flows.json` via `node scripts/build-
 | 1   | Fix `ldi-machine-alarm-005`'s missing `ORDER BY time`                                        | P0                                                                                              | Actively generating alert noise every ~5 minutes right now                                      |
 | 2   | Collapse the 3 migration runners to 1 canonical script                                       | P0                                                                                              | Root cause of the schema-tracking drift that's already bitten this project once (migration 038) |
 | 3   | Get real alert delivery working end-to-end (pick one channel, verify with a real test alert) | P0                                                                                              | Nothing currently reaches a human when something breaks                                         |
-| 4   | Sync migration 020's schema tuning into `postgres/init/001`                                  | <img src="../../docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> P1 | This session's own fix is currently a no-op on fresh deploys                                    |
-| 5   | Fix or retire `ci-flows.yml`                                                                 | <img src="../../docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> P1 | A CI check that structurally cannot pass trains people to ignore CI failures                    |
-| 6   | Rewrite `../architecture/ARCHITECTURE.md` from scratch                                       | <img src="../../docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> P1 | Currently actively misleading (wrong dashboard count, wrong ingestion path, self-contradictory) |
-| 7   | Remove or fix the vibration-critical alert                                                   | <img src="../../docs/assets/icons/circle-check.svg" width="18" height="18" align="center" /> P1 | A "critical" alert that can never fire is worse than none                                       |
-| 8   | Everything else in P2/P3                                                                     | <img src="../../docs/assets/icons/circle-check.svg" width="18" height="18" align="center" />    | Real but not urgent                                                                             |
+| 4   | Sync migration 020's schema tuning into `postgres/init/001`                                  | <img src="../assets/icons/circle-check.svg" width="18" height="18" align="center" /> P1 | This session's own fix is currently a no-op on fresh deploys                                    |
+| 5   | Fix or retire `ci-flows.yml`                                                                 | <img src="../assets/icons/circle-check.svg" width="18" height="18" align="center" /> P1 | A CI check that structurally cannot pass trains people to ignore CI failures                    |
+| 6   | Rewrite `../architecture/ARCHITECTURE.md` from scratch                                       | <img src="../assets/icons/circle-check.svg" width="18" height="18" align="center" /> P1 | Currently actively misleading (wrong dashboard count, wrong ingestion path, self-contradictory) |
+| 7   | Remove or fix the vibration-critical alert                                                   | <img src="../assets/icons/circle-check.svg" width="18" height="18" align="center" /> P1 | A "critical" alert that can never fire is worse than none                                       |
+| 8   | Everything else in P2/P3                                                                     | <img src="../assets/icons/circle-check.svg" width="18" height="18" align="center" />    | Real but not urgent                                                                             |
 
 ---
 
