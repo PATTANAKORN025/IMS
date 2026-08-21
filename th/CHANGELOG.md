@@ -7,13 +7,35 @@
 
 <div align="center">
 
-<img src="../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Version:** 1.0.0
+<img src="../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Version:** 1.0.1
 <img src="../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Release:** Production
-<img src="../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Date:** 2026-06-29
+<img src="../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Date:** 2026-08-21
 
 </div>
 
 ---
+
+## [1.0.1] - 2026-08-21 (World-Class Open Source Edition)
+
+### จุดเด่น (Highlights)
+- **ปลอดภัยระดับโลก 100% (Security Compliance)**: กวาดล้างประวัติ Git ย้อนหลังทั้งหมด 1,100+ Commits ลบข้อมูล IP จริง, ชื่อเครื่องจักร และรหัส Error ของ Vendor ออกแบบถอนรากถอนโคน
+- **สถาปัตยกรรม V2 (V2 Normalized Architecture)**: ย้ายระบบนำเข้าข้อมูล Node-RED สู่โครงสร้าง JSON แบบบรรทัดฐาน และผูก Schema SQL Insert
+- **ระบบตรวจสอบก่อน Commit (Pre-commit Suite)**: เพิ่ม Husky Hooks ที่บังคับผ่าน Unit tests, E2E tests, Dashboard Linters, Security Exceptions และการอัปเดตเอกสาร
+- **รองรับทุกระบบปฏิบัติการ (Cross-Platform)**: แก้ไขบั๊ก CRLF ระหว่าง Windows/Linux ที่ทำให้ Node-RED แครช และปรับมาตรฐาน Path
+- **เอกสาร 3 ภาษา (Multilingual Excellence)**: แปลและปรับปรุงเอกสารทั้งหมด รวมถึง README ให้ตรงกันเป๊ะทั้ง อังกฤษ, ไทย และจีนตัวย่อ
+- **กราฟิกระดับ NOC (Cyberpunk NOC UI)**: เปลี่ยนรูปภาพสแตติกเป็นภาพ GIF แอนิเมชันสแกนเนอร์ 60 FPS สุดล้ำสำหรับหน้าจอบริหาร
+
+### ความปลอดภัย (Security)
+- **ระบบจัดการ CVE (CVE Exceptions Engine)**: สร้างกลไกจัดการช่องโหว่ (เช่น Grafana Go stdlib DoS) แบบมีวันหมดอายุที่ทำงานด้วยโค้ด (Programmatic Gate)
+- **ทำลายข้อมูลจริง (Physical Data Scrub)**: ลบ Database Dumps และ Logs เก่าที่เก็บในเครื่อง (แม้จะอยู่ใน `.gitignore`) เพื่อป้องกันการหลุดรอดจากการก๊อปปี้ไฟล์
+- **เสริมแกร่ง Nginx (Nginx Hardening)**: บังคับจำกัด Rate-limiting (`100r/s`) และขนาด Header (`16k`) บน Reverse Proxy
+
+### การแก้ไขบั๊ก (Fixed)
+- ปัญหา Script ตรวจสอบ `verify-deployment.ps1` ค้างบน Windows จากการ Resolve IPv6 `localhost`
+- ปัญหา Dashboard ของ Grafana ทับซ้อนกัน (บังคับใช้กฎ Grid-24)
+- ปัญหา Barrier Timeout ภายใน Node-RED AIOps Parser
+- ปัญหานโยบาย Refresh ของ Continuous Aggregate (`sys_hourly`) ไม่ทำงาน
+- แปลงโค้ดทดสอบที่ใช้ `as` ไปเป็น `@total-typescript/shoehorn`
 
 ## [1.0.0] — 2026-06-29 (Production Release)
 

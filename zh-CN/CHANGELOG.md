@@ -7,13 +7,35 @@
 
 <div align="center">
 
-<img src="../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Version:** 1.0.0
+<img src="../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Version:** 1.0.1
 <img src="../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Release:** Production
-<img src="../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Date:** 2026-06-29
+<img src="../docs/assets/icons/check-circle.svg" width="14" align="center"/> **Date:** 2026-08-21
 
 </div>
 
 ---
+
+## [1.0.1] - 2026-08-21 (World-Class Open Source Edition)
+
+### 亮点 (Highlights)
+- **100% 安全合规 (Security Compliance)**：对外科手术般的 Git 历史清理（超过 1,100 次提交），彻底消除了所有真实的 IP、硬件标签和供应商错误代码。
+- **V2 规范化架构 (V2 Normalized Architecture)**：将 Node-RED 摄取迁移到规范化的 JSON 结构和绑定 Schema 的 SQL 插入。
+- **全面的 Pre-commit 检查 (Pre-commit Suite)**：添加了强大的 Husky 钩子，强制执行单元测试、E2E 测试、Dashboard Linter、安全例外和文档同步。
+- **跨平台兼容 (Cross-Platform)**：解决了严重的 Windows/Linux CRLF 节点崩溃错误并规范了路径。
+- **多语言卓越 (Multilingual Excellence)**：所有文档和 README 实现了英语、泰语和简体中文的全面同步和精美翻译。
+- **赛博朋克 NOC UI (Cyberpunk NOC UI)**：将静态 UI 资产替换为动画 60 FPS 的赛博朋克扫描仪 GIF，用于 NOC 演示。
+
+### 安全 (Security)
+- **CVE 例外引擎 (CVE Exceptions Engine)**：为高严重性但不可达的漏洞（例如 Grafana Go stdlib DoS）创建了程序化的、严格过期的网关。
+- **物理数据清理 (Physical Data Scrub)**：从本地机器中删除了所有旧的数据转储和日志，防止绕过 `.gitignore` 的泄漏。
+- **Nginx 加固 (Nginx Hardening)**：在反向代理上实施了严格的速率限制（`limit_req_zone 100r/s`）和请求头大小上限（`large_client_header_buffers 4 16k`）。
+
+### 修复 (Fixed)
+- 修复了 `verify-deployment.ps1` 期间 Windows 上的 E2E IPv6 `localhost` 解析超时。
+- 修复了 Grafana 仪表板布局网格重叠（强制执行 Grid-24 规则）。
+- 修复了 AIOps 解析器内部的 Node-RED 屏障超时竞争条件。
+- 修复了缺失的 `sys_hourly` 连续聚合刷新策略。
+- 将孤立的 `as` 类型断言迁移到 `@total-typescript/shoehorn`。
 
 ## [1.0.0] — 2026-06-29 (Production Release)
 

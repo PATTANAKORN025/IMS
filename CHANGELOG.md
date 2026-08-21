@@ -7,13 +7,35 @@
 
 <div align="center">
 
-<img src="docs/assets/icons/check-circle.svg" width="14" align="center"/> **Version:** 1.0.0
+<img src="docs/assets/icons/check-circle.svg" width="14" align="center"/> **Version:** 1.0.1
 <img src="docs/assets/icons/check-circle.svg" width="14" align="center"/> **Release:** Production
-<img src="docs/assets/icons/check-circle.svg" width="14" align="center"/> **Date:** 2026-06-29
+<img src="docs/assets/icons/check-circle.svg" width="14" align="center"/> **Date:** 2026-08-21
 
 </div>
 
 ---
+
+## [1.0.1] - 2026-08-21 (World-Class Open Source Edition)
+
+### Highlights
+- **100% Security Compliance**: Surgical scrub of entire Git history (1,100+ commits) eliminating all IPs, hardware tags, and real vendor error codes.
+- **V2 Normalized Architecture**: Migrated Node-RED ingestion to normalized JSON structures and schema-bound SQL inserts.
+- **Extensive Pre-commit Suite**: Added robust Husky pre-commit hooks enforcing Unit tests, E2E tests, Dashboard Linters, Security Exceptions, and Documentation sync.
+- **Cross-Platform Compatibility**: Resolved critical Windows/Linux CRLF node-red crashing bugs and normalized pathing.
+- **Multilingual Excellence**: Full English, Thai, and Simplified Chinese translations for all documentation and READMEs.
+- **Cyberpunk NOC UI**: Replaced static UI assets with an animated 60 FPS cyberpunk scanner GIF for NOC presentations.
+
+### Security
+- **CVE Exceptions Engine**: Created a programmatic, strictly-expiring gate for high-severity but unreachable vulnerabilities (e.g., Grafana Go stdlib DoS).
+- **Physical Data Scrub**: Deleted all legacy data dumps and logs from the local machine preventing `.gitignore` bypass leaks.
+- **Nginx Hardening**: Implemented strict rate-limiting (`limit_req_zone 100r/s`) and header size caps (`large_client_header_buffers 4 16k`) on the reverse proxy.
+
+### Fixed
+- E2E IPv6 `localhost` resolution timeout on Windows during `verify-deployment.ps1`.
+- Grafana dashboard layout grid overlaps (Grid-24 discipline enforced).
+- Node-RED barrier timeout race conditions inside the AIOps parser.
+- Missing `sys_hourly` continuous aggregate refresh policies.
+- Orphaned `as` type assertions migrated to `@total-typescript/shoehorn`.
 
 ## [1.0.0] — 2026-06-29 (Production Release)
 
