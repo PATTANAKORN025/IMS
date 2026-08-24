@@ -111,6 +111,11 @@ scripts/dr-test-reports/
 # are what's committed as durable evidence, same pattern as the two lines above.
 docs/evidence/runtime/
 
+# Scratch Node-RED /data dir generated per-run by tests/fleet/runner.js for
+# the disposable P9 fleet-ingestion stack (copied from nodered_data/,
+# regenerated every run -- not source).
+tests/fleet/.runtime/
+
 # Editor/script backup and scratch dumps that turn up locally but were
 # never meant to be committed source.
 *.bak

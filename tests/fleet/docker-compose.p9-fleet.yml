@@ -1,0 +1,169 @@
+# P9 Fleet Concurrent Ingestion Assurance -- fully isolated, disposable
+# stack. Reuses the SAME build contexts, Dockerfiles, init SQL, and
+# migration SQL as the live stack (docker-compose.yaml) -- none of those
+# files are modified. Isolation comes entirely from: a dedicated Compose
+# project name (always invoked with `-p ims-p9-fleet`, never the default),
+# container names distinct from every live `ims-*` container, a private
+# Compose-managed network, a private named volume, and host ports that do
+# not overlap the live stack's defaults (5432/1880).
+#
+# Only the Node-RED /ldi-telemetry flow tab (nodered_data/flows/ldi_ingestion.json)
+# is deployed here -- the actual contract under test. The live stack's other
+# tabs (LDI/alarm simulators, SNMP ingestion, alerting) are unrelated to this
+# test and deliberately excluded to keep this disposable instance minimal;
+# tests/fleet/runner.js builds the scratch flows.json from that one file.
+#
+# Never run this file against the live project name. Always invoke via
+# tests/fleet/runner.js, which performs isolation checks before and after
+# `up`/`down`.
+
+services:
+  timescaledb:
+    image: timescale/timescaledb:2.29.0-pg16
+    container_name: p9-fleet-timescaledb
+    environment:
+      POSTGRES_DB: ${P9_POSTGRES_DB}
+      POSTGRES_USER: ${P9_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${P9_POSTGRES_PASSWORD}
+      GRAFANA_DB_PASSWORD: ${P9_GRAFANA_DB_PASSWORD}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    # Same tuning as the live timescaledb service (docker-compose.yaml) --
+    # a first attempt at this file trimmed this down to just
+    # shared_preload_libraries, and TimescaleDB crashed mid-migration
+    # (054-ldi-alarm-context-vacuum-na.sql, "crash of another server
+    # process") under Postgres/TimescaleDB defaults. Matching the proven
+    # production tuning instead of improvising a lighter one.
+    command:
+      - postgres
+      - -c
+      - shared_preload_libraries=timescaledb,pg_stat_statements
+      - -c
+      - max_connections=100
+      - -c
+      - shared_buffers=256MB
+      - -c
+      - effective_cache_size=768MB
+      - -c
+      - work_mem=16MB
+      - -c
+      - maintenance_work_mem=128MB
+      - -c
+      - wal_compression=on
+      - -c
+      - max_wal_size=1GB
+      - -c
+      - checkpoint_completion_target=0.9
+      - -c
+      - random_page_cost=1.1
+      - -c
+      - effective_io_concurrency=200
+      - -c
+      - timezone=UTC
+      - -c
+      - timescaledb.max_background_workers=32
+    volumes:
+      - p9_fleet_db_data:/var/lib/postgresql/data
+      - ../../postgres/init:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "127.0.0.1:${P9_DB_PORT}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${P9_POSTGRES_USER} -d ${P9_POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+
+  db-migrate:
+    image: timescale/timescaledb:2.29.0-pg16
+    container_name: p9-fleet-db-migrate
+    restart: "no"
+    entrypoint: ["/bin/sh", "/scripts/migrate-entrypoint.sh"]
+    environment:
+      POSTGRES_USER: ${P9_POSTGRES_USER}
+      POSTGRES_DB: ${P9_POSTGRES_DB}
+      PGPASSWORD: ${P9_POSTGRES_PASSWORD}
+      PGHOST: timescaledb
+      # migration 078 reads this directly via psql's \getenv -- matches
+      # the db-migrate service's env in the live docker-compose.yaml.
+      ALARM_API_DB_PASSWORD: ${P9_ALARM_API_DB_PASSWORD}
+    volumes:
+      # Only the 2 migrations the /ldi-telemetry contract actually depends
+      # on (055: devices FK, 081: ingest_staging + ingest_ts), copied
+      # unmodified into a scratch dir by runner.js -- NOT the full
+      # database/migrations/ directory. A first attempt mounted the full
+      # 80+-migration history and hit two unrelated, pre-existing bugs
+      # when replayed against a genuinely fresh/empty database (a
+      # postgres backend crash in both 054 and 061, migrations this
+      # project has apparently never actually re-run from empty before --
+      # the live DB only ever applied them once, incrementally, years
+      # apart). Real findings, recorded as follow-ups, not fixed here --
+      # out of scope for testing ingestion specifically, and reproducing
+      # + fixing a Postgres-crashing migration bug is its own project.
+      - ./.runtime/migrations:/migrations:ro
+      - ../../scripts/migrate-entrypoint.sh:/scripts/migrate-entrypoint.sh:ro
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+
+  pgbouncer:
+    build:
+      context: ../../pgbouncer
+    container_name: p9-fleet-pgbouncer
+    entrypoint: ["/bin/sh", "/etc/pgbouncer/entrypoint-wrapper.sh"]
+    environment:
+      DATABASE_URL: postgres://${P9_POSTGRES_USER}:${P9_POSTGRES_PASSWORD}@timescaledb:5432/${P9_POSTGRES_DB}
+      GRAFANA_DB_PASSWORD: ${P9_GRAFANA_DB_PASSWORD}
+      ALARM_API_DB_PASSWORD: ${P9_ALARM_API_DB_PASSWORD}
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: 100
+      DEFAULT_POOL_SIZE: 20
+      MIN_POOL_SIZE: 5
+      AUTH_TYPE: plain
+    volumes:
+      - ../../pgbouncer/entrypoint-wrapper.sh:/etc/pgbouncer/entrypoint-wrapper.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 5432 || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+
+  node-red:
+    build:
+      context: ../../nodered_data
+    container_name: p9-fleet-node-red
+    user: "1000:1000"
+    environment:
+      NODE_RED_ENABLE_PROJECTS: "false"
+      CREDENTIAL_SECRET: ${P9_NODE_RED_CREDENTIAL_SECRET}
+      NODE_RED_ADMIN_USER: p9admin
+      NODE_RED_ADMIN_PASSWORD_HASH: ${P9_NODE_RED_ADMIN_PASSWORD_HASH}
+      PGHOST: pgbouncer
+      PGPORT: "5432"
+      PGDATABASE: ${P9_POSTGRES_DB}
+      PGUSER: ${P9_POSTGRES_USER}
+      PGPASSWORD: ${P9_POSTGRES_PASSWORD}
+      INGEST_API_KEY: ${P9_INGEST_API_KEY}
+    volumes:
+      - ./.runtime/node-red-data:/data
+    ports:
+      - "127.0.0.1:${P9_NODE_RED_PORT}:1880"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "node -e \"require('http').get('http://127.0.0.1:1880/',r=>process.exit(0)).on('error',()=>process.exit(1))\""
+      interval: 5s
+      timeout: 5s
+      retries: 40
+      start_period: 15s
+    depends_on:
+      pgbouncer:
+        condition: service_healthy
+      db-migrate:
+        condition: service_completed_successfully
+
+volumes:
+  p9_fleet_db_data:
