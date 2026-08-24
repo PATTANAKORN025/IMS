@@ -409,3 +409,32 @@ groups:
           summary: "Temperature Z-Score anomaly on {{ $labels.metric }} ({{ $values.A }}σ)"
           description: "Temperature deviates >3 standard deviations from 24h rolling average. Possible thermal event."
           runbook: "https://grafana.internal/d/ims-engineering?var-machine_id={{ $labels.metric }}"
+
+      # Machine Offline / Stale: Alert if a machine has not sent telemetry in 5 minutes
+      - uid: ims-ldi-machine-stale
+        title: LDI Machine Offline (Stale)
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: timescaledb
+            model:
+              rawSql: |
+                SELECT
+                  eqp_id AS metric,
+                  1 AS value
+                FROM public.v_ldi_machine_latest_full
+                WHERE is_stale = true AND enabled = true
+              format: table
+        noDataState: OK
+        execErrState: Error
+        for: 1m
+        labels:
+          severity: critical
+          service: ldi
+        annotations:
+          summary: LDI Machine {{ $labels.metric }} is Offline (Stale)
+          description: No telemetry received from {{ $labels.metric }} for over 5 minutes. Check network or machine power.
+          runbook: https://grafana.internal/d/ims-engineering?var-machine_id={{ $labels.metric }}
