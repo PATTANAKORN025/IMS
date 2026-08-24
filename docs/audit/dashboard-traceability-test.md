@@ -3,7 +3,7 @@
 **Owner:** Person 1 — Dashboard / Grafana / UX / Traceability  
 **Environment:** Friend IMS isolated preview (`http://localhost:3300`)  
 **Status:** IN PROGRESS  
-**Last verified:** 2026-08-21
+**Last verified:** 2026-08-24
 
 ## Required navigation hierarchy
 
@@ -22,12 +22,21 @@
 | Test | Status | Notes |
 |---|---|---|
 | Digital Twin machine color follows DB snapshot | PASS | Fixed and verified on Preview 3300 |
-| Digital Twin machine link exists | PARTIAL | Link propagation was implemented; full hierarchy still requires end-to-end retest |
+| MIS machine tile → Snapshot | PASS | Browser-tested with `EXPOSURE LDI-2`; machine and latest telemetry epoch were preserved |
 | Andon status uses database time | PASS | Prevents browser-clock mismatch |
-| Machine Snapshot context | PARTIAL | Selected-machine workflows tested previously; full matrix is incomplete |
+| Machine Snapshot context | PASS (tested path) | Seven records in the selected 09:45 minute remained visible after selecting 09:45:29; full ten-machine matrix remains incomplete |
 | Factory/Zone context preservation | PENDING | Requires real layout and authoritative zone mapping |
 | All 15 Dashboard links | PENDING | Browser evidence incomplete |
 | Grafana 404 scan | PENDING | Comprehensive scan incomplete |
+
+## Verified browser evidence — 2026-08-24
+
+| Source | Clicked value | Destination context | Result |
+| --- | --- | --- | --- |
+| Mentor MIS machine tile | `EXPOSURE LDI-2` | `machine_id=EXPOSURE LDI-2`, latest telemetry epoch `1784515558591` | PASS |
+| Snapshot minute table | `2026-07-20 09:45:29` | Same machine and all seven 09:45 records retained | PASS |
+
+The audit also removed hardcoded default Snapshot context (`LDI-C-01` and a stale epoch). Direct navigation now starts with `All` and no implicit clicked series.
 
 ## Test evidence template
 

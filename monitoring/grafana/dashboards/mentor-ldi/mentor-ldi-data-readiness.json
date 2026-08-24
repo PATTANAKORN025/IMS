@@ -358,7 +358,7 @@
         "type": "grafana-postgresql-datasource",
         "uid": "mentor-ldi-readonly"
       },
-      "description": "Percent of telemetry rows with a non-null board_id.",
+      "description": "Separates the missing board_id field from usable board progress fields (board_no and total_board). A zero Board ID value is a source-data gap, not a missing production-progress signal.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -421,7 +421,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT ROUND(100.0 * COUNT(board_id) / NULLIF(COUNT(*), 0), 1) AS value\nFROM public.ldi_data\nWHERE factory IN (${factory:sqlstring})\n  AND eqp_id IN (${machine_id:sqlstring});",
+          "rawSql": "SELECT\n  ROUND(100.0 * COUNT(board_id) / NULLIF(COUNT(*), 0), 1) AS \"Board ID\",\n  ROUND(100.0 * COUNT(*) FILTER (WHERE board_no IS NOT NULL AND total_board IS NOT NULL) / NULLIF(COUNT(*), 0), 1) AS \"Board Progress\"\nFROM public.ldi_data\nWHERE factory IN (${factory:sqlstring})\n  AND eqp_id IN (${machine_id:sqlstring});",
           "refId": "A",
           "sql": {
             "columns": [],
@@ -430,7 +430,7 @@
           }
         }
       ],
-      "title": "board_id — Completeness",
+      "title": "Board Identifier / Progress Coverage",
       "transparent": true,
       "type": "stat"
     },

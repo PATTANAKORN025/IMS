@@ -1992,8 +1992,8 @@
       {
         "allowCustomValue": true,
         "current": {
-          "text": "LDI-C-01 - ldi_data",
-          "value": "LDI-C-01 - ldi_data"
+          "text": "__none__",
+          "value": "__none__"
         },
         "hide": 2,
         "includeAll": false,
@@ -2009,8 +2009,8 @@
       {
         "allowCustomValue": true,
         "current": {
-          "text": "1784500976694",
-          "value": "1784500976694"
+          "text": "0",
+          "value": "0"
         },
         "hide": 2,
         "includeAll": false,
@@ -2027,10 +2027,10 @@
         "allowCustomValue": true,
         "current": {
           "text": [
-            "2"
+            "All"
           ],
           "value": [
-            "2"
+            "$__all"
           ]
         },
         "datasource": {
@@ -2056,10 +2056,10 @@
         "allowCustomValue": true,
         "current": {
           "text": [
-            "LDI-C-01"
+            "All"
           ],
           "value": [
-            "LDI-C-01"
+            "$__all"
           ]
         },
         "datasource": {

@@ -4,7 +4,7 @@
 **Environment:** Friend IMS isolated preview (`http://localhost:3300`)  
 **Branch:** `feat/isolated-preview-3300`  
 **Status:** IN PROGRESS  
-**Last verified:** 2026-08-21
+**Last verified:** 2026-08-24
 
 ## Objective
 
@@ -19,6 +19,8 @@
 | IMS AIOps & Capacity Forecast | 12 | PARTIAL | Forecast 3 panels ยังไม่มีข้อมูลเพราะมี daily history เพียง 2 วัน แต่ Query ต้องการอย่างน้อย 3 วัน |
 | IMS Engineering Drill-Down | 19 | PARTIAL | 4 stat panels แสดง NO_DATA เมื่อยังไม่ได้เลือก `machine_id` |
 | IMS Ingestion Latency | 10 | PARTIAL | `ldi_data` latency ไม่มีค่า เพราะ `ingest_ts` เป็น NULL ทุกแถว |
+| Mentor MIS Incident Command Center | 28 | PASS (tested flow) | 10 machines, 2 open incidents, no datasource/plugin/query error in tested browser path |
+| Mentor LDI Machine Snapshot | 14 | PASS (tested flow) | Tile drill-down preserves machine and telemetry epoch; selected-minute rows remain visible |
 
 ## Fixes already verified
 
