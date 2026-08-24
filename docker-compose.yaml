@@ -33,7 +33,7 @@ x-resource-large: &resource-large
 services:
   # ── TimescaleDB ───────────────────────────────────────────
   timescaledb:
-    image: timescale/timescaledb:2.29.0-pg16
+    image: timescale/timescaledb:2.29.2-pg16
     container_name: ims-timescaledb
     <<: *default-restart
     init: true
@@ -361,7 +361,7 @@ services:
 
   # ── Database Migrations (one-shot init container) ──────────
   db-migrate:
-    image: timescale/timescaledb:2.29.0-pg16
+    image: timescale/timescaledb:2.29.2-pg16
     container_name: ims-db-migrate
     restart: "no"
     init: true
