@@ -12,7 +12,7 @@ machine-readable results (`docs/evidence/runtime/production-assurance-*.json`), 
 The verdict is `scripts/gate.js`'s pure function over that JSON, not an assertion.
 
 **Profile run:** `security`  
-**Timestamp:** 2026-08-24T05:11:43.645Z  
+**Timestamp:** 2026-08-24T07:40:38.485Z  
 **Profile verdict:** **NO-GO**
 
 > **This is a `security`-profile verdict, not a whole-system readiness claim.** **Profile GO** means every *blocking* requirement that this profile's own category list actually ran passed -- categories outside that list report `NOT_TESTED` below and are excluded from this verdict by design, not silently assumed passing. **Whole-system production readiness** is only ever established by running the `full` profile (the only one that exercises every category in `scripts/production-assurance.js`'s `PROFILES`) -- a `fast` (or any non-`full`) GO must never be read or reported as "production ready".
@@ -20,14 +20,14 @@ The verdict is `scripts/gate.js`'s pure function over that JSON, not an assertio
 **Reasons:**
 - NO-GO: security.trivy.ims-alarm-api -- CRITICAL, blocking (1 CRITICAL, 8 HIGH (8 unapproved))
 - NO-GO: security.trivy.ims-factory-twin-3d -- CRITICAL, blocking (1 CRITICAL, 8 HIGH (8 unapproved))
-- NO-GO: security.trivy.ims-node-red -- CRITICAL, blocking (7 CRITICAL, 75 HIGH (75 unapproved))
+- NO-GO: security.trivy.ims-node-red -- CRITICAL, blocking (4 CRITICAL, 17 HIGH (17 unapproved))
 - NO-GO: security.trivy.timescale-timescaledb-2.29.0-pg16 -- CRITICAL, blocking (3 CRITICAL, 89 HIGH (89 unapproved))
 - NO-GO: security.trivy.grafana-grafana-13.1.2 -- CRITICAL, blocking (0 CRITICAL, 39 HIGH (30 unapproved))
 - NO-GO: security.trivy.prom-prometheus-v3.13.2 -- CRITICAL, blocking (0 CRITICAL, 16 HIGH (16 unapproved))
 - NO-GO: security.trivy.prom-alertmanager-v0.33.1 -- CRITICAL, blocking (0 CRITICAL, 44 HIGH (44 unapproved))
 - NO-GO: security.trivy.ims-alarm-api -- FAIL, blocking (threshold: 0 CRITICAL, 0 unapproved HIGH, actual: 1 CRITICAL, 8 HIGH (8 unapproved))
 - NO-GO: security.trivy.ims-factory-twin-3d -- FAIL, blocking (threshold: 0 CRITICAL, 0 unapproved HIGH, actual: 1 CRITICAL, 8 HIGH (8 unapproved))
-- NO-GO: security.trivy.ims-node-red -- FAIL, blocking (threshold: 0 CRITICAL, 0 unapproved HIGH, actual: 7 CRITICAL, 75 HIGH (75 unapproved))
+- NO-GO: security.trivy.ims-node-red -- FAIL, blocking (threshold: 0 CRITICAL, 0 unapproved HIGH, actual: 4 CRITICAL, 17 HIGH (17 unapproved))
 - NO-GO: security.trivy.timescale-timescaledb-2.29.0-pg16 -- FAIL, blocking (threshold: 0 CRITICAL, 0 unapproved HIGH, actual: 3 CRITICAL, 89 HIGH (89 unapproved))
 - NO-GO: security.trivy.grafana-grafana-13.1.2 -- FAIL, blocking (threshold: 0 CRITICAL, 0 unapproved HIGH, actual: 0 CRITICAL, 39 HIGH (30 unapproved))
 - NO-GO: security.trivy.prom-prometheus-v3.13.2 -- FAIL, blocking (threshold: 0 CRITICAL, 0 unapproved HIGH, actual: 0 CRITICAL, 16 HIGH (16 unapproved))
@@ -35,19 +35,19 @@ The verdict is `scripts/gate.js`'s pure function over that JSON, not an assertio
 
 | Requirement | Test | Threshold | Evidence | Result | Blocking | Next Action |
 |---|---|---|---|---|---|---|
-| Dependency CVEs | security.npm-audit.root | 0 CRITICAL, 0 unapproved HIGH | docs/evidence/runtime/security-npm-audit-root-2026-08-24T05-03-31-417Z.json | PASS | yes | - |
-| Dependency CVEs | security.npm-audit.services-alarm-api | 0 CRITICAL, 0 unapproved HIGH | docs/evidence/runtime/security-npm-audit-services-alarm-api-2026-08-24T05-03-31-417Z.json | PASS | yes | - |
-| Dependency CVEs | security.npm-audit.services-factory-twin-3d | 0 CRITICAL, 0 unapproved HIGH | docs/evidence/runtime/security-npm-audit-services-factory-twin-3d-2026-08-24T05-03-31-417Z.json | PASS | yes | - |
-| Dependency CVEs | security.npm-audit.nodered_data | 0 CRITICAL, 0 unapproved HIGH | docs/evidence/runtime/security-npm-audit-nodered_data-2026-08-24T05-03-31-417Z.json | PASS | yes | - |
-| Source secret exposure | security.gitleaks.full-history | 0 leaks across full git history | docs/evidence/runtime/security-gitleaks-2026-08-24T05-03-31-417Z.log | PASS | yes | - |
+| Dependency CVEs | security.npm-audit.root | 0 CRITICAL, 0 unapproved HIGH | docs/evidence/runtime/security-npm-audit-root-2026-08-24T07-33-56-064Z.json | PASS | yes | - |
+| Dependency CVEs | security.npm-audit.services-alarm-api | 0 CRITICAL, 0 unapproved HIGH | docs/evidence/runtime/security-npm-audit-services-alarm-api-2026-08-24T07-33-56-064Z.json | PASS | yes | - |
+| Dependency CVEs | security.npm-audit.services-factory-twin-3d | 0 CRITICAL, 0 unapproved HIGH | docs/evidence/runtime/security-npm-audit-services-factory-twin-3d-2026-08-24T07-33-56-064Z.json | PASS | yes | - |
+| Dependency CVEs | security.npm-audit.nodered_data | 0 CRITICAL, 0 unapproved HIGH | docs/evidence/runtime/security-npm-audit-nodered_data-2026-08-24T07-33-56-064Z.json | PASS | yes | - |
+| Source secret exposure | security.gitleaks.full-history | 0 leaks across full git history | docs/evidence/runtime/security-gitleaks-2026-08-24T07-33-56-064Z.log | PASS | yes | - |
 | Source code vulnerabilities (static analysis) | security.codeql.source-analysis | 0 new high-confidence CodeQL alerts | docs/evidence/runtime (see .github/workflows/codeql.yml once billing is restored) | BLOCKED_EXTERNAL | yes | resolve the external blocker (see actual); re-run once resolved |
-| Container image CVEs | security.trivy.ims-alarm-api | 0 CRITICAL, 0 unapproved HIGH | docs/evidence/runtime/security-trivy-ims-alarm-api-2026-08-24T05-03-31-417Z.json | FAIL | yes | investigate and fix -- see evidence |
-| Container image CVEs | security.trivy.ims-factory-twin-3d | 0 CRITICAL, 0 unapproved HIGH | docs/evidence/runtime/security-trivy-ims-factory-twin-3d-2026-08-24T05-03-31-417Z.json | FAIL | yes | investigate and fix -- see evidence |
-| Container image CVEs | security.trivy.ims-node-red | 0 CRITICAL, 0 unapproved HIGH | docs/evidence/runtime/security-trivy-ims-node-red-2026-08-24T05-03-31-417Z.json | FAIL | yes | investigate and fix -- see evidence |
-| Container image CVEs | security.trivy.ims-pgbouncer | 0 CRITICAL, 0 unapproved HIGH | docs/evidence/runtime/security-trivy-ims-pgbouncer-2026-08-24T05-03-31-417Z.json | PASS | yes | - |
-| Container image CVEs | security.trivy.timescale-timescaledb-2.29.0-pg16 | 0 CRITICAL, 0 unapproved HIGH | docs/evidence/runtime/security-trivy-timescale-timescaledb-2.29.0-pg16-2026-08-24T05-03-31-417Z.json | FAIL | yes | investigate and fix -- see evidence |
-| Container image CVEs | security.trivy.grafana-grafana-13.1.2 | 0 CRITICAL, 0 unapproved HIGH | docs/evidence/runtime/security-trivy-grafana-grafana-13.1.2-2026-08-24T05-03-31-417Z.json | FAIL | yes | investigate and fix -- see evidence |
-| Container image CVEs | security.trivy.prom-prometheus-v3.13.2 | 0 CRITICAL, 0 unapproved HIGH | docs/evidence/runtime/security-trivy-prom-prometheus-v3.13.2-2026-08-24T05-03-31-417Z.json | FAIL | yes | investigate and fix -- see evidence |
-| Container image CVEs | security.trivy.prom-alertmanager-v0.33.1 | 0 CRITICAL, 0 unapproved HIGH | docs/evidence/runtime/security-trivy-prom-alertmanager-v0.33.1-2026-08-24T05-03-31-417Z.json | FAIL | yes | investigate and fix -- see evidence |
+| Container image CVEs | security.trivy.ims-alarm-api | 0 CRITICAL, 0 unapproved HIGH | docs/evidence/runtime/security-trivy-ims-alarm-api-2026-08-24T07-33-56-064Z.json | FAIL | yes | investigate and fix -- see evidence |
+| Container image CVEs | security.trivy.ims-factory-twin-3d | 0 CRITICAL, 0 unapproved HIGH | docs/evidence/runtime/security-trivy-ims-factory-twin-3d-2026-08-24T07-33-56-064Z.json | FAIL | yes | investigate and fix -- see evidence |
+| Container image CVEs | security.trivy.ims-node-red | 0 CRITICAL, 0 unapproved HIGH | docs/evidence/runtime/security-trivy-ims-node-red-2026-08-24T07-33-56-064Z.json | FAIL | yes | investigate and fix -- see evidence |
+| Container image CVEs | security.trivy.ims-pgbouncer | 0 CRITICAL, 0 unapproved HIGH | docs/evidence/runtime/security-trivy-ims-pgbouncer-2026-08-24T07-33-56-064Z.json | PASS | yes | - |
+| Container image CVEs | security.trivy.timescale-timescaledb-2.29.0-pg16 | 0 CRITICAL, 0 unapproved HIGH | docs/evidence/runtime/security-trivy-timescale-timescaledb-2.29.0-pg16-2026-08-24T07-33-56-064Z.json | FAIL | yes | investigate and fix -- see evidence |
+| Container image CVEs | security.trivy.grafana-grafana-13.1.2 | 0 CRITICAL, 0 unapproved HIGH | docs/evidence/runtime/security-trivy-grafana-grafana-13.1.2-2026-08-24T07-33-56-064Z.json | FAIL | yes | investigate and fix -- see evidence |
+| Container image CVEs | security.trivy.prom-prometheus-v3.13.2 | 0 CRITICAL, 0 unapproved HIGH | docs/evidence/runtime/security-trivy-prom-prometheus-v3.13.2-2026-08-24T07-33-56-064Z.json | FAIL | yes | investigate and fix -- see evidence |
+| Container image CVEs | security.trivy.prom-alertmanager-v0.33.1 | 0 CRITICAL, 0 unapproved HIGH | docs/evidence/runtime/security-trivy-prom-alertmanager-v0.33.1-2026-08-24T07-33-56-064Z.json | FAIL | yes | investigate and fix -- see evidence |
 
 A profile only exercises its own category list (see `scripts/production-assurance.js`'s `PROFILES`) -- a category not run this time shows as `NOT_TESTED` above and does not affect this run's verdict. Only a `full` profile run claims whole-system readiness.
