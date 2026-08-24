@@ -138,7 +138,7 @@ services:
 
   # ── Prometheus ────────────────────────────────────────────
   prometheus:
-    image: prom/prometheus:v3.13.2
+    image: prom/prometheus:v3.14.0
     container_name: ims-prometheus
     <<: *default-restart
     init: true
