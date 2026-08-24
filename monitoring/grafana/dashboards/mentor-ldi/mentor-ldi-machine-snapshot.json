@@ -1,0 +1,2158 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": false,
+        "iconColor": "rgba(255, 96, 96, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Record-precise Machine Snapshot. Telemetry panels show only ldi_data; alarm panels show only ldi_alarm_log joined to the verified master. Alarm-only machines are explicitly labeled rather than receiving invented telemetry values.",
+  "editable": false,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "Open Mentor MIS Command Center",
+      "tooltip": "",
+      "type": "link",
+      "url": "/d/mentor-mis-incident-command/mentor-mis-incident-command"
+    },
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "Open Mentor Data Readiness",
+      "tooltip": "",
+      "type": "link",
+      "url": "/d/mentor-ldi-data-readiness/mentor-ldi-data-readiness"
+    }
+  ],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "mentor-ldi-readonly"
+      },
+      "description": "The table keeps every telemetry record from the selected machine and minute. Clicking a blue Timestamp changes only the exact-record detail panels below; it does not collapse this table to one row.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "footer": {
+              "reducers": []
+            },
+            "inspect": false
+          },
+          "noValue": "N/A",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "State"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "false": {
+                        "color": "#EF4444",
+                        "text": "DOWN"
+                      },
+                      "true": {
+                        "color": "#22C55E",
+                        "text": "RUNNING"
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Timestamp"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              },
+              {
+                "id": "decimals",
+                "value": 6
+              },
+              {
+                "id": "custom.width",
+                "value": 210
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "oneClick": true,
+                    "targetBlank": false,
+                    "title": "Update detail panels and keep all records in this minute",
+                    "url": "/d/mentor-ldi-machine-snapshot/set2-machine-snapshot?var-clicked_series=${__data.fields[\"Machine\"]}%20-%20ldi_data&var-event_time_ms=${__value.time}&var-factory=${__data.fields[\"Factory\"]}&var-machine_id=${__data.fields[\"Machine\"]}&var-log_id=__auto__&from=${__from}&to=${__to}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Time"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              },
+              {
+                "id": "decimals",
+                "value": 6
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Machine"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 110
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Layer"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 80
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "FPN"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Scale Mode"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 80
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Film"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 60
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "MO"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "State"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 70
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Resist"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Board"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 70
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Factory"
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom.viz",
+                "value": true
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "cellHeight": "sm",
+        "enablePagination": false,
+        "frozenColumns": 2,
+        "rowHeight": 0.8,
+        "showHeader": true
+      },
+      "pluginVersion": "13.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "mentor-ldi-readonly"
+          },
+          "format": "table",
+          "rawSql": "SELECT \"time\" AS \"Timestamp\", eqp_id AS \"Machine\", state AS \"State\", mo AS \"MO\", fpn AS \"FPN\", layer_name AS \"Layer\", (board_no::TEXT || '/' || total_board::TEXT) AS \"Board\", filmno AS \"Film\", resist AS \"Resist\", scale_mode AS \"Scale Mode\", factory AS \"Factory\", log_id AS \"Log ID\"\nFROM public.ldi_data\nWHERE (\n  ${event_time_ms:raw}::NUMERIC > 0\n  AND eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n  AND \"time\" >= date_bin('1 minute', to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0), TIMESTAMPTZ '2000-01-01')\n  AND \"time\" < date_bin('1 minute', to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0), TIMESTAMPTZ '2000-01-01') + INTERVAL '1 minute'\n) OR (\n  ${event_time_ms:raw}::NUMERIC <= 0\n  AND log_id = NULLIF(${validated_log_id:sqlstring}, '__auto__')\n) OR (\n  ${event_time_ms:raw}::NUMERIC <= 0\n  AND ${validated_log_id:sqlstring} = '__none__'\n  AND log_id IN (\n    SELECT DISTINCT ON (d0.eqp_id) d0.log_id\n    FROM public.ldi_data d0\n    WHERE d0.factory IN (${factory:sqlstring})\n      AND d0.eqp_id IN (${machine_id:sqlstring})\n      AND $__timeFilter(d0.\"time\")\n    ORDER BY d0.eqp_id, d0.\"time\" DESC\n  )\n)\nORDER BY \"time\" ASC",
+          "refId": "A"
+        }
+      ],
+      "title": "STEP 1 — Click a blue Timestamp (all records in the minute stay visible)",
+      "transparent": true,
+      "type": "table"
+    },
+    {
+      "gridPos": {
+        "h": 2,
+        "w": 24,
+        "x": 0,
+        "y": 9
+      },
+      "id": 17,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "**How it works:** Choose any blue **Timestamp** in STEP 1. The complete one-minute record list remains visible, while Temperature, Humidity, process values, PE/JE, Epoch, Alarm Context, and Timeline update to the row you selected.",
+        "mode": "markdown"
+      },
+      "pluginVersion": "13.1.0",
+      "targets": [],
+      "title": "STEP 2 — Exact Record Details",
+      "transparent": true,
+      "type": "text"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "mentor-ldi-readonly"
+      },
+      "description": "temperature at clicked moment",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "max": 28,
+          "min": 18,
+          "noValue": "N/A",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#EF4444",
+                "value": 0
+              },
+              {
+                "color": "#F59E0B",
+                "value": 18
+              },
+              {
+                "color": "#22C55E",
+                "value": 20
+              },
+              {
+                "color": "#F59E0B",
+                "value": 24
+              },
+              {
+                "color": "#EF4444",
+                "value": 26
+              }
+            ]
+          },
+          "unit": "celsius"
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 0,
+        "y": 11
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "noValue": "NO TELEMETRY",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {
+          "titleSize": 11,
+          "valueSize": 28
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "13.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "mentor-ldi-readonly"
+          },
+          "format": "table",
+          "rawSql": "SELECT ROUND(temperature::NUMERIC, 2) AS value FROM public.ldi_data WHERE log_id = (COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${validated_log_id:sqlstring}, '__auto__')\n)) LIMIT 1",
+          "refId": "A"
+        }
+      ],
+      "title": "temperature (22±2°C)",
+      "transparent": true,
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "mentor-ldi-readonly"
+      },
+      "description": "humidity at clicked moment",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "max": 70,
+          "min": 40,
+          "noValue": "N/A",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#EF4444",
+                "value": 0
+              },
+              {
+                "color": "#F59E0B",
+                "value": 45
+              },
+              {
+                "color": "#22C55E",
+                "value": 50
+              },
+              {
+                "color": "#F59E0B",
+                "value": 60
+              },
+              {
+                "color": "#EF4444",
+                "value": 65
+              }
+            ]
+          },
+          "unit": "humidity"
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 8,
+        "y": 11
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "noValue": "NO TELEMETRY",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {
+          "titleSize": 11,
+          "valueSize": 28
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "13.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "mentor-ldi-readonly"
+          },
+          "format": "table",
+          "rawSql": "SELECT ROUND(humidity::NUMERIC, 2) AS value FROM public.ldi_data WHERE log_id = (COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${validated_log_id:sqlstring}, '__auto__')\n)) LIMIT 1",
+          "refId": "A"
+        }
+      ],
+      "title": "humidity (55±5%RH)",
+      "transparent": true,
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "mentor-ldi-readonly"
+      },
+      "description": "vacuum pressure at clicked moment",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 2,
+          "noValue": "N/A",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#EF4444",
+                "value": 0
+              },
+              {
+                "color": "#22C55E",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "pressurekpa"
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 16,
+        "y": 11
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "noValue": "NO TELEMETRY",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {
+          "titleSize": 11,
+          "valueSize": 28
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "13.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "mentor-ldi-readonly"
+          },
+          "format": "table",
+          "rawSql": "SELECT ROUND(air_vacuum::NUMERIC, 2) AS value FROM public.ldi_data WHERE log_id = (COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${validated_log_id:sqlstring}, '__auto__')\n)) LIMIT 1",
+          "refId": "A"
+        }
+      ],
+      "title": "air_vacuum (kPa)",
+      "transparent": true,
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "mentor-ldi-readonly"
+      },
+      "description": "laser scan speed at clicked moment",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 2,
+          "noValue": "N/A",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#EF4444",
+                "value": 0
+              },
+              {
+                "color": "#22C55E",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "suffix: mm/s"
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 0,
+        "y": 15
+      },
+      "id": 5,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "noValue": "NO TELEMETRY",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {
+          "titleSize": 11,
+          "valueSize": 28
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "13.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "mentor-ldi-readonly"
+          },
+          "format": "table",
+          "rawSql": "SELECT ROUND(scan_speed::NUMERIC, 2) AS value FROM public.ldi_data WHERE log_id = (COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${validated_log_id:sqlstring}, '__auto__')\n)) LIMIT 1",
+          "refId": "A"
+        }
+      ],
+      "title": "scan_speed (mm/s)",
+      "transparent": true,
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "mentor-ldi-readonly"
+      },
+      "description": "film thickness at clicked moment",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 3,
+          "noValue": "N/A",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#EF4444",
+                "value": 0
+              },
+              {
+                "color": "#22C55E",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "lengthmm"
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 8,
+        "y": 15
+      },
+      "id": 6,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "noValue": "NO TELEMETRY",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {
+          "titleSize": 11,
+          "valueSize": 28
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "13.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "mentor-ldi-readonly"
+          },
+          "format": "table",
+          "rawSql": "SELECT ROUND(thickness::NUMERIC, 2) AS value FROM public.ldi_data WHERE log_id = (COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${validated_log_id:sqlstring}, '__auto__')\n)) LIMIT 1",
+          "refId": "A"
+        }
+      ],
+      "title": "thickness (mm)",
+      "transparent": true,
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "mentor-ldi-readonly"
+      },
+      "description": "resist dosage at clicked moment",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 2,
+          "noValue": "N/A",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#EF4444",
+                "value": 0
+              },
+              {
+                "color": "#22C55E",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "suffix: mJ/cm²"
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 16,
+        "y": 15
+      },
+      "id": 7,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "noValue": "NO TELEMETRY",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {
+          "titleSize": 11,
+          "valueSize": 28
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "13.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "mentor-ldi-readonly"
+          },
+          "format": "table",
+          "rawSql": "SELECT ROUND(resist_dosage::NUMERIC, 2) AS value FROM public.ldi_data WHERE log_id = (COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${validated_log_id:sqlstring}, '__auto__')\n)) LIMIT 1",
+          "refId": "A"
+        }
+      ],
+      "title": "resist_dosage (mJ/cm²)",
+      "transparent": true,
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "mentor-ldi-readonly"
+      },
+      "description": "Real PE values from the selected event. N/A means this machine/event did not provide PE data.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "footer": {
+              "reducers": []
+            },
+            "inspect": false
+          },
+          "decimals": 3,
+          "noValue": "N/A",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "suffix: µm"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "PE Status"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "N/A": {
+                        "color": "#6B7280",
+                        "text": "N/A"
+                      },
+                      "OUT OF SPEC": {
+                        "color": "#EF4444",
+                        "text": "OUT OF SPEC"
+                      },
+                      "PASS": {
+                        "color": "#22C55E",
+                        "text": "PASS"
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "PE Status"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 110
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pe_2"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 80
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "MAX|PE|"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pe_1"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 80
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pe_6"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 80
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pe_setting"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pe_5"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 80
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pe_4"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 80
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pe_3"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 80
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 19
+      },
+      "id": 8,
+      "options": {
+        "cellHeight": "sm",
+        "enablePagination": false,
+        "rowHeight": 0.8,
+        "showHeader": true
+      },
+      "pluginVersion": "13.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "mentor-ldi-readonly"
+          },
+          "format": "table",
+          "rawSql": "SELECT ROUND(pe_1::NUMERIC,3) AS \"pe_1\",ROUND(pe_2::NUMERIC,3) AS \"pe_2\",\n ROUND(pe_3::NUMERIC,3) AS \"pe_3\",ROUND(pe_4::NUMERIC,3) AS \"pe_4\",\n ROUND(pe_5::NUMERIC,3) AS \"pe_5\",ROUND(pe_6::NUMERIC,3) AS \"pe_6\",\n ROUND(max_pe::NUMERIC,3) AS \"MAX|PE|\",ROUND(pe_setting::NUMERIC,3) AS \"pe_setting\",\n CASE WHEN max_pe IS NULL THEN 'N/A' WHEN max_pe <= pe_setting THEN 'PASS' ELSE 'OUT OF SPEC' END AS \"PE Status\"\nFROM (\n SELECT d.*,GREATEST(ABS(pe_1),ABS(pe_2),ABS(pe_3),ABS(pe_4),ABS(pe_5),ABS(pe_6)) AS max_pe\n FROM public.ldi_data d WHERE log_id=(COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${validated_log_id:sqlstring}, '__auto__')\n)) LIMIT 1\n) event_row;",
+          "refId": "A"
+        }
+      ],
+      "title": "pe_1–pe_6 + pe_setting",
+      "transparent": true,
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "mentor-ldi-readonly"
+      },
+      "description": "Real JE values from the selected event with PASS/OUT OF SPEC evaluated against je_setting.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "footer": {
+              "reducers": []
+            },
+            "inspect": false
+          },
+          "decimals": 3,
+          "noValue": "N/A",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "suffix: µm"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "JE Status"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "N/A": {
+                        "color": "#6B7280",
+                        "text": "N/A"
+                      },
+                      "OUT OF SPEC": {
+                        "color": "#EF4444",
+                        "text": "OUT OF SPEC"
+                      },
+                      "PASS": {
+                        "color": "#22C55E",
+                        "text": "PASS"
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "je_1"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "je_4"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "MAX|JE|"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "je_3"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "je_setting"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "je_2"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "JE Status"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 110
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 25
+      },
+      "id": 16,
+      "options": {
+        "cellHeight": "sm",
+        "enablePagination": false,
+        "rowHeight": 0.8,
+        "showHeader": true
+      },
+      "pluginVersion": "13.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "mentor-ldi-readonly"
+          },
+          "format": "table",
+          "rawSql": "SELECT ROUND(je_1::NUMERIC,3) AS \"je_1\",ROUND(je_2::NUMERIC,3) AS \"je_2\",\n ROUND(je_3::NUMERIC,3) AS \"je_3\",ROUND(je_4::NUMERIC,3) AS \"je_4\",\n ROUND(max_je::NUMERIC,3) AS \"MAX|JE|\",ROUND(je_setting::NUMERIC,3) AS \"je_setting\",\n CASE WHEN max_je IS NULL THEN 'N/A' WHEN max_je <= je_setting THEN 'PASS' ELSE 'OUT OF SPEC' END AS \"JE Status\"\nFROM (\n SELECT d.*,GREATEST(ABS(je_1),ABS(je_2),ABS(je_3),ABS(je_4)) AS max_je\n FROM public.ldi_data d WHERE log_id=(COALESCE(\n  (\n    SELECT d0.log_id\n    FROM public.ldi_data d0\n    WHERE ${event_time_ms:raw}::NUMERIC > 0\n      AND d0.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    ORDER BY ABS(EXTRACT(EPOCH FROM (d0.\"time\" - to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)))), d0.\"time\" DESC\n    LIMIT 1\n  ),\n  NULLIF(${validated_log_id:sqlstring}, '__auto__')\n)) LIMIT 1\n) event_row;",
+          "refId": "A"
+        }
+      ],
+      "title": "je_1–je_4 + je_setting",
+      "transparent": true,
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "mentor-ldi-readonly"
+      },
+      "description": "Process capability from v_machine_spc_ranking. Cpk >= 1.33 = Capable, Sigma Level = Cpk * 3.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "footer": {
+              "reducers": []
+            },
+            "inspect": false
+          },
+          "noValue": "N/A",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Capability"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "Capable": {
+                        "color": "#FACC15",
+                        "text": "Capable"
+                      },
+                      "Excellent": {
+                        "color": "#22C55E",
+                        "text": "Excellent"
+                      },
+                      "Marginally Capable": {
+                        "color": "#FACC15",
+                        "text": "Marginal"
+                      },
+                      "Not Capable": {
+                        "color": "#EF4444",
+                        "text": "Not Capable"
+                      },
+                      "World Class": {
+                        "color": "#22C55E",
+                        "text": "World Class"
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Timestamp"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              },
+              {
+                "id": "decimals",
+                "value": 6
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Time"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              },
+              {
+                "id": "decimals",
+                "value": 6
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Mean PE"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 75
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Samples"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 75
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Cp"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 70
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Cpk"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 70
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Machine"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 120
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 0,
+        "y": 31
+      },
+      "id": 9,
+      "options": {
+        "cellHeight": "sm",
+        "enablePagination": false,
+        "rowHeight": 0.8,
+        "showHeader": true
+      },
+      "pluginVersion": "13.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "mentor-ldi-readonly"
+          },
+          "format": "table",
+          "rawSql": "WITH selected_machines AS (\n  SELECT DISTINCT eqp_id FROM public.ldi_data\n  WHERE ((${event_time_ms:raw}::NUMERIC > 0 AND eqp_id=split_part(${clicked_series:sqlstring},' - ',1))\n    OR (${event_time_ms:raw}::NUMERIC <= 0 AND eqp_id IN (${machine_id:sqlstring})))\n), pe_samples AS (\n  SELECT d.eqp_id,d.pe_setting,p.pe FROM public.ldi_data d JOIN selected_machines sm ON sm.eqp_id=d.eqp_id\n  CROSS JOIN LATERAL (VALUES(d.pe_1),(d.pe_2),(d.pe_3),(d.pe_4),(d.pe_5),(d.pe_6)) p(pe)\n  WHERE $__timeFilter(d.\"time\") AND p.pe IS NOT NULL AND d.pe_setting IS NOT NULL\n), stats AS (\n  SELECT eqp_id,COUNT(*) sample_count,AVG(pe) mean_pe,STDDEV_SAMP(pe) stddev_pe,AVG(pe_setting) lim FROM pe_samples GROUP BY eqp_id\n)\nSELECT sm.eqp_id AS \"Machine\",COALESCE(stats.sample_count,0) AS \"Samples\",ROUND(stats.mean_pe::NUMERIC,2) AS \"Mean PE\",\n ROUND((lim/NULLIF(3*stddev_pe,0))::NUMERIC,2) AS \"Cp\",\n ROUND(LEAST((lim-mean_pe)/NULLIF(3*stddev_pe,0),(mean_pe+lim)/NULLIF(3*stddev_pe,0))::NUMERIC,2) AS \"Cpk\"\nFROM selected_machines sm LEFT JOIN stats ON stats.eqp_id=sm.eqp_id;",
+          "refId": "A"
+        }
+      ],
+      "title": "pe_1–pe_6 / pe_setting — Capability",
+      "transparent": true,
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "mentor-ldi-readonly"
+      },
+      "description": "Precise raw timestamp from the database. Engineer can verify this matches the clicked point.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "noValue": "N/A",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#22C55E",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "dateTimeAsIso"
+        }
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 12,
+        "y": 31
+      },
+      "id": 11,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "noValue": "No data",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "text": {
+          "titleSize": 14,
+          "valueSize": 32
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "13.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "mentor-ldi-readonly"
+          },
+          "format": "table",
+          "rawSql": "SELECT CASE\n  WHEN ${event_time_ms:raw}::NUMERIC > 0\n    THEN ${event_time_ms:raw}::NUMERIC\n  ELSE (\n    SELECT (EXTRACT(EPOCH FROM d.\"time\") * 1000)::NUMERIC\n    FROM public.ldi_data d\n    WHERE d.log_id = NULLIF(${validated_log_id:sqlstring}, '__auto__')\n    LIMIT 1\n  )\nEND AS value",
+          "refId": "A"
+        }
+      ],
+      "title": "time — Selected Epoch (ms)",
+      "transparent": true,
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "mentor-ldi-readonly"
+      },
+      "description": "Alarm rows within ±5 minutes of the exact selected telemetry record. This panel stays empty until a Timestamp is selected in STEP 1.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "footer": {
+              "reducers": []
+            },
+            "inspect": false
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "logdate"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              },
+              {
+                "id": "custom.width",
+                "value": 185
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "logid"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 250
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "errorcode"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 105
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "errortime"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 175
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "equipmentid"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 150
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "factory"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 75
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "process"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "alarm_id"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 115
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "alarm_type"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "A": {
+                        "color": "#EF4444",
+                        "text": "A"
+                      },
+                      "E": {
+                        "color": "#A855F7",
+                        "text": "E"
+                      },
+                      "NO ALARM": {
+                        "color": "#3B82F6",
+                        "text": "NO ALARM"
+                      },
+                      "UNMAPPED": {
+                        "color": "#EF4444",
+                        "text": "UNMAPPED"
+                      },
+                      "W": {
+                        "color": "#F59E0B",
+                        "text": "W"
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "custom.width",
+                "value": 95
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "alarm_code"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 115
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "alarm_msg"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 360
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "alarm_detail"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 420
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "mapping_status"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "MAPPED": {
+                        "color": "#22C55E",
+                        "text": "MAPPED"
+                      },
+                      "NO ALARM": {
+                        "color": "#3B82F6",
+                        "text": "NO ALARM"
+                      },
+                      "UNMAPPED": {
+                        "color": "#EF4444",
+                        "text": "UNMAPPED"
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "custom.width",
+                "value": 125
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 37
+      },
+      "id": 10,
+      "options": {
+        "cellHeight": "sm",
+        "enablePagination": true,
+        "frozenColumns": 2,
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "logdate"
+          }
+        ]
+      },
+      "pluginVersion": "13.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "mentor-ldi-readonly"
+          },
+          "format": "table",
+          "rawSql": "WITH target AS (\n  SELECT CASE\n    WHEN ${event_time_ms:raw}::NUMERIC > 0\n      THEN to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)\n    ELSE (\n      SELECT d.\"time\"\n      FROM public.ldi_data d\n      WHERE d.log_id = NULLIF(${validated_log_id:sqlstring}, '__auto__')\n      LIMIT 1\n    )\n  END AS \"time\"\n),\nall_machines AS (\n  SELECT d.eqp_id, d.factory::TEXT AS factory, d.process::TEXT AS process\n  FROM public.ldi_data d\n  UNION ALL\n  SELECT a.equipmentid, a.factory::TEXT, a.process::TEXT\n  FROM public.ldi_alarm_log a\n  WHERE a.equipmentid IS NOT NULL\n),\nselected_machines AS (\n  SELECT\n    am.eqp_id,\n    MIN(am.factory) AS factory,\n    MIN(am.process) AS process\n  FROM all_machines am\n  WHERE (\n      ${event_time_ms:raw}::NUMERIC > 0\n      AND am.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n    )\n    OR (\n      ${event_time_ms:raw}::NUMERIC <= 0\n      AND am.eqp_id IN (${machine_id:sqlstring})\n    )\n  GROUP BY am.eqp_id\n),\nalarm_rows AS (\n  SELECT\n    al.logid,\n    al.logdate,\n    al.errorcode,\n    al.errortime,\n    al.equipmentid,\n    al.factory,\n    al.process,\n    COALESCE(m.alarm_id, 'UNMAPPED') AS alarm_id,\n    COALESCE(m.alarm_type, 'UNMAPPED') AS alarm_type,\n    COALESCE(m.alarm_code, al.errorcode::TEXT) AS alarm_code,\n    COALESCE(m.alarm_msg, al.errorcode::TEXT) AS alarm_msg,\n    CASE\n      WHEN m.alarm_code IS NULL THEN 'No master record for this errorcode'\n      ELSE COALESCE(m.alarm_detail, 'No detail provided in master')\n    END AS alarm_detail,\n    CASE WHEN m.alarm_code IS NULL THEN 'UNMAPPED' ELSE 'MAPPED' END AS mapping_status\n  FROM public.ldi_alarm_log al\n  JOIN selected_machines sm ON sm.eqp_id = al.equipmentid\n  LEFT JOIN public.ldi_alarm_ms_code m\n    ON al.errorcode::TEXT = m.alarm_code::TEXT\n  WHERE al.logdate BETWEEN\n      (SELECT \"time\" - INTERVAL '5 minutes' FROM target)\n      AND\n      (SELECT \"time\" + INTERVAL '5 minutes' FROM target)\n)\nSELECT *\nFROM alarm_rows\nUNION ALL\nSELECT\n  'NO-ALARM-' || sm.eqp_id,\n  target.\"time\",\n  NULL::TEXT,\n  NULL::TEXT,\n  sm.eqp_id,\n  sm.factory,\n  sm.process,\n  'NOT APPLICABLE',\n  'NO ALARM',\n  'NOT APPLICABLE',\n  'No alarm event within ±5 minutes',\n  'Telemetry exists at the selected point, but no alarm event exists for this machine in the ±5-minute window',\n  'NO ALARM'\nFROM selected_machines sm\nCROSS JOIN target\nWHERE target.\"time\" IS NOT NULL\n  AND NOT EXISTS (\n  SELECT 1\n  FROM alarm_rows ar\n  WHERE ar.equipmentid = sm.eqp_id\n)\nORDER BY logdate DESC, equipmentid",
+          "refId": "A"
+        }
+      ],
+      "title": "Alarm Context ±5 min — ldi_alarm_log + Master",
+      "transparent": true,
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "mentor-ldi-readonly"
+      },
+      "description": "All telemetry and alarm events in the selected ±5-minute context. No SQL row limit is applied; pagination controls rendering.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "footer": {
+              "reducers": []
+            },
+            "inspect": false
+          },
+          "noValue": "N/A",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Event Type"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "Alarm": {
+                        "color": "#FACC15",
+                        "text": "ALARM"
+                      },
+                      "Machine Start": {
+                        "color": "#22C55E",
+                        "text": "START"
+                      },
+                      "Machine Stop": {
+                        "color": "#EF4444",
+                        "text": "STOP"
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "custom.width",
+                "value": 105
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Event Time"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 185
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Machine"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 150
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Source"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 125
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Description"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 300
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "mapping_status"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 135
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "logid"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 250
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "alarm_msg"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 360
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "alarm_detail"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 420
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 45
+      },
+      "id": 12,
+      "options": {
+        "cellHeight": "sm",
+        "enablePagination": true,
+        "frozenColumns": 2,
+        "rowHeight": 0.6,
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Event Time"
+          }
+        ]
+      },
+      "pluginVersion": "13.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "mentor-ldi-readonly"
+          },
+          "format": "table",
+          "rawSql": "WITH target AS (\n  SELECT CASE\n    WHEN ${event_time_ms:raw}::NUMERIC > 0\n      THEN to_timestamp(${event_time_ms:raw}::NUMERIC / 1000.0)\n    ELSE (\n      SELECT d.\"time\"\n      FROM public.ldi_data d\n      WHERE d.log_id = NULLIF(${validated_log_id:sqlstring}, '__auto__')\n      LIMIT 1\n    )\n  END AS t\n),\nevents AS (\n  SELECT\n    d.\"time\" AS event_time,\n    d.eqp_id AS machine,\n    'STATE'::TEXT AS event_type,\n    'ldi_data'::TEXT AS source,\n    d.log_id::TEXT AS logid,\n    NULL::TEXT AS errorcode,\n    NULL::TEXT AS errortime,\n    d.factory::TEXT AS factory,\n    d.process::TEXT AS process,\n    'NOT APPLICABLE'::TEXT AS alarm_id,\n    'TELEMETRY'::TEXT AS alarm_type,\n    'NOT APPLICABLE'::TEXT AS alarm_code,\n    'State sample; no alarm event'::TEXT AS alarm_msg,\n    'Alarm fields apply only to ALARM rows'::TEXT AS alarm_detail,\n    'NOT APPLICABLE'::TEXT AS mapping_status,\n    CASE WHEN d.state THEN 'RUNNING' ELSE 'DOWN' END AS description\n  FROM public.ldi_data d\n  CROSS JOIN target\n  WHERE (\n      (${event_time_ms:raw}::NUMERIC > 0\n        AND d.eqp_id = split_part(${clicked_series:sqlstring}, ' - ', 1))\n      OR\n      (${event_time_ms:raw}::NUMERIC <= 0\n        AND d.eqp_id IN (${machine_id:sqlstring}))\n    )\n    AND d.\"time\" BETWEEN target.t - INTERVAL '5 minutes'\n                     AND target.t + INTERVAL '5 minutes'\n\n  UNION ALL\n\n  SELECT\n    a.logdate,\n    a.equipmentid,\n    'ALARM',\n    'ldi_alarm_log',\n    a.logid,\n    a.errorcode::TEXT,\n    a.errortime::TEXT,\n    a.factory::TEXT,\n    a.process::TEXT,\n    COALESCE(m.alarm_id, 'UNMAPPED'),\n    COALESCE(m.alarm_type, 'UNMAPPED'),\n    COALESCE(m.alarm_code, a.errorcode::TEXT),\n    COALESCE(m.alarm_msg, a.errorcode::TEXT),\n    CASE\n      WHEN m.alarm_code IS NULL THEN 'No master record for this errorcode'\n      ELSE COALESCE(m.alarm_detail, 'No detail provided in master')\n    END,\n    CASE WHEN m.alarm_code IS NULL THEN 'UNMAPPED' ELSE 'MAPPED' END,\n    COALESCE(m.alarm_msg, a.errorcode::TEXT)\n  FROM public.ldi_alarm_log a\n  LEFT JOIN public.ldi_alarm_ms_code m\n    ON a.errorcode::TEXT = m.alarm_code::TEXT\n  CROSS JOIN target\n  WHERE (\n      (${event_time_ms:raw}::NUMERIC > 0\n        AND a.equipmentid = split_part(${clicked_series:sqlstring}, ' - ', 1))\n      OR\n      (${event_time_ms:raw}::NUMERIC <= 0\n        AND a.equipmentid IN (${machine_id:sqlstring}))\n    )\n    AND a.logdate BETWEEN target.t - INTERVAL '5 minutes'\n                      AND target.t + INTERVAL '5 minutes'\n)\nSELECT\n  event_time AS \"Event Time\",\n  machine AS \"Machine\",\n  event_type AS \"Event Type\",\n  source AS \"Source\",\n  description AS \"Description\",\n  mapping_status,\n  logid,\n  errorcode,\n  errortime,\n  factory,\n  process,\n  alarm_id,\n  alarm_type,\n  alarm_code,\n  alarm_msg,\n  alarm_detail\nFROM events\nORDER BY event_time DESC",
+          "refId": "A"
+        }
+      ],
+      "title": "Unified Event Timeline ±5 min — ldi_data + ldi_alarm_log",
+      "transparent": true,
+      "type": "table"
+    }
+  ],
+  "preload": false,
+  "refresh": "10s",
+  "schemaVersion": 42,
+  "tags": [
+    "mentor-db",
+    "read-only",
+    "historical-data"
+  ],
+  "templating": {
+    "list": [
+      {
+        "allowCustomValue": true,
+        "current": {
+          "text": "__none__",
+          "value": "__none__"
+        },
+        "hide": 2,
+        "includeAll": false,
+        "label": "clicked_series",
+        "multi": false,
+        "name": "clicked_series",
+        "options": [],
+        "query": "__none__",
+        "skipUrlSync": false,
+        "type": "custom",
+        "valuesFormat": "csv"
+      },
+      {
+        "allowCustomValue": true,
+        "current": {
+          "text": "0",
+          "value": "0"
+        },
+        "hide": 2,
+        "includeAll": false,
+        "label": "event_time_ms",
+        "multi": false,
+        "name": "event_time_ms",
+        "options": [],
+        "query": "0",
+        "skipUrlSync": false,
+        "type": "custom",
+        "valuesFormat": "csv"
+      },
+      {
+        "allowCustomValue": true,
+        "current": {
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "postgres",
+          "uid": "mentor-ldi-readonly"
+        },
+        "definition": "SELECT DISTINCT factory AS __text, factory AS __value FROM public.ldi_data ORDER BY factory",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Factory",
+        "multi": true,
+        "name": "factory",
+        "options": [],
+        "query": "SELECT DISTINCT factory AS __text, factory AS __value FROM public.ldi_data ORDER BY factory",
+        "refresh": 1,
+        "regex": "",
+        "regexApplyTo": "value",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allowCustomValue": true,
+        "current": {
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "postgres",
+          "uid": "mentor-ldi-readonly"
+        },
+        "definition": "SELECT machine_id AS __text, machine_id AS __value\nFROM (\n  SELECT DISTINCT d.eqp_id AS machine_id, d.factory\n  FROM public.ldi_data d\n  UNION\n  SELECT DISTINCT a.equipmentid AS machine_id, a.factory\n  FROM public.ldi_alarm_log a\n  WHERE a.equipmentid IS NOT NULL\n) machines\nWHERE (\n    ${clicked_series:sqlstring} <> '__none__'\n    AND machine_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n  )\n  OR (\n    ${clicked_series:sqlstring} = '__none__'\n    AND factory IN (${factory:sqlstring})\n  )\nORDER BY machine_id",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Machine",
+        "multi": true,
+        "name": "machine_id",
+        "options": [],
+        "query": "SELECT machine_id AS __text, machine_id AS __value\nFROM (\n  SELECT DISTINCT d.eqp_id AS machine_id, d.factory\n  FROM public.ldi_data d\n  UNION\n  SELECT DISTINCT a.equipmentid AS machine_id, a.factory\n  FROM public.ldi_alarm_log a\n  WHERE a.equipmentid IS NOT NULL\n) machines\nWHERE (\n    ${clicked_series:sqlstring} <> '__none__'\n    AND machine_id = split_part(${clicked_series:sqlstring}, ' - ', 1)\n  )\n  OR (\n    ${clicked_series:sqlstring} = '__none__'\n    AND factory IN (${factory:sqlstring})\n  )\nORDER BY machine_id",
+        "refresh": 1,
+        "regex": "",
+        "regexApplyTo": "value",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allowCustomValue": true,
+        "current": {
+          "text": "Selected Timestamp",
+          "value": "__auto__"
+        },
+        "datasource": {
+          "type": "postgres",
+          "uid": "mentor-ldi-readonly"
+        },
+        "definition": "WITH options AS (\n  SELECT\n    '__select__'::TEXT AS __text,\n    '__select__'::TEXT AS __value,\n    0 AS sort_rank,\n    NOW() AS sort_time\n  WHERE ${event_time_ms:raw}::NUMERIC <= 0\n\n  UNION ALL\n\n  SELECT\n    '__auto__'::TEXT AS __text,\n    '__auto__'::TEXT AS __value,\n    0 AS sort_rank,\n    NOW() AS sort_time\n  WHERE ${event_time_ms:raw}::NUMERIC > 0\n\n  UNION ALL\n\n  SELECT\n    log_id::TEXT AS __text,\n    log_id::TEXT AS __value,\n    1 AS sort_rank,\n    \"time\" AS sort_time\n  FROM public.ldi_data\n  WHERE ${event_time_ms:raw}::NUMERIC <= 0\n    AND cardinality(ARRAY[${machine_id:sqlstring}]::TEXT[]) = 1\n    AND eqp_id IN (${machine_id:sqlstring})\n    AND factory IN (${factory:sqlstring})\n    AND $__timeFilter(\"time\")\n)\nSELECT __text, __value\nFROM options\nORDER BY sort_rank, sort_time DESC\nLIMIT 501",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Record (Log ID)",
+        "multi": false,
+        "name": "log_id",
+        "options": [],
+        "query": "WITH options AS (\n  SELECT\n    'Click a Timestamp above'::TEXT AS __text,\n    '__select__'::TEXT AS __value,\n    0 AS sort_rank,\n    NOW() AS sort_time\n  WHERE ${event_time_ms:raw}::NUMERIC <= 0\n\n  UNION ALL\n\n  SELECT\n    'Selected Timestamp'::TEXT AS __text,\n    '__auto__'::TEXT AS __value,\n    0 AS sort_rank,\n    NOW() AS sort_time\n  WHERE ${event_time_ms:raw}::NUMERIC > 0\n\n  UNION ALL\n\n  SELECT\n    log_id::TEXT AS __text,\n    log_id::TEXT AS __value,\n    1 AS sort_rank,\n    \"time\" AS sort_time\n  FROM public.ldi_data\n  WHERE ${event_time_ms:raw}::NUMERIC <= 0\n    AND cardinality(ARRAY[${machine_id:sqlstring}]::TEXT[]) = 1\n    AND eqp_id IN (${machine_id:sqlstring})\n    AND factory IN (${factory:sqlstring})\n    AND $__timeFilter(\"time\")\n)\nSELECT __text, __value\nFROM options\nORDER BY sort_rank, sort_time DESC\nLIMIT 501",
+        "refresh": 1,
+        "regex": "",
+        "regexApplyTo": "value",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allowCustomValue": true,
+        "current": {
+          "text": "__auto__",
+          "value": "__auto__"
+        },
+        "datasource": {
+          "type": "postgres",
+          "uid": "mentor-ldi-readonly"
+        },
+        "definition": "WITH candidate AS (\n  SELECT\n    d.log_id::TEXT AS __text,\n    d.log_id::TEXT AS __value\n  FROM public.ldi_data d\n  WHERE ${event_time_ms:raw}::NUMERIC <= 0\n    AND cardinality(ARRAY[${machine_id:sqlstring}]::TEXT[]) = 1\n    AND d.eqp_id IN (${machine_id:sqlstring})\n    AND d.factory IN (${factory:sqlstring})\n    AND d.log_id::TEXT = NULLIF(${log_id:sqlstring}, '__select__')\n\n  UNION ALL\n\n  SELECT '__auto__'::TEXT, '__auto__'::TEXT\n  WHERE ${event_time_ms:raw}::NUMERIC > 0\n)\nSELECT __text, __value FROM candidate\nUNION ALL\nSELECT '__none__', '__none__'\nWHERE NOT EXISTS (SELECT 1 FROM candidate)",
+        "hide": 2,
+        "includeAll": false,
+        "label": "Validated Log ID",
+        "multi": false,
+        "name": "validated_log_id",
+        "options": [],
+        "query": "WITH candidate AS (\n  SELECT\n    d.log_id::TEXT AS __text,\n    d.log_id::TEXT AS __value\n  FROM public.ldi_data d\n  WHERE ${event_time_ms:raw}::NUMERIC <= 0\n    AND cardinality(ARRAY[${machine_id:sqlstring}]::TEXT[]) = 1\n    AND d.eqp_id IN (${machine_id:sqlstring})\n    AND d.factory IN (${factory:sqlstring})\n    AND d.log_id::TEXT = NULLIF(${log_id:sqlstring}, '__select__')\n\n  UNION ALL\n\n  SELECT '__auto__'::TEXT, '__auto__'::TEXT\n  WHERE ${event_time_ms:raw}::NUMERIC > 0\n)\nSELECT __text, __value FROM candidate\nUNION ALL\nSELECT '__none__', '__none__'\nWHERE NOT EXISTS (SELECT 1 FROM candidate)",
+        "refresh": 2,
+        "regex": "",
+        "regexApplyTo": "value",
+        "skipUrlSync": true,
+        "sort": 0,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "2026-07-19T21:00:00Z",
+    "to": "2026-07-20T03:00:00Z"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ]
+  },
+  "timezone": "browser",
+  "title": "[Mentor DB] LDI Machine Snapshot",
+  "uid": "mentor-ldi-machine-snapshot",
+  "version": 1
+}

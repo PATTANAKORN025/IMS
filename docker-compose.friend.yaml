@@ -1,0 +1,74 @@
+services:
+  timescaledb:
+    container_name: ims-friend-timescaledb
+    ports: !override
+      - "127.0.0.1:15432:5432"
+
+  pgbouncer:
+    container_name: ims-friend-pgbouncer
+    networks:
+      ims-internal:
+        aliases:
+          - ims-pgbouncer
+
+  prometheus:
+    container_name: ims-friend-prometheus
+    ports: !override
+      - "127.0.0.1:19090:9090"
+
+  alertmanager:
+    container_name: ims-friend-alertmanager
+    ports: !override
+      - "127.0.0.1:19093:9093"
+
+  grafana:
+    container_name: ims-friend-grafana
+    environment:
+      MENTOR_LDI_DB_HOST: "${MENTOR_LDI_DB_HOST:?MENTOR_LDI_DB_HOST required in .env}"
+      MENTOR_LDI_DB_PORT: "${MENTOR_LDI_DB_PORT:?MENTOR_LDI_DB_PORT required in .env}"
+      MENTOR_LDI_DB_NAME: "${MENTOR_LDI_DB_NAME:?MENTOR_LDI_DB_NAME required in .env}"
+      MENTOR_LDI_DB_USER: "${MENTOR_LDI_DB_USER:?MENTOR_LDI_DB_USER required in .env}"
+      MENTOR_LDI_DB_PASSWORD: "${MENTOR_LDI_DB_PASSWORD:?MENTOR_LDI_DB_PASSWORD required in .env}"
+
+  proxy:
+    container_name: ims-friend-proxy
+    ports: !override
+      - "127.0.0.1:3300:80"
+
+  renderer:
+    container_name: ims-friend-grafana-renderer
+
+  snmpsim:
+    container_name: ims-friend-snmpsim
+    networks:
+      ims-internal:
+        aliases:
+          - ims-snmpsim
+
+  blackbox-exporter:
+    container_name: ims-friend-blackbox
+    ports: !override
+      - "127.0.0.1:19115:9115"
+
+  db-migrate:
+    container_name: ims-friend-db-migrate
+
+  alarm-api:
+    container_name: ims-friend-alarm-api
+
+  factory-twin-3d:
+    container_name: ims-friend-factory-twin-3d
+
+  node-red:
+    container_name: ims-friend-node-red
+    environment:
+      # settings.js requires pg/net-snmp before Node-RED applies its extra
+      # module path, so include the Dockerfile's installed module directory.
+      NODE_PATH: "/usr/src/node-red/node_modules:/usr/src/node_modules:/data/node_modules"
+    ports: !override
+      - "127.0.0.1:11880:1880"
+
+  observability-archiver:
+    container_name: ims-friend-observability-archiver
+    profiles:
+      - archiver

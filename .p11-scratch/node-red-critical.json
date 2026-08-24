@@ -1,0 +1,927 @@
+{
+  "SchemaVersion": 2,
+  "CreatedAt": "2026-08-24T13:23:07.1244004+07:00",
+  "ArtifactName": "ims-node-red",
+  "ArtifactType": "container_image",
+  "Metadata": {
+    "Size": 396014592,
+    "OS": {
+      "Family": "alpine",
+      "Name": "3.20.3",
+      "EOSL": true
+    },
+    "ImageID": "sha256:846236af68145b941e2dc9d763c049d9bf027aa404dd9fb7890181f486ddacd0",
+    "DiffIDs": [
+      "sha256:75654b8eeebd3beae97271a102f57cdeb794cc91e442648544963a7e951e9558",
+      "sha256:e5174df11535f9f4689677da2bd1c37aa7b708dda3d491709e73cc817afe4795",
+      "sha256:58b2036d19a8a7b69656bc50e4a243e78aab173b97ae14b49b435b5a5e9c096f",
+      "sha256:14c33253c4090c7d26ab865e5ff003e288c48ae3f0f36329fe3629ea584eb755",
+      "sha256:e1467c0eac5a753be1d234a48fd0d84122b4eb61891fac34bc8cdbac140fb51e",
+      "sha256:ac64fc9e0597857690d76a3641273e724dfa57a4702b2cbc5e877749ae994b66",
+      "sha256:7428be20bff0a23854bce7b54f8988e7ac5f057d2fd12a8fa5a65cc88221d5e9",
+      "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
+      "sha256:b2974c9134419400e8e8c50fdb02d045936f2086ad43db2b299321df4cf9f77f",
+      "sha256:e4c21f7b66fe9de4ec1f2bacd57625d197f880c20d122ee36b0b79fc1545dd86",
+      "sha256:a3f8b3ca9a4f83bea430afb662f4ac05fef51f83222076e1e37f22f05b947979",
+      "sha256:56f944d30c6931ede0c5f3dca053a48425e12a18441d946c2b300161121fc9b3",
+      "sha256:e6b551b58aee64247f0ec1a1df04eb522567712792573ca8e7467f7ae3a47d65",
+      "sha256:44c9a39b4f33106e2848360ac03406249f51924254f2b9f81116c2fc90e87801",
+      "sha256:c850374229296ad3e6f8237a441bfdee966c95b8bbb6797019ff448642f32027",
+      "sha256:93bc7dc904becd6c5da58e6ba4c5297b1304307873db85b5585012a5dc2a5b9c",
+      "sha256:e4e8d912e87d01536aec329b5cee997e6541501cd3c0cc363d263141b8b51f61",
+      "sha256:a71a546c1d3a43230ca47a168748b57c5bd7f41ba429b42def5e14d5392160b0",
+      "sha256:218a8184c658d738183ff260d52daa4b30e5bc7e449dbb5d61cb59015b68000c",
+      "sha256:1fd6b9b187c1d659e4bfd7935f99adbc43ffe77c7d4912262f83b854e6e4dbd5"
+    ],
+    "RepoTags": [
+      "ims-node-red:latest"
+    ],
+    "RepoDigests": [
+      "ims-node-red@sha256:846236af68145b941e2dc9d763c049d9bf027aa404dd9fb7890181f486ddacd0"
+    ],
+    "ImageConfig": {
+      "architecture": "amd64",
+      "created": "2026-08-21T06:31:25.422313307Z",
+      "history": [
+        {
+          "created": "2024-09-06T12:05:36Z",
+          "created_by": "ADD alpine-minirootfs-3.20.3-x86_64.tar.gz / # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2024-09-06T12:05:36Z",
+          "created_by": "CMD [\"/bin/sh\"]",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2024-10-29T20:39:22Z",
+          "created_by": "ENV NODE_VERSION=22.11.0",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2024-10-29T20:39:22Z",
+          "created_by": "RUN /bin/sh -c addgroup -g 1000 node     \u0026\u0026 adduser -u 1000 -G node -s /bin/sh -D node     \u0026\u0026 apk add --no-cache         libstdc++     \u0026\u0026 apk add --no-cache --virtual .build-deps         curl     \u0026\u0026 ARCH= OPENSSL_ARCH='linux*' \u0026\u0026 alpineArch=\"$(apk --print-arch)\"       \u0026\u0026 case \"${alpineArch##*-}\" in         x86_64) ARCH='x64' CHECKSUM=\"95e9a410b7ce732705493cd44496c8e77ccb11516c75c2ef794f19a9943d178c\" OPENSSL_ARCH=linux-x86_64;;         x86) OPENSSL_ARCH=linux-elf;;         aarch64) OPENSSL_ARCH=linux-aarch64;;         arm*) OPENSSL_ARCH=linux-armv4;;         ppc64le) OPENSSL_ARCH=linux-ppc64le;;         s390x) OPENSSL_ARCH=linux-s390x;;         *) ;;       esac   \u0026\u0026 if [ -n \"${CHECKSUM}\" ]; then     set -eu;     curl -fsSLO --compressed \"https://unofficial-builds.nodejs.org/download/release/v$NODE_VERSION/node-v$NODE_VERSION-linux-$ARCH-musl.tar.xz\";     echo \"$CHECKSUM  node-v$NODE_VERSION-linux-$ARCH-musl.tar.xz\" | sha256sum -c -       \u0026\u0026 tar -xJf \"node-v$NODE_VERSION-linux-$ARCH-musl.tar.xz\" -C /usr/local --strip-components=1 --no-same-owner       \u0026\u0026 ln -s /usr/local/bin/node /usr/local/bin/nodejs;   else     echo \"Building from source\"     \u0026\u0026 apk add --no-cache --virtual .build-deps-full         binutils-gold         g++         gcc         gnupg         libgcc         linux-headers         make         python3         py-setuptools     \u0026\u0026 export GNUPGHOME=\"$(mktemp -d)\"     \u0026\u0026 for key in       C0D6248439F1D5604AAFFB4021D900FFDB233756       DD792F5973C6DE52C432CBDAC77ABFA00DDBF2B7       CC68F5A3106FF448322E48ED27F5E38D5B0A215F       8FCCA13FEF1D0C2E91008E09770F7A9A5AE15600       890C08DB8579162FEE0DF9DB8BEAB4DFCF555EF4       C82FA3AE1CBEDC6BE46B9360C43CEC45C17AB93C       108F52B48DB57BB0CC439B2997B01419BD92F80A       A363A499291CBBC940DD62E41F10027AF002F8B0     ; do       gpg --batch --keyserver hkps://keys.openpgp.org --recv-keys \"$key\" ||       gpg --batch --keyserver keyserver.ubuntu.com --recv-keys \"$key\" ;     done     \u0026\u0026 curl -fsSLO --compressed \"https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION.tar.xz\"     \u0026\u0026 curl -fsSLO --compressed \"https://nodejs.org/dist/v$NODE_VERSION/SHASUMS256.txt.asc\"     \u0026\u0026 gpg --batch --decrypt --output SHASUMS256.txt SHASUMS256.txt.asc     \u0026\u0026 gpgconf --kill all     \u0026\u0026 rm -rf \"$GNUPGHOME\"     \u0026\u0026 grep \" node-v$NODE_VERSION.tar.xz\\$\" SHASUMS256.txt | sha256sum -c -     \u0026\u0026 tar -xf \"node-v$NODE_VERSION.tar.xz\"     \u0026\u0026 cd \"node-v$NODE_VERSION\"     \u0026\u0026 ./configure     \u0026\u0026 make -j$(getconf _NPROCESSORS_ONLN) V=     \u0026\u0026 make install     \u0026\u0026 apk del .build-deps-full     \u0026\u0026 cd ..     \u0026\u0026 rm -Rf \"node-v$NODE_VERSION\"     \u0026\u0026 rm \"node-v$NODE_VERSION.tar.xz\" SHASUMS256.txt.asc SHASUMS256.txt;   fi   \u0026\u0026 rm -f \"node-v$NODE_VERSION-linux-$ARCH-musl.tar.xz\"   \u0026\u0026 find /usr/local/include/node/openssl/archs -mindepth 1 -maxdepth 1 ! -name \"$OPENSSL_ARCH\" -exec rm -rf {} \\;   \u0026\u0026 apk del .build-deps   \u0026\u0026 node --version   \u0026\u0026 npm --version # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2024-10-29T20:39:22Z",
+          "created_by": "ENV YARN_VERSION=1.22.22",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2024-10-29T20:39:22Z",
+          "created_by": "RUN /bin/sh -c apk add --no-cache --virtual .build-deps-yarn curl gnupg tar   \u0026\u0026 export GNUPGHOME=\"$(mktemp -d)\"   \u0026\u0026 for key in     6A010C5166006599AA17F08146C2130DFD2497F5   ; do     gpg --batch --keyserver hkps://keys.openpgp.org --recv-keys \"$key\" ||     gpg --batch --keyserver keyserver.ubuntu.com --recv-keys \"$key\" ;   done   \u0026\u0026 curl -fsSLO --compressed \"https://yarnpkg.com/downloads/$YARN_VERSION/yarn-v$YARN_VERSION.tar.gz\"   \u0026\u0026 curl -fsSLO --compressed \"https://yarnpkg.com/downloads/$YARN_VERSION/yarn-v$YARN_VERSION.tar.gz.asc\"   \u0026\u0026 gpg --batch --verify yarn-v$YARN_VERSION.tar.gz.asc yarn-v$YARN_VERSION.tar.gz   \u0026\u0026 gpgconf --kill all   \u0026\u0026 rm -rf \"$GNUPGHOME\"   \u0026\u0026 mkdir -p /opt   \u0026\u0026 tar -xzf yarn-v$YARN_VERSION.tar.gz -C /opt/   \u0026\u0026 ln -s /opt/yarn-v$YARN_VERSION/bin/yarn /usr/local/bin/yarn   \u0026\u0026 ln -s /opt/yarn-v$YARN_VERSION/bin/yarnpkg /usr/local/bin/yarnpkg   \u0026\u0026 rm yarn-v$YARN_VERSION.tar.gz.asc yarn-v$YARN_VERSION.tar.gz   \u0026\u0026 apk del .build-deps-yarn   \u0026\u0026 yarn --version   \u0026\u0026 rm -rf /tmp/* # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2024-10-29T20:39:22Z",
+          "created_by": "COPY docker-entrypoint.sh /usr/local/bin/ # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2024-10-29T20:39:22Z",
+          "created_by": "ENTRYPOINT [\"docker-entrypoint.sh\"]",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2024-10-29T20:39:22Z",
+          "created_by": "CMD [\"node\"]",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2024-11-19T20:46:19Z",
+          "created_by": "ARG QEMU_ARCH",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2024-11-19T20:46:19Z",
+          "created_by": "COPY .docker/scripts/*.sh /tmp/ # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2024-11-19T20:46:19Z",
+          "created_by": "COPY .docker/healthcheck.js / # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2024-11-19T20:46:21Z",
+          "created_by": "RUN |1 QEMU_ARCH= /bin/sh -c set -ex \u0026\u0026     apk add --no-cache         bash         tzdata         iputils         curl         nano         git         openssl         openssh-client         ca-certificates \u0026\u0026     mkdir -p /usr/src/node-red /data \u0026\u0026     deluser --remove-home node \u0026\u0026     adduser -h /usr/src/node-red -D -H node-red -u 1000 \u0026\u0026     chown -R node-red:root /data \u0026\u0026 chmod -R g+rwX /data \u0026\u0026     chown -R node-red:root /usr/src/node-red \u0026\u0026 chmod -R g+rwX /usr/src/node-red # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2024-11-19T20:46:21Z",
+          "created_by": "WORKDIR /usr/src/node-red",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2024-11-19T20:46:21Z",
+          "created_by": "COPY .docker/known_hosts.sh . # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2024-11-19T20:46:26Z",
+          "created_by": "RUN |1 QEMU_ARCH= /bin/sh -c ./known_hosts.sh /etc/ssh/ssh_known_hosts \u0026\u0026 rm /usr/src/node-red/known_hosts.sh # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2024-11-19T20:46:26Z",
+          "created_by": "RUN |1 QEMU_ARCH= /bin/sh -c echo \"PubkeyAcceptedKeyTypes +ssh-rsa\" \u003e\u003e /etc/ssh/ssh_config # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2024-11-19T20:46:26Z",
+          "created_by": "COPY package.json . # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2024-11-19T20:46:26Z",
+          "created_by": "COPY flows.json /data # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2024-11-19T20:46:26Z",
+          "created_by": "COPY .docker/scripts/entrypoint.sh . # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2024-11-19T20:46:26Z",
+          "created_by": "ARG BUILD_DATE=2024-11-19T20:45:56Z",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2024-11-19T20:46:26Z",
+          "created_by": "ARG BUILD_VERSION=4.0.5",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2024-11-19T20:46:26Z",
+          "created_by": "ARG BUILD_REF=",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2024-11-19T20:46:26Z",
+          "created_by": "ARG NODE_RED_VERSION=v4.0.5",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2024-11-19T20:46:26Z",
+          "created_by": "ARG ARCH",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2024-11-19T20:46:26Z",
+          "created_by": "ARG QEMU_ARCH",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2024-11-19T20:46:26Z",
+          "created_by": "ARG TAG_SUFFIX=-minimal",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2024-11-19T20:46:26Z",
+          "created_by": "LABEL org.label-schema.build-date=2024-11-19T20:45:56Z org.label-schema.docker.dockerfile=.docker/Dockerfile.alpine org.label-schema.license=Apache-2.0 org.label-schema.name=Node-RED org.label-schema.version=4.0.5 org.label-schema.description=Low-code programming for event-driven applications. org.label-schema.url=https://nodered.org org.label-schema.vcs-ref= org.label-schema.vcs-type=Git org.label-schema.vcs-url=https://github.com/node-red/node-red-docker org.opencontainers.image.source=https://github.com/node-red/node-red-docker org.label-schema.arch= authors=Dave Conway-Jones, Nick O'Leary, James Thomas, Raymond Mouthaan",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2024-11-19T20:46:46Z",
+          "created_by": "COPY /usr/src/node-red/prod_node_modules ./node_modules # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2024-11-19T20:46:53Z",
+          "created_by": "RUN |8 QEMU_ARCH= BUILD_DATE=2024-11-19T20:45:56Z BUILD_VERSION=4.0.5 BUILD_REF= NODE_RED_VERSION=v4.0.5 ARCH= QEMU_ARCH= TAG_SUFFIX=-minimal /bin/sh -c chown -R node-red:root /usr/src/node-red \u0026\u0026     /tmp/install_devtools.sh \u0026\u0026     rm -r /tmp/* # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2024-11-19T20:46:54Z",
+          "created_by": "RUN |8 QEMU_ARCH= BUILD_DATE=2024-11-19T20:45:56Z BUILD_VERSION=4.0.5 BUILD_REF= NODE_RED_VERSION=v4.0.5 ARCH= QEMU_ARCH= TAG_SUFFIX=-minimal /bin/sh -c npm config set cache /data/.npm --global # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2024-11-19T20:46:54Z",
+          "created_by": "USER node-red",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2024-11-19T20:46:54Z",
+          "created_by": "ENV NODE_RED_VERSION=v4.0.5 NODE_PATH=/usr/src/node-red/node_modules:/data/node_modules PATH=/usr/src/node-red/node_modules/.bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin FLOWS=flows.json",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2024-11-19T20:46:54Z",
+          "created_by": "EXPOSE map[1880/tcp:{}]",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2024-11-19T20:46:54Z",
+          "created_by": "HEALTHCHECK \u0026{[\"CMD-SHELL\" \"node /healthcheck.js\"] \"0s\" \"0s\" \"0s\" \"0s\" '\\x00'}",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2024-11-19T20:46:54Z",
+          "created_by": "ENTRYPOINT [\"./entrypoint.sh\"]",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-08-21T06:31:04Z",
+          "created_by": "USER root",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-08-21T06:31:04Z",
+          "created_by": "RUN /bin/sh -c apk update \u0026\u0026 apk upgrade --no-cache # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2026-08-21T06:31:05Z",
+          "created_by": "COPY package.json /tmp/package.json # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2026-08-21T06:31:25Z",
+          "created_by": "RUN /bin/sh -c cd /tmp \u0026\u0026 npm install --omit=dev --no-fund \u0026\u0026     mv node_modules /usr/src/node_modules \u0026\u0026     npm cache clean --force \u0026\u0026     rm /tmp/package.json \u0026\u0026     chown -R node-red:node-red /usr/src/node_modules # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2026-08-21T06:31:25Z",
+          "created_by": "USER node-red",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-08-21T06:31:25Z",
+          "created_by": "ENV NODE_RED_EXTRA_NODE_PATH=/usr/src/node_modules",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        }
+      ],
+      "os": "linux",
+      "rootfs": {
+        "type": "layers",
+        "diff_ids": [
+          "sha256:75654b8eeebd3beae97271a102f57cdeb794cc91e442648544963a7e951e9558",
+          "sha256:e5174df11535f9f4689677da2bd1c37aa7b708dda3d491709e73cc817afe4795",
+          "sha256:58b2036d19a8a7b69656bc50e4a243e78aab173b97ae14b49b435b5a5e9c096f",
+          "sha256:14c33253c4090c7d26ab865e5ff003e288c48ae3f0f36329fe3629ea584eb755",
+          "sha256:e1467c0eac5a753be1d234a48fd0d84122b4eb61891fac34bc8cdbac140fb51e",
+          "sha256:ac64fc9e0597857690d76a3641273e724dfa57a4702b2cbc5e877749ae994b66",
+          "sha256:7428be20bff0a23854bce7b54f8988e7ac5f057d2fd12a8fa5a65cc88221d5e9",
+          "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
+          "sha256:b2974c9134419400e8e8c50fdb02d045936f2086ad43db2b299321df4cf9f77f",
+          "sha256:e4c21f7b66fe9de4ec1f2bacd57625d197f880c20d122ee36b0b79fc1545dd86",
+          "sha256:a3f8b3ca9a4f83bea430afb662f4ac05fef51f83222076e1e37f22f05b947979",
+          "sha256:56f944d30c6931ede0c5f3dca053a48425e12a18441d946c2b300161121fc9b3",
+          "sha256:e6b551b58aee64247f0ec1a1df04eb522567712792573ca8e7467f7ae3a47d65",
+          "sha256:44c9a39b4f33106e2848360ac03406249f51924254f2b9f81116c2fc90e87801",
+          "sha256:c850374229296ad3e6f8237a441bfdee966c95b8bbb6797019ff448642f32027",
+          "sha256:93bc7dc904becd6c5da58e6ba4c5297b1304307873db85b5585012a5dc2a5b9c",
+          "sha256:e4e8d912e87d01536aec329b5cee997e6541501cd3c0cc363d263141b8b51f61",
+          "sha256:a71a546c1d3a43230ca47a168748b57c5bd7f41ba429b42def5e14d5392160b0",
+          "sha256:218a8184c658d738183ff260d52daa4b30e5bc7e449dbb5d61cb59015b68000c",
+          "sha256:1fd6b9b187c1d659e4bfd7935f99adbc43ffe77c7d4912262f83b854e6e4dbd5"
+        ]
+      },
+      "config": {
+        "Healthcheck": {
+          "Test": [
+            "CMD-SHELL",
+            "node /healthcheck.js"
+          ]
+        },
+        "Entrypoint": [
+          "./entrypoint.sh"
+        ],
+        "Env": [
+          "PATH=/usr/src/node-red/node_modules/.bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+          "NODE_VERSION=22.11.0",
+          "YARN_VERSION=1.22.22",
+          "NODE_RED_VERSION=v4.0.5",
+          "NODE_PATH=/usr/src/node-red/node_modules:/data/node_modules",
+          "FLOWS=flows.json",
+          "NODE_RED_EXTRA_NODE_PATH=/usr/src/node_modules"
+        ],
+        "Labels": {
+          "authors": "Dave Conway-Jones, Nick O'Leary, James Thomas, Raymond Mouthaan",
+          "com.docker.compose.project": "ims",
+          "com.docker.compose.service": "node-red",
+          "com.docker.compose.version": "5.3.1",
+          "org.label-schema.arch": "",
+          "org.label-schema.build-date": "2024-11-19T20:45:56Z",
+          "org.label-schema.description": "Low-code programming for event-driven applications.",
+          "org.label-schema.docker.dockerfile": ".docker/Dockerfile.alpine",
+          "org.label-schema.license": "Apache-2.0",
+          "org.label-schema.name": "Node-RED",
+          "org.label-schema.url": "https://nodered.org",
+          "org.label-schema.vcs-ref": "",
+          "org.label-schema.vcs-type": "Git",
+          "org.label-schema.vcs-url": "https://github.com/node-red/node-red-docker",
+          "org.label-schema.version": "4.0.5",
+          "org.opencontainers.image.source": "https://github.com/node-red/node-red-docker"
+        },
+        "User": "node-red",
+        "WorkingDir": "/usr/src/node-red",
+        "ExposedPorts": {
+          "1880": {}
+        },
+        "ArgsEscaped": true
+      }
+    },
+    "Layers": [
+      {
+        "Size": 8081920,
+        "Digest": "sha256:da9db072f522755cbeb85be2b3f84059b70571b229512f1571d9217b77e1087f",
+        "DiffID": "sha256:75654b8eeebd3beae97271a102f57cdeb794cc91e442648544963a7e951e9558"
+      },
+      {
+        "Size": 144398848,
+        "Digest": "sha256:2c683692384c7436fa88d4cd7481be6b45a69a4cf25896cc0e3eaa79a795c0f4",
+        "DiffID": "sha256:e5174df11535f9f4689677da2bd1c37aa7b708dda3d491709e73cc817afe4795"
+      },
+      {
+        "Size": 5610496,
+        "Digest": "sha256:e7428cb4ffb31db5a9006b61751d36556f1a429fd33a9d3c0063c77ee50ac0fc",
+        "DiffID": "sha256:58b2036d19a8a7b69656bc50e4a243e78aab173b97ae14b49b435b5a5e9c096f"
+      },
+      {
+        "Size": 3584,
+        "Digest": "sha256:d9f81725f57f61d3b3491b2eb12ea1949ae8c74d9e28bbd45ffe250990890b2e",
+        "DiffID": "sha256:14c33253c4090c7d26ab865e5ff003e288c48ae3f0f36329fe3629ea584eb755"
+      },
+      {
+        "Size": 4608,
+        "Digest": "sha256:4044348a3eafefccb335bb20f852ada092f80fdf32a861b065684ba23b4ea7f0",
+        "DiffID": "sha256:e1467c0eac5a753be1d234a48fd0d84122b4eb61891fac34bc8cdbac140fb51e"
+      },
+      {
+        "Size": 2560,
+        "Digest": "sha256:7fbd6f991c826bc2228dff7c822095842e486475a8f6f84f788e67c7620c409e",
+        "DiffID": "sha256:ac64fc9e0597857690d76a3641273e724dfa57a4702b2cbc5e877749ae994b66"
+      },
+      {
+        "Size": 26908160,
+        "Digest": "sha256:b7cf038c22e6d0facfa84d39ca41168c78166ae738c983e626138ac28d1b5970",
+        "DiffID": "sha256:7428be20bff0a23854bce7b54f8988e7ac5f057d2fd12a8fa5a65cc88221d5e9"
+      },
+      {
+        "Size": 1024,
+        "Digest": "sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1",
+        "DiffID": "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+      },
+      {
+        "Size": 6144,
+        "Digest": "sha256:95f19cf00840ca57e7ae659affb2db2ce455872d9101d554a0b9cdfaa6082057",
+        "DiffID": "sha256:b2974c9134419400e8e8c50fdb02d045936f2086ad43db2b299321df4cf9f77f"
+      },
+      {
+        "Size": 8192,
+        "Digest": "sha256:09d6e93c4a25953921ef50375ec1f947ba10ff6e75d41d6e7d5bc2c2c34070d4",
+        "DiffID": "sha256:e4c21f7b66fe9de4ec1f2bacd57625d197f880c20d122ee36b0b79fc1545dd86"
+      },
+      {
+        "Size": 4608,
+        "Digest": "sha256:89e10a81f9b14dd8b843ae66d1421efe73c90bfda7dbf4a99755ca90eed52d7b",
+        "DiffID": "sha256:a3f8b3ca9a4f83bea430afb662f4ac05fef51f83222076e1e37f22f05b947979"
+      },
+      {
+        "Size": 4096,
+        "Digest": "sha256:d70ea1a5894a6ba5b16a67d351448ce77066a4bbab5f43c31b4724fcc7802d7d",
+        "DiffID": "sha256:56f944d30c6931ede0c5f3dca053a48425e12a18441d946c2b300161121fc9b3"
+      },
+      {
+        "Size": 3584,
+        "Digest": "sha256:180e429602b1db22e7d6fcefef43e80bd01c468bbecb52a6ba86495972d4b205",
+        "DiffID": "sha256:e6b551b58aee64247f0ec1a1df04eb522567712792573ca8e7467f7ae3a47d65"
+      },
+      {
+        "Size": 3584,
+        "Digest": "sha256:af3c0974d1b36620eac795471883a3217bd56e3c83cc4777ed8c8e4a4de8829d",
+        "DiffID": "sha256:44c9a39b4f33106e2848360ac03406249f51924254f2b9f81116c2fc90e87801"
+      },
+      {
+        "Size": 84440064,
+        "Digest": "sha256:80c94f73bfb97afe1e34dbec080837ba0ff1d5c9f4c4615b65d9db1d8c86a4ee",
+        "DiffID": "sha256:c850374229296ad3e6f8237a441bfdee966c95b8bbb6797019ff448642f32027"
+      },
+      {
+        "Size": 84444672,
+        "Digest": "sha256:c415e9558b21252bfbf2ac2ba6eca50928192852378866cb02f3ddee13173d9e",
+        "DiffID": "sha256:93bc7dc904becd6c5da58e6ba4c5297b1304307873db85b5585012a5dc2a5b9c"
+      },
+      {
+        "Size": 6656,
+        "Digest": "sha256:5a494a504a90b2e03542bc73273d824103ca16c5eb9516b1b29f635387f11208",
+        "DiffID": "sha256:e4e8d912e87d01536aec329b5cee997e6541501cd3c0cc363d263141b8b51f61"
+      },
+      {
+        "Size": 26640896,
+        "Digest": "sha256:23dc8bfedf419e51dcb38612dc37eeb6695fbd58b4d2f9cab58c8ecf9b51ec67",
+        "DiffID": "sha256:a71a546c1d3a43230ca47a168748b57c5bd7f41ba429b42def5e14d5392160b0"
+      },
+      {
+        "Size": 2560,
+        "Digest": "sha256:fc6f35cd7a7e2ff6ef7fd8093573f5bd38117430aa6e5935d3cc08e35c6af70e",
+        "DiffID": "sha256:218a8184c658d738183ff260d52daa4b30e5bc7e449dbb5d61cb59015b68000c"
+      },
+      {
+        "Size": 15438336,
+        "Digest": "sha256:19ce40123a8293e7b893040f1fe21cc8197b2dbc5989db16c575720b4cdef349",
+        "DiffID": "sha256:1fd6b9b187c1d659e4bfd7935f99adbc43ffe77c7d4912262f83b854e6e4dbd5"
+      }
+    ]
+  },
+  "Results": [
+    {
+      "Target": "ims-node-red (alpine 3.20.3)",
+      "Class": "os-pkgs",
+      "Type": "alpine"
+    },
+    {
+      "Target": "Node.js",
+      "Class": "lang-pkgs",
+      "Type": "node-pkg",
+      "Vulnerabilities": [
+        {
+          "VulnerabilityID": "CVE-2025-7783",
+          "PkgID": "form-data@4.0.0",
+          "PkgName": "form-data",
+          "PkgPath": "usr/src/node-red/node_modules/form-data/package.json",
+          "PkgIdentifier": {
+            "PURL": "pkg:npm/form-data@4.0.0",
+            "UID": "d55089115f59faaf"
+          },
+          "InstalledVersion": "4.0.0",
+          "FixedVersion": "2.5.4, 3.0.4, 4.0.4",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:80c94f73bfb97afe1e34dbec080837ba0ff1d5c9f4c4615b65d9db1d8c86a4ee",
+            "DiffID": "sha256:c850374229296ad3e6f8237a441bfdee966c95b8bbb6797019ff448642f32027"
+          },
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2025-7783",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory npm",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Anpm"
+          },
+          "Title": "form-data: Unsafe random function in form-data",
+          "Description": "Use of Insufficiently Random Values vulnerability in form-data allows HTTP Parameter Pollution (HPP). This vulnerability is associated with program files lib/form_data.Js.\n\nThis issue affects form-data: \u003c 2.5.4, 3.0.0 - 3.0.3, 4.0.0 - 4.0.3.",
+          "Severity": "CRITICAL",
+          "CweIDs": [
+            "CWE-330"
+          ],
+          "VendorSeverity": {
+            "ghsa": 4,
+            "redhat": 2,
+            "ubuntu": 2
+          },
+          "CVSS": {
+            "ghsa": {
+              "V40Vector": "CVSS:4.0/AV:N/AC:H/AT:N/PR:N/UI:N/VC:H/VI:H/VA:N/SC:H/SI:H/SA:N",
+              "V40Score": 9.4
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:C/C:L/I:L/A:N",
+              "V3Score": 5.4
+            }
+          },
+          "References": [
+            "https://access.redhat.com/security/cve/CVE-2025-7783",
+            "https://github.com/benweissmann/CVE-2025-7783-poc",
+            "https://github.com/form-data/form-data",
+            "https://github.com/form-data/form-data/commit/3d1723080e6577a66f17f163ecd345a21d8d0fd0",
+            "https://github.com/form-data/form-data/security/advisories/GHSA-fjxv-7rqg-78g4",
+            "https://lists.debian.org/debian-lts-announce/2025/07/msg00023.html",
+            "https://nvd.nist.gov/vuln/detail/CVE-2025-7783",
+            "https://ubuntu.com/security/notices/USN-7976-1",
+            "https://www.cve.org/CVERecord?id=CVE-2025-7783"
+          ],
+          "PublishedDate": "2025-07-18T17:15:44.747Z",
+          "LastModifiedDate": "2026-06-17T10:05:39.033Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2026-77413",
+          "PkgID": "jsonata@2.0.5",
+          "PkgName": "jsonata",
+          "PkgPath": "usr/src/node-red/node_modules/jsonata/package.json",
+          "PkgIdentifier": {
+            "PURL": "pkg:npm/jsonata@2.0.5",
+            "UID": "76041746c54ba9f4"
+          },
+          "InstalledVersion": "2.0.5",
+          "FixedVersion": "1.8.8, 2.2.0",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:80c94f73bfb97afe1e34dbec080837ba0ff1d5c9f4c4615b65d9db1d8c86a4ee",
+            "DiffID": "sha256:c850374229296ad3e6f8237a441bfdee966c95b8bbb6797019ff448642f32027"
+          },
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2026-77413",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory npm",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Anpm"
+          },
+          "Title": "JSONata: Arbitrary Code Execution via crafted JSONata expressions",
+          "Description": "JSONata is a JSON query and transformation language. Prior to 1.8.8 and 2.2.0, the src/functions.js lookup function lacked an Object.prototype.hasOwnProperty check and allowed crafted expressions to access inherited prototype members. An attacker able to supply an expression could use inherited prototype setters and getters, constructor access, valueOf, and process.getBuiltinModule to reach the child_process module and execute arbitrary code with the privileges of the host process. This issue is fixed in versions 1.8.8 and 2.2.0.",
+          "Severity": "CRITICAL",
+          "CweIDs": [
+            "CWE-94"
+          ],
+          "VendorSeverity": {
+            "ghsa": 4
+          },
+          "CVSS": {
+            "ghsa": {
+              "V40Vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N",
+              "V40Score": 9.3
+            }
+          },
+          "References": [
+            "https://github.com/jsonata-js/jsonata",
+            "https://github.com/jsonata-js/jsonata/commit/4b217d514376e30cba278941298d7ba97c4a6c6e",
+            "https://github.com/jsonata-js/jsonata/commit/4c5f4adfb90a9b500889d50f90050ca68888b50d",
+            "https://github.com/jsonata-js/jsonata/pull/794",
+            "https://github.com/jsonata-js/jsonata/releases/tag/v1.8.8",
+            "https://github.com/jsonata-js/jsonata/releases/tag/v2.2.0",
+            "https://github.com/jsonata-js/jsonata/security/advisories/GHSA-8gq3-vp5j-2grp"
+          ],
+          "PublishedDate": "2026-08-21T21:17:07.267Z",
+          "LastModifiedDate": "2026-08-21T21:17:07.267Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2026-77414",
+          "PkgID": "jsonata@2.0.5",
+          "PkgName": "jsonata",
+          "PkgPath": "usr/src/node-red/node_modules/jsonata/package.json",
+          "PkgIdentifier": {
+            "PURL": "pkg:npm/jsonata@2.0.5",
+            "UID": "76041746c54ba9f4"
+          },
+          "InstalledVersion": "2.0.5",
+          "FixedVersion": "2.2.1, 1.8.8",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:80c94f73bfb97afe1e34dbec080837ba0ff1d5c9f4c4615b65d9db1d8c86a4ee",
+            "DiffID": "sha256:c850374229296ad3e6f8237a441bfdee966c95b8bbb6797019ff448642f32027"
+          },
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2026-77414",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory npm",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Anpm"
+          },
+          "Title": "JSONata vulnerable to Arbitrary Code Execution via crafted JSONata expressions",
+          "Description": "JSONata is a JSON query and transformation language. Prior to 1.8.8 and 2.2.1, the src/jsonata.js environment.lookup function used a bypassable hasOwnProperty check. Crafted expressions could use $hasOwnProperty, $spread, $string, prototype access, and $constructor to reach the object prototype and invoke process.getBuiltinModule with child_process, executing arbitrary code with the privileges of the host process. This issue is fixed in versions 1.8.8 and 2.2.1.",
+          "Severity": "CRITICAL",
+          "CweIDs": [
+            "CWE-94"
+          ],
+          "VendorSeverity": {
+            "ghsa": 4
+          },
+          "CVSS": {
+            "ghsa": {
+              "V40Vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N",
+              "V40Score": 9.3
+            }
+          },
+          "References": [
+            "https://github.com/jsonata-js/jsonata",
+            "https://github.com/jsonata-js/jsonata/commit/59e25144fc3b7125f6befd71b8a6e14e1fa610d2",
+            "https://github.com/jsonata-js/jsonata/commit/c41ef185136a7b96ca1049c7745a7503b82193de",
+            "https://github.com/jsonata-js/jsonata/commit/f09df8416eab8ff44926fc6527c80fb8701de159",
+            "https://github.com/jsonata-js/jsonata/pull/799",
+            "https://github.com/jsonata-js/jsonata/releases/tag/v1.8.8",
+            "https://github.com/jsonata-js/jsonata/releases/tag/v2.2.1",
+            "https://github.com/jsonata-js/jsonata/security/advisories/GHSA-2943-5xfg-gq5f"
+          ],
+          "PublishedDate": "2026-08-21T21:17:07.41Z",
+          "LastModifiedDate": "2026-08-21T21:17:07.41Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2026-77415",
+          "PkgID": "jsonata@2.0.5",
+          "PkgName": "jsonata",
+          "PkgPath": "usr/src/node-red/node_modules/jsonata/package.json",
+          "PkgIdentifier": {
+            "PURL": "pkg:npm/jsonata@2.0.5",
+            "UID": "76041746c54ba9f4"
+          },
+          "InstalledVersion": "2.0.5",
+          "FixedVersion": "2.2.1, 1.8.8",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:80c94f73bfb97afe1e34dbec080837ba0ff1d5c9f4c4615b65d9db1d8c86a4ee",
+            "DiffID": "sha256:c850374229296ad3e6f8237a441bfdee966c95b8bbb6797019ff448642f32027"
+          },
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2026-77415",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory npm",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Anpm"
+          },
+          "Title": "JSONata vulnerable to Arbitrary Code Execution via crafted JSONata expressions",
+          "Description": "JSONata is a JSON query and transformation language. Prior to 1.8.8 and 2.2.1, crafted JSONata expressions could chain several object-integrity weaknesses to execute arbitrary code. The chain could overwrite $clone to mutate objects through evaluateTransformExpression, expose and deconstruct JSONata functions or lambdas through $merge.*, replace proc.arguments.forEach used by applyProcedure, and forge internal lambda state. These primitives allowed an attacker to reach prototype getters, prototype and constructor access, and process.getBuiltinModule with child_process, executing code with the privileges of the host process. This issue is fixed in versions 1.8.8 and 2.2.1.",
+          "Severity": "CRITICAL",
+          "CweIDs": [
+            "CWE-94"
+          ],
+          "VendorSeverity": {
+            "ghsa": 4
+          },
+          "CVSS": {
+            "ghsa": {
+              "V40Vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N",
+              "V40Score": 9.3
+            }
+          },
+          "References": [
+            "https://github.com/jsonata-js/jsonata",
+            "https://github.com/jsonata-js/jsonata/commit/47c0e58542202c705726663166dbee5fcae47d06",
+            "https://github.com/jsonata-js/jsonata/commit/4b217d514376e30cba278941298d7ba97c4a6c6e",
+            "https://github.com/jsonata-js/jsonata/commit/59e25144fc3b7125f6befd71b8a6e14e1fa610d2",
+            "https://github.com/jsonata-js/jsonata/commit/f09df8416eab8ff44926fc6527c80fb8701de159",
+            "https://github.com/jsonata-js/jsonata/commit/f174348c7fa30f271b63ddedf0767e814004bc4d",
+            "https://github.com/jsonata-js/jsonata/pull/799",
+            "https://github.com/jsonata-js/jsonata/pull/800",
+            "https://github.com/jsonata-js/jsonata/pull/802",
+            "https://github.com/jsonata-js/jsonata/releases/tag/v1.8.8",
+            "https://github.com/jsonata-js/jsonata/releases/tag/v2.2.1",
+            "https://github.com/jsonata-js/jsonata/security/advisories/GHSA-66mm-25pp-rfff"
+          ],
+          "PublishedDate": "2026-08-21T21:17:07.553Z",
+          "LastModifiedDate": "2026-08-21T21:17:07.553Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2026-59873",
+          "PkgID": "tar@6.2.1",
+          "PkgName": "tar",
+          "PkgPath": "usr/local/lib/node_modules/npm/node_modules/tar/package.json",
+          "PkgIdentifier": {
+            "PURL": "pkg:npm/tar@6.2.1",
+            "UID": "ff874301755bc49a"
+          },
+          "InstalledVersion": "6.2.1",
+          "FixedVersion": "7.5.19",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:2c683692384c7436fa88d4cd7481be6b45a69a4cf25896cc0e3eaa79a795c0f4",
+            "DiffID": "sha256:e5174df11535f9f4689677da2bd1c37aa7b708dda3d491709e73cc817afe4795"
+          },
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2026-59873",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory npm",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Anpm"
+          },
+          "Title": "tar: node-tar: Denial of Service via crafted gzip bomb",
+          "Description": "node-tar is a tar archive manipulation library for Node.js. Prior to 7.5.19, node-tar does not enforce hard upper bounds on total decompressed data, entry counts, or decompression ratio in extraction and parsing paths such as src/extract.ts, allowing a small crafted gzip bomb to exhaust disk space and CPU. This issue is fixed in version 7.5.19.",
+          "Severity": "CRITICAL",
+          "CweIDs": [
+            "CWE-770"
+          ],
+          "VendorSeverity": {
+            "alma": 3,
+            "amazon": 3,
+            "ghsa": 4,
+            "nvd": 3,
+            "oracle-oval": 3,
+            "redhat": 3,
+            "rocky": 3
+          },
+          "CVSS": {
+            "ghsa": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V40Vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:H",
+              "V3Score": 7.5,
+              "V40Score": 9.2
+            },
+            "nvd": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V3Score": 7.5
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V3Score": 7.5
+            }
+          },
+          "References": [
+            "https://access.redhat.com/errata/RHSA-2026:47058",
+            "https://access.redhat.com/errata/RHSA-2026:47060",
+            "https://access.redhat.com/security/cve/CVE-2026-59873",
+            "https://bugzilla.redhat.com/2494813",
+            "https://bugzilla.redhat.com/2498116",
+            "https://bugzilla.redhat.com/2498120",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2494813",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2498116",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2498120",
+            "https://creativecommons.org/licenses/by/4.0/",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-13149",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-59873",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-59874",
+            "https://errata.almalinux.org/8/ALSA-2026-47060.html",
+            "https://errata.rockylinux.org/RLSA-2026:47058",
+            "https://github.com/isaacs/node-tar",
+            "https://github.com/isaacs/node-tar/commit/2812e9338665659b183aa7226518c307044957d3",
+            "https://github.com/isaacs/node-tar/releases/tag/v7.5.19",
+            "https://github.com/isaacs/node-tar/security/advisories/GHSA-23hp-3jrh-7fpw",
+            "https://linux.oracle.com/cve/CVE-2026-59873.html",
+            "https://linux.oracle.com/errata/ELSA-2026-48034.html",
+            "https://nvd.nist.gov/vuln/detail/CVE-2026-59873",
+            "https://www.cve.org/CVERecord?id=CVE-2026-59873"
+          ],
+          "PublishedDate": "2026-07-08T16:16:33.867Z",
+          "LastModifiedDate": "2026-07-10T18:57:17.907Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2026-59873",
+          "PkgID": "tar@7.4.3",
+          "PkgName": "tar",
+          "PkgPath": "usr/local/lib/node_modules/npm/node_modules/cacache/node_modules/tar/package.json",
+          "PkgIdentifier": {
+            "PURL": "pkg:npm/tar@7.4.3",
+            "UID": "cfd5d9d7cb9d4f06"
+          },
+          "InstalledVersion": "7.4.3",
+          "FixedVersion": "7.5.19",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:2c683692384c7436fa88d4cd7481be6b45a69a4cf25896cc0e3eaa79a795c0f4",
+            "DiffID": "sha256:e5174df11535f9f4689677da2bd1c37aa7b708dda3d491709e73cc817afe4795"
+          },
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2026-59873",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory npm",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Anpm"
+          },
+          "Title": "tar: node-tar: Denial of Service via crafted gzip bomb",
+          "Description": "node-tar is a tar archive manipulation library for Node.js. Prior to 7.5.19, node-tar does not enforce hard upper bounds on total decompressed data, entry counts, or decompression ratio in extraction and parsing paths such as src/extract.ts, allowing a small crafted gzip bomb to exhaust disk space and CPU. This issue is fixed in version 7.5.19.",
+          "Severity": "CRITICAL",
+          "CweIDs": [
+            "CWE-770"
+          ],
+          "VendorSeverity": {
+            "alma": 3,
+            "amazon": 3,
+            "ghsa": 4,
+            "nvd": 3,
+            "oracle-oval": 3,
+            "redhat": 3,
+            "rocky": 3
+          },
+          "CVSS": {
+            "ghsa": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V40Vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:H",
+              "V3Score": 7.5,
+              "V40Score": 9.2
+            },
+            "nvd": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V3Score": 7.5
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V3Score": 7.5
+            }
+          },
+          "References": [
+            "https://access.redhat.com/errata/RHSA-2026:47058",
+            "https://access.redhat.com/errata/RHSA-2026:47060",
+            "https://access.redhat.com/security/cve/CVE-2026-59873",
+            "https://bugzilla.redhat.com/2494813",
+            "https://bugzilla.redhat.com/2498116",
+            "https://bugzilla.redhat.com/2498120",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2494813",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2498116",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2498120",
+            "https://creativecommons.org/licenses/by/4.0/",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-13149",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-59873",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-59874",
+            "https://errata.almalinux.org/8/ALSA-2026-47060.html",
+            "https://errata.rockylinux.org/RLSA-2026:47058",
+            "https://github.com/isaacs/node-tar",
+            "https://github.com/isaacs/node-tar/commit/2812e9338665659b183aa7226518c307044957d3",
+            "https://github.com/isaacs/node-tar/releases/tag/v7.5.19",
+            "https://github.com/isaacs/node-tar/security/advisories/GHSA-23hp-3jrh-7fpw",
+            "https://linux.oracle.com/cve/CVE-2026-59873.html",
+            "https://linux.oracle.com/errata/ELSA-2026-48034.html",
+            "https://nvd.nist.gov/vuln/detail/CVE-2026-59873",
+            "https://www.cve.org/CVERecord?id=CVE-2026-59873"
+          ],
+          "PublishedDate": "2026-07-08T16:16:33.867Z",
+          "LastModifiedDate": "2026-07-10T18:57:17.907Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2026-59873",
+          "PkgID": "tar@7.4.3",
+          "PkgName": "tar",
+          "PkgPath": "usr/src/node-red/node_modules/tar/package.json",
+          "PkgIdentifier": {
+            "PURL": "pkg:npm/tar@7.4.3",
+            "UID": "2780eaf81cbfc1f1"
+          },
+          "InstalledVersion": "7.4.3",
+          "FixedVersion": "7.5.19",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:80c94f73bfb97afe1e34dbec080837ba0ff1d5c9f4c4615b65d9db1d8c86a4ee",
+            "DiffID": "sha256:c850374229296ad3e6f8237a441bfdee966c95b8bbb6797019ff448642f32027"
+          },
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2026-59873",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory npm",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Anpm"
+          },
+          "Title": "tar: node-tar: Denial of Service via crafted gzip bomb",
+          "Description": "node-tar is a tar archive manipulation library for Node.js. Prior to 7.5.19, node-tar does not enforce hard upper bounds on total decompressed data, entry counts, or decompression ratio in extraction and parsing paths such as src/extract.ts, allowing a small crafted gzip bomb to exhaust disk space and CPU. This issue is fixed in version 7.5.19.",
+          "Severity": "CRITICAL",
+          "CweIDs": [
+            "CWE-770"
+          ],
+          "VendorSeverity": {
+            "alma": 3,
+            "amazon": 3,
+            "ghsa": 4,
+            "nvd": 3,
+            "oracle-oval": 3,
+            "redhat": 3,
+            "rocky": 3
+          },
+          "CVSS": {
+            "ghsa": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V40Vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:H",
+              "V3Score": 7.5,
+              "V40Score": 9.2
+            },
+            "nvd": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V3Score": 7.5
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V3Score": 7.5
+            }
+          },
+          "References": [
+            "https://access.redhat.com/errata/RHSA-2026:47058",
+            "https://access.redhat.com/errata/RHSA-2026:47060",
+            "https://access.redhat.com/security/cve/CVE-2026-59873",
+            "https://bugzilla.redhat.com/2494813",
+            "https://bugzilla.redhat.com/2498116",
+            "https://bugzilla.redhat.com/2498120",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2494813",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2498116",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2498120",
+            "https://creativecommons.org/licenses/by/4.0/",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-13149",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-59873",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-59874",
+            "https://errata.almalinux.org/8/ALSA-2026-47060.html",
+            "https://errata.rockylinux.org/RLSA-2026:47058",
+            "https://github.com/isaacs/node-tar",
+            "https://github.com/isaacs/node-tar/commit/2812e9338665659b183aa7226518c307044957d3",
+            "https://github.com/isaacs/node-tar/releases/tag/v7.5.19",
+            "https://github.com/isaacs/node-tar/security/advisories/GHSA-23hp-3jrh-7fpw",
+            "https://linux.oracle.com/cve/CVE-2026-59873.html",
+            "https://linux.oracle.com/errata/ELSA-2026-48034.html",
+            "https://nvd.nist.gov/vuln/detail/CVE-2026-59873",
+            "https://www.cve.org/CVERecord?id=CVE-2026-59873"
+          ],
+          "PublishedDate": "2026-07-08T16:16:33.867Z",
+          "LastModifiedDate": "2026-07-10T18:57:17.907Z"
+        }
+      ]
+    }
+  ]
+}

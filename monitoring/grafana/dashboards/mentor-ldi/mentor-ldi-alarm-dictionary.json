@@ -1,0 +1,356 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": false,
+        "iconColor": "rgba(255, 96, 96, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "text",
+      "title": "",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 3
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "## Alarm Dictionary\nLook up any Alarm Code's full definition from the vendor Alarm Master catalog (`public.ldi_alarm_ms_code`), plus its most recent live occurrences. Opened from the **Alarm Code** column on any alarm/event table across the LDI dashboards -- or set `alarm_code` in the URL / variable box below directly."
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "transparent": true,
+      "description": "Header panel -- no data query, just orientation text for the Alarm Dictionary lookup."
+    },
+    {
+      "id": 2,
+      "title": "◈ Master Catalog Entry",
+      "type": "table",
+      "datasource": {
+        "uid": "mentor-ldi-readonly"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 3,
+        "w": 24,
+        "h": 8
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "lg",
+        "footer": {
+          "show": false
+        },
+        "noValue": "NO_DATA"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "NO_DATA",
+          "custom": {}
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Severity"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "Critical": {
+                        "color": "#EF4444",
+                        "index": 0,
+                        "text": "Critical"
+                      },
+                      "Major": {
+                        "color": "#F59E0B",
+                        "index": 1,
+                        "text": "Major"
+                      },
+                      "Minor": {
+                        "color": "#EAB308",
+                        "index": 2,
+                        "text": "Minor"
+                      },
+                      "Warning": {
+                        "color": "#3B82F6",
+                        "index": 3,
+                        "text": "Warning"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Alarm Type"
+            },
+            "properties": [
+              {
+                "id": "description",
+                "value": "Raw vendor category letter: A = general alarm, W = warning/advisory, E = servo/motion safety fault (always Critical severity)."
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Cause"
+            },
+            "properties": [
+              {
+                "id": "description",
+                "value": "Most likely root cause. See docs/architecture/ALARM_DETAIL_STYLE_GUIDE.md §6."
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Impact"
+            },
+            "properties": [
+              {
+                "id": "description",
+                "value": "What this means operationally right now -- blocked, delayed, or a quality risk. See ALARM_DETAIL_STYLE_GUIDE.md §6."
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Recovery Action"
+            },
+            "properties": [
+              {
+                "id": "description",
+                "value": "What the operator/technician should do next."
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "SOP / Work Instruction"
+            },
+            "properties": [
+              {
+                "id": "description",
+                "value": "Link to a real Standard Operating Procedure or Work Instruction document, when one exists. Intentionally not populated yet -- see ALARM_DETAIL_STYLE_GUIDE.md §7; this is a genuine content gap, not a broken field."
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "Not yet available": {
+                        "color": "#64748B"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "mentor-ldi-readonly"
+          },
+          "rawSql": "/* Mentor schema: definition fields are limited to the five vendor columns present. */\nSELECT alarm_id AS \"Alarm Code\",\n       alarm_type AS \"Alarm Type\",\n       alarm_msg AS \"Message\",\n       alarm_detail AS \"Detail\",\n       CASE upper(COALESCE(alarm_type, ''))\n         WHEN 'A' THEN 'Major'\n         WHEN 'W' THEN 'Warning'\n         WHEN 'E' THEN 'Error'\n         ELSE 'Unclassified'\n       END AS \"Derived Severity\",\n       'Not available in mentor master'::text AS \"Cause\",\n       'Not available in mentor master'::text AS \"Impact\",\n       'Not available in mentor master'::text AS \"Recovery Action\",\n       'Not available in mentor master'::text AS \"SOP / Work Instruction\"\nFROM public.ldi_alarm_ms_code\nWHERE alarm_id = ${alarm_code:sqlstring} OR alarm_code = ${alarm_code:sqlstring}\nLIMIT 1;",
+          "format": "table"
+        }
+      ],
+      "description": "The full vendor Alarm Master definition for this code -- the same row every occurrence of this alarm type shares. No row here means the code isn't in the currently loaded catalog (check data mode: mock vs. real -- see docs/architecture/ALARM_SEVERITY_GUIDE.md)."
+    },
+    {
+      "id": 3,
+      "title": "◈ Recent Occurrences (Live Data)",
+      "type": "table",
+      "datasource": {
+        "uid": "mentor-ldi-readonly"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 11,
+        "w": 24,
+        "h": 10
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        },
+        "noValue": "NO_DATA",
+        "sortBy": [
+          {
+            "displayName": "Time",
+            "desc": true
+          }
+        ]
+      },
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "NO_DATA",
+          "custom": {}
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Time"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              },
+              {
+                "id": "decimals",
+                "value": 6
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Link Basis"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "causal": {
+                        "color": "#22C55E",
+                        "text": "causal"
+                      },
+                      "nearest": {
+                        "color": "#64748B",
+                        "text": "nearest"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "mentor-ldi-readonly"
+          },
+          "rawSql": "/* Mentor schema has no telemetry relation ID/link-basis columns. */\nSELECT a.logdate AS \"Time\",\n       a.equipmentid AS \"Machine\",\n       a.logid AS \"Alarm Event ID\",\n       NULL::text AS \"Telemetry Event ID\",\n       'unlinked (not present in mentor schema)'::text AS \"Link Basis\"\nFROM public.ldi_alarm_log a\nWHERE a.errorcode = ${alarm_code:sqlstring}\nORDER BY a.logdate DESC\nLIMIT 20;",
+          "format": "table"
+        }
+      ],
+      "description": "The most recent 20 times this alarm code actually fired, fleet-wide -- for pattern spotting (which machines, how often, causal vs. nearest telemetry link)."
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "alarm_code",
+        "label": "Alarm Code",
+        "type": "textbox",
+        "query": "",
+        "current": {
+          "selected": true,
+          "text": "91009",
+          "value": "91009"
+        },
+        "hide": 0,
+        "skipUrlSync": false
+      }
+    ]
+  },
+  "time": {
+    "from": "2026-04-09T17:00:00Z",
+    "to": "2026-07-16T17:00:00Z"
+  },
+  "timezone": "UTC",
+  "refresh": "",
+  "schemaVersion": 39,
+  "fiscalYearStartMonth": 0,
+  "liveNow": false,
+  "graphTooltip": 0,
+  "id": null,
+  "uid": "mentor-ldi-alarm-dictionary",
+  "title": "[Mentor DB] LDI Alarm Dictionary",
+  "description": "Reference lookup dashboard: full vendor Alarm Master definition + recent live occurrences for any Alarm Code. Not part of the operator/engineering navigation flow -- opened via drill-down link from the Alarm Code column on other LDI dashboards.",
+  "version": 1,
+  "tags": [
+    "mentor-db",
+    "read-only",
+    "alarm-master"
+  ],
+  "editable": false,
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "Open Mentor MIS Command Center",
+      "tooltip": "",
+      "type": "link",
+      "url": "/d/mentor-mis-incident-command/mentor-mis-incident-command"
+    }
+  ]
+}
