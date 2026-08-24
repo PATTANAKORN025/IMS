@@ -12,7 +12,7 @@ machine-readable results (`docs/evidence/runtime/production-assurance-*.json`), 
 The verdict is `scripts/gate.js`'s pure function over that JSON, not an assertion.
 
 **Profile run:** `load`  
-**Timestamp:** 2026-08-24T02:45:51.640Z  
+**Timestamp:** 2026-08-24T03:19:16.663Z  
 **Profile verdict:** **GO**
 
 > **This is a `load`-profile verdict, not a whole-system readiness claim.** **Profile GO** means every *blocking* requirement that this profile's own category list actually ran passed -- categories outside that list report `NOT_TESTED` below and are excluded from this verdict by design, not silently assumed passing. **Whole-system production readiness** is only ever established by running the `full` profile (the only one that exercises every category in `scripts/production-assurance.js`'s `PROFILES`) -- a `fast` (or any non-`full`) GO must never be read or reported as "production ready".
@@ -23,11 +23,14 @@ The verdict is `scripts/gate.js`'s pure function over that JSON, not an assertio
 | Requirement | Test | Threshold | Evidence | Result | Blocking | Next Action |
 |---|---|---|---|---|---|---|
 | load.category | load.category | n/a | n/a | NOT_TESTED | no | run with a profile that includes this category |
-| 23-device simultaneous ingestion availability | fleet.availability.devices-accepted | 23/23 devices with >=1 persisted record | docs/evidence/runtime/fleet-2026-08-24T02-45-04-641Z.json | PASS | yes | - |
-| Ingestion data integrity (loss/dup/reorder) | fleet.integrity.sent-accepted-persisted | sent == accepted (body message == "LDI Batch received"; HTTP status is always 200 regardless of outcome, see findings) == persisted (direct DB count), 0 lost | docs/evidence/runtime/fleet-2026-08-24T02-45-04-641Z.json | PASS | yes | - |
-| Ingestion data integrity (loss/dup/reorder) | fleet.integrity.duplicates | 0 duplicate log_id in persisted rows | docs/evidence/runtime/fleet-2026-08-24T02-45-04-641Z.json | PASS | yes | - |
-| Ingestion data integrity (loss/dup/reorder) | fleet.integrity.sequence-continuity | per-device persisted sequence (by ingest_ts) strictly increasing, matching send order | docs/evidence/runtime/fleet-2026-08-24T02-45-04-641Z.json | PASS | yes | - |
-| Ingestion data integrity (loss/dup/reorder) | fleet.integrity.corruption | 0 persisted rows with values differing from what was sent | docs/evidence/runtime/fleet-2026-08-24T02-45-04-641Z.json | PASS | yes | - |
-| 23-device simultaneous ingestion availability | fleet.availability.error-rate | 0 unexpected failures (body-level error, or transport/timeout failure -- HTTP status is always 200 regardless of outcome, see findings, so it cannot be used for this check) | docs/evidence/runtime/fleet-2026-08-24T02-45-04-641Z.json | PASS | yes | - |
+| 23-device simultaneous ingestion availability | fleet.availability.devices-accepted | 23/23 devices with >=1 persisted record | docs/evidence/runtime/fleet-2026-08-24T03-17-25-666Z.json | PASS | yes | - |
+| Ingestion data integrity (loss/dup/reorder) | fleet.integrity.sent-accepted-persisted | sent == accepted (body message == "LDI Batch received" AND HTTP 200, post-fix both must agree) == persisted (direct DB count), 0 lost | docs/evidence/runtime/fleet-2026-08-24T03-17-25-666Z.json | PASS | yes | - |
+| Ingestion data integrity (loss/dup/reorder) | fleet.integrity.duplicates | 0 duplicate log_id in persisted rows | docs/evidence/runtime/fleet-2026-08-24T03-17-25-666Z.json | PASS | yes | - |
+| Ingestion data integrity (loss/dup/reorder) | fleet.integrity.sequence-continuity | per-device persisted sequence (by ingest_ts) strictly increasing, matching send order | docs/evidence/runtime/fleet-2026-08-24T03-17-25-666Z.json | PASS | yes | - |
+| Ingestion data integrity (loss/dup/reorder) | fleet.integrity.corruption | 0 persisted rows with values differing from what was sent | docs/evidence/runtime/fleet-2026-08-24T03-17-25-666Z.json | PASS | yes | - |
+| 23-device simultaneous ingestion availability | fleet.availability.error-rate | 0 unexpected failures (body-level error, transport/timeout failure, or a body/HTTP-status disagreement -- post-fix the two must always agree) | docs/evidence/runtime/fleet-2026-08-24T03-17-25-666Z.json | PASS | yes | - |
+| fleet.security.auth-enforcement | fleet.security.auth-enforcement | configured key->200+accepted, wrong key->401, missing key->401, invalid payload->400 (real HTTP status, not just body) | n/a -- see this result | PASS | yes | - |
+| fleet.security.auth-key-rotation | fleet.security.auth-key-rotation | recreating node-red with a new INGEST_API_KEY (config change only, zero flow-code change) accepts the new key and rejects the previously-configured one | n/a -- see this result | PASS | yes | - |
+| fleet.security.http-status-failure-codes | fleet.security.http-status-failure-codes | persistence failure after staging (FK violation on unregistered device) -> HTTP 502; staging/DB unavailable -> HTTP 503 | n/a -- see this result | PASS | yes | - |
 
 A profile only exercises its own category list (see `scripts/production-assurance.js`'s `PROFILES`) -- a category not run this time shows as `NOT_TESTED` above and does not affect this run's verdict. Only a `full` profile run claims whole-system readiness.

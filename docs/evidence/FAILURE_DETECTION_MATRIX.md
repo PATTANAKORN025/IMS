@@ -10,7 +10,7 @@
 The real question production-readiness needs to answer isn't "how many tests exist" -- it's: for
 every failure that could actually impact production, do we detect it, alert on it, measure its
 impact, and recover from it, with evidence for each stage? Generated from the same
-`docs/evidence/runtime/production-assurance-*.json` report as PRODUCTION-READINESS.md (profile: `load`, 2026-08-24T02:45:51.640Z) -- no new tests here, this is a cross-cutting view over the same results.
+`docs/evidence/runtime/production-assurance-*.json` report as PRODUCTION-READINESS.md (profile: `load`, 2026-08-24T03:19:16.663Z) -- no new tests here, this is a cross-cutting view over the same results.
 
 | Failure Mode | Detected? | Alerted? | Impact Measured? | Recovered? |
 |---|---|---|---|---|
