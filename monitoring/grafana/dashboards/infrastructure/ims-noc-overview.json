@@ -1269,7 +1269,7 @@
                 "fillOpacity": 40,
                 "lineWidth": 2,
                 "gradientMode": "opacity",
-                "axisCente#EF4444Zero": true,
+                "axisCenteredZero": true,
                 "drawStyle": "bars",
                 "barAlignment": 0,
                 "showValue": "never"

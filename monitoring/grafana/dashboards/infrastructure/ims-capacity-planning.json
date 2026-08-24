@@ -1650,7 +1650,7 @@
         "defaults": {
           "unit": "none",
           "custom": {
-            "axisCente#EF4444Zero": true,
+            "axisCenteredZero": true,
             "fillOpacity": 15,
             "lineWidth": 2,
             "spanNulls": 60000,
@@ -1941,7 +1941,7 @@
         "defaults": {
           "unit": "none",
           "custom": {
-            "axisCente#EF4444Zero": true,
+            "axisCenteredZero": true,
             "fillOpacity": 15,
             "lineWidth": 2,
             "spanNulls": 60000,

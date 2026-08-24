@@ -954,7 +954,7 @@
         "defaults": {
           "unit": "bps",
           "custom": {
-            "axisCente#EF4444Zero": true,
+            "axisCenteredZero": true,
             "fillOpacity": 15,
             "lineWidth": 2,
             "spanNulls": false,
