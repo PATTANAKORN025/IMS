@@ -10,7 +10,7 @@
 The real question production-readiness needs to answer isn't "how many tests exist" -- it's: for
 every failure that could actually impact production, do we detect it, alert on it, measure its
 impact, and recover from it, with evidence for each stage? Generated from the same
-`docs/evidence/runtime/production-assurance-*.json` report as PRODUCTION-READINESS.md (profile: `fast`, 2026-08-24T01:45:03.201Z) -- no new tests here, this is a cross-cutting view over the same results.
+`docs/evidence/runtime/production-assurance-*.json` report as PRODUCTION-READINESS.md (profile: `load`, 2026-08-24T02:45:51.640Z) -- no new tests here, this is a cross-cutting view over the same results.
 
 | Failure Mode | Detected? | Alerted? | Impact Measured? | Recovered? |
 |---|---|---|---|---|
@@ -20,8 +20,8 @@ impact, and recover from it, with evidence for each stage? Generated from the sa
 | Container image CVE | not run this profile | n/a | not run this profile | n/a |
 | Secret committed to source | not run this profile | n/a | not run this profile | n/a |
 | Ingestion overload (load spike) | not run this profile | n/a | not run this profile | n/a |
-| 23-device fleet: device(s) go silent | not run this profile | n/a | not run this profile | n/a |
-| Ingestion data loss/duplication/reorder | not run this profile | n/a | not run this profile | n/a |
+| 23-device fleet: device(s) go silent | YES (fleet.availability.devices-accepted) | n/a | YES (fleet.availability.devices-accepted) | n/a |
+| Ingestion data loss/duplication/reorder | YES (fleet.integrity.sent-accepted-persisted) | n/a | YES (fleet.integrity.sent-accepted-persisted) | n/a |
 
 `n/a` = no test in this framework currently answers that stage for that failure mode (a real gap,
 not a pass). `not run this profile` = the profile used for this run didn't include that category --

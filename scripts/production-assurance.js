@@ -95,10 +95,15 @@ async function runCategory(name, opts) {
       return require('../tests/security/runner').run({ full: true });
     case 'load':
       return notImplemented('load')();
+    // P9's tests/fleet/runner.js emits both fleet.availability.* and
+    // fleet.integrity.* results from ONE disposable-stack run (23-device
+    // concurrent ingestion, isolated stack, real /ldi-telemetry contract).
+    // 'full' runs both category names in the same process -- the runner
+    // caches its own result internally so the second call here returns
+    // instantly instead of standing the whole disposable stack up twice.
     case 'fleet-availability':
-      return notImplemented('fleet-availability')();
     case 'fleet-integrity':
-      return notImplemented('fleet-integrity')();
+      return require('../tests/fleet/runner').run();
     default:
       throw new Error(`unknown category "${name}"`);
   }
