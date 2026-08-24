@@ -492,7 +492,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "/* RESOLVED 2026-08-10 (migration 064): v_machine_spc_fleet is now a materialized view refreshed every 60s via a TimescaleDB background job, not recomputed per read. Previously QUERY_BUDGET_EXEMPT (~150ms); now sub-millisecond. */\nSELECT\n  (SELECT COUNT(*)::INT FROM public.devices WHERE device_type='ldi' AND enabled)::TEXT\n  || ' reg / '\n  || (SELECT COUNT(*) FILTER (WHERE COALESCE(n_pe,0)+COALESCE(n_je,0)>0)::INT FROM public.v_machine_spc_fleet)::TEXT\n  || ' rpt' AS value",
+          "rawSql": "/* RESOLVED 2026-08-10 (migration 064): v_machine_spc_fleet is now a materialized view refreshed every 60s via a TimescaleDB background job, not recomputed per read. Previously QUERY_BUDGET_EXEMPT (~150ms); now sub-millisecond. */\nSELECT\n  (SELECT COUNT(*) FILTER (WHERE COALESCE(n_pe,0)+COALESCE(n_je,0)>0)::INT FROM public.v_machine_spc_fleet)::TEXT\n  || ' rpt / '\n  || (SELECT COUNT(*)::INT FROM public.devices WHERE device_type='ldi' AND enabled)::TEXT\n  || ' reg' AS value",
           "format": "table"
         }
       ],
