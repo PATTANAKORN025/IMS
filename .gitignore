@@ -120,3 +120,7 @@ tests/fleet/.runtime/
 # never meant to be committed source.
 *.bak
 scratch_sql.txt
+
+# Scratch directories for temporary Agent runs
+.p11-scratch/
+.p11c-scratch/
