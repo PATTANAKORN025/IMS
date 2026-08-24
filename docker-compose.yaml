@@ -75,8 +75,8 @@ services:
     volumes:
       - timescaledb_data:/var/lib/postgresql/data
       - ./postgres/init:/docker-entrypoint-initdb.d:ro
-    ports:
-      - "127.0.0.1:${PGPORT:-5432}:5432"
+    # ports:
+    #   - "127.0.0.1:${PGPORT:-5432}:5432"
     deploy:
       resources:
         limits: *resource-large
@@ -469,6 +469,7 @@ services:
     user: "1000:1000"
     environment:
       TZ: ${TZ:-UTC}
+      NODE_PATH: /usr/src/node_modules
       NODE_RED_ENABLE_PROJECTS: "false"
       NODE_OPTIONS: "--max-old-space-size=2048"
       CREDENTIAL_SECRET: ${NODE_RED_CREDENTIAL_SECRET:?set NODE_RED_CREDENTIAL_SECRET in .env}
