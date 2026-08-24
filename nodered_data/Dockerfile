@@ -24,3 +24,4 @@ USER node-red
 
 # Node-RED finds extra modules (net-snmp, pg, etc.) via this path
 ENV NODE_RED_EXTRA_NODE_PATH=/usr/src/node_modules
+ENV NODE_PATH=/usr/src/node_modules
