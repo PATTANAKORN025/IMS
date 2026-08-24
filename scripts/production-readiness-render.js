@@ -62,7 +62,16 @@ function renderReadiness(report, outPath) {
   lines.push('');
   lines.push(`**Profile run:** \`${report.profile}\`  `);
   lines.push(`**Timestamp:** ${report.timestamp}  `);
-  lines.push(`**Verdict:** **${report.verdict}**`);
+  lines.push(`**Profile verdict:** **${report.verdict}**`);
+  lines.push('');
+  lines.push(
+    `> **This is a \`${report.profile}\`-profile verdict, not a whole-system readiness claim.**` +
+      ' **Profile GO** means every *blocking* requirement that this profile\'s own category list actually ran' +
+      ' passed -- categories outside that list report `NOT_TESTED` below and are excluded from this verdict by' +
+      ' design, not silently assumed passing. **Whole-system production readiness** is only ever established by' +
+      ' running the `full` profile (the only one that exercises every category in `scripts/production-assurance.js`\'s' +
+      ' `PROFILES`) -- a `fast` (or any non-`full`) GO must never be read or reported as "production ready".'
+  );
   lines.push('');
   if (report.reasons && report.reasons.length) {
     lines.push('**Reasons:**');

@@ -60,13 +60,28 @@ function notImplemented(categoryName) {
 async function runCategory(name, opts) {
   switch (name) {
     case 'unit':
-      return notImplemented('unit')(); // existing tests/unit already gated by pre-commit.js + CI; not re-wrapped here to avoid duplicate execution of the same suite under two names
+      // Intentionally delegated, not "missing" evidence: tests/unit/*.test.js
+      // already runs on every commit via scripts/pre-commit.js and
+      // .github/workflows/ci.yml. Re-wrapping it here would execute the same
+      // suite twice under two different names -- this result documents the
+      // delegation so a reader doesn't mistake NOT_TESTED for "nobody checked".
+      return [
+        makeResult({
+          name: 'unit.delegated',
+          status: 'NOT_TESTED',
+          duration_ms: 0,
+          threshold: "n/a -- intentionally delegated, not part of this framework's own evidence set",
+          actual: 'unit tests run via scripts/pre-commit.js (every commit) and .github/workflows/ci.yml (every push/PR) -- not duplicated here',
+          evidence: 'scripts/pre-commit.js, .github/workflows/ci.yml',
+          blocking: false,
+        }),
+      ];
     case 'e2e':
-      return notImplemented('e2e')();
+      return require('../tests/e2e/runner').run({ includeQueryTiming: opts.profile !== 'fast' });
     case 'integration':
-      return notImplemented('integration')();
+      return require('../tests/integration/runner').run();
     case 'data-quality':
-      return notImplemented('data-quality')();
+      return require('../tests/data-quality/runner').run({ lightweight: opts.profile === 'fast' });
     case 'disaster-recovery':
       return require('../tests/disaster-recovery/runner').run();
     case 'resilience':
@@ -96,6 +111,7 @@ async function main() {
   const opts = {
     full: args.includes('--full'),
     allowContainerKill: args.includes('--allow-container-kill'),
+    profile,
   };
 
   if (!PROFILES[profile]) {

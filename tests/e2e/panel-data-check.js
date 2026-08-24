@@ -184,8 +184,22 @@ function listDashboardJsonFiles(dir) {
   return out;
 }
 
+// PANEL_CHECK_ONLY: comma-separated dashboard-relative paths (forward-slash,
+// e.g. "manufacturing/ims-easy-overview.json") to restrict the scan to a
+// subset. Used by tests/data-quality/runner.js's lightweight mode (the
+// "fast" assurance profile) so a quick run doesn't have to walk all 139
+// panel targets across all 15 dashboards every time; unset (the CLI
+// default) scans everything, unchanged from before this option existed.
+const ONLY = process.env.PANEL_CHECK_ONLY
+  ? process.env.PANEL_CHECK_ONLY.split(',').map((s) => s.trim()).filter(Boolean)
+  : null;
+
 const summary = { passed: 0, warnings: 0, errors: 0, skipped: 0 };
-const jsonFiles = listDashboardJsonFiles(DASHBOARD_DIR);
+let jsonFiles = listDashboardJsonFiles(DASHBOARD_DIR);
+if (ONLY) {
+  jsonFiles = jsonFiles.filter((f) => ONLY.includes(f.split(path.sep).join('/')));
+  console.log(`PANEL_CHECK_ONLY set -- restricting scan to: ${jsonFiles.join(', ')}`);
+}
 
 for (const f of jsonFiles) {
   checkDashboard(path.join(DASHBOARD_DIR, f), summary);

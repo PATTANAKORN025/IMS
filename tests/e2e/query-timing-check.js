@@ -157,7 +157,21 @@ function listDashboardJsonFiles(dir) {
   return out.sort();
 }
 
-for (const f of listDashboardJsonFiles(DASHBOARD_DIR)) {
+// PANEL_CHECK_ONLY: same convention as tests/e2e/panel-data-check.js --
+// comma-separated dashboard-relative paths (forward-slash) to restrict the
+// scan. Used by tests/e2e/runner.js's lightweight mode (the "fast"
+// assurance profile); unset scans all dashboards, unchanged CLI default.
+const ONLY = process.env.PANEL_CHECK_ONLY
+  ? process.env.PANEL_CHECK_ONLY.split(',').map((s) => s.trim()).filter(Boolean)
+  : null;
+
+let dashboardFiles = listDashboardJsonFiles(DASHBOARD_DIR);
+if (ONLY) {
+  dashboardFiles = dashboardFiles.filter((f) => ONLY.includes(f.split(path.sep).join('/')));
+  console.log(`PANEL_CHECK_ONLY set -- restricting scan to: ${dashboardFiles.join(', ')}`);
+}
+
+for (const f of dashboardFiles) {
   checkDashboard(path.join(DASHBOARD_DIR, f));
 }
 
