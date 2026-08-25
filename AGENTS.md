@@ -59,4 +59,4 @@
 ## 7. Available Skills
 
 Over 90 skills are available via MCP and `.agents/skills/`. Use `/skill-name` to invoke.
-Key local skills include: `code-review-and-quality`, `performance-optimization`, `security-and-hardening`, `grafana-dashboard-mastery`, `timescaledb-query-optimization`, `node-red-pipeline-engineering`.
+Key local skills include: `code-review-and-quality`, `performance-optimization`, `security-and-hardening`, `grafana-dashboard-mastery`, `timescaledb-query-optimization`, `node-red-pipeline-engineering`, `ui-ux-pro-max`, `grill-me`, `brainstorming`, `skill-creator`.
