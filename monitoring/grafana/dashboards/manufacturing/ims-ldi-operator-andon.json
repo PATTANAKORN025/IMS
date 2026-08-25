@@ -1,5 +1,5 @@
 {
-  "description": "Factory floor kiosk. ISA-101 compliant. Zero interaction, zero scrolling. 1280x720. Redesigned from an earlier 1920x1080 layout (System Audit Phase 5): template-variable pickers and the drill-down links row are hidden (hide:2 / links:[]) since a kiosk display has no one to interact with them. Temperature/Humidity compliance trend charts (panels 12/13) were re-added 2026-08-17 as h4/w12 state-timelines (down from the h12/w8 originals on ims-ldi-manufacturing.json), stacked above the Action Queue table (also h4, down from h6) -- both compressed to fit tests/lint/dashboard-linter.js's kiosk height ceiling (20 grid units) alongside every other panel. PE/JE-vs-spec bargauge was never added here (still ims-ldi-manufacturing.json / ims-ldi-engineering-analytics.json drill-down only) -- no remaining room within the height budget.",
+  "description": "Factory floor kiosk. ISA-101 compliant. Zero interaction, zero scrolling. 1280x720. Redesigned from an earlier 1920x1080 layout (System Audit Phase 5): template-variable pickers and the drill-down links row are hidden (hide:2 / links:[]) since a kiosk display has no one to interact with them. Temperature/Humidity compliance trend charts (panels 12/13) were re-added 2026-08-17 as w12 state-timelines (down from the h12/w8 originals on ims-ldi-manufacturing.json), stacked above the Action Queue table -- both compressed to fit tests/lint/dashboard-linter.js's kiosk height ceiling (20 grid units) alongside every other panel. Rebalanced 2026-08-25 (P15-R): compliance timelines h4->h3 each, Action Queue h4->h5 (net height unchanged) so the fleet's highest-priority panel can show more than one alarm row without an internal scrollbar, which was violating this dashboard's own zero-scroll design during multi-alarm periods. PE/JE-vs-spec bargauge was never added here (still ims-ldi-manufacturing.json / ims-ldi-engineering-analytics.json drill-down only) -- no remaining room within the height budget.",
   "schemaVersion": 39,
   "liveNow": true,
   "style": "dark",
@@ -693,7 +693,7 @@
         "x": 0,
         "y": 4,
         "w": 12,
-        "h": 4
+        "h": 3
       },
       "fieldConfig": {
         "defaults": {
@@ -784,7 +784,7 @@
         "x": 12,
         "y": 4,
         "w": 12,
-        "h": 4
+        "h": 3
       },
       "fieldConfig": {
         "defaults": {
@@ -873,9 +873,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 8,
+        "y": 7,
         "w": 24,
-        "h": 4
+        "h": 5
       },
       "options": {
         "showHeader": true,
