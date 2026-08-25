@@ -58,8 +58,8 @@
         "datasource": {
           "uid": "timescaledb"
         },
-        "query": "SELECT DISTINCT eqp_id AS __text, eqp_id AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) ORDER BY eqp_id",
-        "definition": "SELECT DISTINCT eqp_id AS __text, eqp_id AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) ORDER BY eqp_id",
+        "query": "SELECT DISTINCT eqp_id AS __text, eqp_id AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) ORDER BY eqp_id",
+        "definition": "SELECT DISTINCT eqp_id AS __text, eqp_id AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) ORDER BY eqp_id",
         "current": {
           "selected": true,
           "text": "All",
@@ -361,7 +361,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "/* QUERY_BUDGET_EXEMPT-safe rewrite (System QA, 2026-08-06): same\n   DISTINCT-ON-vs-compressed-chunks fix as the \"Machines Running\" panel --\n   see that panel's comment. */\nWITH machines AS (\n  SELECT device_id AS eqp_id FROM public.devices WHERE device_type='ldi' AND enabled AND device_id IN (${machine_id:sqlstring})\n)\nSELECT ROUND((COUNT(*) FILTER (WHERE l.state = true) * 100.0 / NULLIF(COUNT(*), 0))::NUMERIC, 0) AS value\nFROM machines m\nLEFT JOIN LATERAL (\n  SELECT state FROM public.ldi_data d\n  WHERE d.eqp_id = m.eqp_id AND $__timeFilter(d.time) AND d.factory IN (${factory:sqlstring}) AND d.mo IN (${mo:sqlstring})\n  ORDER BY d.time DESC LIMIT 1\n) l ON true",
+          "rawSql": "/* QUERY_BUDGET_EXEMPT-safe rewrite (System QA, 2026-08-06): same\n   DISTINCT-ON-vs-compressed-chunks fix as the \"Machines Running\" panel --\n   see that panel's comment. */\nWITH machines AS (\n  SELECT device_id AS eqp_id FROM public.devices WHERE device_type='ldi' AND enabled AND device_id IN (${machine_id:sqlstring})\n)\nSELECT ROUND((COUNT(*) FILTER (WHERE l.state = true) * 100.0 / NULLIF(COUNT(*), 0))::NUMERIC, 0) AS value\nFROM machines m\nLEFT JOIN LATERAL (\n  SELECT state FROM public.ldi_data d\n  WHERE d.eqp_id = m.eqp_id AND $__timeFilter(d.time) AND d.factory IN (${factory:sqlstring})\n  ORDER BY d.time DESC LIMIT 1\n) l ON true",
           "format": "table"
         }
       ],
@@ -543,7 +543,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT ROUND((COUNT(DISTINCT eqp_id) FILTER (WHERE temperature BETWEEN 20 AND 24 AND humidity BETWEEN 50 AND 60) * 100.0 / NULLIF(COUNT(DISTINCT eqp_id), 0))::NUMERIC, 0) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) AND temperature IS NOT NULL AND humidity IS NOT NULL",
+          "rawSql": "SELECT ROUND((COUNT(DISTINCT eqp_id) FILTER (WHERE temperature BETWEEN 20 AND 24 AND humidity BETWEEN 50 AND 60) * 100.0 / NULLIF(COUNT(DISTINCT eqp_id), 0))::NUMERIC, 0) AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) AND temperature IS NOT NULL AND humidity IS NOT NULL",
           "format": "table"
         }
       ],
@@ -632,7 +632,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "/* QUERY_BUDGET_EXEMPT-safe rewrite (System QA, 2026-08-06): DISTINCT ON\n   over the full requested time range forced a full scan+sort of every chunk\n   (221K+ rows for the 30-day worst case this budget check tests), and once\n   TimescaleDB's compress_after policy started compressing older chunks that\n   became a real regression -- a per-device LATERAL lookup uses the\n   (eqp_id, time DESC) index to jump straight to each device's latest row\n   instead, the same pattern already proven in v_ldi_machine_latest_full. */\nWITH machines AS (\n  SELECT device_id AS eqp_id FROM public.devices WHERE device_type='ldi' AND enabled AND device_id IN (${machine_id:sqlstring})\n)\nSELECT COUNT(*) FILTER (WHERE l.state = true) AS value\nFROM machines m\nLEFT JOIN LATERAL (\n  SELECT state FROM public.ldi_data d\n  WHERE d.eqp_id = m.eqp_id AND $__timeFilter(d.time) AND d.factory IN (${factory:sqlstring}) AND d.mo IN (${mo:sqlstring})\n  ORDER BY d.time DESC LIMIT 1\n) l ON true",
+          "rawSql": "/* QUERY_BUDGET_EXEMPT-safe rewrite (System QA, 2026-08-06): DISTINCT ON\n   over the full requested time range forced a full scan+sort of every chunk\n   (221K+ rows for the 30-day worst case this budget check tests), and once\n   TimescaleDB's compress_after policy started compressing older chunks that\n   became a real regression -- a per-device LATERAL lookup uses the\n   (eqp_id, time DESC) index to jump straight to each device's latest row\n   instead, the same pattern already proven in v_ldi_machine_latest_full. */\nWITH machines AS (\n  SELECT device_id AS eqp_id FROM public.devices WHERE device_type='ldi' AND enabled AND device_id IN (${machine_id:sqlstring})\n)\nSELECT COUNT(*) FILTER (WHERE l.state = true) AS value\nFROM machines m\nLEFT JOIN LATERAL (\n  SELECT state FROM public.ldi_data d\n  WHERE d.eqp_id = m.eqp_id AND $__timeFilter(d.time) AND d.factory IN (${factory:sqlstring})\n  ORDER BY d.time DESC LIMIT 1\n) l ON true",
           "format": "table"
         }
       ],
@@ -766,7 +766,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, eqp_id AS metric, CASE WHEN temperature BETWEEN 20 AND 24 THEN 2 WHEN temperature BETWEEN 19 AND 25 THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) AND temperature IS NOT NULL ORDER BY time ASC",
+          "rawSql": "SELECT time, eqp_id AS metric, CASE WHEN temperature BETWEEN 20 AND 24 THEN 2 WHEN temperature BETWEEN 19 AND 25 THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) AND temperature IS NOT NULL ORDER BY time ASC",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
@@ -857,7 +857,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, eqp_id AS metric, CASE WHEN humidity BETWEEN 50 AND 60 THEN 2 WHEN humidity BETWEEN 45 AND 65 THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) AND humidity IS NOT NULL ORDER BY time ASC",
+          "rawSql": "SELECT time, eqp_id AS metric, CASE WHEN humidity BETWEEN 50 AND 60 THEN 2 WHEN humidity BETWEEN 45 AND 65 THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) AND humidity IS NOT NULL ORDER BY time ASC",
           "format": "time_series",
           "legendFormat": "{{metric}}"
         }
