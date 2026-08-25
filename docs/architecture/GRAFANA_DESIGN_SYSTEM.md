@@ -260,6 +260,40 @@ Reference implementations: `ims-ldi-engineering-analytics.json` panels 17
 
 ---
 
+## 7.2 Panel-container styling (CSS-injection text panel) — undocumented until 2026-08-25
+
+11 of 15 dashboards carry a small, `transparent: true` `text` panel (usually
+`gridPos: {x:0, y:0, w:24, h:1}`, sometimes split across 2 panels) whose
+`options.content` is a bare `<style>` block targeting Grafana's own
+`[class*="-panel-container"]`/`[class*="-panel-title"]` selectors: rounded
+corners, a subtle cyan-tinted border, a hover glow, and uppercase small-caps
+panel titles.
+
+**Why this exists, not a native alternative:** Grafana 13.1's panel-options
+schema (and its `grafana.ini`/custom-theme mechanism) exposes color and
+typography tokens, but does not expose per-panel or global `border-radius`,
+`box-shadow`, or hover-state CSS to a file-provisioned dashboard — those are
+DOM/CSS-level concerns with no corresponding Grafana option in this version.
+A `text` panel injecting a `<style>` tag is the only file-provisionable way to
+apply this treatment without shipping a custom Grafana Docker image with a
+patched frontend build (a materially higher-risk, harder-to-maintain path
+than a 20-line panel). This is a **retained workaround**, not an oversight.
+
+**Known, accepted side effect:** the injector panel(s) render as a blank,
+title-less rectangle (Grafana still allocates their grid space even though
+their only job is emitting a `<style>` tag) — confirmed visible in rendered
+screenshots at the top of every affected dashboard. This costs 1-2 grid rows
+of vertical space above the fold. Accepted tradeoff, not hidden: the
+alternative (no visual polish) or (a patched Grafana image) were both judged
+worse than a small, known, fixed cost.
+
+**Rule for new dashboards:** reuse the existing injector content verbatim
+(copy from any current dashboard, e.g. `ims-ldi-manufacturing.json`'s single
+combined-rules version) rather than hand-rolling a new CSS variant, so the
+whole suite keeps exactly one styling definition, not many near-duplicates.
+
+---
+
 ## 8. Machine Identity Palette (If static color bindings to physical machines are required)
 
 > Populate this table once the list of physical machines slated for production deployment is known. Do not create fixed color overrides anywhere else except by referencing this table.

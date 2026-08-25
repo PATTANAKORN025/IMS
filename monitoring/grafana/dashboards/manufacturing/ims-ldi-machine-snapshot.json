@@ -1545,7 +1545,7 @@
         "x": 0,
         "y": 26,
         "w": 24,
-        "h": 10
+        "h": 6
       },
       "description": "Combined PE + JE process capability for the selected machine(s)/event. Worst Cpk = LEAST(Cpk PE, Cpk JE); Confidence flags LOW SAMPLE when the deciding sample count is below 30, NO_DATA when neither PE nor JE produced samples.",
       "options": {
@@ -1863,9 +1863,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 41,
+        "y": 37,
         "w": 24,
-        "h": 10
+        "h": 5
       },
       "options": {
         "showHeader": true,
@@ -2202,7 +2202,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 36,
+        "y": 32,
         "w": 6,
         "h": 5
       },
@@ -2287,9 +2287,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 51,
+        "y": 42,
         "w": 24,
-        "h": 14
+        "h": 5
       },
       "options": {
         "showHeader": true,
