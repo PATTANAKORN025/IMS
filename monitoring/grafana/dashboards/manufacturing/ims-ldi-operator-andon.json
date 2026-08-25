@@ -683,190 +683,6 @@
       }
     },
     {
-      "id": 12,
-      "title": "◈ Temperature Compliance (22±2°C)",
-      "type": "state-timeline",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 4,
-        "w": 12,
-        "h": 3
-      },
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "0": {
-                  "color": "#EF4444",
-                  "index": 0,
-                  "text": "CRIT"
-                },
-                "1": {
-                  "color": "#F59E0B",
-                  "index": 1,
-                  "text": "WARN"
-                },
-                "2": {
-                  "color": "#22C55E",
-                  "index": 2,
-                  "text": "OK"
-                }
-              }
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#EF4444",
-                "value": null
-              },
-              {
-                "color": "#F59E0B",
-                "value": 1
-              },
-              {
-                "color": "#22C55E",
-                "value": 2
-              }
-            ]
-          },
-          "color": {
-            "mode": "thresholds"
-          },
-          "unit": "celsius",
-          "decimals": 1,
-          "min": 18,
-          "max": 28,
-          "custom": {
-            "lineWidth": 0,
-            "fillOpacity": 100,
-            "axisWidth": 90
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "showValue": "auto",
-        "mergeValues": true,
-        "alignValue": "center",
-        "rowHeight": 0.9,
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT time, eqp_id AS metric, CASE WHEN temperature BETWEEN 20 AND 24 THEN 2 WHEN temperature BETWEEN 19 AND 25 THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) AND temperature IS NOT NULL ORDER BY time ASC",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
-        }
-      ],
-      "description": "Per-machine temperature compliance over time. Green = in spec (20-24C). Copied from IMS LDI - Manufacturing Command Center, resized h12->h6 to fit the Andon Board's fixed 1280x720 zero-scroll budget (replaces the Action Queue table slot). fieldConfig.custom.axisWidth pinned to 90px (2026-08-25) so the eqp_id row-label gutter (e.g. \"LDI-10\", \"LDI-C-01\") has a fixed floor instead of Grafana's auto-computed width, which was letting the gutter shrink toward 0 as more machines got added to the fleet and squeezing labels illegible/invisible."
-    },
-    {
-      "id": 13,
-      "title": "◈ Humidity Compliance (55±5%)",
-      "type": "state-timeline",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 12,
-        "y": 4,
-        "w": 12,
-        "h": 3
-      },
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "0": {
-                  "color": "#EF4444",
-                  "index": 0,
-                  "text": "CRIT"
-                },
-                "1": {
-                  "color": "#F59E0B",
-                  "index": 1,
-                  "text": "WARN"
-                },
-                "2": {
-                  "color": "#22C55E",
-                  "index": 2,
-                  "text": "OK"
-                }
-              }
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#EF4444",
-                "value": null
-              },
-              {
-                "color": "#F59E0B",
-                "value": 1
-              },
-              {
-                "color": "#22C55E",
-                "value": 2
-              }
-            ]
-          },
-          "color": {
-            "mode": "thresholds"
-          },
-          "unit": "humidity",
-          "decimals": 1,
-          "min": 40,
-          "max": 70,
-          "custom": {
-            "lineWidth": 0,
-            "fillOpacity": 100,
-            "axisWidth": 90
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "showValue": "auto",
-        "mergeValues": true,
-        "alignValue": "center",
-        "rowHeight": 0.9,
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT time, eqp_id AS metric, CASE WHEN humidity BETWEEN 50 AND 60 THEN 2 WHEN humidity BETWEEN 45 AND 65 THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) AND humidity IS NOT NULL ORDER BY time ASC",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
-        }
-      ],
-      "description": "Per-machine humidity compliance over time. Green = in spec (50-60% RH). Copied from IMS LDI - Manufacturing Command Center, resized h12->h6 to fit the Andon Board's fixed 1280x720 zero-scroll budget (replaces the Action Queue table slot). fieldConfig.custom.axisWidth pinned to 90px (2026-08-25), same reason as the temperature panel beside it."
-    },
-    {
       "id": 8,
       "title": "◈ Action Queue (Critical/Major, last 5 min)",
       "type": "table",
@@ -1125,6 +941,151 @@
         }
       ],
       "description": "Real Critical/Major alarms from the last 5 minutes (matches the is_stale freshness window used everywhere else in this system) that are not yet RESOLVED, fleet-wide across the selected machines. Status is the real operator lifecycle state (public.ldi_alarm_lifecycle, OPEN/ACKNOWLEDGED/RESOLVED) -- an alarm auto-starts OPEN the instant it fires and only leaves this queue once someone actually resolves it via the alarm-api service (services/alarm-api), not a fixed time window. Owner is derived from the real RCA category taxonomy (public.v_ldi_alarm_category, 14 live categories) via a static category->team mapping -- proposed defaults, review before treating as authoritative org routing. Action is a short imperative derived from Owner. Elapsed is time since the alarm fired (NOT alarm duration -- this system has no alarm-clear/reset event, so true downtime duration cannot be computed without inventing one). When the queue is empty the table shows a single green NO ACTIVE CRITICAL/MAJOR ALARMS row instead of a bare \"No data\" panel state. Click Machine or Alarm Msg to open the Machine Snapshot for that exact event. Read-only -- acknowledge/resolve alarms on IMS LDI - Alarm Console (/d/ims-ldi-alarm-console)."
+    },
+    {
+      "id": 12,
+      "type": "table",
+      "title": "◈ Environmental Compliance — Exceptions",
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 24,
+        "h": 3
+      },
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "WITH status AS (\n  SELECT\n    v.eqp_id,\n    v.temperature,\n    v.humidity,\n    v.has_data,\n    CASE WHEN v.temperature BETWEEN 20 AND 24 THEN 2 WHEN v.temperature BETWEEN 19 AND 25 THEN 1 ELSE 0 END AS temp_status,\n    CASE WHEN v.humidity BETWEEN 50 AND 60 THEN 2 WHEN v.humidity BETWEEN 45 AND 65 THEN 1 ELSE 0 END AS humidity_status\n  FROM public.v_ldi_machine_latest_full v\n  WHERE v.eqp_id IN (${machine_id:sqlstring}) AND v.factory IN (${factory:sqlstring})\n), exceptions AS (\n  SELECT\n    eqp_id AS \"Machine\",\n    ROUND(temperature::numeric,1) AS \"Temp (C)\",\n    CASE temp_status WHEN 0 THEN 'CRIT' WHEN 1 THEN 'WARN' ELSE 'OK' END AS \"Temp Status\",\n    ROUND(humidity::numeric,1) AS \"Humidity (%)\",\n    CASE humidity_status WHEN 0 THEN 'CRIT' WHEN 1 THEN 'WARN' ELSE 'OK' END AS \"Humidity Status\",\n    LEAST(temp_status, humidity_status) AS \"sort_key\"\n  FROM status\n  WHERE has_data AND (temp_status < 2 OR humidity_status < 2)\n)\nSELECT * FROM exceptions\nUNION ALL\nSELECT 'ALL MACHINES COMPLIANT', NULL, NULL, NULL, NULL, 99\nWHERE NOT EXISTS (SELECT 1 FROM exceptions)\nORDER BY \"sort_key\" ASC, \"Machine\" ASC\nLIMIT 11",
+          "format": "table",
+          "datasource": {
+            "uid": "timescaledb"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "NO_DATA",
+          "custom": {}
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "sort_key"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Temp Status"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "CRIT": {
+                        "color": "#EF4444",
+                        "index": 0
+                      },
+                      "WARN": {
+                        "color": "#F59E0B",
+                        "index": 1
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Humidity Status"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "CRIT": {
+                        "color": "#EF4444",
+                        "index": 0
+                      },
+                      "WARN": {
+                        "color": "#F59E0B",
+                        "index": 1
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Machine"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "ALL MACHINES COMPLIANT": {
+                        "color": "#22C55E"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        },
+        "noValue": "NO_DATA",
+        "sortBy": []
+      },
+      "description": "Exceptions-only fleet compliance view: shows only machines currently outside temperature (22±2°C) or humidity (55±5%) tolerance, worst-first. Replaces a per-machine timeline design that could not label any of 11 machines at this panel height (~1.9px/row). Empty (all-compliant) state shown explicitly. Full historical trend charts remain on IMS LDI - Manufacturing Command Center."
     }
   ],
   "fiscalYearStartMonth": 0,
