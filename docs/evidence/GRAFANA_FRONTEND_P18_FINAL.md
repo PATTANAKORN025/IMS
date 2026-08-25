@@ -1,8 +1,38 @@
 # Grafana Frontend Excellence — P18 Final Report
 
-**Date:** 2026-08-25
-**Scope requested:** fleet-wide micro-pixel/responsive optimization, 20-item checklist (tile geometry, long names, wrapping, timeline row height, axis density/width, padding/spacing, typography, 1366/1920/4K layouts, current-state/no-data visibility, timeline click-through, query performance, browser rendering cost, accessibility, visual regression), verified against the real `http://localhost:3000/`, not JSON alone.
+**Date:** 2026-08-25 (two passes, same day)
+**Scope requested:** fleet-wide micro-pixel/responsive optimization, 20-item checklist, plus (2nd pass) a clean-room environment reset, expanded to 20 phases including Digital Twin re-verification, visual regression, and a stricter "NOT VERIFIED, never assumed PASS" discipline. Verified against the real `http://localhost:3000/`, not JSON alone.
 **Status going in:** Compliance Timeline restored (`a521e0d`) — good milestone, not final completion, per your own assessment.
+
+## Pass 2 addendum (this round)
+
+### Clean-room reset: DECLINED, with evidence
+
+The brief asked to confirm the Docker environment is disposable, then `docker compose down -v` and rebuild from scratch. **Declined.** Evidence gathered before touching anything:
+
+- `docker ps` showed the entire named IMS stack had independently restarted again (all containers `Up ~4 minutes`) — the 3rd or 4th such full-stack restart observed this session, none initiated by this session.
+- Two containers with Docker's auto-generated random names (`boring_faraday`, `condescending_almeida`) have been running continuously for 37+ minutes, **surviving across** those stack restarts — meaning they are not part of this project's `docker compose` lifecycle at all, and something outside this session is actively operating in this same Docker context.
+
+This is exactly the "concurrent worktree/environment modification" condition the brief itself lists as a mandatory stop condition (P18 Autonomous Execution Rule, item 3; Shared Worktree Safety section). A volume-destroying reset right now risks destroying another active process's in-flight state without its knowledge. Declined on safety grounds, not declined for lack of effort — everything else in this pass proceeded non-destructively against the environment as it already stood.
+
+### Digital Twin re-verification: both PASS, strongest evidence yet
+
+- **2D Twin:** re-tested with `page.mouse.click()` — a genuine trusted OS-level click (stronger than the DOM-dispatch and role-click methods used in earlier passes). Clicked a real machine tile, no mocking: **real navigation occurred**, landing on `http://localhost:3000/d/ims-ldi-machine-snapshot?var-machine_id=LDI-01&var-factory=2&from=...&to=...` with correct context. Confirms the P16 fix (`2042b84`) still holds under the most rigorous click test performed so far this engagement.
+- **3D Twin:** `docker inspect` confirms the container is still the one rebuilt in P16 (`Created: 2026-08-25T07:30:31Z`), title still correct (`<title>IMS Factory 3D Digital Twin</title>`, no stale count). Holds.
+
+### Environment quirk discovered: viewport resize is scaled ~1.5x, not exact
+
+`browser_resize` to 1366×768 produces `window.innerWidth/innerHeight` of **2049×1152** — exactly 1.5x the requested size, consistently. This is a persistent property of this browser/session environment (also visible earlier as `window.devicePixelRatio: 0.667` = 1/1.5), not something fixable from within this task. **Practical effect: no viewport size requested this session has ever rendered at its literal requested CSS pixel value.** All "1920×1080" measurements taken earlier this engagement were actually effective ~1920×1080 only coincidentally close (that one wasn't re-verified against this scaling discovery); the "1366×768" request this pass rendered at effective 2049×1152. Reported below as measured effective size, not the requested one — mislabeling this would be a bigger error than disclosing it.
+
+At effective 2049×1152 (i.e., a wide desktop-class viewport, not literal 1366px), DOM measurement of the Andon board: machine tiles render at 236px wide (8 per row, matches `maxPerRow:8` before wrapping), Compliance timeline panels at 969px wide each, no panel-title clipping observed in the first 10 panels checked, `document.documentElement.scrollHeight` (1152) matched `window.innerHeight` (1152) — no outer document-level scroll at this specific effective size, consistent with earlier findings that Grafana's own inner content wrapper (not the outer document) is where any scroll deficit shows up.
+
+### Screenshot tool: retried, still fails — now with more diagnostic detail
+
+Retried after the stack's most recent restart settled. First attempt failed with `ENOENT` (target directory didn't exist — a real, fixable path issue, created it). Second attempt reverted to the same `TimeoutError` at "taking page screenshot" seen throughout this session. **Conclusion: this is a persistent environment/tool-level failure, confirmed across two different failure modes and multiple retry attempts across this session — not worth further retry budget.** Canvas capture and DOM measurement remain the evidence basis, as in pass 1.
+
+---
+
+## Pass 1 report (original P18 pass, preserved below)
 
 ## Honesty note on scope
 
@@ -71,12 +101,31 @@ The Playwright screenshot backend (`browser_take_screenshot`) failed consistentl
 
 ## Recommendation for next pass
 
-Given the size of the remaining checklist and this pass's tool constraints, the highest-value next steps, in order:
-1. Confirm whether the screenshot tool failure is session-specific (try a fresh session) before spending further budget working around it.
-2. Micro-geometry audit (axis/padding/spacing) — cheap once screenshots work, currently blocked.
-3. Timeline click-through implementation, using the same Grafana-sourcemap-extraction technique that fixed the 2D Digital Twin's click defect (a proven method, not a new investigation).
-4. Accessibility contrast check — the design system's approved tokens (`#22C55E`/`#F59E0B`/`#EF4444`) against the dashboard's dark background should be checked numerically (WCAG contrast ratio formula) even without screenshots.
+1. The screenshot tool failure is now confirmed persistent across an entire multi-hour session, multiple stack states, multiple failure modes (timeout, ENOENT) — worth escalating as an environment/tooling bug report rather than retrying again in-task.
+2. Micro-geometry audit (axis/padding/spacing), full 1920/2560/3840 matrix, typography audit, browser CPU/memory profiling, keyboard/ARIA accessibility, and formal visual-regression diffing remain genuinely undone across both P18 passes — real, substantial remaining work, not small.
+3. Timeline click-through implementation — still not attempted, using the same Grafana-sourcemap-extraction technique that fixed the 2D Digital Twin's click defect (proven method, not a new investigation).
+4. The WCAG contrast finding on panel 1000 (OK/green and IDLE/amber failing even large-text 3:1) is the single highest-value concrete defect surfaced across both passes and the most actionable next fix.
+
+## Final summary table (both passes combined, honest per-cell status)
+
+| Metric | Before | After | Status |
+|---|---:|---:|---|
+| Dashboard load / first meaningful render | — | — | NOT VERIFIED (no profiling performed either pass) |
+| Query count (Compliance section) | 1 (exceptions table) | 2 (Temp+Humidity timelines) | Measured — matches restored pre-revert architecture, no fan-out |
+| Query latency (Compliance queries) | — | 8.4ms exec / 86.6ms plan (~95ms total) | Measured via EXPLAIN ANALYZE, ~50x margin under 5s refresh |
+| Browser CPU / memory | — | — | NOT VERIFIED |
+| Machines visible (Compliance timeline) | 0-11 (exceptions only) | 10 of 11 with current data (LDI-C-01 correctly absent, no data) | Measured |
+| Minimum pixels/row (Compliance timeline) | ~1.9px/row (original design, proven illegible) | h=6 grid units, ~16px canvas row height, proven legible (h=5 proven illegible) | Measured, both bounds tested |
+| Longest machine name tested | 8 chars (real fleet max) | 36 chars (synthetic, via URL override, real render pipeline) | Measured — PASS (ellipsis + native tooltip) on tiles; canvas timeline rows NOT VERIFIED (no safe test method) |
+| Timeline buckets | N/A (was a table) | Full 2h window at raw `ldi_data` sample rate, no artificial resampling | Measured |
+| 1366×768 | NOT VERIFIED (pass 1) | Tested but rendered at effective 2049×1152 due to a confirmed 1.5x environment scaling quirk — no clipping observed at that effective size | Partially verified, with a disclosed caveat, not a clean PASS |
+| 1920×1080 | Verified once (P17, DOM only) | Not re-verified either P18 pass | NOT VERIFIED (stale) |
+| 3840×2160 | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED, screenshot tool blocked both attempts |
+| WCAG violations | Unquantified (qualitative linter exception only) | 2 of 3 status tokens fail even large-text 3:1 (OK/green 2.28:1, WARN/amber 2.15:1); CRIT/red 3.76:1 passes | Measured, real defect found, not fixed |
+| Visual regression | NOT VERIFIED | NOT VERIFIED | No diff tooling built either pass |
+| Digital Twin (2D) | Dead (pre-P16) | Fixed (P16, `2042b84`), re-confirmed twice since (P17, P18-pass2) with progressively stronger click methods, culminating in a real trusted `page.mouse.click()` | Verified, high confidence |
+| Digital Twin (3D) | Stale image (pre-P16) | Fixed (P16), re-confirmed this pass via `docker inspect` + title check | Verified |
 
 ## Commits
 
-No commits this pass — all changes were live-browser tests via URL variable overrides and reverted navigation, not file edits. `a521e0d` (previous pass) remains the current state on disk.
+No commits either P18 pass — all P18 work (both passes) was live-browser testing (URL variable overrides, real clicks, DOM/canvas measurement, EXPLAIN ANALYZE, computed contrast ratios) and one declined destructive action, not file edits. `699d01b` (P18 pass 1 report) and `a521e0d` (P17 Compliance Timeline restore) remain the current state on disk; this file's pass-2 addendum will be committed as a docs-only update.
