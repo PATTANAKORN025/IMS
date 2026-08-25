@@ -1123,7 +1123,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "short",
+          "unit": "none",
           "decimals": 0,
           "thresholds": {
             "mode": "absolute",
@@ -1202,7 +1202,7 @@
           "format": "table"
         }
       ],
-      "description": "Count of Critical-class alarms in the alarm log. Lower is better. Zero is the goal."
+      "description": "All-time cumulative count of Critical/Major alarms ever logged for the selected machines (no time filter -- this is a lifetime total, not a currently-open count). See the Alarm Console for currently-open alarms."
     },
     {
       "id": 3,
