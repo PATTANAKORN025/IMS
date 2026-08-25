@@ -102,7 +102,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 12,
+        "y": 15,
         "w": 3,
         "h": 4
       },
@@ -195,7 +195,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 16,
+        "y": 19,
         "w": 3,
         "h": 3
       },
@@ -647,7 +647,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 19,
+        "y": 22,
         "w": 1,
         "h": 1
       },
@@ -691,7 +691,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 7,
+        "y": 10,
         "w": 24,
         "h": 5
       },
@@ -944,13 +944,13 @@
     },
     {
       "id": 12,
-      "type": "table",
-      "title": "◈ Environmental Compliance — Exceptions",
+      "type": "state-timeline",
+      "title": "◈ Temperature Compliance (22±2°C)",
       "gridPos": {
         "x": 0,
         "y": 4,
-        "w": 24,
-        "h": 3
+        "w": 12,
+        "h": 6
       },
       "datasource": {
         "uid": "timescaledb"
@@ -958,8 +958,8 @@
       "targets": [
         {
           "refId": "A",
-          "rawSql": "WITH status AS (\n  SELECT\n    v.eqp_id,\n    v.temperature,\n    v.humidity,\n    v.has_data,\n    CASE WHEN v.temperature BETWEEN 20 AND 24 THEN 2 WHEN v.temperature BETWEEN 19 AND 25 THEN 1 ELSE 0 END AS temp_status,\n    CASE WHEN v.humidity BETWEEN 50 AND 60 THEN 2 WHEN v.humidity BETWEEN 45 AND 65 THEN 1 ELSE 0 END AS humidity_status\n  FROM public.v_ldi_machine_latest_full v\n  WHERE v.eqp_id IN (${machine_id:sqlstring}) AND v.factory IN (${factory:sqlstring})\n), exceptions AS (\n  SELECT\n    eqp_id AS \"Machine\",\n    ROUND(temperature::numeric,1) AS \"Temp (C)\",\n    CASE temp_status WHEN 0 THEN 'CRIT' WHEN 1 THEN 'WARN' ELSE 'OK' END AS \"Temp Status\",\n    ROUND(humidity::numeric,1) AS \"Humidity (%)\",\n    CASE humidity_status WHEN 0 THEN 'CRIT' WHEN 1 THEN 'WARN' ELSE 'OK' END AS \"Humidity Status\",\n    LEAST(temp_status, humidity_status) AS \"sort_key\"\n  FROM status\n  WHERE has_data AND (temp_status < 2 OR humidity_status < 2)\n)\nSELECT * FROM exceptions\nUNION ALL\nSELECT 'ALL MACHINES COMPLIANT', NULL, NULL, NULL, NULL, 99\nWHERE NOT EXISTS (SELECT 1 FROM exceptions)\nORDER BY \"sort_key\" ASC, \"Machine\" ASC\nLIMIT 11",
-          "format": "table",
+          "rawSql": "SELECT time, eqp_id AS metric, CASE WHEN temperature BETWEEN 20 AND 24 THEN 2 WHEN temperature BETWEEN 19 AND 25 THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) AND temperature IS NOT NULL ORDER BY time ASC",
+          "format": "time_series",
           "datasource": {
             "uid": "timescaledb"
           }
@@ -967,125 +967,112 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "noValue": "NO_DATA",
-          "custom": {}
+          "custom": {
+            "lineWidth": 0,
+            "fillOpacity": 100,
+            "rowHeight": 0.9
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "color": "#EF4444",
+                  "index": 0,
+                  "text": "CRIT"
+                },
+                "1": {
+                  "color": "#F59E0B",
+                  "index": 1,
+                  "text": "WARN"
+                },
+                "2": {
+                  "color": "#22C55E",
+                  "index": 2,
+                  "text": "OK"
+                }
+              }
+            }
+          ],
+          "unit": "celsius",
+          "decimals": 1,
+          "min": 18,
+          "max": 28
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "sort_key"
-            },
-            "properties": [
-              {
-                "id": "custom.hidden",
-                "value": true
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Temp Status"
-            },
-            "properties": [
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "type": "value",
-                    "options": {
-                      "CRIT": {
-                        "color": "#EF4444",
-                        "index": 0
-                      },
-                      "WARN": {
-                        "color": "#F59E0B",
-                        "index": 1
-                      }
-                    }
-                  }
-                ]
-              },
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "color-background"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Humidity Status"
-            },
-            "properties": [
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "type": "value",
-                    "options": {
-                      "CRIT": {
-                        "color": "#EF4444",
-                        "index": 0
-                      },
-                      "WARN": {
-                        "color": "#F59E0B",
-                        "index": 1
-                      }
-                    }
-                  }
-                ]
-              },
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "color-background"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Machine"
-            },
-            "properties": [
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "type": "value",
-                    "options": {
-                      "ALL MACHINES COMPLIANT": {
-                        "color": "#22C55E"
-                      }
-                    }
-                  }
-                ]
-              },
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "color-text"
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "options": {
-        "showHeader": true,
-        "cellHeight": "sm",
-        "footer": {
-          "show": false
-        },
-        "noValue": "NO_DATA",
-        "sortBy": []
+        "showValue": "never",
+        "alignValue": "left",
+        "mergeValues": true
       },
-      "description": "Exceptions-only fleet compliance view: shows only machines currently outside temperature (22±2°C) or humidity (55±5%) tolerance, worst-first. Replaces a per-machine timeline design that could not label any of 11 machines at this panel height (~1.9px/row). Empty (all-compliant) state shown explicitly. Full historical trend charts remain on IMS LDI - Manufacturing Command Center."
+      "description": "Per-machine temperature compliance timeline (22±2°C target, 19-25°C warning band). Row = machine, column = time bucket (raw ldi_data sample rate, not artificially resampled). Restored 2026-08-25 after an exceptions-only table alternative was rejected for dropping the temporal view -- see GRAFANA_ANDON_COMPLIANCE_TIMELINE_REDESIGN.md."
+    },
+    {
+      "id": 13,
+      "type": "state-timeline",
+      "title": "◈ Humidity Compliance (55±5%)",
+      "gridPos": {
+        "x": 12,
+        "y": 4,
+        "w": 12,
+        "h": 6
+      },
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "rawSql": "SELECT time, eqp_id AS metric, CASE WHEN humidity BETWEEN 50 AND 60 THEN 2 WHEN humidity BETWEEN 45 AND 65 THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) AND humidity IS NOT NULL ORDER BY time ASC",
+          "format": "time_series",
+          "datasource": {
+            "uid": "timescaledb"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 0,
+            "fillOpacity": 100,
+            "rowHeight": 0.9
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "color": "#EF4444",
+                  "index": 0,
+                  "text": "CRIT"
+                },
+                "1": {
+                  "color": "#F59E0B",
+                  "index": 1,
+                  "text": "WARN"
+                },
+                "2": {
+                  "color": "#22C55E",
+                  "index": 2,
+                  "text": "OK"
+                }
+              }
+            }
+          ],
+          "unit": "humidity",
+          "decimals": 1,
+          "min": 40,
+          "max": 70
+        },
+        "overrides": []
+      },
+      "options": {
+        "showValue": "never",
+        "alignValue": "left",
+        "mergeValues": true
+      },
+      "description": "Per-machine humidity compliance timeline (55±5% target, 45-65% warning band). Same row/column model as Temperature Compliance alongside it."
     }
   ],
   "fiscalYearStartMonth": 0,
