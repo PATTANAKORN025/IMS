@@ -193,16 +193,25 @@
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
-                  { "color": "red", "value": null },
-                  { "color": "yellow", "value": 70 },
-                  { "color": "green", "value": 90 }
+                  { "color": "#EF4444", "value": null },
+                  { "color": "#F59E0B", "value": 70 },
+                  { "color": "#22C55E", "value": 90 }
                 ]
               },
-              "color": { "mode": "thresholds" }
+              "color": { "mode": "thresholds" },
+              "mappings": [
+                {
+                  "type": "special",
+                  "options": {
+                    "match": "null+nan",
+                    "result": { "text": "NO_DATA", "color": "#64748B" }
+                  }
+                }
+              ]
             }
           },
           "options": {
-            "colorMode": "background",
+            "colorMode": "value",
             "graphMode": "none",
             "justifyMode": "center",
             "textMode": "value",

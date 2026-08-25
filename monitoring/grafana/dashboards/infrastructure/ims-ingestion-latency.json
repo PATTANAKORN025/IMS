@@ -76,15 +76,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "#22C55E",
                 "value": null
               },
               {
-                "color": "yellow",
+                "color": "#F59E0B",
                 "value": 50
               },
               {
-                "color": "red",
+                "color": "#EF4444",
                 "value": 200
               }
             ]
@@ -140,15 +140,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "#22C55E",
                 "value": null
               },
               {
-                "color": "yellow",
+                "color": "#F59E0B",
                 "value": 50
               },
               {
-                "color": "red",
+                "color": "#EF4444",
                 "value": 200
               }
             ]
@@ -204,7 +204,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "blue",
+                "color": "#00F2FE",
                 "value": null
               }
             ]
@@ -260,15 +260,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "#22C55E",
                 "value": null
               },
               {
-                "color": "yellow",
+                "color": "#F59E0B",
                 "value": 50
               },
               {
-                "color": "red",
+                "color": "#EF4444",
                 "value": 200
               }
             ]
@@ -324,15 +324,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "#22C55E",
                 "value": null
               },
               {
-                "color": "yellow",
+                "color": "#F59E0B",
                 "value": 50
               },
               {
-                "color": "red",
+                "color": "#EF4444",
                 "value": 200
               }
             ]
@@ -388,15 +388,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "#22C55E",
                 "value": null
               },
               {
-                "color": "yellow",
+                "color": "#F59E0B",
                 "value": 50
               },
               {
-                "color": "red",
+                "color": "#EF4444",
                 "value": 200
               }
             ]
