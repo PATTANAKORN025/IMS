@@ -710,7 +710,7 @@
   "links": [
     {
       "title": "Manufacturing Command Center",
-      "url": "/d/ims-ldi-manufacturing/set2-manufacturing",
+      "url": "/d/ims-ldi-manufacturing",
       "type": "link",
       "icon": "external link",
       "targetBlank": false,
@@ -719,7 +719,7 @@
     },
     {
       "title": "Operator Andon Board",
-      "url": "/d/ims-ldi-operator-andon/set2-operator-andon",
+      "url": "/d/ims-ldi-operator-andon",
       "type": "link",
       "icon": "external link",
       "targetBlank": false,
@@ -728,7 +728,7 @@
     },
     {
       "title": "Engineering Analytics & SPC",
-      "url": "/d/ims-ldi-engineering-analytics/set2-engineering",
+      "url": "/d/ims-ldi-engineering-analytics",
       "type": "link",
       "icon": "external link",
       "targetBlank": false,

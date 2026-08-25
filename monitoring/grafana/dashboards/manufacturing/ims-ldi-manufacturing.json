@@ -742,12 +742,12 @@
                 "value": [
                   {
                     "title": "Open Machine Snapshot for ${__value.text}",
-                    "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=${__value.text}&from=${__from}&to=${__to}",
+                    "url": "/d/ims-ldi-machine-snapshot?var-machine_id=${__value.text}&from=${__from}&to=${__to}",
                     "targetBlank": false
                   },
                   {
                     "title": "View RCA correlation (Engineering Analytics)",
-                    "url": "/d/ims-ldi-engineering-analytics/set2-engineering-analytics?var-machine_id=${__value.text}&from=${__from}&to=${__to}",
+                    "url": "/d/ims-ldi-engineering-analytics?var-machine_id=${__value.text}&from=${__from}&to=${__to}",
                     "targetBlank": false
                   }
                 ]
@@ -1579,12 +1579,12 @@
                 "value": [
                   {
                     "title": "Open Engineering Analytics",
-                    "url": "/d/ims-ldi-engineering-analytics/set2-engineering?var-machine_id=${__value.text}&from=${__from}&to=${__to}",
+                    "url": "/d/ims-ldi-engineering-analytics?var-machine_id=${__value.text}&from=${__from}&to=${__to}",
                     "targetBlank": false
                   },
                   {
                     "title": "Open Machine Snapshot for ${__value.text}",
-                    "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=${__value.text}&${factory:queryparam}&from=${__from}&to=${__to}",
+                    "url": "/d/ims-ldi-machine-snapshot?var-machine_id=${__value.text}&${factory:queryparam}&from=${__from}&to=${__to}",
                     "targetBlank": false
                   }
                 ]
@@ -2859,7 +2859,7 @@
                 "value": [
                   {
                     "title": "Open Machine Snapshot for ${__value.text}",
-                    "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=${__value.text}&${factory:queryparam}&from=${__from}&to=${__to}",
+                    "url": "/d/ims-ldi-machine-snapshot?var-machine_id=${__value.text}&${factory:queryparam}&from=${__from}&to=${__to}",
                     "targetBlank": false
                   }
                 ]
@@ -2919,7 +2919,7 @@
   "links": [
     {
       "title": "Engineering Analytics & SPC",
-      "url": "/d/ims-ldi-engineering-analytics/set2-engineering?from=${__from}&to=${__to}",
+      "url": "/d/ims-ldi-engineering-analytics?from=${__from}&to=${__to}",
       "type": "link",
       "icon": "external link",
       "targetBlank": false,
@@ -2928,7 +2928,7 @@
     },
     {
       "title": "Operator Andon Board",
-      "url": "/d/ims-ldi-operator-andon/set2-operator-andon?from=${__from}&to=${__to}",
+      "url": "/d/ims-ldi-operator-andon?from=${__from}&to=${__to}",
       "type": "link",
       "icon": "external link",
       "targetBlank": false,
@@ -2937,7 +2937,7 @@
     },
     {
       "title": "Incident Snapshot",
-      "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?from=${__from}&to=${__to}",
+      "url": "/d/ims-ldi-machine-snapshot?from=${__from}&to=${__to}",
       "type": "link",
       "icon": "external link",
       "targetBlank": false,
