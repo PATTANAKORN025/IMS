@@ -690,6 +690,10 @@
                   "mode": "fixed",
                   "fixedColor": "#00F2FE"
                 }
+              },
+              {
+                "id": "custom.width",
+                "value": 90
               }
             ]
           },
