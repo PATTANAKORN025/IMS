@@ -23,13 +23,4 @@ providers:
       path: /var/lib/grafana/dashboards/manufacturing
       foldersFromFilesStructure: false
 
-  - name: 'Mentor LDI Read-only'
-    orgId: 1
-    folder: 'Mentor LDI (Read-only)'
-    type: file
-    disableDeletion: false
-    updateIntervalSeconds: 30
-    allowUiUpdates: false
-    options:
-      path: /var/lib/grafana/dashboards/mentor-ldi
-      foldersFromFilesStructure: false
+

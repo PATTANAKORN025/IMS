@@ -43,12 +43,9 @@ const path = require('path');
 
 const DASHBOARD_DIR = path.join(process.cwd(), 'monitoring', 'grafana', 'dashboards');
 
-// Production dashboards use the primary TimescaleDB datasource. Dashboards
-// under mentor-ldi intentionally use a separately provisioned SELECT-only
-// datasource so the preview cannot mutate the mentor-provided database.
+// Production dashboards use the primary TimescaleDB datasource.
 const APPROVED_DATASOURCE_UIDS = {
   default: ['timescaledb'],
-  'mentor-ldi': ['mentor-ldi-readonly'],
 };
 
 // Check 17 exceptions: panels intentionally kept at colorMode "background"
@@ -437,3 +434,4 @@ if (errors > 0) {
   console.log('LINT PASSED — all checks clean');
   process.exit(0);
 }
+
