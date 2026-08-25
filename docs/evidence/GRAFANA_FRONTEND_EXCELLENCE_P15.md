@@ -3,7 +3,9 @@
 **Date:** 2026-08-25
 **Scope:** P15 was scoped to Manufacturing's 1366px clipping and Engineering Analytics' render performance (both carried over from P14). Mid-phase, a live, currently-active production failure was discovered on the Operator Andon Board and was correctly prioritized above the original scope per explicit instruction. This report documents the P0 investigation/fix and the work completed under an authentication blocker that limited (but did not stop) the remaining phases.
 
-**Commits this phase:** `3bb5dd3` (Andon HTTP 400 root cause + fix), `2085de9` (Andon machine-tile width, forward-looking).
+**Commits this phase:** `3bb5dd3` (Andon HTTP 400 root cause + fix), `2085de9` (Andon machine-tile width, forward-looking), `e184185` (Manufacturing 1366px table-width fix), `3119194` (Engineering Analytics query optimization, `IN()` → `ANY(ARRAY[])`), `32e7ad0` (fleet-wide completion of the same `mo`/`fpn` pattern).
+
+**Update — resumed after the auth blocker, per explicit instruction to continue automatically:** the original P15 scope (Manufacturing 1366px, Engineering Analytics performance) was completed using the same non-authenticated evidence sources (dashboard JSON, direct `psql`, `EXPLAIN ANALYZE`, `pgbouncer` stats) that resolved the Andon P0. Grafana authentication remained unavailable throughout (confirmed via a single, non-repeated check before resuming, and again at the end of this phase) — not worked around, per the standing rule. Everything below that depends on live rendering is still honestly marked as such.
 
 ---
 
@@ -58,13 +60,27 @@ Grafana logs show a recurring `"failed to walk provisioned dashboards" error="st
 
 ---
 
-## Remaining P15 Original Scope (Manufacturing 1366px, Engineering Analytics performance)
+## P15-A (resumed) — Manufacturing 1366px Clipping
 
-**Not reached this session** — the live Andon failure correctly took priority per explicit instruction ("this is currently a higher priority than visual polish"), and the subsequent auth blocker limited what could be safely verified for the remaining scope. The findings and recommended approach from the P14 final report remain valid and unstarted:
-- Manufacturing's 1366px title truncation + Worst Cpk data clipping.
-- Engineering Analytics' 24–40s render time with observed 408 timeouts.
+**Root cause** (from P14's `D_manufacturing_1366.png` render, re-confirmed in this dashboard's current JSON): the Worst Cpk table (panel 18) has 2 columns with no explicit `custom.width`, so Grafana's equal auto-distribution at a ~320px panel width (1366px viewport, w:6 of 24) clips the Worst Cpk value badge — real data loss, not just a title truncation.
 
-Both require render-based before/after verification to do safely, which needs restored Grafana authentication.
+**Fix:** added `custom.width: 90` to the Machine column (fits the fixed `LDI-NN` ID format used throughout this system), leaving Worst Cpk to auto-fill the remainder. Purely additive — cannot introduce new clipping, only reduce or eliminate existing clipping.
+
+**Not fixed, deliberately:** the ~6 panel-title truncations found in P14 ("AVG CPK (FLE...", "CRITICAL/MAJ...", etc.) — cosmetic only (Grafana shows the full title on hover regardless), and shortening titles without render verification risks confusing users for uncertain visual gain. Documented, not silently dropped.
+
+**Verification status:** JSON-valid, lint-clean. **Not render-verified** — auth blocker.
+
+## P15-B (resumed) — Engineering Analytics Performance
+
+**Root cause, measured not assumed:** unlike Andon's `mo`, this dashboard's `mo`/`fpn`/etc. variables are genuinely operator-facing (`hide:0`) — not safely removable. Two have very high cardinality: `mo` = 1,608 distinct values, **`fpn` = 1,555 distinct values** (a second high-cardinality variable, newly discovered this phase), both appearing together in ~20 of the dashboard's ~26 query targets.
+
+`EXPLAIN ANALYZE` on the most expensive affected query (PE StdDev-by-machine, a `CROSS JOIN LATERAL` unpivot over raw `ldi_data`, already flagged `QUERY_BUDGET_EXEMPT` by a prior 2026-08-06 optimization pass that found no further improvement for the query's fundamental *shape*) with both variables at full "All" selection: **303ms planning + 105ms execution** — for one of ~20 queries in a single dashboard load.
+
+**Fix:** rewrote `column IN (${var:sqlstring})` → `column = ANY(ARRAY[${var:sqlstring}])` for `mo` and `fpn` specifically (34 call sites in this dashboard). Verified semantically identical — both forms returned byte-identical result rows on live data. Measured improvement on the same query: **303ms → 82ms planning (−73%), 105ms → 21ms execution (−80%)**. Verified non-negative on cheaper continuous-aggregate-based queries too (25ms → 24ms — smaller win, never a regression). This rewrite was then extended fleet-wide: found and fixed the identical `mo` pattern on `ims-ldi-alarm-console.json` (hidden/locked, same as Andon — removed entirely, 2 sites) and `ims-ldi-manufacturing.json` (visible/operator-facing, same as here — rewrote to `ANY(ARRAY[])`, 15 sites). A full sweep confirms zero remaining `mo`/`fpn` `IN()` occurrences across all 15 dashboards.
+
+**Honest scope of this fix:** this addresses Postgres-side planning/execution cost across ~20 queries — a real, measured, safe improvement. It does **not** fully explain the 24–40s dashboard-level render times observed in P14, which also include Grafana's own per-panel dispatch overhead and the 2 `volkovlabs-echarts-panel` custom charts' own client-side rendering cost, neither of which could be measured without render access. **Not claimed as a complete fix** — reported as what it actually is: a real, proven, partial improvement.
+
+**Verification status:** JSON-valid, lint-clean, query-level correctness and timing proven via direct Postgres testing. **End-to-end dashboard render time not re-measured** — auth blocker.
 
 ---
 
@@ -79,9 +95,14 @@ Both require render-based before/after verification to do safely, which needs re
 | Andon machine-tile width | w:2 (~114-160px) | w:3 (~171-240px) | ✅ applied, ⚠️ not render-verified |
 | Andon Action Queue column widths | Auto-distributed, 12 columns | Unchanged | ⚠️ deferred (needs render access) |
 | Stale mentor-ldi provisioning log noise | Present | Present (unfixed) | ⚠️ documented, deferred (needs restart) |
-| Manufacturing 1366px clipping (from P14) | Present | Unchanged | ⚠️ not reached this session |
-| Engineering Analytics render timeout (from P14) | 24-40s, 1x HTTP 408 | Unchanged | ⚠️ not reached this session |
-| Dashboards modified this phase | 0 | 1 (`ims-ldi-operator-andon.json`) | ✅ |
+| Manufacturing 1366px Worst Cpk data clipping | Present (real data loss) | Fixed via explicit column width | ✅ fixed, ⚠️ not render-verified |
+| Manufacturing panel-title truncation | Present (cosmetic) | Unchanged | ⚠️ deferred (cosmetic, mitigated by hover) |
+| Engineering Analytics query planning cost (worst case measured) | 303ms | 82ms (−73%) | ✅ measured |
+| Engineering Analytics query execution cost (worst case measured) | 105ms | 21ms (−80%) | ✅ measured |
+| Engineering Analytics `mo`/`fpn` `IN()` call sites | 34 | 0 (rewritten to `ANY(ARRAY[])`) | ✅ |
+| Fleet-wide `mo`/`fpn` high-cardinality `IN()` occurrences | 2 dashboards affected (Andon, Alarm Console) + 2 more found (Manufacturing, Engineering Analytics) = 4 dashboards, ~57 call sites total | 0 remaining anywhere in the 15-dashboard fleet | ✅ fully closed |
+| Engineering Analytics end-to-end render time (from P14) | 24-40s, 1x HTTP 408 | Not re-measured (query-level cost proven lower; full render time needs auth) | ⚠️ partial fix, not fully re-verified |
+| Dashboards modified this phase | 0 | 4 (`ims-ldi-operator-andon.json`, `ims-ldi-manufacturing.json`, `ims-ldi-engineering-analytics.json`, `ims-ldi-alarm-console.json`) | ✅ |
 | Lint errors/warnings | 0/0 | 0/0 | ✅ |
 | Viewports tested | 0 (auth blocker) | 0 | ⚠️ blocked |
 | Auth-dependent verification | — | Blocked, disclosed, not worked around | ⚠️ documented blocker |
@@ -110,6 +131,22 @@ Both require render-based before/after verification to do safely, which needs re
 
 ---
 
+## Architecture Decisions (P15-A / P15-B, resumed)
+
+### Decision 3: Table column width over grid restructuring (Manufacturing)
+
+- **Problem:** Worst Cpk table clips real data at 1366px.
+- **Evidence:** P14's render + confirmed absence of `custom.width` in the current JSON.
+- **Alternatives considered:** (a) widen the whole panel (w:6 → w:8+) — rejected, breaks the 4-across row's alignment with its siblings; (b) drop the `filterable` header icon — rejected, removes real functionality for a cosmetic gain; (c) explicit column width — **chosen**, smallest possible change, cannot regress.
+- **Performance/UX/regression impact:** None/positive/near-zero.
+
+### Decision 4: `IN()` → `ANY(ARRAY[])` rewrite over variable removal or dashboard restructuring (Engineering Analytics)
+
+- **Problem:** Expensive per-refresh SQL cost from 2 high-cardinality, genuinely-operator-facing variables.
+- **Evidence:** `EXPLAIN ANALYZE` before/after, correctness proof via identical result rows.
+- **Alternatives considered:** (a) remove the filters like Andon — rejected, these variables are real, used features here, not permanently-locked no-ops; (b) split the dashboard into multiple linked dashboards (the "if necessary" last-resort option in the original prompt) — rejected as premature: a real, safe, much smaller fix existed and was proven effective first; (c) rewrite the SQL predicate form — **chosen**, semantically inert, empirically faster, zero functional change for operators.
+- **Performance impact:** Real, measured (−73% to −80% on the tested query). **UX impact:** none (operators see identical filtering behavior). **Regression risk:** near-zero (proven identical output).
+
 ## Remaining Limitations
 
 **Fixed:**
@@ -127,9 +164,9 @@ Both require render-based before/after verification to do safely, which needs re
 
 **Deferred (real, documented, needs restored auth or a disposable-stack render check):**
 - Action Queue table's column widths (12 columns, no explicit sizing).
-- Manufacturing's 1366px clipping (carried over from P14, not reached this session).
-- Engineering Analytics' render performance (carried over from P14, not reached this session).
-- Full P1-P8 micro-pixel/responsive/accessibility/performance audit across all 15 dashboards — the original P15+ prompt's full scope was not attempted this session, correctly superseded by the live P0 Andon investigation.
+- Manufacturing's panel-title truncation (cosmetic only; the data-clipping instance is fixed).
+- Engineering Analytics' full end-to-end render time — the proven query-level fix (73-80% reduction on the measured worst case) is real but not confirmed to fully resolve the 24-40s/408-timeout render experience, since Grafana-side dispatch overhead and the 2 ECharts panels' own rendering cost couldn't be measured without auth.
+- Full P1-P8 micro-pixel/responsive/accessibility/performance audit across all 15 dashboards — the original P15+ prompt's full scope was not attempted this session; P15-A and P15-B (the two specific carry-over items from P14) were completed to the extent possible without render access.
 
 **Blocker requiring human input (not a stop-everything blocker — documented and worked around by continuing all safe, non-auth-dependent work):**
 - Grafana admin credential in `.env` no longer authenticates against the live instance. No action was taken to reset, brute-force, or otherwise work around this. Resolving it (updating `.env` with the current password, or providing it) would unblock render-based verification of everything marked "not render-verified" above.
