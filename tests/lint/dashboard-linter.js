@@ -54,7 +54,7 @@ const APPROVED_DATASOURCE_UIDS = {
 // use cases where perceiving *which* solid color it is is the actual task,
 // not reading text. Keyed by dashboard filename -> panel id.
 const BACKGROUND_COLORMODE_EXCEPTIONS = {
-  'ims-ldi-operator-andon.json': [1000],
+  'ims-ldi-operator-andon.json': [1000, 12],
 };
 
 // Standard panel height system (Check 13). KPI stat, normal chart/table,

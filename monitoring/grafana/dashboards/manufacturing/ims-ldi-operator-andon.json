@@ -1,5 +1,5 @@
 {
-  "description": "Factory floor kiosk. ISA-101 compliant. Zero interaction, zero scrolling. 1280x720. Redesigned from an earlier 1920x1080 layout (System Audit Phase 5): template-variable pickers and the drill-down links row are hidden (hide:2 / links:[]) since a kiosk display has no one to interact with them. Temperature/Humidity compliance trend charts (panels 12/13) were re-added 2026-08-17 as w12 state-timelines (down from the h12/w8 originals on ims-ldi-manufacturing.json), stacked above the Action Queue table -- both compressed to fit tests/lint/dashboard-linter.js's kiosk height ceiling (20 grid units) alongside every other panel. Rebalanced 2026-08-25 (P15-R): compliance timelines h4->h3 each, Action Queue h4->h5 (net height unchanged) so the fleet's highest-priority panel can show more than one alarm row without an internal scrollbar, which was violating this dashboard's own zero-scroll design during multi-alarm periods. PE/JE-vs-spec bargauge was never added here (still ims-ldi-manufacturing.json / ims-ldi-engineering-analytics.json drill-down only) -- no remaining room within the height budget.",
+  "description": "Factory floor kiosk. ISA-101 compliant. Zero interaction, zero scrolling. 1280x720. Redesigned from an earlier 1920x1080 layout (System Audit Phase 5): template-variable pickers and the drill-down links row are hidden (hide:2 / links:[]) since a kiosk display has no one to interact with them. Temperature/Humidity compliance charts (panels 12/13) were re-added 2026-08-17 as w12 side-by-side state-timelines, one row per machine. Rebalanced 2026-08-25 (P15-R): compliance timelines h4->h3 each, Action Queue h4->h5 (net height unchanged). Redesigned again 2026-08-25 (operator bug report): at 11 live machines, the state-timelines' per-row pixel height fell below what Grafana needs to draw any row label -- no machine was actually identifiable, only an unlabeled color strip. Replaced with a single merged panel (id 12; id 13 removed) of one worst-of-temperature-or-humidity tile per machine, reusing the repeat-panel pattern from the machine state tiles above -- Grafana does not support two independent repeat-panel groups side by side in one row (confirmed by trying it first: it silently doubled the height and reintroduced scroll), so the two metrics were merged into one glance-only tile row instead of kept as two. Trades the historical trend view for guaranteed per-machine labeling; the full trend charts remain on IMS LDI - Manufacturing Command Center. Total height dropped from 20/20 to 17/20, leaving 3 units of margin not yet reallocated. PE/JE-vs-spec bargauge was never added here (still ims-ldi-manufacturing.json / ims-ldi-engineering-analytics.json drill-down only).",
   "schemaVersion": 39,
   "liveNow": true,
   "style": "dark",
@@ -684,17 +684,20 @@
     },
     {
       "id": 12,
-      "title": "◈ Temperature Compliance (22±2°C)",
-      "type": "state-timeline",
+      "title": "$machine_id",
+      "type": "stat",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 0,
         "y": 4,
-        "w": 12,
+        "w": 2,
         "h": 3
       },
+      "repeat": "machine_id",
+      "repeatDirection": "h",
+      "maxPerRow": 11,
       "fieldConfig": {
         "defaults": {
           "mappings": [
@@ -702,62 +705,66 @@
               "type": "value",
               "options": {
                 "0": {
-                  "color": "#EF4444",
+                  "color": "#64748B",
                   "index": 0,
-                  "text": "CRIT"
+                  "text": "NO_DATA"
                 },
                 "1": {
-                  "color": "#F59E0B",
+                  "color": "#EF4444",
                   "index": 1,
-                  "text": "WARN"
+                  "text": "CRIT"
                 },
                 "2": {
-                  "color": "#22C55E",
+                  "color": "#F59E0B",
                   "index": 2,
+                  "text": "WARN"
+                },
+                "3": {
+                  "color": "#22C55E",
+                  "index": 3,
                   "text": "OK"
                 }
               }
             }
           ],
+          "color": {
+            "mode": "thresholds"
+          },
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "#EF4444",
+                "color": "#64748B",
                 "value": null
-              },
-              {
-                "color": "#F59E0B",
-                "value": 1
-              },
-              {
-                "color": "#22C55E",
-                "value": 2
               }
             ]
           },
-          "color": {
-            "mode": "thresholds"
-          },
-          "unit": "celsius",
-          "decimals": 1,
-          "min": 18,
-          "max": 28,
           "custom": {
-            "lineWidth": 0,
-            "fillOpacity": 100
-          }
+            "gradientMode": "opacity"
+          },
+          "unit": "none"
         },
         "overrides": []
       },
       "options": {
-        "showValue": "auto",
-        "mergeValues": true,
-        "alignValue": "center",
-        "rowHeight": 0.9,
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "text": {
+          "valueSize": 14,
+          "titleSize": 12
+        },
+        "noValue": "0",
+        "textMode": "value_and_name",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
         }
       },
       "targets": [
@@ -766,103 +773,11 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "SELECT time, eqp_id AS metric, CASE WHEN temperature BETWEEN 20 AND 24 THEN 2 WHEN temperature BETWEEN 19 AND 25 THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) AND temperature IS NOT NULL ORDER BY time ASC",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: snapshot-aware current-state tile, same freshness model (v_ldi_machine_latest_full's has_data/is_stale) as the machine state tiles above. Replaces the old two side-by-side per-machine state-timelines (Temperature 22+-2C, Humidity 55+-5%): at 11 machines, an h3 (~90px) timeline panel gave each row ~4px, below the pixel threshold Grafana needs to draw any row label at all -- no machine was actually identifiable. Also, Grafana does not support two independent repeat-panel groups sitting side by side in one row (repeated panels always force everything after them in the panel array down to a new row, regardless of x) -- tried that first, it silently doubled the height budget and reintroduced scroll. Merging both metrics into one worst-of-two tile per machine keeps a single repeat group / one row, and every device stays labeled regardless of fleet size. */\nSELECT CASE\n  WHEN NOT v.has_data OR v.is_stale OR v.temperature IS NULL OR v.humidity IS NULL THEN 0\n  WHEN v.temperature NOT BETWEEN 19 AND 25 OR v.humidity NOT BETWEEN 45 AND 65 THEN 1\n  WHEN v.temperature NOT BETWEEN 20 AND 24 OR v.humidity NOT BETWEEN 50 AND 60 THEN 2\n  ELSE 3\nEND AS \"$machine_id\"\nFROM public.v_ldi_machine_latest_full v\nWHERE v.eqp_id = ${machine_id:sqlstring}",
+          "format": "table"
         }
       ],
-      "description": "Per-machine temperature compliance over time. Green = in spec (20-24C). Copied from IMS LDI - Manufacturing Command Center, resized h12->h6 to fit the Andon Board's fixed 1280x720 zero-scroll budget (replaces the Action Queue table slot)."
-    },
-    {
-      "id": 13,
-      "title": "◈ Humidity Compliance (55±5%)",
-      "type": "state-timeline",
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 12,
-        "y": 4,
-        "w": 12,
-        "h": 3
-      },
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "0": {
-                  "color": "#EF4444",
-                  "index": 0,
-                  "text": "CRIT"
-                },
-                "1": {
-                  "color": "#F59E0B",
-                  "index": 1,
-                  "text": "WARN"
-                },
-                "2": {
-                  "color": "#22C55E",
-                  "index": 2,
-                  "text": "OK"
-                }
-              }
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#EF4444",
-                "value": null
-              },
-              {
-                "color": "#F59E0B",
-                "value": 1
-              },
-              {
-                "color": "#22C55E",
-                "value": 2
-              }
-            ]
-          },
-          "color": {
-            "mode": "thresholds"
-          },
-          "unit": "humidity",
-          "decimals": 1,
-          "min": 40,
-          "max": 70,
-          "custom": {
-            "lineWidth": 0,
-            "fillOpacity": 100
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "showValue": "auto",
-        "mergeValues": true,
-        "alignValue": "center",
-        "rowHeight": 0.9,
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "uid": "timescaledb"
-          },
-          "rawSql": "SELECT time, eqp_id AS metric, CASE WHEN humidity BETWEEN 50 AND 60 THEN 2 WHEN humidity BETWEEN 45 AND 65 THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) AND humidity IS NOT NULL ORDER BY time ASC",
-          "format": "time_series",
-          "legendFormat": "{{metric}}"
-        }
-      ],
-      "description": "Per-machine humidity compliance over time. Green = in spec (50-60% RH). Copied from IMS LDI - Manufacturing Command Center, resized h12->h6 to fit the Andon Board's fixed 1280x720 zero-scroll budget (replaces the Action Queue table slot)."
+      "description": "Environmental compliance for $machine_id: worst of temperature (spec 20-24C, warn 19-25C) and humidity (spec 50-60% RH, warn 45-65% RH). One tile per machine so every device stays labeled and visible regardless of fleet size -- current-state only, not a historical trend (see IMS LDI - Manufacturing Command Center for the full temperature/humidity trend charts)."
     },
     {
       "id": 8,
@@ -1046,7 +961,7 @@
                 "value": [
                   {
                     "title": "Open Machine Snapshot for ${__value.text}",
-                    "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=${__data.fields.Machine}&var-factory=${__data.fields.Factory}&var-mo=${__data.fields.MO}&var-event_time_ms=${__data.fields.When_ms}&from=${__from}&to=${__to}",
+                    "url": "/d/ims-ldi-machine-snapshot/ims-ldi-machine-snapshot?var-machine_id=${__data.fields.Machine}&var-factory=${__data.fields.Factory}&var-mo=${__data.fields.MO}&var-event_time_ms=${__data.fields.When_ms}&from=${__from}&to=${__to}",
                     "targetBlank": false
                   }
                 ]
@@ -1064,7 +979,7 @@
                 "value": [
                   {
                     "title": "Open Machine Snapshot for ${__data.fields.Machine}",
-                    "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=${__data.fields.Machine}&var-factory=${__data.fields.Factory}&var-mo=${__data.fields.MO}&var-event_time_ms=${__data.fields.When_ms}&from=${__from}&to=${__to}",
+                    "url": "/d/ims-ldi-machine-snapshot/ims-ldi-machine-snapshot?var-machine_id=${__data.fields.Machine}&var-factory=${__data.fields.Factory}&var-mo=${__data.fields.MO}&var-event_time_ms=${__data.fields.When_ms}&from=${__from}&to=${__to}",
                     "targetBlank": false
                   }
                 ]
