@@ -125,3 +125,6 @@ scratch_sql.txt
 .p11-scratch/
 .p11c-scratch/
 p*_scratch/
+
+# Allow tracking agent skills
+!.agents/skills/
