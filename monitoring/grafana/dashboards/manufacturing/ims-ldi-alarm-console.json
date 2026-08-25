@@ -58,8 +58,8 @@
         "datasource": {
           "uid": "timescaledb"
         },
-        "query": "WITH v AS (\n  SELECT DISTINCT eqp_id AS __text, eqp_id AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring})\n)\nSELECT * FROM v\nUNION ALL\nSELECT NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM v)\nORDER BY 1",
-        "definition": "SELECT DISTINCT eqp_id AS __text, eqp_id AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND mo IN (${mo:sqlstring}) ORDER BY eqp_id",
+        "query": "WITH v AS (\n  SELECT DISTINCT eqp_id AS __text, eqp_id AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring})\n)\nSELECT * FROM v\nUNION ALL\nSELECT NULL, NULL WHERE NOT EXISTS (SELECT 1 FROM v)\nORDER BY 1",
+        "definition": "SELECT DISTINCT eqp_id AS __text, eqp_id AS __value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) ORDER BY eqp_id",
         "current": {
           "selected": true,
           "text": "All",
