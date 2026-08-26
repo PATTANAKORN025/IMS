@@ -1,5 +1,5 @@
 {
-  "description": "Factory floor kiosk. ISA-101 compliant. Zero interaction, zero scrolling. 1280x720. Redesigned from an earlier 1920x1080 layout (System Audit Phase 5): template-variable pickers and the drill-down links row are hidden (hide:2 / links:[]) since a kiosk display has no one to interact with them. Temperature/Humidity compliance trend charts (panels 12/13) were re-added 2026-08-17 as w12 state-timelines (down from the h12/w8 originals on ims-ldi-manufacturing.json), stacked above the Action Queue table -- both compressed to fit tests/lint/dashboard-linter.js's kiosk height ceiling (20 grid units) alongside every other panel. Rebalanced 2026-08-25 (P15-R): compliance timelines h4->h3 each, Action Queue h4->h5 (net height unchanged) so the fleet's highest-priority panel can show more than one alarm row without an internal scrollbar, which was violating this dashboard's own zero-scroll design during multi-alarm periods. Operator report 2026-08-25: at 11 live machines the row-label (Y-axis) gutter width was not wide enough for every eqp_id to stay legible -- fieldConfig.custom.axisWidth pinned to 90px on both panels (previously left to Grafana's auto-sizing) so the gutter has a fixed floor regardless of fleet size. (A same-day redesign to per-machine tiles was tried and reverted at the operator's request -- kept the original two-panel trend-chart design, fixed only the axis width.) PE/JE-vs-spec bargauge was never added here (still ims-ldi-manufacturing.json / ims-ldi-engineering-analytics.json drill-down only) -- no remaining room within the height budget.",
+  "description": "Factory floor kiosk. ISA-101 compliant. Zero interaction, zero scrolling. 1280x720. Redesigned from an earlier 1920x1080 layout (System Audit Phase 5): template-variable pickers and the drill-down links row are hidden (hide:2 / links:[]) since a kiosk display has no one to interact with them. Temperature/Humidity compliance trend charts (panels 12/13) were re-added 2026-08-17 as w12 state-timelines (down from the h12/w8 originals on ims-ldi-manufacturing.json), stacked above the Action Queue table -- both compressed to fit tests/lint/dashboard-linter.js's kiosk height ceiling (20 grid units) alongside every other panel. Rebalanced 2026-08-25 (P15-R): compliance timelines h4->h3 each, Action Queue h4->h5, net height unchanged -- real fleet size (11 machines) exceeds the machine-tile row's maxPerRow:8 design assumption and wraps to a second tile row, so with 2+ simultaneous Critical/Major alarms the Action Queue's own internal scrollbar was violating this dashboard's zero-scroll design; the extra row gives it room to show more alarms without scrolling. PE/JE-vs-spec bargauge was never added here (still ims-ldi-manufacturing.json / ims-ldi-engineering-analytics.json drill-down only) -- no remaining room within the height budget.",
   "schemaVersion": 39,
   "liveNow": true,
   "style": "dark",
@@ -102,9 +102,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 15,
-        "w": 3,
-        "h": 4
+        "y": 12,
+        "h": 4,
+        "w": 24
       },
       "repeat": "machine_id",
       "repeatDirection": "h",
@@ -195,9 +195,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 19,
-        "w": 3,
-        "h": 3
+        "y": 16,
+        "h": 3,
+        "w": 24
       },
       "repeat": "machine_id",
       "repeatDirection": "h",
@@ -218,7 +218,7 @@
               "options": {
                 "match": "null+nan",
                 "result": {
-                  "text": "—"
+                  "text": "\u2014"
                 }
               }
             }
@@ -241,7 +241,7 @@
           "valueSize": 14,
           "titleSize": 0
         },
-        "noValue": "—",
+        "noValue": "\u2014",
         "textMode": "value",
         "tooltip": {
           "mode": "single",
@@ -258,7 +258,7 @@
           "format": "table"
         }
       ],
-      "description": "Current MO (job) running on $machine_id, or — if the machine has no active job / no data. Sits directly under the state tile so every machine shows its job, not just alarming ones."
+      "description": "Current MO (job) running on $machine_id, or \u2014 if the machine has no active job / no data. Sits directly under the state tile so every machine shows its job, not just alarming ones."
     },
     {
       "id": 9999,
@@ -271,14 +271,14 @@
       "gridPos": {
         "x": 0,
         "y": 0,
-        "w": 24,
-        "h": 1
+        "h": 1,
+        "w": 24
       },
       "transparent": true
     },
     {
       "id": 1,
-      "title": "◉ Fleet Availability",
+      "title": "\u25c9 Fleet Availability",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -286,8 +286,8 @@
       "gridPos": {
         "x": 0,
         "y": 1,
-        "w": 6,
-        "h": 3
+        "h": 3,
+        "w": 6
       },
       "fieldConfig": {
         "defaults": {
@@ -369,7 +369,7 @@
     },
     {
       "id": 2,
-      "title": "◉ Active Critical/Major Alarms (master-code matched)",
+      "title": "\u25c9 Active Critical/Major Alarms (master-code matched)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -377,8 +377,8 @@
       "gridPos": {
         "x": 6,
         "y": 1,
-        "w": 8,
-        "h": 3
+        "h": 3,
+        "w": 8
       },
       "fieldConfig": {
         "defaults": {
@@ -456,7 +456,7 @@
     },
     {
       "id": 3,
-      "title": "◉ Environmental Compliance",
+      "title": "\u25c9 Environmental Compliance",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -464,8 +464,8 @@
       "gridPos": {
         "x": 14,
         "y": 1,
-        "w": 5,
-        "h": 3
+        "h": 3,
+        "w": 5
       },
       "fieldConfig": {
         "defaults": {
@@ -551,7 +551,7 @@
     },
     {
       "id": 9,
-      "title": "◉ Machines Running",
+      "title": "\u25c9 Machines Running",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -559,8 +559,8 @@
       "gridPos": {
         "x": 19,
         "y": 1,
-        "w": 5,
-        "h": 3
+        "h": 3,
+        "w": 5
       },
       "fieldConfig": {
         "defaults": {
@@ -640,16 +640,16 @@
     },
     {
       "id": 10000,
-      "title": "◉ Pipeline Heartbeat",
+      "title": "\u25c9 Pipeline Heartbeat",
       "type": "volkovlabs-echarts-panel",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 0,
-        "y": 22,
-        "w": 1,
-        "h": 1
+        "y": 19,
+        "h": 1,
+        "w": 1
       },
       "description": "Watchdog: re-queries the database every dashboard refresh cycle. If this panel stalls (the frontend refresh timer dying, the reported \"requires F5\" bug), it force-reloads the page automatically. See migration 065 for the TimescaleDB-side half of this fix.",
       "fieldConfig": {
@@ -683,17 +683,199 @@
       }
     },
     {
+      "id": 12,
+      "title": "\u25c8 Temperature Compliance (22\u00b12\u00b0C)",
+      "type": "state-timeline",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "h": 3,
+        "w": 12
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "color": "#EF4444",
+                  "index": 0,
+                  "text": "CRIT"
+                },
+                "1": {
+                  "color": "#F59E0B",
+                  "index": 1,
+                  "text": "WARN"
+                },
+                "2": {
+                  "color": "#22C55E",
+                  "index": 2,
+                  "text": "OK"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#EF4444",
+                "value": null
+              },
+              {
+                "color": "#F59E0B",
+                "value": 1
+              },
+              {
+                "color": "#22C55E",
+                "value": 2
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "celsius",
+          "decimals": 1,
+          "min": 18,
+          "max": 28,
+          "custom": {
+            "lineWidth": 0,
+            "fillOpacity": 100
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "showValue": "auto",
+        "mergeValues": true,
+        "alignValue": "center",
+        "rowHeight": 0.9,
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT time, eqp_id AS metric, CASE WHEN temperature BETWEEN 20 AND 24 THEN 2 WHEN temperature BETWEEN 19 AND 25 THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) AND temperature IS NOT NULL ORDER BY time ASC",
+          "format": "time_series",
+          "legendFormat": "{{metric}}"
+        }
+      ],
+      "description": "Per-machine temperature compliance over time. Green = in spec (20-24C). Copied from IMS LDI - Manufacturing Command Center, resized h12->h6 to fit the Andon Board's fixed 1280x720 zero-scroll budget (replaces the Action Queue table slot)."
+    },
+    {
+      "id": 13,
+      "title": "\u25c8 Humidity Compliance (55\u00b15%)",
+      "type": "state-timeline",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 4,
+        "h": 3,
+        "w": 12
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "color": "#EF4444",
+                  "index": 0,
+                  "text": "CRIT"
+                },
+                "1": {
+                  "color": "#F59E0B",
+                  "index": 1,
+                  "text": "WARN"
+                },
+                "2": {
+                  "color": "#22C55E",
+                  "index": 2,
+                  "text": "OK"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#EF4444",
+                "value": null
+              },
+              {
+                "color": "#F59E0B",
+                "value": 1
+              },
+              {
+                "color": "#22C55E",
+                "value": 2
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "humidity",
+          "decimals": 1,
+          "min": 40,
+          "max": 70,
+          "custom": {
+            "lineWidth": 0,
+            "fillOpacity": 100
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "showValue": "auto",
+        "mergeValues": true,
+        "alignValue": "center",
+        "rowHeight": 0.9,
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT time, eqp_id AS metric, CASE WHEN humidity BETWEEN 50 AND 60 THEN 2 WHEN humidity BETWEEN 45 AND 65 THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) AND humidity IS NOT NULL ORDER BY time ASC",
+          "format": "time_series",
+          "legendFormat": "{{metric}}"
+        }
+      ],
+      "description": "Per-machine humidity compliance over time. Green = in spec (50-60% RH). Copied from IMS LDI - Manufacturing Command Center, resized h12->h6 to fit the Andon Board's fixed 1280x720 zero-scroll budget (replaces the Action Queue table slot)."
+    },
+    {
       "id": 8,
-      "title": "◈ Action Queue (Critical/Major, last 5 min)",
+      "title": "\u25c8 Action Queue (Critical/Major, last 5 min)",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
       },
       "gridPos": {
         "x": 0,
-        "y": 10,
-        "w": 24,
-        "h": 5
+        "y": 7,
+        "h": 5,
+        "w": 24
       },
       "options": {
         "showHeader": true,
@@ -864,7 +1046,7 @@
                 "value": [
                   {
                     "title": "Open Machine Snapshot for ${__value.text}",
-                    "url": "/d/ims-ldi-machine-snapshot?var-machine_id=${__data.fields.Machine}&var-factory=${__data.fields.Factory}&var-mo=${__data.fields.MO}&var-event_time_ms=${__data.fields.When_ms}&from=${__from}&to=${__to}",
+                    "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=${__data.fields.Machine}&var-factory=${__data.fields.Factory}&var-mo=${__data.fields.MO}&var-event_time_ms=${__data.fields.When_ms}&from=${__from}&to=${__to}",
                     "targetBlank": false
                   }
                 ]
@@ -882,7 +1064,7 @@
                 "value": [
                   {
                     "title": "Open Machine Snapshot for ${__data.fields.Machine}",
-                    "url": "/d/ims-ldi-machine-snapshot?var-machine_id=${__data.fields.Machine}&var-factory=${__data.fields.Factory}&var-mo=${__data.fields.MO}&var-event_time_ms=${__data.fields.When_ms}&from=${__from}&to=${__to}",
+                    "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=${__data.fields.Machine}&var-factory=${__data.fields.Factory}&var-mo=${__data.fields.MO}&var-event_time_ms=${__data.fields.When_ms}&from=${__from}&to=${__to}",
                     "targetBlank": false
                   }
                 ]
@@ -941,138 +1123,6 @@
         }
       ],
       "description": "Real Critical/Major alarms from the last 5 minutes (matches the is_stale freshness window used everywhere else in this system) that are not yet RESOLVED, fleet-wide across the selected machines. Status is the real operator lifecycle state (public.ldi_alarm_lifecycle, OPEN/ACKNOWLEDGED/RESOLVED) -- an alarm auto-starts OPEN the instant it fires and only leaves this queue once someone actually resolves it via the alarm-api service (services/alarm-api), not a fixed time window. Owner is derived from the real RCA category taxonomy (public.v_ldi_alarm_category, 14 live categories) via a static category->team mapping -- proposed defaults, review before treating as authoritative org routing. Action is a short imperative derived from Owner. Elapsed is time since the alarm fired (NOT alarm duration -- this system has no alarm-clear/reset event, so true downtime duration cannot be computed without inventing one). When the queue is empty the table shows a single green NO ACTIVE CRITICAL/MAJOR ALARMS row instead of a bare \"No data\" panel state. Click Machine or Alarm Msg to open the Machine Snapshot for that exact event. Read-only -- acknowledge/resolve alarms on IMS LDI - Alarm Console (/d/ims-ldi-alarm-console)."
-    },
-    {
-      "id": 12,
-      "type": "state-timeline",
-      "title": "◈ Temperature Compliance (22±2°C)",
-      "gridPos": {
-        "x": 0,
-        "y": 4,
-        "w": 12,
-        "h": 6
-      },
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "rawSql": "SELECT time, eqp_id AS metric, CASE WHEN temperature BETWEEN 20 AND 24 THEN 2 WHEN temperature BETWEEN 19 AND 25 THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) AND temperature IS NOT NULL ORDER BY time ASC",
-          "format": "time_series",
-          "datasource": {
-            "uid": "timescaledb"
-          }
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "lineWidth": 0,
-            "fillOpacity": 100,
-            "rowHeight": 0.9
-          },
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "0": {
-                  "color": "#EF4444",
-                  "index": 0,
-                  "text": "CRIT"
-                },
-                "1": {
-                  "color": "#F59E0B",
-                  "index": 1,
-                  "text": "WARN"
-                },
-                "2": {
-                  "color": "#22C55E",
-                  "index": 2,
-                  "text": "OK"
-                }
-              }
-            }
-          ],
-          "unit": "celsius",
-          "decimals": 1,
-          "min": 18,
-          "max": 28
-        },
-        "overrides": []
-      },
-      "options": {
-        "showValue": "never",
-        "alignValue": "left",
-        "mergeValues": true
-      },
-      "description": "Per-machine temperature compliance timeline (22±2°C target, 19-25°C warning band). Row = machine, column = time bucket (raw ldi_data sample rate, not artificially resampled). Restored 2026-08-25 after an exceptions-only table alternative was rejected for dropping the temporal view -- see GRAFANA_ANDON_COMPLIANCE_TIMELINE_REDESIGN.md."
-    },
-    {
-      "id": 13,
-      "type": "state-timeline",
-      "title": "◈ Humidity Compliance (55±5%)",
-      "gridPos": {
-        "x": 12,
-        "y": 4,
-        "w": 12,
-        "h": 6
-      },
-      "datasource": {
-        "uid": "timescaledb"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "rawSql": "SELECT time, eqp_id AS metric, CASE WHEN humidity BETWEEN 50 AND 60 THEN 2 WHEN humidity BETWEEN 45 AND 65 THEN 1 ELSE 0 END AS value FROM public.ldi_data WHERE factory IN (${factory:sqlstring}) AND eqp_id IN (${machine_id:sqlstring}) AND $__timeFilter(time) AND humidity IS NOT NULL ORDER BY time ASC",
-          "format": "time_series",
-          "datasource": {
-            "uid": "timescaledb"
-          }
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "lineWidth": 0,
-            "fillOpacity": 100,
-            "rowHeight": 0.9
-          },
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "0": {
-                  "color": "#EF4444",
-                  "index": 0,
-                  "text": "CRIT"
-                },
-                "1": {
-                  "color": "#F59E0B",
-                  "index": 1,
-                  "text": "WARN"
-                },
-                "2": {
-                  "color": "#22C55E",
-                  "index": 2,
-                  "text": "OK"
-                }
-              }
-            }
-          ],
-          "unit": "humidity",
-          "decimals": 1,
-          "min": 40,
-          "max": 70
-        },
-        "overrides": []
-      },
-      "options": {
-        "showValue": "never",
-        "alignValue": "left",
-        "mergeValues": true
-      },
-      "description": "Per-machine humidity compliance timeline (55±5% target, 45-65% warning band). Same row/column model as Temperature Compliance alongside it."
     }
   ],
   "fiscalYearStartMonth": 0,
