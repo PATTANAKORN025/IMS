@@ -7,8 +7,8 @@ Hash: SHA512
   "signedByOrg": "grafana",
   "signedByOrgName": "Grafana Labs",
   "plugin": "grafana-clock-panel",
-  "version": "3.2.4",
-  "time": 1787662697510,
+  "version": "3.2.3",
+  "time": 1786579614212,
   "keyId": "7e4d0c6a708866e7",
   "files": {
     "790.js": "f3436b8a27208ea81faabaa5f92f936110b7108516fe781ff758324ccefcd95f",
@@ -21,7 +21,7 @@ Hash: SHA512
     "locales/es-ES/grafana-clock-panel.json": "67085f89ca59c6e5bb0d3bec646b55d6d79cc4880ccbed2a875db9dbe521a872",
     "locales/ru-RU/grafana-clock-panel.json": "f0818b160488c0464c100665e57a551a85fba1b64bb8c242480672151b747e55",
     "locales/fr-FR/grafana-clock-panel.json": "083817789aa1a34afef1237ab727c8bc4a43e47923951a79c411dcdc6e2e32fb",
-    "locales/en-US/grafana-clock-panel.json": "f663983dccb69740d25a1e99ae8f4268ebf2956b34562c913235c41f6e51ed45",
+    "locales/en-US/grafana-clock-panel.json": "83cfbd9ccc19da1d4eeecd37019167d3c0e6ec121a8cef7dc7350037bc431bf6",
     "locales/zh-Hant/grafana-clock-panel.json": "c6c25f0fa89254cd37b1f17c777efded85703501bdf6b76f59156f34369d8db1",
     "locales/zh-Hans/grafana-clock-panel.json": "eff6701341f289af07171bff4dc8159cce5f0cdef1f3bc942337547922166377",
     "locales/pl-PL/grafana-clock-panel.json": "d667bd04b2fe7f598c32a9e71d6cd53c9f567229ef477d20c2991349d4efa953",
@@ -37,14 +37,14 @@ Hash: SHA512
     "85.js": "2b4ce6e3c52cc39c06c3855671a8c9af6742e602d63ceb9d0f482d40b102349d",
     "492.js": "a29b2befbab4610b50bbb006554aa88a6315df3be7a1b2ed67842e845a0ca6e1",
     "238.js": "8076421cd741fdcbf024ba6f66d58ce06cf5413ce1d6a8bdc269f33a1bf5d3cb",
-    "CHANGELOG.md": "070cb820c95ea49272184286c3442fbcc6d538911fa2d8e5946c770ab7ecb2ac",
+    "CHANGELOG.md": "927aa093109999b790c94fb4bd4a66ca9a879055c7008ed940c2917588e76b05",
     "528.js": "2fb4792261d0127264b8b5fc572978fab0a7df7444fb86ed26524bbcc69e5fce",
     "149.js": "f22784e30f2446ef8be199900534c3c87569474d337f397e50f15c39ebefb39a",
     "553.js": "02ce9534ac2eb00a576233eb4ed95566b5db37537d54d200383ba474b3d7d7b4",
     "156.js.map": "bb252684b7f728a36a447f819e25291346134f58d7c58ea7b5885b7618851733",
-    "plugin.json": "4dc77264d957d15d32bf77d6b328572082de15a409ff58cf1bff9ba605beb3a1",
+    "plugin.json": "eec14ac52a90285228713302dd464ba21efc561fbe5ce5c83ca66927f6b7307b",
     "804.js": "2f2b84964fabc1db6d2918e0a33dcf42bc87f868fa54d8a05cce0c697fa37d27",
-    "595.js": "fa5bd5152925cd8ce6bb2a72f20fbe4cfd7c3a0294015eb9b1f311f27d9e12e0",
+    "595.js": "81ccf1e092acdc942b4f4461a6ee64d18f550b52383a6d735fd33078352e73aa",
     "732.js": "235513fb5fd0aaff7b02ecb4f3e70db4cca21b6fd3441e8f0a70e040d34765c3",
     "img/countdown1.png": "ce51c235273667dde4a8fedc36ea70c6bfa7670b247514a2ae1654bd872548aa",
     "img/screenshot-clock-options.png": "55f428cc45f65e53a118db2b969353cd01e0d2f879848b1df503750ed27007cf",
@@ -59,19 +59,19 @@ Hash: SHA512
     "LICENSE.txt": "cc1b10ac53eebf45f8b6843db2a9c3006414a950aff249f4467178191baa49b5",
     "484.js": "329e154f742f7d3ea5963d594bd1e5a4ee9f1cc0eec612e24826600a8661d61c",
     "README.md": "4d6fec216e1e15ad68035a502c2e7b66c7af1a699b1a0062743e0cf8c5b6a9d3",
-    "module.js.map": "3652fa6b6100283e51a409a658ee096a1a6a9caf97d21204ae4dd1d7a3e4ed54",
-    "module.js": "862fd4f476cf2e47a63bf939ed25454ac061a293d43a1a6962e90905dadc10b1",
+    "module.js.map": "5bcd6969972ac96a4a946ce620295877bd8c9484c14ecf90956b57fcb691cdca",
+    "module.js": "dfbf20e83c64f2d54618bcfcc148466f544f10f613ae0a3a15394e29d0237126",
     "964.js": "3c73460dcd3d251cb7dbab2e5c4e08a8c4db807b78a8a8268225af8b73c5db5b",
     "530.js": "9237476036b0df10c69ee97635bc625da0e303b3e00d59e1e813c188bd46cc7e"
   }
 }
 -----BEGIN PGP SIGNATURE-----
 
-wsA/BAETCgBtBYJqjZFpCRB+TQxqcIhm50UUAAAAAAAcACBzYWx0QG5vdGF0
-aW9ucy5vcGVucGdwanMub3JngNFJ+/eblh3znQl1Vg6irbQqU7q9Xy+CEAow
-QnnA1PgWIQTzOyW2kQdOhGNlcPN+TQxqcIhm5wAAAoICCQHYLr2QUSQFGM+t
-XF9gzFTAEzjza7a++Q2U313uUCDU5vasQgK0l9MqghmSF+0UqkFIkUjw3C47
-S8Qq6JjbHNDzNgIJAciceQ8aqnmEg4rIfZvBirboUUAWFhMMNJqb8Li1gkBG
-8cQ5C1ZpXGPP5Bqf5S9coXBbF5bpwylis6yesxTxWJTR
-=ghOs
+wsA9BAETCgBtBYJqfQqeCRB+TQxqcIhm50UUAAAAAAAcACBzYWx0QG5vdGF0
+aW9ucy5vcGVucGdwanMub3JnRW6EGppbo8F8+qiWg8DGLrUO8v5mlV7zx2iZ
+YOdEsLwWIQTzOyW2kQdOhGNlcPN+TQxqcIhm5wAAbTECCPVWULzSpW6byz+s
+1uIu/m0/lu1CJE45qJaIKYEhn/Uvh9CAfD7bMIaTIreVyvnAQ18pVO7lXVpH
+Oe+G3i9K5Qx2AgdT1JqLBPO3luojiHfxKcDaZyrb0R5jZtO354hrkoWQ/A3T
+Yh1KWRBBTV4iTpO2/RuaDkwHzrvDEgyZZNW2gWGLCg==
+=xpc7
 -----END PGP SIGNATURE-----

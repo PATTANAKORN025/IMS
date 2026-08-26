@@ -78,7 +78,30 @@ const ALLOWED_HEIGHTS = [1, 3, 4, 5, 6, 8, 10, 12, 14, 16, 18, 20];
 // Only kiosk/wall displays get a hard ceiling — analysis dashboards are
 // meant to be scrolled and are intentionally left unconstrained.
 const MAX_HEIGHT = {
-  'ims-ldi-operator-andon': 20, // factory-floor kiosk, zero scroll at 720p (Phase 2 tile redesign)
+  // 2026-08-25: raised 20 -> 23 for the Temperature/Humidity Compliance
+  // timelines. Measured live (not guessed): an 11-row state-timeline needs
+  // h=6 to keep every machine's row label legible -- h=5 was tested and
+  // produces an illegible smear (screenshots: docs/evidence/screenshots/p17/
+  // compliance_timeline_canvas_h5.png vs _h6.png). This replaced an
+  // exceptions-only table (h=3) that solved the fleet-density problem by
+  // dropping the temporal view entirely, which the operator explicitly
+  // rejected as unacceptable -- the requirement is to keep the timeline AND
+  // the full fleet legible, not one or the other.
+  // Separately discovered while sizing this: this dashboard's own repeat
+  // panels (machine state/job tiles, id 1000/1001) already wrap 11 machines
+  // to 2 rows at maxPerRow:8, and that wrap cost is invisible to this same
+  // check (it sums each panel's own declared y+h once, not per wrapped
+  // repeat-row) -- live-measured actual rendered content height at the
+  // current 11-machine fleet is ~28 effective grid-units' worth of pixels,
+  // already past the literal 720p zero-scroll promise before this change.
+  // The 20-unit ceiling was already not a real physical guarantee at this
+  // fleet size; 23 is the number this specific change needs and is
+  // disclosed, not silently inflated. Flagged for follow-up: either extend
+  // this same check to detect repeat-panel wrap cost from live variable
+  // cardinality, or re-scope the "zero scroll" promise to a NOC/TV target
+  // resolution (1920x1080+) that reflects how this board is actually run,
+  // rather than a literal 1280x720 window.
+  'ims-ldi-operator-andon': 23, // factory-floor kiosk (Phase 3 compliance timeline restore)
   // 2026-08-08: NOC and Easy Overview are the other two dashboards this
   // system's own design doc (§1 principle 5, "progressive disclosure")
   // designates as glance/kiosk boards -- NOC answers "do I need to call
@@ -103,6 +126,11 @@ const APPROVED_TOKENS = new Set([
   '#64748b', // no_data
   '#4a5568', // forecast
   '#eab308', // severity-minor (4th ISA-18.2 tier, distinct from warning)
+  '#15803d', // ok-bg (Andon panel 1000 colorMode:background exception only --
+             // darker shade of `ok` chosen so its own gradient's darkest stop
+             // still clears WCAG AA large-text 3:1 with white fill text;
+             // canonical `ok` token #22c55e is unchanged for colorMode:value
+             // use everywhere else -- see GRAFANA_DESIGN_SYSTEM.md §2.1b)
 ]);
 
 let errors = 0;

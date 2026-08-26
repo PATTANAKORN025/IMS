@@ -54,23 +54,6 @@
   <a href="../data-generators"><img src="https://img.shields.io/badge/Data-Digital_Twin-030407?style=for-the-badge&logo=python&logoColor=00C7B7" alt="Synthetic Data" /></a>
 </div>
 
-## ⚡ เริ่มต้นด่วน (Quick Start ใน 3 นาที)
-
-```bash
-# 1. โคลน Repository
-git clone https://github.com/PATTANAKORN025/IMS.git
-cd IMS
-
-# 2. เปิดระบบจำลองสัญญาณและการทำงานทั้งหมด
-make up
-
-# 3. ตรวจสอบสถานะและเข้าสู่แดชบอร์ด
-make verify
-# Grafana: http://localhost:3000 (admin / change-me-please)
-```
-
-*สำหรับการนำไปใช้จริงบน Production ดูเพิ่มเติมที่ [Deployment Readiness](../docs/operations/DEPLOYMENT_READINESS.md)*
-
 <br/>
 
 <div align="center" justify-content="space-between">

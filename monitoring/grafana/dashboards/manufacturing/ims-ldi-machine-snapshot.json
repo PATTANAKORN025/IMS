@@ -2784,7 +2784,7 @@
   "links": [
     {
       "title": "Apex Circuit Fleet Command Center",
-      "url": "/d/ims-ldi-manufacturing/set2-manufacturing?from=${__from}&to=${__to}",
+      "url": "/d/ims-ldi-manufacturing?from=${__from}&to=${__to}",
       "type": "link",
       "icon": "external link",
       "targetBlank": false,
@@ -2793,7 +2793,7 @@
     },
     {
       "title": "Engineering Analytics & SPC",
-      "url": "/d/ims-ldi-engineering-analytics/set2-engineering?from=${__from}&to=${__to}",
+      "url": "/d/ims-ldi-engineering-analytics?from=${__from}&to=${__to}",
       "type": "link",
       "icon": "external link",
       "targetBlank": false,
@@ -2802,7 +2802,7 @@
     },
     {
       "title": "Operator Andon Board",
-      "url": "/d/ims-ldi-operator-andon/set2-operator-andon?from=${__from}&to=${__to}",
+      "url": "/d/ims-ldi-operator-andon?from=${__from}&to=${__to}",
       "type": "link",
       "icon": "external link",
       "targetBlank": false,

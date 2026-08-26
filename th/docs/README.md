@@ -62,15 +62,14 @@
 - **[การตรวจสอบระบบทั้งหมด](archive/IMS_FULL_SYSTEM_AUDIT.md)** - การตรวจสอบพื้นฐานแบบครอบคลุม
 - **[รายงานความเชื่อมั่นของระบบ](evidence/SYSTEM_TRUST_REPORT.md)** - การตรวจสอบความถูกต้องของเมตริก (Metric fidelity)
 
-### 6. การพัฒนาและการเชื่อมต่อ (มาตรฐาน World-Class)
+### 7. การปฏิบัติการระดับ Hyper-Scaler & การกำกับดูแล
 
-พิมพ์เขียวสำหรับวิศวกรรม การดูแลระบบ และการเชื่อมต่อกับระบบ
+มาตรฐานระดับ Enterprise สำหรับความปลอดภัย วัฒนธรรมองค์กร และการปฏิบัติตามกฎหมาย
 
-- **[คู่มือนักพัฒนา (Developer Guide)](developer/LOCAL_DEVELOPMENT.md)** - การตั้งค่า Local Environment และ DX
-- **[API Reference](api/API_REFERENCE.md)** - ข้อตกลง Ingestion และ Webhook API
-- **[บันทึกการตัดสินใจเชิงสถาปัตยกรรม (ADRs)](architecture/decisions/)** - ประวัติศาสตร์การเลือกเทคโนโลยี
-- **[เป้าหมายระดับการให้บริการ (SLO)](sre/SLO_DEFINITIONS.md)** - ความน่าเชื่อถือ, Error Budgets, และ SLIs
-- **[พจนานุกรมข้อมูล (Ontology)](data/TELEMETRY_ONTOLOGY.md)** - โครงสร้าง Payload และมาตรฐานข้อมูล
+- **[การกำกับดูแลข้อมูล (Data Governance)](data/DATA_GOVERNANCE.md)** - วงจรชีวิตข้อมูล, การปกปิด PII, และ PDPA
+- **[ความปลอดภัย Supply Chain](security/SUPPLY_CHAIN_POLICY.md)** - มาตรฐาน SBOM และ Dependency
+- **[กรอบการทำ Post-Mortem](sre/postmortems/TEMPLATE.md)** - เทมเพลต RCA สไตล์ Blameless 
+- **[มาตรฐานการเขียนเอกสาร (Style Guide)](DOCUMENTATION_STYLE_GUIDE.md)** - กฎการเขียน Knowledge Base
 
 ---
 

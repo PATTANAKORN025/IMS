@@ -62,15 +62,14 @@ Historical audits and system snapshots.
 - **[Full System Audit](archive/IMS_FULL_SYSTEM_AUDIT.md)** - Comprehensive baseline audit.
 - **[System Trust Report](evidence/SYSTEM_TRUST_REPORT.md)** - Metric fidelity validation.
 
-### 6. Developer & Integration (World-Class Core)
+### 7. Hyper-Scaler Operations & Governance
 
-The blueprints for engineering, maintaining, and integrating with the system.
+Enterprise-grade frameworks for security, culture, and compliance.
 
-- **[Developer Guide](developer/LOCAL_DEVELOPMENT.md)** - Local environment setup and DX.
-- **[API Reference](api/API_REFERENCE.md)** - Ingestion and Webhook API contracts.
-- **[Architecture Decisions (ADRs)](architecture/decisions/)** - Historical tech choices.
-- **[Service Level Objectives (SLO)](sre/SLO_DEFINITIONS.md)** - Reliability, Error Budgets, and SLIs.
-- **[Telemetry Ontology](data/TELEMETRY_ONTOLOGY.md)** - Data dictionaries and payload standards.
+- **[Data Governance](data/DATA_GOVERNANCE.md)** - Data lifecycle, PII masking, and compliance.
+- **[Supply Chain Security](security/SUPPLY_CHAIN_POLICY.md)** - SBOM and dependency policies.
+- **[Post-Mortem Framework](sre/postmortems/TEMPLATE.md)** - Blameless incident RCA template.
+- **[Docs Style Guide](DOCUMENTATION_STYLE_GUIDE.md)** - Editorial standards for the knowledge base.
 
 ---
 

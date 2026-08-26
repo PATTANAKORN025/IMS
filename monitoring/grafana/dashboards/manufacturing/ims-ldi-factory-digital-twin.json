@@ -734,8 +734,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-01",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-01&var-factory=2&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-01&var-factory=2&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -772,8 +773,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-01",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-01&var-factory=2&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-01&var-factory=2&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -808,8 +810,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-01",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-01&var-factory=2&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-01&var-factory=2&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -837,8 +840,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-01",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-01&var-factory=2&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-01&var-factory=2&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -875,8 +879,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-01",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-01&var-factory=2&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-01&var-factory=2&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -913,8 +918,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-01",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-01&var-factory=2&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-01&var-factory=2&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -945,8 +951,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-02",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-02&var-factory=2&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-02&var-factory=2&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -983,8 +990,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-02",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-02&var-factory=2&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-02&var-factory=2&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -1019,8 +1027,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-02",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-02&var-factory=2&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-02&var-factory=2&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -1048,8 +1057,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-02",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-02&var-factory=2&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-02&var-factory=2&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -1086,8 +1096,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-02",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-02&var-factory=2&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-02&var-factory=2&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -1124,8 +1135,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-02",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-02&var-factory=2&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-02&var-factory=2&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -1210,8 +1222,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-03",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-03&var-factory=3&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-03&var-factory=3&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -1248,8 +1261,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-03",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-03&var-factory=3&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-03&var-factory=3&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -1284,8 +1298,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-03",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-03&var-factory=3&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-03&var-factory=3&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -1313,8 +1328,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-03",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-03&var-factory=3&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-03&var-factory=3&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -1351,8 +1367,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-03",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-03&var-factory=3&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-03&var-factory=3&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -1389,8 +1406,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-03",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-03&var-factory=3&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-03&var-factory=3&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -1421,8 +1439,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-04",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-04&var-factory=3&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-04&var-factory=3&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -1459,8 +1478,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-04",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-04&var-factory=3&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-04&var-factory=3&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -1495,8 +1515,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-04",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-04&var-factory=3&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-04&var-factory=3&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -1524,8 +1545,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-04",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-04&var-factory=3&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-04&var-factory=3&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -1562,8 +1584,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-04",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-04&var-factory=3&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-04&var-factory=3&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -1600,8 +1623,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-04",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-04&var-factory=3&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-04&var-factory=3&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -1686,8 +1710,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-05",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-05&var-factory=2&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-05&var-factory=2&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -1724,8 +1749,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-05",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-05&var-factory=2&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-05&var-factory=2&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -1760,8 +1786,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-05",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-05&var-factory=2&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-05&var-factory=2&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -1789,8 +1816,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-05",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-05&var-factory=2&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-05&var-factory=2&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -1827,8 +1855,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-05",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-05&var-factory=2&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-05&var-factory=2&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -1865,8 +1894,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-05",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-05&var-factory=2&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-05&var-factory=2&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -1897,8 +1927,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-06",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-06&var-factory=2&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-06&var-factory=2&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -1935,8 +1966,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-06",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-06&var-factory=2&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-06&var-factory=2&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -1971,8 +2003,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-06",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-06&var-factory=2&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-06&var-factory=2&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -2000,8 +2033,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-06",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-06&var-factory=2&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-06&var-factory=2&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -2038,8 +2072,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-06",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-06&var-factory=2&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-06&var-factory=2&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -2076,8 +2111,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-06",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-06&var-factory=2&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-06&var-factory=2&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -2162,8 +2198,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-07",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-07&var-factory=2&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-07&var-factory=2&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -2200,8 +2237,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-07",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-07&var-factory=2&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-07&var-factory=2&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -2236,8 +2274,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-07",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-07&var-factory=2&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-07&var-factory=2&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -2265,8 +2304,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-07",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-07&var-factory=2&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-07&var-factory=2&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -2303,8 +2343,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-07",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-07&var-factory=2&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-07&var-factory=2&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -2341,8 +2382,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-07",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-07&var-factory=2&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-07&var-factory=2&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -2373,8 +2415,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-08",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-08&var-factory=2&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-08&var-factory=2&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -2411,8 +2454,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-08",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-08&var-factory=2&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-08&var-factory=2&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -2447,8 +2491,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-08",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-08&var-factory=2&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-08&var-factory=2&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -2476,8 +2521,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-08",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-08&var-factory=2&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-08&var-factory=2&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -2514,8 +2560,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-08",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-08&var-factory=2&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-08&var-factory=2&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -2552,8 +2599,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-08",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-08&var-factory=2&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-08&var-factory=2&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -2638,8 +2686,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-09",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-09&var-factory=3&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-09&var-factory=3&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -2676,8 +2725,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-09",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-09&var-factory=3&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-09&var-factory=3&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -2712,8 +2762,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-09",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-09&var-factory=3&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-09&var-factory=3&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -2741,8 +2792,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-09",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-09&var-factory=3&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-09&var-factory=3&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -2779,8 +2831,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-09",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-09&var-factory=3&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-09&var-factory=3&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -2817,8 +2870,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-09",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-09&var-factory=3&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-09&var-factory=3&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -2849,8 +2903,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-10",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-10&var-factory=3&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-10&var-factory=3&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -2887,8 +2942,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-10",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-10&var-factory=3&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-10&var-factory=3&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -2923,8 +2979,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-10",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-10&var-factory=3&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-10&var-factory=3&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -2952,8 +3009,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-10",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-10&var-factory=3&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-10&var-factory=3&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -2990,8 +3048,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-10",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-10&var-factory=3&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-10&var-factory=3&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             },
@@ -3028,8 +3087,9 @@
               "links": [
                 {
                   "title": "Open Machine Snapshot for LDI-10",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=LDI-10&var-factory=3&from=${__from}&to=${__to}",
-                  "targetBlank": false
+                  "url": "/d/ims-ldi-machine-snapshot?var-machine_id=LDI-10&var-factory=3&from=${__from}&to=${__to}",
+                  "targetBlank": false,
+                  "oneClick": true
                 }
               ]
             }

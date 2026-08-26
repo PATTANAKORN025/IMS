@@ -62,15 +62,14 @@
 - **[系统全面审计](archive/IMS_FULL_SYSTEM_AUDIT.md)** - 全面的基准审计。
 - **[系统信任报告](evidence/SYSTEM_TRUST_REPORT.md)** - 指标保真度验证 (Metric fidelity)。
 
-### 6. 开发与集成 (世界级核心)
+### 7. Hyper-Scaler 运营与治理
 
-工程、维护和系统集成的蓝图。
+用于安全、文化和合规的企业级框架。
 
-- **[开发者指南 (Developer Guide)](developer/LOCAL_DEVELOPMENT.md)** - 本地环境设置与 DX
-- **[API 参考手册 (API Reference)](api/API_REFERENCE.md)** - 数据接入和 Webhook API 契约
-- **[架构决策记录 (ADRs)](architecture/decisions/)** - 历史技术选择
-- **[服务级别目标 (SLO)](sre/SLO_DEFINITIONS.md)** - 可靠性, Error Budgets, 及 SLI
-- **[遥测数据字典 (Ontology)](data/TELEMETRY_ONTOLOGY.md)** - 数据字典和有效载荷标准
+- **[数据治理 (Data Governance)](data/DATA_GOVERNANCE.md)** - 数据生命周期，PII 掩码与合规性。
+- **[供应链安全 (Supply Chain Security)](security/SUPPLY_CHAIN_POLICY.md)** - SBOM 和依赖管理策略。
+- **[事后回顾框架 (Post-Mortem)](sre/postmortems/TEMPLATE.md)** - 无指责事故 RCA 模板。
+- **[文档规范 (Style Guide)](DOCUMENTATION_STYLE_GUIDE.md)** - 知识库的编辑标准。
 
 ---
 

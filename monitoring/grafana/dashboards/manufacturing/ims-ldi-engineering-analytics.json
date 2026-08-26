@@ -227,7 +227,7 @@
           "links": [
             {
               "title": "Open Snapshot at this point",
-              "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-clicked_series=${__series.name}&var-event_time_ms=${__value.time}&var-machine_id=${__series.name}&var-log_id=__auto__&from=${__from}&to=${__to}",
+              "url": "/d/ims-ldi-machine-snapshot?var-clicked_series=${__series.name}&var-event_time_ms=${__value.time}&var-machine_id=${__series.name}&var-log_id=__auto__&from=${__from}&to=${__to}",
               "targetBlank": false,
               "oneClick": true
             }
@@ -335,12 +335,12 @@
       "links": [
         {
           "title": "Open Machine Snapshot (select one Machine)",
-          "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "url": "/d/ims-ldi-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": false
         },
         {
           "title": "Open Manufacturing",
-          "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+          "url": "/d/ims-ldi-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
           "targetBlank": false
         },
         {
@@ -399,7 +399,7 @@
               "links": [
                 {
                   "title": "Open Snapshot at this point",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-clicked_series=${__series.name}&var-event_time_ms=${__value.time}&var-machine_id=${__series.name}&var-log_id=__auto__&from=${__from}&to=${__to}",
+                  "url": "/d/ims-ldi-machine-snapshot?var-clicked_series=${__series.name}&var-event_time_ms=${__value.time}&var-machine_id=${__series.name}&var-log_id=__auto__&from=${__from}&to=${__to}",
                   "targetBlank": false,
                   "oneClick": true
                 }
@@ -480,12 +480,12 @@
           "links": [
             {
               "title": "Open Machine Snapshot (select one Machine)",
-              "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "url": "/d/ims-ldi-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
               "targetBlank": false
             },
             {
               "title": "Open Manufacturing",
-              "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "url": "/d/ims-ldi-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
               "targetBlank": false
             },
             {
@@ -544,7 +544,7 @@
               "links": [
                 {
                   "title": "Open Snapshot at this point",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-clicked_series=${__series.name}&var-event_time_ms=${__value.time}&var-machine_id=${__series.name}&var-log_id=__auto__&from=${__from}&to=${__to}",
+                  "url": "/d/ims-ldi-machine-snapshot?var-clicked_series=${__series.name}&var-event_time_ms=${__value.time}&var-machine_id=${__series.name}&var-log_id=__auto__&from=${__from}&to=${__to}",
                   "targetBlank": false,
                   "oneClick": true
                 }
@@ -615,12 +615,12 @@
           "links": [
             {
               "title": "Open Machine Snapshot (select one Machine)",
-              "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "url": "/d/ims-ldi-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
               "targetBlank": false
             },
             {
               "title": "Open Manufacturing",
-              "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "url": "/d/ims-ldi-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
               "targetBlank": false
             },
             {
@@ -667,7 +667,7 @@
               "links": [
                 {
                   "title": "Open Snapshot at this point",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-clicked_series=${__series.name}&var-event_time_ms=${__value.time}&var-machine_id=${machine_id}&var-log_id=__auto__&from=${__from}&to=${__to}",
+                  "url": "/d/ims-ldi-machine-snapshot?var-clicked_series=${__series.name}&var-event_time_ms=${__value.time}&var-machine_id=${machine_id}&var-log_id=__auto__&from=${__from}&to=${__to}",
                   "targetBlank": false,
                   "oneClick": true
                 }
@@ -808,12 +808,12 @@
           "links": [
             {
               "title": "Open Machine Snapshot (select one Machine)",
-              "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "url": "/d/ims-ldi-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
               "targetBlank": false
             },
             {
               "title": "Open Manufacturing",
-              "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "url": "/d/ims-ldi-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
               "targetBlank": false
             },
             {
@@ -860,7 +860,7 @@
               "links": [
                 {
                   "title": "Open Snapshot at this point",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-clicked_series=${__series.name}&var-event_time_ms=${__value.time}&var-machine_id=${machine_id}&var-log_id=__auto__&from=${__from}&to=${__to}",
+                  "url": "/d/ims-ldi-machine-snapshot?var-clicked_series=${__series.name}&var-event_time_ms=${__value.time}&var-machine_id=${machine_id}&var-log_id=__auto__&from=${__from}&to=${__to}",
                   "targetBlank": false,
                   "oneClick": true
                 }
@@ -974,12 +974,12 @@
           "links": [
             {
               "title": "Open Machine Snapshot (select one Machine)",
-              "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "url": "/d/ims-ldi-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
               "targetBlank": false
             },
             {
               "title": "Open Manufacturing",
-              "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "url": "/d/ims-ldi-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
               "targetBlank": false
             },
             {
@@ -1060,7 +1060,7 @@
               "links": [
                 {
                   "title": "Open Snapshot at this point",
-                  "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-clicked_series=${__series.name}&var-event_time_ms=${__value.time}&var-machine_id=${__series.name}&var-log_id=__auto__&from=${__from}&to=${__to}",
+                  "url": "/d/ims-ldi-machine-snapshot?var-clicked_series=${__series.name}&var-event_time_ms=${__value.time}&var-machine_id=${__series.name}&var-log_id=__auto__&from=${__from}&to=${__to}",
                   "targetBlank": false,
                   "oneClick": true
                 }
@@ -1097,12 +1097,12 @@
           "links": [
             {
               "title": "Open Machine Snapshot (select one Machine)",
-              "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "url": "/d/ims-ldi-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
               "targetBlank": false
             },
             {
               "title": "Open Manufacturing",
-              "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "url": "/d/ims-ldi-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
               "targetBlank": false
             },
             {
@@ -1432,12 +1432,12 @@
                     "value": [
                       {
                         "title": "Open Machine Snapshot for ${__value.text}",
-                        "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=${__value.text}&from=${__from}&to=${__to}",
+                        "url": "/d/ims-ldi-machine-snapshot?var-machine_id=${__value.text}&from=${__from}&to=${__to}",
                         "targetBlank": false
                       },
                       {
                         "title": "View RCA correlation (Engineering Analytics)",
-                        "url": "/d/ims-ldi-engineering-analytics/set2-engineering-analytics?var-machine_id=${__value.text}&from=${__from}&to=${__to}",
+                        "url": "/d/ims-ldi-engineering-analytics?var-machine_id=${__value.text}&from=${__from}&to=${__to}",
                         "targetBlank": false
                       }
                     ]
@@ -1450,12 +1450,12 @@
           "links": [
             {
               "title": "Open Machine Snapshot (select one Machine)",
-              "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "url": "/d/ims-ldi-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
               "targetBlank": false
             },
             {
               "title": "Open Manufacturing",
-              "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "url": "/d/ims-ldi-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
               "targetBlank": false
             },
             {
@@ -1538,12 +1538,12 @@
           "links": [
             {
               "title": "Open Machine Snapshot (select one Machine)",
-              "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "url": "/d/ims-ldi-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
               "targetBlank": false
             },
             {
               "title": "Open Manufacturing",
-              "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "url": "/d/ims-ldi-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
               "targetBlank": false
             },
             {
@@ -1612,12 +1612,12 @@
           "links": [
             {
               "title": "Open Machine Snapshot (select one Machine)",
-              "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "url": "/d/ims-ldi-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
               "targetBlank": false
             },
             {
               "title": "Open Manufacturing",
-              "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "url": "/d/ims-ldi-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
               "targetBlank": false
             },
             {
@@ -1673,12 +1673,12 @@
           "links": [
             {
               "title": "Open Machine Snapshot (select one Machine)",
-              "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "url": "/d/ims-ldi-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
               "targetBlank": false
             },
             {
               "title": "Open Manufacturing",
-              "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "url": "/d/ims-ldi-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
               "targetBlank": false
             },
             {
@@ -1789,12 +1789,12 @@
           "links": [
             {
               "title": "Open Machine Snapshot (select one Machine)",
-              "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "url": "/d/ims-ldi-machine-snapshot?var-factory=${factory}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
               "targetBlank": false
             },
             {
               "title": "Open Manufacturing",
-              "url": "/d/ims-ldi-manufacturing/set2-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
+              "url": "/d/ims-ldi-manufacturing?var-factory=${factory}&var-mo=${mo}&var-machine_id=${machine_id}&from=${__from}&to=${__to}",
               "targetBlank": false
             },
             {
@@ -2454,7 +2454,7 @@
   "links": [
     {
       "title": "Apex Circuit Fleet Command Center",
-      "url": "/d/ims-ldi-manufacturing/set2-manufacturing?from=${__from}&to=${__to}",
+      "url": "/d/ims-ldi-manufacturing?from=${__from}&to=${__to}",
       "type": "link",
       "icon": "external link",
       "targetBlank": false,
@@ -2463,7 +2463,7 @@
     },
     {
       "title": "Operator Andon Board",
-      "url": "/d/ims-ldi-operator-andon/set2-operator-andon?from=${__from}&to=${__to}",
+      "url": "/d/ims-ldi-operator-andon?from=${__from}&to=${__to}",
       "type": "link",
       "icon": "external link",
       "targetBlank": false,
@@ -2472,7 +2472,7 @@
     },
     {
       "title": "Incident Snapshot",
-      "url": "/d/ims-ldi-machine-snapshot/set2-machine-snapshot?from=${__from}&to=${__to}",
+      "url": "/d/ims-ldi-machine-snapshot?from=${__from}&to=${__to}",
       "type": "link",
       "icon": "external link",
       "targetBlank": false,

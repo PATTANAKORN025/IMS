@@ -107,6 +107,30 @@ this "is the block red or green" task, so applying it here would trade away
 the actual accessibility need (glanceability) for a metric that doesn't fit
 the use case.
 
+**Update (P18, live-rendered measurement):** Grafana's `colorMode: "background"`
+doesn't fill a solid color — it renders `linear-gradient(120deg, stop1, stop2)`,
+auto-generated from the single mapping color, confirmed by inspecting the
+live-rendered `background-image` in the DOM (not assumed). This means the
+*real* worst-case contrast is set by the gradient's darker stop, not the
+source hex. Measured live against white fill text (`rgb(247,248,250)`):
+
+| Value  | Source token (pre-P18) | Live gradient stops (rgb)      | Worst-case ratio | AA-large (≥3:1) |
+| ------ | ----------------------- | ------------------------------- | ----------------- | ---------------- |
+| OK     | `#22C55E`               | `(23,132,77)` → `(30,175,64)`   | 2.72              | FAIL             |
+| ALARM  | `#EF4444`               | `(212,44,18)` → `(237,44,70)`   | 3.91              | PASS             |
+
+The OK value failed even the large-text bar the panel's exception status
+accepted. Fixed by darkening the OK mapping color used **only in this panel**
+to `#15803D` (approved as `ok-bg` in `APPROVED_TOKENS`) — re-measured live
+gradient stops `(10,62,37)` → `(17,106,39)`, worst-case contrast **6.34:1**,
+now passing both AA-large and full AA-normal. This is not a relaxation of
+the exception's reasoning above: the tile is still a solid perceptual color
+block (still unambiguously "green"), the fix simply picked a shade whose
+auto-generated gradient happens to also clear WCAG, at no glanceability
+cost. The canonical `ok` token (`#22C55E`) is unchanged for every other
+`colorMode: "value"` usage fleet-wide, where the doc's original inverted-ratio
+math already passes.
+
 **Enforcement:** `tests/lint/dashboard-linter.js` (Check 17) warns on any
 stat/gauge/bargauge panel using `colorMode: "background"` outside the
 per-file exception list, so this doesn't silently regress as new panels are
