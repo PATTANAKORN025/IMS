@@ -5,7 +5,7 @@ This document outlines the exposed HTTP endpoints for integrating external machi
 ## 1. Telemetry Ingestion API
 Accepts time-series data from LDI machines.
 
-**POST** `/ingest/ldi`
+**POST** `/ldi-telemetry`
 - **Host**: `node-red-internal:1880` (or reverse proxy)
 - **Headers**:
   - `Content-Type: application/json`
@@ -19,8 +19,16 @@ Accepts time-series data from LDI machines.
 ## 2. Alarm Webhook API
 Accepts external alarm triggers to route through Alertmanager.
 
-**POST** `/alarms/external`
+**POST** `/alert-webhook`
 - **Host**: `alertmanager:9093`
 - **Body**: Standard Prometheus Alertmanager webhook payload.
 - **Responses**:
   - `200 OK`: Alert received and routed.
+
+## 3. General Metric Ingestion
+Accepts generic metrics for non-LDI equipment.
+
+**POST** `/inject`
+**POST** `/metrics`
+- **Host**: `node-red-internal:1880`
+- **Body**: JSON key-value pairs of telemetry.
