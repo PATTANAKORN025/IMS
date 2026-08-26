@@ -103,8 +103,8 @@
       "gridPos": {
         "x": 0,
         "y": 12,
-        "w": 3,
-        "h": 4
+        "h": 4,
+        "w": 24
       },
       "repeat": "machine_id",
       "repeatDirection": "h",
@@ -196,8 +196,8 @@
       "gridPos": {
         "x": 0,
         "y": 16,
-        "w": 3,
-        "h": 3
+        "h": 3,
+        "w": 24
       },
       "repeat": "machine_id",
       "repeatDirection": "h",
@@ -218,7 +218,7 @@
               "options": {
                 "match": "null+nan",
                 "result": {
-                  "text": "—"
+                  "text": "\u2014"
                 }
               }
             }
@@ -241,7 +241,7 @@
           "valueSize": 14,
           "titleSize": 0
         },
-        "noValue": "—",
+        "noValue": "\u2014",
         "textMode": "value",
         "tooltip": {
           "mode": "single",
@@ -258,7 +258,7 @@
           "format": "table"
         }
       ],
-      "description": "Current MO (job) running on $machine_id, or — if the machine has no active job / no data. Sits directly under the state tile so every machine shows its job, not just alarming ones."
+      "description": "Current MO (job) running on $machine_id, or \u2014 if the machine has no active job / no data. Sits directly under the state tile so every machine shows its job, not just alarming ones."
     },
     {
       "id": 9999,
@@ -271,14 +271,14 @@
       "gridPos": {
         "x": 0,
         "y": 0,
-        "w": 24,
-        "h": 1
+        "h": 1,
+        "w": 24
       },
       "transparent": true
     },
     {
       "id": 1,
-      "title": "◉ Fleet Availability",
+      "title": "\u25c9 Fleet Availability",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -286,8 +286,8 @@
       "gridPos": {
         "x": 0,
         "y": 1,
-        "w": 6,
-        "h": 3
+        "h": 3,
+        "w": 6
       },
       "fieldConfig": {
         "defaults": {
@@ -369,7 +369,7 @@
     },
     {
       "id": 2,
-      "title": "◉ Active Critical/Major Alarms (master-code matched)",
+      "title": "\u25c9 Active Critical/Major Alarms (master-code matched)",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -377,8 +377,8 @@
       "gridPos": {
         "x": 6,
         "y": 1,
-        "w": 8,
-        "h": 3
+        "h": 3,
+        "w": 8
       },
       "fieldConfig": {
         "defaults": {
@@ -456,7 +456,7 @@
     },
     {
       "id": 3,
-      "title": "◉ Environmental Compliance",
+      "title": "\u25c9 Environmental Compliance",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -464,8 +464,8 @@
       "gridPos": {
         "x": 14,
         "y": 1,
-        "w": 5,
-        "h": 3
+        "h": 3,
+        "w": 5
       },
       "fieldConfig": {
         "defaults": {
@@ -551,7 +551,7 @@
     },
     {
       "id": 9,
-      "title": "◉ Machines Running",
+      "title": "\u25c9 Machines Running",
       "type": "stat",
       "datasource": {
         "uid": "timescaledb"
@@ -559,8 +559,8 @@
       "gridPos": {
         "x": 19,
         "y": 1,
-        "w": 5,
-        "h": 3
+        "h": 3,
+        "w": 5
       },
       "fieldConfig": {
         "defaults": {
@@ -640,7 +640,7 @@
     },
     {
       "id": 10000,
-      "title": "◉ Pipeline Heartbeat",
+      "title": "\u25c9 Pipeline Heartbeat",
       "type": "volkovlabs-echarts-panel",
       "datasource": {
         "uid": "timescaledb"
@@ -648,8 +648,8 @@
       "gridPos": {
         "x": 0,
         "y": 19,
-        "w": 1,
-        "h": 1
+        "h": 1,
+        "w": 1
       },
       "description": "Watchdog: re-queries the database every dashboard refresh cycle. If this panel stalls (the frontend refresh timer dying, the reported \"requires F5\" bug), it force-reloads the page automatically. See migration 065 for the TimescaleDB-side half of this fix.",
       "fieldConfig": {
@@ -684,7 +684,7 @@
     },
     {
       "id": 12,
-      "title": "◈ Temperature Compliance (22±2°C)",
+      "title": "\u25c8 Temperature Compliance (22\u00b12\u00b0C)",
       "type": "state-timeline",
       "datasource": {
         "uid": "timescaledb"
@@ -692,8 +692,8 @@
       "gridPos": {
         "x": 0,
         "y": 4,
-        "w": 12,
-        "h": 3
+        "h": 3,
+        "w": 12
       },
       "fieldConfig": {
         "defaults": {
@@ -775,7 +775,7 @@
     },
     {
       "id": 13,
-      "title": "◈ Humidity Compliance (55±5%)",
+      "title": "\u25c8 Humidity Compliance (55\u00b15%)",
       "type": "state-timeline",
       "datasource": {
         "uid": "timescaledb"
@@ -783,8 +783,8 @@
       "gridPos": {
         "x": 12,
         "y": 4,
-        "w": 12,
-        "h": 3
+        "h": 3,
+        "w": 12
       },
       "fieldConfig": {
         "defaults": {
@@ -866,7 +866,7 @@
     },
     {
       "id": 8,
-      "title": "◈ Action Queue (Critical/Major, last 5 min)",
+      "title": "\u25c8 Action Queue (Critical/Major, last 5 min)",
       "type": "table",
       "datasource": {
         "uid": "timescaledb"
@@ -874,8 +874,8 @@
       "gridPos": {
         "x": 0,
         "y": 7,
-        "w": 24,
-        "h": 4
+        "h": 5,
+        "w": 24
       },
       "options": {
         "showHeader": true,
