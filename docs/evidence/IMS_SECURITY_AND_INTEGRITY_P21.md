@@ -77,6 +77,29 @@ Extended the already-tested 1280/1920/3840 set (from earlier P18/P20 passes) wit
 
 Consistent with the already-documented, already-accepted layout tradeoff (compliance timelines and Action Queue sized for readability over literal zero-scroll) — no new or unexpected behavior at these intermediate sizes. No horizontal overflow at any tested size this entire engagement.
 
+## P22/P23 — Reported No-Data Bug (Action Queue → Machine Snapshot) and Full Navigation-Chain Audit
+
+**User-reported defect, real, reproduced live:** navigating from the Andon board's Action Queue to Machine Snapshot showed "No data" on 4 panels (Worst Cpk, Alarm Context, Event Timeline, and transitively Raw Timestamp appeared affected in initial testing but was later cleared as a lazy-load artifact, not a real defect on that specific panel).
+
+**Root cause:** panels 9, 10, 12 resolved their target machine via `event_time_ms > 0 → use clicked_series, else → machine_id`. `clicked_series` is only set by a *different* interaction (clicking a point in an Engineering Analytics trend chart); the Action Queue's link always sets `event_time_ms` but never `clicked_series` (defaults to sentinel `'__none__'`). This forced every Action Queue navigation into the wrong branch, resolving to a machine name of `'__none__'` that matches nothing — even though `machine_id` was correctly passed the whole time. On 2 of the 3 panels this was worse than a plain empty result: their own "no alarm found" / "no telemetry" explanatory fallback rows were `CROSS JOIN`ed against the same broken machine-resolution CTE, so the failure silently ate the fallback message too, leaving a panel with no explanation at all.
+
+**Fixed** (commit `2cb9e3e`): branch on whether `clicked_series` is actually set (`NOT IN ('__none__','')`) instead of on `event_time_ms`, applied to all 4 occurrences across the 3 panels. Verified by reproducing the exact blank state live, confirming Grafana loaded the corrected query via the dashboard API, then confirming all 4 panels render real data using the identical machine/timestamp that was previously blank.
+
+**Full navigation-chain audit** (this pass): enumerated every `url`/panel-link across the entire manufacturing dashboard set that targets Machine Snapshot, Alarm Dictionary, or Alarm Console, to check for the same class of parameter-contract bug elsewhere in the chain:
+
+| Entry point | Parameters passed | Live test result |
+|---|---|---|
+| Andon Action Queue → Machine Snapshot | `machine_id, factory, mo, event_time_ms` (no `clicked_series`) | Fixed and verified (above) |
+| 2D Digital Twin → Machine Snapshot (all 10 machine zones) | `machine_id, factory` only (no `event_time_ms`, no `clicked_series`) | **Clean** — 14 panels, 0 blank |
+| Engineering Analytics trend charts → Machine Snapshot (the *designed* click-a-point interaction) | `clicked_series, event_time_ms, machine_id, log_id=__auto__` | **Clean** — 14 panels, 0 blank. Confirms the fix did not regress the one path that's supposed to use `clicked_series` |
+| Manufacturing "Worst Cpk" / "Board Traceability" → Machine Snapshot | `machine_id` only (no `factory`, no `event_time_ms`, no `clicked_series`) | **Clean** — 14 panels, 0 blank |
+| Machine Snapshot "Alarm Context" → Alarm Dictionary | `alarm_code` only, no machine/factory/time context | **Correct as designed** — Alarm Dictionary is a pure code-lookup reference (its own panels don't take a machine parameter at all), not a context-preserving drill-down |
+| Machine Snapshot "Event Timeline" panel | No outbound links at all (verified via `fieldConfig.overrides` inspection) | N/A — no drill-down exists on this panel to test |
+
+**Checklist items from the request that don't apply to this dashboard:** Machine Snapshot has no `process` template variable at all (confirmed via its `templating.list`) — process/layer context is shown as a field in the Machine Context table, not modeled as a separate navigable variable. Not a defect; nothing to fix.
+
+**Conclusion: the one real defect in this chain was the one already found and fixed.** The other 3 real entry patterns into Machine Snapshot (Digital Twin, the designed trend-chart click, Manufacturing's fleet tables) were tested live and are clean, including confirming no regression from the fix on the one path that legitimately depends on `clicked_series`.
+
 ## What Remains (explicit, per required discipline)
 
 - Fleet-wide polish (typography/spacing normalization across all ~15 dashboards) — not started.
