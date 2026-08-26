@@ -181,15 +181,19 @@ Every panel checked this pass either (a) returned real rows confirming pipeline 
 
 
 - Fleet-wide polish (typography/spacing normalization across all ~15 dashboards) — not started.
-- Node-RED ingestion internals (flow-level inspection — enabled/disabled state, parse error handling, retry loops) — not inspected; only downstream DB freshness was used to infer pipeline health.
+- ~~Node-RED ingestion internals — not inspected~~ **RESOLVED in P26**: flow-level inspection performed (walker error handling, circuit breaker, batch parser), one real defect found/fixed/verified live.
 - Full variable stress matrix on dashboards other than Andon (Manufacturing, Engineering Analytics variable edge cases: large-cardinality, factory chaining) — not tested.
 - 2560×1440, 4096×2160 viewports — not tested this pass (3840×2160 was tested in an earlier pass and covers the 4K case at a slightly different aspect ratio).
 - Formal visual-regression baseline/diffing (pixel-level comparison across code changes) — not built; screenshots exist as point-in-time evidence but no automated before/after diff pipeline.
-- Security audit scope beyond SQL injection (Node-RED Function-node code review, HTTP endpoint exposure, dependency vulnerability scan) — not performed.
+- Security audit scope beyond SQL injection: `alarm-api`/`factory-twin-3d` parameterized-query review and a repo-wide hardcoded-credential pattern scan (AWS keys, private key blocks, Slack tokens) **reconfirmed live in the P27 stabilization pass below, both clean**. Still not performed: full Function-node code review across all flow files, HTTP endpoint exposure audit, `npm audit` dependency vulnerability scan.
+- Alerting delivery (LINE/Teams unconfigured) — real, documented, **OPEN**: requires operator-supplied credentials, not an engineering fix.
+- 13 registered-but-never-reporting LDI device rows (`LDI-A0x`/`LDI-B0x`/lowercase variants) — reconfirmed **zero functional impact** (P27: none referenced in any live dashboard query; one dashboard variable's cached `current` value references a stale device name but is not `includeAll`-locked and self-corrects via `refresh:1` on load). Deregistering them is a data-ownership decision, not an engineering defect — **OPEN**, left to whoever owns the device registry.
 
 ## Commits
 
 - `db4bf57` — `fix(security): close SQL injection via unescaped alarm_code and machine_id interpolation`
+- `b87f285` — `fix(ingestion): stop offline-path row duplication in SRE AIOps Parser`
+- `2adf99f` — `docs(grafana): add P26 data-integrity re-audit (offline-dup bug, live-verified)`
 
 ## Status
 
@@ -202,6 +206,35 @@ Mock-data contamination: 0
 Refresh storm: none detected (stable ~20.8 queries/cycle, 0 failures)
 Slowest measured query: 4.552ms execution (Temperature Compliance, 10-machine fleet, 2h range)
 Regressions from fixes: 0 (verified live)
-Remaining: fleet-wide polish, Node-RED flow internals, full variable matrix on non-Andon dashboards,
-  2560x1440/4096x2160 viewports, formal visual-regression diffing, broader security scope -- all NOT VERIFIED
+Remaining: fleet-wide polish, full variable matrix on non-Andon dashboards, 2560x1440/4096x2160
+  viewports, formal visual-regression diffing, Function-node-wide security review, npm audit -- NOT VERIFIED
+Open (business/config, not engineering defects): alerting delivery credentials, dead-device deregistration
+```
+
+## P27 — Final Stabilization Pass (2026-08-26)
+
+Scope: verify remaining open items and close what's safely closable with live evidence. Not a new audit phase.
+
+- **Git/branch/container health:** `perf/grafana-p15r-operator-andon` clean, both P26 commits (`b87f285`, `2adf99f`) intact. Mid-pass, the shared working directory was checked out to `main` by a concurrent external process **four separate times** (confirmed via reflog, not corruption — a real, ongoing collision, not a one-off) — once losing an in-progress doc edit entirely, requiring a retry. Every time, switched back and verified via reflog that nothing was lost. All 15 IMS containers up and healthy (`docker ps`); `net_metrics` fresh (< 1 min lag) throughout. **VERIFIED**, with the explicit caveat that this working directory is shared with another live process and that is an ongoing operational hazard, not resolved by this session.
+- **Lint/regression:** `dashboard-linter.js` (0 errors, 19 warnings) and full `pre-commit.js` suite both pass on current HEAD. **VERIFIED**.
+- **Alerting readiness:** confirmed (again) `LINE_CHANNEL_ACCESS_TOKEN`, `LINE_USER_ID`, `TEAMS_WEBHOOK_URL` are wired correctly end-to-end (declared in `.env.example`, passed through in `docker-compose.yaml`, consumed in `alerting.json`) but empty in the running container's actual environment. Not fabricated, not touched. **OPEN** — needs operator-supplied credentials.
+- **13 dead device registrations:** reconfirmed zero functional impact — none of the 13 appear in any dashboard's live query logic; the one dashboard JSON reference found (`ims-ldi-machine-snapshot.json`'s `machine_id` variable `current.value`) is a stale cached selection that self-corrects on load (`refresh:1`, `includeAll:false`, query re-derives from real `ldi_data`). **OPEN** — deregistering is a data-ownership call, not something fixed here per explicit instruction not to delete without a business-intent go-ahead.
+- **Security scope beyond SQLi:** re-verified live (not from memory) — `alarm-api`'s `transitionAlarm()` uses fully parameterized queries; its one non-parameterized fragment (`extraSet`) confirmed to be a fixed literal chosen server-side per route, never request-derived. `factory-twin-3d`'s `STATE_SQL` filters on `DEVICE_IDS`, populated from a startup DB query, never from a request. Repo-wide scan for AWS keys / PEM private-key blocks / Slack tokens: 0 matches. **VERIFIED**.
+
+### Final Status
+
+```
+PASS:  SQL injection (fixed+verified), mock-data (0 found), no-data fleet scan (0 unexplained),
+       ldi-data-readiness remaining panel (false positive, reconfirmed), net_metrics gap (resolved,
+       reconfirmed), sre_parser offline-duplication (found+fixed+verified live), lint/pre-commit
+       (0 errors), backend service injection review + credential scan (reconfirmed live)
+OPEN:  alerting delivery (needs operator LINE/Teams credentials -- not an engineering task),
+       13 dead device registrations (data-ownership decision, zero functional impact confirmed)
+NOT VERIFIED: fleet-wide visual polish, full variable-stress matrix on non-Andon dashboards,
+       2560x1440/4096x2160 viewports, formal visual-regression diffing, Function-node-wide review,
+       HTTP endpoint exposure audit, npm audit dependency scan
+Exact remaining actions: (1) operator supplies LINE_CHANNEL_ACCESS_TOKEN/LINE_USER_ID/TEAMS_WEBHOOK_URL
+  if alert delivery is wanted; (2) device-registry owner decides whether to deregister the 13 dead
+  LDI-A0x/B0x rows or leave them; (3) whoever owns the shared working directory should stop the
+  concurrent branch-checkout collisions (4 occurrences this session) before further parallel work here.
 ```
