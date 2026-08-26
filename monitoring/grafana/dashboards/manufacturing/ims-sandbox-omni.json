@@ -5,7 +5,8 @@
   "tags": [
     "experimental",
     "sandbox",
-    "omni"
+    "omni",
+    "manufacturing"
   ],
   "timezone": "browser",
   "editable": true,
@@ -211,7 +212,7 @@
           },
           "rawQuery": true,
           "format": "time_series",
-          "rawSql": "SELECT bucket AS time, avg(temperature) AS temp, avg(air_vacuum) * 100 AS vacuum_scaled FROM ldi_data_1m WHERE $__timeFilter(bucket) GROUP BY 1 ORDER BY 1"
+          "rawSql": "/* Downsampled via ldi_data_1m continuous aggregate (1-minute buckets); no time_bucket() call needed here. */\nSELECT bucket AS time, avg(temperature) AS temp, avg(air_vacuum) * 100 AS vacuum_scaled FROM ldi_data_1m WHERE $__timeFilter(bucket) GROUP BY 1 ORDER BY 1"
         }
       ],
       "fieldConfig": {
