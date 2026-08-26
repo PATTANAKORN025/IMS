@@ -128,3 +128,12 @@ p*_scratch/
 
 # Allow tracking agent skills
 !.agents/skills/
+
+# Additional AI/Audit Clutter
+.cursor/
+.clinerules/
+.windsurf/
+.superpowers/
+.audit/
+.playwright-mcp/
+
