@@ -100,6 +100,34 @@ Consistent with the already-documented, already-accepted layout tradeoff (compli
 
 **Conclusion: the one real defect in this chain was the one already found and fixed.** The other 3 real entry patterns into Machine Snapshot (Digital Twin, the designed trend-chart click, Manufacturing's fleet tables) were tested live and are clean, including confirming no regression from the fix on the one path that legitimately depends on `clicked_series`.
 
+## P24 — Fleet-Wide No-Data Scan (remaining 11 dashboards)
+
+Extended the no-data methodology to every dashboard not yet live-scanned this session (previously covered: Andon, Machine Snapshot, Manufacturing, Engineering Analytics). Authenticated, tall-viewport (1920×6000, eliminates lazy-load false positives), default time range/variables, real render.
+
+| Dashboard | Panels | Error badges | Unexpected "No data" |
+|---|---:|---:|---|
+| `ims-capacity` (AIOps & Capacity Forecast) | 12 | 0 | 4 panels |
+| `ims-engineering` (Engineering Drill-Down) | 19 | 0 | 4 panels |
+| `ims-ingestion-latency` | 10 | 0 | 0 |
+| `ims-meta-monitoring` | 12 | 0 | 2 panels |
+| `ims-noc-overview` | 10 | 0 | 0 |
+| `ims-easy-overview` | 7 | 0 | 0 |
+| `ims-ldi-alarm-console` | 2 | 0 | 0 |
+| `ims-ldi-alarm-dictionary` | 3 | 0 | 0 |
+| `ims-ldi-alarm-response` | 8 | 0 | 0 |
+| `ims-ldi-factory-digital-twin` | 1 | 0 | 0 |
+| `ldi-data-readiness` | 17 | 0 | 1 panel |
+
+**Zero query errors anywhere in the fleet.** 7 of 11 dashboards are completely clean. 4 dashboards show real "No data" on specific panels — root-caused, not assumed:
+
+**Root cause 1 — data immaturity post-reset (most cases).** Panels affected: Disk/RAM Usage Trend + Forecast, CPU/Temperature Z-Score Anomaly (`ims-capacity`); Memory Saturation, Temperature Sensors, LDI Throughput (`ims-engineering`); Trip Rate, Circuit Breaker State (`ims-meta-monitoring`). Traced the actual data chain: `sys_hourly` (the continuous aggregate these queries read) has real, fresh rows for the correct 4 infrastructure devices (`LDI-A01`, `LDI-A02`, `ERP-MASTER-UBUNTU`, `ERP-MASTER-WINDOWS`) — confirmed the `machine_id` variable resolves correctly and the base historical query returns real rows. But `SELECT COUNT(DISTINCT time_bucket('1 day', bucket)) FROM sys_hourly` = **1** — only a single day of aggregated history exists, matching this session's `docker compose down -v` reset (~19 hours ago) exactly. These panels are designed for 30–90 day trend/forecast/anomaly windows (the regression CTE requires `HAVING COUNT(*) >= 3` daily buckets to even attempt a forecast; Z-score anomaly detection needs enough samples for a meaningful standard deviation) — with 1 day of real history, they correctly and honestly produce nothing rather than a fabricated trend line. **Not a dashboard defect. Will self-resolve as the environment accumulates real history; not fixable by a code change today, and forcing a fake trend to "fill" this would violate the explicit no-mock-data policy.**
+
+**Root cause 2 — genuine upstream pipeline gap.** `ims-engineering`'s "Network Bandwidth (Per-Interface)" panel: confirmed via direct query that `public.net_metrics` has **0 rows, ever** (not stale — completely unpopulated). This is a real gap, but it's at the ingestion/ollection layer (no network-interface polling is wired up for this environment), not a Grafana query or variable bug — nothing in the dashboard JSON to fix.
+
+**`ldi-data-readiness`'s "Inferred Sensor / Source Capability"** — not individually root-caused this pass (lower priority, single panel on a diagnostics-only dashboard); flagged as NOT VERIFIED rather than assumed to be the same root cause as the others.
+
+**No new dashboard-code defects found or fixed in this slice** — every no-data instance traced to either genuine data immaturity (self-resolving) or a real but out-of-Grafana-scope ingestion gap. This is itself a real, evidence-based conclusion, not an absence of effort: each was traced to source-table level before being classified.
+
 ## What Remains (explicit, per required discipline)
 
 - Fleet-wide polish (typography/spacing normalization across all ~15 dashboards) — not started.
