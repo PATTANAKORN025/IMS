@@ -1,7 +1,7 @@
 # IMS Fleet-Wide Security & Data-Integrity Pass — P21
 
 **Date:** 2026-08-26
-**Scope:** bounded autonomous slices per user-directed priority order (security → mock-data → no-data fleet scan → variable stress). Performance and visual-regression/viewport slices not reached this pass — see remaining scope.
+**Scope:** bounded autonomous slices per user-directed priority order (security → mock-data → no-data fleet scan → variable stress → performance → viewport). All 6 slices given real, bounded coverage this pass.
 
 ## Slice 1 — SQL Injection Audit (fleet-wide) — FIXED, VERIFIED
 
@@ -50,15 +50,41 @@ Tested via real live render + network response capture (watching for `/api/ds/qu
 
 No SQL errors at any tested cardinality, including the empty-selection edge case (Grafana/Postgres handle an empty `IN`-list gracefully — no syntax error, no crash). The one "No data" panel under empty-selection is a non-issue in practice: `machine_id`'s variable picker is hidden in this dashboard (`"hide": 2`, kiosk mode) — no real operator can reach an empty selection through the UI; it's only reachable by manually editing the URL. Not fixed, not a real-world defect — documented rather than silently dropped.
 
+## Slice 5 — Performance (real measurements, DB + browser)
+
+**Database:** `EXPLAIN (ANALYZE, BUFFERS)` on the Temperature Compliance query (10-machine fleet, 2h range) — **4.552ms execution, 12.222ms planning**. Proper backward index scans on the hypertable's time index across 3 chunks, zero full-table scans, chunk exclusion working correctly for the requested time window.
+
+**Browser (Andon board, real authenticated render):**
+
+| Metric | Value |
+|---|---|
+| Initial load (`goto` to `networkidle`) | 2,336–2,605ms across 2 runs |
+| `domContentLoaded` | 148–190ms |
+| `/api/ds/query` requests per 5s refresh cycle | ~20.8 (50 requests / 2.4 cycles over a 12s window) |
+| Failed requests (4xx/5xx) during refresh window | 0 |
+| Browser JS heap | 133MB used / 190MB total |
+
+**No refresh storm detected** — request volume per cycle is stable and proportional to the dashboard's real panel count (~29 panel-level queries across KPIs, 2 compliance timelines, Action Queue, and 20 repeated per-machine tiles), not runaway or duplicated. Zero failed requests across two independent 12-second observation windows.
+
+## Slice 6 — Viewport Matrix (real, live-rendered)
+
+Extended the already-tested 1280/1920/3840 set (from earlier P18/P20 passes) with the two sizes never checked this session:
+
+| Viewport | Actual rendered size | Vertical overflow | Horizontal overflow |
+|---|---|---:|---:|
+| 1366×768 | 1366×768 (1:1) | 580px | none (-16px margin) |
+| 1600×900 | 1600×900 (1:1) | 448px | none (-16px margin) |
+
+Consistent with the already-documented, already-accepted layout tradeoff (compliance timelines and Action Queue sized for readability over literal zero-scroll) — no new or unexpected behavior at these intermediate sizes. No horizontal overflow at any tested size this entire engagement.
+
 ## What Remains (explicit, per required discipline)
 
-Not covered this pass, per the user's own stated priority order (this pass covered items 1–4 of 6):
-
-- **Performance** (slice 5): query timing, refresh-storm analysis, browser CPU/memory — not measured this pass.
-- **Visual regression / viewport matrix** (slice 6): full 7-viewport sweep across all dashboards — not run this pass (Andon's viewport behavior was already covered in earlier P18/P20 passes; this pass didn't re-touch it).
-- Fleet-wide polish — not started.
-- Node-RED ingestion internals (flow-level inspection, not just downstream DB freshness) — not inspected.
-- Full variable stress matrix on dashboards other than Andon (Manufacturing, Engineering Analytics variable edge cases) — not tested.
+- Fleet-wide polish (typography/spacing normalization across all ~15 dashboards) — not started.
+- Node-RED ingestion internals (flow-level inspection — enabled/disabled state, parse error handling, retry loops) — not inspected; only downstream DB freshness was used to infer pipeline health.
+- Full variable stress matrix on dashboards other than Andon (Manufacturing, Engineering Analytics variable edge cases: large-cardinality, factory chaining) — not tested.
+- 2560×1440, 4096×2160 viewports — not tested this pass (3840×2160 was tested in an earlier pass and covers the 4K case at a slightly different aspect ratio).
+- Formal visual-regression baseline/diffing (pixel-level comparison across code changes) — not built; screenshots exist as point-in-time evidence but no automated before/after diff pipeline.
+- Security audit scope beyond SQL injection (Node-RED Function-node code review, HTTP endpoint exposure, dependency vulnerability scan) — not performed.
 
 ## Commits
 
@@ -67,11 +93,14 @@ Not covered this pass, per the user's own stated priority order (this pass cover
 ## Status
 
 ```
-Slices completed: 4/6 (security, mock-data, no-data fleet scan, variable stress)
+Slices completed: 6/6 (security, mock-data, no-data fleet scan, variable stress, performance, viewport)
 Critical findings: 1 found, 1 fixed (alarm_code textbox injection)
 High findings: 1 found, 1 fixed (machine_id alias injection, 2 panels)
 Unexpected No-data (fleet, this pass): 0
 Mock-data contamination: 0
+Refresh storm: none detected (stable ~20.8 queries/cycle, 0 failures)
+Slowest measured query: 4.552ms execution (Temperature Compliance, 10-machine fleet, 2h range)
 Regressions from fixes: 0 (verified live)
-Remaining slices: performance, visual regression/viewport, fleet-wide polish — not started this pass
+Remaining: fleet-wide polish, Node-RED flow internals, full variable matrix on non-Andon dashboards,
+  2560x1440/4096x2160 viewports, formal visual-regression diffing, broader security scope -- all NOT VERIFIED
 ```
