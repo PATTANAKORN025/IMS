@@ -143,7 +143,42 @@ The P24 conclusion above was based on an incomplete diagnosis. Following the use
 - `ims-capacity`: Disk Usage Trend + Forecast, CPU/Temperature Z-Score Anomaly — now reading genuinely real (non-zero) `sys_hourly` data post-fix, but still empty because only ~1 minute of real history exists since the container was just started; the regression CTE requires `≥3` distinct daily buckets and Z-score needs a meaningful sample count for standard deviation. This is now **true** data immaturity (real data, insufficient elapsed time), not the zero-fallback-garbage version originally suspected. Will resolve as real time passes; not fixable by a code change.
 - `ims-meta-monitoring`: Trip Rate (per device), Device Circuit Breaker State — these query **Prometheus** metrics `ims_circuit_breaker_trips_total` / `ims_circuit_breaker_state`, a completely different datasource, unrelated to the SNMP/TimescaleDB fix. Confirmed via Prometheus's own `/api/v1/label/__name__/values`: **these metric names do not exist anywhere in Prometheus** (only 5 `ims_*` metrics exist, all pipeline buffer/insert stats). The underlying circuit-breaker logic genuinely exists in Node-RED (in-memory `circuitBreaker` object, `checkDevice`/`recordFailure`/`recordSuccess`), but no exporter was ever built to expose it to Prometheus. This is a real, confirmed gap — missing instrumentation, not a fixable query/variable bug — and building a new Prometheus exporter is feature work beyond a safe same-pass fix, correctly left as a documented, verified gap rather than attempted.
 
-## What Remains (explicit, per required discipline)
+## P26 — Data Integrity Re-Audit: Root-Caused Remaining No-Data Panel, Node-RED End-to-End, Offline-Path Duplication Bug (2026-08-26)
+
+Live system at `http://localhost:3000/` and the running Docker stack, re-inspected fresh (not from memory of prior passes).
+
+**Task 1 — `ldi-data-readiness`'s remaining No-Data panel, fully root-caused, reconfirmed:**
+Extracted all 16 SQL targets across the dashboard's 17 panels programmatically, substituted live variable defaults (`factory IN ('2','3')`, `machine_id` = all 10 real `LDI-01..10`), ran every query directly against `ims-timescaledb`. All 16 executed without error and returned real rows. The "◈ Inferred Sensor / Source Capability" panel (id 12) — previously flagged as a possible remaining defect — is reconfirmed a **false positive**: its own query legitimately emits the literal string `'NO DATA'` as a valid capability-status value (e.g. `Vacuum` column), which a naive scan misreads as an empty panel. No code defect. **VERIFIED** (live query execution, all 16 targets, zero errors).
+
+**Task 2/3 — Node-RED ingestion audited end-to-end, telemetry-to-table mapping confirmed:**
+`docker logs ims-node-red` reviewed across a 6-hour window. All 4 core tables (`ldi_data`, `net_metrics`, `sys_metrics`, `ldi_alarm_log`) fresh (< 2 min lag) at audit time. Found and fixed one real defect (below). No dropped-record evidence found; no crash-loop; no unhandled exceptions besides the one fixed bug.
+
+**Task 4 — `net_metrics` zero-row gap: reconfirmed fully resolved, not regressed.**
+2,344 rows present, 14s lag at check time. The P25 fix (starting the `ims-snmpsim` container) holds. Not intentionally out of scope — was a real gap, is now closed and stable.
+
+**New defect found and fixed — SRE AIOps Parser offline-path row duplication:**
+`sre_parser`'s `isOffline` branch (fires when the circuit breaker trips OPEN for a device) pushed a full `sys_metrics` row, every known net interface, and an `ldi_metrics` row **unconditionally on every incoming walker-slot message**, instead of once per poll cycle — unlike the online path, which already gates each push by `walkerType`. `Fork 5 Walker Threads` emits 4–5 offline-tagged messages per cycle per device, so every offline cycle inflated `sys`/`ldi` row counts 4–5x.
+
+Live evidence before fix: `sys_metrics` and `ldi_metrics` each had a device with **88–90 duplicate all-zero rows** landing in a single ~2ms flush window (`2026-08-26 04:38:40`, timestamped to the exact moment `ims-snmpsim` had come back up after an earlier outage). `net_metrics` was unaffected only because those specific devices had no previously-known interfaces to duplicate — same bug, just not yet triggered on that table.
+
+**Fix:** gated all three offline-branch buffer pushes (`sys`/`net`/`ldi`) by `walkerType`, mirroring the existing online-branch structure in the same function (`nodered_data/flows/ingestion.json`).
+
+**Verified live via reversible fault injection:** stopped `ims-snmpsim` (`07:50:31 UTC`), confirmed the circuit breaker tripped OPEN for all 4 affected devices (`LDI-A01`, `LDI-A02`, `ERP-MASTER-WINDOWS`, `ERP-MASTER-UBUNTU`), and confirmed via direct DB query that every offline cycle produced **exactly 1 row** in both `sys_metrics` and `ldi_metrics` per device throughout the entire outage window — zero duplicates. Restarted `ims-snmpsim` (`07:52:45 UTC`), confirmed full recovery: `net_metrics`/`sys_metrics`/`ldi_data` all fresh again within ~90 seconds, zero errors post-recovery. **VERIFIED** (live before/after DB state, live log evidence, reversible test performed and reverted). Committed: `b87f285`.
+
+**Task 5 — stale telemetry, lag, dupes, out-of-order, machine mapping:**
+- Stale/lag: all 4 core tables < 2 min lag at check time. **VERIFIED**.
+- Duplicates: `ldi_data` 0, `net_metrics` 0 (post-fix), `sys_metrics` 0 (post-fix, was 4 groups / ~356 rows pre-fix from the bug above). **VERIFIED**.
+- Out-of-order: naive `ctid`-ordering probe falsely reported 10,995 "out-of-order" `ldi_data` rows — a methodology artifact (`ctid` reflects hypertable chunk storage layout, not insertion order, so it's meaningless across chunks). Re-tested using the real `ingest_ts` column ordered per-`eqp_id`: **8 rows** (0.036% of 22,084) arrived with a sensor timestamp earlier than the previously-ingested row for that machine, in 2 clustered incidents (8–29 min skew, 4 machines each, same incident timestamp) — consistent with a transient walker reconnect delivering a late-queued reading, not corruption or duplication. Real, tiny, self-limiting, **not a code defect**. **VERIFIED**.
+- Machine mapping coverage: all 10 real `LDI-01..10` report continuously. 23 `device_type='ldi'` rows exist in `devices`, 13 (`LDI-A0x`/`LDI-B0x`/lowercase variants) registered+enabled but never report — reconfirms the prior session's "dead device registrations, data-hygiene, zero operator impact" finding; count differs slightly from the previously-cited "11" only because this pass counted the full registry directly rather than relying on a prior tally. Not fixed (not a defect). **VERIFIED**.
+- `devices` also holds 1,002 `device_type='server'` rows (mostly `E2E-SERVER-NNN`, `enabled=false`) — confirmed test/E2E fixture data, not a production data-quality issue.
+
+**Task 6 — no-data vs. defect distinction:**
+Every panel checked this pass either (a) returned real rows confirming pipeline health, or (b) was independently root-caused to a specific code/config cause (this session's offline-duplication bug) rather than asserted as "immaturity" without evidence — continuing the discipline established in P25.
+
+**New finding, out of code scope — alerting delivery gap:**
+`docker logs ims-node-red` shows the alerting pipeline firing correctly on real conditions (new alarms, high RX error rate, threshold breaches) but **every single alert this session, with zero exceptions, failed external delivery**: `'LINE Messaging API not configured — set LINE_CHANNEL_ACCESS_TOKEN and LINE_USER_ID env vars. Alert was NOT delivered.'` and the equivalent for `TEAMS_WEBHOOK_URL`. No Slack node exists in the flow at all. Alerts only ever reach Node-RED's own internal debug log — never an operator. This is a real, verified operational gap, but it is a **deployment/secrets configuration gap** (missing `.env` values), not a code defect — no credentials were fabricated or touched, per CLAUDE.md's zero-trust `.env` policy. **VERIFIED** (live log evidence); remediation requires operator-supplied credentials, outside this session's authority.
+
+
 
 - Fleet-wide polish (typography/spacing normalization across all ~15 dashboards) — not started.
 - Node-RED ingestion internals (flow-level inspection — enabled/disabled state, parse error handling, retry loops) — not inspected; only downstream DB freshness was used to infer pipeline health.
