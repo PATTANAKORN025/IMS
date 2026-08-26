@@ -103,6 +103,11 @@ const APPROVED_TOKENS = new Set([
   '#64748b', // no_data
   '#4a5568', // forecast
   '#eab308', // severity-minor (4th ISA-18.2 tier, distinct from warning)
+  '#15803d', // ok-bg (Andon panel 1000 colorMode:background exception only --
+             // darker shade of `ok` chosen so its own gradient's darkest stop
+             // still clears WCAG AA large-text 3:1 with white fill text;
+             // canonical `ok` token #22c55e is unchanged for colorMode:value
+             // use everywhere else -- see GRAFANA_DESIGN_SYSTEM.md §2.1b)
 ]);
 
 let errors = 0;
