@@ -62,6 +62,16 @@ Historical audits and system snapshots.
 - **[Full System Audit](archive/IMS_FULL_SYSTEM_AUDIT.md)** - Comprehensive baseline audit.
 - **[System Trust Report](evidence/SYSTEM_TRUST_REPORT.md)** - Metric fidelity validation.
 
+### 6. Developer & Integration (World-Class Core)
+
+The blueprints for engineering, maintaining, and integrating with the system.
+
+- **[Developer Guide](developer/LOCAL_DEVELOPMENT.md)** - Local environment setup and DX.
+- **[API Reference](api/API_REFERENCE.md)** - Ingestion and Webhook API contracts.
+- **[Architecture Decisions (ADRs)](architecture/decisions/)** - Historical tech choices.
+- **[Service Level Objectives (SLO)](sre/SLO_DEFINITIONS.md)** - Reliability, Error Budgets, and SLIs.
+- **[Telemetry Ontology](data/TELEMETRY_ONTOLOGY.md)** - Data dictionaries and payload standards.
+
 ### 7. Hyper-Scaler Operations & Governance
 
 Enterprise-grade frameworks for security, culture, and compliance.
@@ -72,7 +82,6 @@ Enterprise-grade frameworks for security, culture, and compliance.
 - **[Docs Style Guide](DOCUMENTATION_STYLE_GUIDE.md)** - Editorial standards for the knowledge base.
 
 ---
-
 
 <div align="center">
   <p><i>Documentation maintained by the IMS Core Engineering Team</i></p>

@@ -62,6 +62,16 @@
 - **[การตรวจสอบระบบทั้งหมด](archive/IMS_FULL_SYSTEM_AUDIT.md)** - การตรวจสอบพื้นฐานแบบครอบคลุม
 - **[รายงานความเชื่อมั่นของระบบ](evidence/SYSTEM_TRUST_REPORT.md)** - การตรวจสอบความถูกต้องของเมตริก (Metric fidelity)
 
+### 6. การพัฒนาและการเชื่อมต่อ (มาตรฐาน World-Class)
+
+พิมพ์เขียวสำหรับวิศวกรรม การดูแลระบบ และการเชื่อมต่อกับระบบ
+
+- **[คู่มือนักพัฒนา (Developer Guide)](developer/LOCAL_DEVELOPMENT.md)** - การตั้งค่า Local Environment และ DX
+- **[API Reference](api/API_REFERENCE.md)** - ข้อตกลง Ingestion และ Webhook API
+- **[บันทึกการตัดสินใจเชิงสถาปัตยกรรม (ADRs)](architecture/decisions/)** - ประวัติศาสตร์การเลือกเทคโนโลยี
+- **[เป้าหมายระดับการให้บริการ (SLO)](sre/SLO_DEFINITIONS.md)** - ความน่าเชื่อถือ, Error Budgets, และ SLIs
+- **[พจนานุกรมข้อมูล (Ontology)](data/TELEMETRY_ONTOLOGY.md)** - โครงสร้าง Payload และมาตรฐานข้อมูล
+
 ### 7. การปฏิบัติการระดับ Hyper-Scaler & การกำกับดูแล
 
 มาตรฐานระดับ Enterprise สำหรับความปลอดภัย วัฒนธรรมองค์กร และการปฏิบัติตามกฎหมาย
@@ -73,8 +83,7 @@
 
 ---
 
-
 <div align="center">
-  <p><i>เอกสารได้รับการดูแลโดยทีมวิศวกรรมหลักของ IMS</i></p>
-  <p><b>ความแม่นยำ • ความถูกต้อง • ความรวดเร็ว (Precision • Fidelity • Velocity)</b></p>
+  <p><i>Documentation maintained by the IMS Core Engineering Team</i></p>
+  <p><b>Precision • Fidelity • Velocity</b></p>
 </div>
