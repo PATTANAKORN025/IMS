@@ -182,10 +182,10 @@ Every panel checked this pass either (a) returned real rows confirming pipeline 
 
 - Fleet-wide polish (typography/spacing normalization across all ~15 dashboards) — not started.
 - ~~Node-RED ingestion internals — not inspected~~ **RESOLVED in P26**: flow-level inspection performed (walker error handling, circuit breaker, batch parser), one real defect found/fixed/verified live.
-- Full variable stress matrix on dashboards other than Andon (Manufacturing, Engineering Analytics variable edge cases: large-cardinality, factory chaining) — not tested.
-- 2560×1440, 4096×2160 viewports — not tested this pass (3840×2160 was tested in an earlier pass and covers the 4K case at a slightly different aspect ratio).
-- Formal visual-regression baseline/diffing (pixel-level comparison across code changes) — not built; screenshots exist as point-in-time evidence but no automated before/after diff pipeline.
-- Security audit scope beyond SQL injection: `alarm-api`/`factory-twin-3d` parameterized-query review and a repo-wide hardcoded-credential pattern scan (AWS keys, private key blocks, Slack tokens) **reconfirmed live in the P27 stabilization pass below, both clean**. Still not performed: full Function-node code review across all flow files, HTTP endpoint exposure audit, `npm audit` dependency vulnerability scan.
+- Full variable stress matrix on dashboards other than Andon — narrowed and closed in P28 (below) for the actual injection-pattern risk this checklist item exists to catch; a full UI-rendering stress sweep (large-cardinality dropdowns, factory chaining behavior) remains untested — no browser tooling available this session.
+- 2560×1440, 4096×2160 viewports — **NOT VERIFIABLE this session**: no browser automation tool available (3840×2160 was tested in an earlier pass, before that tooling was lost, and covers the 4K case at a slightly different aspect ratio).
+- Formal visual-regression baseline/diffing (pixel-level comparison across code changes) — not built; this is new tooling infrastructure, not a defect fix, intentionally out of scope for this pass.
+- Security audit scope beyond SQL injection: `alarm-api`/`factory-twin-3d` parameterized-query review and a repo-wide hardcoded-credential pattern scan (AWS keys, private key blocks, Slack tokens) reconfirmed live in P27, both clean. **Closed in P28** (below): full Function-node code review across all flow files (0 `eval`/`child_process`/`exec`/unparameterized-SQL patterns), HTTP endpoint exposure audit (all 4 Node-RED HTTP endpoints correctly gated), `npm audit` across all 5 dependency trees (0 vulnerabilities; `tests/unit` has no lockfile to audit — dev-only, NOT VERIFIED).
 - Alerting delivery (LINE/Teams unconfigured) — real, documented, **OPEN**: requires operator-supplied credentials, not an engineering fix.
 - 13 registered-but-never-reporting LDI device rows (`LDI-A0x`/`LDI-B0x`/lowercase variants) — reconfirmed **zero functional impact** (P27: none referenced in any live dashboard query; one dashboard variable's cached `current` value references a stale device name but is not `includeAll`-locked and self-corrects via `refresh:1` on load). Deregistering them is a data-ownership decision, not an engineering defect — **OPEN**, left to whoever owns the device registry.
 
@@ -237,4 +237,34 @@ Exact remaining actions: (1) operator supplies LINE_CHANNEL_ACCESS_TOKEN/LINE_US
   if alert delivery is wanted; (2) device-registry owner decides whether to deregister the 13 dead
   LDI-A0x/B0x rows or leave them; (3) whoever owns the shared working directory should stop the
   concurrent branch-checkout collisions (4 occurrences this session) before further parallel work here.
+```
+
+## P28 — Risk-Prioritized Closure Pass (2026-08-26)
+
+Scope: close the highest-value remaining NOT VERIFIED items from P27 that don't require unavailable tooling (no browser automation this session) or new infrastructure build-out. No engineering defect found this pass — pure verification, nothing to fix, nothing committed as a code change.
+
+- **`npm audit`, all 5 dependency trees:** root, `nodered_data`, `services/alarm-api`, `services/factory-twin-3d` — **0 vulnerabilities** each. `tests/unit` has no committed lockfile; audit requires one and generating one is a real repo change outside this pass's scope (dev-only dependency, no production exposure). **PASS** (4/5); **NOT VERIFIED** (`tests/unit`, no lockfile).
+- **Function-node-wide security review**, all 5 flow files (`ingestion.json`, `alerting.json`, `ldi_ingestion.json`, `ldi_simulator.json`, `ldi_alarm_simulator.json`): 0 matches for `eval(`, `child_process`, `exec(`, raw `fs`/`http` requires. The 2 template-literal SQL calls found (`ldi_alarm_simulator.json`, `ldi_ingestion.json`) are fixed SQL text with proper `$1`/`$2` parameter placeholders — no interpolated values inside the SQL string itself. **PASS**.
+- **HTTP endpoint exposure audit**, all 4 Node-RED `http in` nodes: `/ldi-telemetry` and `/inject` both gated by `INGEST_API_KEY` (`x-api-key` header, exact match) — the key is hard-required at container startup via `docker-compose.yaml`'s `${INGEST_API_KEY:?set INGEST_API_KEY in .env}`, so there's no fail-open path if it's ever unset (compose refuses to start). `/metrics` isn't proxied through nginx at all — Node-RED's own port is bound `127.0.0.1:1880` (loopback-only, not externally reachable) and its admin editor is separately protected by `adminAuth` in `settings.js`. `/alert-webhook` (checked in P26) has no auth but only receives from Alertmanager, an internal-network-only service with no published host port. **PASS**.
+- **Non-Andon variable-injection spot check:** grepped all manufacturing dashboards for raw unescaped `${var}` outside a `:sqlstring`/`:singlequote` filter. `ims-ldi-engineering-analytics.json` surfaced raw `${factory}`/`${machine_id}`/`${mo}` — traced every occurrence: all are client-side dashboard drill-down link URLs (`"url": "/d/.../?var-factory=${factory}..."`), never SQL. Grafana substitutes these into an href; the target dashboard independently validates/escapes its own variables at its own SQL usage (already audited elsewhere in this doc). **PASS** — false alarm from pattern-matching alone, resolved by tracing actual usage before concluding a defect.
+
+### Final Status (supersedes P27's)
+
+```
+PASS:  SQL injection (fixed+verified), mock-data (0 found), no-data fleet scan (0 unexplained),
+       ldi-data-readiness remaining panel (false positive, reconfirmed), net_metrics gap (resolved,
+       reconfirmed), sre_parser offline-duplication (found+fixed+verified live), lint/pre-commit
+       (0 errors), backend service injection review + credential scan (reconfirmed live),
+       npm audit (4/5 trees, 0 vulnerabilities), Function-node-wide review (0 dangerous patterns),
+       HTTP endpoint exposure audit (4/4 endpoints correctly gated), non-Andon variable-injection
+       spot check (false alarm traced and closed)
+OPEN:  alerting delivery (needs operator LINE/Teams credentials -- not an engineering task),
+       13 dead device registrations (data-ownership decision, zero functional impact confirmed)
+NOT VERIFIED: fleet-wide visual polish, 2560x1440/4096x2160 viewports, formal visual-regression
+       diffing pipeline (no browser automation tool available this session), tests/unit npm audit
+       (no lockfile)
+Highest-priority remaining risk: none engineering -- the recurring shared-working-directory
+  branch-checkout collision (5 occurrences across this session) is the only item that could still
+  cause real damage (a future collision during an uncommitted edit), and it is outside this
+  session's control to fix.
 ```
