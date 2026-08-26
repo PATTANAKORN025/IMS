@@ -151,7 +151,20 @@
           },
           "unit": "none"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "status"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "$machine_id"
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "colorMode": "background",
@@ -180,7 +193,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: snapshot-aware status. Freshness and the five-minute alarm window use the newest timestamp available in the database, so historical or paused datasets retain truthful colors. ALARM (3) takes priority over every other state. */\nWITH clock AS (\n  SELECT GREATEST(\n    (SELECT MAX(\"time\") FROM public.ldi_data),\n    (SELECT MAX(logdate) FROM public.ldi_alarm_log)\n  ) AS db_now\n)\nSELECT CASE\n  WHEN EXISTS (\n    SELECT 1\n    FROM public.ldi_alarm_log a\n    JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\n    LEFT JOIN public.ldi_alarm_lifecycle l ON l.logdate = a.logdate AND l.logid = a.logid\n    WHERE a.equipmentid = v.eqp_id\n      AND m.severity IN ('Critical', 'Major')\n      AND a.logdate > (SELECT db_now FROM clock) - INTERVAL '5 minutes'\n      AND l.status IS DISTINCT FROM 'RESOLVED'\n  ) THEN 3\n  WHEN NOT v.has_data OR v.\"time\" < (SELECT db_now FROM clock) - INTERVAL '5 minutes' THEN 0\n  WHEN v.state THEN 2\n  ELSE 1\nEND AS \"$machine_id\"\nFROM public.v_ldi_machine_latest_full v\nWHERE v.eqp_id = ${machine_id:sqlstring}",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: snapshot-aware status. Freshness and the five-minute alarm window use the newest timestamp available in the database, so historical or paused datasets retain truthful colors. ALARM (3) takes priority over every other state. */\nWITH clock AS (\n  SELECT GREATEST(\n    (SELECT MAX(\"time\") FROM public.ldi_data),\n    (SELECT MAX(logdate) FROM public.ldi_alarm_log)\n  ) AS db_now\n)\nSELECT CASE\n  WHEN EXISTS (\n    SELECT 1\n    FROM public.ldi_alarm_log a\n    JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT\n    LEFT JOIN public.ldi_alarm_lifecycle l ON l.logdate = a.logdate AND l.logid = a.logid\n    WHERE a.equipmentid = v.eqp_id\n      AND m.severity IN ('Critical', 'Major')\n      AND a.logdate > (SELECT db_now FROM clock) - INTERVAL '5 minutes'\n      AND l.status IS DISTINCT FROM 'RESOLVED'\n  ) THEN 3\n  WHEN NOT v.has_data OR v.\"time\" < (SELECT db_now FROM clock) - INTERVAL '5 minutes' THEN 0\n  WHEN v.state THEN 2\n  ELSE 1\nEND AS status\nFROM public.v_ldi_machine_latest_full v\nWHERE v.eqp_id = ${machine_id:sqlstring}",
           "format": "table"
         }
       ],
@@ -254,7 +267,7 @@
           "datasource": {
             "uid": "timescaledb"
           },
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: current job for this machine, same latest-row source as the state tile above it. */\nSELECT mo AS \"$machine_id\" FROM public.v_ldi_machine_latest_full WHERE eqp_id = ${machine_id:sqlstring}",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: current job for this machine, same latest-row source as the state tile above it. */\nSELECT mo FROM public.v_ldi_machine_latest_full WHERE eqp_id = ${machine_id:sqlstring}",
           "format": "table"
         }
       ],
