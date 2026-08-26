@@ -268,3 +268,33 @@ Highest-priority remaining risk: none engineering -- the recurring shared-workin
   cause real damage (a future collision during an uncommitted edit), and it is outside this
   session's control to fix.
 ```
+
+## P29 — Clean Dev Reset + Genuine Browser-Based Verification (2026-08-26)
+
+User-directed: `docker compose down -v` then `docker compose up -d`, specifically to clear the Grafana admin-credential mismatch found at the end of P28 (`.env`'s `GRAFANA_ADMIN_PASSWORD` didn't match the live container's actual admin password — root cause: the container's internal auth DB predated a later `.env` change, not a corrupted file or fabricated value). This deletes all TimescaleDB/Grafana/Prometheus/Alertmanager volumes — real telemetry accumulated this session (27,106 `ldi_data` rows) was wiped, expected and accepted as the cost of the reset.
+
+- **Post-reset health:** all 16 containers up, `ldi_data` repopulating from zero (46 rows within the first minute), Grafana `/api/health` returns `{"database":"ok","version":"13.1.2"}`. **VERIFIED**.
+- **Credential mismatch:** resolved by the reset, as expected — root cause confirmed (not touched/guessed): fresh login with the current `.env` `GRAFANA_ADMIN_PASSWORD` succeeded immediately post-recreate. **VERIFIED**.
+- **Genuine authenticated Playwright verification, 2560×1440 and 4096×2160**, 5 fleet-critical dashboards (Andon, NOC Overview, LDI Manufacturing, Data Readiness, Machine Snapshot): real login, real navigation, real screenshots. **Important self-caught error**: the first automated pass reported "0 errors, 0 no-data, 0 overflow" across all 10 dashboard/viewport combinations — but those numbers were measuring a *failed login page*, not the dashboard (login silently failed due to the credential mismatch, and the script's own error-detection selectors don't fire on a login page, so it looked like a clean pass). Caught only by opening one screenshot and looking at it, not by trusting the automated metrics. Re-ran after the reset fixed login; this time visually confirmed real dashboard content (live alarm states, real timestamps, real per-machine tiles) at both sizes, zero horizontal/vertical scroll overflow, zero rendering defects. **VERIFIED** (with the explicit lesson: automated pass/fail counts from a scan are not evidence on their own without at least one visual spot-check of the actual output).
+- **`tests/playwright/dashboard-visual-regression.js` chrome-hiding is stale**: its selectors (`.sidemenu`, `.navbar`, `.page-toolbar`) target Grafana class names that no longer exist — Grafana 13.1.2 uses Emotion CSS-in-JS with hashed class names (e.g. `css-rs8tod`), confirmed live via DOM inspection. This means that tool's screenshots have included full browser chrome instead of a clean kiosk capture for as long as this Grafana version has been deployed. **Not fixed this pass** — real, reproducible, but scoped as test-tooling maintenance, not a dashboard/production defect; would need re-deriving current `data-testid`-based selectors. **NOT VERIFIED** (tool needs repair before its captures mean anything).
+- **Real defect found during this verification and fixed**: `ims-ldi-operator-andon.json`'s Action Queue panel leaked the literal string `"NO_DATA"` (from `fieldConfig.defaults.noValue`, correctly used elsewhere in this same panel for its empty-state placeholder row) into a real, clickable link title — `"Open Machine Snapshot for NO_DATA"` — because the Machine column's link used `${__value.text}` (post-`noValue` display text) instead of `${__data.fields.Machine}` (raw field), unlike the sibling Alarm Msg column's link which already used the correct pattern. Fixed by matching the two link titles' interpolation. Verified live, before and after, via Playwright: before the fix, the empty-alarm-queue state showed the bad link; after, real alarms show real machine IDs (`LDI-10`/`LDI-08`/`LDI-04`) and the empty state no longer produces a misleading link. Committed: `1e5cf92`.
+- **Formal visual-regression pixel-diffing**: unchanged conclusion — no baseline-vs-current comparison mechanism exists anywhere in the repo, including in the now-known-stale `dashboard-visual-regression.js`. **NOT VERIFIED / not built**.
+
+### Final Production-Readiness Matrix
+
+```
+FIXED: Action Queue NO_DATA link leak (1e5cf92) -- root-caused, fixed, verified live before/after
+PASS:  post-reset container health, Grafana provisioning + real telemetry, credential mismatch
+       resolved, 2560x1440 + 4096x2160 dashboard rendering (5 fleet-critical dashboards, real
+       data, zero overflow, visually confirmed not just automated-metric-trusted), lint (0
+       errors), pre-commit (all green) -- plus everything already PASS in P26-P28
+OPEN:  alerting delivery credentials, 13 dead device registrations (unchanged, not touched)
+NOT VERIFIED: dashboard-visual-regression.js's chrome-hiding is confirmed stale against
+       Grafana 13.1.2 (real class names changed to hashed Emotion CSS) -- not repaired this
+       pass; formal pixel-diff regression capability still does not exist anywhere in the repo;
+       fleet-wide visual polish beyond the 5 dashboards checked here
+BLOCKED: none. Concurrent-process branch collisions (5 total across the session) did not recur
+       during this pass.
+Commit chain: 1e5cf92 -> 8029620 -> 8ffa7eb -> 2adf99f -> b87f285 -> 8b410fb, all on
+       perf/grafana-p15r-operator-andon, tree clean.
+```
