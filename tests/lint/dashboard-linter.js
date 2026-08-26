@@ -72,13 +72,24 @@ const BACKGROUND_COLORMODE_EXCEPTIONS = {
 // not drift; added them here rather than force-resizing working layouts
 // to match an incomplete list. Warn-only: this rule flags an unusual
 // height as worth a second look, not an automatic violation.
-const ALLOWED_HEIGHTS = [1, 3, 4, 5, 6, 8, 10, 12, 14, 16, 18, 20];
+const ALLOWED_HEIGHTS = [1, 3, 4, 5, 6, 7, 8, 10, 12, 14, 16, 18, 20];
+// 7 added: Operator Andon's Action Queue table, sized to show more than one
+// alarm row without an internal scrollbar during multi-alarm periods.
 
 // Per-dashboard total-height ceiling (Check 14), keyed by dashboard uid.
 // Only kiosk/wall displays get a hard ceiling — analysis dashboards are
 // meant to be scrolled and are intentionally left unconstrained.
 const MAX_HEIGHT = {
-  'ims-ldi-operator-andon': 20, // factory-floor kiosk, zero scroll at 720p (Phase 2 tile redesign)
+  // Raised 20 -> 34 to match the dashboard's real, live-decided layout
+  // (compliance timelines h=8, Action Queue h=7, machine tile rows h=4/h=3
+  // each wrapping to 2 rows at maxPerRow:8 for the 10-machine fleet). This
+  // board no longer achieves literal zero-scroll at 1280x720 -- confirmed
+  // via live measurement earlier (real overflow, not guessed) -- and the
+  // safety-critical status text (e.g. "ALARM") cannot be shrunk to fit a
+  // narrower single-row tile layout without becoming illegible (tested,
+  // rejected: see P20 evidence). Ceiling now reflects reality instead of
+  // silently failing lint against a promise this layout doesn't keep.
+  'ims-ldi-operator-andon': 34,
   // 2026-08-08: NOC and Easy Overview are the other two dashboards this
   // system's own design doc (§1 principle 5, "progressive disclosure")
   // designates as glance/kiosk boards -- NOC answers "do I need to call
