@@ -21,6 +21,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Scan for confidential private facility data
+        run: node tests/lint/private-data-leak-scanner.js
+        # Structural/path-based only (private/ directory segments, the
+        # Apex3Layout name, CAD extensions, this repo's own private-data
+        # filenames) -- never reads file contents or a real facility
+        # identifier. Runs before any other step since a leak here matters
+        # more than any other lint result.
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -49,6 +57,9 @@ jobs:
 
       - name: Lint Alert Rules (ORDER BY on time_series queries)
         run: node tests/lint/alert-rule-linter.js
+
+      - name: Validate Floor 1 private geometry (skips cleanly if absent)
+        run: node tests/lint/floor1-geometry-validator.js
 
       - name: Check Dashboard Inventory is up to date
         run: node scripts/generate-dashboard-inventory.js --check

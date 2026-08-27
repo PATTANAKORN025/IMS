@@ -9,11 +9,16 @@
  * all on a fresh clone -- absence is not a failure).
  *
  * Checks: duplicate slot/column/zone IDs, zero/negative dimensions,
- * slots positioned outside the floor envelope, missing source/confidence
+ * non-finite (NaN/Infinity) coordinates or dimensions, slots positioned
+ * outside the floor envelope (also catches "absurdly large" coordinates,
+ * since anything outside the declared envelope fails this the same way --
+ * no separate arbitrary max invented), missing source/confidence
  * provenance on transcribed objects, excessive coordinate precision (a
  * proxy for "this was copy-pasted from a raw calibration calculation
- * instead of a deliberately rounded value"), and the one invariant that
- * must never be violated: an UNMAPPED slot must never carry a
+ * instead of a deliberately rounded value"), duplicate IMS device_id
+ * mappings (two physical slots claiming the same real device), missing
+ * evidence fields on any VERIFIED_PHYSICAL slot, and the one invariant
+ * that must never be violated: an UNMAPPED slot must never carry a
  * MachineState-shaped live status.
  *
  * Usage: node tests/lint/floor1-geometry-validator.js
@@ -52,9 +57,23 @@ function excessivePrecision(n) {
 function checkDims(obj, label, fields) {
   for (const f of fields) {
     const v = obj[f];
-    if (typeof v !== 'number' || !Number.isFinite(v)) continue;
+    if (v === undefined) continue;
+    if (typeof v !== 'number' || Number.isNaN(v)) { error(`${label}: ${f} is not a valid number (${v})`); continue; }
+    if (!Number.isFinite(v)) { error(`${label}: ${f} is not finite (${v})`); continue; }
     if (v <= 0) error(`${label}: ${f} must be > 0, got ${v}`);
     if (excessivePrecision(v)) warn(`${label}: ${f} has excessive precision (${v}) -- looks like an unrounded calculation, not a deliberate value`);
+  }
+}
+
+// Same non-finite check as checkDims, but for values allowed to be zero
+// or negative (coordinates) -- only rejects NaN/Infinity, not magnitude.
+function checkFiniteCoords(obj, label, fields) {
+  if (!obj) return;
+  for (const f of fields) {
+    const v = obj[f];
+    if (v === undefined) continue;
+    if (typeof v !== 'number' || Number.isNaN(v)) error(`${label}: ${f} is not a valid number (${v})`);
+    else if (!Number.isFinite(v)) error(`${label}: ${f} is not finite (${v})`);
   }
 }
 
@@ -105,13 +124,17 @@ const seenColumnIds = new Set();
 for (const col of geometry.columns || []) {
   if (seenColumnIds.has(col.id)) error(`duplicate column id: ${col.id}`);
   seenColumnIds.add(col.id);
+  checkFiniteCoords(col.position, `column ${col.id}`, ['x', 'y', 'z']);
 }
 
 const seenZoneIds = new Set();
 for (const zone of geometry.zones || []) {
   if (seenZoneIds.has(zone.zone_id)) error(`duplicate zone id: ${zone.zone_id}`);
   seenZoneIds.add(zone.zone_id);
-  if (zone.bounds) checkDims(zone.bounds, `zone ${zone.zone_id}`, ['width', 'depth']);
+  if (zone.bounds) {
+    checkDims(zone.bounds, `zone ${zone.zone_id}`, ['width', 'depth']);
+    checkFiniteCoords(zone.bounds, `zone ${zone.zone_id}`, ['x', 'z']);
+  }
 }
 
 const seenSlotIds = new Set();
@@ -122,17 +145,35 @@ for (const slot of geometry.slots || []) {
   const size = slot.size || slot.footprint;
   if (size) checkDims(size, `slot ${slot.slot_id}`, ['width', 'depth']);
   if (typeof slot.height === 'number') checkDims(slot, `slot ${slot.slot_id}`, ['height']);
+  checkFiniteCoords(slot.position, `slot ${slot.slot_id}`, ['x', 'y', 'z']);
 
-  if (typeof slot.rotation === 'number' && (slot.rotation < 0 || slot.rotation >= 360)) {
-    error(`slot ${slot.slot_id}: rotation ${slot.rotation} out of [0,360) range`);
+  if (slot.rotation !== undefined) {
+    if (typeof slot.rotation !== 'number' || Number.isNaN(slot.rotation) || !Number.isFinite(slot.rotation)) {
+      error(`slot ${slot.slot_id}: rotation is not a valid finite number (${slot.rotation})`);
+    } else if (slot.rotation < 0 || slot.rotation >= 360) {
+      error(`slot ${slot.slot_id}: rotation ${slot.rotation} out of [0,360) range`);
+    }
   }
 
+  // "Absurdly large coordinates" is deliberately not a separately-invented
+  // threshold -- anything outside the geometry's OWN declared envelope
+  // fails this same check, whether it's slightly outside or wildly so.
   if (slot.position && !insideEnvelope(slot.position, geometry.envelope)) {
     error(`slot ${slot.slot_id}: position (${slot.position.x}, ${slot.position.z}) falls outside the floor envelope`);
   }
 
   if (slot.source === 'engineering_drawing_transcription' && !slot.confidence) {
     error(`slot ${slot.slot_id}: source is engineering_drawing_transcription but confidence is missing`);
+  }
+
+  // VERIFIED_PHYSICAL asserts a real, specific asset is confirmed to
+  // occupy this slot -- that claim requires evidence fields, same
+  // discipline as source/confidence above. No instance of this exists in
+  // this repo's own data today (checked, not assumed -- see the count
+  // logged at the end); this check only fires if one is ever added
+  // without the evidence to back it.
+  if (slot.status === 'VERIFIED_PHYSICAL' && (!slot.verification_source || !slot.confidence)) {
+    error(`slot ${slot.slot_id}: status is VERIFIED_PHYSICAL but missing verification_source and/or confidence -- that status asserts real evidence exists`);
   }
 
   // The one invariant that must never be violated: an UNMAPPED slot must
@@ -153,7 +194,22 @@ for (const slotId of Object.keys(mapping)) {
   }
 }
 
-console.log(`Checked: ${geometry.columns?.length || 0} columns, ${geometry.zones?.length || 0} zones, ${geometry.slots?.length || 0} slots, ${Object.keys(mapping).length} mapping entries.`);
+// -- duplicate IMS device_id mappings: two physical slots can't both
+// claim the same real device -- a real device occupies exactly one
+// physical position. --
+const deviceToSlots = new Map();
+for (const [slotId, deviceId] of Object.entries(mapping)) {
+  if (!deviceId) continue;
+  if (!deviceToSlots.has(deviceId)) deviceToSlots.set(deviceId, []);
+  deviceToSlots.get(deviceId).push(slotId);
+}
+for (const [deviceId, slotIds] of deviceToSlots) {
+  if (slotIds.length > 1) error(`device_id ${deviceId} is mapped to ${slotIds.length} different slots (${slotIds.join(', ')}) -- a real device can only occupy one physical slot`);
+}
+
+const verifiedPhysicalCount = (geometry.slots || []).filter((s) => s.status === 'VERIFIED_PHYSICAL').length;
+
+console.log(`Checked: ${geometry.columns?.length || 0} columns, ${geometry.zones?.length || 0} zones, ${geometry.slots?.length || 0} slots, ${Object.keys(mapping).length} mapping entries, ${deviceToSlots.size} unique mapped device(s), ${verifiedPhysicalCount} VERIFIED_PHYSICAL slot(s).`);
 console.log('='.repeat(50));
 console.log(`Results: ${errors} error(s), ${warnings} warning(s)`);
 if (errors > 0) {
