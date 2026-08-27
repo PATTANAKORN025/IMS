@@ -218,6 +218,13 @@ function normalizePrivateEntry(entry, floorIndex) {
     rot_z: 0,
     scale: 1.0,
     floor_index: floorIndex,
+    // Structural placeholder for a real column-grid reference (e.g. a
+    // real facility's "row B, column 3") -- today's value is a synthetic
+    // row letter per zone + a 1-based machine index within it, NOT
+    // derived from any real drawing's actual grid lettering/spacing.
+    // Passed through as-is so a real grid_ref can replace it later
+    // without a schema change.
+    grid_ref: entry.grid_ref || null,
     is_simulated: entry.is_simulated !== false,
     source: entry.source || 'simulated_grid',
   };

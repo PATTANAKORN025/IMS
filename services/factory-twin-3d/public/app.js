@@ -182,6 +182,7 @@ function makeTextSprite(text, { fontSize = 30, scaleFactor = 0.024, bg = 'rgba(1
 // ── Machine meshes (populated once /api/placement resolves) ─────
 const machineMeshes = []; // THREE.Mesh[], one per machine, userData.deviceId set
 const machinesById = new Map(); // deviceId -> { mesh, material }
+const gridRefById = new Map(); // deviceId -> {row, column} from /api/placement, synthetic today
 let latestStateById = new Map(); // deviceId -> state row from /api/state
 
 function buildScene(placements) {
@@ -203,13 +204,18 @@ function buildScene(placements) {
 
     machineMeshes.push(mesh);
     machinesById.set(p.device_id, { mesh, material });
+    if (p.grid_ref) gridRefById.set(p.device_id, p.grid_ref);
 
     // Per-machine ID label, small sprite just above the box, distinct from
     // the larger zone-level label -- helps identify which box is which
     // before/without opening the HUD list. Small font + tight scaleFactor
     // (re-tuned from a first pass that overlapped at 12-unit zone spacing)
     // so 2 machine labels 8 units apart stay legible and non-overlapping.
-    const idLabel = makeTextSprite(p.device_id, { fontSize: 20, scaleFactor: 0.016 });
+    // grid_ref (when present) appends as "(row-column)" -- still a
+    // synthetic placeholder today (see lib/contracts.js), shown here so
+    // the field is visibly wired end-to-end, not just present in the API.
+    const idLabelText = p.grid_ref ? `${p.device_id} (${p.grid_ref.row}-${p.grid_ref.column})` : p.device_id;
+    const idLabel = makeTextSprite(idLabelText, { fontSize: 20, scaleFactor: 0.016 });
     idLabel.position.set(p.pos_x, 1.5, p.pos_y);
     scene.add(idLabel);
   }
@@ -317,6 +323,8 @@ function stateRowHtml(row) {
   const color = row.state_color || `#${DEFAULT_MACHINE_COLOR.toString(16).padStart(6, '0')}`;
   const label = row.state_label || 'Undefine';
   const alarmText = row.alarm ? `${row.alarm.count} ${row.alarm.count === 1 ? 'ALARM' : 'ALARMS'} · ${row.alarm.owner} · ${row.alarm.elapsed}` : '—';
+  const gridRef = gridRefById.get(row.device_id);
+  const gridRefText = gridRef ? `${gridRef.row}-${gridRef.column}` : '—';
   return `
     <div class="machine-row">
       <div class="machine-row-top">
@@ -326,6 +334,9 @@ function stateRowHtml(row) {
       <div class="machine-row-detail">
         <span>${row.board_no ?? '—'} / ${row.total_board ?? '—'} bd</span>
         <span>${row.mo || '—'}</span>
+      </div>
+      <div class="machine-row-detail">
+        <span>Grid: ${gridRefText}</span>
       </div>
       <div class="machine-row-alarm">${alarmText}</div>
     </div>`;

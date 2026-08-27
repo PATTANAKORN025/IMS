@@ -92,6 +92,7 @@ const MACHINE_STATE_THEME = Object.freeze({
  * @property {{x: number, y: number, z: number}} position - Scene-unit coordinates. Synthetic unless source !== 'simulated_grid'.
  * @property {{x: number, y: number, z: number}} rotation - Radians per axis. Always {0,0,0} until real orientation data exists.
  * @property {{width: number, depth: number, height: number}} footprint - Scene-unit bounding box. Synthetic placeholder shape, not a real machine's dimensions.
+ * @property {{row: string, column: string}|null} gridRef - Structural placeholder for a real column-grid reference (e.g. a real facility's "row B, column 3"). Today's value is a synthetic row letter per zone + a 1-based machine index within it -- NOT derived from any real drawing's actual grid lettering/spacing. Ready to hold a real reference with no schema change.
  * @property {MachineState} status - Current run-state. Real (see MachineState comments for which values have a real source today).
  * @property {'simulated_grid'|'manual_survey'|'cad_import'} source - Provenance of position/footprint. 'simulated_grid' is the only value this repo ever produces; the other two are the documented migration path for real coordinates supplied out-of-repo.
  */
