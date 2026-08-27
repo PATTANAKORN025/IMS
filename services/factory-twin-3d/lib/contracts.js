@@ -143,7 +143,7 @@ const AssetMappingStatus = Object.freeze({
  * @property {{x: number, y: number, z: number}} position - Scene-unit (meters) coordinates.
  * @property {{width: number, depth: number, height: number}} footprint - Scene-unit bounding box.
  * @property {'engineering_drawing_transcription'|'arbitrary_placeholder'} [source] - Provenance of this object's geometry.
- * @property {'high'|'medium'|'low'} [confidence] - How directly this value was read/derived vs. approximated. Present on transcribed geometry only.
+ * @property {'high'|'medium'|'low'|'unknown'} [confidence] - How directly this value was read/derived vs. approximated. 'unknown' means the real count/position could not be reliably determined at transcription resolution (a small disclosed placeholder is used for rendering, never a guessed real figure). Present on transcribed geometry only.
  * @property {AssetMappingStatus} status - UNMAPPED or IMS_CONNECTED, resolved server-side from the separate mapping table.
  * @property {string|null} ims_device_id - Real device_id if mapped, else null. Never inferred from position/numbering/proximity.
  */
