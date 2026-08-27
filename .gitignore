@@ -137,3 +137,11 @@ p*_scratch/
 .audit/
 .playwright-mcp/
 
+# Real factory floor plans (private reference for the 3D digital twin
+# design, e.g. Apex3Layout/) -- confidential facility info, private
+# reference only, never committed. See
+# docs/superpowers/specs/2026-08-27-sanitized-4floor-twin-layout-design.md
+# for the sanitized architecture derived from these without copying any
+# real coordinates/dimensions/machine identities into the repo.
+Apex3Layout/
+
