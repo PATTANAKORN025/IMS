@@ -65,13 +65,18 @@ const MachineState = Object.freeze({
 // deferred to the rendering-integration step so this contract can be
 // reviewed on its own first, not bundled sight-unseen with a behavior
 // change.
+//
+// Labels per user spec: OFF, Down, Idle, (Initial, PM, Stop), Run,
+// Undefine -- a generic status-board vocabulary (Off/Down/Idle/Run/PM-
+// Stop/Undefined-style labels are industry-standard on SCADA/HMI status
+// boards generally), not a real facility's proprietary data.
 const MACHINE_STATE_THEME = Object.freeze({
-  [MachineState.OFF]: { color: 0x64748b, label: 'Off' },
+  [MachineState.OFF]: { color: 0x64748b, label: 'OFF' },
   [MachineState.DOWN]: { color: 0xef4444, label: 'Down' },
   [MachineState.IDLE]: { color: 0xf59e0b, label: 'Idle' },
   [MachineState.RUN]: { color: 0x22c55e, label: 'Run' },
-  [MachineState.PM_STOP]: { color: 0x3b82f6, label: 'PM / Stop' },
-  [MachineState.UNKNOWN]: { color: 0x64748b, label: 'Unknown' },
+  [MachineState.PM_STOP]: { color: 0x3b82f6, label: '(Initial, PM, Stop)' },
+  [MachineState.UNKNOWN]: { color: 0x64748b, label: 'Undefine' },
 });
 
 /**

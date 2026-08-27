@@ -1,8 +1,10 @@
 'use strict';
 
+const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const { Pool } = require('pg');
+const { MachineState, MACHINE_STATE_THEME } = require('./lib/contracts');
 
 const PORT = process.env.PORT || 4100;
 
@@ -34,6 +36,41 @@ const app = express();
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/vendor/three/', express.static(path.join(__dirname, 'node_modules', 'three', 'build')));
 app.use('/vendor/three/examples/', express.static(path.join(__dirname, 'node_modules', 'three', 'examples')));
+
+// ── Private data directory (gitignored: .gitignore's `private/` rule) ──
+// This repo is public (github.com/PATTANAKORN025/IMS). The 2-tier split:
+// this service's CODE is public and must run standalone on pure synthetic
+// data with an empty/missing private/ dir (a fresh clone has neither
+// LayoutApex3-F1.json nor any image here); a private production
+// environment can drop a REAL per-device layout file and/or a reference
+// image into this same path, on the same host, with zero code change.
+// express.static 404s cleanly for a request to a file that doesn't exist,
+// so mounting this unconditionally is safe even when the directory (or
+// individual files in it) are absent.
+const PRIVATE_DIR = path.join(__dirname, 'private');
+app.use('/private-assets/', express.static(PRIVATE_DIR));
+
+// Reads private/LayoutApex3-F1.json if present. Returns null (not a
+// throw) for "missing" or "malformed" -- both are the expected default
+// state for anyone cloning this public repo, not error conditions. The
+// checked-in copy of this file (this machine's local working copy only,
+// never committed) is itself still synthetic -- generated from a live
+// public.devices query + the exact same deterministic grid formula
+// computePlacements() below uses, NOT from any real floor plan/CAD file.
+// It exists to prove the file-based/API-served architecture works, ready
+// to be replaced by a real survey export with the same shape.
+function loadPrivateLayout() {
+  const filePath = path.join(PRIVATE_DIR, 'LayoutApex3-F1.json');
+  if (!fs.existsSync(filePath)) return null;
+  try {
+    const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    if (!Array.isArray(parsed.machines)) throw new Error('missing machines[]');
+    return parsed;
+  } catch (err) {
+    console.error(`private layout file present but unusable (falling back to computed grid): ${err.message}`);
+    return null;
+  }
+}
 
 // Task 4.3 dynamic fleet discovery: the hardcoded 10-machine/2-per-zone
 // layout below (Task 4.2) was built when only 10 LDI devices were assumed
@@ -163,11 +200,38 @@ async function discoverDevices() {
 let DEVICE_IDS = [];
 let SIMULATED_PLACEMENTS = [];
 
+// Normalizes a private-layout-file entry (position:{x,y,z}, size:{...} --
+// the nicer, contracts.js-flavored shape) into the same flat wire shape
+// computePlacements() already produces, so app.js's consumer code doesn't
+// need to branch on which source placements came from.
+function normalizePrivateEntry(entry, floorIndex) {
+  const pos = entry.position || {};
+  return {
+    device_id: entry.device_id,
+    zone: entry.zone || null,
+    factory: entry.factory || null,
+    pos_x: pos.x ?? 0,
+    pos_y: pos.z ?? 0, // file's z (depth axis) maps to the renderer's ground-plane Y, same convention as computePlacements()
+    pos_z: pos.y ?? 0,
+    rot_x: 0,
+    rot_y: 0,
+    rot_z: 0,
+    scale: 1.0,
+    floor_index: floorIndex,
+    is_simulated: entry.is_simulated !== false,
+    source: entry.source || 'simulated_grid',
+  };
+}
+
 async function refreshDevices() {
   try {
     const rows = await discoverDevices();
     DEVICE_IDS = rows.map((r) => r.device_id).sort();
-    SIMULATED_PLACEMENTS = computePlacements(rows);
+
+    const privateLayout = loadPrivateLayout();
+    SIMULATED_PLACEMENTS = privateLayout
+      ? privateLayout.machines.map((m) => normalizePrivateEntry(m, privateLayout.floor ?? FLOOR_0.floor_index))
+      : computePlacements(rows);
   } catch (err) {
     console.error('device discovery refresh failed (keeping previous list):', err.message);
   }
@@ -289,30 +353,45 @@ FROM s
 LEFT JOIN alarm_ctx ON alarm_ctx.equipmentid = s.eqp_id
 ORDER BY s.eqp_id`;
 
-const STATE_LABELS = ['NO_DATA', 'IDLE', 'OK', 'ALARM'];
+// STATE_SQL's numeric `st` -> contracts.js's MachineState. Only 4 of the
+// 6 MachineState values have a real source in this query today (see
+// lib/contracts.js's per-member comments on OFF/PM_STOP) -- this map
+// intentionally only covers the 4 that are real.
+const STATE_CODE_TO_MACHINE_STATE = {
+  0: MachineState.UNKNOWN, // no telemetry row, or stale
+  1: MachineState.IDLE, // state=false
+  2: MachineState.RUN, // state=true, no active alarm
+  3: MachineState.DOWN, // active Critical/Major alarm
+};
 
 app.get('/api/state', async (req, res) => {
   try {
     const result = await pool.query(STATE_SQL, [DEVICE_IDS]);
-    const rows = result.rows.map((row) => ({
-      device_id: row.eqp_id,
-      state: row.state,
-      state_label: STATE_LABELS[row.state] || 'NO_DATA',
-      board_no: row.board_no,
-      total_board: row.total_board,
-      mo: row.mo,
-      factory: row.factory,
-      alarm:
-        row.alarm_count > 0
-          ? {
-              count: row.alarm_count,
-              owner: row.alarm_owner,
-              elapsed: row.alarm_elapsed,
-              related_log_id: row.alarm_related_log_id,
-              logdate_ms: row.alarm_logdate_ms,
-            }
-          : null,
-    }));
+    const rows = result.rows.map((row) => {
+      const machineState = STATE_CODE_TO_MACHINE_STATE[row.state] || MachineState.UNKNOWN;
+      const theme = MACHINE_STATE_THEME[machineState];
+      return {
+        device_id: row.eqp_id,
+        state: row.state,
+        machine_state: machineState,
+        state_label: theme.label,
+        state_color: `#${theme.color.toString(16).padStart(6, '0')}`,
+        board_no: row.board_no,
+        total_board: row.total_board,
+        mo: row.mo,
+        factory: row.factory,
+        alarm:
+          row.alarm_count > 0
+            ? {
+                count: row.alarm_count,
+                owner: row.alarm_owner,
+                elapsed: row.alarm_elapsed,
+                related_log_id: row.alarm_related_log_id,
+                logdate_ms: row.alarm_logdate_ms,
+              }
+            : null,
+      };
+    });
     res.status(200).json({
       machines: rows,
       queried_at: new Date().toISOString(),

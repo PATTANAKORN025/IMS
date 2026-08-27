@@ -22,19 +22,13 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-// Same 4-color-token system as ims-ldi-factory-digital-twin.json / the
-// Andon panel -- copied verbatim, not reinvented. Confirmed directly in
-// Task 4.1's app.js before extending: "icon semantics" in this build is
-// (a) the box's material color and (b) the HUD's #state-pill background +
-// text label -- there is no separate 3D icon mesh anywhere in the Task 4.1
-// build, so none is introduced here either.
-const STATE_COLORS = {
-  0: 0x64748b, // NO_DATA
-  1: 0xf59e0b, // IDLE
-  2: 0x22c55e, // OK
-  3: 0xef4444, // ALARM
-};
-const STATE_LABELS = ['NO_DATA', 'IDLE', 'OK', 'ALARM'];
+// Color/label per machine now come straight off /api/state's own
+// state_color/state_label fields -- server.js resolves those from
+// lib/contracts.js's MACHINE_STATE_THEME, the one place a MachineState's
+// color/label is defined. No second, separately-hardcoded copy here.
+// DEFAULT_MACHINE_COLOR is only the pre-first-poll placeholder (before any
+// real /api/state response has arrived to set a real one).
+const DEFAULT_MACHINE_COLOR = 0x64748b;
 
 const POLL_MS = 5000;
 
@@ -114,6 +108,26 @@ function buildFloorShells(floors, machines) {
     shell.position.set(cx, -0.05, cz);
     scene.add(shell);
 
+    // Optional decorative reference texture -- private-assets/ only exists
+    // in a private production environment (this repo's own copy is
+    // gitignored, never committed: .gitignore's `private/` rule). Purely
+    // visual context, NOT a coordinate source -- machine positions above
+    // come entirely from /api/placement's synthetic grid, never from pixel
+    // positions read off this image. TextureLoader's onError leaves the
+    // plain color plate as-is, so a public clone with no private/ dir
+    // renders identically to before this addition.
+    new THREE.TextureLoader().load(
+      'private-assets/floor1-reference.jpg',
+      (texture) => {
+        texture.colorSpace = THREE.SRGBColorSpace;
+        material.map = texture;
+        material.opacity = 0.85;
+        material.needsUpdate = true;
+      },
+      undefined,
+      () => {} // no reference image available -- expected default state, not an error
+    );
+
     // Plate alone reads as near-invisible against the scene background at
     // this opacity -- a bright edge outline is what actually makes "this is
     // the floor extent" legible, confirmed via a real screenshot before
@@ -179,7 +193,7 @@ function buildScene(placements) {
 
   for (const p of placements) {
     const geometry = new THREE.BoxGeometry(1.5, 1, 1);
-    const material = new THREE.MeshStandardMaterial({ color: STATE_COLORS[0] });
+    const material = new THREE.MeshStandardMaterial({ color: DEFAULT_MACHINE_COLOR });
     const mesh = new THREE.Mesh(geometry, material);
     // Design §4 grid shape: x/y from the simulated placement, mapped to the
     // Three.js floor plane (X, Z) with Y fixed as the vertical box height.
@@ -300,8 +314,8 @@ const statusLine = document.getElementById('status-line');
 const summaryLine = document.getElementById('summary-line');
 
 function stateRowHtml(row) {
-  const color = `#${(STATE_COLORS[row.state] ?? STATE_COLORS[0]).toString(16).padStart(6, '0')}`;
-  const label = row.state_label || STATE_LABELS[row.state] || 'NO_DATA';
+  const color = row.state_color || `#${DEFAULT_MACHINE_COLOR.toString(16).padStart(6, '0')}`;
+  const label = row.state_label || 'Undefine';
   const alarmText = row.alarm ? `${row.alarm.count} ${row.alarm.count === 1 ? 'ALARM' : 'ALARMS'} · ${row.alarm.owner} · ${row.alarm.elapsed}` : '—';
   return `
     <div class="machine-row">
@@ -324,13 +338,12 @@ function applyState(payload) {
   for (const row of rows) {
     const entry = machinesById.get(row.device_id);
     if (!entry) continue; // shouldn't happen -- placement and state device sets should match exactly
-    const color = STATE_COLORS[row.state] ?? STATE_COLORS[0];
-    entry.material.color.setHex(color);
+    entry.material.color.set(row.state_color || DEFAULT_MACHINE_COLOR);
   }
 
   machineListEl.innerHTML = rows.map(stateRowHtml).join('');
 
-  const alarmCount = rows.filter((r) => r.state === 3).length;
+  const alarmCount = rows.filter((r) => r.machine_state === 'DOWN').length;
   summaryLine.textContent = `${rows.length} machines · ${alarmCount} in ALARM`;
 
   statusLine.textContent = `Last updated ${new Date(payload.queried_at).toLocaleTimeString()}`;
