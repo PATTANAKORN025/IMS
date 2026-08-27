@@ -27,6 +27,11 @@
  *      exception list (GRAFANA_DESIGN_SYSTEM.md §2.1b) — it fails WCAG AA
  *      white-text contrast for every token except critical/accent/no_data;
  *      use colorMode "value" instead
+ *  18. No abnormal vertical gaps between panels (warn) — a panel left at a
+ *      stale/copy-pasted gridPos.y (e.g. bumped to y=1000 mid-edit to dodge
+ *      an overlap, never repositioned back) passes Check 9 clean since
+ *      nothing overlaps; this walks panels sorted by y and flags any panel
+ *      starting more than GAP_THRESHOLD units past where prior content ends
  *
  * Also validates monitoring/grafana/library-panels/*.json (real Grafana
  * Library Panels, provisioned via scripts/provision-library-panels.sh --
@@ -338,6 +343,22 @@ function lintDashboard(filePath) {
           `B[x=${b.x},y=${b.y},w=${b.w},h=${b.h}]`);
       }
     }
+  }
+
+  // ── Check 18: abnormal vertical gaps ──
+  // Overlap check (9) only catches panels crowding each other; it can't see
+  // a gap where nothing overlaps because nothing is there. Catches a panel
+  // left at a stale/copy-pasted gridPos.y (e.g. bumped to y=1000 to dodge
+  // overlap mid-edit and never repositioned back next to real content).
+  const GAP_THRESHOLD = 20; // units -- generous vs. normal row-header spacing
+  const gapSorted = [...panels].sort((a, b) => a.y - b.y);
+  let frontier = 0;
+  for (const p of gapSorted) {
+    if (p.y > frontier + GAP_THRESHOLD) {
+      warn(file, `${p.id}:${p.title}`,
+        `Abnormal vertical gap: panel starts at y=${p.y}, prior content ends at y=${frontier} (gap=${p.y - frontier}u) — check for a stale gridPos.y`);
+    }
+    frontier = Math.max(frontier, p.y + p.h);
   }
 
   // ── Check 14: kiosk dashboard no-scroll ceiling ──
