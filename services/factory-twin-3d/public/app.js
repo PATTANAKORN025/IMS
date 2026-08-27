@@ -1,14 +1,24 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-const STATE_COLORS = {
-  0: 0x64748b, // NO_DATA
-  1: 0xf59e0b, // IDLE
-  2: 0x22c55e, // OK
-  3: 0xef4444, // ALARM
+const STATUS_META = {
+  OFF: { label: 'Off', color: 0xa6a6a6 },
+  DOWN: { label: 'Down', color: 0xff0000 },
+  IDLE: { label: 'Idle', color: 0xffc000 },
+  INITIAL_PM_STOP: { label: 'Initial,PM,Stop', color: 0x2f9dcc },
+  RUN: { label: 'Run', color: 0x00ff00 },
+  UNDEFINED: { label: 'Undefine', color: 0xffffff },
 };
-const STATE_LABELS = ['NO_DATA', 'IDLE', 'OK', 'ALARM'];
+const DEFAULT_STATUS = 'UNDEFINED';
+const DEFAULT_OUTLINE_COLOR = 0xcbd5e1;
+const ALARM_OUTLINE_COLOR = 0xff003c;
 const POLL_MS = 5000;
+
+function apiColor(value, fallback) {
+  return /^#[0-9a-f]{6}$/i.test(String(value || ''))
+    ? Number.parseInt(String(value).slice(1), 16)
+    : fallback;
+}
 
 const container = document.getElementById('scene');
 const machineListEl = document.getElementById('machine-list');
@@ -44,6 +54,7 @@ const machineMeshes = [];
 const machinesById = new Map();
 let latestStateById = new Map();
 let currentBounds = null;
+let placementSummary = '';
 
 function escapeHtml(value) {
   return String(value ?? '')
@@ -151,7 +162,8 @@ function buildFloor(layout) {
     scene.add(zoneLabel);
   }
 
-  const floorLabel = makeTextSprite(`${layout.floor?.name || 'Floor 1'} · PROVISIONAL LOGICAL LAYOUT`, {
+  const verificationStatus = layout.floor?.verification_status || (layout.floor?.is_simulated ? 'DRAFT' : 'UNVERIFIED');
+  const floorLabel = makeTextSprite(`${layout.floor?.name || 'Floor'} · ${verificationStatus}`, {
     fontSize: 28,
     scaleFactor: 0.026,
     bg: 'rgba(2, 6, 23, 0.94)',
@@ -164,24 +176,32 @@ function buildFloor(layout) {
 
 function buildMachines(placements) {
   for (const placement of placements) {
-    const geometry = new THREE.BoxGeometry(3.2, 1.45, 2.5);
+    const width = Number(placement.width) || 3.2;
+    const height = Number(placement.height) || 1.45;
+    const depth = Number(placement.depth) || 2.5;
+    const geometry = new THREE.BoxGeometry(width, height, depth);
     const material = new THREE.MeshStandardMaterial({
-      color: STATE_COLORS[0],
+      color: STATUS_META[DEFAULT_STATUS].color,
       roughness: 0.48,
       metalness: 0.08,
-      emissive: STATE_COLORS[0],
+      emissive: STATUS_META[DEFAULT_STATUS].color,
       emissiveIntensity: 0.08,
     });
     const mesh = new THREE.Mesh(geometry, material);
-    mesh.position.set(placement.pos_x, 0.8, placement.pos_y);
+    mesh.position.set(placement.pos_x, (Number(placement.pos_z) || 0) + height / 2, placement.pos_y);
+    mesh.rotation.set(
+      Number(placement.rot_x) || 0,
+      Number(placement.rot_y) || 0,
+      Number(placement.rot_z) || 0,
+    );
     mesh.userData.deviceId = placement.device_id;
     scene.add(mesh);
-    addOutline(mesh, 0xcbd5e1);
+    const outline = addOutline(mesh, DEFAULT_OUTLINE_COLOR);
 
     machineMeshes.push(mesh);
-    machinesById.set(placement.device_id, { mesh, material });
+    machinesById.set(placement.device_id, { mesh, material, outline });
 
-    const idLabel = makeTextSprite(placement.device_id, {
+    const idLabel = makeTextSprite(placement.display_name || placement.device_id, {
       fontSize: 21,
       scaleFactor: 0.018,
       bg: 'rgba(2, 6, 23, 0.90)',
@@ -209,11 +229,15 @@ function frameLayout(bounds = currentBounds) {
 function applyPlacementMeta(layout) {
   const floor = layout.floor || {};
   floorNameEl.textContent = floor.name || 'Floor 1';
-  const simulated = (layout.machines || []).some((machine) => machine.is_simulated);
-  bannerEl.hidden = !simulated;
-  bannerEl.textContent = simulated
-    ? 'PROVISIONAL FLOOR 1 LAYOUT — logical grouping from device registry; not surveyed physical coordinates'
-    : 'VERIFIED FLOOR 1 LAYOUT';
+  const provisional = floor.verification_status !== 'APPROVED'
+    || (layout.machines || []).some((machine) => machine.is_simulated);
+  const inventoryStatus = floor.inventory_status || 'INVENTORY_NOT_DECLARED';
+  placementSummary = `${(layout.machines || []).length} mapped assets · ${(layout.zones || []).length} zones · ${inventoryStatus}`;
+  summaryLine.textContent = placementSummary;
+  bannerEl.hidden = !provisional;
+  bannerEl.textContent = provisional
+    ? `${floor.name || 'FLOOR'} — DRAFT LOCAL LAYOUT; coordinates/inventory are not yet owner-approved`
+    : `${floor.name || 'FLOOR'} — APPROVED LAYOUT`;
 }
 
 const raycaster = new THREE.Raycaster();
@@ -221,8 +245,10 @@ const pointer = new THREE.Vector2();
 
 function drillDownUrl(deviceId) {
   const state = latestStateById.get(deviceId);
+  if (!state?.drilldown_enabled) return null;
+  const sourceId = state.source_id || deviceId;
   const params = new URLSearchParams({
-    'var-machine_id': deviceId,
+    'var-machine_id': sourceId,
     from: 'now-6h',
     to: 'now',
   });
@@ -233,7 +259,7 @@ function drillDownUrl(deviceId) {
     params.set('var-log_id', state.alarm.related_log_id);
     if (state.alarm.logdate_ms) {
       params.set('var-event_time_ms', state.alarm.logdate_ms);
-      params.set('var-clicked_series', deviceId);
+      params.set('var-clicked_series', sourceId);
     }
   }
   return `/d/ims-ldi-machine-snapshot/set2-machine-snapshot?${params.toString()}`;
@@ -250,23 +276,32 @@ function pickMachine(event) {
 
 renderer.domElement.addEventListener('click', (event) => {
   const deviceId = pickMachine(event);
-  if (deviceId) window.location.href = drillDownUrl(deviceId);
+  const url = deviceId ? drillDownUrl(deviceId) : null;
+  if (url) window.location.href = url;
 });
 
 renderer.domElement.addEventListener('pointermove', (event) => {
-  renderer.domElement.style.cursor = pickMachine(event) ? 'pointer' : 'default';
+  const deviceId = pickMachine(event);
+  renderer.domElement.style.cursor = deviceId && drillDownUrl(deviceId) ? 'pointer' : 'default';
 });
 
 resetViewButton.addEventListener('click', () => frameLayout());
 
 function stateRowHtml(row) {
-  const color = `#${(STATE_COLORS[row.state] ?? STATE_COLORS[0]).toString(16).padStart(6, '0')}`;
-  const label = row.state_label || STATE_LABELS[row.state] || 'NO_DATA';
+  const state = row.operational_state || row.state || DEFAULT_STATUS;
+  const meta = STATUS_META[state] || STATUS_META[DEFAULT_STATUS];
+  const colorValue = apiColor(row.state_color, meta.color);
+  const color = `#${colorValue.toString(16).padStart(6, '0')}`;
+  const label = row.state_label || meta.label;
   const alarmText = row.alarm
     ? `${row.alarm.count} ${row.alarm.count === 1 ? 'ALARM' : 'ALARMS'} · ${escapeHtml(row.alarm.owner)} · ${escapeHtml(row.alarm.elapsed)}`
     : 'No active critical/major alarm';
+  const disabled = row.drilldown_enabled ? '' : ' disabled';
+  const ariaLabel = row.drilldown_enabled
+    ? `Open ${row.device_id} snapshot`
+    : `${row.device_id} has no connected drill-down source`;
   return `
-    <button class="machine-row" type="button" data-device-id="${escapeHtml(row.device_id)}" aria-label="Open ${escapeHtml(row.device_id)} snapshot">
+    <button class="machine-row${row.alarm ? ' has-alarm' : ''}" type="button" data-device-id="${escapeHtml(row.device_id)}" aria-label="${escapeHtml(ariaLabel)}"${disabled}>
       <span class="machine-row-top">
         <span class="mini-pill" style="background:${color}">${escapeHtml(label)}</span>
         <span class="machine-id">${escapeHtml(row.device_id)}</span>
@@ -275,13 +310,15 @@ function stateRowHtml(row) {
         <span>${escapeHtml(row.board_no ?? '—')} / ${escapeHtml(row.total_board ?? '—')} bd</span>
         <span>${escapeHtml(row.mo || '—')}</span>
       </span>
+      <span class="machine-row-basis">${escapeHtml(row.state_confidence || 'SOURCE')} · ${escapeHtml(row.state_basis || 'configured source')}</span>
       <span class="machine-row-alarm">${alarmText}</span>
     </button>`;
 }
 
 machineListEl.addEventListener('click', (event) => {
   const row = event.target.closest('[data-device-id]');
-  if (row) window.location.href = drillDownUrl(row.dataset.deviceId);
+  const url = row ? drillDownUrl(row.dataset.deviceId) : null;
+  if (url) window.location.href = url;
 });
 
 function applyState(payload) {
@@ -290,16 +327,21 @@ function applyState(payload) {
 
   for (const [deviceId, entry] of machinesById.entries()) {
     const row = latestStateById.get(deviceId);
-    const color = row ? (STATE_COLORS[row.state] ?? STATE_COLORS[0]) : STATE_COLORS[0];
+    const state = row?.operational_state || row?.state || DEFAULT_STATUS;
+    const fallbackColor = (STATUS_META[state] || STATUS_META[DEFAULT_STATUS]).color;
+    const color = apiColor(row?.state_color, fallbackColor);
     entry.material.color.setHex(color);
     entry.material.emissive.setHex(color);
-    entry.material.emissiveIntensity = row?.state === 3 ? 0.22 : 0.08;
+    entry.material.emissiveIntensity = state === 'DOWN' || row?.alarm ? 0.22 : 0.08;
+    entry.outline.material.color.setHex(row?.alarm ? ALARM_OUTLINE_COLOR : DEFAULT_OUTLINE_COLOR);
+    entry.outline.scale.setScalar(row?.alarm ? 1.08 : 1);
   }
 
   machineListEl.innerHTML = rows.map(stateRowHtml).join('');
-  const alarmCount = rows.filter((row) => row.state === 3).length;
-  const noDataCount = rows.filter((row) => row.state === 0).length;
-  summaryLine.textContent = `${rows.length} machines · ${alarmCount} ALARM · ${noDataCount} NO DATA`;
+  const alarmCount = rows.filter((row) => row.alarm).length;
+  const downCount = rows.filter((row) => (row.operational_state || row.state) === 'DOWN').length;
+  const undefinedCount = rows.filter((row) => (row.operational_state || row.state) === 'UNDEFINED').length;
+  summaryLine.textContent = `${placementSummary} · ${downCount} DOWN · ${alarmCount} ALARM overlay · ${undefinedCount} UNDEFINE`;
   statusLine.textContent = `Database/API update: ${new Date(payload.queried_at).toLocaleTimeString()}`;
   statusLine.classList.remove('error');
 }

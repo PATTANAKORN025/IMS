@@ -436,6 +436,10 @@ services:
       PGUSER: ${GRAFANA_DB_USER:?GRAFANA_DB_USER required in .env}
       PGPASSWORD: ${GRAFANA_DB_PASSWORD:?GRAFANA_DB_PASSWORD required in .env}
       PORT: "4100"
+      # Optional path inside the container. Supply the corresponding private
+      # read-only mount from an untracked docker-compose override; never put
+      # confidential floorplan coordinates in this committed base file.
+      FLOOR_LAYOUT_FILE: ${FLOOR_LAYOUT_FILE:-}
     # No host port published -- reachable only through the proxy service's
     # /factory-twin-3d/ path, which is auth_request-gated on Grafana's own
     # session, same pattern as alarm-api.

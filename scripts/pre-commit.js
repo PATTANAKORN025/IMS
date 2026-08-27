@@ -23,6 +23,18 @@ function run(label, cmd) {
   }
 }
 
+function isContainerRunning(name) {
+  try {
+    return execSync(`docker inspect -f "{{.State.Running}}" ${name}`, {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+      timeout: 5000,
+    }).trim() === 'true';
+  } catch {
+    return false;
+  }
+}
+
 console.log("IMS Pre-commit Hook");
 console.log("=".repeat(40));
 
@@ -35,9 +47,14 @@ run("Security Exception Matching Tests", "node tests/unit/security-exceptions.te
 
 // 2. Run Linters
 run("Dashboard Linter", "node tests/lint/dashboard-linter.js");
-run("Alarm Sync Linter", "node tests/lint/alarm-sync-linter.js");
-run("RCA Coverage Linter", "node tests/lint/rca-mapping-coverage.js");
+if (isContainerRunning('ims-timescaledb')) {
+  run("Alarm Sync Linter", "node tests/lint/alarm-sync-linter.js");
+  run("RCA Coverage Linter", "node tests/lint/rca-mapping-coverage.js");
+} else {
+  console.log("  SKIP  DB-backed alarm/RCA linters (ims-timescaledb is not running; CI still enforces them)");
+}
 run("Query Budget Linter", "node tests/lint/query-budget-linter.js");
+run("Private Layout Leak Linter", "node tests/lint/private-layout-leak-linter.js");
 run("Doc Over-Claim Linter", "node tests/lint/doc-overclaim-linter.js");
 run("Docs README Index", "node scripts/generate-docs-readme-index.js --check");
 

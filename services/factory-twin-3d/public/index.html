@@ -94,7 +94,7 @@
     }
     .legend {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       gap: 4px;
       margin-bottom: 10px;
       padding: 7px;
@@ -125,6 +125,8 @@
       cursor: pointer;
     }
     .machine-row:hover, .machine-row:focus-visible { border-color: #38bdf8; outline: none; }
+    .machine-row:disabled { cursor: not-allowed; opacity: 0.88; }
+    .machine-row:disabled:hover { border-color: var(--border); }
     .machine-row-top, .machine-row-detail { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
     .machine-row-top { justify-content: flex-start; margin-bottom: 4px; }
     .machine-id { font-size: 13px; font-weight: 700; }
@@ -139,7 +141,9 @@
       text-align: center;
     }
     .machine-row-detail { color: var(--muted); font-size: 11px; }
+    .machine-row-basis { display: block; margin-top: 3px; color: #64748b; font-size: 9px; }
     .machine-row-alarm { display: block; margin-top: 3px; color: #cbd5e1; font-size: 10px; }
+    .machine-row.has-alarm { border-color: #ff003c; box-shadow: inset 3px 0 #ff003c; }
     .hint {
       margin-top: 9px;
       padding-top: 8px;
@@ -169,14 +173,16 @@
     </div>
     <div id="summary-line">Loading machines…</div>
     <div class="legend" aria-label="Machine status legend">
-      <span><i style="background:#22c55e"></i>OK</span>
-      <span><i style="background:#ef4444"></i>ALARM</span>
-      <span><i style="background:#f59e0b"></i>IDLE</span>
-      <span><i style="background:#64748b"></i>NO DATA</span>
+      <span><i style="background:#a6a6a6"></i>Off</span>
+      <span><i style="background:#ff0000"></i>Down</span>
+      <span><i style="background:#ffc000"></i>Idle</span>
+      <span><i style="background:#2f9dcc"></i>Initial,PM,Stop</span>
+      <span><i style="background:#00ff00"></i>Run</span>
+      <span><i style="background:#fff;border:1px solid #64748b"></i>Undefine</span>
     </div>
     <div id="machine-list"></div>
     <div class="hint">Click a machine in the scene or this list to open its Machine Snapshot. State refreshes every 5 seconds.</div>
-    <div class="hint truth-note"><strong>Layout:</strong> provisional logical zones. <strong>Status:</strong> read-only database/API result.</div>
+    <div class="hint truth-note"><strong>Layout:</strong> provisional logical zones. <strong>Status:</strong> six-state operational status; red outline is a separate active-alarm overlay.</div>
     <div id="status-line" class="hint"></div>
   </aside>
 

@@ -2,9 +2,11 @@
 
 ## Purpose
 
-The Factory 3D Digital Twin now presents enabled LDI machines on a single
-`Floor 1` surface. The view is intended for rapid status recognition and
-machine-to-Snapshot navigation. It is not a surveyed physical floor plan.
+The Factory 3D Digital Twin can use either the original enabled-LDI logical
+fallback or an ignored local placement contract. The local contract is the
+only appropriate path for a confidential Apex 3 floor plan. The view is
+intended for rapid status recognition and asset drill-down; it is not a
+surveyed physical floor plan until its verification status is `APPROVED`.
 
 ## Data truth boundary
 
@@ -13,8 +15,9 @@ machine-to-Snapshot navigation. It is not a surveyed physical floor plan.
 | Enabled machine list | `public.devices` (`device_type = 'ldi'`) | Database-backed |
 | Group / zone name | `public.devices.location` | Database-backed label |
 | Machine state, board progress, MO and alarm context | Existing `/api/state` query | Database-backed |
-| Floor name | Application metadata (`Floor 1`) | Provisional |
-| Zone and machine coordinates | Deterministic layout algorithm | Simulated / provisional |
+| Floor name | Application or local private layout metadata | Must expose verification status |
+| Zone and machine coordinates | Logical fallback or ignored local JSON | Draft until owner-approved |
+| Non-LDI machine state | Configured per-asset adapter | `Undefine` while unbound; never mocked |
 
 The application therefore keeps a visible warning banner while any rendered
 placement has `is_simulated = true`. Status and placement truth are described
@@ -34,17 +37,25 @@ group and centered on the Floor 1 surface. Machines are sorted naturally and
 placed on a collision-free grid inside their zone. The same input rows always
 produce the same coordinates, regardless of database return order.
 
-## State colors
+## Six-state operational colors
 
 | State | Color | Meaning |
 |---|---|---|
-| `OK` | Green | Reporting and running, no active Critical/Major alarm in the active window |
-| `ALARM` | Red | Active Critical/Major alarm |
-| `IDLE` | Amber | Reporting but not running |
-| `NO_DATA` | Gray | No current or sufficiently fresh telemetry |
+| `Off` | Gray | Authoritative source reports the machine is off |
+| `Down` | Red | Authoritative source reports the machine is down |
+| `Idle` | Amber | Machine reports idle; the LDI boolean false fallback is provisional |
+| `Initial,PM,Stop` | Blue | Source reports initialization, preventive maintenance or stopped mode |
+| `Run` | Bright green | Authoritative source reports running |
+| `Undefine` | White | Missing, stale, unbound or unmapped source state |
 
-The existing read-only state query remains the source of these values. The
-layout change does not alter alarm definitions or write lifecycle data.
+The six names and color families are confirmed from the reference screen.
+The exact hex values remain provisional until the original CFM CSS/config is
+available for owner validation.
+
+An active Critical/Major alarm is shown as a separate red outline and badge.
+It must not overwrite the operational state or be interpreted as proof of
+`Down`. `Off`, `Down` and `Initial,PM,Stop` cannot be derived from the current
+LDI boolean column and require the owner's trigger/reset contract.
 
 ## Interaction
 
@@ -57,11 +68,10 @@ layout change does not alter alarm definitions or write lifecycle data.
 
 ## Replacing the provisional layout
 
-When Facilities supplies an approved Floor 1 drawing and surveyed machine
-coordinates, replace only the placement provider with rows from the planned
-`device_3d_placement` contract, set `is_simulated = false`, and record a real
-source such as `manual_survey` or `cad_import`. The state endpoint, color rules
-and drill-down contract should remain unchanged.
+When Facilities supplies an approved asset register and coordinates, place
+them in the ignored local contract described in
+`PRIVATE_FLOOR_LAYOUT_WORKFLOW.md`. Do not commit the drawing, CAD export,
+machine register or real coordinate payload to a public repository.
 
 ## Verification
 

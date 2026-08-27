@@ -2,7 +2,7 @@
   "name": "ims-factory-twin-3d",
   "version": "1.0.0",
   "private": true,
-  "description": "Read-only Three.js factory twin with live LDI state and a clearly disclosed provisional Floor 1 logical layout.",
+  "description": "Read-only Three.js factory twin with a private placement contract, six-state machine legend, LDI adapter and separate alarm overlay.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

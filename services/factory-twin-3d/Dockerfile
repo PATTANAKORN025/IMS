@@ -7,6 +7,8 @@ RUN npm install --omit=dev --no-fund
 
 COPY server.js ./
 COPY layout.js ./
+COPY status-model.js ./
+COPY config ./config
 COPY public ./public
 
 USER node

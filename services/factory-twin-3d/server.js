@@ -3,9 +3,11 @@
 const path = require('path');
 const express = require('express');
 const { Pool } = require('pg');
-const { computeFloorOneLayout } = require('./layout');
+const { computeFloorOneLayout, loadConfiguredLayout } = require('./layout');
+const { MACHINE_STATUS, mapLegacyLdiStatus, statusPayload } = require('./status-model');
 
 const PORT = process.env.PORT || 4100;
+const FLOOR_LAYOUT_FILE = process.env.FLOOR_LAYOUT_FILE || '';
 
 // Read-only service -- unlike alarm-api (dedicated alarm_api_writer role with
 // SELECT+UPDATE on exactly one table), this twin never writes anything, so it
@@ -52,14 +54,49 @@ async function discoverDevices() {
 // instantly. DEVICE_REFRESH_INTERVAL_MS bounds how stale it can get.
 let DEVICE_IDS = [];
 let FLOOR_LAYOUT = computeFloorOneLayout([]);
+let STATE_BINDINGS = [];
+let LAYOUT_CONFIG_ERROR = null;
 
-async function refreshDevices() {
+async function refreshDevices({ failOnLayoutError = false } = {}) {
   try {
-    const rows = await discoverDevices();
-    DEVICE_IDS = rows.map((r) => r.device_id).sort();
-    FLOOR_LAYOUT = computeFloorOneLayout(rows);
+    const configuredLayout = loadConfiguredLayout(FLOOR_LAYOUT_FILE);
+    LAYOUT_CONFIG_ERROR = null;
+    let rows = [];
+    try {
+      rows = await discoverDevices();
+    } catch (error) {
+      if (!configuredLayout) throw error;
+      console.error('LDI device discovery unavailable; private placement remains usable:', error.message);
+    }
+    if (configuredLayout) {
+      FLOOR_LAYOUT = configuredLayout;
+      STATE_BINDINGS = configuredLayout.machines.map((machine) => ({
+        asset_id: machine.asset_id || machine.device_id,
+        display_name: machine.display_name || machine.asset_id || machine.device_id,
+        type: machine.state_binding?.type || 'unbound',
+        source_id: machine.state_binding?.source_id || null,
+        drilldown_enabled: machine.state_binding?.type === 'ldi' && Boolean(machine.state_binding?.source_id),
+      }));
+      DEVICE_IDS = [...new Set(
+        STATE_BINDINGS
+          .filter((binding) => binding.type === 'ldi' && binding.source_id)
+          .map((binding) => binding.source_id),
+      )].sort();
+    } else {
+      DEVICE_IDS = rows.map((r) => r.device_id).sort();
+      FLOOR_LAYOUT = computeFloorOneLayout(rows);
+      STATE_BINDINGS = FLOOR_LAYOUT.machines.map((machine) => ({
+        asset_id: machine.device_id,
+        display_name: machine.device_id,
+        type: 'ldi',
+        source_id: machine.device_id,
+        drilldown_enabled: true,
+      }));
+    }
   } catch (err) {
+    if (FLOOR_LAYOUT_FILE) LAYOUT_CONFIG_ERROR = err.message;
     console.error('device discovery refresh failed (keeping previous list):', err.message);
+    if (FLOOR_LAYOUT_FILE && failOnLayoutError) throw err;
   }
 }
 
@@ -84,12 +121,12 @@ const CATEGORY_OWNER_CASE = `
         ELSE 'Maintenance'
       END`;
 
-// Exact query shape reused verbatim (structure, not re-derived) from
+// Query lineage comes from
 // monitoring/grafana/dashboards/manufacturing/ims-ldi-factory-digital-twin.json
-// refId "A", which itself is the same latest-value + ALARM/OK/IDLE/NO_DATA
-// CASE logic as ims-ldi-operator-andon.json panel id 1000. Only change here:
-// SELECT plain columns instead of Grafana's pre-formatted table strings, and
-// add v.factory for the drill-down URL, since this returns JSON, not a panel.
+// refId "A" and ims-ldi-operator-andon.json panel id 1000. Operational
+// telemetry and alarm lifecycle are now selected independently: the API
+// resolves the limited LDI boolean into the six-state contract, while an
+// active alarm remains an overlay and never forces the state to DOWN.
 //
 // Fleet change from Task 4.1's single-eqp_id `WHERE v.eqp_id = $1`: now
 // `WHERE v.eqp_id = ANY($1::text[])` against the dynamically discovered
@@ -118,22 +155,9 @@ s AS (
     v.board_no,
     v.total_board,
     v.factory,
-    CASE
-      WHEN EXISTS (
-        SELECT 1 FROM public.ldi_alarm_log a
-        JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT
-        LEFT JOIN public.ldi_alarm_lifecycle l
-          ON l.logdate = a.logdate AND l.logid = a.logid
-        WHERE a.equipmentid = v.eqp_id
-          AND m.severity IN ('Critical', 'Major')
-          AND a.logdate > (SELECT db_now FROM clock) - INTERVAL '5 minutes'
-          AND l.status IS DISTINCT FROM 'RESOLVED'
-      ) THEN 3
-      WHEN NOT v.has_data
-        OR v."time" < (SELECT db_now FROM clock) - INTERVAL '5 minutes' THEN 0
-      WHEN v.state THEN 2
-      ELSE 1
-    END AS st
+    COALESCE(v.has_data, false) AS has_data,
+    COALESCE(v."time" >= (SELECT db_now FROM clock) - INTERVAL '5 minutes', false) AS is_fresh,
+    v.state AS is_running
   FROM public.v_ldi_machine_latest_full v
   WHERE v.eqp_id = ANY($1::text[])
 ),
@@ -175,7 +199,9 @@ alarm_ctx AS (
 )
 SELECT
   s.eqp_id,
-  s.st AS state,
+  s.has_data,
+  s.is_fresh,
+  s.is_running,
   s.board_no,
   s.total_board,
   s.mo,
@@ -189,30 +215,79 @@ FROM s
 LEFT JOIN alarm_ctx ON alarm_ctx.equipmentid = s.eqp_id
 ORDER BY s.eqp_id`;
 
-const STATE_LABELS = ['NO_DATA', 'IDLE', 'OK', 'ALARM'];
+function legacyStateValue(status, hasAlarm) {
+  if (hasAlarm) return 3;
+  if (status === MACHINE_STATUS.RUN) return 2;
+  if (status === MACHINE_STATUS.IDLE) return 1;
+  return 0;
+}
 
 app.get('/api/state', async (req, res) => {
   try {
     const result = await pool.query(STATE_SQL, [DEVICE_IDS]);
-    const rows = result.rows.map((row) => ({
-      device_id: row.eqp_id,
-      state: row.state,
-      state_label: STATE_LABELS[row.state] || 'NO_DATA',
-      board_no: row.board_no,
-      total_board: row.total_board,
-      mo: row.mo,
-      factory: row.factory,
-      alarm:
-        row.alarm_count > 0
-          ? {
-              count: row.alarm_count,
-              owner: row.alarm_owner,
-              elapsed: row.alarm_elapsed,
-              related_log_id: row.alarm_related_log_id,
-              logdate_ms: row.alarm_logdate_ms,
-            }
-          : null,
-    }));
+    const sourceRows = new Map(result.rows.map((row) => [row.eqp_id, row]));
+    const rows = STATE_BINDINGS.map((binding) => {
+      const row = binding.type === 'ldi' ? sourceRows.get(binding.source_id) : null;
+      if (!row) {
+        const display = statusPayload(MACHINE_STATUS.UNDEFINED);
+        return {
+          device_id: binding.asset_id,
+          display_name: binding.display_name,
+          source_id: binding.source_id,
+          // Deprecated numeric compatibility field: 0 NO_DATA, 1 IDLE,
+          // 2 OK/RUN, 3 ALARM. New consumers must use operational_state.
+          state: 0,
+          operational_state: display.status,
+          state_label: display.status_label,
+          state_color: display.status_color,
+          state_basis: binding.type === 'unbound' ? 'state_source_not_connected' : 'source_record_not_found',
+          state_confidence: 'UNBOUND',
+          drilldown_enabled: binding.drilldown_enabled,
+          board_no: null,
+          total_board: null,
+          mo: null,
+          factory: null,
+          alarm: null,
+        };
+      }
+      const resolved = mapLegacyLdiStatus({
+        hasData: row.has_data === true,
+        isFresh: row.is_fresh === true,
+        isRunning: row.is_running,
+      });
+      const display = statusPayload(resolved.status);
+      const hasAlarm = row.alarm_count > 0;
+      return {
+        device_id: binding.asset_id,
+        display_name: binding.display_name,
+        source_id: row.eqp_id,
+        // Preserve the previous API contract for external consumers while
+        // the renderer uses the independent six-state operational field.
+        state: legacyStateValue(resolved.status, hasAlarm),
+        operational_state: display.status,
+        state_label: display.status_label,
+        state_color: display.status_color,
+        state_basis: resolved.basis,
+        state_confidence: resolved.confidence,
+        drilldown_enabled: binding.drilldown_enabled,
+        board_no: row.board_no,
+        total_board: row.total_board,
+        mo: row.mo,
+        factory: row.factory,
+        // Alarm lifecycle is an overlay. It must never overwrite the
+        // operational state or be treated as proof that a machine is DOWN.
+        alarm:
+          hasAlarm
+            ? {
+                count: row.alarm_count,
+                owner: row.alarm_owner,
+                elapsed: row.alarm_elapsed,
+                related_log_id: row.alarm_related_log_id,
+                logdate_ms: row.alarm_logdate_ms,
+              }
+            : null,
+      };
+    });
     res.status(200).json({
       machines: rows,
       queried_at: new Date().toISOString(),
@@ -228,6 +303,10 @@ app.get('/api/placement', (req, res) => {
 });
 
 app.get('/healthz', async (req, res) => {
+  if (LAYOUT_CONFIG_ERROR) {
+    res.status(503).json({ status: 'layout config invalid' });
+    return;
+  }
   try {
     await pool.query('SELECT 1');
     res.status(200).json({ status: 'ok' });
@@ -236,9 +315,18 @@ app.get('/healthz', async (req, res) => {
   }
 });
 
-refreshDevices().then(() => {
-  setInterval(refreshDevices, DEVICE_REFRESH_INTERVAL_MS).unref();
-  app.listen(PORT, () => {
-    console.log(`factory-twin-3d listening on :${PORT} (${DEVICE_IDS.length} LDI devices discovered)`);
+refreshDevices({ failOnLayoutError: true })
+  .then(() => {
+    setInterval(refreshDevices, DEVICE_REFRESH_INTERVAL_MS).unref();
+    app.listen(PORT, () => {
+      console.log(
+        `factory-twin-3d listening on :${PORT} `
+        + `(${FLOOR_LAYOUT.machines.length} layout assets, ${DEVICE_IDS.length} LDI state bindings)`,
+      );
+    });
+  })
+  .catch(async (error) => {
+    console.error('factory-twin-3d startup failed:', error.message);
+    await pool.end().catch(() => {});
+    process.exit(1);
   });
-});

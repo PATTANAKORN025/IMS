@@ -2,7 +2,10 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { computeFloorOneLayout, parseLocation } = require('../layout');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const { computeFloorOneLayout, loadConfiguredLayout, parseLocation } = require('../layout');
 
 const TEN_DEVICE_ROWS = [
   ['LDI-01', 'Site A - Zone 1'],
@@ -63,4 +66,86 @@ test('never overlaps machine coordinates when a zone grows beyond two machines',
   assert.equal(layout.machines.length, 23);
   assert.equal(new Set(coordinates).size, 23);
   assert.ok(layout.machines.every((machine) => machine.source === 'provisional_logical_floor_1'));
+});
+
+test('loads a private layout contract and preserves unbound state bindings', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ims-floor-layout-'));
+  const file = path.join(tempDir, 'floor.local.json');
+  fs.writeFileSync(file, JSON.stringify({
+    schema_version: 1,
+    floor: {
+      id: 'private-floor-1',
+      name: 'Private Floor 1',
+      level: 1,
+      layout_mode: 'private_local',
+      coordinate_source: 'local_only',
+      verification_status: 'DRAFT',
+      private_note: 'must not leave the loader',
+    },
+    zones: [{ zone_id: 'zone-a', name: 'Zone A', center_x: 0, center_y: 0, width: 20, depth: 10, internal_note: 'private' }],
+    machines: [{
+      asset_id: 'ASSET-001',
+      zone_id: 'zone-a',
+      pos_x: 1,
+      pos_y: 2,
+      internal_ip: '192.0.2.1',
+      state_binding: { type: 'unbound', source_id: null },
+    }],
+  }));
+
+  const layout = loadConfiguredLayout(file);
+  assert.equal(layout.floor.verification_status, 'DRAFT');
+  assert.equal(layout.floor.is_simulated, true);
+  assert.equal(layout.machines[0].device_id, 'ASSET-001');
+  assert.equal(layout.machines[0].state_binding.type, 'unbound');
+  assert.equal(layout.zones[0].machine_count, 1);
+  assert.equal(Object.hasOwn(layout.floor, 'private_note'), false);
+  assert.equal(Object.hasOwn(layout.zones[0], 'internal_note'), false);
+  assert.equal(Object.hasOwn(layout.machines[0], 'internal_ip'), false);
+  fs.rmSync(tempDir, { recursive: true, force: true });
+});
+
+test('rejects duplicate assets and unknown zone references', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ims-floor-layout-invalid-'));
+  const file = path.join(tempDir, 'floor.local.json');
+  fs.writeFileSync(file, JSON.stringify({
+    schema_version: 1,
+    floor: {
+      id: 'floor-1',
+      name: 'Floor 1',
+      level: 1,
+      layout_mode: 'private_local',
+      coordinate_source: 'local_only',
+      verification_status: 'DRAFT',
+    },
+    zones: [{ zone_id: 'zone-a', name: 'Zone A', center_x: 0, center_y: 0, width: 20, depth: 10 }],
+    machines: [{ asset_id: 'ASSET-001', zone_id: 'missing', pos_x: 0, pos_y: 0 }],
+  }));
+  assert.throws(() => loadConfiguredLayout(file), /unknown zone_id/);
+  fs.rmSync(tempDir, { recursive: true, force: true });
+});
+
+test('rejects a missing configured file and invalid dimensions', () => {
+  assert.throws(
+    () => loadConfiguredLayout(path.join(os.tmpdir(), 'definitely-missing-floor-layout.json')),
+    /not found/,
+  );
+
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ims-floor-layout-dimension-'));
+  const file = path.join(tempDir, 'floor.local.json');
+  fs.writeFileSync(file, JSON.stringify({
+    schema_version: 1,
+    floor: {
+      id: 'floor-1',
+      name: 'Floor 1',
+      level: 1,
+      layout_mode: 'private_local',
+      coordinate_source: 'local_only',
+      verification_status: 'DRAFT',
+    },
+    zones: [{ zone_id: 'zone-a', name: 'Zone A', center_x: 0, center_y: 0, width: 0, depth: 10 }],
+    machines: [],
+  }));
+  assert.throws(() => loadConfiguredLayout(file), /greater than zero/);
+  fs.rmSync(tempDir, { recursive: true, force: true });
 });

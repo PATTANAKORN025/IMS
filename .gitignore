@@ -126,5 +126,11 @@ scratch_sql.txt
 .p11c-scratch/
 p*_scratch/
 
+# Private factory floor plans and calibrated placement data. These files may
+# contain company-confidential geometry and must never be committed.
+services/factory-twin-3d/private/
+*.floor-layout.local.json
+docker-compose.private-layout.yaml
+
 # Allow tracking agent skills
 !.agents/skills/
