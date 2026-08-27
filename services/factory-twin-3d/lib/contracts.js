@@ -97,4 +97,47 @@ const MACHINE_STATE_THEME = Object.freeze({
  * @property {'simulated_grid'|'manual_survey'|'cad_import'} source - Provenance of position/footprint. 'simulated_grid' is the only value this repo ever produces; the other two are the documented migration path for real coordinates supplied out-of-repo.
  */
 
-module.exports = { MachineState, MACHINE_STATE_THEME };
+/**
+ * Distinguishes what a rendered box actually represents -- required so
+ * the UI never conflates "a physical slot exists" with "we know what's
+ * there" with "it's a real IMS-connected device". Only two of these are
+ * ever populated today (UNMAPPED and IMS_CONNECTED); VERIFIED_PHYSICAL
+ * exists in the vocabulary for when a real survey confirms a specific
+ * machine occupies a specific slot WITHOUT that machine being IMS-
+ * connected yet (e.g. manually surveyed, not yet wired for telemetry) --
+ * a real, distinct state this repo does not fabricate an example of.
+ *
+ * @readonly
+ * @enum {string}
+ */
+const AssetMappingStatus = Object.freeze({
+  /** physicalSlotId has no authoritative device/asset mapping. Default for every slot. */
+  UNMAPPED: 'UNMAPPED',
+  /** A real, specific asset is confirmed to occupy this slot (e.g. manual survey), but it has no IMS device_id / live telemetry. Not fabricated -- no instance of this exists in this repo's own data today. */
+  VERIFIED_PHYSICAL: 'VERIFIED_PHYSICAL',
+  /** Slot is mapped to a real IMS device_id with live telemetry (MachineState applies). */
+  IMS_CONNECTED: 'IMS_CONNECTED',
+});
+
+/**
+ * One anonymous physical machine position on a floor -- geometry only,
+ * deliberately carrying no identity. physicalSlotId is an anonymous
+ * placeholder (e.g. "SLOT-A-01"), never a real vendor/asset tag.
+ * position/footprint here are arbitrary, self-chosen round numbers, NOT
+ * measured or estimated from any real floor plan -- see
+ * services/factory-twin-3d/private/floor1-geometry.json's own header
+ * comment for the full disclosure. Whether this slot has any asset/
+ * device mapped to it lives entirely in a separate mapping table
+ * (physicalSlotId -> device_id | null), never in this object -- keeps
+ * "where physical slots are" and "what's confirmed to occupy them"
+ * independently editable, per the user's explicit requirement that a
+ * verified mapping must be addable without changing the geometry.
+ *
+ * @typedef {Object} PhysicalSlot
+ * @property {string} physicalSlotId - Anonymous slot identifier. Never a real vendor/asset tag.
+ * @property {string} zoneId - Anonymous zone identifier (e.g. "ZONE-A"). Never a real facility zone name.
+ * @property {{x: number, y: number, z: number}} position - Scene-unit coordinates. Arbitrary, not derived from any real drawing.
+ * @property {{width: number, depth: number, height: number}} footprint - Scene-unit bounding box. Arbitrary placeholder shape.
+ */
+
+module.exports = { MachineState, MACHINE_STATE_THEME, AssetMappingStatus };

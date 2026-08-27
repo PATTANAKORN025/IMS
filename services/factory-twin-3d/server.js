@@ -72,6 +72,27 @@ function loadPrivateLayout() {
   }
 }
 
+// Reads private/floor1-geometry.json if present -- anonymous building
+// envelope/columns/zones/physical-slot geometry, entirely independent of
+// the per-device placement above. Returns null (not a throw) when
+// missing/malformed, matching loadPrivateLayout()'s convention; this repo's
+// own /api/floor-geometry response is simply an empty-slots shape in that
+// case (see the route below), never a crash.
+function loadPrivateGeometry() {
+  const filePath = path.join(PRIVATE_DIR, 'floor1-geometry.json');
+  if (!fs.existsSync(filePath)) return null;
+  try {
+    const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    if (!Array.isArray(parsed.slots) || typeof parsed.mapping !== 'object' || parsed.mapping === null) {
+      throw new Error('missing slots[] or mapping{}');
+    }
+    return parsed;
+  } catch (err) {
+    console.error(`private geometry file present but unusable: ${err.message}`);
+    return null;
+  }
+}
+
 // Task 4.3 dynamic fleet discovery: the hardcoded 10-machine/2-per-zone
 // layout below (Task 4.2) was built when only 10 LDI devices were assumed
 // to exist. A later audit found public.devices actually has 23 enabled
@@ -416,6 +437,28 @@ app.get('/api/placement', (req, res) => {
     floors: [FLOOR_0],
     machines: SIMULATED_PLACEMENTS,
   });
+});
+
+// Anonymous physical-slot geometry -- entirely separate concern from
+// /api/placement above. Returns an empty-but-valid shape when
+// private/floor1-geometry.json is absent (the default state for anyone
+// cloning this public repo), never an error. `mapping` is
+// physicalSlotId -> device_id | null; every value is null (UNMAPPED)
+// until an authoritative correspondence is supplied -- this route never
+// infers or fabricates one from position, numbering, or any other
+// heuristic.
+app.get('/api/floor-geometry', (req, res) => {
+  const geometry = loadPrivateGeometry();
+  res.status(200).json(
+    geometry || {
+      envelope: null,
+      camera: null,
+      columns: [],
+      zones: [],
+      slots: [],
+      mapping: {},
+    }
+  );
 });
 
 app.get('/healthz', async (req, res) => {

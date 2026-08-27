@@ -143,6 +143,59 @@ function buildFloorShells(floors, machines) {
   }
 }
 
+// ── Anonymous physical-slot geometry (/api/floor-geometry) ──────
+// Entirely separate from the real-device layer above: building envelope,
+// columns, zone boundaries, and anonymous physicalSlotId markers. Every
+// dimension here comes from the server's response, which is itself
+// arbitrary/self-chosen numbers (see private/floor1-geometry.json's own
+// header) -- never real facility data. Rendered in a visually distinct,
+// dim, muted style (vs. the real devices' bright per-state colors) and
+// deliberately NOT added to machineMeshes / raycasting: an unmapped slot
+// has no click target, no drill-down, no live status, by construction --
+// the UI cannot accidentally imply a physical slot is a connected device.
+function buildPhysicalSlots(geometry) {
+  if (!geometry || !geometry.envelope) return;
+
+  const { envelope, columns, zones, slots } = geometry;
+
+  const envelopeGeom = new THREE.BoxGeometry(envelope.width, envelope.height, envelope.depth);
+  const envelopeEdges = new THREE.EdgesGeometry(envelopeGeom);
+  const envelopeOutline = new THREE.LineSegments(envelopeEdges, new THREE.LineBasicMaterial({ color: 0x334155 }));
+  envelopeOutline.position.set(0, envelope.height / 2, 0);
+  scene.add(envelopeOutline);
+
+  for (const col of columns || []) {
+    const colGeom = new THREE.CylinderGeometry(0.15, 0.15, envelope.height, 8);
+    const colMesh = new THREE.Mesh(colGeom, new THREE.MeshStandardMaterial({ color: 0x334155 }));
+    colMesh.position.set(col.position.x, envelope.height / 2, col.position.z);
+    scene.add(colMesh);
+  }
+
+  for (const zone of zones || []) {
+    const b = zone.bounds;
+    const zoneGeom = new THREE.BoxGeometry(b.width, 0.05, b.depth);
+    const zoneEdges = new THREE.EdgesGeometry(zoneGeom);
+    // Dashed-looking dim slate, distinct from the real-device zone
+    // outlines' brighter 0x475569 -- these are anonymous/unmapped zones,
+    // should read as visually secondary.
+    const zoneOutline = new THREE.LineSegments(zoneEdges, new THREE.LineBasicMaterial({ color: 0x1e293b }));
+    zoneOutline.position.set(b.x + b.width / 2, 0.02, b.z + b.depth / 2);
+    scene.add(zoneOutline);
+  }
+
+  for (const slot of slots || []) {
+    const geom = new THREE.BoxGeometry(slot.footprint.width, slot.footprint.height, slot.footprint.depth);
+    // Flat, dim, unlit-looking gray -- deliberately unlike the bright,
+    // state-colored real device boxes. No label, no userData.deviceId,
+    // never pushed to machineMeshes: nothing about this mesh is clickable
+    // or implies a live device.
+    const mat = new THREE.MeshBasicMaterial({ color: 0x334155, transparent: true, opacity: 0.5 });
+    const mesh = new THREE.Mesh(geom, mat);
+    mesh.position.set(slot.position.x, slot.position.y, slot.position.z);
+    scene.add(mesh);
+  }
+}
+
 scene.add(new THREE.AmbientLight(0xffffff, 0.6));
 const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
 dirLight.position.set(10, 16, 10);
@@ -390,6 +443,17 @@ async function boot() {
     statusLine.textContent = `Placement fetch failed: ${err.message}`;
     statusLine.classList.add('error');
   }
+
+  // Independent of the placement fetch above -- absence here (empty
+  // shape, the default for a public clone) must never block real-device
+  // rendering, and a real-device fetch failure must never block this.
+  try {
+    const geoRes = await fetch('api/floor-geometry');
+    if (geoRes.ok) buildPhysicalSlots(await geoRes.json());
+  } catch (err) {
+    console.warn('floor-geometry fetch failed (non-fatal):', err.message);
+  }
+
   await pollState();
   setInterval(pollState, POLL_MS);
   const t1 = performance.now();
