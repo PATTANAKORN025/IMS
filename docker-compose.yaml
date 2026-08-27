@@ -419,7 +419,7 @@ services:
       - ims-internal
     logging: *default-logging
 
-  # ── Factory 3D Digital Twin (Task 4.1 POC -- LDI-01 only, read-only) ──
+  # ── Factory 3D Digital Twin (provisional Floor 1 layout, read-only) ──
   factory-twin-3d:
     build:
       context: ./services/factory-twin-3d
@@ -432,8 +432,7 @@ services:
       PGDATABASE: ${POSTGRES_DB}
       # Read-only service, no write path -- reuses the existing grafana_reader
       # role (postgres/init/002-grafana-readonly.sql) instead of provisioning
-      # a new DB role/migration for a 1-machine POC (see Task 4.1 brief's
-      # scope-minimization decision).
+      # a new DB role/migration for this read-only renderer.
       PGUSER: ${GRAFANA_DB_USER:?GRAFANA_DB_USER required in .env}
       PGPASSWORD: ${GRAFANA_DB_PASSWORD:?GRAFANA_DB_PASSWORD required in .env}
       PORT: "4100"

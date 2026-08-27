@@ -11,7 +11,7 @@
 > (`node scripts/generate-dashboard-inventory.js --check`) fails the build
 > if this file doesn't match what the dashboards currently say.
 >
-> Last generated: 2026-08-26 | Total dashboards: 15 | Total panels: 190
+> Last generated: 2026-08-27 | Total dashboards: 15 | Total panels: 190
 
 ## Infrastructure (5)
 

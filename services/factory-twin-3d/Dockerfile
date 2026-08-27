@@ -6,6 +6,7 @@ COPY package.json package-lock.json* ./
 RUN npm install --omit=dev --no-fund
 
 COPY server.js ./
+COPY layout.js ./
 COPY public ./public
 
 USER node

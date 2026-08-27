@@ -1,24 +1,6 @@
-// IMS Factory 3D Digital Twin -- Task 4.2 (all 10 real reporting LDI
-// machines, grouped by their 5 real zones)
-//
-// Extends Task 4.1's 1-machine POC: 10 box meshes instead of 1, positioned
-// per /api/placement (deterministic simulated grid, grouped by real zone),
-// each colored/labeled by its own REAL live state/board/MO/alarm data
-// (fetched from /api/state -- same query shape as ims-ldi-factory-digital-
-// twin.json refId "A", extended to all 10 eqp_id values -- see server.js).
-// Polls /api/state every 5s. Clicking ANY of the 10 boxes navigates to that
-// SPECIFIC machine's real Machine Snapshot drill-down (raycast against all
-// 10 meshes, not just one).
-
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-// Same 4-color-token system as ims-ldi-factory-digital-twin.json / the
-// Andon panel -- copied verbatim, not reinvented. Confirmed directly in
-// Task 4.1's app.js before extending: "icon semantics" in this build is
-// (a) the box's material color and (b) the HUD's #state-pill background +
-// text label -- there is no separate 3D icon mesh anywhere in the Task 4.1
-// build, so none is introduced here either.
 const STATE_COLORS = {
   0: 0x64748b, // NO_DATA
   1: 0xf59e0b, // IDLE
@@ -26,69 +8,72 @@ const STATE_COLORS = {
   3: 0xef4444, // ALARM
 };
 const STATE_LABELS = ['NO_DATA', 'IDLE', 'OK', 'ALARM'];
-
 const POLL_MS = 5000;
 
-// ── Scene setup ──────────────────────────────────────────────
 const container = document.getElementById('scene');
+const machineListEl = document.getElementById('machine-list');
+const statusLine = document.getElementById('status-line');
+const summaryLine = document.getElementById('summary-line');
+const floorNameEl = document.getElementById('floor-name');
+const bannerEl = document.getElementById('simulated-banner');
+const resetViewButton = document.getElementById('reset-view');
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0f172a);
+scene.background = new THREE.Color(0x0b1220);
+scene.fog = new THREE.Fog(0x0b1220, 85, 170);
 
-const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 250);
-// Wider/higher/more top-down framing than Task 4.1's single-box camera
-// (4,4,6) -- the scene now spans roughly x:[-36,36] z:[-4,4], needs a
-// pulled-back, steeper overhead angle to keep all 5 zones AND their zone
-// labels legibly separated in frame by default (design §11's "operator/
-// engineer interactive session" mode -- OrbitControls still let the user
-// zoom/pan/rotate freely from here; re-tuned after a real screenshot showed
-// the first pass's flatter angle caused zone labels to visually overlap).
-camera.position.set(18, 52, 46);
-
+const camera = new THREE.PerspectiveCamera(47, window.innerWidth / window.innerHeight, 0.1, 300);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
 container.appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
-// Target offset +14 on X (not 0) so the default view keeps the leftmost
-// zone (Site A - Zone 1) clear of the fixed-position HUD sidebar,
-// which covers roughly the left 280px of the viewport and would otherwise
-// intercept clicks meant for the 3D canvas underneath it -- a real,
-// discovered-via-screenshot issue, not a hypothetical one. Users can still
-// freely pan/rotate anywhere via OrbitControls; this only changes the
-// initial framing.
-controls.target.set(14, 0.5, 0);
+controls.minDistance = 12;
+controls.maxDistance = 180;
+controls.maxPolarAngle = Math.PI * 0.48;
 
-// Floor grid -- purely orientation, not real factory floor data. Sized up
-// from Task 4.1's 20x20 to cover the full 10-machine/5-zone spread.
-const grid = new THREE.GridHelper(100, 40, 0x334155, 0x1e293b);
-scene.add(grid);
+scene.add(new THREE.HemisphereLight(0xdbeafe, 0x0f172a, 1.4));
+const keyLight = new THREE.DirectionalLight(0xffffff, 1.4);
+keyLight.position.set(24, 46, 18);
+scene.add(keyLight);
 
-scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-dirLight.position.set(10, 16, 10);
-scene.add(dirLight);
+const machineMeshes = [];
+const machinesById = new Map();
+let latestStateById = new Map();
+let currentBounds = null;
 
-// ── Zone label sprites ───────────────────────────────────────
-// Design brief: "the 5 zones must be distinguishable at a glance" -- chose
-// a canvas-texture text sprite per zone (no external font/label library,
-// canvas 2D is a native browser API, consistent with "no CDN dependency"
-// used throughout this service) hovering above each zone's machine cluster,
-// in addition to the physical spacing itself (12 units between zone
-// clusters vs. 6 units between the 2 machines within a zone).
-function makeTextSprite(text, { fontSize = 30, scaleFactor = 0.024, bg = 'rgba(15, 23, 42, 0.78)', fg = '#e2e8f0' } = {}) {
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
+function makeTextSprite(text, {
+  fontSize = 30,
+  scaleFactor = 0.024,
+  bg = 'rgba(15, 23, 42, 0.88)',
+  fg = '#e2e8f0',
+  border = '#475569',
+} = {}) {
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
   ctx.font = `700 ${fontSize}px system-ui, sans-serif`;
   const metrics = ctx.measureText(text);
-  canvas.width = Math.ceil(metrics.width) + 28;
-  canvas.height = fontSize + 22;
+  canvas.width = Math.ceil(metrics.width) + 34;
+  canvas.height = fontSize + 24;
 
   ctx.font = `700 ${fontSize}px system-ui, sans-serif`;
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.strokeStyle = border;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
   ctx.fillStyle = fg;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
@@ -102,88 +87,156 @@ function makeTextSprite(text, { fontSize = 30, scaleFactor = 0.024, bg = 'rgba(1
   return sprite;
 }
 
-// ── Machine meshes (populated once /api/placement resolves) ─────
-const machineMeshes = []; // THREE.Mesh[], one per machine, userData.deviceId set
-const machinesById = new Map(); // deviceId -> { mesh, material }
-let latestStateById = new Map(); // deviceId -> state row from /api/state
+function addOutline(mesh, color = 0x475569) {
+  const edges = new THREE.EdgesGeometry(mesh.geometry);
+  const outline = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color }));
+  outline.position.copy(mesh.position);
+  outline.rotation.copy(mesh.rotation);
+  scene.add(outline);
+  return outline;
+}
 
-function buildScene(placements) {
-  const zoneGroups = new Map(); // zone name -> [{pos_x, pos_y}]
-  for (const p of placements) {
-    if (!zoneGroups.has(p.zone)) zoneGroups.set(p.zone, []);
-    zoneGroups.get(p.zone).push(p);
+function buildFloor(layout) {
+  const bounds = layout.bounds || {
+    min_x: -10,
+    max_x: 10,
+    min_y: -8,
+    max_y: 8,
+    width: 20,
+    depth: 16,
+    center_x: 0,
+    center_y: 0,
+  };
+  currentBounds = bounds;
+
+  const slab = new THREE.Mesh(
+    new THREE.BoxGeometry(bounds.width, 0.35, bounds.depth),
+    new THREE.MeshStandardMaterial({ color: 0x111c2f, roughness: 0.92, metalness: 0.05 }),
+  );
+  slab.position.set(bounds.center_x, -0.25, bounds.center_y);
+  scene.add(slab);
+  addOutline(slab, 0x38bdf8);
+
+  const gridSize = Math.ceil(Math.max(bounds.width, bounds.depth) / 10) * 10;
+  const grid = new THREE.GridHelper(gridSize, Math.max(10, gridSize / 2), 0x334155, 0x1e293b);
+  grid.position.set(bounds.center_x, -0.06, bounds.center_y);
+  const gridMaterials = Array.isArray(grid.material) ? grid.material : [grid.material];
+  gridMaterials.forEach((material) => {
+    material.transparent = true;
+    material.opacity = 0.55;
+  });
+  scene.add(grid);
+
+  for (const zone of layout.zones || []) {
+    const pad = new THREE.Mesh(
+      new THREE.BoxGeometry(zone.width, 0.12, zone.depth),
+      new THREE.MeshStandardMaterial({
+        color: zone.group.toLowerCase().includes('b') || zone.group.includes('3') ? 0x172554 : 0x16273b,
+        roughness: 0.82,
+        transparent: true,
+        opacity: 0.92,
+      }),
+    );
+    pad.position.set(zone.center_x, 0, zone.center_y);
+    scene.add(pad);
+    addOutline(pad, 0x475569);
+
+    const zoneLabel = makeTextSprite(zone.name, {
+      fontSize: 25,
+      scaleFactor: 0.022,
+      bg: 'rgba(15, 23, 42, 0.94)',
+      border: '#38bdf8',
+    });
+    zoneLabel.position.set(zone.center_x, 4.1, zone.center_y - zone.depth / 2 + 1.8);
+    scene.add(zoneLabel);
   }
 
-  for (const p of placements) {
-    const geometry = new THREE.BoxGeometry(1.5, 1, 1);
-    const material = new THREE.MeshStandardMaterial({ color: STATE_COLORS[0] });
+  const floorLabel = makeTextSprite(`${layout.floor?.name || 'Floor 1'} · PROVISIONAL LOGICAL LAYOUT`, {
+    fontSize: 28,
+    scaleFactor: 0.026,
+    bg: 'rgba(2, 6, 23, 0.94)',
+    fg: '#7dd3fc',
+    border: '#0ea5e9',
+  });
+  floorLabel.position.set(bounds.min_x + 13, 1.2, bounds.min_y + 1.5);
+  scene.add(floorLabel);
+}
+
+function buildMachines(placements) {
+  for (const placement of placements) {
+    const geometry = new THREE.BoxGeometry(3.2, 1.45, 2.5);
+    const material = new THREE.MeshStandardMaterial({
+      color: STATE_COLORS[0],
+      roughness: 0.48,
+      metalness: 0.08,
+      emissive: STATE_COLORS[0],
+      emissiveIntensity: 0.08,
+    });
     const mesh = new THREE.Mesh(geometry, material);
-    // Design §4 grid shape: x/y from the simulated placement, mapped to the
-    // Three.js floor plane (X, Z) with Y fixed as the vertical box height.
-    mesh.position.set(p.pos_x, 0.5, p.pos_y);
-    mesh.userData.deviceId = p.device_id;
+    mesh.position.set(placement.pos_x, 0.8, placement.pos_y);
+    mesh.userData.deviceId = placement.device_id;
     scene.add(mesh);
+    addOutline(mesh, 0xcbd5e1);
 
     machineMeshes.push(mesh);
-    machinesById.set(p.device_id, { mesh, material });
+    machinesById.set(placement.device_id, { mesh, material });
 
-    // Per-machine ID label, small sprite just above the box, distinct from
-    // the larger zone-level label -- helps identify which box is which
-    // before/without opening the HUD list. Small font + tight scaleFactor
-    // (re-tuned from a first pass that overlapped at 12-unit zone spacing)
-    // so 2 machine labels 8 units apart stay legible and non-overlapping.
-    const idLabel = makeTextSprite(p.device_id, { fontSize: 20, scaleFactor: 0.016 });
-    idLabel.position.set(p.pos_x, 1.5, p.pos_y);
+    const idLabel = makeTextSprite(placement.device_id, {
+      fontSize: 21,
+      scaleFactor: 0.018,
+      bg: 'rgba(2, 6, 23, 0.90)',
+    });
+    idLabel.position.set(placement.pos_x, 2.15, placement.pos_y);
     scene.add(idLabel);
-  }
-
-  // Zone labels float well above the machine-ID labels (y=5.5 vs y=1.5) so
-  // the two label layers never visually collide, and are wide enough at
-  // 18-unit zone spacing (re-tuned from the first pass's 12) to render
-  // without touching their neighbors.
-  for (const [zoneName, members] of zoneGroups) {
-    const avgX = members.reduce((sum, m) => sum + m.pos_x, 0) / members.length;
-    const avgY = members.reduce((sum, m) => sum + m.pos_y, 0) / members.length;
-    const label = makeTextSprite(zoneName, { fontSize: 26, scaleFactor: 0.02, bg: 'rgba(15, 23, 42, 0.85)' });
-    label.position.set(avgX, 5.5, avgY);
-    scene.add(label);
   }
 }
 
-// ── Click-to-drill-down (raycasting against ALL 10 meshes, real browser
-// click-picking -- design §8: functionally testable, unlike Grafana Canvas
-// links[]) ──
+function frameLayout(bounds = currentBounds) {
+  if (!bounds) return;
+  const span = Math.max(bounds.width, bounds.depth);
+  controls.target.set(bounds.center_x + span * 0.08, 0.5, bounds.center_y);
+  camera.position.set(
+    bounds.center_x + span * 0.48,
+    Math.max(32, span * 0.82),
+    bounds.center_y + span * 0.82,
+  );
+  camera.near = 0.1;
+  camera.far = Math.max(300, span * 5);
+  camera.updateProjectionMatrix();
+  controls.update();
+}
+
+function applyPlacementMeta(layout) {
+  const floor = layout.floor || {};
+  floorNameEl.textContent = floor.name || 'Floor 1';
+  const simulated = (layout.machines || []).some((machine) => machine.is_simulated);
+  bannerEl.hidden = !simulated;
+  bannerEl.textContent = simulated
+    ? 'PROVISIONAL FLOOR 1 LAYOUT — logical grouping from device registry; not surveyed physical coordinates'
+    : 'VERIFIED FLOOR 1 LAYOUT';
+}
+
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
 
 function drillDownUrl(deviceId) {
   const state = latestStateById.get(deviceId);
-  const factory = (state && state.factory) || '2';
-  let url = `/d/ims-ldi-machine-snapshot/set2-machine-snapshot?var-machine_id=${encodeURIComponent(deviceId)}&var-factory=${encodeURIComponent(factory)}&from=now-6h&to=now`;
-  // If this machine currently has an active alarm (the red state), scope
-  // the drill-down to that exact event -- without var-log_id/var-event_time_ms,
-  // Machine Snapshot falls back to its own default (most recent telemetry
-  // row), which can be minutes newer than the alarm and show unrelated
-  // "everything looks fine" values instead of the alarm moment.
-  if (state && state.alarm && state.alarm.related_log_id) {
-    url += `&var-log_id=${encodeURIComponent(state.alarm.related_log_id)}`;
+  const params = new URLSearchParams({
+    'var-machine_id': deviceId,
+    from: 'now-6h',
+    to: 'now',
+  });
+  if (state?.factory !== null && state?.factory !== undefined && String(state.factory).trim() !== '') {
+    params.set('var-factory', state.factory);
+  }
+  if (state?.alarm?.related_log_id) {
+    params.set('var-log_id', state.alarm.related_log_id);
     if (state.alarm.logdate_ms) {
-      // var-clicked_series MUST be sent alongside var-event_time_ms: every
-      // panel keyed on "was a specific point clicked" branches on
-      // event_time_ms > 0 to decide whether to read the machine from
-      // clicked_series (split_part(x, ' - ', 1) -- ims-ldi-engineering-
-      // analytics.json's own data links set this to the plain machine ID,
-      // e.g. "LDI-03", confirmed live: split_part('LDI-03', ' - ', 1) =
-      // 'LDI-03' unchanged) or from machine_id. Sending event_time_ms alone
-      // (as this function did before) leaves clicked_series at its default
-      // '__none__', so that branch matches zero machines -- confirmed live:
-      // Process Capability / Alarm Context / Event Timeline all silently
-      // returned 0 rows (NO_DATA) until this was added.
-      url += `&var-event_time_ms=${encodeURIComponent(state.alarm.logdate_ms)}`;
-      url += `&var-clicked_series=${encodeURIComponent(deviceId)}`;
+      params.set('var-event_time_ms', state.alarm.logdate_ms);
+      params.set('var-clicked_series', deviceId);
     }
   }
-  return url;
+  return `/d/ims-ldi-machine-snapshot/set2-machine-snapshot?${params.toString()}`;
 }
 
 function pickMachine(event) {
@@ -191,124 +244,114 @@ function pickMachine(event) {
   pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
   pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
   raycaster.setFromCamera(pointer, camera);
-  // intersectObjects (plural) against the full 10-mesh array -- the hit
-  // list is sorted nearest-first by Three.js, so hits[0] is the correct
-  // single machine actually under the cursor, not just "any click hits
-  // LDI-01" (verified this is genuinely per-mesh below in the report).
   const hits = raycaster.intersectObjects(machineMeshes, false);
   return hits.length > 0 ? hits[0].object.userData.deviceId : null;
 }
 
 renderer.domElement.addEventListener('click', (event) => {
   const deviceId = pickMachine(event);
-  if (deviceId) {
-    window.location.href = drillDownUrl(deviceId);
-  }
+  if (deviceId) window.location.href = drillDownUrl(deviceId);
 });
 
 renderer.domElement.addEventListener('pointermove', (event) => {
-  const deviceId = pickMachine(event);
-  renderer.domElement.style.cursor = deviceId ? 'pointer' : 'default';
+  renderer.domElement.style.cursor = pickMachine(event) ? 'pointer' : 'default';
 });
 
-// ── HUD (also the accessibility fallback per design §16 -- same real data
-// as plain DOM text/list, not locked inside the WebGL canvas) ──
-const machineListEl = document.getElementById('machine-list');
-const statusLine = document.getElementById('status-line');
-const summaryLine = document.getElementById('summary-line');
+resetViewButton.addEventListener('click', () => frameLayout());
 
 function stateRowHtml(row) {
   const color = `#${(STATE_COLORS[row.state] ?? STATE_COLORS[0]).toString(16).padStart(6, '0')}`;
   const label = row.state_label || STATE_LABELS[row.state] || 'NO_DATA';
-  const alarmText = row.alarm ? `${row.alarm.count} ${row.alarm.count === 1 ? 'ALARM' : 'ALARMS'} · ${row.alarm.owner} · ${row.alarm.elapsed}` : '—';
+  const alarmText = row.alarm
+    ? `${row.alarm.count} ${row.alarm.count === 1 ? 'ALARM' : 'ALARMS'} · ${escapeHtml(row.alarm.owner)} · ${escapeHtml(row.alarm.elapsed)}`
+    : 'No active critical/major alarm';
   return `
-    <div class="machine-row">
-      <div class="machine-row-top">
-        <span class="mini-pill" style="background:${color}">${label}</span>
-        <span class="machine-id">${row.device_id}</span>
-      </div>
-      <div class="machine-row-detail">
-        <span>${row.board_no ?? '—'} / ${row.total_board ?? '—'} bd</span>
-        <span>${row.mo || '—'}</span>
-      </div>
-      <div class="machine-row-alarm">${alarmText}</div>
-    </div>`;
+    <button class="machine-row" type="button" data-device-id="${escapeHtml(row.device_id)}" aria-label="Open ${escapeHtml(row.device_id)} snapshot">
+      <span class="machine-row-top">
+        <span class="mini-pill" style="background:${color}">${escapeHtml(label)}</span>
+        <span class="machine-id">${escapeHtml(row.device_id)}</span>
+      </span>
+      <span class="machine-row-detail">
+        <span>${escapeHtml(row.board_no ?? '—')} / ${escapeHtml(row.total_board ?? '—')} bd</span>
+        <span>${escapeHtml(row.mo || '—')}</span>
+      </span>
+      <span class="machine-row-alarm">${alarmText}</span>
+    </button>`;
 }
+
+machineListEl.addEventListener('click', (event) => {
+  const row = event.target.closest('[data-device-id]');
+  if (row) window.location.href = drillDownUrl(row.dataset.deviceId);
+});
 
 function applyState(payload) {
   const rows = payload.machines || [];
-  latestStateById = new Map(rows.map((r) => [r.device_id, r]));
+  latestStateById = new Map(rows.map((row) => [row.device_id, row]));
 
-  for (const row of rows) {
-    const entry = machinesById.get(row.device_id);
-    if (!entry) continue; // shouldn't happen -- placement and state device sets should match exactly
-    const color = STATE_COLORS[row.state] ?? STATE_COLORS[0];
+  for (const [deviceId, entry] of machinesById.entries()) {
+    const row = latestStateById.get(deviceId);
+    const color = row ? (STATE_COLORS[row.state] ?? STATE_COLORS[0]) : STATE_COLORS[0];
     entry.material.color.setHex(color);
+    entry.material.emissive.setHex(color);
+    entry.material.emissiveIntensity = row?.state === 3 ? 0.22 : 0.08;
   }
 
   machineListEl.innerHTML = rows.map(stateRowHtml).join('');
-
-  const alarmCount = rows.filter((r) => r.state === 3).length;
-  summaryLine.textContent = `${rows.length} machines · ${alarmCount} in ALARM`;
-
-  statusLine.textContent = `Last updated ${new Date(payload.queried_at).toLocaleTimeString()}`;
+  const alarmCount = rows.filter((row) => row.state === 3).length;
+  const noDataCount = rows.filter((row) => row.state === 0).length;
+  summaryLine.textContent = `${rows.length} machines · ${alarmCount} ALARM · ${noDataCount} NO DATA`;
+  statusLine.textContent = `Database/API update: ${new Date(payload.queried_at).toLocaleTimeString()}`;
   statusLine.classList.remove('error');
 }
 
 async function pollState() {
   try {
-    const res = await fetch('api/state');
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    applyState(data);
-  } catch (err) {
-    statusLine.textContent = `State fetch failed: ${err.message}`;
+    const response = await fetch('api/state');
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    applyState(await response.json());
+  } catch (error) {
+    statusLine.textContent = `State fetch failed: ${error.message}`;
     statusLine.classList.add('error');
   }
 }
 
-// ── Boot: placement is fetched once (rare-changing per design §5), state
-// is polled every 5s (frequently-changing) -- two independent queries,
-// joined client-side by device_id, exactly the separation design §5
-// requires so a future real-coordinate swap only ever touches the
-// placement fetch below. ──
 async function boot() {
-  const t0 = performance.now();
+  const startedAt = performance.now();
   try {
-    const res = await fetch('api/placement');
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    buildScene(data.machines || []);
-  } catch (err) {
-    statusLine.textContent = `Placement fetch failed: ${err.message}`;
+    const response = await fetch('api/placement');
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const layout = await response.json();
+    applyPlacementMeta(layout);
+    buildFloor(layout);
+    buildMachines(layout.machines || []);
+    frameLayout(layout.bounds);
+  } catch (error) {
+    statusLine.textContent = `Placement fetch failed: ${error.message}`;
     statusLine.classList.add('error');
   }
+
   await pollState();
   setInterval(pollState, POLL_MS);
-  const t1 = performance.now();
-  // Exposed for Playwright/perf instrumentation to read back -- not
-  // rendered in the UI itself, no effect on normal operator use. Lets a
-  // verification script (a) read boot timing and (b) drive the camera
-  // programmatically to center a specific machine before a real
-  // browser_click, since the canvas has no per-object DOM node a click
-  // target selector could otherwise address.
-  window.__twinBootMs = t1 - t0;
-  window.__twin = { camera, controls, scene, renderer, machineMeshes };
+  window.__twinBootMs = performance.now() - startedAt;
+  window.__twin = { camera, controls, scene, renderer, machineMeshes, frameLayout };
 }
 
-boot();
-
-// ── Render loop ──────────────────────────────────────────────
 function onResize() {
-  camera.aspect = window.innerWidth / window.innerHeight;
+  const { width, height } = container.getBoundingClientRect();
+  if (width <= 0 || height <= 0) return;
+  camera.aspect = width / height;
   camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setSize(width, height);
 }
 window.addEventListener('resize', onResize);
+const resizeObserver = new ResizeObserver(onResize);
+resizeObserver.observe(container);
 
 function animate() {
   requestAnimationFrame(animate);
   controls.update();
   renderer.render(scene, camera);
 }
+
+boot();
 animate();

@@ -2,10 +2,11 @@
   "name": "ims-factory-twin-3d",
   "version": "1.0.0",
   "private": true,
-  "description": "Task 4.1 POC: 1-machine (LDI-01) Three.js 3D digital twin. Read-only -- state/alarm/board/MO queried live from TimescaleDB via the grafana_reader role, position is a hardcoded simulated constant (is_simulated: true). No write endpoints (unlike alarm-api).",
+  "description": "Read-only Three.js factory twin with live LDI state and a clearly disclosed provisional Floor 1 logical layout.",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node --test test/*.test.js"
   },
   "dependencies": {
     "express": "^4.19.2",

@@ -2,156 +2,186 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>IMS Factory 3D Digital Twin</title>
+  <title>IMS Factory Digital Twin — Floor 1</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
+    :root {
+      color-scheme: dark;
+      --surface: rgba(15, 23, 42, 0.92);
+      --surface-soft: rgba(30, 41, 59, 0.72);
+      --border: #334155;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+    }
+    * { box-sizing: border-box; }
     html, body {
       margin: 0;
-      padding: 0;
       width: 100%;
       height: 100%;
-      background: #0f172a;
-      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: #0b1220;
+      color: var(--text);
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
       overflow: hidden;
     }
-    #scene {
-      position: fixed;
-      inset: 0;
-    }
-    #scene canvas {
-      display: block;
-    }
-
-    /* Binding requirement (design spec §19): visible on-screen banner
-       whenever any rendered placement is simulated. This POC's one
-       placement is always simulated (hardcoded constant, see server.js),
-       so the banner is always shown -- not conditional in this build, but
-       still driven off the API's is_simulated field so it would correctly
-       disappear once /api/placement ever returns a real one. */
+    #scene { position: fixed; inset: 0; overflow: hidden; }
+    #scene canvas { display: block; }
     #simulated-banner {
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
-      z-index: 10;
+      z-index: 20;
+      min-height: 34px;
       background: #f59e0b;
       color: #1c1305;
-      font-weight: 700;
-      font-size: 14px;
-      letter-spacing: 0.04em;
+      font-weight: 800;
+      font-size: 13px;
+      letter-spacing: 0.025em;
       text-align: center;
-      padding: 8px 12px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+      padding: 8px 330px 8px 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.35);
     }
-
     #hud {
       position: fixed;
-      top: 44px;
+      top: 46px;
       left: 16px;
       bottom: 16px;
       z-index: 10;
-      background: rgba(15, 23, 42, 0.85);
-      border: 1px solid #334155;
-      border-radius: 8px;
-      padding: 14px 18px;
-      color: #e2e8f0;
-      width: 280px;
-      font-size: 14px;
-      line-height: 1.5;
+      width: 318px;
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      padding: 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.28);
+    }
+    .hud-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
     }
     #hud h1 {
-      font-size: 15px;
-      margin: 0 0 4px 0;
+      margin: 0;
       color: #f8fafc;
+      font-size: 16px;
+      line-height: 1.25;
     }
+    #floor-name {
+      display: block;
+      margin-top: 2px;
+      color: #7dd3fc;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    #reset-view {
+      flex: 0 0 auto;
+      padding: 6px 9px;
+      color: #e2e8f0;
+      background: #1e293b;
+      border: 1px solid #475569;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 650;
+    }
+    #reset-view:hover, #reset-view:focus-visible { border-color: #38bdf8; outline: none; }
     #summary-line {
-      color: #94a3b8;
+      margin: 7px 0 8px;
+      color: var(--muted);
       font-size: 12px;
-      margin-bottom: 8px;
     }
+    .legend {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+      margin-bottom: 10px;
+      padding: 7px;
+      background: rgba(2, 6, 23, 0.56);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+    }
+    .legend span { color: #cbd5e1; font-size: 10px; text-align: center; white-space: nowrap; }
+    .legend i { display: inline-block; width: 8px; height: 8px; margin-right: 4px; border-radius: 50%; }
     #machine-list {
-      overflow-y: auto;
+      min-height: 0;
       flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 7px;
+      overflow-y: auto;
       padding-right: 4px;
     }
     .machine-row {
-      background: rgba(30, 41, 59, 0.6);
-      border: 1px solid #334155;
-      border-radius: 6px;
-      padding: 8px 10px;
+      display: block;
+      width: 100%;
+      padding: 8px 9px;
+      color: var(--text);
+      text-align: left;
+      background: var(--surface-soft);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      cursor: pointer;
     }
-    .machine-row-top {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 4px;
-    }
-    .machine-id {
-      font-weight: 600;
-      font-size: 13px;
-    }
+    .machine-row:hover, .machine-row:focus-visible { border-color: #38bdf8; outline: none; }
+    .machine-row-top, .machine-row-detail { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .machine-row-top { justify-content: flex-start; margin-bottom: 4px; }
+    .machine-id { font-size: 13px; font-weight: 700; }
     .mini-pill {
       display: inline-block;
-      padding: 1px 8px;
+      min-width: 54px;
+      padding: 2px 7px;
       border-radius: 999px;
-      font-weight: 700;
-      font-size: 10px;
-      color: #0f172a;
+      color: #07111f;
+      font-size: 9px;
+      font-weight: 850;
+      text-align: center;
     }
-    .machine-row-detail {
-      display: flex;
-      justify-content: space-between;
-      color: #94a3b8;
-      font-size: 12px;
-    }
-    .machine-row-alarm {
-      margin-top: 2px;
-      font-size: 11px;
-      color: #cbd5e1;
-    }
-    #hud .hint {
-      margin-top: 10px;
+    .machine-row-detail { color: var(--muted); font-size: 11px; }
+    .machine-row-alarm { display: block; margin-top: 3px; color: #cbd5e1; font-size: 10px; }
+    .hint {
+      margin-top: 9px;
       padding-top: 8px;
-      border-top: 1px solid #334155;
-      color: #94a3b8;
-      font-size: 12px;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      font-size: 11px;
+      line-height: 1.45;
     }
-    #hud .error {
-      color: #ef4444;
-      font-weight: 600;
+    .truth-note strong { color: #fbbf24; }
+    .error { color: #f87171 !important; font-weight: 700; }
+    @media (max-width: 760px) {
+      #simulated-banner { padding-right: 12px; font-size: 11px; }
+      #hud { width: 270px; left: 8px; top: 56px; bottom: 8px; }
     }
-
-    /* Accessibility fallback (design §16): the same real per-machine data
-       (state/board/MO/alarm for all 10 machines) is also available as
-       plain HTML text in #machine-list, not locked inside the WebGL
-       canvas -- a screen reader can read the HUD list even though it
-       can't meaningfully describe the 3D scene itself. */
   </style>
 </head>
 <body>
-  <div id="simulated-banner">SIMULATED LAYOUT — machine positions are placeholders, not real surveyed coordinates</div>
+  <div id="simulated-banner">PROVISIONAL FLOOR 1 LAYOUT — logical grouping from device registry; not surveyed physical coordinates</div>
 
-  <div id="hud">
-    <h1>IMS Factory 3D Digital Twin</h1>
-    <div id="summary-line">Loading…</div>
+  <aside id="hud" aria-label="Floor 1 machine status">
+    <div class="hud-header">
+      <div>
+        <h1>IMS Factory Digital Twin</h1>
+        <span id="floor-name">Floor 1</span>
+      </div>
+      <button id="reset-view" type="button">Reset view</button>
+    </div>
+    <div id="summary-line">Loading machines…</div>
+    <div class="legend" aria-label="Machine status legend">
+      <span><i style="background:#22c55e"></i>OK</span>
+      <span><i style="background:#ef4444"></i>ALARM</span>
+      <span><i style="background:#f59e0b"></i>IDLE</span>
+      <span><i style="background:#64748b"></i>NO DATA</span>
+    </div>
     <div id="machine-list"></div>
-    <div class="hint">Click a box in the scene to open that machine's Machine Snapshot drill-down. Live data polls every 5s.</div>
+    <div class="hint">Click a machine in the scene or this list to open its Machine Snapshot. State refreshes every 5 seconds.</div>
+    <div class="hint truth-note"><strong>Layout:</strong> provisional logical zones. <strong>Status:</strong> read-only database/API result.</div>
     <div id="status-line" class="hint"></div>
-  </div>
+  </aside>
 
-  <div id="scene"></div>
+  <main id="scene" aria-label="Interactive three-dimensional Floor 1 logical layout"></main>
 
-  <!-- Relative paths (no leading "/") throughout this page and app.js's
-       fetch calls, deliberately -- this page is served under nginx's
-       /factory-twin-3d/ prefix (proxy/nginx.conf), which strips the prefix
-       on proxy_pass. An absolute "/app.js" would resolve against the site
-       root and hit Grafana's own location block instead of this service. -->
   <script type="importmap">
     {
       "imports": {

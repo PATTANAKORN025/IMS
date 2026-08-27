@@ -121,6 +121,10 @@ jobs:
       - name: Run Gate Decision Tests
         run: node tests/unit/gate.test.js
 
+      - name: Run Factory Twin Floor Layout Tests
+        working-directory: services/factory-twin-3d
+        run: npm test
+
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   # Stage 3: Integration & Chaos Test
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
