@@ -78,18 +78,41 @@ function loadPrivateLayout() {
 // missing/malformed, matching loadPrivateLayout()'s convention; this repo's
 // own /api/floor-geometry response is simply an empty-slots shape in that
 // case (see the route below), never a crash.
+//
+// Deliberately does NOT itself carry a device_id mapping -- see
+// loadPrivateAssetMapping() below. Splitting these into two files (per an
+// explicit data-separation requirement) means a verified physical-slot ->
+// device_id correspondence can be added or changed without touching this
+// file's geometry at all.
 function loadPrivateGeometry() {
   const filePath = path.join(PRIVATE_DIR, 'floor1-geometry.json');
   if (!fs.existsSync(filePath)) return null;
   try {
     const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-    if (!Array.isArray(parsed.slots) || typeof parsed.mapping !== 'object' || parsed.mapping === null) {
-      throw new Error('missing slots[] or mapping{}');
-    }
+    if (!Array.isArray(parsed.slots)) throw new Error('missing slots[]');
     return parsed;
   } catch (err) {
     console.error(`private geometry file present but unusable: ${err.message}`);
     return null;
+  }
+}
+
+// Reads private/floor1-asset-mapping.json if present -- physicalSlotId ->
+// device_id | null. Absent/malformed both fall back to an empty mapping
+// (every slot UNMAPPED), never invented. This is the ONLY place a real
+// physical-slot<->device_id correspondence would ever be introduced, and
+// this repo's own copy of the file (if any) has every entry null: no
+// authoritative mapping exists.
+function loadPrivateAssetMapping() {
+  const filePath = path.join(PRIVATE_DIR, 'floor1-asset-mapping.json');
+  if (!fs.existsSync(filePath)) return {};
+  try {
+    const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    if (typeof parsed.mapping !== 'object' || parsed.mapping === null) throw new Error('missing mapping{}');
+    return parsed.mapping;
+  } catch (err) {
+    console.error(`private asset-mapping file present but unusable (treating all slots UNMAPPED): ${err.message}`);
+    return {};
   }
 }
 
@@ -442,23 +465,42 @@ app.get('/api/placement', (req, res) => {
 // Anonymous physical-slot geometry -- entirely separate concern from
 // /api/placement above. Returns an empty-but-valid shape when
 // private/floor1-geometry.json is absent (the default state for anyone
-// cloning this public repo), never an error. `mapping` is
-// physicalSlotId -> device_id | null; every value is null (UNMAPPED)
-// until an authoritative correspondence is supplied -- this route never
-// infers or fabricates one from position, numbering, or any other
-// heuristic.
+// cloning this public repo), never an error. Merges in
+// floor1-asset-mapping.json's physicalSlotId -> device_id | null
+// separately (per the explicit data-separation requirement: a real
+// mapping can be added/changed without touching geometry) -- every value
+// is null (UNMAPPED) until an authoritative correspondence is supplied;
+// this route never infers or fabricates one from position, numbering, or
+// any other heuristic. A mapped slot's `status` becomes 'IMS_CONNECTED'
+// (its live MachineState comes from /api/state, joined client-side by
+// device_id, same pattern as the real-device layer); every other slot
+// stays 'UNMAPPED' and carries no device_id.
 app.get('/api/floor-geometry', (req, res) => {
   const geometry = loadPrivateGeometry();
-  res.status(200).json(
-    geometry || {
-      envelope: null,
-      camera: null,
-      columns: [],
-      zones: [],
-      slots: [],
-      mapping: {},
-    }
-  );
+  if (!geometry) {
+    return res.status(200).json({ envelope: null, camera: null, columns: [], zones: [], slots: [] });
+  }
+  const mapping = loadPrivateAssetMapping();
+  // Normalizes each slot to a stable wire shape (position/footprint)
+  // regardless of the private file's own internal shape (e.g. a
+  // transcription file may use size:{width,depth}+height instead of
+  // footprint:{width,depth,height}) -- the renderer only ever needs to
+  // know one shape.
+  const slots = geometry.slots.map((slot) => {
+    const deviceId = mapping[slot.slot_id] || null;
+    const footprint = slot.footprint || {
+      width: slot.size?.width ?? 1,
+      depth: slot.size?.depth ?? 1,
+      height: slot.height ?? 1,
+    };
+    return {
+      ...slot,
+      footprint,
+      ims_device_id: deviceId,
+      status: deviceId ? 'IMS_CONNECTED' : 'UNMAPPED',
+    };
+  });
+  res.status(200).json({ ...geometry, slots });
 });
 
 app.get('/healthz', async (req, res) => {
