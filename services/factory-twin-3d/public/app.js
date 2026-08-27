@@ -9,6 +9,15 @@
 // Polls /api/state every 5s. Clicking ANY of the 10 boxes navigates to that
 // SPECIFIC machine's real Machine Snapshot drill-down (raycast against all
 // 10 meshes, not just one).
+//
+// Floor-scoping addendum: adds a floor shell + zone boundary outlines
+// (buildFloorShells / the zone-outline block in buildScene). Both are
+// derived entirely from data this service already owned (the synthetic
+// simulated_grid coordinates) -- no real floor plan/CAD/survey data was
+// read into this file. See server.js's FLOOR_0 comment and
+// docs/superpowers/specs/2026-08-27-sanitized-4floor-twin-layout-design.md
+// for why "Floor 1" here is a default container label, not a verified
+// claim about where these real devices physically sit.
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -65,6 +74,60 @@ controls.target.set(14, 0.5, 0);
 // from Task 4.1's 20x20 to cover the full 10-machine/5-zone spread.
 const grid = new THREE.GridHelper(100, 40, 0x334155, 0x1e293b);
 scene.add(grid);
+
+// ── Floor shell (Floor 1, default grouping) ─────────────────
+// A plate + edge outline under the grid, one per entry in /api/placement's
+// `floors` array (currently always exactly one -- see server.js FLOOR_0).
+// Sized from the actual placement bounding box (+ padding), NOT a guessed
+// fixed constant: a hardcoded shell size is exactly the class of bug this
+// codebase has already hit twice (Task 4.2's fixed 2-machine-per-zone
+// assumption, server.js's ZONE_ORDER comment) -- the real device set has
+// grown past every hand-picked constant tried so far, so this derives its
+// extent from data instead of guessing another one that will go stale the
+// same way. Still zero real facility data: the bounding box comes from the
+// synthetic simulated_grid coordinates this service already computed.
+const FLOOR_PADDING = 6;
+
+function buildFloorShells(floors, machines) {
+  if (machines.length === 0) return;
+  const xs = machines.map((m) => m.pos_x);
+  const ys = machines.map((m) => m.pos_y);
+  const minX = Math.min(...xs) - FLOOR_PADDING;
+  const maxX = Math.max(...xs) + FLOOR_PADDING;
+  const minY = Math.min(...ys) - FLOOR_PADDING;
+  const maxY = Math.max(...ys) + FLOOR_PADDING;
+  const width = maxX - minX;
+  const depth = maxY - minY;
+  const cx = (minX + maxX) / 2;
+  const cz = (minY + maxY) / 2;
+
+  for (const floor of floors) {
+    const geometry = new THREE.PlaneGeometry(width, depth);
+    const material = new THREE.MeshStandardMaterial({
+      color: 0x1e293b,
+      transparent: true,
+      opacity: 0.55,
+      side: THREE.DoubleSide,
+    });
+    const shell = new THREE.Mesh(geometry, material);
+    shell.rotation.x = -Math.PI / 2; // lay flat on the X/Z plane, under the grid
+    shell.position.set(cx, -0.05, cz);
+    scene.add(shell);
+
+    // Plate alone reads as near-invisible against the scene background at
+    // this opacity -- a bright edge outline is what actually makes "this is
+    // the floor extent" legible, confirmed via a real screenshot before
+    // adding this (the plain-plate version rendered but was not visible).
+    const edges = new THREE.EdgesGeometry(new THREE.BoxGeometry(width, 0.05, depth));
+    const outline = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xf59e0b }));
+    outline.position.set(cx, -0.05, cz);
+    scene.add(outline);
+
+    const label = makeTextSprite(floor.floor_label, { fontSize: 22, scaleFactor: 0.02, bg: 'rgba(245, 158, 11, 0.85)', fg: '#1c1305' });
+    label.position.set(cx, 9, minY - 2);
+    scene.add(label);
+  }
+}
 
 scene.add(new THREE.AmbientLight(0xffffff, 0.6));
 const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
@@ -141,9 +204,28 @@ function buildScene(placements) {
   // the two label layers never visually collide, and are wide enough at
   // 18-unit zone spacing (re-tuned from the first pass's 12) to render
   // without touching their neighbors.
+  //
+  // Zone boundary outlines: a wireframe box per zone, sized from that
+  // zone's OWN member bounding box (computed from the already-synthetic
+  // simulated_grid coordinates above) plus a fixed padding constant --
+  // never from any real drawing. This is "zone structure" made visible,
+  // the 3D equivalent of the 2D twin's canvas zone-container rectangles,
+  // built from data this service already owns rather than a new input.
+  const ZONE_PADDING = 3;
   for (const [zoneName, members] of zoneGroups) {
     const avgX = members.reduce((sum, m) => sum + m.pos_x, 0) / members.length;
     const avgY = members.reduce((sum, m) => sum + m.pos_y, 0) / members.length;
+    const minX = Math.min(...members.map((m) => m.pos_x)) - ZONE_PADDING;
+    const maxX = Math.max(...members.map((m) => m.pos_x)) + ZONE_PADDING;
+    const minY = Math.min(...members.map((m) => m.pos_y)) - ZONE_PADDING;
+    const maxY = Math.max(...members.map((m) => m.pos_y)) + ZONE_PADDING;
+
+    const boxGeom = new THREE.BoxGeometry(maxX - minX, 2, maxY - minY);
+    const edges = new THREE.EdgesGeometry(boxGeom);
+    const outline = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x475569 }));
+    outline.position.set(avgX, 0.01, avgY);
+    scene.add(outline);
+
     const label = makeTextSprite(zoneName, { fontSize: 26, scaleFactor: 0.02, bg: 'rgba(15, 23, 42, 0.85)' });
     label.position.set(avgX, 5.5, avgY);
     scene.add(label);
@@ -278,6 +360,7 @@ async function boot() {
     const res = await fetch('api/placement');
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
+    buildFloorShells(data.floors || [], data.machines || []);
     buildScene(data.machines || []);
   } catch (err) {
     statusLine.textContent = `Placement fetch failed: ${err.message}`;

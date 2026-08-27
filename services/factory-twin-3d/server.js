@@ -81,6 +81,23 @@ const ZONE_SPACING_X = 18;
 const MACHINE_SPACING_Y = 8;
 const DEVICE_REFRESH_INTERVAL_MS = 60_000;
 
+// Floor-scoping addendum (docs/superpowers/specs/2026-08-27-sanitized-4floor-
+// twin-layout-design.md): every device currently discovered has no real
+// floor assignment anywhere in this system (public.devices has no floor
+// column, and no cross-reference to any real building survey/CAD exists in
+// this repo -- confirmed by a full-repo search before this change). FLOOR_0
+// is therefore an explicit DEFAULT GROUPING, not a verified claim that
+// these real devices physically sit on the real building's first floor --
+// it is the twin's own single-floor container, labeled honestly as such,
+// that every device lands in until a real per-device floor assignment is
+// supplied. is_simulated/source (already present per-machine) carry the
+// same "not real yet" disclosure this floor field now carries too.
+const FLOOR_0 = {
+  floor_index: 0,
+  floor_label: 'Floor 1 (default grouping -- no real floor survey data yet)',
+  is_simulated: true,
+};
+
 // A zone not in ZONE_ORDER (a future physical zone this code doesn't know
 // about yet) is appended after the known five, sorted alphabetically --
 // keeps placement deterministic and collision-free without needing a code
@@ -122,6 +139,7 @@ function computePlacements(deviceRows) {
         rot_y: 0,
         rot_z: 0,
         scale: 1.0,
+        floor_index: FLOOR_0.floor_index,
         is_simulated: true,
         source: 'simulated_grid',
       });
@@ -306,7 +324,12 @@ app.get('/api/state', async (req, res) => {
 });
 
 app.get('/api/placement', (req, res) => {
-  res.status(200).json({ machines: SIMULATED_PLACEMENTS });
+  res.status(200).json({
+    // Single-floor scope for now (see FLOOR_0 above) -- an array so a real
+    // second floor is additive later, not a breaking shape change.
+    floors: [FLOOR_0],
+    machines: SIMULATED_PLACEMENTS,
+  });
 });
 
 app.get('/healthz', async (req, res) => {
