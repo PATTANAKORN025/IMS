@@ -87,6 +87,76 @@ layers.operational.name = 'operational';
 layers.telemetry.name = 'telemetry';
 for (const g of Object.values(layers)) scene.add(g);
 
+// ── View modes ──────────────────────────────────────────────
+// Two coordinate systems legitimately coexist in this scene and neither may
+// be moved to suit the other:
+//
+//   OPERATOR  the 23 monitored devices, positioned on a synthetic grid
+//             (is_simulated: true) because no real per-device position
+//             exists. Their framing is the hand-tuned one that predates the
+//             building geometry, kept byte-for-byte so the monitoring
+//             default is unchanged.
+//   BUILDING  the measured envelope, footprint, columns, slots and zones,
+//             which span far more ground than the synthetic device grid.
+//
+// Framing one well necessarily frames the other badly. That is a real
+// property of the data, not a bug, so it is exposed as an explicit choice
+// rather than resolved by moving machines or rescaling geometry -- either of
+// which would invent a spatial relationship the evidence does not support.
+//
+// Switching only moves the camera. No geometry, position, layer visibility
+// or API result is touched.
+const OPERATOR_VIEW = Object.freeze({
+  // The values already in use, preserved exactly (see the camera/controls
+  // comments above for why they were chosen).
+  position: { x: 18, y: 52, z: 46 },
+  target: { x: 14, y: 0.5, z: 0 },
+});
+let buildingView = null; // derived from real bounds once geometry arrives
+let activeView = 'operator';
+
+// Derives a camera placement that fits a bounding box, rather than hardcoding
+// coordinates: the building's extent is known from the data, so the framing
+// should follow it and stay correct if the evidence ever changes.
+function frameBounds({ cx, cz, width, depth, height = 0 }) {
+  const fov = THREE.MathUtils.degToRad(camera.fov);
+  const halfSpan = Math.max(width, depth / Math.max(camera.aspect, 0.0001)) / 2;
+  const dist = (halfSpan / Math.tan(fov / 2)) * 1.15; // 15% margin so nothing clips at the edge
+  return {
+    position: { x: cx + dist * 0.35, y: Math.max(dist * 0.75, height * 2), z: cz + dist * 0.85 },
+    target: { x: cx, y: height / 2, z: cz },
+  };
+}
+
+function applyView(name) {
+  const v = name === 'building' ? buildingView : OPERATOR_VIEW;
+  if (!v) return false;
+  camera.position.set(v.position.x, v.position.y, v.position.z);
+  controls.target.set(v.target.x, v.target.y, v.target.z);
+  controls.update();
+  activeView = name;
+  for (const btn of document.querySelectorAll('#view-controls button[data-view]')) {
+    btn.setAttribute('aria-pressed', String(btn.dataset.view === name));
+  }
+  return true;
+}
+
+document.getElementById('view-controls')?.addEventListener('click', (ev) => {
+  const btn = ev.target.closest('button[data-view]');
+  if (btn) applyView(btn.dataset.view);
+});
+
+// The far plane was sized for the old synthetic spread; the building view
+// pulls the camera much further back, so a too-near far plane would clip the
+// structure it exists to show.
+function ensureDepthRange(dist) {
+  const needed = dist * 3;
+  if (camera.far < needed) {
+    camera.far = needed;
+    camera.updateProjectionMatrix();
+  }
+}
+
 // One centralized controller, deliberately not visibility logic scattered
 // through the build functions. Because each layer is a Group, hiding one is
 // a single flag: the objects stay in the scene graph, keep their geometry
@@ -226,6 +296,16 @@ function buildPhysicalSlots(geometry) {
   if (!geometry || !geometry.envelope) return;
 
   const { envelope, columns, zones, slots } = geometry;
+
+  // Building framing comes from the measured envelope, not from constants.
+  buildingView = frameBounds({
+    cx: 0,
+    cz: 0,
+    width: envelope.width,
+    depth: envelope.depth,
+    height: envelope.height,
+  });
+  ensureDepthRange(Math.hypot(buildingView.position.x, buildingView.position.y, buildingView.position.z));
 
   const envelopeGeom = new THREE.BoxGeometry(envelope.width, envelope.height, envelope.depth);
   const envelopeEdges = new THREE.EdgesGeometry(envelopeGeom);
@@ -725,6 +805,9 @@ async function boot() {
     machineMeshes,
     slotMeshes,
     layers,
+    applyView,
+    getView: () => activeView,
+    getBuildingView: () => buildingView,
     // Cache sizes are exposed so a regression test can assert the sharing
     // actually happened rather than trusting that it did.
     resourceStats: () => ({ geometries: geometryCache.size, materials: materialCache.size }),
