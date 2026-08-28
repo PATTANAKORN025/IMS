@@ -18,6 +18,46 @@ it is not.
 
 ---
 
+## 0. Current state
+
+What the twin holds today, and on what basis. Status words are used strictly:
+
+| Word | Means |
+|---|---|
+| **CONFIRMED** | Read directly from the source, cross-checked, and agreeing with an independent value. |
+| **OBSERVED** | Detected from the drawing and visually verified, but not independently corroborated. |
+| **DERIVED** | Computed from confirmed inputs rather than read. |
+| **SIMULATED** | Deliberately not real. Present so the system has something to render. |
+| **BLOCKED** | Absent because the source does not exist — not because it was skipped. |
+| **WITHHELD** | Extracted, but deliberately not served or drawn because it did not pass validation. |
+
+| Asset | Count | Status | Evidence |
+|---|---:|---|---|
+| Envelope | 1 | CONFIRMED | Printed dimension chains on the plan set |
+| Floor-to-floor height | 1 | DERIVED | Difference between printed floor levels across four plans |
+| Clear height | — | BLOCKED | No section or elevation exists |
+| Footprint polygon | 1 | CONFIRMED | Perimeter traced by ink-coverage measurement; area agrees with the printed figure |
+| Structural grid | 1 | CONFIRMED | Printed spans; totals match, cross-checked against bubble spacing |
+| Structural columns | 147 | OBSERVED | Shape detection at grid intersections, thresholds calibrated on verified samples |
+| Equipment slots | 242 | OBSERVED | Colour-separated component detection, machine-scale filtered |
+| Equipment height | — | BLOCKED | A plan view carries no equipment elevation |
+| Monitored devices | 23 | SIMULATED position | Live telemetry is real; position is a synthetic grid |
+| Physical mappings | 0 | BLOCKED | No authoritative record relates the namespaces |
+| Functional zones (rendered) | 8 | OBSERVED | Area-layer boundaries accepted against printed areas |
+| Functional zones (withheld) | 13 | WITHHELD | Failed area validation or party to an unresolved conflict |
+| Interior walls | 0 | BLOCKED | Floor is open-plan; no closed wall network exists to recover |
+| Doors | 0 | BLOCKED | Dependent on interior walls |
+| Lift pits | 0 | BLOCKED | Symbols merge with adjacent structure |
+| MES census | — | BLOCKED | Only source is a low-resolution screenshot |
+
+**Not complete, and not claimed to be.** Six rows are BLOCKED, each on a
+missing source rather than unfinished work. See
+**[Evidence Requirements](FACTORY_TWIN_EVIDENCE_REQUIREMENTS.md)** for what
+would unlock them, and **[Visual QA](FACTORY_TWIN_VISUAL_QA.md)** for the
+current QA and performance baseline.
+
+---
+
 ## 1. Reconstruction methodology
 
 The twin was reconstructed from a confidential engineering floor plan held

@@ -28,6 +28,7 @@ The high-level design, business value, and product capabilities.
 - **[Data Flow](architecture/DATA_FLOW.md)** - Telemetry pipeline from edge to visualization.
 - **[Database Schema](architecture/DATABASE_SCHEMA.md)** - TimescaleDB hypertable structures.
 - **[Factory Twin Reconstruction](architecture/FACTORY_TWIN_RECONSTRUCTION.md)** - How the Floor 1 twin was reconstructed, its evidence model, and what it may not claim.
+- **[Factory Twin Visual QA](architecture/FACTORY_TWIN_VISUAL_QA.md)** - Repeatable visual and performance QA procedure and baseline.
 - **[Business ROI](business/BUSINESS_VALUE_ROI.md)** - Business impact and return on investment.
 
 ### 2. Operations & Administration
