@@ -87,6 +87,24 @@ layers.operational.name = 'operational';
 layers.telemetry.name = 'telemetry';
 for (const g of Object.values(layers)) scene.add(g);
 
+// One centralized controller, deliberately not visibility logic scattered
+// through the build functions. Because each layer is a Group, hiding one is
+// a single flag: the objects stay in the scene graph, keep their geometry
+// and keep polling. This is presentation only -- it never mutates data,
+// never re-fetches, and never changes what the API returned.
+function setLayerVisible(name, visible) {
+  const g = layers[name];
+  if (!g) return false;
+  g.visible = visible;
+  return true;
+}
+
+document.getElementById('layer-controls')?.addEventListener('change', (ev) => {
+  const box = ev.target;
+  if (!(box instanceof HTMLInputElement) || !box.dataset.layer) return;
+  setLayerVisible(box.dataset.layer, box.checked);
+});
+
 // Floor grid -- purely orientation, not real factory floor data. Sized up
 // from Task 4.1's 20x20 to cover the full 10-machine/5-zone spread.
 const grid = new THREE.GridHelper(100, 40, 0x334155, 0x1e293b);
@@ -636,6 +654,7 @@ async function boot() {
     // Cache sizes are exposed so a regression test can assert the sharing
     // actually happened rather than trusting that it did.
     resourceStats: () => ({ geometries: geometryCache.size, materials: materialCache.size }),
+    setLayerVisible,
   };
 }
 
