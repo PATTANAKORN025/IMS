@@ -64,10 +64,33 @@ controls.enableDamping = true;
 // initial framing.
 controls.target.set(14, 0.5, 0);
 
+// ── Scene layers ────────────────────────────────────────────
+// Four layers, matching the four distinct kinds of claim this twin makes.
+// They are kept apart because they carry different evidentiary weight, not
+// for convenience: STRUCTURAL is measured building fabric, FUNCTIONAL is
+// digitized process areas, OPERATIONAL is physical equipment with no
+// confirmed identity, and TELEMETRY is live data about real devices. An
+// object belongs to exactly one.
+//
+// Grouping is also what makes visibility toggles a one-line operation
+// instead of visibility logic scattered across every build function, and it
+// leaves each layer's transform/culling handled by three.js as a unit.
+const layers = {
+  structural: new THREE.Group(), // envelope, footprint, grid, columns
+  functional: new THREE.Group(), // functional/process zones
+  operational: new THREE.Group(), // machine meshes, equipment slot pads
+  telemetry: new THREE.Group(), // live state overlays (labels)
+};
+layers.structural.name = 'structural';
+layers.functional.name = 'functional';
+layers.operational.name = 'operational';
+layers.telemetry.name = 'telemetry';
+for (const g of Object.values(layers)) scene.add(g);
+
 // Floor grid -- purely orientation, not real factory floor data. Sized up
 // from Task 4.1's 20x20 to cover the full 10-machine/5-zone spread.
 const grid = new THREE.GridHelper(100, 40, 0x334155, 0x1e293b);
-scene.add(grid);
+layers.structural.add(grid);
 
 // ── Floor shell (Floor 1, default grouping) ─────────────────
 // A plate + edge outline under the grid, one per entry in /api/placement's
@@ -106,7 +129,7 @@ function buildFloorShells(floors, machines) {
     const shell = new THREE.Mesh(geometry, material);
     shell.rotation.x = -Math.PI / 2; // lay flat on the X/Z plane, under the grid
     shell.position.set(cx, -0.05, cz);
-    scene.add(shell);
+    layers.structural.add(shell);
 
     // The floor plate is rendered from validated geometry only. An earlier
     // revision textured it with a private reference image fetched over
@@ -121,11 +144,11 @@ function buildFloorShells(floors, machines) {
     const edges = new THREE.EdgesGeometry(new THREE.BoxGeometry(width, 0.05, depth));
     const outline = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xf59e0b }));
     outline.position.set(cx, -0.05, cz);
-    scene.add(outline);
+    layers.structural.add(outline);
 
     const label = makeTextSprite(floor.floor_label, { fontSize: 22, scaleFactor: 0.02, bg: 'rgba(245, 158, 11, 0.85)', fg: '#1c1305' });
     label.position.set(cx, 9, minY - 2);
-    scene.add(label);
+    layers.structural.add(label);
   }
 }
 
@@ -139,6 +162,48 @@ function buildFloorShells(floors, machines) {
 // deliberately NOT added to machineMeshes / raycasting: an unmapped slot
 // has no click target, no drill-down, no live status, by construction --
 // the UI cannot accidentally imply a physical slot is a connected device.
+// ── Shared geometry/material caches ─────────────────────────
+// 147 columns and 242 slot pads previously allocated one BoxGeometry and one
+// Material each -- ~390 of each for objects that reuse a handful of distinct
+// sizes and three distinct appearances. Materials matter most: each unique
+// material is its own shader/state bucket at draw time. Keys are rounded to
+// the millimetre so floating-point noise does not defeat the cache.
+//
+// This changes allocation only. Every mesh keeps its own transform, so no
+// position, dimension or colour is altered -- the scene renders identically.
+const geometryCache = new Map();
+const materialCache = new Map();
+
+function boxGeometry(w, h, d) {
+  const key = `${w.toFixed(3)}|${h.toFixed(3)}|${d.toFixed(3)}`;
+  let g = geometryCache.get(key);
+  if (!g) {
+    g = new THREE.BoxGeometry(w, h, d);
+    geometryCache.set(key, g);
+  }
+  return g;
+}
+
+function standardMaterial(color) {
+  const key = `std|${color}`;
+  let m = materialCache.get(key);
+  if (!m) {
+    m = new THREE.MeshStandardMaterial({ color });
+    materialCache.set(key, m);
+  }
+  return m;
+}
+
+function basicMaterial(color, opacity) {
+  const key = `basic|${color}|${opacity}`;
+  let m = materialCache.get(key);
+  if (!m) {
+    m = new THREE.MeshBasicMaterial({ color, transparent: true, opacity });
+    materialCache.set(key, m);
+  }
+  return m;
+}
+
 function buildPhysicalSlots(geometry) {
   if (!geometry || !geometry.envelope) return;
 
@@ -148,7 +213,7 @@ function buildPhysicalSlots(geometry) {
   const envelopeEdges = new THREE.EdgesGeometry(envelopeGeom);
   const envelopeOutline = new THREE.LineSegments(envelopeEdges, new THREE.LineBasicMaterial({ color: 0x334155 }));
   envelopeOutline.position.set(0, envelope.height / 2, 0);
-  scene.add(envelopeOutline);
+  layers.structural.add(envelopeOutline);
 
   // Structural columns detected from the drawing (see the private geometry
   // file's column_detection block for method and thresholds).
@@ -170,11 +235,11 @@ function buildPhysicalSlots(geometry) {
   for (const col of columns || []) {
     const w = col.footprint?.width ?? 0.3;
     const dpt = col.footprint?.depth ?? 0.3;
-    const colGeom = new THREE.BoxGeometry(w, envelope.height, dpt);
+    const colGeom = boxGeometry(w, envelope.height, dpt);
     const color = col.confidence === 'medium' ? 0x1e293b : 0x334155;
-    const colMesh = new THREE.Mesh(colGeom, new THREE.MeshStandardMaterial({ color }));
+    const colMesh = new THREE.Mesh(colGeom, standardMaterial(color));
     colMesh.position.set(col.position.x, envelope.height / 2, col.position.z);
-    scene.add(colMesh);
+    layers.structural.add(colMesh);
   }
 
   for (const zone of zones || []) {
@@ -186,7 +251,7 @@ function buildPhysicalSlots(geometry) {
     // should read as visually secondary.
     const zoneOutline = new THREE.LineSegments(zoneEdges, new THREE.LineBasicMaterial({ color: 0x1e293b }));
     zoneOutline.position.set(b.x + b.width / 2, 0.02, b.z + b.depth / 2);
-    scene.add(zoneOutline);
+    layers.functional.add(zoneOutline);
   }
 
   // Physical machine positions digitized from the drawing. Plan width/depth
@@ -201,22 +266,18 @@ function buildPhysicalSlots(geometry) {
   // discipline used for columns and functional zones.
   for (const slot of slots || []) {
     const h = slot.footprint.height;
-    const geom = new THREE.BoxGeometry(slot.footprint.width, h, slot.footprint.depth);
+    const geom = boxGeometry(slot.footprint.width, h, slot.footprint.depth);
     // Flat, dim, unlit-looking gray -- deliberately unlike the bright,
     // state-colored real device boxes. No label, no userData.deviceId,
     // never pushed to machineMeshes: nothing about this mesh is clickable
     // or implies a live device.
-    const mat = new THREE.MeshBasicMaterial({
-      color: 0x334155,
-      transparent: true,
-      opacity: slot.confidence === 'medium' ? 0.32 : 0.5,
-    });
+    const mat = basicMaterial(0x334155, slot.confidence === 'medium' ? 0.32 : 0.5);
     const mesh = new THREE.Mesh(geom, mat);
     // Sit the pad ON the floor. position.y is the slot's floor reference (0),
     // and a box is centred on its origin, so without the half-height offset
     // the lower half renders below the floor plane.
     mesh.position.set(slot.position.x, slot.position.y + h / 2, slot.position.z);
-    scene.add(mesh);
+    layers.operational.add(mesh);
   }
 }
 
@@ -309,13 +370,13 @@ function buildFunctionalZones(geometry) {
     );
     plate.rotation.x = Math.PI / 2; // Shape is authored in XY; lay it on XZ
     plate.position.y = floorY;
-    scene.add(plate);
+    layers.functional.add(plate);
 
     const outline = new THREE.LineLoop(
       new THREE.BufferGeometry().setFromPoints(verts.map((v) => new THREE.Vector3(v.x, floorY + 0.01, v.z))),
       new THREE.LineBasicMaterial({ color: style.line })
     );
-    scene.add(outline);
+    layers.functional.add(outline);
     drawn++;
   }
   return drawn;
@@ -342,7 +403,7 @@ function buildScene(placements) {
     // Three.js floor plane (X, Z) with Y fixed as the vertical box height.
     mesh.position.set(p.pos_x, 0.5, p.pos_y);
     mesh.userData.deviceId = p.device_id;
-    scene.add(mesh);
+    layers.operational.add(mesh);
 
     machineMeshes.push(mesh);
     machinesById.set(p.device_id, { mesh, material });
@@ -359,7 +420,7 @@ function buildScene(placements) {
     const idLabelText = p.grid_ref ? `${p.device_id} (${p.grid_ref.row}-${p.grid_ref.column})` : p.device_id;
     const idLabel = makeTextSprite(idLabelText, { fontSize: 20, scaleFactor: 0.016 });
     idLabel.position.set(p.pos_x, 1.5, p.pos_y);
-    scene.add(idLabel);
+    layers.telemetry.add(idLabel);
   }
 
   // Zone labels float well above the machine-ID labels (y=5.5 vs y=1.5) so
@@ -386,11 +447,11 @@ function buildScene(placements) {
     const edges = new THREE.EdgesGeometry(boxGeom);
     const outline = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x475569 }));
     outline.position.set(avgX, 0.01, avgY);
-    scene.add(outline);
+    layers.operational.add(outline);
 
     const label = makeTextSprite(zoneName, { fontSize: 26, scaleFactor: 0.02, bg: 'rgba(15, 23, 42, 0.85)' });
     label.position.set(avgX, 5.5, avgY);
-    scene.add(label);
+    layers.operational.add(label);
   }
 }
 
@@ -565,7 +626,17 @@ async function boot() {
   // browser_click, since the canvas has no per-object DOM node a click
   // target selector could otherwise address.
   window.__twinBootMs = t1 - t0;
-  window.__twin = { camera, controls, scene, renderer, machineMeshes };
+  window.__twin = {
+    camera,
+    controls,
+    scene,
+    renderer,
+    machineMeshes,
+    layers,
+    // Cache sizes are exposed so a regression test can assert the sharing
+    // actually happened rather than trusting that it did.
+    resourceStats: () => ({ geometries: geometryCache.size, materials: materialCache.size }),
+  };
 }
 
 boot();
