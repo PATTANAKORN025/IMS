@@ -86,6 +86,42 @@ function checkFiniteCoords(obj, label, fields) {
   }
 }
 
+// Ray-cast point-in-polygon against the validated footprint. Stricter than
+// insideEnvelope(): the envelope is only the footprint's bounding box, so an
+// object can sit inside the box yet outside the building.
+function insidePolygon(pos, verts) {
+  if (!pos || !Array.isArray(verts) || verts.length < 3) return true;
+  let inside = false;
+  for (let i = 0, j = verts.length - 1; i < verts.length; j = i++) {
+    const a = verts[i];
+    const b = verts[j];
+    if ((a.z > pos.z) !== (b.z > pos.z) && pos.x < ((b.x - a.x) * (pos.z - a.z)) / (b.z - a.z) + a.x) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+// O(n^2) segment sweep -- fine for the vertex counts these polygons carry.
+function selfIntersections(verts) {
+  const orient = (p, q, r) => {
+    const v = (q.z - p.z) * (r.x - q.x) - (q.x - p.x) * (r.z - q.z);
+    return Math.abs(v) < 1e-12 ? 0 : v > 0 ? 1 : 2;
+  };
+  const crosses = (a, b, c, d) =>
+    orient(a, b, c) !== orient(a, b, d) && orient(c, d, a) !== orient(c, d, b);
+  const n = verts.length;
+  if (n > 400) return 0; // guard: not worth an O(n^2) sweep in a lint pass
+  let hits = 0;
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      if (Math.abs(i - j) <= 1 || (i === 0 && j === n - 1)) continue;
+      if (crosses(verts[i], verts[(i + 1) % n], verts[j], verts[(j + 1) % n])) hits++;
+    }
+  }
+  return hits;
+}
+
 function insideEnvelope(pos, envelope) {
   if (!envelope) return true; // nothing to check against
   const halfW = envelope.width / 2;
@@ -228,6 +264,94 @@ for (const [slotId, deviceId] of Object.entries(mapping)) {
 }
 for (const [deviceId, slotIds] of deviceToSlots) {
   if (slotIds.length > 1) error(`device_id ${deviceId} is mapped to ${slotIds.length} different slots (${slotIds.join(', ')}) -- a real device can only occupy one physical slot`);
+}
+
+// -- footprint polygon topology --
+// The polygon is the boundary every other object is checked against, so a
+// malformed one would silently invalidate the containment checks below.
+let footprint = null;
+if (geometry.footprint_polygon) {
+  const fp = geometry.footprint_polygon;
+  const verts = Array.isArray(fp.vertices) ? fp.vertices : [];
+  if (verts.length < 3) {
+    error(`footprint_polygon: ${verts.length} vertices, needs at least 3`);
+  } else {
+    verts.forEach((v, i) => checkFiniteCoords(v, `footprint_polygon vertex ${i}`, ['x', 'z']));
+    const a = verts[0];
+    const b = verts[verts.length - 1];
+    if (a.x === b.x && a.z === b.z) {
+      error('footprint_polygon: ring repeats its first vertex as the last -- rings are implicitly closed');
+    }
+    if (selfIntersections(verts) > 0) error('footprint_polygon: polygon self-intersects');
+    if (verts.every((v) => Number.isFinite(v.x) && Number.isFinite(v.z))) footprint = verts;
+  }
+}
+
+// -- grid consistency --
+// The grid is deterministic from the printed spans; if the cumulative lines
+// stop agreeing with the envelope, the calibration has drifted.
+if (geometry.grid) {
+  const g = geometry.grid;
+  for (const [axis, lines, spans, total] of [
+    ['x', g.x_lines, g.x_spans_mm, geometry.envelope?.width],
+    ['z', g.z_lines, g.z_spans_mm, geometry.envelope?.depth],
+  ]) {
+    if (!Array.isArray(lines) || !Array.isArray(spans)) continue;
+    if (lines.length !== spans.length + 1) {
+      error(`grid ${axis}: ${lines.length} lines but ${spans.length} spans (expected lines = spans + 1)`);
+    }
+    lines.forEach((v, i) => {
+      if (!Number.isFinite(v)) error(`grid ${axis}_lines[${i}] is not finite (${v})`);
+    });
+    const spanTotalM = spans.reduce((s, v) => s + v, 0) / 1000;
+    if (typeof total === 'number' && Math.abs(spanTotalM - total) > 0.001) {
+      error(`grid ${axis}: spans sum to ${spanTotalM} m but envelope declares ${total} m`);
+    }
+    const lineSpanM = lines.length ? lines[lines.length - 1] - lines[0] : 0;
+    if (typeof total === 'number' && Math.abs(lineSpanM - total) > 0.001) {
+      error(`grid ${axis}: cumulative lines span ${lineSpanM} m but envelope declares ${total} m`);
+    }
+  }
+}
+
+// -- columns: provenance + containment --
+// Detected geometry must carry the evidence it was detected from, and must
+// sit inside the boundary it was clipped to.
+const VALID_TIER = new Set(['high', 'medium', 'low', 'unknown']);
+const seenColIds = new Set();
+for (const col of geometry.columns || []) {
+  const label = `column ${col.id}`;
+  if (seenColIds.has(col.id)) error(`duplicate column id: ${col.id}`);
+  seenColIds.add(col.id);
+  if (!col.confidence || !VALID_TIER.has(col.confidence)) error(`${label}: invalid/missing confidence "${col.confidence}"`);
+  if (!col.source) error(`${label}: missing source provenance`);
+  if (col.source === 'digitized_from_drawing' && !col.detector) {
+    error(`${label}: digitized but carries no detector metadata -- detected geometry must record what it was detected from`);
+  }
+  if (col.footprint) checkDims(col.footprint, label, ['width', 'depth']);
+  if (col.position && footprint && !insidePolygon(col.position, footprint)) {
+    error(`${label}: position falls outside the validated footprint polygon`);
+  }
+}
+if ((geometry.columns || []).length > 0 && !geometry.column_detection) {
+  error('columns are present but column_detection metadata is missing -- method and limitations must be disclosed');
+}
+
+// -- slots: provenance, observed-vs-derived, containment --
+for (const slot of geometry.slots || []) {
+  const label = `slot ${slot.slot_id}`;
+  if (slot.confidence && !VALID_TIER.has(slot.confidence)) error(`${label}: invalid confidence "${slot.confidence}"`);
+  if (slot.source === 'digitized_from_drawing') {
+    if (!slot.confidence) error(`${label}: digitized but missing confidence`);
+    if (!slot.detection) error(`${label}: digitized but carries no detection metadata`);
+    if (!slot.geometry_status) error(`${label}: digitized but missing geometry_status (observed vs derived)`);
+  }
+  if (slot.position && footprint && !insidePolygon(slot.position, footprint)) {
+    error(`${label}: position falls outside the validated footprint polygon`);
+  }
+}
+if ((geometry.slots || []).length > 0 && !geometry.equipment_detection) {
+  error('slots are present but equipment_detection metadata is missing -- method and limitations must be disclosed');
 }
 
 // -- functional zones (private/floor1-zones.json) --
