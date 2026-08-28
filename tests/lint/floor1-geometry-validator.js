@@ -28,6 +28,10 @@
 const fs = require('fs');
 const path = require('path');
 
+// Single source of truth for what the runtime can read -- imported rather
+// than re-declared so the validator and the service cannot drift apart.
+const { SUPPORTED_SCHEMA_MAJOR } = require('../../services/factory-twin-3d/lib/contracts');
+
 const PRIVATE_DIR = path.join(__dirname, '..', '..', 'services', 'factory-twin-3d', 'private');
 const GEOMETRY_PATH = path.join(PRIVATE_DIR, 'floor1-geometry.json');
 const MAPPING_PATH = path.join(PRIVATE_DIR, 'floor1-asset-mapping.json');
@@ -264,6 +268,41 @@ for (const [slotId, deviceId] of Object.entries(mapping)) {
 }
 for (const [deviceId, slotIds] of deviceToSlots) {
   if (slotIds.length > 1) error(`device_id ${deviceId} is mapped to ${slotIds.length} different slots (${slotIds.join(', ')}) -- a real device can only occupy one physical slot`);
+}
+
+// -- schema version + height semantics --
+// The reader declares what it can parse in contracts.js; this keeps the two
+// from drifting apart silently.
+function checkSchemaVersion(doc, label, expectedMajor) {
+  const raw = doc && doc.schema_version;
+  if (typeof raw !== 'string' || !/^\d+\.\d+\.\d+$/.test(raw)) {
+    error(`${label}: missing or malformed schema_version (${raw}) -- expected a semver string`);
+    return;
+  }
+  const major = Number(raw.split('.')[0]);
+  if (major !== expectedMajor) {
+    error(`${label}: schema_version ${raw} has major ${major}, but this runtime supports major ${expectedMajor}`);
+  }
+}
+if (geometryPresent) checkSchemaVersion(geometry, 'floor1-geometry.json', SUPPORTED_SCHEMA_MAJOR.geometry);
+
+if (geometry.envelope) {
+  const e = geometry.envelope;
+  // Clear height is not in evidence. It may only carry a value if the value
+  // arrives with a source, otherwise it is an estimate wearing a fact's shape.
+  if (e.clear_height_m !== null && e.clear_height_m !== undefined) {
+    if (typeof e.clear_height_m !== 'number' || !Number.isFinite(e.clear_height_m)) {
+      error(`envelope: clear_height_m must be null or a finite number (got ${e.clear_height_m})`);
+    } else if (!e.clear_height_source) {
+      error('envelope: clear_height_m carries a value but no clear_height_source -- an unsourced clear height is an estimate, not evidence');
+    }
+  }
+  if (e.floor_to_floor === true && !e.height_source) {
+    error('envelope: floor_to_floor is true but height_source is missing -- the derivation must travel with the value');
+  }
+  if (typeof e.clear_height_m === 'number' && typeof e.height === 'number' && e.clear_height_m > e.height) {
+    error(`envelope: clear_height_m (${e.clear_height_m}) exceeds floor-to-floor height (${e.height}) -- contradictory height semantics`);
+  }
 }
 
 // -- footprint polygon topology --

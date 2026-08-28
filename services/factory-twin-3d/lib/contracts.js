@@ -183,4 +183,64 @@ const AssetMappingStatus = Object.freeze({
  * @property {Object} [competingCandidate] - An alternative boundary from a different extraction method, retained unselected.
  */
 
-module.exports = { MachineState, MACHINE_STATE_THEME, AssetMappingStatus };
+/**
+ * Supported MAJOR schema versions of the two private data documents. The
+ * files already carry `schema_version` (semver strings); these constants are
+ * the single place the runtime declares what it can read, so the validator
+ * and any future loader agree instead of each hardcoding a number.
+ *
+ * Major is the compatibility boundary: a major bump means the reader must be
+ * updated. Minor/patch are additive and safe to ignore.
+ */
+const SUPPORTED_SCHEMA_MAJOR = Object.freeze({
+  geometry: 2, // private/floor1-geometry.json
+  zones: 1, // private/floor1-zones.json
+});
+
+/**
+ * The private Floor-1 geometry document, as the runtime actually consumes it.
+ *
+ * COORDINATE SYSTEM -- metres, 1 scene unit = 1 real metre. Origin is the
+ * grid-envelope bounding-box centre, so x spans +/-87.25 and z spans +/-60.15.
+ * x follows the numbered grid axis, z the lettered axis, y is elevation.
+ * The origin is a geometric reference only: there is no survey datum and no
+ * geospatial claim.
+ *
+ * HEIGHT SEMANTICS -- `envelope.height` is FLOOR-TO-FLOOR, derived from the
+ * printed floor levels of the building's four plans. `clear_height_m` is the
+ * height under the slab and is NOT in evidence; it must stay null unless a
+ * source is supplied alongside it. Equipment height is likewise unmeasured:
+ * slots carry no height and the API's 1 m fallback is a rendering default,
+ * never a measurement.
+ *
+ * IDENTITY / NAMESPACE RULES -- four identifier spaces exist and must never
+ * be merged without an authoritative record:
+ *   1. `slot_id`      geometry-only physical position (PHYS-F1-nnnn)
+ *   2. `ims_device_id` a real monitored device
+ *   3. MES machine id  vendor system, prefixed per process group
+ *   4. `id` on a zone  anonymous functional area (zone-nn)
+ * Proximity, numbering order and count coincidence are NOT evidence of
+ * identity.
+ *
+ * PROVENANCE -- every digitized object carries `source`, `confidence` and the
+ * detection metadata it was derived from; a populated layer carries its
+ * `*_detection` block so method and limitations travel with the data.
+ *
+ * @typedef {Object} GeometryDocument
+ * @property {string} schema_version - Semver. Major must match SUPPORTED_SCHEMA_MAJOR.geometry.
+ * @property {string} generated_from - Which reconstruction pass produced this file.
+ * @property {Object} coordinate_system - units, scale, origin, axes, floor level and its source.
+ * @property {Object} envelope - width/depth/height plus height provenance and clear-height disclosure. Bounding box of the footprint, not a claim the building fills it.
+ * @property {Object|null} camera - Optional; the current renderer does not read it.
+ * @property {Object} footprint_polygon - Implicitly-closed ring of the real building boundary, with evidence and unresolved edges.
+ * @property {Object} grid - Cumulative structural gridlines plus the raw printed spans they derive from.
+ * @property {Array<Object>} columns - Detected structural columns. Empty is valid and means "not extracted", disclosed in empty_layer_disclosure.
+ * @property {Array<Object>} zones - Deliberately empty: functional zones live in floor1-zones.json.
+ * @property {Array<PhysicalSlot>} slots - Observed machine positions, geometry only.
+ * @property {Object} empty_layer_disclosure - Why any empty layer is empty. Absence of data is stated, never implied.
+ * @property {Object} calibration - Totals, mm/px, residuals and the area reconciliation.
+ * @property {Object} [column_detection] - Required when columns is non-empty.
+ * @property {Object} [equipment_detection] - Required when slots is non-empty.
+ */
+
+module.exports = { MachineState, MACHINE_STATE_THEME, AssetMappingStatus, SUPPORTED_SCHEMA_MAJOR };
