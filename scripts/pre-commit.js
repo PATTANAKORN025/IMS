@@ -34,6 +34,7 @@ run("Gate Decision Tests", "node tests/unit/gate.test.js");
 run("Security Exception Matching Tests", "node tests/unit/security-exceptions.test.js");
 run("Factory Twin Mapping Contract Tests", "node tests/unit/factory-twin-mapping.test.js");
 run("Factory Twin MES Import Boundary Tests", "node tests/unit/factory-twin-mes-import.test.js");
+run("Factory Twin Geometry Mutation Tests", "node tests/unit/factory-twin-geometry-mutation.test.js");
 
 // 2. Run Linters
 run("Dashboard Linter", "node tests/lint/dashboard-linter.js");

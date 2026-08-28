@@ -32,7 +32,11 @@ const path = require('path');
 // than re-declared so the validator and the service cannot drift apart.
 const { SUPPORTED_SCHEMA_MAJOR } = require('../../services/factory-twin-3d/lib/contracts');
 
-const PRIVATE_DIR = path.join(__dirname, '..', '..', 'services', 'factory-twin-3d', 'private');
+// Overridable so mutation tests can point at throwaway fixtures instead of
+// corrupting the real private data to prove a rule fires. Unset in normal use.
+const PRIVATE_DIR =
+  process.env.FACTORY_TWIN_PRIVATE_DIR ||
+  path.join(__dirname, '..', '..', 'services', 'factory-twin-3d', 'private');
 const GEOMETRY_PATH = path.join(PRIVATE_DIR, 'floor1-geometry.json');
 const MAPPING_PATH = path.join(PRIVATE_DIR, 'floor1-asset-mapping.json');
 const ZONES_PATH = path.join(PRIVATE_DIR, 'floor1-zones.json');
@@ -353,6 +357,54 @@ if (geometry.grid) {
   }
 }
 
+// Zone ids are needed before the slot loop (slots reference them) but the zone
+// file is fully validated later. Read the ids up front; null means "no zone
+// file", which disables the reference check rather than failing every slot.
+let knownZoneIds = null;
+if (zonesPresent) {
+  try {
+    const parsed = JSON.parse(fs.readFileSync(ZONES_PATH, 'utf8'));
+    if (Array.isArray(parsed.zones)) knownZoneIds = new Set(parsed.zones.map((z) => z.id));
+  } catch {
+    // Malformed JSON is reported by the zone section below; not duplicated here.
+  }
+}
+
+// -- coordinate system --
+// Units and scale are the assumption every number in the file rests on. If
+// they ever drift from metres, every containment and area check silently
+// starts measuring the wrong thing.
+if (geometry.coordinate_system) {
+  const cs = geometry.coordinate_system;
+  if (cs.units !== 'metres') {
+    error(`coordinate_system: units must be "metres" (got "${cs.units}") -- every stored coordinate assumes it`);
+  }
+  if (!cs.origin) error('coordinate_system: origin must be stated');
+  if (!cs.axes) error('coordinate_system: axes must be stated');
+  if (typeof cs.floor_level_m !== 'number' || !Number.isFinite(cs.floor_level_m)) {
+    error(`coordinate_system: floor_level_m must be a finite number (got ${cs.floor_level_m})`);
+  } else if (!cs.floor_level_source) {
+    error('coordinate_system: floor_level_m carries a value but no floor_level_source');
+  }
+}
+
+// -- footprint winding --
+// The recorded winding must match the polygon's actual orientation. A stale
+// winding field is worse than none: downstream code that trusts it would
+// treat the interior as the exterior.
+if (footprint && geometry.footprint_polygon.winding) {
+  let twice = 0;
+  for (let i = 0; i < footprint.length; i++) {
+    const a = footprint[i];
+    const b = footprint[(i + 1) % footprint.length];
+    twice += a.x * b.z - b.x * a.z;
+  }
+  const actual = twice > 0 ? 'CCW' : 'CW';
+  if (actual !== geometry.footprint_polygon.winding) {
+    error(`footprint_polygon: winding is recorded as ${geometry.footprint_polygon.winding} but the vertices wind ${actual}`);
+  }
+}
+
 // -- columns: provenance + containment --
 // Detected geometry must carry the evidence it was detected from, and must
 // sit inside the boundary it was clipped to.
@@ -371,6 +423,12 @@ for (const col of geometry.columns || []) {
   if (col.position && footprint && !insidePolygon(col.position, footprint)) {
     error(`${label}: position falls outside the validated footprint polygon`);
   }
+  // Physical structure is rendered as fact. A LOW-confidence detection is not
+  // fact, so it must not be emitted as geometry at all -- the tier exists to
+  // be withheld, the way LOW zones are.
+  if (col.confidence === 'low') {
+    error(`${label}: LOW-confidence structural geometry must not be emitted -- retain it as a rejected candidate instead`);
+  }
 }
 if ((geometry.columns || []).length > 0 && !geometry.column_detection) {
   error('columns are present but column_detection metadata is missing -- method and limitations must be disclosed');
@@ -387,6 +445,15 @@ for (const slot of geometry.slots || []) {
   }
   if (slot.position && footprint && !insidePolygon(slot.position, footprint)) {
     error(`${label}: position falls outside the validated footprint polygon`);
+  }
+  if (slot.confidence === 'low') {
+    error(`${label}: LOW-confidence equipment geometry must not be emitted -- retain it as a rejected candidate instead`);
+  }
+  // zone_id is assigned only by geometric containment, so it must name a zone
+  // that actually exists. A dangling reference would render as "this position
+  // belongs to a zone" while pointing at nothing.
+  if (slot.zone_id != null && knownZoneIds && !knownZoneIds.has(slot.zone_id)) {
+    error(`${label}: zone_id "${slot.zone_id}" does not exist in the zone file`);
   }
 }
 if ((geometry.slots || []).length > 0 && !geometry.equipment_detection) {
