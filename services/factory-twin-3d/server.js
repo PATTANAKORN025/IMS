@@ -5,9 +5,16 @@ const express = require('express');
 const { Pool } = require('pg');
 const { computeFloorOneLayout, loadConfiguredLayout } = require('./layout');
 const { MACHINE_STATUS, mapLegacyLdiStatus, statusPayload } = require('./status-model');
+const { createStatusApiClient } = require('./status-api');
 
 const PORT = process.env.PORT || 4100;
 const FLOOR_LAYOUT_FILE = process.env.FLOOR_LAYOUT_FILE || '';
+const statusApiClient = createStatusApiClient({
+  url: process.env.MACHINE_STATUS_API_URL || '',
+  token: process.env.MACHINE_STATUS_API_TOKEN || '',
+  timeoutMs: process.env.MACHINE_STATUS_API_TIMEOUT_MS || 3000,
+  cacheMs: process.env.MACHINE_STATUS_API_CACHE_MS || 2000,
+});
 
 // Read-only service -- unlike alarm-api (dedicated alarm_api_writer role with
 // SELECT+UPDATE on exactly one table), this twin never writes anything, so it
@@ -224,9 +231,34 @@ function legacyStateValue(status, hasAlarm) {
 
 app.get('/api/state', async (req, res) => {
   try {
-    const result = await pool.query(STATE_SQL, [DEVICE_IDS]);
+    const result = DEVICE_IDS.length > 0
+      ? await pool.query(STATE_SQL, [DEVICE_IDS])
+      : { rows: [] };
+    const apiResult = await statusApiClient.getRows();
     const sourceRows = new Map(result.rows.map((row) => [row.eqp_id, row]));
     const rows = STATE_BINDINGS.map((binding) => {
+      const apiRow = binding.type === 'status_api' ? apiResult.rows.get(binding.source_id) : null;
+      if (apiRow) {
+        const display = statusPayload(apiRow.status);
+        return {
+          device_id: binding.asset_id,
+          display_name: binding.display_name,
+          source_id: apiRow.source_id,
+          state: legacyStateValue(apiRow.status, false),
+          operational_state: display.status,
+          state_label: display.status_label,
+          state_color: display.status_color,
+          state_basis: apiRow.basis,
+          state_confidence: apiRow.confidence,
+          state_updated_at: apiRow.updated_at,
+          drilldown_enabled: false,
+          board_no: apiRow.board_no,
+          total_board: apiRow.total_board,
+          mo: apiRow.mo,
+          factory: apiRow.factory,
+          alarm: null,
+        };
+      }
       const row = binding.type === 'ldi' ? sourceRows.get(binding.source_id) : null;
       if (!row) {
         const display = statusPayload(MACHINE_STATUS.UNDEFINED);
@@ -240,7 +272,11 @@ app.get('/api/state', async (req, res) => {
           operational_state: display.status,
           state_label: display.status_label,
           state_color: display.status_color,
-          state_basis: binding.type === 'unbound' ? 'state_source_not_connected' : 'source_record_not_found',
+          state_basis: binding.type === 'unbound'
+            ? 'state_source_not_connected'
+            : binding.type === 'status_api' && !apiResult.available
+              ? apiResult.error
+              : 'source_record_not_found',
           state_confidence: 'UNBOUND',
           drilldown_enabled: binding.drilldown_enabled,
           board_no: null,
@@ -291,6 +327,11 @@ app.get('/api/state', async (req, res) => {
     res.status(200).json({
       machines: rows,
       queried_at: new Date().toISOString(),
+      status_api: {
+        configured: Boolean(statusApiClient.endpoint),
+        available: apiResult.available,
+        error: apiResult.error,
+      },
     });
   } catch (err) {
     console.error(err);

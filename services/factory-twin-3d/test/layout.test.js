@@ -125,6 +125,29 @@ test('rejects duplicate assets and unknown zone references', () => {
   fs.rmSync(tempDir, { recursive: true, force: true });
 });
 
+test('accepts status_api bindings only when a source ID is present', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ims-floor-layout-api-'));
+  const file = path.join(tempDir, 'floor.local.json');
+  const base = {
+    schema_version: 1,
+    floor: {
+      id: 'floor-1', name: 'Floor 1', level: 1, layout_mode: 'private_local',
+      coordinate_source: 'local_only', verification_status: 'DRAFT',
+    },
+    zones: [{ zone_id: 'zone-a', name: 'Zone A', center_x: 0, center_y: 0, width: 20, depth: 10 }],
+    machines: [{
+      asset_id: 'DRL-001', zone_id: 'zone-a', pos_x: 0, pos_y: 0,
+      state_binding: { type: 'status_api', source_id: 'CFM-DRL-001' },
+    }],
+  };
+  fs.writeFileSync(file, JSON.stringify(base));
+  assert.equal(loadConfiguredLayout(file).machines[0].state_binding.type, 'status_api');
+  base.machines[0].state_binding.source_id = null;
+  fs.writeFileSync(file, JSON.stringify(base));
+  assert.throws(() => loadConfiguredLayout(file), /required for status_api/);
+  fs.rmSync(tempDir, { recursive: true, force: true });
+});
+
 test('rejects a missing configured file and invalid dimensions', () => {
   assert.throws(
     () => loadConfiguredLayout(path.join(os.tmpdir(), 'definitely-missing-floor-layout.json')),

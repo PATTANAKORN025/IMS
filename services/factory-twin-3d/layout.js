@@ -254,12 +254,12 @@ function loadConfiguredLayout(filePath) {
       ? machine.state_binding
       : { type: 'unbound' };
     const bindingType = String(binding.type || 'unbound').toLowerCase();
-    if (!['ldi', 'unbound'].includes(bindingType)) {
-      throw new Error(`machines[${index}].state_binding.type must be ldi or unbound`);
+    if (!['ldi', 'status_api', 'unbound'].includes(bindingType)) {
+      throw new Error(`machines[${index}].state_binding.type must be ldi, status_api or unbound`);
     }
     const sourceId = binding.source_id ? String(binding.source_id).trim() : null;
-    if (bindingType === 'ldi' && !sourceId) {
-      throw new Error(`machines[${index}].state_binding.source_id is required for ldi`);
+    if (['ldi', 'status_api'].includes(bindingType) && !sourceId) {
+      throw new Error(`machines[${index}].state_binding.source_id is required for ${bindingType}`);
     }
     return {
       asset_id: assetId,

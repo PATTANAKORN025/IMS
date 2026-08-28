@@ -440,6 +440,12 @@ services:
       # read-only mount from an untracked docker-compose override; never put
       # confidential floorplan coordinates in this committed base file.
       FLOOR_LAYOUT_FILE: ${FLOOR_LAYOUT_FILE:-}
+      # Optional canonical six-state fleet source. Keep credentials in .env or
+      # a secrets manager; the service fails closed to UNDEFINED when absent.
+      MACHINE_STATUS_API_URL: ${MACHINE_STATUS_API_URL:-}
+      MACHINE_STATUS_API_TOKEN: ${MACHINE_STATUS_API_TOKEN:-}
+      MACHINE_STATUS_API_TIMEOUT_MS: ${MACHINE_STATUS_API_TIMEOUT_MS:-3000}
+      MACHINE_STATUS_API_CACHE_MS: ${MACHINE_STATUS_API_CACHE_MS:-2000}
     # No host port published -- reachable only through the proxy service's
     # /factory-twin-3d/ path, which is auth_request-gated on Grafana's own
     # session, same pattern as alarm-api.

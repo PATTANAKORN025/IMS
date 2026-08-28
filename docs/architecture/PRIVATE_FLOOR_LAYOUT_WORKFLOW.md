@@ -38,6 +38,16 @@ Each machine declares one state binding:
 - `{ "type": "unbound", "source_id": null }` is displayed as `Undefine` and
   has no drill-down. This is the required representation for non-LDI assets
   until a real DB/API source is connected.
+- `{ "type": "status_api", "source_id": "CFM-MACHINE-ID" }` reads the
+  canonical six-state value from the optional fleet endpoint configured by
+  `MACHINE_STATUS_API_URL`. The endpoint must return either an array or
+  `{ "machines": [] }`; each item needs `machine_id` (or `source_id`) and
+  `status`. Accepted statuses are Off, Down, Idle, Initial/PM/Stop, Run and
+  Undefine. `MACHINE_STATUS_API_TOKEN` is sent as a Bearer token when set.
+
+The service fetches one fleet payload, caches it briefly and joins rows by
+`source_id`. An unavailable API, a missing machine or an unknown state always
+fails closed to `Undefine`; it never becomes Run by default.
 
 The six operational states are `Off`, `Down`, `Idle`, `Initial,PM,Stop`, `Run`
 and `Undefine`. Alarm lifecycle is a separate red outline/badge and never

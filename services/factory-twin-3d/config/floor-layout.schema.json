@@ -63,7 +63,7 @@
             "additionalProperties": false,
             "required": ["type"],
             "properties": {
-              "type": { "enum": ["ldi", "unbound"] },
+              "type": { "enum": ["ldi", "status_api", "unbound"] },
               "source_id": { "type": ["string", "null"] }
             }
           }
