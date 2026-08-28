@@ -27,6 +27,7 @@ The high-level design, business value, and product capabilities.
 - **[Architecture Book](architecture/IMS_PLATFORM_BOOK.md)** - Full-stack technical architecture.
 - **[Data Flow](architecture/DATA_FLOW.md)** - Telemetry pipeline from edge to visualization.
 - **[Database Schema](architecture/DATABASE_SCHEMA.md)** - TimescaleDB hypertable structures.
+- **[Factory Twin Reconstruction](architecture/FACTORY_TWIN_RECONSTRUCTION.md)** - How the Floor 1 twin was reconstructed, its evidence model, and what it may not claim.
 - **[Business ROI](business/BUSINESS_VALUE_ROI.md)** - Business impact and return on investment.
 
 ### 2. Operations & Administration
