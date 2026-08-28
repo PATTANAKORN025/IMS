@@ -5,6 +5,7 @@ const path = require('path');
 const express = require('express');
 const { Pool } = require('pg');
 const { MachineState, MACHINE_STATE_THEME } = require('./lib/contracts');
+const { buildDiagnostics } = require('./lib/diagnostics');
 
 const PORT = process.env.PORT || 4100;
 
@@ -28,6 +29,24 @@ pool.on('error', (err) => {
 });
 
 const app = express();
+
+// Aggregate operational counters. Deliberately counts only -- no path, no
+// URL, no identifier, no client detail. Anything richer would turn the
+// diagnostics endpoint into a log of who asked for what.
+const runtimeCounters = {
+  requestsTotal: 0,
+  requestsFailed: 0,
+  geometryLoadMs: 0,
+  geometryParseFailures: 0,
+};
+
+app.use((req, res, next) => {
+  runtimeCounters.requestsTotal++;
+  res.on('finish', () => {
+    if (res.statusCode >= 400) runtimeCounters.requestsFailed++;
+  });
+  next();
+});
 
 // ── Static frontend + vendored Three.js (no CDN dependency -- this
 // container has no host port, only reachable via the proxy's auth_request
@@ -93,6 +112,7 @@ function loadPrivateGeometry() {
     if (!Array.isArray(parsed.slots)) throw new Error('missing slots[]');
     return parsed;
   } catch (err) {
+    runtimeCounters.geometryParseFailures++;
     console.error(`private geometry file present but unusable: ${err.message}`);
     return null;
   }
@@ -605,48 +625,25 @@ app.get('/api/floor-geometry', (req, res) => {
 // devices are the same kind of claim, which is exactly what this system
 // exists to keep apart.
 app.get('/api/diagnostics', (req, res) => {
+  const t0 = Date.now();
   const geometry = loadPrivateGeometry();
   const zoneLayer = loadPrivateZones();
   const mapping = loadPrivateAssetMapping();
+  runtimeCounters.geometryLoadMs = Date.now() - t0;
 
-  const slots = (geometry && geometry.slots) || [];
-  const columns = (geometry && geometry.columns) || [];
-  const confirmedMappings = Object.values(mapping).filter(Boolean).length;
-
-  const byConfidence = (arr) =>
-    arr.reduce((acc, o) => ((acc[o.confidence || 'unspecified'] = (acc[o.confidence || 'unspecified'] || 0) + 1), acc), {});
-
+  // Serialization is delegated to lib/diagnostics, which builds the response
+  // field by field and can only emit counts, booleans and fixed enums. This
+  // route deliberately does not assemble the payload itself: an inline object
+  // literal here is exactly where a private field would eventually be added
+  // by accident.
   res.status(200).json({
-    data: {
-      geometry_loaded: Boolean(geometry),
-      geometry_schema_version: geometry ? geometry.schema_version : null,
-      envelope_present: Boolean(geometry && geometry.envelope),
-      footprint_vertices: geometry && geometry.footprint_polygon ? geometry.footprint_polygon.vertices.length : 0,
-      grid_x_lines: geometry && geometry.grid ? geometry.grid.x_lines.length : 0,
-      grid_z_lines: geometry && geometry.grid ? geometry.grid.z_lines.length : 0,
-      column_count: columns.length,
-      slot_count: slots.length,
-      zone_count_rendered: zoneLayer.meta.served,
-      zone_count_withheld: zoneLayer.meta.withheld,
-      zone_count_total: zoneLayer.meta.total,
-    },
-    evidence: {
-      // Measured/derived building fabric, observed detections, and simulated
-      // positions are different claims and are reported as such.
-      measured_envelope: geometry && geometry.envelope ? 1 : 0,
-      derived_floor_to_floor: geometry && geometry.envelope && geometry.envelope.floor_to_floor ? 1 : 0,
-      observed_columns: columns.length,
-      observed_slots: slots.length,
-      simulated_machine_positions: SIMULATED_PLACEMENTS.length,
-      unknown_clear_height: geometry && geometry.envelope && geometry.envelope.clear_height_m == null ? 1 : 0,
-      unknown_equipment_height: slots.filter((s) => s.height_status === 'unknown').length,
-      confirmed_mappings: confirmedMappings,
-      unresolved_mappings: slots.length - confirmedMappings,
-      column_confidence: byConfidence(columns),
-      slot_confidence: byConfidence(slots),
-      zone_confidence: zoneLayer.meta.byConfidence,
-    },
-    conflicts: zoneLayer.meta.conflicts,
+    ...buildDiagnostics({
+      geometry,
+      zoneMeta: zoneLayer.meta,
+      confirmedMappings: Object.values(mapping).filter(Boolean).length,
+      simulatedPlacements: SIMULATED_PLACEMENTS.length,
+      runtime: { ...runtimeCounters, uptimeSeconds: Math.floor(process.uptime()) },
+    }),
     generated_at: new Date().toISOString(),
   });
 });
