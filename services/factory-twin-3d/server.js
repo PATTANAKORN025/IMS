@@ -577,8 +577,18 @@ app.get('/api/floor-geometry', (req, res) => {
       status: deviceId ? 'IMS_CONNECTED' : 'UNMAPPED',
     };
   });
+  // Explicit allowlist rather than spreading the private document. Spreading
+  // means any field ever added to the private file is published the moment it
+  // is written -- including one that carries a source path, a real name, or an
+  // internal note. Nothing in the file does today; this makes that a decision
+  // rather than a default. A new field must be added here to be served.
   res.status(200).json({
-    ...geometry,
+    envelope: geometry.envelope ?? null,
+    camera: geometry.camera ?? null,
+    footprint_polygon: geometry.footprint_polygon ?? null,
+    grid: geometry.grid ?? null,
+    columns: geometry.columns ?? [],
+    zones: geometry.zones ?? [],
     slots,
     functional_zones: zoneLayer.renderable,
     functional_zones_meta: zoneLayer.meta,
