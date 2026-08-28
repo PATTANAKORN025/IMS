@@ -2,11 +2,15 @@
 
 ## Purpose
 
-The Factory 3D Digital Twin can use either the original enabled-LDI logical
+The Factory Digital Twin provides switchable 2D and 3D views and can use
+either the original enabled-LDI logical
 fallback or an ignored local placement contract. The local contract is the
 only appropriate path for a confidential Apex 3 floor plan. The view is
 intended for rapid status recognition and asset drill-down; it is not a
 surveyed physical floor plan until its verification status is `APPROVED`.
+
+Both views are projections of the same placement response and six-state status
+response. There is no separate 2D register to drift away from the 3D register.
 
 ## Data truth boundary
 
@@ -59,12 +63,15 @@ LDI boolean column and require the owner's trigger/reset contract.
 
 ## Interaction
 
-- Clicking a machine box or its accessible HUD row opens Machine Snapshot.
+- `2D` renders an SVG plan from the same zone bounds, machine coordinates and
+  dimensions used by `3D`; `?view=2d` is a directly shareable view URL.
+- Clicking a machine box in either view or its accessible HUD row opens Machine
+  Snapshot when that asset has a configured source binding.
 - Alarmed machines carry the existing `log_id`, event timestamp and clicked
   machine context into the drill-down.
-- `Reset view` restores the camera framing calculated from the current layout
-  bounds, so newly registered devices remain visible without hardcoded camera
-  coordinates.
+- `Fit 2D` restores the SVG view box and `Reset 3D` restores the camera framing
+  calculated from the current layout bounds, so newly registered devices remain
+  visible without hardcoded camera coordinates.
 
 ## Replacing the provisional layout
 

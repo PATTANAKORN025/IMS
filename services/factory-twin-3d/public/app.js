@@ -13,6 +13,7 @@ const DEFAULT_STATUS = 'UNDEFINED';
 const DEFAULT_OUTLINE_COLOR = 0xcbd5e1;
 const ALARM_OUTLINE_COLOR = 0xff003c;
 const POLL_MS = 5000;
+const SVG_NS = 'http://www.w3.org/2000/svg';
 
 function apiColor(value, fallback) {
   return /^#[0-9a-f]{6}$/i.test(String(value || ''))
@@ -21,12 +22,16 @@ function apiColor(value, fallback) {
 }
 
 const container = document.getElementById('scene');
+const twoDContainer = document.getElementById('scene-2d');
+const floorPlan2d = document.getElementById('floor-plan-2d');
 const machineListEl = document.getElementById('machine-list');
 const statusLine = document.getElementById('status-line');
 const summaryLine = document.getElementById('summary-line');
 const floorNameEl = document.getElementById('floor-name');
 const bannerEl = document.getElementById('simulated-banner');
 const resetViewButton = document.getElementById('reset-view');
+const view2dButton = document.getElementById('view-2d');
+const view3dButton = document.getElementById('view-3d');
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0b1220);
@@ -52,9 +57,11 @@ scene.add(keyLight);
 
 const machineMeshes = [];
 const machinesById = new Map();
+const machines2dById = new Map();
 let latestStateById = new Map();
 let currentBounds = null;
 let placementSummary = '';
+let currentView = new URLSearchParams(window.location.search).get('view') === '2d' ? '2d' : '3d';
 
 function escapeHtml(value) {
   return String(value ?? '')
@@ -105,6 +112,101 @@ function addOutline(mesh, color = 0x475569) {
   outline.rotation.copy(mesh.rotation);
   scene.add(outline);
   return outline;
+}
+
+function svgElement(name, attributes = {}) {
+  const element = document.createElementNS(SVG_NS, name);
+  for (const [key, value] of Object.entries(attributes)) {
+    element.setAttribute(key, String(value));
+  }
+  return element;
+}
+
+function twoDViewBox(bounds = currentBounds) {
+  if (!bounds) return null;
+  const padding = Math.max(3, Math.max(bounds.width, bounds.depth) * 0.035);
+  return [
+    bounds.min_x - padding,
+    bounds.min_y - padding,
+    bounds.width + padding * 2,
+    bounds.depth + padding * 2,
+  ].join(' ');
+}
+
+function resetTwoDView() {
+  const viewBox = twoDViewBox();
+  if (viewBox) floorPlan2d.setAttribute('viewBox', viewBox);
+}
+
+function buildFloor2d(layout) {
+  floorPlan2d.replaceChildren();
+  machines2dById.clear();
+  floorPlan2d.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  resetTwoDView();
+
+  const zonesLayer = svgElement('g', { 'aria-label': 'Floor zones' });
+  for (const zone of layout.zones || []) {
+    zonesLayer.appendChild(svgElement('rect', {
+      class: 'zone-2d',
+      x: zone.center_x - zone.width / 2,
+      y: zone.center_y - zone.depth / 2,
+      width: zone.width,
+      height: zone.depth,
+      rx: 0.45,
+    }));
+    const label = svgElement('text', {
+      class: 'zone-label-2d',
+      x: zone.center_x - zone.width / 2 + 0.8,
+      y: zone.center_y - zone.depth / 2 + 1.7,
+    });
+    label.textContent = zone.name;
+    zonesLayer.appendChild(label);
+  }
+  floorPlan2d.appendChild(zonesLayer);
+
+  const machinesLayer = svgElement('g', { 'aria-label': 'Machine status markers' });
+  for (const placement of layout.machines || []) {
+    const width = Number(placement.width) || 3.2;
+    const depth = Number(placement.depth) || 2.5;
+    const centerX = Number(placement.pos_x) || 0;
+    const centerY = Number(placement.pos_y) || 0;
+    const rotationDeg = ((Number(placement.rot_y) || 0) * 180) / Math.PI;
+    const group = svgElement('g', {
+      class: 'machine-2d',
+      'data-device-id': placement.device_id,
+      transform: `rotate(${rotationDeg} ${centerX} ${centerY})`,
+    });
+    const title = svgElement('title');
+    title.textContent = placement.display_name || placement.device_id;
+    const rect = svgElement('rect', {
+      class: 'machine-body-2d',
+      x: centerX - width / 2,
+      y: centerY - depth / 2,
+      width,
+      height: depth,
+      rx: 0.22,
+      fill: '#ffffff',
+    });
+    const label = svgElement('text', {
+      class: 'machine-label-2d',
+      x: centerX,
+      y: centerY,
+    });
+    label.textContent = placement.display_name || placement.device_id;
+    group.append(title, rect, label);
+    group.addEventListener('click', () => {
+      const url = drillDownUrl(placement.device_id);
+      if (url) window.location.href = url;
+    });
+    group.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      const url = drillDownUrl(placement.device_id);
+      if (url) window.location.href = url;
+    });
+    machinesLayer.appendChild(group);
+    machines2dById.set(placement.device_id, { group, rect, title });
+  }
+  floorPlan2d.appendChild(machinesLayer);
 }
 
 function buildFloor(layout) {
@@ -226,6 +328,31 @@ function frameLayout(bounds = currentBounds) {
   controls.update();
 }
 
+function setView(mode, { syncUrl = true } = {}) {
+  currentView = mode === '2d' ? '2d' : '3d';
+  const is2d = currentView === '2d';
+  container.hidden = is2d;
+  twoDContainer.hidden = !is2d;
+  controls.enabled = !is2d;
+  view2dButton.setAttribute('aria-pressed', String(is2d));
+  view3dButton.setAttribute('aria-pressed', String(!is2d));
+  resetViewButton.textContent = is2d ? 'Fit 2D' : 'Reset 3D';
+
+  if (is2d) {
+    resetTwoDView();
+  } else {
+    onResize();
+    frameLayout();
+  }
+
+  if (syncUrl) {
+    const url = new URL(window.location.href);
+    if (is2d) url.searchParams.set('view', '2d');
+    else url.searchParams.delete('view');
+    window.history.replaceState({}, '', url);
+  }
+}
+
 function applyPlacementMeta(layout) {
   const floor = layout.floor || {};
   floorNameEl.textContent = floor.name || 'Floor 1';
@@ -285,7 +412,12 @@ renderer.domElement.addEventListener('pointermove', (event) => {
   renderer.domElement.style.cursor = deviceId && drillDownUrl(deviceId) ? 'pointer' : 'default';
 });
 
-resetViewButton.addEventListener('click', () => frameLayout());
+view2dButton.addEventListener('click', () => setView('2d'));
+view3dButton.addEventListener('click', () => setView('3d'));
+resetViewButton.addEventListener('click', () => {
+  if (currentView === '2d') resetTwoDView();
+  else frameLayout();
+});
 
 function stateRowHtml(row) {
   const state = row.operational_state || row.state || DEFAULT_STATUS;
@@ -335,6 +467,22 @@ function applyState(payload) {
     entry.material.emissiveIntensity = state === 'DOWN' || row?.alarm ? 0.22 : 0.08;
     entry.outline.material.color.setHex(row?.alarm ? ALARM_OUTLINE_COLOR : DEFAULT_OUTLINE_COLOR);
     entry.outline.scale.setScalar(row?.alarm ? 1.08 : 1);
+
+    const entry2d = machines2dById.get(deviceId);
+    if (entry2d) {
+      const hexColor = `#${color.toString(16).padStart(6, '0')}`;
+      entry2d.rect.setAttribute('fill', hexColor);
+      entry2d.group.classList.toggle('has-alarm', Boolean(row?.alarm));
+      entry2d.group.classList.toggle('is-clickable', Boolean(row?.drilldown_enabled));
+      if (row?.drilldown_enabled) {
+        entry2d.group.setAttribute('role', 'link');
+        entry2d.group.setAttribute('tabindex', '0');
+      } else {
+        entry2d.group.removeAttribute('role');
+        entry2d.group.removeAttribute('tabindex');
+      }
+      entry2d.title.textContent = `${deviceId} · ${row?.state_label || state}${row?.alarm ? ` · ${row.alarm.count} alarm` : ''}`;
+    }
   }
 
   machineListEl.innerHTML = rows.map(stateRowHtml).join('');
@@ -366,7 +514,9 @@ async function boot() {
     applyPlacementMeta(layout);
     buildFloor(layout);
     buildMachines(layout.machines || []);
+    buildFloor2d(layout);
     frameLayout(layout.bounds);
+    setView(currentView, { syncUrl: false });
   } catch (error) {
     statusLine.textContent = `Placement fetch failed: ${error.message}`;
     statusLine.classList.add('error');
@@ -375,7 +525,16 @@ async function boot() {
   await pollState();
   setInterval(pollState, POLL_MS);
   window.__twinBootMs = performance.now() - startedAt;
-  window.__twin = { camera, controls, scene, renderer, machineMeshes, frameLayout };
+  window.__twin = {
+    camera,
+    controls,
+    scene,
+    renderer,
+    machineMeshes,
+    machines2dById,
+    frameLayout,
+    setView,
+  };
 }
 
 function onResize() {
@@ -391,6 +550,7 @@ resizeObserver.observe(container);
 
 function animate() {
   requestAnimationFrame(animate);
+  if (currentView !== '3d') return;
   controls.update();
   renderer.render(scene, camera);
 }

@@ -14,6 +14,7 @@
       --muted: #94a3b8;
     }
     * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
     html, body {
       margin: 0;
       width: 100%;
@@ -23,8 +24,58 @@
       font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
       overflow: hidden;
     }
-    #scene { position: fixed; inset: 0; overflow: hidden; }
+    #scene, #scene-2d { position: fixed; inset: 0; overflow: hidden; }
     #scene canvas { display: block; }
+    #scene-2d {
+      padding: 48px 18px 18px 350px;
+      background:
+        radial-gradient(circle at 70% 24%, rgba(14, 165, 233, 0.08), transparent 36%),
+        #0b1220;
+    }
+    #floor-plan-2d {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border: 1px solid #1e3a5f;
+      border-radius: 10px;
+      background: #0c1730;
+      box-shadow: inset 0 0 36px rgba(2, 6, 23, 0.58);
+    }
+    .zone-2d {
+      fill: rgba(30, 41, 59, 0.74);
+      stroke: #64748b;
+      stroke-width: 0.22;
+      vector-effect: non-scaling-stroke;
+    }
+    .zone-label-2d {
+      fill: #7dd3fc;
+      font-size: 1.25px;
+      font-weight: 800;
+      paint-order: stroke;
+      stroke: #0c1730;
+      stroke-width: 0.28px;
+      pointer-events: none;
+    }
+    .machine-2d { cursor: default; }
+    .machine-2d.is-clickable { cursor: pointer; }
+    .machine-body-2d {
+      stroke: #cbd5e1;
+      stroke-width: 0.18;
+      vector-effect: non-scaling-stroke;
+      transition: fill 180ms ease, stroke 180ms ease;
+    }
+    .machine-2d.has-alarm .machine-body-2d {
+      stroke: #ff003c;
+      stroke-width: 0.58;
+    }
+    .machine-label-2d {
+      fill: #07111f;
+      font-size: 0.8px;
+      font-weight: 900;
+      text-anchor: middle;
+      dominant-baseline: central;
+      pointer-events: none;
+    }
     #simulated-banner {
       position: fixed;
       top: 0;
@@ -76,7 +127,8 @@
       font-size: 13px;
       font-weight: 700;
     }
-    #reset-view {
+    .view-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 5px; }
+    .view-button, #reset-view {
       flex: 0 0 auto;
       padding: 6px 9px;
       color: #e2e8f0;
@@ -86,7 +138,9 @@
       cursor: pointer;
       font-weight: 650;
     }
+    .view-button:hover, .view-button:focus-visible,
     #reset-view:hover, #reset-view:focus-visible { border-color: #38bdf8; outline: none; }
+    .view-button[aria-pressed="true"] { color: #07111f; background: #38bdf8; border-color: #7dd3fc; }
     #summary-line {
       margin: 7px 0 8px;
       color: var(--muted);
@@ -156,7 +210,16 @@
     .error { color: #f87171 !important; font-weight: 700; }
     @media (max-width: 760px) {
       #simulated-banner { padding-right: 12px; font-size: 11px; }
-      #hud { width: 270px; left: 8px; top: 56px; bottom: 8px; }
+      #hud {
+        top: 56px;
+        left: 8px;
+        right: 8px;
+        bottom: auto;
+        width: auto;
+        height: 44vh;
+        min-height: 250px;
+      }
+      #scene-2d { padding: calc(44vh + 68px) 8px 8px; }
     }
   </style>
 </head>
@@ -169,7 +232,11 @@
         <h1>IMS Factory Digital Twin</h1>
         <span id="floor-name">Floor 1</span>
       </div>
-      <button id="reset-view" type="button">Reset view</button>
+      <div class="view-actions" aria-label="Layout view mode">
+        <button id="view-2d" class="view-button" type="button" aria-pressed="false">2D</button>
+        <button id="view-3d" class="view-button" type="button" aria-pressed="true">3D</button>
+        <button id="reset-view" type="button">Reset</button>
+      </div>
     </div>
     <div id="summary-line">Loading machines…</div>
     <div class="legend" aria-label="Machine status legend">
@@ -187,6 +254,9 @@
   </aside>
 
   <main id="scene" aria-label="Interactive three-dimensional Floor 1 logical layout"></main>
+  <main id="scene-2d" aria-label="Interactive two-dimensional Floor 1 logical layout" hidden>
+    <svg id="floor-plan-2d" role="img" aria-label="Floor 1 zones and machine status map"></svg>
+  </main>
 
   <script type="importmap">
     {
