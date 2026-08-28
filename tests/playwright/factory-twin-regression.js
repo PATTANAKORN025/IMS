@@ -106,11 +106,47 @@ async function run() {
   {
     const anon = await browser.newContext();
     const page = await anon.newPage();
-    for (const path of ['', 'api/floor-geometry', 'api/placement', 'private-assets/floor1-geometry.json']) {
+    for (const path of [
+      '',
+      'api/floor-geometry',
+      'api/placement',
+      'api/state',
+      'api/diagnostics',
+      'private-assets/floor1-geometry.json',
+    ]) {
       const res = await page.goto(TWIN_URL + path, { waitUntil: 'domcontentloaded' }).catch(() => null);
       const status = res ? res.status() : 0;
       check(status === 401, `401 without a session: /${path || ''}`, `got ${status}`);
     }
+
+    // Traversal variants. Plain, encoded, nested and route-relative. None may
+    // return private content; reaching the auth gate is itself a rejection.
+    for (const attack of [
+      '../private/floor1-geometry.json',
+      '..%2fprivate%2ffloor1-geometry.json',
+      '%2e%2e/%2e%2e/private/floor1-zones.json',
+      'vendor/three/../../private/floor1-geometry.json',
+      'api/floor-geometry/../../private/floor1-geometry.json',
+      'private/floor1-geometry.json',
+    ]) {
+      const res = await page.goto(TWIN_URL + attack, { waitUntil: 'domcontentloaded' }).catch(() => null);
+      const status = res ? res.status() : 0;
+      const body = res ? await page.content().catch(() => '') : '';
+      // Status alone is NOT the security property. A browser normalises a
+      // leading ../ before sending, so the request leaves the twin's path
+      // entirely and lands on Grafana, which 302s to its login page -- a 200
+      // login page is a rejection, not a leak. What must hold is that no
+      // private content comes back, whatever the status.
+      const leaked = /footprint_polygon|slot_id|schema_version|"columns"|"envelope"/.test(body);
+      check(!leaked, `traversal returns no private content: ${attack}`, `status ${status}${leaked ? ' LEAKED' : ''}`);
+    }
+
+    // An error response must never carry a stack trace or a filesystem path.
+    const errRes = await page.goto(`${TWIN_URL}api/floor-geometry`, { waitUntil: 'domcontentloaded' }).catch(() => null);
+    const errBody = errRes ? await page.content().catch(() => '') : '';
+    check(!/at .*\(.*:\d+:\d+\)/.test(errBody), 'no stack trace in an unauthenticated response');
+    check(!/\/app\/|C:\\\\/.test(errBody), 'no filesystem path in an unauthenticated response');
+
     await anon.close();
   }
 
@@ -183,6 +219,98 @@ async function run() {
 
     page.off('console', onConsole);
     page.off('requestfailed', onFailed);
+    console.log('');
+  }
+
+  // ── Evidence semantics ──
+  // These are the claims the twin is not allowed to make. Each has been a real
+  // risk at some point in this reconstruction.
+  console.log('Evidence semantics:');
+  {
+    const ev = await page.evaluate(async () => {
+      const geo = await (await fetch('api/floor-geometry')).json();
+      const diag = await (await fetch('api/diagnostics')).json().catch(() => null);
+      return {
+        slotsAllUnmapped: geo.slots.every((s) => s.status === 'UNMAPPED' && s.ims_device_id === null),
+        slotsNoMesId: geo.slots.every((s) => s.mes_machine_id === undefined || s.mes_machine_id === null),
+        heightsUnknown: geo.slots.every((s) => s.height_status === 'unknown'),
+        clearHeightNull: geo.envelope ? geo.envelope.clear_height_m === null : null,
+        noLowConfidenceGeometry:
+          geo.columns.every((c) => c.confidence !== 'low') && geo.slots.every((s) => s.confidence !== 'low'),
+        servedZoneTiers: [...new Set(geo.functional_zones.map((z) => z.confidence))],
+        confirmedMappings: diag ? diag.evidence.confirmed_mappings : null,
+        simulatedPositions: diag ? diag.evidence.simulated_machine_positions : null,
+      };
+    });
+    check(ev.slotsAllUnmapped, 'every slot remains UNMAPPED with a null device id');
+    check(ev.slotsNoMesId, 'no slot carries a MES machine id');
+    check(ev.heightsUnknown, 'equipment height stays unknown, not defaulted into evidence');
+    check(ev.clearHeightNull, 'clear height stays null rather than estimated');
+    check(ev.noLowConfidenceGeometry, 'no LOW-confidence physical geometry is served');
+    check(
+      ev.servedZoneTiers.every((t) => t === 'HIGH' || t === 'MEDIUM'),
+      'only HIGH/MEDIUM zones are served',
+      ev.servedZoneTiers.join(',')
+    );
+    check(ev.confirmedMappings === 0, 'confirmed mappings remains 0', `got ${ev.confirmedMappings}`);
+    check(ev.simulatedPositions > 0, 'machine positions are still declared simulated');
+    console.log('');
+  }
+
+  // ── View presets ──
+  console.log('View presets:');
+  {
+    const before = await snapshot(page);
+    const machinesBefore = await page.evaluate(() =>
+      window.__twin.machineMeshes.map((m) => [m.position.x, m.position.y, m.position.z])
+    );
+    await page.click('#view-controls button[data-view="building"]');
+    await page.waitForTimeout(600);
+    const inBuilding = await page.evaluate(() => {
+      const T = window.__twin;
+      let total = 0;
+      let visible = 0;
+      T.layers.structural.traverse((o) => {
+        if (o.type !== 'Mesh') return;
+        total++;
+        const v = o.position.clone().project(T.camera);
+        if (Math.abs(v.x) <= 1 && Math.abs(v.y) <= 1 && v.z < 1) visible++;
+      });
+      return { total, visible, view: T.getView() };
+    });
+    check(inBuilding.view === 'building', 'building preset activates');
+    check(
+      inBuilding.visible === inBuilding.total,
+      'building preset frames the whole structure without clipping',
+      `${inBuilding.visible}/${inBuilding.total}`
+    );
+    await page.click('#view-controls button[data-view="operator"]');
+    await page.waitForTimeout(600);
+    const machinesAfter = await page.evaluate(() =>
+      window.__twin.machineMeshes.map((m) => [m.position.x, m.position.y, m.position.z])
+    );
+    check(
+      JSON.stringify(machinesBefore) === JSON.stringify(machinesAfter),
+      'switching views never moves a machine'
+    );
+    const restored = await snapshot(page);
+    check(JSON.stringify(restored.api) === JSON.stringify(before.api), 'switching views never changes API results');
+    console.log('');
+  }
+
+  // ── Diagnostics ──
+  console.log('Diagnostics:');
+  {
+    const openByDefault = await page.locator('#diagnostics').evaluate((e) => e.open);
+    check(openByDefault === false, 'diagnostics stays collapsed for the default view');
+    await page.click('#diagnostics > summary');
+    await page.waitForTimeout(1200);
+    const text = await page.locator('#diagnostics-body').innerText();
+    check(text.includes('Confirmed mappings'), 'diagnostics reports confirmed mappings');
+    check(text.includes('Observed columns') && text.includes('Simulated machine positions'),
+      'diagnostics keeps evidence categories separate');
+    check(!/PHYS-F1-|LDI-\d/.test(text), 'diagnostics leaks no object identifiers');
+    await page.click('#diagnostics > summary');
     console.log('');
   }
 
