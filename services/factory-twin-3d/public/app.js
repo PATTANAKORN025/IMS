@@ -150,9 +150,29 @@ function buildPhysicalSlots(geometry) {
   envelopeOutline.position.set(0, envelope.height / 2, 0);
   scene.add(envelopeOutline);
 
+  // Structural columns detected from the drawing (see the private geometry
+  // file's column_detection block for method and thresholds).
+  //
+  // HEIGHT SEMANTICS -- envelope.height is FLOOR-TO-FLOOR, derived from the
+  // printed floor levels of the four floor plans (+0.30 / +5.30 / +10.30 /
+  // +15.30, three intervals of exactly 5.00 m). Drawing a column at that
+  // full height is a VISUALIZATION CONVENTION so the column reads as
+  // vertical structure; it is NOT evidence of clear column height. The
+  // clear height under the slab is unknown -- the private file records it
+  // as clear_height_m: null rather than estimating slab thickness.
+  //
+  // Plan size comes from the measured symbol (col.footprint, ~0.96 m
+  // square, +/-40 mm) rather than the previous hardcoded 0.15 m cylinder,
+  // which was a placeholder from before any real column was extracted.
+  // MEDIUM-confidence columns are drawn dimmer than HIGH so a less certain
+  // detection never reads as firmly as a clear one -- same discipline as
+  // the functional-zone tiers.
   for (const col of columns || []) {
-    const colGeom = new THREE.CylinderGeometry(0.15, 0.15, envelope.height, 8);
-    const colMesh = new THREE.Mesh(colGeom, new THREE.MeshStandardMaterial({ color: 0x334155 }));
+    const w = col.footprint?.width ?? 0.3;
+    const dpt = col.footprint?.depth ?? 0.3;
+    const colGeom = new THREE.BoxGeometry(w, envelope.height, dpt);
+    const color = col.confidence === 'medium' ? 0x1e293b : 0x334155;
+    const colMesh = new THREE.Mesh(colGeom, new THREE.MeshStandardMaterial({ color }));
     colMesh.position.set(col.position.x, envelope.height / 2, col.position.z);
     scene.add(colMesh);
   }
