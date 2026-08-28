@@ -189,15 +189,33 @@ function buildPhysicalSlots(geometry) {
     scene.add(zoneOutline);
   }
 
+  // Physical machine positions digitized from the drawing. Plan width/depth
+  // are measured from the drawn symbol; HEIGHT IS NOT IN EVIDENCE -- a plan
+  // view carries no equipment elevation, so the private file emits none and
+  // the API's existing 1 m fallback applies. That 1 m is a RENDERING
+  // DEFAULT, not a measurement, which is why these are drawn as low flat
+  // pads rather than machine-shaped volumes: the silhouette must not imply
+  // a height nobody measured.
+  //
+  // MEDIUM-confidence detections render dimmer than HIGH, the same
+  // discipline used for columns and functional zones.
   for (const slot of slots || []) {
-    const geom = new THREE.BoxGeometry(slot.footprint.width, slot.footprint.height, slot.footprint.depth);
+    const h = slot.footprint.height;
+    const geom = new THREE.BoxGeometry(slot.footprint.width, h, slot.footprint.depth);
     // Flat, dim, unlit-looking gray -- deliberately unlike the bright,
     // state-colored real device boxes. No label, no userData.deviceId,
     // never pushed to machineMeshes: nothing about this mesh is clickable
     // or implies a live device.
-    const mat = new THREE.MeshBasicMaterial({ color: 0x334155, transparent: true, opacity: 0.5 });
+    const mat = new THREE.MeshBasicMaterial({
+      color: 0x334155,
+      transparent: true,
+      opacity: slot.confidence === 'medium' ? 0.32 : 0.5,
+    });
     const mesh = new THREE.Mesh(geom, mat);
-    mesh.position.set(slot.position.x, slot.position.y, slot.position.z);
+    // Sit the pad ON the floor. position.y is the slot's floor reference (0),
+    // and a box is centred on its origin, so without the half-height offset
+    // the lower half renders below the floor plane.
+    mesh.position.set(slot.position.x, slot.position.y + h / 2, slot.position.z);
     scene.add(mesh);
   }
 }
