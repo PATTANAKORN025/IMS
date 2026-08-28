@@ -148,4 +148,39 @@ const AssetMappingStatus = Object.freeze({
  * @property {string|null} ims_device_id - Real device_id if mapped, else null. Never inferred from position/numbering/proximity.
  */
 
+/**
+ * A functional/process zone digitized from the engineering drawing's area
+ * layer -- NOT a room and NOT an architectural wall. Floor 1 is largely
+ * open-plan: these regions are open-sided, delimited by an area layer
+ * rather than enclosed by partitions, so a zone boundary must never be
+ * rendered or interpreted as a wall.
+ *
+ * Geometry comes only from real drawn linework. `printedAreaM2` is the
+ * area value printed on the drawing and is used ONLY to accept or reject a
+ * candidate boundary after the fact -- it is never an input to generating
+ * geometry, and no vertex is ever moved to improve the match.
+ *
+ * Only HIGH/MEDIUM zones that are not party to an unresolved CONFLICT are
+ * given geometry on the wire. LOW/REJECTED/UNRESOLVED tiers and both sides
+ * of a conflict are withheld as geometry and survive as counts only:
+ * unvalidated geometry must not be renderable, and a conflict must not be
+ * silently resolved by dropping one candidate.
+ *
+ * @typedef {Object} FunctionalZone
+ * @property {string} id - Anonymous zone identifier (e.g. "zone-07"). Never a real process/room name.
+ * @property {'functional-zone'} type
+ * @property {'HIGH'|'MEDIUM'|'LOW'|'REJECTED'|'UNRESOLVED'} confidence - Evidence tier for the boundary.
+ * @property {'VALIDATED'|'VALIDATED_QUALIFIED'|'CANDIDATE_NOT_AUTHORITATIVE'|'CONFLICT'|'REJECTED_NO_GEOMETRY'|'UNRESOLVED_NO_BOUNDARY'} status
+ * @property {'cyan'} [sourceLayer] - Drawing layer the boundary was read from.
+ * @property {string} [geometryMethod] - How the boundary was recovered.
+ * @property {number} printedAreaM2 - Area printed on the drawing. Validation evidence only, never a geometry input.
+ * @property {number|null} calculatedAreaM2 - Area measured from the recovered boundary.
+ * @property {number|null} areaDeltaPct - Signed percentage difference, calculated vs printed.
+ * @property {boolean} renderable - False for every tier that was not validated. Server re-derives this; a hand-edit cannot promote a zone into the scene.
+ * @property {{type: 'polygon', units: 'scene-metres', vertices: Array<{x: number, z: number}>}|null} geometry - Implicitly-closed ring; null for metadata-only zones.
+ * @property {string} [validationNotes] - Why this zone landed in its tier.
+ * @property {string} [competingWith] - Zone id of the other side of an unresolved conflict.
+ * @property {Object} [competingCandidate] - An alternative boundary from a different extraction method, retained unselected.
+ */
+
 module.exports = { MachineState, MACHINE_STATE_THEME, AssetMappingStatus };

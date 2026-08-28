@@ -31,6 +31,15 @@ const path = require('path');
 const PRIVATE_DIR = path.join(__dirname, '..', '..', 'services', 'factory-twin-3d', 'private');
 const GEOMETRY_PATH = path.join(PRIVATE_DIR, 'floor1-geometry.json');
 const MAPPING_PATH = path.join(PRIVATE_DIR, 'floor1-asset-mapping.json');
+const ZONES_PATH = path.join(PRIVATE_DIR, 'floor1-zones.json');
+
+// A functional-zone is a process/functional area digitized from the
+// drawing's area layer. It is NOT a room and NOT an architectural wall.
+// Only HIGH/MEDIUM zones with an unambiguous boundary are renderable; LOW,
+// REJECTED, UNRESOLVED and unresolved CONFLICT zones are metadata-only and
+// must never carry renderable geometry.
+const ZONE_CONFIDENCE = new Set(['HIGH', 'MEDIUM', 'LOW', 'REJECTED', 'UNRESOLVED']);
+const RENDERABLE_CONFIDENCE = new Set(['HIGH', 'MEDIUM']);
 
 const REAL_MACHINE_STATES = new Set(['OFF', 'DOWN', 'IDLE', 'RUN', 'PM_STOP', 'UNKNOWN']);
 const MAX_DECIMAL_PLACES = 3; // beyond this reads as false precision, not a deliberate value
@@ -87,21 +96,31 @@ function insideEnvelope(pos, envelope) {
 console.log('Floor 1 Geometry Validator');
 console.log('='.repeat(50));
 
-if (!fs.existsSync(GEOMETRY_PATH)) {
-  console.log('private/floor1-geometry.json not present -- nothing to validate (expected on a fresh clone).');
+const geometryPresent = fs.existsSync(GEOMETRY_PATH);
+const zonesPresent = fs.existsSync(ZONES_PATH);
+
+if (!geometryPresent && !zonesPresent) {
+  console.log('No private geometry or zone file present -- nothing to validate (expected on a fresh clone).');
   console.log('='.repeat(50));
-  console.log('VALIDATION SKIPPED (no private geometry file)');
+  console.log('VALIDATION SKIPPED (no private files)');
   process.exit(0);
 }
 
-let geometry;
-try {
-  geometry = JSON.parse(fs.readFileSync(GEOMETRY_PATH, 'utf8'));
-} catch (err) {
-  error(`floor1-geometry.json is not valid JSON: ${err.message}`);
-  console.log('='.repeat(50));
-  console.log(`Results: ${errors} error(s), ${warnings} warning(s)`);
-  process.exit(1);
+// Defaults to {} rather than null so the geometry checks below degrade to
+// empty-array iterations when only the zone file exists -- the two files
+// are independently optional.
+let geometry = {};
+if (geometryPresent) {
+  try {
+    geometry = JSON.parse(fs.readFileSync(GEOMETRY_PATH, 'utf8'));
+  } catch (err) {
+    error(`floor1-geometry.json is not valid JSON: ${err.message}`);
+    console.log('='.repeat(50));
+    console.log(`Results: ${errors} error(s), ${warnings} warning(s)`);
+    process.exit(1);
+  }
+} else {
+  console.log('private/floor1-geometry.json not present -- skipping geometry checks.');
 }
 
 let mapping = {};
@@ -188,9 +207,13 @@ for (const slot of geometry.slots || []) {
 }
 
 // -- mapping sanity: every mapped slot_id must exist in geometry --
-for (const slotId of Object.keys(mapping)) {
-  if (mapping[slotId] && !seenSlotIds.has(slotId)) {
-    error(`floor1-asset-mapping.json maps ${slotId} -> ${mapping[slotId]}, but no such slot exists in floor1-geometry.json`);
+// Only meaningful when the geometry file is actually present; without it
+// there is no slot list to check against and every entry would false-fail.
+if (geometryPresent) {
+  for (const slotId of Object.keys(mapping)) {
+    if (mapping[slotId] && !seenSlotIds.has(slotId)) {
+      error(`floor1-asset-mapping.json maps ${slotId} -> ${mapping[slotId]}, but no such slot exists in floor1-geometry.json`);
+    }
   }
 }
 
@@ -207,9 +230,121 @@ for (const [deviceId, slotIds] of deviceToSlots) {
   if (slotIds.length > 1) error(`device_id ${deviceId} is mapped to ${slotIds.length} different slots (${slotIds.join(', ')}) -- a real device can only occupy one physical slot`);
 }
 
+// -- functional zones (private/floor1-zones.json) --
+let zoneDoc = null;
+let zoneCounts = { total: 0, renderable: 0 };
+if (zonesPresent) {
+  try {
+    zoneDoc = JSON.parse(fs.readFileSync(ZONES_PATH, 'utf8'));
+  } catch (err) {
+    error(`floor1-zones.json is not valid JSON: ${err.message}`);
+  }
+}
+if (zoneDoc) {
+  const zones = Array.isArray(zoneDoc.zones) ? zoneDoc.zones : [];
+  zoneCounts.total = zones.length;
+  const seenZoneObjIds = new Set();
+  const conflicted = new Set();
+  for (const c of zoneDoc.conflicts || []) {
+    if (c.status === 'CONFLICT') for (const id of c.ids || []) conflicted.add(id);
+  }
+
+  for (const z of zones) {
+    const label = `functional-zone ${z.id}`;
+    if (!z.id) { error('a functional-zone is missing its id'); continue; }
+    if (seenZoneObjIds.has(z.id)) error(`duplicate functional-zone id: ${z.id}`);
+    seenZoneObjIds.add(z.id);
+
+    if (z.type !== 'functional-zone') {
+      error(`${label}: type must be "functional-zone" (got "${z.type}") -- these are process areas, not rooms or walls`);
+    }
+    if (!ZONE_CONFIDENCE.has(z.confidence)) {
+      error(`${label}: invalid confidence "${z.confidence}"`);
+    }
+    if (typeof z.renderable !== 'boolean') {
+      error(`${label}: renderable must be a boolean (got ${z.renderable})`);
+    }
+
+    const isConflicted = z.status === 'CONFLICT' || conflicted.has(z.id);
+
+    // The invariant this whole file exists to protect: geometry that was
+    // not validated must never be presented as if it were. LOW/REJECTED/
+    // UNRESOLVED tiers and any unresolved CONFLICT are metadata-only.
+    if (z.renderable === true) {
+      if (!RENDERABLE_CONFIDENCE.has(z.confidence)) {
+        error(`${label}: renderable=true but confidence is ${z.confidence} -- only HIGH/MEDIUM may render`);
+      }
+      if (isConflicted) {
+        error(`${label}: renderable=true but the zone is in an unresolved CONFLICT -- conflicting candidates must not render`);
+      }
+      if (!z.geometry || !Array.isArray(z.geometry.vertices) || z.geometry.vertices.length < 3) {
+        error(`${label}: renderable=true but has no polygon of at least 3 vertices`);
+      }
+    }
+
+    if (!z.geometry) {
+      if (z.renderable === true) error(`${label}: renderable=true with null geometry`);
+      continue;
+    }
+
+    const verts = Array.isArray(z.geometry.vertices) ? z.geometry.vertices : [];
+    if (verts.length < 3) {
+      error(`${label}: polygon has ${verts.length} vertices, needs at least 3`);
+      continue;
+    }
+    verts.forEach((v, i) => checkFiniteCoords(v, `${label} vertex ${i}`, ['x', 'z']));
+
+    // A ring is implicitly closed -- an explicit repeat of the first point
+    // as the last is a malformed ring here, not a closure.
+    const first = verts[0];
+    const last = verts[verts.length - 1];
+    if (first && last && first.x === last.x && first.z === last.z) {
+      error(`${label}: ring repeats its first vertex as the last -- rings are implicitly closed`);
+    }
+
+    // Self-intersection: skipped above a size where the O(n^2) sweep stops
+    // being worth it in a lint pass; those zones are non-renderable anyway.
+    if (verts.length <= 200) {
+      const orient = (p, q, r) => {
+        const v = (q.z - p.z) * (r.x - q.x) - (q.x - p.x) * (r.z - q.z);
+        return Math.abs(v) < 1e-12 ? 0 : (v > 0 ? 1 : 2);
+      };
+      const crosses = (a, b, c, d) =>
+        orient(a, b, c) !== orient(a, b, d) && orient(c, d, a) !== orient(c, d, b);
+      const n = verts.length;
+      let hits = 0;
+      for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+          if (Math.abs(i - j) <= 1 || (i === 0 && j === n - 1)) continue;
+          if (crosses(verts[i], verts[(i + 1) % n], verts[j], verts[(j + 1) % n])) hits++;
+        }
+      }
+      if (hits > 0) error(`${label}: polygon self-intersects (${hits} crossing pair(s))`);
+    }
+
+    if (z.renderable === true) zoneCounts.renderable++;
+  }
+
+  // Every declared CONFLICT must still name at least two candidates and
+  // leave them unrendered -- a conflict silently resolved by dropping one
+  // side is exactly the failure mode this metadata exists to prevent.
+  for (const c of zoneDoc.conflicts || []) {
+    if (c.status !== 'CONFLICT') continue;
+    if (!Array.isArray(c.ids) || c.ids.length < 2) {
+      error(`conflict entry ${JSON.stringify(c.ids)} must name at least two competing zones`);
+    }
+    for (const id of c.ids || []) {
+      const z = zones.find((q) => q.id === id);
+      if (!z) error(`conflict names ${id}, but no such functional-zone exists`);
+      else if (z.renderable === true) error(`conflict member ${id} is renderable -- unresolved conflicts must not render`);
+    }
+  }
+}
+
 const verifiedPhysicalCount = (geometry.slots || []).filter((s) => s.status === 'VERIFIED_PHYSICAL').length;
 
 console.log(`Checked: ${geometry.columns?.length || 0} columns, ${geometry.zones?.length || 0} zones, ${geometry.slots?.length || 0} slots, ${Object.keys(mapping).length} mapping entries, ${deviceToSlots.size} unique mapped device(s), ${verifiedPhysicalCount} VERIFIED_PHYSICAL slot(s).`);
+console.log(`Functional zones: ${zoneCounts.total} record(s), ${zoneCounts.renderable} renderable, ${zoneCounts.total - zoneCounts.renderable} metadata-only.`);
 console.log('='.repeat(50));
 console.log(`Results: ${errors} error(s), ${warnings} warning(s)`);
 if (errors > 0) {

@@ -218,6 +218,71 @@ function makeTextSprite(text, { fontSize = 30, scaleFactor = 0.024, bg = 'rgba(1
   return sprite;
 }
 
+// ── Functional/process zones (/api/floor-geometry -> functional_zones) ──
+// Deliberately NOT part of buildPhysicalSlots: that function returns early
+// without a building envelope, and the zone layer is independent of the
+// envelope file -- zones must still render when no floor1-geometry.json
+// exists (the current state of this deployment).
+//
+// These are process areas, not rooms and not walls. The floor is largely
+// open-plan, so they are drawn as flat translucent plates with an outline
+// at floor level -- never as vertical surfaces, which would read as
+// enclosure the drawing does not support. Colour is keyed to evidence
+// tier so a qualified boundary never looks as certain as a validated one.
+// Plain three.js primitives only (Shape/ShapeGeometry/LineLoop); no
+// external plugin, no DOM or Grafana behaviour relied on.
+//
+// The server already withholds every non-renderable zone; the guard here
+// is a second, independent barrier so a client-side change alone cannot
+// draw an unvalidated boundary.
+const ZONE_TIER_STYLE = {
+  HIGH: { fill: 0x10b981, line: 0x34d399, opacity: 0.14 },
+  MEDIUM: { fill: 0xf59e0b, line: 0xfbbf24, opacity: 0.1 },
+};
+
+function buildFunctionalZones(geometry) {
+  const zones = geometry?.functional_zones;
+  if (!Array.isArray(zones) || zones.length === 0) return 0;
+
+  const floorY = 0.3; // validated finished-floor level, metres
+  let drawn = 0;
+
+  for (const zone of zones) {
+    const style = ZONE_TIER_STYLE[zone.confidence];
+    const verts = zone.geometry?.vertices;
+    // Second barrier: anything the server should already have withheld is
+    // skipped rather than trusted.
+    if (!style || !Array.isArray(verts) || verts.length < 3) continue;
+
+    const shape = new THREE.Shape();
+    shape.moveTo(verts[0].x, verts[0].z);
+    for (let i = 1; i < verts.length; i++) shape.lineTo(verts[i].x, verts[i].z);
+    shape.closePath();
+
+    const plate = new THREE.Mesh(
+      new THREE.ShapeGeometry(shape),
+      new THREE.MeshBasicMaterial({
+        color: style.fill,
+        transparent: true,
+        opacity: style.opacity,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      })
+    );
+    plate.rotation.x = Math.PI / 2; // Shape is authored in XY; lay it on XZ
+    plate.position.y = floorY;
+    scene.add(plate);
+
+    const outline = new THREE.LineLoop(
+      new THREE.BufferGeometry().setFromPoints(verts.map((v) => new THREE.Vector3(v.x, floorY + 0.01, v.z))),
+      new THREE.LineBasicMaterial({ color: style.line })
+    );
+    scene.add(outline);
+    drawn++;
+  }
+  return drawn;
+}
+
 // ── Machine meshes (populated once /api/placement resolves) ─────
 const machineMeshes = []; // THREE.Mesh[], one per machine, userData.deviceId set
 const machinesById = new Map(); // deviceId -> { mesh, material }
@@ -435,7 +500,19 @@ async function boot() {
   // rendering, and a real-device fetch failure must never block this.
   try {
     const geoRes = await fetch('api/floor-geometry');
-    if (geoRes.ok) buildPhysicalSlots(await geoRes.json());
+    if (geoRes.ok) {
+      const geo = await geoRes.json();
+      buildPhysicalSlots(geo);
+      // Separate call: the zone layer is independent of the envelope, and
+      // buildPhysicalSlots returns early when no envelope file exists.
+      const drawn = buildFunctionalZones(geo);
+      const meta = geo.functional_zones_meta;
+      if (meta && meta.total > 0) {
+        console.info(
+          `functional zones: ${drawn} rendered of ${meta.total} (${meta.withheld} withheld as unvalidated/conflicting)`
+        );
+      }
+    }
   } catch (err) {
     console.warn('floor-geometry fetch failed (non-fatal):', err.message);
   }

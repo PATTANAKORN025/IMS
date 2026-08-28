@@ -117,6 +117,70 @@ function loadPrivateAssetMapping() {
   }
 }
 
+// Reads private/floor1-zones.json if present -- functional/process zones
+// digitized from the drawing's area layer. These are NOT rooms and NOT
+// architectural walls; that floor is largely open-plan and the zones are
+// open-sided regions, so nothing here should be read as an enclosure.
+//
+// Returns { renderable, meta }. Only zones the extraction actually
+// validated are given geometry: HIGH/MEDIUM confidence, renderable===true,
+// and not party to an unresolved CONFLICT. Everything else -- LOW,
+// REJECTED, UNRESOLVED, and both sides of a conflict -- is deliberately
+// withheld from the wire as geometry and survives only as counts in meta,
+// so the browser cannot draw an unvalidated boundary even by accident. The
+// filter is applied here rather than trusting the file's own renderable
+// flag alone, so a hand-edit of that flag still cannot promote a LOW or
+// conflicted zone into the scene.
+function loadPrivateZones() {
+  const empty = { renderable: [], meta: { total: 0, served: 0, withheld: 0, byConfidence: {}, conflicts: [] } };
+  const filePath = path.join(PRIVATE_DIR, 'floor1-zones.json');
+  if (!fs.existsSync(filePath)) return empty;
+  try {
+    const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    const zones = Array.isArray(parsed.zones) ? parsed.zones : [];
+    const conflicts = Array.isArray(parsed.conflicts) ? parsed.conflicts : [];
+    const conflicted = new Set();
+    for (const c of conflicts) {
+      if (c.status === 'CONFLICT') for (const id of c.ids || []) conflicted.add(id);
+    }
+    const renderable = zones
+      .filter((z) =>
+        z.renderable === true &&
+        (z.confidence === 'HIGH' || z.confidence === 'MEDIUM') &&
+        z.status !== 'CONFLICT' &&
+        !conflicted.has(z.id) &&
+        z.geometry && Array.isArray(z.geometry.vertices) && z.geometry.vertices.length >= 3)
+      .map((z) => ({
+        id: z.id,
+        type: z.type,
+        confidence: z.confidence,
+        status: z.status,
+        printedAreaM2: z.printedAreaM2,
+        calculatedAreaM2: z.calculatedAreaM2,
+        areaDeltaPct: z.areaDeltaPct,
+        validationNotes: z.validationNotes,
+        geometry: z.geometry,
+      }));
+    const byConfidence = {};
+    for (const z of zones) byConfidence[z.confidence] = (byConfidence[z.confidence] || 0) + 1;
+    return {
+      renderable,
+      meta: {
+        total: zones.length,
+        served: renderable.length,
+        withheld: zones.length - renderable.length,
+        byConfidence,
+        // Conflicts are reported, never silently resolved -- the client is
+        // told two candidates exist and that neither was drawn.
+        conflicts: conflicts.map((c) => ({ ids: c.ids, status: c.status, resolution: c.resolution })),
+      },
+    };
+  } catch (err) {
+    console.error(`private zone file present but unusable (serving no zones): ${err.message}`);
+    return empty;
+  }
+}
+
 // Task 4.3 dynamic fleet discovery: the hardcoded 10-machine/2-per-zone
 // layout below (Task 4.2) was built when only 10 LDI devices were assumed
 // to exist. A later audit found public.devices actually has 23 enabled
@@ -477,9 +541,21 @@ app.get('/api/placement', (req, res) => {
 // device_id, same pattern as the real-device layer); every other slot
 // stays 'UNMAPPED' and carries no device_id.
 app.get('/api/floor-geometry', (req, res) => {
+  // Functional zones live in their own private file and are independent of
+  // floor1-geometry.json -- they are served even when no geometry file
+  // exists, which is the current state on this deployment.
+  const zoneLayer = loadPrivateZones();
   const geometry = loadPrivateGeometry();
   if (!geometry) {
-    return res.status(200).json({ envelope: null, camera: null, columns: [], zones: [], slots: [] });
+    return res.status(200).json({
+      envelope: null,
+      camera: null,
+      columns: [],
+      zones: [],
+      slots: [],
+      functional_zones: zoneLayer.renderable,
+      functional_zones_meta: zoneLayer.meta,
+    });
   }
   const mapping = loadPrivateAssetMapping();
   // Normalizes each slot to a stable wire shape (position/footprint)
@@ -501,7 +577,12 @@ app.get('/api/floor-geometry', (req, res) => {
       status: deviceId ? 'IMS_CONNECTED' : 'UNMAPPED',
     };
   });
-  res.status(200).json({ ...geometry, slots });
+  res.status(200).json({
+    ...geometry,
+    slots,
+    functional_zones: zoneLayer.renderable,
+    functional_zones_meta: zoneLayer.meta,
+  });
 });
 
 app.get('/healthz', async (req, res) => {
