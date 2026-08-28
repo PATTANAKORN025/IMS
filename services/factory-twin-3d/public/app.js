@@ -87,6 +87,26 @@ layers.operational.name = 'operational';
 layers.telemetry.name = 'telemetry';
 for (const g of Object.values(layers)) scene.add(g);
 
+// Sub-layers, because "structure" and "equipment" each bundle two things an
+// operator has a real reason to separate: the measured building shell is a
+// different claim from 147 detected columns, and 23 monitored devices on a
+// SIMULATED grid are a different claim from 242 OBSERVED equipment positions.
+// Hiding one must not hide the other, or the toggle silently conflates two
+// evidence classes.
+//
+// Nested Groups rather than a flat list: the four top-level layers keep their
+// meaning and their existing traversal counts, and a parent toggle still hides
+// its children, so nothing that depended on the coarse layers changed.
+const sublayers = {
+  shell: new THREE.Group(), // floor plate, orientation grid, measured envelope outline
+  columns: new THREE.Group(), // detected structural columns
+  machines: new THREE.Group(), // monitored devices (simulated positions) + their zone boxes
+  slots: new THREE.Group(), // observed equipment slots, no confirmed identity
+};
+for (const [name, g] of Object.entries(sublayers)) g.name = name;
+layers.structural.add(sublayers.shell, sublayers.columns);
+layers.operational.add(sublayers.machines, sublayers.slots);
+
 // ── View modes ──────────────────────────────────────────────
 // Two coordinate systems legitimately coexist in this scene and neither may
 // be moved to suit the other:
@@ -113,7 +133,15 @@ const OPERATOR_VIEW = Object.freeze({
   target: { x: 14, y: 0.5, z: 0 },
 });
 let buildingView = null; // derived from real bounds once geometry arrives
+let overviewView = null; // derived from the union of both, once both exist
 let activeView = 'operator';
+
+// Bounds each derived view was fitted from. Kept so a resize (or the arrival
+// of the second data source) can refit rather than leave framing computed for
+// a stale aspect ratio. Declared here, above every reader, because the fits
+// are recomputed from them in three different places.
+let buildingBounds = null; // measured envelope
+let machineBounds = null; // synthetic device grid extent
 
 // Derives a camera placement that fits a bounding box, rather than hardcoding
 // coordinates: the building's extent is known from the data, so the framing
@@ -135,8 +163,50 @@ function frameBounds({ cx, cz, width, depth, height = 0 }) {
   };
 }
 
+// OVERVIEW frames both coordinate systems at once: the measured building and
+// the synthetic device grid, whichever extent is larger on each axis. It is a
+// framing union, not a reconciliation -- it does not move a machine towards
+// the building or claim the two systems are registered to each other. It
+// exists because "show me everything" is a real question for an executive or
+// NOC walkthrough, and the honest answer is "here is both, unmerged".
+function unionBounds(a, b) {
+  if (!a) return b;
+  if (!b) return a;
+  const minX = Math.min(a.cx - a.width / 2, b.cx - b.width / 2);
+  const maxX = Math.max(a.cx + a.width / 2, b.cx + b.width / 2);
+  const minZ = Math.min(a.cz - a.depth / 2, b.cz - b.depth / 2);
+  const maxZ = Math.max(a.cz + a.depth / 2, b.cz + b.depth / 2);
+  return {
+    cx: (minX + maxX) / 2,
+    cz: (minZ + maxZ) / 2,
+    width: maxX - minX,
+    depth: maxZ - minZ,
+    height: Math.max(a.height || 0, b.height || 0),
+  };
+}
+
+// Recomputes every derived view from the bounds currently known. Called when
+// either data source arrives and on resize, because the fit depends on aspect.
+// OPERATOR_VIEW is never recomputed: it is the hand-tuned monitoring default
+// and must stay byte-for-byte what it was.
+function refitViews() {
+  if (buildingBounds) buildingView = frameBounds(buildingBounds);
+  const combined = unionBounds(buildingBounds, machineBounds);
+  overviewView = combined ? frameBounds(combined) : null;
+  const far = overviewView || buildingView;
+  if (far) ensureDepthRange(Math.hypot(far.position.x, far.position.y, far.position.z));
+  // A view that has no data behind it must not offer itself as a choice.
+  for (const btn of document.querySelectorAll('#view-controls button[data-view]')) {
+    const v = btn.dataset.view;
+    btn.disabled = (v === 'building' && !buildingView) || (v === 'overview' && !overviewView);
+  }
+  if (activeView !== 'operator') applyView(activeView);
+}
+
+const VIEWS = () => ({ operator: OPERATOR_VIEW, building: buildingView, overview: overviewView });
+
 function applyView(name) {
-  const v = name === 'building' ? buildingView : OPERATOR_VIEW;
+  const v = VIEWS()[name];
   if (!v) return false;
   camera.position.set(v.position.x, v.position.y, v.position.z);
   controls.target.set(v.target.x, v.target.y, v.target.z);
@@ -152,6 +222,15 @@ document.getElementById('view-controls')?.addEventListener('click', (ev) => {
   const btn = ev.target.closest('button[data-view]');
   if (btn) applyView(btn.dataset.view);
 });
+
+// Reset returns the camera to the ACTIVE view's canonical framing rather than
+// forcing operator view: orbit and zoom drift is the thing being undone, not
+// the operator's choice of what to look at. Same camera-only guarantee.
+function resetView() {
+  return applyView(activeView);
+}
+
+document.getElementById('view-reset')?.addEventListener('click', resetView);
 
 // The far plane was sized for the old synthetic spread; the building view
 // pulls the camera much further back, so a too-near far plane would clip the
@@ -170,7 +249,7 @@ function ensureDepthRange(dist) {
 // and keep polling. This is presentation only -- it never mutates data,
 // never re-fetches, and never changes what the API returned.
 function setLayerVisible(name, visible) {
-  const g = layers[name];
+  const g = layers[name] || sublayers[name];
   if (!g) return false;
   g.visible = visible;
   return true;
@@ -185,7 +264,7 @@ document.getElementById('layer-controls')?.addEventListener('change', (ev) => {
 // Floor grid -- purely orientation, not real factory floor data. Sized up
 // from Task 4.1's 20x20 to cover the full 10-machine/5-zone spread.
 const grid = new THREE.GridHelper(100, 40, 0x334155, 0x1e293b);
-layers.structural.add(grid);
+sublayers.shell.add(grid);
 
 // ── Floor shell (Floor 1, default grouping) ─────────────────
 // A plate + edge outline under the grid, one per entry in /api/placement's
@@ -224,7 +303,7 @@ function buildFloorShells(floors, machines) {
     const shell = new THREE.Mesh(geometry, material);
     shell.rotation.x = -Math.PI / 2; // lay flat on the X/Z plane, under the grid
     shell.position.set(cx, -0.05, cz);
-    layers.structural.add(shell);
+    sublayers.shell.add(shell);
 
     // The floor plate is rendered from validated geometry only. An earlier
     // revision textured it with a private reference image fetched over
@@ -239,11 +318,11 @@ function buildFloorShells(floors, machines) {
     const edges = new THREE.EdgesGeometry(new THREE.BoxGeometry(width, 0.05, depth));
     const outline = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xf59e0b }));
     outline.position.set(cx, -0.05, cz);
-    layers.structural.add(outline);
+    sublayers.shell.add(outline);
 
     const label = makeTextSprite(floor.floor_label, { fontSize: 22, scaleFactor: 0.02, bg: 'rgba(245, 158, 11, 0.85)', fg: '#1c1305' });
     label.position.set(cx, 9, minY - 2);
-    layers.structural.add(label);
+    sublayers.shell.add(label);
   }
 }
 
@@ -317,14 +396,13 @@ function buildPhysicalSlots(geometry) {
     depth: envelope.depth,
     height: envelope.height,
   };
-  buildingView = frameBounds(buildingBounds);
-  ensureDepthRange(Math.hypot(buildingView.position.x, buildingView.position.y, buildingView.position.z));
+  refitViews();
 
   const envelopeGeom = new THREE.BoxGeometry(envelope.width, envelope.height, envelope.depth);
   const envelopeEdges = new THREE.EdgesGeometry(envelopeGeom);
   const envelopeOutline = new THREE.LineSegments(envelopeEdges, new THREE.LineBasicMaterial({ color: 0x334155 }));
   envelopeOutline.position.set(0, envelope.height / 2, 0);
-  layers.structural.add(envelopeOutline);
+  sublayers.shell.add(envelopeOutline);
 
   // Structural columns detected from the drawing (see the private geometry
   // file's column_detection block for method and thresholds).
@@ -352,7 +430,7 @@ function buildPhysicalSlots(geometry) {
     colMesh.position.set(col.position.x, envelope.height / 2, col.position.z);
     colMesh.userData.column = col;
     columnMeshes.push(colMesh);
-    layers.structural.add(colMesh);
+    sublayers.columns.add(colMesh);
   }
 
   for (const zone of zones || []) {
@@ -396,7 +474,7 @@ function buildPhysicalSlots(geometry) {
     // and a box is centred on its origin, so without the half-height offset
     // the lower half renders below the floor plane.
     mesh.position.set(slot.position.x, slot.position.y + h / 2, slot.position.z);
-    layers.operational.add(mesh);
+    sublayers.slots.add(mesh);
   }
 }
 
@@ -527,7 +605,7 @@ function buildScene(placements) {
     // Three.js floor plane (X, Z) with Y fixed as the vertical box height.
     mesh.position.set(p.pos_x, 0.5, p.pos_y);
     mesh.userData.deviceId = p.device_id;
-    layers.operational.add(mesh);
+    sublayers.machines.add(mesh);
 
     machineMeshes.push(mesh);
     machinesById.set(p.device_id, { mesh, material });
@@ -558,6 +636,26 @@ function buildScene(placements) {
   // never from any real drawing. This is "zone structure" made visible,
   // the 3D equivalent of the 2D twin's canvas zone-container rectangles,
   // built from data this service already owns rather than a new input.
+  // Extent of the synthetic device grid, recorded so the overview fit can
+  // frame it alongside the measured building. Read only; no machine position
+  // is written, rounded or adjusted here.
+  if (placements.length > 0) {
+    const xs = placements.map((p) => p.pos_x);
+    const zs = placements.map((p) => p.pos_y);
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minZ = Math.min(...zs);
+    const maxZ = Math.max(...zs);
+    machineBounds = {
+      cx: (minX + maxX) / 2,
+      cz: (minZ + maxZ) / 2,
+      width: Math.max(maxX - minX, 1),
+      depth: Math.max(maxZ - minZ, 1),
+      height: 2,
+    };
+    refitViews();
+  }
+
   const ZONE_PADDING = 3;
   for (const [zoneName, members] of zoneGroups) {
     const avgX = members.reduce((sum, m) => sum + m.pos_x, 0) / members.length;
@@ -571,11 +669,11 @@ function buildScene(placements) {
     const edges = new THREE.EdgesGeometry(boxGeom);
     const outline = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x475569 }));
     outline.position.set(avgX, 0.01, avgY);
-    layers.operational.add(outline);
+    sublayers.machines.add(outline);
 
     const label = makeTextSprite(zoneName, { fontSize: 26, scaleFactor: 0.02, bg: 'rgba(15, 23, 42, 0.85)' });
     label.position.set(avgX, 5.5, avgY);
-    layers.operational.add(label);
+    sublayers.machines.add(label);
   }
 }
 
@@ -748,9 +846,13 @@ function updateEvidenceSummary(geo, zonesDrawn) {
     const el = document.querySelector(`#layer-controls [data-count="${layer}"]`);
     if (el) el.textContent = text;
   };
-  setCount('structural', `(grid, envelope, ${columns} columns)`);
-  setCount('functional', `(${zonesDrawn} validated zones)`);
-  setCount('operational', `(${machineMeshes.length} machines + ${slots} observed slots)`);
+  // Each count names its evidence class, because the number alone is
+  // ambiguous: 242 and 23 are both "equipment" but not the same claim.
+  setCount('shell', '(measured envelope, floor plate, grid)');
+  setCount('columns', `(${columns} OBSERVED)`);
+  setCount('functional', `(${zonesDrawn} validated, ${withheld} withheld)`);
+  setCount('machines', `(${machineMeshes.length} SIMULATED positions)`);
+  setCount('slots', `(${slots} OBSERVED, ${confirmed} CONFIRMED)`);
 
   const el = document.getElementById('evidence-summary');
   if (!el) return;
@@ -848,6 +950,21 @@ function showMachineInspector(deviceId) {
   ],
   'Telemetry is real. The position is not: this device sits on a synthetic grid because no authoritative ' +
   'record places it in the building. Click to open its Machine Snapshot drill-down.');
+}
+
+// Every rendered evidence position, as one stable string. A view switch is
+// allowed to move the camera and nothing else, so this must compare identical
+// before and after -- an assertion a regression test can make directly rather
+// than inferring from a screenshot. Fixed precision so the comparison is
+// byte-level rather than float-tolerant.
+function snapshotCoordinates() {
+  const out = [];
+  for (const group of [machineMeshes, slotMeshes, columnMeshes]) {
+    for (const m of group) {
+      out.push(`${m.position.x.toFixed(6)},${m.position.y.toFixed(6)},${m.position.z.toFixed(6)}`);
+    }
+  }
+  return out.join('|');
 }
 
 function hideSlotInspector() {
@@ -1043,28 +1160,24 @@ async function boot() {
     // actually happened rather than trusting that it did.
     resourceStats,
     setLayerVisible,
+    sublayers,
+    resetView,
+    snapshotCoordinates,
   };
 }
 
 boot();
 
 // ── Render loop ──────────────────────────────────────────────
-// Bounds the building view was fitted from, kept so a resize can refit rather
-// than leave framing computed for the old aspect ratio.
-let buildingBounds = null;
-
 function onResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 
-  // The building fit depends on aspect, so a resize invalidates it. Without
-  // this, framing the building after a window change silently uses the old
-  // aspect and can clip the structure it exists to show.
-  if (buildingBounds) {
-    buildingView = frameBounds(buildingBounds);
-    if (activeView === 'building') applyView('building');
-  }
+  // Every derived fit depends on aspect, so a resize invalidates all of them.
+  // Without this, framing after a window change silently uses the old aspect
+  // and can clip the structure the view exists to show.
+  refitViews();
 }
 
 // setSize reallocates the drawing buffer, and a drag-resize fires this

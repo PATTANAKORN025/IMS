@@ -25,6 +25,22 @@
  * Usage:
  *   GRAFANA_URL=... GRAFANA_ADMIN_USER=... GRAFANA_ADMIN_PASSWORD=... \
  *     node tests/playwright/factory-twin-regression.js
+ *
+ * TWIN_DIRECT_URL escape hatch:
+ *   TWIN_DIRECT_URL=http://localhost:4199/ node tests/playwright/factory-twin-regression.js
+ *
+ *   Points the SCENE checks at the service directly, skipping the login and
+ *   the unauthenticated-boundary section. It exists because the Grafana
+ *   credential in this environment currently returns 401, which would
+ *   otherwise leave every scene assertion unrunnable rather than merely
+ *   unverified-through-the-proxy.
+ *
+ *   It is explicitly NOT equivalent to the authenticated run and never
+ *   reports as one: the proxy, the auth gate and the 401 boundary are not
+ *   exercised at all, so a direct run proves the scene is correct and proves
+ *   NOTHING about access control. The default path remains the authenticated
+ *   one. Nothing about the service's auth is changed, disabled or bypassed --
+ *   the gate lives in the proxy and is simply not on this route.
  */
 
 'use strict';
@@ -34,15 +50,24 @@ const { chromium } = require('playwright');
 const BASE_URL = process.env.GRAFANA_URL || 'http://localhost:3000';
 const USER = process.env.GRAFANA_ADMIN_USER || process.env.GRAFANA_USER || 'admin';
 const PASS = process.env.GRAFANA_ADMIN_PASSWORD || process.env.GRAFANA_PASS;
-const TWIN_URL = `${BASE_URL}/factory-twin-3d/`;
+const DIRECT_URL = process.env.TWIN_DIRECT_URL || null;
+const TWIN_URL = DIRECT_URL || `${BASE_URL}/factory-twin-3d/`;
 
 const VIEWPORTS = [
   { name: '1366x768', width: 1366, height: 768 },
   { name: '1920x1080', width: 1920, height: 1080 },
   { name: '2560x1440', width: 2560, height: 1440 },
+  { name: '3840x2160', width: 3840, height: 2160 },
+  // Portrait is not decorative: the camera fit divides the horizontal extent
+  // by tan(fov/2) * aspect, so an aspect below 1 makes the depth axis the
+  // binding one -- a real bug that only showed up once portrait was tested.
+  { name: '600x1000 (portrait)', width: 600, height: 1000 },
 ];
 
-const LAYERS = ['structural', 'functional', 'operational', 'telemetry'];
+// The toggles an operator actually has. Sub-layers exist because the four
+// coarse layers each bundled two different evidence classes; the test drives
+// the real controls rather than the internal grouping.
+const LAYERS = ['shell', 'columns', 'functional', 'slots', 'machines', 'telemetry'];
 
 let failures = 0;
 function check(ok, label, detail) {
@@ -77,7 +102,21 @@ async function snapshot(page) {
       meshes,
       badTransforms,
       perLayer,
-      visibility: Object.fromEntries(Object.entries(T.layers).map(([k, g]) => [k, g.visible])),
+      visibility: Object.fromEntries(
+        [...Object.entries(T.layers), ...Object.entries(T.sublayers)].map(([k, g]) => [k, g.visible])
+      ),
+      perSublayer: Object.fromEntries(
+        Object.entries(T.sublayers).map(([k, g]) => {
+          let n = 0;
+          g.traverse((o) => {
+            if (o.type === 'Mesh') n++;
+          });
+          return [k, n];
+        })
+      ),
+      // Every rendered evidence position as one string. A camera change must
+      // leave this identical; anything else means a view moved real data.
+      coords: T.snapshotCoordinates(),
       resources: T.resourceStats(),
       machineMeshes: T.machineMeshes.length,
       api: {
@@ -94,14 +133,22 @@ async function snapshot(page) {
 }
 
 async function run() {
-  if (!PASS) {
+  if (!PASS && !DIRECT_URL) {
     console.error('FATAL: GRAFANA_ADMIN_PASSWORD (or GRAFANA_PASS) env var not set.');
     process.exit(1);
+  }
+  // Direct mode exists so a blocked credential does not leave every scene
+  // assertion unrunnable. It proves nothing about access control, and says so
+  // both here and in the final banner.
+  if (DIRECT_URL) {
+    console.log(`DIRECT MODE (${DIRECT_URL}) - scene checks only.`);
+    console.log('Auth gate, 401 boundary and traversal checks are NOT exercised in this mode.');
   }
 
   const browser = await chromium.launch({ headless: true });
 
   // ── Unauthenticated boundary, before any login ──
+  if (!DIRECT_URL) {
   console.log('Unauthenticated access:');
   {
     const anon = await browser.newContext();
@@ -149,10 +196,12 @@ async function run() {
 
     await anon.close();
   }
+  }
 
   const context = await browser.newContext({ viewport: VIEWPORTS[0] });
   const page = await context.newPage();
 
+  if (!DIRECT_URL) {
   console.log(`\nLogging in to ${BASE_URL} as ${USER}...`);
   await page.goto(`${BASE_URL}/login`);
   await page.fill('input[name="user"]', USER);
@@ -166,7 +215,8 @@ async function run() {
     await browser.close();
     process.exit(1);
   }
-  console.log('Login verified.\n');
+  }
+  if (!DIRECT_URL) console.log('Login verified.\n');
 
   let baseline = null;
 
@@ -197,6 +247,12 @@ async function run() {
       `${s.perLayer.structural} vs ${expectedStructural}`);
     check(s.perLayer.functional === s.api.zones, 'functional meshes = zones served',
       `${s.perLayer.functional} vs ${s.api.zones}`);
+    check(s.perSublayer.columns === s.api.columns, 'column sub-layer holds exactly the served columns',
+      `${s.perSublayer.columns} vs ${s.api.columns}`);
+    check(s.perSublayer.slots === s.api.slots, 'slot sub-layer holds exactly the served slots',
+      `${s.perSublayer.slots} vs ${s.api.slots}`);
+    check(s.perSublayer.machines === s.machineMeshes, 'machine sub-layer holds exactly the monitored devices',
+      `${s.perSublayer.machines} vs ${s.machineMeshes}`);
     check(s.perLayer.operational === expectedOperational, 'operational meshes = slots + machines',
       `${s.perLayer.operational} vs ${expectedOperational}`);
     check(s.meshes === expectedStructural + s.api.zones + expectedOperational, 'total mesh count reconciles',
@@ -284,6 +340,45 @@ async function run() {
       'building preset frames the whole structure without clipping',
       `${inBuilding.visible}/${inBuilding.total}`
     );
+    // Overview frames both coordinate systems at once. It must contain the
+    // whole structure AND every machine -- a preset that quietly drops one of
+    // the two is worse than not offering it.
+    await page.click('#view-controls button[data-view="overview"]');
+    await page.waitForTimeout(600);
+    const inOverview = await page.evaluate(() => {
+      const T = window.__twin;
+      const framed = (obj) => {
+        const v = obj.position.clone().project(T.camera);
+        return Math.abs(v.x) <= 1 && Math.abs(v.y) <= 1 && v.z < 1;
+      };
+      let structTotal = 0;
+      let structVisible = 0;
+      T.layers.structural.traverse((o) => {
+        if (o.type !== 'Mesh') return;
+        structTotal++;
+        if (framed(o)) structVisible++;
+      });
+      return {
+        view: T.getView(),
+        structTotal,
+        structVisible,
+        machinesFramed: T.machineMeshes.filter(framed).length,
+        machineTotal: T.machineMeshes.length,
+      };
+    });
+    check(inOverview.view === 'overview', 'overview preset activates');
+    check(inOverview.structVisible === inOverview.structTotal, 'overview frames the whole structure',
+      `${inOverview.structVisible}/${inOverview.structTotal}`);
+    check(inOverview.machinesFramed === inOverview.machineTotal, 'overview frames every monitored device',
+      `${inOverview.machinesFramed}/${inOverview.machineTotal}`);
+
+    // Reset re-applies the ACTIVE view's framing rather than forcing operator.
+    await page.evaluate(() => window.__twin.controls.target.set(999, 999, 999));
+    await page.click('#view-reset');
+    await page.waitForTimeout(400);
+    check(await page.evaluate(() => window.__twin.getView()) === 'overview',
+      'reset restores framing without changing which view is active');
+
     await page.click('#view-controls button[data-view="operator"]');
     await page.waitForTimeout(600);
     const machinesAfter = await page.evaluate(() =>
@@ -295,6 +390,10 @@ async function run() {
     );
     const restored = await snapshot(page);
     check(JSON.stringify(restored.api) === JSON.stringify(before.api), 'switching views never changes API results');
+    // Byte-level, across all 412 evidence-backed meshes, not just the 23
+    // machines: a view is a camera change and nothing else.
+    check(restored.coords === before.coords,
+      'no rendered coordinate changes across three view switches and a reset');
     console.log('');
   }
 
@@ -321,7 +420,8 @@ async function run() {
   }
   await page.waitForTimeout(500);
   const hidden = await snapshot(page);
-  check(Object.values(hidden.visibility).every((v) => v === false), 'all layers reported hidden');
+  check(LAYERS.every((l) => hidden.visibility[l] === false), 'every toggled layer reported hidden',
+    LAYERS.filter((l) => hidden.visibility[l] !== false).join(','));
   check(hidden.meshes === baseline.meshes, 'hiding does not delete meshes', `${hidden.meshes} vs ${baseline.meshes}`);
   check(hidden.machineMeshes === baseline.machineMeshes, 'hiding does not change machine count');
   check(JSON.stringify(hidden.api) === JSON.stringify(baseline.api), 'hiding does not change API results');
@@ -335,7 +435,7 @@ async function run() {
 
   await browser.close();
 
-  console.log(`\n${failures === 0 ? 'FACTORY TWIN REGRESSION PASSED' : `FACTORY TWIN REGRESSION FAILED (${failures})`}`);
+  console.log(`\n${failures === 0 ? `FACTORY TWIN REGRESSION PASSED${DIRECT_URL ? ' (DIRECT MODE - access control NOT verified)' : ''}` : `FACTORY TWIN REGRESSION FAILED (${failures})`}`);
   process.exit(failures === 0 ? 0 : 1);
 }
 

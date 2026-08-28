@@ -144,7 +144,41 @@
       border-color: #64748b;
       font-weight: 600;
     }
-    #view-controls button:focus-visible { outline: 2px solid #38bdf8; outline-offset: 2px; }
+    #view-controls button:focus-visible,
+    #view-reset:focus-visible,
+    #evidence-legend > summary:focus-visible { outline: 2px solid #38bdf8; outline-offset: 2px; }
+    #view-controls button[disabled] { opacity: 0.45; cursor: not-allowed; }
+    #view-reset-row { margin-top: 6px; }
+    #view-reset {
+      width: 100%;
+      padding: 5px 8px;
+      font: inherit;
+      font-size: 11px;
+      color: #cbd5e1;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #evidence-legend { margin-top: 8px; font-size: 11px; }
+    #evidence-legend > summary { color: #94a3b8; cursor: pointer; }
+    #evidence-legend dl { margin: 6px 0 0 0; }
+    #evidence-legend dt { color: #f1f5f9; font-weight: 700; letter-spacing: 0.04em; margin-top: 5px; }
+    #evidence-legend dd { margin: 1px 0 0 22px; color: #cbd5e1; line-height: 1.45; }
+    /* Glyph first, colour second. The glyph is what survives a monochrome
+       screen or colour-blind vision; the colour only reinforces it. */
+    #evidence-legend .ev {
+      display: inline-block;
+      width: 16px;
+      text-align: center;
+      font-weight: 700;
+    }
+    #evidence-legend .ev-measured { color: #38bdf8; }
+    #evidence-legend .ev-derived { color: #7dd3fc; }
+    #evidence-legend .ev-observed { color: #cbd5e1; }
+    #evidence-legend .ev-simulated { color: #c4b5fd; }
+    #evidence-legend .ev-unknown { color: #fbbf24; }
+    #evidence-legend .ev-confirmed { color: #4ade80; }
     /* Inspection panel. Amber, not the machine palette: an observed slot is
        not a monitored device and must not borrow a device's visual language. */
     #inspector {
@@ -179,7 +213,7 @@
     #diagnostics > summary { color: #94a3b8; cursor: pointer; }
     #diagnostics > summary:focus-visible { outline: 2px solid #38bdf8; outline-offset: 2px; }
     #diagnostics .diag-section { margin-top: 6px; }
-    #diagnostics .diag-title { color: #64748b; font-weight: 700; letter-spacing: 0.04em; }
+    #diagnostics .diag-title { color: #a5b4c3; font-weight: 700; letter-spacing: 0.04em; }
     #diagnostics .k { color: #94a3b8; display: inline-block; min-width: 150px; }
     #diagnostics .v { color: #e2e8f0; }
     #evidence-summary {
@@ -192,7 +226,10 @@
     #evidence-summary .summary-title { color: #94a3b8; font-weight: 700; margin-bottom: 4px; }
     #evidence-summary .k { color: #cbd5e1; }
     #evidence-summary .n { color: #f8fafc; font-weight: 700; }
-    #evidence-summary .t { color: #64748b; font-size: 10px; letter-spacing: 0.04em; }
+    /* Was #64748b: at 10px on the HUD background that measured under the
+       4.5:1 minimum, and this is the label that says whether a number is
+       OBSERVED or SIMULATED -- the least acceptable place for low contrast. */
+    #evidence-summary .t { color: #a5b4c3; font-size: 10px; letter-spacing: 0.04em; }
     #inspector .k { color: #94a3b8; display: inline-block; min-width: 116px; }
     #inspector .v { color: #e2e8f0; }
     #inspector .hint { margin-top: 8px; }
@@ -231,21 +268,56 @@
          reachable and carry a real pressed state. -->
     <div id="view-controls" role="group" aria-label="Camera view">
       <button type="button" data-view="operator" aria-pressed="true">Operator</button>
-      <button type="button" data-view="building" aria-pressed="false">Building</button>
+      <button type="button" data-view="building" aria-pressed="false" disabled>Building</button>
+      <button type="button" data-view="overview" aria-pressed="false" disabled>Overview</button>
+    </div>
+    <!-- Undoes orbit/zoom drift by re-applying the ACTIVE view's framing. It
+         does not force operator view: which view you are in is your choice,
+         where the camera has wandered to is not. -->
+    <div id="view-reset-row">
+      <button type="button" id="view-reset">Reset camera to view framing</button>
     </div>
     <!-- Inspection target. Populated only from evidence-backed fields the API
          actually served; an unresolved slot never renders an identity. -->
     <div id="inspector" hidden aria-live="polite"></div>
+    <!-- One toggle per evidence class, not per convenience grouping. The
+         building shell is MEASURED, columns and slots are OBSERVED, and the
+         monitored devices sit on SIMULATED positions -- bundling any two of
+         those behind one checkbox would imply they are the same kind of
+         claim. All default to on, so the initial scene is unchanged. -->
     <fieldset id="layer-controls">
       <legend>Layers</legend>
-      <label><input type="checkbox" data-layer="structural" checked> Structure <span class="hint" data-count="structural"></span></label>
-      <label><input type="checkbox" data-layer="functional" checked> Zones <span class="hint" data-count="functional"></span></label>
-      <label><input type="checkbox" data-layer="operational" checked> Equipment <span class="hint" data-count="operational"></span></label>
+      <label><input type="checkbox" data-layer="shell" checked> Floor shell <span class="hint" data-count="shell"></span></label>
+      <label><input type="checkbox" data-layer="columns" checked> Columns <span class="hint" data-count="columns"></span></label>
+      <label><input type="checkbox" data-layer="functional" checked> Functional zones <span class="hint" data-count="functional"></span></label>
+      <label><input type="checkbox" data-layer="slots" checked> Equipment slots <span class="hint" data-count="slots"></span></label>
+      <label><input type="checkbox" data-layer="machines" checked> Simulated machines <span class="hint" data-count="machines"></span></label>
       <label><input type="checkbox" data-layer="telemetry" checked> Labels</label>
     </fieldset>
     <!-- These four numbers describe four different things and are deliberately
          never summed: 242 observed positions are not 242 confirmed machines. -->
     <div id="evidence-summary" aria-live="polite"></div>
+    <!-- The vocabulary the whole UI is built on, stated once. Each row carries
+         a glyph AND a word, never colour alone: the distinction between an
+         observed position and a confirmed machine has to survive a monochrome
+         screen, a projector, and colour-blind vision. -->
+    <details id="evidence-legend">
+      <summary>Evidence legend</summary>
+      <dl>
+        <dt><span class="ev ev-measured" aria-hidden="true">&#9635;</span> MEASURED</dt>
+        <dd>Taken directly off the engineering drawing against a calibrated scale.</dd>
+        <dt><span class="ev ev-derived" aria-hidden="true">&#9650;</span> DERIVED</dt>
+        <dd>Computed from measured values. Not itself measured.</dd>
+        <dt><span class="ev ev-observed" aria-hidden="true">&#9670;</span> OBSERVED</dt>
+        <dd>Detected on the drawing. Position is evidence-backed; identity is not claimed.</dd>
+        <dt><span class="ev ev-simulated" aria-hidden="true">&#9671;</span> SIMULATED</dt>
+        <dd>Placeholder position on a synthetic grid. Real telemetry, invented location.</dd>
+        <dt><span class="ev ev-unknown" aria-hidden="true">?</span> UNKNOWN</dt>
+        <dd>Not in evidence. Shown as unknown rather than estimated or omitted.</dd>
+        <dt><span class="ev ev-confirmed" aria-hidden="true">&#10003;</span> CONFIRMED</dt>
+        <dd>Backed by an authoritative record. Nothing in this build is CONFIRMED.</dd>
+      </dl>
+    </details>
     <!-- Developer/operator tool. Collapsed by default so the executive view is
          not cluttered; rendering never depends on it being open. -->
     <details id="diagnostics">
