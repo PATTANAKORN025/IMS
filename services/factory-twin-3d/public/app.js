@@ -119,9 +119,16 @@ let activeView = 'operator';
 // coordinates: the building's extent is known from the data, so the framing
 // should follow it and stay correct if the evidence ever changes.
 function frameBounds({ cx, cz, width, depth, height = 0 }) {
+  // camera.fov is the VERTICAL field of view, so the two axes need different
+  // divisors: the horizontal half-angle is tan(fov/2) * aspect. Treating both
+  // the same over-fits on one axis, which showed up as structure clipping at
+  // portrait aspect ratios where the depth axis becomes the binding one.
   const fov = THREE.MathUtils.degToRad(camera.fov);
-  const halfSpan = Math.max(width, depth / Math.max(camera.aspect, 0.0001)) / 2;
-  const dist = (halfSpan / Math.tan(fov / 2)) * 1.15; // 15% margin so nothing clips at the edge
+  const tanV = Math.tan(fov / 2);
+  const aspect = Math.max(camera.aspect, 0.0001);
+  const distForWidth = width / 2 / (tanV * aspect);
+  const distForDepth = depth / 2 / tanV;
+  const dist = Math.max(distForWidth, distForDepth) * 1.15; // 15% margin so nothing clips at the edge
   return {
     position: { x: cx + dist * 0.35, y: Math.max(dist * 0.75, height * 2), z: cz + dist * 0.85 },
     target: { x: cx, y: height / 2, z: cz },
@@ -302,13 +309,15 @@ function buildPhysicalSlots(geometry) {
   const { envelope, columns, zones, slots } = geometry;
 
   // Building framing comes from the measured envelope, not from constants.
-  buildingView = frameBounds({
+  // The bounds are retained so a resize can refit for the new aspect ratio.
+  buildingBounds = {
     cx: 0,
     cz: 0,
     width: envelope.width,
     depth: envelope.depth,
     height: envelope.height,
-  });
+  };
+  buildingView = frameBounds(buildingBounds);
   ensureDepthRange(Math.hypot(buildingView.position.x, buildingView.position.y, buildingView.position.z));
 
   const envelopeGeom = new THREE.BoxGeometry(envelope.width, envelope.height, envelope.depth);
@@ -1040,12 +1049,35 @@ async function boot() {
 boot();
 
 // ── Render loop ──────────────────────────────────────────────
+// Bounds the building view was fitted from, kept so a resize can refit rather
+// than leave framing computed for the old aspect ratio.
+let buildingBounds = null;
+
 function onResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
+
+  // The building fit depends on aspect, so a resize invalidates it. Without
+  // this, framing the building after a window change silently uses the old
+  // aspect and can clip the structure it exists to show.
+  if (buildingBounds) {
+    buildingView = frameBounds(buildingBounds);
+    if (activeView === 'building') applyView('building');
+  }
 }
-window.addEventListener('resize', onResize);
+
+// setSize reallocates the drawing buffer, and a drag-resize fires this
+// continuously. Coalescing to one call per frame keeps the final state
+// identical while doing the work once instead of dozens of times.
+let resizePending = null;
+window.addEventListener('resize', () => {
+  if (resizePending) return;
+  resizePending = requestAnimationFrame(() => {
+    resizePending = null;
+    onResize();
+  });
+});
 
 function animate() {
   requestAnimationFrame(animate);
