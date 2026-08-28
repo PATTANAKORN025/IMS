@@ -40,15 +40,16 @@ app.use('/vendor/three/examples/', express.static(path.join(__dirname, 'node_mod
 // ── Private data directory (gitignored: .gitignore's `private/` rule) ──
 // This repo is public (github.com/PATTANAKORN025/IMS). The 2-tier split:
 // this service's CODE is public and must run standalone on pure synthetic
-// data with an empty/missing private/ dir (a fresh clone has neither
-// LayoutApex3-F1.json nor any image here); a private production
-// environment can drop a REAL per-device layout file and/or a reference
-// image into this same path, on the same host, with zero code change.
-// express.static 404s cleanly for a request to a file that doesn't exist,
-// so mounting this unconditionally is safe even when the directory (or
-// individual files in it) are absent.
+// data with an empty/missing private/ dir (a fresh clone has no real
+// layout or geometry file here); a private production environment drops
+// real files into this same path, on the same host, with zero code change.
+//
+// READ SERVER-SIDE ONLY -- deliberately NOT mounted as static content. A
+// static mount serves every file in private/ verbatim to anyone past the
+// proxy's auth gate, which bypasses the shaped /api/* responses below and
+// would expose any file dropped here (including a source drawing) at a
+// guessable URL. Real geometry reaches the browser only via those routes.
 const PRIVATE_DIR = path.join(__dirname, 'private');
-app.use('/private-assets/', express.static(PRIVATE_DIR));
 
 // Reads private/LayoutApex3-F1.json if present. Returns null (not a
 // throw) for "missing" or "malformed" -- both are the expected default

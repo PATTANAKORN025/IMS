@@ -108,25 +108,11 @@ function buildFloorShells(floors, machines) {
     shell.position.set(cx, -0.05, cz);
     scene.add(shell);
 
-    // Optional decorative reference texture -- private-assets/ only exists
-    // in a private production environment (this repo's own copy is
-    // gitignored, never committed: .gitignore's `private/` rule). Purely
-    // visual context, NOT a coordinate source -- machine positions above
-    // come entirely from /api/placement's synthetic grid, never from pixel
-    // positions read off this image. TextureLoader's onError leaves the
-    // plain color plate as-is, so a public clone with no private/ dir
-    // renders identically to before this addition.
-    new THREE.TextureLoader().load(
-      'private-assets/floor1-reference.jpg',
-      (texture) => {
-        texture.colorSpace = THREE.SRGBColorSpace;
-        material.map = texture;
-        material.opacity = 0.85;
-        material.needsUpdate = true;
-      },
-      undefined,
-      () => {} // no reference image available -- expected default state, not an error
-    );
+    // The floor plate is rendered from validated geometry only. An earlier
+    // revision textured it with a private reference image fetched over
+    // HTTP; that was removed -- the confidential source drawing must never
+    // be reachable by URL, and validated geometry supersedes a pixel
+    // backdrop as a spatial reference.
 
     // Plate alone reads as near-invisible against the scene background at
     // this opacity -- a bright edge outline is what actually makes "this is
