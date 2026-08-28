@@ -291,6 +291,12 @@ function buildPhysicalSlots(geometry) {
     // or implies a live device.
     const mat = basicMaterial(0x334155, slot.confidence === 'medium' ? 0.32 : 0.5);
     const mesh = new THREE.Mesh(geom, mat);
+    // Inspectable, but deliberately NOT a machine: kept out of
+    // machineMeshes, carries no userData.deviceId, and gets no drill-down.
+    // Only the evidence the API actually served is attached -- there is no
+    // machine name, no MES id and no IMS id to attach, and none is invented.
+    mesh.userData.slot = slot;
+    slotMeshes.push(mesh);
     // Sit the pad ON the floor. position.y is the slot's floor reference (0),
     // and a box is centred on its origin, so without the half-height offset
     // the lower half renders below the floor plane.
@@ -402,6 +408,10 @@ function buildFunctionalZones(geometry) {
 
 // ── Machine meshes (populated once /api/placement resolves) ─────
 const machineMeshes = []; // THREE.Mesh[], one per machine, userData.deviceId set
+// Separate array on purpose. A slot is an observed position with no confirmed
+// identity; keeping it out of machineMeshes is what guarantees it can never
+// acquire a drill-down, a live state or a device id by accident.
+const slotMeshes = []; // THREE.Mesh[], one per observed slot, userData.slot set
 const machinesById = new Map(); // deviceId -> { mesh, material }
 const gridRefById = new Map(); // deviceId -> {row, column} from /api/placement, synthetic today
 let latestStateById = new Map(); // deviceId -> state row from /api/state
@@ -522,16 +532,79 @@ function pickMachine(event) {
   return hits.length > 0 ? hits[0].object.userData.deviceId : null;
 }
 
+// Slots are picked through the SAME raycaster, in a second pass that only
+// runs when no machine was hit. Machines therefore keep absolute priority
+// and their existing click behaviour is bit-for-bit unchanged.
+function pickSlot(event) {
+  if (slotMeshes.length === 0) return null;
+  const rect = renderer.domElement.getBoundingClientRect();
+  pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+  pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+  raycaster.setFromCamera(pointer, camera);
+  const hits = raycaster.intersectObjects(slotMeshes, false);
+  return hits.length > 0 ? hits[0].object.userData.slot : null;
+}
+
+const inspectorEl = document.getElementById('inspector');
+
+function esc(v) {
+  return String(v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+}
+
+// Renders ONLY fields the API actually served. Anything unknown is shown as
+// unknown rather than omitted -- a blank row would read as "not applicable",
+// which is a different and untrue claim.
+function showSlotInspector(slot) {
+  if (!inspectorEl) return;
+  const mapped = slot.status === 'IMS_CONNECTED' && slot.ims_device_id;
+  const rows = [
+    ['Slot', slot.slot_id],
+    ['Identity', mapped ? `mapped to ${slot.ims_device_id}` : 'UNRESOLVED — no confirmed machine'],
+    ['Mapping status', slot.status],
+    ['Confidence', slot.confidence ?? 'unknown'],
+    ['Source', slot.source ?? 'unknown'],
+    ['Geometry status', slot.geometry_status ?? 'unknown'],
+    ['Measured width', slot.footprint ? `${slot.footprint.width} m` : 'unknown'],
+    ['Measured depth', slot.footprint ? `${slot.footprint.depth} m` : 'unknown'],
+    ['Height', slot.height_status === 'unknown' ? 'unknown — not in evidence' : (slot.height_status ?? 'unknown')],
+    ['Zone', slot.zone_id ?? 'none — outside every validated zone'],
+    ['Detected on layer', slot.detection ? slot.detection.layer : 'unknown'],
+  ];
+  inspectorEl.innerHTML =
+    `<div class="inspector-title">${mapped ? 'Mapped machine' : 'Observed physical slot'}</div>` +
+    rows.map(([k, v]) => `<div><span class="k">${esc(k)}</span> <span class="v">${esc(v)}</span></div>`).join('') +
+    (mapped
+      ? ''
+      : '<div class="hint">Position observed on the engineering drawing. No machine identity is claimed: ' +
+        'no authoritative record relates observed positions to monitored devices, so this slot carries no ' +
+        'device id, no MES id and no live state.</div>');
+  inspectorEl.hidden = false;
+}
+
+function hideSlotInspector() {
+  if (inspectorEl) inspectorEl.hidden = true;
+}
+
 renderer.domElement.addEventListener('click', (event) => {
   const deviceId = pickMachine(event);
   if (deviceId) {
     window.location.href = drillDownUrl(deviceId);
+    return;
   }
+  const slot = pickSlot(event);
+  if (slot) showSlotInspector(slot);
+  else hideSlotInspector();
 });
 
 renderer.domElement.addEventListener('pointermove', (event) => {
   const deviceId = pickMachine(event);
-  renderer.domElement.style.cursor = deviceId ? 'pointer' : 'default';
+  if (deviceId) {
+    renderer.domElement.style.cursor = 'pointer';
+    return;
+  }
+  // 'help' rather than 'pointer': a slot opens an evidence panel, it does not
+  // navigate. The cursor should not promise a drill-down that does not exist.
+  renderer.domElement.style.cursor = pickSlot(event) ? 'help' : 'default';
 });
 
 // ── HUD (also the accessibility fallback per design §16 -- same real data
@@ -650,6 +723,7 @@ async function boot() {
     scene,
     renderer,
     machineMeshes,
+    slotMeshes,
     layers,
     // Cache sizes are exposed so a regression test can assert the sharing
     // actually happened rather than trusting that it did.

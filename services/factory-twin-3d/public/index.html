@@ -126,6 +126,35 @@
       color: #ef4444;
       font-weight: 600;
     }
+    /* Inspection panel. Amber, not the machine palette: an observed slot is
+       not a monitored device and must not borrow a device's visual language. */
+    #inspector {
+      margin-top: 10px;
+      padding: 8px 10px;
+      border: 1px solid #f59e0b;
+      border-radius: 4px;
+      background: rgba(245, 158, 11, 0.08);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    #inspector .inspector-title {
+      font-weight: 700;
+      color: #fbbf24;
+      margin-bottom: 6px;
+    }
+    #inspector .k { color: #94a3b8; display: inline-block; min-width: 116px; }
+    #inspector .v { color: #e2e8f0; }
+    #inspector .hint { margin-top: 8px; }
+    #layer-controls {
+      margin-top: 10px;
+      padding: 6px 10px 8px;
+      border: 1px solid #334155;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    #layer-controls legend { color: #94a3b8; padding: 0 4px; }
+    #layer-controls label { display: block; color: #e2e8f0; cursor: pointer; }
+    #layer-controls input:focus-visible { outline: 2px solid #38bdf8; outline-offset: 2px; }
 
     /* Accessibility fallback (design §16): the same real per-machine data
        (state/board/MO/alarm for all 10 machines) is also available as
@@ -146,6 +175,9 @@
     <!-- Visibility only. Toggling hides rendered objects; it never changes
          geometry, API results or telemetry. All layers default to on, so
          the initial view is unchanged from before these controls existed. -->
+    <!-- Inspection target. Populated only from evidence-backed fields the API
+         actually served; an unresolved slot never renders an identity. -->
+    <div id="inspector" hidden aria-live="polite"></div>
     <fieldset id="layer-controls">
       <legend>Layers</legend>
       <label><input type="checkbox" data-layer="structural" checked> Structure <span class="hint">(grid, envelope, columns)</span></label>
