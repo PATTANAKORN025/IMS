@@ -175,6 +175,13 @@
     #inspector .badge-unmapped { background: #b45309; color: #fffbeb; }
     #inspector .badge-observed { background: #475569; color: #f1f5f9; }
     #inspector .badge-simulated { background: #7c3aed; color: #f5f3ff; }
+    #diagnostics { margin-top: 10px; font-size: 11px; }
+    #diagnostics > summary { color: #94a3b8; cursor: pointer; }
+    #diagnostics > summary:focus-visible { outline: 2px solid #38bdf8; outline-offset: 2px; }
+    #diagnostics .diag-section { margin-top: 6px; }
+    #diagnostics .diag-title { color: #64748b; font-weight: 700; letter-spacing: 0.04em; }
+    #diagnostics .k { color: #94a3b8; display: inline-block; min-width: 150px; }
+    #diagnostics .v { color: #e2e8f0; }
     #evidence-summary {
       margin-top: 10px;
       padding-top: 8px;
@@ -239,6 +246,12 @@
     <!-- These four numbers describe four different things and are deliberately
          never summed: 242 observed positions are not 242 confirmed machines. -->
     <div id="evidence-summary" aria-live="polite"></div>
+    <!-- Developer/operator tool. Collapsed by default so the executive view is
+         not cluttered; rendering never depends on it being open. -->
+    <details id="diagnostics">
+      <summary>Diagnostics</summary>
+      <div id="diagnostics-body">Loading…</div>
+    </details>
   </div>
 
   <div id="scene"></div>

@@ -585,6 +585,62 @@ app.get('/api/floor-geometry', (req, res) => {
   });
 });
 
+// Safe aggregate diagnostics. Deliberately counts and flags only: no
+// coordinate, no identifier, no filesystem path, no process or vendor name
+// ever appears here. A diagnostics endpoint that leaks the data it describes
+// would defeat the boundary the rest of this service maintains.
+//
+// Evidence categories are reported separately and never summed -- a single
+// "objects" figure would say that 242 observed positions and 23 monitored
+// devices are the same kind of claim, which is exactly what this system
+// exists to keep apart.
+app.get('/api/diagnostics', (req, res) => {
+  const geometry = loadPrivateGeometry();
+  const zoneLayer = loadPrivateZones();
+  const mapping = loadPrivateAssetMapping();
+
+  const slots = (geometry && geometry.slots) || [];
+  const columns = (geometry && geometry.columns) || [];
+  const confirmedMappings = Object.values(mapping).filter(Boolean).length;
+
+  const byConfidence = (arr) =>
+    arr.reduce((acc, o) => ((acc[o.confidence || 'unspecified'] = (acc[o.confidence || 'unspecified'] || 0) + 1), acc), {});
+
+  res.status(200).json({
+    data: {
+      geometry_loaded: Boolean(geometry),
+      geometry_schema_version: geometry ? geometry.schema_version : null,
+      envelope_present: Boolean(geometry && geometry.envelope),
+      footprint_vertices: geometry && geometry.footprint_polygon ? geometry.footprint_polygon.vertices.length : 0,
+      grid_x_lines: geometry && geometry.grid ? geometry.grid.x_lines.length : 0,
+      grid_z_lines: geometry && geometry.grid ? geometry.grid.z_lines.length : 0,
+      column_count: columns.length,
+      slot_count: slots.length,
+      zone_count_rendered: zoneLayer.meta.served,
+      zone_count_withheld: zoneLayer.meta.withheld,
+      zone_count_total: zoneLayer.meta.total,
+    },
+    evidence: {
+      // Measured/derived building fabric, observed detections, and simulated
+      // positions are different claims and are reported as such.
+      measured_envelope: geometry && geometry.envelope ? 1 : 0,
+      derived_floor_to_floor: geometry && geometry.envelope && geometry.envelope.floor_to_floor ? 1 : 0,
+      observed_columns: columns.length,
+      observed_slots: slots.length,
+      simulated_machine_positions: SIMULATED_PLACEMENTS.length,
+      unknown_clear_height: geometry && geometry.envelope && geometry.envelope.clear_height_m == null ? 1 : 0,
+      unknown_equipment_height: slots.filter((s) => s.height_status === 'unknown').length,
+      confirmed_mappings: confirmedMappings,
+      unresolved_mappings: slots.length - confirmedMappings,
+      column_confidence: byConfidence(columns),
+      slot_confidence: byConfidence(slots),
+      zone_confidence: zoneLayer.meta.byConfidence,
+    },
+    conflicts: zoneLayer.meta.conflicts,
+    generated_at: new Date().toISOString(),
+  });
+});
+
 app.get('/healthz', async (req, res) => {
   try {
     await pool.query('SELECT 1');

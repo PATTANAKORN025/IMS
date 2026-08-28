@@ -262,6 +262,10 @@ function buildFloorShells(floors, machines) {
 const geometryCache = new Map();
 const materialCache = new Map();
 
+function resourceStats() {
+  return { geometries: geometryCache.size, materials: materialCache.size };
+}
+
 function boxGeometry(w, h, d) {
   const key = `${w.toFixed(3)}|${h.toFixed(3)}|${d.toFixed(3)}`;
   let g = geometryCache.get(key);
@@ -630,6 +634,97 @@ function pickSlot(event) {
 
 const inspectorEl = document.getElementById('inspector');
 
+// Developer/operator diagnostics. Rendering never depends on this: it is
+// fetched lazily the first time the panel is opened, so a normal operator
+// session never pays for it and a failure here cannot affect the scene.
+let diagnosticsLoaded = false;
+async function loadDiagnostics() {
+  const body = document.getElementById('diagnostics-body');
+  if (!body || diagnosticsLoaded) return;
+  diagnosticsLoaded = true;
+  const T0 = performance.now();
+  let api = null;
+  try {
+    const res = await fetch('api/diagnostics');
+    if (res.ok) api = await res.json();
+  } catch {
+    /* diagnostics are best-effort; the scene is unaffected */
+  }
+  const apiMs = Math.round(performance.now() - T0);
+
+  const info = renderer.info;
+  let meshes = 0;
+  const perLayer = {};
+  for (const [name, g] of Object.entries(layers)) {
+    let n = 0;
+    g.traverse((o) => {
+      if (o.type === 'Mesh') n++;
+    });
+    perLayer[name] = n;
+    meshes += n;
+  }
+  const res = resourceStats();
+
+  const section = (title, rows) =>
+    `<div class="diag-section"><div class="diag-title">${esc(title)}</div>` +
+    rows.map(([k, v]) => `<div><span class="k">${esc(k)}</span> <span class="v">${esc(v)}</span></div>`).join('') +
+    '</div>';
+
+  const render = [
+    ['Mesh count', meshes],
+    ['Draw calls', info.render.calls],
+    ['Triangles', info.render.triangles],
+    ['Geometries (GPU)', info.memory.geometries],
+    ['Textures', info.memory.textures],
+    ['Cached geometries', res.geometries],
+    ['Cached materials', res.materials],
+    ['Machine meshes', machineMeshes.length],
+    ['Column meshes', columnMeshes.length],
+    ['Slot meshes', slotMeshes.length],
+    ['Visible layers', Object.values(layers).filter((g) => g.visible).length],
+    ['Viewport', `${window.innerWidth}×${window.innerHeight}`],
+    ['Active view', activeView],
+    ['Boot', `${Math.round(window.__twinBootMs || 0)} ms`],
+    ['Diagnostics API', `${apiMs} ms`],
+  ];
+
+  let html = section('Rendering', render);
+  if (api) {
+    html =
+      section('Data', [
+        ['Geometry loaded', api.data.geometry_loaded],
+        ['Schema version', api.data.geometry_schema_version ?? 'none'],
+        ['Envelope', api.data.envelope_present ? 'present' : 'absent'],
+        ['Footprint vertices', api.data.footprint_vertices],
+        ['Grid', `${api.data.grid_x_lines} × ${api.data.grid_z_lines}`],
+        ['Columns', api.data.column_count],
+        ['Slots', api.data.slot_count],
+        ['Zones rendered / withheld', `${api.data.zone_count_rendered} / ${api.data.zone_count_withheld}`],
+      ]) +
+      // Categories stay separate: summing them would assert that an observed
+      // position and a monitored device are the same kind of claim.
+      section('Evidence', [
+        ['Measured envelope', api.evidence.measured_envelope],
+        ['Derived floor-to-floor', api.evidence.derived_floor_to_floor],
+        ['Observed columns', api.evidence.observed_columns],
+        ['Observed slots', api.evidence.observed_slots],
+        ['Simulated machine positions', api.evidence.simulated_machine_positions],
+        ['Unknown clear height', api.evidence.unknown_clear_height],
+        ['Unknown equipment height', api.evidence.unknown_equipment_height],
+        ['Confirmed mappings', api.evidence.confirmed_mappings],
+        ['Unresolved mappings', api.evidence.unresolved_mappings],
+      ]) +
+      html;
+  } else {
+    html = '<div class="diag-section"><div class="k">Diagnostics API unavailable</div></div>' + html;
+  }
+  body.innerHTML = html;
+}
+
+document.getElementById('diagnostics')?.addEventListener('toggle', (ev) => {
+  if (ev.target.open) loadDiagnostics();
+});
+
 // Four counts describing four different things. They are shown separately and
 // never summed: 242 observed positions are not 242 confirmed machines, and a
 // single "equipment" figure would say exactly that. Confirmed mappings is
@@ -937,7 +1032,7 @@ async function boot() {
     getBuildingView: () => buildingView,
     // Cache sizes are exposed so a regression test can assert the sharing
     // actually happened rather than trusting that it did.
-    resourceStats: () => ({ geometries: geometryCache.size, materials: materialCache.size }),
+    resourceStats,
     setLayerVisible,
   };
 }
