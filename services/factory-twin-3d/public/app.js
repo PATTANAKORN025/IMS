@@ -337,6 +337,8 @@ function buildPhysicalSlots(geometry) {
     const color = col.confidence === 'medium' ? 0x1e293b : 0x334155;
     const colMesh = new THREE.Mesh(colGeom, standardMaterial(color));
     colMesh.position.set(col.position.x, envelope.height / 2, col.position.z);
+    colMesh.userData.column = col;
+    columnMeshes.push(colMesh);
     layers.structural.add(colMesh);
   }
 
@@ -492,6 +494,7 @@ const machineMeshes = []; // THREE.Mesh[], one per machine, userData.deviceId se
 // identity; keeping it out of machineMeshes is what guarantees it can never
 // acquire a drill-down, a live state or a device id by accident.
 const slotMeshes = []; // THREE.Mesh[], one per observed slot, userData.slot set
+const columnMeshes = []; // THREE.Mesh[], one per detected column, userData.column set
 const machinesById = new Map(); // deviceId -> { mesh, material }
 const gridRefById = new Map(); // deviceId -> {row, column} from /api/placement, synthetic today
 let latestStateById = new Map(); // deviceId -> state row from /api/state
@@ -627,38 +630,120 @@ function pickSlot(event) {
 
 const inspectorEl = document.getElementById('inspector');
 
+// Four counts describing four different things. They are shown separately and
+// never summed: 242 observed positions are not 242 confirmed machines, and a
+// single "equipment" figure would say exactly that. Confirmed mappings is
+// listed even though it is zero -- especially because it is zero.
+function updateEvidenceSummary(geo, zonesDrawn) {
+  const columns = geo.columns.length;
+  const slots = geo.slots.length;
+  const confirmed = geo.slots.filter((s) => s.ims_device_id).length;
+  const withheld = geo.functional_zones_meta ? geo.functional_zones_meta.withheld : 0;
+
+  const setCount = (layer, text) => {
+    const el = document.querySelector(`#layer-controls [data-count="${layer}"]`);
+    if (el) el.textContent = text;
+  };
+  setCount('structural', `(grid, envelope, ${columns} columns)`);
+  setCount('functional', `(${zonesDrawn} validated zones)`);
+  setCount('operational', `(${machineMeshes.length} machines + ${slots} observed slots)`);
+
+  const el = document.getElementById('evidence-summary');
+  if (!el) return;
+  const rows = [
+    ['Structural columns', columns, 'OBSERVED'],
+    ['Observed equipment slots', slots, 'OBSERVED'],
+    ['Monitored devices', machineMeshes.length, 'SIMULATED position'],
+    ['Confirmed physical mappings', confirmed, confirmed === 0 ? 'NONE — no authoritative record' : 'CONFIRMED'],
+    ['Zones withheld as unvalidated', withheld, 'WITHHELD'],
+  ];
+  el.innerHTML =
+    '<div class="summary-title">Evidence</div>' +
+    rows
+      .map(
+        ([k, n, tag]) =>
+          `<div><span class="k">${esc(k)}</span> <span class="n">${esc(n)}</span> <span class="t">${esc(tag)}</span></div>`
+      )
+      .join('');
+}
+
 function esc(v) {
   return String(v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 }
 
-// Renders ONLY fields the API actually served. Anything unknown is shown as
-// unknown rather than omitted -- a blank row would read as "not applicable",
-// which is a different and untrue claim.
-function showSlotInspector(slot) {
+// Every inspector renders ONLY fields that were actually served. Anything
+// unknown is shown as unknown rather than omitted -- a blank row would read
+// as "not applicable", which is a different and untrue claim.
+//
+// The badge is the load-bearing part. Only CONFIRMED may imply an
+// authoritative physical correspondence, and nothing in this system can
+// currently produce one.
+function render(badge, badgeClass, title, rows, note) {
   if (!inspectorEl) return;
-  const mapped = slot.status === 'IMS_CONNECTED' && slot.ims_device_id;
-  const rows = [
-    ['Slot', slot.slot_id],
-    ['Identity', mapped ? `mapped to ${slot.ims_device_id}` : 'UNRESOLVED — no confirmed machine'],
-    ['Mapping status', slot.status],
-    ['Confidence', slot.confidence ?? 'unknown'],
-    ['Source', slot.source ?? 'unknown'],
-    ['Geometry status', slot.geometry_status ?? 'unknown'],
-    ['Measured width', slot.footprint ? `${slot.footprint.width} m` : 'unknown'],
-    ['Measured depth', slot.footprint ? `${slot.footprint.depth} m` : 'unknown'],
-    ['Height', slot.height_status === 'unknown' ? 'unknown — not in evidence' : (slot.height_status ?? 'unknown')],
-    ['Zone', slot.zone_id ?? 'none — outside every validated zone'],
-    ['Detected on layer', slot.detection ? slot.detection.layer : 'unknown'],
-  ];
   inspectorEl.innerHTML =
-    `<div class="inspector-title">${mapped ? 'Mapped machine' : 'Observed physical slot'}</div>` +
+    `<div class="inspector-title"><span class="badge ${badgeClass}">${esc(badge)}</span> ${esc(title)}</div>` +
     rows.map(([k, v]) => `<div><span class="k">${esc(k)}</span> <span class="v">${esc(v)}</span></div>`).join('') +
-    (mapped
-      ? ''
-      : '<div class="hint">Position observed on the engineering drawing. No machine identity is claimed: ' +
-        'no authoritative record relates observed positions to monitored devices, so this slot carries no ' +
-        'device id, no MES id and no live state.</div>');
+    (note ? `<div class="hint">${note}</div>` : '');
   inspectorEl.hidden = false;
+}
+
+function showSlotInspector(slot) {
+  const mapped = slot.status === 'IMS_CONNECTED' && slot.ims_device_id;
+  render(
+    mapped ? 'CONFIRMED' : 'UNMAPPED',
+    mapped ? 'badge-confirmed' : 'badge-unmapped',
+    'Observed equipment slot',
+    [
+      ['Slot', slot.slot_id],
+      ['Identity', mapped ? `mapped to ${slot.ims_device_id}` : 'no confirmed machine'],
+      ['Mapping status', slot.status],
+      ['Confidence', slot.confidence ?? 'unknown'],
+      ['Source', slot.source ?? 'unknown'],
+      ['Geometry status', slot.geometry_status ?? 'unknown'],
+      ['Position x / z', `${slot.position.x} / ${slot.position.z} m`],
+      ['Measured width', slot.footprint ? `${slot.footprint.width} m` : 'unknown'],
+      ['Measured depth', slot.footprint ? `${slot.footprint.depth} m` : 'unknown'],
+      ['Height', slot.height_status === 'unknown' ? 'unknown — not in evidence' : (slot.height_status ?? 'unknown')],
+      ['Zone', slot.zone_id ?? 'none — outside every validated zone'],
+      ['Detected on layer', slot.detection ? slot.detection.layer : 'unknown'],
+    ],
+    mapped
+      ? null
+      : 'Position observed on the engineering drawing. No machine identity is claimed: no authoritative ' +
+        'record relates observed positions to monitored devices, so this slot carries no device id, no ' +
+        'MES id and no live state.'
+  );
+}
+
+function showColumnInspector(col) {
+  render('OBSERVED', 'badge-observed', 'Structural column', [
+    ['Column', col.id],
+    ['Position x / z', `${col.position.x} / ${col.position.z} m`],
+    ['Measured footprint', col.footprint ? `${col.footprint.width} × ${col.footprint.depth} m` : 'unknown'],
+    ['Grid reference', col.grid_ref ? `${col.grid_ref.x}${col.grid_ref.z}` : 'none'],
+    ['Offset from intersection', col.offset_from_intersection_mm != null ? `${col.offset_from_intersection_mm} mm` : 'unknown'],
+    ['Confidence', col.confidence ?? 'unknown'],
+    ['Source', col.source ?? 'unknown'],
+    ['Geometry status', col.geometry_status ?? 'unknown'],
+    ['Detector ring / interior', col.detector ? `${col.detector.ring_density} / ${col.detector.interior_density}` : 'unknown'],
+  ],
+  'Detected from the engineering drawing at its own measured position — not snapped to the grid intersection. ' +
+  'Rendered height is the floor-to-floor envelope, a visualization convention; clear height is not in evidence.');
+}
+
+function showMachineInspector(deviceId) {
+  const st = latestStateById.get(deviceId);
+  render('SIMULATED', 'badge-simulated', 'Monitored device', [
+    ['Device', deviceId],
+    ['Live state', st ? `${st.state_label} (${st.machine_state})` : 'awaiting first poll'],
+    ['Boards', st ? `${st.board_no} / ${st.total_board}` : 'unknown'],
+    ['MO', st && st.mo ? st.mo : '—'],
+    ['Alarm', st && st.alarm ? `${st.alarm.count} · ${st.alarm.owner} · ${st.alarm.elapsed}` : 'none'],
+    ['Position', 'simulated grid — not a surveyed location'],
+    ['Physical mapping', 'NOT CONFIRMED'],
+  ],
+  'Telemetry is real. The position is not: this device sits on a synthetic grid because no authoritative ' +
+  'record places it in the building. Click to open its Machine Snapshot drill-down.');
 }
 
 function hideSlotInspector() {
@@ -676,15 +761,55 @@ renderer.domElement.addEventListener('click', (event) => {
   else hideSlotInspector();
 });
 
-renderer.domElement.addEventListener('pointermove', (event) => {
+function pickColumn(event) {
+  if (columnMeshes.length === 0) return null;
+  const rect = renderer.domElement.getBoundingClientRect();
+  pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+  pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+  raycaster.setFromCamera(pointer, camera);
+  const hits = raycaster.intersectObjects(columnMeshes, false);
+  return hits.length > 0 ? hits[0].object.userData.column : null;
+}
+
+// Hover drives the inspector; click still only navigates, and only for
+// machines. Inspecting a machine therefore costs nothing and cannot be
+// confused with drilling into it.
+//
+// Throttled to one raycast per animation frame: pointermove fires far faster
+// than the scene redraws, and three picks across ~420 meshes per event is
+// wasted work that buys no extra responsiveness.
+let hoverPending = null;
+function handleHover(event) {
   const deviceId = pickMachine(event);
   if (deviceId) {
     renderer.domElement.style.cursor = 'pointer';
+    showMachineInspector(deviceId);
     return;
   }
-  // 'help' rather than 'pointer': a slot opens an evidence panel, it does not
-  // navigate. The cursor should not promise a drill-down that does not exist.
-  renderer.domElement.style.cursor = pickSlot(event) ? 'help' : 'default';
+  const slot = pickSlot(event);
+  if (slot) {
+    // 'help' rather than 'pointer': these open an evidence panel, they do not
+    // navigate. The cursor must not promise a drill-down that does not exist.
+    renderer.domElement.style.cursor = 'help';
+    showSlotInspector(slot);
+    return;
+  }
+  const col = pickColumn(event);
+  if (col) {
+    renderer.domElement.style.cursor = 'help';
+    showColumnInspector(col);
+    return;
+  }
+  renderer.domElement.style.cursor = 'default';
+}
+
+renderer.domElement.addEventListener('pointermove', (event) => {
+  if (hoverPending) return;
+  const { clientX, clientY } = event;
+  hoverPending = requestAnimationFrame(() => {
+    hoverPending = null;
+    handleHover({ clientX, clientY });
+  });
 });
 
 // ── HUD (also the accessibility fallback per design §16 -- same real data
@@ -776,6 +901,7 @@ async function boot() {
       // Separate call: the zone layer is independent of the envelope, and
       // buildPhysicalSlots returns early when no envelope file exists.
       const drawn = buildFunctionalZones(geo);
+      updateEvidenceSummary(geo, drawn);
       const meta = geo.functional_zones_meta;
       if (meta && meta.total > 0) {
         console.info(
@@ -804,6 +930,7 @@ async function boot() {
     renderer,
     machineMeshes,
     slotMeshes,
+    columnMeshes,
     layers,
     applyView,
     getView: () => activeView,

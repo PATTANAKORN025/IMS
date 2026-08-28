@@ -161,6 +161,31 @@
       color: #fbbf24;
       margin-bottom: 6px;
     }
+    #inspector .badge {
+      display: inline-block;
+      padding: 1px 6px;
+      margin-right: 6px;
+      border-radius: 3px;
+      font-size: 10px;
+      letter-spacing: 0.04em;
+      vertical-align: middle;
+    }
+    /* Only CONFIRMED is allowed to look authoritative. */
+    #inspector .badge-confirmed { background: #16a34a; color: #f0fdf4; }
+    #inspector .badge-unmapped { background: #b45309; color: #fffbeb; }
+    #inspector .badge-observed { background: #475569; color: #f1f5f9; }
+    #inspector .badge-simulated { background: #7c3aed; color: #f5f3ff; }
+    #evidence-summary {
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid #334155;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    #evidence-summary .summary-title { color: #94a3b8; font-weight: 700; margin-bottom: 4px; }
+    #evidence-summary .k { color: #cbd5e1; }
+    #evidence-summary .n { color: #f8fafc; font-weight: 700; }
+    #evidence-summary .t { color: #64748b; font-size: 10px; letter-spacing: 0.04em; }
     #inspector .k { color: #94a3b8; display: inline-block; min-width: 116px; }
     #inspector .v { color: #e2e8f0; }
     #inspector .hint { margin-top: 8px; }
@@ -206,11 +231,14 @@
     <div id="inspector" hidden aria-live="polite"></div>
     <fieldset id="layer-controls">
       <legend>Layers</legend>
-      <label><input type="checkbox" data-layer="structural" checked> Structure <span class="hint">(grid, envelope, columns)</span></label>
-      <label><input type="checkbox" data-layer="functional" checked> Zones <span class="hint">(validated process areas)</span></label>
-      <label><input type="checkbox" data-layer="operational" checked> Equipment <span class="hint">(machines + observed slots)</span></label>
+      <label><input type="checkbox" data-layer="structural" checked> Structure <span class="hint" data-count="structural"></span></label>
+      <label><input type="checkbox" data-layer="functional" checked> Zones <span class="hint" data-count="functional"></span></label>
+      <label><input type="checkbox" data-layer="operational" checked> Equipment <span class="hint" data-count="operational"></span></label>
       <label><input type="checkbox" data-layer="telemetry" checked> Labels</label>
     </fieldset>
+    <!-- These four numbers describe four different things and are deliberately
+         never summed: 242 observed positions are not 242 confirmed machines. -->
+    <div id="evidence-summary" aria-live="polite"></div>
   </div>
 
   <div id="scene"></div>
