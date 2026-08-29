@@ -53,8 +53,15 @@ What the twin holds today, and on what basis. Status words are used strictly:
 **Not complete, and not claimed to be.** Six rows are BLOCKED, each on a
 missing source rather than unfinished work. See
 **[Evidence Requirements](FACTORY_TWIN_EVIDENCE_REQUIREMENTS.md)** for what
-would unlock them, and **[Visual QA](FACTORY_TWIN_VISUAL_QA.md)** for the
-current QA and performance baseline.
+would unlock them and what a new source is allowed to claim once it arrives,
+and **[Visual QA](FACTORY_TWIN_VISUAL_QA.md)** for the current QA and
+performance baseline.
+
+Four distinctions carry most of the weight of this document, and collapsing any
+one of them produces a specific wrong decision rather than a rounding error:
+**Observed ≠ Confirmed. Simulated ≠ Real. Derived ≠ Measured. Unknown ≠
+Missing.** The consequences of each are tabulated in the
+**[Operator Guide](FACTORY_TWIN_OPERATOR_GUIDE.md)**.
 
 ---
 
@@ -175,12 +182,26 @@ authoritative record says otherwise.
 Objects are grouped by the kind of claim they make, and an object belongs to
 exactly one layer:
 
-| Layer | Contains |
-|---|---|
-| `structural` | Building envelope, footprint, structural grid, columns |
-| `functional` | Validated process/functional areas |
-| `operational` | Equipment positions and machine meshes |
-| `telemetry` | Live device state overlays |
+| Layer | Sub-layer | Contains |
+|---|---|---|
+| `structural` | `shell` | Building envelope, footprint, orientation grid |
+| `structural` | `columns` | Structural columns |
+| `functional` | — | Validated process/functional areas |
+| `operational` | `slots` | Observed equipment positions |
+| `operational` | `machines` | Monitored devices at synthetic positions |
+| `telemetry` | — | Live device state overlays |
+
+The sub-layer split exists so an operator can separate two different claims
+that would otherwise share one toggle: a measured envelope from a detected
+column, and an observed position from a simulated device. Runtime detail is in
+**[Runtime Architecture](FACTORY_TWIN_ARCHITECTURE.md)**; what each toggle
+means to a reader is in the
+**[Operator Guide](FACTORY_TWIN_OPERATOR_GUIDE.md)**.
+
+Camera presets are **framing only**. Switching a view never moves an object,
+changes a coordinate or alters an evidence state, and the regression suite
+proves it by comparing a fixed-precision snapshot of every rendered coordinate
+before and after switching.
 
 ---
 
