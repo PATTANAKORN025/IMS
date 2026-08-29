@@ -52,9 +52,23 @@ const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
 container.appendChild(renderer.domElement);
+// A WebGL canvas is opaque to assistive technology. It is named rather than
+// left as a bare "canvas", and points at the HUD, which carries the same live
+// data as plain DOM text and is the documented accessibility path.
+renderer.domElement.setAttribute('role', 'img');
+renderer.domElement.setAttribute(
+  'aria-label',
+  'Three-dimensional view of Floor 1. Machine state and evidence counts are also available as text in the panel on the left.'
+);
 
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
+// Damping keeps the camera gliding after the pointer stops, which is exactly
+// the kind of continued motion a reduced-motion preference asks not to see.
+// Honoured at construction rather than animated away, so the camera simply
+// stops when the input stops.
+const prefersReducedMotion =
+  typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+controls.enableDamping = !prefersReducedMotion;
 // Target offset +14 on X (not 0) so the default view keeps the leftmost
 // zone (Site A - Zone 1) clear of the fixed-position HUD sidebar,
 // which covers roughly the left 280px of the viewport and would otherwise
@@ -199,6 +213,11 @@ function refitViews() {
   for (const btn of document.querySelectorAll('#view-controls button[data-view]')) {
     const v = btn.dataset.view;
     btn.disabled = (v === 'building' && !buildingView) || (v === 'overview' && !overviewView);
+    // A control that is disabled without a reason reads as broken. Say why:
+    // the framing is derived from data that has not arrived, not withheld.
+    btn.title = btn.disabled
+      ? 'Unavailable until the measured building geometry loads'
+      : '';
   }
   if (activeView !== 'operator') applyView(activeView);
 }

@@ -378,6 +378,69 @@ async function run() {
     check(errors.length === 0, 'no console errors', errors.slice(0, 2).join(' | '));
     check(failed.length === 0, 'no failed requests', failed.slice(0, 2).join(' | '));
 
+    // ── Operator surface: every control must be reachable at this viewport ──
+    // Not decoration. With the evidence legend and diagnostics expanded, the
+    // HUD's content exceeds its fixed height by roughly 900px at 1366x768, and
+    // under overflow:hidden the diagnostics control sat below the viewport with
+    // no scrollbar and no way to reach it with a pointer.
+    const surface = await page.evaluate(() => {
+      const sels = [
+        '#simulated-banner',
+        '#hud h1',
+        '#view-controls button[data-view="operator"]',
+        '#view-controls button[data-view="building"]',
+        '#view-controls button[data-view="overview"]',
+        '#view-reset',
+        '#layer-controls input[data-layer="shell"]',
+        '#layer-controls input[data-layer="telemetry"]',
+        '#evidence-summary',
+        '#evidence-legend > summary',
+        '#diagnostics > summary',
+      ];
+      const legend = document.getElementById('evidence-legend');
+      const diag = document.getElementById('diagnostics');
+      const wasLegend = legend.open;
+      const wasDiag = diag.open;
+      legend.open = true;
+      diag.open = true;
+      const unreachable = [];
+      for (const sel of sels) {
+        const el = document.querySelector(sel);
+        if (!el) { unreachable.push(`${sel} (missing)`); continue; }
+        el.scrollIntoView({ block: 'nearest' });
+        const r = el.getBoundingClientRect();
+        const offscreen =
+          r.width === 0 || r.height === 0 ||
+          r.bottom > window.innerHeight + 1 || r.right > window.innerWidth + 1 ||
+          r.top < -1 || r.left < -1;
+        if (offscreen) unreachable.push(`${sel} (${Math.round(r.left)},${Math.round(r.top)} ${Math.round(r.width)}x${Math.round(r.height)})`);
+      }
+      legend.open = wasLegend;
+      diag.open = wasDiag;
+      const canvas = document.querySelector('canvas');
+      return {
+        unreachable,
+        horizontalScroll: document.documentElement.scrollWidth > window.innerWidth,
+        canvasLabelled: Boolean(canvas && canvas.getAttribute('aria-label')),
+        // Evidence state must never be carried by colour alone. Each legend
+        // row pairs a glyph with the word, and the glyph is aria-hidden so a
+        // screen reader gets the word rather than a decorative character.
+        legendRows: [...document.querySelectorAll('#evidence-legend dt')].map((dt) => ({
+          text: dt.textContent.trim(),
+          glyph: Boolean(dt.querySelector('.ev[aria-hidden="true"]')),
+        })),
+      };
+    });
+    check(surface.unreachable.length === 0, 'every operator control is reachable',
+      surface.unreachable.join(' | '));
+    check(!surface.horizontalScroll, 'the page never scrolls horizontally');
+    check(surface.canvasLabelled, 'the 3D canvas carries an accessible name');
+    check(
+      surface.legendRows.length === 6 && surface.legendRows.every((r) => r.glyph && /[A-Z]{6,}/.test(r.text)),
+      'every evidence state is named in words and carries a non-colour glyph',
+      `${surface.legendRows.length} rows`
+    );
+
     if (!baseline) baseline = s;
 
     page.off('console', onConsole);

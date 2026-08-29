@@ -60,7 +60,14 @@
       line-height: 1.5;
       display: flex;
       flex-direction: column;
-      overflow: hidden;
+      /* auto, not hidden. The panel has a fixed height, and with the evidence
+         legend and diagnostics both expanded its content legitimately exceeds
+         it -- at 1366x768 by roughly 900px. Under overflow:hidden that content
+         was clipped with no scrollbar and no way to reach it, which put the
+         diagnostics control out of reach of a pointer entirely. Nothing is
+         removed; the panel simply scrolls when it has more to show than it
+         has room for. */
+      overflow-y: auto;
     }
     #hud h1 {
       font-size: 15px;
@@ -75,6 +82,14 @@
     #machine-list {
       overflow-y: auto;
       flex: 1;
+      /* Without this the list never shrinks below its content height: a flex
+         item's default min-height is auto, so `flex: 1` cannot compress it and
+         its own overflow-y never engages. The list then pushes the view
+         controls, layer toggles, legend and diagnostics past the panel's
+         bottom edge, where #hud's overflow:hidden clips them out of reach --
+         observed at 1366x768 and in portrait, where the diagnostics control
+         sat ~270px below the viewport with no way to scroll to it. */
+      min-height: 0;
       display: flex;
       flex-direction: column;
       gap: 8px;
