@@ -1,0 +1,445 @@
+// Schematic reference view.
+//
+// A flat technical drawing of the manufacturing system's floor schematic,
+// rendered from /api/floor-schematic. It exists alongside the 3D twin rather
+// than inside it, because the two make different claims: the twin shows
+// measured building geometry and cannot name a single area, while this shows
+// every area by name and measures nothing at all.
+//
+// SCHEMATIC COORDINATES ARE NOT PHYSICAL COORDINATES.
+//
+// Everything drawn here is in the payload's own normalized sx/sy space, from a
+// source whose title block declares no scale. This file never reads the
+// measured geometry API, never converts an sx to a metre, and shares no state
+// with app.js beyond the DOM elements it owns. That isolation is the point: it
+// makes registering one onto the other something someone would have to do
+// deliberately, in a file that does not currently exist.
+//
+// SVG rather than canvas or WebGL: the drawing is a few hundred static vector
+// elements, it must stay crisp at 4K, and its text has to be real text for a
+// screen reader. Pan and zoom mutate one viewBox attribute, so pointer movement
+// costs a single attribute write and never rebuilds the DOM.
+
+'use strict';
+
+const NS = 'http://www.w3.org/2000/svg';
+
+const host = document.getElementById('schematic');
+const panel = document.getElementById('schematic-panel');
+const modeControls = document.getElementById('mode-controls');
+const snapshotControls = document.getElementById('snapshot-controls');
+const conflictEl = document.getElementById('schematic-conflict');
+const optionsEl = document.getElementById('schematic-options');
+const fitButton = document.getElementById('schematic-fit');
+const sceneEl = document.getElementById('scene');
+
+/** Controls that belong to the 3D view and mean nothing in schematic mode. */
+const PHYSICAL_ONLY = ['view-controls', 'view-reset-row', 'layer-controls'];
+
+let doc = null;
+let svg = null;
+let activeSnapshot = null;
+/** The drawing's own extent, and the current window onto it. */
+let extent = { sx: 1000, sy: 1000 };
+let view = null;
+
+function el(name, attrs) {
+  const node = document.createElementNS(NS, name);
+  for (const [k, v] of Object.entries(attrs || {})) node.setAttribute(k, String(v));
+  return node;
+}
+
+/** A ring of schematic points as an SVG path. */
+function ringPath(vertices) {
+  if (!Array.isArray(vertices) || vertices.length < 3) return null;
+  const parts = vertices.map((v, i) => `${i === 0 ? 'M' : 'L'}${v.sx} ${v.sy}`);
+  parts.push('Z');
+  return parts.join(' ');
+}
+
+/** Bounding box of every drawn ring, so "fit" frames the drawing, not the space. */
+function contentBounds() {
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  const consider = (vertices) => {
+    for (const v of vertices || []) {
+      if (v.sx < minX) minX = v.sx;
+      if (v.sx > maxX) maxX = v.sx;
+      if (v.sy < minY) minY = v.sy;
+      if (v.sy > maxY) maxY = v.sy;
+    }
+  };
+  if (doc && doc.boundary) consider(doc.boundary.vertices);
+  for (const a of (doc && doc.areas) || []) consider(a.vertices);
+  if (!Number.isFinite(minX)) return { sx: 0, sy: 0, width: extent.sx, height: extent.sy };
+  const pad = 12;
+  return {
+    sx: minX - pad,
+    sy: minY - pad,
+    width: maxX - minX + pad * 2,
+    height: maxY - minY + pad * 2,
+  };
+}
+
+function applyView() {
+  if (!svg || !view) return;
+  svg.setAttribute('viewBox', `${view.sx} ${view.sy} ${view.width} ${view.height}`);
+}
+
+/**
+ * Frames the drawing in the space the HUD is not already occupying.
+ *
+ * A naive fit centres the drawing in the viewport, which puts its upper-left
+ * corner underneath the fixed HUD panel -- and the upper-left corner is where
+ * this particular drawing keeps an entire labelled area. Reserving the panel's
+ * width is the difference between "the drawing is on screen" and "the drawing
+ * can be read".
+ *
+ * The viewBox is also given the viewport's own aspect ratio, so
+ * preserveAspectRatio has nothing left to letterbox and the reserved margin
+ * lands exactly where it was computed to land.
+ */
+function fit() {
+  const content = contentBounds();
+  view = content;
+  if (!svg) return applyView();
+
+  const rect = svg.getBoundingClientRect();
+  if (!rect.width || !rect.height) return applyView();
+
+  const hud = document.getElementById('hud');
+  const hudRect = hud ? hud.getBoundingClientRect() : null;
+  // The share of the viewport the panel covers, plus a gutter.
+  //
+  // The gutter is not cosmetic. An area label is centred on its area, so its
+  // text overhangs the content bounds by half its own width -- and the
+  // left-most area on this drawing has one of the longest names. Reserving only
+  // the panel's width therefore still slides that label under the panel. The
+  // allowance covers the overhang; the cap keeps a narrow viewport from
+  // reserving so much that nothing is left to draw in.
+  const LABEL_OVERHANG_PX = 48;
+  const reserved = hudRect
+    ? Math.min((hudRect.right + LABEL_OVERHANG_PX) / rect.width, 0.66)
+    : 0;
+
+  const width = content.width / (1 - reserved);
+  const height = width * (rect.height / rect.width);
+  view = {
+    sx: content.sx - width * reserved,
+    // Centre what is left vertically, since the panel constrains width only.
+    sy: content.sy - (height - content.height) / 2,
+    width,
+    height,
+  };
+  applyView();
+}
+
+/**
+ * Whether a record belongs to the snapshot currently selected.
+ *
+ * A record with no snapshot list is shown in every snapshot: it is something
+ * the drawing states about itself rather than something one render happens to
+ * show. A record that lists snapshots appears only in those, which is how the
+ * two conflicting renders stay distinguishable instead of being merged.
+ */
+function inSnapshot(record) {
+  const list = record && record.observed_in;
+  if (!Array.isArray(list) || list.length === 0) return true;
+  return activeSnapshot === null || list.includes(activeSnapshot);
+}
+
+function buildSvg() {
+  const next = el('svg', {
+    xmlns: NS,
+    preserveAspectRatio: 'xMidYMid meet',
+    role: 'img',
+    'aria-label':
+      'Schematic reference drawing of the factory floor. Area names are listed in the panel; this drawing carries no measured dimensions.',
+  });
+
+  // One group per concern, so a visibility toggle is a single attribute on a
+  // group rather than a walk over hundreds of elements.
+  const gBoundary = el('g', { 'data-sch-layer': 'boundary' });
+  const gAreas = el('g', { 'data-sch-layer': 'areas' });
+  const gLabels = el('g', { 'data-sch-layer': 'labels' });
+  const gDims = el('g', { 'data-sch-layer': 'dimensions' });
+  const gAnno = el('g', { 'data-sch-layer': 'annotations' });
+
+  if (doc.boundary) {
+    const d = ringPath(doc.boundary.vertices);
+    if (d) gBoundary.appendChild(el('path', { d, class: 'sch-boundary' }));
+  }
+
+  for (const area of doc.areas || []) {
+    if (!inSnapshot(area)) continue;
+    const d = ringPath(area.vertices);
+    if (!d) continue;
+    const path = el('path', { d, class: 'sch-area', 'data-area-id': area.id });
+    // The name is a label for a reader, never an identifier. The id is what
+    // anything keys on, and it is the thing put in the DOM for a test to find.
+    if (area.name) path.appendChild(el('title', {})).textContent = area.name;
+    gAreas.appendChild(path);
+
+    if (area.name && area.label_at) {
+      const text = el('text', {
+        x: area.label_at.sx,
+        y: area.label_at.sy,
+        class: 'sch-area-label',
+        'data-area-label': area.id,
+      });
+      text.textContent = area.name;
+      gLabels.appendChild(text);
+    }
+  }
+
+  for (const anno of doc.annotations || []) {
+    if (!inSnapshot(anno)) continue;
+    const target = anno.kind === 'DIMENSION' ? gDims : gAnno;
+    if (anno.kind === 'DIMENSION' && anno.to) {
+      target.appendChild(
+        el('line', { x1: anno.at.sx, y1: anno.at.sy, x2: anno.to.sx, y2: anno.to.sy, class: 'sch-dim' })
+      );
+      if (anno.text) {
+        const t = el('text', {
+          x: (anno.at.sx + anno.to.sx) / 2,
+          y: (anno.at.sy + anno.to.sy) / 2 - 2,
+          class: 'sch-dim-text',
+        });
+        // Printed as it appears on the drawing. The source states no scale, so
+        // this is a number someone wrote beside a line and never a length.
+        t.textContent = anno.text;
+        target.appendChild(t);
+      }
+      continue;
+    }
+    if (anno.to) {
+      target.appendChild(
+        el('rect', {
+          x: Math.min(anno.at.sx, anno.to.sx),
+          y: Math.min(anno.at.sy, anno.to.sy),
+          width: Math.abs(anno.to.sx - anno.at.sx),
+          height: Math.abs(anno.to.sy - anno.at.sy),
+          class: 'sch-anno-box',
+          'data-anno': anno.kind,
+        })
+      );
+    }
+    const label = el('text', { x: anno.at.sx + 3, y: anno.at.sy + 9, class: 'sch-anno', 'data-anno-text': anno.kind });
+    label.textContent = anno.kind === 'TIMESTAMP' ? snapshotTimestamp() : anno.kind.replace(/_/g, ' ');
+    target.appendChild(label);
+  }
+
+  next.append(gBoundary, gAreas, gLabels, gDims, gAnno);
+  host.replaceChildren(next);
+  svg = next;
+  attachPanZoom();
+  applyOptions();
+  fit();
+}
+
+/** The timestamp the active render claims, not a time this system knows. */
+function snapshotTimestamp() {
+  const s = (doc.snapshots || []).find((x) => x.id === activeSnapshot);
+  return s && s.timestamp_observed ? s.timestamp_observed : '';
+}
+
+function applyOptions() {
+  if (!svg) return;
+  for (const box of optionsEl.querySelectorAll('input[data-sch]')) {
+    const layer = svg.querySelector(`[data-sch-layer="${box.dataset.sch}"]`);
+    if (layer) layer.style.display = box.checked ? '' : 'none';
+  }
+}
+
+// ── Pan and zoom ──
+// Both mutate `view` and write one viewBox attribute. No layout is read during
+// a drag, and nothing is rebuilt, so a pointer move costs one attribute write.
+function attachPanZoom() {
+  let dragging = null;
+
+  svg.addEventListener('pointerdown', (ev) => {
+    if (ev.button !== 0) return;
+    dragging = { x: ev.clientX, y: ev.clientY, sx: view.sx, sy: view.sy };
+    svg.setPointerCapture(ev.pointerId);
+    svg.classList.add('dragging');
+  });
+
+  svg.addEventListener('pointermove', (ev) => {
+    if (!dragging) return;
+    // Screen pixels to drawing units via the current scale, so a drag moves the
+    // drawing exactly as far as the pointer went.
+    const rect = svg.getBoundingClientRect();
+    const scale = view.width / (rect.width || 1);
+    view.sx = dragging.sx - (ev.clientX - dragging.x) * scale;
+    view.sy = dragging.sy - (ev.clientY - dragging.y) * scale;
+    applyView();
+  });
+
+  const endDrag = (ev) => {
+    if (!dragging) return;
+    dragging = null;
+    svg.releasePointerCapture(ev.pointerId);
+    svg.classList.remove('dragging');
+  };
+  svg.addEventListener('pointerup', endDrag);
+  svg.addEventListener('pointercancel', endDrag);
+
+  svg.addEventListener(
+    'wheel',
+    (ev) => {
+      ev.preventDefault();
+      const rect = svg.getBoundingClientRect();
+      const factor = ev.deltaY > 0 ? 1.12 : 1 / 1.12;
+      // Zoom about the pointer rather than the centre, so the thing under the
+      // cursor stays under the cursor.
+      const px = (ev.clientX - rect.left) / (rect.width || 1);
+      const py = (ev.clientY - rect.top) / (rect.height || 1);
+      const anchorX = view.sx + view.width * px;
+      const anchorY = view.sy + view.height * py;
+      const width = Math.min(Math.max(view.width * factor, 20), extent.sx * 4);
+      const height = width * (view.height / view.width);
+      view = { sx: anchorX - width * px, sy: anchorY - height * py, width, height };
+      applyView();
+    },
+    { passive: false }
+  );
+}
+
+// ── Snapshot selection ──
+
+function buildSnapshotControls() {
+  snapshotControls.replaceChildren();
+  for (const snap of doc.snapshots || []) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.dataset.snapshot = snap.id;
+    btn.textContent = snap.label || snap.id;
+    btn.setAttribute('aria-pressed', String(snap.id === activeSnapshot));
+    btn.addEventListener('click', () => selectSnapshot(snap.id));
+    snapshotControls.appendChild(btn);
+  }
+  updateConflictNotice();
+}
+
+function selectSnapshot(id) {
+  activeSnapshot = id;
+  for (const btn of snapshotControls.querySelectorAll('button[data-snapshot]')) {
+    btn.setAttribute('aria-pressed', String(btn.dataset.snapshot === id));
+  }
+  updateConflictNotice();
+  buildSvg();
+}
+
+/**
+ * States the conflict rather than resolving it.
+ *
+ * The two renders declare the same instant and disagree about equipment and
+ * status. Showing one without saying so would present a contested reading as
+ * settled, which is the failure this whole system is built to avoid.
+ */
+function updateConflictNotice() {
+  const snap = (doc.snapshots || []).find((s) => s.id === activeSnapshot);
+  const others = snap && Array.isArray(snap.conflicts_with) ? snap.conflicts_with : [];
+  if (others.length === 0) {
+    conflictEl.hidden = true;
+    return;
+  }
+  const names = others
+    .map((id) => {
+      const other = (doc.snapshots || []).find((s) => s.id === id);
+      return (other && other.label) || id;
+    })
+    .join(', ');
+  conflictEl.textContent =
+    `Conflicting source renders. This drawing and ${names} declare the same instant ` +
+    'yet disagree on equipment values and status. Neither is treated as correct; ' +
+    'switch between them to see what differs.';
+  conflictEl.hidden = false;
+}
+
+// ── Mode switching ──
+
+function setMode(mode) {
+  const schematic = mode === 'schematic';
+  host.hidden = !schematic;
+  panel.hidden = !schematic;
+  if (sceneEl) sceneEl.style.visibility = schematic ? 'hidden' : '';
+  for (const id of PHYSICAL_ONLY) {
+    const node = document.getElementById(id);
+    if (node) node.hidden = schematic;
+  }
+  for (const btn of modeControls.querySelectorAll('button[data-mode]')) {
+    btn.setAttribute('aria-pressed', String(btn.dataset.mode === mode));
+  }
+  if (schematic && !svg && doc) buildSvg();
+}
+
+modeControls?.addEventListener('click', (ev) => {
+  const btn = ev.target.closest('button[data-mode]');
+  if (btn) setMode(btn.dataset.mode);
+});
+
+optionsEl?.addEventListener('change', applyOptions);
+fitButton?.addEventListener('click', fit);
+
+// Refit on resize so the drawing keeps its aspect without being re-read. Only
+// the viewBox changes; the DOM does not.
+let resizePending = null;
+window.addEventListener('resize', () => {
+  if (resizePending || !svg || host.hidden) return;
+  resizePending = requestAnimationFrame(() => {
+    resizePending = null;
+    // Refit rather than re-apply: the panel's share of the viewport changes
+    // with the viewport, so the reserved margin has to be recomputed.
+    fit();
+  });
+});
+
+async function boot() {
+  try {
+    const res = await fetch('api/floor-schematic');
+    if (!res.ok) throw new Error(`status ${res.status}`);
+    doc = await res.json();
+  } catch (err) {
+    // A missing or broken schematic must never take the 3D view down with it.
+    console.warn('schematic fetch failed (non-fatal):', err.message);
+    doc = null;
+  }
+
+  const areas = doc && Array.isArray(doc.areas) ? doc.areas : [];
+  const modeButton = modeControls?.querySelector('button[data-mode="schematic"]');
+  if (areas.length === 0) {
+    // Nothing transcribed for this deployment -- the default for a public
+    // clone. The control says why rather than failing when pressed.
+    if (modeButton) {
+      modeButton.disabled = true;
+      modeButton.title = 'No schematic reference is deployed here';
+    }
+    return;
+  }
+
+  if (doc.extent) extent = doc.extent;
+  activeSnapshot = (doc.snapshots && doc.snapshots[0] && doc.snapshots[0].id) || null;
+  buildSnapshotControls();
+
+  // Exposed for the regression suite, mirroring window.__twin. Read-only
+  // accessors: nothing here lets a caller move the drawing or change what it
+  // claims.
+  window.__schematic = {
+    getDoc: () => doc,
+    getActiveSnapshot: () => activeSnapshot,
+    getView: () => (view ? { ...view } : null),
+    getMode: () =>
+      modeControls.querySelector('button[aria-pressed="true"][data-mode]')?.dataset.mode || 'physical',
+    setMode,
+    selectSnapshot,
+    fit,
+    countAreas: () => (svg ? svg.querySelectorAll('[data-area-id]').length : 0),
+    countLabels: () => (svg ? svg.querySelectorAll('[data-area-label]').length : 0),
+    countDimensions: () => (svg ? svg.querySelectorAll('.sch-dim').length : 0),
+  };
+}
+
+boot();

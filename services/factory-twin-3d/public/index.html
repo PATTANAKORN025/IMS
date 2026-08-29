@@ -18,6 +18,81 @@
       position: fixed;
       inset: 0;
     }
+    /* The schematic reads as a technical drawing: light ground, graphite line
+       work, no colour except where status genuinely needs it. The deliberate
+       contrast with the dark 3D view is a signal, not decoration -- these are
+       two different kinds of claim about the floor, and they should not look
+       like two tabs of the same thing. */
+    #schematic {
+      position: fixed;
+      inset: 0;
+      background: #f4f4f1;
+      z-index: 5;
+    }
+    #schematic svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: grab;
+      touch-action: none;
+    }
+    #schematic svg.dragging { cursor: grabbing; }
+    .sch-boundary { fill: #fbfbf9; stroke: #2b2b2b; stroke-width: 1.6; vector-effect: non-scaling-stroke; }
+    .sch-area { fill: #ffffff; stroke: #6b6b6b; stroke-width: 0.9; vector-effect: non-scaling-stroke; }
+    .sch-area:hover { fill: #eef2f6; }
+    .sch-area-label {
+      font: 700 11px system-ui, sans-serif;
+      fill: #1b1b1b;
+      text-anchor: middle;
+      dominant-baseline: middle;
+      paint-order: stroke;
+      stroke: #ffffff;
+      stroke-width: 3px;
+      stroke-linejoin: round;
+    }
+    .sch-dim { stroke: #8a8a8a; stroke-width: 0.7; vector-effect: non-scaling-stroke; }
+    .sch-dim-text { font: 400 8px system-ui, sans-serif; fill: #4a4a4a; text-anchor: middle; }
+    .sch-anno { fill: #3a3a3a; font: 400 9px system-ui, sans-serif; }
+    .sch-anno-box { fill: none; stroke: #6b6b6b; stroke-width: 0.9; vector-effect: non-scaling-stroke; }
+    /* Mode and snapshot selectors reuse the view-control styling so the whole
+       panel stays one visual system. */
+    #mode-controls, #snapshot-controls { display: flex; gap: 4px; margin-top: 8px; }
+    #mode-controls button, #snapshot-controls button {
+      flex: 1;
+      padding: 5px 6px;
+      font: inherit;
+      font-size: 11px;
+      color: #cbd5e1;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #mode-controls button[aria-pressed="true"],
+    #snapshot-controls button[aria-pressed="true"] {
+      background: #334155;
+      color: #f1f5f9;
+      border-color: #64748b;
+    }
+    #mode-controls button:focus-visible,
+    #snapshot-controls button:focus-visible,
+    #schematic-options input:focus-visible {
+      outline: 2px solid #38bdf8;
+      outline-offset: 2px;
+    }
+    #schematic-panel[hidden] { display: none; }
+    #schematic-options { margin-top: 6px; border: 1px solid #334155; border-radius: 4px; padding: 6px 8px; }
+    #schematic-options legend { padding: 0 4px; color: #94a3b8; font-size: 11px; }
+    #schematic-options label { display: block; font-size: 12px; color: #e2e8f0; }
+    #schematic-conflict {
+      margin-top: 6px;
+      padding: 6px 8px;
+      border: 1px solid #b45309;
+      border-radius: 4px;
+      font-size: 11px;
+      color: #fbbf24;
+      line-height: 1.45;
+    }
     #scene canvas {
       display: block;
     }
@@ -281,6 +356,13 @@
     <!-- Two coordinate systems coexist and neither may be moved to suit the
          other, so framing is an explicit choice. Buttons, so they are keyboard
          reachable and carry a real pressed state. -->
+    <!-- Two different claims about the floor, so an explicit choice rather than
+         a silent blend. The physical twin is measured and cannot name an area;
+         the schematic names every area and measures nothing. -->
+    <div id="mode-controls" role="group" aria-label="Floor view mode">
+      <button type="button" data-mode="physical" aria-pressed="true">Physical Twin</button>
+      <button type="button" data-mode="schematic" aria-pressed="false">FROOL1 Schematic</button>
+    </div>
     <div id="view-controls" role="group" aria-label="Camera view">
       <button type="button" data-view="operator" aria-pressed="true">Operator</button>
       <button type="button" data-view="building" aria-pressed="false" disabled>Building</button>
@@ -291,6 +373,21 @@
          where the camera has wandered to is not. -->
     <div id="view-reset-row">
       <button type="button" id="view-reset">Reset camera to view framing</button>
+    </div>
+    <!-- Schematic-only controls. Hidden in physical mode so the panel never
+         offers a control that does nothing. -->
+    <div id="schematic-panel" hidden>
+      <div id="snapshot-controls" role="group" aria-label="Reference snapshot"></div>
+      <div id="schematic-conflict" hidden></div>
+      <fieldset id="schematic-options">
+        <legend>Show</legend>
+        <label><input type="checkbox" data-sch="labels" checked> Area labels</label>
+        <label><input type="checkbox" data-sch="dimensions" checked> Dimensions</label>
+        <label><input type="checkbox" data-sch="annotations" checked> Legend and title block</label>
+      </fieldset>
+      <div id="view-reset-row">
+        <button type="button" id="schematic-fit">Fit drawing to view</button>
+      </div>
     </div>
     <!-- Inspection target. Populated only from evidence-backed fields the API
          actually served; an unresolved slot never renders an identity. -->
@@ -342,6 +439,9 @@
   </div>
 
   <div id="scene"></div>
+  <!-- Built once from /api/floor-schematic; pan and zoom mutate only the SVG
+       viewBox, so pointer movement never rebuilds the DOM. -->
+  <div id="schematic" hidden></div>
 
   <!-- Relative paths (no leading "/") throughout this page and app.js's
        fetch calls, deliberately -- this page is served under nginx's
@@ -357,5 +457,6 @@
     }
   </script>
   <script type="module" src="./app.js"></script>
+  <script type="module" src="./schematic.js"></script>
 </body>
 </html>

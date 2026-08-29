@@ -722,6 +722,126 @@ async function run() {
     console.log('');
   }
 
+  // ── Schematic view ──
+  // The second view exists to be read, and its one safety property is that
+  // entering it changes nothing about the measured model.
+  console.log('Schematic view:');
+  {
+    const available = await page.evaluate(() => Boolean(window.__schematic));
+    if (!available) {
+      for (const label of [
+        'entering schematic mode moves nothing in the 3D scene',
+        'the schematic draws every area the API served',
+        'every area label is rendered',
+        'switching snapshot changes what is drawn without changing the areas',
+        'switching snapshot never alters the 3D scene',
+        'physical camera controls are hidden in schematic mode',
+        'leaving schematic mode restores the physical controls',
+      ]) {
+        skip(label, NO_SCHEMATIC);
+      }
+    } else {
+      const coordsBefore = await page.evaluate(() => window.__twin.snapshotCoordinates());
+      await page.click('#mode-controls button[data-mode="schematic"]');
+      await page.waitForTimeout(700);
+
+      const inSchematic = await page.evaluate(() => {
+        const S = window.__schematic;
+        return {
+          mode: S.getMode(),
+          areasDrawn: S.countAreas(),
+          labelsDrawn: S.countLabels(),
+          dims: S.countDimensions(),
+          snapshot: S.getActiveSnapshot(),
+          apiAreas: S.getDoc().areas.length,
+          coords: window.__twin.snapshotCoordinates(),
+          viewControlsHidden: document.getElementById('view-controls').hidden,
+          layerControlsHidden: document.getElementById('layer-controls').hidden,
+        };
+      });
+      check(inSchematic.mode === 'schematic', 'the schematic mode activates');
+      check(inSchematic.coords === coordsBefore,
+        'entering schematic mode moves nothing in the 3D scene');
+      check(inSchematic.areasDrawn === inSchematic.apiAreas,
+        'the schematic draws every area the API served',
+        `${inSchematic.areasDrawn} of ${inSchematic.apiAreas}`);
+      check(inSchematic.labelsDrawn === inSchematic.apiAreas, 'every area label is rendered',
+        `${inSchematic.labelsDrawn}`);
+      check(inSchematic.viewControlsHidden && inSchematic.layerControlsHidden,
+        'physical camera controls are hidden in schematic mode');
+
+      // The two renders disagree. Switching must show that difference rather
+      // than smoothing it away, and must not disturb the areas they share.
+      const other = await page.evaluate(() => {
+        const S = window.__schematic;
+        const ids = S.getDoc().snapshots.map((x) => x.id);
+        return ids.find((id) => id !== S.getActiveSnapshot()) || null;
+      });
+      if (other) {
+        await page.click(`#snapshot-controls button[data-snapshot="${other}"]`);
+        await page.waitForTimeout(600);
+        const swapped = await page.evaluate(() => {
+          const S = window.__schematic;
+          return {
+            snapshot: S.getActiveSnapshot(),
+            areas: S.countAreas(),
+            dims: S.countDimensions(),
+            coords: window.__twin.snapshotCoordinates(),
+          };
+        });
+        check(swapped.snapshot === other && swapped.areas === inSchematic.areasDrawn,
+          'switching snapshot changes what is drawn without changing the areas',
+          `${swapped.dims} vs ${inSchematic.dims} dimension marks`);
+        check(swapped.coords === coordsBefore, 'switching snapshot never alters the 3D scene');
+      }
+
+      // Readable at every viewport: labels on screen, nothing overflowing.
+      for (const vp of VIEWPORTS) {
+        await page.setViewportSize({ width: vp.width, height: vp.height });
+        await page.waitForTimeout(400);
+        const legible = await page.evaluate(() => {
+          const labels = [...document.querySelectorAll('[data-area-label]')];
+          const offscreen = labels.filter((n) => {
+            const r = n.getBoundingClientRect();
+            return r.width === 0 || r.right < 0 || r.left > window.innerWidth ||
+              r.bottom < 0 || r.top > window.innerHeight;
+          });
+          const hud = document.getElementById('hud').getBoundingClientRect();
+          const behindHud = labels.filter((n) => {
+            const r = n.getBoundingClientRect();
+            return r.left < hud.right && r.right > hud.left && r.top < hud.bottom && r.bottom > hud.top;
+          });
+          return {
+            total: labels.length,
+            offscreen: offscreen.length,
+            behindHud: behindHud.length,
+            horizontalScroll: document.documentElement.scrollWidth > window.innerWidth,
+          };
+        });
+        check(legible.offscreen === 0, `${vp.name}: every area label is on screen`,
+          `${legible.offscreen} of ${legible.total} off`);
+        check(legible.behindHud === 0, `${vp.name}: no area label sits behind the panel`,
+          `${legible.behindHud} covered`);
+        check(!legible.horizontalScroll, `${vp.name}: the schematic never scrolls the page sideways`);
+      }
+      await page.setViewportSize(VIEWPORTS[1]);
+
+      await page.click('#mode-controls button[data-mode="physical"]');
+      await page.waitForTimeout(600);
+      const back = await page.evaluate(() => ({
+        mode: window.__schematic.getMode(),
+        hidden: document.getElementById('schematic').hidden,
+        controls: !document.getElementById('view-controls').hidden,
+        coords: window.__twin.snapshotCoordinates(),
+      }));
+      check(back.mode === 'physical' && back.hidden && back.controls,
+        'leaving schematic mode restores the physical controls');
+      check(back.coords === coordsBefore,
+        'a full round trip through the schematic leaves every coordinate identical');
+    }
+    console.log('');
+  }
+
   // ── Diagnostics ──
   console.log('Diagnostics:');
   {
