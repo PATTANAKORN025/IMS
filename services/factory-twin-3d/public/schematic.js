@@ -150,6 +150,135 @@ function inSnapshot(record) {
   return activeSnapshot === null || list.includes(activeSnapshot);
 }
 
+/**
+ * The six hatch patterns the reference legend defines.
+ *
+ * Defined once in <defs> and referenced by url(), so giving a cell a hatch
+ * costs a fill attribute rather than more geometry. They are distinguishable by
+ * texture alone, not by colour: the source is a monochrome technical drawing,
+ * and the point of a hatch vocabulary is that it survives being printed.
+ */
+function buildHatchPatterns() {
+  const defs = el('defs', {});
+  // Static geometry authored here, never derived from a response. The payload
+  // can select a pattern by name; it cannot introduce one.
+  const specs = {
+    OFF: [{ tag: 'path', attrs: { d: 'M0 4 L4 0', stroke: '#3a3a3a', 'stroke-width': 0.6 } }],
+    DOWN: [{ tag: 'path', attrs: { d: 'M0 1 L4 1 M0 3 L4 3', stroke: '#3a3a3a', 'stroke-width': 0.5 } }],
+    IDLE: [{ tag: 'path', attrs: { d: 'M1 0 L1 4 M3 0 L3 4', stroke: '#3a3a3a', 'stroke-width': 0.5 } }],
+    INITIAL_PM_STOP: [{ tag: 'circle', attrs: { cx: 1, cy: 1, r: 0.4, fill: '#3a3a3a' } }],
+    RUN: [
+      { tag: 'circle', attrs: { cx: 1, cy: 1, r: 0.45, fill: '#3a3a3a' } },
+      { tag: 'circle', attrs: { cx: 3, cy: 3, r: 0.45, fill: '#3a3a3a' } },
+    ],
+    UNDEFINED: [],
+  };
+  for (const [state, parts] of Object.entries(specs)) {
+    const pattern = el('pattern', {
+      id: `hatch-${state}`,
+      width: 4,
+      height: 4,
+      patternUnits: 'userSpaceOnUse',
+    });
+    pattern.appendChild(el('rect', { width: 4, height: 4, fill: '#e6e6e1' }));
+    for (const part of parts) pattern.appendChild(el(part.tag, part.attrs));
+    defs.appendChild(pattern);
+  }
+  return defs;
+}
+
+/** Draws the legend the reference prints, in the reference's own order. */
+function buildLegend(anno, target) {
+  const states = Array.isArray(doc.legend_states) ? doc.legend_states : [];
+  if (states.length === 0 || !anno.to) return;
+  const x = Math.min(anno.at.sx, anno.to.sx);
+  const y = Math.min(anno.at.sy, anno.to.sy);
+  const w = Math.abs(anno.to.sx - anno.at.sx);
+  const h = Math.abs(anno.to.sy - anno.at.sy);
+  target.appendChild(el('rect', { x, y, width: w, height: h, class: 'sch-anno-box', 'data-anno': 'LEGEND' }));
+
+  const title = el('text', { x: x + w / 2, y: y + 8, class: 'sch-legend-title' });
+  title.textContent = 'LEGEND';
+  target.appendChild(title);
+
+  const rowH = (h - 12) / states.length;
+  const swatchW = w * 0.3;
+  states.forEach((state, i) => {
+    const top = y + 12 + i * rowH;
+    target.appendChild(
+      el('rect', {
+        x: x + 3,
+        y: top + 1,
+        width: swatchW,
+        height: Math.max(rowH - 2, 1),
+        fill: `url(#hatch-${state.state})`,
+        stroke: '#6b6b6b',
+        'stroke-width': 0.4,
+        'vector-effect': 'non-scaling-stroke',
+        'data-legend-swatch': state.state,
+      })
+    );
+    const label = el('text', {
+      x: x + swatchW + 7,
+      y: top + rowH / 2 + 2,
+      class: 'sch-legend-label',
+      'data-legend-label': state.state,
+    });
+    label.textContent = state.label;
+    target.appendChild(label);
+  });
+}
+
+/** A compass rose, as the secondary render carries one. */
+function buildNorth(anno, target) {
+  const { sx, sy } = anno.at;
+  const r = 9;
+  const g = el('g', { 'data-anno': 'NORTH' });
+  g.appendChild(el('circle', { cx: sx, cy: sy, r, class: 'sch-anno-box' }));
+  g.appendChild(
+    el('path', {
+      d: `M${sx} ${sy - r} L${sx + 3} ${sy} L${sx} ${sy + r} L${sx - 3} ${sy} Z`,
+      class: 'sch-north-needle',
+    })
+  );
+  const n = el('text', { x: sx, y: sy - r - 2, class: 'sch-legend-title' });
+  n.textContent = 'N';
+  g.appendChild(n);
+  target.appendChild(g);
+}
+
+/**
+ * The title block, drawn with its scale field visibly empty.
+ *
+ * That emptiness is the most consequential thing on the drawing: a blank SCALE
+ * is why none of these dimensions can become a length, and why this whole layer
+ * exists apart from the measured model. Drawing the field and leaving it blank
+ * states that; omitting the block would hide it.
+ */
+function buildTitleBlock(anno, target) {
+  if (!anno.to) return;
+  const x = Math.min(anno.at.sx, anno.to.sx);
+  const y = Math.min(anno.at.sy, anno.to.sy);
+  const w = Math.abs(anno.to.sx - anno.at.sx);
+  const h = Math.abs(anno.to.sy - anno.at.sy);
+  const g = el('g', { 'data-anno': 'TITLE_BLOCK' });
+  g.appendChild(el('rect', { x, y, width: w, height: h, class: 'sch-anno-box' }));
+  g.appendChild(el('line', { x1: x, y1: y + h / 2, x2: x + w, y2: y + h / 2, class: 'sch-anno-box' }));
+  g.appendChild(el('line', { x1: x + w * 0.55, y1: y, x2: x + w * 0.55, y2: y + h, class: 'sch-anno-box' }));
+  const scale = el('text', {
+    x: x + w * 0.57 + 2,
+    y: y + h * 0.36,
+    class: 'sch-anno',
+    'data-title-field': 'SCALE',
+  });
+  scale.textContent = 'SCALE';
+  g.appendChild(scale);
+  const blank = el('text', { x: x + w * 0.57 + 2, y: y + h * 0.86, class: 'sch-anno-blank' });
+  blank.textContent = 'blank on the source';
+  g.appendChild(blank);
+  target.appendChild(g);
+}
+
 function buildSvg() {
   const next = el('svg', {
     xmlns: NS,
@@ -158,6 +287,8 @@ function buildSvg() {
     'aria-label':
       'Schematic reference drawing of the factory floor. Area names are listed in the panel; this drawing carries no measured dimensions.',
   });
+
+  next.appendChild(buildHatchPatterns());
 
   // One group per concern, so a visibility toggle is a single attribute on a
   // group rather than a walk over hundreds of elements.
@@ -265,6 +396,23 @@ function buildSvg() {
       target.appendChild(
         el('line', { x1: anno.at.sx, y1: anno.at.sy, x2: anno.to.sx, y2: anno.to.sy, class: 'sch-dim' })
       );
+      // End ticks perpendicular to the run, as the reference draws them.
+      const dx = anno.to.sx - anno.at.sx;
+      const dy = anno.to.sy - anno.at.sy;
+      const len = Math.hypot(dx, dy) || 1;
+      const nx = (-dy / len) * 2;
+      const ny = (dx / len) * 2;
+      for (const end of [anno.at, anno.to]) {
+        target.appendChild(
+          el('line', {
+            x1: end.sx - nx,
+            y1: end.sy - ny,
+            x2: end.sx + nx,
+            y2: end.sy + ny,
+            class: 'sch-dim',
+          })
+        );
+      }
       if (anno.text) {
         const t = el('text', {
           x: (anno.at.sx + anno.to.sx) / 2,
@@ -278,17 +426,17 @@ function buildSvg() {
       }
       continue;
     }
-    if (anno.to) {
-      target.appendChild(
-        el('rect', {
-          x: Math.min(anno.at.sx, anno.to.sx),
-          y: Math.min(anno.at.sy, anno.to.sy),
-          width: Math.abs(anno.to.sx - anno.at.sx),
-          height: Math.abs(anno.to.sy - anno.at.sy),
-          class: 'sch-anno-box',
-          'data-anno': anno.kind,
-        })
-      );
+    if (anno.kind === 'LEGEND') {
+      buildLegend(anno, target);
+      continue;
+    }
+    if (anno.kind === 'NORTH') {
+      buildNorth(anno, target);
+      continue;
+    }
+    if (anno.kind === 'TITLE_BLOCK') {
+      buildTitleBlock(anno, target);
+      continue;
     }
     const label = el('text', { x: anno.at.sx + 3, y: anno.at.sy + 9, class: 'sch-anno', 'data-anno-text': anno.kind });
     label.textContent = anno.kind === 'TIMESTAMP' ? snapshotTimestamp() : anno.kind.replace(/_/g, ' ');
@@ -504,6 +652,9 @@ async function boot() {
     countLabels: () => (svg ? svg.querySelectorAll('[data-area-label]').length : 0),
     countDimensions: () => (svg ? svg.querySelectorAll('.sch-dim').length : 0),
     countBanks: () => (svg ? svg.querySelectorAll('[data-bank-id]').length : 0),
+    countLegendRows: () => (svg ? svg.querySelectorAll('[data-legend-swatch]').length : 0),
+    legendStates: () =>
+      svg ? [...svg.querySelectorAll('[data-legend-swatch]')].map((n) => n.dataset.legendSwatch) : [],
     countCells: () => (svg ? svg.querySelectorAll('.sch-cell').length : 0),
     bankIds: () => (svg ? [...svg.querySelectorAll('[data-bank-id]')].map((n) => n.dataset.bankId) : []),
   };

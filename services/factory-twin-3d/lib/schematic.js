@@ -50,7 +50,15 @@ const ALLOWED_SOURCE_CLASS = new Set(Object.values(SOURCE_CLASS));
  * file cannot introduce a state name and therefore cannot introduce an output
  * value the renderer has no styling for.
  */
-const ALLOWED_STATE = new Set(['OFF', 'DOWN', 'IDLE', 'INITIAL_PM_STOP', 'RUN', 'UNDEFINED']);
+const LEGEND_STATES = Object.freeze([
+  { state: 'OFF', label: 'Off' },
+  { state: 'DOWN', label: 'Down' },
+  { state: 'IDLE', label: 'Idle' },
+  { state: 'INITIAL_PM_STOP', label: 'Initial, PM, Stop' },
+  { state: 'RUN', label: 'Run' },
+  { state: 'UNDEFINED', label: 'Undefined' },
+]);
+const ALLOWED_STATE = new Set(LEGEND_STATES.map((s) => s.state));
 
 /** What the drawing says about itself, rather than about the factory. */
 const ALLOWED_ANNOTATION_KIND = new Set(['LEGEND', 'TIMESTAMP', 'DIMENSION', 'NORTH', 'TITLE_BLOCK']);
@@ -317,6 +325,16 @@ function projectSchematic(doc) {
     // ever sees the response still knows what space these numbers are in.
     coordinate_space: 'SCHEMATIC_NOT_PHYSICAL',
     extent: { sx: SCHEMATIC_MAX_X, sy: SCHEMATIC_MAX_Y },
+    // The legend the reference prints, in its own order. Fixed in code rather
+    // than read from the private document: these are the six operational words
+    // the drawing defines, and serving them from a frozen list means a data
+    // file can neither add a seventh nor rename one into free text.
+    //
+    // Publishing the vocabulary is not publishing state. No cell here carries a
+    // status: the two renders disagree about status, and none was transcribed,
+    // so every cell is UNDEFINED -- which is the honest reading and happens to
+    // be exactly what the drawing's own UNDEFINED swatch looks like.
+    legend_states: LEGEND_STATES.map((s) => ({ state: s.state, label: s.label })),
     snapshots: projectAll(d.snapshots, projectSnapshot),
     boundary: projectBoundary(d.boundary),
     areas: projectAll(d.areas, projectArea),
@@ -330,6 +348,7 @@ function projectSchematic(doc) {
 module.exports = {
   SOURCE_CLASS,
   ALLOWED_STATE,
+  LEGEND_STATES,
   SCHEMATIC_MAX_X,
   SCHEMATIC_MAX_Y,
   point,

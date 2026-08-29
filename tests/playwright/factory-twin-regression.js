@@ -749,6 +749,10 @@ async function run() {
         'every drawing label is classified as an observed label',
         'labels the two renders disagree on remain marked ambiguous',
         'no bank carries a physical dimension field or an IMS identity',
+        'the legend draws all six states the reference defines',
+        'the legend states match the reference vocabulary and its order',
+        'the secondary render carries its own north marker and title block',
+        'the title block shows its scale field, which the source leaves blank',
       ]) {
         skip(label, NO_SCHEMATIC);
       }
@@ -826,6 +830,22 @@ async function run() {
       check(!/"width"|"height"|ims_device_id|IMS_CONNECTED/.test(inSchematic.rawDoc),
         'no bank carries a physical dimension field or an IMS identity');
 
+      // ── Legend ──
+      // The drawing defines six operational states. Publishing that vocabulary
+      // is not publishing state: no cell carries a status, because the two
+      // renders disagree about status and none was transcribed.
+      const legend = await page.evaluate(() => ({
+        rows: window.__schematic.countLegendRows(),
+        states: window.__schematic.legendStates(),
+      }));
+      check(legend.rows === 6, 'the legend draws all six states the reference defines', `${legend.rows}`);
+      check(
+        JSON.stringify(legend.states) ===
+          JSON.stringify(['OFF', 'DOWN', 'IDLE', 'INITIAL_PM_STOP', 'RUN', 'UNDEFINED']),
+        'the legend states match the reference vocabulary and its order',
+        legend.states.join(',')
+      );
+
       // The two renders disagree. Switching must show that difference rather
       // than smoothing it away, and must not disturb the areas they share.
       const other = await page.evaluate(() => {
@@ -849,6 +869,19 @@ async function run() {
           'switching snapshot changes what is drawn without changing the areas',
           `${swapped.dims} vs ${inSchematic.dims} dimension marks`);
         check(swapped.coords === coordsBefore, 'switching snapshot never alters the 3D scene');
+
+        // Annotations that only one render carries must appear only there.
+        // The blank SCALE field is the reason this whole layer exists apart
+        // from the measured model, so it is asserted rather than assumed.
+        const annos = await page.evaluate(() => ({
+          north: document.querySelectorAll('[data-anno="NORTH"]').length,
+          title: document.querySelectorAll('[data-anno="TITLE_BLOCK"]').length,
+          scaleField: document.querySelectorAll('[data-title-field="SCALE"]').length,
+        }));
+        check(annos.north === 1 && annos.title === 1,
+          'the secondary render carries its own north marker and title block');
+        check(annos.scaleField === 1,
+          'the title block shows its scale field, which the source leaves blank');
       }
 
       // Readable at every viewport: labels on screen, nothing overflowing.
