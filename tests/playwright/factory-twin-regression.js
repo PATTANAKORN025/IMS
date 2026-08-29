@@ -201,6 +201,44 @@ async function run() {
   const context = await browser.newContext({ viewport: VIEWPORTS[0] });
   const page = await context.newPage();
 
+  // Service response hygiene. Only meaningful in direct mode: through the proxy
+  // the auth gate answers first, so these assertions would be testing nginx.
+  // Express's defaults are wrong here in two specific ways, and both are
+  // disclosure rather than availability problems -- the default 404 echoes the
+  // requested path back into the body, and the default error handler emits a
+  // stack trace unless NODE_ENV happens to be production.
+  if (DIRECT_URL) {
+    console.log('Service response hygiene:');
+    await page.goto(TWIN_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
+    const probe = 'private/floor1-zones.json';
+    const res = await page.request.get(TWIN_URL + probe, { failOnStatusCode: false });
+    const body = await res.text();
+    check(res.status() === 404, 'a private path is not served', `got ${res.status()}`);
+    check(!body.includes(probe), 'the 404 body does not echo the requested path back');
+    check(!/floor1|private|\.json/i.test(body), 'the 404 body names no private file');
+    check(!/at .*\(.*:\d+:\d+\)/.test(body), 'the 404 body carries no stack trace');
+    check(!/\/app\/|[A-Za-z]:\\/.test(body), 'the 404 body carries no filesystem path');
+    const headers = res.headers();
+    check(!('x-powered-by' in headers), 'the service does not advertise its framework');
+
+    // Every string the geometry route serves must be a safe token. Free text --
+    // a note, a process name, a path -- cannot satisfy this, which is the
+    // property being asserted rather than the absence of any particular word.
+    const strings = await page.evaluate(async () => {
+      const geo = await (await fetch('api/floor-geometry')).json();
+      const out = [];
+      (function walk(o) {
+        if (o === null || o === undefined) return;
+        if (typeof o === 'string') { out.push(o); return; }
+        if (typeof o === 'object') for (const v of Object.values(o)) walk(v);
+      })(geo);
+      return out;
+    });
+    const nonToken = strings.filter((v) => !/^[A-Za-z0-9][A-Za-z0-9_.:-]{0,63}$/.test(v));
+    check(nonToken.length === 0, 'every served geometry string is a safe token', `${nonToken.length} free-text value(s)`);
+  }
+
+
   if (!DIRECT_URL) {
   console.log(`\nLogging in to ${BASE_URL} as ${USER}...`);
   await page.goto(`${BASE_URL}/login`);

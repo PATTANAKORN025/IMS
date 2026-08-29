@@ -37,6 +37,7 @@ run("Factory Twin MES Import Boundary Tests", "node tests/unit/factory-twin-mes-
 run("Factory Twin Geometry Mutation Tests", "node tests/unit/factory-twin-geometry-mutation.test.js");
 run("Factory Twin Diagnostics Sanitization Tests", "node tests/unit/factory-twin-diagnostics.test.js");
 run("Factory Twin Evidence Pipeline Tests", "node tests/unit/factory-twin-evidence.test.js");
+run("Factory Twin Wire Projection Tests", "node tests/unit/factory-twin-wire.test.js");
 
 // 2. Run Linters
 run("Dashboard Linter", "node tests/lint/dashboard-linter.js");

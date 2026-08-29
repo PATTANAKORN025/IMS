@@ -6,6 +6,7 @@ const express = require('express');
 const { Pool } = require('pg');
 const { MachineState, MACHINE_STATE_THEME } = require('./lib/contracts');
 const { buildDiagnostics } = require('./lib/diagnostics');
+const wire = require('./lib/wire');
 
 const PORT = process.env.PORT || 4100;
 
@@ -29,6 +30,10 @@ pool.on('error', (err) => {
 });
 
 const app = express();
+
+// Nothing needs to know which framework serves this, and naming it only helps
+// someone match the service against a vulnerability list.
+app.disable('x-powered-by');
 
 // Aggregate operational counters. Deliberately counts only -- no path, no
 // URL, no identifier, no client detail. Anything richer would turn the
@@ -163,26 +168,28 @@ function loadPrivateZones() {
     for (const c of conflicts) {
       if (c.status === 'CONFLICT') for (const id of c.ids || []) conflicted.add(id);
     }
-    const renderable = zones
-      .filter((z) =>
+    // Validation filter first, then projection. lib/wire rebuilds each zone
+    // field by field: tier and boundary only. Its process type, its printed and
+    // calculated areas and its free-text validation notes are values read from
+    // the confidential drawing, nothing rendered them, and they are no longer
+    // put on the wire at all.
+    const renderable = wire.projectAll(
+      zones.filter((z) =>
         z.renderable === true &&
         (z.confidence === 'HIGH' || z.confidence === 'MEDIUM') &&
         z.status !== 'CONFLICT' &&
         !conflicted.has(z.id) &&
-        z.geometry && Array.isArray(z.geometry.vertices) && z.geometry.vertices.length >= 3)
-      .map((z) => ({
-        id: z.id,
-        type: z.type,
-        confidence: z.confidence,
-        status: z.status,
-        printedAreaM2: z.printedAreaM2,
-        calculatedAreaM2: z.calculatedAreaM2,
-        areaDeltaPct: z.areaDeltaPct,
-        validationNotes: z.validationNotes,
-        geometry: z.geometry,
-      }));
-    const byConfidence = {};
-    for (const z of zones) byConfidence[z.confidence] = (byConfidence[z.confidence] || 0) + 1;
+        z.geometry && Array.isArray(z.geometry.vertices) && z.geometry.vertices.length >= 3),
+      wire.projectFunctionalZone
+    );
+    // Null-prototype accumulator: a confidence value of `__proto__` on a plain
+    // object literal is swallowed by the prototype setter rather than counted,
+    // which loses a zone silently. Counting into a bare object cannot.
+    const byConfidence = Object.create(null);
+    for (const z of zones) {
+      const tier = typeof z.confidence === 'string' ? z.confidence : 'unknown';
+      byConfidence[tier] = (byConfidence[tier] || 0) + 1;
+    }
     return {
       renderable,
       meta: {
@@ -191,8 +198,10 @@ function loadPrivateZones() {
         withheld: zones.length - renderable.length,
         byConfidence,
         // Conflicts are reported, never silently resolved -- the client is
-        // told two candidates exist and that neither was drawn.
-        conflicts: conflicts.map((c) => ({ ids: c.ids, status: c.status, resolution: c.resolution })),
+        // told two candidates exist and that neither was drawn. Ids and status
+        // are enough to say that; the resolution note is author-written free
+        // text and is not carried, matching lib/diagnostics.
+        conflicts: wire.projectAll(conflicts, wire.projectConflict),
       },
     };
   } catch (err) {
@@ -569,7 +578,6 @@ app.get('/api/floor-geometry', (req, res) => {
   if (!geometry) {
     return res.status(200).json({
       envelope: null,
-      camera: null,
       columns: [],
       zones: [],
       slots: [],
@@ -578,38 +586,24 @@ app.get('/api/floor-geometry', (req, res) => {
     });
   }
   const mapping = loadPrivateAssetMapping();
-  // Normalizes each slot to a stable wire shape (position/footprint)
-  // regardless of the private file's own internal shape (e.g. a
-  // transcription file may use size:{width,depth}+height instead of
-  // footprint:{width,depth,height}) -- the renderer only ever needs to
-  // know one shape.
-  const slots = geometry.slots.map((slot) => {
-    const deviceId = mapping[slot.slot_id] || null;
-    const footprint = slot.footprint || {
-      width: slot.size?.width ?? 1,
-      depth: slot.size?.depth ?? 1,
-      height: slot.height ?? 1,
-    };
-    return {
-      ...slot,
-      footprint,
-      ims_device_id: deviceId,
-      status: deviceId ? 'IMS_CONNECTED' : 'UNMAPPED',
-    };
-  });
-  // Explicit allowlist rather than spreading the private document. Spreading
-  // means any field ever added to the private file is published the moment it
-  // is written -- including one that carries a source path, a real name, or an
-  // internal note. Nothing in the file does today; this makes that a decision
-  // rather than a default. A new field must be added here to be served.
+  // Allowlist at BOTH levels, not just this one. Naming the top-level fields
+  // stopped a whole private document being published by one spread; it did not
+  // stop the level below, where each slot was itself spread. lib/wire rebuilds
+  // every slot, column and zone field by field, so a field added to a private
+  // record cannot reach the browser the moment it is written. It also
+  // normalizes each slot to one wire shape regardless of the private file's own
+  // internal shape, which the renderer relies on.
+  //
+  // footprint_polygon, grid and camera were served here and consumed by
+  // nothing. The first two are traced facility geometry; publishing measured
+  // outlines that no client reads is disclosure with no purpose, so they are no
+  // longer served. Their counts still appear in /api/diagnostics, derived
+  // server-side.
   res.status(200).json({
-    envelope: geometry.envelope ?? null,
-    camera: geometry.camera ?? null,
-    footprint_polygon: geometry.footprint_polygon ?? null,
-    grid: geometry.grid ?? null,
-    columns: geometry.columns ?? [],
-    zones: geometry.zones ?? [],
-    slots,
+    envelope: wire.projectEnvelope(geometry.envelope),
+    columns: wire.projectAll(geometry.columns, wire.projectColumn),
+    zones: wire.projectAll(geometry.zones, wire.projectZoneBox),
+    slots: wire.projectAll(geometry.slots, wire.projectSlot, mapping),
     functional_zones: zoneLayer.renderable,
     functional_zones_meta: zoneLayer.meta,
   });
@@ -655,6 +649,31 @@ app.get('/healthz', async (req, res) => {
   } catch (err) {
     res.status(503).json({ status: 'db unreachable' });
   }
+});
+
+// Terminal handlers. Express's defaults are wrong for this service in two
+// specific ways, and both are disclosure rather than availability problems:
+//
+//   - the default 404 page echoes the requested path back into the body, which
+//     reflects caller-controlled text and, for a probe like
+//     /private/floor1-geometry.json, quotes a private filename back at whoever
+//     guessed it.
+//   - the default error handler emits err.stack unless NODE_ENV is production.
+//     Relying on an environment variable being set correctly is not a control;
+//     a stack trace names source files, line numbers and the container's
+//     directory layout.
+//
+// Both are replaced with fixed strings that carry nothing from the request.
+app.use((req, res) => {
+  res.status(404).json({ error: 'not found' });
+});
+
+// eslint-disable-next-line no-unused-vars -- Express identifies an error
+// handler by its arity; dropping `next` silently turns this back into ordinary
+// middleware and reinstates the default handler.
+app.use((err, req, res, next) => {
+  console.error(`unhandled request error: ${err && err.message}`);
+  res.status(500).json({ error: 'internal error' });
 });
 
 refreshDevices().then(() => {
