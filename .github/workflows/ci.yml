@@ -158,6 +158,9 @@ jobs:
       - name: Run Factory Twin Wire Projection Tests
         run: node tests/unit/factory-twin-wire.test.js
 
+      - name: Run Factory Twin Schematic Layer Tests
+        run: node tests/unit/factory-twin-schematic.test.js
+
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   # Stage 3: Integration & Chaos Test
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

@@ -71,6 +71,7 @@ const LAYERS = ['shell', 'columns', 'functional', 'slots', 'machines', 'telemetr
 
 const NO_GEOMETRY = 'no private geometry is deployed here';
 const NO_DEVICES = 'no monitored devices in this database';
+const NO_SCHEMATIC = 'no schematic transcription is deployed here';
 
 let failures = 0;
 let skipped = 0;
@@ -192,6 +193,7 @@ async function run() {
       'api/placement',
       'api/state',
       'api/diagnostics',
+      'api/floor-schematic',
       'private-assets/floor1-geometry.json',
     ]) {
       const res = await page.goto(TWIN_URL + path, { waitUntil: 'domcontentloaded' }).catch(() => null);
@@ -548,6 +550,64 @@ async function run() {
       baseline.api.zoneNames.every((n) => !diagText.includes(n)),
       'no zone name appears in diagnostics'
     );
+    // ── Schematic reference layer ──
+    // A second spatial model whose only safety property is that it can never be
+    // mistaken for the measured one. These assert the separation, not the
+    // drawing.
+    const sch = await page.evaluate(async () => {
+      const r = await fetch('api/floor-schematic');
+      if (!r.ok) return null;
+      const j = await r.json();
+      const areas = Array.isArray(j.areas) ? j.areas : [];
+      const snapshots = Array.isArray(j.snapshots) ? j.snapshots : [];
+      return {
+        raw: JSON.stringify(j),
+        space: j.coordinate_space,
+        areas: areas.length,
+        snapshots: snapshots.map((s) => s.id),
+        names: areas.map((a) => a.name).filter(Boolean),
+        classes: [...new Set(areas.map((a) => a.source_class))],
+        annotations: Array.isArray(j.annotations) ? j.annotations.length : 0,
+      };
+    });
+    if (!sch || sch.areas === 0) {
+      // No schematic transcription deployed -- the default for a public clone,
+      // exactly as with the measured geometry. Reported, never passed.
+      for (const label of [
+        'the schematic payload names its own coordinate space',
+        'the schematic emits no physical coordinate field',
+        'every schematic area claims only SCHEMATIC_OBSERVED',
+        'no schematic record carries an IMS identity',
+        'every schematic area name is a drawing label, not free text',
+        'both reference snapshots coexist without being merged',
+        'no schematic area name appears in diagnostics',
+      ]) {
+        skip(label, NO_SCHEMATIC);
+      }
+    } else {
+    check(sch.space === 'SCHEMATIC_NOT_PHYSICAL', 'the schematic payload names its own coordinate space', sch.space);
+    check(!/"[xyz]":/.test(sch.raw), 'the schematic emits no physical coordinate field');
+    check(
+      sch.classes.every((c) => c === 'SCHEMATIC_OBSERVED' || c === null),
+      'every schematic area claims only SCHEMATIC_OBSERVED',
+      sch.classes.join(',')
+    );
+    check(!/IMS_CONNECTED|ims_device_id/.test(sch.raw), 'no schematic record carries an IMS identity');
+    check(
+      sch.names.every((n) => nameGuard.test(n)),
+      'every schematic area name is a drawing label, not free text',
+      `${sch.names.length} named`
+    );
+    // Two renders claiming one instant and disagreeing. Served as two, never
+    // reconciled into one.
+    check(sch.snapshots.length === 2 && new Set(sch.snapshots).size === 2,
+      'both reference snapshots coexist without being merged', sch.snapshots.join(','));
+    check(
+      sch.names.every((n) => !diagText.includes(n)),
+      'no schematic area name appears in diagnostics'
+    );
+    }
+
     // Today this is zero, and that is the honest state: the names exist on a
     // schematic that shares no reference frame with these measured polygons,
     // so attaching one would be inventing the correspondence. If this ever

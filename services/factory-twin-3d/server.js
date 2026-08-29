@@ -7,6 +7,7 @@ const { Pool } = require('pg');
 const { MachineState, MACHINE_STATE_THEME } = require('./lib/contracts');
 const { buildDiagnostics } = require('./lib/diagnostics');
 const wire = require('./lib/wire');
+const schematic = require('./lib/schematic');
 
 const PORT = process.env.PORT || 4100;
 
@@ -658,6 +659,40 @@ app.get('/api/floor-geometry', (req, res) => {
     slots: wire.projectAll(geometry.slots, wire.projectSlot, mapping),
     functional_zones: zoneLayer.renderable,
     functional_zones_meta: zoneLayer.meta,
+  });
+});
+
+// Reads private/floor1-schematic.json if present -- the schematic reference
+// transcription. Same convention as every other private loader: missing or
+// malformed is the expected default for a public clone and returns null, never
+// a throw.
+//
+// This document is NOT geometry. It holds drawing coordinates from a source
+// that declares no scale, and it is kept in its own file precisely so that it
+// cannot be confused with, or accidentally merged into, the measured model.
+function loadPrivateSchematic() {
+  const filePath = path.join(PRIVATE_DIR, 'floor1-schematic.json');
+  if (!fs.existsSync(filePath)) return null;
+  try {
+    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  } catch (err) {
+    console.error(`private schematic file present but unusable: ${err.message}`);
+    return null;
+  }
+}
+
+// The schematic reference layer, served separately from /api/floor-geometry
+// and never mixed into it.
+//
+// Two things make the separation real rather than stated. The route is its own
+// route, so nothing consuming geometry receives schematic coordinates by
+// accident. And the payload names its own space -- coordinate_space is
+// SCHEMATIC_NOT_PHYSICAL -- so a consumer that only ever sees the response
+// still knows these numbers are not metres.
+app.get('/api/floor-schematic', (req, res) => {
+  res.status(200).json({
+    ...schematic.projectSchematic(loadPrivateSchematic()),
+    generated_at: new Date().toISOString(),
   });
 });
 
