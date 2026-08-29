@@ -31,6 +31,9 @@ const snapshotControls = document.getElementById('snapshot-controls');
 const conflictEl = document.getElementById('schematic-conflict');
 const optionsEl = document.getElementById('schematic-options');
 const fitButton = document.getElementById('schematic-fit');
+const inspectorEl = document.getElementById('schematic-inspector');
+const bannerMode = document.getElementById('eb-mode');
+const bannerSnapshot = document.getElementById('eb-snapshot');
 const sceneEl = document.getElementById('scene');
 
 /** Controls that belong to the 3D view and mean nothing in schematic mode. */
@@ -502,6 +505,7 @@ function buildSvg() {
   host.replaceChildren(...(badge ? [badge] : []), next);
   svg = next;
   attachPanZoom();
+  attachSelection();
   applyOptions();
   fit();
 }
@@ -580,6 +584,144 @@ function attachPanZoom() {
   );
 }
 
+// ── Selection and provenance ──
+//
+// Every row this panel shows is a claim about where something came from, never
+// about what it is in the factory. The two link rows exist to say UNMAPPED out
+// loud: an operator reading a drawing label should be told, in the same breath,
+// that it names nothing in the monitoring system.
+
+let selectedEl = null;
+
+function row(key, value, cls) {
+  const r = document.createElement('div');
+  r.className = 'si-row';
+  const k = document.createElement('span');
+  k.className = 'si-k';
+  k.textContent = key;
+  const v = document.createElement('span');
+  v.className = cls ? `si-v ${cls}` : 'si-v';
+  v.textContent = value;
+  r.append(k, v);
+  return r;
+}
+
+function clearSelection() {
+  if (selectedEl) selectedEl.classList.remove('sch-selected');
+  selectedEl = null;
+  if (inspectorEl) inspectorEl.hidden = true;
+}
+
+function showProvenance(title, rows) {
+  if (!inspectorEl) return;
+  inspectorEl.replaceChildren();
+  const h = document.createElement('div');
+  h.className = 'si-title';
+  h.textContent = title;
+  inspectorEl.appendChild(h);
+  for (const r of rows) inspectorEl.appendChild(r);
+  inspectorEl.hidden = false;
+}
+
+/** The render a selection came from, named as a snapshot rather than a file. */
+function activeSourceLabel() {
+  return snapshotLabel(activeSnapshot);
+}
+
+function selectArea(area, node) {
+  markSelected(node);
+  showProvenance(area.name || area.id, [
+    row('Object', 'Schematic area'),
+    row('Source', `Reference render ${activeSourceLabel()}`),
+    row('Classification', area.source_class || 'UNCLASSIFIED'),
+    row('Confidence', area.confidence || 'unstated'),
+    row('Snapshot', activeSourceLabel()),
+    row('Physical link', 'UNMAPPED', 'si-unmapped'),
+    row('IMS link', 'UNMAPPED', 'si-unmapped'),
+  ]);
+}
+
+function selectBank(bank, node) {
+  markSelected(node);
+  const labels = (bank.labels || [])
+    .map((l) => (l.ambiguous && l.variants.length > 1 ? l.variants.join(' / ') : l.text))
+    .join(', ');
+  const conflicts = (bank.cell_conflicts || []).length;
+  const rows = [
+    row('Object', 'Schematic equipment bank'),
+    row('Cells', `${bank.columns * bank.rows} (${bank.columns} x ${bank.rows})`),
+    row('Source', `Reference render ${activeSourceLabel()}`),
+    row('Classification', bank.source_class || 'UNCLASSIFIED'),
+    row('Grouping', bank.grouping_class || 'UNCLASSIFIED'),
+    // Said plainly, because a rectangle on screen looks like a measurement.
+    row('Dimensions', `${bank.dimension_class || 'UNCLASSIFIED'} — presentation only, not measured`),
+  ];
+  if (labels) rows.push(row('Drawing labels', labels));
+  if ((bank.labels || []).some((l) => l.ambiguous)) {
+    rows.push(row('Label reading', 'AMBIGUOUS — sources disagree', 'si-conflict'));
+  }
+  if (conflicts > 0) {
+    rows.push(row('Cell values', `CONFLICTING SOURCE — ${conflicts} cell(s)`, 'si-conflict'));
+  }
+  rows.push(row('Physical link', 'UNMAPPED', 'si-unmapped'));
+  rows.push(row('IMS link', 'UNMAPPED', 'si-unmapped'));
+  showProvenance(bank.id, rows);
+}
+
+function selectCell(bank, index, node) {
+  markSelected(node);
+  const readings = Object.entries(bank.cell_values || {}).map(([snap, list]) => {
+    const v = list[index];
+    return row(snapshotLabel(snap), v === null || v === undefined ? 'UNREADABLE' : v,
+      v === null || v === undefined ? 'si-unmapped' : null);
+  });
+  const conflicted = (bank.cell_conflicts || []).includes(index);
+  const rows = [
+    row('Object', 'Schematic cell'),
+    row('Bank', bank.id),
+    row('Source', `Reference render ${activeSourceLabel()}`),
+    row('Classification', conflicted ? 'CONFLICTING' : 'SCHEMATIC_OBSERVED',
+      conflicted ? 'si-conflict' : null),
+    ...readings,
+    row('Physical link', 'UNMAPPED', 'si-unmapped'),
+    row('IMS link', 'UNMAPPED', 'si-unmapped'),
+  ];
+  if (readings.length === 0) {
+    rows.splice(3, 0, row('Value', 'NOT TRANSCRIBED', 'si-unmapped'));
+  }
+  showProvenance(`${bank.id} · cell ${index}`, rows);
+}
+
+function markSelected(node) {
+  if (selectedEl) selectedEl.classList.remove('sch-selected');
+  selectedEl = node;
+  if (node) node.classList.add('sch-selected');
+}
+
+/** Click routing. Cell first, then bank, then area -- most specific wins. */
+function attachSelection() {
+  svg.addEventListener('click', (ev) => {
+    const cell = ev.target.closest('[data-cell-value], .sch-cell');
+    const bankNode = ev.target.closest('[data-bank-id]');
+    const areaNode = ev.target.closest('[data-area-id]');
+    if (bankNode) {
+      const bank = (doc.banks || []).find((b) => b.id === bankNode.dataset.bankId);
+      if (!bank) return;
+      const cells = [...bankNode.querySelectorAll('.sch-cell')];
+      const i = cell ? cells.indexOf(cell.closest('.sch-cell')) : -1;
+      if (i >= 0) selectCell(bank, i, cell.closest('.sch-cell'));
+      else selectBank(bank, bankNode);
+      return;
+    }
+    if (areaNode) {
+      const area = (doc.areas || []).find((a) => a.id === areaNode.dataset.areaId);
+      if (area) selectArea(area, areaNode);
+      return;
+    }
+    clearSelection();
+  });
+}
+
 // ── Snapshot selection ──
 
 function buildSnapshotControls() {
@@ -598,10 +740,12 @@ function buildSnapshotControls() {
 
 function selectSnapshot(id) {
   activeSnapshot = id;
+  clearSelection();
   for (const btn of snapshotControls.querySelectorAll('button[data-snapshot]')) {
     btn.setAttribute('aria-pressed', String(btn.dataset.snapshot === id));
   }
   updateConflictNotice();
+  updateBanner('schematic');
   buildSvg();
 }
 
@@ -658,6 +802,28 @@ function setMode(mode) {
     btn.setAttribute('aria-pressed', String(btn.dataset.mode === mode));
   }
   if (schematic && !svg && doc) buildSvg();
+  if (!schematic) clearSelection();
+  updateBanner(mode);
+}
+
+/**
+ * Keeps the top banner honest about which claim is on screen.
+ *
+ * The mode label is the whole point: MEASURED and NOT TO SCALE are different
+ * kinds of statement about the same floor, and which one you are reading should
+ * never require looking at the drawing to work out.
+ */
+function updateBanner(mode) {
+  if (bannerMode) {
+    bannerMode.textContent =
+      mode === 'schematic' ? 'SCHEMATIC — NOT TO SCALE' : 'PHYSICAL — MEASURED';
+    bannerMode.classList.toggle('eb-warn', mode === 'schematic');
+  }
+  if (bannerSnapshot) {
+    const show = mode === 'schematic' && activeSnapshot;
+    bannerSnapshot.hidden = !show;
+    if (show) bannerSnapshot.textContent = `REFERENCE SNAPSHOT ${snapshotLabel(activeSnapshot)}`;
+  }
 }
 
 modeControls?.addEventListener('click', (ev) => {
@@ -726,6 +892,19 @@ async function boot() {
     countBanks: () => (svg ? svg.querySelectorAll('[data-bank-id]').length : 0),
     countLegendRows: () => (svg ? svg.querySelectorAll('[data-legend-swatch]').length : 0),
     countCellValues: () => (svg ? svg.querySelectorAll('[data-cell-value]').length : 0),
+    getInspectorText: () => (inspectorEl && !inspectorEl.hidden ? inspectorEl.textContent : null),
+    selectFirstBank: () => {
+      const node = svg && svg.querySelector('[data-bank-id]');
+      if (!node) return null;
+      node.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      return node.dataset.bankId;
+    },
+    selectFirstArea: () => {
+      const node = svg && svg.querySelector('[data-area-id]');
+      if (!node) return null;
+      node.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      return node.dataset.areaId;
+    },
     countCellConflicts: () => (svg ? svg.querySelectorAll('[data-cell-conflict]').length : 0),
     cellValueTexts: () =>
       svg ? [...svg.querySelectorAll('[data-cell-value]')].map((n) => n.textContent) : [],

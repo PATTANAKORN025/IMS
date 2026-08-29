@@ -32,6 +32,7 @@ The high-level design, business value, and product capabilities.
 - **[Factory Twin Operator Guide](architecture/FACTORY_TWIN_OPERATOR_GUIDE.md)** - How to read the twin without over-reading it: views, layers, evidence legend, inspector.
 - **[Factory Twin Security Model](architecture/FACTORY_TWIN_SECURITY_MODEL.md)** - Trust boundaries, the 401 requirement, response shaping, private geometry handling.
 - **[Factory Twin Evidence Requirements](architecture/FACTORY_TWIN_EVIDENCE_REQUIREMENTS.md)** - What is blocked, what would unlock it, and the evidence promotion contract.
+- **[Factory Twin Provenance](architecture/FACTORY_TWIN_PROVENANCE.md)** - The four namespaces, the classification vocabulary, and why no spatial IMS mapping exists.
 - **[Factory Twin Visual Fidelity](architecture/FACTORY_TWIN_VISUAL_FIDELITY.md)** - How closely the schematic view reproduces its reference renders, element by element.
 - **[Factory Twin Visual QA](architecture/FACTORY_TWIN_VISUAL_QA.md)** - Repeatable visual and performance QA procedure, regression strategy and baseline.
 - **[Business ROI](business/BUSINESS_VALUE_ROI.md)** - Business impact and return on investment.

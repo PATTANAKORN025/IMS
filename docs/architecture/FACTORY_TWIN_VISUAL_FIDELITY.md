@@ -157,6 +157,18 @@ None of these is engineering work. The renderer is ready for all three.
 
 ---
 
+## Deliberately not built
+
+Two items requested during this work were not implemented, because each would
+have required inventing evidence rather than reproducing it.
+
+| Not built | Why |
+|---|---|
+| **Solid machine bodies on the measured floor** | The reference shows equipment as flat blocks on a plan; the plan set carries no equipment elevation. Extruding the 242 measured slots into cabinets would put a height on the floor that nobody measured, and a silhouette implying a height reads as evidence whatever the metadata says. Slots stay flat pads, which is why they were made flat pads. |
+| **A single 3D world containing both models** | A COMBINED view that draws schematic banks alongside measured geometry states, by placement alone, that the two are registered. They are not, and no amount of labelling undoes what an eye reads from a shared coordinate frame. The two-mode split is the honest form. A side-by-side split-screen would be a safe way to show both at once and is the recommended next step if one view is wanted. |
+
+---
+
 ## What this page does not claim
 
 - Not that the schematic is to scale. Its source states no scale.

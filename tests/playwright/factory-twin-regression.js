@@ -757,6 +757,17 @@ async function run() {
         'the conflict notice names the conflict and the declared instant',
         "the other snapshot shows its own cell values, not the first one's",
         'both snapshots transcribe the same cells',
+        'selecting a bank states its evidence classification',
+        'selecting a bank states that its grouping is presentation only',
+        'selecting a bank states that its dimensions are not measured',
+        'a selected bank reports its physical link as unmapped',
+        'a selected bank reports its IMS link as unmapped',
+        'no selected schematic object names a monitored device',
+        'selecting an area reports it as unmapped too',
+        'the banner says not to scale in schematic mode',
+        'the banner states zero confirmed mappings',
+        'the banner names the active reference snapshot',
+        'the banner returns to the measured claim outside schematic mode',
         'the legend draws all six states the reference defines',
         'the legend states match the reference vocabulary and its order',
         'the secondary render carries its own north marker and title block',
@@ -794,6 +805,18 @@ async function run() {
         };
       });
       check(inSchematic.mode === 'schematic', 'the schematic mode activates');
+      // The banner states which kind of claim is on screen, so nobody has to
+      // infer it from the drawing.
+      const banner = await page.evaluate(() => ({
+        mode: document.getElementById('eb-mode').textContent,
+        mappings: document.getElementById('eb-mappings').textContent,
+        snapshot: document.getElementById('eb-snapshot').textContent,
+        snapshotHidden: document.getElementById('eb-snapshot').hidden,
+      }));
+      check(/NOT TO SCALE/.test(banner.mode), 'the banner says not to scale in schematic mode', banner.mode);
+      check(/0 CONFIRMED/.test(banner.mappings), 'the banner states zero confirmed mappings', banner.mappings);
+      check(!banner.snapshotHidden && /REFERENCE SNAPSHOT/.test(banner.snapshot),
+        'the banner names the active reference snapshot', banner.snapshot);
       check(inSchematic.coords === coordsBefore,
         'entering schematic mode moves nothing in the 3D scene');
       check(inSchematic.areasDrawn === inSchematic.apiAreas,
@@ -884,6 +907,32 @@ async function run() {
       check(cells.badge, 'the not-to-scale notice is always present in schematic mode');
       check(/REFERENCE CONFLICT/.test(cells.notice),
         'the conflict notice names the conflict and the declared instant');
+
+      // ── Provenance on selection ──
+      // Every row is a claim about where something came from. The two link
+      // rows exist to say UNMAPPED out loud: a drawing label names nothing in
+      // the monitoring system, and the panel has to say so.
+      const prov = await page.evaluate(() => {
+        const S = window.__schematic;
+        const bank = S.selectFirstBank();
+        const bankText = S.getInspectorText();
+        const area = S.selectFirstArea();
+        const areaText = S.getInspectorText();
+        return { bank, bankText, area, areaText };
+      });
+      check(Boolean(prov.bank) && /SCHEMATIC_OBSERVED/.test(prov.bankText),
+        'selecting a bank states its evidence classification');
+      check(/SCHEMATIC_PRESENTATION_GROUP/.test(prov.bankText),
+        'selecting a bank states that its grouping is presentation only');
+      check(/presentation only, not measured/.test(prov.bankText),
+        'selecting a bank states that its dimensions are not measured');
+      check(/Physical link\s*UNMAPPED/.test(prov.bankText),
+        'a selected bank reports its physical link as unmapped');
+      check(/IMS link\s*UNMAPPED/.test(prov.bankText),
+        'a selected bank reports its IMS link as unmapped');
+      check(!/LDI-\d/.test(prov.bankText), 'no selected schematic object names a monitored device');
+      check(Boolean(prov.area) && /UNMAPPED/.test(prov.areaText),
+        'selecting an area reports it as unmapped too');
 
       const legend = await page.evaluate(() => ({
         rows: window.__schematic.countLegendRows(),
@@ -983,6 +1032,12 @@ async function run() {
       }));
       check(back.mode === 'physical' && back.hidden && back.controls,
         'leaving schematic mode restores the physical controls');
+      const backBanner = await page.evaluate(() => ({
+        mode: document.getElementById('eb-mode').textContent,
+        snapshotHidden: document.getElementById('eb-snapshot').hidden,
+      }));
+      check(/MEASURED/.test(backBanner.mode) && backBanner.snapshotHidden,
+        'the banner returns to the measured claim outside schematic mode', backBanner.mode);
       check(back.coords === coordsBefore,
         'a full round trip through the schematic leaves every coordinate identical');
     }

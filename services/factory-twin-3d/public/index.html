@@ -126,6 +126,46 @@
     #schematic-options { margin-top: 6px; border: 1px solid #334155; border-radius: 4px; padding: 6px 8px; }
     #schematic-options legend { padding: 0 4px; color: #94a3b8; font-size: 11px; }
     #schematic-options label { display: block; font-size: 12px; color: #e2e8f0; }
+    #evidence-banner {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 8px;
+      margin: 2px 0 8px 0;
+      font-size: 10px;
+      letter-spacing: 0.04em;
+    }
+    .eb-item {
+      padding: 2px 6px;
+      border: 1px solid #334155;
+      border-radius: 3px;
+      color: #cbd5e1;
+      background: #1e293b;
+    }
+    .eb-warn { border-color: #b45309; color: #fbbf24; }
+    .hud-section {
+      margin: 10px 0 2px 0;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #94a3b8;
+    }
+    #schematic-inspector {
+      margin-top: 6px;
+      padding: 7px 9px;
+      border: 1px solid #475569;
+      border-radius: 4px;
+      font-size: 11px;
+      line-height: 1.5;
+      color: #e2e8f0;
+    }
+    #schematic-inspector .si-title { font-weight: 700; margin-bottom: 4px; }
+    #schematic-inspector .si-row { display: flex; gap: 6px; }
+    #schematic-inspector .si-k { color: #94a3b8; min-width: 96px; }
+    #schematic-inspector .si-v { color: #f1f5f9; }
+    #schematic-inspector .si-unmapped { color: #fbbf24; }
+    #schematic-inspector .si-conflict { color: #fb923c; }
+    .sch-selected { stroke: #38bdf8 !important; stroke-width: 2 !important; }
     #schematic-conflict strong { display: block; letter-spacing: 0.04em; margin-bottom: 3px; }
     #schematic-conflict {
       margin-top: 6px;
@@ -389,7 +429,24 @@
 
   <div id="hud">
     <h1>IMS Factory 3D Digital Twin — Floor 1</h1>
+    <!-- The three facts an operator needs before reading anything else: which
+         claim they are looking at, that nothing is confirmed, and which source
+         render is selected. Stated once, at the top, rather than discovered. -->
+    <div id="evidence-banner">
+      <span class="eb-item"><b>FLOOR 1</b></span>
+      <span class="eb-item" id="eb-mode">PHYSICAL — MEASURED</span>
+      <span class="eb-item eb-warn" id="eb-mappings">MAPPINGS: 0 CONFIRMED</span>
+      <span class="eb-item" id="eb-snapshot" hidden></span>
+    </div>
+    <!-- Telemetry is real; its position is not. Naming the section for what is
+         missing keeps a live value from reading as a located machine. -->
+    <h2 class="hud-section">Unmapped IMS devices</h2>
     <div id="summary-line">Loading…</div>
+    <div id="unmapped-note" class="hint">
+      Spatial mapping unavailable. These devices report live state, but no
+      authoritative record places any of them on this floor, so none is drawn
+      at a real position.
+    </div>
     <div id="machine-list"></div>
     <div class="hint">Click a box in the scene to open that machine's Machine Snapshot drill-down. Live data polls every 5s.</div>
     <div id="status-line" class="hint"></div>
@@ -421,6 +478,9 @@
          offers a control that does nothing. -->
     <div id="schematic-panel" hidden>
       <div id="snapshot-controls" role="group" aria-label="Reference snapshot"></div>
+      <!-- Provenance for whatever is selected. Every row is a claim about where
+           the thing came from, never about what it is in the factory. -->
+      <div id="schematic-inspector" hidden aria-live="polite"></div>
       <div id="schematic-conflict" hidden></div>
       <fieldset id="schematic-options">
         <legend>Show</legend>
