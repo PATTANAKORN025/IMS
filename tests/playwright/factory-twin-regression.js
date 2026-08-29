@@ -67,7 +67,7 @@ const VIEWPORTS = [
 // The toggles an operator actually has. Sub-layers exist because the four
 // coarse layers each bundled two different evidence classes; the test drives
 // the real controls rather than the internal grouping.
-const LAYERS = ['shell', 'columns', 'functional', 'slots', 'machines', 'telemetry'];
+const LAYERS = ['shell', 'columns', 'functional', 'slots', 'machines', 'telemetry', 'presentation'];
 
 const NO_GEOMETRY = 'no private geometry is deployed here';
 const NO_DEVICES = 'no monitored devices in this database';
@@ -134,6 +134,7 @@ async function snapshot(page) {
       coords: T.snapshotCoordinates(),
       resources: T.resourceStats(),
       footprintMeshes: T.footprintMeshes.length,
+      presentationMeshes: T.presentationMeshes ? T.presentationMeshes.length : 0,
       structuralGrid: (() => {
         const g = T.getStructuralGrid();
         return g ? g.geometry.attributes.position.count / 2 : 0;
@@ -365,10 +366,15 @@ async function run() {
     // when one was served. Derived rather than fixed, so a deployment without
     // private geometry reconciles at its own smaller number.
     const expectedStructural = s.api.columns + 1 + s.footprintMeshes;
-    const expectedOperational = s.api.slots + s.machineMeshes;
+    // slots + monitored devices + one instanced mesh per presentation part.
+    // The presentation meshes are four objects standing in for 242 machines,
+    // which is exactly why they are counted as four.
+    const expectedOperational = s.api.slots + s.machineMeshes + s.presentationMeshes;
     check(s.perLayer.structural === expectedStructural,
       'structural meshes = columns + floor plate + traced outline',
       `${s.perLayer.structural} vs ${expectedStructural}`);
+    check(s.visibility.presentation === false,
+      'the presentation model is off by default, so the measured floor is what is claimed');
     check(s.perLayer.functional === s.api.zones, 'functional meshes = zones served',
       `${s.perLayer.functional} vs ${s.api.zones}`);
     check(s.perSublayer.columns === s.api.columns, 'column sub-layer holds exactly the served columns',
@@ -481,6 +487,66 @@ async function run() {
       'every evidence state is named in words and carries a non-colour glyph',
       `${surface.legendRows.length} rows`
     );
+
+    // ── Presentation model ──
+    // A third evidence layer whose footprints are measured and whose every
+    // vertical dimension is a drawing convention. It must announce that, cost
+    // little, and change nothing about the measured model.
+    const pres = await page.evaluate(() => {
+      const T = window.__twin;
+      const before = T.renderer.info.render.calls;
+      const coordsBefore = T.snapshotCoordinates();
+      const group = T.sublayers.presentation;
+      const wasVisible = group.visible;
+      group.visible = true;
+      T.renderer.render(T.scene, T.camera);
+      const after = T.renderer.info.render.calls;
+      let nan = 0;
+      group.traverse((o) => {
+        const p = o.position;
+        if (p && !(Number.isFinite(p.x) && Number.isFinite(p.y) && Number.isFinite(p.z))) nan++;
+      });
+      const out = {
+        meshes: T.presentationMeshes.length,
+        instances: T.presentationMeshes.map((m) => m.count),
+        classes: [...new Set(T.presentationMeshes.map((m) => m.userData.presentation.classification))],
+        instanced: T.presentationMeshes.every((m) => m.isInstancedMesh === true),
+        carriesDevice: T.presentationMeshes.some((m) => 'deviceId' in m.userData),
+        drawDelta: after - before,
+        nan,
+        coordsUnchanged: T.snapshotCoordinates() === coordsBefore,
+        spec: T.presentationSpec(),
+      };
+      group.visible = wasVisible;
+      return out;
+    });
+    if (pres.meshes === 0) {
+      skip('the presentation model is built from the measured footprints', NO_GEOMETRY);
+    } else {
+      check(pres.instanced, 'the presentation model is instanced, not one mesh per machine');
+      check(
+        pres.instances.every((n) => n === s.api.slots),
+        'every measured slot gets one presentation machine',
+        `${pres.instances.join(',')} vs ${s.api.slots}`
+      );
+      // Instancing is the whole reason this layer is affordable: one mesh per
+      // part rather than one per machine per part.
+      check(pres.drawDelta <= pres.meshes,
+        'the presentation model costs one draw call per part, not one per machine',
+        `+${pres.drawDelta} draws for ${s.api.slots} machines`);
+      check(
+        pres.classes.length === 1 && pres.classes[0] === 'PRESENTATION_ONLY',
+        'every presentation object declares itself PRESENTATION_ONLY',
+        pres.classes.join(',')
+      );
+      check(!pres.carriesDevice, 'no presentation object carries a device identity');
+      check(pres.nan === 0, 'no presentation object has a NaN transform', `${pres.nan}`);
+      // The load-bearing one: drawing a convention must not disturb evidence.
+      check(pres.coordsUnchanged,
+        'building the presentation model moves no measured coordinate');
+      check(pres.spec.classification === 'PRESENTATION_ONLY',
+        'the presentation specification names its own classification');
+    }
 
     if (!baseline) baseline = s;
 
@@ -1073,8 +1139,13 @@ async function run() {
   check(hidden.machineMeshes === baseline.machineMeshes, 'hiding does not change machine count');
   check(JSON.stringify(hidden.api) === JSON.stringify(baseline.api), 'hiding does not change API results');
 
+  // Restore each toggle to the state it started in, not blanket-on: the
+  // presentation layer starts off by design, and checking it would be a
+  // different scene rather than the baseline.
   for (const layer of LAYERS) {
-    await page.check(`#layer-controls input[data-layer="${layer}"]`);
+    const sel = `#layer-controls input[data-layer="${layer}"]`;
+    if (baseline.visibility[layer]) await page.check(sel);
+    else await page.uncheck(sel);
   }
   await page.waitForTimeout(500);
   const restored = await snapshot(page);

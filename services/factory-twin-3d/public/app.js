@@ -116,10 +116,19 @@ const sublayers = {
   columns: new THREE.Group(), // detected structural columns
   machines: new THREE.Group(), // monitored devices (simulated positions) + their zone boxes
   slots: new THREE.Group(), // observed equipment slots, no confirmed identity
+  // A third evidence layer, kept apart from the other two on purpose. Its
+  // FOOTPRINTS are measured; its HEIGHTS and everything vertical are a drawing
+  // convention with no source. Its own group so it can be switched off, and so
+  // nothing here can be mistaken for the observed slots underneath it.
+  presentation: new THREE.Group(),
 };
+// Off by default. The measured floor is what this view claims by default; the
+// presentation model is something the operator opts into.
+
 for (const [name, g] of Object.entries(sublayers)) g.name = name;
+sublayers.presentation.visible = false;
 layers.structural.add(sublayers.shell, sublayers.columns);
-layers.operational.add(sublayers.machines, sublayers.slots);
+layers.operational.add(sublayers.machines, sublayers.slots, sublayers.presentation);
 
 // ── View modes ──────────────────────────────────────────────
 // Two coordinate systems legitimately coexist in this scene and neither may
@@ -500,6 +509,134 @@ function buildStructuralGrid(grid) {
   return xs.length + zs.length;
 }
 
+// ── Presentation machine model ────────────────────────────────────────
+//
+// PRESENTATION_ONLY. Read this before changing anything below.
+//
+// The floor holds 242 observed equipment positions whose width and depth were
+// measured from the drawing and whose HEIGHT IS NOT IN EVIDENCE -- a plan view
+// carries no elevation. Those positions render as flat pads precisely so their
+// silhouette cannot imply a height nobody measured.
+//
+// This layer deliberately draws that height anyway, because a floor of flat
+// grey pads communicates nothing to someone trying to understand the space.
+// Everything vertical here is a visual convention:
+//
+//   - the cabinet height, the plinth, the upper enclosure, the light strip
+//   - the proportions between them
+//   - the fact that a machine is box-shaped at all
+//
+// None of it is a measurement, none of it may be promoted, and the inspector
+// says so on every object. What IS carried from evidence is each machine's
+// footprint and position -- the plan dimensions that were actually measured.
+//
+// Built as InstancedMesh, four instances deep. The alternative is roughly a
+// thousand individual meshes for 242 machines, which would cost about a
+// thousand draw calls; instancing costs four. That is a real reason chosen at
+// build time, not a swap of an existing representation whose equivalence would
+// have to be proven.
+const PRESENTATION = Object.freeze({
+  // Metres, and every one of them a convention rather than a reading.
+  plinth: 0.12,
+  body: 1.55,
+  enclosure: 0.55,
+  lightStrip: 0.09,
+  // Insets, so the stack reads as a machine rather than as one extruded slab.
+  enclosureInset: 0.18,
+  plinthOutset: 0.06,
+  classification: 'PRESENTATION_ONLY',
+});
+
+const presentationMeshes = [];
+let presentationBuilt = false;
+
+/**
+ * Builds the presentation machines from the measured slot footprints.
+ *
+ * One InstancedMesh per part, each carrying every machine's instance of that
+ * part. The parts are separate so materials can differ -- a painted cabinet, a
+ * darker plinth, a lighter enclosure, an accent strip -- without a material per
+ * machine.
+ */
+function buildPresentationMachines(slots) {
+  if (presentationBuilt) return 0;
+  const usable = slots.filter(
+    (s) => s && finitePoint(s.position, true) && s.footprint &&
+      finite(s.footprint.width) && finite(s.footprint.depth)
+  );
+  if (usable.length === 0) return 0;
+
+  const unit = new THREE.BoxGeometry(1, 1, 1);
+  const parts = [
+    { key: 'plinth', color: 0x1c2431, rough: 0.95 },
+    { key: 'body', color: 0x33414f, rough: 0.72 },
+    { key: 'enclosure', color: 0x4a5a6b, rough: 0.5 },
+    { key: 'light', color: 0x7dd3fc, rough: 0.35, emissive: 0x1e3a5f },
+  ];
+
+  const meshes = {};
+  for (const part of parts) {
+    const material = new THREE.MeshStandardMaterial({
+      color: part.color,
+      roughness: part.rough,
+      metalness: 0.15,
+      ...(part.emissive ? { emissive: part.emissive } : {}),
+    });
+    const mesh = new THREE.InstancedMesh(unit, material, usable.length);
+    mesh.name = `presentation-${part.key}`;
+    // Named on the object itself so a scene dump, a screenshot review or a
+    // test cannot mistake this for measured geometry.
+    mesh.userData.presentation = {
+      classification: PRESENTATION.classification,
+      part: part.key,
+      note: 'Heights and vertical proportions are a drawing convention, not a measurement.',
+    };
+    meshes[part.key] = mesh;
+    presentationMeshes.push(mesh);
+    sublayers.presentation.add(mesh);
+  }
+
+  const m = new THREE.Matrix4();
+  const place = (mesh, i, w, h, d, cx, cy, cz) => {
+    m.makeScale(w, h, d);
+    m.setPosition(cx, cy, cz);
+    mesh.setMatrixAt(i, m);
+  };
+
+  usable.forEach((slot, i) => {
+    const { width: w, depth: d } = slot.footprint;
+    const x = slot.position.x;
+    const z = slot.position.z;
+    const base = slot.position.y;
+
+    const plinthW = w + PRESENTATION.plinthOutset;
+    const plinthD = d + PRESENTATION.plinthOutset;
+    place(meshes.plinth, i, plinthW, PRESENTATION.plinth, plinthD,
+      x, base + PRESENTATION.plinth / 2, z);
+
+    const bodyY = base + PRESENTATION.plinth + PRESENTATION.body / 2;
+    place(meshes.body, i, w, PRESENTATION.body, d, x, bodyY, z);
+
+    // The enclosure is inset on both axes so the machine reads as stepped
+    // rather than as a single column, which is what industrial equipment
+    // generally looks like from across a floor.
+    const encW = Math.max(w - PRESENTATION.enclosureInset, w * 0.4);
+    const encD = Math.max(d - PRESENTATION.enclosureInset, d * 0.4);
+    const encY = base + PRESENTATION.plinth + PRESENTATION.body + PRESENTATION.enclosure / 2;
+    place(meshes.enclosure, i, encW, PRESENTATION.enclosure, encD, x, encY, z);
+
+    // A status strip, unlit and uncoloured by any state: no cell status is in
+    // evidence, so this is a shape, never an indicator.
+    const lightY = base + PRESENTATION.plinth + PRESENTATION.body + PRESENTATION.enclosure +
+      PRESENTATION.lightStrip / 2;
+    place(meshes.light, i, encW * 0.55, PRESENTATION.lightStrip, encD * 0.55, x, lightY, z);
+  });
+
+  for (const mesh of presentationMeshes) mesh.instanceMatrix.needsUpdate = true;
+  presentationBuilt = true;
+  return usable.length;
+}
+
 function buildPhysicalSlots(geometry) {
   const envelope = geometry && typeof geometry === 'object' ? geometry.envelope : null;
   // A partially-valid envelope is not a smaller envelope, it is an unknown
@@ -530,6 +667,7 @@ function buildPhysicalSlots(geometry) {
 
   buildFootprint(geometry.footprint_polygon);
   buildStructuralGrid(geometry.grid);
+  buildPresentationMachines(slots);
 
   // Structural columns detected from the drawing (see the private geometry
   // file's column_detection block for method and thresholds).
@@ -1339,6 +1477,8 @@ async function boot() {
     // actually happened rather than trusting that it did.
     resourceStats,
     footprintMeshes,
+    presentationMeshes,
+    presentationSpec: () => ({ ...PRESENTATION }),
     getStructuralGrid: () => structuralGridLines,
     setLayerVisible,
     sublayers,
