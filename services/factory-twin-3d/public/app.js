@@ -382,10 +382,27 @@ function basicMaterial(color, opacity) {
   return m;
 }
 
-function buildPhysicalSlots(geometry) {
-  if (!geometry || !geometry.envelope) return;
+// The renderer is the second barrier, not a consumer that trusts the wire.
+// The server already projects every field, but a truthiness check is not a
+// shape check: an envelope that arrived as a string passes `if (envelope)` and
+// then yields NaN width, depth and height, which places a mesh at NaN and
+// makes the whole scene's bounds meaningless. Nothing here may be drawn from a
+// value that is not a real number.
+const finite = (v) => typeof v === 'number' && Number.isFinite(v);
+const finitePoint = (p, needY) =>
+  p !== null && typeof p === 'object' && finite(p.x) && finite(p.z) && (!needY || finite(p.y));
+const asArray = (v) => (Array.isArray(v) ? v : []);
 
-  const { envelope, columns, zones, slots } = geometry;
+function buildPhysicalSlots(geometry) {
+  const envelope = geometry && typeof geometry === 'object' ? geometry.envelope : null;
+  // A partially-valid envelope is not a smaller envelope, it is an unknown
+  // one. Drawing from it would state a measurement nobody made.
+  if (!envelope || typeof envelope !== 'object') return;
+  if (!finite(envelope.width) || !finite(envelope.depth) || !finite(envelope.height)) return;
+
+  const columns = asArray(geometry.columns);
+  const zones = asArray(geometry.zones);
+  const slots = asArray(geometry.slots);
 
   // Building framing comes from the measured envelope, not from constants.
   // The bounds are retained so a resize can refit for the new aspect ratio.
@@ -421,9 +438,10 @@ function buildPhysicalSlots(geometry) {
   // MEDIUM-confidence columns are drawn dimmer than HIGH so a less certain
   // detection never reads as firmly as a clear one -- same discipline as
   // the functional-zone tiers.
-  for (const col of columns || []) {
-    const w = col.footprint?.width ?? 0.3;
-    const dpt = col.footprint?.depth ?? 0.3;
+  for (const col of columns) {
+    if (!col || !finitePoint(col.position, false)) continue;
+    const w = finite(col.footprint?.width) ? col.footprint.width : 0.3;
+    const dpt = finite(col.footprint?.depth) ? col.footprint.depth : 0.3;
     const colGeom = boxGeometry(w, envelope.height, dpt);
     const color = col.confidence === 'medium' ? 0x1e293b : 0x334155;
     const colMesh = new THREE.Mesh(colGeom, standardMaterial(color));
@@ -433,8 +451,9 @@ function buildPhysicalSlots(geometry) {
     sublayers.columns.add(colMesh);
   }
 
-  for (const zone of zones || []) {
-    const b = zone.bounds;
+  for (const zone of zones) {
+    const b = zone && zone.bounds;
+    if (!b || !finite(b.x) || !finite(b.z) || !finite(b.width) || !finite(b.depth)) continue;
     const zoneGeom = new THREE.BoxGeometry(b.width, 0.05, b.depth);
     const zoneEdges = new THREE.EdgesGeometry(zoneGeom);
     // Dashed-looking dim slate, distinct from the real-device zone
@@ -455,9 +474,14 @@ function buildPhysicalSlots(geometry) {
   //
   // MEDIUM-confidence detections render dimmer than HIGH, the same
   // discipline used for columns and functional zones.
-  for (const slot of slots || []) {
-    const h = slot.footprint.height;
-    const geom = boxGeometry(slot.footprint.width, h, slot.footprint.depth);
+  for (const slot of slots) {
+    // A slot that cannot be placed is skipped, never placed at a stand-in
+    // coordinate: an invented position is worse than a missing one.
+    if (!slot || !finitePoint(slot.position, true)) continue;
+    const fp = slot.footprint;
+    if (!fp || !finite(fp.width) || !finite(fp.depth) || !finite(fp.height)) continue;
+    const h = fp.height;
+    const geom = boxGeometry(fp.width, h, fp.depth);
     // Flat, dim, unlit-looking gray -- deliberately unlike the bright,
     // state-colored real device boxes. No label, no userData.deviceId,
     // never pushed to machineMeshes: nothing about this mesh is clickable
@@ -844,10 +868,16 @@ document.getElementById('diagnostics')?.addEventListener('toggle', (ev) => {
 // single "equipment" figure would say exactly that. Confirmed mappings is
 // listed even though it is zero -- especially because it is zero.
 function updateEvidenceSummary(geo, zonesDrawn) {
-  const columns = geo.columns.length;
-  const slots = geo.slots.length;
-  const confirmed = geo.slots.filter((s) => s.ims_device_id).length;
-  const withheld = geo.functional_zones_meta ? geo.functional_zones_meta.withheld : 0;
+  // Counts are read defensively for the same reason the renderer is: a
+  // malformed response must produce an honest zero, not an exception that
+  // leaves the evidence panel showing the previous, now-wrong figures.
+  const columnList = Array.isArray(geo && geo.columns) ? geo.columns : [];
+  const slotList = Array.isArray(geo && geo.slots) ? geo.slots : [];
+  const columns = columnList.length;
+  const slots = slotList.length;
+  const confirmed = slotList.filter((s) => s && s.ims_device_id).length;
+  const meta = geo && typeof geo.functional_zones_meta === 'object' ? geo.functional_zones_meta : null;
+  const withheld = meta && Number.isFinite(meta.withheld) ? meta.withheld : 0;
 
   const setCount = (layer, text) => {
     const el = document.querySelector(`#layer-controls [data-count="${layer}"]`);

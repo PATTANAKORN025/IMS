@@ -69,10 +69,23 @@ const VIEWPORTS = [
 // the real controls rather than the internal grouping.
 const LAYERS = ['shell', 'columns', 'functional', 'slots', 'machines', 'telemetry'];
 
+const NO_GEOMETRY = 'no private geometry is deployed here';
+const NO_DEVICES = 'no monitored devices in this database';
+
 let failures = 0;
+let skipped = 0;
 function check(ok, label, detail) {
   console.log(`  ${ok ? 'PASS' : 'FAIL'}  ${label}${detail ? `  ${detail}` : ''}`);
   if (!ok) failures++;
+}
+
+// A precondition that is absent is not a passing assertion. CI has no private
+// geometry -- it is gitignored -- so the checks that need it cannot run there.
+// They are reported as SKIP with the reason, never folded into the pass count,
+// so a green CI run never implies the geometry was verified.
+function skip(label, why) {
+  console.log(`  SKIP  ${label}  (${why})`);
+  skipped++;
 }
 
 // Reads scene + API together so scene composition is compared against what
@@ -98,6 +111,7 @@ async function snapshot(page) {
       if (s && !(Number.isFinite(s.x) && Number.isFinite(s.y) && Number.isFinite(s.z))) badTransforms++;
     });
     const geo = await (await fetch('api/floor-geometry')).json();
+    const place = await (await fetch('api/placement')).json().catch(() => null);
     return {
       meshes,
       badTransforms,
@@ -127,6 +141,7 @@ async function snapshot(page) {
         conflictServed: geo.functional_zones.some((z) => ['zone-28', 'zone-31'].includes(z.id)),
         envelopeHeight: geo.envelope ? geo.envelope.height : null,
         clearHeight: geo.envelope ? geo.envelope.clear_height_m : null,
+        placements: place && Array.isArray(place.machines) ? place.machines.length : 0,
       },
     };
   });
@@ -315,7 +330,11 @@ async function run() {
     page.on('requestfailed', onFailed);
 
     await page.goto(TWIN_URL, { waitUntil: 'networkidle', timeout: 60000 });
-    await page.waitForFunction(() => window.__twin && window.__twin.machineMeshes.length > 0, { timeout: 30000 });
+    // Wait for the scene, not for machines. A deployment with no monitored
+    // devices is a valid deployment -- CI runs against a database that has
+    // none -- and waiting on a device that will never arrive would turn an
+    // empty fleet into a timeout instead of a reported zero.
+    await page.waitForFunction(() => window.__twin !== undefined, { timeout: 30000 });
     await page.waitForTimeout(2500);
 
     const s = await snapshot(page);
@@ -340,9 +359,16 @@ async function run() {
       `${s.meshes}`);
 
     check(s.badTransforms === 0, 'no NaN/Infinity transforms', `${s.badTransforms} bad`);
-    check(s.machineMeshes === 23, 'IMS machine meshes = 23', `${s.machineMeshes}`);
+    // Reconciled against what /api/placement served, not against a literal:
+    // the device set is discovered live, so hardcoding it would fail on any
+    // deployment with a different fleet rather than catching a real regression.
+    check(s.machineMeshes === s.api.placements, 'machine meshes = placements served',
+      `${s.machineMeshes} vs ${s.api.placements}`);
     check(!s.api.conflictServed, 'conflicting zones withheld from the wire');
-    check(s.api.zonesTotal === null || s.api.zones < s.api.zonesTotal,
+    // Only meaningful where zones exist. With none served there is nothing
+    // being withheld and nothing being over-served -- that is not a pass.
+    if (!s.api.zonesTotal) skip('unvalidated zones withheld', NO_GEOMETRY);
+    else check(s.api.zones < s.api.zonesTotal,
       'unvalidated zones withheld', `${s.api.zones} of ${s.api.zonesTotal}`);
     check(s.api.clearHeight === null, 'clear height still unmeasured (null, not estimated)');
     check(s.resources.materials < s.meshes / 10, 'materials shared, not per-mesh',
@@ -356,6 +382,16 @@ async function run() {
 
     page.off('console', onConsole);
     page.off('requestfailed', onFailed);
+    console.log('');
+  }
+
+  // Whether this deployment actually has private geometry. It is gitignored,
+  // so CI runs without it: the scene is then correctly empty of structure, and
+  // the assertions that need an envelope have nothing to assert rather than
+  // something to assert about zero.
+  const hasGeometry = Boolean(baseline && baseline.api.envelopeHeight !== null);
+  if (!hasGeometry) {
+    console.log('No private geometry served -- geometry-dependent checks will be SKIPPED, not passed.');
     console.log('');
   }
 
@@ -379,24 +415,49 @@ async function run() {
         simulatedPositions: diag ? diag.evidence.simulated_machine_positions : null,
       };
     });
+    // These hold whether or not geometry is deployed: an empty set trivially
+    // satisfies them, and that is the correct answer when nothing was served.
     check(ev.slotsAllUnmapped, 'every slot remains UNMAPPED with a null device id');
     check(ev.slotsNoMesId, 'no slot carries a MES machine id');
     check(ev.heightsUnknown, 'equipment height stays unknown, not defaulted into evidence');
-    check(ev.clearHeightNull, 'clear height stays null rather than estimated');
     check(ev.noLowConfidenceGeometry, 'no LOW-confidence physical geometry is served');
     check(
       ev.servedZoneTiers.every((t) => t === 'HIGH' || t === 'MEDIUM'),
       'only HIGH/MEDIUM zones are served',
       ev.servedZoneTiers.join(',')
     );
+    // This one genuinely needs an envelope to assert anything about.
+    if (ev.clearHeightNull === null) skip('clear height stays null rather than estimated', NO_GEOMETRY);
+    else check(ev.clearHeightNull, 'clear height stays null rather than estimated');
     check(ev.confirmedMappings === 0, 'confirmed mappings remains 0', `got ${ev.confirmedMappings}`);
-    check(ev.simulatedPositions > 0, 'machine positions are still declared simulated');
+    // Only assertable where a fleet exists. Zero monitored devices is a real
+    // deployment state, not a failed assertion about simulated positions.
+    if (!baseline.api.placements) skip('machine positions are still declared simulated', NO_DEVICES);
+    else check(ev.simulatedPositions > 0, 'machine positions are still declared simulated');
     console.log('');
   }
 
   // ── View presets ──
+  // Building framing is derived from the measured envelope, so without private
+  // geometry the preset is correctly disabled and there is nothing to assert
+  // about it. That is reported as skipped, not as passing.
   console.log('View presets:');
-  {
+  if (!hasGeometry) {
+    for (const label of [
+      'building preset activates',
+      'building preset frames the whole structure without clipping',
+      'overview preset activates',
+      'overview frames the whole structure',
+      'overview frames every monitored device',
+      'reset restores framing without changing which view is active',
+      'switching views never moves a machine',
+      'switching views never changes API results',
+      'no rendered coordinate changes across three view switches and a reset',
+    ]) {
+      skip(label, NO_GEOMETRY);
+    }
+    console.log('');
+  } else {
     const before = await snapshot(page);
     const machinesBefore = await page.evaluate(() =>
       window.__twin.machineMeshes.map((m) => [m.position.x, m.position.y, m.position.z])
@@ -517,6 +578,9 @@ async function run() {
   await browser.close();
 
   console.log(`\n${failures === 0 ? `FACTORY TWIN REGRESSION PASSED${DIRECT_URL ? ' (DIRECT MODE - access control NOT verified)' : ''}` : `FACTORY TWIN REGRESSION FAILED (${failures})`}`);
+  if (skipped > 0) {
+    console.log(`${skipped} check(s) SKIPPED and NOT counted as passing -- see the reasons above.`);
+  }
   process.exit(failures === 0 ? 0 : 1);
 }
 
