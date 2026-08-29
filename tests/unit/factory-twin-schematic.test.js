@@ -255,6 +255,7 @@ test('a bank emits exactly the documented key set', () => {
     'dimension_class',
     'grouping_class',
     'id',
+    'label_orientation',
     'labels',
     'observed_in',
     'orientation',
@@ -344,6 +345,18 @@ test('a horizontal bank keeps its orientation', () => {
   assert.strictEqual(out.orientation, 'HORIZONTAL');
   const bogus = schematic.projectBank(validBank({ orientation: 'TEST-DIAGONAL' }));
   assert.strictEqual(bogus.orientation, null);
+});
+
+test('a rotated bank label keeps the orientation the drawing sets', () => {
+  // Several labels on the reference read bottom-to-top beside their stack.
+  // That is an observation about the drawing, carried rather than guessed.
+  const out = schematic.projectBank(validBank({ label_orientation: 'VERTICAL' }));
+  assert.strictEqual(out.label_orientation, 'VERTICAL');
+});
+
+test('an unrecognised label orientation is dropped, not echoed', () => {
+  const out = schematic.projectBank(validBank({ label_orientation: 'TEST-SIDEWAYS' }));
+  assert.strictEqual(out.label_orientation, null);
 });
 
 // ── Drawing labels ──

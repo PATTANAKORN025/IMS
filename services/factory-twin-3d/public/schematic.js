@@ -368,11 +368,20 @@ function buildSvg() {
       // at one height collide with the next bank's. Staggering alternate banks
       // keeps both readable without shrinking the text to illegibility.
       const stagger = (bankIndex % 2) * 7;
+      const vertical = bank.label_orientation === 'VERTICAL';
+      // A rotated label sits beside its stack reading bottom-to-top, which is
+      // how the reference sets these, and it also stops long identifiers from
+      // overrunning a narrow bank.
+      const lx = vertical ? bank.at.sx - 3 - i * 8 : bank.at.sx + bank.schematic_width / 2;
+      const ly = vertical
+        ? bank.at.sy + bank.schematic_height / 2
+        : bank.at.sy + bank.schematic_height + 7 + stagger + i * 8;
       const text = el('text', {
-        x: bank.at.sx + bank.schematic_width / 2,
-        y: bank.at.sy + bank.schematic_height + 7 + stagger + i * 8,
+        x: lx,
+        y: ly,
         class: label.ambiguous ? 'sch-bank-label sch-ambiguous' : 'sch-bank-label',
         'data-bank-label': bank.id,
+        ...(vertical ? { transform: `rotate(-90 ${lx} ${ly})` } : {}),
       });
       // An ambiguous label shows both readings rather than picking the tidier
       // one. The two renders disagree by a single glyph in several places, and

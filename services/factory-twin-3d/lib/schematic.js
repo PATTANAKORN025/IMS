@@ -269,6 +269,11 @@ function projectBank(b) {
     columns,
     rows,
     orientation: fromEnum(b.orientation, ALLOWED_ORIENTATION),
+    // How the drawing sets this bank's label. Several are rotated on the
+    // reference -- read bottom-to-top beside their stack rather than across it
+    // -- and that is an observation about the drawing, so it is carried rather
+    // than left to the renderer to guess.
+    label_orientation: fromEnum(b.label_orientation, ALLOWED_ORIENTATION),
     source_class: fromEnum(b.source_class, ALLOWED_SOURCE_CLASS),
     grouping_class: fromEnum(b.grouping_class, ALLOWED_GROUPING),
     dimension_class: fromEnum(b.dimension_class, ALLOWED_DIMENSION_CLASS),
