@@ -132,6 +132,32 @@ jobs:
       - name: Run Gate Decision Tests
         run: node tests/unit/gate.test.js
 
+      # Factory Twin contract suites. These encode the system's REFUSALS --
+      # that an observation cannot be promoted to a confirmation, that a
+      # mapping cannot be inferred from proximity or a property lookup, that
+      # an unvalidated zone cannot render, that no private field can reach the
+      # wire. They ran only in the local pre-commit hook, so a change that
+      # deleted a refusal passed CI. Enforced here for the same reason the
+      # leak scanner runs before everything else: these are the guarantees,
+      # not incidental coverage.
+      - name: Run Factory Twin Mapping Contract Tests
+        run: node tests/unit/factory-twin-mapping.test.js
+
+      - name: Run Factory Twin MES Import Boundary Tests
+        run: node tests/unit/factory-twin-mes-import.test.js
+
+      - name: Run Factory Twin Geometry Mutation Tests
+        run: node tests/unit/factory-twin-geometry-mutation.test.js
+
+      - name: Run Factory Twin Diagnostics Sanitization Tests
+        run: node tests/unit/factory-twin-diagnostics.test.js
+
+      - name: Run Factory Twin Evidence Pipeline Tests
+        run: node tests/unit/factory-twin-evidence.test.js
+
+      - name: Run Factory Twin Wire Projection Tests
+        run: node tests/unit/factory-twin-wire.test.js
+
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   # Stage 3: Integration & Chaos Test
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

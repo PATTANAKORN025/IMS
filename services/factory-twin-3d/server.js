@@ -53,6 +53,25 @@ app.use((req, res, next) => {
   next();
 });
 
+// Response headers. Small set, each with a reason -- this service's threat is
+// disclosure of the data it serves, not compromise of the service.
+app.use((req, res, next) => {
+  // The geometry route carries values derived from a confidential drawing.
+  // Without an explicit directive a browser may heuristically cache it and a
+  // future caching intermediary may store it, which would put private-derived
+  // data somewhere the auth gate does not reach. Static assets keep their
+  // normal caching; only the shaped API is marked.
+  if (req.path.startsWith('/api/')) res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  // The twin is opened in its own tab from a dashboard link and is never
+  // embedded, so refusing to be framed costs nothing and removes clickjacking
+  // against a view whose controls change what an operator believes.
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Content-Security-Policy', "frame-ancestors 'none'");
+  next();
+});
+
 // ── Static frontend + vendored Three.js (no CDN dependency -- this
 // container has no host port, only reachable via the proxy's auth_request
 // gate, so the frontend must not depend on fetching a script from a

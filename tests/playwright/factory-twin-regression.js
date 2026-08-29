@@ -221,6 +221,33 @@ async function run() {
     const headers = res.headers();
     check(!('x-powered-by' in headers), 'the service does not advertise its framework');
 
+    // Response headers. Each asserts a disclosure property, not a style rule.
+    const api = await page.request.get(TWIN_URL + 'api/floor-geometry', { failOnStatusCode: false });
+    const apiHeaders = api.headers();
+    check(
+      (apiHeaders['cache-control'] || '').includes('no-store'),
+      'geometry is marked no-store so private-derived data is not cached',
+      apiHeaders['cache-control'] || 'absent'
+    );
+    check(apiHeaders['x-content-type-options'] === 'nosniff', 'content type is not sniffable');
+    check(apiHeaders['referrer-policy'] === 'no-referrer', 'no referrer is sent onward');
+    check(apiHeaders['x-frame-options'] === 'DENY', 'the twin refuses to be framed');
+    check(
+      (apiHeaders['content-security-policy'] || '').includes("frame-ancestors 'none'"),
+      'frame-ancestors is none'
+    );
+    check(
+      (apiHeaders['content-type'] || '').startsWith('application/json'),
+      'geometry is served as JSON, not as something a browser may execute'
+    );
+    check(!('access-control-allow-origin' in apiHeaders), 'no cross-origin access is granted');
+
+    // Nothing outside public/ is reachable, and no source map exposes internals.
+    for (const probe of ['server.js', 'lib/wire.js', 'package.json', '.env', 'app.js.map', 'api/debug']) {
+      const r = await page.request.get(TWIN_URL + probe, { failOnStatusCode: false });
+      check(r.status() === 404, `not served: /${probe}`, `got ${r.status()}`);
+    }
+
     // Every string the geometry route serves must be a safe token. Free text --
     // a note, a process name, a path -- cannot satisfy this, which is the
     // property being asserted rather than the absence of any particular word.
@@ -249,9 +276,25 @@ async function run() {
   // Same hard auth gate the dashboard suites use: /login answers 200, so a
   // failed login would otherwise sail through every check below.
   if (page.url().includes('/login') || (await page.locator('input[name="password"]').count()) > 0) {
-    console.error(`AUTHENTICATION_FAILED: still on login page (url=${page.url()}).`);
+    // Distinguish "this environment has no usable credential" from "the twin
+    // regressed". Both are non-zero -- neither is ever reported as PASS -- but
+    // conflating them makes a red CI run say nothing about the twin. Exit 78
+    // (EX_CONFIG) marks a configuration precondition, not a product failure.
+    console.error('');
+    console.error('AUTH_REGRESSION_BLOCKED_EXTERNAL_CREDENTIAL');
+    console.error(`  Grafana rejected the configured credential for user "${USER}" at ${BASE_URL}.`);
+    console.error('  The authenticated half of this suite did not run and is NOT reported as passing.');
+    console.error('  This is a credential/environment precondition, not a factory-twin defect:');
+    console.error('  GF_SECURITY_ADMIN_PASSWORD seeds the admin password only at first');
+    console.error('  initialisation of the Grafana database, so a password changed inside');
+    console.error('  Grafana afterwards no longer matches the environment value.');
+    console.error('  Resolve by supplying the current credential. Do NOT disable authentication,');
+    console.error('  relax the proxy gate, or hardcode a replacement to make this run green.');
+    console.error('  The unauthenticated boundary checks above DID run and their result stands.');
+    console.error('  Scene assertions can be executed separately with TWIN_DIRECT_URL, which');
+    console.error('  proves nothing about access control and says so in its own banner.');
     await browser.close();
-    process.exit(1);
+    process.exit(78);
   }
   }
   if (!DIRECT_URL) console.log('Login verified.\n');
