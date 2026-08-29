@@ -43,12 +43,33 @@ const runtimeCounters = {
   requestsFailed: 0,
   geometryLoadMs: 0,
   geometryParseFailures: 0,
+  // Fixed-edge histogram, not a list of timings. A list would be an ordered
+  // record of individual requests; a histogram answers "is this service slow"
+  // without describing any one of them. Null-prototype so a bucket name can
+  // never collide with an inherited property.
+  latencyBuckets: Object.assign(Object.create(null), {
+    lt_10ms: 0,
+    lt_50ms: 0,
+    lt_100ms: 0,
+    lt_500ms: 0,
+    gte_500ms: 0,
+  }),
 };
+
+function latencyBucket(ms) {
+  if (ms < 10) return 'lt_10ms';
+  if (ms < 50) return 'lt_50ms';
+  if (ms < 100) return 'lt_100ms';
+  if (ms < 500) return 'lt_500ms';
+  return 'gte_500ms';
+}
 
 app.use((req, res, next) => {
   runtimeCounters.requestsTotal++;
+  const started = Date.now();
   res.on('finish', () => {
     if (res.statusCode >= 400) runtimeCounters.requestsFailed++;
+    runtimeCounters.latencyBuckets[latencyBucket(Date.now() - started)]++;
   });
   next();
 });

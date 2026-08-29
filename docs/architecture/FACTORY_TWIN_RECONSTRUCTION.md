@@ -31,6 +31,14 @@ What the twin holds today, and on what basis. Status words are used strictly:
 | **BLOCKED** | Absent because the source does not exist — not because it was skipped. |
 | **WITHHELD** | Extracted, but deliberately not served or drawn because it did not pass validation. |
 
+There is deliberately **no INFERRED state**. Inference is not a weaker kind of
+evidence that could be labelled and shown with a caveat; it is the thing this
+system exists to refuse. A value nobody read, measured or was told is UNKNOWN,
+and stays UNKNOWN. The evidence pipeline enforces this by name: proximity,
+sequential identifiers, name similarity, grid symmetry, visual similarity,
+machine ordering and MES numbering are each rejected as a basis, and an
+unrecognised basis is rejected rather than assumed harmless.
+
 | Asset | Count | Status | Evidence |
 |---|---:|---|---|
 | Envelope | 1 | CONFIRMED | Printed dimension chains on the plan set |

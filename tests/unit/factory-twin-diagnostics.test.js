@@ -197,6 +197,50 @@ test('non-numeric runtime counters become 0 rather than pass through', () => {
   assert.strictEqual(d.runtime.requests_failed, 0);
 });
 
+// ── latency histogram ──
+test('latency buckets are always the fixed set, never the caller keys', () => {
+  const d = buildDiagnostics({
+    geometry: null,
+    runtime: { latencyBuckets: { lt_10ms: 5, 'TEST-INVENTED-BUCKET': 99, __proto__: 7 } },
+  });
+  assert.deepStrictEqual(Object.keys(d.runtime.latency_buckets).sort(), [
+    'gte_500ms',
+    'lt_100ms',
+    'lt_10ms',
+    'lt_500ms',
+    'lt_50ms',
+  ]);
+  assert.strictEqual(d.runtime.latency_buckets.lt_10ms, 5);
+  assert.ok(!JSON.stringify(d).includes('TEST-INVENTED-BUCKET'));
+});
+
+test('a missing or malformed bucket object yields zeros rather than throwing', () => {
+  for (const bad of [undefined, null, 'TEST-STRING', 42, []]) {
+    const d = buildDiagnostics({ geometry: null, runtime: { latencyBuckets: bad } });
+    assert.strictEqual(d.runtime.latency_buckets.gte_500ms, 0);
+  }
+});
+
+test('a non-numeric bucket value becomes 0 rather than pass through', () => {
+  const d = buildDiagnostics({
+    geometry: null,
+    runtime: { latencyBuckets: { lt_50ms: 'TEST-NOT-A-NUMBER', gte_500ms: -3 } },
+  });
+  assert.strictEqual(d.runtime.latency_buckets.lt_50ms, 0);
+  assert.strictEqual(d.runtime.latency_buckets.gte_500ms, 0);
+});
+
+test('the histogram carries counts only, never a timing or an identifier', () => {
+  const d = buildDiagnostics({
+    geometry: null,
+    runtime: { latencyBuckets: { lt_10ms: 3, lt_500ms: 1 } },
+  });
+  for (const v of Object.values(d.runtime.latency_buckets)) {
+    assert.strictEqual(typeof v, 'number');
+    assert.ok(Number.isInteger(v) && v >= 0);
+  }
+});
+
 test('building diagnostics never mutates its input', () => {
   const before = JSON.stringify(POISON);
   build();

@@ -79,6 +79,24 @@ So the blocker is recorded as an **external, pre-existing verification
 blocker** and is resolved by supplying a working credential, not by changing
 the middleware, the credential handling, or the login flow.
 
+**Diagnosed cause**, established without touching any credential: the Grafana
+admin row was created at first database initialisation and updated
+twenty-five minutes later. `GF_SECURITY_ADMIN_PASSWORD` seeds the admin
+password *only* at that first initialisation, so a password changed inside
+Grafana afterwards no longer matches the environment value. The environment
+value and the container's value were confirmed identical by hash, and Grafana
+still answers "Invalid username or password". Nothing is misconfigured; the
+stored password is simply one that only its owner knows.
+
+Two consequences worth stating plainly:
+
+- It is a **workstation** blocker, not a CI one. CI starts from
+  `.env.example` against a fresh database, so the authenticated path genuinely
+  runs there.
+- The fix is to supply the current credential, or to reset it through
+  Grafana's own tooling as a deliberate administrative act. Neither is
+  something an automated run should do on someone's behalf.
+
 ---
 
 ## 4. Response shaping
@@ -115,6 +133,17 @@ there — either would have served the slot as `IMS_CONNECTED`. A CONFIRMED
 mapping conjured from a property lookup is the worst defect available in this
 system, so the lookup is constrained rather than trusted.
 
+### Deferred: a full content security policy
+
+The response carries `frame-ancestors 'none'`, which is the directive that
+matters for a page that is never embedded. A full `script-src 'self'` policy is
+**not** applied: `index.html` carries an inline importmap, so locking
+`script-src` would need either `'unsafe-inline'`, which defeats the purpose, or
+a hash that silently breaks the page the next time the importmap changes. The
+page loads no third-party origin -- Three.js is vendored -- so the exposure a
+script CSP would close is small and the failure mode of getting it wrong is a
+blank screen. Recorded as deferred rather than done badly.
+
 ### Error responses
 
 Express's stock 404 echoes the requested path back into the body, which quotes
@@ -142,6 +171,32 @@ Two design points:
 Its unit tests feed deliberately poisoned input (unexpected fields, hostile
 keys, prototype-pollution shapes) and assert that the emitted object contains
 only the allowlisted keys.
+
+### Diagnostics disclosure classification
+
+Every field the diagnostics endpoint emits, and what it may reveal. The point
+of writing it out is that adding a field becomes a decision someone has to
+classify, rather than a convenience.
+
+| Field | Class | Reveals |
+|---|---|---|
+| `data.geometry_loaded`, `envelope_present` | Presence | Whether a private file is deployed. Not its content. |
+| `data.geometry_schema_version` | Version | Matched against a strict semver pattern, never echoed. |
+| `data.footprint_vertices`, `grid_x_lines`, `grid_z_lines` | Count | How many vertices or grid lines exist. No coordinate. |
+| `data.column_count`, `slot_count`, `zone_count_*` | Count | Census sizes, already published by the geometry route. |
+| `evidence.*` counts | Count | How many objects hold each evidence state. |
+| `evidence.*_confidence` tallies | Fixed enum → count | Tier distribution. An unrecognised tier is counted under `other`, never echoed as a key. |
+| `conflicts[].ids` | Anonymous id | Zone ids matching `zone-NN`, which name no real place. Anything else becomes `zone-unknown`. |
+| `conflicts[].status` | Fixed enum | `CONFLICT` or `UNKNOWN`. The author's resolution note is not carried. |
+| `runtime.requests_total`, `requests_failed` | Count | Service load and error volume. No path, URL, identifier or client detail. |
+| `runtime.latency_buckets` | Fixed-edge histogram | Whether the service is slow. Fixed bucket names, so a caller cannot introduce an output field, and no individual request is described. |
+| `runtime.geometry_load_ms_last`, `geometry_parse_failures`, `uptime_seconds` | Count | Load health. |
+
+Deliberately absent, and to stay absent: coordinates, machine and device
+identifiers, filesystem paths, process, vendor or operator names, evidence
+notes, and any per-request timing list. A list of timings is an ordered record
+of individual requests, which is a step back towards logging who asked for
+what.
 
 ### Evidence registry serialization
 
@@ -190,6 +245,7 @@ message or a path.
 - Never spread a private document into a response, at any level of nesting.
 - Never let an identifier reach a property lookup without an own-property and
   token check.
-- Never add a diagnostics field that carries a free-form string from input.
+- Never add a diagnostics field that carries a free-form string from input, and
+  classify every new field in the table above before adding it.
 - Never commit private geometry, `.env`, or a credential; the pre-commit leak
   scan is a net, not a substitute for the rule.

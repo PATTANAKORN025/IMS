@@ -66,6 +66,21 @@ function sanitizeTally(tally) {
   return out;
 }
 
+/**
+ * Latency histogram edges, in milliseconds. Fixed here rather than supplied,
+ * so a caller cannot introduce a bucket name and therefore cannot introduce an
+ * output field.
+ */
+const LATENCY_BUCKETS = Object.freeze(['lt_10ms', 'lt_50ms', 'lt_100ms', 'lt_500ms', 'gte_500ms']);
+
+/** Reads only the known bucket names; an unknown key is dropped, never echoed. */
+function bucketTally(buckets) {
+  const src = buckets && typeof buckets === 'object' ? buckets : {};
+  const out = {};
+  for (const name of LATENCY_BUCKETS) out[name] = count(src[name]);
+  return out;
+}
+
 /** Anonymous zone ids only: zone-NN. Anything else is replaced, never echoed. */
 function safeZoneId(id) {
   return typeof id === 'string' && /^zone-\d{1,4}$/.test(id) ? id : 'zone-unknown';
@@ -135,8 +150,13 @@ function buildDiagnostics({ geometry, zoneMeta = {}, confirmedMappings = 0, simu
       geometry_load_ms_last: count(runtime.geometryLoadMs),
       geometry_parse_failures: count(runtime.geometryParseFailures),
       uptime_seconds: count(runtime.uptimeSeconds),
+      // Fixed buckets, not per-request timings. A latency list would be an
+      // ordered record of individual requests, which is a step back towards
+      // "who asked for what"; a histogram over fixed edges answers "is this
+      // service slow" without describing any single request.
+      latency_buckets: bucketTally(runtime.latencyBuckets),
     },
   };
 }
 
-module.exports = { buildDiagnostics };
+module.exports = { buildDiagnostics, LATENCY_BUCKETS };

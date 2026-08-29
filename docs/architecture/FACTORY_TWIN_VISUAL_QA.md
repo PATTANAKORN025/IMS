@@ -129,13 +129,13 @@ real interaction latency cannot be obtained from it.
 
 Same scene, same build, captured in headless Chromium.
 
-| Viewport | Cold load | Boot | Frame (median) | Frame p95 | FPS |
-|---|---:|---:|---:|---:|---:|
-| 1366×768 | 1330 ms | 574 ms | 37.1 ms | 56.1 ms | 27.0 |
-| 1920×1080 | 1596 ms | 810 ms | 65.3 ms | 80.8 ms | 15.3 |
-| 2560×1440 | 2154 ms | 1205 ms | 112.5 ms | 133.0 ms | 8.9 |
-| 3840×2160 | 3435 ms | 2101 ms | 242.5 ms | 293.1 ms | 4.1 |
-| 600×1000 (portrait) | 1254 ms | 487 ms | 24.0 ms | 27.2 ms | 41.7 |
+| Viewport | Cold load | Boot | API | Frame (median) | Frame p95 | FPS | Resize | JS heap |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| 1366×768 | 1227 ms | 521 ms | 172 ms | 32.0 ms | 40.6 ms | 31.3 | 105 ms | 11 MB |
+| 1920×1080 | 1545 ms | 688 ms | 204 ms | 59.3 ms | 72.0 ms | 16.9 | 204 ms | 12 MB |
+| 2560×1440 | 1825 ms | 1015 ms | 415 ms | 108.8 ms | 135.4 ms | 9.2 | 366 ms | 12 MB |
+| 3840×2160 | 3217 ms | 2125 ms | 729 ms | 232.0 ms | 325.9 ms | 4.3 | 798 ms | 10 MB |
+| 600×1000 (portrait) | 1204 ms | 456 ms | 86 ms | 20.3 ms | 25.6 ms | 49.3 | 129 ms | 10 MB |
 
 Scene composition, constant across the four landscape viewports: **418 draw
 calls · 4,546 triangles · 135 geometries (105 cached) · 4 materials · 30
@@ -165,6 +165,13 @@ software rendering. It was not re-measured in the most recent run: an
 end-to-end hover measurement here is dominated by frame time and automation
 round-trips, so it cannot resolve the cost of the pointer path itself.
 
+Resize latency tracks pixel count almost exactly (105 ms at 1366×768, 798 ms
+at 3840×2160), which is the drawing-buffer reallocation plus one re-render --
+the same fill-rate signature, not a coalescing failure; resize work is already
+collapsed to one call per animation frame. The JS heap sits at 10-12 MB and
+does not grow across viewport changes, so nothing here retains geometry per
+resize.
+
 Redundant work **was** removed from that pointer path — one ray per hover
 instead of three, a cursor write only when the value changes, and an inspector
 rebuild only when the hovered target changes. Those are justified as work that
@@ -189,6 +196,27 @@ issues are fixed automatically; a DATA or EVIDENCE finding is reported, never
 
 ---
 
+## What was examined and left alone
+
+A code-level pass over geometry and material creation, duplicate resources,
+raycasting, pointer and resize handlers, the animation loop, DOM updates, API
+calls, JSON parsing, scene traversal and redraws found the following already in
+place: geometry and material caches shared across meshes (135 geometries and 4
+materials for 421 meshes), resize collapsed to one call per animation frame,
+hover picking throttled to one pass per frame with a single shared ray,
+diagnostics fetched lazily on first open, and the inspector rebuilt only when
+the hovered target changes.
+
+Two candidates remain deliberately unimplemented:
+
+| Candidate | Status | Why |
+|---|---|---|
+| **Instancing** | DEFERRED | Would collapse 418 draw calls to roughly 4. Visual equivalence cannot be demonstrated under software rasterisation, and optimising against that risks changing rendering for no real gain. Recorded as the available lever if a real-hardware measurement ever justifies it. |
+| **On-demand rendering** | DEFERRED | Would stop the loop when nothing changes. Damped orbit controls need continuous frames, so this is a behaviour change to interaction, not a tidy-up. |
+| **Caching the server-side projection** | DEFERRED | The geometry route re-reads and re-projects the private files per request. At one request per page load, with the measured API latency above, there is no demonstrated problem to fix -- and an optimisation adopted because it sounds faster is how a cache-invalidation bug gets introduced into the one path that must never serve stale evidence. |
+
+---
+
 ## Regression strategy
 
 Four tiers, deliberately separated, because they fail for different reasons and
@@ -201,8 +229,27 @@ a merged suite hides which one broke.
 | **Security regression** | Browser, through the proxy | Unauthenticated 401 on every route, traversal probes, no body leakage. |
 | **Scene regression** | Browser, five viewports | Counts, framing, layer behaviour, inspector content, coordinate stability, console and network cleanliness. |
 
-Every unit tier is registered in the pre-commit suite, so a semantic refusal
-cannot be removed without a commit failing.
+Every unit tier is registered in the pre-commit suite **and in CI**. They ran
+only locally until an audit noticed that a pull request deleting a refusal --
+the prototype-key guard, say, or the promotion ceiling -- passed CI unopposed.
+
+A fifth tier now runs alongside them:
+
+| Tier | Runs | Asserts |
+|---|---|---|
+| **Failure-mode regression** | Browser, faults injected into the API | That the twin stays honest when the API does not: 21 injected faults covering status codes, malformed and truncated bodies, wrong types, duplicate identifiers, unknown schema versions and evidence tiers, hostile extra fields, transport aborts and a request that never answers. Each asserts no uncaught exception, no NaN transform, nothing private on screen, and nothing presented as CONFIRMED. |
+
+### Absent preconditions are reported, never passed
+
+CI has no private geometry -- it is gitignored -- and a database may have no
+monitored devices. Both are legitimate deployment states, so the suite
+distinguishes three outcomes rather than two: checks needing an envelope or a
+fleet report **SKIP** with the reason and are never folded into the pass count.
+A green CI run therefore never implies the geometry was verified.
+
+The same discipline covers the authenticated path. A rejected credential emits
+`AUTH_REGRESSION_BLOCKED_EXTERNAL_CREDENTIAL` and exits 78, distinguishing a
+configuration precondition from a product failure without ever reporting PASS.
 
 Three properties keep the suite honest:
 
