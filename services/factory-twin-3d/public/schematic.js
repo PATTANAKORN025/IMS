@@ -164,6 +164,7 @@ function buildSvg() {
   const gBoundary = el('g', { 'data-sch-layer': 'boundary' });
   const gAreas = el('g', { 'data-sch-layer': 'areas' });
   const gLabels = el('g', { 'data-sch-layer': 'labels' });
+  const gBanks = el('g', { 'data-sch-layer': 'equipment' });
   const gDims = el('g', { 'data-sch-layer': 'dimensions' });
   const gAnno = el('g', { 'data-sch-layer': 'annotations' });
 
@@ -192,6 +193,69 @@ function buildSvg() {
       text.textContent = area.name;
       gLabels.appendChild(text);
     }
+  }
+
+  // Equipment banks. Each is a rectangle of cells laid out from a column and
+  // row count rather than a transcribed position per cell -- the drawing shows
+  // density and arrangement, and that is exactly what is reproduced. Nothing
+  // here is a machine: these are marks on a render, grouped for presentation.
+  let bankIndex = -1;
+  for (const bank of doc.banks || []) {
+    if (!inSnapshot(bank)) continue;
+    bankIndex++;
+    const g = el('g', { 'data-bank-id': bank.id, class: 'sch-bank' });
+    const cw = bank.schematic_width / bank.columns;
+    const ch = bank.schematic_height / bank.rows;
+    // A hair of inset so adjacent cells read as separate blocks rather than as
+    // one filled slab, which is what the reference looks like up close.
+    const inset = Math.min(cw, ch) * 0.08;
+    for (let c = 0; c < bank.columns; c++) {
+      for (let r = 0; r < bank.rows; r++) {
+        g.appendChild(
+          el('rect', {
+            x: bank.at.sx + c * cw + inset,
+            y: bank.at.sy + r * ch + inset,
+            width: Math.max(cw - inset * 2, 0.5),
+            height: Math.max(ch - inset * 2, 0.5),
+            class: 'sch-cell',
+          })
+        );
+      }
+    }
+    // The bank's own outline, so a group reads as a group.
+    g.appendChild(
+      el('rect', {
+        x: bank.at.sx,
+        y: bank.at.sy,
+        width: bank.schematic_width,
+        height: bank.schematic_height,
+        class: 'sch-bank-outline',
+      })
+    );
+    for (const [i, label] of (bank.labels || []).entries()) {
+      // Neighbouring banks are narrower than their own labels, so labels placed
+      // at one height collide with the next bank's. Staggering alternate banks
+      // keeps both readable without shrinking the text to illegibility.
+      const stagger = (bankIndex % 2) * 7;
+      const text = el('text', {
+        x: bank.at.sx + bank.schematic_width / 2,
+        y: bank.at.sy + bank.schematic_height + 7 + stagger + i * 8,
+        class: label.ambiguous ? 'sch-bank-label sch-ambiguous' : 'sch-bank-label',
+        'data-bank-label': bank.id,
+      });
+      // An ambiguous label shows both readings rather than picking the tidier
+      // one. The two renders disagree by a single glyph in several places, and
+      // choosing between them would be inventing a transcription.
+      text.textContent =
+        label.ambiguous && label.variants.length > 1 ? label.variants.join(' / ') : label.text;
+      if (label.ambiguous) {
+        const t = el('title', {});
+        t.textContent = 'Ambiguous transcription: the two source renders disagree.';
+        text.appendChild(t);
+      }
+      gLabels.appendChild(text);
+    }
+    gBanks.appendChild(g);
   }
 
   for (const anno of doc.annotations || []) {
@@ -231,7 +295,7 @@ function buildSvg() {
     target.appendChild(label);
   }
 
-  next.append(gBoundary, gAreas, gLabels, gDims, gAnno);
+  next.append(gBoundary, gAreas, gBanks, gLabels, gDims, gAnno);
   host.replaceChildren(next);
   svg = next;
   attachPanZoom();
@@ -439,6 +503,9 @@ async function boot() {
     countAreas: () => (svg ? svg.querySelectorAll('[data-area-id]').length : 0),
     countLabels: () => (svg ? svg.querySelectorAll('[data-area-label]').length : 0),
     countDimensions: () => (svg ? svg.querySelectorAll('.sch-dim').length : 0),
+    countBanks: () => (svg ? svg.querySelectorAll('[data-bank-id]').length : 0),
+    countCells: () => (svg ? svg.querySelectorAll('.sch-cell').length : 0),
+    bankIds: () => (svg ? [...svg.querySelectorAll('[data-bank-id]')].map((n) => n.dataset.bankId) : []),
   };
 }
 

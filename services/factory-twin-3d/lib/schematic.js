@@ -173,6 +173,105 @@ function projectArea(a) {
 }
 
 /**
+ * Grouping classes. A bank on this drawing is a PRESENTATION group and nothing
+ * more: the measured slot set is predominantly horizontal, loosely clustered
+ * and largely unzoned, so it does not correspond to these dense vertical banks
+ * and cannot be their source. Saying PRESENTATION rather than inventing an
+ * equipment grouping is the honest description of what this is.
+ */
+const ALLOWED_GROUPING = new Set(['SCHEMATIC_PRESENTATION_GROUP']);
+
+/**
+ * How a bank's rectangle was arrived at. The source images carry no
+ * authoritative machine dimension, so every width and height here is a
+ * presentation value read off a render -- never a measurement, and never
+ * eligible to enter the physical model.
+ */
+const ALLOWED_DIMENSION_CLASS = new Set(['SCHEMATIC_DERIVED']);
+
+/** Counts of drawn cells. Bounded so a malformed record cannot ask for a million rectangles. */
+function count(v, max) {
+  const n = num(v);
+  if (n === null || !Number.isInteger(n) || n < 1 || n > max) return null;
+  return n;
+}
+
+/**
+ * Projects one drawing label.
+ *
+ * `ambiguous` and `variants` exist because the two renders disagree on several
+ * labels by a single glyph -- BVN001 against BYN001, XRY001 against XRN001.
+ * Neither spelling is authoritative, so both are carried and the label is
+ * marked ambiguous rather than silently normalised to whichever reads better.
+ */
+function projectLabel(l) {
+  if (!l || typeof l !== 'object') return null;
+  const text = token(l.text);
+  if (text === null) return null;
+  const variants = [];
+  for (const v of Array.isArray(l.variants) ? l.variants : []) {
+    const t = token(v);
+    if (t !== null) variants.push(t);
+  }
+  return {
+    text,
+    // A drawing label is an observation of ink, never an identity. It is
+    // deliberately its own class so it can never be read as an IMS device id.
+    class: 'SCHEMATIC_OBSERVED_LABEL',
+    ambiguous: l.ambiguous === true,
+    variants,
+  };
+}
+
+/**
+ * Projects one equipment bank: a rectangle of cells at a place on the drawing.
+ *
+ * Cells are described by a column and row count rather than transcribed
+ * individually. The renderer lays them out inside the rectangle, which
+ * reproduces the density and arrangement the drawing shows without asserting a
+ * position for each cell that the source does not support.
+ */
+function projectBank(b) {
+  if (!b || typeof b !== 'object') return null;
+  const id = token(b.id);
+  const at = point(b.at);
+  const width = num(b.schematic_width);
+  const height = num(b.schematic_height);
+  const columns = count(b.columns, 64);
+  const rows = count(b.rows, 64);
+  if (id === null || !at || width === null || height === null || columns === null || rows === null) {
+    return null;
+  }
+  if (width <= 0 || height <= 0) return null;
+
+  const labels = [];
+  for (const l of Array.isArray(b.labels) ? b.labels : []) {
+    const projected = projectLabel(l);
+    if (projected !== null) labels.push(projected);
+  }
+
+  return {
+    id,
+    area_id: token(b.area_id),
+    at,
+    // Named schematic_* rather than width/height so that a value from here
+    // reads wrong the moment anyone puts it near the measured model.
+    schematic_width: width,
+    schematic_height: height,
+    columns,
+    rows,
+    orientation: fromEnum(b.orientation, ALLOWED_ORIENTATION),
+    source_class: fromEnum(b.source_class, ALLOWED_SOURCE_CLASS),
+    grouping_class: fromEnum(b.grouping_class, ALLOWED_GROUPING),
+    dimension_class: fromEnum(b.dimension_class, ALLOWED_DIMENSION_CLASS),
+    labels,
+    observed_in: snapshotRefs(b.observed_in),
+  };
+}
+
+const ALLOWED_ORIENTATION = new Set(['VERTICAL', 'HORIZONTAL']);
+
+/**
  * Projects one annotation: a legend box, a timestamp, a dimension, a north
  * marker. Everything the drawing says about itself rather than about the
  * factory.
@@ -221,6 +320,9 @@ function projectSchematic(doc) {
     snapshots: projectAll(d.snapshots, projectSnapshot),
     boundary: projectBoundary(d.boundary),
     areas: projectAll(d.areas, projectArea),
+    // Sorted by id so the order a consumer sees is deterministic rather than
+    // whatever order the file happens to hold.
+    banks: projectAll(d.banks, projectBank).sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)),
     annotations: projectAll(d.annotations, projectAnnotation),
   };
 }
@@ -234,6 +336,8 @@ module.exports = {
   projectSnapshot,
   projectBoundary,
   projectArea,
+  projectBank,
+  projectLabel,
   projectAnnotation,
   projectSchematic,
 };

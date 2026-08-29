@@ -226,6 +226,142 @@ test('a snapshot note is not carried, only the fact of the conflict', () => {
   assert.deepStrictEqual(out.conflicts_with, ['frooldwg']);
 });
 
+// ── Equipment banks ──
+
+const validBank = (extra) =>
+  Object.assign(
+    {
+      id: 'bank-test-01',
+      area_id: 'sch-test-area',
+      at: { sx: 10, sy: 10 },
+      schematic_width: 40,
+      schematic_height: 80,
+      columns: 2,
+      rows: 5,
+      orientation: 'VERTICAL',
+      source_class: 'SCHEMATIC_OBSERVED',
+      grouping_class: 'SCHEMATIC_PRESENTATION_GROUP',
+      dimension_class: 'SCHEMATIC_DERIVED',
+    },
+    extra
+  );
+
+test('a bank emits exactly the documented key set', () => {
+  const out = schematic.projectBank(validBank());
+  assert.deepStrictEqual(Object.keys(out).sort(), [
+    'area_id',
+    'at',
+    'columns',
+    'dimension_class',
+    'grouping_class',
+    'id',
+    'labels',
+    'observed_in',
+    'orientation',
+    'rows',
+    'schematic_height',
+    'schematic_width',
+    'source_class',
+  ]);
+});
+
+test('bank dimensions are named schematic_* and never width/height', () => {
+  // The naming is the guard. A value called schematic_width reads wrong the
+  // moment anyone puts it near the measured model, where widths are metres.
+  const out = schematic.projectBank(validBank());
+  assert.strictEqual(out.width, undefined);
+  assert.strictEqual(out.height, undefined);
+  assert.strictEqual(out.schematic_width, 40);
+});
+
+test('a bank can only be a presentation group', () => {
+  for (const claim of ['IMS_GROUP', 'MEASURED_GROUP', 'TEST-INVENTED']) {
+    const out = schematic.projectBank(validBank({ grouping_class: claim }));
+    assert.strictEqual(out.grouping_class, null, claim);
+  }
+});
+
+test('a bank dimension can only be schematic-derived', () => {
+  for (const claim of ['MEASURED', 'SURVEYED', 'TEST-INVENTED']) {
+    const out = schematic.projectBank(validBank({ dimension_class: claim }));
+    assert.strictEqual(out.dimension_class, null, claim);
+  }
+});
+
+test('a bank carries no IMS identity, however it is supplied', () => {
+  const out = schematic.projectBank(
+    validBank({ ims_device_id: 'TEST-DEVICE-01', device_id: 'TEST-DEVICE-02', status: 'IMS_CONNECTED' })
+  );
+  const s = JSON.stringify(out);
+  assert.ok(!s.includes('TEST-DEVICE'));
+  assert.ok(!s.includes('IMS_CONNECTED'));
+});
+
+test('cell counts are bounded so a malformed record cannot ask for a million cells', () => {
+  assert.strictEqual(schematic.projectBank(validBank({ columns: 10000 })), null);
+  assert.strictEqual(schematic.projectBank(validBank({ rows: 0 })), null);
+  assert.strictEqual(schematic.projectBank(validBank({ columns: 2.5 })), null);
+  assert.strictEqual(schematic.projectBank(validBank({ rows: 'TEST-NOT-A-NUMBER' })), null);
+});
+
+test('a bank with no usable placement or size is withheld', () => {
+  assert.strictEqual(schematic.projectBank(validBank({ at: null })), null);
+  assert.strictEqual(schematic.projectBank(validBank({ schematic_width: 0 })), null);
+  assert.strictEqual(schematic.projectBank(validBank({ schematic_height: NaN })), null);
+  assert.strictEqual(schematic.projectBank(validBank({ id: 'TEST BANK ID' })), null);
+});
+
+test('an added private field on a bank is not carried', () => {
+  const out = schematic.projectBank(validBank({ extraction_note: 'TEST-PRIVATE-NOTE' }));
+  assert.ok(!JSON.stringify(out).includes('TEST-PRIVATE-NOTE'));
+});
+
+test('banks are served in a deterministic order', () => {
+  const out = schematic.projectSchematic({
+    banks: [validBank({ id: 'bank-c' }), validBank({ id: 'bank-a' }), validBank({ id: 'bank-b' })],
+  });
+  assert.deepStrictEqual(out.banks.map((b) => b.id), ['bank-a', 'bank-b', 'bank-c']);
+});
+
+// ── Drawing labels ──
+
+test('a drawing label is its own class and never an identity', () => {
+  const out = schematic.projectLabel({ text: 'TEST-LABEL' });
+  assert.strictEqual(out.class, 'SCHEMATIC_OBSERVED_LABEL');
+  assert.deepStrictEqual(Object.keys(out).sort(), ['ambiguous', 'class', 'text', 'variants']);
+});
+
+test('an ambiguous label keeps both readings rather than picking one', () => {
+  // The two renders disagree by a single glyph in several places. Choosing the
+  // tidier spelling would be inventing a transcription.
+  const out = schematic.projectLabel({
+    text: 'TEST-A01',
+    ambiguous: true,
+    variants: ['TEST-A01', 'TEST-B01'],
+  });
+  assert.strictEqual(out.ambiguous, true);
+  assert.deepStrictEqual(out.variants, ['TEST-A01', 'TEST-B01']);
+});
+
+test('ambiguity is never inferred, only carried when the source says so', () => {
+  const out = schematic.projectLabel({ text: 'TEST-A01', ambiguous: 'yes' });
+  assert.strictEqual(out.ambiguous, false);
+});
+
+test('a label that is not a safe token is withheld', () => {
+  assert.strictEqual(schematic.projectLabel({ text: 'TEST LABEL with prose' }), null);
+  assert.strictEqual(schematic.projectLabel({ text: 'C:/TEST/PATH' }), null);
+  assert.strictEqual(schematic.projectLabel(null), null);
+});
+
+test('an unusable label does not withhold the bank it belongs to', () => {
+  const out = schematic.projectBank(
+    validBank({ labels: [{ text: 'TEST-PRIVATE-NOTE about this bank' }, { text: 'TEST-OK' }] })
+  );
+  assert.strictEqual(out.labels.length, 1);
+  assert.strictEqual(out.labels[0].text, 'TEST-OK');
+});
+
 // ── Annotations ──
 
 test('an annotation kind is a fixed enum, not echoed input', () => {

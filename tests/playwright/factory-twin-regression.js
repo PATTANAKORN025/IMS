@@ -740,6 +740,18 @@ async function run() {
       ]) {
         skip(label, NO_SCHEMATIC);
       }
+      for (const label of [
+        'every equipment bank the API served is drawn',
+        'every bank cell is drawn',
+        'banks are drawn in deterministic id order',
+        'every bank is classified as a presentation group',
+        'every bank dimension is classified as schematic-derived',
+        'every drawing label is classified as an observed label',
+        'labels the two renders disagree on remain marked ambiguous',
+        'no bank carries a physical dimension field or an IMS identity',
+      ]) {
+        skip(label, NO_SCHEMATIC);
+      }
     } else {
       const coordsBefore = await page.evaluate(() => window.__twin.snapshotCoordinates());
       await page.click('#mode-controls button[data-mode="schematic"]');
@@ -752,8 +764,18 @@ async function run() {
           areasDrawn: S.countAreas(),
           labelsDrawn: S.countLabels(),
           dims: S.countDimensions(),
+          banksDrawn: S.countBanks(),
+          cellsDrawn: S.countCells(),
+          bankIds: S.bankIds(),
           snapshot: S.getActiveSnapshot(),
           apiAreas: S.getDoc().areas.length,
+          apiBanks: S.getDoc().banks.length,
+          apiCells: S.getDoc().banks.reduce((n, b) => n + b.columns * b.rows, 0),
+          groupingClasses: [...new Set(S.getDoc().banks.map((b) => b.grouping_class))],
+          dimensionClasses: [...new Set(S.getDoc().banks.map((b) => b.dimension_class))],
+          labelClasses: [...new Set(S.getDoc().banks.flatMap((b) => b.labels).map((l) => l.class))],
+          ambiguous: S.getDoc().banks.flatMap((b) => b.labels).filter((l) => l.ambiguous).length,
+          rawDoc: JSON.stringify(S.getDoc()),
           coords: window.__twin.snapshotCoordinates(),
           viewControlsHidden: document.getElementById('view-controls').hidden,
           layerControlsHidden: document.getElementById('layer-controls').hidden,
@@ -769,6 +791,40 @@ async function run() {
         `${inSchematic.labelsDrawn}`);
       check(inSchematic.viewControlsHidden && inSchematic.layerControlsHidden,
         'physical camera controls are hidden in schematic mode');
+
+      // ── Equipment banks ──
+      check(inSchematic.banksDrawn === inSchematic.apiBanks,
+        'every equipment bank the API served is drawn',
+        `${inSchematic.banksDrawn} of ${inSchematic.apiBanks}`);
+      check(inSchematic.cellsDrawn === inSchematic.apiCells,
+        'every bank cell is drawn',
+        `${inSchematic.cellsDrawn} of ${inSchematic.apiCells}`);
+      // Deterministic order, so a diff of what was drawn is meaningful.
+      const sorted = [...inSchematic.bankIds].sort();
+      check(JSON.stringify(inSchematic.bankIds) === JSON.stringify(sorted),
+        'banks are drawn in deterministic id order');
+      // A bank is a presentation grouping and its rectangle is a drawing
+      // measurement of nothing. Both must say so.
+      check(
+        inSchematic.groupingClasses.every((c) => c === 'SCHEMATIC_PRESENTATION_GROUP'),
+        'every bank is classified as a presentation group',
+        inSchematic.groupingClasses.join(',')
+      );
+      check(
+        inSchematic.dimensionClasses.every((c) => c === 'SCHEMATIC_DERIVED'),
+        'every bank dimension is classified as schematic-derived',
+        inSchematic.dimensionClasses.join(',')
+      );
+      check(
+        inSchematic.labelClasses.every((c) => c === 'SCHEMATIC_OBSERVED_LABEL'),
+        'every drawing label is classified as an observed label',
+        inSchematic.labelClasses.join(',')
+      );
+      check(inSchematic.ambiguous > 0,
+        'labels the two renders disagree on remain marked ambiguous',
+        `${inSchematic.ambiguous} ambiguous`);
+      check(!/"width"|"height"|ims_device_id|IMS_CONNECTED/.test(inSchematic.rawDoc),
+        'no bank carries a physical dimension field or an IMS identity');
 
       // The two renders disagree. Switching must show that difference rather
       // than smoothing it away, and must not disturb the areas they share.

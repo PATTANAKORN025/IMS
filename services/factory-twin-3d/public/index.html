@@ -50,6 +50,14 @@
       stroke-width: 3px;
       stroke-linejoin: round;
     }
+    /* Equipment cells: light neutral fill, hairline outline. The reference
+       draws these as dense banks of small blocks, and density is the thing
+       that has to survive -- not per-cell detail nobody can read zoomed out. */
+    .sch-cell { fill: #e6e6e1; stroke: #7a7a7a; stroke-width: 0.35; vector-effect: non-scaling-stroke; }
+    .sch-bank-outline { fill: none; stroke: #4a4a4a; stroke-width: 0.7; vector-effect: non-scaling-stroke; }
+    .sch-bank-label { font: 600 5px system-ui, sans-serif; fill: #2b2b2b; text-anchor: middle; }
+    /* An ambiguous transcription is marked, never resolved by preference. */
+    .sch-ambiguous { fill: #8a5a00; font-style: italic; }
     .sch-dim { stroke: #8a8a8a; stroke-width: 0.7; vector-effect: non-scaling-stroke; }
     .sch-dim-text { font: 400 8px system-ui, sans-serif; fill: #4a4a4a; text-anchor: middle; }
     .sch-anno { fill: #3a3a3a; font: 400 9px system-ui, sans-serif; }
@@ -382,6 +390,7 @@
       <fieldset id="schematic-options">
         <legend>Show</legend>
         <label><input type="checkbox" data-sch="labels" checked> Area labels</label>
+        <label><input type="checkbox" data-sch="equipment" checked> Equipment banks</label>
         <label><input type="checkbox" data-sch="dimensions" checked> Dimensions</label>
         <label><input type="checkbox" data-sch="annotations" checked> Legend and title block</label>
       </fieldset>
