@@ -713,30 +713,37 @@ function drillDownUrl(deviceId) {
   return url;
 }
 
-function pickMachine(event) {
+// Points the shared raycaster at a pointer event. Reading the canvas rect
+// forces a layout, so a pass that needs several picks aims once and then
+// intersects several times rather than re-aiming per pass -- the ray is
+// identical either way, so every pick result is unchanged.
+function aimRay(event) {
   const rect = renderer.domElement.getBoundingClientRect();
   pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
   pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
   raycaster.setFromCamera(pointer, camera);
-  // intersectObjects (plural) against the full 10-mesh array -- the hit
-  // list is sorted nearest-first by Three.js, so hits[0] is the correct
-  // single machine actually under the cursor, not just "any click hits
-  // LDI-01" (verified this is genuinely per-mesh below in the report).
-  const hits = raycaster.intersectObjects(machineMeshes, false);
-  return hits.length > 0 ? hits[0].object.userData.deviceId : null;
+}
+
+// intersectObjects (plural) against the whole array -- the hit list is
+// sorted nearest-first by Three.js, so hits[0] is the object actually under
+// the cursor rather than merely one of the objects along the ray.
+function pickFrom(meshes, key) {
+  if (meshes.length === 0) return null;
+  const hits = raycaster.intersectObjects(meshes, false);
+  return hits.length > 0 ? hits[0].object.userData[key] : null;
+}
+
+function pickMachine(event) {
+  aimRay(event);
+  return pickFrom(machineMeshes, 'deviceId');
 }
 
 // Slots are picked through the SAME raycaster, in a second pass that only
 // runs when no machine was hit. Machines therefore keep absolute priority
 // and their existing click behaviour is bit-for-bit unchanged.
 function pickSlot(event) {
-  if (slotMeshes.length === 0) return null;
-  const rect = renderer.domElement.getBoundingClientRect();
-  pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-  pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-  raycaster.setFromCamera(pointer, camera);
-  const hits = raycaster.intersectObjects(slotMeshes, false);
-  return hits.length > 0 ? hits[0].object.userData.slot : null;
+  aimRay(event);
+  return pickFrom(slotMeshes, 'slot');
 }
 
 const inspectorEl = document.getElementById('inspector');
@@ -969,6 +976,9 @@ function snapshotCoordinates() {
 
 function hideSlotInspector() {
   if (inspectorEl) inspectorEl.hidden = true;
+  // Clear the hover cache too: the panel is now hidden, so the next hover over
+  // the same object must re-render rather than assume it is still displayed.
+  lastInspected = null;
 }
 
 renderer.domElement.addEventListener('click', (event) => {
@@ -983,13 +993,8 @@ renderer.domElement.addEventListener('click', (event) => {
 });
 
 function pickColumn(event) {
-  if (columnMeshes.length === 0) return null;
-  const rect = renderer.domElement.getBoundingClientRect();
-  pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-  pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-  raycaster.setFromCamera(pointer, camera);
-  const hits = raycaster.intersectObjects(columnMeshes, false);
-  return hits.length > 0 ? hits[0].object.userData.column : null;
+  aimRay(event);
+  return pickFrom(columnMeshes, 'column');
 }
 
 // Hover drives the inspector; click still only navigates, and only for
@@ -1000,28 +1005,60 @@ function pickColumn(event) {
 // than the scene redraws, and three picks across ~420 meshes per event is
 // wasted work that buys no extra responsiveness.
 let hoverPending = null;
+// Writing style.cursor is a style mutation whether or not the value changed,
+// and a hover pass runs every animation frame the pointer moves. Tracking the
+// current value keeps the assignment to the frames where it actually differs.
+let currentCursor = 'default';
+function setCursor(value) {
+  if (currentCursor === value) return;
+  currentCursor = value;
+  renderer.domElement.style.cursor = value;
+}
+
+// Rebuilding the inspector means building a string and reparsing it into the
+// DOM. Hovering a single object holds that target for many frames, and the
+// panel's content is a pure function of the target plus, for a machine, the
+// most recent poll. Re-rendering identical markup every frame is work with no
+// observable effect, so the last rendered target is remembered and an
+// unchanged one is skipped. A poll invalidates it, so live state still lands.
+let lastInspected = null;
+
 function handleHover(event) {
-  const deviceId = pickMachine(event);
+  // One ray, three passes. Priority order is unchanged, and so is every
+  // result: the three passes previously recomputed the identical ray.
+  aimRay(event);
+
+  const deviceId = pickFrom(machineMeshes, 'deviceId');
   if (deviceId) {
-    renderer.domElement.style.cursor = 'pointer';
-    showMachineInspector(deviceId);
+    setCursor('pointer');
+    if (lastInspected !== deviceId) {
+      lastInspected = deviceId;
+      showMachineInspector(deviceId);
+    }
     return;
   }
-  const slot = pickSlot(event);
+  const slot = pickFrom(slotMeshes, 'slot');
   if (slot) {
     // 'help' rather than 'pointer': these open an evidence panel, they do not
     // navigate. The cursor must not promise a drill-down that does not exist.
-    renderer.domElement.style.cursor = 'help';
-    showSlotInspector(slot);
+    setCursor('help');
+    if (lastInspected !== slot) {
+      lastInspected = slot;
+      showSlotInspector(slot);
+    }
     return;
   }
-  const col = pickColumn(event);
+  const col = pickFrom(columnMeshes, 'column');
   if (col) {
-    renderer.domElement.style.cursor = 'help';
-    showColumnInspector(col);
+    setCursor('help');
+    if (lastInspected !== col) {
+      lastInspected = col;
+      showColumnInspector(col);
+    }
     return;
   }
-  renderer.domElement.style.cursor = 'default';
+  setCursor('default');
+  lastInspected = null;
 }
 
 renderer.domElement.addEventListener('pointermove', (event) => {
@@ -1065,6 +1102,8 @@ function stateRowHtml(row) {
 function applyState(payload) {
   const rows = payload.machines || [];
   latestStateById = new Map(rows.map((r) => [r.device_id, r]));
+  // New telemetry invalidates a machine inspector that is currently open.
+  lastInspected = null;
 
   for (const row of rows) {
     const entry = machinesById.get(row.device_id);
