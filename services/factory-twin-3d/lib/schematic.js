@@ -232,6 +232,65 @@ function projectLabel(l) {
 }
 
 /**
+ * Per-cell values, held per snapshot and never merged.
+ *
+ * The two renders disagree about what the cells say while declaring the same
+ * instant. Recording both, each under the snapshot it came from, is not
+ * choosing between them -- it is the only way to keep both readable. A merged
+ * or averaged array would be a reading neither source supports.
+ *
+ * A cell the transcriber could not read confidently is null, which the renderer
+ * shows as unknown. Guessing at a smudged three-digit number would be exactly
+ * the fabrication this whole layer is built to avoid, and a wrong number here
+ * looks identical to a right one.
+ *
+ * The array is positional: index = column * rows + row, matching the order the
+ * renderer lays cells out. A length that does not match the bank's own
+ * columns * rows is refused outright rather than padded, because a
+ * misaligned array silently attributes every value to the wrong cell.
+ */
+function cellValues(raw, expected) {
+  if (!raw || typeof raw !== 'object') return {};
+  const out = {};
+  for (const key of Object.keys(raw)) {
+    const snapshot = token(key);
+    if (snapshot === null) continue;
+    const list = raw[key];
+    if (!Array.isArray(list) || list.length !== expected) continue;
+    out[snapshot] = list.map((v) => (v === null || v === undefined ? null : token(v)));
+  }
+  return out;
+}
+
+/**
+ * Marks which cells the two snapshots disagree about.
+ *
+ * Computed here rather than by the renderer so that every consumer sees the
+ * same answer, and so the comparison is made once against the raw values rather
+ * than against whatever happens to be on screen. Two snapshots that both read
+ * a cell and read it differently is a CONFLICT; one reading it and the other
+ * not is not -- that is simply one transcription being less complete.
+ */
+function cellConflicts(values, expected) {
+  const keys = Object.keys(values);
+  if (keys.length < 2) return [];
+  const out = [];
+  for (let i = 0; i < expected; i++) {
+    const seen = new Set();
+    let readable = 0;
+    for (const k of keys) {
+      const v = values[k][i];
+      if (v !== null && v !== undefined) {
+        seen.add(v);
+        readable++;
+      }
+    }
+    if (readable > 1 && seen.size > 1) out.push(i);
+  }
+  return out;
+}
+
+/**
  * Projects one equipment bank: a rectangle of cells at a place on the drawing.
  *
  * Cells are described by a column and row count rather than transcribed
@@ -258,10 +317,19 @@ function projectBank(b) {
     if (projected !== null) labels.push(projected);
   }
 
+  const expected = columns * rows;
+  const values = cellValues(b.cell_values, expected);
+
   return {
     id,
     area_id: token(b.area_id),
     at,
+    // Per snapshot, never merged. An absent snapshot key means that render was
+    // not transcribed for this bank; a null entry means that cell could not be
+    // read confidently.
+    cell_values: values,
+    // Indices where two snapshots both read a cell and read it differently.
+    cell_conflicts: cellConflicts(values, expected),
     // Named schematic_* rather than width/height so that a value from here
     // reads wrong the moment anyone puts it near the measured model.
     schematic_width: width,
@@ -299,8 +367,10 @@ function projectAnnotation(a) {
     at,
     // A dimension's printed value is a number on a drawing with no stated
     // scale. It is carried as the text it is, never converted, and the unit is
-    // whatever the drawing does not say.
+    // whatever the drawing does not say. The class travels with it so a
+    // consumer cannot mistake the number for a length.
     text: token(a.text),
+    annotation_class: a.kind === 'DIMENSION' ? 'SCHEMATIC_ANNOTATION' : null,
     to: point(a.to),
     observed_in: snapshotRefs(a.observed_in),
   };
@@ -362,6 +432,8 @@ module.exports = {
   projectArea,
   projectBank,
   projectLabel,
+  cellValues,
+  cellConflicts,
   projectAnnotation,
   projectSchematic,
 };

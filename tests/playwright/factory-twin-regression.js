@@ -750,6 +750,13 @@ async function run() {
         'labels the two renders disagree on remain marked ambiguous',
         'no bank carries a physical dimension field or an IMS identity',
         'a bank outside every named area is still drawn',
+        'every transcribed cell value is drawn for the active snapshot',
+        'every disagreeing cell is marked as a conflict',
+        'the sources genuinely disagree and that is recorded, not smoothed away',
+        'the not-to-scale notice is always present in schematic mode',
+        'the conflict notice names the conflict and the declared instant',
+        "the other snapshot shows its own cell values, not the first one's",
+        'both snapshots transcribe the same cells',
         'the legend draws all six states the reference defines',
         'the legend states match the reference vocabulary and its order',
         'the secondary render carries its own north marker and title block',
@@ -848,6 +855,36 @@ async function run() {
       // The drawing defines six operational states. Publishing that vocabulary
       // is not publishing state: no cell carries a status, because the two
       // renders disagree about status and none was transcribed.
+      // ── Per-cell values and the conflict between renders ──
+      const cells = await page.evaluate(() => {
+        const S = window.__schematic;
+        const banks = S.getDoc().banks;
+        return {
+          drawn: S.countCellValues(),
+          conflictsDrawn: S.countCellConflicts(),
+          expectedValues: banks.reduce(
+            (n, b) => n + (b.cell_values && b.cell_values[S.getActiveSnapshot()] ? b.columns * b.rows : 0),
+            0
+          ),
+          expectedConflicts: banks.reduce((n, b) => n + (b.cell_conflicts || []).length, 0),
+          texts: S.cellValueTexts(),
+          badge: Boolean(document.getElementById('schematic-badge')),
+          notice: document.getElementById('schematic-conflict').textContent,
+        };
+      });
+      check(cells.drawn === cells.expectedValues,
+        'every transcribed cell value is drawn for the active snapshot',
+        `${cells.drawn} of ${cells.expectedValues}`);
+      check(cells.conflictsDrawn === cells.expectedConflicts,
+        'every disagreeing cell is marked as a conflict',
+        `${cells.conflictsDrawn} of ${cells.expectedConflicts}`);
+      check(cells.expectedConflicts > 0,
+        'the sources genuinely disagree and that is recorded, not smoothed away',
+        `${cells.expectedConflicts} cells`);
+      check(cells.badge, 'the not-to-scale notice is always present in schematic mode');
+      check(/REFERENCE CONFLICT/.test(cells.notice),
+        'the conflict notice names the conflict and the declared instant');
+
       const legend = await page.evaluate(() => ({
         rows: window.__schematic.countLegendRows(),
         states: window.__schematic.legendStates(),
@@ -882,6 +919,13 @@ async function run() {
         check(swapped.snapshot === other && swapped.areas === inSchematic.areasDrawn,
           'switching snapshot changes what is drawn without changing the areas',
           `${swapped.dims} vs ${inSchematic.dims} dimension marks`);
+        // The point of two snapshots: the disputed values actually differ.
+        const swappedTexts = await page.evaluate(() => window.__schematic.cellValueTexts());
+        check(JSON.stringify(swappedTexts) !== JSON.stringify(cells.texts),
+          "the other snapshot shows its own cell values, not the first one's");
+        check(swappedTexts.length === cells.texts.length,
+          'both snapshots transcribe the same cells',
+          `${swappedTexts.length} vs ${cells.texts.length}`);
         check(swapped.coords === coordsBefore, 'switching snapshot never alters the 3D scene');
 
         // Annotations that only one render carries must appear only there.

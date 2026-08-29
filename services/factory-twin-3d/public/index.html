@@ -29,6 +29,20 @@
       background: #f4f4f1;
       z-index: 5;
     }
+    #schematic-badge {
+      position: absolute;
+      top: 8px;
+      right: 12px;
+      z-index: 2;
+      padding: 4px 10px;
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid #b45309;
+      border-radius: 4px;
+      color: #7c3f00;
+      font: 600 11px system-ui, sans-serif;
+      letter-spacing: 0.02em;
+      pointer-events: none;
+    }
     #schematic svg {
       display: block;
       width: 100%;
@@ -54,6 +68,20 @@
        draws these as dense banks of small blocks, and density is the thing
        that has to survive -- not per-cell detail nobody can read zoomed out. */
     .sch-cell { fill: #e6e6e1; stroke: #7a7a7a; stroke-width: 0.35; vector-effect: non-scaling-stroke; }
+    /* A cell the two renders read differently. Outlined rather than filled, so
+       the conflict is visible without pretending to be a status. */
+    .sch-cell-conflict { stroke: #b45309; stroke-width: 1; }
+    /* Per-cell values appear only once the view is close enough to read them. */
+    .sch-cell-value { display: none; }
+    svg.zoomed .sch-cell-value {
+      display: initial;
+      font: 500 3.2px system-ui, sans-serif;
+      fill: #1b1b1b;
+      text-anchor: middle;
+      pointer-events: none;
+    }
+    /* Not a value: an explicit admission that this cell could not be read. */
+    svg.zoomed .sch-cell-unknown { fill: #9a9a9a; font-style: italic; }
     .sch-bank-outline { fill: none; stroke: #4a4a4a; stroke-width: 0.7; vector-effect: non-scaling-stroke; }
     .sch-bank-label { font: 600 5px system-ui, sans-serif; fill: #2b2b2b; text-anchor: middle; }
     /* An ambiguous transcription is marked, never resolved by preference. */
@@ -98,6 +126,7 @@
     #schematic-options { margin-top: 6px; border: 1px solid #334155; border-radius: 4px; padding: 6px 8px; }
     #schematic-options legend { padding: 0 4px; color: #94a3b8; font-size: 11px; }
     #schematic-options label { display: block; font-size: 12px; color: #e2e8f0; }
+    #schematic-conflict strong { display: block; letter-spacing: 0.04em; margin-bottom: 3px; }
     #schematic-conflict {
       margin-top: 6px;
       padding: 6px 8px;
@@ -456,7 +485,12 @@
   <div id="scene"></div>
   <!-- Built once from /api/floor-schematic; pan and zoom mutate only the SVG
        viewBox, so pointer movement never rebuilds the DOM. -->
-  <div id="schematic" hidden></div>
+  <div id="schematic" hidden>
+    <!-- Standing, not dismissible. The single most important thing to know
+         about this view is that its geometry is a drawing, not a measurement -
+         the source's own title block leaves SCALE blank. -->
+    <div id="schematic-badge">SCHEMATIC — NOT TO SCALE. Drawing reference, not measured geometry.</div>
+  </div>
 
   <!-- Relative paths (no leading "/") throughout this page and app.js's
        fetch calls, deliberately -- this page is served under nginx's

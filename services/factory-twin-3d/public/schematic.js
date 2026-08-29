@@ -83,9 +83,16 @@ function contentBounds() {
   };
 }
 
+// Below this window width the drawing is close enough that per-cell text is
+// legible. Above it the glyphs would be sub-pixel noise over the areas.
+const CELL_TEXT_ZOOM = 340;
+
 function applyView() {
   if (!svg || !view) return;
   svg.setAttribute('viewBox', `${view.sx} ${view.sy} ${view.width} ${view.height}`);
+  // One class toggle rather than rebuilding or walking the cells: level of
+  // detail costs a class here, not a re-render.
+  svg.classList.toggle('zoomed', view.width <= CELL_TEXT_ZOOM);
 }
 
 /**
@@ -340,17 +347,54 @@ function buildSvg() {
     // A hair of inset so adjacent cells read as separate blocks rather than as
     // one filled slab, which is what the reference looks like up close.
     const inset = Math.min(cw, ch) * 0.08;
+    // Values belong to a snapshot. Reading the active one, and only the active
+    // one, is what keeps the two conflicting renders from being blended.
+    const values = (bank.cell_values && bank.cell_values[activeSnapshot]) || null;
+    const conflicts = new Set(bank.cell_conflicts || []);
     for (let c = 0; c < bank.columns; c++) {
       for (let r = 0; r < bank.rows; r++) {
-        g.appendChild(
-          el('rect', {
-            x: bank.at.sx + c * cw + inset,
-            y: bank.at.sy + r * ch + inset,
-            width: Math.max(cw - inset * 2, 0.5),
-            height: Math.max(ch - inset * 2, 0.5),
-            class: 'sch-cell',
-          })
-        );
+        const i = c * bank.rows + r;
+        const x = bank.at.sx + c * cw + inset;
+        const y = bank.at.sy + r * ch + inset;
+        const w = Math.max(cw - inset * 2, 0.5);
+        const h = Math.max(ch - inset * 2, 0.5);
+        const conflicted = conflicts.has(i);
+        const rect = el('rect', {
+          x,
+          y,
+          width: w,
+          height: h,
+          class: conflicted ? 'sch-cell sch-cell-conflict' : 'sch-cell',
+          ...(conflicted ? { 'data-cell-conflict': `${bank.id}:${i}` } : {}),
+        });
+        if (conflicted) {
+          const t = el('title', {});
+          // Say what the other render reads rather than only that it differs.
+          const others = Object.entries(bank.cell_values)
+            .map(([snap, list]) => `${snapshotLabel(snap)}: ${list[i] === null ? 'unreadable' : list[i]}`)
+            .join('  |  ');
+          t.textContent = `Sources disagree — ${others}`;
+          rect.appendChild(t);
+        }
+        g.appendChild(rect);
+
+        // The value itself, hidden until the view is zoomed enough to read it.
+        // Drawing hundreds of unreadable glyphs at overview zoom costs layout
+        // for nothing and buries the areas under noise.
+        if (values) {
+          const raw = values[i];
+          const text = el('text', {
+            x: x + w / 2,
+            y: y + h / 2 + 1.2,
+            class: raw === null ? 'sch-cell-value sch-cell-unknown' : 'sch-cell-value',
+            'data-cell-value': `${bank.id}:${i}`,
+          });
+          // A cell nobody could read confidently says so. Guessing at a smudged
+          // three-digit number produces something indistinguishable from a real
+          // reading, which is worse than an honest blank.
+          text.textContent = raw === null ? '?' : raw;
+          g.appendChild(text);
+        }
       }
     }
     // The bank's own outline, so a group reads as a group.
@@ -453,11 +497,19 @@ function buildSvg() {
   }
 
   next.append(gBoundary, gAreas, gBanks, gLabels, gDims, gAnno);
-  host.replaceChildren(next);
+  // The badge is part of the host, not the drawing, so it survives a rebuild.
+  const badge = host.querySelector('#schematic-badge');
+  host.replaceChildren(...(badge ? [badge] : []), next);
   svg = next;
   attachPanZoom();
   applyOptions();
   fit();
+}
+
+/** A snapshot's display label, falling back to its id. */
+function snapshotLabel(id) {
+  const s = (doc.snapshots || []).find((x) => x.id === id);
+  return (s && s.label) || id;
 }
 
 /** The timestamp the active render claims, not a time this system knows. */
@@ -573,10 +625,21 @@ function updateConflictNotice() {
       return (other && other.label) || id;
     })
     .join(', ');
-  conflictEl.textContent =
-    `Conflicting source renders. This drawing and ${names} declare the same instant ` +
-    'yet disagree on equipment values and status. Neither is treated as correct; ' +
-    'switch between them to see what differs.';
+  const stamp = snapshotTimestamp();
+  const conflicted = (doc.banks || []).reduce(
+    (n, b) => n + ((b.cell_conflicts && b.cell_conflicts.length) || 0),
+    0
+  );
+  conflictEl.replaceChildren();
+  const head = document.createElement('strong');
+  head.textContent = `REFERENCE CONFLICT${stamp ? ` — ${stamp}` : ''}`;
+  const body = document.createElement('div');
+  body.textContent =
+    `This render and ${names} declare the same instant yet disagree` +
+    (conflicted > 0 ? ` on ${conflicted} transcribed cell${conflicted === 1 ? '' : 's'}` : '') +
+    '. Neither is treated as correct. Switch between them to see what differs; ' +
+    'disagreeing cells are outlined.';
+  conflictEl.append(head, body);
   conflictEl.hidden = false;
 }
 
@@ -662,6 +725,10 @@ async function boot() {
     countDimensions: () => (svg ? svg.querySelectorAll('.sch-dim').length : 0),
     countBanks: () => (svg ? svg.querySelectorAll('[data-bank-id]').length : 0),
     countLegendRows: () => (svg ? svg.querySelectorAll('[data-legend-swatch]').length : 0),
+    countCellValues: () => (svg ? svg.querySelectorAll('[data-cell-value]').length : 0),
+    countCellConflicts: () => (svg ? svg.querySelectorAll('[data-cell-conflict]').length : 0),
+    cellValueTexts: () =>
+      svg ? [...svg.querySelectorAll('[data-cell-value]')].map((n) => n.textContent) : [],
     legendStates: () =>
       svg ? [...svg.querySelectorAll('[data-legend-swatch]')].map((n) => n.dataset.legendSwatch) : [],
     countCells: () => (svg ? svg.querySelectorAll('.sch-cell').length : 0),

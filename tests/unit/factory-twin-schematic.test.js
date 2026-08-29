@@ -251,6 +251,8 @@ test('a bank emits exactly the documented key set', () => {
   assert.deepStrictEqual(Object.keys(out).sort(), [
     'area_id',
     'at',
+    'cell_conflicts',
+    'cell_values',
     'columns',
     'dimension_class',
     'grouping_class',
@@ -359,6 +361,80 @@ test('an unrecognised label orientation is dropped, not echoed', () => {
   assert.strictEqual(out.label_orientation, null);
 });
 
+// ── Per-cell values, held per snapshot ──
+
+test('cell values are kept per snapshot and never merged', () => {
+  const out = schematic.projectBank(
+    validBank({
+      columns: 1,
+      rows: 2,
+      cell_values: { a: ['TEST-1', 'TEST-2'], b: ['TEST-9', 'TEST-2'] },
+    })
+  );
+  assert.deepStrictEqual(out.cell_values.a, ['TEST-1', 'TEST-2']);
+  assert.deepStrictEqual(out.cell_values.b, ['TEST-9', 'TEST-2']);
+  // No third, reconciled reading exists anywhere in the output.
+  assert.deepStrictEqual(Object.keys(out.cell_values).sort(), ['a', 'b']);
+});
+
+test('a disagreement between two snapshots is reported as a conflict', () => {
+  const out = schematic.projectBank(
+    validBank({ columns: 1, rows: 3, cell_values: { a: ['TEST-1', 'TEST-2', 'TEST-3'], b: ['TEST-9', 'TEST-2', 'TEST-8'] } })
+  );
+  assert.deepStrictEqual(out.cell_conflicts, [0, 2]);
+});
+
+test('one snapshot reading a cell the other did not is not a conflict', () => {
+  // That is one transcription being less complete, not the sources disagreeing.
+  const out = schematic.projectBank(
+    validBank({ columns: 1, rows: 2, cell_values: { a: ['TEST-1', 'TEST-2'], b: [null, 'TEST-2'] } })
+  );
+  assert.deepStrictEqual(out.cell_conflicts, []);
+});
+
+test('an unread cell stays null rather than being filled in', () => {
+  const out = schematic.projectBank(
+    validBank({ columns: 1, rows: 2, cell_values: { a: ['TEST-1', null] } })
+  );
+  assert.deepStrictEqual(out.cell_values.a, ['TEST-1', null]);
+});
+
+test('a value array whose length does not match the cell count is refused whole', () => {
+  // A misaligned array attributes every value to the wrong cell, which looks
+  // exactly like correct data. Padding or truncating would hide that.
+  const out = schematic.projectBank(
+    validBank({ columns: 2, rows: 5, cell_values: { a: ['TEST-1', 'TEST-2'] } })
+  );
+  assert.deepStrictEqual(out.cell_values, {});
+});
+
+test('free text in a cell value is dropped, not echoed', () => {
+  const out = schematic.projectBank(
+    validBank({ columns: 1, rows: 2, cell_values: { a: ['TEST-OK', 'TEST-PRIVATE-NOTE about this cell'] } })
+  );
+  assert.deepStrictEqual(out.cell_values.a, ['TEST-OK', null]);
+});
+
+test('a snapshot key that is not a safe token is dropped', () => {
+  const out = schematic.projectBank(
+    validBank({ columns: 1, rows: 1, cell_values: { 'TEST SNAP': ['TEST-1'], __proto__: ['TEST-2'] } })
+  );
+  assert.deepStrictEqual(Object.keys(out.cell_values), []);
+});
+
+test('a bank with no transcribed values reports none rather than empty strings', () => {
+  const out = schematic.projectBank(validBank());
+  assert.deepStrictEqual(out.cell_values, {});
+  assert.deepStrictEqual(out.cell_conflicts, []);
+});
+
+test('a dimension annotation declares its class so it cannot read as a length', () => {
+  const dim = schematic.projectAnnotation({ kind: 'DIMENSION', at: { sx: 1, sy: 1 }, text: '750' });
+  assert.strictEqual(dim.annotation_class, 'SCHEMATIC_ANNOTATION');
+  const other = schematic.projectAnnotation({ kind: 'LEGEND', at: { sx: 1, sy: 1 } });
+  assert.strictEqual(other.annotation_class, null);
+});
+
 // ── Drawing labels ──
 
 test('a drawing label is its own class and never an identity', () => {
@@ -417,7 +493,14 @@ test('a dimension carries its printed text and no converted value', () => {
     metres: 0.75,
     mm: 750,
   });
-  assert.deepStrictEqual(Object.keys(out).sort(), ['at', 'kind', 'observed_in', 'text', 'to']);
+  assert.deepStrictEqual(Object.keys(out).sort(), [
+    'annotation_class',
+    'at',
+    'kind',
+    'observed_in',
+    'text',
+    'to',
+  ]);
   assert.strictEqual(out.text, '750');
   assert.strictEqual(out.metres, undefined);
   assert.strictEqual(out.mm, undefined);
