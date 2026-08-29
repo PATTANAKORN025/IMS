@@ -88,6 +88,10 @@ viewport. Every row below holds at every one of the five.
 | HUD / layer controls / evidence panel readable | PASS | visually inspected at 1920×1080 |
 | z-fighting | PASS | none observed |
 | Floating geometry | PASS | none observed; slot pads sit on the floor plane |
+| A private path is not served | PASS | 404 with a fixed body |
+| The 404 body echoes nothing | PASS | no requested path, no private filename, no stack trace, no filesystem path |
+| No framework banner header | PASS | `x-powered-by` absent |
+| Every served geometry string is a safe token | PASS | 450 distinct values, 0 free text |
 | Authenticated API assertions | **BLOCKED** | see below |
 | GPU utilisation | **NOT TESTABLE** | see below |
 
@@ -125,15 +129,23 @@ real interaction latency cannot be obtained from it.
 
 Same scene, same build, captured in headless Chromium.
 
-| Viewport | Cold load | Boot | API | Frame (median) | Frame p95 | FPS | Interaction |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| 1366×768 | 1790 ms | 1005 ms | 149 ms | 41.0 ms | 49 ms | 24.4 | 129 ms |
-| 1920×1080 | 1532 ms | 724 ms | 190 ms | 69.4 ms | 91 ms | 14.4 | 212 ms |
-| 2560×1440 | 1912 ms | 1045 ms | 435 ms | 114.3 ms | 133 ms | 8.7 | — |
-| 3840×2160 | 3625 ms | 2137 ms | 838 ms | 264.6 ms | 304 ms | 3.8 | — |
+| Viewport | Cold load | Boot | Frame (median) | Frame p95 | FPS |
+|---|---:|---:|---:|---:|---:|
+| 1366×768 | 1330 ms | 574 ms | 37.1 ms | 56.1 ms | 27.0 |
+| 1920×1080 | 1596 ms | 810 ms | 65.3 ms | 80.8 ms | 15.3 |
+| 2560×1440 | 2154 ms | 1205 ms | 112.5 ms | 133.0 ms | 8.9 |
+| 3840×2160 | 3435 ms | 2101 ms | 242.5 ms | 293.1 ms | 4.1 |
+| 600×1000 (portrait) | 1254 ms | 487 ms | 24.0 ms | 27.2 ms | 41.7 |
 
-Scene composition, constant across viewports: **418 draw calls · 4,546
-triangles · 135 geometries (105 cached) · 4 materials · 30 textures**.
+Scene composition, constant across the four landscape viewports: **418 draw
+calls · 4,546 triangles · 135 geometries (105 cached) · 4 materials · 30
+textures**.
+
+At 600×1000 the same scene issues **161 draw calls and 1,718 triangles** from
+**39 geometries**. Nothing was removed: the narrower frustum culls most of the
+floor, which is why that viewport is the fastest despite being the most
+constrained. It is listed to show the shape of the workload, not as evidence
+of an optimisation.
 
 > [!WARNING]
 > **These are not GPU numbers and must not be quoted as the twin's real
@@ -148,8 +160,17 @@ demonstrated here, and optimising against a software rasteriser risks changing
 rendering for no real gain. Draw calls are recorded as the lever if a
 real-hardware measurement ever justifies pulling it.
 
-Interaction latency exceeds the 100 ms target but is bounded by frame time
-under software rendering.
+Interaction latency exceeds the 100 ms target, bounded by frame time under
+software rendering. It was not re-measured in the most recent run: an
+end-to-end hover measurement here is dominated by frame time and automation
+round-trips, so it cannot resolve the cost of the pointer path itself.
+
+Redundant work **was** removed from that pointer path — one ray per hover
+instead of three, a cursor write only when the value changes, and an inspector
+rebuild only when the hovered target changes. Those are justified as work that
+provably has no observable effect, not by a measured speedup, and none is
+claimed: the numbers above cannot show one. What they do show is that nothing
+regressed — composition is identical and timings are within run-to-run noise.
 
 ---
 

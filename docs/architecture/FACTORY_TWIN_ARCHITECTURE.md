@@ -56,6 +56,7 @@ Three properties of that path are load-bearing:
 | `server.js` | Routes, the pg pool, device refresh, the private-file loaders, and the serving allowlists. |
 | `lib/contracts.js` | The machine-state vocabulary and its theme. One definition, shared by API and renderer. |
 | `lib/diagnostics.js` | Diagnostics serialization, allowlist-by-construction. |
+| `lib/wire.js` | Wire projection for private geometry: rebuilds every served slot, column, zone and envelope field by field. |
 | `lib/mapping.js` | The physical-to-device mapping contract, including its refusals. |
 | `lib/mes-import.js` | The import boundary for external manufacturing data. |
 | `lib/evidence.js` | The evidence-source registry and promotion contract. |
@@ -75,7 +76,7 @@ future source is allowed to assert. Its rules are documented under
 |---|---|---|
 | `GET /api/state` | Live machine state per monitored device | The only route that touches the database. Read-only role. |
 | `GET /api/placement` | Floor descriptor plus **synthetic** machine placements | Positions here are simulated, and labelled as such downstream. |
-| `GET /api/floor-geometry` | Envelope, grid, columns, slots, validated functional zones | Serves an empty-but-valid shape when no private geometry is present, which is the default for a fresh clone and not an error. |
+| `GET /api/floor-geometry` | Envelope, columns, anonymous zone boxes, slots, validated functional zones | Serves an empty-but-valid shape when no private geometry is present, which is the default for a fresh clone and not an error. |
 | `GET /api/diagnostics` | Counts, booleans and fixed enums only | Never a coordinate, identifier, path, process or vendor name. |
 | `GET /healthz` | Liveness, including a database round-trip | |
 
@@ -84,9 +85,19 @@ future source is allowed to assert. Its rules are documented under
 The private documents are the sensitive artefact. Publishing them by spreading
 means **any field ever added to a private file is served the moment it is
 written**, including one carrying a source path, a real name or an internal
-note. The geometry route therefore names every field it serves, at every level
-of the response, and a new field must be added there deliberately before it can
-reach the wire.
+note.
+
+The allowlist therefore holds at **both** levels. The route names its top-level
+fields, and `lib/wire.js` rebuilds each slot, column, zone box, envelope,
+functional zone and conflict field by field. Only finite numbers,
+pattern-checked tokens and fixed enums can be emitted, so free text has no path
+out — a note, a path or a process name fails the token guard rather than being
+sanitised and echoed. A new field must be added to the projection deliberately
+before it can reach the wire.
+
+Anything that cannot be projected is **withheld rather than coerced**: a slot
+with no usable position is not served at a fallback coordinate, because
+inventing a location is worse than showing nothing.
 
 Two rules the routes enforce rather than merely document:
 

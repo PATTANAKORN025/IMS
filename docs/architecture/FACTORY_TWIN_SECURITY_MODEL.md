@@ -88,11 +88,40 @@ rather than trusted.
 
 ### Geometry
 
-The geometry route names every field it serves. Spreading a private document
-into a response means any field ever added to that document is published the
-moment it is written, including one that carries a source path, a real name or
-an internal note. Under an allowlist, publishing a new field is a decision
-someone makes in code review.
+The geometry route names every field it serves, and `lib/wire.js` does the same
+one level down for each slot, column, zone box, envelope, functional zone and
+conflict. Both levels matter: an audit found the top-level allowlist in place
+while each slot was still being spread individually, which meant a field added
+to a private slot record would have been published the moment it was written.
+
+The projection can only emit finite numbers, pattern-checked tokens and fixed
+enums. That shape is chosen so that **free text fails**, rather than so that
+known-bad text fails — a note, a filesystem path or a process name cannot
+satisfy a token guard. Values that cannot be projected are withheld rather than
+coerced.
+
+Three classes of value were being served with no consumer at all and are no
+longer served: a functional zone's process type, its printed and calculated
+areas, and free-text validation and conflict-resolution notes. Publishing
+values read from a confidential drawing that no client reads is disclosure with
+no purpose.
+
+### Identifier lookups
+
+A mapping is looked up by own property, and only for an identifier that is
+itself a safe token. On a plain object `mapping['constructor']` answers with a
+function and `mapping['__proto__']` can answer with a value `JSON.parse` placed
+there — either would have served the slot as `IMS_CONNECTED`. A CONFIRMED
+mapping conjured from a property lookup is the worst defect available in this
+system, so the lookup is constrained rather than trusted.
+
+### Error responses
+
+Express's stock 404 echoes the requested path back into the body, which quotes
+a private filename to whoever guessed it, and its stock error handler emits a
+stack trace unless `NODE_ENV` happens to be production. An environment variable
+being set correctly is not a control. Both are replaced with fixed JSON that
+carries nothing from the request, and the framework banner header is disabled.
 
 ### Diagnostics
 
@@ -158,7 +187,9 @@ message or a path.
 - Never weaken the auth gate to obtain a passing test.
 - Never publish a host port for the twin container.
 - Never serve `private/` statically.
-- Never spread a private document into a response.
+- Never spread a private document into a response, at any level of nesting.
+- Never let an identifier reach a property lookup without an own-property and
+  token check.
 - Never add a diagnostics field that carries a free-form string from input.
 - Never commit private geometry, `.env`, or a credential; the pre-commit leak
   scan is a net, not a substitute for the rule.
