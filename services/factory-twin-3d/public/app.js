@@ -280,10 +280,14 @@ document.getElementById('layer-controls')?.addEventListener('change', (ev) => {
   setLayerVisible(box.dataset.layer, box.checked);
 });
 
-// Floor grid -- purely orientation, not real factory floor data. Sized up
-// from Task 4.1's 20x20 to cover the full 10-machine/5-zone spread.
-const grid = new THREE.GridHelper(100, 40, 0x334155, 0x1e293b);
-sublayers.shell.add(grid);
+// Orientation grid. Purely a reference frame, NOT factory floor data -- it is
+// sized to cover the synthetic device spread and says nothing about the
+// building. It is removed the moment the surveyed structural grid arrives, so
+// the two are never on screen together: one is decoration, the other is
+// evidence, and showing both would invite reading the decoration as a
+// measurement.
+let orientationGrid = new THREE.GridHelper(100, 40, 0x334155, 0x1e293b);
+sublayers.shell.add(orientationGrid);
 
 // ── Floor shell (Floor 1, default grouping) ─────────────────
 // A plate + edge outline under the grid, one per entry in /api/placement's
@@ -408,9 +412,93 @@ function basicMaterial(color, opacity) {
 // makes the whole scene's bounds meaningless. Nothing here may be drawn from a
 // value that is not a real number.
 const finite = (v) => typeof v === 'number' && Number.isFinite(v);
+
+// Stacking order on the floor plane, in metres. Small deliberate separations
+// rather than coincident planes: two surfaces at exactly the same height
+// z-fight, and the resulting shimmer reads as a rendering fault in a view whose
+// whole job is to be believed.
+const FOOTPRINT_Y = 0.002; // traced building slab, lowest
+const GRID_Y = 0.006; // surveyed gridlines, just above the slab
+
+// One entry per traced footprint. An array rather than a single reference
+// because the count is what the regression asserts against the API.
+const footprintMeshes = [];
+let structuralGridLines = null;
 const finitePoint = (p, needY) =>
   p !== null && typeof p === 'object' && finite(p.x) && finite(p.z) && (!needY || finite(p.y));
 const asArray = (v) => (Array.isArray(v) ? v : []);
+
+// The traced building outline. This is what makes the floor read as THIS
+// building: the envelope above is only its bounding box, and a box is the same
+// box for every rectangular-ish building in the world. The outline is stepped
+// and includes a fitted corner, and drawing it is the difference between a
+// generic shell and a floor plan.
+//
+// Drawn as a filled slab plus its own edge loop, both from the same vertex
+// list, so the fill and the outline can never disagree.
+function buildFootprint(footprint) {
+  const verts = footprint && Array.isArray(footprint.vertices) ? footprint.vertices : [];
+  if (verts.length < 3) return 0;
+  if (!verts.every((v) => v && finite(v.x) && finite(v.z))) return 0;
+
+  const shape = new THREE.Shape();
+  shape.moveTo(verts[0].x, verts[0].z);
+  for (let i = 1; i < verts.length; i++) shape.lineTo(verts[i].x, verts[i].z);
+  shape.closePath();
+
+  const slab = new THREE.Mesh(
+    new THREE.ShapeGeometry(shape),
+    new THREE.MeshBasicMaterial({ color: 0x111c2e, side: THREE.DoubleSide, depthWrite: false })
+  );
+  slab.rotation.x = Math.PI / 2; // Shape is authored in XY; lay it on XZ.
+  slab.position.y = FOOTPRINT_Y;
+  slab.userData.footprint = { confidence: footprint.confidence, geometry_status: footprint.geometry_status };
+  footprintMeshes.push(slab);
+  sublayers.shell.add(slab);
+
+  const loop = new THREE.LineLoop(
+    new THREE.BufferGeometry().setFromPoints(verts.map((v) => new THREE.Vector3(v.x, FOOTPRINT_Y + 0.01, v.z))),
+    new THREE.LineBasicMaterial({ color: 0x475569 })
+  );
+  sublayers.shell.add(loop);
+  return 1;
+}
+
+// The surveyed structural grid: the gridlines the building is actually set out
+// on, replacing the decorative helper. Every line is one segment pair in a
+// single BufferGeometry, so the whole grid costs one draw call rather than one
+// per line.
+function buildStructuralGrid(grid) {
+  if (!grid || typeof grid !== 'object') return 0;
+  const xs = Array.isArray(grid.x) ? grid.x.filter((l) => l && finite(l.at)) : [];
+  const zs = Array.isArray(grid.z) ? grid.z.filter((l) => l && finite(l.at)) : [];
+  if (xs.length < 2 || zs.length < 2) return 0;
+
+  const xMin = Math.min(...xs.map((l) => l.at));
+  const xMax = Math.max(...xs.map((l) => l.at));
+  const zMin = Math.min(...zs.map((l) => l.at));
+  const zMax = Math.max(...zs.map((l) => l.at));
+
+  const points = [];
+  for (const l of xs) points.push(new THREE.Vector3(l.at, GRID_Y, zMin), new THREE.Vector3(l.at, GRID_Y, zMax));
+  for (const l of zs) points.push(new THREE.Vector3(xMin, GRID_Y, l.at), new THREE.Vector3(xMax, GRID_Y, l.at));
+
+  const lines = new THREE.LineSegments(
+    new THREE.BufferGeometry().setFromPoints(points),
+    new THREE.LineBasicMaterial({ color: 0x1e293b })
+  );
+  sublayers.shell.add(lines);
+  structuralGridLines = lines;
+
+  // The decorative grid has served its purpose. Retiring it here, rather than
+  // leaving both, keeps exactly one grid on screen and makes that one evidence.
+  if (orientationGrid) {
+    sublayers.shell.remove(orientationGrid);
+    orientationGrid.geometry.dispose();
+    orientationGrid = null;
+  }
+  return xs.length + zs.length;
+}
 
 function buildPhysicalSlots(geometry) {
   const envelope = geometry && typeof geometry === 'object' ? geometry.envelope : null;
@@ -439,6 +527,9 @@ function buildPhysicalSlots(geometry) {
   const envelopeOutline = new THREE.LineSegments(envelopeEdges, new THREE.LineBasicMaterial({ color: 0x334155 }));
   envelopeOutline.position.set(0, envelope.height / 2, 0);
   sublayers.shell.add(envelopeOutline);
+
+  buildFootprint(geometry.footprint_polygon);
+  buildStructuralGrid(geometry.grid);
 
   // Structural columns detected from the drawing (see the private geometry
   // file's column_detection block for method and thresholds).
@@ -1247,6 +1338,8 @@ async function boot() {
     // Cache sizes are exposed so a regression test can assert the sharing
     // actually happened rather than trusting that it did.
     resourceStats,
+    footprintMeshes,
+    getStructuralGrid: () => structuralGridLines,
     setLayerVisible,
     sublayers,
     resetView,

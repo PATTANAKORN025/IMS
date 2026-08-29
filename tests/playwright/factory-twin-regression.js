@@ -132,6 +132,20 @@ async function snapshot(page) {
       // leave this identical; anything else means a view moved real data.
       coords: T.snapshotCoordinates(),
       resources: T.resourceStats(),
+      footprintMeshes: T.footprintMeshes.length,
+      structuralGrid: (() => {
+        const g = T.getStructuralGrid();
+        return g ? g.geometry.attributes.position.count / 2 : 0;
+      })(),
+      // The decorative helper must be gone once the surveyed grid is drawn:
+      // one grid on screen, and that one evidence.
+      orientationGridPresent: (() => {
+        let found = false;
+        T.layers.structural.traverse((o) => {
+          if (o.type === 'GridHelper') found = true;
+        });
+        return found;
+      })(),
       machineMeshes: T.machineMeshes.length,
       api: {
         columns: geo.columns.length,
@@ -140,6 +154,8 @@ async function snapshot(page) {
         zonesTotal: geo.functional_zones_meta ? geo.functional_zones_meta.total : null,
         conflictServed: geo.functional_zones.some((z) => ['zone-28', 'zone-31'].includes(z.id)),
         envelopeHeight: geo.envelope ? geo.envelope.height : null,
+        footprintVertices: geo.footprint_polygon ? geo.footprint_polygon.vertices.length : 0,
+        gridLines: geo.grid ? geo.grid.x.length + geo.grid.z.length : 0,
         clearHeight: geo.envelope ? geo.envelope.clear_height_m : null,
         placements: place && Array.isArray(place.machines) ? place.machines.length : 0,
       },
@@ -341,9 +357,13 @@ async function run() {
 
     // Scene composition is checked against what the API served, so adding
     // evidence later does not require editing this test.
-    const expectedStructural = s.api.columns + 1; // columns + floor shell
+    // columns + the synthetic-extent floor plate + the traced building slab
+    // when one was served. Derived rather than fixed, so a deployment without
+    // private geometry reconciles at its own smaller number.
+    const expectedStructural = s.api.columns + 1 + s.footprintMeshes;
     const expectedOperational = s.api.slots + s.machineMeshes;
-    check(s.perLayer.structural === expectedStructural, 'structural meshes = columns + floor shell',
+    check(s.perLayer.structural === expectedStructural,
+      'structural meshes = columns + floor plate + traced outline',
       `${s.perLayer.structural} vs ${expectedStructural}`);
     check(s.perLayer.functional === s.api.zones, 'functional meshes = zones served',
       `${s.perLayer.functional} vs ${s.api.zones}`);
@@ -365,6 +385,23 @@ async function run() {
     check(s.machineMeshes === s.api.placements, 'machine meshes = placements served',
       `${s.machineMeshes} vs ${s.api.placements}`);
     check(!s.api.conflictServed, 'conflicting zones withheld from the wire');
+
+    // ── Building outline: the floor must read as THIS building ──
+    // The envelope is only a bounding box, and a box is the same box for every
+    // rectangular-ish building. The traced outline is what distinguishes them.
+    if (!s.api.footprintVertices) {
+      skip('the traced building outline is drawn', NO_GEOMETRY);
+      skip('the surveyed structural grid replaces the orientation helper', NO_GEOMETRY);
+    } else {
+      check(s.api.footprintVertices >= 3, 'the served outline is a polygon',
+        `${s.api.footprintVertices} vertices`);
+      check(s.footprintMeshes === 1, 'the traced building outline is drawn',
+        `${s.footprintMeshes} slab(s)`);
+      check(s.structuralGrid === s.api.gridLines,
+        'the surveyed structural grid replaces the orientation helper',
+        `${s.structuralGrid} drawn vs ${s.api.gridLines} served`);
+      check(!s.orientationGridPresent, 'the decorative orientation grid is retired once the surveyed grid arrives');
+    }
     // Only meaningful where zones exist. With none served there is nothing
     // being withheld and nothing being over-served -- that is not a pass.
     if (!s.api.zonesTotal) skip('unvalidated zones withheld', NO_GEOMETRY);

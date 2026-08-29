@@ -618,6 +618,8 @@ app.get('/api/floor-geometry', (req, res) => {
   if (!geometry) {
     return res.status(200).json({
       envelope: null,
+      footprint_polygon: null,
+      grid: null,
       columns: [],
       zones: [],
       slots: [],
@@ -634,13 +636,23 @@ app.get('/api/floor-geometry', (req, res) => {
   // normalizes each slot to one wire shape regardless of the private file's own
   // internal shape, which the renderer relies on.
   //
-  // footprint_polygon, grid and camera were served here and consumed by
-  // nothing. The first two are traced facility geometry; publishing measured
-  // outlines that no client reads is disclosure with no purpose, so they are no
-  // longer served. Their counts still appear in /api/diagnostics, derived
-  // server-side.
+  // footprint_polygon and grid are served again, and the reason they were
+  // withdrawn is the reason they are back: they were removed when nothing
+  // consumed them, because publishing traced outlines no client reads is
+  // disclosure with no purpose. The renderer now draws the building from the
+  // traced outline and the surveyed gridlines instead of from a bounding box
+  // and a decorative helper grid, so they have a consumer and earn their place
+  // on the wire. Both go through the same field-by-field projection as
+  // everything else: vertices and line positions as finite numbers, axis labels
+  // through the token guard, and the traced area, winding note, span dimensions
+  // and provenance prose all left server-side.
+  //
+  // `camera` stays unserved. Nothing reads it, and framing is derived from the
+  // geometry rather than dictated by the private file.
   res.status(200).json({
     envelope: wire.projectEnvelope(geometry.envelope),
+    footprint_polygon: wire.projectFootprintPolygon(geometry.footprint_polygon),
+    grid: wire.projectGrid(geometry.grid),
     columns: wire.projectAll(geometry.columns, wire.projectColumn),
     zones: wire.projectAll(geometry.zones, wire.projectZoneBox),
     slots: wire.projectAll(geometry.slots, wire.projectSlot, mapping),

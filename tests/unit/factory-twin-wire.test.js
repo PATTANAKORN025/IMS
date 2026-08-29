@@ -325,6 +325,117 @@ test('an envelope missing an extent is withheld rather than half-served', () => 
   assert.strictEqual(wire.projectEnvelope(null), null);
 });
 
+// ── Building footprint ──
+
+test('the footprint carries vertices and tier, never its area or provenance', () => {
+  const out = wire.projectFootprintPolygon({
+    vertices: [{ x: 0, z: 0 }, { x: 10, z: 0 }, { x: 10, z: 10 }],
+    area_m2: 1234.5,
+    winding: 'CW',
+    vertex_count: 3,
+    confidence: 'HIGH',
+    geometry_status: 'observed',
+    source: 'TEST-SOURCE-PATH',
+    evidence: 'TEST-PRIVATE-NOTE describing how the perimeter was measured',
+    unresolved: 'TEST-PRIVATE-NOTE',
+  });
+  assert.deepStrictEqual(Object.keys(out).sort(), ['confidence', 'geometry_status', 'vertices']);
+  const s = JSON.stringify(out);
+  assert.ok(!s.includes('TEST-'));
+  assert.ok(!s.includes('1234'));
+});
+
+test('a footprint vertex list is rebuilt to x/z only', () => {
+  const out = wire.projectFootprintPolygon({
+    vertices: [
+      { x: 0, z: 0, on_gridline: true, note: 'TEST-VERTEX-NOTE' },
+      { x: 1, z: 0 },
+      { x: 1, z: 1 },
+    ],
+    confidence: 'HIGH',
+  });
+  assert.deepStrictEqual(out.vertices[0], { x: 0, z: 0 });
+  assert.ok(!JSON.stringify(out).includes('TEST-'));
+});
+
+test('one unusable footprint vertex withholds the whole outline', () => {
+  // A partial building outline is a different building. Half of it is worse
+  // than none of it, because it still looks like a boundary.
+  assert.strictEqual(
+    wire.projectFootprintPolygon({ vertices: [{ x: 0, z: 0 }, { x: 1, z: NaN }, { x: 1, z: 1 }] }),
+    null
+  );
+});
+
+test('a footprint below three vertices, or absent, is withheld', () => {
+  assert.strictEqual(wire.projectFootprintPolygon({ vertices: [{ x: 0, z: 0 }, { x: 1, z: 1 }] }), null);
+  assert.strictEqual(wire.projectFootprintPolygon(null), null);
+  assert.strictEqual(wire.projectFootprintPolygon('TEST-STRING'), null);
+});
+
+// ── Structural grid ──
+
+test('the grid carries line positions and labels, never span dimensions', () => {
+  const out = wire.projectGrid({
+    x_lines: [0, 6, 12],
+    x_labels: ['1', '2', '3'],
+    z_lines: [0, 6],
+    z_labels: ['A', 'B'],
+    x_spans_mm: [6000, 6000],
+    z_spans_mm: [6000],
+    confidence: 'HIGH',
+    source: 'TEST-SOURCE-PATH',
+    evidence: 'TEST-PRIVATE-NOTE',
+  });
+  assert.deepStrictEqual(Object.keys(out).sort(), ['confidence', 'x', 'z']);
+  assert.deepStrictEqual(out.x[1], { at: 6, label: '2' });
+  const s = JSON.stringify(out);
+  assert.ok(!s.includes('TEST-'));
+  assert.ok(!s.includes('6000'));
+});
+
+test('a grid label that is not a safe token is dropped, not echoed', () => {
+  const out = wire.projectGrid({
+    x_lines: [0, 6],
+    x_labels: ['1', 'TEST LABEL with spaces'],
+    z_lines: [0, 6],
+    z_labels: ['A', 'B'],
+  });
+  assert.strictEqual(out.x[0].label, '1');
+  assert.strictEqual(out.x[1].label, null);
+});
+
+test('an unusable gridline is dropped while the rest of the grid survives', () => {
+  // Unlike the footprint, a partial grid is still a true statement about the
+  // lines that were read -- it does not imply a boundary that was not traced.
+  const out = wire.projectGrid({
+    x_lines: [0, 'TEST-NOT-A-NUMBER', 12],
+    x_labels: ['1', '2', '3'],
+    z_lines: [0, 6],
+    z_labels: ['A', 'B'],
+  });
+  assert.strictEqual(out.x.length, 2);
+  assert.deepStrictEqual(out.x.map((l) => l.at), [0, 12]);
+});
+
+test('a grid with too few usable lines on both axes is withheld', () => {
+  assert.strictEqual(wire.projectGrid({ x_lines: [0], z_lines: [] }), null);
+  assert.strictEqual(wire.projectGrid(null), null);
+  assert.strictEqual(wire.projectGrid({}), null);
+});
+
+test('grid label indices stay aligned with their line positions', () => {
+  const out = wire.projectGrid({
+    x_lines: [0, 6, 12],
+    x_labels: ['1'],
+    z_lines: [0, 6],
+    z_labels: ['A', 'B'],
+  });
+  assert.strictEqual(out.x[0].label, '1');
+  assert.strictEqual(out.x[1].label, null);
+  assert.strictEqual(out.x[2].label, null);
+});
+
 // ── Zone boxes ──
 
 test('an anonymous zone box carries its bounds and nothing else', () => {

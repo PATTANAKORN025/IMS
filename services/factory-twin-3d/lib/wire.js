@@ -208,6 +208,74 @@ function projectEnvelope(env) {
 }
 
 /**
+ * Projects the traced building footprint: the outer boundary polygon.
+ *
+ * This is the real, stepped outline -- not the bounding box the envelope
+ * describes -- and it is what makes the floor read as this building rather than
+ * as a generic rectangle. Carried as vertices and nothing else: the traced area,
+ * the winding note and the free-text provenance describing how the perimeter
+ * was measured all stay server-side.
+ *
+ * Withheld entirely if any vertex is unusable. A partial outline is a different
+ * building, and drawing one would assert a boundary nobody traced.
+ */
+function projectFootprintPolygon(fp) {
+  if (!fp || typeof fp !== 'object') return null;
+  const raw = Array.isArray(fp.vertices) ? fp.vertices : [];
+  const vertices = [];
+  for (const v of raw) {
+    const p = point2(v);
+    if (!p) return null;
+    vertices.push(p);
+  }
+  if (vertices.length < 3) return null;
+  return {
+    vertices,
+    confidence: fromEnum(fp.confidence, ALLOWED_CONFIDENCE),
+    geometry_status: fromEnum(fp.geometry_status, ALLOWED_GEOMETRY_STATUS),
+  };
+}
+
+/**
+ * Projects the structural grid: the surveyed gridline positions and their
+ * printed labels.
+ *
+ * The labels are the drawing's own axis names, which is why they go through the
+ * token guard like every other identifier -- a label that is not a safe token is
+ * dropped rather than echoed. Span dimensions in millimetres are not carried:
+ * they are printed facility dimensions, and nothing renders them.
+ *
+ * A line whose position is unusable is dropped rather than placed, but unlike
+ * the footprint a partial grid is still a true statement about the lines that
+ * were read, so the rest survives.
+ */
+function projectGrid(grid) {
+  if (!grid || typeof grid !== 'object') return null;
+  const axis = (positions, labels) => {
+    const pos = Array.isArray(positions) ? positions : [];
+    const lab = Array.isArray(labels) ? labels : [];
+    const out = [];
+    for (let i = 0; i < pos.length; i++) {
+      const at = num(pos[i]);
+      if (at === null) continue;
+      out.push({ at, label: token(lab[i]) });
+    }
+    return out;
+  };
+  const x = axis(grid.x_lines, grid.x_labels);
+  const z = axis(grid.z_lines, grid.z_labels);
+  // Two lines per axis is the minimum that describes a grid rather than a
+  // stray line. Below that it is withheld, so the renderer is never handed
+  // something that would draw as an arbitrary mark across the floor.
+  if (x.length < 2 || z.length < 2) return null;
+  return {
+    x,
+    z,
+    confidence: fromEnum(grid.confidence, ALLOWED_CONFIDENCE),
+  };
+}
+
+/**
  * Projects one validated functional zone: its tier, and the boundary needed to
  * draw it. Its process type, its printed and calculated areas, and its
  * free-text validation notes are not carried — nothing rendered them, and each
@@ -270,6 +338,8 @@ module.exports = {
   projectColumn,
   projectZoneBox,
   projectEnvelope,
+  projectFootprintPolygon,
+  projectGrid,
   projectFunctionalZone,
   projectConflict,
   projectAll,
