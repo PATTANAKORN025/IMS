@@ -87,6 +87,48 @@ function safeZoneId(id) {
 }
 
 /**
+ * Coverage of the schematic reference layer, as counts only.
+ *
+ * The question this answers is the one an operator or a runbook actually asks:
+ * how much of what the drawing shows is tied to anything real. Today the answer
+ * is none of it, and that has to be visible from the safe endpoint rather than
+ * inferable only by reading the code.
+ *
+ * Counts and nothing else. No area name, no drawing label, no coordinate --
+ * this response is pasted into tickets, and the security model puts area names
+ * on the authenticated geometry route and nowhere else. The two link counts are
+ * computed from the records rather than hardcoded to zero, so the day a
+ * schematic record does gain a slot or a device the number moves on its own.
+ */
+function schematicCoverage(schematic) {
+  const d = schematic && typeof schematic === 'object' ? schematic : {};
+  const areas = Array.isArray(d.areas) ? d.areas : [];
+  const banks = Array.isArray(d.banks) ? d.banks : [];
+  const snapshots = Array.isArray(d.snapshots) ? d.snapshots : [];
+  const labels = banks.flatMap((b) => (Array.isArray(b && b.labels) ? b.labels : []));
+
+  return {
+    present: banks.length > 0 || areas.length > 0,
+    areas: areas.length,
+    banks: banks.length,
+    cells: banks.reduce((n, b) => n + count(b && b.columns) * count(b && b.rows), 0),
+    observed_labels: labels.length,
+    ambiguous_labels: labels.filter((l) => l && l.ambiguous === true).length,
+    snapshots: snapshots.length,
+    // Two renders declaring one instant and disagreeing is a standing conflict,
+    // and a count of it belongs where someone reading health will see it.
+    conflicting_snapshots: snapshots.filter(
+      (s) => Array.isArray(s && s.conflicts_with) && s.conflicts_with.length > 0
+    ).length,
+    // The coverage that matters. A schematic record has no field for either
+    // today, so both are zero by construction -- and stay zero until an
+    // authoritative record introduces one.
+    linked_to_physical_slot: banks.filter((b) => b && b.physical_slot_id).length,
+    linked_to_ims_device: banks.filter((b) => b && b.ims_device_id).length,
+  };
+}
+
+/**
  * @param {Object} input
  * @param {Object|null} input.geometry - Private geometry document, or null.
  * @param {Object} input.zoneMeta - Zone layer meta (served/withheld/total/byConfidence/conflicts).
@@ -95,7 +137,14 @@ function safeZoneId(id) {
  * @param {Object} [input.runtime] - Aggregate counters (requests, errors, durations).
  * @returns {Object} A response containing only counts, booleans and fixed enums.
  */
-function buildDiagnostics({ geometry, zoneMeta = {}, confirmedMappings = 0, simulatedPlacements = 0, runtime = {} }) {
+function buildDiagnostics({
+  geometry,
+  zoneMeta = {},
+  confirmedMappings = 0,
+  simulatedPlacements = 0,
+  runtime = {},
+  schematic = null,
+}) {
   const slots = geometry && Array.isArray(geometry.slots) ? geometry.slots : [];
   const columns = geometry && Array.isArray(geometry.columns) ? geometry.columns : [];
   const envelope = geometry && geometry.envelope ? geometry.envelope : null;
@@ -144,6 +193,7 @@ function buildDiagnostics({ geometry, zoneMeta = {}, confirmedMappings = 0, simu
       status: c && c.status === 'CONFLICT' ? 'CONFLICT' : 'UNKNOWN',
       member_count: Array.isArray(c && c.ids) ? c.ids.length : 0,
     })),
+    schematic: schematicCoverage(schematic),
     runtime: {
       requests_total: count(runtime.requestsTotal),
       requests_failed: count(runtime.requestsFailed),

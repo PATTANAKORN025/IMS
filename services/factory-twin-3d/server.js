@@ -724,6 +724,9 @@ app.get('/api/diagnostics', (req, res) => {
       confirmedMappings: Object.values(mapping).filter(Boolean).length,
       simulatedPlacements: SIMULATED_PLACEMENTS.length,
       runtime: { ...runtimeCounters, uptimeSeconds: Math.floor(process.uptime()) },
+      // Coverage only -- lib/diagnostics reduces this to counts and can emit
+      // no name, label or coordinate from it.
+      schematic: loadPrivateSchematic(),
     }),
     generated_at: new Date().toISOString(),
   });

@@ -277,6 +277,77 @@ test('an all-caps name is not exempt from the diagnostics boundary', () => {
   assert.ok(s.includes('zone-unknown'));
 });
 
+// ── schematic coverage ──
+// Answers "how much of the drawing is tied to anything real" without naming
+// anything on the drawing.
+
+test('schematic coverage reports counts and never a name or a label', () => {
+  const d = buildDiagnostics({
+    geometry: null,
+    schematic: {
+      areas: [{ id: 'sch-a', name: 'TEST AREA NAME' }],
+      banks: [
+        {
+          id: 'bank-a',
+          columns: 2,
+          rows: 5,
+          labels: [{ text: 'TEST-LABEL', ambiguous: true }, { text: 'TEST-OTHER' }],
+        },
+      ],
+      snapshots: [{ id: 'a', conflicts_with: ['b'] }, { id: 'b', conflicts_with: ['a'] }],
+    },
+  });
+  assert.strictEqual(d.schematic.areas, 1);
+  assert.strictEqual(d.schematic.banks, 1);
+  assert.strictEqual(d.schematic.cells, 10);
+  assert.strictEqual(d.schematic.observed_labels, 2);
+  assert.strictEqual(d.schematic.ambiguous_labels, 1);
+  assert.strictEqual(d.schematic.conflicting_snapshots, 2);
+  const s = JSON.stringify(d);
+  assert.ok(!s.includes('TEST AREA NAME'));
+  assert.ok(!s.includes('TEST-LABEL'));
+  assert.ok(!s.includes('sch-a'));
+  assert.ok(!s.includes('bank-a'));
+});
+
+test('schematic link coverage is zero and is computed, not asserted', () => {
+  // Zero because no schematic record carries either field, not because the
+  // number is hardcoded. Supplying one moves it, which is what makes the zero
+  // meaningful.
+  const none = buildDiagnostics({ geometry: null, schematic: { banks: [{ id: 'b', columns: 1, rows: 1 }] } });
+  assert.strictEqual(none.schematic.linked_to_physical_slot, 0);
+  assert.strictEqual(none.schematic.linked_to_ims_device, 0);
+
+  const linked = buildDiagnostics({
+    geometry: null,
+    schematic: {
+      banks: [{ id: 'b', columns: 1, rows: 1, physical_slot_id: 'TEST-SLOT-1', ims_device_id: 'TEST-DEVICE-1' }],
+    },
+  });
+  assert.strictEqual(linked.schematic.linked_to_physical_slot, 1);
+  assert.strictEqual(linked.schematic.linked_to_ims_device, 1);
+  // Even then, the identifiers themselves stay server-side.
+  assert.ok(!JSON.stringify(linked).includes('TEST-SLOT-1'));
+  assert.ok(!JSON.stringify(linked).includes('TEST-DEVICE-1'));
+});
+
+test('an absent or malformed schematic reports zeros rather than throwing', () => {
+  for (const bad of [null, undefined, 'TEST-STRING', 42, [], { banks: 'nope', areas: 7 }]) {
+    const d = buildDiagnostics({ geometry: null, schematic: bad });
+    assert.strictEqual(d.schematic.banks, 0);
+    assert.strictEqual(d.schematic.cells, 0);
+    assert.strictEqual(d.schematic.present, false);
+  }
+});
+
+test('a malformed cell count cannot produce a nonsense total', () => {
+  const d = buildDiagnostics({
+    geometry: null,
+    schematic: { banks: [{ id: 'b', columns: 'TEST-NOT-A-NUMBER', rows: -5 }] },
+  });
+  assert.strictEqual(d.schematic.cells, 0);
+});
+
 test('building diagnostics never mutates its input', () => {
   const before = JSON.stringify(POISON);
   build();
