@@ -323,6 +323,29 @@ test('banks are served in a deterministic order', () => {
   assert.deepStrictEqual(out.banks.map((b) => b.id), ['bank-a', 'bank-b', 'bank-c']);
 });
 
+test('a bank may belong to no named area', () => {
+  // The reference puts a couple of blocks outside every labelled region. They
+  // are still equipment on the drawing, so an absent area is carried as null
+  // rather than withholding the bank or inventing an area to hold it.
+  const out = schematic.projectBank(validBank({ area_id: null }));
+  assert.notStrictEqual(out, null);
+  assert.strictEqual(out.area_id, null);
+});
+
+test('an area reference that is not a safe token becomes none, not the raw value', () => {
+  const out = schematic.projectBank(validBank({ area_id: 'TEST AREA REF' }));
+  assert.strictEqual(out.area_id, null);
+});
+
+test('a horizontal bank keeps its orientation', () => {
+  // Not every group on the drawing is a vertical stack; the orientation is
+  // observed, so it is carried rather than assumed.
+  const out = schematic.projectBank(validBank({ orientation: 'HORIZONTAL' }));
+  assert.strictEqual(out.orientation, 'HORIZONTAL');
+  const bogus = schematic.projectBank(validBank({ orientation: 'TEST-DIAGONAL' }));
+  assert.strictEqual(bogus.orientation, null);
+});
+
 // ── Drawing labels ──
 
 test('a drawing label is its own class and never an identity', () => {

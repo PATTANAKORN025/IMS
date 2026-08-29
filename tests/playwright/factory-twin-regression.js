@@ -749,6 +749,7 @@ async function run() {
         'every drawing label is classified as an observed label',
         'labels the two renders disagree on remain marked ambiguous',
         'no bank carries a physical dimension field or an IMS identity',
+        'a bank outside every named area is still drawn',
         'the legend draws all six states the reference defines',
         'the legend states match the reference vocabulary and its order',
         'the secondary render carries its own north marker and title block',
@@ -829,6 +830,19 @@ async function run() {
         `${inSchematic.ambiguous} ambiguous`);
       check(!/"width"|"height"|ims_device_id|IMS_CONNECTED/.test(inSchematic.rawDoc),
         'no bank carries a physical dimension field or an IMS identity');
+      // The drawing puts some equipment outside every labelled region. Those
+      // banks must still be drawn rather than dropped for having no home.
+      const unhoused = await page.evaluate(() => {
+        const banks = window.__schematic.getDoc().banks;
+        const orphans = banks.filter((b) => !b.area_id);
+        return {
+          orphans: orphans.length,
+          drawn: orphans.filter((b) => document.querySelector(`[data-bank-id="${b.id}"]`)).length,
+        };
+      });
+      check(unhoused.orphans === unhoused.drawn,
+        'a bank outside every named area is still drawn',
+        `${unhoused.drawn} of ${unhoused.orphans}`);
 
       // ── Legend ──
       // The drawing defines six operational states. Publishing that vocabulary
