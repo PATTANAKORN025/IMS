@@ -23,7 +23,7 @@ The twin is unusual in that **the data is more sensitive than the service**.
 |---|---|
 | The source engineering drawing | Confidential. Lives outside the repository entirely. |
 | Derived private geometry (envelope, footprint, grid, columns, slot positions, zone boundaries) | Confidential. Gitignored, host-only, never in an image layer. |
-| Process and area names | Confidential. Never served, never logged, never in diagnostics. |
+| Process and area names | Confidential, with one deliberate exception: servable on the authenticated geometry route because the floor view is unreadable without them. Never logged, never in diagnostics, never in an error response. See [Area names](#area-names). |
 | Live telemetry | Internal. Already governed by the platform's existing controls. |
 | The code | Public. The repository is public and must run standalone on synthetic data. |
 
@@ -123,6 +123,36 @@ longer served: a functional zone's process type, its printed and calculated
 areas, and free-text validation and conflict-resolution notes. Publishing
 values read from a confidential drawing that no client reads is disclosure with
 no purpose.
+
+### Area names
+
+An area name is a process name, and this document classified process names as
+never served. That classification was changed deliberately, not eroded: a floor
+plan whose areas are all called `zone-07` cannot answer "what area is this",
+which is the question the view exists to answer.
+
+The exception is narrow, and the narrowness is the control:
+
+| Where | Area names |
+|---|---|
+| Authenticated geometry route | **Served.** The one place a name is needed to render the floor. |
+| Diagnostics | **Never.** That response is pasted into tickets and logs; a process name there has left the boundary the geometry route keeps. |
+| Logs and error responses | **Never.** Error bodies are fixed strings carrying nothing from the request. |
+| Filesystem disclosure | **Never.** No name reaches a path, and no path reaches a response. |
+| Arbitrary serialization | **Never.** The name is one named field in the projection, not a passthrough. |
+
+The guard is shaped rather than listed. A name must match an **uppercase-only**
+pattern of letters, digits, spaces and hyphens, at most 32 characters. Every
+area label on the drawing is set in caps; every note, path and sentence that
+must not travel contains lowercase. So prose fails by shape, the way the token
+guard works elsewhere, instead of by a blocklist someone has to keep current.
+A name that does not match is withheld, never rewritten into one that does, and
+a bad label costs the label and never the geometry it belongs to.
+
+The approved vocabulary is deliberately **not** in this repository. Enforcing a
+hardcoded list of real area names in public code would publish exactly the
+thing being protected. The code enforces shape; the private data supplies the
+values.
 
 ### Identifier lookups
 

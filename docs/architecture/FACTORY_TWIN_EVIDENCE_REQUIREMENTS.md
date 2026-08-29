@@ -195,6 +195,61 @@ record. It is deliberately dull.
 > Steps 4 and 5 are where fabrication would enter if it ever did. A source that
 > cannot support a claim must be allowed to fail to support it.
 
+## Area names: what is known and what is missing
+
+The drawing's area labels -- the names an operator would use to say where they
+are -- are **OBSERVED and unattached**. Both facts matter.
+
+**Observed.** Two renderings of the manufacturing system's floor schematic name
+eleven labelled regions, two of which carry the same label. The labels are
+legible and unambiguous. That is real evidence about what areas exist.
+
+**Unattached.** Not one of those names can be put on a measured polygon, and the
+obstacle is structural rather than a matter of effort:
+
+| What is needed | What the schematic has |
+|---|---|
+| A shared reference frame with the measured plan | No structural gridline, no grid bubble, no datum |
+| A scale | A title block whose SCALE field is blank |
+| Dimensions in a known unit | Unitless annotations that reference no gridline |
+| A stated correspondence | None; the schematic names areas, it does not identify them against the plan |
+
+What is left is shape and position — matching a named region to a measured
+polygon because they look alike or sit in about the same place. That is
+`visual_similarity`, `proximity` and `grid_symmetry`, all three of which the
+evidence pipeline refuses **by name**. The refusal is doing its job here: the
+match would probably be right, and "probably right" is precisely the claim this
+system exists not to make.
+
+So the zone-name field is served, guarded and tested, and carries `null` for
+every zone.
+
+### What would unlock it
+
+Any one of these, in decreasing order of strength:
+
+| Evidence | Effect |
+|---|---|
+| A stated correspondence: area name to zone id, from someone who knows | Attaches names directly. The only path that needs no inference. |
+| The schematic redrawn over the structural grid, or with gridline references | Gives the shared frame, so a correspondence becomes readable rather than guessed. |
+| Vector CAD of this floor with named layers or area labels | Replaces the digitized boundaries and carries the names with them. See Priority 2. |
+| The architectural plan's own area annotations, if they exist on a sheet not yet supplied | Same frame as the measured polygons, so names attach without inference. |
+
+### A conflict, preserved
+
+The two renderings carry the **same timestamp** and disagree with each other:
+equipment cell values differ within the same columns, status hatching differs,
+and several labels differ by single glyphs in ways that read as render or
+transcription ambiguity rather than as real difference.
+
+They are therefore **not** the same layout at two moments, which is how a pair
+of status snapshots would normally be read. Two images asserting one instant
+and disagreeing is an unresolved conflict about the source, and it is recorded
+rather than resolved by preferring the clearer image. It does not affect the
+measured geometry, which comes from the architectural plan and not from these.
+
+---
+
 ## Sources already evaluated and rejected
 
 Recorded so they are not re-investigated:

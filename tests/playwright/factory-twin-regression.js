@@ -153,6 +153,8 @@ async function snapshot(page) {
         zones: geo.functional_zones.length,
         zonesTotal: geo.functional_zones_meta ? geo.functional_zones_meta.total : null,
         conflictServed: geo.functional_zones.some((z) => ['zone-28', 'zone-31'].includes(z.id)),
+        zoneNames: geo.functional_zones.map((z) => z.name).filter((n) => n !== null && n !== undefined),
+        zonesNamedCount: geo.functional_zones.filter((z) => z.name).length,
         envelopeHeight: geo.envelope ? geo.envelope.height : null,
         footprintVertices: geo.footprint_polygon ? geo.footprint_polygon.vertices.length : 0,
         gridLines: geo.grid ? geo.grid.x.length + geo.grid.z.length : 0,
@@ -530,6 +532,27 @@ async function run() {
     if (ev.clearHeightNull === null) skip('clear height stays null rather than estimated', NO_GEOMETRY);
     else check(ev.clearHeightNull, 'clear height stays null rather than estimated');
     check(ev.confirmedMappings === 0, 'confirmed mappings remains 0', `got ${ev.confirmedMappings}`);
+
+    // ── Zone display names ──
+    // Names are servable on this route and nowhere else. Whatever the count is,
+    // every name must satisfy the label guard, and none may appear in
+    // diagnostics -- which is pasted into tickets and logs.
+    const nameGuard = /^[A-Z0-9][A-Z0-9 \-]{0,31}$/;
+    check(
+      baseline.api.zoneNames.every((n) => nameGuard.test(n)),
+      'every served zone name is a drawing label, not free text',
+      `${baseline.api.zonesNamedCount} named of ${baseline.api.zones}`
+    );
+    const diagText = await page.evaluate(async () => JSON.stringify(await (await fetch('api/diagnostics')).json()));
+    check(
+      baseline.api.zoneNames.every((n) => !diagText.includes(n)),
+      'no zone name appears in diagnostics'
+    );
+    // Today this is zero, and that is the honest state: the names exist on a
+    // schematic that shares no reference frame with these measured polygons,
+    // so attaching one would be inventing the correspondence. If this ever
+    // becomes non-zero, an authoritative correspondence must have arrived.
+    console.log(`  INFO  ${baseline.api.zonesNamedCount} of ${baseline.api.zones} served zones carry a drawing label`);
     // Only assertable where a fleet exists. Zero monitored devices is a real
     // deployment state, not a failed assertion about simulated positions.
     if (!baseline.api.placements) skip('machine positions are still declared simulated', NO_DEVICES);

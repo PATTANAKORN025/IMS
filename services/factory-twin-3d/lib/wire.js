@@ -37,6 +37,24 @@
  */
 const SAFE_TOKEN = /^[A-Za-z0-9][A-Za-z0-9_.:-]{0,63}$/;
 
+/**
+ * A zone display name: the drawing's own area label, and the one field on the
+ * wire that is prose-shaped rather than identifier-shaped.
+ *
+ * Deliberately uppercase-only. Every area label on the drawing is set in caps
+ * ("DRILLING HOLD", "AUTO LAY UP", "DE-OXIDE"), while the things that must
+ * never travel -- an author's note, a filesystem path, a sentence of
+ * provenance -- all contain lowercase. Requiring caps therefore admits the
+ * labels and rejects the prose by shape, which is the same discipline the
+ * token guard uses, not a blocklist of bad words. Spaces and hyphens are
+ * allowed because real labels contain them; slashes, dots and colons are not,
+ * so a path cannot pass.
+ *
+ * Capped at 32 characters: an area label is short, and a length limit is what
+ * stops a paragraph typed into the wrong field from being served as a name.
+ */
+const ZONE_NAME = /^[A-Z0-9][A-Z0-9 \-]{0,31}$/;
+
 /** Confidence tiers a private document is allowed to express. */
 const ALLOWED_CONFIDENCE = new Set(['high', 'medium', 'low', 'HIGH', 'MEDIUM', 'LOW']);
 
@@ -59,6 +77,18 @@ function token(v) {
 
 function fromEnum(v, allowed) {
   return typeof v === 'string' && allowed.has(v) ? v : null;
+}
+
+/**
+ * A zone display name, or null. Trimmed before matching so trailing whitespace
+ * in the source file is not the reason an otherwise valid label is dropped,
+ * but never otherwise rewritten: a name that does not match is withheld, not
+ * sanitised into something that does.
+ */
+function zoneName(v) {
+  if (typeof v !== 'string') return null;
+  const trimmed = v.trim();
+  return ZONE_NAME.test(trimmed) ? trimmed : null;
 }
 
 /** A point on the floor plane. Null unless every component is a real number. */
@@ -284,6 +314,13 @@ function projectGrid(grid) {
 function projectFunctionalZone(zone) {
   if (!zone || typeof zone !== 'object') return null;
   const confidence = fromEnum(zone.confidence, ALLOWED_CONFIDENCE);
+  // The area's own label, when the private record carries one. It is null for
+  // every zone today: the names exist on a schematic that shares no reference
+  // frame with these measured polygons, so no zone has a name that could be
+  // attached without inventing the correspondence. The field is here so that
+  // attaching one later is a data change rather than a code change, and so the
+  // guard protecting it is already tested.
+  const name = zoneName(zone.zone_name);
   const geom = zone.geometry && typeof zone.geometry === 'object' ? zone.geometry : null;
   const rawVerts = geom && Array.isArray(geom.vertices) ? geom.vertices : [];
   const vertices = [];
@@ -297,6 +334,9 @@ function projectFunctionalZone(zone) {
   if (!confidence || vertices.length < 3) return null;
   return {
     id: token(zone.id),
+    // Named or not, the id is what the rest of the system keys on. A name is a
+    // label for a human, never an identifier.
+    name,
     confidence,
     status: token(zone.status),
     geometry: { vertices },
@@ -331,6 +371,8 @@ function projectAll(items, project, ...rest) {
 
 module.exports = {
   SAFE_TOKEN,
+  ZONE_NAME,
+  zoneName,
   num,
   token,
   deviceIdFor,

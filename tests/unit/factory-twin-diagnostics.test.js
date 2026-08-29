@@ -241,6 +241,42 @@ test('the histogram carries counts only, never a timing or an identifier', () =>
   }
 });
 
+// ── zone and process names ──
+// Area names became servable on the authenticated geometry route. They did NOT
+// become servable here: diagnostics is pasted into tickets and logs, and a
+// process name in one of those has left the boundary the geometry route keeps.
+
+test('a zone name never reaches diagnostics, however it is supplied', () => {
+  const d = buildDiagnostics({
+    geometry: {
+      slots: [{ zone_name: 'TEST AREA NAME', height_status: 'unknown' }],
+      columns: [{ zone_name: 'TEST AREA NAME' }],
+      envelope: { zone_name: 'TEST AREA NAME', clear_height_m: null },
+    },
+    zoneMeta: {
+      total: 1,
+      served: 1,
+      withheld: 0,
+      byConfidence: { HIGH: 1, 'TEST AREA NAME': 3 },
+      conflicts: [{ ids: ['zone-28', 'TEST AREA NAME'], status: 'CONFLICT', name: 'TEST AREA NAME' }],
+      names: ['TEST AREA NAME'],
+    },
+  });
+  assert.ok(!JSON.stringify(d).includes('TEST AREA NAME'));
+});
+
+test('an all-caps name is not exempt from the diagnostics boundary', () => {
+  // The geometry route admits all-caps labels by design. Diagnostics has no
+  // such door at all, so the same string must still find no way out here.
+  const d = buildDiagnostics({
+    geometry: null,
+    zoneMeta: { byConfidence: { DRILLING: 4 }, conflicts: [{ ids: ['DRILLING HOLD'], status: 'CONFLICT' }] },
+  });
+  const s = JSON.stringify(d);
+  assert.ok(!s.includes('DRILLING'));
+  assert.ok(s.includes('zone-unknown'));
+});
+
 test('building diagnostics never mutates its input', () => {
   const before = JSON.stringify(POISON);
   build();

@@ -238,7 +238,7 @@ test('a zone type, its areas and its notes are not carried', () => {
     validationNotes: 'TEST-PRIVATE-NOTE',
     geometry: { vertices: [{ x: 0, z: 0 }, { x: 1, z: 0 }, { x: 1, z: 1 }] },
   });
-  assert.deepStrictEqual(Object.keys(out).sort(), ['confidence', 'geometry', 'id', 'status']);
+  assert.deepStrictEqual(Object.keys(out).sort(), ['confidence', 'geometry', 'id', 'name', 'status']);
   const s = JSON.stringify(out);
   assert.ok(!s.includes('TEST-PROCESS-NAME'));
   assert.ok(!s.includes('TEST-PRIVATE-NOTE'));
@@ -285,6 +285,85 @@ test('a zone below three vertices, or with no accepted tier, is withheld', () =>
     }),
     null
   );
+});
+
+// ── Zone display names ──
+//
+// The one prose-shaped field on the wire. Its guard admits the drawing's
+// all-caps area labels and rejects everything shaped like prose or a path.
+
+test('an all-caps area label is carried', () => {
+  for (const name of ['DRILLING', 'DRILLING HOLD', 'AUTO LAY UP', 'DE-OXIDE', 'XRY', 'PP']) {
+    assert.strictEqual(wire.zoneName(name), name, name);
+  }
+});
+
+test('a lowercase note cannot pass as a name', () => {
+  // Every label on the drawing is capitalised; every note, path and sentence
+  // that must not travel contains lowercase. The guard separates them by shape.
+  assert.strictEqual(wire.zoneName('Extracted from the cyan layer, see notes'), null);
+  assert.strictEqual(wire.zoneName('drilling'), null);
+  assert.strictEqual(wire.zoneName('TEST-Private-Note'), null);
+});
+
+test('a filesystem path cannot pass as a name', () => {
+  assert.strictEqual(wire.zoneName('C:/TEST/PRIVATE/PLAN.DWG'), null);
+  assert.strictEqual(wire.zoneName('/TEST/PRIVATE'), null);
+  assert.strictEqual(wire.zoneName('..\TEST'), null);
+});
+
+test('a name longer than a label is withheld, not truncated', () => {
+  const long = 'A'.repeat(33);
+  assert.strictEqual(wire.zoneName(long), null);
+  assert.strictEqual(wire.zoneName('A'.repeat(32)), 'A'.repeat(32));
+});
+
+test('surrounding whitespace is trimmed but nothing else is rewritten', () => {
+  assert.strictEqual(wire.zoneName('  DRILLING HOLD  '), 'DRILLING HOLD');
+  // Punctuation is not stripped to force a match: the name is simply refused.
+  assert.strictEqual(wire.zoneName('DRILLING; HOLD'), null);
+  assert.strictEqual(wire.zoneName('DRILLING/HOLD'), null);
+});
+
+test('a non-string name is refused rather than coerced', () => {
+  for (const bad of [null, undefined, 42, {}, [], true]) {
+    assert.strictEqual(wire.zoneName(bad), null);
+  }
+});
+
+test('a zone carries its name when the record has one', () => {
+  const out = wire.projectFunctionalZone({
+    id: 'zone-04',
+    zone_name: 'TEST AREA',
+    confidence: 'HIGH',
+    geometry: { vertices: [{ x: 0, z: 0 }, { x: 1, z: 0 }, { x: 1, z: 1 }] },
+  });
+  assert.strictEqual(out.name, 'TEST AREA');
+  assert.deepStrictEqual(Object.keys(out).sort(), ['confidence', 'geometry', 'id', 'name', 'status']);
+});
+
+test('a zone with no name reports null rather than borrowing its id', () => {
+  // An unnamed area must not silently display its anonymous id as if that were
+  // the drawing's label.
+  const out = wire.projectFunctionalZone({
+    id: 'zone-05',
+    confidence: 'HIGH',
+    geometry: { vertices: [{ x: 0, z: 0 }, { x: 1, z: 0 }, { x: 1, z: 1 }] },
+  });
+  assert.strictEqual(out.name, null);
+});
+
+test('an unusable name does not withhold the zone itself', () => {
+  // The boundary is measured evidence; the label is not. A bad label costs the
+  // label, never the geometry.
+  const out = wire.projectFunctionalZone({
+    id: 'zone-06',
+    zone_name: 'TEST-Private-Note about this area',
+    confidence: 'MEDIUM',
+    geometry: { vertices: [{ x: 0, z: 0 }, { x: 1, z: 0 }, { x: 1, z: 1 }] },
+  });
+  assert.strictEqual(out.name, null);
+  assert.strictEqual(out.geometry.vertices.length, 3);
 });
 
 // ── Conflicts ──
