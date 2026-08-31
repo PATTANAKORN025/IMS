@@ -362,13 +362,19 @@ async function run() {
 
     // Scene composition is checked against what the API served, so adding
     // evidence later does not require editing this test.
-    // columns + the synthetic-extent floor plate + the traced building slab
-    // when one was served. Derived rather than fixed, so a deployment without
-    // private geometry reconciles at its own smaller number.
-    const expectedStructural = s.api.columns + 1 + s.footprintMeshes;
-    // slots + monitored devices + one instanced mesh per presentation part.
-    // The presentation meshes are four objects standing in for 242 machines,
-    // which is exactly why they are counted as four.
+    //
+    // Structural meshes are the columns plus exactly ONE floor plate. Which
+    // plate depends on the evidence: with a traced polygon it is the measured
+    // slab and the synthetic-extent plate is retired, because two plates would
+    // be two answers to "where is the building" and the synthetic one is the
+    // wrong answer. Without geometry the synthetic plate is the only spatial
+    // reference there is and stays. Either way the count is columns + 1.
+    const measuredPlate = s.footprintMeshes > 0;
+    const syntheticPlate = !measuredPlate && s.machineMeshes > 0 ? 1 : 0;
+    const expectedStructural = s.api.columns + (measuredPlate ? s.footprintMeshes : syntheticPlate);
+    // slots + monitored devices + one instanced mesh per (form, part). The
+    // presentation meshes are a couple of dozen objects standing in for every
+    // machine on the floor, which is exactly why they are counted as objects.
     const expectedOperational = s.api.slots + s.machineMeshes + s.presentationMeshes;
     check(s.perLayer.structural === expectedStructural,
       'structural meshes = columns + floor plate + traced outline',

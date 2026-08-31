@@ -173,20 +173,96 @@ let machineBounds = null; // synthetic device grid extent
 // Derives a camera placement that fits a bounding box, rather than hardcoding
 // coordinates: the building's extent is known from the data, so the framing
 // should follow it and stay correct if the evidence ever changes.
+// The HUD is an opaque overlay pinned to the left, so the part of the canvas a
+// viewer can actually see is narrower than the canvas. Fitting to the full
+// width puts the model half behind the panel. Measured from the element rather
+// than assumed, because the panel's width is set in CSS and has changed twice.
+function usableViewport() {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const hud = document.getElementById('hud');
+  const banner = document.getElementById('simulated-banner');
+  const left = hud && !hud.hidden ? hud.getBoundingClientRect().right : 0;
+  const top = banner && !banner.hidden ? banner.getBoundingClientRect().height : 0;
+  // Never let a huge panel on a small screen collapse the usable area to
+  // nothing: below this the overlay is the problem, not the framing.
+  const usableW = Math.max(w - left, w * 0.35);
+  const usableH = Math.max(h - top, h * 0.5);
+  return { w, h, left, top, usableW, usableH };
+}
+
+// Derives a camera placement that fits a bounding box, rather than hardcoding
+// coordinates: the building's extent is known from the data, so the framing
+// should follow it and stay correct if the evidence ever changes.
+//
+// The fit is measured, not computed from a formula. An oblique camera sees a
+// box's silhouette, not its axis-aligned extent, so the trigonometric fit that
+// used to live here under-estimated the required distance and clipped the
+// corners of the floor -- worst at the shallow angles that make the floor
+// readable. This projects the eight corners through a trial camera and scales
+// until they land inside the usable rectangle, which is exact for any angle,
+// any aspect and any overlay width.
 function frameBounds({ cx, cz, width, depth, height = 0 }) {
-  // camera.fov is the VERTICAL field of view, so the two axes need different
-  // divisors: the horizontal half-angle is tan(fov/2) * aspect. Treating both
-  // the same over-fits on one axis, which showed up as structure clipping at
-  // portrait aspect ratios where the depth axis becomes the binding one.
-  const fov = THREE.MathUtils.degToRad(camera.fov);
-  const tanV = Math.tan(fov / 2);
-  const aspect = Math.max(camera.aspect, 0.0001);
-  const distForWidth = width / 2 / (tanV * aspect);
-  const distForDepth = depth / 2 / tanV;
-  const dist = Math.max(distForWidth, distForDepth) * 1.15; // 15% margin so nothing clips at the edge
+  const view = usableViewport();
+  // The model stays centred on the canvas -- moving it sideways would mean a
+  // projection offset, and that changes what every raycast and every existing
+  // framing assertion sees. Instead the fit box is narrowed symmetrically by
+  // the overlay width on BOTH sides, so a canvas-centred model clears the
+  // panel on the left and has the same margin on the right. It costs some
+  // screen area and buys a floor that is never half-hidden.
+  const centreNdcX = 0;
+  const centreNdcY = 0;
+  const clearW = Math.max(view.w - 2 * view.left, view.w * 0.30);
+  const clearH = Math.max(view.h - 2 * view.top, view.h * 0.50);
+  const halfNdcX = (clearW / view.w) * 0.94;
+  const halfNdcY = (clearH / view.h) * 0.94;
+
+  const dir = new THREE.Vector3(0.35, 0.78, 0.85).normalize();
+  const target = new THREE.Vector3(cx, height / 2, cz);
+  const corners = [];
+  for (const sx of [-1, 1]) {
+    for (const sy of [0, 1]) {
+      for (const sz of [-1, 1]) {
+        corners.push(new THREE.Vector3(
+          cx + (sx * width) / 2,
+          sy * Math.max(height, 1),
+          cz + (sz * depth) / 2
+        ));
+      }
+    }
+  }
+
+  const probe = camera.clone();
+  probe.aspect = camera.aspect;
+  // Start from the old closed-form estimate and correct it by measurement.
+  const tanV = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
+  let dist = Math.max(width / 2 / (tanV * Math.max(camera.aspect, 0.0001)), depth / 2 / tanV);
+  const v = new THREE.Vector3();
+  // Six passes is far more than convergence needs; it is cheap and runs only
+  // when the data or the aspect changes, never per frame.
+  for (let pass = 0; pass < 6; pass++) {
+    probe.position.copy(dir).multiplyScalar(dist).add(target);
+    probe.lookAt(target);
+    probe.updateMatrixWorld(true);
+    probe.updateProjectionMatrix();
+    let worstX = 0;
+    let worstY = 0;
+    for (const c of corners) {
+      v.copy(c).project(probe);
+      worstX = Math.max(worstX, Math.abs(v.x - centreNdcX));
+      worstY = Math.max(worstY, Math.abs(v.y - centreNdcY));
+    }
+    const over = Math.max(worstX / halfNdcX, worstY / halfNdcY);
+    if (over <= 1 && over > 0.92) break;
+    dist *= Math.max(over, 0.35);
+  }
+
+  const pos = dir.clone().multiplyScalar(dist).add(target);
   return {
-    position: { x: cx + dist * 0.35, y: Math.max(dist * 0.75, height * 2), z: cz + dist * 0.85 },
-    target: { x: cx, y: height / 2, z: cz },
+    position: { x: pos.x, y: pos.y, z: pos.z },
+    target: { x: target.x, y: target.y, z: target.z },
+    // Recorded so a test can assert the framing was fitted rather than guessed.
+    fittedDistance: dist,
   };
 }
 
@@ -315,6 +391,32 @@ sublayers.shell.add(orientationGrid);
 // synthetic simulated_grid coordinates this service already computed.
 const FLOOR_PADDING = 6;
 
+// The simulated container's own objects, kept so they can be retired the
+// moment a measured floor plate exists. Two plates on screen at once is two
+// answers to "where is the building", and the amber one is the wrong answer:
+// it bounds a synthetic device grid, not a building.
+const simulatedShellObjects = [];
+
+/**
+ * Removes the simulated floor container once measured geometry supersedes it.
+ *
+ * Called from buildFootprint, which only runs when a real traced polygon has
+ * arrived, so this cannot fire on the no-geometry path where the simulated
+ * container is the only spatial reference there is.
+ */
+function retireSimulatedShell() {
+  if (simulatedShellObjects.length === 0) return 0;
+  const n = simulatedShellObjects.length;
+  for (const obj of simulatedShellObjects) {
+    sublayers.shell.remove(obj);
+    if (obj.geometry) obj.geometry.dispose();
+    if (obj.material && obj.material.map) obj.material.map.dispose();
+    if (obj.material) obj.material.dispose();
+  }
+  simulatedShellObjects.length = 0;
+  return n;
+}
+
 function buildFloorShells(floors, machines) {
   if (machines.length === 0) return;
   const xs = machines.map((m) => m.pos_x);
@@ -340,6 +442,7 @@ function buildFloorShells(floors, machines) {
     shell.rotation.x = -Math.PI / 2; // lay flat on the X/Z plane, under the grid
     shell.position.set(cx, -0.05, cz);
     sublayers.shell.add(shell);
+    simulatedShellObjects.push(shell);
 
     // The floor plate is rendered from validated geometry only. An earlier
     // revision textured it with a private reference image fetched over
@@ -355,10 +458,12 @@ function buildFloorShells(floors, machines) {
     const outline = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xf59e0b }));
     outline.position.set(cx, -0.05, cz);
     sublayers.shell.add(outline);
+    simulatedShellObjects.push(outline);
 
     const label = makeTextSprite(floor.floor_label, { fontSize: 22, scaleFactor: 0.02, bg: 'rgba(245, 158, 11, 0.85)', fg: '#1c1305' });
     label.position.set(cx, 9, minY - 2);
     sublayers.shell.add(label);
+    simulatedShellObjects.push(label);
   }
 }
 
@@ -459,9 +564,14 @@ function buildFootprint(footprint) {
   for (let i = 1; i < verts.length; i++) shape.lineTo(verts[i].x, verts[i].z);
   shape.closePath();
 
+  // The plate was 0x111c2e against a 0x0f172a background -- a two-step
+  // difference that vanished on any real display, so the traced outline was
+  // the only thing saying where the building was and the floor did not read as
+  // a floor at all. Lifted to a slate that separates from the background
+  // without competing with the equipment drawn on it.
   const slab = new THREE.Mesh(
     new THREE.ShapeGeometry(shape),
-    new THREE.MeshBasicMaterial({ color: 0x111c2e, side: THREE.DoubleSide, depthWrite: false })
+    new THREE.MeshBasicMaterial({ color: 0x1c2b45, side: THREE.DoubleSide, depthWrite: false })
   );
   slab.rotation.x = Math.PI / 2; // Shape is authored in XY; lay it on XZ.
   slab.position.y = FOOTPRINT_Y;
@@ -469,9 +579,17 @@ function buildFootprint(footprint) {
   footprintMeshes.push(slab);
   sublayers.shell.add(slab);
 
+  // Measured geometry supersedes the synthetic container, exactly as the
+  // decorative grid is retired below once the surveyed grid arrives. Leaving
+  // both would put an amber rectangle across the real floor and invite reading
+  // a synthetic extent as a building line.
+  retireSimulatedShell();
+
+  // The building line is the heaviest line on the source sheet and is the one
+  // element an operator uses to orient. It gets the strongest edge here too.
   const loop = new THREE.LineLoop(
     new THREE.BufferGeometry().setFromPoints(verts.map((v) => new THREE.Vector3(v.x, FOOTPRINT_Y + 0.01, v.z))),
-    new THREE.LineBasicMaterial({ color: 0x475569 })
+    new THREE.LineBasicMaterial({ color: 0x93a8c4 })
   );
   sublayers.shell.add(loop);
   return 1;
@@ -1114,6 +1232,29 @@ function updateEvidenceSummary(geo, zonesDrawn) {
   const confirmed = slotList.filter((s) => s && s.ims_device_id).length;
   const meta = geo && typeof geo.functional_zones_meta === 'object' ? geo.functional_zones_meta : null;
   const withheld = meta && Number.isFinite(meta.withheld) ? meta.withheld : 0;
+
+  // The top banner used to be static, and its text ("not derived from any real
+  // floor plan or survey") was written when this view had no measured geometry
+  // at all. It is now false in the OTHER direction: the building, its columns
+  // and its equipment positions are digitized from the architectural plan, and
+  // a page-wide banner denying that is as misleading as one overclaiming.
+  //
+  // What is still simulated is narrower and needs saying precisely: the
+  // monitored devices have no surveyed position. So the banner is written from
+  // the response, and says which half is which.
+  const banner = document.getElementById('simulated-banner');
+  if (banner) {
+    const measured = columns > 0 || slots > 0;
+    banner.textContent = measured
+      ? `MEASURED FLOOR — building outline, ${columns} columns and ${slots} equipment `
+        + `positions are digitized from the architectural plan. The `
+        + `${machineMeshes.length} monitored devices have NO surveyed position and sit `
+        + `on a simulated grid. ${confirmed} confirmed physical-to-IMS mappings.`
+      : 'SIMULATED LAYOUT — Floor 1 (default grouping). No measured floor geometry is '
+        + 'deployed here, so machine and zone positions are placeholders, not derived '
+        + 'from any real floor plan or survey.';
+    banner.classList.toggle('banner-measured', measured);
+  }
 
   const setCount = (layer, text) => {
     const el = document.querySelector(`#layer-controls [data-count="${layer}"]`);

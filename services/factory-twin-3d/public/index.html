@@ -201,6 +201,16 @@
       padding: 8px 12px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.35);
     }
+    /* Amber is a warning colour and the warning is real when nothing on screen
+       is measured. Once the floor IS measured the banner is a statement of
+       provenance, not an alarm, and shouting it in amber trains an operator to
+       ignore the amber that matters. Slate, and still always present. */
+    #simulated-banner.banner-measured {
+      background: #1e293b;
+      color: #cbd5e1;
+      font-weight: 600;
+      border-bottom: 1px solid #334155;
+    }
 
     #hud {
       position: fixed;
@@ -425,7 +435,11 @@
   </style>
 </head>
 <body>
-  <div id="simulated-banner">SIMULATED LAYOUT — Floor 1 (default grouping). Machine/zone positions are placeholders, not derived from any real floor plan or survey.</div>
+  <!-- Written from the geometry response, not hardcoded: see
+       updateEvidenceSummary(). This initial text is the honest state BEFORE any
+       response has arrived, so a slow or failed fetch leaves a banner that
+       claims nothing rather than one that claims measurement. -->
+  <div id="simulated-banner">Loading floor evidence… nothing on screen is confirmed until this banner says what it is.</div>
 
   <div id="hud">
     <h1>IMS Factory 3D Digital Twin — Floor 1</h1>
