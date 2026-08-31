@@ -63,6 +63,27 @@ Alarm ใดยัง Active อยู่ จึงใช้กติกา fail
 เมื่อได้รับ trigger/reset จริง ต้องเพิ่ม lifecycle query และทดสอบการจับคู่
 เหตุการณ์ก่อนเปิด Active Alarm overlay
 
+## รายละเอียด P0 ที่แสดงได้จากข้อมูลปัจจุบัน
+
+สำหรับ `DRL054-M` หน้า 2D/3D แสดงข้อมูลที่มีหลักฐานจาก `machine_event` เท่านั้น:
+
+- สถานะ `RUN`/`STOP` และเวลาของสถานะล่าสุด
+- ความสดของข้อมูล; ข้อมูลเก่าแสดง `Undefine`
+- Error ล่าสุดในฐานะประวัติ ไม่ใช่ Active Alarm
+- กลุ่มปัญหา: Safety, Spindle/Tool, Axis หรือ Program/Tool table
+- ช่วงการทำงาน: Startup, Home/Reset, Program selection,
+  Tool change/measurement หรือ Drilling
+- ระดับการตอบสนองเบื้องต้น เช่น Stop and secure, Stop and inspect หรือ
+  Validate before restart
+
+การหาช่วงการทำงานใช้ข้อความ Error ร่วมกับ Event/Status ก่อนหน้าไม่เกิน 10 นาที
+และไม่ใช้เลข Error เพียงอย่างเดียว ตัวอย่าง `E0409` ของ `DRL054-M` มีลำดับ
+Tool diameter/run-out, ATC ที่ Hole 0 และ Diameter error จึงจัดเป็น
+`TOOL_CHANGE_MEASUREMENT` ไม่ใช่ Error ระหว่างกำลังเจาะ
+
+ข้อมูล Program name, Progress, Hits, Shift rate และ Utilization ยังไม่อยู่ใน
+แหล่งข้อมูลนี้และต้องไม่สร้างค่าจำลองในโหมดจริง
+
 ## การตั้งค่า Local Preview
 
 ```yaml

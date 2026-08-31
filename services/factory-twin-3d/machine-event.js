@@ -47,6 +47,34 @@ latest_error_reference AS (
       OR troubleshooting_method IS NOT NULL
     )
   ORDER BY equipment_id, event_time DESC, id DESC
+),
+latest_error_with_context AS (
+  SELECT
+    latest_error_reference.*,
+    context.error_context
+  FROM latest_error_reference
+  LEFT JOIN LATERAL (
+    SELECT STRING_AGG(
+      CONCAT_WS(' ', recent.event_type, recent.event_code, recent.event_message),
+      ' | ' ORDER BY recent.event_time, recent.id
+    ) AS error_context
+    FROM (
+      SELECT id, event_time, event_type, event_code, event_message
+      FROM public.machine_event
+      WHERE equipment_id = latest_error_reference.equipment_id
+        AND (
+          event_time < latest_error_reference.event_time
+          OR (
+            event_time = latest_error_reference.event_time
+            AND id < latest_error_reference.id
+          )
+        )
+        AND event_time >= latest_error_reference.event_time - INTERVAL '10 minutes'
+        AND message_type IN ('event', 'status')
+      ORDER BY event_time DESC, id DESC
+      LIMIT 8
+    ) AS recent
+  ) AS context ON TRUE
 )
 SELECT
   requested.equipment_id,
@@ -56,18 +84,131 @@ SELECT
   latest_status.event_message AS status_event_message,
   latest_status.event_time AS status_event_time,
   latest_status.received_at AS status_received_at,
-  latest_error_reference.id AS error_id,
-  latest_error_reference.event_code AS error_code,
-  latest_error_reference.event_message AS error_message,
-  latest_error_reference.event_time AS error_event_time,
-  latest_error_reference.level AS error_level,
-  latest_error_reference.error_description,
-  latest_error_reference.troubleshooting_method,
-  latest_error_reference.error_master_source
+  latest_error_with_context.id AS error_id,
+  latest_error_with_context.event_code AS error_code,
+  latest_error_with_context.event_message AS error_message,
+  latest_error_with_context.event_time AS error_event_time,
+  latest_error_with_context.level AS error_level,
+  latest_error_with_context.error_description,
+  latest_error_with_context.troubleshooting_method,
+  latest_error_with_context.error_master_source,
+  latest_error_with_context.error_context
 FROM requested
 LEFT JOIN latest_status USING (equipment_id)
-LEFT JOIN latest_error_reference USING (equipment_id)
+LEFT JOIN latest_error_with_context USING (equipment_id)
 ORDER BY requested.equipment_id`;
+
+const ERROR_CATEGORY = Object.freeze({
+  SAFETY: 'SAFETY',
+  SPINDLE_TOOL: 'SPINDLE_TOOL',
+  AXIS: 'AXIS',
+  PROGRAM_TOOL_TABLE: 'PROGRAM_TOOL_TABLE',
+  UNKNOWN: 'UNKNOWN',
+});
+
+const ERROR_PHASE = Object.freeze({
+  STARTUP: 'STARTUP',
+  HOME_RESET: 'HOME_RESET',
+  PROGRAM_SELECTION: 'PROGRAM_SELECTION',
+  TOOL_CHANGE_MEASUREMENT: 'TOOL_CHANGE_MEASUREMENT',
+  DRILLING: 'DRILLING',
+  UNKNOWN: 'UNKNOWN',
+});
+
+const ERROR_RISK = Object.freeze({
+  STOP_AND_SECURE: 'STOP_AND_SECURE',
+  STOP_AND_INSPECT: 'STOP_AND_INSPECT',
+  VALIDATE_BEFORE_RESTART: 'VALIDATE_BEFORE_RESTART',
+  REVIEW_REQUIRED: 'REVIEW_REQUIRED',
+});
+
+function numericErrorCode(value) {
+  const match = String(value || '').trim().toUpperCase().match(/^E?(\d{4})$/);
+  return match ? Number(match[1]) : null;
+}
+
+function classifyErrorCategory(row) {
+  const code = numericErrorCode(row?.error_code);
+  const codeText = String(row?.error_code || '').trim();
+  const text = [
+    row?.error_message,
+    row?.error_description,
+  ].filter(Boolean).join(' ').toLowerCase();
+  const codeTrusted = /^E\d{4}$/i.test(codeText)
+    || String(row?.error_level || '').trim().toUpperCase() === 'E'
+    || Boolean(row?.error_description)
+    || Boolean(row?.troubleshooting_method)
+    || Boolean(row?.error_master_source);
+  const trustedCode = codeTrusted && !/^alarm time\s*:/i.test(String(row?.error_message || ''))
+    ? code
+    : null;
+
+  if ((trustedCode >= 101 && trustedCode <= 121) || trustedCode === 701
+      || /safety|emergency|interlock|door|warning device|air pressure/.test(text)) {
+    return ERROR_CATEGORY.SAFETY;
+  }
+  if ((trustedCode >= 403 && trustedCode <= 419)
+      || /spindle|tool|diameter|run[ -]?out|magazine|broken drill/.test(text)) {
+    return ERROR_CATEGORY.SPINDLE_TOOL;
+  }
+  if ((trustedCode >= 202 && trustedCode <= 324)
+      || (trustedCode >= 601 && trustedCode <= 605)
+      || /\baxis\b|servo|encoder|over.?travel|limit switch|position error/.test(text)) {
+    return ERROR_CATEGORY.AXIS;
+  }
+  if ((trustedCode >= 501 && trustedCode <= 519)
+      || /program|excellon|sieb.?meyer|tool table|safe area|pin data|file format/.test(text)) {
+    return ERROR_CATEGORY.PROGRAM_TOOL_TABLE;
+  }
+  return ERROR_CATEGORY.UNKNOWN;
+}
+
+function classifyErrorPhase(row) {
+  const text = [
+    row?.error_context,
+    row?.error_message,
+    row?.error_description,
+  ].filter(Boolean).join(' ').toLowerCase();
+
+  // Context wins over the code family. Error numbers identify the subsystem,
+  // not necessarily the operation the machine was performing at the time.
+  if (/\batc\b|tool change|tool diameter|tool length|run[ -]?out|diameter error|\bt\d+m\d+/.test(text)) {
+    return ERROR_PHASE.TOOL_CHANGE_MEASUREMENT;
+  }
+  if (/home|homing|origin|zero return|reference return|reset/.test(text)) {
+    return ERROR_PHASE.HOME_RESET;
+  }
+  if (/program|file|excellon|sieb.?meyer|tool table|safe area|pin data|load/.test(text)) {
+    return ERROR_PHASE.PROGRAM_SELECTION;
+  }
+  if (/hole\s*[1-9]\d*|drilling|production cycle|machining/.test(text)) {
+    return ERROR_PHASE.DRILLING;
+  }
+  if (/power.?on|startup|start.?up|initiali[sz]/.test(text)) {
+    return ERROR_PHASE.STARTUP;
+  }
+  return ERROR_PHASE.UNKNOWN;
+}
+
+function riskForCategory(category) {
+  if (category === ERROR_CATEGORY.SAFETY) return ERROR_RISK.STOP_AND_SECURE;
+  if ([ERROR_CATEGORY.SPINDLE_TOOL, ERROR_CATEGORY.AXIS].includes(category)) {
+    return ERROR_RISK.STOP_AND_INSPECT;
+  }
+  if (category === ERROR_CATEGORY.PROGRAM_TOOL_TABLE) {
+    return ERROR_RISK.VALIDATE_BEFORE_RESTART;
+  }
+  return ERROR_RISK.REVIEW_REQUIRED;
+}
+
+function classifyError(row) {
+  const category = classifyErrorCategory(row);
+  return {
+    category,
+    phase: classifyErrorPhase(row),
+    risk: riskForCategory(category),
+  };
+}
 
 function normalizeStaleSeconds(value = DEFAULT_STALE_SECONDS) {
   const seconds = Number(value);
@@ -138,6 +279,7 @@ function mapMachineEventStatus(row, {
 
 function latestErrorReference(row) {
   if (!row?.error_id) return null;
+  const classification = classifyError(row);
   return {
     id: row.error_id,
     code: row.error_code || null,
@@ -147,6 +289,10 @@ function latestErrorReference(row) {
     description: row.error_description || null,
     troubleshooting: row.troubleshooting_method || null,
     master_source: row.error_master_source || null,
+    context: row.error_context || null,
+    category: classification.category,
+    phase: classification.phase,
+    risk: classification.risk,
     lifecycle_status: 'HISTORICAL_REFERENCE_ONLY',
     active: false,
   };
@@ -170,7 +316,13 @@ async function readMachineEventRows(pool, equipmentIds) {
 
 module.exports = {
   DEFAULT_STALE_SECONDS,
+  ERROR_CATEGORY,
+  ERROR_PHASE,
+  ERROR_RISK,
   MACHINE_EVENT_SQL,
+  classifyError,
+  classifyErrorCategory,
+  classifyErrorPhase,
   latestErrorReference,
   mapMachineEventStatus,
   normalizeStaleSeconds,

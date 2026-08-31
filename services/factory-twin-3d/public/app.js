@@ -480,6 +480,44 @@ resetViewButton.addEventListener('click', () => {
   else frameLayout();
 });
 
+const ERROR_CATEGORY_LABEL = Object.freeze({
+  SAFETY: 'Safety system',
+  SPINDLE_TOOL: 'Spindle / tool',
+  AXIS: 'X/Y/Z axis',
+  PROGRAM_TOOL_TABLE: 'Program / tool table',
+  UNKNOWN: 'Unclassified',
+});
+
+const ERROR_PHASE_LABEL = Object.freeze({
+  STARTUP: 'Startup',
+  HOME_RESET: 'Home / reset',
+  PROGRAM_SELECTION: 'Program selection',
+  TOOL_CHANGE_MEASUREMENT: 'Tool change / measurement',
+  DRILLING: 'Drilling',
+  UNKNOWN: 'Phase unknown',
+});
+
+const ERROR_RISK_LABEL = Object.freeze({
+  STOP_AND_SECURE: 'Stop and secure',
+  STOP_AND_INSPECT: 'Stop and inspect',
+  VALIDATE_BEFORE_RESTART: 'Validate before restart',
+  REVIEW_REQUIRED: 'Review required',
+});
+
+function formatStatusTime(value) {
+  if (!value) return null;
+  const timestamp = new Date(value);
+  if (Number.isNaN(timestamp.getTime())) return null;
+  return timestamp.toLocaleString([], {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+}
+
 function stateRowHtml(row) {
   const state = row.operational_state || row.state || DEFAULT_STATUS;
   const meta = STATUS_META[state] || STATUS_META[DEFAULT_STATUS];
@@ -495,11 +533,21 @@ function stateRowHtml(row) {
   const errorText = row.latest_error
     ? `Latest error record ${escapeHtml(errorCode || '—')} · history only`
     : '';
+  const errorCategory = row.latest_error
+    ? ERROR_CATEGORY_LABEL[row.latest_error.category] || ERROR_CATEGORY_LABEL.UNKNOWN
+    : '';
+  const errorPhase = row.latest_error
+    ? ERROR_PHASE_LABEL[row.latest_error.phase] || ERROR_PHASE_LABEL.UNKNOWN
+    : '';
+  const errorRisk = row.latest_error
+    ? ERROR_RISK_LABEL[row.latest_error.risk] || ERROR_RISK_LABEL.REVIEW_REQUIRED
+    : '';
   const errorDetail = row.latest_error
     ? [row.latest_error.description || row.latest_error.message, row.latest_error.troubleshooting]
       .filter(Boolean)
       .join(' · ')
     : '';
+  const statusTime = formatStatusTime(row.state_updated_at);
   const disabled = row.drilldown_enabled ? '' : ' disabled';
   const ariaLabel = row.drilldown_enabled
     ? `Open ${row.device_id} snapshot`
@@ -515,8 +563,16 @@ function stateRowHtml(row) {
         <span>${escapeHtml(row.mo || '—')}</span>
       </span>
       <span class="machine-row-basis">${escapeHtml(row.state_confidence || 'SOURCE')} · ${escapeHtml(row.state_basis || 'configured source')}</span>
+      ${statusTime ? `<span class="machine-row-time">Last status: ${escapeHtml(statusTime)}</span>` : ''}
       <span class="machine-row-alarm">${alarmText}</span>
-      ${errorText ? `<span class="machine-row-error" title="${escapeHtml(errorDetail)}">${errorText}</span>` : ''}
+      ${errorText ? `
+        <span class="machine-row-error" title="${escapeHtml(errorDetail)}">${errorText}</span>
+        <span class="machine-row-error-meta">
+          <span>${escapeHtml(errorCategory)}</span>
+          <span>${escapeHtml(errorPhase)}</span>
+        </span>
+        <span class="machine-row-error-action">Action: ${escapeHtml(errorRisk)}</span>
+      ` : ''}
     </button>`;
 }
 

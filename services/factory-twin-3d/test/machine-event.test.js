@@ -3,6 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const {
+  classifyError,
   latestErrorReference,
   mapMachineEventStatus,
   normalizeStaleSeconds,
@@ -44,9 +45,43 @@ test('marks decoded error details as history, never as an active alarm', () => {
     error_description: 'Spindle diameter error',
     troubleshooting_method: 'Check the measured result.',
     error_master_source: 'DG Operation manual',
+    error_context: 'EVENT 0110 ATC T176M165-> T0M0, at Hole 0',
   });
   assert.equal(error.code, '0409');
   assert.equal(error.troubleshooting, 'Check the measured result.');
   assert.equal(error.lifecycle_status, 'HISTORICAL_REFERENCE_ONLY');
   assert.equal(error.active, false);
+  assert.equal(error.category, 'SPINDLE_TOOL');
+  assert.equal(error.phase, 'TOOL_CHANGE_MEASUREMENT');
+  assert.equal(error.risk, 'STOP_AND_INSPECT');
+});
+
+test('classifies subsystem and operation phase separately', () => {
+  assert.deepEqual(classifyError({
+    error_code: '0108',
+    error_message: 'Safety door interlock open',
+    error_context: 'HOME origin return',
+  }), {
+    category: 'SAFETY',
+    phase: 'HOME_RESET',
+    risk: 'STOP_AND_SECURE',
+  });
+
+  assert.deepEqual(classifyError({
+    error_code: '0502',
+    error_message: 'Program file format error',
+  }), {
+    category: 'PROGRAM_TOOL_TABLE',
+    phase: 'PROGRAM_SELECTION',
+    risk: 'VALIDATE_BEFORE_RESTART',
+  });
+
+  assert.deepEqual(classifyError({
+    error_code: '0204',
+    error_message: 'Alarm Time: 00:20',
+  }), {
+    category: 'UNKNOWN',
+    phase: 'UNKNOWN',
+    risk: 'REVIEW_REQUIRED',
+  });
 });
