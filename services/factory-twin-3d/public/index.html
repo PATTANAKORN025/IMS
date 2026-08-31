@@ -29,6 +29,61 @@
       background: #f4f4f1;
       z-index: 5;
     }
+    /* SIDE-BY-SIDE. The two panes are put next to each other and NOT on top of
+       each other, and there is a hard rule between them, because the whole
+       point is that they are two different claims about one floor that share no
+       reference frame. Overlaying them would assert a registration that does
+       not exist; abutting them asserts nothing beyond "both are about Floor 1".
+       The measured half keeps the left, matching the reading order of the mode
+       label, and the divider is a real 2px line rather than a gap so neither
+       pane can be mistaken for a detail of the other. */
+    body.mode-split #scene { left: var(--hud-clear, 0px); right: 50%; }
+    body.mode-split #schematic { left: 50%; right: 0; }
+    body.mode-split #schematic::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 2px;
+      background: #0f172a;
+    }
+    /* A caption per pane, so a screenshot of this view still says which side is
+       which. Without it a cropped image of the split is unattributable. */
+    .split-caption { display: none; }
+    body.mode-split .split-caption {
+      display: block;
+      position: fixed;
+      bottom: 10px;
+      z-index: 6;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+    body.mode-split #split-caption-left {
+      left: calc(var(--hud-clear, 0px) + 12px);
+      background: rgba(15, 23, 42, 0.88);
+      color: #cbd5e1;
+      border: 1px solid #334155;
+    }
+    body.mode-split #split-caption-right {
+      right: 12px;
+      background: rgba(255, 255, 255, 0.92);
+      color: #1c1917;
+      border: 1px solid #b45309;
+    }
+    /* EXECUTIVE trades the working controls for the headline claim. Nothing is
+       hidden that carries evidence -- the evidence summary and the banner both
+       stay -- only the controls that presume someone is going to drive. */
+    body.mode-executive #layer-controls,
+    body.mode-executive #machine-list,
+    body.mode-executive #status-line,
+    body.mode-executive #diagnostics { display: none; }
+    body.mode-executive #evidence-summary { font-size: 15px; }
+    /* INSPECTION is the opposite: every control open, and the inspector given
+       room, because the whole activity is reading one object at a time. */
+    body.mode-inspection #diagnostics { display: block; }
+    body.mode-inspection #inspector { max-height: 40vh; overflow: auto; }
     #schematic-badge {
       position: absolute;
       top: 8px;
@@ -98,10 +153,15 @@
     .sch-anno-blank { font: italic 400 4px system-ui, sans-serif; fill: #8a5a00; }
     /* Mode and snapshot selectors reuse the view-control styling so the whole
        panel stays one visual system. */
-    #mode-controls, #snapshot-controls { display: flex; gap: 4px; margin-top: 8px; }
+    /* Five modes in a 335px panel. They wrap to a second row rather than
+       squeezing each label onto three lines, and no label is allowed to break
+       mid-phrase: "Side by side" stacked as three words reads as three
+       controls. */
+    #mode-controls, #snapshot-controls { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
     #mode-controls button, #snapshot-controls button {
-      flex: 1;
-      padding: 5px 6px;
+      flex: 1 1 auto;
+      white-space: nowrap;
+      padding: 5px 8px;
       font: inherit;
       font-size: 11px;
       color: #cbd5e1;
@@ -109,6 +169,15 @@
       border: 1px solid #334155;
       border-radius: 4px;
       cursor: pointer;
+    }
+    /* A mode with no evidence behind it is offered but not enabled, and says
+       why on hover. Disabled and visible beats hidden: "there is a
+       side-by-side view and this deployment has nothing to put in it" is worth
+       knowing. Never colour alone -- the cursor and the title carry it too. */
+    #mode-controls button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      border-style: dashed;
     }
     #mode-controls button[aria-pressed="true"],
     #snapshot-controls button[aria-pressed="true"] {
@@ -473,9 +542,16 @@
     <!-- Two different claims about the floor, so an explicit choice rather than
          a silent blend. The physical twin is measured and cannot name an area;
          the schematic names every area and measures nothing. -->
+    <!-- Five modes, one application. Three of them change WHICH claim is on
+         screen (physical, schematic, both); two change how much apparatus
+         surrounds the same claim (executive, inspection). None of them changes
+         a coordinate, and the regression asserts that by snapshot. -->
     <div id="mode-controls" role="group" aria-label="Floor view mode">
-      <button type="button" data-mode="physical" aria-pressed="true">Physical Twin</button>
-      <button type="button" data-mode="schematic" aria-pressed="false">FROOL1 Schematic</button>
+      <button type="button" data-mode="executive" aria-pressed="false">Executive</button>
+      <button type="button" data-mode="physical" aria-pressed="true">Physical</button>
+      <button type="button" data-mode="schematic" aria-pressed="false">Schematic</button>
+      <button type="button" data-mode="split" aria-pressed="false">Side by side</button>
+      <button type="button" data-mode="inspection" aria-pressed="false">Inspection</button>
     </div>
     <div id="view-controls" role="group" aria-label="Camera view">
       <button type="button" data-view="operator" aria-pressed="true">Operator</button>
@@ -568,6 +644,12 @@
          the source's own title block leaves SCALE blank. -->
     <div id="schematic-badge">SCHEMATIC — NOT TO SCALE. Drawing reference, not measured geometry.</div>
   </div>
+
+  <!-- Only rendered in side-by-side mode. A crop of that view must still say
+       which pane is which, and the two captions are deliberately worded as
+       different KINDS of statement rather than as two labels. -->
+  <div class="split-caption" id="split-caption-left">PHYSICAL — MEASURED / OBSERVED</div>
+  <div class="split-caption" id="split-caption-right">SCHEMATIC — NOT TO SCALE · UNREGISTERED TO THE LEFT PANE</div>
 
   <!-- Relative paths (no leading "/") throughout this page and app.js's
        fetch calls, deliberately -- this page is served under nginx's

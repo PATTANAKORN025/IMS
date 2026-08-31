@@ -789,20 +789,64 @@ function updateConflictNotice() {
 
 // ── Mode switching ──
 
+/**
+ * The five modes, and exactly what each one is allowed to change.
+ *
+ *   showsScene      the 3D measured/observed model is on screen
+ *   showsSchematic  the drawing reproduction is on screen
+ *   physicalPanel   the 3D-only controls are meaningful
+ *   schematicPanel  the drawing-only controls are meaningful
+ *
+ * Two of the five -- executive and inspection -- differ from `physical` only
+ * in how much apparatus surrounds the same scene. They are modes because an
+ * operator picks between them, not because they show different evidence, and
+ * NONE of the five moves a coordinate. The regression asserts that by taking a
+ * byte-level coordinate snapshot across every switch.
+ */
+const MODES = Object.freeze({
+  executive: { showsScene: true, showsSchematic: false, physicalPanel: false, schematicPanel: false },
+  physical: { showsScene: true, showsSchematic: false, physicalPanel: true, schematicPanel: false },
+  schematic: { showsScene: false, showsSchematic: true, physicalPanel: false, schematicPanel: true },
+  split: { showsScene: true, showsSchematic: true, physicalPanel: true, schematicPanel: true },
+  inspection: { showsScene: true, showsSchematic: false, physicalPanel: true, schematicPanel: false },
+});
+const MODE_KEYS = Object.freeze(Object.keys(MODES));
+let activeMode = 'physical';
+
 function setMode(mode) {
-  const schematic = mode === 'schematic';
-  host.hidden = !schematic;
-  panel.hidden = !schematic;
-  if (sceneEl) sceneEl.style.visibility = schematic ? 'hidden' : '';
+  // An unknown mode falls back rather than blanking the view: a typo in a
+  // data-mode attribute must not be able to leave an operator with nothing.
+  if (!Object.prototype.hasOwnProperty.call(MODES, mode)) mode = 'physical';
+  const spec = MODES[mode];
+  activeMode = mode;
+
+  host.hidden = !spec.showsSchematic;
+  panel.hidden = !spec.schematicPanel;
+  if (sceneEl) sceneEl.style.visibility = spec.showsScene ? '' : 'hidden';
   for (const id of PHYSICAL_ONLY) {
     const node = document.getElementById(id);
-    if (node) node.hidden = schematic;
+    if (node) node.hidden = !spec.physicalPanel;
   }
+  // One class per mode on <body>, so the layout rules live in CSS where they
+  // can be read next to the thing they lay out.
+  for (const key of MODE_KEYS) document.body.classList.toggle(`mode-${key}`, key === mode);
+
   for (const btn of modeControls.querySelectorAll('button[data-mode]')) {
     btn.setAttribute('aria-pressed', String(btn.dataset.mode === mode));
   }
-  if (schematic && !svg && doc) buildSvg();
-  if (!schematic) clearSelection();
+
+  if (spec.showsSchematic && !svg && doc) buildSvg();
+  if (!spec.showsSchematic) clearSelection();
+  // The 3D pane's width changes in side-by-side, and the renderer sizes itself
+  // from its container. Tell it, rather than waiting for a window resize that
+  // will not come.
+  window.dispatchEvent(new CustomEvent('twin-pane-resize'));
+  // Announced separately from the resize, because the two do different things:
+  // one re-fits the pane, the other picks the framing that suits the mode.
+  window.dispatchEvent(new CustomEvent('twin-mode', { detail: { mode } }));
+  // The drawing refits to its own new width for the same reason. Only the
+  // viewBox changes; no schematic coordinate is touched.
+  if (spec.showsSchematic && svg) fit();
   updateBanner(mode);
 }
 
@@ -813,14 +857,24 @@ function setMode(mode) {
  * kinds of statement about the same floor, and which one you are reading should
  * never require looking at the drawing to work out.
  */
+const BANNER_LABEL = Object.freeze({
+  executive: 'PHYSICAL — MEASURED',
+  physical: 'PHYSICAL — MEASURED',
+  inspection: 'PHYSICAL — MEASURED',
+  schematic: 'SCHEMATIC — NOT TO SCALE',
+  // Side by side shows both claims at once, so the label must not pick one.
+  // Saying they are unregistered is the whole content of this mode.
+  split: 'PHYSICAL + SCHEMATIC — UNREGISTERED',
+});
+
 function updateBanner(mode) {
+  const spec = MODES[mode] || MODES.physical;
   if (bannerMode) {
-    bannerMode.textContent =
-      mode === 'schematic' ? 'SCHEMATIC — NOT TO SCALE' : 'PHYSICAL — MEASURED';
-    bannerMode.classList.toggle('eb-warn', mode === 'schematic');
+    bannerMode.textContent = BANNER_LABEL[mode] || BANNER_LABEL.physical;
+    bannerMode.classList.toggle('eb-warn', spec.showsSchematic);
   }
   if (bannerSnapshot) {
-    const show = mode === 'schematic' && activeSnapshot;
+    const show = spec.showsSchematic && activeSnapshot;
     bannerSnapshot.hidden = !show;
     if (show) bannerSnapshot.textContent = `REFERENCE SNAPSHOT ${snapshotLabel(activeSnapshot)}`;
   }
@@ -847,6 +901,41 @@ window.addEventListener('resize', () => {
   });
 });
 
+/**
+ * The part of the API that exists whether or not a drawing is deployed.
+ *
+ * The mode system governs the 3D view as well, so tying it to the presence of
+ * a schematic left a no-schematic deployment with no modes, no initial body
+ * class, and no way for a test to ask what mode it was in.
+ */
+function exposeModeApi() {
+  window.__schematic = window.__schematic || {};
+  Object.assign(window.__schematic, {
+    getMode: () =>
+      modeControls?.querySelector('button[aria-pressed="true"][data-mode]')?.dataset.mode
+        || 'physical',
+    setMode,
+    modes: () => MODE_KEYS.slice(),
+    modeSpec: (m) => (MODES[m] ? { ...MODES[m] } : null),
+    // Which modes this deployment can actually enter. A mode whose evidence is
+    // absent is reported as unavailable rather than quietly missing.
+    availableModes: () => MODE_KEYS.filter((k) => {
+      const btn = modeControls?.querySelector(`button[data-mode="${k}"]`);
+      return !btn || !btn.disabled;
+    }),
+    // What the two panes actually occupy, so a test can assert side-by-side is
+    // two panes rather than one pane with a hidden sibling.
+    paneRects: () => {
+      const r = (el) => {
+        if (!el || el.hidden) return null;
+        const b = el.getBoundingClientRect();
+        return { x: Math.round(b.x), w: Math.round(b.width), h: Math.round(b.height) };
+      };
+      return { scene: r(sceneEl), schematic: r(host) };
+    },
+  });
+}
+
 async function boot() {
   try {
     const res = await fetch('api/floor-schematic');
@@ -859,16 +948,28 @@ async function boot() {
   }
 
   const areas = doc && Array.isArray(doc.areas) ? doc.areas : [];
-  const modeButton = modeControls?.querySelector('button[data-mode="schematic"]');
-  if (areas.length === 0) {
-    // Nothing transcribed for this deployment -- the default for a public
-    // clone. The control says why rather than failing when pressed.
-    if (modeButton) {
-      modeButton.disabled = true;
-      modeButton.title = 'No schematic reference is deployed here';
-    }
-    return;
+  const hasSchematic = areas.length > 0;
+
+  // Every mode that would put the drawing on screen needs a drawing. Without
+  // one those controls say why rather than failing when pressed -- and they are
+  // disabled, not hidden, because "there is a side-by-side view and this
+  // deployment has nothing to put in it" is worth knowing.
+  for (const key of MODE_KEYS) {
+    if (!MODES[key].showsSchematic) continue;
+    const btn = modeControls?.querySelector(`button[data-mode="${key}"]`);
+    if (!btn) continue;
+    btn.disabled = !hasSchematic;
+    btn.title = hasSchematic ? '' : 'No schematic reference is deployed here';
   }
+
+  // The mode system itself is exposed either way. It governs the 3D view too,
+  // so tying its existence to the presence of a drawing would mean a
+  // deployment without one has no modes at all -- which is how the initial
+  // body class came to be missing on exactly that deployment.
+  exposeModeApi();
+  setMode(window.__schematic.getMode());
+
+  if (!hasSchematic) return;
 
   if (doc.extent) extent = doc.extent;
   activeSnapshot = (doc.snapshots && doc.snapshots[0] && doc.snapshots[0].id) || null;
@@ -877,13 +978,10 @@ async function boot() {
   // Exposed for the regression suite, mirroring window.__twin. Read-only
   // accessors: nothing here lets a caller move the drawing or change what it
   // claims.
-  window.__schematic = {
+  Object.assign(window.__schematic, {
     getDoc: () => doc,
     getActiveSnapshot: () => activeSnapshot,
     getView: () => (view ? { ...view } : null),
-    getMode: () =>
-      modeControls.querySelector('button[aria-pressed="true"][data-mode]')?.dataset.mode || 'physical',
-    setMode,
     selectSnapshot,
     fit,
     countAreas: () => (svg ? svg.querySelectorAll('[data-area-id]').length : 0),
@@ -912,7 +1010,7 @@ async function boot() {
       svg ? [...svg.querySelectorAll('[data-legend-swatch]')].map((n) => n.dataset.legendSwatch) : [],
     countCells: () => (svg ? svg.querySelectorAll('.sch-cell').length : 0),
     bankIds: () => (svg ? [...svg.querySelectorAll('[data-bank-id]')].map((n) => n.dataset.bankId) : []),
-  };
+  });
 }
 
 boot();

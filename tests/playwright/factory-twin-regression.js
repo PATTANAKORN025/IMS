@@ -823,7 +823,15 @@ async function run() {
   // entering it changes nothing about the measured model.
   console.log('Schematic view:');
   {
-    const available = await page.evaluate(() => Boolean(window.__schematic));
+    // A DRAWING, not merely the mode API. window.__schematic now exists on
+    // every deployment because the mode system governs the 3D view too, so
+    // testing for the object stopped distinguishing "no drawing here" from
+    // "drawing present" -- and these checks silently stopped running rather
+    // than reporting as skipped, which is the one outcome this suite exists to
+    // prevent. getDoc is only attached once a document has actually loaded.
+    const available = await page.evaluate(
+      () => Boolean(window.__schematic && typeof window.__schematic.getDoc === 'function')
+    );
     if (!available) {
       for (const label of [
         'entering schematic mode moves nothing in the 3D scene',
@@ -1153,6 +1161,104 @@ async function run() {
       'diagnostics keeps evidence categories separate');
     check(!/PHYS-F1-|LDI-\d/.test(text), 'diagnostics leaks no object identifiers');
     await page.click('#diagnostics > summary');
+    console.log('');
+  }
+
+  // ── Modes are chrome and camera, never evidence ──
+  //
+  // Five modes, one application. Three change which claim is on screen and two
+  // change how much apparatus surrounds it. The load-bearing assertion is the
+  // last one: a byte-level coordinate snapshot taken across every switch, so a
+  // mode that quietly moved geometry would fail here rather than be discovered
+  // in a screenshot months later.
+  console.log('Modes:');
+  {
+    const modes = await page.evaluate(() => (window.__schematic ? window.__schematic.modes() : []));
+    if (modes.length === 0) {
+      skip('the application offers five modes', 'the mode system did not load');
+    } else {
+      check(modes.length === 5, 'the application offers five modes', modes.join(','));
+      check(
+        ['executive', 'physical', 'schematic', 'split', 'inspection'].every((m) => modes.includes(m)),
+        'the five modes are executive, physical, schematic, side-by-side and inspection',
+        modes.join(',')
+      );
+
+      const available = await page.evaluate(() => window.__schematic.availableModes());
+      // A mode whose evidence is absent must be reported as unavailable, not
+      // quietly missing and not silently broken when pressed.
+      const needsDrawing = ['schematic', 'split'];
+      const hasDrawing = await page.evaluate(
+        () => Boolean(window.__schematic && typeof window.__schematic.getDoc === 'function')
+      );
+      check(
+        needsDrawing.every((m) => available.includes(m) === hasDrawing),
+        'modes that need the drawing are available exactly when the drawing is',
+        `available=${available.join(',')} drawing=${hasDrawing}`
+      );
+      check(
+        ['executive', 'physical', 'inspection'].every((m) => available.includes(m)),
+        'the modes that need only the measured floor are always available',
+        available.join(',')
+      );
+
+      const base = await page.evaluate(() => window.__twin.snapshotCoordinates());
+      const seen = [];
+      let moved = null;
+      for (const mode of available) {
+        await page.click(`#mode-controls button[data-mode="${mode}"]`);
+        await page.waitForTimeout(600);
+        const st = await page.evaluate(() => ({
+          mode: window.__schematic.getMode(),
+          bodyClasses: [...document.body.classList].filter((c) => c.startsWith('mode-')),
+          banner: document.getElementById('eb-mode')?.textContent || '',
+          panes: window.__schematic.paneRects(),
+          coords: window.__twin.snapshotCoordinates(),
+          pressed: [...document.querySelectorAll('#mode-controls button[data-mode]')]
+            .filter((b) => b.getAttribute('aria-pressed') === 'true')
+            .map((b) => b.dataset.mode),
+        }));
+        seen.push({ mode, st });
+        if (st.coords !== base && moved === null) moved = mode;
+      }
+
+      check(moved === null,
+        'no mode switch moves a measured coordinate',
+        moved ? `coordinates changed entering ${moved}` : '');
+      check(seen.every((e) => e.st.mode === e.mode),
+        'every mode reports itself as active once entered');
+      check(seen.every((e) => e.st.bodyClasses.length === 1 && e.st.bodyClasses[0] === `mode-${e.mode}`),
+        'exactly one mode class is on the document at a time',
+        seen.map((e) => e.st.bodyClasses.join('+')).join(' '));
+      check(seen.every((e) => e.st.pressed.length === 1 && e.st.pressed[0] === e.mode),
+        'exactly one mode control reports itself pressed');
+      check(seen.every((e) => e.st.banner.length > 0),
+        'every mode states which claim is on screen');
+
+      const split = seen.find((e) => e.mode === 'split');
+      if (!split) {
+        skip('side-by-side puts the two claims in two panes, not one on top of the other',
+          NO_SCHEMATIC);
+        skip('side-by-side refuses to label itself with either single claim', NO_SCHEMATIC);
+      } else {
+        const { scene, schematic } = split.st.panes;
+        // Abutting, not overlapping. Overlaying them would assert a
+        // registration between two systems that share no reference frame.
+        check(
+          scene && schematic && scene.w > 0 && schematic.w > 0
+            && scene.x + scene.w <= schematic.x + 2,
+          'side-by-side puts the two claims in two panes, not one on top of the other',
+          JSON.stringify(split.st.panes)
+        );
+        check(/UNREGISTERED/.test(split.st.banner),
+          'side-by-side refuses to label itself with either single claim',
+          split.st.banner);
+      }
+
+      // Leave the page in the mode the rest of the suite expects.
+      await page.click('#mode-controls button[data-mode="physical"]');
+      await page.waitForTimeout(400);
+    }
     console.log('');
   }
 

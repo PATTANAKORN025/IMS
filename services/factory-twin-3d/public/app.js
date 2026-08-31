@@ -391,14 +391,20 @@ sublayers.shell.add(orientationGrid);
 // synthetic simulated_grid coordinates this service already computed.
 const FLOOR_PADDING = 6;
 
-// The simulated container's own objects, kept so they can be retired the
-// moment a measured floor plate exists. Two plates on screen at once is two
-// answers to "where is the building", and the amber one is the wrong answer:
-// it bounds a synthetic device grid, not a building.
+// The simulated container's own objects. Two are retired the moment a measured
+// floor plate exists -- the amber PLATE and its "Floor 1" LABEL, because two
+// plates on screen is two answers to "where is the building" and the amber one
+// is the wrong answer: it bounds a synthetic device grid, not a building.
+//
+// The OUTLINE is kept and dimmed. It is the only thing on screen saying where
+// the synthetic device extent ends, and without it the SIMULATED devices sit
+// inside the measured floor with nothing marking them as a different space --
+// which reads as placement, the exact claim this view must not make.
 const simulatedShellObjects = [];
+let simulatedExtentOutline = null;
 
 /**
- * Removes the simulated floor container once measured geometry supersedes it.
+ * Supersedes the simulated floor container once measured geometry exists.
  *
  * Called from buildFootprint, which only runs when a real traced polygon has
  * arrived, so this cannot fire on the no-geometry path where the simulated
@@ -414,6 +420,16 @@ function retireSimulatedShell() {
     if (obj.material) obj.material.dispose();
   }
   simulatedShellObjects.length = 0;
+  if (simulatedExtentOutline) {
+    // Kept, but demoted: thin and dim, so it bounds the synthetic devices
+    // without competing with the building line for the eye.
+    simulatedExtentOutline.material.color.setHex(0x7c5c2a);
+    simulatedExtentOutline.material.needsUpdate = true;
+    simulatedExtentOutline.userData.extent = {
+      classification: 'SIMULATED',
+      note: 'Bounds the synthetic device grid. Not a building line, and not registered to the measured floor.',
+    };
+  }
   return n;
 }
 
@@ -458,7 +474,7 @@ function buildFloorShells(floors, machines) {
     const outline = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xf59e0b }));
     outline.position.set(cx, -0.05, cz);
     sublayers.shell.add(outline);
-    simulatedShellObjects.push(outline);
+    simulatedExtentOutline = outline;
 
     const label = makeTextSprite(floor.floor_label, { fontSize: 22, scaleFactor: 0.02, bg: 'rgba(245, 158, 11, 0.85)', fg: '#1c1305' });
     label.position.set(cx, 9, minY - 2);
@@ -1624,15 +1640,71 @@ boot();
 
 // ── Render loop ──────────────────────────────────────────────
 function onResize() {
-  camera.aspect = window.innerWidth / window.innerHeight;
+  // Sized from the CONTAINER, not the window. In side-by-side the 3D pane is
+  // half the window wide, and a renderer sized to the window would draw the
+  // model at the wrong aspect and let it spill under the drawing.
+  const rect = container.getBoundingClientRect();
+  const w = Math.max(Math.round(rect.width), 1);
+  const h = Math.max(Math.round(rect.height), 1);
+  camera.aspect = w / h;
   camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setSize(w, h, false);
 
   // Every derived fit depends on aspect, so a resize invalidates all of them.
   // Without this, framing after a window change silently uses the old aspect
   // and can clip the structure the view exists to show.
   refitViews();
 }
+
+// The HUD's real width, published to CSS so the side-by-side rules can leave
+// the panel clear without hardcoding a number that has already changed twice.
+function publishHudWidth() {
+  const hud = document.getElementById('hud');
+  const clear = hud && !hud.hidden ? Math.ceil(hud.getBoundingClientRect().right) : 0;
+  document.documentElement.style.setProperty('--hud-clear', `${clear}px`);
+}
+publishHudWidth();
+
+// A mode switch changes the pane's width without changing the window's, so the
+// resize listener below never fires for it. Modes are camera and layout only:
+// this recomputes the fit, and moves no geometry.
+// Which framing each mode opens on. CAMERA ONLY -- these entries are read by
+// applyView, which sets a position and a target and touches nothing else. A
+// mode never changes a layer's data, never moves a machine, and never promotes
+// an evidence state; the regression takes a byte-level coordinate snapshot
+// across every switch to keep that true.
+//
+// Modes not listed keep whatever framing the operator last chose, because
+// overriding a deliberate camera choice on every mode switch is the behaviour
+// that made the earlier view buttons feel broken.
+const MODE_VIEW = Object.freeze({
+  // The widest honest framing: the whole building, and the device grid too if
+  // one is present. "Show me everything" is the executive question.
+  executive: ['overview', 'building', 'operator'],
+  // Back to the working framing an operator reads machines at.
+  inspection: ['operator'],
+});
+
+window.addEventListener('twin-mode', (ev) => {
+  const mode = ev && ev.detail && ev.detail.mode;
+  const wanted = MODE_VIEW[mode];
+  if (!wanted) return;
+  // First framing in the list that actually has data behind it. A view with no
+  // bounds must not be applied -- it would frame nothing.
+  for (const name of wanted) {
+    if (applyView(name)) return;
+  }
+});
+
+window.addEventListener('twin-pane-resize', () => {
+  publishHudWidth();
+  // One frame later, so the class change has been laid out and the container
+  // reports its new width rather than its old one.
+  requestAnimationFrame(() => {
+    onResize();
+    if (activeView !== 'operator') applyView(activeView);
+  });
+});
 
 // setSize reallocates the drawing buffer, and a drag-resize fires this
 // continuously. Coalescing to one call per frame keeps the final state
@@ -1642,6 +1714,7 @@ window.addEventListener('resize', () => {
   if (resizePending) return;
   resizePending = requestAnimationFrame(() => {
     resizePending = null;
+    publishHudWidth();
     onResize();
   });
 });
