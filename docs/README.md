@@ -29,6 +29,7 @@ The high-level design, business value, and product capabilities.
 - **[Database Schema](architecture/DATABASE_SCHEMA.md)** - TimescaleDB hypertable structures.
 - **[Factory Twin Reconstruction](architecture/FACTORY_TWIN_RECONSTRUCTION.md)** - How the Floor 1 twin was reconstructed, its evidence model, and what it may not claim.
 - **[Factory Twin Runtime Architecture](architecture/FACTORY_TWIN_ARCHITECTURE.md)** - Request path, module map, HTTP surface, rendering and view semantics.
+- **[Factory Twin Service Architecture](architecture/FACTORY_TWIN_SERVICE_ARCHITECTURE.md)** - Which container serves the twin, which only look like they do, and how to run direct-mode verification safely.
 - **[Factory Twin Operator Guide](architecture/FACTORY_TWIN_OPERATOR_GUIDE.md)** - How to read the twin without over-reading it: views, layers, evidence legend, inspector.
 - **[Factory Twin Security Model](architecture/FACTORY_TWIN_SECURITY_MODEL.md)** - Trust boundaries, the 401 requirement, response shaping, private geometry handling.
 - **[Factory Twin Evidence Requirements](architecture/FACTORY_TWIN_EVIDENCE_REQUIREMENTS.md)** - What is blocked, what would unlock it, and the evidence promotion contract.
