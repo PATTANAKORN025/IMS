@@ -508,7 +508,6 @@ async function run() {
       });
       const out = {
         meshes: T.presentationMeshes.length,
-        instances: T.presentationMeshes.map((m) => m.count),
         classes: [...new Set(T.presentationMeshes.map((m) => m.userData.presentation.classification))],
         instanced: T.presentationMeshes.every((m) => m.isInstancedMesh === true),
         carriesDevice: T.presentationMeshes.some((m) => 'deviceId' in m.userData),
@@ -516,6 +515,20 @@ async function run() {
         nan,
         coordsUnchanged: T.snapshotCoordinates() === coordsBefore,
         spec: T.presentationSpec(),
+        census: T.presentationCensus(),
+        // One InstancedMesh per (form, part). Every mesh of a form must carry
+        // exactly that form's membership, or a machine has been dropped or
+        // double-counted between its own parts.
+        countsMatchCensus: T.presentationMeshes.every(
+          (m) => m.count === T.presentationCensus()[m.userData.presentation.form]
+        ),
+        formsUsed: [...new Set(T.presentationMeshes.map((m) => m.userData.presentation.form))],
+        // Every mesh must name a form and a part, or the inspector cannot say
+        // what an object is when someone clicks it.
+        allNamed: T.presentationMeshes.every(
+          (m) => typeof m.userData.presentation.form === 'string'
+            && typeof m.userData.presentation.part === 'string'
+        ),
       };
       group.visible = wasVisible;
       return out;
@@ -524,11 +537,22 @@ async function run() {
       skip('the presentation model is built from the measured footprints', NO_GEOMETRY);
     } else {
       check(pres.instanced, 'the presentation model is instanced, not one mesh per machine');
+      const censusTotal = Object.values(pres.census).reduce((a, b) => a + b, 0);
       check(
-        pres.instances.every((n) => n === s.api.slots),
-        'every measured slot gets one presentation machine',
-        `${pres.instances.join(',')} vs ${s.api.slots}`
+        censusTotal === s.api.slots,
+        'every measured slot gets exactly one presentation machine',
+        `${censusTotal} vs ${s.api.slots}`
       );
+      check(pres.countsMatchCensus,
+        'every part of a form is instanced once per member of that form');
+      // The point of the whole change: the floor is not 243 copies of one box.
+      check(pres.formsUsed.length >= 4,
+        'the floor draws several machine forms, not one repeated shape',
+        `${pres.formsUsed.length} forms: ${pres.formsUsed.join(',')}`);
+      check(pres.formsUsed.every((f) => pres.spec.forms.includes(f)),
+        'every form built is a declared form',
+        pres.formsUsed.join(','));
+      check(pres.allNamed, 'every presentation object names its form and its part');
       // Instancing is the whole reason this layer is affordable: one mesh per
       // part rather than one per machine per part.
       check(pres.drawDelta <= pres.meshes,

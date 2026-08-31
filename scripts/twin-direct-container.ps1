@@ -58,10 +58,27 @@ else {
 # that looked like a product defect.
 docker build -q -t $image (Join-Path $root 'services\factory-twin-3d') | Out-Null
 docker rm -f $name 2>$null | Out-Null
+
+# Carry the running production container's database settings across, so
+# /api/state answers here too and the scene is checked against real telemetry
+# rather than a 500. Read from the live container and passed straight to
+# `docker run`; never printed, and never written to a file.
+$envArgs = @()
+$prod = docker inspect ims-factory-twin-3d --format '{{json .Config.Env}}' 2>$null
+if ($prod) {
+    foreach ($kv in ($prod | ConvertFrom-Json)) {
+        if ($kv -match '^(PG[A-Z]+|PORT)=') { $envArgs += @('-e', $kv) }
+    }
+}
+if (-not $envArgs) {
+    Write-Warning 'ims-factory-twin-3d is not running; starting without database settings. /api/state will 500.'
+}
+
 docker run -d --rm --name $name --label $label `
     --network ims_ims-internal `
     -p "127.0.0.1:${port}:4100" `
     -v "${mount}:/app/private:ro" `
+    @envArgs `
     $image | Out-Null
 
 Write-Output "$name listening on http://127.0.0.1:$port/ (loopback only, NO auth gate)"

@@ -40,6 +40,7 @@ const baseZones = fs.existsSync(ZONES) ? fs.readFileSync(ZONES, 'utf8') : null;
 
 let passed = 0;
 let failed = 0;
+let skipped = 0;
 
 // Returns { ok, output }. The validator exits non-zero on failure.
 function runValidator(geometry) {
@@ -125,8 +126,37 @@ mutation('a grid span total that disagrees with the envelope is rejected', (g) =
 mutation('a non-finite grid line is rejected', (g) => { g.grid.z_lines[2] = Infinity; }, 'is not finite');
 
 // ── columns ──
+// A point that is outside the traced boundary but still inside the envelope, so
+// the mutation exercises the footprint rule specifically rather than the
+// coarser envelope rule. Hardcoding a corner is what this used to do, and it
+// silently stopped being a mutation the moment the traced outline changed.
+function outsideFootprint() {
+  const verts = baseGeometry.footprint_polygon.vertices;
+  const inside = (x, z) => {
+    let hit = false;
+    for (let i = 0; i < verts.length; i++) {
+      const a = verts[i];
+      const b = verts[(i + 1) % verts.length];
+      if ((a.z > z) !== (b.z > z)) {
+        const xint = ((b.x - a.x) * (z - a.z)) / (b.z - a.z) + a.x;
+        if (x < xint) hit = !hit;
+      }
+    }
+    return hit;
+  };
+  const w = baseGeometry.envelope.width / 2;
+  const d = baseGeometry.envelope.depth / 2;
+  for (let x = -w + 1; x < w; x += 2) {
+    for (let z = -d + 1; z < d; z += 2) {
+      if (!inside(x, z)) return { x: Number(x.toFixed(3)), z: Number(z.toFixed(3)) };
+    }
+  }
+  throw new Error('the footprint fills the whole envelope; no interior point lies outside it');
+}
+const OUTSIDE = outsideFootprint();
+
 mutation('a column outside the footprint is rejected', (g) => {
-  g.columns[0].position.x = -86.9; g.columns[0].position.z = 59.9;
+  g.columns[0].position.x = OUTSIDE.x; g.columns[0].position.z = OUTSIDE.z;
 }, 'outside the validated footprint');
 mutation('a column without detector evidence is rejected', (g) => { delete g.columns[1].detector; }, 'no detector metadata');
 mutation('a duplicate column id is rejected', (g) => { g.columns[1].id = g.columns[0].id; }, 'duplicate column id');
@@ -136,14 +166,22 @@ mutation('columns without their detection block are rejected', (g) => { delete g
 
 // ── slots ──
 mutation('a slot outside the footprint is rejected', (g) => {
-  g.slots[0].position.x = -86.9; g.slots[0].position.z = 59.9;
+  g.slots[0].position.x = OUTSIDE.x; g.slots[0].position.z = OUTSIDE.z;
 }, 'outside the validated footprint');
 mutation('a slot without detection metadata is rejected', (g) => { delete g.slots[0].detection; }, 'no detection metadata');
 mutation('a slot without geometry_status is rejected', (g) => { delete g.slots[0].geometry_status; }, 'missing geometry_status');
 mutation('a LOW-confidence slot is rejected', (g) => { g.slots[0].confidence = 'low'; }, 'LOW-confidence equipment geometry');
-mutation('a dangling slot zone reference is rejected', (g) => { g.slots[0].zone_id = 'zone-does-not-exist'; }, 'does not exist in the zone file');
+if (baseZones) {
+  mutation('a dangling slot zone reference is rejected', (g) => { g.slots[0].zone_id = 'zone-does-not-exist'; }, 'does not exist in the zone file');
+} else {
+  // The rule compares against the zone file's ids. With no zone file there is
+  // nothing to dangle from, so this case is unrunnable -- reported as skipped,
+  // never counted as a pass.
+  skipped++;
+  console.log('  SKIP  a dangling slot zone reference is rejected  (no zone file on this machine)');
+}
 mutation('slots without their detection block are rejected', (g) => { delete g.equipment_detection; }, 'equipment_detection metadata is missing');
 mutation('a slot claiming a live machine state while unmapped is rejected', (g) => { g.slots[0].status = 'RUN'; }, 'unmapped slots must be geometry-only');
 
-console.log(`\n${passed} passed, ${failed} failed`);
+console.log(`\n${passed} passed, ${failed} failed` + (skipped ? `, ${skipped} skipped` : ''));
 process.exit(failed === 0 ? 0 : 1);

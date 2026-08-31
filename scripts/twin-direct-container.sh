@@ -44,10 +44,25 @@ case "$ACTION" in
     # failure that looked like a product defect.
     docker build -q -t "$IMAGE" "$ROOT/services/factory-twin-3d" >/dev/null
     docker rm -f "$NAME" >/dev/null 2>&1 || true
+
+    # Carry the running production container's database settings across, so
+    # /api/state answers here too and the scene is checked against real
+    # telemetry rather than a 500. Read from the live container and passed
+    # straight to `docker run`; never printed, never written to a file.
+    ENVARGS=()
+    while IFS= read -r kv; do
+      [ -n "$kv" ] && ENVARGS+=(-e "$kv")
+    done < <(docker inspect ims-factory-twin-3d \
+      --format '{{range .Config.Env}}{{println .}}{{end}}' 2>/dev/null \
+      | grep -E '^(PG[A-Z]+|PORT)=' || true)
+    [ ${#ENVARGS[@]} -eq 0 ] && \
+      echo "warning: ims-factory-twin-3d not running; /api/state will 500" >&2
+
     docker run -d --rm --name "$NAME" --label "$LABEL" \
       --network ims_ims-internal \
       -p "127.0.0.1:$PORT:4100" \
       -v "$MOUNT:/app/private:ro" \
+      "${ENVARGS[@]}" \
       "$IMAGE" >/dev/null
     echo "$NAME listening on http://127.0.0.1:$PORT/ (loopback only, NO auth gate)"
     echo "TWIN_DIRECT_URL=http://127.0.0.1:$PORT/ node tests/playwright/factory-twin-regression.js"
