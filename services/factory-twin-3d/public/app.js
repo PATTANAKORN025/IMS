@@ -61,6 +61,8 @@ const machines2dById = new Map();
 let latestStateById = new Map();
 let currentBounds = null;
 let placementSummary = '';
+let placementBannerText = '';
+let placementNeedsWarning = true;
 let currentView = new URLSearchParams(window.location.search).get('view') === '2d' ? '2d' : '3d';
 
 function escapeHtml(value) {
@@ -361,10 +363,22 @@ function applyPlacementMeta(layout) {
   const inventoryStatus = floor.inventory_status || 'INVENTORY_NOT_DECLARED';
   placementSummary = `${(layout.machines || []).length} mapped assets · ${(layout.zones || []).length} zones · ${inventoryStatus}`;
   summaryLine.textContent = placementSummary;
-  bannerEl.hidden = !provisional;
-  bannerEl.textContent = provisional
+  placementNeedsWarning = provisional;
+  placementBannerText = provisional
     ? `${floor.name || 'FLOOR'} — DRAFT LOCAL LAYOUT; coordinates/inventory are not yet owner-approved`
     : `${floor.name || 'FLOOR'} — APPROVED LAYOUT`;
+  bannerEl.hidden = !placementNeedsWarning;
+  bannerEl.textContent = placementBannerText;
+}
+
+function applyStatusModeMeta(payload) {
+  const simulated = payload.status_mode?.simulated === true;
+  document.body.classList.toggle('mock-status', simulated);
+  bannerEl.hidden = simulated ? false : !placementNeedsWarning;
+  bannerEl.textContent = simulated
+    ? `SIMULATED STATUS — NOT PRODUCTION · ${placementBannerText}`
+    : placementBannerText;
+  return simulated;
 }
 
 const raycaster = new THREE.Raycaster();
@@ -455,6 +469,7 @@ machineListEl.addEventListener('click', (event) => {
 
 function applyState(payload) {
   const rows = payload.machines || [];
+  const simulated = applyStatusModeMeta(payload);
   latestStateById = new Map(rows.map((row) => [row.device_id, row]));
 
   for (const [deviceId, entry] of machinesById.entries()) {
@@ -489,8 +504,8 @@ function applyState(payload) {
   const alarmCount = rows.filter((row) => row.alarm).length;
   const downCount = rows.filter((row) => (row.operational_state || row.state) === 'DOWN').length;
   const undefinedCount = rows.filter((row) => (row.operational_state || row.state) === 'UNDEFINED').length;
-  summaryLine.textContent = `${placementSummary} · ${downCount} DOWN · ${alarmCount} ALARM overlay · ${undefinedCount} UNDEFINE`;
-  statusLine.textContent = `Database/API update: ${new Date(payload.queried_at).toLocaleTimeString()}`;
+  summaryLine.textContent = `${simulated ? 'SIMULATED STATUS · ' : ''}${placementSummary} · ${downCount} DOWN · ${alarmCount} ALARM overlay · ${undefinedCount} UNDEFINE`;
+  statusLine.textContent = `${simulated ? 'Mock preview' : 'Database/API'} update: ${new Date(payload.queried_at).toLocaleTimeString()}`;
   statusLine.classList.remove('error');
 }
 

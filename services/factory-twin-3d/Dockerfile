@@ -9,6 +9,7 @@ COPY server.js ./
 COPY layout.js ./
 COPY status-model.js ./
 COPY status-api.js ./
+COPY mock-status.js ./
 COPY config ./config
 COPY public ./public
 

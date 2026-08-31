@@ -6,9 +6,15 @@ const { Pool } = require('pg');
 const { computeFloorOneLayout, loadConfiguredLayout } = require('./layout');
 const { MACHINE_STATUS, mapLegacyLdiStatus, statusPayload } = require('./status-model');
 const { createStatusApiClient } = require('./status-api');
+const {
+  STATUS_MODE,
+  createMockStateRows,
+  normalizeStatusMode,
+} = require('./mock-status');
 
 const PORT = process.env.PORT || 4100;
 const FLOOR_LAYOUT_FILE = process.env.FLOOR_LAYOUT_FILE || '';
+const MACHINE_STATUS_MODE = normalizeStatusMode(process.env.MACHINE_STATUS_MODE);
 const statusApiClient = createStatusApiClient({
   url: process.env.MACHINE_STATUS_API_URL || '',
   token: process.env.MACHINE_STATUS_API_TOKEN || '',
@@ -231,6 +237,24 @@ function legacyStateValue(status, hasAlarm) {
 
 app.get('/api/state', async (req, res) => {
   try {
+    if (MACHINE_STATUS_MODE === STATUS_MODE.MOCK) {
+      res.status(200).json({
+        machines: createMockStateRows(STATE_BINDINGS),
+        queried_at: new Date().toISOString(),
+        status_mode: {
+          mode: STATUS_MODE.MOCK,
+          simulated: true,
+          writes_database: false,
+        },
+        status_api: {
+          configured: false,
+          available: false,
+          error: 'disabled_by_mock_mode',
+        },
+      });
+      return;
+    }
+
     const result = DEVICE_IDS.length > 0
       ? await pool.query(STATE_SQL, [DEVICE_IDS])
       : { rows: [] };
@@ -327,6 +351,11 @@ app.get('/api/state', async (req, res) => {
     res.status(200).json({
       machines: rows,
       queried_at: new Date().toISOString(),
+      status_mode: {
+        mode: STATUS_MODE.REAL,
+        simulated: false,
+        writes_database: false,
+      },
       status_api: {
         configured: Boolean(statusApiClient.endpoint),
         available: apiResult.available,
@@ -362,7 +391,8 @@ refreshDevices({ failOnLayoutError: true })
     app.listen(PORT, () => {
       console.log(
         `factory-twin-3d listening on :${PORT} `
-        + `(${FLOOR_LAYOUT.machines.length} layout assets, ${DEVICE_IDS.length} LDI state bindings)`,
+        + `(${FLOOR_LAYOUT.machines.length} layout assets, ${DEVICE_IDS.length} LDI state bindings, `
+        + `status mode=${MACHINE_STATUS_MODE})`,
       );
     });
   })

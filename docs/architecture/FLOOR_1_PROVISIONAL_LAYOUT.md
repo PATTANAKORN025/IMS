@@ -21,7 +21,7 @@ response. There is no separate 2D register to drift away from the 3D register.
 | Machine state, board progress, MO and alarm context | Existing `/api/state` query | Database-backed |
 | Floor name | Application or local private layout metadata | Must expose verification status |
 | Zone and machine coordinates | Logical fallback or ignored local JSON | Draft until owner-approved |
-| Non-LDI machine state | Configured per-asset adapter | `Undefine` while unbound; never mocked |
+| Non-LDI machine state | Configured per-asset adapter | `Undefine` while unbound in the default `real` mode |
 
 The application therefore keeps a visible warning banner while any rendered
 placement has `is_simulated = true`. Status and placement truth are described
@@ -61,6 +61,25 @@ It must not overwrite the operational state or be interpreted as proof of
 `Down`. `Off`, `Down` and `Initial,PM,Stop` cannot be derived from the current
 LDI boolean column and require the owner's trigger/reset contract.
 
+## Safe mock preview mode
+
+Production and the committed Compose default use `MACHINE_STATUS_MODE=real`.
+For an isolated local preview only, set `MACHINE_STATUS_MODE=mock` on the
+`factory-twin-3d` service. The service then assigns all six operational states
+deterministically across the current placement registry, so the 2D and 3D
+renderers, legend and responsive layout can be reviewed before the real
+machine adapters are available.
+
+Mock mode is deliberately visible and isolated:
+
+- A red `SIMULATED STATUS — NOT PRODUCTION` banner is always shown.
+- Every machine row is marked `SIMULATED` with basis
+  `mock_preview_deterministic`.
+- No mock alarm lifecycle is created; the alarm overlay stays independent.
+- No values are written to PostgreSQL, TimescaleDB or an external status API.
+- Removing the environment override restores fail-closed `real` behavior,
+  where unbound or unavailable sources display `Undefine`.
+
 ## Interaction
 
 - `2D` renders an SVG plan from the same zone bounds, machine coordinates and
@@ -90,5 +109,5 @@ npm test
 ```
 
 Tests cover location parsing, deterministic output, separate logical group
-rows, the 10-machine/five-zone reference set, and collision-free expansion to
-23 machines.
+rows, the 10-machine/five-zone reference set, collision-free expansion to 23
+machines, and the opt-in/no-database-write mock status contract.
