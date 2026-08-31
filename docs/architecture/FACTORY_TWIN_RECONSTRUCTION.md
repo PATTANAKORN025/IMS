@@ -90,13 +90,31 @@ reported as measured rather than tuned towards the previous figures:
 | Structural columns | 147 | **120** |
 | Equipment slots | 242 | **243** |
 
-Slots land within one, and two of the six colour layers reproduce exactly
-(magenta 48, red 19). Columns are the real gap: this pass requires an unfilled
-square outline within 1.8 m of a printed grid intersection and finds 124, of
-which 4 fall outside the traced boundary and are dropped. All 16 intersections
-that carry ink but no column symbol were inspected individually; none carries
-one. The previous figure most likely included columns away from an
-intersection, which this detector does not look for.
+The schematic transcription changed too: 55 banks and 240 cells against a
+previously recorded 38 and 212. All four discrepancies were traced back to the
+sheet; the reconciliation is below.
+
+### Count reconciliation
+
+Four counts differ from the ones the lost file recorded. Each was traced back to
+the sheet rather than settled by preferring either number. **No value below was
+chosen because a detector produced it, and none was chosen to match the previous
+implementation.**
+
+| Object | Previous | Current | Source evidence | Root cause | Final | Confidence |
+|---|---:|---:|---|---|---:|---|
+| Structural columns | 147 | 120 | 190 grid intersections fall inside the traced footprint; 119 carry a solid column square within 1.8 m. A strip audit along grid line 9 found **6 squares, all 6 detected, no misses and no false positives**. All 96 column-sized squares that are *not* on an intersection were inspected individually. | Every off-node square is equipment or plant detail — pumps, tanks, cabinets, sanitary fixtures — not structural. The previous figure is reached only by associating a square within **5.6 m** of an intersection, which is not a column on that line. The previous detector's output no longer exists and cannot be re-examined. | **120** | HIGH |
+| Equipment slots | 242 | 243 | Per-colour connected components under the machine-scale filter. **Magenta (48) and red (19) reproduce exactly.** | The whole delta sits in four layers: green −4, yellow −2, blue −2, black +9. Green and yellow are **not equipment layers on this sheet** — inspection of every green component shows dimension text (including the printed `120300` itself), cable runs and small fixture symbols, so the previous green 18 and yellow 9 counted annotation as equipment. Black differs in the dense south-east cluster, which the lost file's own metadata already named as its known limitation. | **243** | MEDIUM |
+| Schematic banks | 38 | 55 | 55 rectangles recovered as closed pairs of vertical edges. **Every one was inspected on a contact sheet**: all are equipment banks, none is the legend frame, a title box or a label box, and none overlaps the legend. | Only **one** adjacent, vertically aligned pair exists on the whole drawing, so "the previous pass grouped adjacent columns" cannot account for 38 against 55. The previous transcription was manual and partial — its own record shows 161 of 212 cells left unread. | **55** | HIGH |
+| Schematic cells | 212 | 240 | Cells split at each bank's own internal separator lines. Cells-per-bank runs 1–9 and matches the reference bank by bank. | Same as banks: a partial manual transcription against a complete measured one. | **240** | HIGH |
+
+The medium confidence on slots is deliberate. The count is reproducible from a
+stated rule, but the rule's machine-scale floor (1.5 m) is a threshold, and
+twenty green components sit just under it at 0.4–1.2 m in one dimension. Those
+are sub-parts of symbols rather than machines, but the boundary is a judgement
+and is recorded as one.
+
+---
 
 **What the re-derivation is checked against.** Every check below comes from the
 drawing itself, not from the file it replaced:

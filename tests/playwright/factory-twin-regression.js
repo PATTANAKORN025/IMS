@@ -560,9 +560,18 @@ async function run() {
         pres.formsUsed.join(','));
       check(pres.allNamed, 'every presentation object names its form and its part');
       // Instancing is the whole reason this layer is affordable: one mesh per
-      // part rather than one per machine per part.
-      check(pres.drawDelta <= pres.meshes,
-        'the presentation model costs one draw call per part, not one per machine',
+      // (form, part) rather than one per machine.
+      //
+      // The bound is TWICE the mesh count because every caster is also drawn
+      // into the shadow map, so an instanced mesh costs one scene draw plus one
+      // shadow draw. The second clause is the one that matters: whatever the
+      // shading does, the cost must never start scaling with the number of
+      // machines.
+      check(pres.drawDelta <= pres.meshes * 2,
+        'the presentation model costs a draw per mesh pass, not one per machine',
+        `+${pres.drawDelta} draws for ${pres.meshes} meshes`);
+      check(pres.drawDelta < s.api.slots / 4,
+        'the presentation model never costs a draw call per machine',
         `+${pres.drawDelta} draws for ${s.api.slots} machines`);
       check(
         pres.classes.length === 1 && pres.classes[0] === 'PRESENTATION_ONLY',
