@@ -274,11 +274,20 @@ attention.
 
 | Invariant | Value | Why fixed |
 |---|---:|---|
-| Structural columns | 147 | Detection result; changes only if detection is re-run |
-| Observed equipment slots | 242 | Detection result; same |
+| Structural columns | 120 | Detection result; changes only if detection is re-run |
+| Observed equipment slots | 243 | Detection result; same |
 | Monitored devices | 23 | The live enabled device set |
 | Confirmed physical mappings | **0** | No authoritative record exists |
-| Zones rendered / withheld | 8 / 13 | Only validated tiers may render |
+| Zones rendered / withheld | 0 / 0 | No zone file is deployed after the re-derivation |
+
+The column and slot figures changed on 2026-08-31 when the private geometry was
+re-derived from the source sheet after the working copy was deleted. They are
+what the same method measures on the same drawing, reported as measured and not
+tuned towards the previous 147 and 242. See
+[Reconstruction](FACTORY_TWIN_RECONSTRUCTION.md) for the independent checks the
+re-derivation passes: both printed dimension chains sum to their printed totals
+with zero delta, and the traced footprint encloses 14,401 m² against the
+sheet's own printed 14,430 m².
 
 The regression suite derives counts from the API and reconciles them against
 the scene rather than hardcoding them, so adding evidence does not require

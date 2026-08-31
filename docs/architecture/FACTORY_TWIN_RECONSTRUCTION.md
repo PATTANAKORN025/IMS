@@ -46,8 +46,8 @@ unrecognised basis is rejected rather than assumed harmless.
 | Clear height | — | BLOCKED | No section or elevation exists |
 | Footprint polygon | 1 | CONFIRMED | Perimeter traced by ink-coverage measurement; area agrees with the printed figure |
 | Structural grid | 1 | CONFIRMED | Printed spans; totals match, cross-checked against bubble spacing |
-| Structural columns | 147 | OBSERVED | Shape detection at grid intersections, thresholds calibrated on verified samples |
-| Equipment slots | 242 | OBSERVED | Colour-separated component detection, machine-scale filtered |
+| Structural columns | 120 | OBSERVED | Unfilled square outlines matched to the nearest printed grid intersection within 1.8 m |
+| Equipment slots | 243 | OBSERVED | Colour-separated component detection, machine-scale filtered |
 | Equipment height | — | BLOCKED | A plan view carries no equipment elevation |
 | Monitored devices | 23 | SIMULATED position | Live telemetry is real; position is a synthetic grid |
 | Physical mappings | 0 | BLOCKED | No authoritative record relates the namespaces |
@@ -70,6 +70,59 @@ one of them produces a specific wrong decision rather than a rounding error:
 **Observed ≠ Confirmed. Simulated ≠ Real. Derived ≠ Measured. Unknown ≠
 Missing.** The consequences of each are tabulated in the
 **[Operator Guide](FACTORY_TWIN_OPERATOR_GUIDE.md)**.
+
+---
+
+## 0.1 The 2026-08-31 re-derivation
+
+The private geometry was **re-derived from scratch** on 2026-08-31. The working
+copy of `private/` had been deleted from the tree along with the reference
+images; the images were recovered intact from the owner's own storage, the
+derived JSON was not, and it had never been committed — by design, since it is
+confidential facility geometry.
+
+What exists now is therefore a fresh derivation from the same sheet by the same
+method, not a restored file. Two counts came out different, and they are
+reported as measured rather than tuned towards the previous figures:
+
+| | Before | Re-derived |
+|---|---:|---:|
+| Structural columns | 147 | **120** |
+| Equipment slots | 242 | **243** |
+
+Slots land within one, and two of the six colour layers reproduce exactly
+(magenta 48, red 19). Columns are the real gap: this pass requires an unfilled
+square outline within 1.8 m of a printed grid intersection and finds 124, of
+which 4 fall outside the traced boundary and are dropped. All 16 intersections
+that carry ink but no column symbol were inspected individually; none carries
+one. The previous figure most likely included columns away from an
+intersection, which this detector does not look for.
+
+**What the re-derivation is checked against.** Every check below comes from the
+drawing itself, not from the file it replaced:
+
+| Check | Result |
+|---|---|
+| Printed X dimension chain, 20 spans | 174,500 mm — equals the sheet's printed total, delta 0 |
+| Printed Z dimension chain, 13 spans | 120,300 mm — equals the sheet's printed total, delta 0 |
+| Structural grid | 21 × 14, unchanged |
+| Pixel calibration, each axis fitted independently | 40.019 and 40.024 mm/px — 0.01 % apart |
+| Traced footprint bounding box | 174.48 × 120.27 m against those printed totals |
+| Traced footprint area | **14,401 m²** against the sheet's own printed **14,430 m²** (−0.20 %) |
+| Geometry validator | 0 errors, 0 warnings |
+
+Gridline positions come from the printed cumulative chain rather than from the
+fitted pixel positions. The chain is printed evidence and sums to the printed
+total exactly; the pixel fit is a measurement *of* that chain and carries a few
+centimetres of residual.
+
+The schematic transcription was rebuilt at the same time and is deliberately
+more conservative than the one it replaces — see
+[Visual Fidelity](FACTORY_TWIN_VISUAL_FIDELITY.md) for exactly which parts are
+measured, which are transcribed by eye, and which are recorded as unread.
+
+The functional-zone file was **not** rebuilt. No zone polygons are deployed, so
+the API serves zero functional zones rather than an unvalidated boundary.
 
 ---
 

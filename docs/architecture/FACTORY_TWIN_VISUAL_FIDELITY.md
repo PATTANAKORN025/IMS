@@ -138,10 +138,14 @@ between them.
 | Gap | Why |
 |---|---|
 | Per-cell status hatching | Both renders hatch every cell and disagree. Rendering either would present one render's operational reading as the floor's state. Every cell shows Undefined, which is the honest reading and is what the source's own Undefined swatch looks like. |
-| 161 of 212 cell values | Transcribed only where legible in **both** renders at native resolution. The rest are unread rather than guessed: a wrong three-digit number is indistinguishable from a right one. |
+| All 240 cell values | Not transcribed. Glyph segmentation recovered about 1.4 glyphs per three-character label, so any transcription from it would be mostly wrong, and a wrong three-digit number is indistinguishable from a right one. Every cell carries null in both snapshots, which the contract already means as "could not be read confidently". |
+| Per-cell status | Not transcribed. The drawing's own printed legend swatches were used as texture templates and separated 2 of 240 cells above threshold. Assigning the nearest swatch to the rest would have invented a status for 238 machines. |
+| 8 of 11 area names | An area is named only when a printed area name falls inside it. Three regions contain exactly one name; five contain none; three contain two or more and are left ambiguous rather than picked between. |
 
-Of the 51 cells transcribed from both renders, **17 disagree**. That ratio is
-itself the argument against picking a favourite.
+Both renders declare the same instant, **2026-08-26T15:34:07**, and differ in
+content — the first bank alone reads 140/138/133/133/144 on one and
+140/147/143/143/144 on the other. They are carried as two snapshots that
+conflict, and no code path averages, prefers or reconciles them.
 
 ---
 
@@ -164,8 +168,8 @@ have required inventing evidence rather than reproducing it.
 
 | Not built | Why |
 |---|---|
-| **Solid machine bodies on the measured floor** | The reference shows equipment as flat blocks on a plan; the plan set carries no equipment elevation. Extruding the 242 measured slots into cabinets would put a height on the floor that nobody measured, and a silhouette implying a height reads as evidence whatever the metadata says. Slots stay flat pads, which is why they were made flat pads. |
-| **A single 3D world containing both models** | A COMBINED view that draws schematic banks alongside measured geometry states, by placement alone, that the two are registered. They are not, and no amount of labelling undoes what an eye reads from a shared coordinate frame. The two-mode split is the honest form. A side-by-side split-screen would be a safe way to show both at once and is the recommended next step if one view is wanted. |
+| **Solid machine bodies in the OBSERVED slot layer** | The plan set carries no equipment elevation, so the observed slots stay flat pads: a silhouette implying a height reads as evidence whatever the metadata says. Bodies are drawn instead in a separate, default-off [presentation layer](FACTORY_TWIN_PRESENTATION_MODEL.md) where every vertical dimension is classified PRESENTATION_ONLY. |
+| **A single 3D world containing both models** | A COMBINED view that draws schematic banks alongside measured geometry states, by placement alone, that the two are registered. They are not, and no amount of labelling undoes what an eye reads from a shared coordinate frame. The **side-by-side** mode is the built form of this: two panes with a hard rule between them, each with its own caption, and a banner that reads PHYSICAL + SCHEMATIC — UNREGISTERED rather than labelling itself with either single claim. |
 
 ---
 

@@ -47,8 +47,8 @@ guard, in both directions, and both refusals are tested.
 | `SCHEMATIC_DERIVED` | A dimension read off a render, never measured | Bank width and height |
 | `SCHEMATIC_ANNOTATION` | A number printed beside a line on a scaleless drawing | Dimension annotations |
 | `SCHEMATIC_OBSERVED_LABEL` | Ink on a render, never an identity | Bank and cell labels |
-| `CONFLICTING` | Two sources read it differently | 17 cells, 6 labels |
-| `UNREADABLE` | Present but not legible; recorded as unknown | 161 untranscribed cells |
+| `CONFLICTING` | Two sources read it differently | the two renders declare one instant and disagree |
+| `UNREADABLE` | Present but not legible; recorded as unknown | all 240 cell values and every cell status |
 | `UNMAPPED` | No authoritative record relates it to anything | Every physical and IMS link |
 | `SIMULATED` | Deliberately not real | Monitored device positions |
 

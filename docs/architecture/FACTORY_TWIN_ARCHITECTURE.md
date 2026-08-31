@@ -122,12 +122,41 @@ member of it:
 | Top-level layer | Sub-layers |
 |---|---|
 | `structural` | `shell` (floor plate, orientation grid, measured envelope outline), `columns` |
-| `operational` | `machines`, `slots` |
+| `operational` | `machines`, `slots`, `presentation` (default off) |
 | `functional` | none; single class |
 | `telemetry` | none; single class |
 
 Visibility resolution accepts either level, so the six operator toggles map
 onto the same tree without a parallel lookup table.
+
+### Modes
+
+One application, five modes. Three change WHICH claim is on screen; two change
+how much apparatus surrounds the same claim.
+
+| Mode | 3D | Drawing | Needs |
+|---|---|---|---|
+| `executive` | ✓ | | measured floor; widest framing, controls stripped |
+| `physical` | ✓ | | measured floor |
+| `schematic` | | ✓ | a transcribed drawing |
+| `split` | ✓ | ✓ | both |
+| `inspection` | ✓ | | measured floor; every control open |
+
+A mode is a body class plus a camera preset. **No mode changes a coordinate**,
+and the regression proves it by taking a byte-level coordinate snapshot across
+every switch. Modes that need the drawing are **disabled with a reason** when
+none is deployed, rather than hidden — "there is a side-by-side view and this
+deployment has nothing to put in it" is worth knowing.
+
+`split` abuts the two panes with a hard rule rather than overlaying them:
+overlaying would assert a registration between two systems that share no
+reference frame. Its banner reads `PHYSICAL + SCHEMATIC — UNREGISTERED` rather
+than labelling itself with either single claim.
+
+Every measurement that lays the scene out — the renderer size, the camera fit,
+the drawing's fit — is taken against **the pane**, never the window. In
+side-by-side the pane is half the window wide and starts to the right of the
+HUD, so a window-based measurement reserves a panel that is not over that pane.
 
 ### Camera and view semantics
 
@@ -140,9 +169,13 @@ resetting.
 
 Two details worth knowing before editing the fit code:
 
-- **`camera.fov` is vertical.** The horizontal half-angle is
-  `tan(fov / 2) * aspect`, so a fit dividing both axes by the same quantity is
-  wrong on one of them. Each axis needs its own divisor.
+- **The fit is measured, not computed.** An oblique camera sees a box's
+  silhouette, not its axis-aligned extent, so the closed-form trigonometric fit
+  that used to live here under-estimated the distance and clipped the floor's
+  corners — worst at the shallow angles that make a floor readable. The fit now
+  projects the envelope's eight corners through a trial camera and scales until
+  they land inside the area the overlays leave clear. That is exact for any
+  angle, any aspect and any panel width.
 - **Overview frames a union of bounds, not a registration.** The measured
   building extent and the synthetic machine extent are separate coordinate
   systems; the union puts both in frame and implies no correspondence between
@@ -153,13 +186,32 @@ path, so a viewport change cannot leave two views fitted from different inputs.
 A preset whose inputs have not arrived stays disabled rather than silently
 falling back to another framing.
 
-### Resource reuse
+### Resource reuse and render on demand
 
 Geometries and materials are cached and shared across meshes rather than
-constructed per object; resize work is coalesced and rendering is throttled to
-animation frames. Current measured composition, and the reason instancing has
-**not** been adopted, are in
-**[Visual QA](FACTORY_TWIN_VISUAL_QA.md)**.
+constructed per object, and resize work is coalesced to one call per frame.
+
+**Frames are drawn on demand.** This view is fill-rate bound, not geometry
+bound: across 1366×768 to 3840×2160 the median frame time tracks pixel count
+almost exactly while the triangle count does not move. And the scene is static
+between interactions — it never animates, and a telemetry poll every five
+seconds changes a handful of colours. Drawing it sixty times a second was
+spending the entire frame budget producing an identical image, over 200 ms of
+work per frame at 4K to change nothing.
+
+A frame is now drawn when something has actually changed: camera motion, a
+layer toggle, a mode or view change, a resize, a hover, a telemetry update. Any
+request draws a short run of frames rather than exactly one, because "changed"
+is not always observable in the same tick — a texture finishing decode, a
+sprite laying out, a material upload completing.
+
+Measured: **0 frames in 2 seconds of idle** at 1080p and 4K; **102 frames
+during a 0.8 s orbit drag**. Interaction is not degraded; idle is free. The
+device pixel ratio is capped at 2 for the same fill-rate reason.
+
+The **presentation** layer is instanced — one `InstancedMesh` per (form, part),
+21 objects and 21 draw calls for the whole floor. Current measured composition
+is in **[Visual QA](FACTORY_TWIN_VISUAL_QA.md)**.
 
 ---
 

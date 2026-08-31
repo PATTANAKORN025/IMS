@@ -53,7 +53,7 @@ The observed equipment positions render as flat pads in the measured layer, and
 that was a correct decision: a silhouette implying a height nobody measured
 reads as evidence whatever the metadata says.
 
-But a floor of 242 flat grey pads communicates almost nothing about a factory.
+But a floor of flat grey pads communicates almost nothing about a factory.
 An operator cannot see aisles, cannot judge density, cannot tell equipment from
 markings. The view becomes technically honest and practically useless.
 
@@ -88,9 +88,32 @@ building the layer moves no measured coordinate.
 
 ## How it is built
 
-One `InstancedMesh` per part — plinth, body, enclosure, light strip — each
-carrying an instance for every measured slot. Four objects stand in for 242
-machines.
+One `InstancedMesh` per (form, part). Twenty-one objects stand in for every
+machine on the floor, and the layer costs **21 draw calls** rather than the
+roughly one thousand that individual meshes would.
+
+Machines are **not all one shape**. Equipment is drawn on six colour-separated
+layers of the source sheet, and members of a layer repeat one symbol. Which
+layer a symbol came from is served per slot as `detection.layer`, and it is the
+only input the form model reads:
+
+| Drawing layer (OBSERVED) | Form (PRESENTATION_ONLY) | Height |
+|---|---|---:|
+| black | Large process machine | 3.52 m |
+| magenta | Medium process machine | 2.62 m |
+| blue | In-line column station | 2.74 m |
+| red | Bench with overhead gantry | 1.97 m |
+| green | Transfer deck | 0.76 m |
+| yellow | Control cabinet | 2.12 m |
+| *unrecognised* | Unclassified block | 1.22 m |
+
+The grouping is OBSERVED; the form is invented. Form names are shape words and
+never process words — a form called "drilling machine" would assert that a
+group is the drilling area's equipment, which is the mapping no evidence in
+this project supports. An unrecognised layer falls through to the plainest
+shape in the set, so an unknown group never looks better resolved than a known
+one, and every height is a constant of its form, so no machine's height can
+carry information about that machine.
 
 That choice is about cost, and the cost is measured: the layer adds **4 draw
 calls** and about 11,600 triangles. Drawn as individual meshes the same model
