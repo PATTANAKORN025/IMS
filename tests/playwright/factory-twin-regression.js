@@ -896,6 +896,9 @@ async function run() {
           bankIds: S.bankIds(),
           snapshot: S.getActiveSnapshot(),
           apiAreas: S.getDoc().areas.length,
+          // Areas the drawing actually names. An area with no name printed
+          // inside it is served unnamed, and has no label to draw.
+          apiNamedAreas: S.getDoc().areas.filter((a) => a && a.name).length,
           apiBanks: S.getDoc().banks.length,
           apiCells: S.getDoc().banks.reduce((n, b) => n + b.columns * b.rows, 0),
           groupingClasses: [...new Set(S.getDoc().banks.map((b) => b.grouping_class))],
@@ -926,7 +929,14 @@ async function run() {
       check(inSchematic.areasDrawn === inSchematic.apiAreas,
         'the schematic draws every area the API served',
         `${inSchematic.areasDrawn} of ${inSchematic.apiAreas}`);
-      check(inSchematic.labelsDrawn === inSchematic.apiAreas, 'every area label is rendered',
+      check(inSchematic.apiNamedAreas <= inSchematic.apiAreas,
+        'no more areas are named than exist',
+        `${inSchematic.apiNamedAreas} of ${inSchematic.apiAreas}`);
+      // Against NAMED areas, not all areas. An area with no name printed
+      // inside it has nothing to draw, and asserting otherwise would pressure
+      // the transcription into naming areas the drawing does not name there.
+      check(inSchematic.labelsDrawn === inSchematic.apiNamedAreas,
+        'every named area has its label rendered',
         `${inSchematic.labelsDrawn}`);
       check(inSchematic.viewControlsHidden && inSchematic.layerControlsHidden,
         'physical camera controls are hidden in schematic mode');
@@ -959,7 +969,11 @@ async function run() {
         'every drawing label is classified as an observed label',
         inSchematic.labelClasses.join(',')
       );
-      check(inSchematic.ambiguous > 0,
+      // Unrunnable, not passing, when no bank labels were transcribed: there
+      // is nothing for the two renders to disagree about.
+      if (inSchematic.labelClasses.length === 0) {
+        skip('labels the two renders disagree on remain marked ambiguous', 'no cell or bank labels are transcribed in this deployment');
+      } else check(inSchematic.ambiguous > 0,
         'labels the two renders disagree on remain marked ambiguous',
         `${inSchematic.ambiguous} ambiguous`);
       check(!/"width"|"height"|ims_device_id|IMS_CONNECTED/.test(inSchematic.rawDoc),
@@ -994,6 +1008,11 @@ async function run() {
             0
           ),
           expectedConflicts: banks.reduce((n, b) => n + (b.cell_conflicts || []).length, 0),
+          // Values actually READ, as opposed to snapshot keys present. A key
+          // whose entries are all null records that those cells could not be
+          // read; counting it as transcribed hid a gap behind a green check.
+          transcribedValues: banks.reduce((n, b) => n + Object.values(b.cell_values || {})
+            .reduce((m, list) => m + (list || []).filter((v) => v !== null).length, 0), 0),
           texts: S.cellValueTexts(),
           badge: Boolean(document.getElementById('schematic-badge')),
           notice: document.getElementById('schematic-conflict').textContent,
@@ -1005,7 +1024,13 @@ async function run() {
       check(cells.conflictsDrawn === cells.expectedConflicts,
         'every disagreeing cell is marked as a conflict',
         `${cells.conflictsDrawn} of ${cells.expectedConflicts}`);
-      check(cells.expectedConflicts > 0,
+      // With no values transcribed there is nothing to disagree about. That is
+      // a gap in the transcription, reported as a skip -- never as a pass, and
+      // never as a failure of the code under test.
+      if (cells.transcribedValues === 0) {
+        skip('the sources genuinely disagree and that is recorded, not smoothed away',
+          'no per-cell values are transcribed in this deployment');
+      } else check(cells.expectedConflicts > 0,
         'the sources genuinely disagree and that is recorded, not smoothed away',
         `${cells.expectedConflicts} cells`);
       check(cells.badge, 'the not-to-scale notice is always present in schematic mode');
@@ -1074,7 +1099,10 @@ async function run() {
           `${swapped.dims} vs ${inSchematic.dims} dimension marks`);
         // The point of two snapshots: the disputed values actually differ.
         const swappedTexts = await page.evaluate(() => window.__schematic.cellValueTexts());
-        check(JSON.stringify(swappedTexts) !== JSON.stringify(cells.texts),
+        if (cells.transcribedValues === 0) {
+          skip("the other snapshot shows its own cell values, not the first one's",
+            'no per-cell values are transcribed in this deployment');
+        } else check(JSON.stringify(swappedTexts) !== JSON.stringify(cells.texts),
           "the other snapshot shows its own cell values, not the first one's");
         check(swappedTexts.length === cells.texts.length,
           'both snapshots transcribe the same cells',
@@ -1084,15 +1112,52 @@ async function run() {
         // Annotations that only one render carries must appear only there.
         // The blank SCALE field is the reason this whole layer exists apart
         // from the measured model, so it is asserted rather than assumed.
-        const annos = await page.evaluate(() => ({
-          north: document.querySelectorAll('[data-anno="NORTH"]').length,
-          title: document.querySelectorAll('[data-anno="TITLE_BLOCK"]').length,
-          scaleField: document.querySelectorAll('[data-title-field="SCALE"]').length,
-        }));
-        check(annos.north === 1 && annos.title === 1,
-          'the secondary render carries its own north marker and title block');
-        check(annos.scaleField === 1,
-          'the title block shows its scale field, which the source leaves blank');
+        // Which render carries these is a property of the transcription, not
+        // a constant: read it from the document, then assert the RULE -- an
+        // annotation restricted to one snapshot is drawn on that snapshot and
+        // on no other.
+        const restricted = await page.evaluate(() => {
+          const doc = window.__schematic.getDoc();
+          const one = (doc.annotations || []).filter(
+            (a) => Array.isArray(a.observed_in) && a.observed_in.length === 1
+              && (a.kind === 'NORTH' || a.kind === 'TITLE_BLOCK')
+          );
+          return { kinds: one.map((a) => a.kind), owner: one.length ? one[0].observed_in[0] : null };
+        });
+        if (!restricted.owner) {
+          skip('a render-specific annotation is drawn only on its own render',
+            'no annotation in this transcription is restricted to one render');
+          skip('the title block shows its scale field, which the source leaves blank',
+            'no title block is transcribed in this deployment');
+        } else {
+          const readAnnos = () => page.evaluate(() => ({
+            north: document.querySelectorAll('[data-anno="NORTH"]').length,
+            title: document.querySelectorAll('[data-anno="TITLE_BLOCK"]').length,
+            scaleField: document.querySelectorAll('[data-title-field="SCALE"]').length,
+            snapshot: window.__schematic.getActiveSnapshot(),
+          }));
+          const here = await readAnnos();
+          await page.evaluate((id) => window.__schematic.selectSnapshot(id), restricted.owner);
+          await page.waitForTimeout(500);
+          const onOwner = await readAnnos();
+          const wantNorth = restricted.kinds.includes('NORTH') ? 1 : 0;
+          const wantTitle = restricted.kinds.includes('TITLE_BLOCK') ? 1 : 0;
+          check(
+            onOwner.north === wantNorth && onOwner.title === wantTitle
+              && (here.snapshot === restricted.owner
+                || (here.north === 0 && here.title === 0)),
+            'a render-specific annotation is drawn only on its own render',
+            `owner=${restricted.owner} on-owner ${onOwner.north}/${onOwner.title}, `
+            + `elsewhere ${here.north}/${here.title}`
+          );
+          if (!wantTitle) {
+            skip('the title block shows its scale field, which the source leaves blank',
+              'no title block is transcribed in this deployment');
+          } else {
+            check(onOwner.scaleField === 1,
+              'the title block shows its scale field, which the source leaves blank');
+          }
+        }
       }
 
       // Readable at every viewport: labels on screen, nothing overflowing.

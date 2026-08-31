@@ -178,13 +178,21 @@ let machineBounds = null; // synthetic device grid extent
 // width puts the model half behind the panel. Measured from the element rather
 // than assumed, because the panel's width is set in CSS and has changed twice.
 function usableViewport() {
-  const w = window.innerWidth;
-  const h = window.innerHeight;
+  // Measured against the SCENE PANE, not the window. In side-by-side the pane
+  // is half the window wide and starts to the right of the panel, so a
+  // window-based measurement reserves a panel that is not over this pane and
+  // frames the floor off its own half.
+  const rect = container.getBoundingClientRect();
+  const w = Math.max(rect.width, 1);
+  const h = Math.max(rect.height, 1);
   const hud = document.getElementById('hud');
   const banner = document.getElementById('simulated-banner');
-  const left = hud && !hud.hidden ? hud.getBoundingClientRect().right : 0;
-  const top = banner && !banner.hidden ? banner.getBoundingClientRect().height : 0;
-  // Never let a huge panel on a small screen collapse the usable area to
+  const hudRect = hud && !hud.hidden ? hud.getBoundingClientRect() : null;
+  const bannerRect = banner && !banner.hidden ? banner.getBoundingClientRect() : null;
+  // Only the part of each overlay that actually covers this pane.
+  const left = hudRect ? Math.max(0, Math.min(hudRect.right, rect.right) - rect.left) : 0;
+  const top = bannerRect ? Math.max(0, Math.min(bannerRect.bottom, rect.bottom) - rect.top) : 0;
+  // Never let a large panel on a small pane collapse the usable area to
   // nothing: below this the overlay is the problem, not the framing.
   const usableW = Math.max(w - left, w * 0.35);
   const usableH = Math.max(h - top, h * 0.5);
@@ -1648,7 +1656,10 @@ function onResize() {
   const h = Math.max(Math.round(rect.height), 1);
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
-  renderer.setSize(w, h, false);
+  // updateStyle stays ON. Suppressing it leaves the canvas at its previous CSS
+  // size while the drawing buffer changes underneath, which renders the floor
+  // squeezed into a corner of a half-width pane.
+  renderer.setSize(w, h);
 
   // Every derived fit depends on aspect, so a resize invalidates all of them.
   // Without this, framing after a window change silently uses the old aspect
@@ -1683,6 +1694,10 @@ const MODE_VIEW = Object.freeze({
   executive: ['overview', 'building', 'operator'],
   // Back to the working framing an operator reads machines at.
   inspection: ['operator'],
+  // Half a window wide. The operator view is a fixed, hand-tuned camera that
+  // does not adapt to the pane it is drawn in, so entering side-by-side on it
+  // leaves the 3D half zoomed into a corner. The fitted framings do adapt.
+  split: ['building', 'overview', 'operator'],
 });
 
 window.addEventListener('twin-mode', (ev) => {

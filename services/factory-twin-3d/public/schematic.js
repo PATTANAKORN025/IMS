@@ -130,8 +130,13 @@ function fit() {
   // allowance covers the overhang; the cap keeps a narrow viewport from
   // reserving so much that nothing is left to draw in.
   const LABEL_OVERHANG_PX = 48;
-  const reserved = hudRect
-    ? Math.min((hudRect.right + LABEL_OVERHANG_PX) / rect.width, 0.66)
+  // Only what the panel actually covers OF THIS PANE. In side-by-side the
+  // drawing starts to the right of the panel, so the panel covers none of it
+  // and reserving its width would push the whole drawing off its own pane --
+  // which is exactly what it did.
+  const overlap = hudRect ? Math.max(0, Math.min(hudRect.right, rect.right) - rect.left) : 0;
+  const reserved = overlap > 0
+    ? Math.min((overlap + LABEL_OVERHANG_PX) / rect.width, 0.66)
     : 0;
 
   const width = content.width / (1 - reserved);
