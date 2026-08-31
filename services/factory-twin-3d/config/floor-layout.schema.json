@@ -26,7 +26,11 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["zone_id", "name", "center_x", "center_y", "width", "depth"],
+        "required": ["zone_id", "name"],
+        "anyOf": [
+          { "required": ["polygon"] },
+          { "required": ["center_x", "center_y", "width", "depth"] }
+        ],
         "properties": {
           "zone_id": { "type": "string", "minLength": 1 },
           "name": { "type": "string", "minLength": 1 },
@@ -35,7 +39,20 @@
           "center_x": { "type": "number" },
           "center_y": { "type": "number" },
           "width": { "type": "number", "exclusiveMinimum": 0 },
-          "depth": { "type": "number", "exclusiveMinimum": 0 }
+          "depth": { "type": "number", "exclusiveMinimum": 0 },
+          "polygon": {
+            "type": "array",
+            "minItems": 3,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["x", "y"],
+              "properties": {
+                "x": { "type": "number" },
+                "y": { "type": "number" }
+              }
+            }
+          }
         }
       }
     },
@@ -63,7 +80,7 @@
             "additionalProperties": false,
             "required": ["type"],
             "properties": {
-              "type": { "enum": ["ldi", "status_api", "unbound"] },
+              "type": { "enum": ["ldi", "machine_event", "status_api", "unbound"] },
               "source_id": { "type": ["string", "null"] }
             }
           }

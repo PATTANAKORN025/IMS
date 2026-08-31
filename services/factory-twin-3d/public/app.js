@@ -124,6 +124,24 @@ function svgElement(name, attributes = {}) {
   return element;
 }
 
+function zonePolygon(zone) {
+  if (Array.isArray(zone.polygon) && zone.polygon.length >= 3) {
+    return zone.polygon.map((point) => ({ x: Number(point.x), y: Number(point.y) }));
+  }
+  const halfWidth = Number(zone.width) / 2;
+  const halfDepth = Number(zone.depth) / 2;
+  return [
+    { x: Number(zone.center_x) - halfWidth, y: Number(zone.center_y) - halfDepth },
+    { x: Number(zone.center_x) + halfWidth, y: Number(zone.center_y) - halfDepth },
+    { x: Number(zone.center_x) + halfWidth, y: Number(zone.center_y) + halfDepth },
+    { x: Number(zone.center_x) - halfWidth, y: Number(zone.center_y) + halfDepth },
+  ];
+}
+
+function svgPolygonPoints(points) {
+  return points.map((point) => `${point.x},${point.y}`).join(' ');
+}
+
 function twoDViewBox(bounds = currentBounds) {
   if (!bounds) return null;
   const padding = Math.max(3, Math.max(bounds.width, bounds.depth) * 0.035);
@@ -146,25 +164,29 @@ function buildFloor2d(layout) {
   floorPlan2d.setAttribute('preserveAspectRatio', 'xMidYMid meet');
   resetTwoDView();
 
-  const zonesLayer = svgElement('g', { 'aria-label': 'Floor zones' });
+  const zoneFillsLayer = svgElement('g', { 'aria-label': 'Floor zone fills' });
+  const zoneOutlinesLayer = svgElement('g', { 'aria-label': 'Floor zone boundaries' });
+  const zoneLabelsLayer = svgElement('g', { 'aria-label': 'Floor zone labels' });
   for (const zone of layout.zones || []) {
-    zonesLayer.appendChild(svgElement('rect', {
-      class: 'zone-2d',
-      x: zone.center_x - zone.width / 2,
-      y: zone.center_y - zone.depth / 2,
-      width: zone.width,
-      height: zone.depth,
-      rx: 0.45,
+    const points = zonePolygon(zone);
+    const pointList = svgPolygonPoints(points);
+    zoneFillsLayer.appendChild(svgElement('polygon', {
+      class: 'zone-fill-2d',
+      points: pointList,
+    }));
+    zoneOutlinesLayer.appendChild(svgElement('polygon', {
+      class: 'zone-outline-2d',
+      points: pointList,
     }));
     const label = svgElement('text', {
       class: 'zone-label-2d',
-      x: zone.center_x - zone.width / 2 + 0.8,
-      y: zone.center_y - zone.depth / 2 + 1.7,
+      x: zone.label_x,
+      y: zone.label_y,
     });
     label.textContent = zone.name;
-    zonesLayer.appendChild(label);
+    zoneLabelsLayer.appendChild(label);
   }
-  floorPlan2d.appendChild(zonesLayer);
+  floorPlan2d.append(zoneFillsLayer, zoneOutlinesLayer, zoneLabelsLayer);
 
   const machinesLayer = svgElement('g', { 'aria-label': 'Machine status markers' });
   for (const placement of layout.machines || []) {
@@ -243,18 +265,35 @@ function buildFloor(layout) {
   scene.add(grid);
 
   for (const zone of layout.zones || []) {
+    const polygon = zonePolygon(zone);
+    const shape = new THREE.Shape();
+    shape.moveTo(polygon[0].x, -polygon[0].y);
+    for (const point of polygon.slice(1)) shape.lineTo(point.x, -point.y);
+    shape.closePath();
     const pad = new THREE.Mesh(
-      new THREE.BoxGeometry(zone.width, 0.12, zone.depth),
+      new THREE.ShapeGeometry(shape),
       new THREE.MeshStandardMaterial({
         color: zone.group.toLowerCase().includes('b') || zone.group.includes('3') ? 0x172554 : 0x16273b,
         roughness: 0.82,
         transparent: true,
-        opacity: 0.92,
+        opacity: 0.86,
+        depthWrite: false,
+        side: THREE.DoubleSide,
       }),
     );
-    pad.position.set(zone.center_x, 0, zone.center_y);
+    pad.rotation.x = -Math.PI / 2;
+    pad.position.y = -0.01;
+    pad.renderOrder = 10;
     scene.add(pad);
-    addOutline(pad, 0x475569);
+
+    const boundaryPoints = polygon.map((point) => new THREE.Vector3(point.x, 0.05, point.y));
+    boundaryPoints.push(boundaryPoints[0].clone());
+    const boundary = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(boundaryPoints),
+      new THREE.LineBasicMaterial({ color: 0x64748b, transparent: true, opacity: 0.96 }),
+    );
+    boundary.renderOrder = 20;
+    scene.add(boundary);
 
     const zoneLabel = makeTextSprite(zone.name, {
       fontSize: 25,
@@ -262,7 +301,12 @@ function buildFloor(layout) {
       bg: 'rgba(15, 23, 42, 0.94)',
       border: '#38bdf8',
     });
-    zoneLabel.position.set(zone.center_x, 4.1, zone.center_y - zone.depth / 2 + 1.8);
+    zoneLabel.position.set(
+      Number(zone.label_x) + zoneLabel.scale.x / 2 + 0.35,
+      3.6,
+      Number(zone.label_y) + 0.35,
+    );
+    zoneLabel.renderOrder = 25;
     scene.add(zoneLabel);
   }
 
@@ -299,8 +343,10 @@ function buildMachines(placements) {
       Number(placement.rot_z) || 0,
     );
     mesh.userData.deviceId = placement.device_id;
+    mesh.renderOrder = 30;
     scene.add(mesh);
     const outline = addOutline(mesh, DEFAULT_OUTLINE_COLOR);
+    outline.renderOrder = 35;
 
     machineMeshes.push(mesh);
     machinesById.set(placement.device_id, { mesh, material, outline });
@@ -311,6 +357,7 @@ function buildMachines(placements) {
       bg: 'rgba(2, 6, 23, 0.90)',
     });
     idLabel.position.set(placement.pos_x, 2.15, placement.pos_y);
+    idLabel.renderOrder = 40;
     scene.add(idLabel);
   }
 }
@@ -442,6 +489,17 @@ function stateRowHtml(row) {
   const alarmText = row.alarm
     ? `${row.alarm.count} ${row.alarm.count === 1 ? 'ALARM' : 'ALARMS'} · ${escapeHtml(row.alarm.owner)} · ${escapeHtml(row.alarm.elapsed)}`
     : 'No active critical/major alarm';
+  const errorCode = row.latest_error?.code
+    ? `E${String(row.latest_error.code).replace(/^E/i, '')}`
+    : null;
+  const errorText = row.latest_error
+    ? `Latest error record ${escapeHtml(errorCode || '—')} · history only`
+    : '';
+  const errorDetail = row.latest_error
+    ? [row.latest_error.description || row.latest_error.message, row.latest_error.troubleshooting]
+      .filter(Boolean)
+      .join(' · ')
+    : '';
   const disabled = row.drilldown_enabled ? '' : ' disabled';
   const ariaLabel = row.drilldown_enabled
     ? `Open ${row.device_id} snapshot`
@@ -458,6 +516,7 @@ function stateRowHtml(row) {
       </span>
       <span class="machine-row-basis">${escapeHtml(row.state_confidence || 'SOURCE')} · ${escapeHtml(row.state_basis || 'configured source')}</span>
       <span class="machine-row-alarm">${alarmText}</span>
+      ${errorText ? `<span class="machine-row-error" title="${escapeHtml(errorDetail)}">${errorText}</span>` : ''}
     </button>`;
 }
 
@@ -496,7 +555,10 @@ function applyState(payload) {
         entry2d.group.removeAttribute('role');
         entry2d.group.removeAttribute('tabindex');
       }
-      entry2d.title.textContent = `${deviceId} · ${row?.state_label || state}${row?.alarm ? ` · ${row.alarm.count} alarm` : ''}`;
+      const lastError = row?.latest_error?.code
+        ? ` · latest error E${String(row.latest_error.code).replace(/^E/i, '')} (history only)`
+        : '';
+      entry2d.title.textContent = `${deviceId} · ${row?.state_label || state}${row?.alarm ? ` · ${row.alarm.count} alarm` : ''}${lastError}`;
     }
   }
 
@@ -526,6 +588,9 @@ async function boot() {
     const response = await fetch('api/placement');
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const layout = await response.json();
+    if (layout.geometry_validation?.valid === false) {
+      throw new Error(`unsafe layout geometry (${layout.geometry_validation.conflicts?.length || 0} conflicts)`);
+    }
     applyPlacementMeta(layout);
     buildFloor(layout);
     buildMachines(layout.machines || []);

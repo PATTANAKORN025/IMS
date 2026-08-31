@@ -11,6 +11,8 @@ surveyed physical floor plan until its verification status is `APPROVED`.
 
 Both views are projections of the same placement response and six-state status
 response. There is no separate 2D register to drift away from the 3D register.
+Zone geometry is normalized to polygons before either renderer runs. Legacy
+rectangle fields remain accepted only as an input compatibility fallback.
 
 ## Data truth boundary
 
@@ -22,6 +24,7 @@ response. There is no separate 2D register to drift away from the 3D register.
 | Floor name | Application or local private layout metadata | Must expose verification status |
 | Zone and machine coordinates | Logical fallback or ignored local JSON | Draft until owner-approved |
 | Non-LDI machine state | Configured per-asset adapter | `Undefine` while unbound in the default `real` mode |
+| `DRL054-M` state | Latest `public.machine_event` status ordered by `event_time DESC, id DESC` | Database-backed; 15-minute freshness guard |
 
 The application therefore keeps a visible warning banner while any rendered
 placement has `is_simulated = true`. Status and placement truth are described
@@ -37,9 +40,21 @@ has been physically verified.
 - Unknown labels remain visible under an `Other` group instead of being dropped.
 
 Groups are placed on separate rows. Zones are placed left-to-right within each
-group and centered on the Floor 1 surface. Machines are sorted naturally and
-placed on a collision-free grid inside their zone. The same input rows always
-produce the same coordinates, regardless of database return order.
+group and centered on the Floor 1 surface with a 2-unit logical clearance.
+At the fitted Floor 1 scale this represents roughly 12–20 screen pixels.
+Machines are sorted naturally and placed on a collision-free grid inside their
+zone. The same input rows always produce the same coordinates, regardless of
+database return order.
+
+The private Floor 1 contract uses separate internal IDs `drilling-west` and
+`drilling-east`; both intentionally expose the display label `DRILLING`.
+Polygon bounds, not display labels, remain the authoritative layout identity.
+
+Before `/api/placement` can render, geometry validation checks every zone pair,
+every machine pair and every machine footprint against its assigned polygon.
+Zone overlap, clearance below 1.5 logical units, machine collision or a machine
+outside its zone stops the layout from loading. The response also includes a
+sanitized `geometry_validation` summary with checked-pair counts and conflicts.
 
 ## Six-state operational colors
 
@@ -60,6 +75,12 @@ An active Critical/Major alarm is shown as a separate red outline and badge.
 It must not overwrite the operational state or be interpreted as proof of
 `Down`. `Off`, `Down` and `Initial,PM,Stop` cannot be derived from the current
 LDI boolean column and require the owner's trigger/reset contract.
+
+For the DG drilling feed, `RUN` maps to `Run` and `STOP` maps to
+`Initial,PM,Stop`. The adapter exposes the last decoded error as historical
+reference only. It does not activate the red alarm outline because the supplied
+event table has no confirmed alarm clear/reset lifecycle. See
+`DG_DRILLING_MACHINE_EVENT_INTEGRATION.md`.
 
 ## Safe mock preview mode
 
@@ -84,6 +105,9 @@ Mock mode is deliberately visible and isolated:
 
 - `2D` renders an SVG plan from the same zone bounds, machine coordinates and
   dimensions used by `3D`; `?view=2d` is a directly shareable view URL.
+- Both renderers use the same polygon points. Zone fill is the bottom layer,
+  boundary and label are the middle layer, and machines/status are the top
+  layer. Zone labels are anchored inside the polygon's upper-left bounds.
 - Clicking a machine box in either view or its accessible HUD row opens Machine
   Snapshot when that asset has a configured source binding.
 - Alarmed machines carry the existing `log_id`, event timestamp and clicked
@@ -109,5 +133,6 @@ npm test
 ```
 
 Tests cover location parsing, deterministic output, separate logical group
-rows, the 10-machine/five-zone reference set, collision-free expansion to 23
+rows, the 10-machine/five-zone reference set, polygon clearance, zone overlap,
+machine collision/out-of-zone rejection, collision-free expansion to 23
 machines, and the opt-in/no-database-write mock status contract.

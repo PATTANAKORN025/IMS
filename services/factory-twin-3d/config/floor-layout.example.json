@@ -12,10 +12,14 @@
     {
       "zone_id": "example-zone-a",
       "name": "EXAMPLE ZONE A",
-      "center_x": 0,
-      "center_y": 0,
-      "width": 24,
-      "depth": 16
+      "polygon": [
+        { "x": -12, "y": -8 },
+        { "x": 12, "y": -8 },
+        { "x": 12, "y": 5 },
+        { "x": 7, "y": 5 },
+        { "x": 7, "y": 8 },
+        { "x": -12, "y": 8 }
+      ]
     }
   ],
   "machines": [

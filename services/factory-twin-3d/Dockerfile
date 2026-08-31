@@ -7,8 +7,10 @@ RUN npm install --omit=dev --no-fund
 
 COPY server.js ./
 COPY layout.js ./
+COPY geometry.js ./
 COPY status-model.js ./
 COPY status-api.js ./
+COPY machine-event.js ./
 COPY mock-status.js ./
 COPY config ./config
 COPY public ./public

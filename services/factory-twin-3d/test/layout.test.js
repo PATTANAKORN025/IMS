@@ -82,7 +82,14 @@ test('loads a private layout contract and preserves unbound state bindings', () 
       verification_status: 'DRAFT',
       private_note: 'must not leave the loader',
     },
-    zones: [{ zone_id: 'zone-a', name: 'Zone A', center_x: 0, center_y: 0, width: 20, depth: 10, internal_note: 'private' }],
+    zones: [{
+      zone_id: 'zone-a',
+      name: 'Zone A',
+      polygon: [
+        { x: -10, y: -5 }, { x: 10, y: -5 }, { x: 10, y: 5 }, { x: -10, y: 5 },
+      ],
+      internal_note: 'private',
+    }],
     machines: [{
       asset_id: 'ASSET-001',
       zone_id: 'zone-a',
@@ -99,6 +106,8 @@ test('loads a private layout contract and preserves unbound state bindings', () 
   assert.equal(layout.machines[0].device_id, 'ASSET-001');
   assert.equal(layout.machines[0].state_binding.type, 'unbound');
   assert.equal(layout.zones[0].machine_count, 1);
+  assert.equal(layout.zones[0].polygon.length, 4);
+  assert.equal(layout.geometry_validation.valid, true);
   assert.equal(Object.hasOwn(layout.floor, 'private_note'), false);
   assert.equal(Object.hasOwn(layout.zones[0], 'internal_note'), false);
   assert.equal(Object.hasOwn(layout.machines[0], 'internal_ip'), false);
@@ -145,6 +154,30 @@ test('accepts status_api bindings only when a source ID is present', () => {
   base.machines[0].state_binding.source_id = null;
   fs.writeFileSync(file, JSON.stringify(base));
   assert.throws(() => loadConfiguredLayout(file), /required for status_api/);
+  fs.rmSync(tempDir, { recursive: true, force: true });
+});
+
+test('accepts machine_event bindings only when an equipment ID is present', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ims-floor-layout-machine-event-'));
+  const file = path.join(tempDir, 'floor.local.json');
+  const base = {
+    schema_version: 1,
+    floor: {
+      id: 'floor-1', name: 'Floor 1', level: 1, layout_mode: 'private_local',
+      coordinate_source: 'local_only', verification_status: 'DRAFT',
+    },
+    zones: [{ zone_id: 'zone-a', name: 'Zone A', center_x: 0, center_y: 0, width: 20, depth: 10 }],
+    machines: [{
+      asset_id: 'DRILL-054', zone_id: 'zone-a', pos_x: 0, pos_y: 0,
+      state_binding: { type: 'machine_event', source_id: 'DRL054-M' },
+    }],
+  };
+  fs.writeFileSync(file, JSON.stringify(base));
+  assert.equal(loadConfiguredLayout(file).machines[0].state_binding.type, 'machine_event');
+  assert.equal(loadConfiguredLayout(file).machines[0].state_binding.source_id, 'DRL054-M');
+  base.machines[0].state_binding.source_id = null;
+  fs.writeFileSync(file, JSON.stringify(base));
+  assert.throws(() => loadConfiguredLayout(file), /required for machine_event/);
   fs.rmSync(tempDir, { recursive: true, force: true });
 });
 

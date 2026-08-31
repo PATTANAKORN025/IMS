@@ -41,8 +41,12 @@
       background: #0c1730;
       box-shadow: inset 0 0 36px rgba(2, 6, 23, 0.58);
     }
-    .zone-2d {
+    .zone-fill-2d {
       fill: rgba(30, 41, 59, 0.74);
+      stroke: none;
+    }
+    .zone-outline-2d {
+      fill: none;
       stroke: #64748b;
       stroke-width: 0.22;
       vector-effect: non-scaling-stroke;
@@ -201,6 +205,7 @@
     .machine-row-detail { color: var(--muted); font-size: 11px; }
     .machine-row-basis { display: block; margin-top: 3px; color: #64748b; font-size: 9px; }
     .machine-row-alarm { display: block; margin-top: 3px; color: #cbd5e1; font-size: 10px; }
+    .machine-row-error { display: block; margin-top: 3px; color: #fbbf24; font-size: 10px; }
     .machine-row.has-alarm { border-color: #ff003c; box-shadow: inset 3px 0 #ff003c; }
     .hint {
       margin-top: 9px;

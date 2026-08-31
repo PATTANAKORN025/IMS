@@ -7,6 +7,13 @@ const { computeFloorOneLayout, loadConfiguredLayout } = require('./layout');
 const { MACHINE_STATUS, mapLegacyLdiStatus, statusPayload } = require('./status-model');
 const { createStatusApiClient } = require('./status-api');
 const {
+  DEFAULT_STALE_SECONDS,
+  latestErrorReference,
+  mapMachineEventStatus,
+  normalizeStaleSeconds,
+  readMachineEventRows,
+} = require('./machine-event');
+const {
   STATUS_MODE,
   createMockStateRows,
   normalizeStatusMode,
@@ -15,6 +22,9 @@ const {
 const PORT = process.env.PORT || 4100;
 const FLOOR_LAYOUT_FILE = process.env.FLOOR_LAYOUT_FILE || '';
 const MACHINE_STATUS_MODE = normalizeStatusMode(process.env.MACHINE_STATUS_MODE);
+const MACHINE_EVENT_STALE_SECONDS = normalizeStaleSeconds(
+  process.env.MACHINE_EVENT_STALE_SECONDS || DEFAULT_STALE_SECONDS,
+);
 const statusApiClient = createStatusApiClient({
   url: process.env.MACHINE_STATUS_API_URL || '',
   token: process.env.MACHINE_STATUS_API_TOKEN || '',
@@ -66,6 +76,7 @@ async function discoverDevices() {
 // DB round trip on every single poll isn't worth it just to react to that
 // instantly. DEVICE_REFRESH_INTERVAL_MS bounds how stale it can get.
 let DEVICE_IDS = [];
+let MACHINE_EVENT_IDS = [];
 let FLOOR_LAYOUT = computeFloorOneLayout([]);
 let STATE_BINDINGS = [];
 let LAYOUT_CONFIG_ERROR = null;
@@ -95,8 +106,14 @@ async function refreshDevices({ failOnLayoutError = false } = {}) {
           .filter((binding) => binding.type === 'ldi' && binding.source_id)
           .map((binding) => binding.source_id),
       )].sort();
+      MACHINE_EVENT_IDS = [...new Set(
+        STATE_BINDINGS
+          .filter((binding) => binding.type === 'machine_event' && binding.source_id)
+          .map((binding) => binding.source_id),
+      )].sort();
     } else {
       DEVICE_IDS = rows.map((r) => r.device_id).sort();
+      MACHINE_EVENT_IDS = [];
       FLOOR_LAYOUT = computeFloorOneLayout(rows);
       STATE_BINDINGS = FLOOR_LAYOUT.machines.map((machine) => ({
         asset_id: machine.device_id,
@@ -255,10 +272,13 @@ app.get('/api/state', async (req, res) => {
       return;
     }
 
-    const result = DEVICE_IDS.length > 0
-      ? await pool.query(STATE_SQL, [DEVICE_IDS])
-      : { rows: [] };
-    const apiResult = await statusApiClient.getRows();
+    const [result, apiResult, machineEventResult] = await Promise.all([
+      DEVICE_IDS.length > 0
+        ? pool.query(STATE_SQL, [DEVICE_IDS])
+        : Promise.resolve({ rows: [] }),
+      statusApiClient.getRows(),
+      readMachineEventRows(pool, MACHINE_EVENT_IDS),
+    ]);
     const sourceRows = new Map(result.rows.map((row) => [row.eqp_id, row]));
     const rows = STATE_BINDINGS.map((binding) => {
       const apiRow = binding.type === 'status_api' ? apiResult.rows.get(binding.source_id) : null;
@@ -281,6 +301,38 @@ app.get('/api/state', async (req, res) => {
           mo: apiRow.mo,
           factory: apiRow.factory,
           alarm: null,
+          latest_error: null,
+        };
+      }
+      const machineEventRow = binding.type === 'machine_event'
+        ? machineEventResult.rows.get(binding.source_id)
+        : null;
+      if (machineEventRow) {
+        const resolved = mapMachineEventStatus(machineEventRow, {
+          staleSeconds: MACHINE_EVENT_STALE_SECONDS,
+        });
+        const display = statusPayload(resolved.status);
+        return {
+          device_id: binding.asset_id,
+          display_name: binding.display_name,
+          source_id: binding.source_id,
+          state: legacyStateValue(resolved.status, false),
+          operational_state: display.status,
+          state_label: display.status_label,
+          state_color: display.status_color,
+          state_basis: resolved.basis,
+          state_confidence: resolved.confidence,
+          state_updated_at: resolved.updated_at,
+          drilldown_enabled: false,
+          board_no: null,
+          total_board: null,
+          mo: null,
+          factory: null,
+          alarm: null,
+          // The supplied machine_event evidence has no confirmed reset/clear
+          // lifecycle. Expose the last decoded error only as history; never
+          // turn on the active-alarm outline from this field.
+          latest_error: latestErrorReference(machineEventRow),
         };
       }
       const row = binding.type === 'ldi' ? sourceRows.get(binding.source_id) : null;
@@ -298,6 +350,8 @@ app.get('/api/state', async (req, res) => {
           state_color: display.status_color,
           state_basis: binding.type === 'unbound'
             ? 'state_source_not_connected'
+            : binding.type === 'machine_event' && !machineEventResult.available
+              ? machineEventResult.error
             : binding.type === 'status_api' && !apiResult.available
               ? apiResult.error
               : 'source_record_not_found',
@@ -308,6 +362,7 @@ app.get('/api/state', async (req, res) => {
           mo: null,
           factory: null,
           alarm: null,
+          latest_error: null,
         };
       }
       const resolved = mapLegacyLdiStatus({
@@ -346,6 +401,7 @@ app.get('/api/state', async (req, res) => {
                 logdate_ms: row.alarm_logdate_ms,
               }
             : null,
+        latest_error: null,
       };
     });
     res.status(200).json({
@@ -360,6 +416,13 @@ app.get('/api/state', async (req, res) => {
         configured: Boolean(statusApiClient.endpoint),
         available: apiResult.available,
         error: apiResult.error,
+      },
+      machine_event: {
+        configured_sources: MACHINE_EVENT_IDS.length,
+        available: machineEventResult.available,
+        error: machineEventResult.error,
+        stale_after_seconds: MACHINE_EVENT_STALE_SECONDS,
+        alarm_lifecycle_confirmed: false,
       },
     });
   } catch (err) {
@@ -391,7 +454,8 @@ refreshDevices({ failOnLayoutError: true })
     app.listen(PORT, () => {
       console.log(
         `factory-twin-3d listening on :${PORT} `
-        + `(${FLOOR_LAYOUT.machines.length} layout assets, ${DEVICE_IDS.length} LDI state bindings, `
+        + `(${FLOOR_LAYOUT.machines.length} layout assets, ${DEVICE_IDS.length} LDI bindings, `
+        + `${MACHINE_EVENT_IDS.length} machine_event bindings, `
         + `status mode=${MACHINE_STATUS_MODE})`,
       );
     });

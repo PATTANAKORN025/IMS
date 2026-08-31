@@ -1,6 +1,13 @@
 'use strict';
 
 const fs = require('fs');
+const {
+  DEFAULT_ZONE_CLEARANCE,
+  assertLayoutGeometry,
+  normalizePolygon,
+  polygonBounds,
+  rectPolygon,
+} = require('./geometry');
 
 // Floor 1 is a logical, provisional arrangement derived only from the
 // device registry's `location` values. It must not be presented as a
@@ -14,13 +21,12 @@ const FLOOR = Object.freeze({
   is_simulated: true,
 });
 
-const GROUP_SPACING = 28;
-const ZONE_SPACING = 26;
 const MACHINE_SPACING_X = 5;
 const MACHINE_SPACING_Y = 5;
 const ZONE_PADDING = 8;
 const FLOOR_PADDING = 8;
 const MAX_MACHINE_COLUMNS = 3;
+const ZONE_CLEARANCE = 2;
 
 function naturalCompare(left, right) {
   return String(left).localeCompare(String(right), 'en', {
@@ -80,10 +86,11 @@ function computeBounds(zones) {
     };
   }
 
-  const minX = Math.min(...zones.map((zone) => zone.center_x - zone.width / 2)) - FLOOR_PADDING;
-  const maxX = Math.max(...zones.map((zone) => zone.center_x + zone.width / 2)) + FLOOR_PADDING;
-  const minY = Math.min(...zones.map((zone) => zone.center_y - zone.depth / 2)) - FLOOR_PADDING;
-  const maxY = Math.max(...zones.map((zone) => zone.center_y + zone.depth / 2)) + FLOOR_PADDING;
+  const zoneBounds = zones.map((zone) => polygonBounds(zone.polygon));
+  const minX = Math.min(...zoneBounds.map((bounds) => bounds.min_x)) - FLOOR_PADDING;
+  const maxX = Math.max(...zoneBounds.map((bounds) => bounds.max_x)) + FLOOR_PADDING;
+  const minY = Math.min(...zoneBounds.map((bounds) => bounds.min_y)) - FLOOR_PADDING;
+  const maxY = Math.max(...zoneBounds.map((bounds) => bounds.max_y)) + FLOOR_PADDING;
   return {
     min_x: minX,
     max_x: maxX,
@@ -118,30 +125,53 @@ function computeFloorOneLayout(deviceRows) {
   }
 
   const groupNames = [...byGroup.keys()].sort(naturalCompare);
-  const groupCenter = (groupNames.length - 1) / 2;
   const zones = [];
   const machines = [];
 
-  groupNames.forEach((groupName, groupIndex) => {
-    const groupZones = byGroup.get(groupName).sort((a, b) => naturalCompare(a.area, b.area));
-    const zoneCenter = (groupZones.length - 1) / 2;
+  const groups = groupNames.map((groupName) => {
+    const groupZones = byGroup.get(groupName)
+      .sort((a, b) => naturalCompare(a.area, b.area))
+      .map((zone) => ({
+        ...zone,
+        device_ids: [...zone.device_ids].sort(naturalCompare),
+        size: computeZoneSize(zone.device_ids.length),
+      }));
+    return {
+      name: groupName,
+      zones: groupZones,
+      depth: Math.max(...groupZones.map((zone) => zone.size.depth)),
+    };
+  });
+  const totalDepth = groups.reduce((sum, group) => sum + group.depth, 0)
+    + Math.max(0, groups.length - 1) * ZONE_CLEARANCE;
+  let groupCursorY = -totalDepth / 2;
 
-    groupZones.forEach((zone, zoneIndex) => {
-      const deviceIds = [...zone.device_ids].sort(naturalCompare);
-      const size = computeZoneSize(deviceIds.length);
-      const centerX = (zoneIndex - zoneCenter) * ZONE_SPACING;
-      const centerY = (groupIndex - groupCenter) * GROUP_SPACING;
+  groups.forEach((group) => {
+    const groupWidth = group.zones.reduce((sum, zone) => sum + zone.size.width, 0)
+      + Math.max(0, group.zones.length - 1) * ZONE_CLEARANCE;
+    let zoneCursorX = -groupWidth / 2;
+    const centerY = groupCursorY + group.depth / 2;
+
+    group.zones.forEach((zone) => {
+      const deviceIds = zone.device_ids;
+      const size = zone.size;
+      const centerX = zoneCursorX + size.width / 2;
       const zoneId = `${FLOOR.id}:${zone.location.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`;
+      const polygon = rectPolygon(centerX, centerY, size.width, size.depth);
+      const zoneBounds = polygonBounds(polygon);
 
       zones.push({
         zone_id: zoneId,
         name: zone.location,
-        group: groupName,
+        group: group.name,
         area: zone.area,
         center_x: centerX,
         center_y: centerY,
         width: size.width,
         depth: size.depth,
+        polygon,
+        label_x: zoneBounds.min_x + 0.8,
+        label_y: zoneBounds.min_y + 1.7,
         machine_count: deviceIds.length,
       });
 
@@ -152,14 +182,14 @@ function computeFloorOneLayout(deviceRows) {
       deviceIds.forEach((deviceId, machineIndex) => {
         const column = machineIndex % size.columns;
         const row = Math.floor(machineIndex / size.columns);
-        const factoryMatch = groupName.match(/^Factory\s+(\d+)/i);
+        const factoryMatch = group.name.match(/^Factory\s+(\d+)/i);
         machines.push({
           device_id: deviceId,
           floor_id: FLOOR.id,
           floor_name: FLOOR.name,
           zone_id: zoneId,
           zone: zone.location,
-          layout_group: groupName,
+          layout_group: group.name,
           area: zone.area,
           factory: factoryMatch ? factoryMatch[1] : null,
           pos_x: centerX + (column - machineCenterX) * MACHINE_SPACING_X,
@@ -173,14 +203,20 @@ function computeFloorOneLayout(deviceRows) {
           source: 'provisional_logical_floor_1',
         });
       });
+      zoneCursorX += size.width + ZONE_CLEARANCE;
     });
+    groupCursorY += group.depth + ZONE_CLEARANCE;
   });
 
+  const geometryValidation = assertLayoutGeometry(zones, machines, {
+    minZoneClearance: ZONE_CLEARANCE,
+  });
   return {
     floor: { ...FLOOR },
     zones,
     machines,
     bounds: computeBounds(zones),
+    geometry_validation: geometryValidation,
   };
 }
 
@@ -230,15 +266,28 @@ function loadConfiguredLayout(filePath) {
     if (!zoneId) throw new Error(`zones[${index}].zone_id is required`);
     if (zoneIds.has(zoneId)) throw new Error(`duplicate zone_id: ${zoneId}`);
     zoneIds.add(zoneId);
+    let fallbackPolygon = null;
+    if (!Array.isArray(zone.polygon) || zone.polygon.length === 0) {
+      const centerX = requireFiniteNumber(zone.center_x, `zones[${index}].center_x`);
+      const centerY = requireFiniteNumber(zone.center_y, `zones[${index}].center_y`);
+      const width = requirePositiveNumber(zone.width, `zones[${index}].width`);
+      const depth = requirePositiveNumber(zone.depth, `zones[${index}].depth`);
+      fallbackPolygon = rectPolygon(centerX, centerY, width, depth);
+    }
+    const polygon = normalizePolygon(zone.polygon, `zones[${index}].polygon`, fallbackPolygon);
+    const bounds = polygonBounds(polygon);
     return {
       zone_id: zoneId,
       name: String(zone.name || zoneId),
       group: String(zone.group || floorName),
       area: String(zone.area || zone.name || zoneId),
-      center_x: requireFiniteNumber(zone.center_x, `zones[${index}].center_x`),
-      center_y: requireFiniteNumber(zone.center_y, `zones[${index}].center_y`),
-      width: requirePositiveNumber(zone.width, `zones[${index}].width`),
-      depth: requirePositiveNumber(zone.depth, `zones[${index}].depth`),
+      center_x: bounds.center_x,
+      center_y: bounds.center_y,
+      width: bounds.width,
+      depth: bounds.depth,
+      polygon,
+      label_x: bounds.min_x + 0.8,
+      label_y: bounds.min_y + 1.7,
     };
   });
 
@@ -254,11 +303,11 @@ function loadConfiguredLayout(filePath) {
       ? machine.state_binding
       : { type: 'unbound' };
     const bindingType = String(binding.type || 'unbound').toLowerCase();
-    if (!['ldi', 'status_api', 'unbound'].includes(bindingType)) {
-      throw new Error(`machines[${index}].state_binding.type must be ldi, status_api or unbound`);
+    if (!['ldi', 'machine_event', 'status_api', 'unbound'].includes(bindingType)) {
+      throw new Error(`machines[${index}].state_binding.type must be ldi, machine_event, status_api or unbound`);
     }
     const sourceId = binding.source_id ? String(binding.source_id).trim() : null;
-    if (['ldi', 'status_api'].includes(bindingType) && !sourceId) {
+    if (['ldi', 'machine_event', 'status_api'].includes(bindingType) && !sourceId) {
       throw new Error(`machines[${index}].state_binding.source_id is required for ${bindingType}`);
     }
     return {
@@ -292,6 +341,10 @@ function loadConfiguredLayout(filePath) {
   }
   for (const zone of zones) zone.machine_count = machineCountByZone.get(zone.zone_id) || 0;
 
+  const geometryValidation = assertLayoutGeometry(zones, machines, {
+    minZoneClearance: DEFAULT_ZONE_CLEARANCE,
+  });
+
   const computedBounds = computeBounds(zones);
   const bounds = parsed.bounds
     ? {
@@ -323,12 +376,14 @@ function loadConfiguredLayout(filePath) {
     zones,
     machines,
     bounds,
+    geometry_validation: geometryValidation,
   };
 }
 
 module.exports = {
   FLOOR,
   computeFloorOneLayout,
+  computeBounds,
   loadConfiguredLayout,
   parseLocation,
 };
