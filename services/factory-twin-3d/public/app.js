@@ -53,7 +53,13 @@ const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerH
 camera.position.set(18, 52, 46);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(window.devicePixelRatio);
+// Capped. This view is fill-rate bound, not triangle bound: across 1366x768 to
+// 3840x2160 the frame time tracks PIXEL COUNT almost exactly while the triangle
+// count is unchanged. An uncapped ratio therefore multiplies the most expensive
+// axis by itself -- a 3x display would render nine times the pixels of the
+// measurement above. Two is the point past which more samples stop being
+// visible on this content.
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 container.appendChild(renderer.domElement);
 // A WebGL canvas is opaque to assistive technology. It is named rather than
@@ -73,6 +79,41 @@ const controls = new OrbitControls(camera, renderer.domElement);
 const prefersReducedMotion =
   typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 controls.enableDamping = !prefersReducedMotion;
+
+// ── Render on demand ──────────────────────────────────────────────────
+//
+// This scene is static between interactions: the geometry never animates, and
+// a telemetry poll every 5 s changes a handful of colours. Redrawing it 60
+// times a second regardless was spending the whole frame budget to produce an
+// identical image, and at 4K that image costs over 200 ms to produce.
+//
+// So a frame is drawn when something has actually changed. OrbitControls emits
+// 'change' on every damped step, so a moving camera still redraws every frame
+// and the interaction is not degraded; when it settles, the loop goes quiet.
+//
+// TAIL FRAMES exist because "changed" is not always observable in the same
+// tick: a texture finishing decode, a label sprite laying out, a material
+// upload completing. Rather than hunt for every such case, any request draws a
+// short run of frames. It costs a few frames after a change and removes a
+// whole class of "the first frame after X is stale" bug.
+//
+// Declared here, above every caller, because boot() runs before the render
+// loop is reached and would otherwise touch these in the temporal dead zone.
+const RENDER_TAIL_FRAMES = 4;
+let renderTail = RENDER_TAIL_FRAMES;
+let framesRendered = 0;
+
+/** Requests a redraw. Safe to call from anywhere, any number of times. */
+function requestRender() {
+  renderTail = RENDER_TAIL_FRAMES;
+}
+
+controls.addEventListener('change', requestRender);
+window.addEventListener('resize', requestRender);
+window.addEventListener('twin-pane-resize', requestRender);
+window.addEventListener('twin-mode', requestRender);
+document.addEventListener('visibilitychange', requestRender);
+
 // Target offset +14 on X (not 0) so the default view keeps the leftmost
 // zone (Site A - Zone 1) clear of the fixed-position HUD sidebar,
 // which covers roughly the left 280px of the viewport and would otherwise
@@ -324,6 +365,7 @@ const VIEWS = () => ({ operator: OPERATOR_VIEW, building: buildingView, overview
 function applyView(name) {
   const v = VIEWS()[name];
   if (!v) return false;
+  requestRender();
   camera.position.set(v.position.x, v.position.y, v.position.z);
   controls.target.set(v.target.x, v.target.y, v.target.z);
   controls.update();
@@ -368,6 +410,8 @@ function setLayerVisible(name, visible) {
   const g = layers[name] || sublayers[name];
   if (!g) return false;
   g.visible = visible;
+  // Visibility is what the next frame draws, so the next frame has to happen.
+  requestRender();
   return true;
 }
 
@@ -1498,6 +1542,8 @@ renderer.domElement.addEventListener('pointermove', (event) => {
   hoverPending = requestAnimationFrame(() => {
     hoverPending = null;
     handleHover({ clientX, clientY });
+    // Hover changes the cursor and the highlight, both of which are drawn.
+    requestRender();
   });
 });
 
@@ -1531,6 +1577,10 @@ function stateRowHtml(row) {
 }
 
 function applyState(payload) {
+  // Live state changes machine colours and labels. Ask for the frame that
+  // shows them; without this the poll would update the scene graph and nothing
+  // would ever draw it.
+  requestRender();
   const rows = payload.machines || [];
   latestStateById = new Map(rows.map((r) => [r.device_id, r]));
   // New telemetry invalidates a machine inspector that is currently open.
@@ -1641,6 +1691,11 @@ async function boot() {
     sublayers,
     resetView,
     snapshotCoordinates,
+    // Exposed so a test can force a frame and read renderer.info afterwards.
+    // Without it, a suite that measures draw calls on a quiet loop reads the
+    // counters from whenever the last frame happened to be.
+    requestRender,
+    framesRendered: () => framesRendered,
   };
 }
 
@@ -1736,7 +1791,12 @@ window.addEventListener('resize', () => {
 
 function animate() {
   requestAnimationFrame(animate);
-  controls.update();
+  // controls.update() returns true while damping is still moving the camera.
+  // Trusting only the 'change' event would stop the loop mid-glide.
+  if (controls.update()) requestRender();
+  if (renderTail <= 0) return;
+  renderTail--;
+  framesRendered++;
   renderer.render(scene, camera);
 }
 animate();
