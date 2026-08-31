@@ -322,6 +322,9 @@ app.get('/api/state', async (req, res) => {
           state_color: display.status_color,
           state_basis: resolved.basis,
           state_confidence: resolved.confidence,
+          state_freshness_policy: MACHINE_EVENT_STALE_SECONDS === 0
+            ? 'LATEST_KNOWN'
+            : 'FRESHNESS_WINDOW',
           state_updated_at: resolved.updated_at,
           drilldown_enabled: false,
           board_no: null,
@@ -422,6 +425,9 @@ app.get('/api/state', async (req, res) => {
         available: machineEventResult.available,
         error: machineEventResult.error,
         stale_after_seconds: MACHINE_EVENT_STALE_SECONDS,
+        state_policy: MACHINE_EVENT_STALE_SECONDS === 0
+          ? 'LATEST_KNOWN'
+          : 'FRESHNESS_WINDOW',
         alarm_lifecycle_confirmed: false,
       },
     });

@@ -2,7 +2,10 @@
 
 const { MACHINE_STATUS } = require('./status-model');
 
-const DEFAULT_STALE_SECONDS = 900;
+// Zero means "latest known state": keep displaying the newest source record
+// regardless of age. The timestamp remains visible so operators can judge age.
+// Deployments that require freshness expiry can set a positive number.
+const DEFAULT_STALE_SECONDS = 0;
 
 // event_time and id are both required for deterministic ordering. The source
 // can emit STOP and RUN with the same event_time; the later id is the final
@@ -212,8 +215,8 @@ function classifyError(row) {
 
 function normalizeStaleSeconds(value = DEFAULT_STALE_SECONDS) {
   const seconds = Number(value);
-  if (!Number.isFinite(seconds) || seconds <= 0) {
-    throw new Error('MACHINE_EVENT_STALE_SECONDS must be a positive number');
+  if (!Number.isFinite(seconds) || seconds < 0) {
+    throw new Error('MACHINE_EVENT_STALE_SECONDS must be zero or a positive number');
   }
   return seconds;
 }
@@ -242,7 +245,7 @@ function mapMachineEventStatus(row, {
     };
   }
 
-  if (Math.max(0, nowMs - eventMs) > maxAgeSeconds * 1000) {
+  if (maxAgeSeconds > 0 && Math.max(0, nowMs - eventMs) > maxAgeSeconds * 1000) {
     return {
       status: MACHINE_STATUS.UNDEFINED,
       basis: 'machine_event_status_stale',

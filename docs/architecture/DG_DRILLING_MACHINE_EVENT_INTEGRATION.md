@@ -16,9 +16,12 @@
 | `RUN` | `Run` (เขียว) | ระบบเครื่องรายงานว่ากำลังทำงาน |
 | `STOP` | `Initial,PM,Stop` (ฟ้า) | แหล่งข้อมูลยืนยันเพียงการหยุด ไม่ได้ยืนยันว่าเครื่องเสีย |
 | ค่าอื่น | `Undefine` (ขาว) | ห้ามเดาความหมายจากค่าที่ไม่อยู่ในสัญญา |
-| ไม่มีข้อมูล/ข้อมูลเกิน 15 นาที | `Undefine` (ขาว) | ป้องกันการค้างสีเขียวจากข้อมูลเก่า |
+| ไม่มีข้อมูลสถานะเลย | `Undefine` (ขาว) | ไม่มีหลักฐานให้แสดงสี |
 
-ค่าความสดปรับได้ด้วย `MACHINE_EVENT_STALE_SECONDS` และตั้งต้นที่ 900 วินาที
+ค่าเริ่มต้นใช้ `Latest known state`: แสดงสถานะล่าสุดที่มีอยู่โดยไม่หมดอายุและ
+แสดงเวลา Source ให้ผู้ใช้เห็นเสมอ ตั้ง `MACHINE_EVENT_STALE_SECONDS` เป็นจำนวน
+วินาทีที่มากกว่า 0 ได้เมื่อหน้างานต้องการบังคับ freshness window; ค่า `0`
+หมายถึงไม่หมดอายุ
 
 การเลือกสถานะล่าสุดต้องเรียงทั้งเวลาและลำดับแถว:
 
@@ -68,7 +71,7 @@ Alarm ใดยัง Active อยู่ จึงใช้กติกา fail
 สำหรับ `DRL054-M` หน้า 2D/3D แสดงข้อมูลที่มีหลักฐานจาก `machine_event` เท่านั้น:
 
 - สถานะ `RUN`/`STOP` และเวลาของสถานะล่าสุด
-- ความสดของข้อมูล; ข้อมูลเก่าแสดง `Undefine`
+- เวลา Source และป้าย `LATEST KNOWN`; ข้อมูลเก่ายังคงแสดงสถานะล่าสุด
 - Error ล่าสุดในฐานะประวัติ ไม่ใช่ Active Alarm
 - กลุ่มปัญหา: Safety, Spindle/Tool, Axis หรือ Program/Tool table
 - ช่วงการทำงาน: Startup, Home/Reset, Program selection,
@@ -89,7 +92,7 @@ Tool diameter/run-out, ATC ที่ Hole 0 และ Diameter error จึง�
 ```yaml
 environment:
   MACHINE_STATUS_MODE: real
-  MACHINE_EVENT_STALE_SECONDS: 900
+  MACHINE_EVENT_STALE_SECONDS: 0
 ```
 
 ตัว service ใช้สิทธิ์อ่านอย่างเดียว และไม่เขียนข้อมูลกลับ `machine_event`

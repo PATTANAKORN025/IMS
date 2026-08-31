@@ -548,6 +548,9 @@ function stateRowHtml(row) {
       .join(' · ')
     : '';
   const statusTime = formatStatusTime(row.state_updated_at);
+  const sourcePolicy = row.state_freshness_policy === 'LATEST_KNOWN'
+    ? 'LATEST KNOWN'
+    : row.state_confidence || 'SOURCE';
   const disabled = row.drilldown_enabled ? '' : ' disabled';
   const ariaLabel = row.drilldown_enabled
     ? `Open ${row.device_id} snapshot`
@@ -562,7 +565,7 @@ function stateRowHtml(row) {
         <span>${escapeHtml(row.board_no ?? '—')} / ${escapeHtml(row.total_board ?? '—')} bd</span>
         <span>${escapeHtml(row.mo || '—')}</span>
       </span>
-      <span class="machine-row-basis">${escapeHtml(row.state_confidence || 'SOURCE')} · ${escapeHtml(row.state_basis || 'configured source')}</span>
+      <span class="machine-row-basis">${escapeHtml(sourcePolicy)} · ${escapeHtml(row.state_basis || 'configured source')}</span>
       ${statusTime ? `<span class="machine-row-time">Last status: ${escapeHtml(statusTime)}</span>` : ''}
       <span class="machine-row-alarm">${alarmText}</span>
       ${errorText ? `

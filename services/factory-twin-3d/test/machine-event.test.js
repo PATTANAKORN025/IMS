@@ -32,7 +32,17 @@ test('fails closed for stale, missing and unknown machine_event states', () => {
     status_event_type: 'PAUSE',
     status_event_time: '2026-08-31T01:30:58.000Z',
   }, { nowMs: NOW }).status, 'UNDEFINED');
-  assert.throws(() => normalizeStaleSeconds(0), /positive number/);
+  assert.equal(normalizeStaleSeconds(0), 0);
+  assert.throws(() => normalizeStaleSeconds(-1), /zero or a positive number/);
+});
+
+test('keeps the latest known status when freshness expiry is disabled', () => {
+  const result = mapMachineEventStatus({
+    status_event_type: 'RUN',
+    status_event_time: '2026-01-01T00:00:00.000Z',
+  }, { nowMs: NOW, staleSeconds: 0 });
+  assert.equal(result.status, 'RUN');
+  assert.equal(result.basis, 'machine_event_status_run');
 });
 
 test('marks decoded error details as history, never as an active alarm', () => {
