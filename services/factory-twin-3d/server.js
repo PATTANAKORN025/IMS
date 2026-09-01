@@ -99,7 +99,8 @@ async function refreshDevices({ failOnLayoutError = false } = {}) {
         display_name: machine.display_name || machine.asset_id || machine.device_id,
         type: machine.state_binding?.type || 'unbound',
         source_id: machine.state_binding?.source_id || null,
-        drilldown_enabled: machine.state_binding?.type === 'ldi' && Boolean(machine.state_binding?.source_id),
+        drilldown_enabled: ['ldi', 'machine_event'].includes(machine.state_binding?.type)
+          && Boolean(machine.state_binding?.source_id),
       }));
       DEVICE_IDS = [...new Set(
         STATE_BINDINGS
@@ -295,7 +296,7 @@ app.get('/api/state', async (req, res) => {
           state_basis: apiRow.basis,
           state_confidence: apiRow.confidence,
           state_updated_at: apiRow.updated_at,
-          drilldown_enabled: false,
+          drilldown_enabled: binding.drilldown_enabled,
           board_no: apiRow.board_no,
           total_board: apiRow.total_board,
           mo: apiRow.mo,
@@ -326,7 +327,7 @@ app.get('/api/state', async (req, res) => {
             ? 'LATEST_KNOWN'
             : 'FRESHNESS_WINDOW',
           state_updated_at: resolved.updated_at,
-          drilldown_enabled: false,
+          drilldown_enabled: binding.drilldown_enabled,
           board_no: null,
           total_board: null,
           mo: null,

@@ -23,13 +23,15 @@ const path = require('path');
 const DASHBOARD_DIR = path.join(process.cwd(), 'monitoring', 'grafana', 'dashboards');
 const OUT_FILE = path.join(process.cwd(), 'docs', 'architecture', 'DASHBOARD_INVENTORY.md');
 
-// ims-easy-overview doesn't have "ldi" in its uid but is entirely an LDI
-// fleet dashboard (see its description) -- categorize by an explicit
-// allowlist for that one exception rather than a fragile substring guess.
-const LDI_UID_EXTRAS = new Set(['ims-easy-overview']);
+// Manufacturing dashboards without "ldi" in their uid are categorized by an
+// explicit allowlist rather than a fragile title/tag substring guess.
+const MANUFACTURING_UID_EXTRAS = new Set([
+  'ims-easy-overview',
+  'ims-drilling-machine-detail',
+]);
 
 function category(uid) {
-  return uid.includes('ldi') || LDI_UID_EXTRAS.has(uid) ? 'LDI Manufacturing' : 'Infrastructure';
+  return uid.includes('ldi') || MANUFACTURING_UID_EXTRAS.has(uid) ? 'LDI Manufacturing' : 'Infrastructure';
 }
 
 function firstSentence(desc) {

@@ -1,0 +1,1094 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "#00F2FE",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": true,
+  "panels": [
+    {
+      "id": 9999,
+      "type": "text",
+      "title": "",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 3
+      },
+      "description": "Scope and truth-status banner for DG drilling machine detail.",
+      "options": {
+        "mode": "markdown",
+        "content": "# IMS Drilling Machine Detail\n\n**Selected source:** `$machine_id` · **Mapped asset:** `DRL054-M → APEX3-F1-DRILL-054` · **Policy:** latest known status (no 15-minute expiry)\n\n[← Apex 3 Floor 1 — 2D](/factory-twin-3d/?view=2d) · [← Apex 3 Floor 1 — 3D](/factory-twin-3d/?view=3d)\n\n> Error rows are historical records. `machine_event` does not yet provide alarm trigger/reset lifecycle, so this dashboard does not claim any alarm is active."
+      }
+    },
+    {
+      "id": 1000,
+      "title": "Current Machine State",
+      "type": "row",
+      "collapsed": false,
+      "panels": [],
+      "gridPos": {
+        "x": 0,
+        "y": 3,
+        "w": 24,
+        "h": 1
+      }
+    },
+    {
+      "id": 1,
+      "title": "CURRENT OPERATIONAL STATE",
+      "type": "stat",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 6,
+        "h": 4
+      },
+      "description": "Latest status record for selected machine, ordered by event_time DESC then id DESC. STOP maps to Initial/PM/Stop; alarm records never force Down.",
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "NO_DATA",
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "index": 0,
+                  "text": "Off",
+                  "color": "#64748B"
+                },
+                "1": {
+                  "index": 1,
+                  "text": "Down",
+                  "color": "#EF4444"
+                },
+                "2": {
+                  "index": 2,
+                  "text": "Idle",
+                  "color": "#F59E0B"
+                },
+                "3": {
+                  "index": 3,
+                  "text": "Initial / PM / Stop",
+                  "color": "#00F2FE"
+                },
+                "4": {
+                  "index": 4,
+                  "text": "Run",
+                  "color": "#22C55E"
+                },
+                "5": {
+                  "index": 5,
+                  "text": "Undefine",
+                  "color": "#64748B"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#64748B",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "wideLayout": true,
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "showPercentChange": false,
+        "percentChangeColorMode": "standard",
+        "noValue": "NO_DATA"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: latest known status must remain visible even when older than dashboard range. */\nSELECT CASE\n         WHEN event_type = 'RUN' THEN 4\n         WHEN event_type = 'STOP' THEN 3\n         ELSE 5\n       END AS \"Operational State\"\nFROM public.machine_event\nWHERE equipment_id IN (${machine_id:singlequote})\n  AND message_type = 'status'\nORDER BY event_time DESC, id DESC\nLIMIT 1",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "LATEST STATUS TIMESTAMP",
+      "type": "stat",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 4,
+        "w": 6,
+        "h": 4
+      },
+      "description": "Timestamp of source record used for current state. State remains latest-known even if timestamp is old.",
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "NO_DATA",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#00F2FE"
+          },
+          "unit": "dateTimeAsIso"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "wideLayout": true,
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "showPercentChange": false,
+        "percentChangeColorMode": "standard",
+        "noValue": "NO_DATA"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: source timestamp for latest known status. */\nSELECT (EXTRACT(EPOCH FROM event_time) * 1000)::DOUBLE PRECISION AS \"Last Status Time\"\nFROM public.machine_event\nWHERE equipment_id IN (${machine_id:singlequote})\n  AND message_type = 'status'\nORDER BY event_time DESC, id DESC\nLIMIT 1",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "AGE OF LATEST STATUS",
+      "type": "stat",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 4,
+        "w": 6,
+        "h": 4
+      },
+      "description": "Elapsed wall-clock time since latest status source record. Informational only; it does not expire current state.",
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "NO_DATA",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#F59E0B"
+          },
+          "unit": "s",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "wideLayout": true,
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "showPercentChange": false,
+        "percentChangeColorMode": "standard",
+        "noValue": "NO_DATA"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: age is transparency metadata; it does not expire latest-known state. */\nSELECT GREATEST(EXTRACT(EPOCH FROM (NOW() - event_time)), 0) AS \"Seconds Since Status\"\nFROM public.machine_event\nWHERE equipment_id IN (${machine_id:singlequote})\n  AND message_type = 'status'\nORDER BY event_time DESC, id DESC\nLIMIT 1",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "EVENT RECORDS IN RANGE",
+      "type": "stat",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 4,
+        "w": 6,
+        "h": 4
+      },
+      "description": "Number of machine_event rows for selected machine and Grafana time range.",
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "NO_DATA",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#00F2FE"
+          },
+            "unit": "none",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "wideLayout": true,
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "showPercentChange": false,
+        "percentChangeColorMode": "standard",
+        "noValue": "NO_DATA"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT COUNT(*)::DOUBLE PRECISION AS \"Event Records\"\nFROM public.machine_event\nWHERE equipment_id IN (${machine_id:singlequote})\n  AND $__timeFilter(event_time)",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "id": 1001,
+      "title": "Observed Performance",
+      "type": "row",
+      "collapsed": false,
+      "panels": [],
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 24,
+        "h": 1
+      }
+    },
+    {
+      "id": 5,
+      "title": "RUN RATIO (OBSERVED)",
+      "type": "stat",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 9,
+        "w": 6,
+        "h": 4
+      },
+      "description": "RUN duration divided by RUN+STOP duration inside selected range, capped at last observed event. Not vendor shift utilization.",
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "NO_DATA",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#22C55E"
+          },
+          "unit": "percent",
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "wideLayout": true,
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "showPercentChange": false,
+        "percentChangeColorMode": "standard",
+        "noValue": "NO_DATA"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "WITH observed AS (\n  SELECT MIN(event_time) AS first_event, MAX(event_time) AS last_event\n  FROM public.machine_event\n  WHERE equipment_id IN (${machine_id:singlequote})\n),\nbounds AS (\n  SELECT GREATEST($__timeFrom()::timestamptz, first_event) AS from_ts,\n         LEAST($__timeTo()::timestamptz, last_event) AS to_ts\n  FROM observed\n),\nseed AS (\n  SELECT m.event_type, m.event_time, m.id\n  FROM public.machine_event m\n  CROSS JOIN bounds b\n  WHERE m.equipment_id IN (${machine_id:singlequote})\n    AND m.message_type = 'status'\n    AND m.event_time < b.from_ts\n  ORDER BY m.event_time DESC, m.id DESC\n  LIMIT 1\n),\npoints AS (\n  SELECT * FROM seed\n  UNION ALL\n  SELECT m.event_type, m.event_time, m.id\n  FROM public.machine_event m\n  CROSS JOIN bounds b\n  WHERE m.equipment_id IN (${machine_id:singlequote})\n    AND m.message_type = 'status'\n    AND m.event_time >= b.from_ts\n    AND m.event_time <= b.to_ts\n),\nsegments AS (\n  SELECT event_type,\n         GREATEST(event_time, from_ts) AS segment_start,\n         LEAST(LEAD(event_time, 1, to_ts) OVER (ORDER BY event_time, id), to_ts) AS segment_end\n  FROM points\n  CROSS JOIN bounds\n),\ndurations AS (\n  SELECT event_type,\n         GREATEST(EXTRACT(EPOCH FROM (segment_end - segment_start)), 0) AS seconds\n  FROM segments\n  WHERE segment_end > segment_start\n)\nSELECT ROUND((100.0 * COALESCE(SUM(seconds) FILTER (WHERE event_type = 'RUN'), 0) / NULLIF(SUM(seconds), 0))::NUMERIC, 1) AS \"Run Ratio\"\nFROM durations",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "RUN TIME (OBSERVED)",
+      "type": "stat",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 9,
+        "w": 6,
+        "h": 4
+      },
+      "description": "Duration covered by RUN status segments inside selected range, capped at last observed event.",
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "NO_DATA",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#22C55E"
+          },
+          "unit": "s",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "wideLayout": true,
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "showPercentChange": false,
+        "percentChangeColorMode": "standard",
+        "noValue": "NO_DATA"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "WITH observed AS (\n  SELECT MIN(event_time) AS first_event, MAX(event_time) AS last_event\n  FROM public.machine_event\n  WHERE equipment_id IN (${machine_id:singlequote})\n),\nbounds AS (\n  SELECT GREATEST($__timeFrom()::timestamptz, first_event) AS from_ts,\n         LEAST($__timeTo()::timestamptz, last_event) AS to_ts\n  FROM observed\n),\nseed AS (\n  SELECT m.event_type, m.event_time, m.id\n  FROM public.machine_event m\n  CROSS JOIN bounds b\n  WHERE m.equipment_id IN (${machine_id:singlequote})\n    AND m.message_type = 'status'\n    AND m.event_time < b.from_ts\n  ORDER BY m.event_time DESC, m.id DESC\n  LIMIT 1\n),\npoints AS (\n  SELECT * FROM seed\n  UNION ALL\n  SELECT m.event_type, m.event_time, m.id\n  FROM public.machine_event m\n  CROSS JOIN bounds b\n  WHERE m.equipment_id IN (${machine_id:singlequote})\n    AND m.message_type = 'status'\n    AND m.event_time >= b.from_ts\n    AND m.event_time <= b.to_ts\n),\nsegments AS (\n  SELECT event_type,\n         GREATEST(event_time, from_ts) AS segment_start,\n         LEAST(LEAD(event_time, 1, to_ts) OVER (ORDER BY event_time, id), to_ts) AS segment_end\n  FROM points\n  CROSS JOIN bounds\n),\ndurations AS (\n  SELECT event_type,\n         GREATEST(EXTRACT(EPOCH FROM (segment_end - segment_start)), 0) AS seconds\n  FROM segments\n  WHERE segment_end > segment_start\n)\nSELECT COALESCE(SUM(seconds) FILTER (WHERE event_type = 'RUN'), 0)::DOUBLE PRECISION AS \"Run Time\"\nFROM durations",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "STOP TIME (OBSERVED)",
+      "type": "stat",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 9,
+        "w": 6,
+        "h": 4
+      },
+      "description": "Duration covered by STOP status segments inside selected range, capped at last observed event. STOP is not automatically Down.",
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "NO_DATA",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#00F2FE"
+          },
+          "unit": "s",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "wideLayout": true,
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "showPercentChange": false,
+        "percentChangeColorMode": "standard",
+        "noValue": "NO_DATA"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "WITH observed AS (\n  SELECT MIN(event_time) AS first_event, MAX(event_time) AS last_event\n  FROM public.machine_event\n  WHERE equipment_id IN (${machine_id:singlequote})\n),\nbounds AS (\n  SELECT GREATEST($__timeFrom()::timestamptz, first_event) AS from_ts,\n         LEAST($__timeTo()::timestamptz, last_event) AS to_ts\n  FROM observed\n),\nseed AS (\n  SELECT m.event_type, m.event_time, m.id\n  FROM public.machine_event m\n  CROSS JOIN bounds b\n  WHERE m.equipment_id IN (${machine_id:singlequote})\n    AND m.message_type = 'status'\n    AND m.event_time < b.from_ts\n  ORDER BY m.event_time DESC, m.id DESC\n  LIMIT 1\n),\npoints AS (\n  SELECT * FROM seed\n  UNION ALL\n  SELECT m.event_type, m.event_time, m.id\n  FROM public.machine_event m\n  CROSS JOIN bounds b\n  WHERE m.equipment_id IN (${machine_id:singlequote})\n    AND m.message_type = 'status'\n    AND m.event_time >= b.from_ts\n    AND m.event_time <= b.to_ts\n),\nsegments AS (\n  SELECT event_type,\n         GREATEST(event_time, from_ts) AS segment_start,\n         LEAST(LEAD(event_time, 1, to_ts) OVER (ORDER BY event_time, id), to_ts) AS segment_end\n  FROM points\n  CROSS JOIN bounds\n),\ndurations AS (\n  SELECT event_type,\n         GREATEST(EXTRACT(EPOCH FROM (segment_end - segment_start)), 0) AS seconds\n  FROM segments\n  WHERE segment_end > segment_start\n)\nSELECT COALESCE(SUM(seconds) FILTER (WHERE event_type = 'STOP'), 0)::DOUBLE PRECISION AS \"Stop Time\"\nFROM durations",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "STATUS RECORDS",
+      "type": "stat",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 9,
+        "w": 6,
+        "h": 4
+      },
+      "description": "Count of status records in selected range. Same-timestamp STOP then RUN records are both retained and ordered by id.",
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "NO_DATA",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#00F2FE"
+          },
+            "unit": "none",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "wideLayout": true,
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "showPercentChange": false,
+        "percentChangeColorMode": "standard",
+        "noValue": "NO_DATA"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT COUNT(*)::DOUBLE PRECISION AS \"Status Records\"\nFROM public.machine_event\nWHERE equipment_id IN (${machine_id:singlequote})\n  AND message_type = 'status'\n  AND $__timeFilter(event_time)",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "id": 1002,
+      "title": "Latest Decoded Error Context",
+      "type": "row",
+      "collapsed": false,
+      "panels": [],
+      "gridPos": {
+        "x": 0,
+        "y": 13,
+        "w": 24,
+        "h": 1
+      }
+    },
+    {
+      "id": 9,
+      "title": "LATEST ERROR RECORD — HISTORICAL REFERENCE ONLY",
+      "type": "table",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 14,
+        "w": 24,
+        "h": 8
+      },
+      "description": "Latest level=E alarm record. Category, likely phase, and risk action are conservative interpretations of DG manual code families; no active lifecycle is inferred.",
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "NO_DATA",
+          "custom": {}
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Error Time"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              },
+              {
+                "id": "custom.width",
+                "value": 170
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Lifecycle"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "HISTORICAL ONLY": {
+                        "text": "HISTORICAL ONLY",
+                        "color": "#F59E0B"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Risk Action"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "STOP AND SECURE": {
+                        "text": "STOP AND SECURE",
+                        "color": "#EF4444"
+                      },
+                      "STOP AND INSPECT": {
+                        "text": "STOP AND INSPECT",
+                        "color": "#EF4444"
+                      },
+                      "VALIDATE BEFORE RESTART": {
+                        "text": "VALIDATE BEFORE RESTART",
+                        "color": "#F59E0B"
+                      },
+                      "REVIEW REQUIRED": {
+                        "text": "REVIEW REQUIRED",
+                        "color": "#64748B"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Observed Message"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 340
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Troubleshooting"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 420
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        },
+        "sortBy": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: latest decoded error is historical reference, never active-alarm lifecycle. */\nWITH latest AS (\n  SELECT *\n  FROM public.machine_event\n  WHERE equipment_id IN (${machine_id:singlequote})\n    AND message_type = 'alarm'\n    AND level = 'E'\n  ORDER BY event_time DESC, id DESC\n  LIMIT 1\n), normalized AS (\n  SELECT *, NULLIF(regexp_replace(event_code, '[^0-9]', '', 'g'), '')::INTEGER AS code_num\n  FROM latest\n)\nSELECT event_time AS \"Error Time\",\n       CASE WHEN event_code ~ '^[0-9]{4}$' THEN 'E' || event_code ELSE event_code END AS \"Error Code\",\n       'HISTORICAL ONLY' AS \"Lifecycle\",\n       CASE\n         WHEN code_num BETWEEN 101 AND 121 OR code_num = 701 THEN 'Safety / interlock'\n         WHEN code_num BETWEEN 202 AND 324 OR code_num BETWEEN 601 AND 605 THEN 'Axis / motion'\n         WHEN code_num BETWEEN 403 AND 419 THEN 'Spindle / tool'\n         WHEN code_num BETWEEN 501 AND 519 THEN 'Program / tool table'\n         ELSE 'Unclassified'\n       END AS \"Category\",\n       CASE\n         WHEN code_num BETWEEN 403 AND 419 THEN 'Tool change / measurement'\n         WHEN code_num BETWEEN 501 AND 519 THEN 'Program selection / validation'\n         WHEN code_num BETWEEN 202 AND 324 THEN 'Home / axis motion'\n         WHEN code_num BETWEEN 601 AND 605 THEN 'Drilling setup / depth'\n         WHEN code_num BETWEEN 101 AND 121 OR code_num = 701 THEN 'Startup / safety check'\n         ELSE 'Unknown phase'\n       END AS \"Likely Phase\",\n       CASE\n         WHEN code_num BETWEEN 101 AND 121 OR code_num = 701 THEN 'STOP AND SECURE'\n         WHEN code_num BETWEEN 403 AND 419 THEN 'STOP AND INSPECT'\n         WHEN code_num BETWEEN 202 AND 324 OR code_num BETWEEN 501 AND 519 OR code_num BETWEEN 601 AND 605 THEN 'VALIDATE BEFORE RESTART'\n         ELSE 'REVIEW REQUIRED'\n       END AS \"Risk Action\",\n       event_message AS \"Observed Message\",\n       troubleshooting_method AS \"Troubleshooting\",\n       decoder_version AS \"Decoder\"\nFROM normalized",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "id": 1003,
+      "title": "Machine Event Timeline",
+      "type": "row",
+      "collapsed": false,
+      "panels": [],
+      "gridPos": {
+        "x": 0,
+        "y": 22,
+        "w": 24,
+        "h": 1
+      }
+    },
+    {
+      "id": 10,
+      "title": "OPERATIONAL STATUS HISTORY",
+      "type": "status-history",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 23,
+        "w": 12,
+        "h": 8
+      },
+      "description": "Last observed RUN/STOP record in each non-empty 5-minute bucket. Empty buckets remain empty and no state is extended beyond observed records; the adjacent event table retains the unaggregated rows.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "Off",
+                  "color": "#64748B"
+                },
+                "1": {
+                  "text": "Down",
+                  "color": "#EF4444"
+                },
+                "2": {
+                  "text": "Idle",
+                  "color": "#F59E0B"
+                },
+                "3": {
+                  "text": "Initial / PM / Stop",
+                  "color": "#00F2FE"
+                },
+                "4": {
+                  "text": "Run",
+                  "color": "#22C55E"
+                },
+                "5": {
+                  "text": "Undefine",
+                  "color": "#64748B"
+                }
+              }
+            }
+          ],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#64748B",
+                "value": null
+              },
+              {
+                "color": "#EF4444",
+                "value": 1
+              },
+              {
+                "color": "#F59E0B",
+                "value": 2
+              },
+              {
+                "color": "#00F2FE",
+                "value": 3
+              },
+              {
+                "color": "#22C55E",
+                "value": 4
+              },
+              {
+                "color": "#64748B",
+                "value": 5
+              }
+            ]
+          },
+          "custom": {
+            "lineWidth": 1,
+            "fillOpacity": 90
+          },
+          "decimals": 0,
+          "min": 0,
+          "max": 5
+        },
+        "overrides": []
+      },
+      "options": {
+        "showValue": "never",
+        "rowHeight": 0.9,
+        "colWidth": 0.9,
+        "legend": {
+          "showLegend": false,
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "WITH sampled AS (\n  SELECT DISTINCT ON (date_bin(INTERVAL '5 minutes', event_time, TIMESTAMPTZ '1970-01-01'))\n         date_bin(INTERVAL '5 minutes', event_time, TIMESTAMPTZ '1970-01-01') AS time,\n         equipment_id, event_type\n  FROM public.machine_event\n  WHERE equipment_id IN (${machine_id:singlequote})\n    AND message_type = 'status'\n    AND $__timeFilter(event_time)\n  ORDER BY date_bin(INTERVAL '5 minutes', event_time, TIMESTAMPTZ '1970-01-01'), event_time DESC, id DESC\n)\nSELECT time, equipment_id AS metric,\n       CASE WHEN event_type = 'RUN' THEN 4\n            WHEN event_type = 'STOP' THEN 3\n            ELSE 5 END AS value\nFROM sampled\nORDER BY time",
+          "format": "time_series",
+          "maxDataPoints": 3000,
+          "legendFormat": "{{metric}}"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "title": "EVENT / TOOL / ALARM RECORDS",
+      "type": "table",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 23,
+        "w": 12,
+        "h": 8
+      },
+      "description": "Latest 250 source records in selected time range. Alarm rows are event history, not proof of an active alarm.",
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "NO_DATA",
+          "custom": {}
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Time"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              },
+              {
+                "id": "custom.width",
+                "value": 170
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Message"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 360
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        },
+        "sortBy": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "SELECT event_time AS \"Time\",\n       message_type AS \"Type\",\n       event_type AS \"Event\",\n       event_code AS \"Code\",\n       event_message AS \"Message\",\n       level AS \"Level\",\n       tool_no AS \"Tool\",\n       magazine_no AS \"Magazine\",\n       spindle AS \"Spindle\"\nFROM public.machine_event\nWHERE equipment_id IN (${machine_id:singlequote})\n  AND $__timeFilter(event_time)\nORDER BY event_time DESC, id DESC\nLIMIT 250",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "id": 1004,
+      "title": "Source & Data Quality",
+      "type": "row",
+      "collapsed": false,
+      "panels": [],
+      "gridPos": {
+        "x": 0,
+        "y": 31,
+        "w": 24,
+        "h": 1
+      }
+    },
+    {
+      "id": 12,
+      "title": "SOURCE TRACEABILITY",
+      "type": "table",
+      "datasource": {
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 32,
+        "w": 16,
+        "h": 5
+      },
+      "description": "Latest source, ingestion, decoder, and mapping metadata. Enables trace-back without claiming data that is absent.",
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "NO_DATA",
+          "custom": {}
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Latest Event"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sent"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Received"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Ingestion ms"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "ms"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        },
+        "sortBy": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "uid": "timescaledb"
+          },
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: latest ingestion/decoder metadata for selected source. */\nSELECT equipment_id AS \"Machine ID\",\n       CASE WHEN equipment_id = 'DRL054-M' THEN 'APEX3-F1-DRILL-054' ELSE 'UNMAPPED' END AS \"Layout Asset\",\n       source AS \"Source\",\n       source_file AS \"Source File\",\n       event_time AS \"Latest Event\",\n       sent_time AS \"Sent\",\n       received_at AS \"Received\",\n       ROUND((1000.0 * EXTRACT(EPOCH FROM (received_at - sent_time)))::NUMERIC, 1) AS \"Ingestion ms\",\n       decode_status AS \"Decode Status\",\n       decoder_version AS \"Decoder Version\",\n       'LATEST_KNOWN' AS \"State Policy\"\nFROM public.machine_event\nWHERE equipment_id IN (${machine_id:singlequote})\nORDER BY event_time DESC, id DESC\nLIMIT 1",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "title": "DATA BOUNDARY",
+      "type": "text",
+      "gridPos": {
+        "x": 16,
+        "y": 32,
+        "w": 8,
+        "h": 5
+      },
+      "description": "Explicitly documents fields unavailable in current machine_event source.",
+      "options": {
+        "mode": "markdown",
+        "content": "### Not available yet\n\n- Active alarm trigger/reset lifecycle\n- Current program name and progress\n- Vendor Hits / Online / Stop / Shift Rate\n- Confirmed six-state values beyond RUN and STOP\n\nPanels stay absent until a real source is provided."
+      }
+    }
+  ],
+  "refresh": "30s",
+  "description": "Read-only drilling-machine detail for the real public.machine_event source: latest-known state, observed performance, decoded historical error context, sampled status history, raw event records, and source traceability without inventing alarm lifecycle or vendor-only KPIs.",
+  "schemaVersion": 39,
+  "tags": [
+    "IMS",
+    "drilling",
+    "DG",
+    "machine-event",
+    "real-data",
+    "manufacturing"
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "machine_id",
+        "label": "Machine",
+        "type": "query",
+        "datasource": {
+          "uid": "timescaledb"
+        },
+        "query": "SELECT DISTINCT equipment_id AS __text, equipment_id AS __value FROM public.machine_event ORDER BY 1",
+        "definition": "SELECT DISTINCT equipment_id AS __text, equipment_id AS __value FROM public.machine_event ORDER BY 1",
+        "current": {
+          "selected": true,
+          "text": "DRL054-M",
+          "value": "DRL054-M"
+        },
+        "multi": false,
+        "includeAll": false,
+        "options": [],
+        "refresh": 1,
+        "sort": 1,
+        "hide": 0,
+        "regex": "",
+        "skipUrlSync": false
+      }
+    ]
+  },
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m"
+    ],
+    "time_options": [
+      "1h",
+      "6h",
+      "12h",
+      "24h",
+      "2d",
+      "7d",
+      "30d"
+    ]
+  },
+  "timezone": "browser",
+  "title": "IMS Drilling Machine Detail",
+  "uid": "ims-drilling-machine-detail",
+  "version": 1,
+  "weekStart": "monday"
+}

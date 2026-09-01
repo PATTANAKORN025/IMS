@@ -435,9 +435,10 @@ function drillDownUrl(deviceId) {
   const state = latestStateById.get(deviceId);
   if (!state?.drilldown_enabled) return null;
   const sourceId = state.source_id || deviceId;
+  const isDrillingSource = sourceId === 'DRL054-M';
   const params = new URLSearchParams({
     'var-machine_id': sourceId,
-    from: 'now-6h',
+    from: isDrillingSource ? 'now-7d' : 'now-6h',
     to: 'now',
   });
   if (state?.factory !== null && state?.factory !== undefined && String(state.factory).trim() !== '') {
@@ -450,7 +451,10 @@ function drillDownUrl(deviceId) {
       params.set('var-clicked_series', sourceId);
     }
   }
-  return `/d/ims-ldi-machine-snapshot/set2-machine-snapshot?${params.toString()}`;
+  const dashboardPath = isDrillingSource
+    ? '/d/ims-drilling-machine-detail/ims-drilling-machine-detail'
+    : '/d/ims-ldi-machine-snapshot/set2-machine-snapshot';
+  return `${dashboardPath}?${params.toString()}`;
 }
 
 function pickMachine(event) {
@@ -551,12 +555,16 @@ function stateRowHtml(row) {
   const sourcePolicy = row.state_freshness_policy === 'LATEST_KNOWN'
     ? 'LATEST KNOWN'
     : row.state_confidence || 'SOURCE';
-  const disabled = row.drilldown_enabled ? '' : ' disabled';
+  const href = row.drilldown_enabled ? drillDownUrl(row.device_id) : null;
+  const tagName = href ? 'a' : 'button';
+  const navigationAttrs = href
+    ? ` href="${escapeHtml(href)}"`
+    : ' type="button" disabled';
   const ariaLabel = row.drilldown_enabled
-    ? `Open ${row.device_id} snapshot`
+    ? `Open ${row.device_id} machine detail`
     : `${row.device_id} has no connected drill-down source`;
   return `
-    <button class="machine-row${row.alarm ? ' has-alarm' : ''}" type="button" data-device-id="${escapeHtml(row.device_id)}" aria-label="${escapeHtml(ariaLabel)}"${disabled}>
+    <${tagName} class="machine-row${row.alarm ? ' has-alarm' : ''}" data-device-id="${escapeHtml(row.device_id)}" aria-label="${escapeHtml(ariaLabel)}"${navigationAttrs}>
       <span class="machine-row-top">
         <span class="mini-pill" style="background:${color}">${escapeHtml(label)}</span>
         <span class="machine-id">${escapeHtml(row.device_id)}</span>
@@ -576,14 +584,8 @@ function stateRowHtml(row) {
         </span>
         <span class="machine-row-error-action">Action: ${escapeHtml(errorRisk)}</span>
       ` : ''}
-    </button>`;
+    </${tagName}>`;
 }
-
-machineListEl.addEventListener('click', (event) => {
-  const row = event.target.closest('[data-device-id]');
-  const url = row ? drillDownUrl(row.dataset.deviceId) : null;
-  if (url) window.location.href = url;
-});
 
 function applyState(payload) {
   const rows = payload.machines || [];

@@ -185,6 +185,8 @@
       border: 1px solid var(--border);
       border-radius: 7px;
       cursor: pointer;
+      box-sizing: border-box;
+      text-decoration: none;
     }
     .machine-row:hover, .machine-row:focus-visible { border-color: #38bdf8; outline: none; }
     .machine-row:disabled { cursor: not-allowed; opacity: 0.88; }
@@ -268,7 +270,7 @@
       <span><i style="background:#fff;border:1px solid #64748b"></i>Undefine</span>
     </div>
     <div id="machine-list"></div>
-    <div class="hint">Click a machine in the scene or this list to open its Machine Snapshot. State refreshes every 5 seconds.</div>
+    <div class="hint">Click a machine in the scene or this list to open its matching machine-detail dashboard. State refreshes every 5 seconds.</div>
     <div class="hint truth-note"><strong>Layout:</strong> provisional logical zones. <strong>Status:</strong> six-state operational status; red outline is a separate active-alarm overlay.</div>
     <div id="status-line" class="hint"></div>
   </aside>
@@ -286,6 +288,6 @@
       }
     }
   </script>
-  <script type="module" src="./app.js"></script>
+  <script type="module" src="./app.js?v=20260831-drilling-dashboard-3"></script>
 </body>
 </html>

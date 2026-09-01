@@ -11,7 +11,7 @@
 > (`node scripts/generate-dashboard-inventory.js --check`) fails the build
 > if this file doesn't match what the dashboards currently say.
 >
-> Last generated: 2026-08-27 | Total dashboards: 15 | Total panels: 190
+> Last generated: 2026-09-01 | Total dashboards: 16 | Total panels: 209
 
 ## Infrastructure (5)
 
@@ -23,10 +23,11 @@
 | `ims-meta-monitoring` | IMS Pipeline Health & Meta-Monitoring | 16 | The ingestion pipeline's own health: rows/sec insert rate, batch success rate, retry queue depth, circuit breaker state, and device poll rates. Watches the pipeline, not the fleet it monitors. |
 | `ims-noc-overview` | IMS NOC Overview | 7 | Infrastructure-only (servers) -- LDI process/quality metrics live on the Manufacturing and Machine Snapshot dashboards. |
 
-## LDI Manufacturing (10)
+## LDI Manufacturing (11)
 
 | UID | Title | Panels | Purpose |
 |---|---|---|---|
+| `ims-drilling-machine-detail` | IMS Drilling Machine Detail | 19 | Read-only drilling-machine detail for the real public.machine_event source: latest-known state, observed performance, decoded historical error context, sampled status history, raw event records, and source traceabilit... |
 | `ims-easy-overview` | IMS Easy Overview | 8 | The easiest way to see the whole LDI fleet at once: no template variables to set, no filters to configure, just open it. Built entirely from this repo's shared views/functions (v_ldi_machine_latest_full, v_ldi_alarm_c... |
 | `ims-ldi-alarm-console` | IMS LDI - Alarm Console | 2 | Interactive alarm acknowledge/resolve workflow -- writes real state to public.ldi_alarm_lifecycle. Companion to the read-only IMS LDI - Operator Andon Board (TV-wall kiosk, no interactive elements). |
 | `ims-ldi-alarm-dictionary` | IMS LDI - Alarm Dictionary | 3 | Reference lookup dashboard: full vendor Alarm Master definition + recent live occurrences for any Alarm Code. Not part of the operator/engineering navigation flow -- opened via drill-down link from the Alarm Code colu... |
