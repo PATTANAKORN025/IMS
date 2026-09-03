@@ -774,6 +774,10 @@ function buildOpenings(openings) {
 //
 // One merged LineSegments geometry: hundreds of spans, one draw call.
 let wallLineCount = 0;
+// Exposed for the same reason wallMeshes is: the structural reconciliation
+// test counts what the renderer actually put in the scene, and a layer the
+// test cannot see is a layer that can silently disappear again.
+const wallLineMeshes = [];
 
 function buildWallLines(lines) {
   const list = asArray(lines).filter(
@@ -790,6 +794,7 @@ function buildWallLines(lines) {
     new THREE.LineBasicMaterial({ color: 0x64789a })
   );
   sublayers.walls.add(seg);
+  wallLineMeshes.push(seg);
   return list.length;
 }
 
@@ -902,35 +907,36 @@ function buildFloor(geometry) {
   for (const item of equipment) {
     if (!item || !finitePoint(item.position, true)) continue;
     const fp = item.footprint;
-    const resolved = item.footprint_status === 'OBSERVED_CAD'
+    const tier = item.footprint_status;
+    const sized = (tier === 'OBSERVED_CAD' || tier === 'APPROXIMATION')
       && fp && finite(fp.width) && finite(fp.depth);
-    const w = resolved ? fp.width : UNRESOLVED_MARKER_M;
-    const d = resolved ? fp.depth : UNRESOLVED_MARKER_M;
-    const geom = boxGeometry(w, EQUIPMENT_PAD_H, d);
-    // A resolved extent reads as a solid pad; an unresolved one reads as a
-    // faint marker. The visual difference is the point: an operator must be
-    // able to see, without opening anything, which shapes are measurements.
-    // Contrast is load-bearing here, not decoration. On a dark plan a pad at
-    // the floor's own value is invisible, and an operator cannot check a
-    // machine they cannot see. A measured extent reads as a solid, clearly
-    // lighter block; an unresolved one reads as a dim, obviously uniform
-    // marker. The two must never be confusable, which is why they differ in
-    // value and not only in size.
-    const mat = basicMaterial(
-      resolved ? 0x7d94b8 : 0x4a5a70,
-      resolved ? (item.confidence === 'high' ? 0.9 : 0.72) : 0.5,
-    );
+    // An asset with no extent gets a marker, never a box. Height comes down
+    // with it: a full-height block would read as a machine of known size.
+    const w = sized ? fp.width : UNRESOLVED_MARKER_M;
+    const d = sized ? fp.depth : UNRESOLVED_MARKER_M;
+    const h = sized ? EQUIPMENT_PRESENTATION_HEIGHT_M : MARKER_HEIGHT_M;
+
+    // ONE geometry, extruded from the 2D footprint, drawn in every view. The
+    // plan and the 3D view are the same meshes seen from different angles, so
+    // they cannot disagree about where a machine is or how big it is -- there
+    // is no second position to get wrong.
+    const geom = boxGeometry(w, h, d);
+    // Three tiers, three appearances. An operator must be able to see which
+    // shapes are measurements without opening anything, so the difference is
+    // in value and opacity rather than in a label they have to hunt for.
+    const style = EQUIPMENT_TIER_STYLE[tier] || EQUIPMENT_TIER_STYLE.UNRESOLVED;
+    const mat = basicMaterial(style.color, style.opacity);
     const mesh = new THREE.Mesh(geom, mat);
-    // Rotation is applied about Y because the CAD angle is a plan rotation.
-    // The sign is negated: CAD measures counter-clockwise in a right-handed
-    // XY plane, and this scene's Z axis runs the other way, so an unnegated
-    // angle mirrors every machine's orientation.
+    // Rotation about +Y, with the sign the canonical frame demands. See
+    // CAD_ROTATION_SIGN above.
     if (finite(item.rotation_deg)) {
-      mesh.rotation.y = -item.rotation_deg * Math.PI / 180;
+      mesh.rotation.y = CAD_ROTATION_SIGN * item.rotation_deg * Math.PI / 180;
     }
     mesh.userData.equipment = item;
     equipmentMeshes.push(mesh);
-    mesh.position.set(item.position.x, item.position.y + EQUIPMENT_PAD_H / 2, item.position.z);
+    // Sat ON the floor: position.y is the floor reference and a box is centred
+    // on its origin, so without the half-height offset the lower half sinks.
+    mesh.position.set(item.position.x, item.position.y + h / 2, item.position.z);
     sublayers.equipment.add(mesh);
   }
 }
@@ -1165,14 +1171,50 @@ function buildFunctionalZones(geometry) {
 // A slot is an observed position with no confirmed identity. It can never
 // acquire a drill-down, a live state or a device id, and now there is no
 // machine array for it to be confused with.
-// Plan thickness of an equipment pad. A rendering constant, not a measurement:
-// no equipment elevation exists anywhere in this drawing, so the pad is drawn
-// deliberately thin to keep it reading as a footprint rather than a machine.
-const EQUIPMENT_PAD_H = 0.06;
+/**
+ * Height of an equipment block. PRESENTATION_ONLY, and that is not a hedge:
+ * the drawing is a plan and a plan carries no elevation, so no machine on this
+ * floor has a height in evidence. Every block is drawn at the SAME height for
+ * exactly that reason -- a varying height would look like data.
+ *
+ * Physical x/z position and rotation are CAD-derived. The height is not.
+ */
+const EQUIPMENT_PRESENTATION_HEIGHT_M = 2.2;
+
+/**
+ * Sign applied to a CAD plan rotation to obtain the three.js rotation about
+ * world +Y. Must equal CAD_ROTATION_SIGN in scripts/lib/floor1-frame.js, where
+ * the derivation lives.
+ *
+ * The canonical frame maps CAD (x, y) to twin (x, -y) so that the plan camera
+ * -- whose screen-up is world -z -- renders the sheet the right way up. That
+ * is a reflection, and a reflection flips the sense of a plan rotation, so
+ * this sign flips with it. It was -1 under the old mirrored frame. Getting one
+ * of the two right and the other wrong puts every machine in the correct place
+ * facing the wrong way, which is why a regression measures the rendered mesh
+ * rotation against the served angle rather than trusting this line.
+ */
+const CAD_ROTATION_SIGN = 1;
 // The mark drawn where the CAD establishes a position but not an extent. A
 // fixed, obviously-uniform square: it must not be mistakable for a measurement,
 // which is exactly why every one of them is the same size.
 const UNRESOLVED_MARKER_M = 0.9;
+// And deliberately flat. A marker at block height would read as a machine
+// whose size is known, which is the one thing it is not.
+const MARKER_HEIGHT_M = 0.08;
+
+/**
+ * How each evidence tier is drawn.
+ *
+ * OBSERVED_CAD is the block's own extent and reads as solid. APPROXIMATION is
+ * that extent clipped to neighbour spacing -- real bounds, but bounds, so it
+ * reads a step back. UNRESOLVED claims no size at all and is a faint marker.
+ */
+const EQUIPMENT_TIER_STYLE = Object.freeze({
+  OBSERVED_CAD: { color: 0x8fa7c9, opacity: 0.92 },
+  APPROXIMATION: { color: 0x6d829f, opacity: 0.7 },
+  UNRESOLVED: { color: 0x44536a, opacity: 0.5 },
+});
 
 const equipmentMeshes = []; // THREE.Mesh[], one per CAD asset, userData.equipment set
 const columnMeshes = []; // THREE.Mesh[], one per detected column, userData.column set
@@ -1356,14 +1398,16 @@ function updateEvidenceSummary(geo, zonesDrawn) {
   const cadColumns = columnList.filter((c) => c && c.geometry_status === 'MEASURED_CAD').length;
   const wallList = Array.isArray(geo && geo.walls) ? geo.walls : [];
   const openingList = Array.isArray(geo && geo.openings) ? geo.openings : [];
+  const wallLineList = Array.isArray(geo && geo.wall_lines) ? geo.wall_lines : [];
   const resolved = equipmentList.filter((e) => e && e.footprint_status === 'OBSERVED_CAD').length;
-  const unresolved = equipmentList.length - resolved;
+  const approximated = equipmentList.filter((e) => e && e.footprint_status === 'APPROXIMATION').length;
+  const unresolved = equipmentList.length - resolved - approximated;
   const confirmed = equipmentList.filter((e) => e && e.ims_device_id).length;
   const meta = geo && typeof geo.functional_zones_meta === 'object' ? geo.functional_zones_meta : null;
   const withheld = meta && Number.isFinite(meta.withheld) ? meta.withheld : 0;
 
   equipmentCensus = {
-    total: equipmentList.length, resolved, unresolved, mapped: confirmed,
+    total: equipmentList.length, resolved, approximated, unresolved, mapped: confirmed,
   };
 
   // The header's data-quality line, written from the response rather than
@@ -1374,7 +1418,7 @@ function updateEvidenceSummary(geo, zonesDrawn) {
   if (quality) {
     quality.textContent = equipmentList.length > 0 || columns > 0
       ? `CAD · ${columns} columns · ${wallList.length} walls · `
-        + `${equipmentList.length} assets (${resolved} with a measured extent, `
+        + `${equipmentList.length} assets (${resolved} measured, ${approximated} approximated, `
         + `${unresolved} UNRESOLVED) · ${confirmed} confirmed IMS mappings`
       : 'NO MEASURED GEOMETRY DEPLOYED — nothing on this floor is a measurement.';
     quality.classList.toggle('quality-measured', columns > 0);
@@ -1388,10 +1432,11 @@ function updateEvidenceSummary(geo, zonesDrawn) {
   setCount('columns', cadColumns > 0
     ? `(${columns} MEASURED_CAD)` : `(${columns} OBSERVED)`);
   setCount('walls', `(${wallCount} walls MEASURED_CAD plan, `
+    + `${wallLineCount} faces OBSERVED_CAD no measured thickness, `
     + `${openingCount} openings; height PRESENTATION_ONLY)`);
   setCount('functional', `(${zonesDrawn} validated, ${withheld} withheld)`);
-  setCount('equipment', `(${equipmentList.length} MEASURED_CAD positions, `
-    + `${unresolved} extents UNRESOLVED)`);
+  setCount('equipment', `(${equipmentList.length} MEASURED_CAD positions; extents `
+    + `${resolved} measured, ${approximated} approximated, ${unresolved} unresolved)`);
 
   factoryCounts = {
     assets: equipmentList.length, mapped: confirmed, zones: zonesDrawn, unresolved,
@@ -1403,10 +1448,16 @@ function updateEvidenceSummary(geo, zonesDrawn) {
   const rows = [
     ['Structural columns', columns, cadColumns > 0 ? 'MEASURED_CAD' : 'OBSERVED'],
     ['Interior walls', wallList.length, 'MEASURED_CAD plan, PRESENTATION height'],
+    // Counted separately and never folded into the wall total. A face whose
+    // partner is off-layer is drawn line-work, not a measured wall, and adding
+    // the two would turn a known-weaker claim into part of a stronger one.
+    ['Wall faces, thickness unresolved', wallLineList.length, 'OBSERVED_CAD'],
     ['Doors, windows, air showers', openingList.length, 'OBSERVED_CAD'],
     ['Equipment positions', equipmentList.length, 'MEASURED_CAD'],
     ['Equipment extents measured', resolved, 'OBSERVED_CAD'],
+    ['Equipment extents approximated', approximated, 'APPROXIMATION'],
     ['Equipment extents unresolved', unresolved, 'UNRESOLVED'],
+    ['Equipment height', 0, 'PRESENTATION_ONLY \u2014 not in evidence'],
     ['Raster-derived positions drawn', 0, 'NONE — superseded by the CAD'],
     ['Confirmed physical mappings', confirmed, confirmed === 0 ? 'NONE — no authoritative record' : 'CONFIRMED'],
     ['Zones withheld as unvalidated', withheld, 'WITHHELD'],
@@ -1443,7 +1494,19 @@ function render(badge, badgeClass, title, rows, note) {
 
 function showEquipmentInspector(item) {
   const mapped = item.status === 'IMS_CONNECTED' && item.ims_device_id;
-  const resolved = item.footprint_status === 'OBSERVED_CAD' && item.footprint;
+  const tier = item.footprint_status;
+  const sized = (tier === 'OBSERVED_CAD' || tier === 'APPROXIMATION') && item.footprint;
+  const extent = sized
+    ? `${item.footprint.width} × ${item.footprint.depth} m`
+    : 'UNRESOLVED — no size is claimed';
+  // The extent's own evidence, stated on its own row. Position and extent are
+  // two claims of different strength on one record, and the row that says
+  // "measured" must never be read as covering both.
+  const extentEvidence = {
+    OBSERVED_CAD: 'OBSERVED_CAD — the block’s own extent',
+    APPROXIMATION: 'APPROXIMATION — block extent clipped to neighbour spacing',
+  }[tier] || 'UNRESOLVED — not established by the CAD';
+
   render(
     mapped ? 'CONFIRMED' : 'UNMAPPED',
     mapped ? 'badge-confirmed' : 'badge-unmapped',
@@ -1455,24 +1518,29 @@ function showEquipmentInspector(item) {
       ['Position x / z', `${item.position.x} / ${item.position.z} m`],
       ['Rotation', item.rotation_deg == null ? 'unknown' : `${item.rotation_deg}°`],
       ['Position evidence', item.geometry_status ?? 'unknown'],
-      ['Footprint', resolved
-        ? `${item.footprint.width} × ${item.footprint.depth} m`
-        : 'UNRESOLVED — not established by the CAD'],
-      ['Footprint evidence', item.footprint_status ?? 'unknown'],
+      ['Footprint', extent],
+      ['Footprint evidence', extentEvidence],
+      ['Height', 'PRESENTATION_ONLY — a plan carries no elevation'],
       ['Confidence', item.confidence ?? 'unknown'],
       ['Source', item.source ?? 'unknown'],
-      ['Height', item.height_status === 'unknown' ? 'unknown — not in evidence' : (item.height_status ?? 'unknown')],
       ['Zone', item.zone_id ?? 'none — outside every validated zone'],
     ],
-    resolved
+    (tier === 'OBSERVED_CAD'
       ? 'Placed by a CAD block reference: the insertion point and the rotation are the '
         + "drawing's own, not traced. Extent is the block's bounding box, which measures "
-        + 'everything the block draws. No machine identity is claimed — the CAD names '
-        + 'blocks, not assets.'
-      : 'Placed by a CAD block reference, so position and rotation are measured. Its extent '
-        + 'is NOT established: the block bounding box overlaps a neighbour, meaning it '
-        + 'measures more than the machine. A marker is drawn rather than an invented '
-        + 'footprint.'
+        + 'everything the block draws.'
+      : (tier === 'APPROXIMATION'
+        ? 'Placed by a CAD block reference, so position and rotation are measured. The '
+          + 'extent is the block box CLIPPED to the spacing of the neighbouring insertion '
+          + 'points — two machines whose centres are P apart along an axis cannot both '
+          + 'exceed P along it. Both bounds are CAD-measured; the result is a bound, not a '
+          + 'stated dimension.'
+        : 'Placed by a CAD block reference, so position and rotation are measured. Its '
+          + 'extent is NOT established and none is drawn — a marker stands in for the '
+          + 'machine rather than an invented footprint.'))
+    + ' The block height is a presentation constant, identical for every machine on this '
+    + 'floor, and is not a measurement of anything. No machine identity is claimed: the '
+    + 'CAD names blocks, not assets.'
   );
 }
 
@@ -1930,6 +1998,7 @@ async function boot() {
     resourceStats,
     footprintMeshes,
     wallMeshes,
+    wallLineMeshes,
     openingMeshes,
     // Counts a reconciliation test reads back, so "the renderer drew what the
     // CAD said" is an assertion rather than an inference from a screenshot.

@@ -551,6 +551,7 @@ app.get('/api/floor-geometry', (req, res) => {
       grid: null,
       columns: [],
       walls: [],
+      wall_lines: [],
       openings: [],
       zones: [],
       equipment: [],
@@ -586,6 +587,14 @@ app.get('/api/floor-geometry', (req, res) => {
     grid: wire.projectGrid(geometry.grid),
     columns: wire.projectAll(geometry.columns, wire.projectColumn),
     walls: wire.projectAll(geometry.walls, wire.projectWall),
+    // The unpaired faces. The renderer has drawn these as flat plan linework
+    // since the wall layer was written, and never received one: the field was
+    // extracted, documented and rendered, but never projected, so two thirds
+    // of the drawing's wall line-work was silently absent from every plan this
+    // service has ever served. They are a WEAKER claim than walls[] and are
+    // shaped to stay that way -- no thickness field, so nothing downstream can
+    // extrude a depth the drawing does not measure.
+    wall_lines: wire.projectAll(geometry.wall_lines, wire.projectWallLine),
     openings: wire.projectAll(geometry.openings, wire.projectOpening),
     zones: wire.projectAll(geometry.zones, wire.projectZoneBox),
     // equipment[] replaces slots[]. slots[] held 243 positions digitised off

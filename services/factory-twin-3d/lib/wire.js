@@ -74,14 +74,24 @@ const ALLOWED_GEOMETRY_STATUS = new Set([
 ]);
 
 /**
- * Whether a piece of equipment's plan extent is established.
+ * Whether a piece of equipment's plan extent is established, and how well.
  *
- * UNRESOLVED is a first-class answer, not an error state: the CAD block behind
- * a machine draws its service envelope as well as its body for many machines,
- * so an extent that swallows its neighbour is withheld rather than drawn. The
- * renderer draws a position marker for those and says so.
+ * Three tiers, in descending order of evidence, and the renderer draws each
+ * one differently so an operator can see which is which without opening
+ * anything:
+ *
+ *   OBSERVED_CAD   the block's own extent, machine-scale and clear of its
+ *                  neighbours. A measurement.
+ *   APPROXIMATION  the block's extent clipped to the spacing of neighbouring
+ *                  insertion points. Both bounds are CAD-measured, but the
+ *                  result is a bound rather than a stated dimension.
+ *   UNRESOLVED     neither held. A first-class answer, not an error state: a
+ *                  marker is drawn and no size is claimed.
  */
-const ALLOWED_FOOTPRINT_STATUS = new Set(['OBSERVED_CAD', 'UNRESOLVED']);
+const ALLOWED_FOOTPRINT_STATUS = new Set(['OBSERVED_CAD', 'APPROXIMATION', 'UNRESOLVED']);
+
+/** How an extent was arrived at. A fixed enum, never the extractor's prose. */
+const ALLOWED_FOOTPRINT_SOURCE = new Set(['cad_block_extent', 'CAD_CORRELATED']);
 
 /** Physical opening kinds the CAD distinguishes. */
 const ALLOWED_OPENING_KIND = new Set(['door', 'window', 'airshower']);
@@ -384,6 +394,39 @@ function projectWall(wall) {
 }
 
 /**
+ * A drawn wall FACE that the extractor could not pair into a wall.
+ *
+ * These are the two-thirds of the drawing's wall line-work that carry no
+ * measured thickness: one face is on a plan layer and its partner is not, so
+ * the gap between them -- which is what a wall thickness IS in this drawing --
+ * was never measured. The face itself is still real CAD geometry, and a plan
+ * that omits it is visibly missing wall.
+ *
+ * So it is carried, and carried DIFFERENTLY: no thickness field exists on this
+ * shape at all. A renderer cannot accidentally extrude one, because there is
+ * nothing to extrude it by, and a consumer that wants a wall must use walls[].
+ * geometry_status is the private record's own -- OBSERVED_CAD, not
+ * MEASURED_CAD -- which is the whole distinction being preserved.
+ */
+function projectWallLine(line) {
+  if (!line || typeof line !== 'object') return null;
+  const x1 = num(line.x1);
+  const z1 = num(line.z1);
+  const x2 = num(line.x2);
+  const z2 = num(line.z2);
+  if (x1 === null || z1 === null || x2 === null || z2 === null) return null;
+  return {
+    id: token(line.id),
+    x1,
+    z1,
+    x2,
+    z2,
+    source: token(line.source),
+    geometry_status: fromEnum(line.geometry_status, ALLOWED_GEOMETRY_STATUS),
+  };
+}
+
+/**
  * A door, window or air shower, as an insertion point only. The CAD block
  * behind it carries a vendor part name and its own internal geometry; neither
  * is carried here. Position and kind are what the floor plan needs.
@@ -427,9 +470,12 @@ function projectEquipment(item, mapping) {
   const fp = item.footprint && typeof item.footprint === 'object' ? item.footprint : null;
   const width = num(fp && fp.width);
   const depth = num(fp && fp.depth);
-  // A footprint is served only when it is complete AND declared resolved. Either
-  // half missing means no footprint, never half a footprint.
-  const footprint = footprintStatus === 'OBSERVED_CAD' && width !== null && depth !== null
+  // A footprint is served only when it is complete AND its status claims one.
+  // Either half missing means no footprint, never half a footprint, and an
+  // UNRESOLVED record never carries one however the private document is
+  // written.
+  const claimsExtent = footprintStatus === 'OBSERVED_CAD' || footprintStatus === 'APPROXIMATION';
+  const footprint = claimsExtent && width !== null && depth !== null
     ? { width, depth }
     : null;
   const deviceId = deviceIdFor(mapping, item.id);
@@ -445,9 +491,12 @@ function projectEquipment(item, mapping) {
     rotation_deg: rotation === null ? null
       : (rotation >= 0 && rotation < 360 ? rotation : ((rotation % 360) + 360) % 360),
     footprint,
-    footprint_status: footprint === null && footprintStatus === 'OBSERVED_CAD'
-      ? 'UNRESOLVED'
-      : footprintStatus,
+    // A status that claims an extent it could not produce is corrected down to
+    // UNRESOLVED rather than left claiming one.
+    footprint_status: footprint === null && claimsExtent ? 'UNRESOLVED' : footprintStatus,
+    footprint_source: footprint === null
+      ? null
+      : fromEnum(item.footprint_source, ALLOWED_FOOTPRINT_SOURCE),
     geometry_status: fromEnum(item.geometry_status, ALLOWED_GEOMETRY_STATUS),
     confidence: fromEnum(item.confidence, ALLOWED_CONFIDENCE),
     source: token(item.source),
@@ -483,6 +532,7 @@ module.exports = {
   projectFunctionalZone,
   projectConflict,
   projectWall,
+  projectWallLine,
   projectOpening,
   projectEquipment,
   projectAll,

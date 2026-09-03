@@ -41,6 +41,7 @@ function validEquipment(extra = {}) {
       rotation_deg: 90,
       footprint: { width: 2, depth: 3 },
       footprint_status: 'OBSERVED_CAD',
+      footprint_source: 'cad_block_extent',
       confidence: 'high',
       source: 'floor1_dxf',
       geometry_status: 'MEASURED_CAD',
@@ -78,6 +79,18 @@ function validWall(extra = {}) {
       thickness: 0.1,
       source: 'floor1_dxf',
       geometry_status: 'MEASURED_CAD',
+    },
+    extra
+  );
+}
+
+function validWallLine(extra = {}) {
+  return Object.assign(
+    {
+      id: 'WLN-F1-0001',
+      x1: -10.5, z1: 4.25, x2: 12.75, z2: 4.25,
+      source: 'floor1_dxf',
+      geometry_status: 'OBSERVED_CAD',
     },
     extra
   );
@@ -125,6 +138,49 @@ test('an unrecognised geometry_status becomes null rather than riding through', 
   assert.strictEqual(wire.projectWall(validWall({ geometry_status: 'CONFIRMED' })).geometry_status, null);
   assert.strictEqual(wire.projectWall(validWall({ geometry_status: 'TEST-NOTE' })).geometry_status, null);
   assert.strictEqual(wire.projectWall(validWall()).geometry_status, 'MEASURED_CAD');
+});
+
+test('a wall-line projection emits exactly the documented key set', () => {
+  const out = wire.projectWallLine(validWallLine());
+  assert.deepStrictEqual(Object.keys(out).sort(), [
+    'geometry_status', 'id', 'source', 'x1', 'x2', 'z1', 'z2',
+  ]);
+});
+
+test('a wall line carries NO thickness, even when the record has one', () => {
+  // The shape is the guarantee. A consumer cannot extrude an unpaired face by
+  // accident if there is nothing on the wire to extrude it by, and a private
+  // record that gains a thickness later must not start asserting one here.
+  const out = wire.projectWallLine(validWallLine({ thickness: 0.25 }));
+  assert.ok(!('thickness' in out));
+  assert.ok(!JSON.stringify(out).includes('0.25'));
+});
+
+test('the CAD layer name a wall line came from is never carried', () => {
+  const out = wire.projectWallLine(validWallLine({ layer: 'TEST-PRIVATE-PROCESS-LAYER' }));
+  assert.ok(!('layer' in out));
+  assert.ok(!JSON.stringify(out).includes('TEST-PRIVATE-PROCESS-LAYER'));
+});
+
+test('a wall line with one unusable endpoint is dropped, not shortened', () => {
+  assert.strictEqual(wire.projectWallLine(validWallLine({ x2: NaN })), null);
+  assert.strictEqual(wire.projectWallLine(validWallLine({ z1: Infinity })), null);
+  assert.strictEqual(wire.projectWallLine(validWallLine({ x1: '0' })), null);
+  assert.strictEqual(wire.projectWallLine(null), null);
+});
+
+test('a wall line cannot claim MEASURED_CAD by carrying an unknown status', () => {
+  assert.strictEqual(
+    wire.projectWallLine(validWallLine({ geometry_status: 'CONFIRMED' })).geometry_status, null);
+  assert.strictEqual(
+    wire.projectWallLine(validWallLine()).geometry_status, 'OBSERVED_CAD');
+});
+
+test('a wall line never mutates its input', () => {
+  const line = validWallLine({ layer: 'TEST-PRIVATE-PROCESS-LAYER' });
+  const before = JSON.stringify(line);
+  wire.projectWallLine(line);
+  assert.strictEqual(JSON.stringify(line), before);
 });
 
 test('an opening projection emits exactly the documented key set', () => {
@@ -190,6 +246,7 @@ test('an equipment projection emits exactly the documented key set', () => {
   assert.deepStrictEqual(Object.keys(out).sort(), [
     'confidence',
     'footprint',
+    'footprint_source',
     'footprint_status',
     'geometry_status',
     'height_status',
@@ -223,6 +280,7 @@ test('a valid equipment record keeps every value it should', () => {
   assert.deepStrictEqual(out.position, { x: 1.5, y: 0, z: -2.25 });
   assert.deepStrictEqual(out.footprint, { width: 2, depth: 3 });
   assert.strictEqual(out.footprint_status, 'OBSERVED_CAD');
+  assert.strictEqual(out.footprint_source, 'cad_block_extent');
   assert.strictEqual(out.rotation_deg, 90);
   assert.strictEqual(out.geometry_status, 'MEASURED_CAD');
   assert.strictEqual(out.confidence, 'high');
@@ -260,6 +318,34 @@ test('a half-stated extent is refused, and the record says so', () => {
     assert.strictEqual(out.footprint, null, `${JSON.stringify(fp)} produced a footprint`);
     assert.strictEqual(out.footprint_status, 'UNRESOLVED');
   }
+});
+
+test('an APPROXIMATION carries its extent and declares where it came from', () => {
+  // The middle tier: the block's own extent clipped to neighbour spacing. Both
+  // bounds are CAD-measured, so an extent IS served -- but it must say it is a
+  // bound, or it reads exactly like a measurement.
+  const out = wire.projectEquipment(validEquipment({
+    footprint_status: 'APPROXIMATION', footprint_source: 'CAD_CORRELATED',
+  }), {});
+  assert.deepStrictEqual(out.footprint, { width: 2, depth: 3 });
+  assert.strictEqual(out.footprint_status, 'APPROXIMATION');
+  assert.strictEqual(out.footprint_source, 'CAD_CORRELATED');
+});
+
+test('an invented footprint_source is dropped, extent and all', () => {
+  const out = wire.projectEquipment(validEquipment({
+    footprint_source: 'TEST-INVENTED-SOURCE',
+  }), {});
+  assert.strictEqual(out.footprint_source, null);
+  assert.ok(!JSON.stringify(out).includes('TEST-INVENTED-SOURCE'));
+});
+
+test('an UNRESOLVED record carries no source either', () => {
+  const out = wire.projectEquipment(validEquipment({
+    footprint_status: 'UNRESOLVED', footprint: null,
+  }), {});
+  assert.strictEqual(out.footprint, null);
+  assert.strictEqual(out.footprint_source, null);
 });
 
 test('an invented footprint_status is dropped rather than echoed', () => {
