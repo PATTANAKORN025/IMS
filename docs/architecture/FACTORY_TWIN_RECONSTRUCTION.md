@@ -246,9 +246,16 @@ weaker claim into a stronger total is how a measurement gets invented.
 ### What is still wrong with the wall model
 
 Connectivity is 71.3% and 1,392 of 2,323 faces are unpaired, and neither figure
-is a rendering problem. Reconstructed as a graph, the wall centrelines plus the
-211 kept faces produce **1,028 dangling endpoints and exactly one enclosed
-region — the building itself**. No interior room closes.
+is a rendering problem. Reconstructed as a graph — 866 centrelines plus the 211
+kept faces, split at every crossing and snapped at 100 mm — the wall model
+produces 1,649 nodes, 1,348 edges and **1,055 dangling endpoints**. It closes
+39 regions, of which **the largest is 25 m² and only 3 reach the size of the
+smallest labelled area on the floor (9 m²), against 37 labelled areas in the
+drawing**. No room closes.
+
+The building envelope is deliberately left out of that graph. Adding it would
+close one 14,000 m² region and make the wall model look far better connected
+than it is.
 
 That is the reason room boundaries do not come from walls. Four properties of
 the extraction produce it, and all four are in the extractor, not the drawing:

@@ -251,6 +251,191 @@ console.log(`  wall connectivity    ${wa.connectivity != null ? `${(wa.connectiv
   + `${wa.unpaired_faces != null ? `, ${wa.unpaired_faces} faces unpaired` : ''}`);
 console.log(`  openings             ${openings.length} preserved, none bridged`);
 
+/* -- wall topology --------------------------------------------------- */
+//
+// Position and thickness are reconciled above; this is the property neither of
+// those can see. A wall model can be perfectly placed, perfectly measured, and
+// still be a disconnected sketch -- and a sketch cannot bound a room, which is
+// exactly the state Floor 1 is in.
+//
+// The measurement is deliberately blunt: build a graph from the wall
+// centrelines and the unpaired faces, split every segment at its crossings,
+// snap coincident ends, and then count two things. Endpoints that meet nothing
+// (degree 1) say how broken the model is. Enclosed regions say whether any
+// room actually closes. Floor 1 currently produces exactly one enclosed region
+// -- the building -- so ROOMS CANNOT BE DERIVED FROM WALLS HERE, and that is
+// published rather than worked around.
+//
+// The baselines below are a RATCHET, not a target. They are the measured
+// present state; the check fails if the numbers get worse, never if they get
+// better, and any improvement is expected to move them down deliberately.
+const TOPOLOGY_SNAP_M = 0.10;
+const MAX_DANGLING_BASELINE = 1100;
+const MIN_ROOM_SIZED_BASELINE = 3;
+
+function wallTopology(runs, faces) {
+  const segs = [];
+  for (const w of runs) segs.push([w.x1, w.z1, w.x2, w.z2]);
+  for (const f of faces) segs.push([f.x1, f.z1, f.x2, f.z2]);
+
+  // Split every segment at every crossing, so a tee becomes a node rather than
+  // two segments that merely pass through each other.
+  const cuts = segs.map(() => [0, 1]);
+  for (let i = 0; i < segs.length; i++) {
+    const [ax, ay, bx, by] = segs[i];
+    const rx = bx - ax;
+    const ry = by - ay;
+    for (let j = i + 1; j < segs.length; j++) {
+      const [cx, cy, dx, dy] = segs[j];
+      const sx = dx - cx;
+      const sy = dy - cy;
+      const den = rx * sy - ry * sx;
+      if (Math.abs(den) < 1e-12) continue;
+      const t = ((cx - ax) * sy - (cy - ay) * sx) / den;
+      const u = ((cx - ax) * ry - (cy - ay) * rx) / den;
+      if (t < 0 || t > 1 || u < 0 || u > 1) continue;
+      cuts[i].push(t);
+      cuts[j].push(u);
+    }
+  }
+
+  const nodes = [];
+  const grid = new Map();
+  const nodeId = (x, y) => {
+    const gx = Math.round(x / TOPOLOGY_SNAP_M);
+    const gy = Math.round(y / TOPOLOGY_SNAP_M);
+    for (let a = -1; a <= 1; a++) {
+      for (let b = -1; b <= 1; b++) {
+        const bucket = grid.get(`${gx + a}:${gy + b}`);
+        if (!bucket) continue;
+        for (const id of bucket) {
+          if (Math.hypot(nodes[id].x - x, nodes[id].y - y) <= TOPOLOGY_SNAP_M) return id;
+        }
+      }
+    }
+    const id = nodes.length;
+    nodes.push({ x, y, adj: [] });
+    const key = `${gx}:${gy}`;
+    if (!grid.has(key)) grid.set(key, []);
+    grid.get(key).push(id);
+    return id;
+  };
+
+  const seen = new Set();
+  const edges = [];
+  for (let i = 0; i < segs.length; i++) {
+    const [ax, ay, bx, by] = segs[i];
+    const ts = cuts[i].slice().sort((p, q) => p - q);
+    for (let k = 0; k + 1 < ts.length; k++) {
+      if (ts[k + 1] - ts[k] < 1e-9) continue;
+      const a = nodeId(ax + (bx - ax) * ts[k], ay + (by - ay) * ts[k]);
+      const b = nodeId(ax + (bx - ax) * ts[k + 1], ay + (by - ay) * ts[k + 1]);
+      if (a === b) continue;
+      const key = a < b ? `${a}-${b}` : `${b}-${a}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      edges.push([a, b]);
+      nodes[a].adj.push(b);
+      nodes[b].adj.push(a);
+    }
+  }
+
+  // Planar face traversal: from each directed half-edge, always take the next
+  // edge clockwise around the arrival node. Every bounded region is walked once
+  // and comes out with positive signed area; the outer boundary comes out
+  // negative and is discarded.
+  for (let i = 0; i < nodes.length; i++) {
+    nodes[i].adj.sort((p, q) => (
+      Math.atan2(nodes[p].y - nodes[i].y, nodes[p].x - nodes[i].x)
+      - Math.atan2(nodes[q].y - nodes[i].y, nodes[q].x - nodes[i].x)
+    ));
+  }
+  const walked = new Set();
+  const areas = [];
+  for (const [a, b] of edges) {
+    for (const [from, to] of [[a, b], [b, a]]) {
+      if (walked.has(`${from}>${to}`)) continue;
+      let cur = from;
+      let next = to;
+      let area = 0;
+      let guard = 0;
+      while (guard++ < 200000) {
+        walked.add(`${cur}>${next}`);
+        area += nodes[cur].x * nodes[next].y - nodes[next].x * nodes[cur].y;
+        const adj = nodes[next].adj;
+        const back = adj.indexOf(cur);
+        const pick = adj[(back - 1 + adj.length) % adj.length];
+        cur = next;
+        next = pick;
+        if (cur === from && next === to) break;
+      }
+      areas.push(area / 2);
+    }
+  }
+
+  // Two bands, and the distinction is the whole point. A traversal produces a
+  // positive region wherever any three segments happen to meet, so a raw count
+  // says nothing: what matters is how many of them are the size of a room. The
+  // smallest labelled area on this floor prints at 9 m2, so 9 m2 is the floor
+  // of the room band, and the building itself is excluded by an upper bound.
+  const bounded = areas.filter((a) => a > 1).sort((a, b) => b - a);
+  const ROOM_MIN_M2 = 9;
+  const ROOM_MAX_M2 = 10000;
+  return {
+    nodes: nodes.length,
+    edges: edges.length,
+    dangling: nodes.filter((n) => n.adj.length === 1).length,
+    enclosed: bounded.length,
+    largest: bounded.length > 0 ? bounded[0] : 0,
+    roomSized: bounded.filter((a) => a >= ROOM_MIN_M2 && a <= ROOM_MAX_M2).length,
+    roomMin: ROOM_MIN_M2,
+  };
+}
+
+const wallLines = Array.isArray(geometry.wall_lines) ? geometry.wall_lines : [];
+const strayLines = wallLines.filter(
+  (w) => !inside(w.x1, w.z1, WALL_ENVELOPE_PAD_M) || !inside(w.x2, w.z2, WALL_ENVELOPE_PAD_M)
+);
+if (strayLines.length) {
+  fail(`${strayLines.length} unpaired wall faces fall more than ${WALL_ENVELOPE_PAD_M} m `
+    + 'outside the envelope');
+}
+const thickLines = wallLines.filter((w) => w.thickness !== undefined);
+if (thickLines.length) {
+  fail(`${thickLines.length} unpaired wall faces carry a thickness -- an unpaired face has `
+    + 'no measured thickness and must not claim one');
+}
+
+// The drawing's own count of labelled areas, read from the zone document when
+// it is deployed. It is the yardstick the room-sized figure is reported
+// against: 0 of 37 is a different statement from 0 of 0.
+let zoneCount = 0;
+try {
+  const zonesPath = path.join(PRIVATE_DIR, 'floor1-zones.json');
+  if (fs.existsSync(zonesPath)) {
+    const doc = JSON.parse(fs.readFileSync(zonesPath, 'utf8'));
+    zoneCount = Array.isArray(doc.zones) ? doc.zones.length : 0;
+  }
+} catch (err) {
+  zoneCount = 0;
+}
+
+const topo = wallTopology(walls, wallLines);
+if (topo.dangling > MAX_DANGLING_BASELINE) {
+  fail(`wall topology regressed: ${topo.dangling} dangling endpoints, baseline `
+    + `${MAX_DANGLING_BASELINE}`);
+}
+if (topo.roomSized < MIN_ROOM_SIZED_BASELINE) {
+  fail(`wall topology regressed: ${topo.roomSized} room-sized enclosed regions, baseline `
+    + `${MIN_ROOM_SIZED_BASELINE}`);
+}
+console.log(`  unpaired faces       ${wallLines.length} served as line-work, no thickness claimed`);
+console.log(`  wall graph           ${topo.nodes} nodes, ${topo.edges} edges, `
+  + `${topo.dangling} dangling ends (ratchet ${MAX_DANGLING_BASELINE})`);
+console.log(`  enclosed regions     ${topo.enclosed} total, largest ${Math.round(topo.largest)} m2`);
+console.log(`  room-sized regions   ${topo.roomSized} at or above ${topo.roomMin} m2 `
+  + `-- against ${zoneCount} labelled areas in the drawing`);
+
 /* -- raster supersession --------------------------------------------- */
 //
 // The raster slots are retained in the private document as a superseded
