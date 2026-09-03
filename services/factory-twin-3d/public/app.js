@@ -2,7 +2,7 @@
 // machines, grouped by their 5 real zones)
 //
 // Extends Task 4.1's 1-machine POC: 10 box meshes instead of 1, positioned
-// per /api/placement (deterministic simulated grid, grouped by real zone),
+// from /api/floor-geometry (CAD-derived; no simulated machine positions),
 // each colored/labeled by its own REAL live state/board/MO/alarm data
 // (fetched from /api/state -- same query shape as ims-ldi-factory-digital-
 // twin.json refId "A", extended to all 10 eqp_id values -- see server.js).
@@ -202,7 +202,6 @@ const sublayers = {
   // it is a declared presentation constant, the same convention already used
   // for columns, and the inspector says so per wall.
   walls: new THREE.Group(),
-  machines: new THREE.Group(), // monitored devices (simulated positions) + their zone boxes
   slots: new THREE.Group(), // observed equipment slots, no confirmed identity
   // A third evidence layer, kept apart from the other two on purpose. Its
   // FOOTPRINTS are measured; its HEIGHTS and everything vertical are a drawing
@@ -216,7 +215,7 @@ const sublayers = {
 for (const [name, g] of Object.entries(sublayers)) g.name = name;
 sublayers.presentation.visible = false;
 layers.structural.add(sublayers.shell, sublayers.columns, sublayers.walls);
-layers.operational.add(sublayers.machines, sublayers.slots, sublayers.presentation);
+layers.operational.add(sublayers.slots, sublayers.presentation);
 
 // ── View modes ──────────────────────────────────────────────
 // Two coordinate systems legitimately coexist in this scene and neither may
@@ -244,7 +243,11 @@ const OPERATOR_VIEW = Object.freeze({
   target: { x: 14, y: 0.5, z: 0 },
 });
 let buildingView = null; // derived from real bounds once geometry arrives
-let overviewView = null; // derived from the union of both, once both exist
+let overviewView = null; // derived from the measured envelope once it arrives
+// Straight-down plan framing: the CAD-derived 2D floor plan. Same scene, same
+// geometry, same coordinates -- only the camera differs, so the plan and the
+// model can never disagree about where a wall is.
+let planView = null;
 // Factory overview is the default framing, not the tight operator camera. The
 // first question this view answers is "what is the state of the floor", which
 // needs the whole floor on screen; the operator framing is one click away and
@@ -262,7 +265,6 @@ let activeView = 'overview';
 // a stale aspect ratio. Declared here, above every reader, because the fits
 // are recomputed from them in three different places.
 let buildingBounds = null; // measured envelope
-let machineBounds = null; // synthetic device grid extent
 
 // Derives a camera placement that fits a bounding box, rather than hardcoding
 // coordinates: the building's extent is known from the data, so the framing
@@ -368,42 +370,39 @@ function frameBounds({ cx, cz, width, depth, height = 0 }) {
   };
 }
 
-// OVERVIEW frames both coordinate systems at once: the measured building and
-// the synthetic device grid, whichever extent is larger on each axis. It is a
-// framing union, not a reconciliation -- it does not move a machine towards
-// the building or claim the two systems are registered to each other. It
-// exists because "show me everything" is a real question for an executive or
-// NOC walkthrough, and the honest answer is "here is both, unmerged".
-function unionBounds(a, b) {
-  if (!a) return b;
-  if (!b) return a;
-  const minX = Math.min(a.cx - a.width / 2, b.cx - b.width / 2);
-  const maxX = Math.max(a.cx + a.width / 2, b.cx + b.width / 2);
-  const minZ = Math.min(a.cz - a.depth / 2, b.cz - b.depth / 2);
-  const maxZ = Math.max(a.cz + a.depth / 2, b.cz + b.depth / 2);
-  return {
-    cx: (minX + maxX) / 2,
-    cz: (minZ + maxZ) / 2,
-    width: maxX - minX,
-    depth: maxZ - minZ,
-    height: Math.max(a.height || 0, b.height || 0),
-  };
-}
-
+// OVERVIEW frames the measured building. It once had to union that with the
+// extent of a synthetic device grid drawn beside it; that grid is deleted, so
+// there is only one coordinate system left to frame and the union is gone with
+// it. "Show me everything" now has a single honest answer: the CAD floor.
 // Recomputes every derived view from the bounds currently known. Called when
 // either data source arrives and on resize, because the fit depends on aspect.
 // OPERATOR_VIEW is never recomputed: it is the hand-tuned monitoring default
 // and must stay byte-for-byte what it was.
 function refitViews() {
   if (buildingBounds) buildingView = frameBounds(buildingBounds);
-  const combined = unionBounds(buildingBounds, machineBounds);
+  // The overview once had to frame the building AND a synthetic device grid
+  // sitting outside it. That grid is gone, so the building IS the extent.
+  const combined = buildingBounds;
   overviewView = combined ? frameBounds(combined) : null;
+  if (buildingBounds) {
+    // Directly overhead, looking straight down. A tight vertical FOV keeps the
+    // projection close to orthographic, so the result reads as a drawing rather
+    // than as a photograph of a model.
+    const fit = frameBounds(buildingBounds);
+    const h = Math.hypot(fit.position.x - buildingBounds.cx,
+      fit.position.y, fit.position.z - buildingBounds.cz);
+    planView = {
+      position: { x: buildingBounds.cx, y: h * 1.25, z: buildingBounds.cz + 0.001 },
+      target: { x: buildingBounds.cx, y: 0, z: buildingBounds.cz },
+    };
+  }
   const far = overviewView || buildingView;
   if (far) ensureDepthRange(Math.hypot(far.position.x, far.position.y, far.position.z));
   // A view that has no data behind it must not offer itself as a choice.
   for (const btn of document.querySelectorAll('#view-controls button[data-view]')) {
     const v = btn.dataset.view;
-    btn.disabled = (v === 'building' && !buildingView) || (v === 'overview' && !overviewView);
+    btn.disabled = (v === 'building' && !buildingView) || (v === 'overview' && !overviewView)
+      || (v === 'plan' && !planView);
     // A control that is disabled without a reason reads as broken. Say why:
     // the framing is derived from data that has not arrived, not withheld.
     btn.title = btn.disabled
@@ -415,7 +414,7 @@ function refitViews() {
   if (activeView !== 'operator') applyView(activeView);
 }
 
-const VIEWS = () => ({ operator: OPERATOR_VIEW, building: buildingView, overview: overviewView });
+const VIEWS = () => ({ operator: OPERATOR_VIEW, building: buildingView, overview: overviewView, plan: planView });
 
 function applyView(name) {
   const v = VIEWS()[name];
@@ -484,111 +483,6 @@ document.getElementById('layer-controls')?.addEventListener('change', (ev) => {
 // measurement.
 let orientationGrid = new THREE.GridHelper(100, 40, 0x334155, 0x1e293b);
 sublayers.shell.add(orientationGrid);
-
-// ── Floor shell (Floor 1, default grouping) ─────────────────
-// A plate + edge outline under the grid, one per entry in /api/placement's
-// `floors` array (currently always exactly one -- see server.js FLOOR_0).
-// Sized from the actual placement bounding box (+ padding), NOT a guessed
-// fixed constant: a hardcoded shell size is exactly the class of bug this
-// codebase has already hit twice (Task 4.2's fixed 2-machine-per-zone
-// assumption, server.js's ZONE_ORDER comment) -- the real device set has
-// grown past every hand-picked constant tried so far, so this derives its
-// extent from data instead of guessing another one that will go stale the
-// same way. Still zero real facility data: the bounding box comes from the
-// synthetic simulated_grid coordinates this service already computed.
-const FLOOR_PADDING = 6;
-
-// The simulated container's own objects. Two are retired the moment a measured
-// floor plate exists -- the amber PLATE and its "Floor 1" LABEL, because two
-// plates on screen is two answers to "where is the building" and the amber one
-// is the wrong answer: it bounds a synthetic device grid, not a building.
-//
-// The OUTLINE is kept and dimmed. It is the only thing on screen saying where
-// the synthetic device extent ends, and without it the SIMULATED devices sit
-// inside the measured floor with nothing marking them as a different space --
-// which reads as placement, the exact claim this view must not make.
-const simulatedShellObjects = [];
-let simulatedExtentOutline = null;
-
-/**
- * Supersedes the simulated floor container once measured geometry exists.
- *
- * Called from buildFootprint, which only runs when a real traced polygon has
- * arrived, so this cannot fire on the no-geometry path where the simulated
- * container is the only spatial reference there is.
- */
-function retireSimulatedShell() {
-  if (simulatedShellObjects.length === 0) return 0;
-  const n = simulatedShellObjects.length;
-  for (const obj of simulatedShellObjects) {
-    sublayers.shell.remove(obj);
-    if (obj.geometry) obj.geometry.dispose();
-    if (obj.material && obj.material.map) obj.material.map.dispose();
-    if (obj.material) obj.material.dispose();
-  }
-  simulatedShellObjects.length = 0;
-  if (simulatedExtentOutline) {
-    // Kept, but demoted: thin and dim, so it bounds the synthetic devices
-    // without competing with the building line for the eye.
-    simulatedExtentOutline.material.color.setHex(0x7c5c2a);
-    simulatedExtentOutline.material.needsUpdate = true;
-    simulatedExtentOutline.userData.extent = {
-      classification: 'SIMULATED',
-      note: 'Bounds the synthetic device grid. Not a building line, and not registered to the measured floor.',
-    };
-  }
-  return n;
-}
-
-function buildFloorShells(floors, machines) {
-  if (machines.length === 0) return;
-  const xs = machines.map((m) => m.pos_x);
-  const ys = machines.map((m) => m.pos_y);
-  const minX = Math.min(...xs) - FLOOR_PADDING;
-  const maxX = Math.max(...xs) + FLOOR_PADDING;
-  const minY = Math.min(...ys) - FLOOR_PADDING;
-  const maxY = Math.max(...ys) + FLOOR_PADDING;
-  const width = maxX - minX;
-  const depth = maxY - minY;
-  const cx = (minX + maxX) / 2;
-  const cz = (minY + maxY) / 2;
-
-  for (const floor of floors) {
-    const geometry = new THREE.PlaneGeometry(width, depth);
-    const material = new THREE.MeshStandardMaterial({
-      color: 0x1e293b,
-      transparent: true,
-      opacity: 0.55,
-      side: THREE.DoubleSide,
-    });
-    const shell = new THREE.Mesh(geometry, material);
-    shell.rotation.x = -Math.PI / 2; // lay flat on the X/Z plane, under the grid
-    shell.position.set(cx, -0.05, cz);
-    sublayers.shell.add(shell);
-    simulatedShellObjects.push(shell);
-
-    // The floor plate is rendered from validated geometry only. An earlier
-    // revision textured it with a private reference image fetched over
-    // HTTP; that was removed -- the confidential source drawing must never
-    // be reachable by URL, and validated geometry supersedes a pixel
-    // backdrop as a spatial reference.
-
-    // Plate alone reads as near-invisible against the scene background at
-    // this opacity -- a bright edge outline is what actually makes "this is
-    // the floor extent" legible, confirmed via a real screenshot before
-    // adding this (the plain-plate version rendered but was not visible).
-    const edges = new THREE.EdgesGeometry(new THREE.BoxGeometry(width, 0.05, depth));
-    const outline = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xf59e0b }));
-    outline.position.set(cx, -0.05, cz);
-    sublayers.shell.add(outline);
-    simulatedExtentOutline = outline;
-
-    const label = makeTextSprite(floor.floor_label, { fontSize: 22, scaleFactor: 0.02, bg: 'rgba(245, 158, 11, 0.85)', fg: '#1c1305' });
-    label.position.set(cx, 9, minY - 2);
-    sublayers.shell.add(label);
-    simulatedShellObjects.push(label);
-  }
-}
 
 // ── Anonymous physical-slot geometry (/api/floor-geometry) ──────
 // Entirely separate from the real-device layer above: building envelope,
@@ -716,7 +610,6 @@ function buildFootprint(footprint) {
   // decorative grid is retired below once the surveyed grid arrives. Leaving
   // both would put an amber rectangle across the real floor and invite reading
   // a synthetic extent as a building line.
-  retireSimulatedShell();
 
   // The building line is the heaviest line on the source sheet and is the one
   // element an operator uses to orient. It gets the strongest edge here too.
@@ -988,6 +881,34 @@ function buildOpenings(openings) {
   return list.length;
 }
 
+// ── Wall lines: drawn CAD geometry with no measured thickness ─
+// Long wall faces the extractor could not pair. They are real line-work from
+// the drawing, so the plan view would be visibly incomplete without them, but
+// they carry no thickness and are therefore NEVER extruded -- they are drawn
+// flat on the floor, where they read as plan linework rather than as walls
+// with an implied depth nobody measured.
+//
+// One merged LineSegments geometry: hundreds of spans, one draw call.
+let wallLineCount = 0;
+
+function buildWallLines(lines) {
+  const list = asArray(lines).filter(
+    (w) => w && finite(w.x1) && finite(w.z1) && finite(w.x2) && finite(w.z2));
+  wallLineCount = list.length;
+  if (list.length === 0) return 0;
+  const pts = [];
+  for (const w of list) {
+    pts.push(new THREE.Vector3(w.x1, 0.02, w.z1));
+    pts.push(new THREE.Vector3(w.x2, 0.02, w.z2));
+  }
+  const seg = new THREE.LineSegments(
+    new THREE.BufferGeometry().setFromPoints(pts),
+    new THREE.LineBasicMaterial({ color: 0x51617a })
+  );
+  sublayers.walls.add(seg);
+  return list.length;
+}
+
 function buildPhysicalSlots(geometry) {
   const envelope = geometry && typeof geometry === 'object' ? geometry.envelope : null;
   // A partially-valid envelope is not a smaller envelope, it is an unknown
@@ -1020,6 +941,7 @@ function buildPhysicalSlots(geometry) {
   buildFootprint(geometry.footprint_polygon);
   buildStructuralGrid(geometry.grid);
   buildWalls(geometry.walls, envelope);
+  buildWallLines(geometry.wall_lines);
   buildOpenings(geometry.openings);
   buildPresentationMachines(slots);
 
@@ -1223,6 +1145,35 @@ function makeTextSprite(text, { fontSize = 30, scaleFactor = 0.024, bg = 'rgba(1
 // The server already withholds every non-renderable zone; the guard here
 // is a second, independent barrier so a client-side change alone cannot
 // draw an unvalidated boundary.
+// Below this, an area is labelled only in inspection mode. Chosen so every
+// process hall and every real room carries its name in the default view, while
+// the handful of closet-sized areas do not compete with them.
+const MINOR_ZONE_AREA_M2 = 60;
+const zoneLabels = [];
+
+/** Shoelace area of a ring, in square metres. */
+function polygonArea2D(verts) {
+  let sum = 0;
+  for (let i = 0, j = verts.length - 1; i < verts.length; j = i++) {
+    sum += (verts[j].x * verts[i].z) - (verts[i].x * verts[j].z);
+  }
+  return Math.abs(sum / 2);
+}
+
+/** Inspection mode shows every area name; every other mode shows the major
+ *  ones only. Visibility of a label, never the zone itself. */
+function setMinorZoneLabels(visible) {
+  let changed = 0;
+  for (const label of zoneLabels) {
+    const meta = label.userData.zoneLabel;
+    if (!meta || !meta.minor) continue;
+    if (label.visible !== visible) changed++;
+    label.visible = visible;
+  }
+  if (changed > 0) requestRender();
+  return changed;
+}
+
 const ZONE_TIER_STYLE = {
   HIGH: { fill: 0x10b981, line: 0x34d399, opacity: 0.14 },
   MEDIUM: { fill: 0xf59e0b, line: 0xfbbf24, opacity: 0.1 },
@@ -1277,8 +1228,23 @@ function buildFunctionalZones(geometry) {
       let cx = 0;
       let cz = 0;
       for (const v of verts) { cx += v.x; cz += v.z; }
-      const label = makeTextSprite(zone.name, { fontSize: 22, scaleFactor: 0.05 });
+
+      // Label size follows the area's own size, and small areas are not
+      // labelled at all by default. A 9 m2 store room and a 4,300 m2 drilling
+      // hall are not equally important to someone reading the floor, and
+      // labelling both at the same weight is what turns an executive view into
+      // a cluttered drawing. The small ones keep their names -- they are in the
+      // record and in the inspector; they are simply not shouted across the
+      // scene. Inspection mode turns them all on.
+      const area = polygonArea2D(verts);
+      const label = makeTextSprite(zone.name, {
+        fontSize: 22,
+        scaleFactor: area >= 600 ? 0.075 : (area >= 200 ? 0.055 : 0.042),
+      });
       label.position.set(cx / verts.length, floorY + 2.2, cz / verts.length);
+      label.userData.zoneLabel = { area, minor: area < MINOR_ZONE_AREA_M2 };
+      label.visible = area >= MINOR_ZONE_AREA_M2;
+      zoneLabels.push(label);
       layers.functional.add(label);
     }
     drawn++;
@@ -1286,103 +1252,21 @@ function buildFunctionalZones(geometry) {
   return drawn;
 }
 
-// ── Machine meshes (populated once /api/placement resolves) ─────
-const machineMeshes = []; // THREE.Mesh[], one per machine, userData.deviceId set
-// Separate array on purpose. A slot is an observed position with no confirmed
-// identity; keeping it out of machineMeshes is what guarantees it can never
-// acquire a drill-down, a live state or a device id by accident.
+// ── Pickable geometry ────────────────────────────────────────
+// There is no machine-mesh registry any more. Monitored devices are not drawn
+// on this floor at all: none of them has an established position, and the
+// synthetic grid that used to supply one has been deleted.
+//
+// A slot is an observed position with no confirmed identity. It can never
+// acquire a drill-down, a live state or a device id, and now there is no
+// machine array for it to be confused with.
 const slotMeshes = []; // THREE.Mesh[], one per observed slot, userData.slot set
 const columnMeshes = []; // THREE.Mesh[], one per detected column, userData.column set
-const machinesById = new Map(); // deviceId -> { mesh, material }
-const gridRefById = new Map(); // deviceId -> {row, column} from /api/placement, synthetic today
 let latestStateById = new Map(); // deviceId -> state row from /api/state
-
-function buildScene(placements) {
-  const zoneGroups = new Map(); // zone name -> [{pos_x, pos_y}]
-  for (const p of placements) {
-    if (!zoneGroups.has(p.zone)) zoneGroups.set(p.zone, []);
-    zoneGroups.get(p.zone).push(p);
-  }
-
-  for (const p of placements) {
-    const geometry = new THREE.BoxGeometry(1.5, 1, 1);
-    const material = new THREE.MeshStandardMaterial({ color: DEFAULT_MACHINE_COLOR });
-    const mesh = new THREE.Mesh(geometry, material);
-    // Design §4 grid shape: x/y from the simulated placement, mapped to the
-    // Three.js floor plane (X, Z) with Y fixed as the vertical box height.
-    mesh.position.set(p.pos_x, 0.5, p.pos_y);
-    mesh.userData.deviceId = p.device_id;
-    sublayers.machines.add(mesh);
-
-    machineMeshes.push(mesh);
-    machinesById.set(p.device_id, { mesh, material });
-    if (p.grid_ref) gridRefById.set(p.device_id, p.grid_ref);
-
-    // Per-machine ID label, small sprite just above the box, distinct from
-    // the larger zone-level label -- helps identify which box is which
-    // before/without opening the HUD list. Small font + tight scaleFactor
-    // (re-tuned from a first pass that overlapped at 12-unit zone spacing)
-    // so 2 machine labels 8 units apart stay legible and non-overlapping.
-    // grid_ref (when present) appends as "(row-column)" -- still a
-    // synthetic placeholder today (see lib/contracts.js), shown here so
-    // the field is visibly wired end-to-end, not just present in the API.
-    const idLabelText = p.grid_ref ? `${p.device_id} (${p.grid_ref.row}-${p.grid_ref.column})` : p.device_id;
-    const idLabel = makeTextSprite(idLabelText, { fontSize: 20, scaleFactor: 0.016 });
-    idLabel.position.set(p.pos_x, 1.5, p.pos_y);
-    layers.telemetry.add(idLabel);
-  }
-
-  // Zone labels float well above the machine-ID labels (y=5.5 vs y=1.5) so
-  // the two label layers never visually collide, and are wide enough at
-  // 18-unit zone spacing (re-tuned from the first pass's 12) to render
-  // without touching their neighbors.
-  //
-  // Zone boundary outlines: a wireframe box per zone, sized from that
-  // zone's OWN member bounding box (computed from the already-synthetic
-  // simulated_grid coordinates above) plus a fixed padding constant --
-  // never from any real drawing. This is "zone structure" made visible,
-  // the 3D equivalent of the 2D twin's canvas zone-container rectangles,
-  // built from data this service already owns rather than a new input.
-  // Extent of the synthetic device grid, recorded so the overview fit can
-  // frame it alongside the measured building. Read only; no machine position
-  // is written, rounded or adjusted here.
-  if (placements.length > 0) {
-    const xs = placements.map((p) => p.pos_x);
-    const zs = placements.map((p) => p.pos_y);
-    const minX = Math.min(...xs);
-    const maxX = Math.max(...xs);
-    const minZ = Math.min(...zs);
-    const maxZ = Math.max(...zs);
-    machineBounds = {
-      cx: (minX + maxX) / 2,
-      cz: (minZ + maxZ) / 2,
-      width: Math.max(maxX - minX, 1),
-      depth: Math.max(maxZ - minZ, 1),
-      height: 2,
-    };
-    refitViews();
-  }
-
-  const ZONE_PADDING = 3;
-  for (const [zoneName, members] of zoneGroups) {
-    const avgX = members.reduce((sum, m) => sum + m.pos_x, 0) / members.length;
-    const avgY = members.reduce((sum, m) => sum + m.pos_y, 0) / members.length;
-    const minX = Math.min(...members.map((m) => m.pos_x)) - ZONE_PADDING;
-    const maxX = Math.max(...members.map((m) => m.pos_x)) + ZONE_PADDING;
-    const minY = Math.min(...members.map((m) => m.pos_y)) - ZONE_PADDING;
-    const maxY = Math.max(...members.map((m) => m.pos_y)) + ZONE_PADDING;
-
-    const boxGeom = new THREE.BoxGeometry(maxX - minX, 2, maxY - minY);
-    const edges = new THREE.EdgesGeometry(boxGeom);
-    const outline = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x475569 }));
-    outline.position.set(avgX, 0.01, avgY);
-    sublayers.machines.add(outline);
-
-    const label = makeTextSprite(zoneName, { fontSize: 26, scaleFactor: 0.02, bg: 'rgba(15, 23, 42, 0.85)' });
-    label.position.set(avgX, 5.5, avgY);
-    sublayers.machines.add(label);
-  }
-}
+// The two fetches race: geometry can land after the first poll, and the roll-up
+// needs both. Keeping the last rows lets either arrival render a complete panel
+// rather than one showing zeros for the half that has not arrived.
+let lastStateRows = [];
 
 // ── Click-to-drill-down (raycasting against ALL 10 meshes, real browser
 // click-picking -- design §8: functionally testable, unlike Grafana Canvas
@@ -1440,14 +1324,7 @@ function pickFrom(meshes, key) {
   return hits.length > 0 ? hits[0].object.userData[key] : null;
 }
 
-function pickMachine(event) {
-  aimRay(event);
-  return pickFrom(machineMeshes, 'deviceId');
-}
-
-// Slots are picked through the SAME raycaster, in a second pass that only
-// runs when no machine was hit. Machines therefore keep absolute priority
-// and their existing click behaviour is bit-for-bit unchanged.
+// Slots are the only pickable operational geometry now.
 function pickSlot(event) {
   aimRay(event);
   return pickFrom(slotMeshes, 'slot');
@@ -1499,7 +1376,7 @@ async function loadDiagnostics() {
     ['Textures', info.memory.textures],
     ['Cached geometries', res.geometries],
     ['Cached materials', res.materials],
-    ['Machine meshes', machineMeshes.length],
+    ['Machine meshes', 0],
     ['Column meshes', columnMeshes.length],
     ['Slot meshes', slotMeshes.length],
     ['Visible layers', Object.values(layers).filter((g) => g.visible).length],
@@ -1582,11 +1459,11 @@ function updateEvidenceSummary(geo, zonesDrawn) {
     const measured = columns > 0 || slots > 0;
     const cad = cadColumns > 0 || wallList.length > 0;
     banner.textContent = measured
-      ? `${cad ? 'CAD FLOOR' : 'MEASURED FLOOR'} — building outline, ${columns} columns`
+      ? `${cad ? 'CAD FLOOR' : 'MEASURED FLOOR'} — ${columns} columns`
         + `${wallList.length > 0 ? `, ${wallList.length} walls` : ''} and ${slots} equipment `
         + `positions are ${cad ? 'read from the AutoCAD source' : 'digitized from the architectural plan'}. `
-        + `The ${machineMeshes.length} monitored devices have NO surveyed position and sit `
-        + `on a simulated grid. ${confirmed} confirmed physical-to-IMS mappings.`
+        + `No monitored device is drawn on this floor: ${confirmed} confirmed `
+        + 'physical-to-IMS mappings, so every asset here is UNMAPPED.'
       : 'SIMULATED LAYOUT — Floor 1 (default grouping). No measured floor geometry is '
         + 'deployed here, so machine and zone positions are placeholders, not derived '
         + 'from any real floor plan or survey.';
@@ -1605,8 +1482,11 @@ function updateEvidenceSummary(geo, zonesDrawn) {
   setCount('walls', `(${wallCount} walls MEASURED_CAD plan, `
     + `${openingCount} openings; height PRESENTATION_ONLY)`);
   setCount('functional', `(${zonesDrawn} validated, ${withheld} withheld)`);
-  setCount('machines', `(${machineMeshes.length} SIMULATED positions)`);
+
   setCount('slots', `(${slots} OBSERVED, ${confirmed} CONFIRMED)`);
+
+  factoryCounts = { assets: slots, mapped: confirmed, zones: zonesDrawn };
+  updateFactoryStatus(lastStateRows);
 
   const el = document.getElementById('evidence-summary');
   if (!el) return;
@@ -1615,7 +1495,7 @@ function updateEvidenceSummary(geo, zonesDrawn) {
     ['Interior walls', wallList.length, 'MEASURED_CAD plan, PRESENTATION height'],
     ['Doors, windows, air showers', openingList.length, 'OBSERVED_CAD'],
     ['Observed equipment slots', slots, 'OBSERVED'],
-    ['Monitored devices', machineMeshes.length, 'SIMULATED position'],
+    ['Monitored devices drawn', 0, 'NONE — no established position'],
     ['Confirmed physical mappings', confirmed, confirmed === 0 ? 'NONE — no authoritative record' : 'CONFIRMED'],
     ['Zones withheld as unvalidated', withheld, 'WITHHELD'],
   ];
@@ -1715,7 +1595,7 @@ function showMachineInspector(deviceId) {
 // byte-level rather than float-tolerant.
 function snapshotCoordinates() {
   const out = [];
-  for (const group of [machineMeshes, slotMeshes, columnMeshes]) {
+  for (const group of [slotMeshes, columnMeshes]) {
     for (const m of group) {
       out.push(`${m.position.x.toFixed(6)},${m.position.y.toFixed(6)},${m.position.z.toFixed(6)}`);
     }
@@ -1731,11 +1611,9 @@ function hideSlotInspector() {
 }
 
 renderer.domElement.addEventListener('click', (event) => {
-  const deviceId = pickMachine(event);
-  if (deviceId) {
-    window.location.href = drillDownUrl(deviceId);
-    return;
-  }
+  // No machine drill-down from the scene: nothing in the scene IS a machine.
+  // A drill-down would have to be reached from a position, and no position on
+  // this floor is tied to a device by an authoritative record.
   const slot = pickSlot(event);
   if (slot) showSlotInspector(slot);
   else hideSlotInspector();
@@ -1777,15 +1655,6 @@ function handleHover(event) {
   // result: the three passes previously recomputed the identical ray.
   aimRay(event);
 
-  const deviceId = pickFrom(machineMeshes, 'deviceId');
-  if (deviceId) {
-    setCursor('pointer');
-    if (lastInspected !== deviceId) {
-      lastInspected = deviceId;
-      showMachineInspector(deviceId);
-    }
-    return;
-  }
   const slot = pickFrom(slotMeshes, 'slot');
   if (slot) {
     // 'help' rather than 'pointer': these open an evidence panel, they do not
@@ -1831,8 +1700,8 @@ function stateRowHtml(row) {
   const color = row.state_color || `#${DEFAULT_MACHINE_COLOR.toString(16).padStart(6, '0')}`;
   const label = row.state_label || 'Undefine';
   const alarmText = row.alarm ? `${row.alarm.count} ${row.alarm.count === 1 ? 'ALARM' : 'ALARMS'} · ${row.alarm.owner} · ${row.alarm.elapsed}` : '—';
-  const gridRef = gridRefById.get(row.device_id);
-  const gridRefText = gridRef ? `${gridRef.row}-${gridRef.column}` : '—';
+  // The synthetic grid reference is gone with the grid that produced it.
+  const gridRefText = 'UNMAPPED';
   return `
     <div class="machine-row">
       <div class="machine-row-top">
@@ -1856,20 +1725,20 @@ function applyState(payload) {
   // would ever draw it.
   requestRender();
   const rows = payload.machines || [];
+  lastStateRows = rows;
   latestStateById = new Map(rows.map((r) => [r.device_id, r]));
   // New telemetry invalidates a machine inspector that is currently open.
   lastInspected = null;
 
-  for (const row of rows) {
-    const entry = machinesById.get(row.device_id);
-    if (!entry) continue; // shouldn't happen -- placement and state device sets should match exactly
-    entry.material.color.set(row.state_color || DEFAULT_MACHINE_COLOR);
-  }
-
+  // Nothing in the scene is coloured by this. No monitored device has an
+  // established position on this floor, so live state colours no geometry --
+  // it drives the device list and the factory status roll-up only. The moment
+  // an authoritative mapping exists, the mapped SLOT is what will take colour.
   machineListEl.innerHTML = rows.map(stateRowHtml).join('');
 
   const alarmCount = rows.filter((r) => r.machine_state === 'DOWN').length;
-  summaryLine.textContent = `${rows.length} machines · ${alarmCount} in ALARM`;
+  summaryLine.textContent = `${rows.length} devices · ${alarmCount} in ALARM · none placed on this floor`;
+  updateFactoryStatus(rows);
 
   statusLine.textContent = `Last updated ${new Date(payload.queried_at).toLocaleTimeString()}`;
   statusLine.classList.remove('error');
@@ -1892,6 +1761,37 @@ async function pollState() {
 // joined client-side by device_id, exactly the separation design §5
 // requires so a future real-coordinate swap only ever touches the
 // placement fetch below. ──
+// ── Factory status roll-up ───────────────────────────────────
+// The hierarchy this view answers in, top down: FACTORY -> AREA -> PHYSICAL
+// ASSET -> STATUS. Deliberately not a list of machine cards; the floor is the
+// subject, and a device is only interesting here once it is tied to a place on
+// it.
+//
+// Live telemetry reaches this roll-up but CANNOT reach the scene. Every
+// physical asset is UNMAPPED until an authoritative record links it to a
+// device, so the device counts are reported as what they are: real states
+// belonging to equipment whose location on this floor is not established.
+let factoryCounts = { assets: 0, mapped: 0, zones: 0 };
+
+function updateFactoryStatus(rows) {
+  const el = document.getElementById('factory-status');
+  if (!el) return;
+  const list = Array.isArray(rows) ? rows : [];
+  const critical = list.filter((r) => r.machine_state === 'DOWN').length;
+  const unmapped = factoryCounts.assets - factoryCounts.mapped;
+
+  const cell = (label, value, tone) =>
+    `<div class="fs-cell${tone ? ` fs-${tone}` : ''}">`
+    + `<div class="fs-value">${value}</div><div class="fs-label">${label}</div></div>`;
+
+  el.innerHTML =
+    cell('process areas', factoryCounts.zones)
+    + cell('physical assets', factoryCounts.assets)
+    + cell('mapped to IMS', factoryCounts.mapped, factoryCounts.mapped === 0 ? 'warn' : null)
+    + cell('unmapped', unmapped, unmapped > 0 ? 'warn' : null)
+    + cell('devices in alarm', critical, critical > 0 ? 'crit' : null);
+}
+
 // ── Status legend ────────────────────────────────────────────
 // Rendered from the shared vocabulary rather than written into the HTML, so a
 // state cannot appear in the legend without existing in the code that colours
@@ -1941,16 +1841,15 @@ function renderStatusLegend() {
 async function boot() {
   const t0 = performance.now();
   renderStatusLegend();
-  try {
-    const res = await fetch('api/placement');
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    buildFloorShells(data.floors || [], data.machines || []);
-    buildScene(data.machines || []);
-  } catch (err) {
-    statusLine.textContent = `Placement fetch failed: ${err.message}`;
-    statusLine.classList.add('error');
-  }
+  // NO PLACEMENT FETCH. This view once drew every monitored device as a box on
+  // a deterministic synthetic grid, with a floor plate sized from that grid. It
+  // is gone -- not hidden, not toggled off: the fetch, the meshes, the labels,
+  // the synthetic zone boxes and the plate are all deleted.
+  //
+  // Those positions were invented. On a floor plan read from CAD, an invented
+  // position sitting beside a measured one is indistinguishable to the eye, and
+  // the eye is what this view is for. A device whose location is not
+  // established is now absent from the scene and listed as UNMAPPED instead.
 
   // Independent of the placement fetch above -- absence here (empty
   // shape, the default for a public clone) must never block real-device
@@ -1990,7 +1889,6 @@ async function boot() {
     controls,
     scene,
     renderer,
-    machineMeshes,
     slotMeshes,
     columnMeshes,
     layers,
@@ -2071,7 +1969,8 @@ const MODE_VIEW = Object.freeze({
   // one is present. "Show me everything" is the executive question.
   executive: ['overview', 'building', 'operator'],
   // Back to the working framing an operator reads machines at.
-  inspection: ['operator'],
+  // Inspection reads detail on the floor plan, so it opens on the plan.
+  inspection: ['plan', 'building', 'operator'],
   // Half a window wide. The operator view is a fixed, hand-tuned camera that
   // does not adapt to the pane it is drawn in, so entering side-by-side on it
   // leaves the 3D half zoomed into a corner. The fitted framings do adapt.
@@ -2080,6 +1979,10 @@ const MODE_VIEW = Object.freeze({
 
 window.addEventListener('twin-mode', (ev) => {
   const mode = ev && ev.detail && ev.detail.mode;
+  // Inspection is the mode for reading detail, so it is the mode that shows
+  // every area name. This changes label VISIBILITY only -- no zone, boundary or
+  // coordinate is touched, which the coordinate snapshot check keeps honest.
+  setMinorZoneLabels(mode === 'inspection');
   const wanted = MODE_VIEW[mode];
   if (!wanted) return;
   // First framing in the list that actually has data behind it. A view with no

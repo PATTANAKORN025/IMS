@@ -133,7 +133,6 @@ function schematicCoverage(schematic) {
  * @param {Object|null} input.geometry - Private geometry document, or null.
  * @param {Object} input.zoneMeta - Zone layer meta (served/withheld/total/byConfidence/conflicts).
  * @param {number} input.confirmedMappings
- * @param {number} input.simulatedPlacements
  * @param {Object} [input.runtime] - Aggregate counters (requests, errors, durations).
  * @returns {Object} A response containing only counts, booleans and fixed enums.
  */
@@ -141,7 +140,6 @@ function buildDiagnostics({
   geometry,
   zoneMeta = {},
   confirmedMappings = 0,
-  simulatedPlacements = 0,
   runtime = {},
   schematic = null,
 }) {
@@ -177,7 +175,10 @@ function buildDiagnostics({
       derived_floor_to_floor: envelope && envelope.floor_to_floor === true ? 1 : 0,
       observed_columns: columns.length,
       observed_slots: slots.length,
-      simulated_machine_positions: count(simulatedPlacements),
+      // Reported as a hard zero rather than dropped. A reader who remembers
+      // this floor once carried synthetic machine positions should see that it
+      // now carries none, not find the field missing and wonder.
+      simulated_machine_positions: 0,
       unknown_clear_height: envelope && envelope.clear_height_m == null ? 1 : 0,
       unknown_equipment_height: slots.filter((s) => s && s.height_status === 'unknown').length,
       confirmed_mappings: count(confirmedMappings),

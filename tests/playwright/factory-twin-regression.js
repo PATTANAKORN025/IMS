@@ -67,7 +67,7 @@ const VIEWPORTS = [
 // The toggles an operator actually has. Sub-layers exist because the four
 // coarse layers each bundled two different evidence classes; the test drives
 // the real controls rather than the internal grouping.
-const LAYERS = ['shell', 'columns', 'functional', 'slots', 'machines', 'telemetry', 'presentation'];
+const LAYERS = ['shell', 'columns', 'walls', 'functional', 'slots', 'telemetry', 'presentation'];
 
 const NO_GEOMETRY = 'no private geometry is deployed here';
 const NO_DEVICES = 'no monitored devices in this database';
@@ -112,7 +112,6 @@ async function snapshot(page) {
       if (s && !(Number.isFinite(s.x) && Number.isFinite(s.y) && Number.isFinite(s.z))) badTransforms++;
     });
     const geo = await (await fetch('api/floor-geometry')).json();
-    const place = await (await fetch('api/placement')).json().catch(() => null);
     return {
       meshes,
       badTransforms,
@@ -152,7 +151,11 @@ async function snapshot(page) {
         });
         return found;
       })(),
-      machineMeshes: T.machineMeshes.length,
+      // There is no machine-mesh registry any more. Read defensively and
+      // assert it stays absent: a number here would mean the synthetic
+      // placement path had been reinstated.
+      machineMeshes: Array.isArray(T.machineMeshes) ? T.machineMeshes.length : 0,
+      hasMachineRegistry: T.machineMeshes !== undefined,
       api: {
         columns: geo.columns.length,
         walls: Array.isArray(geo.walls) ? geo.walls.length : 0,
@@ -167,7 +170,6 @@ async function snapshot(page) {
         footprintVertices: geo.footprint_polygon ? geo.footprint_polygon.vertices.length : 0,
         gridLines: geo.grid ? geo.grid.x.length + geo.grid.z.length : 0,
         clearHeight: geo.envelope ? geo.envelope.clear_height_m : null,
-        placements: place && Array.isArray(place.machines) ? place.machines.length : 0,
       },
     };
   });
@@ -197,7 +199,6 @@ async function run() {
     for (const path of [
       '',
       'api/floor-geometry',
-      'api/placement',
       'api/state',
       'api/diagnostics',
       'api/floor-schematic',
@@ -284,8 +285,11 @@ async function run() {
     );
     check(!('access-control-allow-origin' in apiHeaders), 'no cross-origin access is granted');
 
-    // Nothing outside public/ is reachable, and no source map exposes internals.
-    for (const probe of ['server.js', 'lib/wire.js', 'package.json', '.env', 'app.js.map', 'api/debug']) {
+    // The synthetic placement route is deleted, so it must 404 like any other
+    // path that does not exist. Asserted rather than assumed: a route that
+    // still answered would mean invented positions were still being served,
+    // whether or not this client drew them.
+    for (const probe of ['server.js', 'lib/wire.js', 'package.json', '.env', 'app.js.map', 'api/debug', 'api/placement']) {
       const r = await page.request.get(TWIN_URL + probe, { failOnStatusCode: false });
       check(r.status() === 404, `not served: /${probe}`, `got ${r.status()}`);
     }
@@ -400,7 +404,7 @@ async function run() {
     // wrong answer. Without geometry the synthetic plate is the only spatial
     // reference there is and stays. Either way the count is columns + 1.
     const measuredPlate = s.footprintMeshes > 0;
-    const syntheticPlate = !measuredPlate && s.machineMeshes > 0 ? 1 : 0;
+    const syntheticPlate = 0; // the synthetic floor plate is deleted
     // Plus the CAD building fabric: one instanced mesh for every wall, and one
     // per opening kind. These are added as objects, not per wall, which is the
     // whole point of instancing them -- ~900 walls must not cost ~900 meshes.
@@ -410,7 +414,7 @@ async function run() {
     // slots + monitored devices + one instanced mesh per (form, part). The
     // presentation meshes are a couple of dozen objects standing in for every
     // machine on the floor, which is exactly why they are counted as objects.
-    const expectedOperational = s.api.slots + s.machineMeshes + s.presentationMeshes;
+    const expectedOperational = s.api.slots + s.presentationMeshes;
     check(s.perLayer.structural === expectedStructural,
       'structural meshes = columns + floor plate + traced outline',
       `${s.perLayer.structural} vs ${expectedStructural}`);
@@ -431,19 +435,19 @@ async function run() {
       `${s.wallMeshes} mesh(es) for ${s.api.walls} walls`);
     check(s.perSublayer.slots === s.api.slots, 'slot sub-layer holds exactly the served slots',
       `${s.perSublayer.slots} vs ${s.api.slots}`);
-    check(s.perSublayer.machines === s.machineMeshes, 'machine sub-layer holds exactly the monitored devices',
-      `${s.perSublayer.machines} vs ${s.machineMeshes}`);
-    check(s.perLayer.operational === expectedOperational, 'operational meshes = slots + machines',
+    check(s.perLayer.operational === expectedOperational, 'operational meshes = slots + presentation forms',
       `${s.perLayer.operational} vs ${expectedOperational}`);
     check(s.meshes === expectedStructural + s.api.zones + expectedOperational, 'total mesh count reconciles',
       `${s.meshes}`);
 
     check(s.badTransforms === 0, 'no NaN/Infinity transforms', `${s.badTransforms} bad`);
-    // Reconciled against what /api/placement served, not against a literal:
-    // the device set is discovered live, so hardcoding it would fail on any
-    // deployment with a different fleet rather than catching a real regression.
-    check(s.machineMeshes === s.api.placements, 'machine meshes = placements served',
-      `${s.machineMeshes} vs ${s.api.placements}`);
+    // The synthetic placement path is DELETED, not disabled. These two assert
+    // that: no machine mesh exists, and the registry that held them is gone.
+    // A non-zero count here would mean invented positions were being drawn on
+    // a floor read from CAD, which is the failure this whole change prevents.
+    check(s.machineMeshes === 0, 'no monitored device is drawn on the floor',
+      `${s.machineMeshes} machine mesh(es)`);
+    check(s.hasMachineRegistry === false, 'the machine-mesh registry is gone, not merely empty');
     check(!s.api.conflictServed, 'conflicting zones withheld from the wire');
 
     // ── Building outline: the floor must read as THIS building ──
@@ -764,8 +768,8 @@ async function run() {
     console.log(`  INFO  ${baseline.api.zonesNamedCount} of ${baseline.api.zones} served zones carry a drawing label`);
     // Only assertable where a fleet exists. Zero monitored devices is a real
     // deployment state, not a failed assertion about simulated positions.
-    if (!baseline.api.placements) skip('machine positions are still declared simulated', NO_DEVICES);
-    else check(ev.simulatedPositions > 0, 'machine positions are still declared simulated');
+    check(ev.simulatedPositions === 0, 'diagnostics reports zero simulated positions',
+      `${ev.simulatedPositions}`);
     console.log('');
   }
 
@@ -780,9 +784,8 @@ async function run() {
       'building preset frames the whole structure without clipping',
       'overview preset activates',
       'overview frames the whole structure',
-      'overview frames every monitored device',
+      'overview frames every equipment position',
       'reset restores framing without changing which view is active',
-      'switching views never moves a machine',
       'switching views never changes API results',
       'no rendered coordinate changes across three view switches and a reset',
     ]) {
@@ -791,9 +794,7 @@ async function run() {
     console.log('');
   } else {
     const before = await snapshot(page);
-    const machinesBefore = await page.evaluate(() =>
-      window.__twin.machineMeshes.map((m) => [m.position.x, m.position.y, m.position.z])
-    );
+
     await page.click('#view-controls button[data-view="building"]');
     await page.waitForTimeout(600);
     const inBuilding = await page.evaluate(() => {
@@ -836,15 +837,17 @@ async function run() {
         view: T.getView(),
         structTotal,
         structVisible,
-        machinesFramed: T.machineMeshes.filter(framed).length,
-        machineTotal: T.machineMeshes.length,
+        // Slots stand in for "everything operational on the floor" now that
+        // no monitored device is drawn.
+        slotsFramed: T.slotMeshes.filter(framed).length,
+        slotTotal: T.slotMeshes.length,
       };
     });
     check(inOverview.view === 'overview', 'overview preset activates');
     check(inOverview.structVisible === inOverview.structTotal, 'overview frames the whole structure',
       `${inOverview.structVisible}/${inOverview.structTotal}`);
-    check(inOverview.machinesFramed === inOverview.machineTotal, 'overview frames every monitored device',
-      `${inOverview.machinesFramed}/${inOverview.machineTotal}`);
+    check(inOverview.slotsFramed === inOverview.slotTotal, 'overview frames every equipment position',
+      `${inOverview.slotsFramed}/${inOverview.slotTotal}`);
 
     // Reset re-applies the ACTIVE view's framing rather than forcing operator.
     await page.evaluate(() => window.__twin.controls.target.set(999, 999, 999));
@@ -855,17 +858,10 @@ async function run() {
 
     await page.click('#view-controls button[data-view="operator"]');
     await page.waitForTimeout(600);
-    const machinesAfter = await page.evaluate(() =>
-      window.__twin.machineMeshes.map((m) => [m.position.x, m.position.y, m.position.z])
-    );
-    check(
-      JSON.stringify(machinesBefore) === JSON.stringify(machinesAfter),
-      'switching views never moves a machine'
-    );
     const restored = await snapshot(page);
     check(JSON.stringify(restored.api) === JSON.stringify(before.api), 'switching views never changes API results');
-    // Byte-level, across all 412 evidence-backed meshes, not just the 23
-    // machines: a view is a camera change and nothing else.
+    // Byte-level, across every evidence-backed mesh in the scene: a view is a
+    // camera change and nothing else.
     check(restored.coords === before.coords,
       'no rendered coordinate changes across three view switches and a reset');
     console.log('');
@@ -1390,7 +1386,6 @@ async function run() {
   check(LAYERS.every((l) => hidden.visibility[l] === false), 'every toggled layer reported hidden',
     LAYERS.filter((l) => hidden.visibility[l] !== false).join(','));
   check(hidden.meshes === baseline.meshes, 'hiding does not delete meshes', `${hidden.meshes} vs ${baseline.meshes}`);
-  check(hidden.machineMeshes === baseline.machineMeshes, 'hiding does not change machine count');
   check(JSON.stringify(hidden.api) === JSON.stringify(baseline.api), 'hiding does not change API results');
 
   // Restore each toggle to the state it started in, not blanket-on: the

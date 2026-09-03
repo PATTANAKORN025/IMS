@@ -412,6 +412,19 @@
       border-radius: 4px;
       cursor: pointer;
     }
+    #factory-status { display: grid; grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); gap: 6px; margin: 10px 0 6px; }
+    .fs-cell { background: #131a26; border: 1px solid #1f2937; border-radius: 4px; padding: 6px 8px; }
+    .fs-value { font: 700 19px/1.1 ui-monospace, SFMono-Regular, Menlo, monospace; color: #e2e8f0; font-variant-numeric: tabular-nums; }
+    .fs-label { font-size: 9.5px; letter-spacing: 0.07em; text-transform: uppercase; color: #7c8ba1; margin-top: 3px; }
+    /* Tone is reinforced by a left rule, never carried by colour alone. */
+    .fs-warn { border-left: 3px solid #f59e0b; }
+    .fs-warn .fs-value { color: #fbbf24; }
+    .fs-crit { border-left: 3px solid #ef4444; }
+    .fs-crit .fs-value { color: #f87171; }
+    #unmapped-devices { margin-top: 6px; }
+    #unmapped-devices > summary { color: #94a3b8; cursor: pointer; font-size: 11px; }
+    #unmapped-devices > summary:focus-visible { outline: 2px solid #38bdf8; outline-offset: 2px; }
+    #summary-line { color: #64748b; }
     #status-legend { margin-top: 8px; font-size: 11px; }
     #status-legend > summary { color: #94a3b8; cursor: pointer; }
     #status-legend > summary:focus-visible { outline: 2px solid #38bdf8; outline-offset: 2px; }
@@ -533,18 +546,26 @@
       <span class="eb-item eb-warn" id="eb-mappings">MAPPINGS: 0 CONFIRMED</span>
       <span class="eb-item" id="eb-snapshot" hidden></span>
     </div>
-    <!-- Telemetry is real; its position is not. Naming the section for what is
-         missing keeps a live value from reading as a located machine. -->
-    <h2 class="hud-section">Unmapped IMS devices</h2>
-    <div id="summary-line">Loading…</div>
-    <div id="unmapped-note" class="hint">
-      Spatial mapping unavailable. These devices report live state, but no
-      authoritative record places any of them on this floor, so none is drawn
-      at a real position.
-    </div>
-    <div id="machine-list"></div>
-    <div class="hint">Click a box in the scene to open that machine's Machine Snapshot drill-down. Live data polls every 5s.</div>
+    <!-- FACTORY -> AREA -> PHYSICAL ASSET -> STATUS, in that order. This block
+         is the first thing read and answers the three-second question: how big
+         is this floor, how much of it is tied to live data, and is anything
+         wrong. It is deliberately NOT a list of machine cards. -->
+    <div id="factory-status" aria-live="polite"></div>
     <div id="status-line" class="hint"></div>
+
+    <!-- Telemetry is real; its position is not. These devices are NOT drawn on
+         the floor -- the synthetic grid that used to place them is deleted --
+         so the list is collapsed by default and named for what is missing. -->
+    <details id="unmapped-devices">
+      <summary>Unmapped IMS devices <span id="summary-line"></span></summary>
+      <div id="unmapped-note" class="hint">
+        These devices report live state, but no authoritative record places any
+        of them on this floor. None is drawn in the scene, and none can be
+        reached by clicking the floor: a drill-down would have to start from a
+        position, and no position here is tied to a device.
+      </div>
+      <div id="machine-list"></div>
+    </details>
     <!-- Visibility only. Toggling hides rendered objects; it never changes
          geometry, API results or telemetry. All layers default to on, so
          the initial view is unchanged from before these controls existed. -->
@@ -566,9 +587,12 @@
       <button type="button" data-mode="inspection" aria-pressed="false">Inspection</button>
     </div>
     <div id="view-controls" role="group" aria-label="Camera view">
-      <button type="button" data-view="operator" aria-pressed="true">Operator</button>
+      <button type="button" data-view="operator" aria-pressed="false">Operator</button>
       <button type="button" data-view="building" aria-pressed="false" disabled>Building</button>
-      <button type="button" data-view="overview" aria-pressed="false" disabled>Overview</button>
+      <button type="button" data-view="overview" aria-pressed="true" disabled>Overview</button>
+      <!-- The CAD-derived 2D floor plan. Same scene and the same coordinates,
+           viewed straight down, so the plan and the model cannot disagree. -->
+      <button type="button" data-view="plan" aria-pressed="false" disabled>Plan (2D)</button>
     </div>
     <!-- Undoes orbit/zoom drift by re-applying the ACTIVE view's framing. It
          does not force operator view: which view you are in is your choice,
@@ -627,7 +651,6 @@
       <label><input type="checkbox" data-layer="walls" checked> Walls and openings <span class="hint" data-count="walls"></span></label>
       <label><input type="checkbox" data-layer="functional" checked> Functional zones <span class="hint" data-count="functional"></span></label>
       <label><input type="checkbox" data-layer="slots" checked> Equipment slots <span class="hint" data-count="slots"></span></label>
-      <label><input type="checkbox" data-layer="machines" checked> Simulated machines <span class="hint" data-count="machines"></span></label>
       <label><input type="checkbox" data-layer="telemetry" checked> Labels</label>
       <!-- Off by default and named for what it is. Footprints are measured;
            every height in it is a drawing convention with no source. -->

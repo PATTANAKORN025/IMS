@@ -233,6 +233,7 @@ function wallSegments(entities) {
  *  not in evidence, and a default thickness would be an invented dimension. */
 function pairWalls(segs) {
   const walls = [];
+  const faces = [];
   let unpaired = 0;
   for (const axis of ['h', 'v']) {
     const list = segs.filter((s) => s.axis === axis)
@@ -247,26 +248,122 @@ function pairWalls(segs) {
         if (used.has(j)) continue;
         const t = list[j];
         const gap = t.at - s.at;
+        // 50..600 mm spans every plausible interior wall in this building, from
+        // a 50 mm panel to a 600 mm structural wall. Wider than that and the
+        // "pair" is far more likely two unrelated faces -- a duct run, a plinth
+        // -- so it is left unpaired rather than fused into a wall nobody drew.
         if (gap < 50) continue;
-        if (gap > 400) break;
+        if (gap > 600) break;
         const ov = Math.min(s.b, t.b) - Math.max(s.a, t.a);
         const shorter = Math.min(s.b - s.a, t.b - t.a);
         if (ov <= 0 || ov < 0.6 * shorter) continue;
         if (gap < bestGap) { bestGap = gap; best = j; }
       }
-      if (best < 0) { unpaired++; continue; }
+      if (best < 0) {
+        unpaired++;
+        // A long face with no partner is still real drawn geometry -- typically
+        // a wall whose far side is off-layer. It is kept as a LINE with NO
+        // thickness, for the 2D plan only. It is never extruded, because a
+        // thickness nobody measured is exactly what must not be invented.
+        if (s.b - s.a >= 2000) faces.push({ axis, at: s.at, a: s.a, b: s.b });
+        continue;
+      }
       const t = list[best];
       used.add(i);
       used.add(best);
-      const at = (s.at + t.at) / 2;
-      const a = Math.max(s.a, t.a);
-      const b = Math.min(s.b, t.b);
-      walls.push(axis === 'h'
-        ? { x1: mx(a), z1: mz(at), x2: mx(b), z2: mz(at), thickness: round3(bestGap / 1000) }
-        : { x1: mx(at), z1: mz(a), x2: mx(at), z2: mz(b), thickness: round3(bestGap / 1000) });
+      // Kept in raw millimetres: merging and corner closure both need to reason
+      // about real distances before anything is rounded to the model's frame.
+      walls.push({
+        axis,
+        at: (s.at + t.at) / 2,
+        a: Math.max(s.a, t.a),
+        b: Math.min(s.b, t.b),
+        thickness: bestGap,
+      });
     }
   }
-  return { walls, unpaired };
+  return { walls, faces, unpaired };
+}
+
+/**
+ * Joins wall runs the drawing broke into fragments.
+ *
+ * The CAD draws one physical wall as many separate face segments -- split at
+ * every column, tee and detail it passes. Rendering those as-is produces a
+ * dashed-looking wall that is nothing like the real floor.
+ *
+ * Two fragments merge only when they are the SAME wall by evidence: same axis,
+ * same centreline within a millimetre, same measured thickness within 5 mm, and
+ * touching or overlapping within MERGE_GAP. That gap is deliberately far below
+ * a door leaf, so a genuine opening is never bridged -- a merge must not invent
+ * wall where the drawing shows a doorway.
+ */
+const MERGE_GAP_MM = 120;
+
+function mergeWalls(walls) {
+  const out = [];
+  const buckets = new Map();
+  for (const w of walls) {
+    const k = `${w.axis}|${Math.round(w.at)}|${Math.round(w.thickness / 5)}`;
+    if (!buckets.has(k)) buckets.set(k, []);
+    buckets.get(k).push(w);
+  }
+  let merged = 0;
+  for (const group of buckets.values()) {
+    group.sort((p, q) => p.a - q.a);
+    let cur = null;
+    for (const w of group) {
+      if (cur && w.a <= cur.b + MERGE_GAP_MM) {
+        if (w.b > cur.b) cur.b = w.b;
+        cur.parts++;
+        merged++;
+        continue;
+      }
+      if (cur) out.push(cur);
+      cur = { ...w, parts: 1 };
+    }
+    if (cur) out.push(cur);
+  }
+  return { walls: out, merged };
+}
+
+/**
+ * Closes the notch where two walls meet.
+ *
+ * A wall's measured extent stops at its own face, so a corner between a 100 mm
+ * and a 250 mm wall leaves a visible gap of half the other wall's thickness.
+ * Extending an end to the crossing wall's centreline closes it.
+ *
+ * This is bounded and evidence-gated, not free extension: an end moves only
+ * when a perpendicular wall actually crosses within its own thickness, and only
+ * by at most half that wall's thickness. Nothing is extended into open space,
+ * so no wall is created and no opening is closed.
+ */
+function closeCorners(walls) {
+  let closed = 0;
+  const perp = { h: walls.filter((w) => w.axis === 'v'), v: walls.filter((w) => w.axis === 'h') };
+  for (const w of walls) {
+    const others = perp[w.axis];
+    for (const endKey of ['a', 'b']) {
+      const end = w[endKey];
+      let bestReach = 0;
+      for (const o of others) {
+        // the perpendicular wall must actually span this wall's centreline
+        if (o.a > w.at + o.thickness || o.b < w.at - o.thickness) continue;
+        const reach = o.thickness / 2;
+        const d = endKey === 'a' ? end - o.at : o.at - end;
+        // it must lie just beyond this end, within its own half-thickness
+        if (d < -reach || d > reach) continue;
+        const need = endKey === 'a' ? end - o.at : o.at - end;
+        if (need > bestReach) bestReach = need;
+      }
+      if (bestReach > 0) {
+        w[endKey] = endKey === 'a' ? end - bestReach : end + bestReach;
+        closed++;
+      }
+    }
+  }
+  return closed;
 }
 
 // --- zones ----------------------------------------------------------------
@@ -525,8 +622,52 @@ async function main() {
   console.log(`  column axes: ${axesX.length} in x, ${axesZ.length} in z`);
 
   // walls
-  const { walls, unpaired } = pairWalls(wallSegments(entities));
-  console.log(`  walls: ${walls.length} paired centrelines (${unpaired} faces left unpaired)`);
+  const paired = pairWalls(wallSegments(entities));
+  const mergedRes = mergeWalls(paired.walls);
+  const cornersClosed = closeCorners(mergedRes.walls);
+  const unpaired = paired.unpaired;
+  const wallRuns = mergedRes.walls;
+  console.log(`  walls: ${paired.walls.length} paired faces -> ${wallRuns.length} runs `
+    + `(${mergedRes.merged} fragments merged, ${cornersClosed} corners closed, `
+    + `${unpaired} faces left unpaired)`);
+
+  // Connectivity check, reported rather than assumed: how many run ends meet
+  // another run. An end that meets nothing is a real free end (a doorway, a
+  // wall stopping at a column), not necessarily a defect -- so it is counted
+  // and published, never silently "fixed".
+  let joined = 0;
+  let free = 0;
+  for (const w of wallRuns) {
+    for (const endKey of ['a', 'b']) {
+      const p = w.axis === 'h' ? { x: w[endKey], y: w.at } : { x: w.at, y: w[endKey] };
+      const meets = wallRuns.some((o) => {
+        if (o === w) return false;
+        const ox0 = o.axis === 'h' ? o.a : o.at;
+        const ox1 = o.axis === 'h' ? o.b : o.at;
+        const oy0 = o.axis === 'h' ? o.at : o.a;
+        const oy1 = o.axis === 'h' ? o.at : o.b;
+        const tol = Math.max(o.thickness, 150);
+        return p.x >= Math.min(ox0, ox1) - tol && p.x <= Math.max(ox0, ox1) + tol
+          && p.y >= Math.min(oy0, oy1) - tol && p.y <= Math.max(oy0, oy1) + tol;
+      });
+      if (meets) joined++; else free++;
+    }
+  }
+  const connectivity = joined / (joined + free);
+  console.log(`  wall connectivity: ${(connectivity * 100).toFixed(1)}% of run ends meet another run`);
+
+  // Long unpaired faces, merged along their own axis, for the 2D plan only.
+  const faceRuns = mergeWalls(paired.faces.map((f) => ({ ...f, thickness: 0 }))).walls;
+  const wallLines = faceRuns.map((f) => (f.axis === 'h'
+    ? { x1: mx(f.a), z1: mz(f.at), x2: mx(f.b), z2: mz(f.at) }
+    : { x1: mx(f.at), z1: mz(f.a), x2: mx(f.at), z2: mz(f.b) }));
+  console.log(`  wall lines (unpaired faces >=2 m, 2D only): ${wallLines.length}`);
+
+  const walls = wallRuns.map((w) => (w.axis === 'h'
+    ? { x1: mx(w.a), z1: mz(w.at), x2: mx(w.b), z2: mz(w.at),
+        thickness: round3(w.thickness / 1000), parts: w.parts }
+    : { x1: mx(w.at), z1: mz(w.a), x2: mx(w.at), z2: mz(w.b),
+        thickness: round3(w.thickness / 1000), parts: w.parts }));
 
   // openings
   const openings = entities
@@ -568,6 +709,28 @@ async function main() {
 
   geo.schema_version = '2.1.0';
   geo.columns = columns;
+  geo.wall_assembly = {
+    paired_faces: paired.walls.length,
+    runs: wallRuns.length,
+    fragments_merged: mergedRes.merged,
+    corners_closed: cornersClosed,
+    unpaired_faces: unpaired,
+    connectivity: round3(connectivity),
+    merge_gap_mm: MERGE_GAP_MM,
+    note:
+      'Fragments merge only on identical axis, centreline and measured thickness, '
+      + 'and only across gaps below a door leaf, so an opening is never bridged. '
+      + 'Corner closure extends an end only where a perpendicular wall actually '
+      + 'crosses, by at most half that wall thickness.',
+  };
+  // Drawn geometry with no measured thickness. Served for the plan view and
+  // deliberately NOT extruded in 3D.
+  geo.wall_lines = wallLines.map((w, i) => ({
+    id: `WLN-F1-${String(i + 1).padStart(4, '0')}`,
+    ...w,
+    source: 'floor1_dxf',
+    geometry_status: 'OBSERVED_CAD',
+  }));
   geo.walls = walls.map((w, i) => ({
     id: `WAL-F1-${String(i + 1).padStart(4, '0')}`,
     ...w,

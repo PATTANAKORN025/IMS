@@ -115,7 +115,10 @@ async function loadWith(browser, { route, handler, waitForScene = true }) {
       booted: Boolean(T),
       meshes,
       badTransforms,
-      machineMeshes: T ? T.machineMeshes.length : 0,
+      // The machine-mesh registry no longer exists. Read defensively so a
+      // fault case reports 0 rather than throwing, and so "still zero under
+      // every fault" becomes an assertable property.
+      machineMeshes: T && Array.isArray(T.machineMeshes) ? T.machineMeshes.length : 0,
       slotMeshes: T ? T.slotMeshes.length : 0,
       columnMeshes: T ? T.columnMeshes.length : 0,
       // Whole visible document, so a leaked value is caught wherever it
@@ -192,12 +195,15 @@ async function run() {
   // Baseline with no fault injected, to learn what this deployment actually
   // has before asserting anything about what survives a fault.
   const base = await loadWith(browser, {});
-  hasMachines = base.machineMeshes > 0;
-  if (!hasMachines) console.log(`(${NO_DEVICES} -- device-dependent cases will be SKIPPED, not passed)`);
+  // No deployment renders monitored devices any more: the synthetic placement
+  // path is deleted. What used to be "do the machines survive this fault" is
+  // now the stronger question "does this fault conjure one", asserted below.
+  hasMachines = false;
+  console.log('(no monitored device is drawn on this floor by design -- '
+    + 'device-render cases are replaced by "no machine is invented" assertions)');
 
   const GEO = '**/api/floor-geometry';
   const STATE = '**/api/state';
-  const PLACEMENT = '**/api/placement';
 
   // ── HTTP status failures ──
   console.log('Geometry API status failures:');
@@ -207,7 +213,7 @@ async function run() {
       handler: json({ error: 'denied' }, status),
     });
     assertSafeDegradation(`geometry ${status}`, r);
-    checkMachines(r.machineMeshes > 0, `geometry ${status}: monitored devices still render`, `${r.machineMeshes}`);
+    check(r.machineMeshes === 0, `geometry ${status}: no machine is invented`, `${r.machineMeshes}`);
     check(r.slotMeshes === 0 && r.columnMeshes === 0, `geometry ${status}: no geometry is invented`);
   }
 
@@ -254,7 +260,7 @@ async function run() {
       handler: json({ envelope: null, columns: [], zones: [], slots: [], functional_zones: [] }),
     });
     assertSafeDegradation('empty but well-formed', r);
-    checkMachines(r.machineMeshes > 0, 'empty geometry: monitored devices still render');
+    check(r.machineMeshes === 0, 'empty geometry: no machine is invented');
   }
   {
     // A slot with no position at all, and one with a non-finite position.
@@ -353,15 +359,21 @@ async function run() {
 
   // ── Placement and state ──
   console.log('\nPlacement and telemetry failures:');
-  for (const status of [401, 404, 500]) {
-    const r = await loadWith(browser, { route: PLACEMENT, handler: json({ error: 'denied' }, status) });
-    assertSafeDegradation(`placement ${status}`, r, { expectScene: false });
-    check(r.machineMeshes === 0, `placement ${status}: no machine is invented`, `${r.machineMeshes}`);
+  {
+    // There is no placement route to fault-inject any more. The meaningful
+    // assertion is that it is really gone: if something reinstated it, the
+    // fault cases above would stop being sufficient.
+    const page = await (await browser.newContext()).newPage();
+    const res = await page.request.get(new URL('api/placement', TWIN_URL).toString(),
+      { failOnStatusCode: false });
+    check(res.status() === 404, 'the placement route is deleted, not merely unused',
+      `got ${res.status()}`);
+    await page.close();
   }
   {
     const r = await loadWith(browser, { route: STATE, handler: json({ error: 'boom' }, 500) });
     assertSafeDegradation('state 500', r);
-    checkMachines(r.machineMeshes > 0, 'state 500: machines still render without telemetry');
+    check(r.machineMeshes === 0, 'state 500: no machine is invented');
   }
   {
     // Duplicate device rows, and a row for a device that has no mesh.
@@ -376,7 +388,7 @@ async function run() {
       }),
     });
     assertSafeDegradation('duplicate and unknown device rows', r);
-    checkMachines(r.machineMeshes > 0, 'unknown device rows: existing machines are untouched');
+    check(r.machineMeshes === 0, 'unknown device rows: no machine is invented');
   }
   {
     const r = await loadWith(browser, {
@@ -391,7 +403,7 @@ async function run() {
   {
     const r = await loadWith(browser, { route: GEO, handler: (route) => route.abort('failed') });
     assertSafeDegradation('geometry request aborted', r);
-    checkMachines(r.machineMeshes > 0, 'aborted geometry: monitored devices still render');
+    check(r.machineMeshes === 0, 'aborted geometry: no machine is invented');
   }
   {
     // A response that never arrives within the observation window. The scene

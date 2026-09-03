@@ -153,7 +153,9 @@ test('counts are still accurate', () => {
   assert.strictEqual(d.data.slot_count, 2);
   assert.strictEqual(d.data.footprint_vertices, 3);
   assert.strictEqual(d.data.zone_count_rendered, 8);
-  assert.strictEqual(d.evidence.simulated_machine_positions, 23);
+  // Always zero now, and asserted as zero on purpose: the synthetic placement
+  // path is deleted, so any non-zero here would mean it had been reinstated.
+  assert.strictEqual(d.evidence.simulated_machine_positions, 0);
   assert.strictEqual(d.evidence.unknown_equipment_height, 2);
   assert.strictEqual(d.evidence.unknown_clear_height, 1);
   assert.strictEqual(d.evidence.confirmed_mappings, 0);
