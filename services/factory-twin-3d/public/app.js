@@ -32,6 +32,13 @@ const bannerEl = document.getElementById('simulated-banner');
 const resetViewButton = document.getElementById('reset-view');
 const view2dButton = document.getElementById('view-2d');
 const view3dButton = document.getElementById('view-3d');
+const detailPanel = document.getElementById('machine-detail');
+const detailTitle = document.getElementById('detail-title');
+const detailSubtitle = document.getElementById('detail-subtitle');
+const detailContent = document.getElementById('detail-content');
+const detailCloseButton = document.getElementById('detail-close');
+const detailFocusButton = document.getElementById('detail-focus');
+const detailGrafanaLink = document.getElementById('detail-grafana');
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0b1220);
@@ -64,6 +71,7 @@ let placementSummary = '';
 let placementBannerText = '';
 let placementNeedsWarning = true;
 let currentView = new URLSearchParams(window.location.search).get('view') === '2d' ? '2d' : '3d';
+let selectedMachineId = null;
 
 function escapeHtml(value) {
   return String(value ?? '')
@@ -219,13 +227,12 @@ function buildFloor2d(layout) {
     label.textContent = placement.display_name || placement.device_id;
     group.append(title, rect, label);
     group.addEventListener('click', () => {
-      const url = drillDownUrl(placement.device_id);
-      if (url) window.location.href = url;
+      openMachineDetail(placement.device_id);
     });
     group.addEventListener('keydown', (event) => {
       if (event.key !== 'Enter' && event.key !== ' ') return;
-      const url = drillDownUrl(placement.device_id);
-      if (url) window.location.href = url;
+      event.preventDefault();
+      openMachineDetail(placement.device_id);
     });
     machinesLayer.appendChild(group);
     machines2dById.set(placement.device_id, { group, rect, title });
@@ -468,8 +475,7 @@ function pickMachine(event) {
 
 renderer.domElement.addEventListener('click', (event) => {
   const deviceId = pickMachine(event);
-  const url = deviceId ? drillDownUrl(deviceId) : null;
-  if (url) window.location.href = url;
+  if (deviceId) openMachineDetail(deviceId);
 });
 
 renderer.domElement.addEventListener('pointermove', (event) => {
@@ -522,6 +528,149 @@ function formatStatusTime(value) {
   });
 }
 
+function detailField(label, value, { full = false, mono = false } = {}) {
+  const rendered = value === null || value === undefined || value === '' ? 'Not available' : value;
+  return `
+    <div class="detail-field${full ? ' full' : ''}">
+      <span class="detail-label">${escapeHtml(label)}</span>
+      <span class="detail-value${mono ? ' mono' : ''}">${escapeHtml(rendered)}</span>
+    </div>`;
+}
+
+function renderMachineDetail(deviceId) {
+  const row = latestStateById.get(deviceId);
+  if (!row) return;
+  const detail = row.machine_event_detail;
+  const operation = detail?.operation || {};
+  const production = detail?.production || {};
+  const tool = detail?.tool_measurement;
+  const reference = detail?.reference_spec;
+  const state = row.operational_state || row.state || DEFAULT_STATUS;
+  const meta = STATUS_META[state] || STATUS_META[DEFAULT_STATUS];
+  const colorValue = apiColor(row.state_color, meta.color);
+  const color = `#${colorValue.toString(16).padStart(6, '0')}`;
+  const statusTime = formatStatusTime(row.state_updated_at);
+  const programTime = formatStatusTime(production.program_event_time);
+  const toolTime = formatStatusTime(tool?.event_time);
+  const hitsTime = formatStatusTime(production.hits_event_time);
+  const errorTime = formatStatusTime(row.latest_error?.event_time);
+  const errorCode = row.latest_error?.code
+    ? `E${String(row.latest_error.code).replace(/^E/i, '')}`
+    : null;
+  const grafanaUrl = drillDownUrl(deviceId);
+
+  detailTitle.textContent = row.source_id || row.display_name || deviceId;
+  detailSubtitle.textContent = `${row.display_name || deviceId} · DRILLING`;
+  detailGrafanaLink.hidden = !grafanaUrl;
+  if (grafanaUrl) detailGrafanaLink.href = grafanaUrl;
+  detailContent.innerHTML = `
+    <section class="detail-card">
+      <div class="detail-state-line">
+        <h3>Drilling operation state</h3>
+        <span class="mini-pill" style="background:${color}">${escapeHtml(row.state_label || meta.label)}</span>
+      </div>
+      <div class="detail-grid">
+        ${detailField('Event code', operation.event_code, { mono: true })}
+        ${detailField('Event type', operation.event_type, { mono: true })}
+        ${detailField('Source time', statusTime, { full: true })}
+        ${detailField('Event message', operation.event_message, { full: true, mono: true })}
+      </div>
+    </section>
+    <section class="detail-card">
+      <h3>Active NC program</h3>
+      <div class="detail-grid">
+        ${detailField('Latest PROGRAM_LOAD record', production.program_message, { full: true, mono: true })}
+        ${detailField('Source time', programTime, { full: true })}
+      </div>
+    </section>
+    <section class="detail-card">
+      <h3>Tool & spindle observation</h3>
+      <div class="detail-grid">
+        ${detailField('Tool', tool?.tool, { mono: true })}
+        ${detailField('Observed spindle values', tool?.observed_spindle_count)}
+        ${detailField('Diameter values', tool?.values?.join(' · '), { full: true, mono: true })}
+        ${detailField('Source message', tool?.raw_message, { full: true, mono: true })}
+        ${detailField('Source time', toolTime, { full: true })}
+        ${detailField('Recorded hits', production.run_hits)}
+        ${detailField('Hits source time', hitsTime)}
+      </div>
+    </section>
+    <section class="detail-card">
+      <h3>Machine engineering reference <span class="detail-reference">REFERENCE SPEC</span></h3>
+      <div class="detail-grid">
+        ${detailField('Family', reference?.family)}
+        ${detailField('Machine type', reference?.machine_type)}
+        ${detailField('Spindles', reference?.spindle_count === null || reference?.spindle_count === undefined
+          ? null
+          : `${reference.spindle_count} observed in latest measurement`)}
+        ${detailField('Maximum RPM', reference?.max_rpm ?? 'Not confirmed by supplied evidence')}
+      </div>
+    </section>
+    <section class="detail-card">
+      <h3>Latest decoded error · historical only</h3>
+      <div class="detail-grid">
+        ${detailField('Error code', errorCode, { mono: true })}
+        ${detailField('Source time', errorTime)}
+        ${detailField('Category', row.latest_error
+          ? ERROR_CATEGORY_LABEL[row.latest_error.category] || ERROR_CATEGORY_LABEL.UNKNOWN
+          : null)}
+        ${detailField('Phase', row.latest_error
+          ? ERROR_PHASE_LABEL[row.latest_error.phase] || ERROR_PHASE_LABEL.UNKNOWN
+          : null)}
+        ${detailField('Observed message', row.latest_error?.message, { full: true, mono: true })}
+        ${detailField('Troubleshooting', row.latest_error?.troubleshooting, { full: true })}
+        ${detailField('Recommended action', row.latest_error
+          ? ERROR_RISK_LABEL[row.latest_error.risk] || ERROR_RISK_LABEL.REVIEW_REQUIRED
+          : null, { full: true })}
+      </div>
+    </section>
+    <div class="detail-boundary">No active-alarm count is shown. Supplied machine_event data has no confirmed trigger/reset lifecycle.</div>`;
+}
+
+function openMachineDetail(deviceId) {
+  if (!latestStateById.has(deviceId)) return;
+  selectedMachineId = deviceId;
+  renderMachineDetail(deviceId);
+  detailPanel.hidden = false;
+}
+
+function closeMachineDetail() {
+  selectedMachineId = null;
+  detailPanel.hidden = true;
+}
+
+function focusSelectedMachine() {
+  if (!selectedMachineId) return;
+  if (currentView === '2d') {
+    const entry = machines2dById.get(selectedMachineId);
+    if (!entry) return;
+    const x = Number(entry.rect.getAttribute('x'));
+    const y = Number(entry.rect.getAttribute('y'));
+    const width = Number(entry.rect.getAttribute('width'));
+    const height = Number(entry.rect.getAttribute('height'));
+    const padding = Math.max(width, height, 2) * 4;
+    floorPlan2d.setAttribute('viewBox', `${x - padding} ${y - padding} ${width + padding * 2} ${height + padding * 2}`);
+    return;
+  }
+  const entry = machinesById.get(selectedMachineId);
+  if (!entry) return;
+  const position = entry.mesh.position;
+  controls.target.copy(position);
+  camera.position.set(position.x + 10, position.y + 13, position.z + 14);
+  camera.updateProjectionMatrix();
+  controls.update();
+}
+
+detailCloseButton.addEventListener('click', closeMachineDetail);
+detailFocusButton.addEventListener('click', focusSelectedMachine);
+machineListEl.addEventListener('click', (event) => {
+  const button = event.target.closest('.machine-row:not(:disabled)');
+  if (button && machineListEl.contains(button)) openMachineDetail(button.dataset.deviceId);
+});
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && !detailPanel.hidden) closeMachineDetail();
+});
+
 function stateRowHtml(row) {
   const state = row.operational_state || row.state || DEFAULT_STATUS;
   const meta = STATUS_META[state] || STATUS_META[DEFAULT_STATUS];
@@ -555,16 +704,12 @@ function stateRowHtml(row) {
   const sourcePolicy = row.state_freshness_policy === 'LATEST_KNOWN'
     ? 'LATEST KNOWN'
     : row.state_confidence || 'SOURCE';
-  const href = row.drilldown_enabled ? drillDownUrl(row.device_id) : null;
-  const tagName = href ? 'a' : 'button';
-  const navigationAttrs = href
-    ? ` href="${escapeHtml(href)}"`
-    : ' type="button" disabled';
+  const navigationAttrs = row.drilldown_enabled ? ' type="button"' : ' type="button" disabled';
   const ariaLabel = row.drilldown_enabled
-    ? `Open ${row.device_id} machine detail`
+    ? `Open ${row.device_id} side panel`
     : `${row.device_id} has no connected drill-down source`;
   return `
-    <${tagName} class="machine-row${row.alarm ? ' has-alarm' : ''}" data-device-id="${escapeHtml(row.device_id)}" aria-label="${escapeHtml(ariaLabel)}"${navigationAttrs}>
+    <button class="machine-row${row.alarm ? ' has-alarm' : ''}" data-device-id="${escapeHtml(row.device_id)}" aria-label="${escapeHtml(ariaLabel)}"${navigationAttrs}>
       <span class="machine-row-top">
         <span class="mini-pill" style="background:${color}">${escapeHtml(label)}</span>
         <span class="machine-id">${escapeHtml(row.device_id)}</span>
@@ -584,7 +729,7 @@ function stateRowHtml(row) {
         </span>
         <span class="machine-row-error-action">Action: ${escapeHtml(errorRisk)}</span>
       ` : ''}
-    </${tagName}>`;
+    </button>`;
 }
 
 function applyState(payload) {
@@ -623,7 +768,15 @@ function applyState(payload) {
     }
   }
 
-  machineListEl.innerHTML = rows.map(stateRowHtml).join('');
+  const listRows = [...rows].sort((left, right) => {
+    const bindingPriority = Number(Boolean(right.drilldown_enabled)) - Number(Boolean(left.drilldown_enabled));
+    if (bindingPriority !== 0) return bindingPriority;
+    return String(left.device_id).localeCompare(String(right.device_id));
+  });
+  machineListEl.innerHTML = listRows.map(stateRowHtml).join('');
+  if (selectedMachineId && latestStateById.has(selectedMachineId)) {
+    renderMachineDetail(selectedMachineId);
+  }
   const alarmCount = rows.filter((row) => row.alarm).length;
   const downCount = rows.filter((row) => (row.operational_state || row.state) === 'DOWN').length;
   const undefinedCount = rows.filter((row) => (row.operational_state || row.state) === 'UNDEFINED').length;

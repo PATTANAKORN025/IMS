@@ -220,6 +220,85 @@
     }
     .machine-row-error-action { display: block; margin-top: 3px; color: #fca5a5; font-size: 9px; }
     .machine-row.has-alarm { border-color: #ff003c; box-shadow: inset 3px 0 #ff003c; }
+    #machine-detail {
+      position: fixed;
+      top: 46px;
+      right: 16px;
+      bottom: 16px;
+      z-index: 12;
+      width: 372px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: rgba(10, 20, 38, 0.97);
+      border: 1px solid #334155;
+      border-radius: 10px;
+      box-shadow: 0 20px 55px rgba(0, 0, 0, 0.46);
+    }
+    .detail-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px;
+      border-bottom: 1px solid #334155;
+    }
+    .detail-title { margin: 0; color: #f8fafc; font-size: 17px; line-height: 1.25; }
+    .detail-subtitle { display: block; margin-top: 3px; color: #94a3b8; font-size: 10px; letter-spacing: 0.06em; }
+    .detail-close {
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      color: #cbd5e1;
+      background: transparent;
+      border: 1px solid #475569;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 18px;
+    }
+    .detail-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px 14px 0; }
+    .detail-action {
+      display: block;
+      padding: 8px 10px;
+      color: #dbeafe;
+      text-align: center;
+      text-decoration: none;
+      background: #172554;
+      border: 1px solid #2563eb;
+      border-radius: 6px;
+      cursor: pointer;
+      font: inherit;
+      font-size: 11px;
+      font-weight: 750;
+    }
+    .detail-action:hover, .detail-action:focus-visible { border-color: #38bdf8; outline: none; }
+    .detail-scroll { min-height: 0; overflow-y: auto; padding: 12px 14px 14px; }
+    .detail-state-line { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .detail-card {
+      margin-bottom: 10px;
+      padding: 11px;
+      background: rgba(15, 23, 42, 0.88);
+      border: 1px solid #334155;
+      border-radius: 8px;
+    }
+    .detail-card h3 { margin: 0 0 8px; color: #bae6fd; font-size: 11px; letter-spacing: 0.03em; }
+    .detail-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 7px 12px; }
+    .detail-field { min-width: 0; }
+    .detail-field.full { grid-column: 1 / -1; }
+    .detail-label { display: block; margin-bottom: 2px; color: #64748b; font-size: 8px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .detail-value { display: block; color: #e2e8f0; font-size: 11px; line-height: 1.4; overflow-wrap: anywhere; }
+    .detail-value.mono { font-family: "Roboto Mono", Consolas, monospace; }
+    .detail-reference {
+      display: inline-block;
+      margin-left: 5px;
+      padding: 2px 5px;
+      color: #fbbf24;
+      border: 1px solid #92400e;
+      border-radius: 999px;
+      font-size: 7px;
+      vertical-align: middle;
+    }
+    .detail-boundary { color: #fbbf24; font-size: 10px; line-height: 1.45; }
     .hint {
       margin-top: 9px;
       padding-top: 8px;
@@ -242,6 +321,13 @@
         min-height: 250px;
       }
       #scene-2d { padding: calc(44vh + 68px) 8px 8px; }
+      #machine-detail {
+        top: 56px;
+        left: 8px;
+        right: 8px;
+        bottom: 8px;
+        width: auto;
+      }
     }
   </style>
 </head>
@@ -270,9 +356,24 @@
       <span><i style="background:#fff;border:1px solid #64748b"></i>Undefine</span>
     </div>
     <div id="machine-list"></div>
-    <div class="hint">Click a machine in the scene or this list to open its matching machine-detail dashboard. State refreshes every 5 seconds.</div>
+    <div class="hint">Click a machine in the scene or this list to open its detail panel. Use Grafana drill-down from the panel when deeper history is needed. State refreshes every 5 seconds.</div>
     <div class="hint truth-note"><strong>Layout:</strong> provisional logical zones. <strong>Status:</strong> six-state operational status; red outline is a separate active-alarm overlay.</div>
     <div id="status-line" class="hint"></div>
+  </aside>
+
+  <aside id="machine-detail" aria-label="Selected machine detail" hidden>
+    <div class="detail-header">
+      <div>
+        <h2 id="detail-title" class="detail-title">Machine detail</h2>
+        <span id="detail-subtitle" class="detail-subtitle"></span>
+      </div>
+      <button id="detail-close" class="detail-close" type="button" aria-label="Close machine detail">×</button>
+    </div>
+    <div class="detail-actions">
+      <button id="detail-focus" class="detail-action" type="button">Focus machine</button>
+      <a id="detail-grafana" class="detail-action" href="#">Grafana drill-down</a>
+    </div>
+    <div id="detail-content" class="detail-scroll"></div>
   </aside>
 
   <main id="scene" aria-label="Interactive three-dimensional Floor 1 logical layout"></main>
@@ -288,6 +389,6 @@
       }
     }
   </script>
-  <script type="module" src="./app.js?v=20260831-drilling-dashboard-3"></script>
+  <script type="module" src="./app.js?v=20260903-drilling-side-panel-3"></script>
 </body>
 </html>

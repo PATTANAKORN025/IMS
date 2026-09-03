@@ -72,6 +72,8 @@ Alarm ใดยัง Active อยู่ จึงใช้กติกา fail
 
 - สถานะ `RUN`/`STOP` และเวลาของสถานะล่าสุด
 - เวลา Source และป้าย `LATEST KNOWN`; ข้อมูลเก่ายังคงแสดงสถานะล่าสุด
+- Side Panel แสดง `event_code`, `event_message`, `Run Hits`, PROGRAM_LOAD
+  ล่าสุด และข้อความ Tool diameter ล่าสุด โดยคงเวลา Source ของแต่ละรายการ
 - Error ล่าสุดในฐานะประวัติ ไม่ใช่ Active Alarm
 - กลุ่มปัญหา: Safety, Spindle/Tool, Axis หรือ Program/Tool table
 - ช่วงการทำงาน: Startup, Home/Reset, Program selection,
@@ -84,8 +86,18 @@ Alarm ใดยัง Active อยู่ จึงใช้กติกา fail
 Tool diameter/run-out, ATC ที่ Hole 0 และ Diameter error จึงจัดเป็น
 `TOOL_CHANGE_MEASUREMENT` ไม่ใช่ Error ระหว่างกำลังเจาะ
 
-ข้อมูล Program name, Progress, Hits, Shift rate และ Utilization ยังไม่อยู่ใน
-แหล่งข้อมูลนี้และต้องไม่สร้างค่าจำลองในโหมดจริง
+ข้อความ PROGRAM_LOAD และ Run Hits มีอยู่ใน Event/Status log และแสดงเป็น
+ข้อความ Source ได้ แต่ยังไม่มี Program ID, จำนวน Hole ทั้งหมด, Progress,
+Shift rate หรือ Utilization ตามนิยาม Vendor และต้องไม่สร้างค่าจำลองในโหมดจริง
+ค่า Tool diameter มีอยู่ใน `event_message`; dedicated columns `tool_no`,
+`tool_diameter`, `magazine_no` และ `spindle` ยังว่าง จึงแสดงเป็น
+source observation ไม่ใช่ structured master data
+
+ข้อมูลอ้างอิงจากคู่มือใน Side Panel ต้องติดป้าย `REFERENCE SPEC` เสมอ
+ชื่อผลิตภัณฑ์ `PCB Drilling Machine` และตระกูล `DG Series` มาจากคู่มือ ส่วน
+จำนวน spindle ในปัจจุบันมาจากจำนวนค่าที่พบใน Tool measurement ล่าสุด ไม่ใช่
+ค่าคงที่ของเครื่อง และ Maximum RPM ต้องแสดงว่า `Not confirmed` จนกว่าจะมี
+หลักฐานรุ่นเครื่องที่ตรงกับ `DRL054-M`
 
 ## การตั้งค่า Local Preview
 

@@ -24,7 +24,7 @@ rectangle fields remain accepted only as an input compatibility fallback.
 | Floor name | Application or local private layout metadata | Must expose verification status |
 | Zone and machine coordinates | Logical fallback or ignored local JSON | Draft until owner-approved |
 | Non-LDI machine state | Configured per-asset adapter | `Undefine` while unbound in the default `real` mode |
-| `DRL054-M` state | Latest `public.machine_event` status ordered by `event_time DESC, id DESC` | Database-backed; 15-minute freshness guard |
+| `DRL054-M` state | Latest `public.machine_event` status ordered by `event_time DESC, id DESC` | Database-backed; latest-known policy with source timestamp visible; optional freshness guard is disabled by default |
 
 The application therefore keeps a visible warning banner while any rendered
 placement has `is_simulated = true`. Status and placement truth are described

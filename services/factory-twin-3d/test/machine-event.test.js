@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const {
   classifyError,
   latestErrorReference,
+  machineEventDetail,
   mapMachineEventStatus,
   normalizeStaleSeconds,
 } = require('../machine-event');
@@ -20,6 +21,44 @@ test('maps fresh RUN and STOP records to the confirmed six-state contract', () =
     status_event_type: 'STOP',
     status_event_time: '2026-08-31T01:30:58.000Z',
   }, { nowMs: NOW }).status, 'INITIAL_PM_STOP');
+});
+
+test('builds evidence-only drilling detail from source messages', () => {
+  const detail = machineEventDetail({
+    status_id: 448916,
+    status_event_code: '0201',
+    status_event_type: 'RUN',
+    status_event_message: 'Run Hits: 2',
+    status_event_time: '2026-08-31T01:30:58.000Z',
+    program_message: '[END RUN, BLKD] A220A-107BJ-FA SCALE X100.010 Y100.010.TLP Run Time= 14:08',
+    program_event_time: '2026-08-31T01:30:44.000Z',
+    hits_message: 'Run Hits: 2',
+    hits_event_time: '2026-08-31T01:30:58.000Z',
+    tool_measurement_message: 'T200 tool diameter: 3.101 3.105 3.116 3.113 3.115 3.111',
+    tool_measurement_event_time: '2026-08-31T01:30:35.000Z',
+  });
+
+  assert.equal(detail.operation.event_code, '0201');
+  assert.equal(detail.production.run_hits, 2);
+  assert.equal(detail.tool_measurement.tool, 'T200');
+  assert.deepEqual(detail.tool_measurement.values, ['3.101', '3.105', '3.116', '3.113', '3.115', '3.111']);
+  assert.equal(detail.reference_spec.spindle_count, 6);
+  assert.equal(detail.reference_spec.spindle_count_basis, 'OBSERVED_IN_LATEST_TOOL_MEASUREMENT');
+  assert.equal(detail.reference_spec.max_rpm, null);
+});
+
+test('does not invent production or engineering fields when source messages are absent', () => {
+  const detail = machineEventDetail({
+    status_id: 1,
+    status_event_type: 'STOP',
+    status_event_time: '2026-08-31T01:30:58.000Z',
+  });
+
+  assert.equal(detail.production.run_hits, null);
+  assert.equal(detail.production.program_message, null);
+  assert.equal(detail.tool_measurement, null);
+  assert.equal(detail.reference_spec.spindle_count, null);
+  assert.equal(detail.reference_spec.max_rpm_basis, 'NOT_CONFIRMED');
 });
 
 test('fails closed for stale, missing and unknown machine_event states', () => {

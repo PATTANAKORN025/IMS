@@ -9,6 +9,7 @@ const { createStatusApiClient } = require('./status-api');
 const {
   DEFAULT_STALE_SECONDS,
   latestErrorReference,
+  machineEventDetail,
   mapMachineEventStatus,
   normalizeStaleSeconds,
   readMachineEventRows,
@@ -303,6 +304,7 @@ app.get('/api/state', async (req, res) => {
           factory: apiRow.factory,
           alarm: null,
           latest_error: null,
+          machine_event_detail: null,
         };
       }
       const machineEventRow = binding.type === 'machine_event'
@@ -337,6 +339,7 @@ app.get('/api/state', async (req, res) => {
           // lifecycle. Expose the last decoded error only as history; never
           // turn on the active-alarm outline from this field.
           latest_error: latestErrorReference(machineEventRow),
+          machine_event_detail: machineEventDetail(machineEventRow),
         };
       }
       const row = binding.type === 'ldi' ? sourceRows.get(binding.source_id) : null;
@@ -367,6 +370,7 @@ app.get('/api/state', async (req, res) => {
           factory: null,
           alarm: null,
           latest_error: null,
+          machine_event_detail: null,
         };
       }
       const resolved = mapLegacyLdiStatus({
@@ -406,6 +410,7 @@ app.get('/api/state', async (req, res) => {
               }
             : null,
         latest_error: null,
+        machine_event_detail: null,
       };
     });
     res.status(200).json({

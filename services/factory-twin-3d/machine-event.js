@@ -28,6 +28,42 @@ latest_status AS (
     AND message_type = 'status'
   ORDER BY equipment_id, event_time DESC, id DESC
 ),
+latest_program AS (
+  SELECT DISTINCT ON (equipment_id)
+    equipment_id,
+    id,
+    event_message,
+    event_time
+  FROM public.machine_event
+  WHERE equipment_id = ANY($1::text[])
+    AND message_type = 'event'
+    AND event_type = 'PROGRAM_LOAD'
+  ORDER BY equipment_id, event_time DESC, id DESC
+),
+latest_tool_measurement AS (
+  SELECT DISTINCT ON (equipment_id)
+    equipment_id,
+    id,
+    event_message,
+    event_time
+  FROM public.machine_event
+  WHERE equipment_id = ANY($1::text[])
+    AND message_type = 'event'
+    AND event_message ~* 'tool diameter:'
+  ORDER BY equipment_id, event_time DESC, id DESC
+),
+latest_hits AS (
+  SELECT DISTINCT ON (equipment_id)
+    equipment_id,
+    id,
+    event_message,
+    event_time
+  FROM public.machine_event
+  WHERE equipment_id = ANY($1::text[])
+    AND message_type = 'status'
+    AND event_message ~* '^Run Hits:[[:space:]]*[0-9]+'
+  ORDER BY equipment_id, event_time DESC, id DESC
+),
 latest_error_reference AS (
   SELECT DISTINCT ON (equipment_id)
     equipment_id,
@@ -87,6 +123,12 @@ SELECT
   latest_status.event_message AS status_event_message,
   latest_status.event_time AS status_event_time,
   latest_status.received_at AS status_received_at,
+  latest_program.event_message AS program_message,
+  latest_program.event_time AS program_event_time,
+  latest_tool_measurement.event_message AS tool_measurement_message,
+  latest_tool_measurement.event_time AS tool_measurement_event_time,
+  latest_hits.event_message AS hits_message,
+  latest_hits.event_time AS hits_event_time,
   latest_error_with_context.id AS error_id,
   latest_error_with_context.event_code AS error_code,
   latest_error_with_context.event_message AS error_message,
@@ -98,6 +140,9 @@ SELECT
   latest_error_with_context.error_context
 FROM requested
 LEFT JOIN latest_status USING (equipment_id)
+LEFT JOIN latest_program USING (equipment_id)
+LEFT JOIN latest_tool_measurement USING (equipment_id)
+LEFT JOIN latest_hits USING (equipment_id)
 LEFT JOIN latest_error_with_context USING (equipment_id)
 ORDER BY requested.equipment_id`;
 
@@ -301,6 +346,56 @@ function latestErrorReference(row) {
   };
 }
 
+function parseRunHits(value) {
+  const match = String(value || '').match(/^Run Hits:\s*(\d+)\s*$/i);
+  return match ? Number(match[1]) : null;
+}
+
+function parseToolMeasurement(value) {
+  const match = String(value || '').trim().match(/^(T\d+)\s+tool diameter:\s*(.+)$/i);
+  if (!match) return null;
+  const values = match[2].trim().split(/\s+/).filter(Boolean);
+  return {
+    tool: match[1].toUpperCase(),
+    values,
+    observed_spindle_count: values.length,
+    raw_message: String(value).trim(),
+  };
+}
+
+function machineEventDetail(row) {
+  if (!row?.status_id) return null;
+  const toolMeasurement = parseToolMeasurement(row.tool_measurement_message);
+  return {
+    operation: {
+      event_code: row.status_event_code || null,
+      event_type: row.status_event_type || null,
+      event_message: row.status_event_message || null,
+      event_time: row.status_event_time || null,
+    },
+    production: {
+      program_message: row.program_message || null,
+      program_event_time: row.program_event_time || null,
+      run_hits: parseRunHits(row.hits_message),
+      hits_event_time: row.hits_event_time || null,
+    },
+    tool_measurement: toolMeasurement
+      ? { ...toolMeasurement, event_time: row.tool_measurement_event_time || null }
+      : null,
+    reference_spec: {
+      classification: 'REFERENCE_SPEC',
+      family: 'DG Series',
+      machine_type: 'PCB Drilling Machine',
+      spindle_count: toolMeasurement?.observed_spindle_count || null,
+      spindle_count_basis: toolMeasurement
+        ? 'OBSERVED_IN_LATEST_TOOL_MEASUREMENT'
+        : 'NOT_CONFIRMED',
+      max_rpm: null,
+      max_rpm_basis: 'NOT_CONFIRMED',
+    },
+  };
+}
+
 async function readMachineEventRows(pool, equipmentIds) {
   if (!Array.isArray(equipmentIds) || equipmentIds.length === 0) {
     return { rows: new Map(), available: true, error: null };
@@ -327,7 +422,10 @@ module.exports = {
   classifyErrorCategory,
   classifyErrorPhase,
   latestErrorReference,
+  machineEventDetail,
   mapMachineEventStatus,
   normalizeStaleSeconds,
+  parseRunHits,
+  parseToolMeasurement,
   readMachineEventRows,
 };
