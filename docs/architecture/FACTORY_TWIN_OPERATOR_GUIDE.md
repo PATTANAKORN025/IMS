@@ -46,7 +46,12 @@ before and after every switch.
 |---|---|---|
 | **Operator** | The framing operator work was tuned against; machines stay legible at working size, structural context visible around them. | Day-to-day monitoring. |
 | **Building** | Frames the measured envelope. All structural geometry is in frame. | Understanding where things are in the real building. |
-| **Overview** | **The default.** Frames the union of the measured envelope and the synthetic machine grid, so the whole floor is on screen at once. | Executive / NOC walkthrough, and the first question anyone asks: what is the state of the floor. |
+| **Overview** | **The default.** Frames the measured envelope, so the whole floor is on screen at once. | Executive / NOC walkthrough, and the first question anyone asks: what is the state of the floor. |
+| **Plan (2D)** | Straight down. The CAD-derived floor plan: outline, walls at measured thickness, columns, openings, areas. | Reading the floor as a drawing. |
+
+Plan is the same scene and the same coordinates seen from above — not a
+separate drawing — so the plan and the 3D model can never disagree about where
+a wall is.
 
 The default is Overview rather than Operator because the view opens on the
 factory, not on a corner of it. The Operator framing is one click away and is
@@ -82,13 +87,30 @@ result.
 | **Walls and openings** | Interior walls and partitions, plus doors, windows and air showers | MEASURED_CAD plan and thickness; **height is PRESENTATION_ONLY** |
 | **Functional zones** | Validated process/functional areas only | OBSERVED (validated tier only) |
 | **Equipment slots** | Detected equipment positions | OBSERVED, no identity |
-| **Simulated machines** | Monitored devices at synthetic positions | Real state, SIMULATED position |
 | **Labels** | Live device state overlays | Telemetry |
 
 Each toggle carries a live count in the panel — for example the zone toggle
 reports validated versus withheld. **Withheld zones are never rendered at any
 toggle setting**; they failed validation or are party to an unresolved
 conflict, and a toggle is not permitted to promote them.
+
+---
+
+## What is no longer drawn
+
+The twin used to draw every monitored device as a box on a synthetic grid.
+**That is deleted** — the route, the computation, the meshes and the floor
+plate sized from them.
+
+On a floor read from CAD, an invented position beside a measured one is
+indistinguishable to the eye. So a device whose location is not established is
+now **absent from the scene** rather than drawn somewhere plausible. Its
+telemetry is still real and still polled every 5 s; it drives the status
+roll-up and the collapsed device list, and it colours nothing on the floor.
+
+Nothing in the scene opens a machine drill-down any more, because nothing in
+the scene *is* a machine. A drill-down would have to start from a position, and
+no position on this floor is tied to a device by an authoritative record.
 
 ---
 

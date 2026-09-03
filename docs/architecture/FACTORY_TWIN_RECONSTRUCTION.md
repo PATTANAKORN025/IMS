@@ -202,6 +202,77 @@ closed boundary contains are kept as UNRESOLVED records with no geometry.
 
 ---
 
+## 0.4 Wall assembly, and the removal of every invented position
+
+### Walls are assembled, not dumped
+
+The drawing splits one physical wall into many face segments — at every column,
+tee and detail it passes. Rendered raw, a wall reads as dashes.
+
+| Step | Rule | Result |
+|---|---|---|
+| Pair faces | Parallel, 50–600 mm apart, ≥60% overlap | 931 faces paired; thickness is the measured gap |
+| Merge runs | Same axis, centreline within 1 mm, thickness within 5 mm, gap ≤ 120 mm | 866 runs |
+| Close corners | Extend an end only where a perpendicular wall actually crosses, by ≤ half its thickness | 380 corners |
+
+The 120 mm merge gap is deliberately far below a door leaf, so **an opening is
+never bridged**. Connectivity is **measured and published, not asserted**:
+71.3% of run ends meet another run. A free end is usually a real doorway or a
+wall stopping at a column, so the figure is reported rather than "fixed".
+
+Faces the extractor could not pair, and that are at least 2 m long, are kept as
+**lines with no thickness**. They appear in the 2D plan, where they are real
+drawn geometry, and are **never extruded** — a thickness nobody measured is
+exactly what must not be invented.
+
+### Every invented machine position is deleted
+
+The twin previously drew each monitored device as a box on a deterministic
+synthetic grid, with a floor plate sized from that grid. All of it is gone:
+the `/api/placement` route, the grid computation, the private per-device layout
+loader, the zone ordering and spacing constants, the meshes, the labels and the
+plate. The route now returns 404, and the regression asserts that.
+
+The reason is the CAD. On a floor read from a drawing, an invented position
+next to a measured one is indistinguishable to the eye, and the eye is what a
+digital twin is for.
+
+A monitored device with no established position is now **absent from the scene**
+and reported as UNMAPPED. Its telemetry is still real and still polled; it
+drives the status roll-up and the device list, and it colours no geometry.
+**0 confirmed mappings**, so no live status is drawn on any physical asset.
+
+---
+
+## 0.3 Equipment from CAD — attempted, UNRESOLVED
+
+Extracting equipment footprints from the CAD was attempted three ways and
+**none produced a trustworthy result**. The attempts are recorded because the
+negative result is itself evidence, and because repeating them without knowing
+this would be wasted work.
+
+| Method | Result | Why it fails |
+|---|---|---|
+| Block definition bounding boxes | Rejected | Nested references inflate them beyond use — one common machine block computes to 882 m × 58 m; others to 9 mm. |
+| Axis-aligned rectangle reconstruction from line-work | 1 of 243 slots matched | Only 2,042 of 61,311 lines on the machine layer are axis-aligned. The plan equipment is drawn rotated. |
+| Connected-component clustering with oriented bounding boxes | 8 of 243 slots matched | Components either merge whole equipment rows or shatter into fragments; 528 of 834 fell outside any plausible machine size. |
+
+What *is* established: the equipment is genuinely there. Every one of the 243
+raster-derived slots overlaps real CAD geometry — median 3 entities each, and
+**zero slots overlap nothing** — overwhelmingly on the machine layer. The
+positions are corroborated; only the per-machine *outline* could not be cut
+cleanly out of the surrounding drawing.
+
+The detail drawings are separable, which is what makes a future attempt
+worthwhile: SPLINE work concentrates in **19 of 875 five-metre bins**, so the
+part sections sitting in this modelspace occupy two tight clusters rather than
+being spread through the plan.
+
+**Consequence:** equipment footprints stay **raster-derived and OBSERVED**.
+They are not relabelled MEASURED_CAD, because the CAD did not yield them.
+
+---
+
 ## 1. Reconstruction methodology
 
 The twin was reconstructed from a confidential engineering floor plan held
