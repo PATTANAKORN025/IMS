@@ -2,6 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const express = require('express');
 const { Pool } = require('pg');
 const { MachineState, MACHINE_STATE_THEME } = require('./lib/contracts');
@@ -94,6 +95,79 @@ app.use((req, res, next) => {
   next();
 });
 
+// ── Build fingerprint ────────────────────────────────────────
+//
+// WHY THIS EXISTS. A container was found serving a six-commit-old build while
+// the repository, the tests and the image tag had all moved on. Nothing on the
+// page said so, and nothing could: the frontend is static files with no
+// version in them, so "is production running the code I just wrote" was a
+// question no one could answer from the outside. That is how a rebuilt
+// verification port came to be mistaken for a rebuilt production one.
+//
+// The fingerprint is computed at boot from the bytes actually on disk in this
+// process's own image -- server.js, lib/ and public/ -- so it cannot be set
+// by an environment variable, cannot be stamped by a build script that did not
+// run, and cannot claim a version the running code is not. Two services
+// reporting the same fingerprint are running identical code; two reporting
+// different fingerprints are not, whatever their tags say.
+//
+// It is a hash of source bytes, not a secret and not a coordinate: it names
+// code, and the code is public.
+const BUILD = (() => {
+  const files = [];
+  const walk = (dir) => {
+    let entries;
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const e of entries.sort((a, b) => a.name.localeCompare(b.name))) {
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) walk(full);
+      else if (/\.(js|html|css|mjs)$/.test(e.name)) files.push(full);
+    }
+  };
+  walk(path.join(__dirname, 'public'));
+  walk(path.join(__dirname, 'lib'));
+  files.push(path.join(__dirname, 'server.js'));
+
+  const h = crypto.createHash('sha256');
+  const assets = [];
+  for (const f of files.sort()) {
+    let buf;
+    try {
+      buf = fs.readFileSync(f);
+    } catch {
+      continue;
+    }
+    const rel = path.relative(__dirname, f).split(path.sep).join('/');
+    const digest = crypto.createHash('sha256').update(buf).digest('hex').slice(0, 12);
+    h.update(rel).update(digest);
+    assets.push({ path: rel, sha256: digest, bytes: buf.length });
+  }
+  return {
+    fingerprint: h.digest('hex').slice(0, 16),
+    asset_count: assets.length,
+    assets,
+    started_at: new Date().toISOString(),
+  };
+})();
+
+// Deliberately unauthenticated-safe in content: it lists this service's own
+// public source files and their hashes, which are already published in the
+// repository. It carries no private path -- every entry is relative to the app
+// root -- and no facility data of any kind.
+app.get('/api/build', (req, res) => {
+  res.status(200).json({
+    service: 'factory-twin-3d',
+    fingerprint: BUILD.fingerprint,
+    asset_count: BUILD.asset_count,
+    assets: BUILD.assets,
+    started_at: BUILD.started_at,
+  });
+});
+
 // ── Static frontend + vendored Three.js (no CDN dependency -- this
 // container has no host port, only reachable via the proxy's auth_request
 // gate, so the frontend must not depend on fetching a script from a
@@ -140,7 +214,11 @@ function loadPrivateGeometry() {
   if (!fs.existsSync(filePath)) return null;
   try {
     const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-    if (!Array.isArray(parsed.slots)) throw new Error('missing slots[]');
+    // equipment[] is what the physical view draws. slots[] -- the raster-
+    // derived positions digitised from the scanned schematic -- is no longer
+    // served at all, so its presence or absence says nothing about whether
+    // this document is usable.
+    if (!Array.isArray(parsed.equipment)) throw new Error('missing equipment[]');
     return parsed;
   } catch (err) {
     runtimeCounters.geometryParseFailures++;
@@ -385,11 +463,12 @@ LEFT JOIN alarm_ctx ON alarm_ctx.equipmentid = s.eqp_id
 ORDER BY s.eqp_id`;
 
 // STATE_SQL's numeric `st` -> contracts.js's MachineState. Only 4 of the
-// 6 MachineState values have a real source in this query today (see
-// lib/contracts.js's per-member comments on OFF/PM_STOP) -- this map
-// intentionally only covers the 4 that are real.
+// 8 MachineState values have a real source in this query today (see
+// lib/contracts.js's per-member comments on OFF/INITIAL/PM/STOP) -- this
+// map intentionally only covers the 4 that are real. A code this map does
+// not cover resolves to UNDEFINED, never to a plausible-looking state.
 const STATE_CODE_TO_MACHINE_STATE = {
-  0: MachineState.UNKNOWN, // no telemetry row, or stale
+  0: MachineState.UNDEFINED, // no telemetry row, or stale
   1: MachineState.IDLE, // state=false
   2: MachineState.RUN, // state=true, no active alarm
   3: MachineState.DOWN, // active Critical/Major alarm
@@ -399,7 +478,7 @@ app.get('/api/state', async (req, res) => {
   try {
     const result = await pool.query(STATE_SQL, [DEVICE_IDS]);
     const rows = result.rows.map((row) => {
-      const machineState = STATE_CODE_TO_MACHINE_STATE[row.state] || MachineState.UNKNOWN;
+      const machineState = STATE_CODE_TO_MACHINE_STATE[row.state] || MachineState.UNDEFINED;
       const theme = MACHINE_STATE_THEME[machineState];
       return {
         device_id: row.eqp_id,
@@ -474,7 +553,7 @@ app.get('/api/floor-geometry', (req, res) => {
       walls: [],
       openings: [],
       zones: [],
-      slots: [],
+      equipment: [],
       functional_zones: zoneLayer.renderable,
       functional_zones_meta: zoneLayer.meta,
     });
@@ -509,7 +588,12 @@ app.get('/api/floor-geometry', (req, res) => {
     walls: wire.projectAll(geometry.walls, wire.projectWall),
     openings: wire.projectAll(geometry.openings, wire.projectOpening),
     zones: wire.projectAll(geometry.zones, wire.projectZoneBox),
-    slots: wire.projectAll(geometry.slots, wire.projectSlot, mapping),
+    // equipment[] replaces slots[]. slots[] held 243 positions digitised off
+    // the scanned schematic: they were raster measurements presented beside CAD
+    // geometry, and left/right placement, extent and orientation were all the
+    // raster's, not the drawing's. They are no longer served in any form --
+    // deleting the wire path is what makes that irreversible by accident.
+    equipment: wire.projectAll(geometry.equipment, wire.projectEquipment, mapping),
     functional_zones: zoneLayer.renderable,
     functional_zones_meta: zoneLayer.meta,
   });

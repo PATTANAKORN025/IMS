@@ -33,18 +33,19 @@ function test(name, fn) {
 }
 
 /** A well-formed slot, of the shape the private document actually uses. */
-function validSlot(extra = {}) {
+function validEquipment(extra = {}) {
   return Object.assign(
     {
-      slot_id: 'slot-0001',
+      id: 'eqp-0001',
       position: { x: 1.5, y: 0, z: -2.25 },
-      footprint: { width: 2, depth: 3, height: 1 },
+      rotation_deg: 90,
+      footprint: { width: 2, depth: 3 },
+      footprint_status: 'OBSERVED_CAD',
       confidence: 'high',
-      source: 'drawing',
-      geometry_status: 'observed',
+      source: 'floor1_dxf',
+      geometry_status: 'MEASURED_CAD',
       height_status: 'unknown',
       zone_id: 'zone-04',
-      detection: { layer: 'equipment' },
     },
     extra
   );
@@ -160,10 +161,22 @@ console.log('\nFactory Twin Wire Projection Tests\n');
 
 // ── The core guarantee: an unknown field never reaches the wire ──
 
-test('an added private field on a slot is not carried', () => {
-  const out = wire.projectSlot(validSlot({ internal_note: 'TEST-PRIVATE-NOTE' }), {});
+test('an added private field on an equipment record is not carried', () => {
+  const out = wire.projectEquipment(validEquipment({
+    internal_note: 'TEST-PRIVATE-NOTE',
+    // The two fields the private document really does carry and that must
+    // never travel: a CAD layer and a block name in this drawing identify a
+    // process and a vendor.
+    cad_layer: 'TEST-PRIVATE-PROCESS-LAYER',
+    cad_block: 'TEST-VENDOR-BLOCK-NAME',
+  }), {});
   assert.ok(!('internal_note' in out), 'internal_note was carried through');
-  assert.ok(!JSON.stringify(out).includes('TEST-PRIVATE-NOTE'));
+  assert.ok(!('cad_layer' in out), 'the CAD layer name was carried through');
+  assert.ok(!('cad_block' in out), 'the CAD block name was carried through');
+  const json = JSON.stringify(out);
+  assert.ok(!json.includes('TEST-PRIVATE-NOTE'));
+  assert.ok(!json.includes('TEST-PRIVATE-PROCESS-LAYER'));
+  assert.ok(!json.includes('TEST-VENDOR-BLOCK-NAME'));
 });
 
 test('an added private field on a column is not carried', () => {
@@ -172,17 +185,18 @@ test('an added private field on a column is not carried', () => {
   assert.ok(!JSON.stringify(out).includes('TEST-PRIVATE-PATH'));
 });
 
-test('a slot projection emits exactly the documented key set', () => {
-  const out = wire.projectSlot(validSlot(), {});
+test('an equipment projection emits exactly the documented key set', () => {
+  const out = wire.projectEquipment(validEquipment(), {});
   assert.deepStrictEqual(Object.keys(out).sort(), [
     'confidence',
-    'detection',
     'footprint',
+    'footprint_status',
     'geometry_status',
     'height_status',
+    'id',
     'ims_device_id',
     'position',
-    'slot_id',
+    'rotation_deg',
     'source',
     'status',
     'zone_id',
@@ -204,20 +218,60 @@ test('a column projection emits exactly the documented key set', () => {
   ]);
 });
 
-test('a valid slot keeps every value it should', () => {
-  const out = wire.projectSlot(validSlot(), {});
+test('a valid equipment record keeps every value it should', () => {
+  const out = wire.projectEquipment(validEquipment(), {});
   assert.deepStrictEqual(out.position, { x: 1.5, y: 0, z: -2.25 });
-  assert.deepStrictEqual(out.footprint, { width: 2, depth: 3, height: 1 });
+  assert.deepStrictEqual(out.footprint, { width: 2, depth: 3 });
+  assert.strictEqual(out.footprint_status, 'OBSERVED_CAD');
+  assert.strictEqual(out.rotation_deg, 90);
+  assert.strictEqual(out.geometry_status, 'MEASURED_CAD');
   assert.strictEqual(out.confidence, 'high');
   assert.strictEqual(out.height_status, 'unknown');
   assert.strictEqual(out.zone_id, 'zone-04');
-  assert.deepStrictEqual(out.detection, { layer: 'equipment' });
+});
+
+test('rotation is normalised into [0,360) and never rounded away', () => {
+  // Orientation is a measurement here. Normalising keeps a reconciliation
+  // comparing like with like; rounding would hide the residual it exists to
+  // report.
+  assert.strictEqual(wire.projectEquipment(validEquipment({ rotation_deg: -90 }), {}).rotation_deg, 270);
+  assert.strictEqual(wire.projectEquipment(validEquipment({ rotation_deg: 450 }), {}).rotation_deg, 90);
+  assert.strictEqual(wire.projectEquipment(validEquipment({ rotation_deg: 12.345 }), {}).rotation_deg, 12.345);
+  assert.strictEqual(wire.projectEquipment(validEquipment({ rotation_deg: NaN }), {}).rotation_deg, null);
+  assert.strictEqual(wire.projectEquipment(validEquipment({ rotation_deg: '90' }), {}).rotation_deg, null);
+});
+
+test('an UNRESOLVED extent travels as absent, never as a default box', () => {
+  // The single most important rule on this projector. The old slot projector
+  // substituted a 1 m pad for a missing dimension, which put an invented
+  // extent on the wire wearing the same shape as a measured one.
+  const out = wire.projectEquipment(validEquipment({
+    footprint_status: 'UNRESOLVED', footprint: null,
+  }), {});
+  assert.strictEqual(out.footprint, null);
+  assert.strictEqual(out.footprint_status, 'UNRESOLVED');
+});
+
+test('a half-stated extent is refused, and the record says so', () => {
+  // A width with no depth is not a narrower machine, it is an unmeasured one.
+  // The status is corrected to UNRESOLVED rather than left claiming OBSERVED.
+  for (const fp of [{ width: 2 }, { depth: 3 }, { width: 2, depth: NaN }, {}]) {
+    const out = wire.projectEquipment(validEquipment({ footprint: fp }), {});
+    assert.strictEqual(out.footprint, null, `${JSON.stringify(fp)} produced a footprint`);
+    assert.strictEqual(out.footprint_status, 'UNRESOLVED');
+  }
+});
+
+test('an invented footprint_status is dropped rather than echoed', () => {
+  const out = wire.projectEquipment(validEquipment({ footprint_status: 'TEST-INVENTED' }), {});
+  assert.strictEqual(out.footprint_status, null);
+  assert.ok(!JSON.stringify(out).includes('TEST-INVENTED'));
 });
 
 // ── Free text cannot pass a token guard ──
 
 test('free text in a token field is dropped, not sanitised and echoed', () => {
-  const out = wire.projectSlot(validSlot({ source: 'TEST-NOTE with spaces and /a/path' }), {});
+  const out = wire.projectEquipment(validEquipment({ source: 'TEST-NOTE with spaces and /a/path' }), {});
   assert.strictEqual(out.source, null);
 });
 
@@ -228,12 +282,12 @@ test('a filesystem path is not a token', () => {
 });
 
 test('an unrecognised confidence tier is dropped rather than echoed', () => {
-  const out = wire.projectSlot(validSlot({ confidence: 'TEST-INVENTED-TIER' }), {});
+  const out = wire.projectEquipment(validEquipment({ confidence: 'TEST-INVENTED-TIER' }), {});
   assert.strictEqual(out.confidence, null);
 });
 
 test('an unrecognised geometry or height status is dropped', () => {
-  const out = wire.projectSlot(validSlot({ geometry_status: 'TEST-BOGUS', height_status: 'TEST-BOGUS' }), {});
+  const out = wire.projectEquipment(validEquipment({ geometry_status: 'TEST-BOGUS', height_status: 'TEST-BOGUS' }), {});
   assert.strictEqual(out.geometry_status, null);
   assert.strictEqual(out.height_status, null);
 });
@@ -246,69 +300,79 @@ test('a half-resolved grid reference reports none rather than half', () => {
 // ── Numbers ──
 
 test('NaN and Infinity are rejected as coordinates', () => {
-  assert.strictEqual(wire.projectSlot(validSlot({ position: { x: NaN, y: 0, z: 1 } }), {}), null);
-  assert.strictEqual(wire.projectSlot(validSlot({ position: { x: 1, y: 0, z: Infinity } }), {}), null);
+  assert.strictEqual(wire.projectEquipment(validEquipment({ position: { x: NaN, y: 0, z: 1 } }), {}), null);
+  assert.strictEqual(wire.projectEquipment(validEquipment({ position: { x: 1, y: 0, z: Infinity } }), {}), null);
 });
 
 test('a numeric string is not a number', () => {
   assert.strictEqual(wire.num('1.5'), null);
-  assert.strictEqual(wire.projectSlot(validSlot({ position: { x: '1', y: '0', z: '2' } }), {}), null);
+  assert.strictEqual(wire.projectEquipment(validEquipment({ position: { x: '1', y: '0', z: '2' } }), {}), null);
 });
 
 test('a slot with no usable position is withheld, never placed at a fallback', () => {
-  assert.strictEqual(wire.projectSlot(validSlot({ position: null }), {}), null);
-  assert.strictEqual(wire.projectSlot(validSlot({ position: {} }), {}), null);
+  assert.strictEqual(wire.projectEquipment(validEquipment({ position: null }), {}), null);
+  assert.strictEqual(wire.projectEquipment(validEquipment({ position: {} }), {}), null);
 });
 
-test('a missing footprint falls back to a neutral pad, not to an invented dimension', () => {
-  const out = wire.projectSlot(validSlot({ footprint: undefined, size: undefined, height: undefined }), {});
-  assert.deepStrictEqual(out.footprint, { width: 1, depth: 1, height: 1 });
+test('an absent footprint is absent on the wire, not a 1 m pad', () => {
+  // The behaviour this replaces: the slot projector substituted width 1,
+  // depth 1, height 1 whenever a dimension was missing. On a floor plan read
+  // from CAD, a 1 m box drawn where nothing was measured is indistinguishable
+  // from a machine that really is 1 m across.
+  const out = wire.projectEquipment(validEquipment({ footprint: undefined }), {});
+  assert.strictEqual(out.footprint, null);
+  assert.strictEqual(out.footprint_status, 'UNRESOLVED');
 });
 
-test('the alternative size+height shape is normalised to one wire shape', () => {
-  const out = wire.projectSlot(
-    validSlot({ footprint: undefined, size: { width: 4, depth: 5 }, height: 6 }),
+test('the old size+height shape is no longer accepted as a footprint', () => {
+  // The slot projector accepted two different private shapes and normalised
+  // them. Equipment accepts one, `footprint`, and a document still written in
+  // the old shape resolves to UNRESOLVED rather than being quietly adopted --
+  // a stale record must not look like a fresh measurement.
+  const out = wire.projectEquipment(
+    validEquipment({ footprint: undefined, size: { width: 4, depth: 5 }, height: 6 }),
     {}
   );
-  assert.deepStrictEqual(out.footprint, { width: 4, depth: 5, height: 6 });
+  assert.strictEqual(out.footprint, null);
+  assert.strictEqual(out.footprint_status, 'UNRESOLVED');
 });
 
 // ── Mapping lookup: the fabricated-mapping vector ──
 
 test('a slot id of __proto__ cannot conjure a mapping', () => {
   const mapping = JSON.parse('{"__proto__": "TEST-FAKE-DEVICE"}');
-  const out = wire.projectSlot(validSlot({ slot_id: '__proto__' }), mapping);
+  const out = wire.projectEquipment(validEquipment({ id: '__proto__' }), mapping);
   assert.strictEqual(out.ims_device_id, null);
   assert.strictEqual(out.status, 'UNMAPPED');
 });
 
 test('a slot id of constructor cannot conjure a mapping', () => {
-  const out = wire.projectSlot(validSlot({ slot_id: 'constructor' }), {});
+  const out = wire.projectEquipment(validEquipment({ id: 'constructor' }), {});
   assert.strictEqual(out.ims_device_id, null);
   assert.strictEqual(out.status, 'UNMAPPED');
 });
 
 test('inherited property names never answer a mapping lookup', () => {
   for (const name of ['toString', 'valueOf', 'hasOwnProperty', 'isPrototypeOf']) {
-    const out = wire.projectSlot(validSlot({ slot_id: name }), {});
+    const out = wire.projectEquipment(validEquipment({ id: name }), {});
     assert.strictEqual(out.status, 'UNMAPPED', `${name} produced a mapping`);
   }
 });
 
 test('a mapping value that is not a token does not map', () => {
-  const out = wire.projectSlot(validSlot(), { 'slot-0001': { device_id: 'TEST-OBJ' } });
+  const out = wire.projectEquipment(validEquipment(), { 'eqp-0001': { device_id: 'TEST-OBJ' } });
   assert.strictEqual(out.ims_device_id, null);
   assert.strictEqual(out.status, 'UNMAPPED');
 });
 
 test('an explicit null mapping entry stays unmapped', () => {
-  const out = wire.projectSlot(validSlot(), { 'slot-0001': null });
+  const out = wire.projectEquipment(validEquipment(), { 'eqp-0001': null });
   assert.strictEqual(out.ims_device_id, null);
   assert.strictEqual(out.status, 'UNMAPPED');
 });
 
 test('a real authoritative mapping entry does map', () => {
-  const out = wire.projectSlot(validSlot(), { 'slot-0001': 'TEST-DEVICE-01' });
+  const out = wire.projectEquipment(validEquipment(), { 'eqp-0001': 'TEST-DEVICE-01' });
   assert.strictEqual(out.ims_device_id, 'TEST-DEVICE-01');
   assert.strictEqual(out.status, 'IMS_CONNECTED');
 });
@@ -620,26 +684,26 @@ test('an anonymous zone box carries its bounds and nothing else', () => {
 // ── Collection behaviour ──
 
 test('projectAll drops unprojectable entries instead of emitting holes', () => {
-  const out = wire.projectAll([validSlot(), { position: null }, validSlot({ slot_id: 'slot-0002' })], wire.projectSlot, {});
+  const out = wire.projectAll([validEquipment(), { position: null }, validEquipment({ id: 'eqp-0002' })], wire.projectEquipment, {});
   assert.strictEqual(out.length, 2);
   assert.ok(out.every((s) => s !== null));
 });
 
 test('projectAll tolerates a non-array without throwing', () => {
-  assert.deepStrictEqual(wire.projectAll(null, wire.projectSlot, {}), []);
+  assert.deepStrictEqual(wire.projectAll(null, wire.projectEquipment, {}), []);
   assert.deepStrictEqual(wire.projectAll(undefined, wire.projectColumn), []);
 });
 
 test('a non-object entry never becomes an output object', () => {
-  assert.strictEqual(wire.projectSlot('TEST-STRING', {}), null);
+  assert.strictEqual(wire.projectEquipment('TEST-STRING', {}), null);
   assert.strictEqual(wire.projectColumn(42), null);
   assert.strictEqual(wire.projectFunctionalZone(null), null);
 });
 
 test('projection never mutates its input', () => {
-  const slot = validSlot({ internal_note: 'TEST-PRIVATE-NOTE' });
+  const slot = validEquipment({ internal_note: 'TEST-PRIVATE-NOTE' });
   const before = JSON.stringify(slot);
-  wire.projectSlot(slot, { 'slot-0001': 'TEST-DEVICE-01' });
+  wire.projectEquipment(slot, { 'eqp-0001': 'TEST-DEVICE-01' });
   assert.strictEqual(JSON.stringify(slot), before);
 });
 

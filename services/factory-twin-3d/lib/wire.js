@@ -73,6 +73,16 @@ const ALLOWED_GEOMETRY_STATUS = new Set([
   'MEASURED_CAD', 'OBSERVED_CAD',
 ]);
 
+/**
+ * Whether a piece of equipment's plan extent is established.
+ *
+ * UNRESOLVED is a first-class answer, not an error state: the CAD block behind
+ * a machine draws its service envelope as well as its body for many machines,
+ * so an extent that swallows its neighbour is withheld rather than drawn. The
+ * renderer draws a position marker for those and says so.
+ */
+const ALLOWED_FOOTPRINT_STATUS = new Set(['OBSERVED_CAD', 'UNRESOLVED']);
+
 /** Physical opening kinds the CAD distinguishes. */
 const ALLOWED_OPENING_KIND = new Set(['door', 'window', 'airshower']);
 
@@ -145,51 +155,19 @@ function deviceIdFor(mapping, slotId) {
 }
 
 /**
- * Projects one observed equipment slot.
+ * projectSlot IS GONE, along with the slots[] layer it served.
  *
- * Returns null for a slot with no usable position: a slot that cannot be placed
- * is withheld rather than rendered at a coerced coordinate. Emitting a fallback
- * position would invent a location, which is worse than showing nothing.
+ * It projected the 243 raster-derived equipment positions digitised off the
+ * scanned schematic. Those positions were a raster measurement rendered beside
+ * CAD geometry at the same visual weight -- left/right placement, extent and
+ * orientation all came from a scan of a print, not from the drawing -- and it
+ * substituted a nominal 1 m box whenever a width or depth was missing, which
+ * put an invented extent on the wire wearing the same shape as a measured one.
+ *
+ * Equipment now comes from CAD block references; see projectEquipment below.
+ * The projector is deleted rather than left unused so that re-adding
+ * `slots: wire.projectAll(...)` to the route cannot silently work again.
  */
-function projectSlot(slot, mapping) {
-  if (!slot || typeof slot !== 'object') return null;
-  const position = point3(slot.position);
-  if (!position) return null;
-
-  const slotId = token(slot.slot_id);
-  const deviceId = deviceIdFor(mapping, slot.slot_id);
-  const detectionLayer = token(slot.detection && slot.detection.layer);
-
-  // Height is a rendering default, never a measurement — see the height
-  // semantics section of the reconstruction methodology. Width and depth are
-  // measured, so a missing one falls back to the same 1 m neutral pad rather
-  // than to a shape that implies a dimension nobody read.
-  const raw = slot.footprint && typeof slot.footprint === 'object' ? slot.footprint : slot.size;
-  const width = num(raw && raw.width);
-  const depth = num(raw && raw.depth);
-  const height = num(raw && raw.height) ?? num(slot.height);
-
-  return {
-    slot_id: slotId,
-    position,
-    footprint: {
-      width: width === null ? 1 : width,
-      depth: depth === null ? 1 : depth,
-      height: height === null ? 1 : height,
-    },
-    confidence: fromEnum(slot.confidence, ALLOWED_CONFIDENCE),
-    source: token(slot.source),
-    geometry_status: fromEnum(slot.geometry_status, ALLOWED_GEOMETRY_STATUS),
-    height_status: fromEnum(slot.height_status, ALLOWED_HEIGHT_STATUS),
-    zone_id: token(slot.zone_id),
-    // Null rather than an object holding a null: the inspector distinguishes
-    // "no detection record" from "a detection record naming nothing", and only
-    // the first is a state this data can be in.
-    detection: detectionLayer === null ? null : { layer: detectionLayer },
-    ims_device_id: deviceId,
-    status: deviceId ? 'IMS_CONNECTED' : 'UNMAPPED',
-  };
-}
 
 /** Projects one detected structural column. Null if it cannot be placed. */
 function projectColumn(col) {
@@ -424,6 +402,62 @@ function projectOpening(opening) {
   };
 }
 
+/**
+ * One piece of equipment read from the CAD as a block reference.
+ *
+ * Position and rotation come out of an INSERT record, so both are stated by
+ * the drawing rather than traced from it. Footprint is a separate and weaker
+ * claim and travels with its own status; a record whose extent did not survive
+ * the spatial-consistency test carries `footprint: null` and
+ * `footprint_status: 'UNRESOLVED'`, and the renderer must not substitute a
+ * default box for it. Emitting a nominal 1 m pad here, the way the old slot
+ * projector did, would put an invented extent on the wire wearing the same
+ * shape as a measured one.
+ *
+ * The CAD layer name, the block name and the block's family size never travel.
+ * A layer or block name in this drawing identifies a vendor or a process.
+ */
+function projectEquipment(item, mapping) {
+  if (!item || typeof item !== 'object') return null;
+  const position = point3(item.position);
+  if (!position) return null;
+
+  const rotation = num(item.rotation_deg);
+  const footprintStatus = fromEnum(item.footprint_status, ALLOWED_FOOTPRINT_STATUS);
+  const fp = item.footprint && typeof item.footprint === 'object' ? item.footprint : null;
+  const width = num(fp && fp.width);
+  const depth = num(fp && fp.depth);
+  // A footprint is served only when it is complete AND declared resolved. Either
+  // half missing means no footprint, never half a footprint.
+  const footprint = footprintStatus === 'OBSERVED_CAD' && width !== null && depth !== null
+    ? { width, depth }
+    : null;
+  const deviceId = deviceIdFor(mapping, item.id);
+
+  return {
+    id: token(item.id),
+    position,
+    // Degrees, as the CAD records them. An angle already inside [0, 360) is
+    // passed through UNTOUCHED -- running it through a modulo would introduce
+    // float error into a measurement (12.345 comes back 12.345000000000027),
+    // and a reconciliation test measuring residuals in thousandths would then
+    // be measuring its own arithmetic. Only an out-of-range angle is wrapped.
+    rotation_deg: rotation === null ? null
+      : (rotation >= 0 && rotation < 360 ? rotation : ((rotation % 360) + 360) % 360),
+    footprint,
+    footprint_status: footprint === null && footprintStatus === 'OBSERVED_CAD'
+      ? 'UNRESOLVED'
+      : footprintStatus,
+    geometry_status: fromEnum(item.geometry_status, ALLOWED_GEOMETRY_STATUS),
+    confidence: fromEnum(item.confidence, ALLOWED_CONFIDENCE),
+    source: token(item.source),
+    height_status: fromEnum(item.height_status, ALLOWED_HEIGHT_STATUS),
+    zone_id: token(item.zone_id),
+    ims_device_id: deviceId,
+    status: deviceId ? 'IMS_CONNECTED' : 'UNMAPPED',
+  };
+}
+
 /** Maps a list through a projector, dropping anything unprojectable. */
 function projectAll(items, project, ...rest) {
   const out = [];
@@ -441,7 +475,6 @@ module.exports = {
   num,
   token,
   deviceIdFor,
-  projectSlot,
   projectColumn,
   projectZoneBox,
   projectEnvelope,
@@ -451,5 +484,6 @@ module.exports = {
   projectConflict,
   projectWall,
   projectOpening,
+  projectEquipment,
   projectAll,
 };

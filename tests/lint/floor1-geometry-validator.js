@@ -53,7 +53,13 @@ const RENDERABLE_CONFIDENCE = new Set(['HIGH', 'MEDIUM']);
 // detector metadata. Anything not named here is treated as detected.
 const NON_DETECTED_SOURCES = new Set(['survey', 'as_built_record']);
 
-const REAL_MACHINE_STATES = new Set(['OFF', 'DOWN', 'IDLE', 'RUN', 'PM_STOP', 'UNKNOWN']);
+// The plant's eight machine states, per lib/contracts.js. A geometry record
+// must never carry one of these as its `status`: geometry says where a thing
+// is, a MachineState says what it is doing, and conflating them is how a
+// drawing starts asserting live plant condition.
+const REAL_MACHINE_STATES = new Set([
+  'OFF', 'DOWN', 'IDLE', 'INITIAL', 'PM', 'STOP', 'RUN', 'UNDEFINED',
+]);
 const MAX_DECIMAL_PLACES = 3; // beyond this reads as false precision, not a deliberate value
 
 let errors = 0;
@@ -251,6 +257,121 @@ for (const slot of geometry.slots || []) {
   }
   if (mappedDevice && slot.status !== 'IMS_CONNECTED' && slot.status !== 'VERIFIED_PHYSICAL') {
     warn(`slot ${slot.slot_id}: mapped to ${mappedDevice} but status is "${slot.status}", expected IMS_CONNECTED or VERIFIED_PHYSICAL`);
+  }
+}
+
+
+// -- CAD equipment -------------------------------------------------------
+//
+// equipment[] is the physical asset layer the twin actually draws. It carries
+// TWO claims of different strength on one record, and the rules below exist to
+// stop them being conflated:
+//
+//   position + rotation  MEASURED_CAD, straight out of an INSERT entity
+//   footprint            OBSERVED_CAD where it survived the extractor's
+//                        spatial-consistency test, UNRESOLVED where it did not
+//
+// The load-bearing invariant is that UNRESOLVED means UNRESOLVED: a record may
+// not declare its extent unresolved and then carry one anyway, and it may not
+// declare it observed and carry nothing. Either would let a renderer draw an
+// invented box that looks exactly like a measured one.
+const EQUIPMENT_FOOTPRINT_STATUS = new Set(['OBSERVED_CAD', 'UNRESOLVED']);
+const seenEquipmentIds = new Set();
+let equipmentResolved = 0;
+let equipmentUnresolved = 0;
+for (const item of geometry.equipment || []) {
+  const label = `equipment ${item.id}`;
+  if (seenEquipmentIds.has(item.id)) error(`duplicate equipment id: ${item.id}`);
+  seenEquipmentIds.add(item.id);
+
+  checkFiniteCoords(item.position, label, ['x', 'y', 'z']);
+  if (item.position && !insideEnvelope(item.position, geometry.envelope)) {
+    error(`${label}: position (${item.position.x}, ${item.position.z}) falls outside the floor envelope`);
+  }
+
+  // Rotation is a measurement here, so an absent or unusable one is an error
+  // rather than something to default to zero. A machine silently rotated to 0
+  // is a machine facing the wrong way with no indication that it is.
+  if (typeof item.rotation_deg !== 'number' || !Number.isFinite(item.rotation_deg)) {
+    error(`${label}: rotation_deg is not a finite number (${item.rotation_deg})`);
+  } else if (item.rotation_deg < 0 || item.rotation_deg >= 360) {
+    error(`${label}: rotation_deg ${item.rotation_deg} out of [0,360) range`);
+  }
+
+  if (!EQUIPMENT_FOOTPRINT_STATUS.has(item.footprint_status)) {
+    error(`${label}: footprint_status "${item.footprint_status}" is not one of `
+      + `${[...EQUIPMENT_FOOTPRINT_STATUS].join(', ')}`);
+  } else if (item.footprint_status === 'OBSERVED_CAD') {
+    equipmentResolved++;
+    if (!item.footprint) {
+      error(`${label}: footprint_status is OBSERVED_CAD but no footprint is recorded`);
+    } else {
+      checkDims(item.footprint, label, ['width', 'depth']);
+    }
+  } else {
+    equipmentUnresolved++;
+    // The whole point of UNRESOLVED. A record that says it has no extent and
+    // then carries one is the exact shape of an invented dimension.
+    if (item.footprint) {
+      error(`${label}: footprint_status is UNRESOLVED but a footprint is recorded `
+        + '-- an unresolved extent must be absent, not withheld-but-present');
+    }
+  }
+
+  // Position provenance must be stated, and must be a CAD tier: this layer
+  // exists precisely because the raster-derived one was not.
+  if (item.geometry_status !== 'MEASURED_CAD') {
+    error(`${label}: geometry_status is "${item.geometry_status}", expected MEASURED_CAD `
+      + '-- equipment position comes from a CAD block reference or it does not belong here');
+  }
+  if (!item.source) error(`${label}: no source recorded`);
+  if (!item.confidence) error(`${label}: no confidence recorded`);
+
+  // Height is not in evidence anywhere in this drawing. A record claiming
+  // otherwise would need a source that does not exist.
+  if (item.height_status !== 'unknown') {
+    error(`${label}: height_status is "${item.height_status}" -- a plan view carries no `
+      + 'equipment elevation, so unknown is the only supportable value');
+  }
+
+  // Same invariant the slot layer carries: an UNMAPPED asset must never wear a
+  // live MachineState.
+  const mappedDevice = mapping[item.id] || null;
+  if (!mappedDevice && item.status && REAL_MACHINE_STATES.has(item.status)) {
+    error(`${label}: UNMAPPED but status "${item.status}" is a live MachineState value`);
+  }
+  if (!mappedDevice && item.ims_device_id) {
+    error(`${label}: carries ims_device_id "${item.ims_device_id}" with no entry in the `
+      + 'authoritative mapping document -- a mapping may only come from that record');
+  }
+}
+
+// The extractor's own tally must agree with the records it wrote. A summary
+// that drifts from its data is how a negative result quietly becomes a
+// positive one in a report nobody re-derives.
+const extraction = geometry.equipment_extraction;
+if (Array.isArray(geometry.equipment) && geometry.equipment.length > 0) {
+  if (!extraction || typeof extraction !== 'object') {
+    error('equipment[] is present but equipment_extraction is missing -- extracted '
+      + 'geometry must record the methods that produced it');
+  } else {
+    const c = extraction.counts || {};
+    if (c.candidates !== geometry.equipment.length) {
+      error(`equipment_extraction.counts.candidates (${c.candidates}) disagrees with `
+        + `equipment[].length (${geometry.equipment.length})`);
+    }
+    if (c.footprint_resolved !== equipmentResolved) {
+      error(`equipment_extraction.counts.footprint_resolved (${c.footprint_resolved}) `
+        + `disagrees with the ${equipmentResolved} records carrying OBSERVED_CAD extents`);
+    }
+    if (c.footprint_unresolved !== equipmentUnresolved) {
+      error(`equipment_extraction.counts.footprint_unresolved (${c.footprint_unresolved}) `
+        + `disagrees with the ${equipmentUnresolved} records carrying UNRESOLVED extents`);
+    }
+    if (!Array.isArray(extraction.methods_tried) || extraction.methods_tried.length === 0) {
+      error('equipment_extraction records no methods_tried -- a negative result is '
+        + 'evidence and has to be written down');
+    }
   }
 }
 
@@ -584,7 +705,7 @@ if (zoneDoc) {
 
 const verifiedPhysicalCount = (geometry.slots || []).filter((s) => s.status === 'VERIFIED_PHYSICAL').length;
 
-console.log(`Checked: ${geometry.columns?.length || 0} columns, ${geometry.zones?.length || 0} zones, ${geometry.slots?.length || 0} slots, ${Object.keys(mapping).length} mapping entries, ${deviceToSlots.size} unique mapped device(s), ${verifiedPhysicalCount} VERIFIED_PHYSICAL slot(s).`);
+console.log(`Checked: ${geometry.columns?.length || 0} columns, ${geometry.zones?.length || 0} zones, ${geometry.equipment?.length || 0} CAD equipment (${equipmentResolved} with a measured extent, ${equipmentUnresolved} UNRESOLVED), ${geometry.slots?.length || 0} superseded raster slots, ${Object.keys(mapping).length} mapping entries, ${deviceToSlots.size} unique mapped device(s), ${verifiedPhysicalCount} VERIFIED_PHYSICAL slot(s).`);
 console.log(`Functional zones: ${zoneCounts.total} record(s), ${zoneCounts.renderable} renderable, ${zoneCounts.total - zoneCounts.renderable} metadata-only.`);
 console.log('='.repeat(50));
 console.log(`Results: ${errors} error(s), ${warnings} warning(s)`);

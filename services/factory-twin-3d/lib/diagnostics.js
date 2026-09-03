@@ -143,7 +143,10 @@ function buildDiagnostics({
   runtime = {},
   schematic = null,
 }) {
-  const slots = geometry && Array.isArray(geometry.slots) ? geometry.slots : [];
+  // equipment[] is the physical asset layer. slots[] -- the raster-derived
+  // positions -- is not counted here at all: a diagnostics figure is a claim
+  // about what the twin is showing, and the twin no longer shows them.
+  const equipment = geometry && Array.isArray(geometry.equipment) ? geometry.equipment : [];
   const columns = geometry && Array.isArray(geometry.columns) ? geometry.columns : [];
   const envelope = geometry && geometry.envelope ? geometry.envelope : null;
   const footprint = geometry && geometry.footprint_polygon ? geometry.footprint_polygon : null;
@@ -163,7 +166,17 @@ function buildDiagnostics({
       grid_x_lines: grid && Array.isArray(grid.x_lines) ? grid.x_lines.length : 0,
       grid_z_lines: grid && Array.isArray(grid.z_lines) ? grid.z_lines.length : 0,
       column_count: columns.length,
-      slot_count: slots.length,
+      equipment_count: equipment.length,
+      equipment_footprint_resolved: equipment.filter(
+        (e) => e && e.footprint_status === 'OBSERVED_CAD'
+      ).length,
+      equipment_footprint_unresolved: equipment.filter(
+        (e) => e && e.footprint_status === 'UNRESOLVED'
+      ).length,
+      // Reported as a hard zero rather than dropped: a reader who remembers the
+      // 243 raster slots should see that the count is now none, not find the
+      // field missing and wonder whether it was renamed.
+      raster_slot_count: 0,
       zone_count_rendered: count(zoneMeta.served),
       zone_count_withheld: count(zoneMeta.withheld),
       zone_count_total: count(zoneMeta.total),
@@ -174,17 +187,17 @@ function buildDiagnostics({
       measured_envelope: envelope ? 1 : 0,
       derived_floor_to_floor: envelope && envelope.floor_to_floor === true ? 1 : 0,
       observed_columns: columns.length,
-      observed_slots: slots.length,
+      measured_equipment: equipment.length,
       // Reported as a hard zero rather than dropped. A reader who remembers
       // this floor once carried synthetic machine positions should see that it
       // now carries none, not find the field missing and wonder.
       simulated_machine_positions: 0,
       unknown_clear_height: envelope && envelope.clear_height_m == null ? 1 : 0,
-      unknown_equipment_height: slots.filter((s) => s && s.height_status === 'unknown').length,
+      unknown_equipment_height: equipment.filter((e) => e && e.height_status === 'unknown').length,
       confirmed_mappings: count(confirmedMappings),
-      unresolved_mappings: Math.max(slots.length - count(confirmedMappings), 0),
+      unresolved_mappings: Math.max(equipment.length - count(confirmedMappings), 0),
       column_confidence: tallyConfidence(columns),
-      slot_confidence: tallyConfidence(slots),
+      equipment_confidence: tallyConfidence(equipment),
       zone_confidence: sanitizeTally(zoneMeta.byConfidence),
     },
     // Rebuilt field by field. ids are pattern-checked; status is a fixed enum;

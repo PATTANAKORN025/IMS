@@ -64,11 +64,19 @@ const POISON = {
     { id: 'TEST-COL-001', confidence: 'high', position: { x: -12.345, z: 67.891 } },
     { id: 'TEST-COL-002', confidence: 'medium', position: { x: 1.5, z: 2.5 } },
   ],
+  // The physical asset layer is equipment[] now. slots[] is retained on the
+  // fixture as well, poisoned, precisely so the test proves the superseded
+  // layer contributes nothing to diagnostics rather than merely being absent.
+  equipment: [
+    { id: 'TEST-EQP-0001', confidence: 'high', height_status: 'unknown', footprint_status: 'OBSERVED_CAD', position: { x: -45.562, z: -51.411 }, cad_block: 'TEST-SENSITIVE-BLOCK', cad_layer: 'TEST-SENSITIVE-LAYER' },
+    { id: 'TEST-EQP-0002', confidence: 'medium', height_status: 'unknown', footprint_status: 'UNRESOLVED', ims_device_id: 'TEST-DEVICE-01' },
+  ],
   slots: [
     { slot_id: 'TEST-SLOT-0001', confidence: 'high', height_status: 'unknown', position: { x: -45.562, z: -51.411 } },
-    { slot_id: 'TEST-SLOT-0002', confidence: 'medium', height_status: 'unknown', ims_device_id: 'TEST-DEVICE-01' },
+    { slot_id: 'TEST-SLOT-0002', confidence: 'medium', height_status: 'unknown' },
   ],
   equipment_detection: { method: 'TEST-SENSITIVE-METHOD-TEXT' },
+  equipment_extraction: { evidence_intersection: 'TEST-SENSITIVE-INTERSECTION-TEXT' },
 };
 
 const ZONE_META = {
@@ -150,7 +158,12 @@ test('output contains only counts, booleans, fixed enums and safe zone ids', () 
 test('counts are still accurate', () => {
   const d = build();
   assert.strictEqual(d.data.column_count, 2);
-  assert.strictEqual(d.data.slot_count, 2);
+  assert.strictEqual(d.data.equipment_count, 2);
+  assert.strictEqual(d.data.equipment_footprint_resolved, 1);
+  assert.strictEqual(d.data.equipment_footprint_unresolved, 1);
+  // The superseded raster layer is on the fixture and must still count zero:
+  // diagnostics reports what the twin shows, and it shows none of them.
+  assert.strictEqual(d.data.raster_slot_count, 0);
   assert.strictEqual(d.data.footprint_vertices, 3);
   assert.strictEqual(d.data.zone_count_rendered, 8);
   // Always zero now, and asserted as zero on purpose: the synthetic placement
@@ -160,11 +173,12 @@ test('counts are still accurate', () => {
   assert.strictEqual(d.evidence.unknown_clear_height, 1);
   assert.strictEqual(d.evidence.confirmed_mappings, 0);
   assert.strictEqual(d.evidence.unresolved_mappings, 2);
+  assert.strictEqual(d.evidence.measured_equipment, 2);
 });
 
 test('an unrecognised confidence tier is counted, never echoed', () => {
   const d = buildDiagnostics({
-    geometry: { columns: [{ confidence: 'TEST-INJECTED-TIER' }], slots: [] },
+    geometry: { columns: [{ confidence: 'TEST-INJECTED-TIER' }], equipment: [] },
     zoneMeta: { byConfidence: { 'TEST-INJECTED-KEY': 4 } },
   });
   assert.strictEqual(d.evidence.column_confidence.other, 1);
@@ -173,7 +187,7 @@ test('an unrecognised confidence tier is counted, never echoed', () => {
 });
 
 test('a poisoned schema_version is dropped rather than echoed', () => {
-  const d = buildDiagnostics({ geometry: { schema_version: '../../etc/passwd', columns: [], slots: [] } });
+  const d = buildDiagnostics({ geometry: { schema_version: '../../etc/passwd', columns: [], equipment: [] } });
   assert.strictEqual(d.data.geometry_schema_version, null);
 });
 
@@ -251,7 +265,7 @@ test('the histogram carries counts only, never a timing or an identifier', () =>
 test('a zone name never reaches diagnostics, however it is supplied', () => {
   const d = buildDiagnostics({
     geometry: {
-      slots: [{ zone_name: 'TEST AREA NAME', height_status: 'unknown' }],
+      equipment: [{ zone_name: 'TEST AREA NAME', height_status: 'unknown' }],
       columns: [{ zone_name: 'TEST AREA NAME' }],
       envelope: { zone_name: 'TEST AREA NAME', clear_height_m: null },
     },

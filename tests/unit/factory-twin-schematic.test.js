@@ -68,8 +68,13 @@ test('a physical position is not accepted as a schematic point', () => {
 });
 
 test('a schematic point is not accepted as a physical position', () => {
-  // And the reverse: lib/wire's guards must reject a schematic point.
-  assert.strictEqual(wire.projectSlot({ slot_id: 'slot-1', position: { sx: 5, sy: 6 } }, {}), null);
+  // And the reverse: lib/wire's guards must reject a schematic point. Checked
+  // against the equipment projector, which is what the physical layer goes
+  // through now -- projectSlot was deleted with the raster layer it served.
+  assert.strictEqual(
+    wire.projectEquipment({ id: 'eqp-1', position: { sx: 5, sy: 6 } }, {}),
+    null,
+  );
 });
 
 test('a coordinate outside the schematic extent is refused', () => {
