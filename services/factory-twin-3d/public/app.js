@@ -25,6 +25,9 @@ import {
   FORM_CLASSIFICATION, FORMS, FORM_KEYS, PART_ROLES,
   formKeyFor, partsFor, groupByForm,
 } from './machine-forms.js';
+import {
+  OPERATIONAL_STATUS, STATUS_ORDER, BACKED_STATUSES,
+} from './operational-status.js';
 
 // Color/label per machine now come straight off /api/state's own
 // state_color/state_label fields -- server.js resolves those from
@@ -193,6 +196,12 @@ for (const g of Object.values(layers)) scene.add(g);
 const sublayers = {
   shell: new THREE.Group(), // floor plate, orientation grid, measured envelope outline
   columns: new THREE.Group(), // detected structural columns
+  // Interior walls and partitions read straight out of the CAD. Their plan
+  // position and their thickness are MEASURED_CAD -- the thickness is the gap
+  // between the two drawn faces. Their HEIGHT is not in the drawing at all, so
+  // it is a declared presentation constant, the same convention already used
+  // for columns, and the inspector says so per wall.
+  walls: new THREE.Group(),
   machines: new THREE.Group(), // monitored devices (simulated positions) + their zone boxes
   slots: new THREE.Group(), // observed equipment slots, no confirmed identity
   // A third evidence layer, kept apart from the other two on purpose. Its
@@ -206,7 +215,7 @@ const sublayers = {
 
 for (const [name, g] of Object.entries(sublayers)) g.name = name;
 sublayers.presentation.visible = false;
-layers.structural.add(sublayers.shell, sublayers.columns);
+layers.structural.add(sublayers.shell, sublayers.columns, sublayers.walls);
 layers.operational.add(sublayers.machines, sublayers.slots, sublayers.presentation);
 
 // ── View modes ──────────────────────────────────────────────
@@ -236,7 +245,17 @@ const OPERATOR_VIEW = Object.freeze({
 });
 let buildingView = null; // derived from real bounds once geometry arrives
 let overviewView = null; // derived from the union of both, once both exist
-let activeView = 'operator';
+// Factory overview is the default framing, not the tight operator camera. The
+// first question this view answers is "what is the state of the floor", which
+// needs the whole floor on screen; the operator framing is one click away and
+// unchanged. The camera is the ONLY thing this decides -- no layer, no evidence
+// state and no coordinate depends on which view is active.
+//
+// It falls back to the operator camera on its own: `overview` is derived from
+// the measured envelope, so before that geometry loads (or on a deployment that
+// has none) applyView('overview') returns false and the fixed operator camera
+// is what the user gets.
+let activeView = 'overview';
 
 // Bounds each derived view was fitted from. Kept so a resize (or the arrival
 // of the second data source) can refit rather than leave framing computed for
@@ -391,6 +410,8 @@ function refitViews() {
       ? 'Unavailable until the measured building geometry loads'
       : '';
   }
+  // Apply the active framing once its geometry exists. The operator camera is
+  // a fixed constant and needs no refit; the derived ones do.
   if (activeView !== 'operator') applyView(activeView);
 }
 
@@ -862,6 +883,111 @@ function presentationCensus(slots) {
   return out;
 }
 
+// ── Interior walls and partitions (CAD) ──────────────────────
+// EVIDENCE SPLIT, and it is not a fine distinction: a wall's plan position and
+// its THICKNESS are MEASURED_CAD -- the thickness is the measured gap between
+// the two faces the drawing actually draws, which is why the extractor discards
+// any face it could not pair rather than assigning a default. A wall's HEIGHT
+// appears nowhere in the drawing. A plan view carries no elevation.
+//
+// So height is a declared presentation constant, tagged PRESENTATION_ONLY,
+// exactly the convention already used for column height. It is deliberately
+// well below the 5.0 m floor-to-floor: a partition drawn to the slab would
+// assert an enclosure the drawing does not support, on a floor that is largely
+// open-plan.
+//
+// One InstancedMesh, so ~900 walls cost one draw call rather than 900.
+const WALL_PRESENTATION_HEIGHT_M = 2.6;
+let wallCount = 0;
+// The instanced meshes themselves, so the regression suite can reconcile the
+// structural layer exactly rather than being loosened to tolerate them.
+const wallMeshes = [];
+const openingMeshes = [];
+
+function buildWalls(walls) {
+  const list = asArray(walls).filter(
+    (w) => w && finite(w.x1) && finite(w.z1) && finite(w.x2) && finite(w.z2)
+      && finite(w.thickness) && w.thickness > 0
+  );
+  wallCount = list.length;
+  if (list.length === 0) return 0;
+
+  const unit = boxGeometry(1, 1, 1);
+  const mesh = new THREE.InstancedMesh(unit, standardMaterial(0x2c3a4f), list.length);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  const m = new THREE.Matrix4();
+  const q = new THREE.Quaternion();
+  const pos = new THREE.Vector3();
+  const scale = new THREE.Vector3();
+  const up = new THREE.Vector3(0, 1, 0);
+
+  let drawn = 0;
+  for (const w of list) {
+    const dx = w.x2 - w.x1;
+    const dz = w.z2 - w.z1;
+    const len = Math.hypot(dx, dz);
+    // A zero-length wall is not a thin wall, it is a pairing that produced no
+    // span. Skip it rather than draw a degenerate box.
+    if (!(len > 0)) continue;
+    pos.set((w.x1 + w.x2) / 2, WALL_PRESENTATION_HEIGHT_M / 2, (w.z1 + w.z2) / 2);
+    q.setFromAxisAngle(up, -Math.atan2(dz, dx));
+    scale.set(len, WALL_PRESENTATION_HEIGHT_M, w.thickness);
+    mesh.setMatrixAt(drawn, m.compose(pos, q, scale));
+    drawn++;
+  }
+  mesh.count = drawn;
+  mesh.instanceMatrix.needsUpdate = true;
+  sublayers.walls.add(mesh);
+  wallMeshes.push(mesh);
+  wallCount = drawn;
+  return drawn;
+}
+
+// ── Doors, windows, air showers (CAD) ────────────────────────
+// Insertion points only. The CAD block behind each one carries a vendor part
+// name and its own internal geometry; the wire projection carries neither, so
+// these are drawn as small markers at the recorded point rather than as
+// modelled leaves and frames. Position is OBSERVED_CAD; the marker's size is
+// a presentation choice.
+const OPENING_STYLE = {
+  door: { color: 0x38bdf8, h: 2.1 },
+  window: { color: 0x7dd3fc, h: 1.0 },
+  airshower: { color: 0xc4b5fd, h: 2.3 },
+};
+let openingCount = 0;
+
+function buildOpenings(openings) {
+  const list = asArray(openings).filter((o) => o && finitePoint(o.position, false)
+    && OPENING_STYLE[o.kind]);
+  openingCount = list.length;
+  if (list.length === 0) return 0;
+
+  const byKind = new Map();
+  for (const o of list) {
+    if (!byKind.has(o.kind)) byKind.set(o.kind, []);
+    byKind.get(o.kind).push(o);
+  }
+  const m = new THREE.Matrix4();
+  const q = new THREE.Quaternion();
+  const pos = new THREE.Vector3();
+  const scale = new THREE.Vector3();
+  for (const [kind, members] of byKind) {
+    const style = OPENING_STYLE[kind];
+    const mesh = new THREE.InstancedMesh(
+      boxGeometry(1, 1, 1), standardMaterial(style.color), members.length);
+    members.forEach((o, i) => {
+      pos.set(o.position.x, style.h / 2, o.position.z);
+      scale.set(0.9, style.h, 0.25);
+      mesh.setMatrixAt(i, m.compose(pos, q, scale));
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+    sublayers.walls.add(mesh);
+    openingMeshes.push(mesh);
+  }
+  return list.length;
+}
+
 function buildPhysicalSlots(geometry) {
   const envelope = geometry && typeof geometry === 'object' ? geometry.envelope : null;
   // A partially-valid envelope is not a smaller envelope, it is an unknown
@@ -893,6 +1019,8 @@ function buildPhysicalSlots(geometry) {
   aimKeyLight(envelope);
   buildFootprint(geometry.footprint_polygon);
   buildStructuralGrid(geometry.grid);
+  buildWalls(geometry.walls, envelope);
+  buildOpenings(geometry.openings);
   buildPresentationMachines(slots);
 
   // Structural columns detected from the drawing (see the private geometry
@@ -1138,6 +1266,21 @@ function buildFunctionalZones(geometry) {
       new THREE.LineBasicMaterial({ color: style.line })
     );
     layers.functional.add(outline);
+
+    // The area's own label from the drawing, when one survived the name guard.
+    // Until the CAD arrived no zone could carry a name -- the labels lived on a
+    // schematic sharing no reference frame with the measured polygons, so
+    // attaching one would have invented the correspondence. The CAD carries the
+    // label and the boundary in the SAME frame, so this is now a reading, not a
+    // guess. A nameless zone still draws; it simply goes unlabelled.
+    if (typeof zone.name === 'string' && zone.name.length > 0) {
+      let cx = 0;
+      let cz = 0;
+      for (const v of verts) { cx += v.x; cz += v.z; }
+      const label = makeTextSprite(zone.name, { fontSize: 22, scaleFactor: 0.05 });
+      label.position.set(cx / verts.length, floorY + 2.2, cz / verts.length);
+      layers.functional.add(label);
+    }
     drawn++;
   }
   return drawn;
@@ -1415,6 +1558,12 @@ function updateEvidenceSummary(geo, zonesDrawn) {
   const slotList = Array.isArray(geo && geo.slots) ? geo.slots : [];
   const columns = columnList.length;
   const slots = slotList.length;
+  // Provenance is counted, not assumed. A column read from the CAD and a column
+  // traced off a raster scan are both "columns"; only the record says which,
+  // and the panel must not describe one as the other.
+  const cadColumns = columnList.filter((c) => c && c.geometry_status === 'MEASURED_CAD').length;
+  const wallList = Array.isArray(geo && geo.walls) ? geo.walls : [];
+  const openingList = Array.isArray(geo && geo.openings) ? geo.openings : [];
   const confirmed = slotList.filter((s) => s && s.ims_device_id).length;
   const meta = geo && typeof geo.functional_zones_meta === 'object' ? geo.functional_zones_meta : null;
   const withheld = meta && Number.isFinite(meta.withheld) ? meta.withheld : 0;
@@ -1431,10 +1580,12 @@ function updateEvidenceSummary(geo, zonesDrawn) {
   const banner = document.getElementById('simulated-banner');
   if (banner) {
     const measured = columns > 0 || slots > 0;
+    const cad = cadColumns > 0 || wallList.length > 0;
     banner.textContent = measured
-      ? `MEASURED FLOOR — building outline, ${columns} columns and ${slots} equipment `
-        + `positions are digitized from the architectural plan. The `
-        + `${machineMeshes.length} monitored devices have NO surveyed position and sit `
+      ? `${cad ? 'CAD FLOOR' : 'MEASURED FLOOR'} — building outline, ${columns} columns`
+        + `${wallList.length > 0 ? `, ${wallList.length} walls` : ''} and ${slots} equipment `
+        + `positions are ${cad ? 'read from the AutoCAD source' : 'digitized from the architectural plan'}. `
+        + `The ${machineMeshes.length} monitored devices have NO surveyed position and sit `
         + `on a simulated grid. ${confirmed} confirmed physical-to-IMS mappings.`
       : 'SIMULATED LAYOUT — Floor 1 (default grouping). No measured floor geometry is '
         + 'deployed here, so machine and zone positions are placeholders, not derived '
@@ -1449,7 +1600,10 @@ function updateEvidenceSummary(geo, zonesDrawn) {
   // Each count names its evidence class, because the number alone is
   // ambiguous: 242 and 23 are both "equipment" but not the same claim.
   setCount('shell', '(measured envelope, floor plate, grid)');
-  setCount('columns', `(${columns} OBSERVED)`);
+  setCount('columns', cadColumns > 0
+    ? `(${columns} MEASURED_CAD)` : `(${columns} OBSERVED)`);
+  setCount('walls', `(${wallCount} walls MEASURED_CAD plan, `
+    + `${openingCount} openings; height PRESENTATION_ONLY)`);
   setCount('functional', `(${zonesDrawn} validated, ${withheld} withheld)`);
   setCount('machines', `(${machineMeshes.length} SIMULATED positions)`);
   setCount('slots', `(${slots} OBSERVED, ${confirmed} CONFIRMED)`);
@@ -1457,7 +1611,9 @@ function updateEvidenceSummary(geo, zonesDrawn) {
   const el = document.getElementById('evidence-summary');
   if (!el) return;
   const rows = [
-    ['Structural columns', columns, 'OBSERVED'],
+    ['Structural columns', columns, cadColumns > 0 ? 'MEASURED_CAD' : 'OBSERVED'],
+    ['Interior walls', wallList.length, 'MEASURED_CAD plan, PRESENTATION height'],
+    ['Doors, windows, air showers', openingList.length, 'OBSERVED_CAD'],
     ['Observed equipment slots', slots, 'OBSERVED'],
     ['Monitored devices', machineMeshes.length, 'SIMULATED position'],
     ['Confirmed physical mappings', confirmed, confirmed === 0 ? 'NONE — no authoritative record' : 'CONFIRMED'],
@@ -1736,8 +1892,55 @@ async function pollState() {
 // joined client-side by device_id, exactly the separation design §5
 // requires so a future real-coordinate swap only ever touches the
 // placement fetch below. ──
+// ── Status legend ────────────────────────────────────────────
+// Rendered from the shared vocabulary rather than written into the HTML, so a
+// state cannot appear in the legend without existing in the code that colours
+// the scene, and vice versa.
+//
+// A state with no backend column is rendered dimmed AND carries a literal "no
+// source" tag. An operator reading this panel learns which lamps this
+// deployment can actually light -- which is a different and more useful fact
+// than "no machine is currently in that state".
+function renderStatusLegend() {
+  const body = document.getElementById('status-legend-body');
+  const note = document.getElementById('status-legend-note');
+  if (!body) return;
+  body.textContent = '';
+  for (const key of STATUS_ORDER) {
+    const st = OPERATIONAL_STATUS[key];
+    const dt = document.createElement('dt');
+    if (!st.backed) dt.className = 'st-off';
+    const glyph = document.createElement('span');
+    glyph.className = 'st-glyph';
+    glyph.style.color = st.color;
+    glyph.setAttribute('aria-hidden', 'true');
+    glyph.textContent = st.glyph;
+    dt.appendChild(glyph);
+    dt.appendChild(document.createTextNode(` ${st.label}`));
+    if (!st.backed) {
+      const tag = document.createElement('span');
+      tag.className = 'st-na';
+      tag.textContent = 'NO SOURCE';
+      dt.appendChild(tag);
+    }
+    const dd = document.createElement('dd');
+    if (!st.backed) dd.className = 'st-off';
+    dd.textContent = st.meaning;
+    body.appendChild(dt);
+    body.appendChild(dd);
+  }
+  if (note) {
+    const missing = STATUS_ORDER.length - BACKED_STATUSES.length;
+    note.textContent =
+      `${BACKED_STATUSES.length} of ${STATUS_ORDER.length} states are derivable from this `
+      + `deployment's own data. ${missing} have no backing column in the schema yet and `
+      + 'are listed so the vocabulary is complete, not because they can display.';
+  }
+}
+
 async function boot() {
   const t0 = performance.now();
+  renderStatusLegend();
   try {
     const res = await fetch('api/placement');
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -1799,6 +2002,8 @@ async function boot() {
     resourceStats,
     footprintMeshes,
     presentationMeshes,
+    wallMeshes,
+    openingMeshes,
     // The form tables and the per-form census, so a regression can assert what
     // was actually built rather than trusting that it was.
     presentationSpec: () => ({ classification: FORM_CLASSIFICATION, forms: FORM_KEYS }),

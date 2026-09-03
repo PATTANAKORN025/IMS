@@ -412,6 +412,18 @@
       border-radius: 4px;
       cursor: pointer;
     }
+    #status-legend { margin-top: 8px; font-size: 11px; }
+    #status-legend > summary { color: #94a3b8; cursor: pointer; }
+    #status-legend > summary:focus-visible { outline: 2px solid #38bdf8; outline-offset: 2px; }
+    #status-legend dl { margin: 6px 0 0 0; display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; align-items: baseline; }
+    #status-legend dt { color: #f1f5f9; font-weight: 700; letter-spacing: 0.03em; white-space: nowrap; }
+    #status-legend dd { margin: 0; color: #94a3b8; line-height: 1.35; }
+    /* An unavailable state is dimmed AND labelled -- the label is what carries
+       the meaning, the dimming only reinforces it. */
+    #status-legend .st-off dt, #status-legend .st-off dd { opacity: 0.55; }
+    #status-legend .st-glyph { display: inline-block; width: 14px; text-align: center; font-size: 12px; }
+    #status-legend .st-na { font-size: 9px; letter-spacing: 0.06em; color: #fbbf24; border: 1px solid #52412a; border-radius: 2px; padding: 0 3px; margin-left: 4px; }
+    .legend-note { margin: 6px 0 0 0; color: #64748b; font-size: 10px; line-height: 1.4; }
     #evidence-legend { margin-top: 8px; font-size: 11px; }
     #evidence-legend > summary { color: #94a3b8; cursor: pointer; }
     #evidence-legend dl { margin: 6px 0 0 0; }
@@ -591,10 +603,28 @@
          monitored devices sit on SIMULATED positions -- bundling any two of
          those behind one checkbox would imply they are the same kind of
          claim. All default to on, so the initial scene is unchanged. -->
+    <!-- Operational status legend. Separate from the evidence legend below on
+         purpose: evidence is how well we know WHERE a thing is, status is what
+         that thing is DOING. Conflating them is what turns a digital twin into
+         a dashboard with a floor plan.
+
+         Built from public/operational-status.js so the legend and the renderer
+         cannot disagree about what a colour means, and so a state with no
+         backend column behind it is rendered as unavailable rather than as a
+         lamp that simply never lights. Every row carries a glyph and a word as
+         well as a colour. -->
+    <details id="status-legend" open>
+      <summary>Status legend</summary>
+      <dl id="status-legend-body"></dl>
+      <p class="legend-note" id="status-legend-note"></p>
+    </details>
     <fieldset id="layer-controls">
       <legend>Layers</legend>
       <label><input type="checkbox" data-layer="shell" checked> Floor shell <span class="hint" data-count="shell"></span></label>
       <label><input type="checkbox" data-layer="columns" checked> Columns <span class="hint" data-count="columns"></span></label>
+      <!-- Plan position and thickness are read from the CAD; the height is a
+           declared presentation constant, because a plan view carries none. -->
+      <label><input type="checkbox" data-layer="walls" checked> Walls and openings <span class="hint" data-count="walls"></span></label>
       <label><input type="checkbox" data-layer="functional" checked> Functional zones <span class="hint" data-count="functional"></span></label>
       <label><input type="checkbox" data-layer="slots" checked> Equipment slots <span class="hint" data-count="slots"></span></label>
       <label><input type="checkbox" data-layer="machines" checked> Simulated machines <span class="hint" data-count="machines"></span></label>

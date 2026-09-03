@@ -40,6 +40,7 @@ run("Factory Twin Evidence Pipeline Tests", "node tests/unit/factory-twin-eviden
 run("Factory Twin Wire Projection Tests", "node tests/unit/factory-twin-wire.test.js");
 run("Factory Twin Schematic Layer Tests", "node tests/unit/factory-twin-schematic.test.js");
 run("Factory Twin Machine Form Tests", "node tests/unit/factory-twin-machine-forms.test.js");
+run("Factory Twin Operational Status Tests", "node tests/unit/factory-twin-operational-status.test.js");
 
 // 2. Run Linters
 run("Dashboard Linter", "node tests/lint/dashboard-linter.js");

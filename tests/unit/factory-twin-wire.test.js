@@ -67,6 +67,95 @@ function validColumn(extra = {}) {
   );
 }
 
+// -- CAD-derived walls and openings ---------------------------------------
+
+function validWall(extra = {}) {
+  return Object.assign(
+    {
+      id: 'WAL-F1-0001',
+      x1: -10.5, z1: 4.25, x2: 12.75, z2: 4.25,
+      thickness: 0.1,
+      source: 'floor1_dxf',
+      geometry_status: 'MEASURED_CAD',
+    },
+    extra
+  );
+}
+
+function validOpening(extra = {}) {
+  return Object.assign(
+    {
+      id: 'OPN-F1-0001',
+      position: { x: 3.5, z: -8.25 },
+      kind: 'door',
+      source: 'floor1_dxf',
+      geometry_status: 'OBSERVED_CAD',
+    },
+    extra
+  );
+}
+
+test('a wall projection emits exactly the documented key set', () => {
+  const out = wire.projectWall(validWall());
+  assert.deepStrictEqual(Object.keys(out).sort(), [
+    'geometry_status', 'id', 'source', 'thickness', 'x1', 'x2', 'z1', 'z2',
+  ]);
+});
+
+test('the CAD layer name a wall came from is never carried', () => {
+  const out = wire.projectWall(validWall({ layer: 'TEST-PRIVATE-PROCESS-LAYER' }));
+  assert.ok(!('layer' in out));
+  assert.ok(!JSON.stringify(out).includes('TEST-PRIVATE-PROCESS-LAYER'));
+});
+
+test('a wall with one unusable endpoint is dropped, not shortened', () => {
+  assert.strictEqual(wire.projectWall(validWall({ x2: NaN })), null);
+  assert.strictEqual(wire.projectWall(validWall({ z1: Infinity })), null);
+  assert.strictEqual(wire.projectWall(validWall({ x1: '0' })), null);
+});
+
+test('a wall with no measured thickness is dropped, not defaulted', () => {
+  assert.strictEqual(wire.projectWall(validWall({ thickness: null })), null);
+  assert.strictEqual(wire.projectWall(validWall({ thickness: 0 })), null);
+  assert.strictEqual(wire.projectWall(validWall({ thickness: -0.1 })), null);
+});
+
+test('an unrecognised geometry_status becomes null rather than riding through', () => {
+  assert.strictEqual(wire.projectWall(validWall({ geometry_status: 'CONFIRMED' })).geometry_status, null);
+  assert.strictEqual(wire.projectWall(validWall({ geometry_status: 'TEST-NOTE' })).geometry_status, null);
+  assert.strictEqual(wire.projectWall(validWall()).geometry_status, 'MEASURED_CAD');
+});
+
+test('an opening projection emits exactly the documented key set', () => {
+  const out = wire.projectOpening(validOpening());
+  assert.deepStrictEqual(Object.keys(out).sort(), [
+    'geometry_status', 'id', 'kind', 'position', 'source',
+  ]);
+});
+
+test('the CAD block name behind an opening is never carried', () => {
+  const out = wire.projectOpening(validOpening({ block: 'TEST-VENDOR-BLOCK-NAME' }));
+  assert.ok(!('block' in out));
+  assert.ok(!JSON.stringify(out).includes('TEST-VENDOR-BLOCK-NAME'));
+});
+
+test('an opening of an unknown kind is dropped entirely', () => {
+  assert.strictEqual(wire.projectOpening(validOpening({ kind: 'hatch' })), null);
+  assert.strictEqual(wire.projectOpening(validOpening({ kind: null })), null);
+  assert.strictEqual(wire.projectOpening(validOpening({ position: null })), null);
+});
+
+test('walls and openings never mutate their input', () => {
+  const wall = validWall({ layer: 'TEST-PRIVATE-PROCESS-LAYER' });
+  const opening = validOpening({ block: 'TEST-VENDOR-BLOCK-NAME' });
+  const wb = JSON.stringify(wall);
+  const ob = JSON.stringify(opening);
+  wire.projectWall(wall);
+  wire.projectOpening(opening);
+  assert.strictEqual(JSON.stringify(wall), wb);
+  assert.strictEqual(JSON.stringify(opening), ob);
+});
+
 console.log('\nFactory Twin Wire Projection Tests\n');
 
 // ── The core guarantee: an unknown field never reaches the wire ──

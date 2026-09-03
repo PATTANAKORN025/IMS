@@ -49,6 +49,10 @@ const ZONES_PATH = path.join(PRIVATE_DIR, 'floor1-zones.json');
 const ZONE_CONFIDENCE = new Set(['HIGH', 'MEDIUM', 'LOW', 'REJECTED', 'UNRESOLVED']);
 const RENDERABLE_CONFIDENCE = new Set(['HIGH', 'MEDIUM']);
 
+// Provenances that are not a detection, and so are not required to carry
+// detector metadata. Anything not named here is treated as detected.
+const NON_DETECTED_SOURCES = new Set(['survey', 'as_built_record']);
+
 const REAL_MACHINE_STATES = new Set(['OFF', 'DOWN', 'IDLE', 'RUN', 'PM_STOP', 'UNKNOWN']);
 const MAX_DECIMAL_PLACES = 3; // beyond this reads as false precision, not a deliberate value
 
@@ -416,8 +420,15 @@ for (const col of geometry.columns || []) {
   seenColIds.add(col.id);
   if (!col.confidence || !VALID_TIER.has(col.confidence)) error(`${label}: invalid/missing confidence "${col.confidence}"`);
   if (!col.source) error(`${label}: missing source provenance`);
-  if (col.source === 'digitized_from_drawing' && !col.detector) {
-    error(`${label}: digitized but carries no detector metadata -- detected geometry must record what it was detected from`);
+  // Detected geometry must record what it was detected from. This used to be
+  // keyed to one source string, which meant the rule silently stopped applying
+  // the moment the extraction moved from the raster tracer to the CAD reader --
+  // a new source name switched the check off rather than tripping it. It now
+  // fails safe: every column must carry detector metadata unless its source is
+  // one of the few provenances that are not a detection at all. An unrecognised
+  // source therefore demands evidence instead of escaping the requirement.
+  if (!col.detector && !NON_DETECTED_SOURCES.has(col.source)) {
+    error(`${label}: carries no detector metadata -- detected geometry must record what it was detected from`);
   }
   if (col.footprint) checkDims(col.footprint, label, ['width', 'depth']);
   if (col.position && footprint && !insidePolygon(col.position, footprint)) {

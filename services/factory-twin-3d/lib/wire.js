@@ -58,8 +58,23 @@ const ZONE_NAME = /^[A-Z0-9][A-Z0-9 \-]{0,31}$/;
 /** Confidence tiers a private document is allowed to express. */
 const ALLOWED_CONFIDENCE = new Set(['high', 'medium', 'low', 'HIGH', 'MEDIUM', 'LOW']);
 
-/** Geometry status values the renderer and inspector understand. */
-const ALLOWED_GEOMETRY_STATUS = new Set(['measured', 'observed', 'derived', 'simulated', 'unknown']);
+/**
+ * Geometry status values the renderer and inspector understand.
+ *
+ * MEASURED_CAD and OBSERVED_CAD are the CAD tiers: geometry read directly out
+ * of the authoritative AutoCAD source, in the drawing's own coordinates. They
+ * are deliberately distinct from the lowercase raster tiers rather than folded
+ * into them -- a wall traced off a scanned image and a wall read from the CAD
+ * that produced that image are not the same quality of evidence, and the
+ * inspector must be able to say which one the operator is looking at.
+ */
+const ALLOWED_GEOMETRY_STATUS = new Set([
+  'measured', 'observed', 'derived', 'simulated', 'unknown',
+  'MEASURED_CAD', 'OBSERVED_CAD',
+]);
+
+/** Physical opening kinds the CAD distinguishes. */
+const ALLOWED_OPENING_KIND = new Set(['door', 'window', 'airshower']);
 
 /** Height status values. `unknown` is a real answer here, not a fallback. */
 const ALLOWED_HEIGHT_STATUS = new Set(['measured', 'derived', 'unknown']);
@@ -359,6 +374,56 @@ function projectConflict(c) {
   };
 }
 
+/**
+ * An architectural wall centreline read from the CAD, with the thickness
+ * measured between its two drawn faces.
+ *
+ * Both endpoints and the thickness must survive, or the wall is dropped. A
+ * wall with one usable end is not a shorter wall, it is a wall nobody
+ * measured, and half of it drawn at full confidence would be an invention.
+ * The private record's own layer name is never carried: layer names in this
+ * drawing identify processes and vendors.
+ */
+function projectWall(wall) {
+  if (!wall || typeof wall !== 'object') return null;
+  const x1 = num(wall.x1);
+  const z1 = num(wall.z1);
+  const x2 = num(wall.x2);
+  const z2 = num(wall.z2);
+  const thickness = num(wall.thickness);
+  if (x1 === null || z1 === null || x2 === null || z2 === null) return null;
+  if (thickness === null || thickness <= 0) return null;
+  return {
+    id: token(wall.id),
+    x1,
+    z1,
+    x2,
+    z2,
+    thickness,
+    source: token(wall.source),
+    geometry_status: fromEnum(wall.geometry_status, ALLOWED_GEOMETRY_STATUS),
+  };
+}
+
+/**
+ * A door, window or air shower, as an insertion point only. The CAD block
+ * behind it carries a vendor part name and its own internal geometry; neither
+ * is carried here. Position and kind are what the floor plan needs.
+ */
+function projectOpening(opening) {
+  if (!opening || typeof opening !== 'object') return null;
+  const position = point2(opening.position);
+  const kind = fromEnum(opening.kind, ALLOWED_OPENING_KIND);
+  if (!position || !kind) return null;
+  return {
+    id: token(opening.id),
+    position,
+    kind,
+    source: token(opening.source),
+    geometry_status: fromEnum(opening.geometry_status, ALLOWED_GEOMETRY_STATUS),
+  };
+}
+
 /** Maps a list through a projector, dropping anything unprojectable. */
 function projectAll(items, project, ...rest) {
   const out = [];
@@ -384,5 +449,7 @@ module.exports = {
   projectGrid,
   projectFunctionalZone,
   projectConflict,
+  projectWall,
+  projectOpening,
   projectAll,
 };

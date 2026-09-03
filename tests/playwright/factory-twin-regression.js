@@ -135,6 +135,10 @@ async function snapshot(page) {
       resources: T.resourceStats(),
       footprintMeshes: T.footprintMeshes.length,
       presentationMeshes: T.presentationMeshes ? T.presentationMeshes.length : 0,
+      // Walls and openings are instanced: a few objects carrying hundreds of
+      // spans. Counted as objects, because that is what the scene holds.
+      wallMeshes: T.wallMeshes ? T.wallMeshes.length : 0,
+      openingMeshes: T.openingMeshes ? T.openingMeshes.length : 0,
       structuralGrid: (() => {
         const g = T.getStructuralGrid();
         return g ? g.geometry.attributes.position.count / 2 : 0;
@@ -151,6 +155,8 @@ async function snapshot(page) {
       machineMeshes: T.machineMeshes.length,
       api: {
         columns: geo.columns.length,
+        walls: Array.isArray(geo.walls) ? geo.walls.length : 0,
+        openings: Array.isArray(geo.openings) ? geo.openings.length : 0,
         slots: geo.slots.length,
         zones: geo.functional_zones.length,
         zonesTotal: geo.functional_zones_meta ? geo.functional_zones_meta.total : null,
@@ -287,18 +293,42 @@ async function run() {
     // Every string the geometry route serves must be a safe token. Free text --
     // a note, a process name, a path -- cannot satisfy this, which is the
     // property being asserted rather than the absence of any particular word.
+    //
+    // ONE field is deliberately prose-shaped and therefore exempt from the
+    // token rule: a functional zone's `name`, which is the drawing's own area
+    // label. It is not unchecked -- it is held to lib/wire.js's ZONE_NAME
+    // instead, which is the stricter guard of the two in every way that
+    // matters: uppercase only, no dots, no slashes, no colons, 32 characters.
+    // A path, a sentence of provenance or an author's note all contain
+    // lowercase and so cannot pass it. The exemption is keyed to the field
+    // path, so prose appearing anywhere else still fails.
     const strings = await page.evaluate(async () => {
       const geo = await (await fetch('api/floor-geometry')).json();
       const out = [];
-      (function walk(o) {
+      (function walk(o, path) {
         if (o === null || o === undefined) return;
-        if (typeof o === 'string') { out.push(o); return; }
-        if (typeof o === 'object') for (const v of Object.values(o)) walk(v);
-      })(geo);
+        if (typeof o === 'string') { out.push({ path, value: o }); return; }
+        if (Array.isArray(o)) { o.forEach((v) => walk(v, `${path}[]`)); return; }
+        if (typeof o === 'object') {
+          for (const [k, v] of Object.entries(o)) walk(v, `${path}.${k}`);
+        }
+      })(geo, '$');
       return out;
     });
-    const nonToken = strings.filter((v) => !/^[A-Za-z0-9][A-Za-z0-9_.:-]{0,63}$/.test(v));
+    const ZONE_NAME_FIELD = '$.functional_zones[].name';
+    const nonToken = strings.filter(
+      (s) => s.path !== ZONE_NAME_FIELD
+        && !/^[A-Za-z0-9][A-Za-z0-9_.:-]{0,63}$/.test(s.value));
     check(nonToken.length === 0, 'every served geometry string is a safe token', `${nonToken.length} free-text value(s)`);
+
+    // The exempt field carries its own, stricter assertion rather than being
+    // waved through: if a name ever stops matching ZONE_NAME, that is a leak.
+    const names = strings.filter((s) => s.path === ZONE_NAME_FIELD).map((s) => s.value);
+    const badNames = names.filter((v) => !/^[A-Z0-9][A-Z0-9 \-]{0,31}$/.test(v));
+    check(badNames.length === 0, 'every zone name matches the zone-name guard exactly',
+      `${badNames.length} of ${names.length} name(s) failed`);
+    check(!names.some((v) => /[/\.:]/.test(v)),
+      'no zone name can carry a path, a dot or a colon');
   }
 
 
@@ -371,7 +401,12 @@ async function run() {
     // reference there is and stays. Either way the count is columns + 1.
     const measuredPlate = s.footprintMeshes > 0;
     const syntheticPlate = !measuredPlate && s.machineMeshes > 0 ? 1 : 0;
-    const expectedStructural = s.api.columns + (measuredPlate ? s.footprintMeshes : syntheticPlate);
+    // Plus the CAD building fabric: one instanced mesh for every wall, and one
+    // per opening kind. These are added as objects, not per wall, which is the
+    // whole point of instancing them -- ~900 walls must not cost ~900 meshes.
+    const expectedStructural = s.api.columns
+      + (measuredPlate ? s.footprintMeshes : syntheticPlate)
+      + s.wallMeshes + s.openingMeshes;
     // slots + monitored devices + one instanced mesh per (form, part). The
     // presentation meshes are a couple of dozen objects standing in for every
     // machine on the floor, which is exactly why they are counted as objects.
@@ -385,6 +420,15 @@ async function run() {
       `${s.perLayer.functional} vs ${s.api.zones}`);
     check(s.perSublayer.columns === s.api.columns, 'column sub-layer holds exactly the served columns',
       `${s.perSublayer.columns} vs ${s.api.columns}`);
+    check(s.perSublayer.walls === s.wallMeshes + s.openingMeshes,
+      'wall sub-layer holds exactly the wall and opening meshes',
+      `${s.perSublayer.walls} vs ${s.wallMeshes + s.openingMeshes}`);
+    // Instancing is the claim, so assert it: hundreds of walls, a handful of
+    // objects. If a refactor ever drops back to one mesh per wall this fails
+    // rather than quietly costing ~900 draw calls.
+    check(s.api.walls === 0 || s.wallMeshes <= 2,
+      'walls are instanced, not one mesh each',
+      `${s.wallMeshes} mesh(es) for ${s.api.walls} walls`);
     check(s.perSublayer.slots === s.api.slots, 'slot sub-layer holds exactly the served slots',
       `${s.perSublayer.slots} vs ${s.api.slots}`);
     check(s.perSublayer.machines === s.machineMeshes, 'machine sub-layer holds exactly the monitored devices',
