@@ -43,7 +43,12 @@ const POLL_MS = 5000;
 const container = document.getElementById('scene');
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0f172a);
+// Restrained graphite. The scene is read for hours in a control room, so the
+// ground tone is deliberately darker and less blue than the HUD chrome: the
+// floor plate, the structure and the status colours each need their own step
+// of separation from it, and a lighter ground spends contrast that the status
+// vocabulary needs more.
+scene.background = new THREE.Color(0x0b1017);
 
 const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 250);
 // Wider/higher/more top-down framing than Task 4.1's single-box camera
@@ -392,7 +397,7 @@ function refitViews() {
     const h = Math.hypot(fit.position.x - buildingBounds.cx,
       fit.position.y, fit.position.z - buildingBounds.cz);
     planView = {
-      position: { x: buildingBounds.cx, y: h * 1.25, z: buildingBounds.cz + 0.001 },
+      position: { x: buildingBounds.cx, y: h * 1.02, z: buildingBounds.cz + 0.001 },
       target: { x: buildingBounds.cx, y: 0, z: buildingBounds.cz },
     };
   }
@@ -592,7 +597,10 @@ function buildFootprint(footprint) {
     // plate is the surface every shadow lands on. depthWrite stays off so the
     // plate never occludes the grid drawn just above it.
     new THREE.MeshStandardMaterial({
-      color: 0x27384f,
+      // The floor sits between the background and the structure on purpose:
+      // dark enough that walls and columns read as objects standing ON it,
+      // light enough that the building is visibly a solid plate and not a hole.
+      color: 0x1b2534,
       roughness: 0.96,
       metalness: 0.02,
       side: THREE.DoubleSide,
@@ -806,7 +814,7 @@ function buildWalls(walls) {
   if (list.length === 0) return 0;
 
   const unit = boxGeometry(1, 1, 1);
-  const mesh = new THREE.InstancedMesh(unit, standardMaterial(0x2c3a4f), list.length);
+  const mesh = new THREE.InstancedMesh(unit, standardMaterial(0x4a5d78), list.length);
   mesh.castShadow = true;
   mesh.receiveShadow = true;
   const m = new THREE.Matrix4();
@@ -903,7 +911,7 @@ function buildWallLines(lines) {
   }
   const seg = new THREE.LineSegments(
     new THREE.BufferGeometry().setFromPoints(pts),
-    new THREE.LineBasicMaterial({ color: 0x51617a })
+    new THREE.LineBasicMaterial({ color: 0x64789a })
   );
   sublayers.walls.add(seg);
   return list.length;
@@ -967,7 +975,9 @@ function buildPhysicalSlots(geometry) {
     const w = finite(col.footprint?.width) ? col.footprint.width : 0.3;
     const dpt = finite(col.footprint?.depth) ? col.footprint.depth : 0.3;
     const colGeom = boxGeometry(w, envelope.height, dpt);
-    const color = col.confidence === 'medium' ? 0x1e293b : 0x334155;
+    // Structure reads a clear step above the floor plate. MEDIUM stays dimmer
+    // than HIGH so a less certain detection never looks as firm as a clear one.
+    const color = col.confidence === 'medium' ? 0x3d4a5e : 0x5c6e88;
     const colMesh = new THREE.Mesh(colGeom, standardMaterial(color));
     // Structure reads as vertical when it is shaded and casts. This changes how
     // a column is drawn, never where it is or what it claims.
@@ -1558,35 +1568,45 @@ function showSlotInspector(slot) {
 }
 
 function showColumnInspector(col) {
-  render('OBSERVED', 'badge-observed', 'Structural column', [
-    ['Column', col.id],
-    ['Position x / z', `${col.position.x} / ${col.position.z} m`],
-    ['Measured footprint', col.footprint ? `${col.footprint.width} × ${col.footprint.depth} m` : 'unknown'],
-    ['Grid reference', col.grid_ref ? `${col.grid_ref.x}${col.grid_ref.z}` : 'none'],
-    ['Offset from intersection', col.offset_from_intersection_mm != null ? `${col.offset_from_intersection_mm} mm` : 'unknown'],
-    ['Confidence', col.confidence ?? 'unknown'],
-    ['Source', col.source ?? 'unknown'],
-    ['Geometry status', col.geometry_status ?? 'unknown'],
-    ['Detector ring / interior', col.detector ? `${col.detector.ring_density} / ${col.detector.interior_density}` : 'unknown'],
-  ],
-  'Detected from the engineering drawing at its own measured position — not snapped to the grid intersection. ' +
-  'Rendered height is the floor-to-floor envelope, a visualization convention; clear height is not in evidence.');
+  // The badge follows the record, it is not hardcoded. A column read out of the
+  // CAD and one traced off a raster scan are different evidence, and the panel
+  // has to be able to say which one is on screen.
+  const cad = col.geometry_status === 'MEASURED_CAD';
+  const det = col.detector || {};
+  // Two detectors have produced columns for this floor and they report
+  // different things. Show whichever actually ran, rather than a blank row for
+  // fields belonging to the other one.
+  const detectorRow = det.size_mm != null
+    ? ['CAD evidence', `${det.squares || 1} drawn square(s), ${det.size_mm} mm`]
+    : ['Detector ring / interior', det.ring_density != null
+      ? `${det.ring_density} / ${det.interior_density}` : 'unknown'];
+
+  render(
+    cad ? 'MEASURED_CAD' : 'OBSERVED',
+    cad ? 'badge-measured' : 'badge-observed',
+    'Structural column',
+    [
+      ['Column', col.id],
+      ['Position x / z', `${col.position.x} / ${col.position.z} m`],
+      ['Measured footprint', col.footprint ? `${col.footprint.width} × ${col.footprint.depth} m` : 'unknown'],
+      ['Grid reference', col.grid_ref ? `${col.grid_ref.x}${col.grid_ref.z}` : 'none'],
+      ['Confidence', col.confidence ?? 'unknown'],
+      ['Source', col.source ?? 'unknown'],
+      ['Geometry status', col.geometry_status ?? 'unknown'],
+      detectorRow,
+    ],
+    cad
+      ? 'Read from the AutoCAD source at its own drawn position. Plan size is measured. '
+        + 'Rendered height is the floor-to-floor envelope, a visualization convention; '
+        + 'clear height is not in evidence.'
+      : 'Detected from the engineering drawing at its own measured position — not snapped '
+        + 'to the grid intersection. Rendered height is the floor-to-floor envelope, a '
+        + 'visualization convention; clear height is not in evidence.'
+  );
 }
 
-function showMachineInspector(deviceId) {
-  const st = latestStateById.get(deviceId);
-  render('SIMULATED', 'badge-simulated', 'Monitored device', [
-    ['Device', deviceId],
-    ['Live state', st ? `${st.state_label} (${st.machine_state})` : 'awaiting first poll'],
-    ['Boards', st ? `${st.board_no} / ${st.total_board}` : 'unknown'],
-    ['MO', st && st.mo ? st.mo : '—'],
-    ['Alarm', st && st.alarm ? `${st.alarm.count} · ${st.alarm.owner} · ${st.alarm.elapsed}` : 'none'],
-    ['Position', 'simulated grid — not a surveyed location'],
-    ['Physical mapping', 'NOT CONFIRMED'],
-  ],
-  'Telemetry is real. The position is not: this device sits on a synthetic grid because no authoritative ' +
-  'record places it in the building. Click to open its Machine Snapshot drill-down.');
-}
+// showMachineInspector is gone with the machines. Nothing in the scene is a
+// monitored device, so nothing can open a device inspector from the floor.
 
 // Every rendered evidence position, as one stable string. A view switch is
 // allowed to move the camera and nothing else, so this must compare identical
