@@ -1910,6 +1910,77 @@ function renderStatusLegend() {
   }
 }
 
+// ── Floor selection ──────────────────────────────────────────
+// Floor 1 is the first validated dataset, not a special case in the code. The
+// selector is built from the server's catalogue: it lists what is deployed and
+// nothing else, so an operator is never offered a floor that would 404, and a
+// floor that has not been surveyed simply is not there. No label here is read
+// from a private document -- the server computes "Floor N" from the ordinal.
+//
+// Switching floors reloads the page with the new id in the query string. That
+// is deliberate rather than lazy: rebuilding a scene in place means tearing
+// down every mesh, cache, instanced buffer and event binding this module owns,
+// and a teardown that misses one leaves the previous floor's geometry in the
+// scene -- which on a plan of a real building is a silent, invisible error of
+// exactly the kind this whole service exists to prevent. A reload cannot leave
+// a stale coordinate behind.
+let floorCatalogue = [];
+let activeFloor = null;
+
+async function setUpFloorSelector() {
+  const select = document.getElementById('floor-select');
+  const wrap = document.getElementById('floor-picker');
+  let requested = null;
+  try {
+    const params = new URLSearchParams(window.location.search);
+    requested = params.get('floor');
+  } catch (err) {
+    requested = null;
+  }
+
+  try {
+    const res = await fetch('api/floors');
+    if (res.ok) {
+      const body = await res.json();
+      floorCatalogue = Array.isArray(body.floors) ? body.floors : [];
+      // The requested id has to BE one of the catalogue's, not merely look like
+      // one, and the value used from here on is the catalogue's own string.
+      const hit = floorCatalogue.find((f) => f && f.id === requested);
+      activeFloor = hit ? hit.id
+        : (typeof body.default === 'string' ? body.default : null);
+    }
+  } catch (err) {
+    console.warn('floor catalogue fetch failed (non-fatal):', err.message);
+  }
+
+  if (!select || !wrap) return activeFloor;
+  // One deployed floor is not a choice. Showing a selector with a single
+  // option implies the others exist somewhere, which is a claim about the
+  // building this service has no evidence for.
+  if (floorCatalogue.length < 2) {
+    wrap.hidden = true;
+    return activeFloor;
+  }
+  wrap.hidden = false;
+  select.replaceChildren();
+  for (const f of floorCatalogue) {
+    if (!f || typeof f.id !== 'string' || typeof f.label !== 'string') continue;
+    const opt = document.createElement('option');
+    opt.value = f.id;
+    opt.textContent = f.label;
+    if (f.id === activeFloor) opt.selected = true;
+    select.appendChild(opt);
+  }
+  select.addEventListener('change', () => {
+    const next = floorCatalogue.find((f) => f && f.id === select.value);
+    if (!next) return;
+    const url = new URL(window.location.href);
+    url.searchParams.set('floor', next.id);
+    window.location.assign(url.toString());
+  });
+  return activeFloor;
+}
+
 async function boot() {
   const t0 = performance.now();
   // Size the camera and the drawing buffer to the STAGE before anything is
@@ -1934,8 +2005,18 @@ async function boot() {
   // Independent of the placement fetch above -- absence here (empty
   // shape, the default for a public clone) must never block real-device
   // rendering, and a real-device fetch failure must never block this.
+  // WHICH FLOOR. The id comes from the page's own query string so a floor is
+  // a bookmarkable address, but it is never trusted: it is looked up in the
+  // catalogue the server published, and anything not in that list is dropped
+  // and the default floor requested instead. The client therefore cannot ask
+  // for a floor the server would refuse, and cannot be steered into building a
+  // request path out of a string somebody put in the URL bar.
+  const floorId = await setUpFloorSelector();
+  const geometryUrl = floorId
+    ? `api/floor-geometry?floor=${encodeURIComponent(floorId)}` : 'api/floor-geometry';
+
   try {
-    const geoRes = await fetch('api/floor-geometry');
+    const geoRes = await fetch(geometryUrl);
     if (geoRes.ok) {
       const geo = await geoRes.json();
       buildFloor(geo);
@@ -1992,6 +2073,8 @@ async function boot() {
     layers,
     applyView,
     getView: () => activeView,
+    getFloor: () => activeFloor,
+    getFloorCatalogue: () => floorCatalogue.slice(),
     getBuildingView: () => buildingView,
     // Cache sizes are exposed so a regression test can assert the sharing
     // actually happened rather than trusting that it did.

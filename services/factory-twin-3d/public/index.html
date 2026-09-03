@@ -134,6 +134,13 @@
     .seg button:hover:not(:disabled), .btn:hover:not(:disabled) { color: var(--text); background: #172434; }
     .seg button[aria-pressed="true"] { background: #1d3348; color: var(--text); border-color: var(--line-2); }
     .seg button:disabled, .btn:disabled { opacity: .35; cursor: not-allowed; }
+    #floor-picker { display: flex; align-items: center; gap: 6px; }
+    #floor-picker[hidden] { display: none; }
+    #floor-picker label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+    #floor-select {
+      background: var(--panel-2); color: var(--text); border: 1px solid var(--line);
+      border-radius: var(--radius); padding: 5px 8px; font: inherit; font-size: 12px;
+    }
     .btn { border-color: var(--line); }
     /* Focus is never removed, only restyled. Keyboard operators are operators. */
     :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
@@ -292,6 +299,12 @@
         <button type="button" data-view="building" aria-pressed="false">Fit floor</button>
       </div>
       <button type="button" class="btn" id="view-reset">Reset camera</button>
+      <!-- Hidden until a second floor is deployed. A selector offering one
+           option asserts that the others exist, which nothing here establishes. -->
+      <div id="floor-picker" hidden>
+        <label for="floor-select">Floor</label>
+        <select id="floor-select"></select>
+      </div>
 
       <div id="data-quality">Loading floor evidence…</div>
       <div id="status-line"></div>

@@ -9,6 +9,7 @@ const { MachineState, MACHINE_STATE_THEME } = require('./lib/contracts');
 const { buildDiagnostics } = require('./lib/diagnostics');
 const wire = require('./lib/wire');
 const schematic = require('./lib/schematic');
+const floors = require('./lib/floors');
 
 const PORT = process.env.PORT || 4100;
 
@@ -209,9 +210,9 @@ const PRIVATE_DIR = path.join(__dirname, 'private');
 // explicit data-separation requirement) means a verified physical-slot ->
 // device_id correspondence can be added or changed without touching this
 // file's geometry at all.
-function loadPrivateGeometry() {
-  const filePath = path.join(PRIVATE_DIR, 'floor1-geometry.json');
-  if (!fs.existsSync(filePath)) return null;
+function loadPrivateGeometry(floorId) {
+  const filePath = floors.documentPath(PRIVATE_DIR, floorId, 'geometry');
+  if (!filePath || !fs.existsSync(filePath)) return null;
   try {
     const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
     // equipment[] is what the physical view draws. slots[] -- the raster-
@@ -233,9 +234,9 @@ function loadPrivateGeometry() {
 // physical-slot<->device_id correspondence would ever be introduced, and
 // this repo's own copy of the file (if any) has every entry null: no
 // authoritative mapping exists.
-function loadPrivateAssetMapping() {
-  const filePath = path.join(PRIVATE_DIR, 'floor1-asset-mapping.json');
-  if (!fs.existsSync(filePath)) return {};
+function loadPrivateAssetMapping(floorId) {
+  const filePath = floors.documentPath(PRIVATE_DIR, floorId, 'mapping');
+  if (!filePath || !fs.existsSync(filePath)) return {};
   try {
     const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
     if (typeof parsed.mapping !== 'object' || parsed.mapping === null) throw new Error('missing mapping{}');
@@ -260,10 +261,10 @@ function loadPrivateAssetMapping() {
 // filter is applied here rather than trusting the file's own renderable
 // flag alone, so a hand-edit of that flag still cannot promote a LOW or
 // conflicted zone into the scene.
-function loadPrivateZones() {
+function loadPrivateZones(floorId) {
   const empty = { renderable: [], meta: { total: 0, served: 0, withheld: 0, byConfidence: {}, conflicts: [] } };
-  const filePath = path.join(PRIVATE_DIR, 'floor1-zones.json');
-  if (!fs.existsSync(filePath)) return empty;
+  const filePath = floors.documentPath(PRIVATE_DIR, floorId, 'zones');
+  if (!filePath || !fs.existsSync(filePath)) return empty;
   try {
     const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
     const zones = Array.isArray(parsed.zones) ? parsed.zones : [];
@@ -538,14 +539,68 @@ app.get('/api/state', async (req, res) => {
 // (its live MachineState comes from /api/state, joined client-side by
 // device_id, same pattern as the real-device layer); every other slot
 // stays 'UNMAPPED' and carries no device_id.
+/**
+ * The deployed-floor catalogue.
+ *
+ * Read on every request rather than cached at boot, because a floor arrives as
+ * a file drop into a read-only bind mount: a restart to notice it would make
+ * the deployment step a redeploy. The directory holds at most five entries and
+ * this is five fs.existsSync calls, so the cost is not worth a cache that can
+ * go stale.
+ */
+function catalogue() {
+  return floors.discover(PRIVATE_DIR);
+}
+
+/**
+ * The floor a request is for.
+ *
+ * No `floor` parameter means the default floor -- the URL every client used
+ * before floors existed still means what it meant. A parameter that names a
+ * deployed floor resolves to the CATALOGUE'S copy of that id, never the
+ * client's string. Anything else resolves to null, and the caller answers 404
+ * rather than quietly substituting a different floor: a view that shows
+ * Floor 1 while its control says Floor 3 is worse than an error.
+ */
+function requestedFloor(req, list) {
+  const raw = req.query ? req.query.floor : undefined;
+  if (raw === undefined || raw === null || raw === '') return floors.defaultFloor(list);
+  return floors.resolve(list, typeof raw === 'string' ? raw : null);
+}
+
+// Which floors this deployment actually has. Ids, ordinals and computed
+// labels only -- nothing here is read from a private document, so the
+// catalogue discloses that a floor is deployed and nothing about what is on
+// it. A client renders its floor selector from this and cannot invent an
+// option the server would refuse.
+app.get('/api/floors', (req, res) => {
+  const list = catalogue();
+  res.status(200).json({
+    floors: list.map((f) => ({
+      id: f.id,
+      ordinal: f.ordinal,
+      label: f.label,
+      has_zones: f.has_zones,
+    })),
+    default: floors.defaultFloor(list),
+  });
+});
+
 app.get('/api/floor-geometry', (req, res) => {
   // Functional zones live in their own private file and are independent of
   // floor1-geometry.json -- they are served even when no geometry file
   // exists, which is the current state on this deployment.
-  const zoneLayer = loadPrivateZones();
-  const geometry = loadPrivateGeometry();
+  const list = catalogue();
+  const floorId = requestedFloor(req, list);
+  // A named floor that is not deployed is not an empty floor. Answering with
+  // the empty shape would say "this floor exists and has nothing on it", which
+  // is a different statement from "there is no such floor here".
+  if (floorId === null && list.length > 0) return res.status(404).json({ error: 'not found' });
+  const zoneLayer = loadPrivateZones(floorId);
+  const geometry = loadPrivateGeometry(floorId);
   if (!geometry) {
     return res.status(200).json({
+      floor: floorId,
       envelope: null,
       footprint_polygon: null,
       grid: null,
@@ -559,7 +614,7 @@ app.get('/api/floor-geometry', (req, res) => {
       functional_zones_meta: zoneLayer.meta,
     });
   }
-  const mapping = loadPrivateAssetMapping();
+  const mapping = loadPrivateAssetMapping(floorId);
   // Allowlist at BOTH levels, not just this one. Naming the top-level fields
   // stopped a whole private document being published by one spread; it did not
   // stop the level below, where each slot was itself spread. lib/wire rebuilds
@@ -582,6 +637,9 @@ app.get('/api/floor-geometry', (req, res) => {
   // `camera` stays unserved. Nothing reads it, and framing is derived from the
   // geometry rather than dictated by the private file.
   res.status(200).json({
+    // The floor this payload describes, echoed from the catalogue rather than
+    // from the request, so a client can tell which floor it actually received.
+    floor: floorId,
     envelope: wire.projectEnvelope(geometry.envelope),
     footprint_polygon: wire.projectFootprintPolygon(geometry.footprint_polygon),
     grid: wire.projectGrid(geometry.grid),
@@ -616,8 +674,9 @@ app.get('/api/floor-geometry', (req, res) => {
 // This document is NOT geometry. It holds drawing coordinates from a source
 // that declares no scale, and it is kept in its own file precisely so that it
 // cannot be confused with, or accidentally merged into, the measured model.
-function loadPrivateSchematic() {
-  const filePath = path.join(PRIVATE_DIR, 'floor1-schematic.json');
+function loadPrivateSchematic(floorId) {
+  const filePath = floors.documentPath(PRIVATE_DIR, floorId, 'schematic');
+  if (!filePath) return null;
   if (!fs.existsSync(filePath)) return null;
   try {
     return JSON.parse(fs.readFileSync(filePath, 'utf8'));
@@ -636,8 +695,11 @@ function loadPrivateSchematic() {
 // SCHEMATIC_NOT_PHYSICAL -- so a consumer that only ever sees the response
 // still knows these numbers are not metres.
 app.get('/api/floor-schematic', (req, res) => {
+  const list = catalogue();
+  const floorId = requestedFloor(req, list);
+  if (floorId === null && list.length > 0) return res.status(404).json({ error: 'not found' });
   res.status(200).json({
-    ...schematic.projectSchematic(loadPrivateSchematic()),
+    ...schematic.projectSchematic(loadPrivateSchematic(floorId)),
     generated_at: new Date().toISOString(),
   });
 });
@@ -653,9 +715,12 @@ app.get('/api/floor-schematic', (req, res) => {
 // exists to keep apart.
 app.get('/api/diagnostics', (req, res) => {
   const t0 = Date.now();
-  const geometry = loadPrivateGeometry();
-  const zoneLayer = loadPrivateZones();
-  const mapping = loadPrivateAssetMapping();
+  const list = catalogue();
+  const floorId = requestedFloor(req, list);
+  if (floorId === null && list.length > 0) return res.status(404).json({ error: 'not found' });
+  const geometry = loadPrivateGeometry(floorId);
+  const zoneLayer = loadPrivateZones(floorId);
+  const mapping = loadPrivateAssetMapping(floorId);
   runtimeCounters.geometryLoadMs = Date.now() - t0;
 
   // Serialization is delegated to lib/diagnostics, which builds the response
@@ -671,7 +736,7 @@ app.get('/api/diagnostics', (req, res) => {
       runtime: { ...runtimeCounters, uptimeSeconds: Math.floor(process.uptime()) },
       // Coverage only -- lib/diagnostics reduces this to counts and can emit
       // no name, label or coordinate from it.
-      schematic: loadPrivateSchematic(),
+      schematic: loadPrivateSchematic(floorId),
     }),
     generated_at: new Date().toISOString(),
   });

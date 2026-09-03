@@ -207,7 +207,14 @@ async function run() {
   console.log('(no monitored device is drawn on this floor by design -- '
     + 'device-render cases are replaced by "no machine is invented" assertions)');
 
-  const GEO = '**/api/floor-geometry';
+  // The trailing wildcard matters. The client asks for a specific floor, so
+  // the request carries a query string, and a pattern without it silently
+  // stops matching -- which does not fail the suite, it makes every injected
+  // geometry fault a no-op while the assertions keep passing against real
+  // data. That is exactly how this pattern was found: the "no geometry is
+  // invented" checks began failing because real geometry was being served
+  // through a fault the suite believed it had injected.
+  const GEO = '**/api/floor-geometry*';
   const STATE = '**/api/state';
 
   // ── HTTP status failures ──

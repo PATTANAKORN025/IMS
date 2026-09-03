@@ -358,6 +358,61 @@ async function run() {
       check(r.status() === 404, `not served: /${probe}`, `got ${r.status()}`);
     }
 
+    // The floor registry. A floor id is a client-supplied string used to build
+    // a filesystem path, so it is probed here the way any other path parameter
+    // would be. The property asserted is that a floor the server did not
+    // discover cannot be addressed at all -- not that a particular hostile
+    // string is rejected, which would only prove that one string was thought of.
+    const cat = await page.request.get(TWIN_URL + 'api/floors', { failOnStatusCode: false });
+    const catalogue = cat.status() === 200 ? await cat.json() : null;
+    check(cat.status() === 200, 'the floor catalogue is served', `got ${cat.status()}`);
+    check(catalogue !== null && Array.isArray(catalogue.floors),
+      'the catalogue is a list of floors');
+    const deployed = catalogue && Array.isArray(catalogue.floors) ? catalogue.floors : [];
+    check(deployed.length >= 1, 'at least one floor is deployed', `${deployed.length}`);
+    check(deployed.every((f) => /^floor[1-5]$/.test(f.id)),
+      'every catalogue id is a floor id and nothing else');
+    check(deployed.every((f) => f.label === `Floor ${f.ordinal}`),
+      'every label is computed from the ordinal, not read from a document');
+    check(deployed.every((f) => Object.keys(f).sort().join(',') === 'has_zones,id,label,ordinal'),
+      'the catalogue carries no field beyond id, ordinal, label and has_zones');
+    check(typeof (catalogue && catalogue.default) === 'string',
+      'the catalogue names a default floor');
+
+    const deployedIds = new Set(deployed.map((f) => f.id));
+    const undeployed = ['floor1', 'floor2', 'floor3', 'floor4', 'floor5']
+      .filter((id) => !deployedIds.has(id));
+    for (const id of undeployed) {
+      const r = await page.request.get(`${TWIN_URL}api/floor-geometry?floor=${id}`,
+        { failOnStatusCode: false });
+      const b = await r.text();
+      check(r.status() === 404, `an undeployed floor is 404, not an empty floor: ${id}`,
+        `got ${r.status()}`);
+      check(!b.includes(id), `the ${id} refusal does not echo the requested id back`);
+    }
+    for (const hostile of [
+      '..%2F..%2Fetc%2Fpasswd', 'floor1%2F..%2Ffloor1', '.%2Ffloor1', 'FLOOR1',
+      'floor1%00', '__proto__', 'constructor', 'floor1%0A', 'floor6', 'floor0',
+    ]) {
+      const r = await page.request.get(`${TWIN_URL}api/floor-geometry?floor=${hostile}`,
+        { failOnStatusCode: false });
+      const b = await r.text();
+      check(r.status() === 404, `a floor id that is not in the catalogue is refused: ${hostile}`,
+        `got ${r.status()}`);
+      check(b === '{"error":"not found"}',
+        `the refusal body is the fixed one, with no echo: ${hostile}`, b.slice(0, 80));
+    }
+    // Omitting the parameter must still mean what it meant before floors
+    // existed, or every client that predates the selector silently breaks.
+    const noParam = await page.request.get(TWIN_URL + 'api/floor-geometry',
+      { failOnStatusCode: false });
+    const named = await page.request.get(
+      `${TWIN_URL}api/floor-geometry?floor=${catalogue.default}`, { failOnStatusCode: false });
+    check(noParam.status() === 200 && named.status() === 200,
+      'the default floor answers with and without the parameter');
+    check(await noParam.text() === await named.text(),
+      'no parameter and the default floor return byte-identical geometry');
+
     // Every string the geometry route serves must be a safe token. Free text --
     // a note, a process name, a path -- cannot satisfy this, which is the
     // property being asserted rather than the absence of any particular word.

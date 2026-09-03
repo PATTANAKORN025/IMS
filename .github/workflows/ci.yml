@@ -161,6 +161,12 @@ jobs:
       - name: Run Factory Twin Schematic Layer Tests
         run: node tests/unit/factory-twin-schematic.test.js
 
+      - name: Run Factory Twin Floor Registry Tests
+        run: node tests/unit/factory-twin-floors.test.js
+
+      - name: Run Factory Twin Operational Status Tests
+        run: node tests/unit/factory-twin-operational-status.test.js
+
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   # Stage 3: Integration & Chaos Test
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

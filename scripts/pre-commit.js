@@ -38,6 +38,7 @@ run("Factory Twin Geometry Mutation Tests", "node tests/unit/factory-twin-geomet
 run("Factory Twin Diagnostics Sanitization Tests", "node tests/unit/factory-twin-diagnostics.test.js");
 run("Factory Twin Evidence Pipeline Tests", "node tests/unit/factory-twin-evidence.test.js");
 run("Factory Twin Wire Projection Tests", "node tests/unit/factory-twin-wire.test.js");
+run("Factory Twin Floor Registry Tests", "node tests/unit/factory-twin-floors.test.js");
 run("Factory Twin Schematic Layer Tests", "node tests/unit/factory-twin-schematic.test.js");
 run("Factory Twin Operational Status Tests", "node tests/unit/factory-twin-operational-status.test.js");
 // The machine-form suite is gone with the layer it covered: invented machine
