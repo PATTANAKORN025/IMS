@@ -25,6 +25,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const frame = require('./lib/floor1-frame');
 const readline = require('readline');
 
 const PRIVATE_DIR =
@@ -78,8 +79,12 @@ const Y_CODES = new Set([20, 21, 22, 23]);
 
 // Metres, rounded the way the validator expects: beyond 3 decimals reads as a
 // raw calibration result rather than a deliberate value.
-const mx = (xmm) => round3((xmm - X0) / 1000 - HALF_W);
-const mz = (ymm) => round3((ymm - Y0) / 1000 - HALF_D);
+// The canonical frame, defined once in scripts/lib/floor1-frame.js. z is the
+// NEGATED CAD y: the plan camera's screen-up is world -z, so mapping CAD +y
+// straight onto +z rendered the sheet upside down. Never compute a twin z here
+// by hand -- that is how the two halves of the model ended up in two frames.
+const mx = (xmm) => round3(frame.cadXToTwin(xmm - X0, HALF_W));
+const mz = (ymm) => round3(frame.cadYToTwin(ymm - Y0, HALF_D));
 function round3(v) { return Math.round(v * 1000) / 1000; }
 
 function fail(msg) {

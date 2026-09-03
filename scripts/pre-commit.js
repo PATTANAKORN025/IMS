@@ -45,6 +45,10 @@ run("Factory Twin Operational Status Tests", "node tests/unit/factory-twin-opera
 // looser -- the CAD reconciliation below compares the served model back against
 // the drawing record by record and reports residuals.
 run("Factory Twin CAD Reconciliation", "node tests/lint/floor1-cad-reconciliation.js");
+// Orientation is checked against the CAD's own coordinates and its own place
+// names, because every check that compared the model against itself passed
+// while the floor rendered mirrored.
+run("Factory Twin Orientation Proof", "node tests/lint/floor1-orientation.js");
 
 // 2. Run Linters
 run("Dashboard Linter", "node tests/lint/dashboard-linter.js");

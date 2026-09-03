@@ -28,6 +28,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const frame = require('../../scripts/lib/floor1-frame');
 
 const PRIVATE_DIR = process.env.FLOOR1_PRIVATE_DIR
   || path.join(__dirname, '..', '..', 'services', 'factory-twin-3d', 'private');
@@ -118,10 +119,17 @@ for (const ins of bundle.inserts) {
 const equipment = Array.isArray(geometry.equipment) ? geometry.equipment : [];
 let matched = 0;
 let resolved = 0;
+let approximated = 0;
+let unresolvedCount = 0;
+let worstClipW = 0;
+let worstClipD = 0;
 for (const item of equipment) {
-  // Model coordinates are centred metres; the CAD is floor-local millimetres.
-  const mmX = (item.position.x + HALF_W) * 1000;
-  const mmY = (item.position.z + HALF_D) * 1000;
+  // Model coordinates are canonical centred metres; the CAD is floor-local
+  // millimetres. The inverse goes through scripts/lib/floor1-frame.js, the same
+  // module the extractors use -- reimplementing it here is how the model and
+  // its own reconciliation drifted into two frames the first time.
+  const mmX = frame.twinXToCad(item.position.x, HALF_W);
+  const mmY = frame.twinZToCad(item.position.z, HALF_D);
   let best = null;
   let bestD = Infinity;
   for (const cand of inserts) {
@@ -158,11 +166,34 @@ for (const item of equipment) {
         + `(model ${item.footprint.width} x ${item.footprint.depth} m, `
         + `CAD ${(best.box.w / 1000).toFixed(3)} x ${(best.box.h / 1000).toFixed(3)} m)`);
     }
+  } else if (item.footprint_status === 'APPROXIMATION') {
+    approximated++;
+    if (!item.footprint) { fail(`${item.id}: APPROXIMATION with no footprint`); continue; }
+    // An approximation is the block box CLIPPED to neighbour spacing, so it is
+    // checked as a bound rather than as an equality: it may be smaller than the
+    // block's own extent and must never be larger. Larger would mean the clip
+    // had invented space the block does not even claim.
+    const mw = item.footprint.width * 1000;
+    const md = item.footprint.depth * 1000;
+    if (mw > best.box.w + SIZE_TOL_MM || md > best.box.h + SIZE_TOL_MM) {
+      fail(`${item.id}: approximated extent ${(mw / 1000).toFixed(3)} x ${(md / 1000).toFixed(3)} m `
+        + `exceeds the block's own ${(best.box.w / 1000).toFixed(3)} x `
+        + `${(best.box.h / 1000).toFixed(3)} m -- a clip may only shrink`);
+    }
+    worstClipW = Math.max(worstClipW, best.box.w - mw);
+    worstClipD = Math.max(worstClipD, best.box.h - md);
+  } else {
+    unresolvedCount++;
+    if (item.footprint) fail(`${item.id}: UNRESOLVED but carries a footprint`);
   }
 }
 
 console.log(`  equipment            ${equipment.length} records, ${matched} reconciled to a CAD INSERT`);
-console.log(`  extents measured     ${resolved} OBSERVED_CAD, ${equipment.length - resolved} UNRESOLVED`);
+console.log(`  extents measured     ${resolved} OBSERVED_CAD`);
+console.log(`  extents approximated ${approximated} APPROXIMATION (block extent clipped to `
+  + `neighbour spacing; worst clip ${(worstClipW / 1000).toFixed(2)} x `
+  + `${(worstClipD / 1000).toFixed(2)} m)`);
+console.log(`  extents unresolved   ${unresolvedCount} UNRESOLVED, no size claimed`);
 console.log(`  worst position       ${worst.pos.toFixed(4)} mm   (tolerance ${POSITION_TOL_MM} mm)`);
 console.log(`  worst extent         ${worst.size.toFixed(4)} mm   (tolerance ${SIZE_TOL_MM} mm)`);
 console.log(`  worst rotation       ${worst.rot.toFixed(4)} deg  (tolerance ${ROTATION_TOL_DEG} deg)`);

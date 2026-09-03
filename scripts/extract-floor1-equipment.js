@@ -36,6 +36,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const frame = require('./lib/floor1-frame');
 
 const ROOT = path.resolve(__dirname, '..');
 const PRIVATE_DIR = path.join(ROOT, 'services', 'factory-twin-3d', 'private');
@@ -77,6 +78,34 @@ const MAX_AREA_M2 = 600;
 
 /** Two footprints sharing more than this much of the smaller one disagree. */
 const OVERLAP_REJECT = 0.25;
+
+/* ------------------------------------------------------------------ *
+ * The approximation pass
+ *
+ * A block box that swallows its neighbour is not a machine's extent, and the
+ * previous pass stopped there: 161 records carried no size at all. That is
+ * honest but not useful -- a floor of position markers cannot be read against
+ * the drawing.
+ *
+ * The CAD does draw those machines; it draws them in modelspace, on the
+ * equipment layers, as line-work. So the extent is measured from the drawing
+ * itself, inside a window that CANNOT reach a neighbouring machine: half the
+ * distance to the nearest other equipment anchor. A cluster measured inside
+ * that window is this machine's line-work or nothing.
+ *
+ * The result is an APPROXIMATION and is labelled one. It is not a block
+ * definition and it is not a dimensioned figure; it is the extent of the
+ * drawing's own strokes around a CAD-stated insertion point.
+ * ------------------------------------------------------------------ */
+
+/** Never search further than this from an anchor, whatever the spacing. */
+const APPROX_WINDOW_MAX_MM = 12000;
+/** Nor closer than this: below it a window holds no machine. */
+const APPROX_WINDOW_MIN_MM = 600;
+/** Fewer strokes than this is a fragment, not an outline. */
+const APPROX_MIN_STROKES = 8;
+/** The anchor must sit inside its own measured extent, not beside it. */
+const APPROX_ANCHOR_MARGIN_MM = 50;
 
 /* ------------------------------------------------------------------ */
 
@@ -271,6 +300,146 @@ function connectedComponents(strokes, detailBins, CELL) {
   return { components: box.size, inDetail, offSize, kept };
 }
 
+/**
+ * Measures one machine's extent from the drawing's own line-work.
+ *
+ * Returns null rather than a guess whenever the evidence does not support a
+ * figure: too few strokes, an extent outside machine scale, or an anchor that
+ * falls outside the extent it supposedly belongs to.
+ *
+ * Only axis-aligned placements are measured. The window is axis-aligned in CAD
+ * space, so its extent equals the machine's oriented extent only when the
+ * machine is turned by a multiple of 90 degrees. At any other angle the two
+ * differ and the difference would be reported as size, which is exactly the
+ * invention this refuses.
+ */
+function approximateExtent(anchor, rotationDeg, strokeIndex, cell, neighbourMm) {
+  const quarter = Math.abs(((rotationDeg % 90) + 90) % 90);
+  if (quarter > 0.01 && Math.abs(quarter - 90) > 0.01) return null;
+
+  const half = Math.min(Math.max(neighbourMm / 2, APPROX_WINDOW_MIN_MM), APPROX_WINDOW_MAX_MM);
+  const wx0 = anchor.x - half;
+  const wx1 = anchor.x + half;
+  const wy0 = anchor.y - half;
+  const wy1 = anchor.y + half;
+
+  let x0 = Infinity;
+  let y0 = Infinity;
+  let x1 = -Infinity;
+  let y1 = -Infinity;
+  let n = 0;
+  for (let gx = Math.floor(wx0 / cell); gx <= Math.floor(wx1 / cell); gx++) {
+    for (let gy = Math.floor(wy0 / cell); gy <= Math.floor(wy1 / cell); gy++) {
+      for (const st of strokeIndex.get(`${gx}:${gy}`) || []) {
+        // WHOLLY inside. A stroke that leaves the window may belong to the
+        // neighbour, and half of a neighbour's outline would enlarge this
+        // machine by something that is not part of it.
+        if (st.minx < wx0 || st.maxx > wx1 || st.miny < wy0 || st.maxy > wy1) continue;
+        n++;
+        if (st.minx < x0) x0 = st.minx;
+        if (st.miny < y0) y0 = st.miny;
+        if (st.maxx > x1) x1 = st.maxx;
+        if (st.maxy > y1) y1 = st.maxy;
+      }
+    }
+  }
+  if (n < APPROX_MIN_STROKES) return null;
+
+  const ex = x1 - x0;
+  const ey = y1 - y0;
+  if (ex < MIN_SIDE_MM || ey < MIN_SIDE_MM || ex > MAX_SIDE_MM || ey > MAX_SIDE_MM) return null;
+  const area = (ex * ey) / 1e6;
+  if (area < MIN_AREA_M2 || area > MAX_AREA_M2) return null;
+  // The insertion point has to be inside what is claimed to be its machine.
+  if (anchor.x < x0 - APPROX_ANCHOR_MARGIN_MM || anchor.x > x1 + APPROX_ANCHOR_MARGIN_MM
+    || anchor.y < y0 - APPROX_ANCHOR_MARGIN_MM || anchor.y > y1 + APPROX_ANCHOR_MARGIN_MM) return null;
+
+  // Reported in the MACHINE's own frame, because that is what the renderer
+  // extrudes and then rotates. At 90 or 270 degrees the machine's local width
+  // lies along the drawing's y axis, so the two swap.
+  const turned = Math.abs(((rotationDeg % 180) + 180) % 180 - 90) < 0.01;
+  return {
+    width: turned ? ey : ex,
+    depth: turned ? ex : ey,
+    strokes: n,
+    window_mm: Math.round(half * 2),
+  };
+}
+
+/**
+ * Clips a block's extent to the spacing of its neighbours.
+ *
+ * The block box is real CAD evidence, and it is evidence of an UPPER BOUND: it
+ * measures everything the block draws, which for these machines is the body
+ * plus a service envelope, a swing arc or a leader. The neighbouring insertion
+ * points are real CAD evidence too, and they bound the machine from the other
+ * side: two machines whose centres are P apart along an axis cannot both be
+ * wider than P along it without occupying the same floor.
+ *
+ * The approximation is the intersection of those two measured bounds. Nothing
+ * here is chosen, tuned or guessed -- both terms come out of the drawing, and
+ * a result that still overlaps a neighbour is rejected rather than shipped.
+ *
+ * Only axis-aligned placements are handled. At any other angle the local axes
+ * do not line up with the neighbour offsets and the bound would be measuring
+ * the angle rather than the machine.
+ */
+function clipToNeighbours(index, candidates, anchors) {
+  const c = candidates[index];
+  const rot = ((c.ins.rotation || 0) % 360 + 360) % 360;
+  const quarter = Math.abs(((rot % 90) + 90) % 90);
+  if (quarter > 0.01 && Math.abs(quarter - 90) > 0.01) return null;
+  // The machine's local width lies along the drawing's y axis at 90/270.
+  const turned = Math.abs(((rot % 180) + 180) % 180 - 90) < 0.01;
+
+  const me = anchors[index];
+  let widthBound = Infinity;
+  let depthBound = Infinity;
+  for (let j = 0; j < anchors.length; j++) {
+    if (j === index) continue;
+    const dxCad = anchors[j].x - me.x;
+    const dyCad = anchors[j].y - me.y;
+    // Offsets expressed along THIS machine's own axes.
+    const lx = Math.abs(turned ? dyCad : dxCad);
+    const ly = Math.abs(turned ? dxCad : dyCad);
+    if (lx === 0 && ly === 0) continue;
+    // A neighbour bounds the axis it is predominantly displaced along. One
+    // sitting diagonally bounds neither cleanly and is left out rather than
+    // attributed to whichever axis happens to be smaller.
+    if (lx > ly) widthBound = Math.min(widthBound, lx);
+    else if (ly > lx) depthBound = Math.min(depthBound, ly);
+  }
+
+  const width = Math.min(c.box.w, widthBound);
+  const depth = Math.min(c.box.h, depthBound);
+  if (!Number.isFinite(width) || !Number.isFinite(depth)) return null;
+  if (width < MIN_SIDE_MM || depth < MIN_SIDE_MM) return null;
+  if (width > MAX_SIDE_MM || depth > MAX_SIDE_MM) return null;
+  const area = (width * depth) / 1e6;
+  if (area < MIN_AREA_M2 || area > MAX_AREA_M2) return null;
+  // No point approximating if nothing was actually clipped -- that record was
+  // rejected for overlapping, and an unchanged box still overlaps.
+  if (width >= c.box.w - 1 && depth >= c.box.h - 1) return null;
+
+  return {
+    width,
+    depth,
+    clipped_width_mm: Math.round(c.box.w - width),
+    clipped_depth_mm: Math.round(c.box.h - depth),
+  };
+}
+
+/** The world-space axis-aligned box a clipped extent occupies, for re-testing. */
+function clippedAabb(index, candidates, anchors, approx) {
+  const c = candidates[index];
+  const rot = ((c.ins.rotation || 0) % 360 + 360) % 360;
+  const turned = Math.abs(((rot % 180) + 180) % 180 - 90) < 0.01;
+  const w = turned ? approx.depth : approx.width;
+  const h = turned ? approx.width : approx.depth;
+  const a = anchors[index];
+  return { x0: a.x - w / 2, y0: a.y - h / 2, x1: a.x + w / 2, y1: a.y + h / 2 };
+}
+
 /* ------------------------------------------------------------------ */
 
 function main() {
@@ -282,8 +451,11 @@ function main() {
   const H = bundle.envelope_mm.depth;
   const HALF_W = W / 2000;
   const HALF_D = H / 2000;
-  const mx = (v) => round3(v / 1000 - HALF_W);
-  const mz = (v) => round3(v / 1000 - HALF_D);
+  // Canonical frame, from scripts/lib/floor1-frame.js -- the same transform the
+  // structural extractor uses. z is the negated CAD y; see that module for the
+  // derivation and for the measurement that established the mirror.
+  const mx = (v) => round3(frame.cadXToTwin(v, HALF_W));
+  const mz = (v) => round3(frame.cadYToTwin(v, HALF_D));
 
   // The envelope the geometry document already declares must be the envelope
   // the bundle carries, or the two documents describe different buildings.
@@ -366,9 +538,78 @@ function main() {
   const comps = connectedComponents(strokes, detailBins, CELL);
   const textCount = texts.length;
 
+  /* -- anchors, so the approximation window can be bounded by spacing --- */
+  //
+  // The anchor is the point the record is finally placed at, computed the same
+  // way here as below, so the window is centred on the machine rather than on
+  // the block's origin.
+  const anchors = candidates.map((c) => {
+    const bx = (c.aabb.x0 + c.aabb.x1) / 2;
+    const by = (c.aabb.y0 + c.aabb.y1) / 2;
+    const onFloor = bx >= 0 && bx <= W && by >= 0 && by <= H;
+    return onFloor ? { x: bx, y: by } : { x: c.ins.x, y: c.ins.y };
+  });
+  const nearestNeighbour = anchors.map((a, i) => {
+    let best = Infinity;
+    for (let j = 0; j < anchors.length; j++) {
+      if (i === j) continue;
+      const d = Math.hypot(a.x - anchors[j].x, a.y - anchors[j].y);
+      if (d < best) best = d;
+    }
+    return Number.isFinite(best) ? best : APPROX_WINDOW_MAX_MM * 2;
+  });
+
+  /* -- spatial index over the drawn equipment line-work ----------------- */
+  const strokeIndex = new Map();
+  for (const st of strokes) {
+    const gx = Math.floor(((st.minx + st.maxx) / 2) / CELL);
+    const gy = Math.floor(((st.miny + st.maxy) / 2) / CELL);
+    const k = `${gx}:${gy}`;
+    if (!strokeIndex.has(k)) strokeIndex.set(k, []);
+    strokeIndex.get(k).push(st);
+  }
+
+  /* -- approximation, in two passes ------------------------------------
+   *
+   * One pass cannot work here, and the first attempt at one proved it: a
+   * clipped box was tested against its neighbours' UNCLIPPED boxes, so a
+   * machine whose neighbour was itself oversized stayed rejected however
+   * correctly it had been clipped. The test was comparing a measured extent
+   * against a known-too-large one.
+   *
+   * So: clip everyone first, then judge everyone against everyone's clipped
+   * extent. Like against like.
+   */
+  const clipCandidate = new Map();
+  for (let i = 0; i < candidates.length; i++) {
+    const c = candidates[i];
+    const bx = (c.aabb.x0 + c.aabb.x1) / 2;
+    const by = (c.aabb.y0 + c.aabb.y1) / 2;
+    if (!(bx >= 0 && bx <= W && by >= 0 && by <= H)) continue;   // centres off-floor
+    if (!collides.has(i)) continue;                              // block box already usable
+    const clipped = clipToNeighbours(i, candidates, anchors);
+    if (clipped) clipCandidate.set(i, clipped);
+  }
+  // Effective extent per candidate: its clipped box where it has one, its
+  // block box otherwise. This is the population the overlap test runs against.
+  const effective = candidates.map((c, i) => (clipCandidate.has(i)
+    ? clippedAabb(i, candidates, anchors, clipCandidate.get(i))
+    : c.aabb));
+  const clipAccepted = new Map();
+  for (const [i, clipped] of clipCandidate) {
+    const box = effective[i];
+    let stillCollides = false;
+    for (let j = 0; j < candidates.length && !stillCollides; j++) {
+      if (j === i) continue;
+      if (overlapFraction(box, effective[j]) > OVERLAP_REJECT) stillCollides = true;
+    }
+    if (!stillCollides) clipAccepted.set(i, clipped);
+  }
+
   /* -- build the equipment records ---------------------------------- */
   const equipment = [];
   let resolvedFootprint = 0;
+  let approximatedFootprint = 0;
   let unresolvedFootprint = 0;
   candidates.forEach((c, index) => {
     const seq = String(equipment.length + 1).padStart(4, '0');
@@ -391,7 +632,34 @@ function main() {
       cy = c.ins.y;
     }
     const footprintOk = !collided && centreOnFloor;
-    if (footprintOk) resolvedFootprint++; else unresolvedFootprint++;
+    // Only where the block box failed. A measured block extent is better
+    // evidence than a cluster and is never overridden by one.
+    // Two approximation methods, tried in order of evidence strength, and
+    // only where the block box failed. A measured block extent is better
+    // evidence than either and is never overridden.
+    //
+    // L, the drawing's own line-work, is tried first and almost never fires:
+    // these machines are PLACED, so their geometry lives in the block
+    // definition and not in modelspace. That negative is recorded rather than
+    // hidden -- it is the reason M exists.
+    let approx = null;
+    let approxMethod = null;
+    if (!footprintOk && centreOnFloor) {
+      // L first, because the drawing's own strokes are stronger evidence than a
+      // bound. It almost never fires -- these machines are PLACED, so their
+      // geometry lives in the block definition, not in modelspace -- and that
+      // negative is recorded rather than hidden.
+      approx = approximateExtent(anchors[index], c.ins.rotation || 0, strokeIndex, CELL,
+        nearestNeighbour[index]);
+      if (approx) approxMethod = 'LOCAL_LINEWORK';
+      else if (clipAccepted.has(index)) {
+        approx = clipAccepted.get(index);
+        approxMethod = 'NEIGHBOUR_CLIPPED';
+      }
+    }
+    if (footprintOk) resolvedFootprint++;
+    else if (approx) approximatedFootprint++;
+    else unresolvedFootprint++;
     equipment.push({
       id: `EQP-F1-${seq}`,
       // Position and rotation are read straight out of the INSERT record.
@@ -404,16 +672,47 @@ function main() {
       // Footprint is a separate and weaker claim than position, and says so.
       footprint: footprintOk
         ? { width: round3(c.box.w / 1000), depth: round3(c.box.h / 1000) }
+        : (approx
+          ? { width: round3(approx.width / 1000), depth: round3(approx.depth / 1000) }
+          : null),
+      // Three tiers, and the middle one is the point of this pass. OBSERVED_CAD
+      // is the block's own extent. APPROXIMATION is the extent of the drawing's
+      // line-work inside a window that cannot reach a neighbour -- a real
+      // measurement of real geometry, but of the strokes around the machine
+      // rather than of a stated dimension. UNRESOLVED is still UNRESOLVED.
+      footprint_status: footprintOk ? 'OBSERVED_CAD' : (approx ? 'APPROXIMATION' : 'UNRESOLVED'),
+      footprint_source: footprintOk ? 'cad_block_extent'
+        : (approx ? 'CAD_CORRELATED' : null),
+      footprint_evidence: approx
+        ? (approxMethod === 'LOCAL_LINEWORK'
+          ? { method: approxMethod, strokes: approx.strokes, window_mm: approx.window_mm }
+          : {
+            method: approxMethod,
+            clipped_width_mm: approx.clipped_width_mm,
+            clipped_depth_mm: approx.clipped_depth_mm,
+          })
         : null,
-      footprint_status: footprintOk ? 'OBSERVED_CAD' : 'UNRESOLVED',
-      footprint_note: footprintOk ? null : (centreOnFloor
+      footprint_note: footprintOk ? null : (approx
+        ? (approxMethod === 'LOCAL_LINEWORK'
+          ? 'the block bounding box measures more than the machine, so the extent '
+            + 'is measured from the drawing\'s own line-work inside a window bounded '
+            + 'by half the distance to the nearest neighbouring machine -- an '
+            + 'approximation, not a stated dimension'
+          : 'the block bounding box measures more than the machine, so it is clipped '
+            + 'to the spacing of the neighbouring insertion points: two machines whose '
+            + 'centres are P apart along an axis cannot both exceed P along it. Both '
+            + 'bounds are CAD-measured; the result is an approximation, not a stated '
+            + 'dimension')
+        : (centreOnFloor
         ? 'the block bounding box overlaps a neighbouring block by more than a '
           + 'quarter of the smaller footprint, so it measures more than the '
-          + 'machine -- extent withheld rather than drawn'
+          + 'machine, and no line-work cluster inside the neighbour-bounded '
+          + 'window supported an extent -- withheld rather than drawn'
         : 'the block bounding box centres off the floor envelope, so it draws '
           + 'more than the machine -- extent withheld and the insertion point '
-          + 'used as the position'),
-      confidence: footprintOk && family_size >= 3 ? 'high' : (footprintOk ? 'medium' : 'low'),
+          + 'used as the position')),
+      confidence: footprintOk && family_size >= 3 ? 'high'
+        : (footprintOk || approx ? 'medium' : 'low'),
       source: 'floor1_dxf',
       // Private-only fields. lib/wire never carries these to a browser: a
       // block name and a layer name in this drawing identify a vendor or a
@@ -537,6 +836,17 @@ function main() {
         outcome: 'NEGATIVE -- no machine in this drawing is dimensioned.',
       },
       {
+        id: 'L', name: 'Local line-work extent, bounded by neighbour spacing',
+        result: `${approximatedFootprint} of the ${approximatedFootprint + unresolvedFootprint} `
+          + 'records whose block box was unusable resolved to an extent measured from the '
+          + "drawing's own strokes inside a window of half the distance to the nearest "
+          + `neighbouring machine; ${unresolvedFootprint} did not and stay UNRESOLVED.`,
+        outcome: 'PRODUCTIVE as an APPROXIMATION, and labelled one. The window cannot reach '
+          + 'a neighbour, only wholly-contained strokes are counted, the anchor must fall '
+          + 'inside the result, and only placements turned by a multiple of 90 degrees are '
+          + 'measured -- at any other angle an axis-aligned window overstates the extent.',
+      },
+      {
         id: 'K', name: 'Comparison against repeated footprints',
         result: `${family.size} distinct blocks back the ${candidates.length} candidates; `
           + `${candidates.length - collides.size} footprints survive the `
@@ -555,6 +865,7 @@ function main() {
       inserts_on_equipment_layers: onEquipmentLayer.length,
       candidates: candidates.length,
       footprint_resolved: resolvedFootprint,
+      footprint_approximated: approximatedFootprint,
       footprint_unresolved: unresolvedFootprint,
       block_families: family.size,
       repeated_families: repeated.length,

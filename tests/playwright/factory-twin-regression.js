@@ -148,6 +148,19 @@ async function snapshot(page) {
       equipmentRotations: (Array.isArray(T.equipmentMeshes) ? T.equipmentMeshes : []).map(
         (m) => ({ id: m.userData.equipment.id, y: m.rotation.y })
       ),
+      // The DRAWN box: its world placement and its extruded size. This is what
+      // makes "2D and 3D are the same geometry" an assertion rather than a
+      // claim -- there is one mesh, and both views look at it.
+      equipmentBoxes: (Array.isArray(T.equipmentMeshes) ? T.equipmentMeshes : []).map((m) => ({
+        id: m.userData.equipment.id,
+        x: m.position.x,
+        y: m.position.y,
+        z: m.position.z,
+        w: m.geometry.parameters.width,
+        h: m.geometry.parameters.height,
+        d: m.geometry.parameters.depth,
+        tier: m.userData.equipment.footprint_status,
+      })),
       // Walls and openings are instanced: a few objects carrying hundreds of
       // spans. Counted as objects, because that is what the scene holds.
       wallMeshes: T.wallMeshes ? T.wallMeshes.length : 0,
@@ -182,9 +195,26 @@ async function snapshot(page) {
         equipmentResolved: (geo.equipment || []).filter(
           (e) => e.footprint_status === 'OBSERVED_CAD' && e.footprint
         ).length,
+        equipmentApproximated: (geo.equipment || []).filter(
+          (e) => e.footprint_status === 'APPROXIMATION' && e.footprint
+        ).length,
+        // An approximation must declare its provenance. Without it a bound is
+        // indistinguishable from a measurement on the wire.
+        equipmentApproxWithoutSource: (geo.equipment || []).filter(
+          (e) => e.footprint_status === 'APPROXIMATION' && e.footprint_source !== 'CAD_CORRELATED'
+        ).length,
+        equipmentPositions: (geo.equipment || []).map(
+          (e) => ({ id: e.id, x: e.position.x, z: e.position.z, deg: e.rotation_deg })
+        ),
         equipmentUnresolved: (geo.equipment || []).filter(
           (e) => e.footprint_status === 'UNRESOLVED'
         ).length,
+        // The canonical frame's own declaration, on the wire. Not served, so
+        // read from the geometry the client got: a model whose z ordering
+        // disagrees with the CAD would place every machine on the wrong side.
+        equipmentZRange: (geo.equipment || []).reduce((r, e) => ({
+          min: Math.min(r.min, e.position.z), max: Math.max(r.max, e.position.z),
+        }), { min: Infinity, max: -Infinity }),
         equipmentWithFootprintButUnresolved: (geo.equipment || []).filter(
           (e) => e.footprint_status === 'UNRESOLVED' && e.footprint
         ).length,
@@ -501,8 +531,9 @@ async function run() {
       'every equipment position claims MEASURED_CAD provenance',
       `${s.api.equipmentNonCadPosition} record(s) do not`);
     check(s.api.equipment === 0 || s.api.equipmentUnresolved > 0,
-      'the model reports unresolved extents rather than filling them in',
-      `${s.api.equipmentResolved} measured, ${s.api.equipmentUnresolved} UNRESOLVED`);
+      'the model still reports unresolved extents rather than filling them all in',
+      `${s.api.equipmentResolved} measured, ${s.api.equipmentApproximated} approximated, `
+      + `${s.api.equipmentUnresolved} UNRESOLVED`);
     check(!s.api.conflictServed, 'conflicting zones withheld from the wire');
 
     // ── Building outline: the floor must read as THIS building ──
@@ -571,12 +602,38 @@ async function run() {
       '#view-reset', '#drawer-toggle', '#build-id', '#data-quality'
     ])`);
 
+    // Drive the drawer to a KNOWN state rather than assuming one. The viewport
+    // loop reuses a single page, so a previous iteration that ended with the
+    // drawer open turns this section's "open it" click into a "close it" click
+    // -- which is how a working drawer got reported as a zero-width column at
+    // whichever viewport happened to run second.
+    const setDrawer = async (want) => {
+      for (let i = 0; i < 3; i++) {
+        const open = await page.evaluate(
+          () => document.getElementById('drawer-toggle').getAttribute('aria-expanded') === 'true'
+        );
+        if (open === want) return;
+        await page.click('#drawer-toggle');
+        await page.waitForTimeout(250);
+      }
+    };
+    await setDrawer(false);
+
     const stageClosed = await page.evaluate(
       () => document.getElementById('stage').getBoundingClientRect().width
     );
 
-    await page.click('#drawer-toggle');
-    await page.waitForTimeout(450);
+    await setDrawer(true);
+    // Wait for the grid transition to finish rather than for a fixed delay. At
+    // 3840x2160 the relayout takes longer than it does at 1366x768, and a
+    // timeout tuned on the small viewport measured a drawer that was still
+    // zero pixels wide -- a test-timing artefact reported as a layout fault.
+    await page.waitForFunction(
+      () => document.getElementById('drawer').getBoundingClientRect().width > 1,
+      null,
+      { timeout: 10000 },
+    );
+    await page.waitForTimeout(150);
     const drawerUnreachable = await page.evaluate(`(() => {
       const legend = document.getElementById('evidence-legend');
       const diag = document.getElementById('diagnostics');
@@ -604,8 +661,7 @@ async function run() {
         viewportWidth: window.innerWidth,
       };
     });
-    await page.click('#drawer-toggle');
-    await page.waitForTimeout(450);
+    await setDrawer(false);
 
     const surface = await page.evaluate(() => {
       // Nothing but the context panel may sit over the scene, and it starts
@@ -720,7 +776,7 @@ async function run() {
       'the drawer legend explains all eight states plus the data-quality indicator',
       `${strip.legendStates.length} rows`);
 
-    // -- Equipment reconciliation: the scene against the CAD --------------
+    // -- Equipment reconciliation: the scene against the served model -----
     //
     // The complaint was that machines were the wrong size and on the wrong
     // side. Both were invisible from inside the model, so this compares what
@@ -728,18 +784,23 @@ async function run() {
     if (s.api.equipment === 0) {
       skip('every drawn asset carries the rotation the CAD stated', NO_GEOMETRY);
       skip('no drawn asset invents an extent', NO_GEOMETRY);
+      skip('the 3D box is the 2D footprint extruded, at the same coordinates', NO_GEOMETRY);
     } else {
-      const served = new Map(s.api.equipmentRotationsServed.map((e) => [e.id, e.deg]));
+      const served = new Map(s.api.equipmentPositions.map((e) => [e.id, e]));
+
+      // ROTATION. The canonical frame reflects z, and a reflection flips the
+      // sense of a plan rotation, so the renderer applies the CAD angle about
+      // +Y with sign +1. Under the previous mirrored frame the sign was -1;
+      // getting the position right and the sign wrong puts every machine in
+      // the correct place facing the wrong way, which no coordinate check
+      // catches. This one does.
       let rotMismatch = 0;
       let worstRot = 0;
       for (const drawn of s.equipmentRotations) {
-        const deg = served.get(drawn.id);
-        if (deg == null) { rotMismatch++; continue; }
-        // The renderer negates the CAD angle because this scene's Z axis runs
-        // opposite to the drawing's Y. An unnegated angle mirrors every
-        // machine's orientation, which is exactly the reported symptom.
-        const expected = -deg * Math.PI / 180;
-        const d = Math.abs(((drawn.y - expected) % (Math.PI * 2)));
+        const e = served.get(drawn.id);
+        if (!e || e.deg == null) { rotMismatch++; continue; }
+        const expected = e.deg * Math.PI / 180;
+        const d = Math.abs((drawn.y - expected) % (Math.PI * 2));
         const wrapped = Math.min(d, Math.PI * 2 - d);
         worstRot = Math.max(worstRot, wrapped);
         if (wrapped > 1e-9) rotMismatch++;
@@ -747,36 +808,72 @@ async function run() {
       check(rotMismatch === 0, 'every drawn asset carries the rotation the CAD stated',
         `${rotMismatch} mismatched, worst ${(worstRot * 180 / Math.PI).toFixed(6)} deg`);
 
+      // 2D -> 3D. There is exactly ONE mesh per asset and both views look at
+      // it, so this measures that the mesh sits where the API said and is the
+      // size the API said. A second, independently positioned 3D object is
+      // precisely what this forbids.
+      let worstPos = 0;
+      let worstSize = 0;
+      let offFloor = 0;
+      let invented = 0;
+      let sizedBoxes = 0;
+      let markerBoxes = 0;
+      const heights = new Set();
+      for (const box of s.equipmentBoxes) {
+        const e = served.get(box.id);
+        if (!e) { invented++; continue; }
+        worstPos = Math.max(worstPos, Math.abs(box.x - e.x), Math.abs(box.z - e.z));
+        // Every block stands ON the floor: centre height is half its own
+        // height, not an arbitrary elevation.
+        if (Math.abs(box.y - box.h / 2) > 1e-9) offFloor++;
+        if (box.tier === 'OBSERVED_CAD' || box.tier === 'APPROXIMATION') {
+          sizedBoxes++;
+          heights.add(box.h);
+        } else {
+          markerBoxes++;
+          // A marker must not carry a shape. A non-square one would mean a
+          // dimension had been supplied from somewhere.
+          if (box.w !== box.d) invented++;
+        }
+      }
+      check(invented === 0, 'no drawn asset invents an extent',
+        `${invented} asset(s) drawn with a shape they do not have`);
+      check(worstPos < 1e-9,
+        'the 3D box is the 2D footprint extruded, at the same coordinates',
+        `worst position delta ${worstPos} m across ${s.equipmentBoxes.length} boxes`);
+      check(offFloor === 0, 'every equipment block stands on the floor plane',
+        `${offFloor} floating`);
+      // Height is PRESENTATION_ONLY, so it must be IDENTICAL everywhere. A
+      // varying height would read as data, and there is no elevation data.
+      check(heights.size <= 1,
+        'every sized block shares one presentation height, because height is not evidence',
+        `${heights.size} distinct height(s) across ${sizedBoxes} block(s)`);
+      check(sizedBoxes === s.api.equipmentResolved + s.api.equipmentApproximated,
+        'exactly the assets with an extent are drawn with one',
+        `${sizedBoxes} vs ${s.api.equipmentResolved + s.api.equipmentApproximated}`);
+      check(markerBoxes === s.api.equipmentUnresolved,
+        'exactly the assets without an extent are drawn as markers',
+        `${markerBoxes} vs ${s.api.equipmentUnresolved}`);
+
       const scale = await page.evaluate(() => {
         const T = window.__twin;
-        let invented = 0;
-        let measured = 0;
         let worst = 0;
         for (const m of T.equipmentMeshes) {
           const e = m.userData.equipment;
+          if (!e.footprint) continue;
           const box = m.geometry.parameters;
-          if (e.footprint_status === 'OBSERVED_CAD' && e.footprint) {
-            measured++;
-            worst = Math.max(worst,
-              Math.abs(box.width - e.footprint.width),
-              Math.abs(box.depth - e.footprint.depth));
-          } else if (box.width !== box.depth) {
-            // An unresolved asset is drawn as a fixed uniform marker. A
-            // non-square one would mean a dimension had been supplied from
-            // somewhere, which is the invention this forbids.
-            invented++;
-          }
+          worst = Math.max(worst,
+            Math.abs(box.width - e.footprint.width),
+            Math.abs(box.depth - e.footprint.depth));
         }
-        return { invented, measured, worst };
+        return { worst };
       });
-      check(scale.invented === 0, 'no drawn asset invents an extent',
-        `${scale.invented} unresolved asset(s) drawn with a shape`);
       check(scale.worst < 1e-9,
-        'every measured asset is drawn at exactly its measured extent',
+        'every asset with an extent is drawn at exactly that extent',
         `worst ${scale.worst} m`);
-      check(scale.measured === s.api.equipmentResolved,
-        'exactly the assets with a measured extent are drawn with one',
-        `${scale.measured} vs ${s.api.equipmentResolved}`);
+      check(s.api.equipmentApproxWithoutSource === 0,
+        'every approximated extent declares CAD_CORRELATED provenance',
+        `${s.api.equipmentApproxWithoutSource} without it`);
     }
 
     // -- The invented machine-form layer is gone ---------------------------

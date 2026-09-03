@@ -275,9 +275,13 @@ for (const slot of geometry.slots || []) {
 // not declare its extent unresolved and then carry one anyway, and it may not
 // declare it observed and carry nothing. Either would let a renderer draw an
 // invented box that looks exactly like a measured one.
-const EQUIPMENT_FOOTPRINT_STATUS = new Set(['OBSERVED_CAD', 'UNRESOLVED']);
+const EQUIPMENT_FOOTPRINT_STATUS = new Set(['OBSERVED_CAD', 'APPROXIMATION', 'UNRESOLVED']);
+// An approximation must say where it came from, or it is indistinguishable
+// from a number somebody typed.
+const EQUIPMENT_FOOTPRINT_SOURCE = new Set(['cad_block_extent', 'CAD_CORRELATED']);
 const seenEquipmentIds = new Set();
 let equipmentResolved = 0;
+let equipmentApproximated = 0;
 let equipmentUnresolved = 0;
 for (const item of geometry.equipment || []) {
   const label = `equipment ${item.id}`;
@@ -301,12 +305,30 @@ for (const item of geometry.equipment || []) {
   if (!EQUIPMENT_FOOTPRINT_STATUS.has(item.footprint_status)) {
     error(`${label}: footprint_status "${item.footprint_status}" is not one of `
       + `${[...EQUIPMENT_FOOTPRINT_STATUS].join(', ')}`);
-  } else if (item.footprint_status === 'OBSERVED_CAD') {
-    equipmentResolved++;
+  } else if (item.footprint_status === 'OBSERVED_CAD' || item.footprint_status === 'APPROXIMATION') {
+    if (item.footprint_status === 'OBSERVED_CAD') equipmentResolved++;
+    else equipmentApproximated++;
     if (!item.footprint) {
-      error(`${label}: footprint_status is OBSERVED_CAD but no footprint is recorded`);
+      error(`${label}: footprint_status is ${item.footprint_status} but no footprint is recorded`);
     } else {
       checkDims(item.footprint, label, ['width', 'depth']);
+    }
+    if (!EQUIPMENT_FOOTPRINT_SOURCE.has(item.footprint_source)) {
+      error(`${label}: footprint_source "${item.footprint_source}" is not one of `
+        + `${[...EQUIPMENT_FOOTPRINT_SOURCE].join(', ')} -- an extent must say how it was `
+        + 'arrived at');
+    }
+    if (item.footprint_status === 'APPROXIMATION') {
+      // The whole point of the tier. An approximation that does not record its
+      // evidence is a guess wearing a label.
+      if (!item.footprint_evidence || typeof item.footprint_evidence !== 'object'
+        || !item.footprint_evidence.method) {
+        error(`${label}: APPROXIMATION carries no footprint_evidence.method`);
+      }
+      if (item.footprint_source !== 'CAD_CORRELATED') {
+        error(`${label}: APPROXIMATION must declare footprint_source CAD_CORRELATED, `
+          + `not "${item.footprint_source}"`);
+      }
     }
   } else {
     equipmentUnresolved++;
@@ -359,6 +381,10 @@ if (Array.isArray(geometry.equipment) && geometry.equipment.length > 0) {
     if (c.candidates !== geometry.equipment.length) {
       error(`equipment_extraction.counts.candidates (${c.candidates}) disagrees with `
         + `equipment[].length (${geometry.equipment.length})`);
+    }
+    if (c.footprint_approximated !== equipmentApproximated) {
+      error(`equipment_extraction.counts.footprint_approximated (${c.footprint_approximated}) `
+        + `disagrees with the ${equipmentApproximated} records carrying APPROXIMATION extents`);
     }
     if (c.footprint_resolved !== equipmentResolved) {
       error(`equipment_extraction.counts.footprint_resolved (${c.footprint_resolved}) `
@@ -705,7 +731,7 @@ if (zoneDoc) {
 
 const verifiedPhysicalCount = (geometry.slots || []).filter((s) => s.status === 'VERIFIED_PHYSICAL').length;
 
-console.log(`Checked: ${geometry.columns?.length || 0} columns, ${geometry.zones?.length || 0} zones, ${geometry.equipment?.length || 0} CAD equipment (${equipmentResolved} with a measured extent, ${equipmentUnresolved} UNRESOLVED), ${geometry.slots?.length || 0} superseded raster slots, ${Object.keys(mapping).length} mapping entries, ${deviceToSlots.size} unique mapped device(s), ${verifiedPhysicalCount} VERIFIED_PHYSICAL slot(s).`);
+console.log(`Checked: ${geometry.columns?.length || 0} columns, ${geometry.zones?.length || 0} zones, ${geometry.equipment?.length || 0} CAD equipment (${equipmentResolved} measured, ${equipmentApproximated} approximated, ${equipmentUnresolved} UNRESOLVED), ${geometry.slots?.length || 0} superseded raster slots, ${Object.keys(mapping).length} mapping entries, ${deviceToSlots.size} unique mapped device(s), ${verifiedPhysicalCount} VERIFIED_PHYSICAL slot(s).`);
 console.log(`Functional zones: ${zoneCounts.total} record(s), ${zoneCounts.renderable} renderable, ${zoneCounts.total - zoneCounts.renderable} metadata-only.`);
 console.log('='.repeat(50));
 console.log(`Results: ${errors} error(s), ${warnings} warning(s)`);
