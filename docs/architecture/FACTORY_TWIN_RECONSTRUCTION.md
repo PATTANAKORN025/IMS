@@ -144,6 +144,64 @@ the API serves zero functional zones rather than an unvalidated boundary.
 
 ---
 
+## 0.2 The CAD supersession
+
+The raster reconstruction described in §0.1 has been **superseded as the
+primary source** by the AutoCAD drawing the floor plans were produced from.
+The full read-only audit of that file is
+[Floor 1 DXF Forensic Audit](FLOOR1_DXF_FORENSIC_AUDIT.md).
+
+The CAD **confirmed the raster work rather than overturning it**, which is
+worth stating plainly because the opposite was the expected outcome:
+
+| Raster finding | CAD verdict |
+|---|---|
+| Envelope 174500 x 120300 mm | Exact. The drawing's two largest DIMENSION entities are literally these numbers. |
+| Interior bay chain 8500 x8, 17050, 8850 x8 | Exact, to the millimetre. |
+| Two Z spans read as 9975 / 10025 | Corrected to 10000 / 10000. The chain still closes on 120300. |
+| An extra gridline splitting a bay 2000 / 8000 | Confirmed real, not a tracing artefact. |
+| 120 columns | All 120 matched CAD geometry within 1 m, median residual 34 mm, **zero false positives**. |
+| 147 columns (the earlier count) | Refuted. |
+| Floor level +0.30 | Confirmed: the CAD's own area labels carry it. |
+
+What the CAD added that no raster pass could: **82 further columns** (202
+total), **895 interior wall centrelines with measured thickness**, **52
+openings**, and **37 labelled process areas**.
+
+### Why the header defines nothing
+
+The drawing declares `$INSUNITS = 0` — no units at all — and its `$EXTMIN`/
+`$EXTMAX` are stale by roughly 4.3x in X. The union of all entity bounds is
+worse, because modelspace also holds equipment *detail* drawings (part
+sections, thread callouts, ~34k SPLINEs) that have nothing to do with the
+floor plate.
+
+So neither was used. The extractor measures the column-cap envelope at run
+time, checks it against the width and depth the model already declares, and
+**aborts if they disagree by more than a millimetre**. Millimetres are
+established by geometry — bay spacings of 8500/8850/10000 and an overall
+174500 x 120300 admit no other reading — not by the header.
+
+### What the CAD still does not carry
+
+| Item | State |
+|---|---|
+| Equipment height | **UNKNOWN.** A plan view has no elevation. |
+| Wall height | **UNKNOWN.** Drawn at a declared presentation constant, tagged as such. |
+| Clear ceiling height | **UNKNOWN.** Not represented. |
+| Machine identity | **UNMAPPED.** The CAD carries no IMS `eqp_id`. Still **0 confirmed mappings**. |
+| Equipment footprints from CAD | **UNKNOWN.** The machine layer mixes plan and detail geometry; separating them is not yet done, so the 243 raster-derived slots remain the equipment layer. |
+
+### Zone boundaries are checked against the drawing's own arithmetic
+
+Each labelled area carries a printed area figure. The extractor traces the
+boundary independently and compares. The 17 zones that render agree with the
+printed value to within **1%**; two whose traced area disagrees by **37%** and
+**163%** are withheld as LOW rather than reconciled, and 18 labels that no
+closed boundary contains are kept as UNRESOLVED records with no geometry.
+
+---
+
 ## 1. Reconstruction methodology
 
 The twin was reconstructed from a confidential engineering floor plan held

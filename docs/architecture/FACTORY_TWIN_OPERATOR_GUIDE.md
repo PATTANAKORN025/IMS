@@ -44,9 +44,14 @@ before and after every switch.
 
 | View | Framing | Use it for |
 |---|---|---|
-| **Operator** | The default. The framing operator work was tuned against; machines stay legible at working size, structural context visible around them. | Day-to-day monitoring. |
+| **Operator** | The framing operator work was tuned against; machines stay legible at working size, structural context visible around them. | Day-to-day monitoring. |
 | **Building** | Frames the measured envelope. All structural geometry is in frame. | Understanding where things are in the real building. |
-| **Overview** | Frames the union of the measured envelope and the synthetic machine grid. | Executive / NOC walkthrough. |
+| **Overview** | **The default.** Frames the union of the measured envelope and the synthetic machine grid, so the whole floor is on screen at once. | Executive / NOC walkthrough, and the first question anyone asks: what is the state of the floor. |
+
+The default is Overview rather than Operator because the view opens on the
+factory, not on a corner of it. The Operator framing is one click away and is
+unchanged. If the measured geometry has not loaded — or a deployment has none
+— Overview cannot be derived, and the fixed Operator camera is what you get.
 
 > [!WARNING]
 > **Overview frames a union, not a registration.** The measured building and
@@ -73,7 +78,8 @@ result.
 | Layer | Contains | Evidence class |
 |---|---|---|
 | **Floor shell** | Floor plate, orientation grid, measured envelope outline | MEASURED envelope, plus a rendering aid |
-| **Columns** | Detected structural columns | OBSERVED |
+| **Columns** | Structural columns read from the CAD | MEASURED_CAD |
+| **Walls and openings** | Interior walls and partitions, plus doors, windows and air showers | MEASURED_CAD plan and thickness; **height is PRESENTATION_ONLY** |
 | **Functional zones** | Validated process/functional areas only | OBSERVED (validated tier only) |
 | **Equipment slots** | Detected equipment positions | OBSERVED, no identity |
 | **Simulated machines** | Monitored devices at synthetic positions | Real state, SIMULATED position |
@@ -83,6 +89,42 @@ Each toggle carries a live count in the panel — for example the zone toggle
 reports validated versus withheld. **Withheld zones are never rendered at any
 toggle setting**; they failed validation or are party to an unresolved
 conflict, and a toggle is not permitted to promote them.
+
+---
+
+## Status legend
+
+Eight states, and the panel is explicit about which of them this deployment
+can actually show.
+
+| State | Means |
+|---|---|
+| **NORMAL** | Mapped asset reporting a running state. |
+| **WARNING** | *No source.* No warning tier is derivable today — active alarms collapse straight to CRITICAL. |
+| **CRITICAL** | Mapped asset with an active Critical or Major alarm. |
+| **OFFLINE** | *No source.* No column in this schema reports powered-off. |
+| **STALE DATA** | Mapped asset whose telemetry is missing or past its freshness window. |
+| **MAINTENANCE** | *No source.* No column in this schema reports planned maintenance. |
+| **UNMAPPED** | A CAD asset with no authoritative link to an IMS device. Carries no status at all. |
+| **PRESENTATION ONLY** | A drawn form standing in for an asset. Never a measurement, never a status. |
+
+Three states are marked **NO SOURCE** in the panel. That is a statement about
+the *system*, not about the floor: it means this deployment has no column that
+could ever light that lamp, which is a different and more useful fact than "no
+machine is currently in that state". Read a missing WARNING as "not
+measurable here", never as "nothing is warning".
+
+Two rules hold regardless of what is on screen:
+
+- **An asset whose state cannot be established shows UNMAPPED, never NORMAL.**
+  A failed lookup must never read as a healthy machine.
+- **A status requires an authoritative device mapping.** Position, numbering
+  and name similarity never produce one. With **0 confirmed mappings today,
+  every physical asset on this floor is UNMAPPED** and no live status is drawn
+  on any of them.
+
+Every row carries a distinct glyph as well as a colour, so the vocabulary
+survives a monochrome screen, a projector, and colour-blind vision.
 
 ---
 

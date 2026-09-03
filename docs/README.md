@@ -27,6 +27,7 @@ The high-level design, business value, and product capabilities.
 - **[Architecture Book](architecture/IMS_PLATFORM_BOOK.md)** - Full-stack technical architecture.
 - **[Data Flow](architecture/DATA_FLOW.md)** - Telemetry pipeline from edge to visualization.
 - **[Database Schema](architecture/DATABASE_SCHEMA.md)** - TimescaleDB hypertable structures.
+- **[Floor 1 DXF Forensic Audit](architecture/FLOOR1_DXF_FORENSIC_AUDIT.md)** - What the authoritative CAD source actually contains, why its header cannot define the coordinate system, and how the frame was derived instead.
 - **[Factory Twin Reconstruction](architecture/FACTORY_TWIN_RECONSTRUCTION.md)** - How the Floor 1 twin was reconstructed, its evidence model, and what it may not claim.
 - **[Factory Twin Runtime Architecture](architecture/FACTORY_TWIN_ARCHITECTURE.md)** - Request path, module map, HTTP surface, rendering and view semantics.
 - **[Factory Twin Service Architecture](architecture/FACTORY_TWIN_SERVICE_ARCHITECTURE.md)** - Which container serves the twin, which only look like they do, and how to run direct-mode verification safely.
