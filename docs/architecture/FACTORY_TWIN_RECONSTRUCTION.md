@@ -229,6 +229,44 @@ Faces the extractor could not pair, and that are at least 2 m long, are kept as
 drawn geometry, and are **never extruded** — a thickness nobody measured is
 exactly what must not be invented.
 
+**They did not appear until 2026-09-03.** The extractor wrote them, the
+renderer drew them, the documentation above described them — and the wire
+projection never carried the field, so `geometry.wall_lines` arrived at the
+browser as `undefined` and `buildWallLines()` returned on an empty list every
+time. Every plan this service served was missing 211 of the drawing's wall runs,
+and nothing in the code, the tests or this document said so, because each half
+was individually correct.
+
+Two things now make it visible rather than merely fixed. The wire shape carries
+**no thickness field at all** — not null, not zero — so an unpaired face cannot
+be extruded downstream even by accident, and the evidence panel counts these
+faces on their own row instead of adding them to the 866 walls. Folding a
+weaker claim into a stronger total is how a measurement gets invented.
+
+### What is still wrong with the wall model
+
+Connectivity is 71.3% and 1,392 of 2,323 faces are unpaired, and neither figure
+is a rendering problem. Reconstructed as a graph, the wall centrelines plus the
+211 kept faces produce **1,028 dangling endpoints and exactly one enclosed
+region — the building itself**. No interior room closes.
+
+That is the reason room boundaries do not come from walls. Four properties of
+the extraction produce it, and all four are in the extractor, not the drawing:
+
+| Property | Effect |
+|---|---|
+| Only axis-aligned segments are kept (`dx < 1` or `dy < 1` mm) | any angled or curved wall is discarded entirely |
+| Only paired faces become walls | 1,392 faces produce no wall |
+| Unpaired faces below 2 m are dropped | 1,181 short runs are lost, and short runs are what close corners |
+| Merge gap 120 mm, corner closure ≤ half a thickness | fragments that meet across a column do not join |
+
+Fixing this requires re-running the extraction against `Floor1.dxf` with
+non-axis-aligned support and full face retention. **The DXF is not on this host
+and the CAD bundle does not carry wall geometry**, so the work is BLOCKED on the
+source file rather than on a decision. The metrics above are published by
+`tests/lint/floor1-cad-reconciliation.js` on every commit precisely so that the
+gap cannot quietly widen while it waits.
+
 ### Every invented machine position is deleted
 
 The twin previously drew each monitored device as a box on a deterministic

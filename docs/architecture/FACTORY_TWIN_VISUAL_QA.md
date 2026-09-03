@@ -127,50 +127,62 @@ real interaction latency cannot be obtained from it.
 
 ## Performance baseline
 
-Same scene, same build, captured in headless Chromium.
+Measured by `tests/perf/factory-twin-benchmark.js` against the running service,
+same build, headless Chromium.
 
-| Viewport | Cold load | Boot | API | Frame (median) | Frame p95 | FPS | Resize | JS heap |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| 1366×768 | 1227 ms | 521 ms | 172 ms | 32.0 ms | 40.6 ms | 31.3 | 105 ms | 11 MB |
-| 1920×1080 | 1545 ms | 688 ms | 204 ms | 59.3 ms | 72.0 ms | 16.9 | 204 ms | 12 MB |
-| 2560×1440 | 1825 ms | 1015 ms | 415 ms | 108.8 ms | 135.4 ms | 9.2 | 366 ms | 12 MB |
-| 3840×2160 | 3217 ms | 2125 ms | 729 ms | 232.0 ms | 325.9 ms | 4.3 | 798 ms | 10 MB |
-| 600×1000 (portrait) | 1204 ms | 456 ms | 86 ms | 20.3 ms | 25.6 ms | 49.3 | 129 ms | 10 MB |
+| Viewport | Boot | Frame (median) | Frame p95 | API | JS heap |
+|---|---:|---:|---:|---:|---:|
+| 1366x768 | 1046 ms | 58.2 ms | 67.3 ms | 278 ms | 14 MB |
+| 1920x1080 | 1309 ms | 98.7 ms | 122.8 ms | 319 ms | 14 MB |
+| 2560x1440 | 1633 ms | 157.3 ms | 185.9 ms | 481 ms | 10 MB |
+| 3840x2160 | 2655 ms | 322.7 ms | 382.3 ms | 996 ms | 10 MB |
 
-Scene composition, constant across the four landscape viewports: **418 draw
-calls · 4,546 triangles · 135 geometries (105 cached) · 4 materials · 30
-textures**.
+Scene composition, **constant across all four viewports**: 493 draw calls,
+16,228 triangles, 120 geometries (80 cached), 8 materials. Zero console errors
+at every viewport.
 
-At 600×1000 the same scene issues **161 draw calls and 1,718 triangles** from
-**39 geometries**. Nothing was removed: the narrower frustum culls most of the
-floor, which is why that viewport is the fastest despite being the most
-constrained. It is listed to show the shape of the workload, not as evidence
-of an optimisation.
+The composition grew from the previous baseline of 418 draw calls and 4,546
+triangles. Both increases are geometry that is now drawn rather than
+optimisation lost: equipment is extruded from its measured footprint instead of
+drawn as a flat pad, and the 211 unpaired CAD wall faces reach the plan for the
+first time (one additional draw call for all of them).
+
+### What the frame time is actually bound by
+
+Frame time fits **36.5 ms per megapixel plus 19.9 ms fixed** across the four
+viewports, at unchanged scene composition. That is a fill-rate signature.
+
+The benchmark tests it directly rather than arguing from the fit. It hides
+layers one at a time and reports what each removal buys, at 1920x1080:
+
+| Scene | Draw calls | Triangles | Frame (median) | Change |
+|---|---:|---:|---:|---:|
+| All layers | 493 | 16,228 | 94.0 ms | |
+| Without equipment and columns | 67 | 11,116 | 87.5 ms | -6.5 ms |
+| Shell only | 4 | 18 | 67.3 ms | -20.2 ms |
+| Empty scene | 0 | 0 | 16.5 ms | -50.8 ms |
+
+**Removing 426 of 493 draw calls -- 86% of them -- changed the frame by 6.5 ms
+of 94.0 ms, or 7%.** An empty scene still costs 16.5 ms, which is compositing
+and not this application at all.
+
+### Why instancing stays deferred
+
+Columns and equipment are 202 and 224 individual meshes, and instancing them is
+the obvious optimisation. The sweep above is why it has not been done: the
+entire draw-call population of both layers is worth 6.5 ms in a 94 ms frame,
+and the change is not free -- both layers are picked, so an InstancedMesh needs
+an instanceId-to-record map, and the regression suite reconciles per-mesh
+counts that would have to be rewritten. That is real risk and rework against a
+7% ceiling on a number that does not describe production hardware anyway.
+
+The lever is recorded, not taken. If a measurement on real hardware ever shows
+draw calls mattering, the sweep is the thing to re-run first.
 
 > [!WARNING]
-> **These are not GPU numbers and must not be quoted as the twin's real
-> performance.** Frame time scales almost exactly with pixel count — 7.9× the
-> pixels for 6.5× the time — against only 4,546 triangles. That is a fill-rate
-> signature under software rasterisation, not scene complexity. On real
-> hardware this scene is trivial.
-
-**No optimisation was performed on the strength of these numbers.** Instancing
-would collapse 418 draw calls to roughly 4, but the benefit cannot be
-demonstrated here, and optimising against a software rasteriser risks changing
-rendering for no real gain. Draw calls are recorded as the lever if a
-real-hardware measurement ever justifies pulling it.
-
-Interaction latency exceeds the 100 ms target, bounded by frame time under
-software rendering. It was not re-measured in the most recent run: an
-end-to-end hover measurement here is dominated by frame time and automation
-round-trips, so it cannot resolve the cost of the pointer path itself.
-
-Resize latency tracks pixel count almost exactly (105 ms at 1366×768, 798 ms
-at 3840×2160), which is the drawing-buffer reallocation plus one re-render --
-the same fill-rate signature, not a coalescing failure; resize work is already
-collapsed to one call per animation frame. The JS heap sits at 10-12 MB and
-does not grow across viewport changes, so nothing here retains geometry per
-resize.
+> **None of these numbers is a GPU measurement and none may be quoted as the
+> twin's real performance.** Headless Chromium rasterises in software. On real
+> hardware, 16,228 triangles and 493 draw calls is a trivial scene.
 
 Redundant work **was** removed from that pointer path — one ray per hover
 instead of three, a cursor write only when the value changes, and an inspector

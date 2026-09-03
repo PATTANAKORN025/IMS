@@ -76,10 +76,36 @@ future source is allowed to assert. Its rules are documented under
 |---|---|---|
 | `GET /api/state` | Live machine state per monitored device | The only route that touches the database. Read-only role. |
 | `GET /api/build` | This build's fingerprint and its per-file hashes | Computed at boot from the source bytes in the running image. Cannot be set by an environment variable or stamped by a build script that did not run. |
-| `GET /api/floor-geometry` | Envelope, footprint outline, grid, columns, walls, openings, **CAD equipment**, validated functional zones | Serves an empty-but-valid shape when no private geometry is present, which is the default for a fresh clone and not an error. `slots` is **not** served at all. |
+| `GET /api/floors` | The deployed-floor catalogue: id, ordinal, computed label, whether zones exist | Ids and ordinals only. No label, order or description is read from a private document. |
+| `GET /api/floor-geometry` | Envelope, footprint outline, grid, columns, walls, **unpaired wall faces**, openings, **CAD equipment**, validated functional zones | Takes `?floor=`; omitting it means the default floor and returns byte-identical geometry. Serves an empty-but-valid shape when no private geometry is present, which is the default for a fresh clone and not an error. `slots` is **not** served at all. |
 | `GET /api/floor-schematic` | The raster schematic transcription | Retained and still guarded, but **no page draws it**: the canonical twin is the CAD floor. |
 | `GET /api/diagnostics` | Counts, booleans and fixed enums only | Never a coordinate, identifier, path, process or vendor name. |
 | `GET /healthz` | Liveness, including a database round-trip | |
+
+### Floors are addressed by id, not compiled in
+
+`lib/floors.js` owns the floor id space and is the only module allowed to build
+a path into `private/`. Floor 1 is the first validated dataset; a second
+surveyed floor is a file drop, not a code change.
+
+A floor id arrives from a query string, so it is attacker-controlled and it is
+used to build a filesystem path. Two guards apply in order:
+
+1. It must match `^floor[1-5]$` exactly — a closed pattern admitting no dot,
+   slash or separator of any kind.
+2. It must already appear in the catalogue the server built by reading its own
+   directory.
+
+The second guard is what makes this allowlist-by-construction: **the path is
+built from the catalogue's copy of the id, never from the caller's string**, so
+a floor the server did not find cannot be addressed even by a perfectly
+well-formed request. A named floor that is not deployed answers `404` with the
+fixed body — never the empty-geometry shape, which would assert that the floor
+exists and is empty.
+
+`?floor=` is optional. Omitting it means the default floor, and the regression
+asserts the two responses are byte-identical, so every URL that predates floors
+still means what it meant.
 
 ### Serving is an allowlist, never a spread
 
