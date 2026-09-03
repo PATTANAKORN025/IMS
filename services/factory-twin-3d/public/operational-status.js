@@ -1,112 +1,140 @@
 /**
  * Operational status vocabulary for the Factory Twin.
  *
- * This is the FACTORY-WIDE status language: the eight things a physical asset
- * on this floor can be showing an operator. It is a presentation layer over the
- * run-state vocabulary in lib/contracts.js, not a second source of truth, and
- * the mapping between the two is declared here so the legend and the renderer
- * cannot drift apart.
+ * EXACTLY EIGHT machine states exist on this floor, and they are the eight the
+ * plant itself uses:
  *
- * THE HONESTY RULE THIS FILE EXISTS TO ENFORCE. Four of the eight states have
- * no backend column behind them in this system today. lib/contracts.js is
- * explicit that OFF and PM_STOP "have no real source column yet in this
- * schema", and nothing in the current query derives a warning tier -- STATE_SQL
- * collapses Critical/Major alarms straight to DOWN. Those states are listed
- * anyway, because an operator legend with holes in it is worse than one that
- * says which lamps can actually light. Each carries `backed`, and the legend
- * renders an unbacked state visibly differently rather than implying the system
- * can show it today.
+ *     OFF  DOWN  IDLE  INITIAL  PM  STOP  RUN  UNDEFINED
  *
- * NEVER set `backed: true` on a state without a real column behind it. That
- * single flag is the difference between a status board and a mock-up.
+ * Nothing else is a machine state here. The earlier vocabulary of NORMAL /
+ * WARNING / CRITICAL / OFFLINE / STALE DATA / MAINTENANCE was a monitoring
+ * dialect invented by the twin, not the plant's own language, and it is gone:
+ * an operator reading this board and an operator reading the line's own HMI
+ * must see the same word for the same machine.
+ *
+ * THE HONESTY RULE THIS FILE EXISTS TO ENFORCE. Only four of the eight have a
+ * column behind them in this deployment. STATE_SQL derives exactly four
+ * outcomes -- running, not running, active Critical/Major alarm, and no fresh
+ * telemetry -- which are RUN, IDLE, DOWN and UNDEFINED. OFF, INITIAL, PM and
+ * STOP are real plant states with no source column here yet. They are listed,
+ * because a legend with holes is worse than one that says which lamps can
+ * light, and each carries `backed: false` so the legend can render it as a
+ * state the system cannot currently report rather than as a state that happens
+ * to have no members right now.
+ *
+ * NEVER set `backed: true` on a state without a real column behind it. That one
+ * flag is the difference between a status board and a mock-up. And never infer
+ * a state the data cannot support: a machine whose evidence is insufficient is
+ * UNDEFINED, never a plausible-looking Idle or Off.
+ *
+ * DATA QUALITY IS NOT A MACHINE STATE. Whether an asset is linked to an IMS
+ * device is a fact about the *record*, not about the machine, so it lives in a
+ * separate indicator (`DATA_QUALITY`) that the legend renders apart from the
+ * eight. An asset with no authoritative link shows UNMAPPED and carries no
+ * machine state at all -- it is not Off, and it is not Undefined either.
  *
  * ACCESSIBILITY. Every state carries a distinct `glyph` as well as a colour.
- * Status is never communicated by colour alone -- the glyph and the label are
- * both load-bearing, which matters for the red/green pair most of all.
+ * Status is never communicated by colour alone -- glyph and label are both
+ * load-bearing, which matters most for the red/green pair.
  */
 
-/** @typedef {'NORMAL'|'WARNING'|'CRITICAL'|'OFFLINE'|'STALE_DATA'|'MAINTENANCE'|'UNMAPPED'|'PRESENTATION_ONLY'} OperationalStatus */
+/** @typedef {'OFF'|'DOWN'|'IDLE'|'INITIAL'|'PM'|'STOP'|'RUN'|'UNDEFINED'} OperationalStatus */
 
 export const OPERATIONAL_STATUS = Object.freeze({
-  NORMAL: Object.freeze({
-    label: 'NORMAL',
-    glyph: '●', // filled circle
-    color: '#22c55e',
-    hex: 0x22c55e,
-    machineState: 'RUN',
-    backed: true,
-    meaning: 'Mapped asset reporting a running state.',
-  }),
-  WARNING: Object.freeze({
-    label: 'WARNING',
-    glyph: '▲', // triangle
-    color: '#f59e0b',
-    hex: 0xf59e0b,
-    machineState: null,
+  OFF: Object.freeze({
+    label: 'Off',
+    glyph: '■', // filled square
+    color: '#475569',
+    hex: 0x475569,
+    machineState: 'OFF',
     backed: false,
-    meaning: 'No warning tier is derivable today: active alarms collapse to CRITICAL.',
+    meaning: 'Powered down. No column in this schema reports it yet.',
   }),
-  CRITICAL: Object.freeze({
-    label: 'CRITICAL',
+  DOWN: Object.freeze({
+    label: 'Down',
     glyph: '◆', // diamond
     color: '#ef4444',
     hex: 0xef4444,
     machineState: 'DOWN',
     backed: true,
-    meaning: 'Mapped asset with an active Critical or Major alarm.',
+    meaning: 'Active Critical or Major alarm on a mapped asset.',
   }),
-  OFFLINE: Object.freeze({
-    label: 'OFFLINE',
-    glyph: '■', // filled square
-    color: '#64748b',
-    hex: 0x64748b,
-    machineState: 'OFF',
-    backed: false,
-    meaning: 'No column in this schema reports powered-off yet.',
-  }),
-  STALE_DATA: Object.freeze({
-    label: 'STALE DATA',
-    glyph: '◑', // half-filled circle
-    color: '#a78bfa',
-    hex: 0xa78bfa,
-    machineState: 'UNKNOWN',
+  IDLE: Object.freeze({
+    label: 'Idle',
+    glyph: '▲', // triangle
+    color: '#f59e0b',
+    hex: 0xf59e0b,
+    machineState: 'IDLE',
     backed: true,
-    meaning: 'Mapped asset whose telemetry is missing or past its freshness window.',
+    meaning: 'Mapped asset present and reporting, not running.',
   }),
-  MAINTENANCE: Object.freeze({
-    label: 'MAINTENANCE',
+  INITIAL: Object.freeze({
+    label: 'Initial',
+    glyph: '◐', // half-filled circle
+    color: '#38bdf8',
+    hex: 0x38bdf8,
+    machineState: 'INITIAL',
+    backed: false,
+    meaning: 'Warm-up or start-of-job. No column in this schema reports it yet.',
+  }),
+  PM: Object.freeze({
+    label: 'PM',
     glyph: '◇', // hollow diamond
     color: '#3b82f6',
     hex: 0x3b82f6,
-    machineState: 'PM_STOP',
+    machineState: 'PM',
     backed: false,
-    meaning: 'No column in this schema reports planned maintenance yet.',
+    meaning: 'Planned maintenance. No column in this schema reports it yet.',
   }),
-  UNMAPPED: Object.freeze({
-    label: 'UNMAPPED',
-    glyph: '○', // hollow circle
+  STOP: Object.freeze({
+    label: 'Stop',
+    glyph: '▬', // bar
+    color: '#a855f7',
+    hex: 0xa855f7,
+    machineState: 'STOP',
+    backed: false,
+    meaning: 'Deliberately stopped. No column in this schema reports it yet.',
+  }),
+  RUN: Object.freeze({
+    label: 'Run',
+    glyph: '●', // filled circle
+    color: '#22c55e',
+    hex: 0x22c55e,
+    machineState: 'RUN',
+    backed: true,
+    meaning: 'Mapped asset running with no active alarm.',
+  }),
+  UNDEFINED: Object.freeze({
+    label: 'Undefined',
+    glyph: '?',
     color: '#94a3b8',
     hex: 0x94a3b8,
-    machineState: null,
+    machineState: 'UNDEFINED',
     backed: true,
-    meaning: 'CAD asset with no authoritative link to an IMS device. Carries no status.',
-  }),
-  PRESENTATION_ONLY: Object.freeze({
-    label: 'PRESENTATION ONLY',
-    glyph: '▫', // small hollow square
-    color: '#c4b5fd',
-    hex: 0xc4b5fd,
-    machineState: null,
-    backed: true,
-    meaning: 'A drawn form standing in for an asset. Not a measurement, never a status.',
+    meaning: 'Mapped asset whose evidence is insufficient to name a state.',
   }),
 });
 
-/** Declaration order for the legend and for any status roll-up. */
+/** Declaration order for the legend, the status strip and any roll-up. */
 export const STATUS_ORDER = Object.freeze([
-  'NORMAL', 'WARNING', 'CRITICAL', 'OFFLINE',
-  'STALE_DATA', 'MAINTENANCE', 'UNMAPPED', 'PRESENTATION_ONLY',
+  'OFF', 'DOWN', 'IDLE', 'INITIAL', 'PM', 'STOP', 'RUN', 'UNDEFINED',
 ]);
+
+/**
+ * Record-quality indicators. NOT machine states, and deliberately held in a
+ * separate table so no roll-up, legend or renderer can quietly treat one as a
+ * ninth state.
+ */
+export const DATA_QUALITY = Object.freeze({
+  UNMAPPED: Object.freeze({
+    label: 'Unmapped',
+    glyph: '○', // hollow circle
+    color: '#64748b',
+    hex: 0x64748b,
+    meaning: 'CAD asset with no authoritative link to an IMS device. Carries no '
+      + 'machine state, and is not counted in the state distribution.',
+  }),
+});
 
 /** The states this deployment can actually derive from its own data today. */
 export const BACKED_STATUSES = Object.freeze(
@@ -116,33 +144,38 @@ export const BACKED_STATUSES = Object.freeze(
 /**
  * Maps a run-state to its operational status.
  *
- * Returns UNMAPPED for anything it does not recognise, including null and
- * undefined. That default is deliberate and is the whole point: an asset whose
- * state cannot be established must fall to "no authoritative link", never to
- * NORMAL. A missing lookup must never read as a healthy machine.
+ * Returns UNDEFINED for anything it does not recognise, including null and
+ * undefined. That default is the whole point: a machine whose state cannot be
+ * established is explicitly Undefined, never a plausible-looking Idle, Off or
+ * Run. A missing lookup must never read as a healthy machine, and it must not
+ * read as a powered-down one either.
  */
 export function statusForMachineState(state) {
-  if (typeof state !== 'string') return 'UNMAPPED';
+  if (typeof state !== 'string') return 'UNDEFINED';
   for (const key of STATUS_ORDER) {
     if (OPERATIONAL_STATUS[key].machineState === state) return key;
   }
-  return 'UNMAPPED';
+  return 'UNDEFINED';
 }
 
 /**
- * Resolves the status of a physical slot.
+ * Resolves the display state of one physical asset.
  *
- * A slot without a confirmed device mapping is UNMAPPED regardless of anything
- * else present on the record. Proximity, numbering and name similarity are not
- * evidence, so nothing here consults position, id or label -- only whether an
- * authoritative device id exists, and only then the live state.
+ * Returns either one of the eight machine states or the string 'UNMAPPED',
+ * which is a record-quality answer rather than a machine state. An asset
+ * without a confirmed device mapping is UNMAPPED regardless of anything else on
+ * the record. Proximity, numbering and name similarity are not evidence, so
+ * nothing here consults position, id or label -- only whether an authoritative
+ * device id exists, and only then the live state.
  */
-export function statusForSlot(slot, stateByDeviceId) {
-  if (!slot || typeof slot !== 'object') return 'UNMAPPED';
-  const id = slot.ims_device_id;
+export function statusForAsset(asset, stateByDeviceId) {
+  if (!asset || typeof asset !== 'object') return 'UNMAPPED';
+  const id = asset.ims_device_id;
   if (typeof id !== 'string' || id.length === 0) return 'UNMAPPED';
   if (!stateByDeviceId || typeof stateByDeviceId.get !== 'function') return 'UNMAPPED';
   const row = stateByDeviceId.get(id);
-  if (!row) return 'STALE_DATA';
-  return statusForMachineState(row.state);
+  // Mapped but silent is a machine we know about and cannot describe, which is
+  // precisely UNDEFINED. It is NOT unmapped -- the link exists.
+  if (!row) return 'UNDEFINED';
+  return statusForMachineState(row.machine_state || row.state);
 }

@@ -67,7 +67,10 @@ const VIEWPORTS = [
 // The toggles an operator actually has. Sub-layers exist because the four
 // coarse layers each bundled two different evidence classes; the test drives
 // the real controls rather than the internal grouping.
-const LAYERS = ['shell', 'columns', 'walls', 'functional', 'slots', 'telemetry', 'presentation'];
+// Exactly the layers the panel offers, and the panel offers exactly the layers
+// that hold something. The telemetry layer is gone: it was always empty,
+// because no monitored device has an established position on this floor.
+const LAYERS = ['shell', 'columns', 'walls', 'functional', 'equipment'];
 
 const NO_GEOMETRY = 'no private geometry is deployed here';
 const NO_DEVICES = 'no monitored devices in this database';
@@ -133,7 +136,18 @@ async function snapshot(page) {
       coords: T.snapshotCoordinates(),
       resources: T.resourceStats(),
       footprintMeshes: T.footprintMeshes.length,
-      presentationMeshes: T.presentationMeshes ? T.presentationMeshes.length : 0,
+      equipmentMeshes: Array.isArray(T.equipmentMeshes) ? T.equipmentMeshes.length : 0,
+      // The invented-machine-form layer is DELETED. Read defensively and
+      // assert it stays absent: a number here would mean drawn volumes nobody
+      // measured had come back on a floor read from CAD.
+      hasPresentationRegistry: T.presentationMeshes !== undefined
+        || T.sublayers.presentation !== undefined,
+      equipmentCensus: T.equipmentCensus ? T.equipmentCensus() : null,
+      // Rotation actually applied to the drawn pads, so the reconciliation can
+      // compare the SCENE against the API rather than the API against itself.
+      equipmentRotations: (Array.isArray(T.equipmentMeshes) ? T.equipmentMeshes : []).map(
+        (m) => ({ id: m.userData.equipment.id, y: m.rotation.y })
+      ),
       // Walls and openings are instanced: a few objects carrying hundreds of
       // spans. Counted as objects, because that is what the scene holds.
       wallMeshes: T.wallMeshes ? T.wallMeshes.length : 0,
@@ -160,7 +174,27 @@ async function snapshot(page) {
         columns: geo.columns.length,
         walls: Array.isArray(geo.walls) ? geo.walls.length : 0,
         openings: Array.isArray(geo.openings) ? geo.openings.length : 0,
-        slots: geo.slots.length,
+        // slots[] is not served at all any more. Read it defensively and
+        // assert it stays absent -- its presence would mean the raster layer
+        // was back on the wire.
+        slotsServed: 'slots' in geo,
+        equipment: Array.isArray(geo.equipment) ? geo.equipment.length : 0,
+        equipmentResolved: (geo.equipment || []).filter(
+          (e) => e.footprint_status === 'OBSERVED_CAD' && e.footprint
+        ).length,
+        equipmentUnresolved: (geo.equipment || []).filter(
+          (e) => e.footprint_status === 'UNRESOLVED'
+        ).length,
+        equipmentWithFootprintButUnresolved: (geo.equipment || []).filter(
+          (e) => e.footprint_status === 'UNRESOLVED' && e.footprint
+        ).length,
+        equipmentNonCadPosition: (geo.equipment || []).filter(
+          (e) => e.geometry_status !== 'MEASURED_CAD'
+        ).length,
+        equipmentMapped: (geo.equipment || []).filter((e) => e.ims_device_id).length,
+        equipmentRotationsServed: (geo.equipment || []).map(
+          (e) => ({ id: e.id, deg: e.rotation_deg })
+        ),
         zones: geo.functional_zones.length,
         zonesTotal: geo.functional_zones_meta ? geo.functional_zones_meta.total : null,
         conflictServed: geo.functional_zones.some((z) => ['zone-28', 'zone-31'].includes(z.id)),
@@ -411,15 +445,12 @@ async function run() {
     const expectedStructural = s.api.columns
       + (measuredPlate ? s.footprintMeshes : syntheticPlate)
       + s.wallMeshes + s.openingMeshes;
-    // slots + monitored devices + one instanced mesh per (form, part). The
-    // presentation meshes are a couple of dozen objects standing in for every
-    // machine on the floor, which is exactly why they are counted as objects.
-    const expectedOperational = s.api.slots + s.presentationMeshes;
+    // One pad per CAD equipment record and nothing else. No monitored device,
+    // no invented machine form, no raster slot.
+    const expectedOperational = s.api.equipment;
     check(s.perLayer.structural === expectedStructural,
       'structural meshes = columns + floor plate + traced outline',
       `${s.perLayer.structural} vs ${expectedStructural}`);
-    check(s.visibility.presentation === false,
-      'the presentation model is off by default, so the measured floor is what is claimed');
     check(s.perLayer.functional === s.api.zones, 'functional meshes = zones served',
       `${s.perLayer.functional} vs ${s.api.zones}`);
     check(s.perSublayer.columns === s.api.columns, 'column sub-layer holds exactly the served columns',
@@ -433,9 +464,11 @@ async function run() {
     check(s.api.walls === 0 || s.wallMeshes <= 2,
       'walls are instanced, not one mesh each',
       `${s.wallMeshes} mesh(es) for ${s.api.walls} walls`);
-    check(s.perSublayer.slots === s.api.slots, 'slot sub-layer holds exactly the served slots',
-      `${s.perSublayer.slots} vs ${s.api.slots}`);
-    check(s.perLayer.operational === expectedOperational, 'operational meshes = slots + presentation forms',
+    check(s.perSublayer.equipment === s.api.equipment,
+      'equipment sub-layer holds exactly the served CAD assets',
+      `${s.perSublayer.equipment} vs ${s.api.equipment}`);
+    check(s.perLayer.operational === expectedOperational,
+      'operational meshes = CAD equipment, and nothing else',
       `${s.perLayer.operational} vs ${expectedOperational}`);
     check(s.meshes === expectedStructural + s.api.zones + expectedOperational, 'total mesh count reconciles',
       `${s.meshes}`);
@@ -448,6 +481,28 @@ async function run() {
     check(s.machineMeshes === 0, 'no monitored device is drawn on the floor',
       `${s.machineMeshes} machine mesh(es)`);
     check(s.hasMachineRegistry === false, 'the machine-mesh registry is gone, not merely empty');
+    // The raster layer, deleted at three levels: the API no longer serves it,
+    // the renderer no longer has a group for it, and the invented machine
+    // forms that were drawn on top of it are gone with it. Each is asserted
+    // separately, because any one of them coming back alone is a regression.
+    check(s.api.slotsServed === false,
+      'the raster slot layer is not served by the API at all');
+    check(s.hasPresentationRegistry === false,
+      'the invented machine-form layer is deleted, not merely hidden');
+    check(s.equipmentMeshes === s.api.equipment,
+      'every served CAD asset is drawn exactly once',
+      `${s.equipmentMeshes} drawn vs ${s.api.equipment} served`);
+    // The core evidence rule of this layer, checked on the wire rather than in
+    // the extractor: an unresolved extent must be ABSENT, never a default box.
+    check(s.api.equipmentWithFootprintButUnresolved === 0,
+      'no UNRESOLVED extent carries a footprint anyway',
+      `${s.api.equipmentWithFootprintButUnresolved} record(s)`);
+    check(s.api.equipmentNonCadPosition === 0,
+      'every equipment position claims MEASURED_CAD provenance',
+      `${s.api.equipmentNonCadPosition} record(s) do not`);
+    check(s.api.equipment === 0 || s.api.equipmentUnresolved > 0,
+      'the model reports unresolved extents rather than filling them in',
+      `${s.api.equipmentResolved} measured, ${s.api.equipmentUnresolved} UNRESOLVED`);
     check(!s.api.conflictServed, 'conflicting zones withheld from the wire');
 
     // ── Building outline: the floor must read as THIS building ──
@@ -479,61 +534,130 @@ async function run() {
     check(errors.length === 0, 'no console errors', errors.slice(0, 2).join(' | '));
     check(failed.length === 0, 'no failed requests', failed.slice(0, 2).join(' | '));
 
-    // ── Operator surface: every control must be reachable at this viewport ──
-    // Not decoration. With the evidence legend and diagnostics expanded, the
-    // HUD's content exceeds its fixed height by roughly 900px at 1366x768, and
-    // under overflow:hidden the diagnostics control sat below the viewport with
-    // no scrollbar and no way to reach it with a pointer.
-    const surface = await page.evaluate(() => {
-      const sels = [
-        '#simulated-banner',
-        '#hud h1',
-        '#view-controls button[data-view="operator"]',
-        '#view-controls button[data-view="building"]',
-        '#view-controls button[data-view="overview"]',
-        '#view-reset',
-        '#layer-controls input[data-layer="shell"]',
-        '#layer-controls input[data-layer="telemetry"]',
-        '#evidence-summary',
-        '#evidence-legend > summary',
-        '#diagnostics > summary',
-      ];
-      const legend = document.getElementById('evidence-legend');
-      const diag = document.getElementById('diagnostics');
-      const wasLegend = legend.open;
-      const wasDiag = diag.open;
-      legend.open = true;
-      diag.open = true;
-      const unreachable = [];
-      for (const sel of sels) {
+    // -- Command-centre surface: chrome docks, the floor is never covered --
+    //
+    // The previous chrome was an opaque panel floating over the canvas. At
+    // 1366x768 it covered roughly a third of the floor plan, and the camera fit
+    // had to be computed around it. The rule now is stronger and testable: the
+    // only element allowed to overlap the scene is the context panel, and only
+    // once something is selected.
+    // Reachability is measured in two passes with a real click between them,
+    // because the drawer opens through a CSS grid transition: toggling the
+    // class and measuring in the same frame reads every drawer control as zero
+    // wide, which is the transition, not a layout fault.
+    const REACH_FN = `(list) => {
+      const bad = [];
+      for (const sel of list) {
         const el = document.querySelector(sel);
-        if (!el) { unreachable.push(`${sel} (missing)`); continue; }
+        if (!el) { bad.push(sel + ' (missing)'); continue; }
         el.scrollIntoView({ block: 'nearest' });
         const r = el.getBoundingClientRect();
-        const offscreen =
-          r.width === 0 || r.height === 0 ||
-          r.bottom > window.innerHeight + 1 || r.right > window.innerWidth + 1 ||
-          r.top < -1 || r.left < -1;
-        if (offscreen) unreachable.push(`${sel} (${Math.round(r.left)},${Math.round(r.top)} ${Math.round(r.width)}x${Math.round(r.height)})`);
+        const offscreen = r.width === 0 || r.height === 0
+          || r.bottom > window.innerHeight + 1 || r.right > window.innerWidth + 1
+          || r.top < -1 || r.left < -1;
+        if (offscreen) {
+          bad.push(sel + ' (' + Math.round(r.left) + ',' + Math.round(r.top) + ' '
+            + Math.round(r.width) + 'x' + Math.round(r.height) + ')');
+        }
       }
-      legend.open = wasLegend;
-      diag.open = wasDiag;
+      return bad;
+    }`;
+
+    const headerUnreachable = await page.evaluate(`(${REACH_FN})([
+      '#topbar', '#status-strip',
+      '#view-controls button[data-view="plan"]',
+      '#view-controls button[data-view="overview"]',
+      '#view-controls button[data-view="building"]',
+      '#view-reset', '#drawer-toggle', '#build-id', '#data-quality'
+    ])`);
+
+    const stageClosed = await page.evaluate(
+      () => document.getElementById('stage').getBoundingClientRect().width
+    );
+
+    await page.click('#drawer-toggle');
+    await page.waitForTimeout(450);
+    const drawerUnreachable = await page.evaluate(`(() => {
+      const legend = document.getElementById('evidence-legend');
+      const diag = document.getElementById('diagnostics');
+      const unmapped = document.getElementById('unmapped-devices');
+      const prior = [legend.open, diag.open, unmapped.open];
+      legend.open = true; diag.open = true; unmapped.open = true;
+      const bad = (${REACH_FN})([
+        '#factory-status',
+        '#layer-controls input[data-layer="shell"]',
+        '#layer-controls input[data-layer="equipment"]',
+        '#status-legend-body', '#evidence-summary',
+        '#evidence-legend > summary', '#unmapped-devices > summary',
+        '#diagnostics > summary'
+      ]);
+      legend.open = prior[0]; diag.open = prior[1]; unmapped.open = prior[2];
+      return bad;
+    })()`);
+    const docked = await page.evaluate(() => {
+      const stage = document.getElementById('stage').getBoundingClientRect();
+      const drawer = document.getElementById('drawer').getBoundingClientRect();
+      return {
+        stageWidth: stage.width,
+        overlaps: drawer.left < stage.right - 1 && drawer.right > stage.left + 1
+          && drawer.top < stage.bottom - 1 && drawer.bottom > stage.top + 1,
+        viewportWidth: window.innerWidth,
+      };
+    });
+    await page.click('#drawer-toggle');
+    await page.waitForTimeout(450);
+
+    const surface = await page.evaluate(() => {
+      // Nothing but the context panel may sit over the scene, and it starts
+      // hidden. Measured by hit-testing the middle of the canvas.
+      const scene = document.getElementById('scene').getBoundingClientRect();
+      const atCentre = document.elementFromPoint(
+        Math.round(scene.left + scene.width / 2),
+        Math.round(scene.top + scene.height / 2)
+      );
       const canvas = document.querySelector('canvas');
       return {
-        unreachable,
+        inspectorHidden: document.getElementById('inspector').hidden,
+        centreIsCanvas: Boolean(atCentre && atCentre.tagName === 'CANVAS'),
         horizontalScroll: document.documentElement.scrollWidth > window.innerWidth,
         canvasLabelled: Boolean(canvas && canvas.getAttribute('aria-label')),
-        // Evidence state must never be carried by colour alone. Each legend
-        // row pairs a glyph with the word, and the glyph is aria-hidden so a
-        // screen reader gets the word rather than a decorative character.
+        // The chrome the rebuild removed. Any of these coming back means the
+        // floating-HUD treatment has returned.
+        legacyChrome: ['#hud', '#simulated-banner', '#mode-controls', '#schematic-panel',
+          '#schematic', '.split-caption']
+          .filter((sel) => document.querySelector(sel) !== null),
         legendRows: [...document.querySelectorAll('#evidence-legend dt')].map((dt) => ({
           text: dt.textContent.trim(),
           glyph: Boolean(dt.querySelector('.ev[aria-hidden="true"]')),
         })),
       };
     });
-    check(surface.unreachable.length === 0, 'every operator control is reachable',
+    surface.unreachable = headerUnreachable;
+    surface.drawerUnreachable = drawerUnreachable;
+    // Below 900 CSS pixels the drawer deliberately overlays instead of docking:
+    // a 340 px track on a 600 px viewport would leave the floor unreadable, so
+    // the narrow layout trades docking for a usable plan. The invariant that
+    // holds at every width is the one asserted -- the floor pane never grows to
+    // make room, and the drawer is dismissible.
+    surface.overlapsStage = docked.viewportWidth > 900 ? docked.overlaps : false;
+    surface.stageNeverGrew = docked.stageWidth <= stageClosed + 1;
+
+    check(surface.unreachable.length === 0, 'every header control is reachable',
       surface.unreachable.join(' | '));
+    check(surface.drawerUnreachable.length === 0,
+      'every inspection-drawer control is reachable with the drawer open',
+      surface.drawerUnreachable.join(' | '));
+    check(!surface.overlapsStage,
+      'the inspection drawer docks beside the floor rather than over it');
+    check(surface.stageNeverGrew,
+      'opening the drawer never widens the floor pane');
+    check(surface.inspectorHidden,
+      'the context panel stays hidden until something is selected');
+    check(surface.centreIsCanvas,
+      'the centre of the floor plan is the floor plan, not a panel');
+    check(surface.legacyChrome.length === 0,
+      'the floating HUD, banner, mode board and split panes are gone',
+      surface.legacyChrome.join(' '));
     check(!surface.horizontalScroll, 'the page never scrolls horizontally');
     check(surface.canvasLabelled, 'the 3D canvas carries an accessible name');
     check(
@@ -542,98 +666,148 @@ async function run() {
       `${surface.legendRows.length} rows`
     );
 
-    // ── Presentation model ──
-    // A third evidence layer whose footprints are measured and whose every
-    // vertical dimension is a drawing convention. It must announce that, cost
-    // little, and change nothing about the measured model.
-    const pres = await page.evaluate(() => {
-      const T = window.__twin;
-      const before = T.renderer.info.render.calls;
-      const coordsBefore = T.snapshotCoordinates();
-      const group = T.sublayers.presentation;
-      const wasVisible = group.visible;
-      group.visible = true;
-      T.renderer.render(T.scene, T.camera);
-      const after = T.renderer.info.render.calls;
-      let nan = 0;
-      group.traverse((o) => {
-        const p = o.position;
-        if (p && !(Number.isFinite(p.x) && Number.isFinite(p.y) && Number.isFinite(p.z))) nan++;
-      });
-      const out = {
-        meshes: T.presentationMeshes.length,
-        classes: [...new Set(T.presentationMeshes.map((m) => m.userData.presentation.classification))],
-        instanced: T.presentationMeshes.every((m) => m.isInstancedMesh === true),
-        carriesDevice: T.presentationMeshes.some((m) => 'deviceId' in m.userData),
-        drawDelta: after - before,
-        nan,
-        coordsUnchanged: T.snapshotCoordinates() === coordsBefore,
-        spec: T.presentationSpec(),
-        census: T.presentationCensus(),
-        // One InstancedMesh per (form, part). Every mesh of a form must carry
-        // exactly that form's membership, or a machine has been dropped or
-        // double-counted between its own parts.
-        countsMatchCensus: T.presentationMeshes.every(
-          (m) => m.count === T.presentationCensus()[m.userData.presentation.form]
+    // -- Status strip: exactly the eight plant states ---------------------
+    //
+    // The vocabulary is the point. An operator reading this board and an
+    // operator reading the line's own HMI must see the same word for the same
+    // machine, so the eight are asserted by name and in order, and the
+    // monitoring dialect the twin used to invent is asserted absent.
+    const strip = await page.evaluate(() => {
+      const cells = [...document.querySelectorAll('#status-strip .ss-cell')];
+      return {
+        states: cells.filter((c) => !c.classList.contains('ss-quality'))
+          .map((c) => c.dataset.state),
+        labels: cells.map((c) => c.querySelector('.ss-label').textContent.trim()),
+        values: cells.map((c) => c.querySelector('.ss-value').textContent.trim()),
+        unbacked: cells.filter((c) => c.classList.contains('ss-off'))
+          .map((c) => c.dataset.state),
+        glyphsHidden: cells.every(
+          (c) => c.querySelector('.ss-glyph').getAttribute('aria-hidden') === 'true'
         ),
-        formsUsed: [...new Set(T.presentationMeshes.map((m) => m.userData.presentation.form))],
-        // Every mesh must name a form and a part, or the inspector cannot say
-        // what an object is when someone clicks it.
-        allNamed: T.presentationMeshes.every(
-          (m) => typeof m.userData.presentation.form === 'string'
-            && typeof m.userData.presentation.part === 'string'
-        ),
+        distinctGlyphs: new Set(
+          cells.map((c) => c.querySelector('.ss-glyph').textContent)
+        ).size,
+        cellCount: cells.length,
+        qualityCells: cells.filter((c) => c.classList.contains('ss-quality'))
+          .map((c) => c.dataset.state),
+        text: document.getElementById('status-strip').textContent,
+        legendStates: [...document.querySelectorAll('#status-legend-body dt')]
+          .map((dt) => dt.textContent.trim()),
       };
-      group.visible = wasVisible;
-      return out;
     });
-    if (pres.meshes === 0) {
-      skip('the presentation model is built from the measured footprints', NO_GEOMETRY);
+    const REQUIRED_STATES = ['OFF', 'DOWN', 'IDLE', 'INITIAL', 'PM', 'STOP', 'RUN', 'UNDEFINED'];
+    check(JSON.stringify(strip.states) === JSON.stringify(REQUIRED_STATES),
+      'the status strip carries exactly the eight plant states, in order',
+      strip.states.join(','));
+    check(JSON.stringify(strip.qualityCells) === JSON.stringify(['UNMAPPED']),
+      'unmapped is shown as a data-quality indicator, not as a ninth state',
+      strip.qualityCells.join(','));
+    check(!/NORMAL|WARNING|CRITICAL|OFFLINE|STALE|MAINTENANCE|PRESENTATION/i.test(strip.text),
+      'no invented monitoring state appears on the board', strip.text.replace(/\s+/g, ' ').slice(0, 90));
+    check(JSON.stringify(strip.unbacked) === JSON.stringify(['OFF', 'INITIAL', 'PM', 'STOP']),
+      'exactly the four states with no source column are marked as such',
+      strip.unbacked.join(','));
+    // A state this deployment cannot derive shows a dash, never a zero. A zero
+    // is a measurement; a dash is the absence of one.
+    check(strip.states.every((st, i) => (
+      ['OFF', 'INITIAL', 'PM', 'STOP'].includes(st) ? strip.values[i] === '–' : /^\d+$/.test(strip.values[i])
+    )), 'an underivable state reports a dash, a derivable one reports a count',
+    strip.values.join(','));
+    check(strip.distinctGlyphs === strip.cellCount,
+      'every state is distinguishable without colour', `${strip.distinctGlyphs} glyphs for ${strip.cellCount} cells`);
+    check(strip.glyphsHidden, 'status glyphs are decorative to a screen reader; the label carries the meaning');
+    check(strip.legendStates.length === 9,
+      'the drawer legend explains all eight states plus the data-quality indicator',
+      `${strip.legendStates.length} rows`);
+
+    // -- Equipment reconciliation: the scene against the CAD --------------
+    //
+    // The complaint was that machines were the wrong size and on the wrong
+    // side. Both were invisible from inside the model, so this compares what
+    // the renderer actually drew against what the API served, per record.
+    if (s.api.equipment === 0) {
+      skip('every drawn asset carries the rotation the CAD stated', NO_GEOMETRY);
+      skip('no drawn asset invents an extent', NO_GEOMETRY);
     } else {
-      check(pres.instanced, 'the presentation model is instanced, not one mesh per machine');
-      const censusTotal = Object.values(pres.census).reduce((a, b) => a + b, 0);
-      check(
-        censusTotal === s.api.slots,
-        'every measured slot gets exactly one presentation machine',
-        `${censusTotal} vs ${s.api.slots}`
-      );
-      check(pres.countsMatchCensus,
-        'every part of a form is instanced once per member of that form');
-      // The point of the whole change: the floor is not 243 copies of one box.
-      check(pres.formsUsed.length >= 4,
-        'the floor draws several machine forms, not one repeated shape',
-        `${pres.formsUsed.length} forms: ${pres.formsUsed.join(',')}`);
-      check(pres.formsUsed.every((f) => pres.spec.forms.includes(f)),
-        'every form built is a declared form',
-        pres.formsUsed.join(','));
-      check(pres.allNamed, 'every presentation object names its form and its part');
-      // Instancing is the whole reason this layer is affordable: one mesh per
-      // (form, part) rather than one per machine.
-      //
-      // The bound is TWICE the mesh count because every caster is also drawn
-      // into the shadow map, so an instanced mesh costs one scene draw plus one
-      // shadow draw. The second clause is the one that matters: whatever the
-      // shading does, the cost must never start scaling with the number of
-      // machines.
-      check(pres.drawDelta <= pres.meshes * 2,
-        'the presentation model costs a draw per mesh pass, not one per machine',
-        `+${pres.drawDelta} draws for ${pres.meshes} meshes`);
-      check(pres.drawDelta < s.api.slots / 4,
-        'the presentation model never costs a draw call per machine',
-        `+${pres.drawDelta} draws for ${s.api.slots} machines`);
-      check(
-        pres.classes.length === 1 && pres.classes[0] === 'PRESENTATION_ONLY',
-        'every presentation object declares itself PRESENTATION_ONLY',
-        pres.classes.join(',')
-      );
-      check(!pres.carriesDevice, 'no presentation object carries a device identity');
-      check(pres.nan === 0, 'no presentation object has a NaN transform', `${pres.nan}`);
-      // The load-bearing one: drawing a convention must not disturb evidence.
-      check(pres.coordsUnchanged,
-        'building the presentation model moves no measured coordinate');
-      check(pres.spec.classification === 'PRESENTATION_ONLY',
-        'the presentation specification names its own classification');
+      const served = new Map(s.api.equipmentRotationsServed.map((e) => [e.id, e.deg]));
+      let rotMismatch = 0;
+      let worstRot = 0;
+      for (const drawn of s.equipmentRotations) {
+        const deg = served.get(drawn.id);
+        if (deg == null) { rotMismatch++; continue; }
+        // The renderer negates the CAD angle because this scene's Z axis runs
+        // opposite to the drawing's Y. An unnegated angle mirrors every
+        // machine's orientation, which is exactly the reported symptom.
+        const expected = -deg * Math.PI / 180;
+        const d = Math.abs(((drawn.y - expected) % (Math.PI * 2)));
+        const wrapped = Math.min(d, Math.PI * 2 - d);
+        worstRot = Math.max(worstRot, wrapped);
+        if (wrapped > 1e-9) rotMismatch++;
+      }
+      check(rotMismatch === 0, 'every drawn asset carries the rotation the CAD stated',
+        `${rotMismatch} mismatched, worst ${(worstRot * 180 / Math.PI).toFixed(6)} deg`);
+
+      const scale = await page.evaluate(() => {
+        const T = window.__twin;
+        let invented = 0;
+        let measured = 0;
+        let worst = 0;
+        for (const m of T.equipmentMeshes) {
+          const e = m.userData.equipment;
+          const box = m.geometry.parameters;
+          if (e.footprint_status === 'OBSERVED_CAD' && e.footprint) {
+            measured++;
+            worst = Math.max(worst,
+              Math.abs(box.width - e.footprint.width),
+              Math.abs(box.depth - e.footprint.depth));
+          } else if (box.width !== box.depth) {
+            // An unresolved asset is drawn as a fixed uniform marker. A
+            // non-square one would mean a dimension had been supplied from
+            // somewhere, which is the invention this forbids.
+            invented++;
+          }
+        }
+        return { invented, measured, worst };
+      });
+      check(scale.invented === 0, 'no drawn asset invents an extent',
+        `${scale.invented} unresolved asset(s) drawn with a shape`);
+      check(scale.worst < 1e-9,
+        'every measured asset is drawn at exactly its measured extent',
+        `worst ${scale.worst} m`);
+      check(scale.measured === s.api.equipmentResolved,
+        'exactly the assets with a measured extent are drawn with one',
+        `${scale.measured} vs ${s.api.equipmentResolved}`);
     }
+
+    // -- The invented machine-form layer is gone ---------------------------
+    //
+    // It drew a body for every machine on the floor, chosen from a table of
+    // shapes nobody measured, standing at a raster-derived position. Its
+    // absence is asserted rather than assumed: this was a whole rendering
+    // path, and a rendering path can come back.
+    const gone = await page.evaluate(() => {
+      const T = window.__twin;
+      let presentationTagged = 0;
+      T.scene.traverse((o) => {
+        if (o.userData && o.userData.presentation) presentationTagged++;
+      });
+      return {
+        presentationTagged,
+        sublayerNames: Object.keys(T.sublayers),
+        api: ['presentationMeshes', 'presentationSpec', 'presentationCensus', 'presentationFormOf',
+          'slotMeshes']
+          .filter((k) => T[k] !== undefined),
+      };
+    });
+    check(gone.presentationTagged === 0,
+      'no object in the scene is tagged as a presentation form',
+      `${gone.presentationTagged}`);
+    check(!gone.sublayerNames.includes('presentation') && !gone.sublayerNames.includes('slots'),
+      'neither the presentation nor the raster slot sub-layer exists',
+      gone.sublayerNames.join(','));
+    check(gone.api.length === 0,
+      'the presentation and slot test hooks are deleted with their layers',
+      gone.api.join(','));
 
     if (!baseline) baseline = s;
 
@@ -661,12 +835,15 @@ async function run() {
       const geo = await (await fetch('api/floor-geometry')).json();
       const diag = await (await fetch('api/diagnostics')).json().catch(() => null);
       return {
-        slotsAllUnmapped: geo.slots.every((s) => s.status === 'UNMAPPED' && s.ims_device_id === null),
-        slotsNoMesId: geo.slots.every((s) => s.mes_machine_id === undefined || s.mes_machine_id === null),
-        heightsUnknown: geo.slots.every((s) => s.height_status === 'unknown'),
+        slotsAllUnmapped: (geo.equipment || []).every((e) => e.status === 'UNMAPPED' && e.ims_device_id === null),
+        slotsNoMesId: (geo.equipment || []).every((e) => e.mes_machine_id === undefined || e.mes_machine_id === null),
+        heightsUnknown: (geo.equipment || []).every((e) => e.height_status === 'unknown'),
         clearHeightNull: geo.envelope ? geo.envelope.clear_height_m === null : null,
-        noLowConfidenceGeometry:
-          geo.columns.every((c) => c.confidence !== 'low') && geo.slots.every((s) => s.confidence !== 'low'),
+        // Equipment is deliberately EXCLUDED from this one. A low-confidence
+        // asset here is a record whose extent the CAD did not establish, and
+        // reporting that honestly is the point -- it is not a defect to fix by
+        // dropping the record.
+        noLowConfidenceGeometry: geo.columns.every((c) => c.confidence !== 'low'),
         servedZoneTiers: [...new Set(geo.functional_zones.map((z) => z.confidence))],
         confirmedMappings: diag ? diag.evidence.confirmed_mappings : null,
         simulatedPositions: diag ? diag.evidence.simulated_machine_positions : null,
@@ -674,8 +851,8 @@ async function run() {
     });
     // These hold whether or not geometry is deployed: an empty set trivially
     // satisfies them, and that is the correct answer when nothing was served.
-    check(ev.slotsAllUnmapped, 'every slot remains UNMAPPED with a null device id');
-    check(ev.slotsNoMesId, 'no slot carries a MES machine id');
+    check(ev.slotsAllUnmapped, 'every CAD asset remains UNMAPPED with a null device id');
+    check(ev.slotsNoMesId, 'no CAD asset carries a MES machine id');
     check(ev.heightsUnknown, 'equipment height stays unknown, not defaulted into evidence');
     check(ev.noLowConfidenceGeometry, 'no LOW-confidence physical geometry is served');
     check(
@@ -837,10 +1014,10 @@ async function run() {
         view: T.getView(),
         structTotal,
         structVisible,
-        // Slots stand in for "everything operational on the floor" now that
-        // no monitored device is drawn.
-        slotsFramed: T.slotMeshes.filter(framed).length,
-        slotTotal: T.slotMeshes.length,
+        // The CAD equipment is everything operational on the floor now: no
+        // monitored device is drawn, and no raster slot exists.
+        slotsFramed: T.equipmentMeshes.filter(framed).length,
+        slotTotal: T.equipmentMeshes.length,
       };
     });
     check(inOverview.view === 'overview', 'overview preset activates');
@@ -856,7 +1033,10 @@ async function run() {
     check(await page.evaluate(() => window.__twin.getView()) === 'overview',
       'reset restores framing without changing which view is active');
 
-    await page.click('#view-controls button[data-view="operator"]');
+    // Back to the primary view. 2D plan is the default and the one the rest of
+    // the suite expects, and returning to it is itself the third switch this
+    // coordinate check spans.
+    await page.click('#view-controls button[data-view="plan"]');
     await page.waitForTimeout(600);
     const restored = await snapshot(page);
     check(JSON.stringify(restored.api) === JSON.stringify(before.api), 'switching views never changes API results');
@@ -867,398 +1047,42 @@ async function run() {
     console.log('');
   }
 
-  // ── Schematic view ──
-  // The second view exists to be read, and its one safety property is that
-  // entering it changes nothing about the measured model.
-  console.log('Schematic view:');
+  // -- The raster schematic no longer renders in the canonical view -------
+  //
+  // It used to be a second mode of this page, with its own pane, its own
+  // captions and a side-by-side layout. The canonical Factory Twin is the CAD
+  // floor now, and mixing a not-to-scale drawing into the same page is how
+  // raster geometry leaked into the physical view in the first place. The
+  // transcription itself is NOT deleted -- /api/floor-schematic still serves
+  // it, and its wire guarantees are still asserted above -- but nothing on
+  // this page draws it.
+  console.log('Raster schematic retired from the canonical view:');
   {
-    // A DRAWING, not merely the mode API. window.__schematic now exists on
-    // every deployment because the mode system governs the 3D view too, so
-    // testing for the object stopped distinguishing "no drawing here" from
-    // "drawing present" -- and these checks silently stopped running rather
-    // than reporting as skipped, which is the one outcome this suite exists to
-    // prevent. getDoc is only attached once a document has actually loaded.
-    const available = await page.evaluate(
-      () => Boolean(window.__schematic && typeof window.__schematic.getDoc === 'function')
-    );
-    if (!available) {
-      for (const label of [
-        'entering schematic mode moves nothing in the 3D scene',
-        'the schematic draws every area the API served',
-        'every area label is rendered',
-        'switching snapshot changes what is drawn without changing the areas',
-        'switching snapshot never alters the 3D scene',
-        'physical camera controls are hidden in schematic mode',
-        'leaving schematic mode restores the physical controls',
-      ]) {
-        skip(label, NO_SCHEMATIC);
-      }
-      for (const label of [
-        'every equipment bank the API served is drawn',
-        'every bank cell is drawn',
-        'banks are drawn in deterministic id order',
-        'every bank is classified as a presentation group',
-        'every bank dimension is classified as schematic-derived',
-        'every drawing label is classified as an observed label',
-        'labels the two renders disagree on remain marked ambiguous',
-        'no bank carries a physical dimension field or an IMS identity',
-        'a bank outside every named area is still drawn',
-        'every transcribed cell value is drawn for the active snapshot',
-        'every disagreeing cell is marked as a conflict',
-        'the sources genuinely disagree and that is recorded, not smoothed away',
-        'the not-to-scale notice is always present in schematic mode',
-        'the conflict notice names the conflict and the declared instant',
-        "the other snapshot shows its own cell values, not the first one's",
-        'both snapshots transcribe the same cells',
-        'selecting a bank states its evidence classification',
-        'selecting a bank states that its grouping is presentation only',
-        'selecting a bank states that its dimensions are not measured',
-        'a selected bank reports its physical link as unmapped',
-        'a selected bank reports its IMS link as unmapped',
-        'no selected schematic object names a monitored device',
-        'selecting an area reports it as unmapped too',
-        'the banner says not to scale in schematic mode',
-        'the banner states zero confirmed mappings',
-        'the banner names the active reference snapshot',
-        'the banner returns to the measured claim outside schematic mode',
-        'the legend draws all six states the reference defines',
-        'the legend states match the reference vocabulary and its order',
-        'the secondary render carries its own north marker and title block',
-        'the title block shows its scale field, which the source leaves blank',
-      ]) {
-        skip(label, NO_SCHEMATIC);
-      }
-    } else {
-      const coordsBefore = await page.evaluate(() => window.__twin.snapshotCoordinates());
-      await page.click('#mode-controls button[data-mode="schematic"]');
-      await page.waitForTimeout(700);
-
-      const inSchematic = await page.evaluate(() => {
-        const S = window.__schematic;
-        return {
-          mode: S.getMode(),
-          areasDrawn: S.countAreas(),
-          labelsDrawn: S.countLabels(),
-          dims: S.countDimensions(),
-          banksDrawn: S.countBanks(),
-          cellsDrawn: S.countCells(),
-          bankIds: S.bankIds(),
-          snapshot: S.getActiveSnapshot(),
-          apiAreas: S.getDoc().areas.length,
-          // Areas the drawing actually names. An area with no name printed
-          // inside it is served unnamed, and has no label to draw.
-          apiNamedAreas: S.getDoc().areas.filter((a) => a && a.name).length,
-          apiBanks: S.getDoc().banks.length,
-          apiCells: S.getDoc().banks.reduce((n, b) => n + b.columns * b.rows, 0),
-          groupingClasses: [...new Set(S.getDoc().banks.map((b) => b.grouping_class))],
-          dimensionClasses: [...new Set(S.getDoc().banks.map((b) => b.dimension_class))],
-          labelClasses: [...new Set(S.getDoc().banks.flatMap((b) => b.labels).map((l) => l.class))],
-          ambiguous: S.getDoc().banks.flatMap((b) => b.labels).filter((l) => l.ambiguous).length,
-          rawDoc: JSON.stringify(S.getDoc()),
-          coords: window.__twin.snapshotCoordinates(),
-          viewControlsHidden: document.getElementById('view-controls').hidden,
-          layerControlsHidden: document.getElementById('layer-controls').hidden,
-        };
-      });
-      check(inSchematic.mode === 'schematic', 'the schematic mode activates');
-      // The banner states which kind of claim is on screen, so nobody has to
-      // infer it from the drawing.
-      const banner = await page.evaluate(() => ({
-        mode: document.getElementById('eb-mode').textContent,
-        mappings: document.getElementById('eb-mappings').textContent,
-        snapshot: document.getElementById('eb-snapshot').textContent,
-        snapshotHidden: document.getElementById('eb-snapshot').hidden,
-      }));
-      check(/NOT TO SCALE/.test(banner.mode), 'the banner says not to scale in schematic mode', banner.mode);
-      check(/0 CONFIRMED/.test(banner.mappings), 'the banner states zero confirmed mappings', banner.mappings);
-      check(!banner.snapshotHidden && /REFERENCE SNAPSHOT/.test(banner.snapshot),
-        'the banner names the active reference snapshot', banner.snapshot);
-      check(inSchematic.coords === coordsBefore,
-        'entering schematic mode moves nothing in the 3D scene');
-      check(inSchematic.areasDrawn === inSchematic.apiAreas,
-        'the schematic draws every area the API served',
-        `${inSchematic.areasDrawn} of ${inSchematic.apiAreas}`);
-      check(inSchematic.apiNamedAreas <= inSchematic.apiAreas,
-        'no more areas are named than exist',
-        `${inSchematic.apiNamedAreas} of ${inSchematic.apiAreas}`);
-      // Against NAMED areas, not all areas. An area with no name printed
-      // inside it has nothing to draw, and asserting otherwise would pressure
-      // the transcription into naming areas the drawing does not name there.
-      check(inSchematic.labelsDrawn === inSchematic.apiNamedAreas,
-        'every named area has its label rendered',
-        `${inSchematic.labelsDrawn}`);
-      check(inSchematic.viewControlsHidden && inSchematic.layerControlsHidden,
-        'physical camera controls are hidden in schematic mode');
-
-      // ── Equipment banks ──
-      check(inSchematic.banksDrawn === inSchematic.apiBanks,
-        'every equipment bank the API served is drawn',
-        `${inSchematic.banksDrawn} of ${inSchematic.apiBanks}`);
-      check(inSchematic.cellsDrawn === inSchematic.apiCells,
-        'every bank cell is drawn',
-        `${inSchematic.cellsDrawn} of ${inSchematic.apiCells}`);
-      // Deterministic order, so a diff of what was drawn is meaningful.
-      const sorted = [...inSchematic.bankIds].sort();
-      check(JSON.stringify(inSchematic.bankIds) === JSON.stringify(sorted),
-        'banks are drawn in deterministic id order');
-      // A bank is a presentation grouping and its rectangle is a drawing
-      // measurement of nothing. Both must say so.
-      check(
-        inSchematic.groupingClasses.every((c) => c === 'SCHEMATIC_PRESENTATION_GROUP'),
-        'every bank is classified as a presentation group',
-        inSchematic.groupingClasses.join(',')
-      );
-      check(
-        inSchematic.dimensionClasses.every((c) => c === 'SCHEMATIC_DERIVED'),
-        'every bank dimension is classified as schematic-derived',
-        inSchematic.dimensionClasses.join(',')
-      );
-      check(
-        inSchematic.labelClasses.every((c) => c === 'SCHEMATIC_OBSERVED_LABEL'),
-        'every drawing label is classified as an observed label',
-        inSchematic.labelClasses.join(',')
-      );
-      // Unrunnable, not passing, when no bank labels were transcribed: there
-      // is nothing for the two renders to disagree about.
-      if (inSchematic.labelClasses.length === 0) {
-        skip('labels the two renders disagree on remain marked ambiguous', 'no cell or bank labels are transcribed in this deployment');
-      } else check(inSchematic.ambiguous > 0,
-        'labels the two renders disagree on remain marked ambiguous',
-        `${inSchematic.ambiguous} ambiguous`);
-      check(!/"width"|"height"|ims_device_id|IMS_CONNECTED/.test(inSchematic.rawDoc),
-        'no bank carries a physical dimension field or an IMS identity');
-      // The drawing puts some equipment outside every labelled region. Those
-      // banks must still be drawn rather than dropped for having no home.
-      const unhoused = await page.evaluate(() => {
-        const banks = window.__schematic.getDoc().banks;
-        const orphans = banks.filter((b) => !b.area_id);
-        return {
-          orphans: orphans.length,
-          drawn: orphans.filter((b) => document.querySelector(`[data-bank-id="${b.id}"]`)).length,
-        };
-      });
-      check(unhoused.orphans === unhoused.drawn,
-        'a bank outside every named area is still drawn',
-        `${unhoused.drawn} of ${unhoused.orphans}`);
-
-      // ── Legend ──
-      // The drawing defines six operational states. Publishing that vocabulary
-      // is not publishing state: no cell carries a status, because the two
-      // renders disagree about status and none was transcribed.
-      // ── Per-cell values and the conflict between renders ──
-      const cells = await page.evaluate(() => {
-        const S = window.__schematic;
-        const banks = S.getDoc().banks;
-        return {
-          drawn: S.countCellValues(),
-          conflictsDrawn: S.countCellConflicts(),
-          expectedValues: banks.reduce(
-            (n, b) => n + (b.cell_values && b.cell_values[S.getActiveSnapshot()] ? b.columns * b.rows : 0),
-            0
-          ),
-          expectedConflicts: banks.reduce((n, b) => n + (b.cell_conflicts || []).length, 0),
-          // Values actually READ, as opposed to snapshot keys present. A key
-          // whose entries are all null records that those cells could not be
-          // read; counting it as transcribed hid a gap behind a green check.
-          transcribedValues: banks.reduce((n, b) => n + Object.values(b.cell_values || {})
-            .reduce((m, list) => m + (list || []).filter((v) => v !== null).length, 0), 0),
-          texts: S.cellValueTexts(),
-          badge: Boolean(document.getElementById('schematic-badge')),
-          notice: document.getElementById('schematic-conflict').textContent,
-        };
-      });
-      check(cells.drawn === cells.expectedValues,
-        'every transcribed cell value is drawn for the active snapshot',
-        `${cells.drawn} of ${cells.expectedValues}`);
-      check(cells.conflictsDrawn === cells.expectedConflicts,
-        'every disagreeing cell is marked as a conflict',
-        `${cells.conflictsDrawn} of ${cells.expectedConflicts}`);
-      // With no values transcribed there is nothing to disagree about. That is
-      // a gap in the transcription, reported as a skip -- never as a pass, and
-      // never as a failure of the code under test.
-      if (cells.transcribedValues === 0) {
-        skip('the sources genuinely disagree and that is recorded, not smoothed away',
-          'no per-cell values are transcribed in this deployment');
-      } else check(cells.expectedConflicts > 0,
-        'the sources genuinely disagree and that is recorded, not smoothed away',
-        `${cells.expectedConflicts} cells`);
-      check(cells.badge, 'the not-to-scale notice is always present in schematic mode');
-      check(/REFERENCE CONFLICT/.test(cells.notice),
-        'the conflict notice names the conflict and the declared instant');
-
-      // ── Provenance on selection ──
-      // Every row is a claim about where something came from. The two link
-      // rows exist to say UNMAPPED out loud: a drawing label names nothing in
-      // the monitoring system, and the panel has to say so.
-      const prov = await page.evaluate(() => {
-        const S = window.__schematic;
-        const bank = S.selectFirstBank();
-        const bankText = S.getInspectorText();
-        const area = S.selectFirstArea();
-        const areaText = S.getInspectorText();
-        return { bank, bankText, area, areaText };
-      });
-      check(Boolean(prov.bank) && /SCHEMATIC_OBSERVED/.test(prov.bankText),
-        'selecting a bank states its evidence classification');
-      check(/SCHEMATIC_PRESENTATION_GROUP/.test(prov.bankText),
-        'selecting a bank states that its grouping is presentation only');
-      check(/presentation only, not measured/.test(prov.bankText),
-        'selecting a bank states that its dimensions are not measured');
-      check(/Physical link\s*UNMAPPED/.test(prov.bankText),
-        'a selected bank reports its physical link as unmapped');
-      check(/IMS link\s*UNMAPPED/.test(prov.bankText),
-        'a selected bank reports its IMS link as unmapped');
-      check(!/LDI-\d/.test(prov.bankText), 'no selected schematic object names a monitored device');
-      check(Boolean(prov.area) && /UNMAPPED/.test(prov.areaText),
-        'selecting an area reports it as unmapped too');
-
-      const legend = await page.evaluate(() => ({
-        rows: window.__schematic.countLegendRows(),
-        states: window.__schematic.legendStates(),
-      }));
-      check(legend.rows === 6, 'the legend draws all six states the reference defines', `${legend.rows}`);
-      check(
-        JSON.stringify(legend.states) ===
-          JSON.stringify(['OFF', 'DOWN', 'IDLE', 'INITIAL_PM_STOP', 'RUN', 'UNDEFINED']),
-        'the legend states match the reference vocabulary and its order',
-        legend.states.join(',')
-      );
-
-      // The two renders disagree. Switching must show that difference rather
-      // than smoothing it away, and must not disturb the areas they share.
-      const other = await page.evaluate(() => {
-        const S = window.__schematic;
-        const ids = S.getDoc().snapshots.map((x) => x.id);
-        return ids.find((id) => id !== S.getActiveSnapshot()) || null;
-      });
-      if (other) {
-        await page.click(`#snapshot-controls button[data-snapshot="${other}"]`);
-        await page.waitForTimeout(600);
-        const swapped = await page.evaluate(() => {
-          const S = window.__schematic;
-          return {
-            snapshot: S.getActiveSnapshot(),
-            areas: S.countAreas(),
-            dims: S.countDimensions(),
-            coords: window.__twin.snapshotCoordinates(),
-          };
-        });
-        check(swapped.snapshot === other && swapped.areas === inSchematic.areasDrawn,
-          'switching snapshot changes what is drawn without changing the areas',
-          `${swapped.dims} vs ${inSchematic.dims} dimension marks`);
-        // The point of two snapshots: the disputed values actually differ.
-        const swappedTexts = await page.evaluate(() => window.__schematic.cellValueTexts());
-        if (cells.transcribedValues === 0) {
-          skip("the other snapshot shows its own cell values, not the first one's",
-            'no per-cell values are transcribed in this deployment');
-        } else check(JSON.stringify(swappedTexts) !== JSON.stringify(cells.texts),
-          "the other snapshot shows its own cell values, not the first one's");
-        check(swappedTexts.length === cells.texts.length,
-          'both snapshots transcribe the same cells',
-          `${swappedTexts.length} vs ${cells.texts.length}`);
-        check(swapped.coords === coordsBefore, 'switching snapshot never alters the 3D scene');
-
-        // Annotations that only one render carries must appear only there.
-        // The blank SCALE field is the reason this whole layer exists apart
-        // from the measured model, so it is asserted rather than assumed.
-        // Which render carries these is a property of the transcription, not
-        // a constant: read it from the document, then assert the RULE -- an
-        // annotation restricted to one snapshot is drawn on that snapshot and
-        // on no other.
-        const restricted = await page.evaluate(() => {
-          const doc = window.__schematic.getDoc();
-          const one = (doc.annotations || []).filter(
-            (a) => Array.isArray(a.observed_in) && a.observed_in.length === 1
-              && (a.kind === 'NORTH' || a.kind === 'TITLE_BLOCK')
-          );
-          return { kinds: one.map((a) => a.kind), owner: one.length ? one[0].observed_in[0] : null };
-        });
-        if (!restricted.owner) {
-          skip('a render-specific annotation is drawn only on its own render',
-            'no annotation in this transcription is restricted to one render');
-          skip('the title block shows its scale field, which the source leaves blank',
-            'no title block is transcribed in this deployment');
-        } else {
-          const readAnnos = () => page.evaluate(() => ({
-            north: document.querySelectorAll('[data-anno="NORTH"]').length,
-            title: document.querySelectorAll('[data-anno="TITLE_BLOCK"]').length,
-            scaleField: document.querySelectorAll('[data-title-field="SCALE"]').length,
-            snapshot: window.__schematic.getActiveSnapshot(),
-          }));
-          const here = await readAnnos();
-          await page.evaluate((id) => window.__schematic.selectSnapshot(id), restricted.owner);
-          await page.waitForTimeout(500);
-          const onOwner = await readAnnos();
-          const wantNorth = restricted.kinds.includes('NORTH') ? 1 : 0;
-          const wantTitle = restricted.kinds.includes('TITLE_BLOCK') ? 1 : 0;
-          check(
-            onOwner.north === wantNorth && onOwner.title === wantTitle
-              && (here.snapshot === restricted.owner
-                || (here.north === 0 && here.title === 0)),
-            'a render-specific annotation is drawn only on its own render',
-            `owner=${restricted.owner} on-owner ${onOwner.north}/${onOwner.title}, `
-            + `elsewhere ${here.north}/${here.title}`
-          );
-          if (!wantTitle) {
-            skip('the title block shows its scale field, which the source leaves blank',
-              'no title block is transcribed in this deployment');
-          } else {
-            check(onOwner.scaleField === 1,
-              'the title block shows its scale field, which the source leaves blank');
-          }
-        }
-      }
-
-      // Readable at every viewport: labels on screen, nothing overflowing.
-      for (const vp of VIEWPORTS) {
-        await page.setViewportSize({ width: vp.width, height: vp.height });
-        await page.waitForTimeout(400);
-        const legible = await page.evaluate(() => {
-          const labels = [...document.querySelectorAll('[data-area-label]')];
-          const offscreen = labels.filter((n) => {
-            const r = n.getBoundingClientRect();
-            return r.width === 0 || r.right < 0 || r.left > window.innerWidth ||
-              r.bottom < 0 || r.top > window.innerHeight;
-          });
-          const hud = document.getElementById('hud').getBoundingClientRect();
-          const behindHud = labels.filter((n) => {
-            const r = n.getBoundingClientRect();
-            return r.left < hud.right && r.right > hud.left && r.top < hud.bottom && r.bottom > hud.top;
-          });
-          return {
-            total: labels.length,
-            offscreen: offscreen.length,
-            behindHud: behindHud.length,
-            horizontalScroll: document.documentElement.scrollWidth > window.innerWidth,
-          };
-        });
-        check(legible.offscreen === 0, `${vp.name}: every area label is on screen`,
-          `${legible.offscreen} of ${legible.total} off`);
-        check(legible.behindHud === 0, `${vp.name}: no area label sits behind the panel`,
-          `${legible.behindHud} covered`);
-        check(!legible.horizontalScroll, `${vp.name}: the schematic never scrolls the page sideways`);
-      }
-      await page.setViewportSize(VIEWPORTS[1]);
-
-      await page.click('#mode-controls button[data-mode="physical"]');
-      await page.waitForTimeout(600);
-      const back = await page.evaluate(() => ({
-        mode: window.__schematic.getMode(),
-        hidden: document.getElementById('schematic').hidden,
-        controls: !document.getElementById('view-controls').hidden,
-        coords: window.__twin.snapshotCoordinates(),
-      }));
-      check(back.mode === 'physical' && back.hidden && back.controls,
-        'leaving schematic mode restores the physical controls');
-      const backBanner = await page.evaluate(() => ({
-        mode: document.getElementById('eb-mode').textContent,
-        snapshotHidden: document.getElementById('eb-snapshot').hidden,
-      }));
-      check(/MEASURED/.test(backBanner.mode) && backBanner.snapshotHidden,
-        'the banner returns to the measured claim outside schematic mode', backBanner.mode);
-      check(back.coords === coordsBefore,
-        'a full round trip through the schematic leaves every coordinate identical');
-    }
+    const r = await page.evaluate(() => ({
+      renderer: typeof window.__schematic,
+      dom: ['#schematic', '#schematic-panel', '#schematic-badge', '#schematic-inspector',
+        '#schematic-conflict', '#schematic-options', '#snapshot-controls', '.split-caption']
+        .filter((sel) => document.querySelector(sel) !== null),
+      scripts: [...document.querySelectorAll('script[src]')]
+        .map((el) => el.getAttribute('src'))
+        .filter((src) => /schematic|machine-forms/.test(src)),
+      modeApi: typeof (window.__twin && window.__twin.setMode),
+      views: [...document.querySelectorAll('#view-controls button[data-view]')]
+        .map((btn) => btn.dataset.view),
+    }));
+    check(r.renderer === 'undefined',
+      'the schematic renderer is not loaded by the canonical page', r.renderer);
+    check(r.dom.length === 0,
+      'no schematic pane, badge or caption exists in the canonical page', r.dom.join(' '));
+    check(r.scripts.length === 0,
+      'neither the schematic nor the machine-form module is fetched', r.scripts.join(' '));
+    check(r.modeApi === 'undefined',
+      'the mode board that switched between physical and schematic is gone');
+    // 2D first, 3D second: physical accuracy is what this view is for right
+    // now, so the plan is the primary view and it is listed first.
+    check(JSON.stringify(r.views) === JSON.stringify(['plan', 'overview', 'building']),
+      'the view controls are the 2D plan, the 3D overview and fit-to-floor, in that order',
+      r.views.join(','));
     console.log('');
   }
 
@@ -1267,117 +1091,102 @@ async function run() {
   {
     const openByDefault = await page.locator('#diagnostics').evaluate((e) => e.open);
     check(openByDefault === false, 'diagnostics stays collapsed for the default view');
+    // Diagnostics lives in the inspection drawer, which is closed by default:
+    // the default view is the floor plan, not a wall of counters. Open the
+    // drawer first -- clicking a control inside a closed drawer is not a thing
+    // an operator can do either.
+    const drawerWasOpen = await page.evaluate(
+      () => document.getElementById('app').classList.contains('drawer-open')
+    );
+    if (!drawerWasOpen) {
+      await page.click('#drawer-toggle');
+      await page.waitForTimeout(450);
+    }
+    check(await page.locator('#diagnostics > summary').isVisible(),
+      'diagnostics is reachable once the inspection drawer is open');
     await page.click('#diagnostics > summary');
     await page.waitForTimeout(1200);
     const text = await page.locator('#diagnostics-body').innerText();
     check(text.includes('Confirmed mappings'), 'diagnostics reports confirmed mappings');
     check(text.includes('Observed columns') && text.includes('Simulated machine positions'),
       'diagnostics keeps evidence categories separate');
-    check(!/PHYS-F1-|LDI-\d/.test(text), 'diagnostics leaks no object identifiers');
+    check(!/PHYS-F1-|EQP-F1-|LDI-\d/.test(text), 'diagnostics leaks no object identifiers');
+    check(text.includes('Equipment') || text.includes('equipment'),
+      'diagnostics reports the CAD equipment layer');
     await page.click('#diagnostics > summary');
+    if (!drawerWasOpen) {
+      await page.click('#drawer-toggle');
+      await page.waitForTimeout(450);
+    }
     console.log('');
   }
 
-  // ── Modes are chrome and camera, never evidence ──
+  // -- The inspection drawer is chrome, never evidence --------------------
   //
-  // Five modes, one application. Three change which claim is on screen and two
-  // change how much apparatus surrounds it. The load-bearing assertion is the
-  // last one: a byte-level coordinate snapshot taken across every switch, so a
-  // mode that quietly moved geometry would fail here rather than be discovered
-  // in a screenshot months later.
-  console.log('Modes:');
+  // The five-mode board is gone with the schematic it existed to switch to.
+  // What remains that changes the page's shape is the drawer, and it carries
+  // the same load-bearing guarantee the modes did: a byte-level coordinate
+  // snapshot across opening and closing it, so chrome that quietly moved
+  // geometry would fail here rather than be discovered in a screenshot months
+  // later.
+  console.log('Inspection drawer:');
   {
-    const modes = await page.evaluate(() => (window.__schematic ? window.__schematic.modes() : []));
-    if (modes.length === 0) {
-      skip('the application offers five modes', 'the mode system did not load');
-    } else {
-      check(modes.length === 5, 'the application offers five modes', modes.join(','));
-      check(
-        ['executive', 'physical', 'schematic', 'split', 'inspection'].every((m) => modes.includes(m)),
-        'the five modes are executive, physical, schematic, side-by-side and inspection',
-        modes.join(',')
-      );
+    const base = await page.evaluate(() => window.__twin.snapshotCoordinates());
+    const closedStage = await page.evaluate(
+      () => document.getElementById('stage').getBoundingClientRect().width
+    );
 
-      const available = await page.evaluate(() => window.__schematic.availableModes());
-      // A mode whose evidence is absent must be reported as unavailable, not
-      // quietly missing and not silently broken when pressed.
-      const needsDrawing = ['schematic', 'split'];
-      const hasDrawing = await page.evaluate(
-        () => Boolean(window.__schematic && typeof window.__schematic.getDoc === 'function')
-      );
-      check(
-        needsDrawing.every((m) => available.includes(m) === hasDrawing),
-        'modes that need the drawing are available exactly when the drawing is',
-        `available=${available.join(',')} drawing=${hasDrawing}`
-      );
-      check(
-        ['executive', 'physical', 'inspection'].every((m) => available.includes(m)),
-        'the modes that need only the measured floor are always available',
-        available.join(',')
-      );
+    await page.click('#drawer-toggle');
+    await page.waitForTimeout(500);
+    const open = await page.evaluate(() => ({
+      coords: window.__twin.snapshotCoordinates(),
+      expanded: document.getElementById('drawer-toggle').getAttribute('aria-expanded'),
+      stage: document.getElementById('stage').getBoundingClientRect().width,
+      drawerVisible: document.getElementById('drawer').getBoundingClientRect().width > 0,
+      // The renderer must have been resized to the narrower pane, or the model
+      // is drawn at the wrong aspect and spills under the drawer.
+      canvas: document.querySelector('canvas').getBoundingClientRect().width,
+    }));
 
-      const base = await page.evaluate(() => window.__twin.snapshotCoordinates());
-      const seen = [];
-      let moved = null;
-      for (const mode of available) {
-        await page.click(`#mode-controls button[data-mode="${mode}"]`);
-        await page.waitForTimeout(600);
-        const st = await page.evaluate(() => ({
-          mode: window.__schematic.getMode(),
-          bodyClasses: [...document.body.classList].filter((c) => c.startsWith('mode-')),
-          banner: document.getElementById('eb-mode')?.textContent || '',
-          panes: window.__schematic.paneRects(),
-          coords: window.__twin.snapshotCoordinates(),
-          pressed: [...document.querySelectorAll('#mode-controls button[data-mode]')]
-            .filter((b) => b.getAttribute('aria-pressed') === 'true')
-            .map((b) => b.dataset.mode),
-        }));
-        seen.push({ mode, st });
-        if (st.coords !== base && moved === null) moved = mode;
-      }
+    await page.click('#drawer-toggle');
+    await page.waitForTimeout(500);
+    const closed = await page.evaluate(() => ({
+      coords: window.__twin.snapshotCoordinates(),
+      expanded: document.getElementById('drawer-toggle').getAttribute('aria-expanded'),
+      stage: document.getElementById('stage').getBoundingClientRect().width,
+    }));
 
-      check(moved === null,
-        'no mode switch moves a measured coordinate',
-        moved ? `coordinates changed entering ${moved}` : '');
-      check(seen.every((e) => e.st.mode === e.mode),
-        'every mode reports itself as active once entered');
-      check(seen.every((e) => e.st.bodyClasses.length === 1 && e.st.bodyClasses[0] === `mode-${e.mode}`),
-        'exactly one mode class is on the document at a time',
-        seen.map((e) => e.st.bodyClasses.join('+')).join(' '));
-      check(seen.every((e) => e.st.pressed.length === 1 && e.st.pressed[0] === e.mode),
-        'exactly one mode control reports itself pressed');
-      check(seen.every((e) => e.st.banner.length > 0),
-        'every mode states which claim is on screen');
-
-      const split = seen.find((e) => e.mode === 'split');
-      if (!split) {
-        skip('side-by-side puts the two claims in two panes, not one on top of the other',
-          NO_SCHEMATIC);
-        skip('side-by-side refuses to label itself with either single claim', NO_SCHEMATIC);
-      } else {
-        const { scene, schematic } = split.st.panes;
-        // Abutting, not overlapping. Overlaying them would assert a
-        // registration between two systems that share no reference frame.
-        check(
-          scene && schematic && scene.w > 0 && schematic.w > 0
-            && scene.x + scene.w <= schematic.x + 2,
-          'side-by-side puts the two claims in two panes, not one on top of the other',
-          JSON.stringify(split.st.panes)
-        );
-        check(/UNREGISTERED/.test(split.st.banner),
-          'side-by-side refuses to label itself with either single claim',
-          split.st.banner);
-      }
-
-      // Leave the page in the mode the rest of the suite expects.
-      await page.click('#mode-controls button[data-mode="physical"]');
-      await page.waitForTimeout(400);
-    }
+    check(open.expanded === 'true' && closed.expanded === 'false',
+      'the drawer control reports its own state to a screen reader',
+      `${open.expanded} / ${closed.expanded}`);
+    check(open.drawerVisible, 'opening the drawer shows it');
+    // On a narrow viewport the drawer legitimately overlays instead of
+    // docking, so the assertion is "the stage never grows", not a fixed width.
+    check(open.stage <= closedStage + 1,
+      'opening the drawer never widens the floor pane',
+      `${closedStage} -> ${open.stage}`);
+    check(Math.abs(open.canvas - open.stage) <= 2,
+      'the renderer is resized to the pane it is drawn in, not to the window',
+      `canvas ${open.canvas} vs stage ${open.stage}`);
+    check(Math.abs(closed.stage - closedStage) <= 1,
+      'closing the drawer restores the floor pane exactly',
+      `${closedStage} -> ${closed.stage}`);
+    check(open.coords === base && closed.coords === base,
+      'opening and closing the drawer moves no measured coordinate');
     console.log('');
   }
 
   // ── Visibility is presentation only ──
   console.log('Layer visibility:');
+  // The layer controls live in the inspection drawer, so it has to be open for
+  // a pointer to reach them -- same as for an operator.
+  const layerDrawerWasOpen = await page.evaluate(
+    () => document.getElementById('app').classList.contains('drawer-open')
+  );
+  if (!layerDrawerWasOpen) {
+    await page.click('#drawer-toggle');
+    await page.waitForTimeout(450);
+  }
   for (const layer of LAYERS) {
     await page.uncheck(`#layer-controls input[data-layer="${layer}"]`);
   }
@@ -1388,15 +1197,19 @@ async function run() {
   check(hidden.meshes === baseline.meshes, 'hiding does not delete meshes', `${hidden.meshes} vs ${baseline.meshes}`);
   check(JSON.stringify(hidden.api) === JSON.stringify(baseline.api), 'hiding does not change API results');
 
-  // Restore each toggle to the state it started in, not blanket-on: the
-  // presentation layer starts off by design, and checking it would be a
-  // different scene rather than the baseline.
+  // Restore each toggle to the state it started in rather than blanket-on, so
+  // the comparison is against the baseline scene and not against a scene that
+  // merely happens to have everything switched on.
   for (const layer of LAYERS) {
     const sel = `#layer-controls input[data-layer="${layer}"]`;
     if (baseline.visibility[layer]) await page.check(sel);
     else await page.uncheck(sel);
   }
   await page.waitForTimeout(500);
+  if (!layerDrawerWasOpen) {
+    await page.click('#drawer-toggle');
+    await page.waitForTimeout(450);
+  }
   const restored = await snapshot(page);
   check(JSON.stringify(restored) === JSON.stringify(baseline), 'restoring reproduces the baseline snapshot');
 

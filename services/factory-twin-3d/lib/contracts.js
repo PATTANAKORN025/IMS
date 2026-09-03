@@ -27,35 +27,45 @@
 // TWIN rather than a disconnected mockup.
 
 /**
- * Standardized machine run-state vocabulary. Mirrors the generic
- * SCADA/HMI state vocabulary (Off / Down / Idle / Run / PM-Stop /
- * Undefined-style status boards use universally) rather than inventing a
- * new one -- but only OK/IDLE/UNKNOWN/DOWN are currently derivable from
- * this system's own real backend query (v_ldi_machine_latest_full's
- * has_data/is_stale/state columns, joined against ldi_alarm_log --
- * services/factory-twin-3d/server.js's STATE_SQL). OFF and PM_STOP have
- * no real source column yet in this schema -- listed here for a stable,
- * complete vocabulary the renderer can switch on, not because the backend
- * emits them today. Do not have server.js or app.js emit/expect them
- * until a real column backs them; that would be exactly the kind of
+ * The plant's own machine run-state vocabulary -- EXACTLY EIGHT states:
+ *
+ *     OFF  DOWN  IDLE  INITIAL  PM  STOP  RUN  UNDEFINED
+ *
+ * These are the words the line's own HMI uses, so the twin uses them too. The
+ * earlier PM_STOP lumped three distinct plant states into one member and
+ * UNKNOWN named the eighth in monitoring dialect rather than in the plant's;
+ * both are gone.
+ *
+ * Only four are derivable from this system's own backend query today
+ * (v_ldi_machine_latest_full's has_data/is_stale/state columns joined against
+ * ldi_alarm_log -- see server.js's STATE_SQL): RUN, IDLE, DOWN and UNDEFINED.
+ * OFF, INITIAL, PM and STOP are real plant states with no source column in this
+ * schema. They are listed for a stable, complete vocabulary the renderer can
+ * switch on, NOT because the backend emits them. Do not have server.js or
+ * app.js emit them until a real column backs them: that would be exactly the
  * fabricated status this repo does not do.
  *
  * @readonly
  * @enum {string}
  */
 const MachineState = Object.freeze({
-  /** No real backend source yet (see comment above). */
+  /** Powered down. No real backend source yet (see comment above). */
   OFF: 'OFF',
   /** Real: derived from an active Critical/Major alarm (STATE_SQL's st=3, today's "ALARM"). */
   DOWN: 'DOWN',
   /** Real: v_ldi_machine_latest_full.state = false (STATE_SQL's st=1, today's "IDLE"). */
   IDLE: 'IDLE',
+  /** Warm-up / start-of-job. No real backend source yet. */
+  INITIAL: 'INITIAL',
+  /** Planned maintenance. No real backend source yet. */
+  PM: 'PM',
+  /** Deliberately stopped. No real backend source yet. */
+  STOP: 'STOP',
   /** Real: v_ldi_machine_latest_full.state = true, no active alarm (STATE_SQL's st=2, today's "OK"). */
   RUN: 'RUN',
-  /** No real backend source yet (see comment above). */
-  PM_STOP: 'PM_STOP',
-  /** Real: no telemetry row, or stale (STATE_SQL's st=0, today's "NO_DATA"). */
-  UNKNOWN: 'UNKNOWN',
+  /** Real: no telemetry row, or stale (STATE_SQL's st=0, today's "NO_DATA"). Also the
+   *  answer whenever evidence is insufficient to name a state -- never a guess. */
+  UNDEFINED: 'UNDEFINED',
 });
 
 // Centralized theme -- the one place a color for a given MachineState is
@@ -71,12 +81,14 @@ const MachineState = Object.freeze({
 // Stop/Undefined-style labels are industry-standard on SCADA/HMI status
 // boards generally), not a real facility's proprietary data.
 const MACHINE_STATE_THEME = Object.freeze({
-  [MachineState.OFF]: { color: 0x64748b, label: 'OFF' },
+  [MachineState.OFF]: { color: 0x475569, label: 'Off' },
   [MachineState.DOWN]: { color: 0xef4444, label: 'Down' },
   [MachineState.IDLE]: { color: 0xf59e0b, label: 'Idle' },
+  [MachineState.INITIAL]: { color: 0x38bdf8, label: 'Initial' },
+  [MachineState.PM]: { color: 0x3b82f6, label: 'PM' },
+  [MachineState.STOP]: { color: 0xa855f7, label: 'Stop' },
   [MachineState.RUN]: { color: 0x22c55e, label: 'Run' },
-  [MachineState.PM_STOP]: { color: 0x3b82f6, label: '(Initial, PM, Stop)' },
-  [MachineState.UNKNOWN]: { color: 0x64748b, label: 'Undefine' },
+  [MachineState.UNDEFINED]: { color: 0x94a3b8, label: 'Undefined' },
 });
 
 /**

@@ -1,717 +1,378 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>IMS Factory 3D Digital Twin</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Factory Twin — Floor 1</title>
   <style>
+    /*
+      COMMAND-CENTRE SHELL.
+
+      The previous chrome was one opaque panel floating over the canvas plus a
+      stack of smaller floating boxes. On a 1366x768 screen it covered roughly a
+      third of the floor plan, the camera fit had to be computed around it, and
+      the thing the page exists to show was the thing most obscured.
+
+      This layout DOCKS instead. Everything is a grid track:
+
+        header        identity, floor, views, data quality
+        status strip  the eight plant states, always all eight
+        stage         the floor plan -- nothing is ever drawn on top of it
+        drawer        provenance, layers, evidence, diagnostics; a track, so
+                      opening it narrows the stage rather than covering it
+
+      The one element that sits over the stage is the context panel, and it
+      appears only when the operator has selected something, in the corner, with
+      a hard max-height. Nothing else overlaps the floor at any viewport.
+    */
+    :root {
+      --bg: #0b1017;
+      --panel: #111a26;
+      --panel-2: #0e1621;
+      --line: #1e2c3d;
+      --line-2: #2a3d54;
+      --text: #dbe6f3;
+      --text-dim: #8ba0b8;
+      --text-faint: #5f7387;
+      --accent: #38bdf8;
+      --warn: #f59e0b;
+      --crit: #ef4444;
+      --ok: #22c55e;
+      --header-h: 46px;
+      --strip-h: 44px;
+      --drawer-w: 340px;
+      --radius: 6px;
+    }
+    * { box-sizing: border-box; }
     html, body {
       margin: 0;
-      padding: 0;
-      width: 100%;
       height: 100%;
-      background: #0b1017;
-      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font: 13px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif;
       overflow: hidden;
     }
-    #scene {
-      position: fixed;
-      inset: 0;
-    }
-    /* The schematic reads as a technical drawing: light ground, graphite line
-       work, no colour except where status genuinely needs it. The deliberate
-       contrast with the dark 3D view is a signal, not decoration -- these are
-       two different kinds of claim about the floor, and they should not look
-       like two tabs of the same thing. */
-    #schematic {
-      position: fixed;
-      inset: 0;
-      background: #f4f4f1;
-      z-index: 5;
-    }
-    /* SIDE-BY-SIDE. The two panes are put next to each other and NOT on top of
-       each other, and there is a hard rule between them, because the whole
-       point is that they are two different claims about one floor that share no
-       reference frame. Overlaying them would assert a registration that does
-       not exist; abutting them asserts nothing beyond "both are about Floor 1".
-       The measured half keeps the left, matching the reading order of the mode
-       label, and the divider is a real 2px line rather than a gap so neither
-       pane can be mistaken for a detail of the other. */
-    body.mode-split #scene { left: var(--hud-clear, 0px); right: 50%; }
-    body.mode-split #schematic { left: 50%; right: 0; }
-    body.mode-split #schematic::before {
-      content: '';
-      position: absolute;
-      left: 0; top: 0; bottom: 0;
-      width: 2px;
-      background: #0f172a;
-    }
-    /* A caption per pane, so a screenshot of this view still says which side is
-       which. Without it a cropped image of the split is unattributable. */
-    .split-caption { display: none; }
-    body.mode-split .split-caption {
-      display: block;
-      position: fixed;
-      bottom: 10px;
-      z-index: 6;
-      padding: 4px 10px;
-      border-radius: 4px;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-    }
-    body.mode-split #split-caption-left {
-      left: calc(var(--hud-clear, 0px) + 12px);
-      background: rgba(15, 23, 42, 0.88);
-      color: #cbd5e1;
-      border: 1px solid #334155;
-    }
-    body.mode-split #split-caption-right {
-      right: 12px;
-      background: rgba(255, 255, 255, 0.92);
-      color: #1c1917;
-      border: 1px solid #b45309;
-    }
-    /* EXECUTIVE trades the working controls for the headline claim. Nothing is
-       hidden that carries evidence -- the evidence summary and the banner both
-       stay -- only the controls that presume someone is going to drive. */
-    body.mode-executive #layer-controls,
-    body.mode-executive #machine-list,
-    body.mode-executive #status-line,
-    body.mode-executive #diagnostics { display: none; }
-    body.mode-executive #evidence-summary { font-size: 15px; }
-    /* INSPECTION is the opposite: every control open, and the inspector given
-       room, because the whole activity is reading one object at a time. */
-    body.mode-inspection #diagnostics { display: block; }
-    body.mode-inspection #inspector { max-height: 40vh; overflow: auto; }
-    #schematic-badge {
-      position: absolute;
-      top: 8px;
-      right: 12px;
-      z-index: 2;
-      padding: 4px 10px;
-      background: rgba(255, 255, 255, 0.92);
-      border: 1px solid #b45309;
-      border-radius: 4px;
-      color: #7c3f00;
-      font: 600 11px system-ui, sans-serif;
-      letter-spacing: 0.02em;
-      pointer-events: none;
-    }
-    #schematic svg {
-      display: block;
-      width: 100%;
+
+    /* ---- shell -------------------------------------------------- */
+    #app {
+      display: grid;
+      /* auto, not fixed: on a narrow viewport the header wraps to a second
+         row rather than squeezing its controls to zero width. A control that
+         has been squeezed to nothing is a control an operator cannot use. */
+      grid-template-rows: auto auto 1fr;
+      grid-template-columns: 1fr 0;
+      grid-template-areas:
+        "header header"
+        "strip  strip"
+        "stage  drawer";
       height: 100%;
-      cursor: grab;
-      touch-action: none;
+      transition: grid-template-columns 140ms ease;
     }
-    #schematic svg.dragging { cursor: grabbing; }
-    .sch-boundary { fill: #fbfbf9; stroke: #2b2b2b; stroke-width: 1.6; vector-effect: non-scaling-stroke; }
-    .sch-area { fill: #ffffff; stroke: #6b6b6b; stroke-width: 0.9; vector-effect: non-scaling-stroke; }
-    .sch-area:hover { fill: #eef2f6; }
-    .sch-area-label {
-      font: 700 11px system-ui, sans-serif;
-      fill: #1b1b1b;
-      text-anchor: middle;
-      dominant-baseline: middle;
-      paint-order: stroke;
-      stroke: #ffffff;
-      stroke-width: 3px;
-      stroke-linejoin: round;
+    #app.drawer-open { grid-template-columns: 1fr var(--drawer-w); }
+    @media (max-width: 900px) {
+      #app.drawer-open { grid-template-columns: 1fr 0; }
+      #app.drawer-open #drawer {
+        position: fixed;
+        inset: calc(var(--header-h) + var(--strip-h)) 0 0 auto;
+        width: min(var(--drawer-w), 100%);
+        z-index: 40;
+      }
     }
-    /* Equipment cells: light neutral fill, hairline outline. The reference
-       draws these as dense banks of small blocks, and density is the thing
-       that has to survive -- not per-cell detail nobody can read zoomed out. */
-    .sch-cell { fill: #e6e6e1; stroke: #7a7a7a; stroke-width: 0.35; vector-effect: non-scaling-stroke; }
-    /* A cell the two renders read differently. Outlined rather than filled, so
-       the conflict is visible without pretending to be a status. */
-    .sch-cell-conflict { stroke: #b45309; stroke-width: 1; }
-    /* Per-cell values appear only once the view is close enough to read them. */
-    .sch-cell-value { display: none; }
-    svg.zoomed .sch-cell-value {
-      display: initial;
-      font: 500 3.2px system-ui, sans-serif;
-      fill: #1b1b1b;
-      text-anchor: middle;
-      pointer-events: none;
-    }
-    /* Not a value: an explicit admission that this cell could not be read. */
-    svg.zoomed .sch-cell-unknown { fill: #9a9a9a; font-style: italic; }
-    .sch-bank-outline { fill: none; stroke: #4a4a4a; stroke-width: 0.7; vector-effect: non-scaling-stroke; }
-    .sch-bank-label { font: 600 5px system-ui, sans-serif; fill: #2b2b2b; text-anchor: middle; }
-    /* An ambiguous transcription is marked, never resolved by preference. */
-    .sch-ambiguous { fill: #8a5a00; font-style: italic; }
-    .sch-dim { stroke: #8a8a8a; stroke-width: 0.7; vector-effect: non-scaling-stroke; }
-    .sch-dim-text { font: 400 8px system-ui, sans-serif; fill: #4a4a4a; text-anchor: middle; }
-    .sch-anno { fill: #3a3a3a; font: 400 9px system-ui, sans-serif; }
-    .sch-anno-box { fill: none; stroke: #6b6b6b; stroke-width: 0.9; vector-effect: non-scaling-stroke; }
-    .sch-legend-title { font: 700 6px system-ui, sans-serif; fill: #1b1b1b; text-anchor: middle; }
-    .sch-legend-label { font: 400 5px system-ui, sans-serif; fill: #2b2b2b; }
-    .sch-north-needle { fill: #3a3a3a; stroke: #1b1b1b; stroke-width: 0.3; vector-effect: non-scaling-stroke; }
-    /* The blank scale field is evidence, not an omission -- it is the reason
-       none of these dimensions can become a length. Said quietly, but said. */
-    .sch-anno-blank { font: italic 400 4px system-ui, sans-serif; fill: #8a5a00; }
-    /* Mode and snapshot selectors reuse the view-control styling so the whole
-       panel stays one visual system. */
-    /* Five modes in a 335px panel. They wrap to a second row rather than
-       squeezing each label onto three lines, and no label is allowed to break
-       mid-phrase: "Side by side" stacked as three words reads as three
-       controls. */
-    #mode-controls, #snapshot-controls { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
-    #mode-controls button, #snapshot-controls button {
-      flex: 1 1 auto;
-      white-space: nowrap;
-      padding: 5px 8px;
-      font: inherit;
-      font-size: 11px;
-      color: #cbd5e1;
-      background: #1e293b;
-      border: 1px solid #334155;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    /* A mode with no evidence behind it is offered but not enabled, and says
-       why on hover. Disabled and visible beats hidden: "there is a
-       side-by-side view and this deployment has nothing to put in it" is worth
-       knowing. Never colour alone -- the cursor and the title carry it too. */
-    #mode-controls button:disabled {
-      opacity: 0.45;
-      cursor: not-allowed;
-      border-style: dashed;
-    }
-    #mode-controls button[aria-pressed="true"],
-    #snapshot-controls button[aria-pressed="true"] {
-      background: #334155;
-      color: #f1f5f9;
-      border-color: #64748b;
-    }
-    #mode-controls button:focus-visible,
-    #snapshot-controls button:focus-visible,
-    #schematic-options input:focus-visible {
-      outline: 2px solid #38bdf8;
-      outline-offset: 2px;
-    }
-    #schematic-panel[hidden] { display: none; }
-    #schematic-options { margin-top: 6px; border: 1px solid #334155; border-radius: 4px; padding: 6px 8px; }
-    #schematic-options legend { padding: 0 4px; color: #94a3b8; font-size: 11px; }
-    #schematic-options label { display: block; font-size: 12px; color: #e2e8f0; }
-    #evidence-banner {
+
+    /* ---- header ------------------------------------------------- */
+    #topbar {
+      grid-area: header;
       display: flex;
       flex-wrap: wrap;
-      gap: 4px 8px;
-      margin: 2px 0 8px 0;
-      font-size: 10px;
-      letter-spacing: 0.04em;
+      align-items: center;
+      gap: 8px 14px;
+      min-height: var(--header-h);
+      padding: 5px 12px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--line);
+      min-width: 0;
     }
-    .eb-item {
-      padding: 2px 6px;
-      border: 1px solid #334155;
-      border-radius: 3px;
-      color: #cbd5e1;
-      background: #1e293b;
-    }
-    .eb-warn { border-color: #b45309; color: #fbbf24; }
-    .hud-section {
-      margin: 10px 0 2px 0;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: #94a3b8;
-    }
-    #schematic-inspector {
-      margin-top: 6px;
-      padding: 7px 9px;
-      border: 1px solid #475569;
-      border-radius: 4px;
-      font-size: 11px;
-      line-height: 1.5;
-      color: #e2e8f0;
-    }
-    #schematic-inspector .si-title { font-weight: 700; margin-bottom: 4px; }
-    #schematic-inspector .si-row { display: flex; gap: 6px; }
-    #schematic-inspector .si-k { color: #94a3b8; min-width: 96px; }
-    #schematic-inspector .si-v { color: #f1f5f9; }
-    #schematic-inspector .si-unmapped { color: #fbbf24; }
-    #schematic-inspector .si-conflict { color: #fb923c; }
-    .sch-selected { stroke: #38bdf8 !important; stroke-width: 2 !important; }
-    #schematic-conflict strong { display: block; letter-spacing: 0.04em; margin-bottom: 3px; }
-    #schematic-conflict {
-      margin-top: 6px;
-      padding: 6px 8px;
-      border: 1px solid #b45309;
-      border-radius: 4px;
-      font-size: 11px;
-      color: #fbbf24;
-      line-height: 1.45;
-    }
-    #scene canvas {
-      display: block;
-    }
-
-    /* Binding requirement (design spec §19): visible on-screen banner
-       whenever any rendered placement is simulated. This POC's one
-       placement is always simulated (hardcoded constant, see server.js),
-       so the banner is always shown -- not conditional in this build, but
-       still driven off the API's is_simulated field so it would correctly
-       disappear once /api/placement ever returns a real one. */
-    #simulated-banner {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 10;
-      background: #f59e0b;
-      color: #1c1305;
-      font-weight: 700;
-      font-size: 14px;
-      letter-spacing: 0.04em;
-      text-align: center;
-      padding: 8px 12px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.35);
-    }
-    /* Amber is a warning colour and the warning is real when nothing on screen
-       is measured. Once the floor IS measured the banner is a statement of
-       provenance, not an alarm, and shouting it in amber trains an operator to
-       ignore the amber that matters. Slate, and still always present. */
-    #simulated-banner.banner-measured {
-      background: #1e293b;
-      color: #cbd5e1;
-      font-weight: 600;
-      border-bottom: 1px solid #334155;
-    }
-
-    #hud {
-      position: fixed;
-      top: 44px;
-      left: 16px;
-      bottom: 16px;
-      z-index: 10;
-      background: rgba(15, 23, 42, 0.85);
-      border: 1px solid #334155;
-      border-radius: 8px;
-      padding: 14px 18px;
-      color: #e2e8f0;
-      width: 280px;
-      font-size: 14px;
-      line-height: 1.5;
+    .brand {
       display: flex;
-      flex-direction: column;
-      /* auto, not hidden. The panel has a fixed height, and with the evidence
-         legend and diagnostics both expanded its content legitimately exceeds
-         it -- at 1366x768 by roughly 900px. Under overflow:hidden that content
-         was clipped with no scrollbar and no way to reach it, which put the
-         diagnostics control out of reach of a pointer entirely. Nothing is
-         removed; the panel simply scrolls when it has more to show than it
-         has room for. */
-      overflow-y: auto;
-    }
-    #hud h1 {
-      font-size: 15px;
-      margin: 0 0 4px 0;
-      color: #f8fafc;
-    }
-    #summary-line {
-      color: #94a3b8;
-      font-size: 12px;
-      margin-bottom: 8px;
-    }
-    #machine-list {
-      overflow-y: auto;
-      flex: 1;
-      /* Without this the list never shrinks below its content height: a flex
-         item's default min-height is auto, so `flex: 1` cannot compress it and
-         its own overflow-y never engages. The list then pushes the view
-         controls, layer toggles, legend and diagnostics past the panel's
-         bottom edge, where #hud's overflow:hidden clips them out of reach --
-         observed at 1366x768 and in portrait, where the diagnostics control
-         sat ~270px below the viewport with no way to scroll to it. */
-      min-height: 0;
-      display: flex;
-      flex-direction: column;
+      align-items: baseline;
       gap: 8px;
-      padding-right: 4px;
+      white-space: nowrap;
     }
-    .machine-row {
-      background: rgba(30, 41, 59, 0.6);
-      border: 1px solid #334155;
-      border-radius: 6px;
-      padding: 8px 10px;
+    .brand b { font-size: 14px; letter-spacing: .06em; }
+    .brand span { color: var(--text-dim); font-size: 11px; letter-spacing: .1em; }
+    #data-quality {
+      flex: 1 1 260px;
+      /* A hard floor, so the flex line breaks before this collapses. */
+      min-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--text-dim);
+      font-size: 11.5px;
     }
-    .machine-row-top {
+    #data-quality.quality-measured { color: #9fd7a2; }
+    #status-line { color: var(--text-dim); font-size: 11px; white-space: nowrap; }
+    #status-line.error { color: var(--crit); }
+    #build-id {
+      color: var(--text-dim); font-size: 10.5px; letter-spacing: .04em;
+      border: 1px solid var(--line); border-radius: 3px; padding: 1px 5px; white-space: nowrap;
+    }
+
+    .seg { display: flex; gap: 2px; background: var(--panel-2); padding: 2px; border-radius: var(--radius); }
+    .seg button, .btn {
+      appearance: none;
+      background: transparent;
+      color: var(--text-dim);
+      border: 1px solid transparent;
+      border-radius: 4px;
+      padding: 4px 10px;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .seg button:hover:not(:disabled), .btn:hover:not(:disabled) { color: var(--text); background: #172434; }
+    .seg button[aria-pressed="true"] { background: #1d3348; color: var(--text); border-color: var(--line-2); }
+    .seg button:disabled, .btn:disabled { opacity: .35; cursor: not-allowed; }
+    .btn { border-color: var(--line); }
+    /* Focus is never removed, only restyled. Keyboard operators are operators. */
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+    /* ---- status strip ------------------------------------------- */
+    #status-strip {
+      grid-area: strip;
+      min-height: var(--strip-h);
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      background: var(--panel-2);
+      border-bottom: 1px solid var(--line);
+      overflow-x: auto;
+    }
+    .ss-cell {
       display: flex;
       align-items: center;
-      gap: 8px;
-      margin-bottom: 4px;
+      gap: 6px;
+      padding: 0 14px;
+      border-right: 1px solid var(--line);
+      white-space: nowrap;
+      min-width: 0;
     }
-    .machine-id {
-      font-weight: 600;
-      font-size: 13px;
+    .ss-glyph { font-size: 13px; line-height: 1; }
+    .ss-label { color: var(--text-dim); font-size: 11.5px; letter-spacing: .04em; }
+    .ss-value { color: var(--text); font-variant-numeric: tabular-nums; font-weight: 600; font-size: 14px; }
+    /* A state this deployment cannot derive is dimmed AND shows a dash, never a
+       zero: a zero is a measurement, a dash is the absence of one. */
+    .ss-cell.ss-off { opacity: .42; }
+    .ss-cell.ss-off .ss-value { font-weight: 400; }
+    .ss-sep { width: 1px; background: var(--line-2); margin: 8px 6px; flex: 0 0 auto; }
+    .ss-quality .ss-label { font-style: italic; }
+    @media (max-width: 1200px) {
+      .ss-cell { padding: 0 9px; }
+      .ss-label { font-size: 10.5px; }
     }
-    .mini-pill {
-      display: inline-block;
-      padding: 1px 8px;
-      border-radius: 999px;
-      font-weight: 700;
-      font-size: 10px;
-      color: #0f172a;
-    }
-    .machine-row-detail {
-      display: flex;
-      justify-content: space-between;
-      color: #94a3b8;
-      font-size: 12px;
-    }
-    .machine-row-alarm {
-      margin-top: 2px;
-      font-size: 11px;
-      color: #cbd5e1;
-    }
-    #hud .hint {
-      margin-top: 10px;
-      padding-top: 8px;
-      border-top: 1px solid #334155;
-      color: #94a3b8;
-      font-size: 12px;
-    }
-    #hud .error {
-      color: #ef4444;
-      font-weight: 600;
-    }
-    #view-controls { margin-top: 10px; display: flex; gap: 6px; }
-    #view-controls button {
-      flex: 1;
-      padding: 6px 8px;
-      font: inherit;
-      font-size: 12px;
-      color: #cbd5e1;
-      background: #1e293b;
-      border: 1px solid #334155;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    #view-controls button[aria-pressed="true"] {
-      background: #334155;
-      color: #f8fafc;
-      border-color: #64748b;
-      font-weight: 600;
-    }
-    #view-controls button:focus-visible,
-    #view-reset:focus-visible,
-    #evidence-legend > summary:focus-visible { outline: 2px solid #38bdf8; outline-offset: 2px; }
-    #view-controls button[disabled] { opacity: 0.45; cursor: not-allowed; }
-    #view-reset-row { margin-top: 6px; }
-    #view-reset {
-      width: 100%;
-      padding: 5px 8px;
-      font: inherit;
-      font-size: 11px;
-      color: #cbd5e1;
-      background: #1e293b;
-      border: 1px solid #334155;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    #factory-status { display: grid; grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); gap: 6px; margin: 10px 0 6px; }
-    .fs-cell { background: #131a26; border: 1px solid #1f2937; border-radius: 4px; padding: 6px 8px; }
-    .fs-value { font: 700 19px/1.1 ui-monospace, SFMono-Regular, Menlo, monospace; color: #e2e8f0; font-variant-numeric: tabular-nums; }
-    .fs-label { font-size: 9.5px; letter-spacing: 0.07em; text-transform: uppercase; color: #7c8ba1; margin-top: 3px; }
-    /* Tone is reinforced by a left rule, never carried by colour alone. */
-    .fs-warn { border-left: 3px solid #f59e0b; }
-    .fs-warn .fs-value { color: #fbbf24; }
-    .fs-crit { border-left: 3px solid #ef4444; }
-    .fs-crit .fs-value { color: #f87171; }
-    #unmapped-devices { margin-top: 6px; }
-    #unmapped-devices > summary { color: #94a3b8; cursor: pointer; font-size: 11px; }
-    #unmapped-devices > summary:focus-visible { outline: 2px solid #38bdf8; outline-offset: 2px; }
-    #summary-line { color: #64748b; }
-    #status-legend { margin-top: 8px; font-size: 11px; }
-    #status-legend > summary { color: #94a3b8; cursor: pointer; }
-    #status-legend > summary:focus-visible { outline: 2px solid #38bdf8; outline-offset: 2px; }
-    #status-legend dl { margin: 6px 0 0 0; display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; align-items: baseline; }
-    #status-legend dt { color: #f1f5f9; font-weight: 700; letter-spacing: 0.03em; white-space: nowrap; }
-    #status-legend dd { margin: 0; color: #94a3b8; line-height: 1.35; }
-    /* An unavailable state is dimmed AND labelled -- the label is what carries
-       the meaning, the dimming only reinforces it. */
-    #status-legend .st-off dt, #status-legend .st-off dd { opacity: 0.55; }
-    #status-legend .st-glyph { display: inline-block; width: 14px; text-align: center; font-size: 12px; }
-    #status-legend .st-na { font-size: 9px; letter-spacing: 0.06em; color: #fbbf24; border: 1px solid #52412a; border-radius: 2px; padding: 0 3px; margin-left: 4px; }
-    .legend-note { margin: 6px 0 0 0; color: #64748b; font-size: 10px; line-height: 1.4; }
-    #evidence-legend { margin-top: 8px; font-size: 11px; }
-    #evidence-legend > summary { color: #94a3b8; cursor: pointer; }
-    #evidence-legend dl { margin: 6px 0 0 0; }
-    #evidence-legend dt { color: #f1f5f9; font-weight: 700; letter-spacing: 0.04em; margin-top: 5px; }
-    #evidence-legend dd { margin: 1px 0 0 22px; color: #cbd5e1; line-height: 1.45; }
-    /* Glyph first, colour second. The glyph is what survives a monochrome
-       screen or colour-blind vision; the colour only reinforces it. */
-    #evidence-legend .ev {
-      display: inline-block;
-      width: 16px;
-      text-align: center;
-      font-weight: 700;
-    }
-    #evidence-legend .ev-measured { color: #38bdf8; }
-    #evidence-legend .ev-derived { color: #7dd3fc; }
-    #evidence-legend .ev-observed { color: #cbd5e1; }
-    #evidence-legend .ev-simulated { color: #c4b5fd; }
-    #evidence-legend .ev-unknown { color: #fbbf24; }
-    #evidence-legend .ev-confirmed { color: #4ade80; }
-    /* Inspection panel. Amber, not the machine palette: an observed slot is
-       not a monitored device and must not borrow a device's visual language. */
-    #inspector {
-      margin-top: 10px;
-      padding: 8px 10px;
-      border: 1px solid #f59e0b;
-      border-radius: 4px;
-      background: rgba(245, 158, 11, 0.08);
-      font-size: 12px;
-      line-height: 1.5;
-    }
-    #inspector .inspector-title {
-      font-weight: 700;
-      color: #fbbf24;
-      margin-bottom: 6px;
-    }
-    #inspector .badge {
-      display: inline-block;
-      padding: 1px 6px;
-      margin-right: 6px;
-      border-radius: 3px;
-      font-size: 10px;
-      letter-spacing: 0.04em;
-      vertical-align: middle;
-    }
-    /* Only CONFIRMED is allowed to look authoritative. */
-    #inspector .badge-confirmed { background: #16a34a; color: #f0fdf4; }
-    #inspector .badge-unmapped { background: #b45309; color: #fffbeb; }
-    #inspector .badge-observed { background: #475569; color: #f1f5f9; }
-    /* CAD-read geometry is the strongest physical evidence this system holds,
-       and reads a clear step above OBSERVED so the two are never confused. */
-    #inspector .badge-measured { background: #0e7490; color: #ecfeff; }
-    #inspector .badge-simulated { background: #7c3aed; color: #f5f3ff; }
-    #diagnostics { margin-top: 10px; font-size: 11px; }
-    #diagnostics > summary { color: #94a3b8; cursor: pointer; }
-    #diagnostics > summary:focus-visible { outline: 2px solid #38bdf8; outline-offset: 2px; }
-    #diagnostics .diag-section { margin-top: 6px; }
-    #diagnostics .diag-title { color: #a5b4c3; font-weight: 700; letter-spacing: 0.04em; }
-    #diagnostics .k { color: #94a3b8; display: inline-block; min-width: 150px; }
-    #diagnostics .v { color: #e2e8f0; }
-    #evidence-summary {
-      margin-top: 10px;
-      padding-top: 8px;
-      border-top: 1px solid #334155;
-      font-size: 12px;
-      line-height: 1.6;
-    }
-    #evidence-summary .summary-title { color: #94a3b8; font-weight: 700; margin-bottom: 4px; }
-    #evidence-summary .k { color: #cbd5e1; }
-    #evidence-summary .n { color: #f8fafc; font-weight: 700; }
-    /* Was #64748b: at 10px on the HUD background that measured under the
-       4.5:1 minimum, and this is the label that says whether a number is
-       OBSERVED or SIMULATED -- the least acceptable place for low contrast. */
-    #evidence-summary .t { color: #a5b4c3; font-size: 10px; letter-spacing: 0.04em; }
-    #inspector .k { color: #94a3b8; display: inline-block; min-width: 116px; }
-    #inspector .v { color: #e2e8f0; }
-    #inspector .hint { margin-top: 8px; }
-    #layer-controls {
-      margin-top: 10px;
-      padding: 6px 10px 8px;
-      border: 1px solid #334155;
-      border-radius: 4px;
-      font-size: 12px;
-    }
-    #layer-controls legend { color: #94a3b8; padding: 0 4px; }
-    #layer-controls label { display: block; color: #e2e8f0; cursor: pointer; }
-    #layer-controls input:focus-visible { outline: 2px solid #38bdf8; outline-offset: 2px; }
 
-    /* Accessibility fallback (design §16): the same real per-machine data
-       (state/board/MO/alarm for all 10 machines) is also available as
-       plain HTML text in #machine-list, not locked inside the WebGL
-       canvas -- a screen reader can read the HUD list even though it
-       can't meaningfully describe the 3D scene itself. */
+    /* ---- stage -------------------------------------------------- */
+    #stage { grid-area: stage; position: relative; min-width: 0; min-height: 0; }
+    #scene { position: absolute; inset: 0; }
+    #scene canvas { display: block; }
+
+    /* The ONLY thing that ever sits over the floor, and only after a click.
+       Cornered, capped, scrollable, and dismissible. */
+    #inspector {
+      position: absolute;
+      left: 12px;
+      bottom: 12px;
+      width: min(340px, calc(100% - 24px));
+      max-height: min(52%, 420px);
+      overflow: auto;
+      background: rgba(14, 22, 33, .95);
+      border: 1px solid var(--line-2);
+      border-radius: var(--radius);
+      padding: 10px 12px;
+      font-size: 12px;
+      box-shadow: 0 10px 26px rgba(0, 0, 0, .45);
+    }
+    .inspector-title { font-weight: 600; margin-bottom: 7px; display: flex; align-items: center; gap: 7px; }
+    #inspector div { display: flex; gap: 8px; justify-content: space-between; padding: 1.5px 0; }
+    #inspector .k { color: var(--text-dim); }
+    #inspector .v { text-align: right; }
+    #inspector .hint { display: block; color: var(--text-dim); margin-top: 8px; font-size: 11px; line-height: 1.45; }
+    .badge {
+      font-size: 10px; letter-spacing: .06em; padding: 1px 6px;
+      border-radius: 3px; border: 1px solid currentColor;
+    }
+    .badge-measured { color: #7dd3fc; }
+    .badge-observed { color: #a5b4fc; }
+    .badge-confirmed { color: var(--ok); }
+    .badge-unmapped { color: var(--text-dim); }
+
+    /* ---- drawer ------------------------------------------------- */
+    #drawer {
+      grid-area: drawer;
+      background: var(--panel);
+      border-left: 1px solid var(--line);
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 10px 12px 24px;
+      min-width: 0;
+    }
+    #app:not(.drawer-open) #drawer { display: none; }
+    #drawer h2 {
+      font-size: 11px; letter-spacing: .1em; text-transform: uppercase;
+      color: var(--text-dim); margin: 16px 0 6px; font-weight: 600;
+    }
+    #drawer h2:first-child { margin-top: 2px; }
+
+    #factory-status { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+    .fs-cell { background: var(--panel-2); border: 1px solid var(--line); border-radius: 5px; padding: 7px 9px; }
+    .fs-value { font-size: 19px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.1; }
+    .fs-label { font-size: 10.5px; color: var(--text-dim); letter-spacing: .03em; }
+    .fs-warn .fs-value { color: var(--warn); }
+    .fs-crit .fs-value { color: var(--crit); }
+
+    fieldset { border: 1px solid var(--line); border-radius: 5px; margin: 0; padding: 8px 10px; }
+    legend { color: var(--text-dim); font-size: 10.5px; letter-spacing: .08em; padding: 0 4px; }
+    #layer-controls label { display: block; padding: 2px 0; font-size: 12px; }
+    .hint { color: var(--text-dim); font-size: 10.5px; }
+
+    dl { margin: 0; display: grid; grid-template-columns: minmax(0, auto) 1fr; gap: 3px 10px; align-items: baseline; }
+    dt { white-space: nowrap; font-size: 12px; }
+    dd { margin: 0; color: var(--text-dim); font-size: 10.5px; line-height: 1.4; }
+    .st-glyph { font-size: 12px; }
+    .st-off { opacity: .45; }
+    .st-na, .st-dq {
+      margin-left: 5px; font-size: 9px; letter-spacing: .06em;
+      border: 1px solid var(--line-2); border-radius: 3px; padding: 0 3px; color: var(--text-dim);
+    }
+    .legend-note { color: var(--text-dim); font-size: 10.5px; margin: 8px 0 0; line-height: 1.45; }
+
+    #evidence-summary div { display: flex; gap: 8px; align-items: baseline; padding: 1.5px 0; font-size: 11.5px; }
+    #evidence-summary .k { flex: 1 1 auto; color: var(--text-dim); }
+    #evidence-summary .n { font-variant-numeric: tabular-nums; font-weight: 600; }
+    #evidence-summary .t { font-size: 9.5px; letter-spacing: .05em; color: var(--text-dim); }
+    .summary-title { display: none; }
+
+    details { border: 1px solid var(--line); border-radius: 5px; padding: 6px 9px; }
+    summary { cursor: pointer; font-size: 12px; color: var(--text); }
+    #machine-list { margin-top: 8px; max-height: 260px; overflow: auto; }
+    .machine-row { border-top: 1px solid var(--line); padding: 5px 0; font-size: 11.5px; }
+    .machine-row:first-child { border-top: 0; }
+    .machine-row-top { display: flex; gap: 7px; align-items: center; }
+    .mini-pill { font-size: 9.5px; padding: 0 5px; border-radius: 3px; color: #06121f; font-weight: 600; }
+    .machine-id { font-weight: 600; }
+    .machine-row-detail, .machine-row-alarm { color: var(--text-dim); font-size: 10.5px; display: flex; gap: 10px; }
+    #diagnostics-body { margin-top: 8px; font-size: 11px; }
+    #diagnostics-body .k { color: var(--text-dim); }
+    .ev { display: inline-block; width: 1.1em; text-align: center; }
+    .ev-measured { color: #7dd3fc; }
+    .ev-observed { color: #a5b4fc; }
+    .ev-derived { color: #fbbf24; }
+    .ev-simulated { color: #f472b6; }
+    .ev-unknown { color: var(--text-dim); }
+    .ev-confirmed { color: var(--ok); }
+
+    /* Panels get a scrollbar of their own rather than pushing the page: the
+       stage must keep its full height at every viewport, 3840x2160 included. */
+    #drawer::-webkit-scrollbar, #machine-list::-webkit-scrollbar, #inspector::-webkit-scrollbar { width: 8px; }
+    #drawer::-webkit-scrollbar-thumb, #machine-list::-webkit-scrollbar-thumb,
+    #inspector::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 4px; }
+
+    @media (prefers-reduced-motion: reduce) { #app { transition: none; } }
   </style>
 </head>
 <body>
-  <!-- Written from the geometry response, not hardcoded: see
-       updateEvidenceSummary(). This initial text is the honest state BEFORE any
-       response has arrived, so a slow or failed fetch leaves a banner that
-       claims nothing rather than one that claims measurement. -->
-  <div id="simulated-banner">Loading floor evidence… nothing on screen is confirmed until this banner says what it is.</div>
+  <div id="app">
+    <header id="topbar">
+      <div class="brand"><b>FACTORY TWIN</b> <span>FLOOR 1</span></div>
 
-  <div id="hud">
-    <h1>IMS Factory 3D Digital Twin — Floor 1</h1>
-    <!-- The three facts an operator needs before reading anything else: which
-         claim they are looking at, that nothing is confirmed, and which source
-         render is selected. Stated once, at the top, rather than discovered. -->
-    <div id="evidence-banner">
-      <span class="eb-item"><b>FLOOR 1</b></span>
-      <span class="eb-item" id="eb-mode">PHYSICAL — MEASURED</span>
-      <span class="eb-item eb-warn" id="eb-mappings">MAPPINGS: 0 CONFIRMED</span>
-      <span class="eb-item" id="eb-snapshot" hidden></span>
-    </div>
-    <!-- FACTORY -> AREA -> PHYSICAL ASSET -> STATUS, in that order. This block
-         is the first thing read and answers the three-second question: how big
-         is this floor, how much of it is tied to live data, and is anything
-         wrong. It is deliberately NOT a list of machine cards. -->
-    <div id="factory-status" aria-live="polite"></div>
-    <div id="status-line" class="hint"></div>
-
-    <!-- Telemetry is real; its position is not. These devices are NOT drawn on
-         the floor -- the synthetic grid that used to place them is deleted --
-         so the list is collapsed by default and named for what is missing. -->
-    <details id="unmapped-devices">
-      <summary>Unmapped IMS devices <span id="summary-line"></span></summary>
-      <div id="unmapped-note" class="hint">
-        These devices report live state, but no authoritative record places any
-        of them on this floor. None is drawn in the scene, and none can be
-        reached by clicking the floor: a drill-down would have to start from a
-        position, and no position here is tied to a device.
+      <div class="seg" id="view-controls" role="group" aria-label="View">
+        <button type="button" data-view="plan" aria-pressed="true">2D Plan</button>
+        <button type="button" data-view="overview" aria-pressed="false">3D</button>
+        <button type="button" data-view="building" aria-pressed="false">Fit floor</button>
       </div>
-      <div id="machine-list"></div>
-    </details>
-    <!-- Visibility only. Toggling hides rendered objects; it never changes
-         geometry, API results or telemetry. All layers default to on, so
-         the initial view is unchanged from before these controls existed. -->
-    <!-- Two coordinate systems coexist and neither may be moved to suit the
-         other, so framing is an explicit choice. Buttons, so they are keyboard
-         reachable and carry a real pressed state. -->
-    <!-- Two different claims about the floor, so an explicit choice rather than
-         a silent blend. The physical twin is measured and cannot name an area;
-         the schematic names every area and measures nothing. -->
-    <!-- Five modes, one application. Three of them change WHICH claim is on
-         screen (physical, schematic, both); two change how much apparatus
-         surrounds the same claim (executive, inspection). None of them changes
-         a coordinate, and the regression asserts that by snapshot. -->
-    <div id="mode-controls" role="group" aria-label="Floor view mode">
-      <button type="button" data-mode="executive" aria-pressed="false">Executive</button>
-      <button type="button" data-mode="physical" aria-pressed="true">Physical</button>
-      <button type="button" data-mode="schematic" aria-pressed="false">Schematic</button>
-      <button type="button" data-mode="split" aria-pressed="false">Side by side</button>
-      <button type="button" data-mode="inspection" aria-pressed="false">Inspection</button>
-    </div>
-    <div id="view-controls" role="group" aria-label="Camera view">
-      <button type="button" data-view="operator" aria-pressed="false">Operator</button>
-      <button type="button" data-view="building" aria-pressed="false" disabled>Building</button>
-      <button type="button" data-view="overview" aria-pressed="true" disabled>Overview</button>
-      <!-- The CAD-derived 2D floor plan. Same scene and the same coordinates,
-           viewed straight down, so the plan and the model cannot disagree. -->
-      <button type="button" data-view="plan" aria-pressed="false" disabled>Plan (2D)</button>
-    </div>
-    <!-- Undoes orbit/zoom drift by re-applying the ACTIVE view's framing. It
-         does not force operator view: which view you are in is your choice,
-         where the camera has wandered to is not. -->
-    <div id="view-reset-row">
-      <button type="button" id="view-reset">Reset camera to view framing</button>
-    </div>
-    <!-- Schematic-only controls. Hidden in physical mode so the panel never
-         offers a control that does nothing. -->
-    <div id="schematic-panel" hidden>
-      <div id="snapshot-controls" role="group" aria-label="Reference snapshot"></div>
-      <!-- Provenance for whatever is selected. Every row is a claim about where
-           the thing came from, never about what it is in the factory. -->
-      <div id="schematic-inspector" hidden aria-live="polite"></div>
-      <div id="schematic-conflict" hidden></div>
-      <fieldset id="schematic-options">
-        <legend>Show</legend>
-        <label><input type="checkbox" data-sch="labels" checked> Area labels</label>
-        <label><input type="checkbox" data-sch="equipment" checked> Equipment banks</label>
-        <label><input type="checkbox" data-sch="dimensions" checked> Dimensions</label>
-        <label><input type="checkbox" data-sch="annotations" checked> Legend and title block</label>
+      <button type="button" class="btn" id="view-reset">Reset camera</button>
+
+      <div id="data-quality">Loading floor evidence…</div>
+      <div id="status-line"></div>
+      <!-- Build identity, on screen. A stale deployment is invisible without
+           it: static frontend files carry no version, so "is this the code I
+           just shipped" was previously unanswerable from the page. -->
+      <code id="build-id" title="Running build fingerprint">build …</code>
+      <button type="button" class="btn" id="drawer-toggle" aria-expanded="false" aria-controls="drawer">
+        Inspection
+      </button>
+    </header>
+
+    <!-- The eight plant states. Rendered by app.js from the shared vocabulary
+         so a state cannot appear here without existing in the code that
+         colours the scene. Never hand-written into this markup. -->
+    <div id="status-strip" role="group" aria-label="Operational state distribution" aria-live="polite"></div>
+
+    <main id="stage">
+      <div id="scene"></div>
+      <!-- Context panel. Hidden until the operator selects something. -->
+      <div id="inspector" hidden aria-live="polite"></div>
+    </main>
+
+    <aside id="drawer" aria-label="Inspection">
+      <h2>Factory</h2>
+      <div id="factory-status" aria-live="polite"></div>
+
+      <h2>Layers</h2>
+      <fieldset id="layer-controls">
+        <legend>Draw</legend>
+        <label><input type="checkbox" data-layer="shell" checked> Floor shell <span class="hint" data-count="shell"></span></label>
+        <label><input type="checkbox" data-layer="columns" checked> Columns <span class="hint" data-count="columns"></span></label>
+        <label><input type="checkbox" data-layer="walls" checked> Walls and openings <span class="hint" data-count="walls"></span></label>
+        <label><input type="checkbox" data-layer="functional" checked> Functional zones <span class="hint" data-count="functional"></span></label>
+        <label><input type="checkbox" data-layer="equipment" checked> Equipment <span class="hint" data-count="equipment"></span></label>
       </fieldset>
-      <div id="view-reset-row">
-        <button type="button" id="schematic-fit">Fit drawing to view</button>
-      </div>
-    </div>
-    <!-- Inspection target. Populated only from evidence-backed fields the API
-         actually served; an unresolved slot never renders an identity. -->
-    <div id="inspector" hidden aria-live="polite"></div>
-    <!-- One toggle per evidence class, not per convenience grouping. The
-         building shell is MEASURED, columns and slots are OBSERVED, and the
-         monitored devices sit on SIMULATED positions -- bundling any two of
-         those behind one checkbox would imply they are the same kind of
-         claim. All default to on, so the initial scene is unchanged. -->
-    <!-- Operational status legend. Separate from the evidence legend below on
-         purpose: evidence is how well we know WHERE a thing is, status is what
-         that thing is DOING. Conflating them is what turns a digital twin into
-         a dashboard with a floor plan.
 
-         Built from public/operational-status.js so the legend and the renderer
-         cannot disagree about what a colour means, and so a state with no
-         backend column behind it is rendered as unavailable rather than as a
-         lamp that simply never lights. Every row carries a glyph and a word as
-         well as a colour. -->
-    <details id="status-legend" open>
-      <summary>Status legend</summary>
+      <h2>Machine states</h2>
       <dl id="status-legend-body"></dl>
       <p class="legend-note" id="status-legend-note"></p>
-    </details>
-    <fieldset id="layer-controls">
-      <legend>Layers</legend>
-      <label><input type="checkbox" data-layer="shell" checked> Floor shell <span class="hint" data-count="shell"></span></label>
-      <label><input type="checkbox" data-layer="columns" checked> Columns <span class="hint" data-count="columns"></span></label>
-      <!-- Plan position and thickness are read from the CAD; the height is a
-           declared presentation constant, because a plan view carries none. -->
-      <label><input type="checkbox" data-layer="walls" checked> Walls and openings <span class="hint" data-count="walls"></span></label>
-      <label><input type="checkbox" data-layer="functional" checked> Functional zones <span class="hint" data-count="functional"></span></label>
-      <label><input type="checkbox" data-layer="slots" checked> Equipment slots <span class="hint" data-count="slots"></span></label>
-      <label><input type="checkbox" data-layer="telemetry" checked> Labels</label>
-      <!-- Off by default and named for what it is. Footprints are measured;
-           every height in it is a drawing convention with no source. -->
-      <label><input type="checkbox" data-layer="presentation"> Presentation machines <span class="hint">(PRESENTATION_ONLY)</span></label>
-    </fieldset>
-    <!-- These four numbers describe four different things and are deliberately
-         never summed: 242 observed positions are not 242 confirmed machines. -->
-    <div id="evidence-summary" aria-live="polite"></div>
-    <!-- The vocabulary the whole UI is built on, stated once. Each row carries
-         a glyph AND a word, never colour alone: the distinction between an
-         observed position and a confirmed machine has to survive a monochrome
-         screen, a projector, and colour-blind vision. -->
-    <details id="evidence-legend">
-      <summary>Evidence legend</summary>
-      <dl>
-        <dt><span class="ev ev-measured" aria-hidden="true">&#9635;</span> MEASURED</dt>
-        <dd>Taken directly off the engineering drawing against a calibrated scale.</dd>
-        <dt><span class="ev ev-derived" aria-hidden="true">&#9650;</span> DERIVED</dt>
-        <dd>Computed from measured values. Not itself measured.</dd>
-        <dt><span class="ev ev-observed" aria-hidden="true">&#9670;</span> OBSERVED</dt>
-        <dd>Detected on the drawing. Position is evidence-backed; identity is not claimed.</dd>
-        <dt><span class="ev ev-simulated" aria-hidden="true">&#9671;</span> SIMULATED</dt>
-        <dd>Placeholder position on a synthetic grid. Real telemetry, invented location.</dd>
-        <dt><span class="ev ev-unknown" aria-hidden="true">?</span> UNKNOWN</dt>
-        <dd>Not in evidence. Shown as unknown rather than estimated or omitted.</dd>
-        <dt><span class="ev ev-confirmed" aria-hidden="true">&#10003;</span> CONFIRMED</dt>
-        <dd>Backed by an authoritative record. Nothing in this build is CONFIRMED.</dd>
-      </dl>
-    </details>
-    <!-- Developer/operator tool. Collapsed by default so the executive view is
-         not cluttered; rendering never depends on it being open. -->
-    <details id="diagnostics">
-      <summary>Diagnostics</summary>
-      <div id="diagnostics-body">Loading…</div>
-    </details>
+
+      <h2>Evidence</h2>
+      <div id="evidence-summary" aria-live="polite"></div>
+
+      <details id="evidence-legend">
+        <summary>What each evidence tier means</summary>
+        <dl>
+          <dt><span class="ev ev-measured" aria-hidden="true">&#9635;</span> MEASURED</dt>
+          <dd>Read from the CAD or from a printed dimension. A number somebody wrote down.</dd>
+          <dt><span class="ev ev-derived" aria-hidden="true">&#9650;</span> DERIVED</dt>
+          <dd>Computed from measurements, with the computation recorded.</dd>
+          <dt><span class="ev ev-observed" aria-hidden="true">&#9670;</span> OBSERVED</dt>
+          <dd>Detected in a drawing. Real, but weaker than a stated dimension.</dd>
+          <dt><span class="ev ev-simulated" aria-hidden="true">&#9671;</span> SIMULATED</dt>
+          <dd>Invented for presentation. Nothing on this floor carries this tier any more.</dd>
+          <dt><span class="ev ev-unknown" aria-hidden="true">?</span> UNKNOWN / UNRESOLVED</dt>
+          <dd>Not established by any source. Stated as such, never filled in with a default.</dd>
+          <dt><span class="ev ev-confirmed" aria-hidden="true">&#10003;</span> CONFIRMED</dt>
+          <dd>Backed by an authoritative record. Requires a real mapping document.</dd>
+        </dl>
+      </details>
+
+      <h2>IMS devices</h2>
+      <details id="unmapped-devices">
+        <summary>Monitored devices <span id="summary-line"></span></summary>
+        <p class="hint" id="unmapped-note">
+          None of these is drawn on the floor. No authoritative record links a CAD asset to an
+          IMS device, so placing one would be a guess. They are listed here with their real
+          live state instead.
+        </p>
+        <div id="machine-list"></div>
+      </details>
+
+      <h2>Diagnostics</h2>
+      <details id="diagnostics">
+        <summary>Runtime and provenance</summary>
+        <div id="diagnostics-body">Loading…</div>
+      </details>
+    </aside>
   </div>
 
-  <div id="scene"></div>
-  <!-- Built once from /api/floor-schematic; pan and zoom mutate only the SVG
-       viewBox, so pointer movement never rebuilds the DOM. -->
-  <div id="schematic" hidden>
-    <!-- Standing, not dismissible. The single most important thing to know
-         about this view is that its geometry is a drawing, not a measurement -
-         the source's own title block leaves SCALE blank. -->
-    <div id="schematic-badge">SCHEMATIC — NOT TO SCALE. Drawing reference, not measured geometry.</div>
-  </div>
-
-  <!-- Only rendered in side-by-side mode. A crop of that view must still say
-       which pane is which, and the two captions are deliberately worded as
-       different KINDS of statement rather than as two labels. -->
-  <div class="split-caption" id="split-caption-left">PHYSICAL — MEASURED / OBSERVED</div>
-  <div class="split-caption" id="split-caption-right">SCHEMATIC — NOT TO SCALE · UNREGISTERED TO THE LEFT PANE</div>
-
-  <!-- Relative paths (no leading "/") throughout this page and app.js's
-       fetch calls, deliberately -- this page is served under nginx's
-       /factory-twin-3d/ prefix (proxy/nginx.conf), which strips the prefix
-       on proxy_pass. An absolute "/app.js" would resolve against the site
-       root and hit Grafana's own location block instead of this service. -->
   <script type="importmap">
     {
       "imports": {
@@ -721,6 +382,19 @@
     }
   </script>
   <script type="module" src="./app.js"></script>
-  <script type="module" src="./schematic.js"></script>
+  <script>
+    // Drawer is a GRID TRACK, not an overlay: opening it narrows the stage.
+    // The scene pane therefore changes width without the window changing, so
+    // the renderer is told explicitly. Camera only -- no geometry moves.
+    (function () {
+      const app = document.getElementById('app');
+      const toggle = document.getElementById('drawer-toggle');
+      toggle.addEventListener('click', () => {
+        const open = app.classList.toggle('drawer-open');
+        toggle.setAttribute('aria-expanded', String(open));
+        window.dispatchEvent(new CustomEvent('twin-pane-resize'));
+      });
+    }());
+  </script>
 </body>
 </html>

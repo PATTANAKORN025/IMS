@@ -119,7 +119,12 @@ async function loadWith(browser, { route, handler, waitForScene = true }) {
       // fault case reports 0 rather than throwing, and so "still zero under
       // every fault" becomes an assertable property.
       machineMeshes: T && Array.isArray(T.machineMeshes) ? T.machineMeshes.length : 0,
-      slotMeshes: T ? T.slotMeshes.length : 0,
+      equipmentMeshes: T && Array.isArray(T.equipmentMeshes) ? T.equipmentMeshes.length : 0,
+      // The raster slot layer and the invented machine-form layer are both
+      // deleted. Read defensively so a fault case reports absence rather than
+      // throwing, and assert that absence under every fault below.
+      hasSlotRegistry: T ? T.slotMeshes !== undefined : false,
+      hasPresentationRegistry: T ? T.presentationMeshes !== undefined : false,
       columnMeshes: T ? T.columnMeshes.length : 0,
       // Whole visible document, so a leaked value is caught wherever it
       // surfaced -- HUD, inspector, evidence panel or diagnostics.
@@ -131,11 +136,11 @@ async function loadWith(browser, { route, handler, waitForScene = true }) {
       // never appear is the badge that asserts one, or a non-zero count.
       confirmedBadges: document.querySelectorAll('.badge-confirmed').length,
       confirmedCount: (() => {
-        const el = document.querySelector('#layer-controls [data-count="slots"]');
+        const el = document.querySelector('#layer-controls [data-count="equipment"]');
         const m = el && /(\d+)\s+CONFIRMED/.exec(el.textContent || '');
         return m ? Number(m[1]) : 0;
       })(),
-      mappedSlots: (() => {
+      mappedAssets: (() => {
         const el = document.getElementById('evidence-summary');
         const m = el && /Confirmed physical mappings\D*(\d+)/.exec(el.innerText || '');
         return m ? Number(m[1]) : 0;
@@ -160,7 +165,7 @@ function assertSafeDegradation(label, r, { expectScene = true } = {}) {
   // produce one -- least of all a broken response.
   check(r.confirmedBadges === 0, `${label}: no CONFIRMED badge is shown`, `${r.confirmedBadges}`);
   check(r.confirmedCount === 0, `${label}: the slot layer reports 0 confirmed`, `${r.confirmedCount}`);
-  check(r.mappedSlots === 0, `${label}: the evidence panel reports 0 confirmed mappings`, `${r.mappedSlots}`);
+  check(r.mappedAssets === 0, `${label}: the evidence panel reports 0 confirmed mappings`, `${r.mappedAssets}`);
 }
 
 // Whether this deployment has monitored devices at all. CI runs against a
@@ -214,7 +219,9 @@ async function run() {
     });
     assertSafeDegradation(`geometry ${status}`, r);
     check(r.machineMeshes === 0, `geometry ${status}: no machine is invented`, `${r.machineMeshes}`);
-    check(r.slotMeshes === 0 && r.columnMeshes === 0, `geometry ${status}: no geometry is invented`);
+    check(r.equipmentMeshes === 0 && r.columnMeshes === 0, `geometry ${status}: no geometry is invented`);
+    check(!r.hasSlotRegistry && !r.hasPresentationRegistry,
+      `geometry ${status}: the deleted raster and machine-form layers stay deleted`);
   }
 
   // ── Malformed bodies ──
@@ -230,7 +237,7 @@ async function run() {
     const r = await loadWith(browser, {
       route: GEO,
       handler: (route) =>
-        route.fulfill({ status: 200, contentType: 'application/json', body: '{"slots":[{"position":{"x":1' }),
+        route.fulfill({ status: 200, contentType: 'application/json', body: '{"equipment":[{"position":{"x":1' }),
     });
     assertSafeDegradation('truncated JSON', r);
   }
@@ -243,7 +250,7 @@ async function run() {
         envelope: 'TEST-SOURCE-PATH',
         columns: 'not-an-array',
         zones: 42,
-        slots: { nope: true },
+        equipment: { nope: true },
         functional_zones: null,
         functional_zones_meta: 'TEST-PRIVATE-NOTE',
       }),
@@ -257,7 +264,7 @@ async function run() {
   {
     const r = await loadWith(browser, {
       route: GEO,
-      handler: json({ envelope: null, columns: [], zones: [], slots: [], functional_zones: [] }),
+      handler: json({ envelope: null, columns: [], zones: [], equipment: [], functional_zones: [] }),
     });
     assertSafeDegradation('empty but well-formed', r);
     check(r.machineMeshes === 0, 'empty geometry: no machine is invented');
@@ -271,14 +278,14 @@ async function run() {
         envelope: { width: 10, depth: 10, height: 5, clear_height_m: null },
         columns: [],
         zones: [],
-        slots: [
-          { slot_id: 'slot-a', status: 'UNMAPPED', ims_device_id: null },
-          { slot_id: 'slot-b', position: { x: null, y: 0, z: 1 }, footprint: { width: 1, depth: 1, height: 1 }, status: 'UNMAPPED', ims_device_id: null },
+        equipment: [
+          { id: 'eqp-a', rotation_deg: 0, status: 'UNMAPPED', ims_device_id: null },
+          { id: 'eqp-b', position: { x: null, y: 0, z: 1 }, rotation_deg: 0, footprint: { width: 1, depth: 1 }, footprint_status: 'OBSERVED_CAD', status: 'UNMAPPED', ims_device_id: null },
         ],
         functional_zones: [],
       }),
     });
-    assertSafeDegradation('slots without usable positions', r);
+    assertSafeDegradation('equipment without usable positions', r);
   }
   {
     // Duplicate identifiers on both sides. A duplicate must never become two
@@ -292,14 +299,14 @@ async function run() {
           { id: 'col-1', position: { x: 2, z: 2 }, footprint: { width: 1, depth: 1 }, confidence: 'high' },
         ],
         zones: [],
-        slots: [
-          { slot_id: 'dup', position: { x: 1, y: 0, z: 1 }, footprint: { width: 1, depth: 1, height: 1 }, status: 'UNMAPPED', ims_device_id: null, height_status: 'unknown' },
-          { slot_id: 'dup', position: { x: 3, y: 0, z: 3 }, footprint: { width: 1, depth: 1, height: 1 }, status: 'UNMAPPED', ims_device_id: null, height_status: 'unknown' },
+        equipment: [
+          { id: 'dup', position: { x: 1, y: 0, z: 1 }, rotation_deg: 0, footprint: { width: 1, depth: 1 }, footprint_status: 'OBSERVED_CAD', status: 'UNMAPPED', ims_device_id: null, height_status: 'unknown' },
+          { id: 'dup', position: { x: 3, y: 0, z: 3 }, rotation_deg: 0, footprint: { width: 1, depth: 1 }, footprint_status: 'OBSERVED_CAD', status: 'UNMAPPED', ims_device_id: null, height_status: 'unknown' },
         ],
         functional_zones: [],
       }),
     });
-    assertSafeDegradation('duplicate slot and column ids', r);
+    assertSafeDegradation('duplicate equipment and column ids', r);
   }
   {
     // An evidence tier and a schema version the client has never heard of.
@@ -311,7 +318,7 @@ async function run() {
         envelope: { width: 10, depth: 10, height: 5, clear_height_m: null },
         columns: [],
         zones: [],
-        slots: [],
+        equipment: [],
         functional_zones: [
           {
             id: 'zone-99',
@@ -338,23 +345,27 @@ async function run() {
         envelope: { width: 10, depth: 10, height: 5, clear_height_m: null },
         columns: [],
         zones: [],
-        slots: [
+        equipment: [
           {
-            slot_id: 'slot-x',
+            id: 'eqp-x',
             position: { x: 1, y: 0, z: 1 },
-            footprint: { width: 1, depth: 1, height: 1 },
+            rotation_deg: 0,
+            footprint: { width: 1, depth: 1 },
+            footprint_status: 'OBSERVED_CAD',
             status: 'UNMAPPED',
             ims_device_id: null,
             mes_machine_id: 'TEST-PROCESS-NAME',
             operator: 'TEST-OPERATOR-NAME',
             source_file: 'TEST-SOURCE-PATH',
+            cad_block: 'TEST-VENDOR-BLOCK-NAME',
+            cad_layer: 'TEST-PRIVATE-PROCESS-LAYER',
             height_status: 'unknown',
           },
         ],
         functional_zones: [],
       }),
     });
-    assertSafeDegradation('unmapped slot carrying hostile extra fields', r);
+    assertSafeDegradation('unmapped asset carrying hostile extra fields', r);
   }
 
   // ── Placement and state ──

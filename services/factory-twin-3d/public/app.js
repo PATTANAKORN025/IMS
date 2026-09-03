@@ -22,11 +22,8 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import {
-  FORM_CLASSIFICATION, FORMS, FORM_KEYS, PART_ROLES,
-  formKeyFor, partsFor, groupByForm,
-} from './machine-forms.js';
-import {
-  OPERATIONAL_STATUS, STATUS_ORDER, BACKED_STATUSES,
+  OPERATIONAL_STATUS, STATUS_ORDER, BACKED_STATUSES, DATA_QUALITY,
+  statusForMachineState,
 } from './operational-status.js';
 
 // Color/label per machine now come straight off /api/state's own
@@ -153,10 +150,9 @@ function requestShadowUpdate() {
 controls.addEventListener('change', requestRender);
 window.addEventListener('resize', requestRender);
 window.addEventListener('twin-pane-resize', requestRender);
-window.addEventListener('twin-mode', requestRender);
 document.addEventListener('visibilitychange', requestRender);
 
-// Target offset +14 on X (not 0) so the default view keeps the leftmost
+// Framing is derived from the measured bounds, not offset around chrome:
 // zone (Site A - Zone 1) clear of the fixed-position HUD sidebar,
 // which covers roughly the left 280px of the viewport and would otherwise
 // intercept clicks meant for the 3D canvas underneath it -- a real,
@@ -179,13 +175,15 @@ controls.target.set(14, 0.5, 0);
 const layers = {
   structural: new THREE.Group(), // envelope, footprint, grid, columns
   functional: new THREE.Group(), // functional/process zones
-  operational: new THREE.Group(), // machine meshes, equipment slot pads
-  telemetry: new THREE.Group(), // live state overlays (labels)
+  operational: new THREE.Group(), // CAD equipment pads and markers
 };
 layers.structural.name = 'structural';
 layers.functional.name = 'functional';
 layers.operational.name = 'operational';
-layers.telemetry.name = 'telemetry';
+// The TELEMETRY layer is gone. It was created for live state overlays drawn on
+// monitored devices, and nothing was ever added to it: no device has an
+// established position on this floor, so there is nothing to overlay. An empty
+// layer with a toggle in the panel promises a capability that does not exist.
 for (const g of Object.values(layers)) scene.add(g);
 
 // Sub-layers, because "structure" and "equipment" each bundle two things an
@@ -207,63 +205,44 @@ const sublayers = {
   // it is a declared presentation constant, the same convention already used
   // for columns, and the inspector says so per wall.
   walls: new THREE.Group(),
-  slots: new THREE.Group(), // observed equipment slots, no confirmed identity
-  // A third evidence layer, kept apart from the other two on purpose. Its
-  // FOOTPRINTS are measured; its HEIGHTS and everything vertical are a drawing
-  // convention with no source. Its own group so it can be switched off, and so
-  // nothing here can be mistaken for the observed slots underneath it.
-  presentation: new THREE.Group(),
+  // Equipment read out of the CAD as block references: an INSERT states a
+  // position and a rotation, so both are the drawing's own. Extent is a
+  // separate, weaker claim and many records carry none -- those draw as a
+  // position marker, never as a box, because a default box would put an
+  // invented extent on the floor next to a measured one.
+  equipment: new THREE.Group(),
 };
-// Off by default. The measured floor is what this view claims by default; the
-// presentation model is something the operator opts into.
+// The presentation sub-layer is GONE, along with the machine-form library that
+// fed it. It drew invented machine volumes over raster-derived positions: two
+// unmeasured claims stacked, rendered at the same visual weight as the CAD.
 
 for (const [name, g] of Object.entries(sublayers)) g.name = name;
-sublayers.presentation.visible = false;
 layers.structural.add(sublayers.shell, sublayers.columns, sublayers.walls);
-layers.operational.add(sublayers.slots, sublayers.presentation);
+layers.operational.add(sublayers.equipment);
 
-// ── View modes ──────────────────────────────────────────────
-// Two coordinate systems legitimately coexist in this scene and neither may
-// be moved to suit the other:
+// -- View modes --------------------------------------------------------
+// ONE coordinate system now. The scene once held two that could not be framed
+// together -- the measured building, and 23 monitored devices standing on a
+// synthetic grid beside it -- and the view buttons existed largely to choose
+// which of the two to frame badly. The synthetic grid is deleted, so every
+// framing below fits the same measured floor and they can only differ in
+// camera angle.
 //
-//   OPERATOR  the 23 monitored devices, positioned on a synthetic grid
-//             (is_simulated: true) because no real per-device position
-//             exists. Their framing is the hand-tuned one that predates the
-//             building geometry, kept byte-for-byte so the monitoring
-//             default is unchanged.
-//   BUILDING  the measured envelope, footprint, columns, slots and zones,
-//             which span far more ground than the synthetic device grid.
+// Switching only moves the camera. No geometry, position, layer visibility or
+// API result is touched, and the regression takes a byte-level coordinate
+// snapshot across every switch to keep that true.
+// PLAN is the default framing and the primary view. Physical accuracy is what
+// this twin is for right now, and a straight-down CAD plan is the framing in
+// which a wall, a column and a machine can be checked against the drawing. The
+// 3D framings are derived from the same geometry and the same coordinates, so
+// they can never disagree with the plan about where anything is.
 //
-// Framing one well necessarily frames the other badly. That is a real
-// property of the data, not a bug, so it is exposed as an explicit choice
-// rather than resolved by moving machines or rescaling geometry -- either of
-// which would invent a spatial relationship the evidence does not support.
-//
-// Switching only moves the camera. No geometry, position, layer visibility
-// or API result is touched.
-const OPERATOR_VIEW = Object.freeze({
-  // The values already in use, preserved exactly (see the camera/controls
-  // comments above for why they were chosen).
-  position: { x: 18, y: 52, z: 46 },
-  target: { x: 14, y: 0.5, z: 0 },
-});
-let buildingView = null; // derived from real bounds once geometry arrives
-let overviewView = null; // derived from the measured envelope once it arrives
-// Straight-down plan framing: the CAD-derived 2D floor plan. Same scene, same
-// geometry, same coordinates -- only the camera differs, so the plan and the
-// model can never disagree about where a wall is.
-let planView = null;
-// Factory overview is the default framing, not the tight operator camera. The
-// first question this view answers is "what is the state of the floor", which
-// needs the whole floor on screen; the operator framing is one click away and
-// unchanged. The camera is the ONLY thing this decides -- no layer, no evidence
-// state and no coordinate depends on which view is active.
-//
-// It falls back to the operator camera on its own: `overview` is derived from
-// the measured envelope, so before that geometry loads (or on a deployment that
-// has none) applyView('overview') returns false and the fixed operator camera
-// is what the user gets.
-let activeView = 'overview';
+// The hand-tuned OPERATOR camera is GONE. It framed the synthetic device grid
+// that no longer exists, so it framed empty floor.
+let buildingView = null; // fitted to the measured envelope, oblique
+let overviewView = null; // fitted to the whole floor, oblique
+let planView = null;     // straight down, the 2D CAD floor plan
+let activeView = 'plan';
 
 // Bounds each derived view was fitted from. Kept so a resize (or the arrival
 // of the second data source) can refit rather than leave framing computed for
@@ -278,39 +257,18 @@ let buildingBounds = null; // measured envelope
 // viewer can actually see is narrower than the canvas. Fitting to the full
 // width puts the model half behind the panel. Measured from the element rather
 // than assumed, because the panel's width is set in CSS and has changed twice.
+// The command-centre chrome DOCKS -- header, status strip and drawer are grid
+// tracks, not overlays -- so the scene pane's own rectangle is the usable area.
+// The old measurement subtracted a floating panel's width from the canvas;
+// there is no floating panel any more, and subtracting a phantom one framed
+// the floor off-centre.
 function usableViewport() {
-  // Measured against the SCENE PANE, not the window. In side-by-side the pane
-  // is half the window wide and starts to the right of the panel, so a
-  // window-based measurement reserves a panel that is not over this pane and
-  // frames the floor off its own half.
   const rect = container.getBoundingClientRect();
   const w = Math.max(rect.width, 1);
   const h = Math.max(rect.height, 1);
-  const hud = document.getElementById('hud');
-  const banner = document.getElementById('simulated-banner');
-  const hudRect = hud && !hud.hidden ? hud.getBoundingClientRect() : null;
-  const bannerRect = banner && !banner.hidden ? banner.getBoundingClientRect() : null;
-  // Only the part of each overlay that actually covers this pane.
-  const left = hudRect ? Math.max(0, Math.min(hudRect.right, rect.right) - rect.left) : 0;
-  const top = bannerRect ? Math.max(0, Math.min(bannerRect.bottom, rect.bottom) - rect.top) : 0;
-  // Never let a large panel on a small pane collapse the usable area to
-  // nothing: below this the overlay is the problem, not the framing.
-  const usableW = Math.max(w - left, w * 0.35);
-  const usableH = Math.max(h - top, h * 0.5);
-  return { w, h, left, top, usableW, usableH };
+  return { w, h, left: 0, top: 0, usableW: w, usableH: h };
 }
 
-// Derives a camera placement that fits a bounding box, rather than hardcoding
-// coordinates: the building's extent is known from the data, so the framing
-// should follow it and stay correct if the evidence ever changes.
-//
-// The fit is measured, not computed from a formula. An oblique camera sees a
-// box's silhouette, not its axis-aligned extent, so the trigonometric fit that
-// used to live here under-estimated the required distance and clipped the
-// corners of the floor -- worst at the shallow angles that make the floor
-// readable. This projects the eight corners through a trial camera and scales
-// until they land inside the usable rectangle, which is exact for any angle,
-// any aspect and any overlay width.
 function frameBounds({ cx, cz, width, depth, height = 0 }) {
   const view = usableViewport();
   // The model stays centred on the canvas -- moving it sideways would mean a
@@ -347,9 +305,12 @@ function frameBounds({ cx, cz, width, depth, height = 0 }) {
   const tanV = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
   let dist = Math.max(width / 2 / (tanV * Math.max(camera.aspect, 0.0001)), depth / 2 / tanV);
   const v = new THREE.Vector3();
-  // Six passes is far more than convergence needs; it is cheap and runs only
-  // when the data or the aspect changes, never per frame.
-  for (let pass = 0; pass < 6; pass++) {
+  // Twelve passes. Six was not always enough: the oblique view foreshortens
+  // the floor, so the first estimate can start far outside the target band and
+  // the loop would run out of passes still under-filling the frame -- which is
+  // what left the model floating in the middle of a mostly empty screen. This
+  // is cheap and runs only when the data or the aspect changes, never per frame.
+  for (let pass = 0; pass < 12; pass++) {
     probe.position.copy(dir).multiplyScalar(dist).add(target);
     probe.lookAt(target);
     probe.updateMatrixWorld(true);
@@ -366,6 +327,20 @@ function frameBounds({ cx, cz, width, depth, height = 0 }) {
     dist *= Math.max(over, 0.35);
   }
 
+  // NOT CENTRED ON THE PROJECTED BOX, deliberately.
+  //
+  // An oblique perspective view projects a box asymmetrically -- the near
+  // corners land further from centre than the far ones -- so the model sits a
+  // little low in frame and the fit stops when the worst corner reaches the
+  // margin. Correcting that by sliding the target along the camera's own axes
+  // was tried and made it worse: the shift changes which corner is worst,
+  // which changes the required distance, and the two chase each other. The
+  // measured asymmetry is about 0.29 vs 0.89 in NDC, which costs some screen
+  // area and clips nothing. Left as it is rather than shipped half-solved.
+  //
+  // This matters little in practice: 2D plan is the default and the primary
+  // view, and it fits exactly because a straight-down camera has no
+  // foreshortening to correct.
   const pos = dir.clone().multiplyScalar(dist).add(target);
   return {
     position: { x: pos.x, y: pos.y, z: pos.z },
@@ -381,8 +356,6 @@ function frameBounds({ cx, cz, width, depth, height = 0 }) {
 // it. "Show me everything" now has a single honest answer: the CAD floor.
 // Recomputes every derived view from the bounds currently known. Called when
 // either data source arrives and on resize, because the fit depends on aspect.
-// OPERATOR_VIEW is never recomputed: it is the hand-tuned monitoring default
-// and must stay byte-for-byte what it was.
 function refitViews() {
   if (buildingBounds) buildingView = frameBounds(buildingBounds);
   // The overview once had to frame the building AND a synthetic device grid
@@ -390,14 +363,26 @@ function refitViews() {
   const combined = buildingBounds;
   overviewView = combined ? frameBounds(combined) : null;
   if (buildingBounds) {
-    // Directly overhead, looking straight down. A tight vertical FOV keeps the
-    // projection close to orthographic, so the result reads as a drawing rather
-    // than as a photograph of a model.
-    const fit = frameBounds(buildingBounds);
-    const h = Math.hypot(fit.position.x - buildingBounds.cx,
-      fit.position.y, fit.position.z - buildingBounds.cz);
+    // Straight down, and fitted for a straight-down camera rather than derived
+    // from the oblique one. The oblique fit's distance covers the floor's
+    // DIAGONAL as seen at an angle; reusing it overhead framed the plan at
+    // roughly half the screen it could have had, with the drawing marooned in
+    // dead space. The height below is the exact one at which the floor's own
+    // extent fills the frame, less a 6% margin so the outer wall is not flush
+    // against the edge.
+    const view = usableViewport();
+    const aspect = Math.max(view.w / view.h, 0.0001);
+    const tanV = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
+    const MARGIN = 0.94;
+    const h = Math.max(
+      (buildingBounds.depth / 2) / (tanV * MARGIN),
+      (buildingBounds.width / 2) / (tanV * aspect * MARGIN),
+    );
     planView = {
-      position: { x: buildingBounds.cx, y: h * 1.02, z: buildingBounds.cz + 0.001 },
+      // The 0.001 nudge on z keeps the view direction off the exact -Y axis,
+      // which OrbitControls treats as degenerate: without it the camera's up
+      // vector is undefined and the plan can flip on the first drag.
+      position: { x: buildingBounds.cx, y: h, z: buildingBounds.cz + 0.001 },
       target: { x: buildingBounds.cx, y: 0, z: buildingBounds.cz },
     };
   }
@@ -414,12 +399,12 @@ function refitViews() {
       ? 'Unavailable until the measured building geometry loads'
       : '';
   }
-  // Apply the active framing once its geometry exists. The operator camera is
-  // a fixed constant and needs no refit; the derived ones do.
-  if (activeView !== 'operator') applyView(activeView);
+  // Apply the active framing once its geometry exists. Every framing is
+  // derived from the measured bounds now, so every one of them needs the refit.
+  applyView(activeView);
 }
 
-const VIEWS = () => ({ operator: OPERATOR_VIEW, building: buildingView, overview: overviewView, plan: planView });
+const VIEWS = () => ({ plan: planView, overview: overviewView, building: buildingView });
 
 function applyView(name) {
   const v = VIEWS()[name];
@@ -665,124 +650,15 @@ function buildStructuralGrid(grid) {
   return xs.length + zs.length;
 }
 
-// ── Presentation machine model ───────────────────────
+// The PRESENTATION MACHINE FORMS ARE GONE -- the form library, the per-form
+// InstancedMeshes, the census and the layer toggle with them.
 //
-// PRESENTATION_ONLY. Read this, and the header of machine-forms.js, before
-// changing anything below.
-//
-// The floor holds observed equipment positions whose width and depth were
-// measured from the drawing and whose HEIGHT IS NOT IN EVIDENCE -- a plan view
-// carries no elevation. Those positions render as flat pads in the slots layer
-// precisely so their silhouette cannot imply a height nobody measured.
-//
-// This layer deliberately draws a height anyway, because a floor of flat grey
-// pads communicates nothing to someone trying to understand the space. What is
-// carried from evidence is each machine's footprint, its position, and which
-// colour-separated drawing layer its symbol came from. Everything vertical --
-// the heights, the proportions, the fact that a machine is box-shaped at all --
-// is a drawing convention invented here.
-//
-// Machines are NOT all one shape. The sheet draws equipment on six colour
-// layers, and members of a layer repeat one symbol; that grouping is OBSERVED
-// and is the only input to the form choice. The form itself is invented, and
-// the names are shape words rather than process words for the reason set out in
-// machine-forms.js: a form called "drilling machine" would assert a mapping no
-// evidence in this project supports.
-//
-// Built as InstancedMesh, one per (form, part). That is 23 objects for the
-// whole floor; drawn as individual meshes the same model would be roughly a
-// thousand meshes and a thousand draw calls.
-
-const presentationMeshes = [];
-let presentationBuilt = false;
-// Recorded at build time so the inspector and the regression report what was
-// actually instanced, not what a second pass over the data would say.
-let presentationCounts = {};
-
-// Materials are keyed by PART ROLE rather than by form. Six forms therefore
-// cost four materials, and -- more to the point -- a per-form palette would
-// read as a colour code for something, which is exactly what this layer must
-// not look like. Forms are told apart by silhouette, never by colour.
-const ROLE_MATERIAL = Object.freeze({
-  plinth: { color: 0x1c2431, roughness: 0.95, metalness: 0.10 },
-  body: { color: 0x33414f, roughness: 0.72, metalness: 0.15 },
-  head: { color: 0x4a5a6b, roughness: 0.50, metalness: 0.18 },
-  accent: { color: 0x5b6b7d, roughness: 0.45, metalness: 0.20 },
-});
-
-/**
- * Builds the presentation machines from the measured slot footprints.
- *
- * One InstancedMesh per (form, part). Slots are grouped by form first so each
- * mesh knows its instance count before allocation.
- */
-function buildPresentationMachines(slots) {
-  if (presentationBuilt) return 0;
-  const groups = groupByForm(slots);
-  const total = FORM_KEYS.reduce((n, k) => n + groups.get(k).length, 0);
-  if (total === 0) return 0;
-  presentationCounts = presentationCensus(slots);
-
-  const unit = new THREE.BoxGeometry(1, 1, 1);
-  const materials = {};
-  for (const role of PART_ROLES) {
-    materials[role] = new THREE.MeshStandardMaterial(ROLE_MATERIAL[role]);
-  }
-
-  const m = new THREE.Matrix4();
-  for (const formKey of FORM_KEYS) {
-    const members = groups.get(formKey);
-    if (members.length === 0) continue;          // no mesh for an absent form
-    const def = FORMS[formKey];
-
-    def.parts.forEach((part, partIndex) => {
-      const mesh = new THREE.InstancedMesh(unit, materials[part.role], members.length);
-      mesh.name = `presentation-${formKey}-${partIndex}`;
-      // Named and classified on the object itself, so a scene dump, a
-      // screenshot review or a test cannot mistake this for measured geometry.
-      mesh.userData.presentation = {
-        classification: FORM_CLASSIFICATION,
-        form: formKey,
-        form_label: def.label,
-        part: part.role,
-        part_index: partIndex,
-        note: 'Form and every vertical dimension are a drawing convention, not a measurement. '
-          + 'The grouping behind the form is the drawing layer the symbol came from.',
-      };
-      // Casting is a lighting property, not a geometry claim: it changes how
-      // a form is shaded, never where it is. Only PRESENTATION_ONLY bodies
-      // cast -- the measured slot pads must not gain a silhouette they never
-      // had.
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      presentationMeshes.push(mesh);
-      sublayers.presentation.add(mesh);
-
-      members.forEach((slot, i) => {
-        const box = partsFor(slot)[partIndex];
-        m.makeScale(box.w, box.h, box.d);
-        m.setPosition(box.x, box.y, box.z);
-        mesh.setMatrixAt(i, m);
-      });
-      mesh.instanceMatrix.needsUpdate = true;
-    });
-  }
-
-  presentationBuilt = true;
-  requestShadowUpdate();
-  return total;
-}
-
-/** Census by form, for the inspector and the regression. Counts only. */
-function presentationCensus(slots) {
-  const groups = groupByForm(slots);
-  const out = {};
-  for (const key of FORM_KEYS) {
-    const n = groups.get(key).length;
-    if (n > 0) out[key] = n;
-  }
-  return out;
-}
+// They drew invented machine volumes on top of raster-derived positions: a
+// shape nobody measured, standing at a place read off a scan of a print,
+// rendered at the same visual weight as CAD geometry beside it. Equipment now
+// comes from the drawing's own block references, and where the drawing does
+// not establish an extent the renderer draws a position marker and says
+// UNRESOLVED rather than supplying a body.
 
 // ── Interior walls and partitions (CAD) ──────────────────────
 // EVIDENCE SPLIT, and it is not a fine distinction: a wall's plan position and
@@ -917,7 +793,7 @@ function buildWallLines(lines) {
   return list.length;
 }
 
-function buildPhysicalSlots(geometry) {
+function buildFloor(geometry) {
   const envelope = geometry && typeof geometry === 'object' ? geometry.envelope : null;
   // A partially-valid envelope is not a smaller envelope, it is an unknown
   // one. Drawing from it would state a measurement nobody made.
@@ -926,7 +802,7 @@ function buildPhysicalSlots(geometry) {
 
   const columns = asArray(geometry.columns);
   const zones = asArray(geometry.zones);
-  const slots = asArray(geometry.slots);
+  const equipment = asArray(geometry.equipment);
 
   // Building framing comes from the measured envelope, not from constants.
   // The bounds are retained so a resize can refit for the new aspect ratio.
@@ -951,7 +827,6 @@ function buildPhysicalSlots(geometry) {
   buildWalls(geometry.walls, envelope);
   buildWallLines(geometry.wall_lines);
   buildOpenings(geometry.openings);
-  buildPresentationMachines(slots);
 
   // Structural columns detected from the drawing (see the private geometry
   // file's column_detection block for method and thresholds).
@@ -1002,41 +877,61 @@ function buildPhysicalSlots(geometry) {
     layers.functional.add(zoneOutline);
   }
 
-  // Physical machine positions digitized from the drawing. Plan width/depth
-  // are measured from the drawn symbol; HEIGHT IS NOT IN EVIDENCE -- a plan
-  // view carries no equipment elevation, so the private file emits none and
-  // the API's existing 1 m fallback applies. That 1 m is a RENDERING
-  // DEFAULT, not a measurement, which is why these are drawn as low flat
-  // pads rather than machine-shaped volumes: the silhouette must not imply
-  // a height nobody measured.
+  // EQUIPMENT, read out of the CAD as block references.
   //
-  // MEDIUM-confidence detections render dimmer than HIGH, the same
-  // discipline used for columns and functional zones.
-  for (const slot of slots) {
-    // A slot that cannot be placed is skipped, never placed at a stand-in
-    // coordinate: an invented position is worse than a missing one.
-    if (!slot || !finitePoint(slot.position, true)) continue;
-    const fp = slot.footprint;
-    if (!fp || !finite(fp.width) || !finite(fp.depth) || !finite(fp.height)) continue;
-    const h = fp.height;
-    const geom = boxGeometry(fp.width, h, fp.depth);
-    // Flat, dim, unlit-looking gray -- deliberately unlike the bright,
-    // state-colored real device boxes. No label, no userData.deviceId,
-    // never pushed to machineMeshes: nothing about this mesh is clickable
-    // or implies a live device.
-    const mat = basicMaterial(0x334155, slot.confidence === 'medium' ? 0.32 : 0.5);
+  // Two claims of different strength live on one record and are drawn
+  // differently on purpose:
+  //
+  //   POSITION and ROTATION are MEASURED_CAD. An INSERT entity states an
+  //   insertion point and a rotation angle; nothing is traced, snapped,
+  //   averaged or fitted, so left/right placement and orientation are the
+  //   drawing's own. This is what fixes the complaint that machines sat in the
+  //   wrong place and faced the wrong way: the previous layer took both from a
+  //   raster digitisation of a printed sheet.
+  //
+  //   EXTENT is OBSERVED_CAD at best, and for most records it is UNRESOLVED. A
+  //   block's bounding box measures everything the block draws, which for many
+  //   machines includes a service envelope or a swing arc. Where that box
+  //   swallows a neighbour the extractor withholds it, and the renderer draws a
+  //   small flat marker instead of a body. NO DEFAULT BOX. A nominal footprint
+  //   would be an invented dimension wearing the shape of a measured one.
+  //
+  // HEIGHT is not in evidence for any of them -- a plan view carries no
+  // elevation -- so everything here is a flat pad on the floor plane, never a
+  // volume that implies a height nobody read.
+  for (const item of equipment) {
+    if (!item || !finitePoint(item.position, true)) continue;
+    const fp = item.footprint;
+    const resolved = item.footprint_status === 'OBSERVED_CAD'
+      && fp && finite(fp.width) && finite(fp.depth);
+    const w = resolved ? fp.width : UNRESOLVED_MARKER_M;
+    const d = resolved ? fp.depth : UNRESOLVED_MARKER_M;
+    const geom = boxGeometry(w, EQUIPMENT_PAD_H, d);
+    // A resolved extent reads as a solid pad; an unresolved one reads as a
+    // faint marker. The visual difference is the point: an operator must be
+    // able to see, without opening anything, which shapes are measurements.
+    // Contrast is load-bearing here, not decoration. On a dark plan a pad at
+    // the floor's own value is invisible, and an operator cannot check a
+    // machine they cannot see. A measured extent reads as a solid, clearly
+    // lighter block; an unresolved one reads as a dim, obviously uniform
+    // marker. The two must never be confusable, which is why they differ in
+    // value and not only in size.
+    const mat = basicMaterial(
+      resolved ? 0x7d94b8 : 0x4a5a70,
+      resolved ? (item.confidence === 'high' ? 0.9 : 0.72) : 0.5,
+    );
     const mesh = new THREE.Mesh(geom, mat);
-    // Inspectable, but deliberately NOT a machine: kept out of
-    // machineMeshes, carries no userData.deviceId, and gets no drill-down.
-    // Only the evidence the API actually served is attached -- there is no
-    // machine name, no MES id and no IMS id to attach, and none is invented.
-    mesh.userData.slot = slot;
-    slotMeshes.push(mesh);
-    // Sit the pad ON the floor. position.y is the slot's floor reference (0),
-    // and a box is centred on its origin, so without the half-height offset
-    // the lower half renders below the floor plane.
-    mesh.position.set(slot.position.x, slot.position.y + h / 2, slot.position.z);
-    sublayers.slots.add(mesh);
+    // Rotation is applied about Y because the CAD angle is a plan rotation.
+    // The sign is negated: CAD measures counter-clockwise in a right-handed
+    // XY plane, and this scene's Z axis runs the other way, so an unnegated
+    // angle mirrors every machine's orientation.
+    if (finite(item.rotation_deg)) {
+      mesh.rotation.y = -item.rotation_deg * Math.PI / 180;
+    }
+    mesh.userData.equipment = item;
+    equipmentMeshes.push(mesh);
+    mesh.position.set(item.position.x, item.position.y + EQUIPMENT_PAD_H / 2, item.position.z);
+    sublayers.equipment.add(mesh);
   }
 }
 
@@ -1270,7 +1165,16 @@ function buildFunctionalZones(geometry) {
 // A slot is an observed position with no confirmed identity. It can never
 // acquire a drill-down, a live state or a device id, and now there is no
 // machine array for it to be confused with.
-const slotMeshes = []; // THREE.Mesh[], one per observed slot, userData.slot set
+// Plan thickness of an equipment pad. A rendering constant, not a measurement:
+// no equipment elevation exists anywhere in this drawing, so the pad is drawn
+// deliberately thin to keep it reading as a footprint rather than a machine.
+const EQUIPMENT_PAD_H = 0.06;
+// The mark drawn where the CAD establishes a position but not an extent. A
+// fixed, obviously-uniform square: it must not be mistakable for a measurement,
+// which is exactly why every one of them is the same size.
+const UNRESOLVED_MARKER_M = 0.9;
+
+const equipmentMeshes = []; // THREE.Mesh[], one per CAD asset, userData.equipment set
 const columnMeshes = []; // THREE.Mesh[], one per detected column, userData.column set
 let latestStateById = new Map(); // deviceId -> state row from /api/state
 // The two fetches race: geometry can land after the first poll, and the roll-up
@@ -1334,10 +1238,10 @@ function pickFrom(meshes, key) {
   return hits.length > 0 ? hits[0].object.userData[key] : null;
 }
 
-// Slots are the only pickable operational geometry now.
-function pickSlot(event) {
+// CAD equipment is the only pickable operational geometry now.
+function pickEquipment(event) {
   aimRay(event);
-  return pickFrom(slotMeshes, 'slot');
+  return pickFrom(equipmentMeshes, 'equipment');
 }
 
 const inspectorEl = document.getElementById('inspector');
@@ -1388,7 +1292,7 @@ async function loadDiagnostics() {
     ['Cached materials', res.materials],
     ['Machine meshes', 0],
     ['Column meshes', columnMeshes.length],
-    ['Slot meshes', slotMeshes.length],
+    ['Equipment meshes', equipmentMeshes.length],
     ['Visible layers', Object.values(layers).filter((g) => g.visible).length],
     ['Viewport', `${window.innerWidth}×${window.innerHeight}`],
     ['Active view', activeView],
@@ -1437,65 +1341,61 @@ document.getElementById('diagnostics')?.addEventListener('toggle', (ev) => {
 // never summed: 242 observed positions are not 242 confirmed machines, and a
 // single "equipment" figure would say exactly that. Confirmed mappings is
 // listed even though it is zero -- especially because it is zero.
+let equipmentCensus = { total: 0, resolved: 0, unresolved: 0, mapped: 0 };
+
 function updateEvidenceSummary(geo, zonesDrawn) {
   // Counts are read defensively for the same reason the renderer is: a
   // malformed response must produce an honest zero, not an exception that
   // leaves the evidence panel showing the previous, now-wrong figures.
   const columnList = Array.isArray(geo && geo.columns) ? geo.columns : [];
-  const slotList = Array.isArray(geo && geo.slots) ? geo.slots : [];
+  const equipmentList = Array.isArray(geo && geo.equipment) ? geo.equipment : [];
   const columns = columnList.length;
-  const slots = slotList.length;
   // Provenance is counted, not assumed. A column read from the CAD and a column
   // traced off a raster scan are both "columns"; only the record says which,
   // and the panel must not describe one as the other.
   const cadColumns = columnList.filter((c) => c && c.geometry_status === 'MEASURED_CAD').length;
   const wallList = Array.isArray(geo && geo.walls) ? geo.walls : [];
   const openingList = Array.isArray(geo && geo.openings) ? geo.openings : [];
-  const confirmed = slotList.filter((s) => s && s.ims_device_id).length;
+  const resolved = equipmentList.filter((e) => e && e.footprint_status === 'OBSERVED_CAD').length;
+  const unresolved = equipmentList.length - resolved;
+  const confirmed = equipmentList.filter((e) => e && e.ims_device_id).length;
   const meta = geo && typeof geo.functional_zones_meta === 'object' ? geo.functional_zones_meta : null;
   const withheld = meta && Number.isFinite(meta.withheld) ? meta.withheld : 0;
 
-  // The top banner used to be static, and its text ("not derived from any real
-  // floor plan or survey") was written when this view had no measured geometry
-  // at all. It is now false in the OTHER direction: the building, its columns
-  // and its equipment positions are digitized from the architectural plan, and
-  // a page-wide banner denying that is as misleading as one overclaiming.
-  //
-  // What is still simulated is narrower and needs saying precisely: the
-  // monitored devices have no surveyed position. So the banner is written from
-  // the response, and says which half is which.
-  const banner = document.getElementById('simulated-banner');
-  if (banner) {
-    const measured = columns > 0 || slots > 0;
-    const cad = cadColumns > 0 || wallList.length > 0;
-    banner.textContent = measured
-      ? `${cad ? 'CAD FLOOR' : 'MEASURED FLOOR'} — ${columns} columns`
-        + `${wallList.length > 0 ? `, ${wallList.length} walls` : ''} and ${slots} equipment `
-        + `positions are ${cad ? 'read from the AutoCAD source' : 'digitized from the architectural plan'}. `
-        + `No monitored device is drawn on this floor: ${confirmed} confirmed `
-        + 'physical-to-IMS mappings, so every asset here is UNMAPPED.'
-      : 'SIMULATED LAYOUT — Floor 1 (default grouping). No measured floor geometry is '
-        + 'deployed here, so machine and zone positions are placeholders, not derived '
-        + 'from any real floor plan or survey.';
-    banner.classList.toggle('banner-measured', measured);
+  equipmentCensus = {
+    total: equipmentList.length, resolved, unresolved, mapped: confirmed,
+  };
+
+  // The header's data-quality line, written from the response rather than
+  // fixed in the markup. It has been wrong in both directions before: first
+  // denying measured geometry that existed, then implying CAD extents that did
+  // not. It now states the split, because the split is the honest summary.
+  const quality = document.getElementById('data-quality');
+  if (quality) {
+    quality.textContent = equipmentList.length > 0 || columns > 0
+      ? `CAD · ${columns} columns · ${wallList.length} walls · `
+        + `${equipmentList.length} assets (${resolved} with a measured extent, `
+        + `${unresolved} UNRESOLVED) · ${confirmed} confirmed IMS mappings`
+      : 'NO MEASURED GEOMETRY DEPLOYED — nothing on this floor is a measurement.';
+    quality.classList.toggle('quality-measured', columns > 0);
   }
 
   const setCount = (layer, text) => {
     const el = document.querySelector(`#layer-controls [data-count="${layer}"]`);
     if (el) el.textContent = text;
   };
-  // Each count names its evidence class, because the number alone is
-  // ambiguous: 242 and 23 are both "equipment" but not the same claim.
   setCount('shell', '(measured envelope, floor plate, grid)');
   setCount('columns', cadColumns > 0
     ? `(${columns} MEASURED_CAD)` : `(${columns} OBSERVED)`);
   setCount('walls', `(${wallCount} walls MEASURED_CAD plan, `
     + `${openingCount} openings; height PRESENTATION_ONLY)`);
   setCount('functional', `(${zonesDrawn} validated, ${withheld} withheld)`);
+  setCount('equipment', `(${equipmentList.length} MEASURED_CAD positions, `
+    + `${unresolved} extents UNRESOLVED)`);
 
-  setCount('slots', `(${slots} OBSERVED, ${confirmed} CONFIRMED)`);
-
-  factoryCounts = { assets: slots, mapped: confirmed, zones: zonesDrawn };
+  factoryCounts = {
+    assets: equipmentList.length, mapped: confirmed, zones: zonesDrawn, unresolved,
+  };
   updateFactoryStatus(lastStateRows);
 
   const el = document.getElementById('evidence-summary');
@@ -1504,8 +1404,10 @@ function updateEvidenceSummary(geo, zonesDrawn) {
     ['Structural columns', columns, cadColumns > 0 ? 'MEASURED_CAD' : 'OBSERVED'],
     ['Interior walls', wallList.length, 'MEASURED_CAD plan, PRESENTATION height'],
     ['Doors, windows, air showers', openingList.length, 'OBSERVED_CAD'],
-    ['Observed equipment slots', slots, 'OBSERVED'],
-    ['Monitored devices drawn', 0, 'NONE — no established position'],
+    ['Equipment positions', equipmentList.length, 'MEASURED_CAD'],
+    ['Equipment extents measured', resolved, 'OBSERVED_CAD'],
+    ['Equipment extents unresolved', unresolved, 'UNRESOLVED'],
+    ['Raster-derived positions drawn', 0, 'NONE — superseded by the CAD'],
     ['Confirmed physical mappings', confirmed, confirmed === 0 ? 'NONE — no authoritative record' : 'CONFIRMED'],
     ['Zones withheld as unvalidated', withheld, 'WITHHELD'],
   ];
@@ -1539,31 +1441,38 @@ function render(badge, badgeClass, title, rows, note) {
   inspectorEl.hidden = false;
 }
 
-function showSlotInspector(slot) {
-  const mapped = slot.status === 'IMS_CONNECTED' && slot.ims_device_id;
+function showEquipmentInspector(item) {
+  const mapped = item.status === 'IMS_CONNECTED' && item.ims_device_id;
+  const resolved = item.footprint_status === 'OBSERVED_CAD' && item.footprint;
   render(
     mapped ? 'CONFIRMED' : 'UNMAPPED',
     mapped ? 'badge-confirmed' : 'badge-unmapped',
-    'Observed equipment slot',
+    'Equipment (CAD block reference)',
     [
-      ['Slot', slot.slot_id],
-      ['Identity', mapped ? `mapped to ${slot.ims_device_id}` : 'no confirmed machine'],
-      ['Mapping status', slot.status],
-      ['Confidence', slot.confidence ?? 'unknown'],
-      ['Source', slot.source ?? 'unknown'],
-      ['Geometry status', slot.geometry_status ?? 'unknown'],
-      ['Position x / z', `${slot.position.x} / ${slot.position.z} m`],
-      ['Measured width', slot.footprint ? `${slot.footprint.width} m` : 'unknown'],
-      ['Measured depth', slot.footprint ? `${slot.footprint.depth} m` : 'unknown'],
-      ['Height', slot.height_status === 'unknown' ? 'unknown — not in evidence' : (slot.height_status ?? 'unknown')],
-      ['Zone', slot.zone_id ?? 'none — outside every validated zone'],
-      ['Detected on layer', slot.detection ? slot.detection.layer : 'unknown'],
+      ['Asset', item.id],
+      ['Identity', mapped ? `mapped to ${item.ims_device_id}` : 'no confirmed machine'],
+      ['Mapping status', item.status],
+      ['Position x / z', `${item.position.x} / ${item.position.z} m`],
+      ['Rotation', item.rotation_deg == null ? 'unknown' : `${item.rotation_deg}°`],
+      ['Position evidence', item.geometry_status ?? 'unknown'],
+      ['Footprint', resolved
+        ? `${item.footprint.width} × ${item.footprint.depth} m`
+        : 'UNRESOLVED — not established by the CAD'],
+      ['Footprint evidence', item.footprint_status ?? 'unknown'],
+      ['Confidence', item.confidence ?? 'unknown'],
+      ['Source', item.source ?? 'unknown'],
+      ['Height', item.height_status === 'unknown' ? 'unknown — not in evidence' : (item.height_status ?? 'unknown')],
+      ['Zone', item.zone_id ?? 'none — outside every validated zone'],
     ],
-    mapped
-      ? null
-      : 'Position observed on the engineering drawing. No machine identity is claimed: no authoritative ' +
-        'record relates observed positions to monitored devices, so this slot carries no device id, no ' +
-        'MES id and no live state.'
+    resolved
+      ? 'Placed by a CAD block reference: the insertion point and the rotation are the '
+        + "drawing's own, not traced. Extent is the block's bounding box, which measures "
+        + 'everything the block draws. No machine identity is claimed — the CAD names '
+        + 'blocks, not assets.'
+      : 'Placed by a CAD block reference, so position and rotation are measured. Its extent '
+        + 'is NOT established: the block bounding box overlaps a neighbour, meaning it '
+        + 'measures more than the machine. A marker is drawn rather than an invented '
+        + 'footprint.'
   );
 }
 
@@ -1615,7 +1524,7 @@ function showColumnInspector(col) {
 // byte-level rather than float-tolerant.
 function snapshotCoordinates() {
   const out = [];
-  for (const group of [slotMeshes, columnMeshes]) {
+  for (const group of [equipmentMeshes, columnMeshes]) {
     for (const m of group) {
       out.push(`${m.position.x.toFixed(6)},${m.position.y.toFixed(6)},${m.position.z.toFixed(6)}`);
     }
@@ -1623,7 +1532,7 @@ function snapshotCoordinates() {
   return out.join('|');
 }
 
-function hideSlotInspector() {
+function hideEquipmentInspector() {
   if (inspectorEl) inspectorEl.hidden = true;
   // Clear the hover cache too: the panel is now hidden, so the next hover over
   // the same object must re-render rather than assume it is still displayed.
@@ -1634,9 +1543,9 @@ renderer.domElement.addEventListener('click', (event) => {
   // No machine drill-down from the scene: nothing in the scene IS a machine.
   // A drill-down would have to be reached from a position, and no position on
   // this floor is tied to a device by an authoritative record.
-  const slot = pickSlot(event);
-  if (slot) showSlotInspector(slot);
-  else hideSlotInspector();
+  const item = pickEquipment(event);
+  if (item) showEquipmentInspector(item);
+  else hideEquipmentInspector();
 });
 
 function pickColumn(event) {
@@ -1675,14 +1584,14 @@ function handleHover(event) {
   // result: the three passes previously recomputed the identical ray.
   aimRay(event);
 
-  const slot = pickFrom(slotMeshes, 'slot');
-  if (slot) {
+  const item = pickFrom(equipmentMeshes, 'equipment');
+  if (item) {
     // 'help' rather than 'pointer': these open an evidence panel, they do not
     // navigate. The cursor must not promise a drill-down that does not exist.
     setCursor('help');
-    if (lastInspected !== slot) {
-      lastInspected = slot;
-      showSlotInspector(slot);
+    if (lastInspected !== item) {
+      lastInspected = item;
+      showEquipmentInspector(item);
     }
     return;
   }
@@ -1718,7 +1627,7 @@ const summaryLine = document.getElementById('summary-line');
 
 function stateRowHtml(row) {
   const color = row.state_color || `#${DEFAULT_MACHINE_COLOR.toString(16).padStart(6, '0')}`;
-  const label = row.state_label || 'Undefine';
+  const label = row.state_label || 'Undefined';
   const alarmText = row.alarm ? `${row.alarm.count} ${row.alarm.count === 1 ? 'ALARM' : 'ALARMS'} · ${row.alarm.owner} · ${row.alarm.elapsed}` : '—';
   // The synthetic grid reference is gone with the grid that produced it.
   const gridRefText = 'UNMAPPED';
@@ -1759,6 +1668,7 @@ function applyState(payload) {
   const alarmCount = rows.filter((r) => r.machine_state === 'DOWN').length;
   summaryLine.textContent = `${rows.length} devices · ${alarmCount} in ALARM · none placed on this floor`;
   updateFactoryStatus(rows);
+  renderStatusStrip(rows);
 
   statusLine.textContent = `Last updated ${new Date(payload.queried_at).toLocaleTimeString()}`;
   statusLine.classList.remove('error');
@@ -1791,13 +1701,13 @@ async function pollState() {
 // physical asset is UNMAPPED until an authoritative record links it to a
 // device, so the device counts are reported as what they are: real states
 // belonging to equipment whose location on this floor is not established.
-let factoryCounts = { assets: 0, mapped: 0, zones: 0 };
+let factoryCounts = { assets: 0, mapped: 0, zones: 0, unresolved: 0 };
 
 function updateFactoryStatus(rows) {
   const el = document.getElementById('factory-status');
   if (!el) return;
   const list = Array.isArray(rows) ? rows : [];
-  const critical = list.filter((r) => r.machine_state === 'DOWN').length;
+  const down = list.filter((r) => r.machine_state === 'DOWN').length;
   const unmapped = factoryCounts.assets - factoryCounts.mapped;
 
   const cell = (label, value, tone) =>
@@ -1807,29 +1717,95 @@ function updateFactoryStatus(rows) {
   el.innerHTML =
     cell('process areas', factoryCounts.zones)
     + cell('physical assets', factoryCounts.assets)
+    + cell('extents unresolved', factoryCounts.unresolved,
+      factoryCounts.unresolved > 0 ? 'warn' : null)
     + cell('mapped to IMS', factoryCounts.mapped, factoryCounts.mapped === 0 ? 'warn' : null)
     + cell('unmapped', unmapped, unmapped > 0 ? 'warn' : null)
-    + cell('devices in alarm', critical, critical > 0 ? 'crit' : null);
+    + cell('devices down', down, down > 0 ? 'crit' : null);
 }
 
-// ── Status legend ────────────────────────────────────────────
-// Rendered from the shared vocabulary rather than written into the HTML, so a
-// state cannot appear in the legend without existing in the code that colours
-// the scene, and vice versa.
+// -- Status strip -----------------------------------------------------
+// The eight plant states, always all eight, always in the same order, with a
+// live count against each. Rendered from the shared vocabulary rather than
+// written into the HTML, so a state cannot appear here without existing in the
+// code that colours the scene, and vice versa.
 //
-// A state with no backend column is rendered dimmed AND carries a literal "no
-// source" tag. An operator reading this panel learns which lamps this
-// deployment can actually light -- which is a different and more useful fact
-// than "no machine is currently in that state".
+// A state with no backend column is rendered dimmed AND tagged NO SOURCE. That
+// is a different and more useful fact than "no machine is in that state right
+// now": it tells an operator which lamps this deployment can light at all.
+//
+// UNMAPPED sits after a separator because it is NOT a ninth state. It is a
+// property of the record, and folding it in with the eight would let a
+// data-quality problem read as a plant condition.
+function renderStatusStrip(rows) {
+  const strip = document.getElementById('status-strip');
+  if (!strip) return;
+  const list = Array.isArray(rows) ? rows : [];
+  const counts = new Map(STATUS_ORDER.map((k) => [k, 0]));
+  for (const row of list) {
+    const key = statusForMachineState(row && row.machine_state);
+    counts.set(key, (counts.get(key) || 0) + 1);
+  }
+  strip.textContent = '';
+  for (const key of STATUS_ORDER) {
+    const st = OPERATIONAL_STATUS[key];
+    const cell = document.createElement('div');
+    cell.className = st.backed ? 'ss-cell' : 'ss-cell ss-off';
+    cell.dataset.state = key;
+    cell.title = st.meaning;
+    const glyph = document.createElement('span');
+    glyph.className = 'ss-glyph';
+    glyph.style.color = st.color;
+    glyph.setAttribute('aria-hidden', 'true');
+    glyph.textContent = st.glyph;
+    const label = document.createElement('span');
+    label.className = 'ss-label';
+    label.textContent = st.label;
+    const value = document.createElement('span');
+    value.className = 'ss-value';
+    // An unbacked state shows a dash, never a zero. A zero is a measurement
+    // ("none are in PM"); a dash is the truth ("this system cannot tell you").
+    value.textContent = st.backed ? String(counts.get(key)) : '–';
+    cell.append(glyph, label, value);
+    strip.appendChild(cell);
+  }
+  const sep = document.createElement('div');
+  sep.className = 'ss-sep';
+  sep.setAttribute('aria-hidden', 'true');
+  strip.appendChild(sep);
+
+  const dq = document.createElement('div');
+  dq.className = 'ss-cell ss-quality';
+  dq.dataset.state = 'UNMAPPED';
+  dq.title = DATA_QUALITY.UNMAPPED.meaning;
+  const dqGlyph = document.createElement('span');
+  dqGlyph.className = 'ss-glyph';
+  dqGlyph.style.color = DATA_QUALITY.UNMAPPED.color;
+  dqGlyph.setAttribute('aria-hidden', 'true');
+  dqGlyph.textContent = DATA_QUALITY.UNMAPPED.glyph;
+  const dqLabel = document.createElement('span');
+  dqLabel.className = 'ss-label';
+  dqLabel.textContent = DATA_QUALITY.UNMAPPED.label;
+  const dqValue = document.createElement('span');
+  dqValue.className = 'ss-value';
+  dqValue.textContent = String(Math.max(factoryCounts.assets - factoryCounts.mapped, 0));
+  dq.append(dqGlyph, dqLabel, dqValue);
+  strip.appendChild(dq);
+}
+
+// The drawer's fuller legend: the same eight, with what each one means and
+// whether this deployment can derive it.
 function renderStatusLegend() {
   const body = document.getElementById('status-legend-body');
   const note = document.getElementById('status-legend-note');
   if (!body) return;
   body.textContent = '';
-  for (const key of STATUS_ORDER) {
-    const st = OPERATIONAL_STATUS[key];
+  const entries = STATUS_ORDER.map((k) => [OPERATIONAL_STATUS[k], true])
+    .concat([[DATA_QUALITY.UNMAPPED, false]]);
+  for (const [st, isState] of entries) {
+    const backed = isState ? st.backed : true;
     const dt = document.createElement('dt');
-    if (!st.backed) dt.className = 'st-off';
+    if (!backed) dt.className = 'st-off';
     const glyph = document.createElement('span');
     glyph.className = 'st-glyph';
     glyph.style.color = st.color;
@@ -1837,14 +1813,20 @@ function renderStatusLegend() {
     glyph.textContent = st.glyph;
     dt.appendChild(glyph);
     dt.appendChild(document.createTextNode(` ${st.label}`));
-    if (!st.backed) {
+    if (!backed) {
       const tag = document.createElement('span');
       tag.className = 'st-na';
       tag.textContent = 'NO SOURCE';
       dt.appendChild(tag);
     }
+    if (!isState) {
+      const tag = document.createElement('span');
+      tag.className = 'st-dq';
+      tag.textContent = 'DATA QUALITY';
+      dt.appendChild(tag);
+    }
     const dd = document.createElement('dd');
-    if (!st.backed) dd.className = 'st-off';
+    if (!backed) dd.className = 'st-off';
     dd.textContent = st.meaning;
     body.appendChild(dt);
     body.appendChild(dd);
@@ -1852,15 +1834,25 @@ function renderStatusLegend() {
   if (note) {
     const missing = STATUS_ORDER.length - BACKED_STATUSES.length;
     note.textContent =
-      `${BACKED_STATUSES.length} of ${STATUS_ORDER.length} states are derivable from this `
-      + `deployment's own data. ${missing} have no backing column in the schema yet and `
-      + 'are listed so the vocabulary is complete, not because they can display.';
+      `${BACKED_STATUSES.length} of the ${STATUS_ORDER.length} machine states are derivable `
+      + `from this deployment's own data. ${missing} have no backing column in the schema `
+      + 'yet and are listed so the vocabulary is complete, not because they can display. '
+      + 'Unmapped is not a machine state: it says the asset has no authoritative link to a '
+      + 'device, so no state applies to it at all.';
   }
 }
 
 async function boot() {
   const t0 = performance.now();
+  // Size the camera and the drawing buffer to the STAGE before anything is
+  // framed. The camera is constructed from window.innerWidth/innerHeight, but
+  // the stage is shorter than the window by the header and the status strip,
+  // and nothing else fires a resize on first paint. Framing against the window
+  // aspect and rendering into the stage's cropped the plan off the bottom of
+  // its own canvas -- the projection assumed a taller frame than existed.
+  onResize();
   renderStatusLegend();
+  renderStatusStrip([]);
   // NO PLACEMENT FETCH. This view once drew every monitored device as a box on
   // a deterministic synthetic grid, with a floor plate sized from that grid. It
   // is gone -- not hidden, not toggled off: the fetch, the meshes, the labels,
@@ -1878,7 +1870,7 @@ async function boot() {
     const geoRes = await fetch('api/floor-geometry');
     if (geoRes.ok) {
       const geo = await geoRes.json();
-      buildPhysicalSlots(geo);
+      buildFloor(geo);
       // Separate call: the zone layer is independent of the envelope, and
       // buildPhysicalSlots returns early when no envelope file exists.
       const drawn = buildFunctionalZones(geo);
@@ -1892,6 +1884,24 @@ async function boot() {
     }
   } catch (err) {
     console.warn('floor-geometry fetch failed (non-fatal):', err.message);
+  }
+
+  // Build identity. Fetched, never baked in: a constant written into the page
+  // would say whatever it said when someone last edited it, which is exactly
+  // the failure mode this is here to make visible.
+  try {
+    const buildRes = await fetch('api/build');
+    if (buildRes.ok) {
+      const build = await buildRes.json();
+      const el = document.getElementById('build-id');
+      if (el) {
+        el.textContent = `build ${build.fingerprint}`;
+        el.title = `${build.asset_count} source files, started ${build.started_at}`;
+      }
+      window.__twinBuild = build;
+    }
+  } catch (err) {
+    console.warn('build fingerprint fetch failed (non-fatal):', err.message);
   }
 
   await pollState();
@@ -1909,7 +1919,7 @@ async function boot() {
     controls,
     scene,
     renderer,
-    slotMeshes,
+    equipmentMeshes,
     columnMeshes,
     layers,
     applyView,
@@ -1919,14 +1929,11 @@ async function boot() {
     // actually happened rather than trusting that it did.
     resourceStats,
     footprintMeshes,
-    presentationMeshes,
     wallMeshes,
     openingMeshes,
-    // The form tables and the per-form census, so a regression can assert what
-    // was actually built rather than trusting that it was.
-    presentationSpec: () => ({ classification: FORM_CLASSIFICATION, forms: FORM_KEYS }),
-    presentationCensus: () => ({ ...presentationCounts }),
-    presentationFormOf: (slot) => formKeyFor(slot),
+    // Counts a reconciliation test reads back, so "the renderer drew what the
+    // CAD said" is an assertion rather than an inference from a screenshot.
+    equipmentCensus: () => ({ ...equipmentCensus }),
     getStructuralGrid: () => structuralGridLines,
     setLayerVisible,
     sublayers,
@@ -1963,62 +1970,22 @@ function onResize() {
   refitViews();
 }
 
-// The HUD's real width, published to CSS so the side-by-side rules can leave
-// the panel clear without hardcoding a number that has already changed twice.
-function publishHudWidth() {
-  const hud = document.getElementById('hud');
-  const clear = hud && !hud.hidden ? Math.ceil(hud.getBoundingClientRect().right) : 0;
-  document.documentElement.style.setProperty('--hud-clear', `${clear}px`);
-}
-publishHudWidth();
-
-// A mode switch changes the pane's width without changing the window's, so the
-// resize listener below never fires for it. Modes are camera and layout only:
-// this recomputes the fit, and moves no geometry.
-// Which framing each mode opens on. CAMERA ONLY -- these entries are read by
-// applyView, which sets a position and a target and touches nothing else. A
-// mode never changes a layer's data, never moves a machine, and never promotes
-// an evidence state; the regression takes a byte-level coordinate snapshot
-// across every switch to keep that true.
+// publishHudWidth and the MODE_VIEW table are GONE.
 //
-// Modes not listed keep whatever framing the operator last chose, because
-// overriding a deliberate camera choice on every mode switch is the behaviour
-// that made the earlier view buttons feel broken.
-const MODE_VIEW = Object.freeze({
-  // The widest honest framing: the whole building, and the device grid too if
-  // one is present. "Show me everything" is the executive question.
-  executive: ['overview', 'building', 'operator'],
-  // Back to the working framing an operator reads machines at.
-  // Inspection reads detail on the floor plan, so it opens on the plan.
-  inspection: ['plan', 'building', 'operator'],
-  // Half a window wide. The operator view is a fixed, hand-tuned camera that
-  // does not adapt to the pane it is drawn in, so entering side-by-side on it
-  // leaves the 3D half zoomed into a corner. The fitted framings do adapt.
-  split: ['building', 'overview', 'operator'],
-});
+// Both existed to service a floating overlay: one measured how far the panel
+// reached across the canvas so the framing could dodge it, the other decided
+// which camera each board mode should jump to. The chrome docks now -- header,
+// status strip and drawer are grid tracks -- so nothing covers the floor and
+// there is nothing to dodge. Views are chosen explicitly by the operator.
 
-window.addEventListener('twin-mode', (ev) => {
-  const mode = ev && ev.detail && ev.detail.mode;
-  // Inspection is the mode for reading detail, so it is the mode that shows
-  // every area name. This changes label VISIBILITY only -- no zone, boundary or
-  // coordinate is touched, which the coordinate snapshot check keeps honest.
-  setMinorZoneLabels(mode === 'inspection');
-  const wanted = MODE_VIEW[mode];
-  if (!wanted) return;
-  // First framing in the list that actually has data behind it. A view with no
-  // bounds must not be applied -- it would frame nothing.
-  for (const name of wanted) {
-    if (applyView(name)) return;
-  }
-});
-
+// Opening or closing the inspection drawer changes the scene pane's width
+// without changing the window's, so the resize listener never fires for it.
+// This refits the camera for the new pane. It moves the camera and nothing
+// else -- the coordinate snapshot check keeps that honest.
 window.addEventListener('twin-pane-resize', () => {
-  publishHudWidth();
-  // One frame later, so the class change has been laid out and the container
-  // reports its new width rather than its old one.
   requestAnimationFrame(() => {
     onResize();
-    if (activeView !== 'operator') applyView(activeView);
+    applyView(activeView);
   });
 });
 
@@ -2030,7 +1997,6 @@ window.addEventListener('resize', () => {
   if (resizePending) return;
   resizePending = requestAnimationFrame(() => {
     resizePending = null;
-    publishHudWidth();
     onResize();
   });
 });

@@ -39,8 +39,12 @@ run("Factory Twin Diagnostics Sanitization Tests", "node tests/unit/factory-twin
 run("Factory Twin Evidence Pipeline Tests", "node tests/unit/factory-twin-evidence.test.js");
 run("Factory Twin Wire Projection Tests", "node tests/unit/factory-twin-wire.test.js");
 run("Factory Twin Schematic Layer Tests", "node tests/unit/factory-twin-schematic.test.js");
-run("Factory Twin Machine Form Tests", "node tests/unit/factory-twin-machine-forms.test.js");
 run("Factory Twin Operational Status Tests", "node tests/unit/factory-twin-operational-status.test.js");
+// The machine-form suite is gone with the layer it covered: invented machine
+// bodies drawn over raster-derived positions. What replaced it is stricter, not
+// looser -- the CAD reconciliation below compares the served model back against
+// the drawing record by record and reports residuals.
+run("Factory Twin CAD Reconciliation", "node tests/lint/floor1-cad-reconciliation.js");
 
 // 2. Run Linters
 run("Dashboard Linter", "node tests/lint/dashboard-linter.js");

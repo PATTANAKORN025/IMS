@@ -38,16 +38,35 @@ async function main() {
     'operational-status.js'
   );
   const {
-    OPERATIONAL_STATUS, STATUS_ORDER, BACKED_STATUSES,
-    statusForMachineState, statusForSlot,
+    OPERATIONAL_STATUS, STATUS_ORDER, BACKED_STATUSES, DATA_QUALITY,
+    statusForMachineState, statusForAsset,
   } = await import(pathToFileURL(modPath).href);
 
-  test('the legend declares exactly the eight required states', () => {
+  test('the legend declares exactly the eight plant states, in order', () => {
     assert.deepStrictEqual([...STATUS_ORDER], [
-      'NORMAL', 'WARNING', 'CRITICAL', 'OFFLINE',
-      'STALE_DATA', 'MAINTENANCE', 'UNMAPPED', 'PRESENTATION_ONLY',
+      'OFF', 'DOWN', 'IDLE', 'INITIAL', 'PM', 'STOP', 'RUN', 'UNDEFINED',
     ]);
     assert.deepStrictEqual(Object.keys(OPERATIONAL_STATUS).sort(), [...STATUS_ORDER].sort());
+  });
+
+  test('the monitoring dialect the twin invented is gone', () => {
+    // These read as plant states but are not: they were this view's own
+    // vocabulary, and an operator comparing the board against the line's HMI
+    // had to translate. None of them may reappear as a machine state.
+    for (const gone of ['NORMAL', 'WARNING', 'CRITICAL', 'OFFLINE',
+      'STALE_DATA', 'MAINTENANCE', 'PRESENTATION_ONLY']) {
+      assert.ok(!(gone in OPERATIONAL_STATUS), `${gone} is back in the machine states`);
+      assert.ok(!STATUS_ORDER.includes(gone), `${gone} is back in the legend order`);
+    }
+  });
+
+  test('data quality is held apart from the machine states', () => {
+    // UNMAPPED is a fact about the record, not about the machine. Folding it
+    // into the eight would let a missing mapping read as a plant condition.
+    assert.ok(!('UNMAPPED' in OPERATIONAL_STATUS));
+    assert.ok(!STATUS_ORDER.includes('UNMAPPED'));
+    assert.ok(DATA_QUALITY.UNMAPPED, 'UNMAPPED is not declared as a data-quality indicator');
+    assert.ok(DATA_QUALITY.UNMAPPED.label.length > 0);
   });
 
   test('status is never carried by colour alone', () => {
@@ -57,73 +76,89 @@ async function main() {
     for (const k of STATUS_ORDER) {
       assert.ok(OPERATIONAL_STATUS[k].label.length > 0, `${k} has no text label`);
     }
+    assert.ok(!glyphs.includes(DATA_QUALITY.UNMAPPED.glyph),
+      'the data-quality glyph collides with a machine state');
   });
 
   test('only states with a real backend column are marked backed', () => {
-    // lib/contracts.js is explicit that OFF and PM_STOP have no source column
-    // in this schema, and no warning tier is derivable from STATE_SQL.
-    assert.strictEqual(OPERATIONAL_STATUS.OFFLINE.backed, false);
-    assert.strictEqual(OPERATIONAL_STATUS.MAINTENANCE.backed, false);
-    assert.strictEqual(OPERATIONAL_STATUS.WARNING.backed, false);
-    assert.strictEqual(OPERATIONAL_STATUS.NORMAL.backed, true);
-    assert.strictEqual(OPERATIONAL_STATUS.CRITICAL.backed, true);
-    assert.strictEqual(OPERATIONAL_STATUS.STALE_DATA.backed, true);
-    assert.ok(!BACKED_STATUSES.includes('OFFLINE'));
-    assert.ok(!BACKED_STATUSES.includes('MAINTENANCE'));
-    assert.ok(!BACKED_STATUSES.includes('WARNING'));
+    // STATE_SQL derives exactly four outcomes. lib/contracts.js is explicit
+    // that OFF, INITIAL, PM and STOP have no source column in this schema.
+    assert.strictEqual(OPERATIONAL_STATUS.RUN.backed, true);
+    assert.strictEqual(OPERATIONAL_STATUS.IDLE.backed, true);
+    assert.strictEqual(OPERATIONAL_STATUS.DOWN.backed, true);
+    assert.strictEqual(OPERATIONAL_STATUS.UNDEFINED.backed, true);
+    for (const unbacked of ['OFF', 'INITIAL', 'PM', 'STOP']) {
+      assert.strictEqual(OPERATIONAL_STATUS[unbacked].backed, false, `${unbacked} claims a source`);
+      assert.ok(!BACKED_STATUSES.includes(unbacked));
+    }
+    assert.strictEqual(BACKED_STATUSES.length, 4);
   });
 
-  test('an unresolvable state falls to UNMAPPED, never to NORMAL', () => {
-    assert.strictEqual(statusForMachineState(null), 'UNMAPPED');
-    assert.strictEqual(statusForMachineState(undefined), 'UNMAPPED');
-    assert.strictEqual(statusForMachineState(''), 'UNMAPPED');
-    assert.strictEqual(statusForMachineState('NOT_A_STATE'), 'UNMAPPED');
-    assert.strictEqual(statusForMachineState('__proto__'), 'UNMAPPED');
-    assert.strictEqual(statusForMachineState('constructor'), 'UNMAPPED');
+  test('every state carries a machineState, and they are all distinct', () => {
+    // The legend and the renderer key on the same vocabulary. A state with no
+    // machineState, or two sharing one, would let a lookup answer for the
+    // wrong lamp.
+    const seen = new Set();
+    for (const k of STATUS_ORDER) {
+      const ms = OPERATIONAL_STATUS[k].machineState;
+      assert.ok(typeof ms === 'string' && ms.length > 0, `${k} carries no machineState`);
+      assert.ok(!seen.has(ms), `machineState ${ms} is claimed twice`);
+      seen.add(ms);
+    }
   });
 
-  test('known run-states map to their declared status', () => {
-    assert.strictEqual(statusForMachineState('RUN'), 'NORMAL');
-    assert.strictEqual(statusForMachineState('DOWN'), 'CRITICAL');
-    assert.strictEqual(statusForMachineState('UNKNOWN'), 'STALE_DATA');
-    assert.strictEqual(statusForMachineState('OFF'), 'OFFLINE');
-    assert.strictEqual(statusForMachineState('PM_STOP'), 'MAINTENANCE');
+  test('an unresolvable state falls to UNDEFINED, never to a plausible one', () => {
+    // UNDEFINED, specifically: not OFF, which would assert a powered-down
+    // machine, and not RUN, which would assert a healthy one.
+    for (const bad of [null, undefined, '', 'NOT_A_STATE', '__proto__', 'constructor', 7, {}]) {
+      assert.strictEqual(statusForMachineState(bad), 'UNDEFINED', `${String(bad)} resolved elsewhere`);
+    }
   });
 
-  test('a slot without an authoritative device id is UNMAPPED', () => {
-    const live = new Map([['DEV-1', { state: 'RUN' }]]);
-    assert.strictEqual(statusForSlot({ ims_device_id: null }, live), 'UNMAPPED');
-    assert.strictEqual(statusForSlot({ ims_device_id: '' }, live), 'UNMAPPED');
-    assert.strictEqual(statusForSlot({}, live), 'UNMAPPED');
-    assert.strictEqual(statusForSlot(null, live), 'UNMAPPED');
+  test('known run-states map to themselves', () => {
+    for (const k of STATUS_ORDER) {
+      assert.strictEqual(statusForMachineState(OPERATIONAL_STATUS[k].machineState), k);
+    }
   });
 
-  test('a mapped slot with no live row is STALE, not NORMAL', () => {
-    const live = new Map([['DEV-1', { state: 'RUN' }]]);
-    assert.strictEqual(statusForSlot({ ims_device_id: 'DEV-2' }, live), 'STALE_DATA');
-    assert.strictEqual(statusForSlot({ ims_device_id: 'DEV-1' }, live), 'NORMAL');
+  test('an asset without an authoritative device id is UNMAPPED', () => {
+    const live = new Map([['DEV-1', { machine_state: 'RUN' }]]);
+    assert.strictEqual(statusForAsset({ ims_device_id: null }, live), 'UNMAPPED');
+    assert.strictEqual(statusForAsset({ ims_device_id: '' }, live), 'UNMAPPED');
+    assert.strictEqual(statusForAsset({}, live), 'UNMAPPED');
+    assert.strictEqual(statusForAsset(null, live), 'UNMAPPED');
   });
 
-  test('a slot cannot acquire a status from position, id or label', () => {
-    const live = new Map([['DEV-1', { state: 'RUN' }]]);
-    const slot = {
-      slot_id: 'DEV-1',                       // id that looks like a device id
+  test('a mapped asset with no live row is UNDEFINED, not UNMAPPED', () => {
+    // The distinction matters: the link exists, so the record is fine. What is
+    // missing is telemetry, and that is exactly what UNDEFINED names.
+    const live = new Map([['DEV-1', { machine_state: 'RUN' }]]);
+    assert.strictEqual(statusForAsset({ ims_device_id: 'DEV-2' }, live), 'UNDEFINED');
+    assert.strictEqual(statusForAsset({ ims_device_id: 'DEV-1' }, live), 'RUN');
+  });
+
+  test('an asset cannot acquire a status from position, id or label', () => {
+    const live = new Map([['DEV-1', { machine_state: 'RUN' }]]);
+    const asset = {
+      id: 'DEV-1',                             // id that looks like a device id
       zone_name: 'DEV-1',
       position: { x: 0, z: 0 },
       ims_device_id: null,
     };
-    assert.strictEqual(statusForSlot(slot, live), 'UNMAPPED');
+    assert.strictEqual(statusForAsset(asset, live), 'UNMAPPED');
   });
 
   test('a missing or hostile state map cannot produce a live status', () => {
-    assert.strictEqual(statusForSlot({ ims_device_id: 'DEV-1' }, null), 'UNMAPPED');
-    assert.strictEqual(statusForSlot({ ims_device_id: 'DEV-1' }, {}), 'UNMAPPED');
+    assert.strictEqual(statusForAsset({ ims_device_id: 'DEV-1' }, null), 'UNMAPPED');
+    assert.strictEqual(statusForAsset({ ims_device_id: 'DEV-1' }, {}), 'UNMAPPED');
   });
 
   test('the vocabulary tables are frozen', () => {
     assert.ok(Object.isFrozen(OPERATIONAL_STATUS));
-    assert.ok(Object.isFrozen(OPERATIONAL_STATUS.NORMAL));
+    assert.ok(Object.isFrozen(OPERATIONAL_STATUS.RUN));
     assert.ok(Object.isFrozen(STATUS_ORDER));
+    assert.ok(Object.isFrozen(DATA_QUALITY));
+    assert.ok(Object.isFrozen(DATA_QUALITY.UNMAPPED));
   });
 
   console.log(`\n${passed} passed, ${failed} failed\n`);
