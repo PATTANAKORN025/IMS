@@ -75,8 +75,9 @@ future source is allowed to assert. Its rules are documented under
 | Route | Returns | Notes |
 |---|---|---|
 | `GET /api/state` | Live machine state per monitored device | The only route that touches the database. Read-only role. |
-| `GET /api/placement` | Floor descriptor plus **synthetic** machine placements | Positions here are simulated, and labelled as such downstream. |
-| `GET /api/floor-geometry` | Envelope, columns, anonymous zone boxes, slots, validated functional zones | Serves an empty-but-valid shape when no private geometry is present, which is the default for a fresh clone and not an error. |
+| `GET /api/build` | This build's fingerprint and its per-file hashes | Computed at boot from the source bytes in the running image. Cannot be set by an environment variable or stamped by a build script that did not run. |
+| `GET /api/floor-geometry` | Envelope, footprint outline, grid, columns, walls, openings, **CAD equipment**, validated functional zones | Serves an empty-but-valid shape when no private geometry is present, which is the default for a fresh clone and not an error. `slots` is **not** served at all. |
+| `GET /api/floor-schematic` | The raster schematic transcription | Retained and still guarded, but **no page draws it**: the canonical twin is the CAD floor. |
 | `GET /api/diagnostics` | Counts, booleans and fixed enums only | Never a coordinate, identifier, path, process or vendor name. |
 | `GET /healthz` | Liveness, including a database round-trip | |
 
@@ -95,9 +96,18 @@ out — a note, a path or a process name fails the token guard rather than being
 sanitised and echoed. A new field must be added to the projection deliberately
 before it can reach the wire.
 
-Anything that cannot be projected is **withheld rather than coerced**: a slot
-with no usable position is not served at a fallback coordinate, because
-inventing a location is worse than showing nothing.
+Anything that cannot be projected is **withheld rather than coerced**: an
+asset with no usable position is not served at a fallback coordinate, because
+inventing a location is worse than showing nothing. The same rule now governs
+*extent*: an equipment record whose `footprint_status` is `UNRESOLVED` travels
+with `footprint: null`, and the projector refuses to emit a footprint for it
+even if the private document grew one. The predecessor projector substituted a
+1 m pad for a missing dimension, which put an invented extent on the wire
+wearing the same shape as a measured one — on a floor read from CAD, that is
+indistinguishable to the eye.
+
+`projectSlot` and the `slots[]` layer it served are **deleted, not unused**, so
+re-adding `slots: wire.projectAll(...)` to the route cannot silently work.
 
 Two rules the routes enforce rather than merely document:
 
@@ -229,3 +239,79 @@ is in **[Visual QA](FACTORY_TWIN_VISUAL_QA.md)**.
 
 Exact commands and failure symptoms live in
 **[Operations Runbook](../operations-runbook.md)**.
+
+---
+
+## 6. The canonical route, and how a stale build hid behind it
+
+### There is exactly one user-facing Factory Twin
+
+```
+browser
+  -> http://localhost:3000/factory-twin-3d/
+  -> ims-proxy (nginx:1.27-alpine, the only container publishing a host port)
+       location /factory-twin-3d/  { auth_request /auth-check;
+                                     proxy_pass http://factory-twin-3d:4100/; }
+       location = /auth-check      { internal; proxy_pass http://grafana:3000/api/user; }
+  -> ims-factory-twin-3d (no host port, ims-internal network only)
+  -> /app/server.js  +  /app/private (read-only bind mount)
+```
+
+`127.0.0.1:4199` is **verification and scratch only**. It is a throwaway
+container started by `scripts/twin-direct-container.ps1`, bound to loopback,
+with **no auth gate**. It is never the product, and it must never be the place
+where a result exists while the canonical route is stale.
+
+### The failure this section exists to prevent
+
+A rebuilt image is not a redeployed service. `docker compose build` retags the
+image; the **running container keeps the image it was created with** until it
+is recreated. That is how this deployment came to serve a build six commits
+old while the repository, the tests and the image tag had all moved on — and
+how a rebuilt verification port was mistaken for a rebuilt production one.
+
+Nothing on the page could have revealed it: the frontend is static files with
+no version in them.
+
+### What makes it visible now
+
+`GET /api/build` returns a fingerprint computed **at boot from the bytes on
+disk in the running image** — `server.js`, `lib/` and `public/`. It cannot be
+set by an environment variable and cannot claim a version the running code is
+not. The header shows it as a `build …` chip.
+
+Verifying a deployment is therefore one comparison:
+
+```sh
+# what production is actually running
+docker exec ims-proxy wget -qO- http://factory-twin-3d:4100/api/build
+
+# what the verification container is running
+curl -s http://127.0.0.1:4199/api/build
+```
+
+**Same fingerprint means identical code.** Different fingerprints mean one of
+them is stale, whatever the image tags say.
+
+### Redeploying
+
+```sh
+docker compose build factory-twin-3d
+docker compose up -d --force-recreate --no-deps factory-twin-3d
+```
+
+`--force-recreate` is the load-bearing flag. Without it, compose may leave a
+healthy container on its old image.
+
+### Access control, and what that means for verification
+
+`/factory-twin-3d/` is gated by `auth_request` against Grafana's own session,
+exactly like `/alarm-api/`. An unauthenticated request returns **401 from the
+gate**, not from the service — a 404 or a 502 there would mean a routing fault
+instead.
+
+Scene and evidence behaviour is therefore verified through the loopback
+verification container, which runs the **same image** and is proven identical
+by fingerprint. Access control itself is verified separately, against the
+canonical route, by the unauthenticated boundary checks in the regression
+suite.

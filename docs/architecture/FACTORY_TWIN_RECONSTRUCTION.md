@@ -46,20 +46,24 @@ unrecognised basis is rejected rather than assumed harmless.
 | Clear height | — | BLOCKED | No section or elevation exists |
 | Footprint polygon | 1 | CONFIRMED | Perimeter traced by ink-coverage measurement; area agrees with the printed figure |
 | Structural grid | 1 | CONFIRMED | Printed spans; totals match, cross-checked against bubble spacing |
-| Structural columns | 120 | OBSERVED | Unfilled square outlines matched to the nearest printed grid intersection within 1.8 m |
-| Equipment slots | 243 | OBSERVED | Colour-separated component detection, machine-scale filtered |
+| Structural columns | 202 | MEASURED_CAD | Read from the CAD at their drawn positions; the earlier 120 raster columns were a correct subset, matched within 1 m at 34 mm median |
+| Equipment positions | 224 | MEASURED_CAD | CAD `INSERT` records: insertion point and rotation stated by the drawing |
+| Equipment extents | 63 of 224 | OBSERVED_CAD | Block bounding box, gated on machine scale and non-overlap |
+| Equipment extents withheld | 161 of 224 | UNRESOLVED | Block box measures a service envelope rather than the machine body |
 | Equipment height | — | BLOCKED | A plan view carries no equipment elevation |
-| Monitored devices | 23 | SIMULATED position | Live telemetry is real; position is a synthetic grid |
+| Raster equipment slots | 243 | SUPERSEDED | Retained in the private document, served nowhere, drawn nowhere |
+| Monitored devices | 23 | NOT DRAWN | Live telemetry is real; no device has an established position, so none is placed on the floor |
 | Physical mappings | 0 | BLOCKED | No authoritative record relates the namespaces |
-| Functional zones (rendered) | 8 | OBSERVED | Area-layer boundaries accepted against printed areas |
-| Functional zones (withheld) | 13 | WITHHELD | Failed area validation or party to an unresolved conflict |
-| Interior walls | 0 | BLOCKED | Floor is open-plan; no closed wall network exists to recover |
-| Doors | 0 | BLOCKED | Dependent on interior walls |
+| Functional zones (rendered) | 17 | OBSERVED_CAD | Area-layer boundaries accepted against printed areas |
+| Functional zones (withheld) | 20 | WITHHELD | Failed area validation or party to an unresolved conflict |
+| Interior walls | 866 runs | MEASURED_CAD plan | Face pairing, collinear merging and corner closure from the CAD; thickness measured between drawn faces |
+| Wall height | — | PRESENTATION_ONLY | Declared 2.6 m constant; no elevation exists in the drawing |
+| Doors, windows, air showers | 52 | OBSERVED_CAD | Block insertion points on the opening layers |
 | Lift pits | 0 | BLOCKED | Symbols merge with adjacent structure |
 | MES census | — | BLOCKED | Only source is a low-resolution screenshot |
 
-**Not complete, and not claimed to be.** Six rows are BLOCKED, each on a
-missing source rather than unfinished work. See
+**Not complete, and not claimed to be.** Four rows are BLOCKED and one is
+UNRESOLVED, each on a missing source rather than unfinished work. See
 **[Evidence Requirements](FACTORY_TWIN_EVIDENCE_REQUIREMENTS.md)** for what
 would unlock them and what a new source is allowed to claim once it arrives,
 and **[Visual QA](FACTORY_TWIN_VISUAL_QA.md)** for the current QA and
@@ -244,32 +248,104 @@ drives the status roll-up and the device list, and it colours no geometry.
 
 ---
 
-## 0.3 Equipment from CAD — attempted, UNRESOLVED
+## 0.3 Equipment from CAD — RESOLVED by block reference
 
-Extracting equipment footprints from the CAD was attempted three ways and
-**none produced a trustworthy result**. The attempts are recorded because the
-negative result is itself evidence, and because repeating them without knowing
-this would be wasted work.
+The previous pass reported equipment as UNRESOLVED after three attempts. That
+report was accurate about the method it used and wrong about the drawing. All
+three attempts tried to reconstruct machine outlines from the **modelspace
+line-work** on the equipment layer — 97k entities in which detail drawings,
+plant and machine outlines are drawn in the same colour with the same
+primitives. On that layer the answer really is unresolvable.
 
-| Method | Result | Why it fails |
+The machines that matter are not drawn there. They are **placed**: an `INSERT`
+entity records an insertion point and a rotation, and the `BLOCK` it names
+holds the geometry that insertion stamps down. Position and rotation therefore
+come out of the CAD exactly, with no tracing and no heuristic.
+
+### What each of the eleven methods found
+
+`scripts/extract-floor1-equipment.js` runs all eleven and records every result,
+including the negative ones, into `equipment_extraction.methods_tried` in the
+private document. Summarised:
+
+| # | Method | Outcome |
 |---|---|---|
-| Block definition bounding boxes | Rejected | Nested references inflate them beyond use — one common machine block computes to 882 m × 58 m; others to 9 mm. |
-| Axis-aligned rectangle reconstruction from line-work | 1 of 243 slots matched | Only 2,042 of 61,311 lines on the machine layer are axis-aligned. The plan equipment is drawn rotated. |
-| Connected-component clustering with oriented bounding boxes | 8 of 243 slots matched | Components either merge whole equipment rows or shatter into fragments; 528 of 834 fell outside any plausible machine size. |
+| A | INSERT / block reference analysis | **PRODUCTIVE** — this is the pass that resolved equipment. |
+| B | Block definition analysis | **PRODUCTIVE for extent**, but weaker than position: a block box measures everything the block draws, service envelopes included. |
+| C | Layer-aware extraction | Productive as a filter; not sufficient alone — the dominant equipment layer also carries the detail drawings. |
+| D | Closed polyline extraction | Corroborating only. A closed outline on this layer is as likely to be a detail-drawing part as a machine. |
+| E | Line-loop reconstruction | Corroborating only. A reconstructed loop cannot be told from a table, a pit or a hatch boundary without an identifier, and none is drawn. |
+| F | Oriented connected-component analysis | **NEGATIVE for identification.** This is the method the previous three passes used. It finds shapes, not machines. |
+| G | Repeated-pattern detection | **PRODUCTIVE as corroboration** — a footprint repeated across a block family is what lifts a candidate from medium to high confidence. |
+| H | Spatial clustering | Productive as an exclusion: it is how free-curve detail regions are kept out of method F. |
+| I | Label-to-geometry association | **NOT USED.** The labels that exist are area labels and drafting notes; attaching one to a machine would be a proximity guess. |
+| J | Dimensions adjacent to equipment | **NEGATIVE.** No machine in this drawing is dimensioned; the dimension chains measure the structural grid and the envelope. |
+| K | Comparison against repeated footprints | **PRODUCTIVE as the gate** — a block box that swallows its neighbour is measuring more than the machine, and its extent is withheld. |
 
-What *is* established: the equipment is genuinely there. Every one of the 243
-raster-derived slots overlaps real CAD geometry — median 3 entities each, and
-**zero slots overlap nothing** — overwhelmingly on the machine layer. The
-positions are corroborated; only the per-machine *outline* could not be cut
-cleanly out of the surrounding drawing.
+### Evidence intersection
 
-The detail drawings are separable, which is what makes a future attempt
-worthwhile: SPLINE work concentrates in **19 of 875 five-metre bins**, so the
-part sections sitting in this modelspace occupy two tight clusters rather than
-being spread through the plan.
+Position and rotation are accepted from **A alone**, because an INSERT record
+is a direct CAD statement of both and involves no tracing. Footprint requires
+**A and B to agree with K** — the block box must be machine-scale *and* must
+not overlap a neighbour by more than a quarter of the smaller footprint — and
+is raised to high confidence only when **G** shows the same block placed three
+or more times.
 
-**Consequence:** equipment footprints stay **raster-derived and OBSERVED**.
-They are not relabelled MEASURED_CAD, because the CAD did not yield them.
+### What the model now holds
+
+| | Count | Evidence |
+|---|---:|---|
+| INSERT records inside the floor envelope | 1,397 | — |
+| …on an equipment layer, naming a real block | 345 | — |
+| …machine-scale candidates | **224** | `geometry_status: MEASURED_CAD` for position and rotation |
+| …with an extent that survived the overlap gate | **63** | `footprint_status: OBSERVED_CAD` |
+| …with the extent withheld | **161** | `footprint_status: UNRESOLVED`, `footprint: null` |
+| Block families | 56 (17 repeating ≥3×) | — |
+| Assigned to a functional zone by containment | 47 | — |
+
+The 161 unresolved extents are **not a defect to be fixed by filling them in**.
+A block bounding box that overlaps its neighbour, or whose centre lands off the
+floor, is measuring a service envelope or a leader rather than the machine
+body. Those records carry `footprint: null`, and the renderer draws a small
+fixed marker rather than a box. `lib/wire.js` refuses to serve a footprint for
+them even if one were added to the private document, and
+`tests/lint/floor1-geometry-validator.js` fails the document if one is.
+
+### Known limitations of this pass
+
+- **Scale factors are not read.** INSERT group codes 41/42 are not carried by
+  the CAD bundle, so every extent assumes unit scale. This is exactly why
+  footprint is `OBSERVED_CAD` while position is `MEASURED_CAD`: a non-unit
+  scale would change an extent without moving an insertion point.
+- **No identity.** The CAD names *blocks*, not assets, and a block name is a
+  drawing-internal handle shared by every instance. Every record is `UNMAPPED`
+  and stays that way until an authoritative device record is supplied.
+- **Height remains absent.** A plan view carries no equipment elevation.
+  `height_status` is `unknown` on every record, and the validator rejects any
+  other value.
+
+### What this supersedes
+
+The 243 raster-derived slots digitised from the scanned schematic are
+**retained in the private document and no longer served in any form**. Their
+left/right placement, extent and orientation all came from a scan of a print,
+which is what made machines look mis-scaled and mis-placed against the CAD.
+`wire.projectSlot` is deleted rather than left unused, so re-adding
+`slots: wire.projectAll(...)` to the route cannot silently work again.
+
+### Reconciliation
+
+`tests/lint/floor1-cad-reconciliation.js` compares the served model back
+against the CAD bundle record by record and reports residuals rather than a
+verdict. Current run:
+
+| Residual | Worst | Tolerance |
+|---|---:|---:|
+| Position | 0.62 mm | 1 mm |
+| Extent | 0.50 mm | 1 mm |
+| Rotation | 0.0000° | 0.01° |
+
+224 of 224 records reconcile to a CAD INSERT.
 
 ---
 

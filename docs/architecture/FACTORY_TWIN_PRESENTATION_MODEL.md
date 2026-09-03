@@ -7,6 +7,26 @@
 
 # Factory Twin — Presentation Model
 
+> [!CAUTION]
+> **SUPERSEDED — the machine-form layer this document describes is deleted.**
+>
+> It drew a body for every machine on the floor, chosen from a table of shapes
+> nobody measured, standing at a position digitised from a scan of a printed
+> sheet. Two unmeasured claims stacked, rendered at the same visual weight as
+> the CAD geometry beside them.
+>
+> Equipment now comes from the drawing's own block references: position and
+> rotation are `MEASURED_CAD`, extent is `OBSERVED_CAD` where the CAD
+> establishes it and `UNRESOLVED` where it does not — and where it does not,
+> the renderer draws a fixed marker and says so rather than supplying a body.
+> See **[Reconstruction §0.3](FACTORY_TWIN_RECONSTRUCTION.md)**.
+>
+> This document is retained because the *rules* below — how a presentation
+> claim must be labelled, and why it may never be promoted to evidence — still
+> govern the two presentation constants that remain (wall height and column
+> height). The machine-form library, its instanced meshes, its census and its
+> layer toggle are gone from the code.
+
 The third layer: geometry drawn to be understood rather than to be believed,
 and the rules that keep it from becoming evidence.
 
