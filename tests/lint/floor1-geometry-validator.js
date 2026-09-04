@@ -31,6 +31,7 @@ const path = require('path');
 // Single source of truth for what the runtime can read -- imported rather
 // than re-declared so the validator and the service cannot drift apart.
 const { SUPPORTED_SCHEMA_MAJOR } = require('../../services/factory-twin-3d/lib/contracts');
+const blocks = require('../../scripts/lib/cad-blocks');
 
 // Overridable so mutation tests can point at throwaway fixtures instead of
 // corrupting the real private data to prove a rule fires. Unset in normal use.
@@ -297,6 +298,25 @@ const EQUIPMENT_OVERHANG_MAX_M = 2.0;
  * tolerance covers the 3-decimal rounding on both, and nothing else.
  */
 const POLYGON_EXTENT_TOL_M = 0.01;
+
+/**
+ * Display geometry: the classes, and how far derivation is allowed to move a
+ * machine. The answer is "not at all" -- the tolerance below is the model's own
+ * published coordinate resolution, one millimetre, and nothing else.
+ */
+const EQUIPMENT_DISPLAY_SHAPE = new Set([
+  'ORIENTED_RECTANGLE', 'CHAMFERED_RECTANGLE', 'SIMPLIFIED_POLYGON', 'UNRESOLVED',
+]);
+const EQUIPMENT_DISPLAY_SOURCE = new Set(['derived_from_measured_footprint']);
+const EQUIPMENT_DISPLAY_MAX_VERTICES = 12;
+/**
+ * Coordinates are published in metres to three decimals. An extent measured
+ * back off two published vertices can therefore differ from a separately
+ * published width by one millimetre -- half a millimetre at each end -- and by
+ * nothing else. That quantum IS the tolerance; it is not slack for a shape
+ * that drifted.
+ */
+const DISPLAY_TOL_M = 0.0011;
 let equipmentOutsideEnvelope = 0;
 const seenEquipmentIds = new Set();
 let equipmentResolved = 0;
@@ -379,6 +399,50 @@ for (const item of geometry.equipment || []) {
         }
       }
     }
+    // DISPLAY geometry. Derived from the measurement above and drawn instead
+    // of it, so the invariant that matters is that deriving it moved nothing:
+    // same centre, same angle, same extent. This is the check that stops a
+    // "make the map prettier" change from becoming a change to the floor.
+    if (!EQUIPMENT_DISPLAY_SHAPE.has(item.display_shape)) {
+      error(`${label}: display_shape "${item.display_shape}" is not one of `
+        + `${[...EQUIPMENT_DISPLAY_SHAPE].join(', ')}`);
+    } else if (item.display_shape === 'UNRESOLVED') {
+      error(`${label}: has a measured footprint but its display geometry is UNRESOLVED`);
+    } else {
+      const poly = item.display_polygon;
+      if (!Array.isArray(poly) || poly.length < 3 || poly.length > EQUIPMENT_DISPLAY_MAX_VERTICES) {
+        error(`${label}: display_polygon must be 3 to ${EQUIPMENT_DISPLAY_MAX_VERTICES} `
+          + `vertices, got ${Array.isArray(poly) ? poly.length : typeof poly}`);
+      } else if (poly.some((v) => !v || !Number.isFinite(v.x) || !Number.isFinite(v.z))) {
+        error(`${label}: display_polygon has a vertex that is not a finite point`);
+      } else if (item.footprint && typeof item.rotation_deg === 'number') {
+        // Measured on the machine's own axes. The canonical frame reflects z,
+        // so the machine's axis in (x, z) is at MINUS the served rotation;
+        // measuring on +rotation reports a turned machine as larger than it is.
+        const flat = [];
+        for (const v of poly) flat.push(v.x, v.z);
+        const ext = blocks.orientedExtent(flat, -item.rotation_deg);
+        const dx = Math.abs(ext.cx - item.position.x);
+        const dz = Math.abs(ext.cy - item.position.z);
+        const dw = Math.abs(ext.width - item.footprint.width);
+        const dd = Math.abs(ext.depth - item.footprint.depth);
+        if (dx > DISPLAY_TOL_M || dz > DISPLAY_TOL_M) {
+          error(`${label}: display geometry moved the machine by `
+            + `${(Math.max(dx, dz) * 1000).toFixed(3)} mm -- display may simplify a shape, `
+            + 'never relocate it');
+        }
+        if (dw > DISPLAY_TOL_M || dd > DISPLAY_TOL_M) {
+          error(`${label}: display geometry resized the machine by `
+            + `${(Math.max(dw, dd) * 1000).toFixed(3)} mm -- the measured extent is `
+            + 'authoritative');
+        }
+      }
+      if (!EQUIPMENT_DISPLAY_SOURCE.has(item.display_source)) {
+        error(`${label}: display_source "${item.display_source}" is not one of `
+          + `${[...EQUIPMENT_DISPLAY_SOURCE].join(', ')} -- a display outline must say `
+          + 'what it was derived from');
+      }
+    }
     if (!EQUIPMENT_FOOTPRINT_SOURCE.has(item.footprint_source)) {
       error(`${label}: footprint_source "${item.footprint_source}" is not one of `
         + `${[...EQUIPMENT_FOOTPRINT_SOURCE].join(', ')} -- an extent must say how it was `
@@ -403,6 +467,14 @@ for (const item of geometry.equipment || []) {
     if (item.footprint) {
       error(`${label}: footprint_status is UNRESOLVED but a footprint is recorded `
         + '-- an unresolved extent must be absent, not withheld-but-present');
+    }
+    // And display geometry must not smuggle one back in.
+    if (item.display_shape !== 'UNRESOLVED') {
+      error(`${label}: footprint is UNRESOLVED but display_shape is `
+        + `"${item.display_shape}" -- display geometry may not invent an extent`);
+    }
+    if (item.display_polygon) {
+      error(`${label}: footprint is UNRESOLVED but a display_polygon is recorded`);
     }
   }
 

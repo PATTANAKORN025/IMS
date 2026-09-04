@@ -218,6 +218,13 @@ const sublayers = {
   // position marker, never as a box, because a default box would put an
   // invented extent on the floor next to a measured one.
   equipment: new THREE.Group(),
+  // INSPECTION geometry: the exact measured outline of every machine, drawn as
+  // line-work. Hidden by default and never what a machine is drawn as -- the
+  // measurement is reconciliation geometry, and a 34-vertex hull of every
+  // bracket and pipe stub is noise on an operator's map. It exists so the
+  // simplification the operator sees can be checked against what was measured,
+  // in the same view, without leaving the floor.
+  measured: new THREE.Group(),
 };
 // The presentation sub-layer is GONE, along with the machine-form library that
 // fed it. It drew invented machine volumes over raster-derived positions: two
@@ -225,7 +232,8 @@ const sublayers = {
 
 for (const [name, g] of Object.entries(sublayers)) g.name = name;
 layers.structural.add(sublayers.shell, sublayers.columns, sublayers.walls);
-layers.operational.add(sublayers.equipment);
+layers.operational.add(sublayers.equipment, sublayers.measured);
+sublayers.measured.visible = false;
 
 // -- Raw CAD reference -------------------------------------------------
 //
@@ -498,6 +506,8 @@ document.getElementById('layer-controls')?.addEventListener('change', (ev) => {
   const box = ev.target;
   if (!(box instanceof HTMLInputElement) || !box.dataset.layer) return;
   setLayerVisible(box.dataset.layer, box.checked);
+  // Hiding the equipment layer must take its captions with it.
+  requestLabelUpdate();
   // The reference is fetched the first time it is switched on, never at boot.
   if (box.dataset.layer === 'reference' && box.checked) {
     ensureRawCad(activeFloor).then((state) => {
@@ -586,6 +596,17 @@ function standardMaterial(color) {
   let m = materialCache.get(key);
   if (!m) {
     m = new THREE.MeshStandardMaterial({ color });
+    materialCache.set(key, m);
+  }
+  return m;
+}
+
+/** A cached line material, so the inspection layer costs one of them. */
+function lineMaterial(color, opacity) {
+  const key = `line|${color}|${opacity}`;
+  let m = materialCache.get(key);
+  if (!m) {
+    m = new THREE.LineBasicMaterial({ color, transparent: true, opacity });
     materialCache.set(key, m);
   }
   return m;
@@ -1082,8 +1103,19 @@ function buildFloor(geometry) {
     // Where the CAD drew an outline rather than a box, that outline is what is
     // drawn. Squaring it off would report a shape the drawing does not have,
     // and would put a corner where the machine has none.
-    const outline = sized && Array.isArray(item.footprint_polygon)
-      && item.footprint_polygon.length >= 3 ? item.footprint_polygon : null;
+    // DISPLAY geometry, not the measurement. The measured outline is
+    // reconciliation geometry -- it is in the record, it is drawn by the
+    // inspection layer, and it is not what a machine is drawn as. The display
+    // shape is derived from it deterministically and carries no position of
+    // its own, so drawing it cannot move, turn or resize anything.
+    //
+    // An ORIENTED_RECTANGLE is drawn as a shared, cached box turned to the
+    // machine's angle rather than as a four-vertex extrusion: same geometry,
+    // one allocation for every machine of that size.
+    const shape = item.display_shape;
+    const outline = sized && shape !== 'ORIENTED_RECTANGLE'
+      && Array.isArray(item.display_polygon) && item.display_polygon.length >= 3
+      ? item.display_polygon : null;
     const geom = outline
       ? footprintGeometry(outline, item.position, h)
       : boxGeometry(w, h, d);
@@ -1108,6 +1140,42 @@ function buildFloor(geometry) {
     mesh.position.set(item.position.x, item.position.y + (outline ? 0 : h / 2), item.position.z);
     sublayers.equipment.add(mesh);
   }
+
+  buildMeasuredOutlines(equipment);
+}
+
+/**
+ * The MEASURED outline of every machine, as one merged line object.
+ *
+ * One BufferGeometry and one draw call for all of them, because this is a
+ * diagnostic layer and an operator's frame budget should not pay 213 draw
+ * calls for something that is off by default. Drawn at the floor plane, in
+ * plan, so it reads against the display shape it is the source of.
+ */
+function buildMeasuredOutlines(equipment) {
+  sublayers.measured.clear();
+  const points = [];
+  let outlines = 0;
+  for (const item of equipment) {
+    const poly = item && Array.isArray(item.footprint_polygon) ? item.footprint_polygon : null;
+    if (!poly || poly.length < 3) continue;
+    if (!finitePoint(item.position, true)) continue;
+    outlines += 1;
+    const y = item.position.y + MEASURED_OUTLINE_LIFT_M;
+    for (let i = 0; i < poly.length; i += 1) {
+      const a = poly[i];
+      const b = poly[(i + 1) % poly.length];
+      if (!finite(a.x) || !finite(a.z) || !finite(b.x) || !finite(b.z)) continue;
+      points.push(a.x, y, a.z, b.x, y, b.z);
+    }
+  }
+  measuredOutlineCount = outlines;
+  if (!points.length) return;
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
+  const line = new THREE.LineSegments(geom, lineMaterial(MEASURED_OUTLINE_COLOR, 0.85));
+  line.name = 'measured-outlines';
+  sublayers.measured.add(line);
 }
 
 // ── Lighting ──────────────────────────────────────────────────────────
@@ -1374,6 +1442,11 @@ const CAD_ROTATION_SIGN = 1;
 // fixed, obviously-uniform square: it must not be mistakable for a measurement,
 // which is exactly why every one of them is the same size.
 const UNRESOLVED_MARKER_M = 0.9;
+// The inspection outline sits just above the display shape it is the source
+// of, so the two read as a pair rather than z-fighting into a shimmer.
+const MEASURED_OUTLINE_LIFT_M = 0.02;
+const MEASURED_OUTLINE_COLOR = 0xe0a94f;
+let measuredOutlineCount = 0;
 // And deliberately flat. A marker at block height would read as a machine
 // whose size is known, which is the one thing it is not.
 const MARKER_HEIGHT_M = 0.08;
@@ -1702,7 +1775,9 @@ function showEquipmentInspector(item) {
       ['Position evidence', item.geometry_status ?? 'unknown'],
       ['Footprint', extent],
       ['Footprint evidence', extentEvidence],
-      ['Outline', item.footprint_shape ?? 'unresolved'],
+      ['Outline, measured', item.footprint_shape ?? 'unresolved'],
+      ['Outline, drawn', item.display_shape ?? 'unresolved'],
+      ['Shares floor with a neighbour', item.overlaps_neighbour ? 'yes — outlines overlap' : 'no'],
       ['Handing', item.mirrored ? 'mirrored in the CAD' : 'as drawn'],
       ['Room', item.zone_status ?? 'unresolved'],
       ['Height', 'PRESENTATION_ONLY — a plan carries no elevation'],
@@ -1729,9 +1804,12 @@ function showEquipmentInspector(item) {
         : 'Placed by a CAD block reference, so position and rotation are measured. Its '
           + 'extent is NOT established and none is drawn — a marker stands in for the '
           + 'machine rather than an invented footprint.')))
-    + ' The block height is a presentation constant, identical for every machine on this '
-    + 'floor, and is not a measurement of anything. No machine identity is claimed: the '
-    + 'CAD names blocks, not assets.'
+    + ' The shape on screen is DISPLAY geometry, derived from the measured outline and '
+    + 'drawn around the same measured centre at the same measured angle and size; switch '
+    + 'on Measured outlines to see the outline it was derived from. The block height is a '
+    + 'presentation constant, identical for every machine on this floor, and is not a '
+    + 'measurement of anything. No machine identity is claimed: the CAD names blocks, not '
+    + 'assets.'
   );
 }
 
@@ -2270,6 +2348,16 @@ async function boot() {
     // Cache sizes are exposed so a regression test can assert the sharing
     // actually happened rather than trusting that it did.
     resourceStats,
+    // Read back by the regression: the caption layer is a presentation overlay
+    // and must be provable to be one -- it draws no geometry and moves nothing.
+    labelStats: () => ({
+      shown: labelsShown,
+      pooled: labelPool.length,
+      minPx: LABEL_MIN_PX,
+      max: LABEL_MAX,
+    }),
+    updateMachineLabels,
+    measuredOutlineCount: () => measuredOutlineCount,
     footprintMeshes,
     wallMeshes,
     wallLineMeshes,
@@ -2380,6 +2468,129 @@ window.addEventListener('resize', () => {
   });
 });
 
+// ── Machine labels ────────────────────────────────────────────────────
+//
+// An HTML OVERLAY, deliberately not geometry in the scene. Three reasons, and
+// the first is the one that matters: a label drawn in the scene is a thing on
+// the floor, and an operator reading a floor plan should never have to work out
+// whether a rectangle is a machine or a caption. The other two are that text
+// meshes cost geometry per glyph, and that the overlay cannot intercept a
+// click -- picking still goes to the canvas underneath.
+//
+// LEVEL OF DETAIL, not a global switch. A label appears only when the machine
+// it names is large enough on screen to hold one, and the number of labels is
+// capped: 344 captions at full-floor zoom is not information, it is a grey
+// band across the plan. Nothing about the machine changes with zoom -- world
+// dimensions are untouched. Only whether its name is legible does.
+const labelHost = document.getElementById('machine-labels');
+/** Below this on-screen width, in pixels, a machine is too small to caption. */
+const LABEL_MIN_PX = 46;
+/** And above this one it is close enough to carry its measured size as well. */
+const LABEL_DETAIL_PX = 190;
+/** Hard cap. Whatever the zoom, the plan does not become a wall of text. */
+const LABEL_MAX = 40;
+
+const labelPool = [];
+const labelVec = new THREE.Vector3();
+let labelsPending = false;
+
+function labelElement(i) {
+  if (labelPool[i]) return labelPool[i];
+  const el = document.createElement('div');
+  el.className = 'machine-label';
+  el.hidden = true;
+  labelHost?.appendChild(el);
+  labelPool[i] = el;
+  return el;
+}
+
+/**
+ * Projects every drawn machine, keeps the ones big enough to caption, and
+ * writes at most LABEL_MAX of them, largest first.
+ *
+ * Reads the scene; writes only DOM. No mesh, no material and no served value is
+ * touched, so labelling cannot move, resize or restyle a machine.
+ */
+function updateMachineLabels() {
+  labelsPending = false;
+  if (!labelHost) return;
+  const host = renderer.domElement;
+  const width = host.clientWidth;
+  const height = host.clientHeight;
+  if (!width || !height) return;
+  const visible = layers.operational.visible && sublayers.equipment.visible;
+
+  const candidates = [];
+  if (visible) {
+    for (const mesh of equipmentMeshes) {
+      const item = mesh.userData.equipment;
+      if (!item || !item.id) continue;
+      const fp = item.footprint;
+      // An unresolved machine has no size to be legible at: it is a marker, and
+      // captioning every marker is exactly the clutter this avoids.
+      if (!fp || !finite(fp.width) || !finite(fp.depth)) continue;
+      labelVec.set(mesh.position.x, mesh.position.y, mesh.position.z).project(camera);
+      if (labelVec.z < -1 || labelVec.z > 1) continue;
+      const x = (labelVec.x * 0.5 + 0.5) * width;
+      const y = (-labelVec.y * 0.5 + 0.5) * height;
+      if (x < 0 || y < 0 || x > width || y > height) continue;
+      // On-screen size, from the machine's own measured extent: the smaller
+      // side, so a long thin machine is not captioned on its length alone.
+      const scale = worldToPixels(mesh.position, width);
+      const px = Math.min(fp.width, fp.depth) * scale;
+      if (px < LABEL_MIN_PX) continue;
+      candidates.push({ item, x, y, px });
+    }
+    candidates.sort((a, b) => b.px - a.px);
+  }
+
+  const shown = Math.min(candidates.length, LABEL_MAX);
+  for (let i = 0; i < shown; i += 1) {
+    const c = candidates[i];
+    const el = labelElement(i);
+    const mapped = Boolean(c.item.ims_device_id);
+    const dims = c.px >= LABEL_DETAIL_PX && c.item.footprint
+      ? `<span class="dim">${c.item.footprint.width} × ${c.item.footprint.depth} m</span>` : '';
+    // The id is a model identifier (EQP-F1-nnnn), not a CAD block or layer
+    // name, and never a vendor's. textContent is not used because of the two
+    // spans; both are built here, neither carries served free text.
+    el.innerHTML = `<span class="dot"></span>${escapeHtml(c.item.id)}${dims}`;
+    el.classList.toggle('is-mapped', mapped);
+    el.style.left = `${Math.round(c.x)}px`;
+    el.style.top = `${Math.round(c.y)}px`;
+    el.hidden = false;
+  }
+  for (let i = shown; i < labelPool.length; i += 1) labelPool[i].hidden = true;
+  labelsShown = shown;
+}
+
+/** Pixels per world metre at a given point, from the projection itself. */
+const labelA = new THREE.Vector3();
+const labelB = new THREE.Vector3();
+function worldToPixels(position, width) {
+  labelA.set(position.x, position.y, position.z).project(camera);
+  labelB.set(position.x + 1, position.y, position.z).project(camera);
+  return Math.abs(labelB.x - labelA.x) * 0.5 * width;
+}
+
+/** Escapes the four characters that could turn an id into markup. */
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+let labelsShown = 0;
+
+/** Coalesced to one update per frame, whatever asks for it. */
+function requestLabelUpdate() {
+  if (labelsPending) return;
+  labelsPending = true;
+  requestAnimationFrame(updateMachineLabels);
+}
+
 function animate() {
   requestAnimationFrame(animate);
   // controls.update() returns true while damping is still moving the camera.
@@ -2389,5 +2600,8 @@ function animate() {
   renderTail--;
   framesRendered++;
   renderer.render(scene, camera);
+  // Labels follow the camera, so they are refreshed with the frame rather than
+  // on a timer: a timer either lags the view or burns frames when nothing moved.
+  requestLabelUpdate();
 }
 animate();

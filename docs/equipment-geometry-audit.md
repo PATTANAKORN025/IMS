@@ -19,6 +19,11 @@ what is still unresolved.
 
 ---
 
+The shape an operator actually sees is derived from this measurement and is
+documented separately: [equipment-display-geometry.md](equipment-display-geometry.md).
+
+---
+
 ## 1. What the previous pass did, and the three faults in it
 
 Machines in this drawing are **placed, not traced**: an `INSERT` entity records
@@ -63,11 +68,12 @@ T_total = T_parent × T_child
 Never a product of bounding boxes. A box product is not even wrong at one
 level — it is right until something rotates, and then it silently inflates.
 
-The maths lives in `scripts/lib/cad-blocks.js` and is covered by **28 unit
+The maths lives in `scripts/lib/cad-blocks.js` and is covered by **39 unit
 tests** that need no drawing: base-point subtraction, rotation, uniform and
 mirrored scale, mirror detection by determinant, three-level composition,
 associativity, oriented extent, minimum-area fit, shape classification,
-extent-preserving simplification and convex intersection.
+extent-preserving simplification, convex intersection under either winding, and
+the display-geometry derivation.
 
 ### 2.2 Why a hull, and why that loses nothing
 
@@ -231,10 +237,18 @@ width/depth are two statements of one measurement rather than two numbers that
 disagree by up to 286 mm — which is what an unprotected simplification produced
 and what the browser regression caught.
 
-**An independent check on placement.** One of 270 measured outlines touches a
-structural column, worst case 6.3% of one outline — and the columns come from a
-*different* extraction of the same drawing. A transform error would put dozens
-of machines on columns.
+**An independent check on placement.** 115 of 270 measured outlines touch a
+structural column — and the columns come from a *different* extraction of the
+same drawing. The worst single case is **6.3% of one outline**, which is what
+this figure has to be read by: machines are drawn hard against columns and a
+convex outline swallows the corner of one, while a transform error would show as
+machines sitting squarely on top of them.
+
+> **Correction.** This was first reported as *1 of 270*. That figure came from a
+> polygon intersection that returned nothing: the canonical frame reflects z, so
+> a polygon counter-clockwise in the CAD arrives clockwise, and the clip put
+> every point outside. Fixed, with unit tests, in `convexIntersection`. See
+> [equipment-display-geometry.md §8](equipment-display-geometry.md#8-overlap-and-a-correction).
 
 ### Browser regression
 
@@ -284,10 +298,15 @@ as a small, deliberately uniform marker; the renderer never substitutes a
 nominal box, and the geometry validator fails the build if an `UNRESOLVED`
 record carries a footprint.
 
-**23 machines are flagged as overlapping a neighbour** — 5 pairs where one
-outline sits inside another and 14 partial pairs above a quarter of the smaller
-outline. They are reported, not resolved by deletion: an overlap in the drawing
-is a fact about the drawing.
+**163 machines are flagged as overlapping a neighbour** — 31 pairs where one
+outline sits inside another and 432 partial pairs above a quarter of the smaller
+outline. They are reported, not resolved by deletion or by moving anything: an
+overlap in the drawing is a fact about the drawing. The outlines are convex, so
+this is an upper bound on physical interference rather than a collision count —
+the hull of an L-shaped machine covers space the machine does not occupy.
+
+> **Correction.** First reported as *23 machines, 19 pairs*, from the same
+> empty-intersection defect described above.
 
 ---
 

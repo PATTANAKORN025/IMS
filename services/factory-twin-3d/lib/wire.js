@@ -133,6 +133,22 @@ const ALLOWED_FOOTPRINT_SHAPE = new Set([
 ]);
 
 /**
+ * The DISPLAY class a record is drawn as.
+ *
+ * Display geometry is derived from the physical measurement and is what the
+ * renderer draws; the measured outline travels alongside it for inspection and
+ * is never what a mesh is built from. A display shape carries no position of
+ * its own -- it is built around the record's own centre -- so nothing in this
+ * vocabulary can move a machine.
+ */
+const ALLOWED_DISPLAY_SHAPE = new Set([
+  'ORIENTED_RECTANGLE', 'CHAMFERED_RECTANGLE', 'SIMPLIFIED_POLYGON', 'UNRESOLVED',
+]);
+
+/** How a display outline was arrived at. A fixed enum, never prose. */
+const ALLOWED_DISPLAY_SOURCE = new Set(['derived_from_measured_footprint']);
+
+/**
  * Whether a physical machine is bound to an IMS device, and nothing else.
  * Identity is never inferred from position, sequence or name similarity, so
  * UNMAPPED_TO_IMS is the normal state and carries no defect.
@@ -573,18 +589,20 @@ function projectEquipment(item, mapping) {
   // numbers, and a partial outline is dropped rather than closed for it. Never
   // served without a footprint -- an outline with no extent beside it would be
   // an extent claim wearing another name.
-  let polygon = null;
-  if (footprint !== null && Array.isArray(item.footprint_polygon)
-    && item.footprint_polygon.length >= 3 && item.footprint_polygon.length <= 64) {
+  const outline = (value) => {
+    if (footprint === null || !Array.isArray(value)
+      || value.length < 3 || value.length > 64) return null;
     const out = [];
-    for (const v of item.footprint_polygon) {
+    for (const v of value) {
       const x = num(v && v.x);
       const z = num(v && v.z);
-      if (x === null || z === null) { out.length = 0; break; }
+      if (x === null || z === null) return null;
       out.push({ x, z });
     }
-    if (out.length >= 3) polygon = out;
-  }
+    return out;
+  };
+  const polygon = outline(item.footprint_polygon);
+  const displayPolygon = outline(item.display_polygon);
 
   return {
     id: token(item.id),
@@ -606,6 +624,20 @@ function projectEquipment(item, mapping) {
     footprint_shape: footprint === null ? null
       : fromEnum(item.footprint_shape, ALLOWED_FOOTPRINT_SHAPE),
     footprint_polygon: polygon,
+    // What the renderer draws. Derived from the measurement above, never the
+    // other way round, and dropped entirely if the record does not say which
+    // class it was derived as -- an outline with no class is an outline nobody
+    // can check.
+    display_shape: fromEnum(item.display_shape, ALLOWED_DISPLAY_SHAPE),
+    display_polygon: fromEnum(item.display_shape, ALLOWED_DISPLAY_SHAPE) === null
+      ? null : displayPolygon,
+    display_source: displayPolygon === null
+      ? null : fromEnum(item.display_source, ALLOWED_DISPLAY_SOURCE),
+    display_area_error: displayPolygon === null ? null : num(item.display_area_error),
+    // Two machines whose OUTLINES share floor. Measured on convex outlines, so
+    // it over-reports: the convex hull of an L-shaped machine covers space the
+    // machine does not occupy. Reported, never resolved by moving anything.
+    overlaps_neighbour: item.footprint_overlaps_neighbour === true,
     // The handing of the machine, as the CAD states it. A mirrored INSERT is a
     // different physical machine from its twin, and the outline already carries
     // the mirror; this says so in one field the inspector can show.

@@ -85,6 +85,23 @@ const ROTATION_TOL_DEG = 0.01;
  * FALSE POSITIVE is floor the model claims that the drawing does not measure.
  * A rectangle's box legitimately covers more than its hull; an outline may not.
  */
+/**
+ * Display-geometry ratchets.
+ *
+ * DISPLAY_QUANTUM_M is the published coordinate resolution, one millimetre. An
+ * extent measured back off two published vertices differs from a separately
+ * published width by that much and by nothing else, so it is the tolerance for
+ * "did deriving the display shape move or resize anything" -- and the answer
+ * has to be no, for every record, not for most.
+ *
+ * UNCOVERED is measured floor the display shape drops; CLAIMED is floor it adds.
+ * Both are bounded by the classification rules in scripts/lib/cad-blocks.js.
+ */
+const DISPLAY_QUANTUM_M = 0.0011;
+const MAX_DISPLAY_UNCOVERED = 0.05;
+const MAX_DISPLAY_CLAIMED = 0.07;
+const MAX_DISPLAY_VERTICES = 12;
+
 const MIN_EQUIPMENT_POSITION = 0.99;
 const MIN_FOOTPRINT_OVERLAP = 0.95;
 const MAX_FOOTPRINT_FALSE_POSITIVE = 0.05;
@@ -298,7 +315,7 @@ for (const item of equipment) {
   if (!item.footprint) continue;
   const poly = Array.isArray(item.footprint_polygon) && item.footprint_polygon.length >= 3
     ? item.footprint_polygon.map((p) => [p.x, p.z])
-    : blocks.boxCorners(item.position.x, item.position.z, item.footprint.width,
+    : blocks.twinBoxCorners(item.position.x, item.position.z, item.footprint.width,
       item.footprint.depth, item.rotation_deg);
   const area = blocks.polygonArea(poly);
   if (!(area > 0)) continue;
@@ -358,6 +375,126 @@ if (worstCorner > CORNER_TOL_MM) {
 if (worstFalsePositive > MAX_FOOTPRINT_FALSE_POSITIVE) {
   fail(`a served outline claims ${(worstFalsePositive * 100).toFixed(1)}% more floor than the `
     + `drawing measures (limit ${(MAX_FOOTPRINT_FALSE_POSITIVE * 100).toFixed(0)}%)`);
+}
+
+/* -- display geometry vs physical geometry ---------------------------- */
+//
+// The whole point of the display layer is that deriving it changed nothing
+// physical. That is not a claim to be made in a commit message; it is a
+// residual to be measured, per record, and it is measured here:
+//
+//   the display outline is re-measured on the machine's OWN axes and its
+//   centre, width and depth are compared with the physical record's
+//
+//   the display outline is intersected with the MEASURED hull, so a class that
+//   contains the hull is shown to contain it and a class that drops slivers is
+//   shown to drop only slivers
+//
+// The canonical frame reflects z, so a machine's own axis in (x, z) lies at
+// MINUS the served rotation. Measuring on +rotation reports a turned machine as
+// larger than it is, which is a mistake this file made once already.
+const DISPLAY_SHAPES = new Set([
+  'ORIENTED_RECTANGLE', 'CHAMFERED_RECTANGLE', 'SIMPLIFIED_POLYGON', 'UNRESOLVED',
+]);
+const displayTally = {};
+let displayMoved = 0;
+let displayResized = 0;
+let worstDisplayMove = 0;
+let worstDisplayResize = 0;
+let worstRectResize = 0;
+let displayVertices = 0;
+let displayShapesDrawn = 0;
+let displayVertexMax = 0;
+let measuredVertices = 0;
+let worstUncovered = 0;
+let worstClaimed = 0;
+let displayOnUnresolved = 0;
+let classMissing = 0;
+
+for (const item of equipment) {
+  const shape = item.display_shape;
+  if (!DISPLAY_SHAPES.has(shape)) { classMissing += 1; continue; }
+  displayTally[shape] = (displayTally[shape] || 0) + 1;
+
+  if (!item.footprint) {
+    // An unresolved footprint may not acquire one by being drawn.
+    if (shape !== 'UNRESOLVED' || item.display_polygon) displayOnUnresolved += 1;
+    continue;
+  }
+  const poly = item.display_polygon;
+  if (!Array.isArray(poly) || poly.length < 3) {
+    fail(`${item.id}: measured footprint with no display outline to draw it with`);
+    continue;
+  }
+  displayShapesDrawn += 1;
+  displayVertices += poly.length;
+  displayVertexMax = Math.max(displayVertexMax, poly.length);
+  measuredVertices += Array.isArray(item.footprint_polygon) ? item.footprint_polygon.length : 4;
+
+  const flat = [];
+  for (const v of poly) flat.push(v.x, v.z);
+  const ext = blocks.orientedExtent(flat, -item.rotation_deg);
+  const move = Math.max(Math.abs(ext.cx - item.position.x), Math.abs(ext.cy - item.position.z));
+  const resize = Math.max(Math.abs(ext.width - item.footprint.width),
+    Math.abs(ext.depth - item.footprint.depth));
+  worstDisplayMove = Math.max(worstDisplayMove, move);
+  worstDisplayResize = Math.max(worstDisplayResize, resize);
+  if (move > DISPLAY_QUANTUM_M) displayMoved += 1;
+  if (resize > DISPLAY_QUANTUM_M) displayResized += 1;
+  if (shape === 'ORIENTED_RECTANGLE') worstRectResize = Math.max(worstRectResize, resize);
+
+  // Against the MEASUREMENT, not against itself. A rectangle or a chamfer must
+  // cover the measured hull; a simplified polygon must claim no floor beyond
+  // it. Both are the same intersection, read in opposite directions.
+  const measured = Array.isArray(item.footprint_polygon) && item.footprint_polygon.length >= 3
+    ? item.footprint_polygon.map((v) => [v.x, v.z])
+    : blocks.twinBoxCorners(item.position.x, item.position.z, item.footprint.width,
+      item.footprint.depth, item.rotation_deg);
+  const displayPoly = poly.map((v) => [v.x, v.z]);
+  const measuredArea = blocks.polygonArea(measured);
+  const displayArea = blocks.polygonArea(displayPoly);
+  const inter = blocks.polygonArea(blocks.convexIntersection(displayPoly, measured));
+  if (measuredArea > 0) {
+    worstUncovered = Math.max(worstUncovered, (measuredArea - inter) / measuredArea);
+    worstClaimed = Math.max(worstClaimed, (displayArea - inter) / measuredArea);
+  }
+}
+
+console.log(`  display classes      ${JSON.stringify(displayTally)}`);
+console.log(`  display vs physical  ${displayMoved} moved, ${displayResized} resized `
+  + `(worst move ${(worstDisplayMove * 1000).toFixed(3)} mm, worst resize `
+  + `${(worstDisplayResize * 1000).toFixed(3)} mm, rectangles ${(worstRectResize * 1000).toFixed(3)} mm)`);
+console.log(`  display vertices     ${displayVertices} across ${displayShapesDrawn} shapes `
+  + `(mean ${(displayVertices / Math.max(1, displayShapesDrawn)).toFixed(2)}, max `
+  + `${displayVertexMax}) against ${measuredVertices} measured`);
+console.log(`  display vs measured  worst ${(worstUncovered * 100).toFixed(1)}% of the measured `
+  + `outline uncovered, worst ${(worstClaimed * 100).toFixed(1)}% claimed beyond it`);
+
+if (classMissing) {
+  fail(`${classMissing} equipment record(s) carry no display class`);
+}
+if (displayOnUnresolved) {
+  fail(`${displayOnUnresolved} unresolved record(s) carry display geometry -- display may `
+    + 'not invent an extent');
+}
+if (displayMoved) {
+  fail(`${displayMoved} display shape(s) sit off their own record's position by more than `
+    + `${(DISPLAY_QUANTUM_M * 1000).toFixed(1)} mm`);
+}
+if (displayResized) {
+  fail(`${displayResized} display shape(s) differ from their measured extent by more than `
+    + `${(DISPLAY_QUANTUM_M * 1000).toFixed(1)} mm`);
+}
+if (worstUncovered > MAX_DISPLAY_UNCOVERED) {
+  fail(`a display shape leaves ${(worstUncovered * 100).toFixed(1)}% of its measured outline `
+    + `uncovered (limit ${(MAX_DISPLAY_UNCOVERED * 100).toFixed(0)}%)`);
+}
+if (worstClaimed > MAX_DISPLAY_CLAIMED) {
+  fail(`a display shape claims ${(worstClaimed * 100).toFixed(1)}% more floor than its measured `
+    + `outline (limit ${(MAX_DISPLAY_CLAIMED * 100).toFixed(0)}%)`);
+}
+if (displayVertexMax > MAX_DISPLAY_VERTICES) {
+  fail(`a display outline carries ${displayVertexMax} vertices (budget ${MAX_DISPLAY_VERTICES})`);
 }
 
 /* -- structure ------------------------------------------------------- */

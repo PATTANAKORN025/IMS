@@ -127,7 +127,9 @@ function servedShape(e) {
     return e.footprint_polygon.map((p) => [p.x, p.z]);
   }
   if (!e.footprint) return null;
-  return B.boxCorners(e.position.x, e.position.z, e.footprint.width,
+  // Canonical frame: the box is built on MINUS the served rotation. See
+  // B.twinBoxCorners for why, and for the two bugs that came of not doing it.
+  return B.twinBoxCorners(e.position.x, e.position.z, e.footprint.width,
     e.footprint.depth, e.rotation_deg);
 }
 
@@ -535,6 +537,13 @@ function main() {
     let resolved = 0;
     let unresolved = 0;
     const shapes = {};
+    const displayShapes = {};
+    let displayVertexTotal = 0;
+    let displayVertexMax = 0;
+    let displayShapeCount = 0;
+    let measuredVertexTotal = 0;
+    let worstDisplayClaim = 0;
+    let worstDisplayDrop = 0;
     const reference = [];
     for (const m of measured) {
       seq += 1;
@@ -553,6 +562,7 @@ function main() {
 
       const shape = ok ? B.classifyShape(m.hull, box) : 'unresolved';
       shapes[shape] = (shapes[shape] || 0) + 1;
+      if (ok) measuredVertexTotal += m.hull.length;
       if (ok) resolved += 1; else unresolved += 1;
 
       // Position: the centre of the MEASURED footprint where there is one, and
@@ -571,6 +581,24 @@ function main() {
       const served = ok && shape !== 'rectangle' && shape !== 'rotated_rectangle'
         ? B.simplifyHull(m.hull, SERVED_HULL_VERTICES, B.supportVertices(m.hull, ins.rot))
         : null;
+
+      // DISPLAY geometry, derived from the physical measurement and from
+      // nothing else. It is a second, simpler outline for the operator map;
+      // it never replaces the measurement and it carries no position of its
+      // own -- every display shape is built around the SAME record position,
+      // in the machine's own frame, from the measured extent. See
+      // docs/equipment-display-geometry.md.
+      const display = ok
+        ? B.displayGeometry(m.hull, box)
+        : { shape: 'UNRESOLVED', polygon: null, area_error: null };
+      displayShapes[display.shape] = (displayShapes[display.shape] || 0) + 1;
+      if (display.polygon) {
+        displayShapeCount += 1;
+        displayVertexTotal += display.polygon.length;
+        displayVertexMax = Math.max(displayVertexMax, display.polygon.length);
+        if (display.area_error > worstDisplayClaim) worstDisplayClaim = display.area_error;
+        if (display.area_error < worstDisplayDrop) worstDisplayDrop = display.area_error;
+      }
 
       // The measurement, in the CAD's own frame. Written before the canonical
       // transform touches it, so the reconciliation has something to check the
@@ -621,6 +649,17 @@ function main() {
           ? served.map(([x, y]) => ({ x: mx(x), z: mz(y) }))
           : null,
         footprint_polygon_area_m2: served ? round3(B.polygonArea(served) / 1e6) : null,
+        // --- display geometry (derived; the renderer draws THIS) ---------
+        display_shape: display.shape,
+        display_polygon: display.polygon
+          ? display.polygon.map(([x, y]) => ({ x: mx(x), z: mz(y) }))
+          : null,
+        display_vertices: display.polygon ? display.polygon.length : 0,
+        // Signed: >= 0 where the display shape contains the measurement
+        // (rectangle, chamfer), <= 0 where it drops slivers of it (simplified
+        // polygon). Never a licence to move, turn or resize the machine.
+        display_area_error: display.area_error === null ? null : round3(display.area_error),
+        display_source: display.polygon ? 'derived_from_measured_footprint' : null,
         footprint_hull_vertices: ok ? m.hull.length : 0,
         footprint_fill: ok && box.width * box.depth > 0
           ? round3(B.polygonArea(m.hull) / (box.width * box.depth)) : null,
@@ -864,6 +903,24 @@ function main() {
         note: 'Dimension chains, centrelines and Defpoints are excluded by layer name; '
           + 'text, attributes and DIMENSION entities by entity type. The layer filter is '
           + 'subtractive only and is never allowed to empty a block.',
+      },
+      display: {
+        note: 'Derived from the physical measurement, deterministically, and never the '
+          + 'other way round. Display shapes carry no position of their own: each is '
+          + "built around the record's own centre, in the machine's own frame, from the "
+          + 'measured extent. The measured outline stays in the record for '
+          + 'reconciliation and inspection.',
+        by_shape: displayShapes,
+        vertices: {
+          total: displayVertexTotal,
+          mean: displayShapeCount ? round3(displayVertexTotal / displayShapeCount) : 0,
+          max: displayVertexMax,
+          measured_outline_total: measuredVertexTotal,
+        },
+        area_error: {
+          worst_claimed: round3(worstDisplayClaim),
+          worst_dropped: round3(worstDisplayDrop),
+        },
       },
       footprint: {
         measured: resolved,

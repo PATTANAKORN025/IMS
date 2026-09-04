@@ -245,6 +245,10 @@ test('an equipment projection emits exactly the documented key set', () => {
   const out = wire.projectEquipment(validEquipment(), {});
   assert.deepStrictEqual(Object.keys(out).sort(), [
     'confidence',
+    'display_area_error',
+    'display_polygon',
+    'display_shape',
+    'display_source',
     'footprint',
     'footprint_polygon',
     'footprint_shape',
@@ -256,6 +260,7 @@ test('an equipment projection emits exactly the documented key set', () => {
     'ims_device_id',
     'mapping_status',
     'mirrored',
+    'overlaps_neighbour',
     'position',
     'rotation_deg',
     'source',
@@ -317,6 +322,59 @@ test('a measured outline is served vertex by vertex, or not at all', () => {
   assert.strictEqual(noExtent.footprint_shape, null);
 });
 
+test('display geometry is served beside the measurement, never instead of it', () => {
+  const poly = [{ x: 0, z: 0 }, { x: 2, z: 0 }, { x: 2, z: 1 }, { x: 0, z: 1 }];
+  const out = wire.projectEquipment(validEquipment({
+    footprint_shape: 'irregular',
+    footprint_polygon: [{ x: 0, z: 0 }, { x: 2, z: 0 }, { x: 2, z: 1 }],
+    display_shape: 'ORIENTED_RECTANGLE',
+    display_polygon: poly,
+    display_source: 'derived_from_measured_footprint',
+    display_area_error: 0.02,
+  }), {});
+  assert.deepStrictEqual(out.display_polygon, poly);
+  assert.strictEqual(out.display_shape, 'ORIENTED_RECTANGLE');
+  assert.strictEqual(out.display_source, 'derived_from_measured_footprint');
+  assert.strictEqual(out.display_area_error, 0.02);
+  // the measurement is still there: display never replaces it
+  assert.strictEqual(out.footprint_polygon.length, 3);
+});
+
+test('a display outline with no class, or a bad vertex, is dropped whole', () => {
+  const poly = [{ x: 0, z: 0 }, { x: 2, z: 0 }, { x: 2, z: 1 }, { x: 0, z: 1 }];
+  const noClass = wire.projectEquipment(validEquipment({
+    display_polygon: poly, display_source: 'derived_from_measured_footprint',
+  }), {});
+  assert.strictEqual(noClass.display_polygon, null);
+  assert.strictEqual(noClass.display_shape, null);
+
+  const badVertex = wire.projectEquipment(validEquipment({
+    display_shape: 'SIMPLIFIED_POLYGON',
+    display_polygon: [{ x: 0, z: 0 }, { x: 2, z: Infinity }, { x: 2, z: 1 }],
+    display_source: 'derived_from_measured_footprint',
+  }), {});
+  assert.strictEqual(badVertex.display_polygon, null);
+  assert.strictEqual(badVertex.display_source, null);
+
+  const invented = wire.projectEquipment(validEquipment({
+    display_shape: 'TEST-INVENTED', display_polygon: poly,
+  }), {});
+  assert.strictEqual(invented.display_shape, null);
+  assert.strictEqual(invented.display_polygon, null);
+});
+
+test('an unresolved record carries no display outline either', () => {
+  const out = wire.projectEquipment(validEquipment({
+    footprint: null, footprint_status: 'UNRESOLVED',
+    display_shape: 'ORIENTED_RECTANGLE',
+    display_polygon: [{ x: 0, z: 0 }, { x: 2, z: 0 }, { x: 2, z: 1 }, { x: 0, z: 1 }],
+    display_source: 'derived_from_measured_footprint',
+  }), {});
+  assert.strictEqual(out.display_polygon, null);
+  assert.strictEqual(out.display_source, null);
+  assert.strictEqual(out.display_area_error, null);
+});
+
 test('an invented shape or zone status is dropped, not echoed', () => {
   const out = wire.projectEquipment(validEquipment({
     footprint_shape: 'TEST-INVENTED', zone_status: 'TEST-INVENTED',
@@ -333,6 +391,17 @@ test('mapping_status follows the server mapping, never the record', () => {
   assert.strictEqual(lying.mapping_status, 'UNMAPPED_TO_IMS');
   assert.strictEqual(lying.ims_device_id, null);
   assert.strictEqual(lying.status, 'UNMAPPED');
+});
+
+test('the overlap flag is a boolean and never a truthy value from the document', () => {
+  assert.strictEqual(
+    wire.projectEquipment(validEquipment({ footprint_overlaps_neighbour: true }), {}).overlaps_neighbour,
+    true,
+  );
+  assert.strictEqual(
+    wire.projectEquipment(validEquipment({ footprint_overlaps_neighbour: 'yes' }), {}).overlaps_neighbour,
+    false,
+  );
 });
 
 test('mirrored is a boolean and never a truthy value from the document', () => {

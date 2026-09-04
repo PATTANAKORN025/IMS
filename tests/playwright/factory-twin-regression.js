@@ -166,11 +166,13 @@ async function snapshot(page) {
         (m) => ({
           id: m.userData.equipment.id,
           y: m.rotation.y,
-          // A measured OUTLINE is extruded from world coordinates that already
+          // A DISPLAY outline is extruded from world coordinates that already
           // carry the machine's angle, so its mesh is deliberately unturned.
           // Its orientation is proved by the vertex check instead, which is a
-          // stronger statement than a single angle.
-          outline: Array.isArray(m.userData.equipment.footprint_polygon),
+          // stronger statement than a single angle. A display RECTANGLE is
+          // drawn as a shared box and is turned like one.
+          outline: Array.isArray(m.userData.equipment.display_polygon)
+            && m.userData.equipment.display_shape !== 'ORIENTED_RECTANGLE',
         })
       ),
       // The DRAWN box: its world placement and its extruded size. This is what
@@ -178,13 +180,17 @@ async function snapshot(page) {
       // claim -- there is one mesh, and both views look at it.
       equipmentBoxes: (Array.isArray(T.equipmentMeshes) ? T.equipmentMeshes : []).map((m) => {
         const item = m.userData.equipment;
-        const outline = Array.isArray(item.footprint_polygon);
+        // What the renderer draws is DISPLAY geometry. A display rectangle is a
+        // shared, cached box; every other class is an extruded outline.
+        const outline = Array.isArray(item.display_polygon)
+          && item.display_shape !== 'ORIENTED_RECTANGLE';
         if (!outline) {
           const p = m.geometry.parameters;
           return {
             id: item.id, x: m.position.x, y: m.position.y, z: m.position.z,
             w: p.width, h: p.height, d: p.depth, outline: false,
             tier: item.footprint_status, vertexError: 0, floorY: m.position.y - p.height / 2,
+            shape: item.display_shape,
           };
         }
         // An extruded outline has no box parameters -- it has vertices. Measure
@@ -216,7 +222,7 @@ async function snapshot(page) {
           drawn.push([wx, wz]);
         }
         let vertexError = 0;
-        for (const p of item.footprint_polygon) {
+        for (const p of item.display_polygon) {
           let best = Infinity;
           for (const [dx, dz] of drawn) {
             const d = Math.hypot(dx - p.x, dz - p.z);
@@ -229,6 +235,7 @@ async function snapshot(page) {
           x: m.position.x, y: m.position.y, z: m.position.z,
           w: maxu - minu, h: maxy - miny, d: maxv - minv,
           outline: true, tier: item.footprint_status, vertexError, floorY: miny,
+          shape: item.display_shape,
         };
       }),
       // Walls and openings are instanced: a few objects carrying hundreds of
@@ -274,6 +281,46 @@ async function snapshot(page) {
         equipmentApproxWithoutSource: (geo.equipment || []).filter(
           (e) => e.footprint_status === 'APPROXIMATION' && e.footprint_source !== 'CAD_CORRELATED'
         ).length,
+        // Display geometry, summarised. The renderer draws THIS; the measured
+        // outline travels beside it for inspection and is drawn by nobody.
+        displayShapes: (geo.equipment || []).reduce((acc, e) => {
+          const k = e.display_shape || 'MISSING';
+          acc[k] = (acc[k] || 0) + 1;
+          return acc;
+        }, {}),
+        displayClassMissing: (geo.equipment || []).filter(
+          (e) => !['ORIENTED_RECTANGLE', 'CHAMFERED_RECTANGLE', 'SIMPLIFIED_POLYGON', 'UNRESOLVED']
+            .includes(e.display_shape)
+        ).length,
+        displayRectangles: (geo.equipment || []).filter(
+          (e) => e.display_shape === 'ORIENTED_RECTANGLE'
+        ).length,
+        displayOnUnresolved: (geo.equipment || []).filter(
+          (e) => !e.footprint && (e.display_polygon || e.display_shape !== 'UNRESOLVED')
+        ).length,
+        displayVertexMax: (geo.equipment || []).reduce(
+          (n, e) => Math.max(n, Array.isArray(e.display_polygon) ? e.display_polygon.length : 0), 0
+        ),
+        displayVertexTotal: (geo.equipment || []).reduce(
+          (n, e) => n + (Array.isArray(e.display_polygon) ? e.display_polygon.length : 0), 0
+        ),
+        displayVertexMean: (() => {
+          const drawn = (geo.equipment || []).filter((e) => Array.isArray(e.display_polygon));
+          if (!drawn.length) return 0;
+          return drawn.reduce((n, e) => n + e.display_polygon.length, 0) / drawn.length;
+        })(),
+        measuredVertexTotal: (geo.equipment || []).reduce(
+          (n, e) => n + (Array.isArray(e.footprint_polygon) ? e.footprint_polygon.length : 0), 0
+        ),
+        displaySimplerThanMeasured: (() => {
+          const d = (geo.equipment || []).reduce(
+            (n, e) => n + (Array.isArray(e.display_polygon) ? e.display_polygon.length : 0), 0
+          );
+          const m = (geo.equipment || []).reduce(
+            (n, e) => n + (Array.isArray(e.footprint_polygon) ? e.footprint_polygon.length : 0), 0
+          );
+          return m === 0 || d < m;
+        })(),
         // The served extent, by id, so the scene can be measured against it.
         equipmentFootprints: (geo.equipment || []).reduce((acc, e) => {
           if (e.footprint) acc[e.id] = { width: e.footprint.width, depth: e.footprint.depth };
@@ -1175,6 +1222,39 @@ async function run() {
       check(s.api.equipmentApproxWithoutSource === 0,
         'every approximated extent declares CAD_CORRELATED provenance',
         `${s.api.equipmentApproxWithoutSource} without it`);
+
+      const rectanglesAsSharedBoxes = s.equipmentBoxes
+        .filter((b) => b.shape === 'ORIENTED_RECTANGLE')
+        .every((b) => b.outline === false);
+      // -- Display geometry: derived, and provably harmless ---------------
+      //
+      // The display layer exists so an operator sees a clean symbol instead of
+      // a 34-vertex hull. The whole risk in that is a shape that quietly moves,
+      // turns or resizes a machine, so what is asserted here is that it did
+      // none of those -- measured on the DRAWN mesh, not on the record.
+      check(s.api.displayClassMissing === 0,
+        'every equipment record carries exactly one display class',
+        `${s.api.displayClassMissing} without one; ${JSON.stringify(s.api.displayShapes)}`);
+      check(s.api.displayVertexMax <= 12,
+        'no display outline exceeds the vertex budget',
+        `max ${s.api.displayVertexMax} vertices, mean ${s.api.displayVertexMean.toFixed(2)}`);
+      check(s.api.displayOnUnresolved === 0,
+        'an unresolved footprint acquires no display shape',
+        `${s.api.displayOnUnresolved} unresolved record(s) carry display geometry`);
+      check(s.api.displaySimplerThanMeasured,
+        'the drawn outlines are simpler than the measurement they came from',
+        `${s.api.displayVertexTotal} display vertices against `
+        + `${s.api.measuredVertexTotal} measured`);
+      // Position and rotation residual between physical and display: zero, by
+      // construction, because a display shape carries neither -- it is built
+      // around the record's own centre. Asserted on the DRAWN mesh anyway.
+      check(worstPos < 1e-9,
+        'display simplification moved no machine',
+        `worst centre delta ${worstPos} m across ${s.equipmentBoxes.length} drawn assets`);
+      check(s.api.displayRectangles > 0 && rectanglesAsSharedBoxes,
+        'a display rectangle is drawn as a shared cached box, not as an outline',
+        `${s.api.displayRectangles} rectangles, none extruded`);
+
     }
 
     // -- The invented machine-form layer is gone ---------------------------
@@ -1713,6 +1793,105 @@ async function run() {
       await page.waitForTimeout(450);
     }
   }
+
+  console.log('Inspection outlines and machine labels:');
+    // -- Inspection outlines and machine labels ---------------------------
+    //
+    // Two presentation layers that must be provably presentation: the measured
+    // outline is the geometry the display shape was derived FROM, and a caption
+    // is a caption. Neither may add a mesh to the floor, and neither may move a
+    // coordinate.
+    const drawnAssets = await page.evaluate(() => window.__twin.equipmentMeshes.length);
+    if (drawnAssets === 0) {
+      skip('the measured outlines are an inspection layer, off by default', NO_GEOMETRY);
+      skip('machine labels are an overlay, not geometry', NO_GEOMETRY);
+    } else {
+      const before = await page.evaluate(() => {
+        const T = window.__twin;
+        return {
+          visible: T.sublayers.measured.visible,
+          objects: T.sublayers.measured.children.length,
+          outlines: T.measuredOutlineCount(),
+          equipmentMeshes: T.equipmentMeshes.length,
+          positions: T.equipmentMeshes.map((m) => [m.position.x, m.position.y, m.position.z]),
+        };
+      });
+      check(before.visible === false,
+        'the measured outlines are an inspection layer, off by default',
+        `visible=${before.visible}, ${before.objects} object(s) holding ${before.outlines} outlines`);
+      check(before.objects <= 1,
+        'every measured outline is drawn by ONE object, not one per machine',
+        `${before.objects} object(s) for ${before.outlines} outlines`);
+
+      const after = await page.evaluate(() => {
+        const T = window.__twin;
+        T.setLayerVisible('measured', true);
+        return {
+          visible: T.sublayers.measured.visible,
+          equipmentMeshes: T.equipmentMeshes.length,
+          positions: T.equipmentMeshes.map((m) => [m.position.x, m.position.y, m.position.z]),
+        };
+      });
+      check(after.visible === true && after.equipmentMeshes === before.equipmentMeshes,
+        'switching the measured outlines on adds no machine geometry',
+        `${after.equipmentMeshes} meshes before and after`);
+      check(JSON.stringify(after.positions) === JSON.stringify(before.positions),
+        'the inspection layer is an overlay: drawing it moves no machine');
+      await page.evaluate(() => window.__twin.setLayerVisible('measured', false));
+
+      // A stated viewport, because the label layer is level of detail: the last
+      // responsive case leaves the page 600 px wide, where nothing on a 174 m
+      // floor is large enough to caption and the check would assert nothing.
+      await page.setViewportSize({ width: 1920, height: 1080 });
+      await page.waitForTimeout(400);
+      // Back to the operator framing first. The label layer is level-of-detail:
+      // at the building view nothing is close enough to caption, and a check
+      // that runs at that zoom asserts nothing about what a label says.
+      await page.evaluate(() => window.__twin.applyView('operator'));
+      await page.waitForTimeout(700);
+      const labels = await page.evaluate(() => {
+        const T = window.__twin;
+        T.updateMachineLabels();
+        const stats = T.labelStats();
+        const host = document.getElementById('machine-labels');
+        const shown = host ? [...host.querySelectorAll('.machine-label')].filter((el) => !el.hidden) : [];
+        return {
+          stats,
+          shownInDom: shown.length,
+          text: shown.slice(0, 3).map((el) => el.textContent.trim()),
+          sceneChildren: T.sublayers.equipment.children.length,
+          hostPointerEvents: host ? getComputedStyle(host).pointerEvents : null,
+        };
+      });
+      check(labels.stats.shown > 0 && labels.stats.shown <= labels.stats.max
+        && labels.shownInDom === labels.stats.shown,
+        'machine labels are capped and the DOM matches the count',
+        `${labels.stats.shown} shown, cap ${labels.stats.max}, ${labels.shownInDom} in the DOM`);
+      check(labels.sceneChildren === drawnAssets,
+        'machine labels are an overlay, not geometry',
+        `${labels.sceneChildren} meshes for ${drawnAssets} assets, ${labels.stats.shown} captions`);
+      check(labels.hostPointerEvents === 'none',
+        'labels never intercept a click meant for the floor',
+        `pointer-events: ${labels.hostPointerEvents}`);
+      // A caption carries the model's own id, never a CAD block or layer name.
+      check(labels.text.every((t) => /^EQP-/.test(t)),
+        'a label carries the model id, never a name out of the drawing',
+        labels.text.join(' | ') || 'none shown at this zoom');
+
+      const hidden = await page.evaluate(() => {
+        const T = window.__twin;
+        T.setLayerVisible('equipment', false);
+        T.updateMachineLabels();
+        const n = T.labelStats().shown;
+        T.setLayerVisible('equipment', true);
+        T.updateMachineLabels();
+        return { hidden: n, restored: T.labelStats().shown };
+      });
+      check(hidden.hidden === 0,
+        'hiding the equipment layer takes its captions with it',
+        `${hidden.hidden} label(s) left behind, ${hidden.restored} restored`);
+    }
+
 
   await browser.close();
 

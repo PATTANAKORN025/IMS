@@ -244,6 +244,22 @@
     /* The reference is a different kind of thing from the layers above it: it
        is the source the model is checked against, not part of the floor. The
        rule separates the two so the list does not read as six equal layers. */
+    /* Machine labels. Purely an overlay: pointer events pass through to the
+       canvas, so labelling never changes what an operator can click. */
+    #machine-labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+    #machine-labels .machine-label {
+      position: absolute; transform: translate(-50%, -50%);
+      font: 11px/1.25 var(--mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+      color: #dbe6f5; background: rgba(11, 16, 23, 0.72);
+      border: 1px solid rgba(147, 168, 196, 0.35); border-radius: 3px;
+      padding: 1px 4px; white-space: nowrap; letter-spacing: 0.02em;
+    }
+    #machine-labels .machine-label .dot {
+      display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+      margin-right: 4px; vertical-align: baseline; background: #64789a;
+    }
+    #machine-labels .machine-label.is-mapped .dot { background: #4ade80; }
+    #machine-labels .machine-label .dim { color: #93a8c4; margin-left: 5px; }
     .reference-toggle { border-top: 1px solid var(--line); margin-top: 6px; padding-top: 6px !important; }
     .reference-note { margin: 2px 0 0; line-height: 1.4; }
     .hint { color: var(--text-dim); font-size: 10.5px; }
@@ -329,6 +345,9 @@
 
     <main id="stage">
       <div id="scene"></div>
+      <!-- Machine labels. An overlay, not geometry: nothing here is drawn in
+           the scene, so a label can never be mistaken for a measurement. -->
+      <div id="machine-labels" aria-hidden="true"></div>
       <!-- Context panel. Hidden until the operator selects something. -->
       <div id="inspector" hidden aria-live="polite"></div>
     </main>
@@ -345,6 +364,7 @@
         <label><input type="checkbox" data-layer="walls" checked> Walls and openings <span class="hint" data-count="walls"></span></label>
         <label><input type="checkbox" data-layer="functional" checked> Functional zones <span class="hint" data-count="functional"></span></label>
         <label><input type="checkbox" data-layer="equipment" checked> Equipment <span class="hint" data-count="equipment"></span></label>
+        <label><input type="checkbox" data-layer="measured"> Measured outlines <span class="hint">inspection — the exact CAD outline behind each simplified shape</span></label>
         <label class="reference-toggle">
           <input type="checkbox" data-layer="reference"> Raw CAD reference
           <span class="hint" id="reference-status"></span>
