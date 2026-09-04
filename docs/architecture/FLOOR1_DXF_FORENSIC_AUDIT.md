@@ -192,6 +192,32 @@ Two column families exist and must not be conflated:
   within 2 m of a raster column, which is expected, and is *not* evidence
   against either set.
 
+### Area boundaries — two closure encodings in one layer
+
+`00.Area Line` holds 33 polylines: **32 closed rings and one stray two-point
+line**. The rings are the authoritative room polygons for this floor, and they
+declare closure two different ways:
+
+| Encoding | Count | What it looks like |
+|---|---:|---|
+| `CLOSED_FLAG` | 19 | bit 0 of group 70 set, closing edge implicit — all four-vertex |
+| `REPEATED_FIRST_VERTEX` | 13 | flag clear, first vertex repeated as the last |
+
+The split is not arbitrary: **every ring with more than four vertices is in the
+second group**, so a reader that tests only the flag loses precisely the
+L-shaped and stepped rooms, the 4,289 m² drilling hall included. Two of the
+thirteen close to within 4×10⁻⁴ mm and 5×10⁻¹⁰ mm rather than exactly — decimal
+noise in the file's text, not a drawn gap.
+
+`00.Area` is annotation, not boundary: 53 closed rectangles of roughly
+7.3 × 2.4 m are label banners, and its TEXT/MTEXT splits into 34 names, 34
+printed areas (30 formatted MTEXT plus 4 plain `"49m2"`-style TEXT), 29 level
+tags and 29 count tags.
+
+`HATCH` (322 in the file, 113 in the window) and `REGION` (18) carry **no**
+room boundary. REGION geometry is ACIS binary and is not readable as
+coordinates at all; neither was needed, because the polylines are explicit.
+
 ### Floor level
 
 Area labels carry a printed level of **+0.30**, independently confirming the

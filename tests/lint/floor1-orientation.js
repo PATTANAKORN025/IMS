@@ -216,6 +216,7 @@ if (!labels.length || !zonesDoc) {
   let named = 0;
   let contained = 0;
   let mirroredHits = 0;
+  let undecidable = 0;
   for (const z of zoneList) {
     const n = normalise(z.zone_name || z.name);
     const hits = byName.get(n);
@@ -227,20 +228,41 @@ if (!labels.length || !zonesDoc) {
     ))) contained++;
     // The same labels placed by the OLD frame, as a control. A frame error
     // that happened to satisfy the check above would satisfy this one too.
-    if (hits.some((h) => insidePolygon(
+    //
+    // WHICH ZONES CAN ACT AS A CONTROL. The old frame differs from this one by
+    // a reflection through the floor's mid-depth, so the control point is the
+    // canonical point reflected in z. A polygon wide enough in z to contain
+    // BOTH points holds no information about the sign: it would be placed by
+    // either frame, because it overlaps its own mirror image at that label.
+    // One area here is such a shape -- it spans 66 m of the 120 m depth across
+    // the centre line. Counting it as a control failure would make this proof
+    // depend on how symmetric the building happens to be; counting it as a
+    // control pass would quietly weaken the proof. It is neither: it is
+    // undecidable, and it is reported as such and excluded.
+    const mirrored = hits.some((h) => insidePolygon(
       h.x / 1000 - HALF_W, h.y / 1000 - HALF_D, verts,
-    ))) mirroredHits++;
+    ));
+    const canonical = hits.some((h) => insidePolygon(
+      frame.cadXToTwin(h.x, HALF_W), frame.cadYToTwin(h.y, HALF_D), verts,
+    ));
+    if (mirrored && canonical) undecidable++;
+    else if (mirrored) mirroredHits++;
   }
 
+  const decidable = named - undecidable;
   if (named < 3) {
     console.log(`  SKIP  named areas land on the correct side  (only ${named} matched by name)`);
   } else {
     check(contained === named,
       "every named area contains the drawing's own label for it",
       `${contained} of ${named} matched by the drawing's own text`);
+    // The control keeps its force only while most areas can act as one.
+    check(decidable >= 3 && decidable * 4 >= named * 3,
+      'enough areas are narrow enough in z to act as a sign control',
+      `${decidable} of ${named} decidable, ${undecidable} overlap their own mirror`);
     check(mirroredHits === 0,
-      'and the previous mirrored frame places none of them correctly',
-      `${mirroredHits} of ${named} under the old transform -- the check discriminates`);
+      'and the previous mirrored frame places none of the decidable ones',
+      `${mirroredHits} of ${decidable} under the old transform -- the check discriminates`);
   }
 }
 

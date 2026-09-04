@@ -273,6 +273,13 @@ const TOPOLOGY_SNAP_M = 0.10;
 const MAX_DANGLING_BASELINE = 1100;
 const MIN_ROOM_SIZED_BASELINE = 3;
 
+// A served room must agree with the area the drawing prints for it to within
+// this fraction. It is the same threshold the extractor uses to decide that a
+// containing boundary is NOT that label's boundary, so a room that survives
+// extraction and a room that passes reconciliation are the same set by
+// construction -- if they ever diverge, one of the two has been edited alone.
+const ROOM_AREA_TOL = 0.35;
+
 function wallTopology(runs, faces) {
   const segs = [];
   for (const w of runs) segs.push([w.x1, w.z1, w.x2, w.z2]);
@@ -406,18 +413,22 @@ if (thickLines.length) {
     + 'no measured thickness and must not claim one');
 }
 
-// The drawing's own count of labelled areas, read from the zone document when
-// it is deployed. It is the yardstick the room-sized figure is reported
-// against: 0 of 37 is a different statement from 0 of 0.
+// The zone document, when it is deployed. Two separate things are read from
+// it: the drawing's own count of labelled areas, which is the yardstick the
+// wall-topology figure is reported against (0 of 37 is a different statement
+// from 0 of 0), and the rooms themselves, which are reconciled below.
 let zoneCount = 0;
+let zoneList = [];
 try {
   const zonesPath = path.join(PRIVATE_DIR, 'floor1-zones.json');
   if (fs.existsSync(zonesPath)) {
     const doc = JSON.parse(fs.readFileSync(zonesPath, 'utf8'));
-    zoneCount = Array.isArray(doc.zones) ? doc.zones.length : 0;
+    zoneList = Array.isArray(doc.zones) ? doc.zones : [];
+    zoneCount = zoneList.length;
   }
 } catch (err) {
   zoneCount = 0;
+  zoneList = [];
 }
 
 const topo = wallTopology(walls, wallLines);
@@ -435,6 +446,86 @@ console.log(`  wall graph           ${topo.nodes} nodes, ${topo.edges} edges, `
 console.log(`  enclosed regions     ${topo.enclosed} total, largest ${Math.round(topo.largest)} m2`);
 console.log(`  room-sized regions   ${topo.roomSized} at or above ${topo.roomMin} m2 `
   + `-- against ${zoneCount} labelled areas in the drawing`);
+console.log('  (rooms are NOT derived from this graph -- see the room block below)');
+
+/* -- rooms ------------------------------------------------------------ */
+//
+// Rooms come from the drawing's own closed area boundaries, so the error to
+// measure is not "does a polygon exist" but "is it the polygon the drawing
+// says it is". The drawing prints each area's own square metreage, which is an
+// independent number: it was computed by the draughtsman, not by this code,
+// and it is printed as text rather than derived from the polyline. Comparing
+// the traced polygon against it is therefore a real check and not a tautology.
+//
+// Every polygon must be a simple closed ring, and every polygon that has a
+// printed area to check against must agree with it. A zone whose printed area
+// refuted its only containing boundary carries no geometry at all, by design,
+// and is counted here rather than passed over.
+{
+  const roomsWithGeometry = zoneList.filter(
+    (z) => z && z.geometry && Array.isArray(z.geometry.vertices));
+  const named = roomsWithGeometry.filter((z) => z.zone_name);
+  const unlabelled = roomsWithGeometry.filter((z) => !z.zone_name);
+  const noBoundary = zoneList.filter((z) => z && !z.geometry);
+
+  const shoelace = (v) => {
+    let s = 0;
+    for (let i = 0, j = v.length - 1; i < v.length; j = i++) {
+      s += (v[j].x * v[i].z) - (v[i].x * v[j].z);
+    }
+    return Math.abs(s / 2);
+  };
+
+  const degenerate = roomsWithGeometry.filter((z) => {
+    const v = z.geometry.vertices;
+    if (v.length < 3) return true;
+    const f = v[0];
+    const l = v[v.length - 1];
+    // A ring is implicitly closed; an explicit repeat is a malformed ring.
+    return f.x === l.x && f.z === l.z;
+  });
+  if (degenerate.length > 0) {
+    fail(`${degenerate.length} room polygon(s) are not simple closed rings`);
+  }
+
+  const checked = [];
+  for (const z of roomsWithGeometry) {
+    const printed = Number(z.printed_area_m2);
+    if (!Number.isFinite(printed) || printed <= 0) continue;
+    const traced = shoelace(z.geometry.vertices);
+    checked.push({ z, traced, printed, delta: Math.abs(traced - printed) / printed });
+  }
+  checked.sort((a, b) => b.delta - a.delta);
+  const worst = checked.length ? checked[0] : null;
+  if (worst && worst.delta > ROOM_AREA_TOL) {
+    fail(`room "${worst.z.zone_name}" traces ${worst.traced.toFixed(1)} m2 against a `
+      + `printed ${worst.printed} m2 (${(worst.delta * 100).toFixed(1)}%), beyond the `
+      + `${(ROOM_AREA_TOL * 100).toFixed(0)}% tolerance -- a boundary that disagrees with `
+      + 'the drawing this far is not that room, and must be retracted rather than served');
+  }
+  // Every room must be able to say which object in the drawing produced it.
+  const noProvenance = roomsWithGeometry.filter((z) => !z.source_handle || !z.source_layer);
+  if (noProvenance.length > 0) {
+    fail(`${noProvenance.length} room polygon(s) carry no CAD handle -- a room that cannot `
+      + 'name its source entity is not reconcilable');
+  }
+  // One CAD boundary is one room. Two rooms sharing a handle would mean the
+  // same polygon was served twice under different names.
+  const handles = new Set();
+  for (const z of roomsWithGeometry) {
+    if (handles.has(z.source_handle)) {
+      fail(`CAD boundary ${z.source_handle} was used for more than one room`);
+    }
+    handles.add(z.source_handle);
+  }
+
+  console.log(`  rooms                ${roomsWithGeometry.length} from closed CAD boundaries `
+    + `(${named.length} named, ${unlabelled.length} unlabelled), ${handles.size} distinct handles`);
+  console.log(`  room area vs printed ${checked.length} checked against the drawing's own `
+    + `printed area, worst ${worst ? (worst.delta * 100).toFixed(1) : '0.0'}% `
+    + `(tolerance ${(ROOM_AREA_TOL * 100).toFixed(0)}%)`);
+  console.log(`  rooms without a boundary  ${noBoundary.length} label(s) kept with no polygon`);
+}
 
 /* -- raster supersession --------------------------------------------- */
 //

@@ -143,8 +143,8 @@ more conservative than the one it replaces — see
 [Visual Fidelity](FACTORY_TWIN_VISUAL_FIDELITY.md) for exactly which parts are
 measured, which are transcribed by eye, and which are recorded as unread.
 
-The functional-zone file was **not** rebuilt. No zone polygons are deployed, so
-the API serves zero functional zones rather than an unvalidated boundary.
+The functional-zone file was **not** rebuilt in that pass, and at the time no
+zone polygons were deployed at all. They come from the CAD instead — see §0.2.
 
 ---
 
@@ -196,13 +196,54 @@ established by geometry — bay spacings of 8500/8850/10000 and an overall
 | Machine identity | **UNMAPPED.** The CAD carries no IMS `eqp_id`. Still **0 confirmed mappings**. |
 | Equipment footprints from CAD | **UNKNOWN.** The machine layer mixes plan and detail geometry; separating them is not yet done, so the 243 raster-derived slots remain the equipment layer. |
 
-### Zone boundaries are checked against the drawing's own arithmetic
+### Rooms come from the drawing's own boundaries, not from wall topology
 
-Each labelled area carries a printed area figure. The extractor traces the
-boundary independently and compares. The 17 zones that render agree with the
-printed value to within **1%**; two whose traced area disagrees by **37%** and
-**163%** are withheld as LOW rather than reconciled, and 18 labels that no
-closed boundary contains are kept as UNRESOLVED records with no geometry.
+The `00.Area Line` layer carries **32 closed boundaries**, and they are the
+authoritative room polygons for this floor. Nothing about a room is inferred
+from the wall model — the two are independent, and §0.4 explains why that
+matters.
+
+**The defect that hid half of them.** The layer encodes closure two different
+ways and the drawing uses both. Nineteen boundaries set the LWPOLYLINE closed
+flag and leave the closing edge implicit. Thirteen leave the flag clear and
+repeat the first vertex as the last, closing the ring explicitly while
+reporting themselves as open. Reading only the flag discarded those thirteen —
+and not thirteen arbitrary ones. Every boundary with more than four vertices
+closes the second way, so exactly the L-shaped and stepped areas vanished,
+including the **4,289 m² drilling hall**, the largest room on the floor. Two of
+the thirteen additionally close to within 4×10⁻⁴ mm and 5×10⁻¹⁰ mm rather than
+exactly, which is decimal noise in the file's own text, so the closure test
+carries a 0.001 mm tolerance: three orders of magnitude above that noise and
+five below the smallest edge on the layer.
+
+The rule is `scripts/lib/cad-rings.js` and is tested against fixtures in
+`tests/unit/floor1-cad-rings.test.js`, not against the private drawing.
+
+**How a name is bound to a boundary.** Containment alone would be weak, so it
+is not the only evidence used. The drawing prints each area's own square
+metreage as text — a number the draughtsman computed, not one derived from the
+polyline — and the extractor compares it against the polygon it traced. That
+comparison is an independent check rather than a tautology.
+
+| Outcome | Count |
+|---|---:|
+| Closed CAD boundaries on `00.Area Line` | **32** |
+| Served as rooms | **32** (one per boundary, no boundary used twice) |
+| Named, with the printed area agreeing to within 10 % | **26** |
+| Named, agreeing to within 35 % | **1** (traced 1,758.8 m² against a printed 1,580 m²) |
+| Closed by the drawing but carrying no label | **5** |
+| Labels kept with no polygon | **6** |
+
+The last row is the honest half of the result. Five labels sit inside a larger
+area and have no boundary of their own: a 16 m² room whose only containing ring
+is the 4,289 m² hall is not a 4,289 m² room, so the printed area *refutes* the
+match rather than merely disagreeing with it, and the polygon is retracted. The
+name is kept, the geometry is not. One further label — `OFFICE MB INNER` — has
+no containing boundary at all.
+
+The five unlabelled boundaries are served with a null name. A room whose
+purpose is undefined is not the same as no room, and dropping them would delete
+floor area the drawing explicitly draws.
 
 ---
 
@@ -268,11 +309,17 @@ the extraction produce it, and all four are in the extractor, not the drawing:
 | Merge gap 120 mm, corner closure ≤ half a thickness | fragments that meet across a column do not join |
 
 Fixing this requires re-running the extraction against `Floor1.dxf` with
-non-axis-aligned support and full face retention. **The DXF is not on this host
-and the CAD bundle does not carry wall geometry**, so the work is BLOCKED on the
-source file rather than on a decision. The metrics above are published by
-`tests/lint/floor1-cad-reconciliation.js` on every commit precisely so that the
-gap cannot quietly widen while it waits.
+non-axis-aligned support and full face retention. That work is **open, not
+blocked**: the drawing is on this host and every figure above was measured by
+reading it. An earlier version of this section recorded the DXF as unavailable;
+that was wrong, and the correction matters because it was the stated reason the
+wall model had not been improved.
+
+**Rooms no longer depend on any of this.** They come from the drawing's own
+closed area boundaries (§0.2), so the wall graph is now a measure of the wall
+model's own quality rather than the thing room boundaries are inferred from.
+The metrics above are published by `tests/lint/floor1-cad-reconciliation.js` on
+every commit so the gap cannot quietly widen.
 
 ### Every invented machine position is deleted
 

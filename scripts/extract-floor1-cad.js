@@ -26,6 +26,7 @@
 const fs = require('fs');
 const path = require('path');
 const frame = require('./lib/floor1-frame');
+const cadRings = require('./lib/cad-rings');
 const readline = require('readline');
 
 const PRIVATE_DIR =
@@ -137,7 +138,7 @@ async function readEntities(src) {
       if (v === 'EOF') { flush(); break; }
       if (section === 'ENTITIES') {
         flush();
-        cur = { type: v, layer: '', xs: [], ys: [] };
+        cur = { type: v, layer: '', handle: '', xs: [], ys: [] };
         continue;
       }
       flush();
@@ -147,6 +148,10 @@ async function readEntities(src) {
     if (section !== 'ENTITIES' || !cur) continue;
 
     if (c === 8) { cur.layer = value; continue; }
+    // The entity handle is the drawing's own identifier for this object. It is
+    // the only stable way to say WHICH boundary a room came from, so it is
+    // carried into the zone record as provenance.
+    if (c === 5) { cur.handle = value; continue; }
     if (X_CODES.has(c)) { const n = Number(v); if (Number.isFinite(n)) cur.xs.push(n); continue; }
     if (Y_CODES.has(c)) { const n = Number(v); if (Number.isFinite(n)) cur.ys.push(n); continue; }
     if (c === 70 && cur.type === 'LWPOLYLINE') { cur.closed = (Number(v) & 1) === 1; continue; }
@@ -384,7 +389,13 @@ function normaliseZoneName(raw) {
   return /^[A-Z0-9][A-Z0-9 -]{0,31}$/.test(cut) ? cut : null;
 }
 
+// The drawing prints a zone's own area two ways. Most are MTEXT carrying the
+// superscript-2 formatting codes; four are plain TEXT that simply says "49m2".
+// Reading only the formatted kind turned those four into zones named "49M2",
+// which both invented four rooms and denied four real rooms the printed area
+// that would have validated them.
 const AREA_ANNOTATION = /^\\A1;\s*([\d,]+)\s*m/;   // e.g. "\A1;532m{\H0.7x;\S2^ ;}"
+const BARE_AREA = /^([\d,]+)\s*m2?$/i;             // e.g. "49m2"
 const LEVEL_TAG = /^[+-]\d+\.\d+$/;                // e.g. "+0.30"
 
 function polygonOf(entity) {
@@ -448,7 +459,7 @@ function buildZones(entities) {
     if (!s) continue;
     const x = e.xs[0];
     const y = e.ys[0];
-    const m = AREA_ANNOTATION.exec(s);
+    const m = AREA_ANNOTATION.exec(s) || BARE_AREA.exec(s);
     if (m) {
       annotations.push({ x, y, area: Number(m[1].replace(/,/g, '')) });
       continue;
@@ -458,13 +469,42 @@ function buildZones(entities) {
     if (name) labels.push({ x, y, name, raw: s });
   }
 
+  // THE AREA BOUNDARIES, AND WHY HALF OF THEM WERE INVISIBLE.
+  //
+  // This layer encodes closure two different ways, and the drawing uses both.
+  // Nineteen boundaries set the LWPOLYLINE closed flag and leave the closing
+  // edge implicit. Thirteen leave the flag clear and instead repeat the first
+  // vertex as the last -- an explicitly closed ring that reports itself as
+  // open. Reading only the flag therefore discarded thirteen real rooms, and
+  // they were not a random thirteen: every boundary with more than four
+  // vertices is in that group, so exactly the L-shaped and stepped areas
+  // vanished, the 4,289 m2 drilling hall among them.
+  //
+  // A ring is closed if the drawing closes it, by whichever of the two means.
+  // Nothing else is accepted: a polyline whose ends merely come near each
+  // other is an open boundary and stays one.
   const rings = [];
   for (const e of entities) {
-    if (e.layer !== AREA_BOUND_LAYER || e.type !== 'LWPOLYLINE') continue;
+    if (e.layer !== AREA_BOUND_LAYER) continue;
+    if (e.type !== 'LWPOLYLINE' && e.type !== 'POLYLINE') continue;
+    const closure = cadRings.ringClosure(e.xs, e.ys, !!e.closed);
     const verts = polygonOf(e);
     if (verts.length < 3) continue;
-    rings.push({ verts, closed: !!e.closed, area: polygonArea(verts) });
+    rings.push({
+      verts,
+      closed: closure !== cadRings.OPEN,
+      closure,
+      handle: e.handle || null,
+      area: polygonArea(verts),
+    });
   }
+
+  const closureCounts = rings.reduce((acc, r) => {
+    acc[r.closure] = (acc[r.closure] || 0) + 1;
+    return acc;
+  }, {});
+  console.log(`  area boundaries: ${rings.length} rings on "${AREA_BOUND_LAYER}" `
+    + `(${Object.entries(closureCounts).map(([k, n]) => `${n} ${k}`).join(', ')})`);
 
   // Each printed area annotation belongs to exactly one label: the drawing
   // sets it just below and to the right of its own name. Matching from the
@@ -485,7 +525,12 @@ function buildZones(entities) {
     if (best && !printedFor.has(best)) printedFor.set(best, a.area);
   }
 
+  // Past this, the printed area is not a discrepancy to record but a statement
+  // that this ring is not this label's boundary. See the retraction below.
+  const REFUTES_MATCH = 0.35;
+
   const zones = [];
+  const usedRings = new Set();
   let seq = 0;
   for (const lab of labels) {
     seq++;
@@ -509,21 +554,37 @@ function buildZones(entities) {
     let note = 'label present, no closed CAD boundary contains it';
 
     if (ring && !selfIntersects(ring.verts)) {
-      geometry = { vertices: ring.verts };
       const calc = round3(ring.area);
       if (printed != null && printed > 0) {
         const delta = Math.abs(calc - printed) / printed;
         // The drawing prints its own area for each zone. Agreement between the
         // traced polygon and that printed value is the check; disagreement is
         // recorded rather than smoothed away.
-        confidence = delta <= 0.1 ? 'HIGH' : (delta <= 0.35 ? 'MEDIUM' : 'LOW');
-        note = `traced ${calc} m2 vs printed ${printed} m2 (${(delta * 100).toFixed(1)}% delta)`;
+        //
+        // Beyond the band, the printed area is not reporting a discrepancy --
+        // it is refuting the match. Five labels here sit inside a larger area
+        // and have no boundary of their own on this layer: a 16 m2 room whose
+        // only containing ring is the 4,289 m2 drilling hall is not a 4,289 m2
+        // room. Keeping the hall's outline as that label's geometry would
+        // publish a boundary the drawing never drew for it, so the polygon is
+        // retracted and the zone stays unresolved with its name intact.
+        if (delta > REFUTES_MATCH) {
+          confidence = 'UNRESOLVED';
+          note = `no boundary of its own: the only containing ring is ${calc} m2 `
+            + `against a printed ${printed} m2, which refutes the match`;
+        } else {
+          geometry = { vertices: ring.verts };
+          confidence = delta <= 0.1 ? 'HIGH' : 'MEDIUM';
+          note = `traced ${calc} m2 vs printed ${printed} m2 (${(delta * 100).toFixed(1)}% delta)`;
+        }
       } else {
+        geometry = { vertices: ring.verts };
         confidence = 'MEDIUM';
         note = `traced ${calc} m2, no printed area found to check it against`;
       }
       renderable = confidence === 'HIGH' || confidence === 'MEDIUM';
     }
+    if (geometry) usedRings.add(ring);
 
     zones.push({
       id,
@@ -538,6 +599,42 @@ function buildZones(entities) {
       name_status: 'CAD_OBSERVED_LABEL',
       printed_area_m2: printed,
       validation_note: note,
+      // Provenance. Enough to point at the exact object in the drawing that
+      // produced this polygon, and to say by which of the two encodings the
+      // drawing declared it closed. Private, like everything in this document.
+      source_file: 'Floor1.dxf',
+      source_layer: ring ? AREA_BOUND_LAYER : null,
+      source_handle: ring ? ring.handle : null,
+      boundary_closure: ring ? ring.closure : null,
+    });
+  }
+
+  // Boundaries the drawing closed but never labelled. These are measured rooms
+  // whose PURPOSE is undefined, which is a different statement from "no room
+  // is here" -- dropping them would delete floor area the CAD explicitly
+  // draws. They are emitted with a null name rather than a guessed one; a name
+  // borrowed from the nearest label would be an invention.
+  for (const r of rings) {
+    if (!r.closed || usedRings.has(r) || selfIntersects(r.verts)) continue;
+    seq++;
+    zones.push({
+      id: `FZ-F1-${String(seq).padStart(4, '0')}`,
+      type: 'functional-zone',
+      zone_name: null,
+      confidence: 'MEDIUM',
+      renderable: true,
+      status: 'OK',
+      geometry: { vertices: r.verts },
+      source: 'floor1_dxf',
+      geometry_status: 'MEASURED_CAD',
+      name_status: 'NO_CAD_LABEL',
+      printed_area_m2: null,
+      validation_note:
+        `closed CAD boundary of ${round3(r.area)} m2 carrying no area label`,
+      source_file: 'Floor1.dxf',
+      source_layer: AREA_BOUND_LAYER,
+      source_handle: r.handle,
+      boundary_closure: r.closure,
     });
   }
   return zones;

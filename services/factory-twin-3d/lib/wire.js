@@ -317,12 +317,13 @@ function projectGrid(grid) {
 function projectFunctionalZone(zone) {
   if (!zone || typeof zone !== 'object') return null;
   const confidence = fromEnum(zone.confidence, ALLOWED_CONFIDENCE);
-  // The area's own label, when the private record carries one. It is null for
-  // every zone today: the names exist on a schematic that shares no reference
-  // frame with these measured polygons, so no zone has a name that could be
-  // attached without inventing the correspondence. The field is here so that
-  // attaching one later is a data change rather than a code change, and so the
-  // guard protecting it is already tested.
+  // The area's own label, when the private record carries one. Most zones now
+  // have one: the name and the boundary come from the same drawing, and the
+  // label is bound to the polygon by containment plus the area the drawing
+  // prints for itself, so the correspondence is measured rather than assumed.
+  // It is still null for the boundaries the drawing closed but never labelled.
+  // A room with no name is a room whose purpose is undefined, which is not the
+  // same as no room, so those are served unnamed rather than dropped.
   const name = zoneName(zone.zone_name);
   const geom = zone.geometry && typeof zone.geometry === 'object' ? zone.geometry : null;
   const rawVerts = geom && Array.isArray(geom.vertices) ? geom.vertices : [];
