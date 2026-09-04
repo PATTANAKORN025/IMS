@@ -268,17 +268,36 @@ for (const slot of geometry.slots || []) {
 // stop them being conflated:
 //
 //   position + rotation  MEASURED_CAD, straight out of an INSERT entity
-//   footprint            OBSERVED_CAD where it survived the extractor's
-//                        spatial-consistency test, UNRESOLVED where it did not
+//   footprint            MEASURED_CAD where the block's own geometry resolved
+//                        at machine scale, UNRESOLVED where it did not.
+//                        OBSERVED_CAD (a block bounding box) and APPROXIMATION
+//                        (an extent bounded by neighbour spacing) are the older,
+//                        weaker tiers; still accepted, no longer produced.
 //
 // The load-bearing invariant is that UNRESOLVED means UNRESOLVED: a record may
 // not declare its extent unresolved and then carry one anyway, and it may not
 // declare it observed and carry nothing. Either would let a renderer draw an
 // invented box that looks exactly like a measured one.
-const EQUIPMENT_FOOTPRINT_STATUS = new Set(['OBSERVED_CAD', 'APPROXIMATION', 'UNRESOLVED']);
+const EQUIPMENT_FOOTPRINT_STATUS = new Set([
+  'MEASURED_CAD', 'OBSERVED_CAD', 'APPROXIMATION', 'UNRESOLVED',
+]);
 // An approximation must say where it came from, or it is indistinguishable
 // from a number somebody typed.
-const EQUIPMENT_FOOTPRINT_SOURCE = new Set(['cad_block_extent', 'CAD_CORRELATED']);
+const EQUIPMENT_FOOTPRINT_SOURCE = new Set([
+  'cad_block_geometry', 'cad_block_extent', 'CAD_CORRELATED',
+]);
+/**
+ * How far past the column-cap envelope a machine may measure and still be
+ * explainable as a unit standing against the outside of the exterior wall.
+ */
+const EQUIPMENT_OVERHANG_MAX_M = 2.0;
+/**
+ * A rotated footprint's diagonal bounds its axis-aligned span, so the outline
+ * is compared against the diagonal rather than against width and depth. The
+ * tolerance covers the 3-decimal rounding on both, and nothing else.
+ */
+const POLYGON_EXTENT_TOL_M = 0.01;
+let equipmentOutsideEnvelope = 0;
 const seenEquipmentIds = new Set();
 let equipmentResolved = 0;
 let equipmentApproximated = 0;
@@ -290,7 +309,21 @@ for (const item of geometry.equipment || []) {
 
   checkFiniteCoords(item.position, label, ['x', 'y', 'z']);
   if (item.position && !insideEnvelope(item.position, geometry.envelope)) {
-    error(`${label}: position (${item.position.x}, ${item.position.z}) falls outside the floor envelope`);
+    // A unit standing against the OUTSIDE of the exterior wall measures past
+    // the column-cap envelope, and that is a fact about the building. It is
+    // allowed only when the record declares it and states how far, and only
+    // within a bound: a frame or transform error would put machines tens of
+    // metres out, and this still fails on that.
+    const over = item.envelope_overhang_m;
+    if (item.outside_envelope !== true || typeof over !== 'number' || !Number.isFinite(over)) {
+      error(`${label}: position (${item.position.x}, ${item.position.z}) falls outside the `
+        + 'floor envelope without declaring outside_envelope + envelope_overhang_m');
+    } else if (over > EQUIPMENT_OVERHANG_MAX_M) {
+      error(`${label}: sits ${over} m outside the floor envelope, beyond the `
+        + `${EQUIPMENT_OVERHANG_MAX_M} m a unit against the exterior wall can account for`);
+    } else {
+      equipmentOutsideEnvelope++;
+    }
   }
 
   // Rotation is a measurement here, so an absent or unusable one is an error
@@ -305,13 +338,46 @@ for (const item of geometry.equipment || []) {
   if (!EQUIPMENT_FOOTPRINT_STATUS.has(item.footprint_status)) {
     error(`${label}: footprint_status "${item.footprint_status}" is not one of `
       + `${[...EQUIPMENT_FOOTPRINT_STATUS].join(', ')}`);
-  } else if (item.footprint_status === 'OBSERVED_CAD' || item.footprint_status === 'APPROXIMATION') {
-    if (item.footprint_status === 'OBSERVED_CAD') equipmentResolved++;
-    else equipmentApproximated++;
+  } else if (item.footprint_status !== 'UNRESOLVED') {
+    if (item.footprint_status === 'APPROXIMATION') equipmentApproximated++;
+    else equipmentResolved++;
     if (!item.footprint) {
       error(`${label}: footprint_status is ${item.footprint_status} but no footprint is recorded`);
     } else {
       checkDims(item.footprint, label, ['width', 'depth']);
+    }
+    // A served OUTLINE is a second statement of the same extent, so it has to
+    // agree with the first. A polygon that wandered outside the footprint it
+    // travels with would be drawn instead of it.
+    if (item.footprint_polygon !== null && item.footprint_polygon !== undefined) {
+      const poly = item.footprint_polygon;
+      if (!Array.isArray(poly) || poly.length < 3 || poly.length > 64) {
+        error(`${label}: footprint_polygon must be 3 to 64 vertices, got `
+          + `${Array.isArray(poly) ? poly.length : typeof poly}`);
+      } else {
+        let bad = 0;
+        let minx = Infinity;
+        let maxx = -Infinity;
+        let minz = Infinity;
+        let maxz = -Infinity;
+        for (const v of poly) {
+          if (!v || typeof v.x !== 'number' || typeof v.z !== 'number'
+            || !Number.isFinite(v.x) || !Number.isFinite(v.z)) { bad += 1; continue; }
+          minx = Math.min(minx, v.x); maxx = Math.max(maxx, v.x);
+          minz = Math.min(minz, v.z); maxz = Math.max(maxz, v.z);
+        }
+        if (bad) error(`${label}: footprint_polygon has ${bad} vertex/vertices that are not finite points`);
+        else if (item.footprint) {
+          // The outline's own extent cannot exceed the footprint it is served
+          // with -- they are two readings of one measurement.
+          const diag = Math.hypot(item.footprint.width, item.footprint.depth) + POLYGON_EXTENT_TOL_M;
+          if ((maxx - minx) > diag || (maxz - minz) > diag) {
+            error(`${label}: footprint_polygon spans ${(maxx - minx).toFixed(3)} x `
+              + `${(maxz - minz).toFixed(3)} m, larger than the ${item.footprint.width} x `
+              + `${item.footprint.depth} m footprint it is served with`);
+          }
+        }
+      }
     }
     if (!EQUIPMENT_FOOTPRINT_SOURCE.has(item.footprint_source)) {
       error(`${label}: footprint_source "${item.footprint_source}" is not one of `
@@ -388,7 +454,7 @@ if (Array.isArray(geometry.equipment) && geometry.equipment.length > 0) {
     }
     if (c.footprint_resolved !== equipmentResolved) {
       error(`equipment_extraction.counts.footprint_resolved (${c.footprint_resolved}) `
-        + `disagrees with the ${equipmentResolved} records carrying OBSERVED_CAD extents`);
+        + `disagrees with the ${equipmentResolved} records carrying measured extents`);
     }
     if (c.footprint_unresolved !== equipmentUnresolved) {
       error(`equipment_extraction.counts.footprint_unresolved (${c.footprint_unresolved}) `
@@ -731,7 +797,7 @@ if (zoneDoc) {
 
 const verifiedPhysicalCount = (geometry.slots || []).filter((s) => s.status === 'VERIFIED_PHYSICAL').length;
 
-console.log(`Checked: ${geometry.columns?.length || 0} columns, ${geometry.zones?.length || 0} zones, ${geometry.equipment?.length || 0} CAD equipment (${equipmentResolved} measured, ${equipmentApproximated} approximated, ${equipmentUnresolved} UNRESOLVED), ${geometry.slots?.length || 0} superseded raster slots, ${Object.keys(mapping).length} mapping entries, ${deviceToSlots.size} unique mapped device(s), ${verifiedPhysicalCount} VERIFIED_PHYSICAL slot(s).`);
+console.log(`Checked: ${geometry.columns?.length || 0} columns, ${geometry.zones?.length || 0} zones, ${geometry.equipment?.length || 0} CAD equipment (${equipmentResolved} measured, ${equipmentApproximated} approximated, ${equipmentUnresolved} UNRESOLVED, ${equipmentOutsideEnvelope} outside the envelope), ${geometry.slots?.length || 0} superseded raster slots, ${Object.keys(mapping).length} mapping entries, ${deviceToSlots.size} unique mapped device(s), ${verifiedPhysicalCount} VERIFIED_PHYSICAL slot(s).`);
 console.log(`Functional zones: ${zoneCounts.total} record(s), ${zoneCounts.renderable} renderable, ${zoneCounts.total - zoneCounts.renderable} metadata-only.`);
 console.log('='.repeat(50));
 console.log(`Results: ${errors} error(s), ${warnings} warning(s)`);

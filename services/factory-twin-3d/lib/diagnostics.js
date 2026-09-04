@@ -168,7 +168,7 @@ function buildDiagnostics({
       column_count: columns.length,
       equipment_count: equipment.length,
       equipment_footprint_resolved: equipment.filter(
-        (e) => e && e.footprint_status === 'OBSERVED_CAD'
+        (e) => e && (e.footprint_status === 'MEASURED_CAD' || e.footprint_status === 'OBSERVED_CAD')
       ).length,
       equipment_footprint_unresolved: equipment.filter(
         (e) => e && e.footprint_status === 'UNRESOLVED'

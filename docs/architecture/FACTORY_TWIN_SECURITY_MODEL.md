@@ -22,7 +22,8 @@ The twin is unusual in that **the data is more sensitive than the service**.
 | Asset | Sensitivity |
 |---|---|
 | The source engineering drawing | Confidential. Lives outside the repository entirely. |
-| Derived private geometry (envelope, footprint, grid, columns, slot positions, zone boundaries) | Confidential. Gitignored, host-only, never in an image layer. |
+| Derived private geometry (envelope, footprint, grid, columns, slot positions, zone boundaries, equipment outlines) | Confidential. Gitignored, host-only, never in an image layer. |
+| CAD provenance on an equipment record (layer name, block name, entity handle, family size, scale, nesting depth) | Confidential and **never served**. A layer or block name in this drawing identifies a vendor or a process. It is recorded in the private document and stays there; `lib/wire.js` rebuilds every served record field by field, so a new provenance field cannot reach a browser by being added. |
 | Process and area names | Confidential, with one deliberate exception: servable on the authenticated geometry route because the floor view is unreadable without them. Never logged, never in diagnostics, never in an error response. See [Area names](#area-names). |
 | Live telemetry | Internal. Already governed by the platform's existing controls. |
 | The code | Public. The repository is public and must run standalone on synthetic data. |

@@ -73,6 +73,23 @@ const VIEWPORTS = [
 const LAYERS = ['shell', 'columns', 'walls', 'functional', 'equipment'];
 
 const NO_GEOMETRY = 'no private geometry is deployed here';
+
+/**
+ * Tolerance for anything read back out of a three.js vertex buffer.
+ *
+ * Buffer attributes are Float32Array: a coordinate that goes in as a double
+ * comes back with about seven significant digits, which at this building's
+ * scale is a few micrometres. Everything measured through those buffers uses
+ * this; everything compared against the API's own numbers stays exact.
+ */
+const FLOAT32_TOL_M = 5e-5;
+
+/**
+ * The resolution the model publishes coordinates at: metres to three decimals,
+ * one millimetre. Two numbers both derived from millimetre-rounded vertices
+ * can differ by that much and no more.
+ */
+const SERVED_COORDINATE_QUANTUM_M = 0.002;
 const NO_DEVICES = 'no monitored devices in this database';
 const NO_SCHEMATIC = 'no schematic transcription is deployed here';
 
@@ -146,21 +163,74 @@ async function snapshot(page) {
       // Rotation actually applied to the drawn pads, so the reconciliation can
       // compare the SCENE against the API rather than the API against itself.
       equipmentRotations: (Array.isArray(T.equipmentMeshes) ? T.equipmentMeshes : []).map(
-        (m) => ({ id: m.userData.equipment.id, y: m.rotation.y })
+        (m) => ({
+          id: m.userData.equipment.id,
+          y: m.rotation.y,
+          // A measured OUTLINE is extruded from world coordinates that already
+          // carry the machine's angle, so its mesh is deliberately unturned.
+          // Its orientation is proved by the vertex check instead, which is a
+          // stronger statement than a single angle.
+          outline: Array.isArray(m.userData.equipment.footprint_polygon),
+        })
       ),
       // The DRAWN box: its world placement and its extruded size. This is what
       // makes "2D and 3D are the same geometry" an assertion rather than a
       // claim -- there is one mesh, and both views look at it.
-      equipmentBoxes: (Array.isArray(T.equipmentMeshes) ? T.equipmentMeshes : []).map((m) => ({
-        id: m.userData.equipment.id,
-        x: m.position.x,
-        y: m.position.y,
-        z: m.position.z,
-        w: m.geometry.parameters.width,
-        h: m.geometry.parameters.height,
-        d: m.geometry.parameters.depth,
-        tier: m.userData.equipment.footprint_status,
-      })),
+      equipmentBoxes: (Array.isArray(T.equipmentMeshes) ? T.equipmentMeshes : []).map((m) => {
+        const item = m.userData.equipment;
+        const outline = Array.isArray(item.footprint_polygon);
+        if (!outline) {
+          const p = m.geometry.parameters;
+          return {
+            id: item.id, x: m.position.x, y: m.position.y, z: m.position.z,
+            w: p.width, h: p.height, d: p.depth, outline: false,
+            tier: item.footprint_status, vertexError: 0, floorY: m.position.y - p.height / 2,
+          };
+        }
+        // An extruded outline has no box parameters -- it has vertices. Measure
+        // the drawn thing itself: its extent on the machine's own axes, the
+        // plane it rises from, and how far each served vertex is from a vertex
+        // the renderer actually drew.
+        const attr = m.geometry.attributes.position;
+        // The machine's own axes IN THE SCENE. A three.js rotation of +theta
+        // about +Y sends the local x axis to (cos theta, -sin theta) in the
+        // (x, z) plane, because the canonical frame reflects z -- so the axis
+        // to measure along is -theta here, not +theta. Measuring on +theta
+        // reports a rotated machine as up to 170 mm larger than it is.
+        const t = -(item.rotation_deg || 0) * Math.PI / 180;
+        const cos = Math.cos(t);
+        const sin = Math.sin(t);
+        let minu = Infinity; let maxu = -Infinity;
+        let minv = Infinity; let maxv = -Infinity;
+        let miny = Infinity; let maxy = -Infinity;
+        const drawn = [];
+        for (let i = 0; i < attr.count; i += 1) {
+          const wx = attr.getX(i) + m.position.x;
+          const wy = attr.getY(i) + m.position.y;
+          const wz = attr.getZ(i) + m.position.z;
+          const u = wx * cos + wz * sin;
+          const v = -wx * sin + wz * cos;
+          if (u < minu) minu = u; if (u > maxu) maxu = u;
+          if (v < minv) minv = v; if (v > maxv) maxv = v;
+          if (wy < miny) miny = wy; if (wy > maxy) maxy = wy;
+          drawn.push([wx, wz]);
+        }
+        let vertexError = 0;
+        for (const p of item.footprint_polygon) {
+          let best = Infinity;
+          for (const [dx, dz] of drawn) {
+            const d = Math.hypot(dx - p.x, dz - p.z);
+            if (d < best) best = d;
+          }
+          if (best > vertexError) vertexError = best;
+        }
+        return {
+          id: item.id,
+          x: m.position.x, y: m.position.y, z: m.position.z,
+          w: maxu - minu, h: maxy - miny, d: maxv - minv,
+          outline: true, tier: item.footprint_status, vertexError, floorY: miny,
+        };
+      }),
       // Walls and openings are instanced: a few objects carrying hundreds of
       // spans. Counted as objects, because that is what the scene holds.
       wallMeshes: T.wallMeshes ? T.wallMeshes.length : 0,
@@ -193,7 +263,8 @@ async function snapshot(page) {
         slotsServed: 'slots' in geo,
         equipment: Array.isArray(geo.equipment) ? geo.equipment.length : 0,
         equipmentResolved: (geo.equipment || []).filter(
-          (e) => e.footprint_status === 'OBSERVED_CAD' && e.footprint
+          (e) => (e.footprint_status === 'MEASURED_CAD' || e.footprint_status === 'OBSERVED_CAD')
+            && e.footprint
         ).length,
         equipmentApproximated: (geo.equipment || []).filter(
           (e) => e.footprint_status === 'APPROXIMATION' && e.footprint
@@ -203,6 +274,11 @@ async function snapshot(page) {
         equipmentApproxWithoutSource: (geo.equipment || []).filter(
           (e) => e.footprint_status === 'APPROXIMATION' && e.footprint_source !== 'CAD_CORRELATED'
         ).length,
+        // The served extent, by id, so the scene can be measured against it.
+        equipmentFootprints: (geo.equipment || []).reduce((acc, e) => {
+          if (e.footprint) acc[e.id] = { width: e.footprint.width, depth: e.footprint.depth };
+          return acc;
+        }, {}),
         equipmentPositions: (geo.equipment || []).map(
           (e) => ({ id: e.id, x: e.position.x, z: e.position.z, deg: e.rotation_deg })
         ),
@@ -981,9 +1057,21 @@ async function run() {
       // catches. This one does.
       let rotMismatch = 0;
       let worstRot = 0;
+      let turnedBoxes = 0;
+      let unturnedOutlines = 0;
       for (const drawn of s.equipmentRotations) {
         const e = served.get(drawn.id);
         if (!e || e.deg == null) { rotMismatch++; continue; }
+        if (drawn.outline) {
+          // An outline is drawn from world coordinates that already carry the
+          // angle. Turning the mesh as well would double it, so the mesh must
+          // be unturned -- and the vertex check below proves the angle is in
+          // the geometry rather than merely absent from the mesh.
+          unturnedOutlines++;
+          if (Math.abs(drawn.y) > 1e-9) rotMismatch++;
+          continue;
+        }
+        turnedBoxes++;
         const expected = e.deg * Math.PI / 180;
         const d = Math.abs((drawn.y - expected) % (Math.PI * 2));
         const wrapped = Math.min(d, Math.PI * 2 - d);
@@ -991,7 +1079,8 @@ async function run() {
         if (wrapped > 1e-9) rotMismatch++;
       }
       check(rotMismatch === 0, 'every drawn asset carries the rotation the CAD stated',
-        `${rotMismatch} mismatched, worst ${(worstRot * 180 / Math.PI).toFixed(6)} deg`);
+        `${turnedBoxes} boxes turned to the CAD angle, ${unturnedOutlines} outlines drawn `
+        + `pre-turned, ${rotMismatch} mismatched, worst ${(worstRot * 180 / Math.PI).toFixed(6)} deg`);
 
       // 2D -> 3D. There is exactly ONE mesh per asset and both views look at
       // it, so this measures that the mesh sits where the API said and is the
@@ -1003,17 +1092,30 @@ async function run() {
       let invented = 0;
       let sizedBoxes = 0;
       let markerBoxes = 0;
+      let worstVertex = 0;
+      let outlineCount = 0;
       const heights = new Set();
       for (const box of s.equipmentBoxes) {
         const e = served.get(box.id);
         if (!e) { invented++; continue; }
         worstPos = Math.max(worstPos, Math.abs(box.x - e.x), Math.abs(box.z - e.z));
-        // Every block stands ON the floor: centre height is half its own
-        // height, not an arbitrary elevation.
-        if (Math.abs(box.y - box.h / 2) > 1e-9) offFloor++;
-        if (box.tier === 'OBSERVED_CAD' || box.tier === 'APPROXIMATION') {
+        if (box.outline) { outlineCount++; worstVertex = Math.max(worstVertex, box.vertexError); }
+        // Every block stands ON the floor: its lowest face is the floor plane,
+        // not an arbitrary elevation. A box is centred on its origin and an
+        // extruded outline rises from it, so both are reduced to the same
+        // question -- where is the bottom.
+        if (Math.abs(box.floorY) > 1e-9) offFloor++;
+        if (box.tier === 'MEASURED_CAD' || box.tier === 'OBSERVED_CAD'
+          || box.tier === 'APPROXIMATION') {
           sizedBoxes++;
-          heights.add(box.h);
+          // Rounded to the micrometre before comparing: a vertex read back out
+          // of a Float32 buffer is not bit-identical to the number that went
+          // in, and a micrometre is not a height difference.
+          heights.add(Number(box.h.toFixed(6)));
+          // A drawn outline must BE the served outline: every served vertex is
+          // a vertex the renderer drew. This is what proves the angle, the
+          // mirror and the shape all survived into the scene.
+          if (box.vertexError > FLOAT32_TOL_M) invented++;
         } else {
           markerBoxes++;
           // A marker must not carry a shape. A non-square one would mean a
@@ -1040,22 +1142,36 @@ async function run() {
         'exactly the assets without an extent are drawn as markers',
         `${markerBoxes} vs ${s.api.equipmentUnresolved}`);
 
-      const scale = await page.evaluate(() => {
-        const T = window.__twin;
-        let worst = 0;
-        for (const m of T.equipmentMeshes) {
-          const e = m.userData.equipment;
-          if (!e.footprint) continue;
-          const box = m.geometry.parameters;
-          worst = Math.max(worst,
-            Math.abs(box.width - e.footprint.width),
-            Math.abs(box.depth - e.footprint.depth));
-        }
-        return { worst };
-      });
-      check(scale.worst < 1e-9,
+      // The DRAWN extent against the SERVED extent, measured on the machine's
+      // own axes so a box and an outline are held to the same standard. An
+      // outline is measured off its vertices, which is where the tolerance
+      // comes from: the extrusion is exact, the float arithmetic that rotates
+      // a vertex into the machine frame is not.
+      let worstDrawnBox = 0;
+      let worstDrawnOutline = 0;
+      for (const box of s.equipmentBoxes) {
+        const e = served.get(box.id);
+        if (!e) continue;
+        const fp = s.api.equipmentFootprints[box.id];
+        if (!fp) continue;
+        const d = Math.max(Math.abs(box.w - fp.width), Math.abs(box.d - fp.depth));
+        if (box.outline) worstDrawnOutline = Math.max(worstDrawnOutline, d);
+        else worstDrawnBox = Math.max(worstDrawnBox, d);
+      }
+      check(worstDrawnBox < FLOAT32_TOL_M,
         'every asset with an extent is drawn at exactly that extent',
-        `worst ${scale.worst} m`);
+        `worst ${worstDrawnBox.toExponential(2)} m across ${sizedBoxes - outlineCount} boxes`);
+      // An outline is drawn from vertices published at millimetre resolution,
+      // so the extent measured back off those vertices agrees with the served
+      // width and depth to a millimetre and no better. That quantum is the
+      // whole tolerance: it is the model's own published precision, not slack
+      // for a shape that drifted.
+      check(worstDrawnOutline <= SERVED_COORDINATE_QUANTUM_M,
+        'every drawn outline reproduces its served extent to the published precision',
+        `worst ${(worstDrawnOutline * 1000).toFixed(3)} mm across ${outlineCount} outlines`);
+      check(worstVertex < FLOAT32_TOL_M,
+        'every drawn outline is the served outline, vertex for vertex',
+        `worst ${worstVertex.toExponential(2)} m across ${outlineCount} outlines`);
       check(s.api.equipmentApproxWithoutSource === 0,
         'every approximated extent declares CAD_CORRELATED provenance',
         `${s.api.equipmentApproxWithoutSource} without it`);

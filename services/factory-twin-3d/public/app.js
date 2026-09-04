@@ -555,6 +555,32 @@ function boxGeometry(w, h, d) {
   return g;
 }
 
+/**
+ * A machine's MEASURED outline, extruded.
+ *
+ * The served polygon is in world coordinates and already carries the machine's
+ * rotation and its handing, so the mesh built from it must NOT be turned again
+ * -- doing so would rotate a shape that is already oriented. The vertices are
+ * rebased onto the record's own position so the mesh keeps a meaningful origin
+ * for picking and for the inspector.
+ *
+ * A three.js Shape lies in XY and extrudes along +Z; the quarter turn about X
+ * maps that to the floor plane with the extrusion going up, and the shape's y
+ * is negated so the turn brings each vertex back to its own world z.
+ */
+function footprintGeometry(polygon, origin, height) {
+  const shape = new THREE.Shape();
+  polygon.forEach((p, i) => {
+    const u = p.x - origin.x;
+    const v = -(p.z - origin.z);
+    if (i === 0) shape.moveTo(u, v); else shape.lineTo(u, v);
+  });
+  shape.closePath();
+  const geom = new THREE.ExtrudeGeometry(shape, { depth: height, bevelEnabled: false });
+  geom.rotateX(-Math.PI / 2);
+  return geom;
+}
+
 function standardMaterial(color) {
   const key = `std|${color}`;
   let m = materialCache.get(key);
@@ -1040,7 +1066,7 @@ function buildFloor(geometry) {
     if (!item || !finitePoint(item.position, true)) continue;
     const fp = item.footprint;
     const tier = item.footprint_status;
-    const sized = (tier === 'OBSERVED_CAD' || tier === 'APPROXIMATION')
+    const sized = (tier === 'MEASURED_CAD' || tier === 'OBSERVED_CAD' || tier === 'APPROXIMATION')
       && fp && finite(fp.width) && finite(fp.depth);
     // An asset with no extent gets a marker, never a box. Height comes down
     // with it: a full-height block would read as a machine of known size.
@@ -1052,7 +1078,15 @@ function buildFloor(geometry) {
     // plan and the 3D view are the same meshes seen from different angles, so
     // they cannot disagree about where a machine is or how big it is -- there
     // is no second position to get wrong.
-    const geom = boxGeometry(w, h, d);
+    //
+    // Where the CAD drew an outline rather than a box, that outline is what is
+    // drawn. Squaring it off would report a shape the drawing does not have,
+    // and would put a corner where the machine has none.
+    const outline = sized && Array.isArray(item.footprint_polygon)
+      && item.footprint_polygon.length >= 3 ? item.footprint_polygon : null;
+    const geom = outline
+      ? footprintGeometry(outline, item.position, h)
+      : boxGeometry(w, h, d);
     // Three tiers, three appearances. An operator must be able to see which
     // shapes are measurements without opening anything, so the difference is
     // in value and opacity rather than in a label they have to hunt for.
@@ -1060,15 +1094,18 @@ function buildFloor(geometry) {
     const mat = basicMaterial(style.color, style.opacity);
     const mesh = new THREE.Mesh(geom, mat);
     // Rotation about +Y, with the sign the canonical frame demands. See
-    // CAD_ROTATION_SIGN above.
-    if (finite(item.rotation_deg)) {
+    // CAD_ROTATION_SIGN above. An extruded outline is already turned -- its
+    // vertices are world coordinates -- so turning it again would double the
+    // angle on exactly the machines whose shape makes it most visible.
+    if (!outline && finite(item.rotation_deg)) {
       mesh.rotation.y = CAD_ROTATION_SIGN * item.rotation_deg * Math.PI / 180;
     }
     mesh.userData.equipment = item;
     equipmentMeshes.push(mesh);
-    // Sat ON the floor: position.y is the floor reference and a box is centred
-    // on its origin, so without the half-height offset the lower half sinks.
-    mesh.position.set(item.position.x, item.position.y + h / 2, item.position.z);
+    // Sat ON the floor: position.y is the floor reference. A box is centred on
+    // its origin and needs the half-height offset; an extruded outline already
+    // rises from zero.
+    mesh.position.set(item.position.x, item.position.y + (outline ? 0 : h / 2), item.position.z);
     sublayers.equipment.add(mesh);
   }
 }
@@ -1344,11 +1381,14 @@ const MARKER_HEIGHT_M = 0.08;
 /**
  * How each evidence tier is drawn.
  *
- * OBSERVED_CAD is the block's own extent and reads as solid. APPROXIMATION is
- * that extent clipped to neighbour spacing -- real bounds, but bounds, so it
- * reads a step back. UNRESOLVED claims no size at all and is a faint marker.
+ * MEASURED_CAD is the block's own geometry, transformed and measured, and
+ * reads as solid. OBSERVED_CAD is a bounding box of the same block -- weaker,
+ * and no longer produced for this floor. APPROXIMATION is an extent bounded by
+ * neighbour spacing, so it reads a step back. UNRESOLVED claims no size at all
+ * and is a faint marker.
  */
 const EQUIPMENT_TIER_STYLE = Object.freeze({
+  MEASURED_CAD: { color: 0x8fa7c9, opacity: 0.92 },
   OBSERVED_CAD: { color: 0x8fa7c9, opacity: 0.92 },
   APPROXIMATION: { color: 0x6d829f, opacity: 0.7 },
   UNRESOLVED: { color: 0x44536a, opacity: 0.5 },
@@ -1537,7 +1577,9 @@ function updateEvidenceSummary(geo, zonesDrawn) {
   const wallList = Array.isArray(geo && geo.walls) ? geo.walls : [];
   const openingList = Array.isArray(geo && geo.openings) ? geo.openings : [];
   const wallLineList = Array.isArray(geo && geo.wall_lines) ? geo.wall_lines : [];
-  const resolved = equipmentList.filter((e) => e && e.footprint_status === 'OBSERVED_CAD').length;
+  const resolved = equipmentList.filter(
+    (e) => e && (e.footprint_status === 'MEASURED_CAD' || e.footprint_status === 'OBSERVED_CAD'),
+  ).length;
   const approximated = equipmentList.filter((e) => e && e.footprint_status === 'APPROXIMATION').length;
   const unresolved = equipmentList.length - resolved - approximated;
   const confirmed = equipmentList.filter((e) => e && e.ims_device_id).length;
@@ -1592,7 +1634,7 @@ function updateEvidenceSummary(geo, zonesDrawn) {
     ['Wall faces, thickness unresolved', wallLineList.length, 'OBSERVED_CAD'],
     ['Doors, windows, air showers', openingList.length, 'OBSERVED_CAD'],
     ['Equipment positions', equipmentList.length, 'MEASURED_CAD'],
-    ['Equipment extents measured', resolved, 'OBSERVED_CAD'],
+    ['Equipment extents measured', resolved, 'MEASURED_CAD'],
     ['Equipment extents approximated', approximated, 'APPROXIMATION'],
     ['Equipment extents unresolved', unresolved, 'UNRESOLVED'],
     ['Equipment height', 0, 'PRESENTATION_ONLY \u2014 not in evidence'],
@@ -1633,7 +1675,8 @@ function render(badge, badgeClass, title, rows, note) {
 function showEquipmentInspector(item) {
   const mapped = item.status === 'IMS_CONNECTED' && item.ims_device_id;
   const tier = item.footprint_status;
-  const sized = (tier === 'OBSERVED_CAD' || tier === 'APPROXIMATION') && item.footprint;
+  const sized = (tier === 'MEASURED_CAD' || tier === 'OBSERVED_CAD'
+    || tier === 'APPROXIMATION') && item.footprint;
   const extent = sized
     ? `${item.footprint.width} × ${item.footprint.depth} m`
     : 'UNRESOLVED — no size is claimed';
@@ -1641,6 +1684,7 @@ function showEquipmentInspector(item) {
   // two claims of different strength on one record, and the row that says
   // "measured" must never be read as covering both.
   const extentEvidence = {
+    MEASURED_CAD: 'MEASURED_CAD — the block’s own geometry, transformed and measured',
     OBSERVED_CAD: 'OBSERVED_CAD — the block’s own extent',
     APPROXIMATION: 'APPROXIMATION — block extent clipped to neighbour spacing',
   }[tier] || 'UNRESOLVED — not established by the CAD';
@@ -1652,21 +1696,30 @@ function showEquipmentInspector(item) {
     [
       ['Asset', item.id],
       ['Identity', mapped ? `mapped to ${item.ims_device_id}` : 'no confirmed machine'],
-      ['Mapping status', item.status],
+      ['Mapping status', item.mapping_status ?? item.status],
       ['Position x / z', `${item.position.x} / ${item.position.z} m`],
       ['Rotation', item.rotation_deg == null ? 'unknown' : `${item.rotation_deg}°`],
       ['Position evidence', item.geometry_status ?? 'unknown'],
       ['Footprint', extent],
       ['Footprint evidence', extentEvidence],
+      ['Outline', item.footprint_shape ?? 'unresolved'],
+      ['Handing', item.mirrored ? 'mirrored in the CAD' : 'as drawn'],
+      ['Room', item.zone_status ?? 'unresolved'],
       ['Height', 'PRESENTATION_ONLY — a plan carries no elevation'],
       ['Confidence', item.confidence ?? 'unknown'],
       ['Source', item.source ?? 'unknown'],
       ['Zone', item.zone_id ?? 'none — outside every validated zone'],
     ],
-    (tier === 'OBSERVED_CAD'
-      ? 'Placed by a CAD block reference: the insertion point and the rotation are the '
-        + "drawing's own, not traced. Extent is the block's bounding box, which measures "
-        + 'everything the block draws.'
+    (tier === 'MEASURED_CAD'
+      ? 'Placed by a CAD block reference: the insertion point, the rotation and the scale '
+        + "are the drawing's own, not traced. The extent is the block's OWN GEOMETRY, "
+        + 'transformed through the whole INSERT chain — mirror and nesting included — and '
+        + "measured on the machine's own axes. Where the outline is not a box, the outline "
+        + 'is what is drawn.'
+      : (tier === 'OBSERVED_CAD'
+        ? 'Placed by a CAD block reference: the insertion point and the rotation are the '
+          + "drawing's own, not traced. Extent is the block's bounding box, which measures "
+          + 'everything the block draws.'
       : (tier === 'APPROXIMATION'
         ? 'Placed by a CAD block reference, so position and rotation are measured. The '
           + 'extent is the block box CLIPPED to the spacing of the neighbouring insertion '
@@ -1675,7 +1728,7 @@ function showEquipmentInspector(item) {
           + 'stated dimension.'
         : 'Placed by a CAD block reference, so position and rotation are measured. Its '
           + 'extent is NOT established and none is drawn — a marker stands in for the '
-          + 'machine rather than an invented footprint.'))
+          + 'machine rather than an invented footprint.')))
     + ' The block height is a presentation constant, identical for every machine on this '
     + 'floor, and is not a measurement of anything. No machine identity is claimed: the '
     + 'CAD names blocks, not assets.'

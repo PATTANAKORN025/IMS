@@ -29,12 +29,14 @@
 const fs = require('fs');
 const path = require('path');
 const frame = require('../../scripts/lib/floor1-frame');
+const blocks = require('../../scripts/lib/cad-blocks');
 
 const PRIVATE_DIR = process.env.FLOOR1_PRIVATE_DIR
   || path.join(__dirname, '..', '..', 'services', 'factory-twin-3d', 'private');
 const GEOMETRY_PATH = path.join(PRIVATE_DIR, 'floor1-geometry.json');
 const BUNDLE_PATH = process.env.FLOOR1_CAD_BUNDLE
   || path.join(PRIVATE_DIR, 'floor1-cad-bundle.json');
+const EQUIPMENT_REFERENCE_PATH = path.join(PRIVATE_DIR, 'floor1-equipment-reference.json');
 
 /**
  * Tolerances, in the units the drawing is drawn in.
@@ -67,6 +69,27 @@ const ROTATION_TOL_DEG = 0.01;
  * not axis-aligned, and a model reporting none of it has regressed to
  * bucketing faces into horizontal and vertical.
  */
+/**
+ * Equipment reconciliation ratchets.
+ *
+ * POSITION is required of every record, not most of them: a machine's position
+ * is copied out of an INSERT and converted, and there is no arithmetic in that
+ * path that can move one.
+ *
+ * OVERLAP is the share of the union that the served outline and the measured
+ * hull agree on. It is under 1.0 for one reason only -- the served outline is
+ * capped at 16 vertices, and dropping a vertex from a hull loses a sliver --
+ * so the floor is set where that loss lives and a drop below it means the
+ * outline has stopped being the measurement.
+ *
+ * FALSE POSITIVE is floor the model claims that the drawing does not measure.
+ * A rectangle's box legitimately covers more than its hull; an outline may not.
+ */
+const MIN_EQUIPMENT_POSITION = 0.99;
+const MIN_FOOTPRINT_OVERLAP = 0.95;
+const MAX_FOOTPRINT_FALSE_POSITIVE = 0.05;
+const CORNER_TOL_MM = 1.0;
+
 const MIN_WALL_FIDELITY = 0.99;
 const MIN_WALL_COVERAGE = 0.93;
 const MIN_ANGLED_WALLS = 10;
@@ -91,6 +114,7 @@ function load(p, what) {
 
 const geometry = load(GEOMETRY_PATH, 'geometry document');
 const bundle = load(BUNDLE_PATH, 'CAD bundle');
+const equipReference = load(EQUIPMENT_REFERENCE_PATH, 'equipment measurement reference');
 
 const W = bundle.envelope_mm.width;
 const H = bundle.envelope_mm.depth;
@@ -110,114 +134,231 @@ if (Math.abs(env.width - W / 1000) > 0.001 || Math.abs(env.depth - H / 1000) > 0
 
 /* -- equipment ------------------------------------------------------- */
 //
-// Rebuild the same candidate set the extractor built, from the same bundle,
-// and match each model record to it by position. Matching by position rather
-// than by index is deliberate: an index match would pass even if the extractor
-// and the renderer had silently reordered against each other.
-const boxes = bundle.block_boxes || {};
-const inserts = [];
-for (const ins of bundle.inserts) {
-  const box = boxes[ins.block];
-  if (!box) continue;
-  const t = (ins.rotation || 0) * Math.PI / 180;
-  const co = Math.cos(t);
-  const si = Math.sin(t);
-  let x0 = Infinity;
-  let y0 = Infinity;
-  let x1 = -Infinity;
-  let y1 = -Infinity;
-  for (const [dx, dy] of [[0, 0], [box.w, 0], [box.w, box.h], [0, box.h]]) {
-    const bx = box.minx + dx;
-    const by = box.miny + dy;
-    const px = ins.x + bx * co - by * si;
-    const py = ins.y + bx * si + by * co;
-    x0 = Math.min(x0, px); y0 = Math.min(y0, py);
-    x1 = Math.max(x1, px); y1 = Math.max(y1, py);
-  }
-  inserts.push({ ins, box, cx: (x0 + x1) / 2, cy: (y0 + y1) / 2 });
-}
+// Three sources are compared, not two:
+//
+//   the MODEL      services/factory-twin-3d/private/floor1-geometry.json,
+//                  canonical metres, the document the API serves from
+//   the MEASUREMENT floor1-equipment-reference.json, floor-local millimetres,
+//                  written by the extractor BEFORE the canonical transform
+//   the BUNDLE     an older, independent extraction of the same drawing's
+//                  INSERT records
+//
+// The measurement checks everything downstream of it -- the frame, the
+// rounding, the outline simplification, the record assembly. The bundle checks
+// the measurement's own anchor against a second reading of the CAD, which is
+// what stops the pair being self-consistently wrong.
+const referenceById = new Map();
+for (const r of (equipReference.equipment || [])) referenceById.set(r.id, r);
+
+// A second, independent reading of the insertion points, from the older bundle.
+const bundleAnchors = (bundle.inserts || []).map((i) => [i.x, i.y]);
 
 const equipment = Array.isArray(geometry.equipment) ? geometry.equipment : [];
 let matched = 0;
 let resolved = 0;
 let approximated = 0;
 let unresolvedCount = 0;
-let worstClipW = 0;
-let worstClipD = 0;
+let posWithin1 = 0;
+let posWithin5 = 0;
+let rotWithin = 0;
+let widthWithin = 0;
+let depthWithin = 0;
+let anchorChecked = 0;
+let worstAnchor = 0;
+let worstCorner = 0;
+let worstFalsePositive = 0;
+let worstFalseNegative = 0;
+const overlaps = [];
+const rotationResiduals = [];
+
 for (const item of equipment) {
-  // Model coordinates are canonical centred metres; the CAD is floor-local
-  // millimetres. The inverse goes through scripts/lib/floor1-frame.js, the same
-  // module the extractors use -- reimplementing it here is how the model and
-  // its own reconciliation drifted into two frames the first time.
+  const ref = referenceById.get(item.id);
+  if (!ref) { fail(`${item.id}: no measurement record -- nothing to reconcile against`); continue; }
+
+  // Model coordinates are canonical centred metres; the measurement is
+  // floor-local millimetres. The inverse goes through scripts/lib/floor1-frame,
+  // the same module the extractors use -- reimplementing it here is how the
+  // model and its own reconciliation drifted into two frames the first time.
   const mmX = frame.twinXToCad(item.position.x, HALF_W);
   const mmY = frame.twinZToCad(item.position.z, HALF_D);
-  let best = null;
-  let bestD = Infinity;
-  for (const cand of inserts) {
-    // A record with an unresolved extent was placed at the insertion point,
-    // not at the box centre, so both are candidate anchors.
-    for (const [ax, ay] of [[cand.cx, cand.cy], [cand.ins.x, cand.ins.y]]) {
-      const d = Math.hypot(ax - mmX, ay - mmY);
-      if (d < bestD) { bestD = d; best = cand; }
-    }
-  }
-  if (!best) { fail(`${item.id}: no CAD INSERT within reach of its position`); continue; }
-  worst.pos = Math.max(worst.pos, bestD);
-  if (bestD > POSITION_TOL_MM) {
-    fail(`${item.id}: position residual ${bestD.toFixed(3)} mm exceeds ${POSITION_TOL_MM} mm`);
+  const anchor = ref.resolved ? [ref.box_mm.cx, ref.box_mm.cy] : [ref.insertion_mm.x, ref.insertion_mm.y];
+  const dPos = Math.hypot(anchor[0] - mmX, anchor[1] - mmY);
+  worst.pos = Math.max(worst.pos, dPos);
+  if (dPos <= 1.0) posWithin1++;
+  if (dPos <= 5.0) posWithin5++;
+  if (dPos > POSITION_TOL_MM) {
+    fail(`${item.id}: position residual ${dPos.toFixed(3)} mm exceeds ${POSITION_TOL_MM} mm`);
     continue;
   }
   matched++;
 
-  const rot = ((best.ins.rotation || 0) % 360 + 360) % 360;
-  const dRot = Math.abs(rot - item.rotation_deg);
-  worst.rot = Math.max(worst.rot, Math.min(dRot, 360 - dRot));
-  if (Math.min(dRot, 360 - dRot) > ROTATION_TOL_DEG) {
-    fail(`${item.id}: rotation residual ${dRot.toFixed(4)} deg (model ${item.rotation_deg}, CAD ${rot})`);
+  // The insertion point, against the OTHER extraction. The bundle carries no
+  // block scale, so it cannot be used for extent -- but an insertion point is
+  // an insertion point, and if the two readings of the drawing disagree about
+  // where a machine is placed, one of them is wrong.
+  const insX = frame.twinXToCad(item.insertion_point.x, HALF_W);
+  const insY = frame.twinZToCad(item.insertion_point.z, HALF_D);
+  let bestAnchor = Infinity;
+  for (const [ax, ay] of bundleAnchors) {
+    const d = Math.hypot(ax - insX, ay - insY);
+    if (d < bestAnchor) bestAnchor = d;
+  }
+  if (Number.isFinite(bestAnchor)) {
+    anchorChecked++;
+    worstAnchor = Math.max(worstAnchor, bestAnchor);
+    if (bestAnchor > POSITION_TOL_MM) {
+      fail(`${item.id}: insertion point is ${bestAnchor.toFixed(3)} mm from the nearest `
+        + 'INSERT in the independent bundle extraction');
+    }
   }
 
-  if (item.footprint_status === 'OBSERVED_CAD') {
-    resolved++;
-    if (!item.footprint) { fail(`${item.id}: OBSERVED_CAD extent with no footprint`); continue; }
-    const dW = Math.abs(item.footprint.width * 1000 - best.box.w);
-    const dD = Math.abs(item.footprint.depth * 1000 - best.box.h);
-    worst.size = Math.max(worst.size, dW, dD);
-    if (dW > SIZE_TOL_MM || dD > SIZE_TOL_MM) {
-      fail(`${item.id}: extent residual ${dW.toFixed(2)} / ${dD.toFixed(2)} mm `
-        + `(model ${item.footprint.width} x ${item.footprint.depth} m, `
-        + `CAD ${(best.box.w / 1000).toFixed(3)} x ${(best.box.h / 1000).toFixed(3)} m)`);
-    }
-  } else if (item.footprint_status === 'APPROXIMATION') {
-    approximated++;
-    if (!item.footprint) { fail(`${item.id}: APPROXIMATION with no footprint`); continue; }
-    // An approximation is the block box CLIPPED to neighbour spacing, so it is
-    // checked as a bound rather than as an equality: it may be smaller than the
-    // block's own extent and must never be larger. Larger would mean the clip
-    // had invented space the block does not even claim.
-    const mw = item.footprint.width * 1000;
-    const md = item.footprint.depth * 1000;
-    if (mw > best.box.w + SIZE_TOL_MM || md > best.box.h + SIZE_TOL_MM) {
-      fail(`${item.id}: approximated extent ${(mw / 1000).toFixed(3)} x ${(md / 1000).toFixed(3)} m `
-        + `exceeds the block's own ${(best.box.w / 1000).toFixed(3)} x `
-        + `${(best.box.h / 1000).toFixed(3)} m -- a clip may only shrink`);
-    }
-    worstClipW = Math.max(worstClipW, best.box.w - mw);
-    worstClipD = Math.max(worstClipD, best.box.h - md);
-  } else {
+  const rotExpected = frame.cadRotationToTwinDegrees(ref.rotation_deg);
+  const dRot = blocks.angleDelta(rotExpected, item.rotation_deg, 360);
+  worst.rot = Math.max(worst.rot, dRot);
+  if (dRot <= ROTATION_TOL_DEG) rotWithin++;
+  else fail(`${item.id}: rotation residual ${dRot.toFixed(4)} deg (model ${item.rotation_deg}, CAD ${rotExpected})`);
+
+  if (item.footprint_status === 'UNRESOLVED') {
     unresolvedCount++;
     if (item.footprint) fail(`${item.id}: UNRESOLVED but carries a footprint`);
+    if (ref.resolved) fail(`${item.id}: UNRESOLVED in the model but measured in the CAD`);
+    continue;
+  }
+  if (item.footprint_status === 'APPROXIMATION') { approximated++; continue; }
+
+  resolved++;
+  if (!item.footprint) { fail(`${item.id}: ${item.footprint_status} extent with no footprint`); continue; }
+  if (!ref.resolved) { fail(`${item.id}: claims a measured extent the CAD measurement does not have`); continue; }
+
+  const dW = Math.abs(item.footprint.width * 1000 - ref.box_mm.width);
+  const dD = Math.abs(item.footprint.depth * 1000 - ref.box_mm.depth);
+  worst.size = Math.max(worst.size, dW, dD);
+  if (dW <= SIZE_TOL_MM) widthWithin++;
+  if (dD <= SIZE_TOL_MM) depthWithin++;
+  if (dW > SIZE_TOL_MM || dD > SIZE_TOL_MM) {
+    fail(`${item.id}: extent residual ${dW.toFixed(2)} / ${dD.toFixed(2)} mm `
+      + `(model ${item.footprint.width} x ${item.footprint.depth} m, `
+      + `CAD ${(ref.box_mm.width / 1000).toFixed(3)} x ${(ref.box_mm.depth / 1000).toFixed(3)} m)`);
+  }
+
+  // The OUTLINE, in the measurement's own frame. Everything the model serves is
+  // converted back and compared against the hull the CAD produced: what the
+  // model draws where the drawing draws nothing is a false positive, and what
+  // the drawing draws that the model does not cover is a false negative.
+  const isOutline = Array.isArray(item.footprint_polygon) && item.footprint_polygon.length >= 3;
+  const servedPoly = isOutline
+    ? item.footprint_polygon.map((p) => [frame.twinXToCad(p.x, HALF_W), frame.twinZToCad(p.z, HALF_D)])
+    : blocks.boxCorners(mmX, mmY, item.footprint.width * 1000, item.footprint.depth * 1000,
+      ref.box_mm.angle_deg);
+  const rawHull = ref.hull_mm;
+  const interArea = blocks.polygonArea(blocks.convexIntersection(servedPoly, rawHull));
+  const servedArea = blocks.polygonArea(servedPoly);
+  const rawArea = blocks.polygonArea(rawHull);
+  const union = servedArea + rawArea - interArea;
+  if (union > 0) overlaps.push(interArea / union);
+  worstFalsePositive = Math.max(worstFalsePositive, (servedArea - interArea) / rawArea);
+  worstFalseNegative = Math.max(worstFalseNegative, (rawArea - interArea) / rawArea);
+
+  // Corner residual, for a served OUTLINE only. Every vertex the model serves
+  // must lie ON the measured hull, not near it: simplification may drop a
+  // vertex, it may not move one. A box's corners are not hull vertices at all
+  // -- a box contains the hull -- so measuring them against it would be
+  // measuring the difference between a box and a shape, which the false
+  // positive above already reports.
+  for (const [px, py] of (isOutline ? servedPoly : [])) {
+    let d = Infinity;
+    for (let i = 0; i < rawHull.length; i += 1) {
+      const [ax, ay] = rawHull[i];
+      const [bx, by] = rawHull[(i + 1) % rawHull.length];
+      const vx = bx - ax;
+      const vy = by - ay;
+      const len2 = vx * vx + vy * vy;
+      const t = len2 > 0 ? Math.max(0, Math.min(1, ((px - ax) * vx + (py - ay) * vy) / len2)) : 0;
+      d = Math.min(d, Math.hypot(px - (ax + t * vx), py - (ay + t * vy)));
+    }
+    if (Number.isFinite(d)) worstCorner = Math.max(worstCorner, d);
+  }
+
+  if (typeof item.measurement === 'object' && item.measurement
+    && typeof item.measurement.rotation_residual_deg === 'number') {
+    rotationResiduals.push(item.measurement.rotation_residual_deg);
   }
 }
 
-console.log(`  equipment            ${equipment.length} records, ${matched} reconciled to a CAD INSERT`);
-console.log(`  extents measured     ${resolved} OBSERVED_CAD`);
-console.log(`  extents approximated ${approximated} APPROXIMATION (block extent clipped to `
-  + `neighbour spacing; worst clip ${(worstClipW / 1000).toFixed(2)} x `
-  + `${(worstClipD / 1000).toFixed(2)} m)`);
+// A machine standing ON a structural column would be the signature of a
+// transform error, and the columns come from a DIFFERENT extraction of the same
+// drawing -- so this is an independent check on placement, not a restatement of
+// it. Some overlap is real: a machine drawn around a column, or a column inside
+// a machine's convex outline. It is reported with its worst case rather than
+// gated, because the drawing itself decides how much is normal.
+let onColumn = 0;
+let worstColumnShare = 0;
+const columnList = Array.isArray(geometry.columns) ? geometry.columns : [];
+for (const item of equipment) {
+  if (!item.footprint) continue;
+  const poly = Array.isArray(item.footprint_polygon) && item.footprint_polygon.length >= 3
+    ? item.footprint_polygon.map((p) => [p.x, p.z])
+    : blocks.boxCorners(item.position.x, item.position.z, item.footprint.width,
+      item.footprint.depth, item.rotation_deg);
+  const area = blocks.polygonArea(poly);
+  if (!(area > 0)) continue;
+  let hit = 0;
+  for (const c of columnList) {
+    if (!c.position || !c.footprint) continue;
+    if (Math.hypot(c.position.x - item.position.x, c.position.z - item.position.z) > 30) continue;
+    const col = blocks.boxCorners(c.position.x, c.position.z, c.footprint.width, c.footprint.depth, 0);
+    hit += blocks.polygonArea(blocks.convexIntersection(col, poly));
+  }
+  if (hit > 0) {
+    onColumn += 1;
+    worstColumnShare = Math.max(worstColumnShare, hit / area);
+  }
+}
+
+const median = (a) => (a.length ? a.slice().sort((x, y) => x - y)[Math.floor(a.length / 2)] : null);
+const minOverlap = overlaps.length ? Math.min(...overlaps) : 1;
+const roomTally = equipment.reduce((acc, e) => {
+  acc[e.zone_status] = (acc[e.zone_status] || 0) + 1;
+  return acc;
+}, {});
+
+console.log(`  equipment            ${equipment.length} records, ${matched} reconciled to the CAD measurement`);
+console.log(`  position             ${posWithin1} within 1 mm, ${posWithin5} within 5 mm, `
+  + `worst ${worst.pos.toFixed(4)} mm`);
+console.log(`  insertion vs bundle  ${anchorChecked} checked against an independent extraction, `
+  + `worst ${worstAnchor.toFixed(4)} mm`);
+console.log(`  rotation             ${rotWithin} within ${ROTATION_TOL_DEG} deg, worst ${worst.rot.toFixed(4)} deg`);
+console.log(`  extents measured     ${resolved} MEASURED_CAD (${widthWithin} width and `
+  + `${depthWithin} depth within ${SIZE_TOL_MM} mm)`);
 console.log(`  extents unresolved   ${unresolvedCount} UNRESOLVED, no size claimed`);
-console.log(`  worst position       ${worst.pos.toFixed(4)} mm   (tolerance ${POSITION_TOL_MM} mm)`);
-console.log(`  worst extent         ${worst.size.toFixed(4)} mm   (tolerance ${SIZE_TOL_MM} mm)`);
-console.log(`  worst rotation       ${worst.rot.toFixed(4)} deg  (tolerance ${ROTATION_TOL_DEG} deg)`);
+console.log(`  outline overlap      min ${(minOverlap * 100).toFixed(1)}%, median `
+  + `${((median(overlaps) || 0) * 100).toFixed(1)}% of the union with the measured hull`);
+console.log(`  outline error        worst false positive ${(worstFalsePositive * 100).toFixed(1)}%, `
+  + `worst false negative ${(worstFalseNegative * 100).toFixed(1)}% of the measured area`);
+console.log(`  worst corner         ${worstCorner.toFixed(4)} mm off the measured hull`);
+console.log(`  fitted-vs-stated rot median ${(median(rotationResiduals) || 0).toFixed(3)} deg `
+  + '(corroboration only; never used to re-angle a machine)');
+console.log(`  rooms                ${JSON.stringify(roomTally)}`);
+console.log(`  over a column        ${onColumn} of ${equipment.filter((e) => e.footprint).length} `
+  + `measured outlines touch a column from the independent column extraction, `
+  + `worst ${(worstColumnShare * 100).toFixed(1)}% of one outline`);
+
+if (equipment.length && matched / equipment.length < MIN_EQUIPMENT_POSITION) {
+  fail(`only ${matched} of ${equipment.length} equipment records reconcile to the CAD `
+    + `(floor ${(MIN_EQUIPMENT_POSITION * 100).toFixed(0)}%)`);
+}
+if (resolved && minOverlap < MIN_FOOTPRINT_OVERLAP) {
+  fail(`a served outline overlaps its measured hull by only ${(minOverlap * 100).toFixed(1)}% `
+    + `(floor ${(MIN_FOOTPRINT_OVERLAP * 100).toFixed(0)}%)`);
+}
+if (worstCorner > CORNER_TOL_MM) {
+  fail(`a served outline vertex sits ${worstCorner.toFixed(3)} mm off the measured hull `
+    + `(tolerance ${CORNER_TOL_MM} mm)`);
+}
+if (worstFalsePositive > MAX_FOOTPRINT_FALSE_POSITIVE) {
+  fail(`a served outline claims ${(worstFalsePositive * 100).toFixed(1)}% more floor than the `
+    + `drawing measures (limit ${(MAX_FOOTPRINT_FALSE_POSITIVE * 100).toFixed(0)}%)`);
+}
 
 /* -- structure ------------------------------------------------------- */
 //

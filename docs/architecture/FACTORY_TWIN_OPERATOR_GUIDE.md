@@ -118,7 +118,7 @@ result.
 | **Columns** | Structural columns read from the CAD | MEASURED_CAD |
 | **Walls and openings** | Interior walls and partitions, plus doors, windows and air showers | MEASURED_CAD plan and thickness; **height is PRESENTATION_ONLY** |
 | **Functional zones** | Validated process/functional areas only | OBSERVED_CAD (validated tier only) |
-| **Equipment** | CAD block references: 224 positions, 63 with a measured extent | MEASURED_CAD position and rotation; OBSERVED_CAD or UNRESOLVED extent |
+| **Equipment** | CAD block references: 344 positions, 270 with a measured extent, 213 of those drawn as the outline the CAD drew rather than a box | MEASURED_CAD position, rotation and extent; UNRESOLVED extent on 74, drawn as a uniform marker |
 | **Raw CAD reference** | The drawing's own line-work, drawn over the reconstruction | Not a layer of the floor — the **source** the floor is checked against |
 
 The reference is separated from the layers above it by a rule, because it is a

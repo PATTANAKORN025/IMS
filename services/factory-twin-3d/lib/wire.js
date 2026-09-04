@@ -105,18 +105,45 @@ const ALLOWED_GEOMETRY_STATUS = new Set([
  * one differently so an operator can see which is which without opening
  * anything:
  *
- *   OBSERVED_CAD   the block's own extent, machine-scale and clear of its
- *                  neighbours. A measurement.
- *   APPROXIMATION  the block's extent clipped to the spacing of neighbouring
- *                  insertion points. Both bounds are CAD-measured, but the
- *                  result is a bound rather than a stated dimension.
- *   UNRESOLVED     neither held. A first-class answer, not an error state: a
+ *   MEASURED_CAD   the block's own geometry, transformed by the INSERT chain
+ *                  and measured on the machine's own axes. A measurement.
+ *   OBSERVED_CAD   the block's bounding box, machine-scale and clear of its
+ *                  neighbours. Weaker: a box measures everything the block
+ *                  draws. Floor 1 no longer produces this tier.
+ *   APPROXIMATION  an extent bounded by neighbouring insertion points rather
+ *                  than stated by the drawing.
+ *   UNRESOLVED     none held. A first-class answer, not an error state: a
  *                  marker is drawn and no size is claimed.
  */
-const ALLOWED_FOOTPRINT_STATUS = new Set(['OBSERVED_CAD', 'APPROXIMATION', 'UNRESOLVED']);
+const ALLOWED_FOOTPRINT_STATUS = new Set([
+  'MEASURED_CAD', 'OBSERVED_CAD', 'APPROXIMATION', 'UNRESOLVED',
+]);
 
 /** How an extent was arrived at. A fixed enum, never the extractor's prose. */
-const ALLOWED_FOOTPRINT_SOURCE = new Set(['cad_block_extent', 'CAD_CORRELATED']);
+const ALLOWED_FOOTPRINT_SOURCE = new Set([
+  'cad_block_geometry', 'cad_block_extent', 'CAD_CORRELATED',
+]);
+
+/**
+ * What SHAPE the CAD drew. The renderer draws what this says and does not round
+ * an outline up to a rectangle for tidiness.
+ */
+const ALLOWED_FOOTPRINT_SHAPE = new Set([
+  'rectangle', 'rotated_rectangle', 'polygon', 'irregular', 'unresolved',
+]);
+
+/**
+ * Whether a physical machine is bound to an IMS device, and nothing else.
+ * Identity is never inferred from position, sequence or name similarity, so
+ * UNMAPPED_TO_IMS is the normal state and carries no defect.
+ */
+const ALLOWED_MAPPING_STATUS = new Set(['MAPPED_TO_IMS', 'UNMAPPED_TO_IMS']);
+
+/** How a machine sits in the room its centre falls in. */
+const ALLOWED_ZONE_STATUS = new Set([
+  'INSIDE_ROOM', 'CROSSES_ROOM_BOUNDARY', 'OUTSIDE_ROOM', 'ROOM_BY_CENTRE_ONLY',
+  'UNRESOLVED',
+]);
 
 /** Physical opening kinds the CAD distinguishes. */
 const ALLOWED_OPENING_KIND = new Set(['door', 'window', 'airshower']);
@@ -534,11 +561,30 @@ function projectEquipment(item, mapping) {
   // Either half missing means no footprint, never half a footprint, and an
   // UNRESOLVED record never carries one however the private document is
   // written.
-  const claimsExtent = footprintStatus === 'OBSERVED_CAD' || footprintStatus === 'APPROXIMATION';
+  const claimsExtent = footprintStatus === 'MEASURED_CAD' || footprintStatus === 'OBSERVED_CAD'
+    || footprintStatus === 'APPROXIMATION';
   const footprint = claimsExtent && width !== null && depth !== null
     ? { width, depth }
     : null;
   const deviceId = deviceIdFor(mapping, item.id);
+
+  // The measured outline, where the machine is not a box. Rebuilt vertex by
+  // vertex: a polygon is served only if EVERY vertex is a pair of finite
+  // numbers, and a partial outline is dropped rather than closed for it. Never
+  // served without a footprint -- an outline with no extent beside it would be
+  // an extent claim wearing another name.
+  let polygon = null;
+  if (footprint !== null && Array.isArray(item.footprint_polygon)
+    && item.footprint_polygon.length >= 3 && item.footprint_polygon.length <= 64) {
+    const out = [];
+    for (const v of item.footprint_polygon) {
+      const x = num(v && v.x);
+      const z = num(v && v.z);
+      if (x === null || z === null) { out.length = 0; break; }
+      out.push({ x, z });
+    }
+    if (out.length >= 3) polygon = out;
+  }
 
   return {
     id: token(item.id),
@@ -557,12 +603,24 @@ function projectEquipment(item, mapping) {
     footprint_source: footprint === null
       ? null
       : fromEnum(item.footprint_source, ALLOWED_FOOTPRINT_SOURCE),
+    footprint_shape: footprint === null ? null
+      : fromEnum(item.footprint_shape, ALLOWED_FOOTPRINT_SHAPE),
+    footprint_polygon: polygon,
+    // The handing of the machine, as the CAD states it. A mirrored INSERT is a
+    // different physical machine from its twin, and the outline already carries
+    // the mirror; this says so in one field the inspector can show.
+    mirrored: item.mirrored === true,
     geometry_status: fromEnum(item.geometry_status, ALLOWED_GEOMETRY_STATUS),
     confidence: fromEnum(item.confidence, ALLOWED_CONFIDENCE),
     source: token(item.source),
     height_status: fromEnum(item.height_status, ALLOWED_HEIGHT_STATUS),
     zone_id: token(item.zone_id),
+    zone_status: fromEnum(item.zone_status, ALLOWED_ZONE_STATUS),
     ims_device_id: deviceId,
+    // Derived from the mapping the server holds, NEVER from the private
+    // record's own claim: a document that asserted MAPPED_TO_IMS without a
+    // device behind it would otherwise light a machine up on the map.
+    mapping_status: deviceId ? 'MAPPED_TO_IMS' : 'UNMAPPED_TO_IMS',
     status: deviceId ? 'IMS_CONNECTED' : 'UNMAPPED',
   };
 }

@@ -36,6 +36,7 @@ const PRIVATE_DIR = process.env.FLOOR1_PRIVATE_DIR
   || path.join(__dirname, '..', '..', 'services', 'factory-twin-3d', 'private');
 const GEOMETRY_PATH = path.join(PRIVATE_DIR, 'floor1-geometry.json');
 const ZONES_PATH = path.join(PRIVATE_DIR, 'floor1-zones.json');
+const EQUIPMENT_REFERENCE_PATH = path.join(PRIVATE_DIR, 'floor1-equipment-reference.json');
 const BUNDLE_PATH = process.env.FLOOR1_CAD_BUNDLE
   || path.join(PRIVATE_DIR, 'floor1-cad-bundle.json');
 
@@ -63,6 +64,8 @@ const geometry = JSON.parse(fs.readFileSync(GEOMETRY_PATH, 'utf8'));
 const bundle = JSON.parse(fs.readFileSync(BUNDLE_PATH, 'utf8'));
 const zonesDoc = fs.existsSync(ZONES_PATH)
   ? JSON.parse(fs.readFileSync(ZONES_PATH, 'utf8')) : null;
+const equipReference = fs.existsSync(EQUIPMENT_REFERENCE_PATH)
+  ? JSON.parse(fs.readFileSync(EQUIPMENT_REFERENCE_PATH, 'utf8')) : null;
 
 const W = bundle.envelope_mm.width;
 const H = bundle.envelope_mm.depth;
@@ -80,61 +83,68 @@ check(cs.canonical_frame === frame.CANONICAL_FRAME_VERSION,
 
 /* -- rebuild the CAD side, independently of the extractor -------------- */
 //
-// Matching is by position, through the inverse transform, so this test never
-// trusts the extractor's own bookkeeping: if the model and the CAD disagree
-// about where something is, the match fails rather than being assumed.
-const boxes = bundle.block_boxes || {};
+// TWO CAD anchors per record, both in the drawing's own frame:
+//
+//   the INSERTION POINT, from the older bundle extraction -- a second reading
+//   of the same drawing, so a match proves the transform rather than the
+//   extractor's bookkeeping
+//   the MEASURED CENTRE, from the equipment reference the extractor writes
+//   before the canonical transform is applied
+//
+// Matching is by position through the inverse transform. If the model and the
+// CAD disagree about where something is, the match fails rather than being
+// assumed.
 const cadByKey = new Map();
 for (const ins of bundle.inserts) {
-  const box = boxes[ins.block];
-  if (!box) continue;
-  const t = (ins.rotation || 0) * Math.PI / 180;
-  const co = Math.cos(t);
-  const si = Math.sin(t);
-  let x0 = Infinity;
-  let y0 = Infinity;
-  let x1 = -Infinity;
-  let y1 = -Infinity;
-  for (const [dx, dy] of [[0, 0], [box.w, 0], [box.w, box.h], [0, box.h]]) {
-    const bx = box.minx + dx;
-    const by = box.miny + dy;
-    const px = ins.x + bx * co - by * si;
-    const py = ins.y + bx * si + by * co;
-    x0 = Math.min(x0, px); y0 = Math.min(y0, py);
-    x1 = Math.max(x1, px); y1 = Math.max(y1, py);
-  }
-  for (const [ax, ay] of [[(x0 + x1) / 2, (y0 + y1) / 2], [ins.x, ins.y]]) {
-    cadByKey.set(`${Math.round(ax)}:${Math.round(ay)}`, { ins, box, ax, ay });
-  }
+  cadByKey.set(`${Math.round(ins.x)}:${Math.round(ins.y)}`, { ax: ins.x, ay: ins.y });
+}
+const referenceById = new Map();
+for (const r of ((equipReference && equipReference.equipment) || [])) {
+  const anchor = r.resolved && r.box_mm ? [r.box_mm.cx, r.box_mm.cy] : [r.insertion_mm.x, r.insertion_mm.y];
+  referenceById.set(r.id, anchor);
 }
 
 const equipment = Array.isArray(geometry.equipment) ? geometry.equipment : [];
 const pairs = [];
+let insertionMatched = 0;
 for (const e of equipment) {
-  const cadX = frame.twinXToCad(e.position.x, HALF_W);
-  const cadY = frame.twinZToCad(e.position.z, HALF_D);
+  // The record's own insertion point, back through the inverse transform,
+  // against the independent bundle. This is the frame proof: an insertion
+  // point is a single CAD number with no measurement in it.
+  const insX = frame.twinXToCad(e.insertion_point.x, HALF_W);
+  const insY = frame.twinZToCad(e.insertion_point.z, HALF_D);
   let hit = null;
   for (let dx = -1; dx <= 1 && !hit; dx++) {
     for (let dy = -1; dy <= 1 && !hit; dy++) {
-      hit = cadByKey.get(`${Math.round(cadX) + dx}:${Math.round(cadY) + dy}`) || null;
+      hit = cadByKey.get(`${Math.round(insX) + dx}:${Math.round(insY) + dy}`) || null;
     }
   }
-  if (hit) pairs.push({ e, cad: hit });
+  if (hit) insertionMatched++;
+  // Ordering is checked on the drawn position against the measured centre,
+  // which is what an operator actually sees placed on the floor.
+  const anchor = referenceById.get(e.id);
+  if (anchor) pairs.push({ e, cad: { ax: anchor[0], ay: anchor[1] } });
 }
-check(pairs.length === equipment.length,
+check(insertionMatched === equipment.length,
   'every equipment record maps back onto a CAD INSERT through the inverse transform',
+  `${insertionMatched} of ${equipment.length}`);
+check(pairs.length === equipment.length,
+  'every equipment record has a CAD measurement to be ordered against',
   `${pairs.length} of ${equipment.length}`);
 
 /* -- 2 and 3. ordering ------------------------------------------------- */
 //
 // Rank correlation, not a spot check. A single inverted pair anywhere in the
 // population fails it, which is what "ordering matches" has to mean.
-function rankOf(values) {
-  const order = values.map((v, i) => [v, i]).sort((a, b) => a[0] - b[0]);
-  const r = new Array(values.length);
-  order.forEach(([, i], k) => { r[i] = k; });
-  return r;
-}
+/**
+ * Counts pairs the two sequences order differently.
+ *
+ * VALUES, not ranks. Ranking first looked equivalent and was not: ranks are
+ * unique by construction, so the tie guard below could never fire, and two
+ * machines at the same CAD coordinate were given an arbitrary order that the
+ * model's own rounding was then judged against. A pair that is level in either
+ * axis carries no ordering claim, and this is where that is enforced.
+ */
 function inversions(a, b) {
   let n = 0;
   for (let i = 0; i < a.length; i++) {
@@ -155,8 +165,8 @@ if (pairs.length > 1) {
   // old frame made, and comparing against it here would let the bug back in.
   const screenUp = pairs.map((p) => -p.e.position.z);
 
-  const invX = inversions(rankOf(cadX), rankOf(twinX));
-  const invY = inversions(rankOf(cadY), rankOf(screenUp));
+  const invX = inversions(cadX, twinX);
+  const invY = inversions(cadY, screenUp);
   check(invX === 0, 'left/right ordering matches the CAD for every pair',
     `${invX} inverted pair(s) of ${(pairs.length * (pairs.length - 1)) / 2}`);
   check(invY === 0, 'top/bottom ordering matches the CAD for every pair (screen-up = -z)',
@@ -291,8 +301,12 @@ if (pairs.length > 8) {
 /* -- 6. rotation ------------------------------------------------------- */
 let rotMismatch = 0;
 let worstRot = 0;
+const cadRotById = new Map();
+for (const r of ((equipReference && equipReference.equipment) || [])) {
+  cadRotById.set(r.id, r.rotation_deg || 0);
+}
 for (const p of pairs) {
-  const cadRot = ((p.cad.ins.rotation || 0) % 360 + 360) % 360;
+  const cadRot = ((cadRotById.get(p.e.id) || 0) % 360 + 360) % 360;
   const d = Math.abs(cadRot - p.e.rotation_deg);
   const wrapped = Math.min(d, 360 - d);
   worstRot = Math.max(worstRot, wrapped);

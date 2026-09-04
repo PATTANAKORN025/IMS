@@ -246,17 +246,22 @@ test('an equipment projection emits exactly the documented key set', () => {
   assert.deepStrictEqual(Object.keys(out).sort(), [
     'confidence',
     'footprint',
+    'footprint_polygon',
+    'footprint_shape',
     'footprint_source',
     'footprint_status',
     'geometry_status',
     'height_status',
     'id',
     'ims_device_id',
+    'mapping_status',
+    'mirrored',
     'position',
     'rotation_deg',
     'source',
     'status',
     'zone_id',
+    'zone_status',
   ]);
 });
 
@@ -286,6 +291,54 @@ test('a valid equipment record keeps every value it should', () => {
   assert.strictEqual(out.confidence, 'high');
   assert.strictEqual(out.height_status, 'unknown');
   assert.strictEqual(out.zone_id, 'zone-04');
+});
+
+test('a measured outline is served vertex by vertex, or not at all', () => {
+  const poly = [{ x: 0, z: 0 }, { x: 2, z: 0 }, { x: 2, z: 1 }, { x: 0, z: 1 }];
+  const ok = wire.projectEquipment(validEquipment({
+    footprint_shape: 'polygon', footprint_polygon: poly,
+  }), {});
+  assert.deepStrictEqual(ok.footprint_polygon, poly);
+  assert.strictEqual(ok.footprint_shape, 'polygon');
+
+  // one bad vertex drops the whole outline rather than closing a partial one
+  const bad = wire.projectEquipment(validEquipment({
+    footprint_shape: 'polygon',
+    footprint_polygon: [{ x: 0, z: 0 }, { x: 2, z: NaN }, { x: 2, z: 1 }, { x: 0, z: 1 }],
+  }), {});
+  assert.strictEqual(bad.footprint_polygon, null);
+
+  // and an outline without an extent beside it is not an extent claim
+  const noExtent = wire.projectEquipment(validEquipment({
+    footprint: null, footprint_status: 'UNRESOLVED',
+    footprint_shape: 'polygon', footprint_polygon: poly,
+  }), {});
+  assert.strictEqual(noExtent.footprint_polygon, null);
+  assert.strictEqual(noExtent.footprint_shape, null);
+});
+
+test('an invented shape or zone status is dropped, not echoed', () => {
+  const out = wire.projectEquipment(validEquipment({
+    footprint_shape: 'TEST-INVENTED', zone_status: 'TEST-INVENTED',
+  }), {});
+  assert.strictEqual(out.footprint_shape, null);
+  assert.strictEqual(out.zone_status, null);
+});
+
+test('mapping_status follows the server mapping, never the record', () => {
+  // A private document asserting it is mapped must not light a machine up.
+  const lying = wire.projectEquipment(validEquipment({
+    mapping_status: 'MAPPED_TO_IMS', ims_machine_id: 'TEST-NOT-A-DEVICE',
+  }), {});
+  assert.strictEqual(lying.mapping_status, 'UNMAPPED_TO_IMS');
+  assert.strictEqual(lying.ims_device_id, null);
+  assert.strictEqual(lying.status, 'UNMAPPED');
+});
+
+test('mirrored is a boolean and never a truthy value from the document', () => {
+  assert.strictEqual(wire.projectEquipment(validEquipment({ mirrored: true }), {}).mirrored, true);
+  assert.strictEqual(wire.projectEquipment(validEquipment({ mirrored: 'yes' }), {}).mirrored, false);
+  assert.strictEqual(wire.projectEquipment(validEquipment(), {}).mirrored, false);
 });
 
 test('rotation is normalised into [0,360) and never rounded away', () => {

@@ -47,9 +47,10 @@ unrecognised basis is rejected rather than assumed harmless.
 | Footprint polygon | 1 | CONFIRMED | Perimeter traced by ink-coverage measurement; area agrees with the printed figure |
 | Structural grid | 1 | CONFIRMED | Printed spans; totals match, cross-checked against bubble spacing |
 | Structural columns | 202 | MEASURED_CAD | Read from the CAD at their drawn positions; the earlier 120 raster columns were a correct subset, matched within 1 m at 34 mm median |
-| Equipment positions | 224 | MEASURED_CAD | CAD `INSERT` records: insertion point and rotation stated by the drawing |
-| Equipment extents | 63 of 224 | OBSERVED_CAD | Block bounding box, gated on machine scale and non-overlap |
-| Equipment extents withheld | 161 of 224 | UNRESOLVED | Block box measures a service envelope rather than the machine body |
+| Equipment positions | 344 | MEASURED_CAD | CAD `INSERT` records: insertion point, rotation and scale stated by the drawing |
+| Equipment extents | 270 of 344 | MEASURED_CAD | The block's own geometry, transformed through the whole INSERT chain — mirror and nesting included — and measured on the machine's own axes |
+| Equipment outlines | 213 of 270 | MEASURED_CAD | The measured convex outline, served where the machine is not a box; an outer bound, not a concave outline |
+| Equipment extents withheld | 74 of 344 | UNRESOLVED | Below machine scale (73) or a block that draws a region rather than one asset (1). Position kept, no size claimed |
 | Equipment height | — | BLOCKED | A plan view carries no equipment elevation |
 | Raster equipment slots | 243 | SUPERSEDED | Retained in the private document, served nowhere, drawn nowhere |
 | Monitored devices | 23 | NOT DRAWN | Live telemetry is real; no device has an established position, so none is placed on the floor |
@@ -429,81 +430,78 @@ drives the status roll-up and the device list, and it colours no geometry.
 
 ---
 
-## 0.3 Equipment from CAD — RESOLVED by block reference
+## 0.3 Equipment from CAD — measured from the block geometry
 
-The previous pass reported equipment as UNRESOLVED after three attempts. That
-report was accurate about the method it used and wrong about the drawing. All
-three attempts tried to reconstruct machine outlines from the **modelspace
-line-work** on the equipment layer — 97k entities in which detail drawings,
-plant and machine outlines are drawn in the same colour with the same
-primitives. On that layer the answer really is unresolvable.
+The machines that matter are **placed, not drawn**: an `INSERT` entity records
+an insertion point, a scale and a rotation, and the `BLOCK` it names holds the
+geometry that insertion stamps down. Three earlier passes tried instead to
+reconstruct outlines from the **modelspace line-work** on the equipment layer —
+97k entities in which detail drawings, plant and machine outlines share one
+colour and one set of primitives. On that layer the answer really is
+unresolvable, and that negative is why this one reads block definitions.
 
-The machines that matter are not drawn there. They are **placed**: an `INSERT`
-entity records an insertion point and a rotation, and the `BLOCK` it names
-holds the geometry that insertion stamps down. Position and rotation therefore
-come out of the CAD exactly, with no tracing and no heuristic.
+The pass documented here replaced a bounding-box footprint with the block's own
+geometry. The full audit — inventory, transform chain, scale handling,
+measured dimensions, reconciliation and limitations — is
+[docs/equipment-geometry-audit.md](../equipment-geometry-audit.md). Summarised:
 
-### What each of the eleven methods found
+### What was wrong with the box, and what replaced it
 
-`scripts/extract-floor1-equipment.js` runs all eleven and records every result,
-including the negative ones, into `equipment_extraction.methods_tried` in the
-private document. Summarised:
-
-| # | Method | Outcome |
+| Fault | Scale | Fix |
 |---|---|---|
-| A | INSERT / block reference analysis | **PRODUCTIVE** — this is the pass that resolved equipment. |
-| B | Block definition analysis | **PRODUCTIVE for extent**, but weaker than position: a block box measures everything the block draws, service envelopes included. |
-| C | Layer-aware extraction | Productive as a filter; not sufficient alone — the dominant equipment layer also carries the detail drawings. |
-| D | Closed polyline extraction | Corroborating only. A closed outline on this layer is as likely to be a detail-drawing part as a machine. |
-| E | Line-loop reconstruction | Corroborating only. A reconstructed loop cannot be told from a table, a pit or a hatch boundary without an identifier, and none is drawn. |
-| F | Oriented connected-component analysis | **NEGATIVE for identification.** This is the method the previous three passes used. It finds shapes, not machines. |
-| G | Repeated-pattern detection | **PRODUCTIVE as corroboration** — a footprint repeated across a block family is what lifts a candidate from medium to high confidence. |
-| H | Spatial clustering | Productive as an exclusion: it is how free-curve detail regions are kept out of method F. |
-| I | Label-to-geometry association | **NOT USED.** The labels that exist are area labels and drafting notes; attaching one to a machine would be a proximity guess. |
-| J | Dimensions adjacent to equipment | **NEGATIVE.** No machine in this drawing is dimensioned; the dimension chains measure the structural grid and the envelope. |
-| K | Comparison against repeated footprints | **PRODUCTIVE as the gate** — a block box that swallows its neighbour is measuring more than the machine, and its extent is withheld. |
+| The INSERT **scale** was never read | 130 candidates carry one; **120 are mirrors** | The scale, mirror included, goes through the same 2×2 matrix as the rotation |
+| **Nested** blocks were not expanded | 65 candidates, up to **6** deep | `T_total = T_parent × T_child`, a matrix product, never a product of boxes |
+| A bounding box is not a footprint | every record | The block's own geometry, hulled and measured on the machine's own axes |
+| Where the box failed, an extent was **approximated** from neighbour spacing | 123 records | Deleted. These machines are placed; there is nothing to approximate |
 
-### Evidence intersection
+An affine transform maps a convex hull to the hull of the image, so each block
+is hulled **once** in its own coordinates and the hull is transformed per
+instance. The oriented extent measured off the transformed hull equals the one
+measured off every transformed stroke, which is what makes a single pass over a
+412 MB file both sufficient and exact.
 
-Position and rotation are accepted from **A alone**, because an INSERT record
-is a direct CAD statement of both and involves no tracing. Footprint requires
-**A and B to agree with K** — the block box must be machine-scale *and* must
-not overlap a neighbour by more than a quarter of the smaller footprint — and
-is raised to high confidence only when **G** shows the same block placed three
-or more times.
+Annotation is excluded by entity **type**, drafting aids by layer **name**, and
+`HATCH` entirely — a hatch carries seed and pattern points under the same group
+codes as geometry, and reading them inflated one block from 36 m to 122 m
+during the audit. The layer filter is **subtractive only and may never empty a
+block**: thirteen blocks on this floor draw their whole body on a layer named
+for dimensions or centrelines.
 
 ### What the model now holds
 
 | | Count | Evidence |
 |---|---:|---|
-| INSERT records inside the floor envelope | 1,397 | — |
-| …on an equipment layer, naming a real block | 345 | — |
-| …machine-scale candidates | **224** | `geometry_status: MEASURED_CAD` for position and rotation |
-| …with an extent that survived the overlap gate | **63** | `footprint_status: OBSERVED_CAD` |
-| …with the extent withheld | **161** | `footprint_status: UNRESOLVED`, `footprint: null` |
-| Block families | 56 (17 repeating ≥3×) | — |
-| Assigned to a functional zone by containment | 47 | — |
+| INSERT records inside the floor envelope | 1,396 | — |
+| …on an equipment layer, not drawing furniture | **344** | `geometry_status: MEASURED_CAD` for position, rotation and scale |
+| …with a measured extent | **270** | `footprint_status: MEASURED_CAD`, `footprint_source: cad_block_geometry` |
+| …served with a measured outline as well | **213** | `rectangle` 57, `polygon` 17, `irregular` 196 |
+| …with the extent withheld | **74** | `footprint_status: UNRESOLVED`, `footprint: null` |
+| Block families | 77 (29 repeating ≥3×) | — |
+| Wholly inside one authoritative room | 192 | Room polygons unchanged |
+| Crossing a room boundary | 70 | **Flagged, never moved** |
 
-The 161 unresolved extents are **not a defect to be fixed by filling them in**.
-A block bounding box that overlaps its neighbour, or whose centre lands off the
-floor, is measuring a service envelope or a leader rather than the machine
-body. Those records carry `footprint: null`, and the renderer draws a small
-fixed marker rather than a box. `lib/wire.js` refuses to serve a footprint for
-them even if one were added to the private document, and
+The 74 unresolved extents are **not a defect to be filled in**. 73 measure
+smaller than any machine on this floor — fittings and symbols, longest side
+112 mm to 1,795 mm — and one block measures 27.7 × 25.5 m, drawing a process
+region rather than one asset. Those records carry `footprint: null` and the
+renderer draws a small fixed marker. `lib/wire.js` refuses to serve a footprint
+for them even if one were added to the private document, and
 `tests/lint/floor1-geometry-validator.js` fails the document if one is.
 
 ### Known limitations of this pass
 
-- **Scale factors are not read.** INSERT group codes 41/42 are not carried by
-  the CAD bundle, so every extent assumes unit scale. This is exactly why
-  footprint is `OBSERVED_CAD` while position is `MEASURED_CAD`: a non-unit
-  scale would change an extent without moving an insertion point.
-- **No identity.** The CAD names *blocks*, not assets, and a block name is a
-  drawing-internal handle shared by every instance. Every record is `UNMAPPED`
-  and stays that way until an authoritative device record is supplied.
+- **The served outline is a convex hull** — an outer bound. A concave machine
+  is served as the shape that wraps it. Position, rotation and extent are
+  exact; the outline is exact only where the machine is convex.
+- **No identity.** The CAD names *blocks*, not assets. One block on this floor
+  carries attributes and its tags are dimension letters. Every record is
+  `UNMAPPED_TO_IMS` and stays that way until an authoritative device record is
+  supplied; `mapping_status` is derived from the server's mapping table and
+  never from the private record's own claim.
 - **Height remains absent.** A plan view carries no equipment elevation.
-  `height_status` is `unknown` on every record, and the validator rejects any
+  `height_status` is `unknown` on every record and the validator rejects any
   other value.
+- **`MLINE` is still never read**, on any layer.
 
 ### What this supersedes
 
@@ -522,11 +520,17 @@ verdict. Current run:
 
 | Residual | Worst | Tolerance |
 |---|---:|---:|
-| Position | 0.62 mm | 1 mm |
-| Extent | 0.50 mm | 1 mm |
+| Position | 0.68 mm | 1 mm |
+| Insertion point vs an independent extraction | 0.66 mm | 1 mm |
+| Extent | under 1 mm on all 270 | 1 mm |
 | Rotation | 0.0000° | 0.01° |
+| Served outline vertex off the measured hull | 0.62 mm | 1 mm |
 
-224 of 224 records reconcile to a CAD INSERT.
+344 of 344 records reconcile to the CAD measurement, and their outlines overlap
+the measured hull by 97.0% of the union at worst. Three sources are compared,
+not two: the served model, the measurement the extractor wrote before the
+canonical transform, and an older independent extraction of the same drawing's
+INSERT records.
 
 ---
 
@@ -675,7 +679,7 @@ before and after switching.
 | Where | What |
 |---|---|
 | **Public (this repository)** | Schemas, loaders, renderers, validators, contracts, methodology. |
-| **Private (gitignored, runtime-only)** | All real geometry — envelope, footprint, grid, columns, equipment positions, zone boundaries. |
+| **Private (gitignored, runtime-only)** | All real geometry — envelope, footprint, grid, columns, equipment positions and outlines, zone boundaries. Four documents: `floor1-geometry.json`, `floor1-zones.json`, `floor1-raw-cad.json` (the drawing's own line-work, served as a reference overlay) and `floor1-equipment-reference.json` (the equipment measurement in the CAD's own frame, **never served** — it exists so the model can be checked against what was measured rather than against itself). |
 | **Outside the repository entirely** | The source engineering drawing. |
 
 Enforcement is layered, not trusted to `.gitignore` alone:
