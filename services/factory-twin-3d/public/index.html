@@ -241,6 +241,11 @@
     fieldset { border: 1px solid var(--line); border-radius: 5px; margin: 0; padding: 8px 10px; }
     legend { color: var(--text-dim); font-size: 10.5px; letter-spacing: .08em; padding: 0 4px; }
     #layer-controls label { display: block; padding: 2px 0; font-size: 12px; }
+    /* The reference is a different kind of thing from the layers above it: it
+       is the source the model is checked against, not part of the floor. The
+       rule separates the two so the list does not read as six equal layers. */
+    .reference-toggle { border-top: 1px solid var(--line); margin-top: 6px; padding-top: 6px !important; }
+    .reference-note { margin: 2px 0 0; line-height: 1.4; }
     .hint { color: var(--text-dim); font-size: 10.5px; }
 
     dl { margin: 0; display: grid; grid-template-columns: minmax(0, auto) 1fr; gap: 3px 10px; align-items: baseline; }
@@ -340,6 +345,14 @@
         <label><input type="checkbox" data-layer="walls" checked> Walls and openings <span class="hint" data-count="walls"></span></label>
         <label><input type="checkbox" data-layer="functional" checked> Functional zones <span class="hint" data-count="functional"></span></label>
         <label><input type="checkbox" data-layer="equipment" checked> Equipment <span class="hint" data-count="equipment"></span></label>
+        <label class="reference-toggle">
+          <input type="checkbox" data-layer="reference"> Raw CAD reference
+          <span class="hint" id="reference-status"></span>
+        </label>
+        <p class="hint reference-note">
+          The drawing's own line-work, drawn over the reconstruction so the two
+          can be compared. It is a reference, not a measurement of the floor.
+        </p>
       </fieldset>
 
       <h2>Machine states</h2>

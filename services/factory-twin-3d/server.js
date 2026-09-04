@@ -247,10 +247,15 @@ function loadPrivateAssetMapping(floorId) {
   }
 }
 
-// Reads private/floor1-zones.json if present -- functional/process zones
-// digitized from the drawing's area layer. These are NOT rooms and NOT
-// architectural walls; that floor is largely open-plan and the zones are
-// open-sided regions, so nothing here should be read as an enclosure.
+// Reads private/floor1-zones.json if present -- the drawing's own closed area
+// boundaries. These ARE the rooms: each polygon is one closed ring off the
+// CAD's area-boundary layer, bound to its name by containment and by the area
+// the drawing prints for itself. They are not derived from the wall model and
+// do not depend on it.
+//
+// They are still not architectural walls. A boundary says where an area ends,
+// not what stands there, so nothing here should be read as an enclosure with a
+// thickness, a door or a height.
 //
 // Returns { renderable, meta }. Only zones the extraction actually
 // validated are given geometry: HIGH/MEDIUM confidence, renderable===true,
@@ -583,6 +588,94 @@ app.get('/api/floors', (req, res) => {
       has_zones: f.has_zones,
     })),
     default: floors.defaultFloor(list),
+  });
+});
+
+/**
+ * Reads private/floorN-raw-cad.json if present -- the drawing's own line-work,
+ * as a reference the reconstructed model can be compared against.
+ *
+ * WHY THIS EXISTS AS A SEPARATE ROUTE. Every other geometry this service serves
+ * has been interpreted: faces paired into walls, fragments merged, corners
+ * closed, labels bound to boundaries. A model checked only against its own
+ * output can be self-consistently wrong, and on this floor one was -- a
+ * mirrored frame passed every check for as long as the checks compared the
+ * model with itself. This carries no interpretation, so a disagreement between
+ * the two is visible instead of theoretical.
+ *
+ * It is a separate route rather than a field on the geometry response because
+ * it is diagnostic: an operator's floor view must not pay for nine thousand
+ * reference segments it never draws.
+ *
+ * Returns null when the document is absent, which is the normal state for a
+ * fresh clone and not an error.
+ */
+function loadPrivateRawCad(floorId) {
+  const filePath = floors.documentPath(PRIVATE_DIR, floorId, 'rawcad');
+  if (!filePath || !fs.existsSync(filePath)) return null;
+  try {
+    const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    const roles = wire.projectAll(parsed.roles, wire.projectCadRole);
+    if (roles.length === 0) return null;
+    const env = parsed.envelope_mm && typeof parsed.envelope_mm === 'object'
+      ? parsed.envelope_mm : {};
+    const cov = parsed.coverage && typeof parsed.coverage === 'object' ? parsed.coverage : {};
+    const int = (v) => (typeof v === 'number' && Number.isFinite(v) ? Math.trunc(v) : null);
+    return {
+      // Named field by field, like every other private document this service
+      // reads. The source layer names, the disclosure banner and every prose
+      // note in the file stay here.
+      envelope_mm: {
+        width: typeof env.width === 'number' && Number.isFinite(env.width) ? env.width : null,
+        depth: typeof env.depth === 'number' && Number.isFinite(env.depth) ? env.depth : null,
+      },
+      roles,
+      // Coverage is served because the reference is only usable if the reader
+      // knows what it leaves out. Counts only -- no layer is named.
+      coverage: {
+        entities_carried: int(cov.entities_carried),
+        segments: int(cov.segments),
+        entities_excluded_by_layer: int(cov.entities_excluded_by_layer),
+        excluded_layer_count: int(cov.excluded_layer_count),
+        block_references_not_expanded: int(cov.block_references_not_expanded),
+      },
+    };
+  } catch (err) {
+    console.error(`private raw-CAD file present but unusable: ${err.message}`);
+    return null;
+  }
+}
+
+/**
+ * The raw CAD reference for one floor.
+ *
+ * COORDINATES ARE THE DRAWING'S, NOT THE MODEL'S. Millimetres, +y up, no
+ * reflection -- deliberately NOT the twin's frame. The client applies the
+ * canonical transform itself to overlay this on the model, so that the
+ * transform is exercised on the comparison rather than baked into the thing
+ * being compared with.
+ */
+app.get('/api/floor-raw-cad', (req, res) => {
+  const list = catalogue();
+  const floorId = requestedFloor(req, list);
+  if (floorId === null && list.length > 0) return res.status(404).json({ error: 'not found' });
+  const raw = loadPrivateRawCad(floorId);
+  if (!raw) {
+    return res.status(200).json({
+      floor: floorId,
+      available: false,
+      envelope_mm: null,
+      roles: [],
+      coverage: null,
+    });
+  }
+  res.status(200).json({
+    floor: floorId,
+    available: true,
+    coordinate_system: 'CAD_MM_Y_UP_FLOOR_LOCAL',
+    envelope_mm: raw.envelope_mm,
+    roles: raw.roles,
+    coverage: raw.coverage,
   });
 });
 

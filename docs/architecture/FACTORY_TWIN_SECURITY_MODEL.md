@@ -124,6 +124,24 @@ areas, and free-text validation and conflict-resolution notes. Publishing
 values read from a confidential drawing that no client reads is disclosure with
 no purpose.
 
+### CAD layer names are never served
+
+The raw CAD reference is the drawing's own line-work, so the private document
+behind it carries the drawing's real layer names — and on this drawing those
+name processes and vendors outright. They are not projected. The extractor maps
+each carried layer to one of twelve coarse **roles** (`structure`,
+`walls-interior`, `partitions`, `doors`, `area-boundaries`, …), and
+`projectCadRole` emits exactly three keys per role: the role id, a segment
+count, and a flat array of finite numbers.
+
+Two properties make that checkable rather than merely intended. The role id is
+drawn from a closed set in `lib/wire.js`, so a layer appearing in a
+re-extraction cannot introduce a new public name by itself. And because the
+projection emits no string other than a role id, the browser regression can
+assert the whole response body contains no word-shaped value that is not one of
+those ids — a blunt check, deliberately, since anything else appearing there is
+by definition a leak.
+
 ### Area names
 
 An area name is a process name, and this document classified process names as

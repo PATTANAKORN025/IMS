@@ -119,6 +119,19 @@ result.
 | **Walls and openings** | Interior walls and partitions, plus doors, windows and air showers | MEASURED_CAD plan and thickness; **height is PRESENTATION_ONLY** |
 | **Functional zones** | Validated process/functional areas only | OBSERVED_CAD (validated tier only) |
 | **Equipment** | CAD block references: 224 positions, 63 with a measured extent | MEASURED_CAD position and rotation; OBSERVED_CAD or UNRESOLVED extent |
+| **Raw CAD reference** | The drawing's own line-work, drawn over the reconstruction | Not a layer of the floor — the **source** the floor is checked against |
+
+The reference is separated from the layers above it by a rule, because it is a
+different kind of thing. Every other layer is the model: geometry that has been
+paired, merged and classified. The reference is the drawing itself, with none
+of that applied, drawn as thin amber lines above the model so the two can be
+compared by eye. Where they disagree, the drawing is right.
+
+It is off by default and fetched the first time you switch it on, so an
+ordinary floor view never pays for it. It shows what it left out: 393 door,
+window and air-shower **block references are not expanded**, so you will see
+the opening in the wall but not the leaf, and the equipment detail drawings
+that share this drawing's modelspace are excluded entirely.
 
 Each toggle carries a live count — for example the zone toggle reports
 validated versus withheld, and the equipment toggle reports how many extents

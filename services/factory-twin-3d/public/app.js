@@ -176,10 +176,17 @@ const layers = {
   structural: new THREE.Group(), // envelope, footprint, grid, columns
   functional: new THREE.Group(), // functional/process zones
   operational: new THREE.Group(), // CAD equipment pads and markers
+  // The drawing's own line-work, drawn over the reconstruction so the two can
+  // be compared. Off by default and fetched only when first switched on: it is
+  // a diagnostic overlay, not part of the floor, and an operator's view should
+  // not pay for it.
+  reference: new THREE.Group(),
 };
 layers.structural.name = 'structural';
 layers.functional.name = 'functional';
 layers.operational.name = 'operational';
+layers.reference.name = 'reference';
+layers.reference.visible = false;
 // The TELEMETRY layer is gone. It was created for live state overlays drawn on
 // monitored devices, and nothing was ever added to it: no device has an
 // established position on this floor, so there is nothing to overlay. An empty
@@ -219,6 +226,34 @@ const sublayers = {
 for (const [name, g] of Object.entries(sublayers)) g.name = name;
 layers.structural.add(sublayers.shell, sublayers.columns, sublayers.walls);
 layers.operational.add(sublayers.equipment);
+
+// -- Raw CAD reference -------------------------------------------------
+//
+// WHY THIS IS DRAWN AT ALL. Everything else in this scene has been through the
+// reconstruction: faces paired into walls, fragments merged, corners closed,
+// labels bound to boundaries. Each of those steps can be wrong in a way that
+// is invisible from inside the model, because the checks that follow compare
+// the model against itself. This layer is the drawing's own line-work with no
+// interpretation applied, so a disagreement between the reconstruction and its
+// source is something you can see rather than something you have to infer.
+//
+// It is a REFERENCE, not evidence about the floor: it is drawn as thin lines
+// in one flat colour, above the model, and it never participates in picking,
+// framing, counts or the evidence summary.
+//
+// The service serves it in the CAD's own frame -- millimetres, +y up, no
+// reflection. The transform below is the canonical one, applied here rather
+// than server-side on purpose: if the frame is wrong, this overlay is where it
+// shows, and pre-transforming the reference would hide exactly that.
+const cadRoleGroups = new Map();
+let rawCadState = 'idle';     // idle | loading | ready | unavailable | error
+let rawCadCoverage = null;
+let rawCadSegments = 0;
+
+/** CAD millimetres (floor-local, +y up) to twin metres. */
+function cadToTwin(xMm, yMm, halfWidth, halfDepth) {
+  return { x: xMm / 1000 - halfWidth, z: -(yMm / 1000 - halfDepth) };
+}
 
 // -- View modes --------------------------------------------------------
 // ONE coordinate system now. The scene once held two that could not be framed
@@ -451,7 +486,7 @@ function ensureDepthRange(dist) {
 // and keep polling. This is presentation only -- it never mutates data,
 // never re-fetches, and never changes what the API returned.
 function setLayerVisible(name, visible) {
-  const g = layers[name] || sublayers[name];
+  const g = layers[name] || sublayers[name] || cadRoleGroups.get(name);
   if (!g) return false;
   g.visible = visible;
   // Visibility changes what casts, so the shadow map is stale too.
@@ -463,6 +498,16 @@ document.getElementById('layer-controls')?.addEventListener('change', (ev) => {
   const box = ev.target;
   if (!(box instanceof HTMLInputElement) || !box.dataset.layer) return;
   setLayerVisible(box.dataset.layer, box.checked);
+  // The reference is fetched the first time it is switched on, never at boot.
+  if (box.dataset.layer === 'reference' && box.checked) {
+    ensureRawCad(activeFloor).then((state) => {
+      const status = document.getElementById('reference-status');
+      if (!status) return;
+      status.textContent = state === 'ready'
+        ? `${rawCadSegments.toLocaleString()} CAD segments`
+        : (state === 'unavailable' ? 'no CAD reference deployed' : 'CAD reference unavailable');
+    });
+  }
 });
 
 // Orientation grid. Purely a reference frame, NOT factory floor data -- it is
@@ -798,6 +843,93 @@ function buildWallLines(lines) {
   return list.length;
 }
 
+/**
+ * Builds the raw CAD reference overlay from a served document.
+ *
+ * One LineSegments per role, so a role can be switched off without rebuilding
+ * anything, and one shared material, so twelve roles cost one material rather
+ * than twelve. Returns the number of segments drawn.
+ */
+function buildRawCad(doc) {
+  for (const g of cadRoleGroups.values()) {
+    layers.reference.remove(g);
+    g.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
+  }
+  cadRoleGroups.clear();
+  rawCadSegments = 0;
+
+  if (!doc || doc.available !== true || !buildingBounds) return 0;
+  const halfWidth = buildingBounds.width / 2;
+  const halfDepth = buildingBounds.depth / 2;
+  const material = new THREE.LineBasicMaterial({
+    color: 0xf59e0b, transparent: true, opacity: 0.85, depthTest: false,
+  });
+
+  for (const role of asArray(doc.roles)) {
+    const seg = asArray(role.segments);
+    // A role whose array is not a whole number of segments is not a shorter
+    // role, it is a broken one. Half a drawing shown as a reference reads as a
+    // discrepancy in the model, which is the opposite of what this is for.
+    if (!role.id || seg.length === 0 || seg.length % 4 !== 0) continue;
+    const pts = new Float32Array((seg.length / 2) * 3);
+    let bad = false;
+    for (let i = 0, o = 0; i < seg.length; i += 2, o += 3) {
+      if (!finite(seg[i]) || !finite(seg[i + 1])) { bad = true; break; }
+      const p = cadToTwin(seg[i], seg[i + 1], halfWidth, halfDepth);
+      pts[o] = p.x;
+      // Above every reconstructed surface, so the reference reads as an
+      // overlay rather than as another thing standing on the floor.
+      pts[o + 1] = 0.12;
+      pts[o + 2] = p.z;
+    }
+    if (bad) continue;
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.BufferAttribute(pts, 3));
+    const lines = new THREE.LineSegments(geom, material);
+    lines.name = `cad:${role.id}`;
+    lines.renderOrder = 10;
+    const group = new THREE.Group();
+    group.name = `cad-${role.id}`;
+    group.add(lines);
+    layers.reference.add(group);
+    cadRoleGroups.set(role.id, group);
+    rawCadSegments += seg.length / 4;
+  }
+  rawCadCoverage = doc.coverage || null;
+  return rawCadSegments;
+}
+
+/**
+ * Fetches the reference once, on first use.
+ *
+ * Deliberately lazy. The document is several thousand segments the floor view
+ * never draws, and fetching it at boot would charge every operator for a
+ * diagnostic nobody opened.
+ */
+async function ensureRawCad(floorId) {
+  if (rawCadState === 'loading' || rawCadState === 'ready') return rawCadState;
+  // The overlay is placed relative to the measured envelope, so there is
+  // nothing to place it against until the floor is built. Staying idle rather
+  // than recording "unavailable" means a toggle before load simply retries.
+  if (!buildingBounds) return 'idle';
+  rawCadState = 'loading';
+  const url = floorId
+    ? `api/floor-raw-cad?floor=${encodeURIComponent(floorId)}` : 'api/floor-raw-cad';
+  try {
+    const res = await fetch(url);
+    if (!res.ok) { rawCadState = 'unavailable'; return rawCadState; }
+    const doc = await res.json();
+    if (doc.available !== true) { rawCadState = 'unavailable'; return rawCadState; }
+    buildRawCad(doc);
+    rawCadState = rawCadSegments > 0 ? 'ready' : 'unavailable';
+  } catch (err) {
+    console.warn('raw CAD reference fetch failed (non-fatal):', err.message);
+    rawCadState = 'error';
+  }
+  requestRender();
+  return rawCadState;
+}
+
 function buildFloor(geometry) {
   const envelope = geometry && typeof geometry === 'object' ? geometry.envelope : null;
   // A partially-valid envelope is not a smaller envelope, it is an unknown
@@ -1121,6 +1253,12 @@ function buildFunctionalZones(geometry) {
     );
     plate.rotation.x = Math.PI / 2; // Shape is authored in XY; lay it on XZ
     plate.position.y = floorY;
+    // The boundary as it was served, kept alongside the mesh built from it.
+    // A ShapeGeometry cannot be read back as the ring that produced it, and
+    // the claim worth testing -- that these polygons are the drawing's own
+    // area boundaries -- needs the ring, not the triangulation.
+    plate.userData.vertices = verts.map((v) => ({ x: v.x, z: v.z }));
+    plate.userData.zoneId = zone.id;
     layers.functional.add(plate);
 
     const outline = new THREE.LineLoop(
@@ -2089,6 +2227,17 @@ async function boot() {
     getStructuralGrid: () => structuralGridLines,
     setLayerVisible,
     sublayers,
+    // The raw CAD reference, exposed so a regression can assert that the
+    // overlay actually loads and lands where the model does -- the comparison
+    // is the entire point of the layer, and a screenshot cannot make it.
+    ensureRawCad,
+    rawCadState: () => rawCadState,
+    rawCadStats: () => ({
+      segments: rawCadSegments,
+      roles: [...cadRoleGroups.keys()].sort(),
+      coverage: rawCadCoverage,
+    }),
+    cadToTwin,
     resetView,
     snapshotCoordinates,
     // Exposed so a test can force a frame and read renderer.info afterwards.
@@ -2131,15 +2280,40 @@ function onResize() {
 // there is nothing to dodge. Views are chosen explicitly by the operator.
 
 // Opening or closing the inspection drawer changes the scene pane's width
-// without changing the window's, so the resize listener never fires for it.
-// This refits the camera for the new pane. It moves the camera and nothing
+// without changing the window's, so the window resize listener never fires for
+// it. This refits the camera for the new pane. It moves the camera and nothing
 // else -- the coordinate snapshot check keeps that honest.
-window.addEventListener('twin-pane-resize', () => {
-  requestAnimationFrame(() => {
+//
+// OBSERVE THE ELEMENT, DO NOT GUESS WHEN IT CHANGED. This was previously a
+// listener on the drawer's own event that measured inside one
+// requestAnimationFrame. One frame is not enough: the class had been toggled
+// but the grid had not reflowed, so getBoundingClientRect still returned the
+// old width and the canvas kept its full-width drawing buffer. The canvas then
+// overflowed its 1,580 px track by the drawer's 340 px and painted straight
+// over the drawer -- every control in it, layer toggles included, sat under a
+// canvas and could not be clicked at all. A ResizeObserver fires when the
+// element has actually changed size, which is the condition that matters and
+// the only one that cannot be off by a frame.
+if (typeof ResizeObserver === 'function') {
+  let first = true;
+  const paneObserver = new ResizeObserver(() => {
+    // The first callback is the initial observation, and boot has already
+    // sized and framed the scene. Re-framing here would fight it.
+    if (first) { first = false; return; }
     onResize();
     applyView(activeView);
   });
-});
+  paneObserver.observe(container);
+} else {
+  // Fallback for a browser with no ResizeObserver: two frames rather than one,
+  // so the measurement happens after the grid has reflowed.
+  window.addEventListener('twin-pane-resize', () => {
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      onResize();
+      applyView(activeView);
+    }));
+  });
+}
 
 // setSize reallocates the drawing buffer, and a drag-resize fires this
 // continuously. Coalescing to one call per frame keeps the final state

@@ -452,6 +452,83 @@ async function run() {
       `${badNames.length} of ${names.length} name(s) failed`);
     check(!names.some((v) => /[/\.:]/.test(v)),
       'no zone name can carry a path, a dot or a colon');
+
+    // -- The raw CAD reference ------------------------------------------
+    //
+    // This route serves the drawing's own line-work, which makes it the most
+    // disclosure-sensitive geometry endpoint on the service: the private
+    // document behind it carries the drawing's real layer names, and those
+    // name processes and vendors. What is asserted here is that none of that
+    // survives the projection -- three keys per role, a role id drawn from a
+    // fixed set, and nothing anywhere in the body that is not a number or one
+    // of those ids.
+    const rawRes = await page.request.get(`${TWIN_URL}api/floor-raw-cad`, { failOnStatusCode: false });
+    const raw = rawRes.ok() ? await rawRes.json() : null;
+    check(rawRes.status() === 200, 'the raw CAD reference answers', `got ${rawRes.status()}`);
+    if (raw && raw.available) {
+      const ROLES = new Set(['structure', 'columns', 'column-caps', 'walls-interior',
+        'walls-cleanroom', 'walls-movable', 'partitions', 'doors', 'windows',
+        'openings-airshower', 'area-boundaries', 'area-annotation']);
+      const badKeys = [];
+      const badIds = [];
+      let badNumbers = 0;
+      let declaredMismatch = 0;
+      for (const role of raw.roles || []) {
+        for (const k of Object.keys(role)) {
+          if (k !== 'id' && k !== 'segment_count' && k !== 'segments') badKeys.push(`${role.id}.${k}`);
+        }
+        if (!ROLES.has(role.id)) badIds.push(String(role.id));
+        if (!Array.isArray(role.segments) || role.segments.length % 4 !== 0) declaredMismatch++;
+        else if (role.segment_count !== role.segments.length / 4) declaredMismatch++;
+        for (const v of role.segments || []) {
+          if (typeof v !== 'number' || !Number.isFinite(v)) { badNumbers++; break; }
+        }
+      }
+      check(badKeys.length === 0, 'a raw CAD role carries only id, count and segments',
+        badKeys.join(' | '));
+      check(badIds.length === 0, 'every raw CAD role id is one of the fixed roles',
+        badIds.join(' | '));
+      check(badNumbers === 0, 'every raw CAD coordinate is a finite number',
+        `${badNumbers} role(s) carried a non-number`);
+      check(declaredMismatch === 0,
+        'every raw CAD role declares the segment count it actually carries',
+        `${declaredMismatch} mismatch(es)`);
+      // The drawing's layer names are the specific thing that must not travel.
+      // Searching the serialised body for a lowercase word is a blunt check and
+      // that is the point: the projection emits no strings but role ids, so
+      // anything word-shaped that is not a role id is a leak.
+      const body = JSON.stringify(raw);
+      const words = (body.match(/"[^"]*[a-z][^"]*"/g) || [])
+        .map((s) => s.slice(1, -1))
+        .filter((s) => !ROLES.has(s) && ![
+          'floor1', 'floor2', 'floor3', 'floor4', 'floor5',
+          'CAD_MM_Y_UP_FLOOR_LOCAL', 'floor', 'available', 'coordinate_system',
+          'envelope_mm', 'width', 'depth', 'roles', 'id', 'segment_count',
+          'segments', 'coverage', 'entities_carried', 'entities_excluded_by_layer',
+          'excluded_layer_count', 'block_references_not_expanded',
+        ].includes(s));
+      check(words.length === 0,
+        'the raw CAD response carries no free text, so no drawing layer name can leak',
+        words.slice(0, 5).join(' | '));
+      check(raw.coordinate_system === 'CAD_MM_Y_UP_FLOOR_LOCAL',
+        "the raw reference declares the drawing's frame, not the model's",
+        String(raw.coordinate_system));
+      check(raw.coverage && raw.coverage.entities_excluded_by_layer > 0,
+        'the reference reports what it leaves out rather than implying it is complete',
+        `${raw.coverage ? raw.coverage.entities_excluded_by_layer : 'no coverage'} excluded`);
+    } else {
+      console.log('  SKIP  raw CAD reference checks (no reference document deployed)');
+    }
+
+    // An undeployed floor must 404 here for the same reason it does on the
+    // geometry route: an empty reference would say the floor exists.
+    for (const bad of ['floor9', '../floor1', 'floor1%00', '__proto__']) {
+      const res = await page.request.get(
+        `${TWIN_URL}api/floor-raw-cad?floor=${encodeURIComponent(bad)}`,
+        { failOnStatusCode: false });
+      check(res.status() === 404, `the raw CAD reference refuses a bad floor id: ${bad}`,
+        `got ${res.status()}`);
+    }
   }
 
 
@@ -644,6 +721,19 @@ async function run() {
         if (offscreen) {
           bad.push(sel + ' (' + Math.round(r.left) + ',' + Math.round(r.top) + ' '
             + Math.round(r.width) + 'x' + Math.round(r.height) + ')');
+          continue;
+        }
+        // ON SCREEN IS NOT REACHABLE. A control can be laid out perfectly and
+        // still be untouchable because something is painted over it, and that
+        // is not a hypothetical: the WebGL canvas kept a full-window drawing
+        // buffer when the drawer took its grid track, overflowed by the
+        // drawer's width and covered every control in it. Geometry alone
+        // reported all of them fine. Hit-testing the centre point is what an
+        // actual pointer does, so it is what is asserted.
+        const at = document.elementFromPoint(
+          Math.round(r.left + r.width / 2), Math.round(r.top + r.height / 2));
+        if (!at || !(el === at || el.contains(at) || at.contains(el))) {
+          bad.push(sel + ' (covered by ' + (at ? at.tagName.toLowerCase() : 'nothing') + ')');
         }
       }
       return bad;
@@ -1364,6 +1454,109 @@ async function run() {
   }
   const restored = await snapshot(page);
   check(JSON.stringify(restored) === JSON.stringify(baseline), 'restoring reproduces the baseline snapshot');
+  console.log('');
+
+  // ── The raw CAD reference overlay ──
+  //
+  // The overlay exists so the reconstruction can be compared against its
+  // source, which means the only interesting assertion is that the two land in
+  // the same place. A screenshot cannot make that claim; comparing the served
+  // room polygons against the drawn reference line-work can.
+  console.log('Raw CAD reference overlay:');
+  {
+    const drawerWasOpen = await page.evaluate(
+      () => document.getElementById('app').classList.contains('drawer-open'));
+    if (!drawerWasOpen) {
+      await page.click('#drawer-toggle');
+      await page.waitForTimeout(450);
+    }
+    const beforeCoords = await page.evaluate(() => window.__twin.snapshotCoordinates());
+    const idle = await page.evaluate(() => ({
+      state: window.__twin.rawCadState(),
+      visible: window.__twin.layers.reference.visible,
+    }));
+    check(idle.state === 'idle' && idle.visible === false,
+      'the reference is neither fetched nor drawn until it is asked for',
+      `${idle.state} / visible=${idle.visible}`);
+
+    await page.check('#layer-controls input[data-layer="reference"]');
+    const ready = await page.waitForFunction(
+      () => ['ready', 'unavailable', 'error'].includes(window.__twin.rawCadState()),
+      null, { timeout: 30000 },
+    ).then(() => page.evaluate(() => ({
+      state: window.__twin.rawCadState(),
+      stats: window.__twin.rawCadStats(),
+      visible: window.__twin.layers.reference.visible,
+      status: document.getElementById('reference-status').textContent,
+    })));
+
+    if (ready.state !== 'ready') {
+      console.log(`  SKIP  overlay checks (reference reported ${ready.state})`);
+    } else {
+      check(ready.visible && ready.stats.segments > 0,
+        'switching the reference on draws the drawing line-work',
+        `${ready.stats.segments} segments across ${ready.stats.roles.length} roles`);
+      check(/\d/.test(ready.status),
+        'the panel says how much reference was drawn', ready.status);
+
+      // THE COMPARISON. Every vertex of every served room must coincide with an
+      // endpoint of the drawn reference. The two arrive by different routes --
+      // one through the model pipeline, one as untouched line-work through a
+      // transform the client applies itself -- so agreement here means the
+      // rooms really are the drawing's own boundaries and the frame that maps
+      // between them is the right one. A mirrored frame fails this.
+      const agreement = await page.evaluate(() => {
+        const t = window.__twin;
+        const ends = new Set();
+        t.layers.reference.traverse((o) => {
+          if (o.name !== 'cad:area-boundaries') return;
+          const a = o.geometry.attributes.position.array;
+          for (let i = 0; i < a.length; i += 3) {
+            ends.add(`${Math.round(a[i] * 1000)}|${Math.round(a[i + 2] * 1000)}`);
+          }
+        });
+        let vertices = 0;
+        let matched = 0;
+        for (const g of t.layers.functional.children) {
+          const verts = g.userData && g.userData.vertices;
+          if (!Array.isArray(verts)) continue;
+          for (const v of verts) {
+            vertices++;
+            let hit = false;
+            // A two-millimetre neighbourhood: the reference is drawn from
+            // float32 attribute data, so a vertex can round to the far side of
+            // a millimetre boundary without having moved.
+            for (let dx = -2; dx <= 2 && !hit; dx++) {
+              for (let dz = -2; dz <= 2 && !hit; dz++) {
+                if (ends.has(`${Math.round(v.x * 1000) + dx}|${Math.round(v.z * 1000) + dz}`)) hit = true;
+              }
+            }
+            if (hit) matched++;
+          }
+        }
+        return { vertices, matched, endpoints: ends.size };
+      });
+      if (agreement.vertices === 0) {
+        console.log('  SKIP  room-vs-reference agreement (the renderer keeps no zone vertices)');
+      } else {
+        check(agreement.matched === agreement.vertices,
+          'every served room vertex lands on a raw drawing endpoint',
+          `${agreement.matched} of ${agreement.vertices} against ${agreement.endpoints} endpoints`);
+      }
+    }
+
+    await page.uncheck('#layer-controls input[data-layer="reference"]');
+    await page.waitForTimeout(300);
+    const afterCoords = await page.evaluate(() => window.__twin.snapshotCoordinates());
+    const gone = await page.evaluate(() => window.__twin.layers.reference.visible);
+    check(gone === false, 'switching the reference off removes it');
+    check(afterCoords === beforeCoords,
+      'the reference is an overlay: drawing it moves no measured coordinate');
+    if (!drawerWasOpen) {
+      await page.click('#drawer-toggle');
+      await page.waitForTimeout(450);
+    }
+  }
 
   await browser.close();
 

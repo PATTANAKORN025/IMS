@@ -196,6 +196,37 @@ established by geometry — bay spacings of 8500/8850/10000 and an overall
 | Machine identity | **UNMAPPED.** The CAD carries no IMS `eqp_id`. Still **0 confirmed mappings**. |
 | Equipment footprints from CAD | **UNKNOWN.** The machine layer mixes plan and detail geometry; separating them is not yet done, so the 243 raster-derived slots remain the equipment layer. |
 
+### The raw CAD reference
+
+A model checked only against its own output can be self-consistently wrong, and
+on this floor one was: a mirrored frame passed every check for as long as the
+checks compared the model with itself. So the drawing's own line-work is
+extracted separately, with **no** pairing, merging, snapping or classification,
+and served as an overlay the reconstruction can be compared against.
+
+| | |
+|---|---|
+| Source | `scripts/extract-floor1-raw-cad.js` → `private/floor1-raw-cad.json` |
+| Carried | **3,673 entities → 9,416 segments** across 12 layer roles |
+| Excluded | **215,252 entities across 89 layers** — equipment detail drawings sharing this modelspace |
+| Not expanded | **393 block references** — doors, windows and air showers, whose leaves live inside the block |
+| Approximated | arcs and polyline bulges flattened to chords at 24 segments per turn |
+| Frame | the CAD's own: millimetres, +y up, no reflection. Only the **origin** is rebased, to the envelope corner, because the CAD origin locates the facility |
+
+Layer names are not published. This drawing's layers carry process and vendor
+identifiers, so each is mapped to a coarse public **role** (`structure`,
+`walls-interior`, `partitions`, `area-boundaries`, …) which is the only label
+served and what the layer toggles key on.
+
+**What the reference proves.** Every one of the **194 vertices** of the 32
+served rooms coincides, to within 1 mm, with an endpoint of raw line-work on
+the drawing's area-boundary layer. That single measurement establishes three
+things at once: the polygons came off the right layer, the canonical transform
+is the one that maps drawing to model, and no vertex moved between reading and
+serving. It is asserted twice by different routes — in
+`tests/lint/floor1-cad-reconciliation.js` against the documents, and in the
+browser regression against what the renderer actually drew.
+
 ### Rooms come from the drawing's own boundaries, not from wall topology
 
 The `00.Area Line` layer carries **32 closed boundaries**, and they are the

@@ -59,6 +59,30 @@ const ZONE_NAME = /^[A-Z0-9][A-Z0-9 \-]{0,31}$/;
 const ALLOWED_CONFIDENCE = new Set(['high', 'medium', 'low', 'HIGH', 'MEDIUM', 'LOW']);
 
 /**
+ * The raw CAD reference's layer roles.
+ *
+ * A closed set, and closed on purpose. The drawing's own layer names carry
+ * process and vendor identifiers, so they are never served; the extractor maps
+ * each to one of these roles instead. Enumerating them here means a new layer
+ * appearing in a re-extraction cannot introduce a new public name by itself --
+ * it is dropped until someone decides which role it belongs to.
+ */
+const ALLOWED_CAD_ROLE = new Set([
+  'structure',
+  'columns',
+  'column-caps',
+  'walls-interior',
+  'walls-cleanroom',
+  'walls-movable',
+  'partitions',
+  'doors',
+  'windows',
+  'openings-airshower',
+  'area-boundaries',
+  'area-annotation',
+]);
+
+/**
  * Geometry status values the renderer and inspector understand.
  *
  * MEASURED_CAD and OBSERVED_CAD are the CAD tiers: geometry read directly out
@@ -348,6 +372,40 @@ function projectFunctionalZone(zone) {
 }
 
 /**
+ * Projects one role of the raw CAD reference: the drawing's own line-work for
+ * that role, as a flat run of segment endpoints in floor-local millimetres.
+ *
+ * FLAT NUMBERS, NOT OBJECTS. Nine thousand segments as `{x1,y1,x2,y2}` objects
+ * is nine thousand chances for a stray key to ride along, and it is what the
+ * renderer would have to flatten anyway. A flat array can carry nothing but
+ * numbers, which makes the disclosure question answerable by inspection.
+ *
+ * The segment count must match the array, and the array length must be a whole
+ * number of segments. A role that fails either is withheld rather than
+ * truncated: half a wall drawn as a reference is worse than no reference,
+ * because it looks like a discrepancy in the model.
+ *
+ * The role's source layer names, its entity count and every provenance note in
+ * the private document stay server-side. The role id is the only label served.
+ */
+function projectCadRole(role) {
+  if (!role || typeof role !== 'object') return null;
+  const id = fromEnum(role.id, ALLOWED_CAD_ROLE);
+  if (id === null) return null;
+  const src = Array.isArray(role.segments) ? role.segments : null;
+  if (!src || src.length === 0 || src.length % 4 !== 0) return null;
+  const segments = new Array(src.length);
+  for (let i = 0; i < src.length; i++) {
+    const v = num(src[i]);
+    if (v === null) return null;
+    segments[i] = v;
+  }
+  const declared = num(role.segment_count);
+  if (declared === null || declared !== segments.length / 4) return null;
+  return { id, segment_count: declared, segments };
+}
+
+/**
  * Projects one conflict record. Ids and status only: a conflict is reported so
  * the client knows two candidates existed and neither was drawn, which needs no
  * prose. The resolution note is author-written free text and is not carried,
@@ -521,6 +579,7 @@ function projectAll(items, project, ...rest) {
 module.exports = {
   SAFE_TOKEN,
   ZONE_NAME,
+  ALLOWED_CAD_ROLE,
   zoneName,
   num,
   token,
@@ -531,6 +590,7 @@ module.exports = {
   projectFootprintPolygon,
   projectGrid,
   projectFunctionalZone,
+  projectCadRole,
   projectConflict,
   projectWall,
   projectWallLine,

@@ -525,6 +525,80 @@ console.log('  (rooms are NOT derived from this graph -- see the room block belo
     + `printed area, worst ${worst ? (worst.delta * 100).toFixed(1) : '0.0'}% `
     + `(tolerance ${(ROOM_AREA_TOL * 100).toFixed(0)}%)`);
   console.log(`  rooms without a boundary  ${noBoundary.length} label(s) kept with no polygon`);
+
+  /* -- rooms against the RAW drawing ---------------------------------- */
+  //
+  // Everything above compares one derived document against another derived
+  // document, and both were produced by the same extractor in the same run. If
+  // that extractor read the wrong layer, or applied the frame the wrong way
+  // round, the comparison would agree with itself perfectly. That is not a
+  // hypothetical failure on this floor: a mirrored frame did exactly that.
+  //
+  // So the rooms are also checked against the RAW CAD reference, which is the
+  // drawing's own line-work with no pairing, merging or classification applied
+  // and no transform baked in. Every room vertex must coincide with an endpoint
+  // of a raw segment on the drawing's area-boundary layer. That single check
+  // proves three things at once: the polygons came off the right layer, the
+  // canonical transform is the one that maps raw to model, and no vertex was
+  // moved between reading and serving.
+  const rawPath = path.join(PRIVATE_DIR, 'floor1-raw-cad.json');
+  if (!fs.existsSync(rawPath)) {
+    console.log('  rooms vs raw CAD     SKIP -- no raw reference deployed');
+  } else {
+    const rawDoc = JSON.parse(fs.readFileSync(rawPath, 'utf8'));
+    const role = (Array.isArray(rawDoc.roles) ? rawDoc.roles : [])
+      .find((r) => r && r.id === 'area-boundaries');
+    const halfW = geometry.envelope.width / 2;
+    const halfD = geometry.envelope.depth / 2;
+    const seg = role && Array.isArray(role.segments) ? role.segments : [];
+
+    // Endpoints bucketed on a 1 mm grid. A linear scan would be 32 rooms x
+    // hundreds of vertices x 390 endpoints; the bucket makes it a lookup, and
+    // the bucket size IS the tolerance rather than a separate number.
+    const KEY = (x, z) => `${Math.round(x * 1000)}|${Math.round(z * 1000)}`;
+    const endpoints = new Set();
+    for (let i = 0; i < seg.length; i += 2) {
+      const x = seg[i] / 1000 - halfW;
+      const z = -(seg[i + 1] / 1000 - halfD);
+      endpoints.add(KEY(x, z));
+    }
+
+    let vertices = 0;
+    let matched = 0;
+    const strays = [];
+    for (const z of roomsWithGeometry) {
+      for (const v of z.geometry.vertices) {
+        vertices++;
+        // The neighbourhood, so a vertex that rounds to the far side of a
+        // millimetre boundary is not counted as a mismatch.
+        let hit = false;
+        for (let dx = -1; dx <= 1 && !hit; dx++) {
+          for (let dz = -1; dz <= 1 && !hit; dz++) {
+            if (endpoints.has(`${Math.round(v.x * 1000) + dx}|${Math.round(v.z * 1000) + dz}`)) {
+              hit = true;
+            }
+          }
+        }
+        if (hit) matched++;
+        else if (strays.length < 5) strays.push({ id: z.id, name: z.zone_name });
+      }
+    }
+
+    if (endpoints.size === 0) {
+      fail('the raw CAD reference carries no area-boundary line-work, so the rooms '
+        + 'cannot be checked against the drawing');
+    } else if (matched !== vertices) {
+      fail(`${vertices - matched} of ${vertices} room vertices do not coincide with a raw `
+        + `CAD area-boundary endpoint (first: ${strays.map((s) => s.name || s.id).join(', ')}) `
+        + '-- the served rooms are not the drawing\'s own lines, or the frame disagrees');
+    }
+    console.log(`  rooms vs raw CAD     ${matched} of ${vertices} room vertices coincide with a `
+      + `raw drawing endpoint within 1 mm (${endpoints.size} distinct endpoints)`);
+    console.log(`  raw CAD reference    ${rawDoc.coverage.segments} segments carried, `
+      + `${rawDoc.coverage.entities_excluded_by_layer} entities excluded across `
+      + `${rawDoc.coverage.excluded_layer_count} detail layers, `
+      + `${rawDoc.coverage.block_references_not_expanded} block references not expanded`);
+  }
 }
 
 /* -- raster supersession --------------------------------------------- */

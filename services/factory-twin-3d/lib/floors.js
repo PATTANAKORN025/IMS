@@ -49,6 +49,7 @@ const DOCUMENTS = Object.freeze({
   zones: '-zones.json',
   mapping: '-asset-mapping.json',
   schematic: '-schematic.json',
+  rawcad: '-raw-cad.json',
 });
 
 /** True only for a string that is exactly a floor id. */
