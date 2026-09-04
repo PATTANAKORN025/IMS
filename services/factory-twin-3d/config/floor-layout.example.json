@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "floor": {
+    "id": "example-floor-1",
+    "name": "Example Floor 1",
+    "level": 1,
+    "layout_mode": "private_local",
+    "coordinate_source": "example_only",
+    "verification_status": "DRAFT"
+  },
+  "zones": [
+    {
+      "zone_id": "example-zone-a",
+      "name": "EXAMPLE ZONE A",
+      "polygon": [
+        { "x": -12, "y": -8 },
+        { "x": 12, "y": -8 },
+        { "x": 12, "y": 5 },
+        { "x": 7, "y": 5 },
+        { "x": 7, "y": 8 },
+        { "x": -12, "y": 8 }
+      ]
+    }
+  ],
+  "machines": [
+    {
+      "asset_id": "EXAMPLE-001",
+      "display_name": "Example Machine 001",
+      "zone_id": "example-zone-a",
+      "pos_x": 0,
+      "pos_y": 0,
+      "pos_z": 0,
+      "rot_y": 0,
+      "width": 3.2,
+      "height": 1.45,
+      "depth": 2.5,
+      "state_binding": {
+        "type": "unbound",
+        "source_id": null
+      }
+    }
+  ]
+}

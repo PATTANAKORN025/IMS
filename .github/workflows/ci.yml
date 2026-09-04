@@ -47,6 +47,9 @@ jobs:
       - name: Lint Query Budget (tiering contract)
         run: node tests/lint/query-budget-linter.js
 
+      - name: Prevent private factory-layout material from entering Git
+        run: node tests/lint/private-layout-leak-linter.js
+
       - name: Lint Alert Rules (ORDER BY on time_series queries)
         run: node tests/lint/alert-rule-linter.js
 
@@ -120,6 +123,10 @@ jobs:
 
       - name: Run Gate Decision Tests
         run: node tests/unit/gate.test.js
+
+      - name: Run Factory Twin Floor Layout Tests
+        working-directory: services/factory-twin-3d
+        run: npm test
 
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   # Stage 3: Integration & Chaos Test

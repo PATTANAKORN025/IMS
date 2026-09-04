@@ -2,156 +2,385 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>IMS Factory 3D Digital Twin</title>
+  <title>IMS Factory Digital Twin — Floor 1</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
+    :root {
+      color-scheme: dark;
+      --surface: rgba(15, 23, 42, 0.92);
+      --surface-soft: rgba(30, 41, 59, 0.72);
+      --border: #334155;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+    }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
     html, body {
       margin: 0;
-      padding: 0;
       width: 100%;
       height: 100%;
-      background: #0f172a;
-      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: #0b1220;
+      color: var(--text);
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
       overflow: hidden;
     }
-    #scene {
-      position: fixed;
-      inset: 0;
+    #scene, #scene-2d { position: fixed; inset: 0; overflow: hidden; }
+    #scene canvas { display: block; }
+    #scene-2d {
+      padding: 48px 18px 18px 350px;
+      background:
+        radial-gradient(circle at 70% 24%, rgba(14, 165, 233, 0.08), transparent 36%),
+        #0b1220;
     }
-    #scene canvas {
+    #floor-plan-2d {
       display: block;
+      width: 100%;
+      height: 100%;
+      border: 1px solid #1e3a5f;
+      border-radius: 10px;
+      background: #0c1730;
+      box-shadow: inset 0 0 36px rgba(2, 6, 23, 0.58);
     }
-
-    /* Binding requirement (design spec §19): visible on-screen banner
-       whenever any rendered placement is simulated. This POC's one
-       placement is always simulated (hardcoded constant, see server.js),
-       so the banner is always shown -- not conditional in this build, but
-       still driven off the API's is_simulated field so it would correctly
-       disappear once /api/placement ever returns a real one. */
+    .zone-fill-2d {
+      fill: rgba(30, 41, 59, 0.74);
+      stroke: none;
+    }
+    .zone-outline-2d {
+      fill: none;
+      stroke: #64748b;
+      stroke-width: 0.22;
+      vector-effect: non-scaling-stroke;
+    }
+    .zone-label-2d {
+      fill: #7dd3fc;
+      font-size: 1.25px;
+      font-weight: 800;
+      paint-order: stroke;
+      stroke: #0c1730;
+      stroke-width: 0.28px;
+      pointer-events: none;
+    }
+    .machine-2d { cursor: default; }
+    .machine-2d.is-clickable { cursor: pointer; }
+    .machine-body-2d {
+      stroke: #cbd5e1;
+      stroke-width: 0.18;
+      vector-effect: non-scaling-stroke;
+      transition: fill 180ms ease, stroke 180ms ease;
+    }
+    .machine-2d.has-alarm .machine-body-2d {
+      stroke: #ff003c;
+      stroke-width: 0.58;
+    }
+    .machine-label-2d {
+      fill: #07111f;
+      font-size: 0.8px;
+      font-weight: 900;
+      text-anchor: middle;
+      dominant-baseline: central;
+      pointer-events: none;
+    }
     #simulated-banner {
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
-      z-index: 10;
+      z-index: 20;
+      min-height: 34px;
       background: #f59e0b;
       color: #1c1305;
-      font-weight: 700;
-      font-size: 14px;
-      letter-spacing: 0.04em;
+      font-weight: 800;
+      font-size: 13px;
+      letter-spacing: 0.025em;
       text-align: center;
-      padding: 8px 12px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+      padding: 8px 330px 8px 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.35);
     }
-
+    body.mock-status #simulated-banner {
+      background: #e11d48;
+      color: #fff;
+    }
     #hud {
       position: fixed;
-      top: 44px;
+      top: 46px;
       left: 16px;
       bottom: 16px;
       z-index: 10;
-      background: rgba(15, 23, 42, 0.85);
-      border: 1px solid #334155;
-      border-radius: 8px;
-      padding: 14px 18px;
-      color: #e2e8f0;
-      width: 280px;
-      font-size: 14px;
-      line-height: 1.5;
+      width: 318px;
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      padding: 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.28);
+    }
+    .hud-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
     }
     #hud h1 {
-      font-size: 15px;
-      margin: 0 0 4px 0;
+      margin: 0;
       color: #f8fafc;
+      font-size: 16px;
+      line-height: 1.25;
     }
+    #floor-name {
+      display: block;
+      margin-top: 2px;
+      color: #7dd3fc;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .view-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 5px; }
+    .view-button, #reset-view {
+      flex: 0 0 auto;
+      padding: 6px 9px;
+      color: #e2e8f0;
+      background: #1e293b;
+      border: 1px solid #475569;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 650;
+    }
+    .view-button:hover, .view-button:focus-visible,
+    #reset-view:hover, #reset-view:focus-visible { border-color: #38bdf8; outline: none; }
+    .view-button[aria-pressed="true"] { color: #07111f; background: #38bdf8; border-color: #7dd3fc; }
     #summary-line {
-      color: #94a3b8;
+      margin: 7px 0 8px;
+      color: var(--muted);
       font-size: 12px;
-      margin-bottom: 8px;
     }
+    .legend {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4px;
+      margin-bottom: 10px;
+      padding: 7px;
+      background: rgba(2, 6, 23, 0.56);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+    }
+    .legend span { color: #cbd5e1; font-size: 10px; text-align: center; white-space: nowrap; }
+    .legend i { display: inline-block; width: 8px; height: 8px; margin-right: 4px; border-radius: 50%; }
     #machine-list {
-      overflow-y: auto;
+      min-height: 0;
       flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 7px;
+      overflow-y: auto;
       padding-right: 4px;
     }
     .machine-row {
-      background: rgba(30, 41, 59, 0.6);
-      border: 1px solid #334155;
-      border-radius: 6px;
-      padding: 8px 10px;
+      display: block;
+      width: 100%;
+      padding: 8px 9px;
+      color: var(--text);
+      text-align: left;
+      background: var(--surface-soft);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      cursor: pointer;
+      box-sizing: border-box;
+      text-decoration: none;
     }
-    .machine-row-top {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 4px;
-    }
-    .machine-id {
-      font-weight: 600;
-      font-size: 13px;
-    }
+    .machine-row:hover, .machine-row:focus-visible { border-color: #38bdf8; outline: none; }
+    .machine-row:disabled { cursor: not-allowed; opacity: 0.88; }
+    .machine-row:disabled:hover { border-color: var(--border); }
+    .machine-row-top, .machine-row-detail { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .machine-row-top { justify-content: flex-start; margin-bottom: 4px; }
+    .machine-id { font-size: 13px; font-weight: 700; }
     .mini-pill {
       display: inline-block;
-      padding: 1px 8px;
+      min-width: 54px;
+      padding: 2px 7px;
       border-radius: 999px;
-      font-weight: 700;
-      font-size: 10px;
-      color: #0f172a;
+      color: #07111f;
+      font-size: 9px;
+      font-weight: 850;
+      text-align: center;
     }
-    .machine-row-detail {
+    .machine-row-detail { color: var(--muted); font-size: 11px; }
+    .machine-row-basis { display: block; margin-top: 3px; color: #64748b; font-size: 9px; }
+    .machine-row-time { display: block; margin-top: 2px; color: #94a3b8; font-size: 9px; }
+    .machine-row-alarm { display: block; margin-top: 3px; color: #cbd5e1; font-size: 10px; }
+    .machine-row-error { display: block; margin-top: 3px; color: #fbbf24; font-size: 10px; }
+    .machine-row-error-meta { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+    .machine-row-error-meta span {
+      padding: 2px 5px;
+      border: 1px solid #475569;
+      border-radius: 999px;
+      color: #e2e8f0;
+      background: rgba(30, 41, 59, 0.72);
+      font-size: 8px;
+    }
+    .machine-row-error-action { display: block; margin-top: 3px; color: #fca5a5; font-size: 9px; }
+    .machine-row.has-alarm { border-color: #ff003c; box-shadow: inset 3px 0 #ff003c; }
+    #machine-detail {
+      position: fixed;
+      top: 46px;
+      right: 16px;
+      bottom: 16px;
+      z-index: 12;
+      width: 372px;
       display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: rgba(10, 20, 38, 0.97);
+      border: 1px solid #334155;
+      border-radius: 10px;
+      box-shadow: 0 20px 55px rgba(0, 0, 0, 0.46);
+    }
+    .detail-header {
+      display: flex;
+      align-items: flex-start;
       justify-content: space-between;
-      color: #94a3b8;
-      font-size: 12px;
+      gap: 12px;
+      padding: 14px;
+      border-bottom: 1px solid #334155;
     }
-    .machine-row-alarm {
-      margin-top: 2px;
-      font-size: 11px;
+    .detail-title { margin: 0; color: #f8fafc; font-size: 17px; line-height: 1.25; }
+    .detail-subtitle { display: block; margin-top: 3px; color: #94a3b8; font-size: 10px; letter-spacing: 0.06em; }
+    .detail-close {
+      width: 30px;
+      height: 30px;
+      padding: 0;
       color: #cbd5e1;
+      background: transparent;
+      border: 1px solid #475569;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 18px;
     }
-    #hud .hint {
-      margin-top: 10px;
+    .detail-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px 14px 0; }
+    .detail-action {
+      display: block;
+      padding: 8px 10px;
+      color: #dbeafe;
+      text-align: center;
+      text-decoration: none;
+      background: #172554;
+      border: 1px solid #2563eb;
+      border-radius: 6px;
+      cursor: pointer;
+      font: inherit;
+      font-size: 11px;
+      font-weight: 750;
+    }
+    .detail-action:hover, .detail-action:focus-visible { border-color: #38bdf8; outline: none; }
+    .detail-scroll { min-height: 0; overflow-y: auto; padding: 12px 14px 14px; }
+    .detail-state-line { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .detail-card {
+      margin-bottom: 10px;
+      padding: 11px;
+      background: rgba(15, 23, 42, 0.88);
+      border: 1px solid #334155;
+      border-radius: 8px;
+    }
+    .detail-card h3 { margin: 0 0 8px; color: #bae6fd; font-size: 11px; letter-spacing: 0.03em; }
+    .detail-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 7px 12px; }
+    .detail-field { min-width: 0; }
+    .detail-field.full { grid-column: 1 / -1; }
+    .detail-label { display: block; margin-bottom: 2px; color: #64748b; font-size: 8px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .detail-value { display: block; color: #e2e8f0; font-size: 11px; line-height: 1.4; overflow-wrap: anywhere; }
+    .detail-value.mono { font-family: "Roboto Mono", Consolas, monospace; }
+    .detail-reference {
+      display: inline-block;
+      margin-left: 5px;
+      padding: 2px 5px;
+      color: #fbbf24;
+      border: 1px solid #92400e;
+      border-radius: 999px;
+      font-size: 7px;
+      vertical-align: middle;
+    }
+    .detail-boundary { color: #fbbf24; font-size: 10px; line-height: 1.45; }
+    .hint {
+      margin-top: 9px;
       padding-top: 8px;
-      border-top: 1px solid #334155;
-      color: #94a3b8;
-      font-size: 12px;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      font-size: 11px;
+      line-height: 1.45;
     }
-    #hud .error {
-      color: #ef4444;
-      font-weight: 600;
+    .truth-note strong { color: #fbbf24; }
+    .error { color: #f87171 !important; font-weight: 700; }
+    @media (max-width: 760px) {
+      #simulated-banner { padding-right: 12px; font-size: 11px; }
+      #hud {
+        top: 56px;
+        left: 8px;
+        right: 8px;
+        bottom: auto;
+        width: auto;
+        height: 44vh;
+        min-height: 250px;
+      }
+      #scene-2d { padding: calc(44vh + 68px) 8px 8px; }
+      #machine-detail {
+        top: 56px;
+        left: 8px;
+        right: 8px;
+        bottom: 8px;
+        width: auto;
+      }
     }
-
-    /* Accessibility fallback (design §16): the same real per-machine data
-       (state/board/MO/alarm for all 10 machines) is also available as
-       plain HTML text in #machine-list, not locked inside the WebGL
-       canvas -- a screen reader can read the HUD list even though it
-       can't meaningfully describe the 3D scene itself. */
   </style>
 </head>
 <body>
-  <div id="simulated-banner">SIMULATED LAYOUT — machine positions are placeholders, not real surveyed coordinates</div>
+  <div id="simulated-banner">PROVISIONAL FLOOR 1 LAYOUT — logical grouping from device registry; not surveyed physical coordinates</div>
 
-  <div id="hud">
-    <h1>IMS Factory 3D Digital Twin</h1>
-    <div id="summary-line">Loading…</div>
+  <aside id="hud" aria-label="Floor 1 machine status">
+    <div class="hud-header">
+      <div>
+        <h1>IMS Factory Digital Twin</h1>
+        <span id="floor-name">Floor 1</span>
+      </div>
+      <div class="view-actions" aria-label="Layout view mode">
+        <button id="view-2d" class="view-button" type="button" aria-pressed="false">2D</button>
+        <button id="view-3d" class="view-button" type="button" aria-pressed="true">3D</button>
+        <button id="reset-view" type="button">Reset</button>
+      </div>
+    </div>
+    <div id="summary-line">Loading machines…</div>
+    <div class="legend" aria-label="Machine status legend">
+      <span><i style="background:#a6a6a6"></i>Off</span>
+      <span><i style="background:#ff0000"></i>Down</span>
+      <span><i style="background:#ffc000"></i>Idle</span>
+      <span><i style="background:#2f9dcc"></i>Initial,PM,Stop</span>
+      <span><i style="background:#00ff00"></i>Run</span>
+      <span><i style="background:#fff;border:1px solid #64748b"></i>Undefine</span>
+    </div>
     <div id="machine-list"></div>
-    <div class="hint">Click a box in the scene to open that machine's Machine Snapshot drill-down. Live data polls every 5s.</div>
+    <div class="hint">Click a machine in the scene or this list to open its detail panel. Use Grafana drill-down from the panel when deeper history is needed. State refreshes every 5 seconds.</div>
+    <div class="hint truth-note"><strong>Layout:</strong> provisional logical zones. <strong>Status:</strong> six-state operational status; red outline is a separate active-alarm overlay.</div>
     <div id="status-line" class="hint"></div>
-  </div>
+  </aside>
 
-  <div id="scene"></div>
+  <aside id="machine-detail" aria-label="Selected machine detail" hidden>
+    <div class="detail-header">
+      <div>
+        <h2 id="detail-title" class="detail-title">Machine detail</h2>
+        <span id="detail-subtitle" class="detail-subtitle"></span>
+      </div>
+      <button id="detail-close" class="detail-close" type="button" aria-label="Close machine detail">×</button>
+    </div>
+    <div class="detail-actions">
+      <button id="detail-focus" class="detail-action" type="button">Focus machine</button>
+      <a id="detail-grafana" class="detail-action" href="#">Grafana drill-down</a>
+    </div>
+    <div id="detail-content" class="detail-scroll"></div>
+  </aside>
 
-  <!-- Relative paths (no leading "/") throughout this page and app.js's
-       fetch calls, deliberately -- this page is served under nginx's
-       /factory-twin-3d/ prefix (proxy/nginx.conf), which strips the prefix
-       on proxy_pass. An absolute "/app.js" would resolve against the site
-       root and hit Grafana's own location block instead of this service. -->
+  <main id="scene" aria-label="Interactive three-dimensional Floor 1 logical layout"></main>
+  <main id="scene-2d" aria-label="Interactive two-dimensional Floor 1 logical layout" hidden>
+    <svg id="floor-plan-2d" role="img" aria-label="Floor 1 zones and machine status map"></svg>
+  </main>
+
   <script type="importmap">
     {
       "imports": {
@@ -160,6 +389,6 @@
       }
     }
   </script>
-  <script type="module" src="./app.js"></script>
+  <script type="module" src="./app.js?v=20260903-drilling-side-panel-3"></script>
 </body>
 </html>

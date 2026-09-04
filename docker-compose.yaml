@@ -419,7 +419,7 @@ services:
       - ims-internal
     logging: *default-logging
 
-  # ── Factory 3D Digital Twin (Task 4.1 POC -- LDI-01 only, read-only) ──
+  # ── Factory 3D Digital Twin (provisional Floor 1 layout, read-only) ──
   factory-twin-3d:
     build:
       context: ./services/factory-twin-3d
@@ -432,11 +432,23 @@ services:
       PGDATABASE: ${POSTGRES_DB}
       # Read-only service, no write path -- reuses the existing grafana_reader
       # role (postgres/init/002-grafana-readonly.sql) instead of provisioning
-      # a new DB role/migration for a 1-machine POC (see Task 4.1 brief's
-      # scope-minimization decision).
+      # a new DB role/migration for this read-only renderer.
       PGUSER: ${GRAFANA_DB_USER:?GRAFANA_DB_USER required in .env}
       PGPASSWORD: ${GRAFANA_DB_PASSWORD:?GRAFANA_DB_PASSWORD required in .env}
       PORT: "4100"
+      # Optional path inside the container. Supply the corresponding private
+      # read-only mount from an untracked docker-compose override; never put
+      # confidential floorplan coordinates in this committed base file.
+      FLOOR_LAYOUT_FILE: ${FLOOR_LAYOUT_FILE:-}
+      # Explicit opt-in preview switch. Production/default remains real and
+      # fails closed to UNDEFINED when no authoritative status source exists.
+      MACHINE_STATUS_MODE: ${MACHINE_STATUS_MODE:-real}
+      # Optional canonical six-state fleet source. Keep credentials in .env or
+      # a secrets manager; the service fails closed to UNDEFINED when absent.
+      MACHINE_STATUS_API_URL: ${MACHINE_STATUS_API_URL:-}
+      MACHINE_STATUS_API_TOKEN: ${MACHINE_STATUS_API_TOKEN:-}
+      MACHINE_STATUS_API_TIMEOUT_MS: ${MACHINE_STATUS_API_TIMEOUT_MS:-3000}
+      MACHINE_STATUS_API_CACHE_MS: ${MACHINE_STATUS_API_CACHE_MS:-2000}
     # No host port published -- reachable only through the proxy service's
     # /factory-twin-3d/ path, which is auth_request-gated on Grafana's own
     # session, same pattern as alarm-api.

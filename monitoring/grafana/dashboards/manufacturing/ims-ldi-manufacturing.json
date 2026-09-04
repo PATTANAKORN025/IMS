@@ -2901,10 +2901,10 @@
     {
       "id": 10,
       "type": "text",
-      "title": "→ 3D Factory Digital Twin",
-      "description": "Navigation only -- opens the existing, frozen Three.js 3D Factory Digital Twin app (services/factory-twin-3d/, proxied at /factory-twin-3d/, auth-gated on the same Grafana session). Not embedded here, not modified.",
+      "title": "→ 3D Factory Digital Twin — Floor 1",
+      "description": "Navigation only -- opens the read-only Three.js Floor 1 logical layout (services/factory-twin-3d/, proxied at /factory-twin-3d/, auth-gated on the same Grafana session). Machine status is database-backed; placement remains provisional until surveyed coordinates are supplied.",
       "options": {
-        "content": "### 3D Factory Digital Twin\n\nSpatial walkthrough of the factory floor (separate app, same Grafana session/auth, read-only).\n\n<a href=\"/factory-twin-3d/\" target=\"_blank\" rel=\"noopener noreferrer\">Open 3D Digital Twin (opens in new tab) →</a>",
+        "content": "### 3D Factory Digital Twin — Floor 1\n\nRead-only machine status on a provisional logical Floor 1 layout. Positions are not surveyed physical coordinates.\n\n<a href=\"/factory-twin-3d/\" target=\"_blank\" rel=\"noopener noreferrer\">Open Floor 1 Digital Twin (opens in new tab) →</a>",
         "mode": "markdown"
       },
       "gridPos": {

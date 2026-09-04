@@ -1,0 +1,512 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "#00F2FE",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    {
+      "title": "1 · Machine Cards",
+      "type": "link",
+      "icon": "dashboard",
+      "url": "/d/ims-drilling-machine-cards/ims-drilling-machine-cards",
+      "targetBlank": false,
+      "includeVars": true,
+      "keepTime": true,
+      "asDropdown": false
+    },
+    {
+      "title": "2 · Fleet List",
+      "type": "link",
+      "icon": "dashboard",
+      "url": "/d/ims-drilling-fleet-list/ims-drilling-fleet-list",
+      "targetBlank": false,
+      "includeVars": true,
+      "keepTime": true,
+      "asDropdown": false
+    },
+    {
+      "title": "3 · Machine Detail",
+      "type": "link",
+      "icon": "dashboard",
+      "url": "/d/ims-drilling-machine-detail/ims-drilling-machine-detail",
+      "targetBlank": false,
+      "includeVars": true,
+      "keepTime": true,
+      "asDropdown": false
+    },
+    {
+      "title": "4 · History",
+      "type": "link",
+      "icon": "dashboard",
+      "url": "/d/ims-drilling-history/ims-drilling-history",
+      "targetBlank": false,
+      "includeVars": true,
+      "keepTime": true,
+      "asDropdown": false
+    },
+    {
+      "title": "5 · Anomaly Analysis",
+      "type": "link",
+      "icon": "dashboard",
+      "url": "/d/ims-drilling-anomaly-analysis/ims-drilling-anomaly-analysis",
+      "targetBlank": false,
+      "includeVars": true,
+      "keepTime": true,
+      "asDropdown": false
+    },
+    {
+      "title": "6 · Settings",
+      "type": "link",
+      "icon": "dashboard",
+      "url": "/d/ims-drilling-settings/ims-drilling-settings",
+      "targetBlank": false,
+      "includeVars": true,
+      "keepTime": true,
+      "asDropdown": false
+    }
+  ],
+  "liveNow": true,
+  "panels": [
+    {
+      "id": 9000,
+      "title": "",
+      "type": "text",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 3
+      },
+      "transparent": true,
+      "description": "Shared navigation for the six linked DRILLING operator pages.",
+      "options": {
+        "mode": "markdown",
+        "content": "# IMS DRILLING · 6 · Settings\n\n[1 · Machine Cards](/d/ims-drilling-machine-cards/ims-drilling-machine-cards?orgId=1&${machine_id:queryparam}&${focus_machine:queryparam}&${status_filter:queryparam}&${event_filter:queryparam}&${program_search:queryparam}&${stale_hours:queryparam}&${stop_minutes:queryparam}&${alarm_burst:queryparam}&${raw_limit:queryparam}&from=${__from}&to=${__to}) · [2 · Fleet List](/d/ims-drilling-fleet-list/ims-drilling-fleet-list?orgId=1&${machine_id:queryparam}&${focus_machine:queryparam}&${status_filter:queryparam}&${event_filter:queryparam}&${program_search:queryparam}&${stale_hours:queryparam}&${stop_minutes:queryparam}&${alarm_burst:queryparam}&${raw_limit:queryparam}&from=${__from}&to=${__to}) · [3 · Machine Detail](/d/ims-drilling-machine-detail/ims-drilling-machine-detail?orgId=1&${machine_id:queryparam}&${focus_machine:queryparam}&${status_filter:queryparam}&${event_filter:queryparam}&${program_search:queryparam}&${stale_hours:queryparam}&${stop_minutes:queryparam}&${alarm_burst:queryparam}&${raw_limit:queryparam}&from=${__from}&to=${__to}) · [4 · History](/d/ims-drilling-history/ims-drilling-history?orgId=1&${machine_id:queryparam}&${focus_machine:queryparam}&${status_filter:queryparam}&${event_filter:queryparam}&${program_search:queryparam}&${stale_hours:queryparam}&${stop_minutes:queryparam}&${alarm_burst:queryparam}&${raw_limit:queryparam}&from=${__from}&to=${__to}) · [5 · Anomaly Analysis](/d/ims-drilling-anomaly-analysis/ims-drilling-anomaly-analysis?orgId=1&${machine_id:queryparam}&${focus_machine:queryparam}&${status_filter:queryparam}&${event_filter:queryparam}&${program_search:queryparam}&${stale_hours:queryparam}&${stop_minutes:queryparam}&${alarm_burst:queryparam}&${raw_limit:queryparam}&from=${__from}&to=${__to}) · **[6 · Settings](/d/ims-drilling-settings/ims-drilling-settings?orgId=1&${machine_id:queryparam}&${focus_machine:queryparam}&${status_filter:queryparam}&${event_filter:queryparam}&${program_search:queryparam}&${stale_hours:queryparam}&${stop_minutes:queryparam}&${alarm_burst:queryparam}&${raw_limit:queryparam}&from=${__from}&to=${__to})**\n\n[← Apex 3 Floor 1 — 2D](/factory-twin-3d/?view=2d) · [← Apex 3 Floor 1 — 3D](/factory-twin-3d/?view=3d) · **Source:** `public.machine_event` · **Policy:** latest known state; no 15-minute expiry"
+      }
+    },
+    {
+      "id": 15,
+      "title": "SOURCE TRACEABILITY",
+      "type": "table",
+      "datasource": {
+        "type": "postgres",
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 3,
+        "w": 13,
+        "h": 8
+      },
+      "description": "Latest source, ingestion and decoder evidence for every drilling machine.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#64748B",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [],
+        "enablePagination": true
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          },
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: latest ingestion and decoder metadata for every machine. */\nSELECT DISTINCT ON (equipment_id) equipment_id AS \"Machine ID\",source AS \"Source\",source_file AS \"Source File\",event_time AS \"Latest Event\",sent_time AS \"Sent\",received_at AS \"Received\",\n  ROUND((1000.0*EXTRACT(EPOCH FROM (received_at-sent_time)))::NUMERIC,1) AS \"Ingestion ms\",decode_status AS \"Decode Status\",decoder_version AS \"Decoder Version\",'LATEST_KNOWN' AS \"State Policy\"\nFROM public.machine_event ORDER BY equipment_id,event_time DESC,id DESC LIMIT 100",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "title": "SETTINGS / SUPPORT BOUNDARY",
+      "type": "text",
+      "gridPos": {
+        "x": 13,
+        "y": 3,
+        "w": 11,
+        "h": 8
+      },
+      "description": "Documents operator controls and the current truth boundary.",
+      "options": {
+        "mode": "markdown",
+        "content": "### Dashboard settings\n\n- **Focus machine:** single-machine detail and history\n- **Status / Program / Event:** view filters\n- **Stale / STOP / Burst:** anomaly thresholds\n- **Evidence rows:** raw-table limit\n\n### Current source coverage\n\n✅ RUN, STOP, source timestamps, Run Hits messages, NC program, tool diameter, tool life and decoded historical errors\n\n⚠️ Not available: active-alarm lifecycle, shift calendar, vendor utilization/OEE, job progress %, total holes, RPM, axis position, power and quality/yield. Missing values remain **NO_DATA/N/A**."
+      }
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": [
+    "IMS",
+    "DRILLING",
+    "manufacturing",
+    "real-data",
+    "machine-event",
+    "six-page-suite"
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "machine_id",
+        "label": "Machine",
+        "type": "query",
+        "datasource": {
+          "type": "postgres",
+          "uid": "timescaledb"
+        },
+        "definition": "SELECT 'All' AS __text, 'All' AS __value UNION ALL SELECT DISTINCT equipment_id AS __text, equipment_id AS __value FROM public.machine_event WHERE equipment_id IS NOT NULL ORDER BY 1",
+        "query": "SELECT 'All' AS __text, 'All' AS __value UNION ALL SELECT DISTINCT equipment_id AS __text, equipment_id AS __value FROM public.machine_event WHERE equipment_id IS NOT NULL ORDER BY 1",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "All"
+          ]
+        },
+        "options": [],
+        "refresh": 1,
+        "sort": 1,
+        "hide": 2,
+        "skipUrlSync": false,
+        "multi": true,
+        "includeAll": false,
+        "allValue": null
+      },
+      {
+        "name": "focus_machine",
+        "label": "Focus machine",
+        "type": "query",
+        "datasource": {
+          "type": "postgres",
+          "uid": "timescaledb"
+        },
+        "definition": "SELECT DISTINCT equipment_id AS __text, equipment_id AS __value FROM public.machine_event WHERE equipment_id IS NOT NULL ORDER BY 1",
+        "query": "SELECT DISTINCT equipment_id AS __text, equipment_id AS __value FROM public.machine_event WHERE equipment_id IS NOT NULL ORDER BY 1",
+        "current": {
+          "selected": true,
+          "text": "DRL054-M",
+          "value": "DRL054-M"
+        },
+        "options": [],
+        "refresh": 1,
+        "sort": 1,
+        "hide": 0,
+        "skipUrlSync": false,
+        "multi": false,
+        "includeAll": false,
+        "allValue": null
+      },
+      {
+        "name": "status_filter",
+        "label": "Status",
+        "type": "custom",
+        "query": "All,RUN,STOP",
+        "hide": 0,
+        "skipUrlSync": false,
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "All"
+        },
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "All"
+          },
+          {
+            "selected": false,
+            "text": "RUN",
+            "value": "RUN"
+          },
+          {
+            "selected": false,
+            "text": "STOP",
+            "value": "STOP"
+          }
+        ],
+        "multi": false,
+        "includeAll": false
+      },
+      {
+        "name": "event_filter",
+        "label": "Evidence type",
+        "type": "custom",
+        "query": "All,status,event,alarm",
+        "hide": 0,
+        "skipUrlSync": false,
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "All"
+        },
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "All"
+          },
+          {
+            "selected": false,
+            "text": "status",
+            "value": "status"
+          },
+          {
+            "selected": false,
+            "text": "event",
+            "value": "event"
+          },
+          {
+            "selected": false,
+            "text": "alarm",
+            "value": "alarm"
+          }
+        ],
+        "multi": false,
+        "includeAll": false
+      },
+      {
+        "name": "program_search",
+        "label": "Program contains",
+        "type": "textbox",
+        "query": "",
+        "current": {
+          "selected": true,
+          "text": "",
+          "value": ""
+        },
+        "options": [
+          {
+            "selected": true,
+            "text": "",
+            "value": ""
+          }
+        ],
+        "hide": 0,
+        "skipUrlSync": false
+      },
+      {
+        "name": "stale_hours",
+        "label": "Stale after (hours)",
+        "type": "custom",
+        "query": "24,72,168,720",
+        "hide": 0,
+        "skipUrlSync": false,
+        "current": {
+          "selected": true,
+          "text": "168",
+          "value": "168"
+        },
+        "options": [
+          {
+            "selected": false,
+            "text": "24",
+            "value": "24"
+          },
+          {
+            "selected": false,
+            "text": "72",
+            "value": "72"
+          },
+          {
+            "selected": true,
+            "text": "168",
+            "value": "168"
+          },
+          {
+            "selected": false,
+            "text": "720",
+            "value": "720"
+          }
+        ],
+        "multi": false,
+        "includeAll": false
+      },
+      {
+        "name": "stop_minutes",
+        "label": "Long STOP (minutes)",
+        "type": "custom",
+        "query": "15,30,60,240",
+        "hide": 0,
+        "skipUrlSync": false,
+        "current": {
+          "selected": true,
+          "text": "30",
+          "value": "30"
+        },
+        "options": [
+          {
+            "selected": false,
+            "text": "15",
+            "value": "15"
+          },
+          {
+            "selected": true,
+            "text": "30",
+            "value": "30"
+          },
+          {
+            "selected": false,
+            "text": "60",
+            "value": "60"
+          },
+          {
+            "selected": false,
+            "text": "240",
+            "value": "240"
+          }
+        ],
+        "multi": false,
+        "includeAll": false
+      },
+      {
+        "name": "alarm_burst",
+        "label": "Error burst / 5m",
+        "type": "custom",
+        "query": "3,5,10,20",
+        "hide": 0,
+        "skipUrlSync": false,
+        "current": {
+          "selected": true,
+          "text": "5",
+          "value": "5"
+        },
+        "options": [
+          {
+            "selected": false,
+            "text": "3",
+            "value": "3"
+          },
+          {
+            "selected": true,
+            "text": "5",
+            "value": "5"
+          },
+          {
+            "selected": false,
+            "text": "10",
+            "value": "10"
+          },
+          {
+            "selected": false,
+            "text": "20",
+            "value": "20"
+          }
+        ],
+        "multi": false,
+        "includeAll": false
+      },
+      {
+        "name": "raw_limit",
+        "label": "Evidence rows",
+        "type": "custom",
+        "query": "100,250,500",
+        "hide": 0,
+        "skipUrlSync": false,
+        "current": {
+          "selected": true,
+          "text": "250",
+          "value": "250"
+        },
+        "options": [
+          {
+            "selected": false,
+            "text": "100",
+            "value": "100"
+          },
+          {
+            "selected": true,
+            "text": "250",
+            "value": "250"
+          },
+          {
+            "selected": false,
+            "text": "500",
+            "value": "500"
+          }
+        ],
+        "multi": false,
+        "includeAll": false
+      }
+    ]
+  },
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m"
+    ],
+    "time_options": [
+      "1h",
+      "6h",
+      "12h",
+      "24h",
+      "2d",
+      "7d",
+      "30d"
+    ]
+  },
+  "timezone": "browser",
+  "title": "IMS Drilling — 6 Settings",
+  "uid": "ims-drilling-settings",
+  "version": 1,
+  "weekStart": "",
+  "description": "Data quality, source traceability, filters and documented support boundary for the drilling dashboard suite."
+}

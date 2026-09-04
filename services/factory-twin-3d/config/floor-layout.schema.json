@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/ims/floor-layout.schema.json",
+  "title": "IMS private floor layout contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "floor", "zones", "machines"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "floor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "level", "layout_mode", "coordinate_source", "verification_status"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "level": { "type": "integer" },
+        "layout_mode": { "type": "string" },
+        "coordinate_source": { "type": "string" },
+        "verification_status": { "enum": ["DRAFT", "REVIEWED", "APPROVED"] },
+        "inventory_status": { "type": "string" }
+      }
+    },
+    "zones": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["zone_id", "name"],
+        "anyOf": [
+          { "required": ["polygon"] },
+          { "required": ["center_x", "center_y", "width", "depth"] }
+        ],
+        "properties": {
+          "zone_id": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1 },
+          "group": { "type": "string" },
+          "area": { "type": "string" },
+          "center_x": { "type": "number" },
+          "center_y": { "type": "number" },
+          "width": { "type": "number", "exclusiveMinimum": 0 },
+          "depth": { "type": "number", "exclusiveMinimum": 0 },
+          "polygon": {
+            "type": "array",
+            "minItems": 3,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["x", "y"],
+              "properties": {
+                "x": { "type": "number" },
+                "y": { "type": "number" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "machines": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["asset_id", "zone_id", "pos_x", "pos_y", "state_binding"],
+        "properties": {
+          "asset_id": { "type": "string", "minLength": 1 },
+          "display_name": { "type": "string" },
+          "zone_id": { "type": "string", "minLength": 1 },
+          "pos_x": { "type": "number" },
+          "pos_y": { "type": "number" },
+          "pos_z": { "type": "number" },
+          "rot_x": { "type": "number" },
+          "rot_y": { "type": "number" },
+          "rot_z": { "type": "number" },
+          "width": { "type": "number", "exclusiveMinimum": 0 },
+          "height": { "type": "number", "exclusiveMinimum": 0 },
+          "depth": { "type": "number", "exclusiveMinimum": 0 },
+          "state_binding": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["type"],
+            "properties": {
+              "type": { "enum": ["ldi", "machine_event", "status_api", "unbound"] },
+              "source_id": { "type": ["string", "null"] }
+            }
+          }
+        }
+      }
+    },
+    "bounds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["min_x", "max_x", "min_y", "max_y", "width", "depth", "center_x", "center_y"],
+      "properties": {
+        "min_x": { "type": "number" },
+        "max_x": { "type": "number" },
+        "min_y": { "type": "number" },
+        "max_y": { "type": "number" },
+        "width": { "type": "number", "exclusiveMinimum": 0 },
+        "depth": { "type": "number", "exclusiveMinimum": 0 },
+        "center_x": { "type": "number" },
+        "center_y": { "type": "number" }
+      }
+    }
+  }
+}

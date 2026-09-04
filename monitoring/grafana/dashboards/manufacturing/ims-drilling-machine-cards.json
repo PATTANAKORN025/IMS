@@ -1,0 +1,465 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "#00F2FE",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    {
+      "title": "1 · Machine Cards",
+      "type": "link",
+      "icon": "dashboard",
+      "url": "/d/ims-drilling-machine-cards/ims-drilling-machine-cards",
+      "targetBlank": false,
+      "includeVars": true,
+      "keepTime": true,
+      "asDropdown": false
+    },
+    {
+      "title": "2 · Fleet List",
+      "type": "link",
+      "icon": "dashboard",
+      "url": "/d/ims-drilling-fleet-list/ims-drilling-fleet-list",
+      "targetBlank": false,
+      "includeVars": true,
+      "keepTime": true,
+      "asDropdown": false
+    },
+    {
+      "title": "3 · Machine Detail",
+      "type": "link",
+      "icon": "dashboard",
+      "url": "/d/ims-drilling-machine-detail/ims-drilling-machine-detail",
+      "targetBlank": false,
+      "includeVars": true,
+      "keepTime": true,
+      "asDropdown": false
+    },
+    {
+      "title": "4 · History",
+      "type": "link",
+      "icon": "dashboard",
+      "url": "/d/ims-drilling-history/ims-drilling-history",
+      "targetBlank": false,
+      "includeVars": true,
+      "keepTime": true,
+      "asDropdown": false
+    },
+    {
+      "title": "5 · Anomaly Analysis",
+      "type": "link",
+      "icon": "dashboard",
+      "url": "/d/ims-drilling-anomaly-analysis/ims-drilling-anomaly-analysis",
+      "targetBlank": false,
+      "includeVars": true,
+      "keepTime": true,
+      "asDropdown": false
+    },
+    {
+      "title": "6 · Settings",
+      "type": "link",
+      "icon": "dashboard",
+      "url": "/d/ims-drilling-settings/ims-drilling-settings",
+      "targetBlank": false,
+      "includeVars": true,
+      "keepTime": true,
+      "asDropdown": false
+    }
+  ],
+  "liveNow": true,
+  "panels": [
+    {
+      "id": 9000,
+      "title": "",
+      "type": "text",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 3
+      },
+      "transparent": true,
+      "description": "Shared navigation for the six linked DRILLING operator pages.",
+      "options": {
+        "mode": "markdown",
+        "content": "# IMS DRILLING · 1 · Machine Cards\n\n**[1 · Machine Cards](/d/ims-drilling-machine-cards/ims-drilling-machine-cards?orgId=1&${machine_id:queryparam}&${focus_machine:queryparam}&${status_filter:queryparam}&${event_filter:queryparam}&${program_search:queryparam}&${stale_hours:queryparam}&${stop_minutes:queryparam}&${alarm_burst:queryparam}&${raw_limit:queryparam}&from=${__from}&to=${__to})** · [2 · Fleet List](/d/ims-drilling-fleet-list/ims-drilling-fleet-list?orgId=1&${machine_id:queryparam}&${focus_machine:queryparam}&${status_filter:queryparam}&${event_filter:queryparam}&${program_search:queryparam}&${stale_hours:queryparam}&${stop_minutes:queryparam}&${alarm_burst:queryparam}&${raw_limit:queryparam}&from=${__from}&to=${__to}) · [3 · Machine Detail](/d/ims-drilling-machine-detail/ims-drilling-machine-detail?orgId=1&${machine_id:queryparam}&${focus_machine:queryparam}&${status_filter:queryparam}&${event_filter:queryparam}&${program_search:queryparam}&${stale_hours:queryparam}&${stop_minutes:queryparam}&${alarm_burst:queryparam}&${raw_limit:queryparam}&from=${__from}&to=${__to}) · [4 · History](/d/ims-drilling-history/ims-drilling-history?orgId=1&${machine_id:queryparam}&${focus_machine:queryparam}&${status_filter:queryparam}&${event_filter:queryparam}&${program_search:queryparam}&${stale_hours:queryparam}&${stop_minutes:queryparam}&${alarm_burst:queryparam}&${raw_limit:queryparam}&from=${__from}&to=${__to}) · [5 · Anomaly Analysis](/d/ims-drilling-anomaly-analysis/ims-drilling-anomaly-analysis?orgId=1&${machine_id:queryparam}&${focus_machine:queryparam}&${status_filter:queryparam}&${event_filter:queryparam}&${program_search:queryparam}&${stale_hours:queryparam}&${stop_minutes:queryparam}&${alarm_burst:queryparam}&${raw_limit:queryparam}&from=${__from}&to=${__to}) · [6 · Settings](/d/ims-drilling-settings/ims-drilling-settings?orgId=1&${machine_id:queryparam}&${focus_machine:queryparam}&${status_filter:queryparam}&${event_filter:queryparam}&${program_search:queryparam}&${stale_hours:queryparam}&${stop_minutes:queryparam}&${alarm_burst:queryparam}&${raw_limit:queryparam}&from=${__from}&to=${__to})\n\n[← Apex 3 Floor 1 — 2D](/factory-twin-3d/?view=2d) · [← Apex 3 Floor 1 — 3D](/factory-twin-3d/?view=3d) · **Source:** `public.machine_event` · **Policy:** latest known state; no 15-minute expiry"
+      }
+    },
+    {
+      "id": 1,
+      "title": "DRILLING MACHINE CARDS — LATEST KNOWN EVIDENCE",
+      "type": "marcusolsson-dynamictext-panel",
+      "datasource": {
+        "type": "postgres",
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 3,
+        "w": 24,
+        "h": 20
+      },
+      "description": "One clickable card per selected machine. Values come only from public.machine_event; missing fields remain N/A and historical errors are not labelled active.",
+      "options": {
+        "renderMode": "allRows",
+        "defaultContent": "<div class=\"drill-empty\">ไม่พบข้อมูลเครื่องในขอบเขตที่เลือก</div>",
+        "editor": {
+          "language": "html"
+        },
+        "content": "<style>\n.drill-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;padding:8px}\n.drill-card{display:block;min-height:230px;padding:16px;border:2px solid #64748B;border-radius:8px;background:linear-gradient(145deg,rgba(24,31,42,.98),rgba(12,17,25,.98));color:#E8EDF2;text-decoration:none;box-shadow:0 8px 22px rgba(0,0,0,.28);transition:.15s transform,.15s box-shadow}\n.drill-card:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(0,242,254,.14)}\n.drill-card.state-run{border-color:#00FF87;box-shadow:0 0 13px rgba(0,255,135,.22)}\n.drill-card.state-stop{border-color:#00F2FE;box-shadow:0 0 13px rgba(0,242,254,.20)}\n.drill-card.state-undefined{border-color:#F8FAFC}\n.drill-top{display:flex;align-items:center;justify-content:space-between;gap:10px}\n.drill-id{font-size:26px;font-weight:800;letter-spacing:.4px;color:#F8FAFC}\n.drill-state{padding:4px 9px;border:1px solid currentColor;border-radius:4px;font-weight:800;font-size:12px}\n.state-run .drill-state{color:#00FF87}.state-stop .drill-state{color:#00F2FE}.state-undefined .drill-state{color:#F8FAFC}\n.drill-message{font-size:14px;font-weight:650;margin:14px 0 4px;min-height:38px;color:#DCE6F2}\n.drill-code{font:12px/1.4 monospace;color:#91A4B9;margin-bottom:11px}\n.drill-kpis{display:grid;grid-template-columns:1fr 1fr;gap:8px;border-top:1px solid rgba(255,255,255,.10);padding-top:10px}\n.drill-kpi span{display:block;font-size:10px;color:#8292A6;text-transform:uppercase}.drill-kpi strong{font-size:14px;color:#F8FAFC}\n.drill-program{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:10px;font:11px/1.4 monospace;color:#A9BACB}\n.drill-historical{margin-top:7px;font-size:11px;color:#A9BACB}.drill-historical strong{color:#FFB800}\n.drill-evidence{margin-top:10px;font-size:10px;color:#718096}.drill-empty{padding:20px;color:#F8FAFC}\n</style>\n<div class=\"drill-grid\">\n{{#each data}}\n<a class=\"drill-card state-{{StateClass}}\" href=\"/d/ims-drilling-machine-detail/ims-drilling-machine-detail?orgId=1&var-focus_machine={{Machine}}&var-machine_id={{Machine}}&from=now-7d&to=now\">\n  <div class=\"drill-top\"><div class=\"drill-id\">{{Machine}}</div><div class=\"drill-state\">{{StateLabel}}</div></div>\n  <div class=\"drill-message\">{{Message}}</div>\n  <div class=\"drill-code\">Event code: {{Code}}</div>\n  <div class=\"drill-kpis\">\n    <div class=\"drill-kpi\"><span>Run Hits</span><strong>{{RunHits}}</strong></div>\n    <div class=\"drill-kpi\"><span>Progress / OEE</span><strong>N/A</strong></div>\n    <div class=\"drill-kpi\"><span>Observed</span><strong>{{ObservedAt}}</strong></div>\n    <div class=\"drill-kpi\"><span>Evidence age</span><strong>{{Age}}</strong></div>\n  </div>\n  <div class=\"drill-program\">Program: {{Program}}</div>\n  <div class=\"drill-historical\">Last historical error: <strong>{{LastError}}</strong> · {{ErrorAt}}</div>\n  <div class=\"drill-evidence\">คลิกเพื่อเปิดรายละเอียดหลักฐานของเครื่อง</div>\n</a>\n{{/each}}\n</div>"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          },
+          "format": "table",
+          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: one card per selected machine using latest known evidence. */\nWITH equipment AS (\n  SELECT DISTINCT equipment_id\n  FROM public.machine_event\n  WHERE equipment_id IS NOT NULL\n), latest_status AS (\n  SELECT DISTINCT ON (equipment_id)\n         equipment_id, event_type, event_code, event_message, event_time, id\n  FROM public.machine_event\n  WHERE message_type = 'status'\n  ORDER BY equipment_id, event_time DESC, id DESC\n), latest_program AS (\n  SELECT DISTINCT ON (equipment_id) equipment_id, event_message, event_time\n  FROM public.machine_event\n  WHERE event_type = 'PROGRAM_LOAD'\n  ORDER BY equipment_id, event_time DESC, id DESC\n), latest_error AS (\n  SELECT DISTINCT ON (equipment_id) equipment_id, event_code, event_message, event_time\n  FROM public.machine_event\n  WHERE message_type = 'alarm' AND level = 'E'\n  ORDER BY equipment_id, event_time DESC, id DESC\n)\nSELECT e.equipment_id AS \"Machine\",\n       CASE s.event_type WHEN 'RUN' THEN 'RUN' WHEN 'STOP' THEN 'STOP' ELSE 'Undefine' END AS \"StateLabel\",\n       CASE s.event_type WHEN 'RUN' THEN 'run' WHEN 'STOP' THEN 'stop' ELSE 'undefined' END AS \"StateClass\",\n       COALESCE(s.event_code, 'N/A') AS \"Code\",\n       COALESCE(s.event_message, 'No status evidence') AS \"Message\",\n       COALESCE(to_char(s.event_time AT TIME ZONE 'Asia/Bangkok', 'YYYY-MM-DD HH24:MI:SS'), 'N/A') AS \"ObservedAt\",\n       CASE\n         WHEN s.event_time IS NULL THEN 'N/A'\n         WHEN NOW() - s.event_time < INTERVAL '1 hour' THEN ROUND(EXTRACT(EPOCH FROM (NOW() - s.event_time)) / 60)::TEXT || ' min'\n         WHEN NOW() - s.event_time < INTERVAL '1 day' THEN ROUND(EXTRACT(EPOCH FROM (NOW() - s.event_time)) / 3600)::TEXT || ' hr'\n         ELSE ROUND(EXTRACT(EPOCH FROM (NOW() - s.event_time)) / 86400)::TEXT || ' day'\n       END AS \"Age\",\n       COALESCE(CASE WHEN s.event_message ~* 'Run Hits\\s*:'\n         THEN (regexp_match(s.event_message, 'Run Hits\\s*:\\s*([0-9]+)', 'i'))[1]\n       END, 'N/A') AS \"RunHits\",\n       COALESCE(p.event_message, 'N/A') AS \"Program\",\n       COALESCE(CASE WHEN er.event_code ~ '^[0-9]{4}$' THEN 'E' || er.event_code ELSE er.event_code END, 'N/A') AS \"LastError\",\n       COALESCE(to_char(er.event_time AT TIME ZONE 'Asia/Bangkok', 'YYYY-MM-DD HH24:MI:SS'), 'N/A') AS \"ErrorAt\"\nFROM equipment e\nLEFT JOIN latest_status s USING (equipment_id)\nLEFT JOIN latest_program p USING (equipment_id)\nLEFT JOIN latest_error er USING (equipment_id)\nWHERE (${status_filter:sqlstring} = 'All' OR s.event_type = ${status_filter:sqlstring})\n  AND (${program_search:sqlstring} = '' OR COALESCE(p.event_message, '') ILIKE '%' || ${program_search:sqlstring} || '%')\nORDER BY e.equipment_id"
+        }
+      ]
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 39,
+  "tags": [
+    "IMS",
+    "DRILLING",
+    "manufacturing",
+    "real-data",
+    "machine-event",
+    "six-page-suite"
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "machine_id",
+        "label": "Machine",
+        "type": "query",
+        "datasource": {
+          "type": "postgres",
+          "uid": "timescaledb"
+        },
+        "definition": "SELECT 'All' AS __text, 'All' AS __value UNION ALL SELECT DISTINCT equipment_id AS __text, equipment_id AS __value FROM public.machine_event WHERE equipment_id IS NOT NULL ORDER BY 1",
+        "query": "SELECT 'All' AS __text, 'All' AS __value UNION ALL SELECT DISTINCT equipment_id AS __text, equipment_id AS __value FROM public.machine_event WHERE equipment_id IS NOT NULL ORDER BY 1",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "All"
+          ]
+        },
+        "options": [],
+        "refresh": 1,
+        "sort": 1,
+        "hide": 2,
+        "skipUrlSync": false,
+        "multi": true,
+        "includeAll": false,
+        "allValue": null
+      },
+      {
+        "name": "focus_machine",
+        "label": "Focus machine",
+        "type": "query",
+        "datasource": {
+          "type": "postgres",
+          "uid": "timescaledb"
+        },
+        "definition": "SELECT DISTINCT equipment_id AS __text, equipment_id AS __value FROM public.machine_event WHERE equipment_id IS NOT NULL ORDER BY 1",
+        "query": "SELECT DISTINCT equipment_id AS __text, equipment_id AS __value FROM public.machine_event WHERE equipment_id IS NOT NULL ORDER BY 1",
+        "current": {
+          "selected": true,
+          "text": "DRL054-M",
+          "value": "DRL054-M"
+        },
+        "options": [],
+        "refresh": 1,
+        "sort": 1,
+        "hide": 2,
+        "skipUrlSync": false,
+        "multi": false,
+        "includeAll": false,
+        "allValue": null
+      },
+      {
+        "name": "status_filter",
+        "label": "Status",
+        "type": "custom",
+        "query": "All,RUN,STOP",
+        "hide": 0,
+        "skipUrlSync": false,
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "All"
+        },
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "All"
+          },
+          {
+            "selected": false,
+            "text": "RUN",
+            "value": "RUN"
+          },
+          {
+            "selected": false,
+            "text": "STOP",
+            "value": "STOP"
+          }
+        ],
+        "multi": false,
+        "includeAll": false
+      },
+      {
+        "name": "event_filter",
+        "label": "Evidence type",
+        "type": "custom",
+        "query": "All,status,event,alarm",
+        "hide": 2,
+        "skipUrlSync": false,
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "All"
+        },
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "All"
+          },
+          {
+            "selected": false,
+            "text": "status",
+            "value": "status"
+          },
+          {
+            "selected": false,
+            "text": "event",
+            "value": "event"
+          },
+          {
+            "selected": false,
+            "text": "alarm",
+            "value": "alarm"
+          }
+        ],
+        "multi": false,
+        "includeAll": false
+      },
+      {
+        "name": "program_search",
+        "label": "Program contains",
+        "type": "textbox",
+        "query": "",
+        "current": {
+          "selected": true,
+          "text": "",
+          "value": ""
+        },
+        "options": [
+          {
+            "selected": true,
+            "text": "",
+            "value": ""
+          }
+        ],
+        "hide": 0,
+        "skipUrlSync": false
+      },
+      {
+        "name": "stale_hours",
+        "label": "Stale after (hours)",
+        "type": "custom",
+        "query": "24,72,168,720",
+        "hide": 2,
+        "skipUrlSync": false,
+        "current": {
+          "selected": true,
+          "text": "168",
+          "value": "168"
+        },
+        "options": [
+          {
+            "selected": false,
+            "text": "24",
+            "value": "24"
+          },
+          {
+            "selected": false,
+            "text": "72",
+            "value": "72"
+          },
+          {
+            "selected": true,
+            "text": "168",
+            "value": "168"
+          },
+          {
+            "selected": false,
+            "text": "720",
+            "value": "720"
+          }
+        ],
+        "multi": false,
+        "includeAll": false
+      },
+      {
+        "name": "stop_minutes",
+        "label": "Long STOP (minutes)",
+        "type": "custom",
+        "query": "15,30,60,240",
+        "hide": 2,
+        "skipUrlSync": false,
+        "current": {
+          "selected": true,
+          "text": "30",
+          "value": "30"
+        },
+        "options": [
+          {
+            "selected": false,
+            "text": "15",
+            "value": "15"
+          },
+          {
+            "selected": true,
+            "text": "30",
+            "value": "30"
+          },
+          {
+            "selected": false,
+            "text": "60",
+            "value": "60"
+          },
+          {
+            "selected": false,
+            "text": "240",
+            "value": "240"
+          }
+        ],
+        "multi": false,
+        "includeAll": false
+      },
+      {
+        "name": "alarm_burst",
+        "label": "Error burst / 5m",
+        "type": "custom",
+        "query": "3,5,10,20",
+        "hide": 2,
+        "skipUrlSync": false,
+        "current": {
+          "selected": true,
+          "text": "5",
+          "value": "5"
+        },
+        "options": [
+          {
+            "selected": false,
+            "text": "3",
+            "value": "3"
+          },
+          {
+            "selected": true,
+            "text": "5",
+            "value": "5"
+          },
+          {
+            "selected": false,
+            "text": "10",
+            "value": "10"
+          },
+          {
+            "selected": false,
+            "text": "20",
+            "value": "20"
+          }
+        ],
+        "multi": false,
+        "includeAll": false
+      },
+      {
+        "name": "raw_limit",
+        "label": "Evidence rows",
+        "type": "custom",
+        "query": "100,250,500",
+        "hide": 2,
+        "skipUrlSync": false,
+        "current": {
+          "selected": true,
+          "text": "250",
+          "value": "250"
+        },
+        "options": [
+          {
+            "selected": false,
+            "text": "100",
+            "value": "100"
+          },
+          {
+            "selected": true,
+            "text": "250",
+            "value": "250"
+          },
+          {
+            "selected": false,
+            "text": "500",
+            "value": "500"
+          }
+        ],
+        "multi": false,
+        "includeAll": false
+      }
+    ]
+  },
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m"
+    ],
+    "time_options": [
+      "1h",
+      "6h",
+      "12h",
+      "24h",
+      "2d",
+      "7d",
+      "30d"
+    ]
+  },
+  "timezone": "browser",
+  "title": "IMS Drilling — 1 Machine Cards",
+  "uid": "ims-drilling-machine-cards",
+  "version": 1,
+  "weekStart": "",
+  "description": "Vendor-inspired drilling fleet cards backed only by public.machine_event evidence."
+}
