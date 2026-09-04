@@ -133,20 +133,19 @@ const ALLOWED_FOOTPRINT_SHAPE = new Set([
 ]);
 
 /**
- * The DISPLAY class a record is drawn as.
+ * The DISPLAY class a record is drawn as, and the whole vocabulary of it.
  *
- * Display geometry is derived from the physical measurement and is what the
- * renderer draws; the measured outline travels alongside it for inspection and
- * is never what a mesh is built from. A display shape carries no position of
- * its own -- it is built around the record's own centre -- so nothing in this
- * vocabulary can move a machine.
+ * The normal operator view draws one symbol per machine: an oriented rectangle
+ * where the extent was measured, a marker where it was not. This enum carries
+ * NO GEOMETRY and the record carries none either -- there is no display centre,
+ * display angle, display size or display polygon on the wire. The renderer
+ * generates four corners from the record's own position, rotation_deg and
+ * footprint, so nothing in this vocabulary can move, turn or resize a machine.
  */
-const ALLOWED_DISPLAY_SHAPE = new Set([
-  'ORIENTED_RECTANGLE', 'CHAMFERED_RECTANGLE', 'SIMPLIFIED_POLYGON', 'UNRESOLVED',
-]);
+const ALLOWED_DISPLAY_SHAPE = new Set(['MEASURED_RECTANGLE', 'UNRESOLVED']);
 
-/** How a display outline was arrived at. A fixed enum, never prose. */
-const ALLOWED_DISPLAY_SOURCE = new Set(['derived_from_measured_footprint']);
+/** What the rectangle was derived from. A fixed enum, never prose. */
+const ALLOWED_DISPLAY_SOURCE = new Set(['measured_extent']);
 
 /**
  * Whether a physical machine is bound to an IMS device, and nothing else.
@@ -602,7 +601,6 @@ function projectEquipment(item, mapping) {
     return out;
   };
   const polygon = outline(item.footprint_polygon);
-  const displayPolygon = outline(item.display_polygon);
 
   return {
     id: token(item.id),
@@ -624,16 +622,17 @@ function projectEquipment(item, mapping) {
     footprint_shape: footprint === null ? null
       : fromEnum(item.footprint_shape, ALLOWED_FOOTPRINT_SHAPE),
     footprint_polygon: polygon,
-    // What the renderer draws. Derived from the measurement above, never the
-    // other way round, and dropped entirely if the record does not say which
-    // class it was derived as -- an outline with no class is an outline nobody
-    // can check.
-    display_shape: fromEnum(item.display_shape, ALLOWED_DISPLAY_SHAPE),
-    display_polygon: fromEnum(item.display_shape, ALLOWED_DISPLAY_SHAPE) === null
-      ? null : displayPolygon,
-    display_source: displayPolygon === null
-      ? null : fromEnum(item.display_source, ALLOWED_DISPLAY_SOURCE),
-    display_area_error: displayPolygon === null ? null : num(item.display_area_error),
+    // WHAT THE RENDERER DRAWS -- as a class, not as geometry. A record with no
+    // served footprint cannot be a rectangle however the private document
+    // labels it: the class is corrected down to UNRESOLVED, so a marker can
+    // never acquire an extent through this field.
+    display_shape: footprint === null ? 'UNRESOLVED'
+      : fromEnum(item.display_shape, ALLOWED_DISPLAY_SHAPE),
+    display_source: footprint === null ? null
+      : fromEnum(item.display_source, ALLOWED_DISPLAY_SOURCE),
+    // The price of the abstraction: the share of floor the rectangle claims
+    // beyond the measured outline. Reported per record, never acted on.
+    display_area_error: footprint === null ? null : num(item.display_area_error),
     // Two machines whose OUTLINES share floor. Measured on convex outlines, so
     // it over-reports: the convex hull of an L-shaped machine covers space the
     // machine does not occupy. Reported, never resolved by moving anything.

@@ -46,6 +46,11 @@
 'use strict';
 
 const { chromium } = require('playwright');
+const path = require('path');
+// The ONE canonical corner generator, shared with the extractor, the validator
+// and the reconciliation. The browser is measured against it; it is never
+// reimplemented here, because a second convention is the bug it exists to stop.
+const blocks = require(path.join(__dirname, '..', '..', 'scripts', 'lib', 'cad-blocks'));
 
 const BASE_URL = process.env.GRAFANA_URL || 'http://localhost:3000';
 const USER = process.env.GRAFANA_ADMIN_USER || process.env.GRAFANA_USER || 'admin';
@@ -163,81 +168,55 @@ async function snapshot(page) {
       // Rotation actually applied to the drawn pads, so the reconciliation can
       // compare the SCENE against the API rather than the API against itself.
       equipmentRotations: (Array.isArray(T.equipmentMeshes) ? T.equipmentMeshes : []).map(
-        (m) => ({
-          id: m.userData.equipment.id,
-          y: m.rotation.y,
-          // A DISPLAY outline is extruded from world coordinates that already
-          // carry the machine's angle, so its mesh is deliberately unturned.
-          // Its orientation is proved by the vertex check instead, which is a
-          // stronger statement than a single angle. A display RECTANGLE is
-          // drawn as a shared box and is turned like one.
-          outline: Array.isArray(m.userData.equipment.display_polygon)
-            && m.userData.equipment.display_shape !== 'ORIENTED_RECTANGLE',
-        })
+        (m) => ({ id: m.userData.equipment.id, y: m.rotation.y })
       ),
-      // The DRAWN box: its world placement and its extruded size. This is what
+      // The DRAWN box: its world placement, its extruded size, and the four
+      // floor-plane corners the renderer actually put on screen. This is what
       // makes "2D and 3D are the same geometry" an assertion rather than a
-      // claim -- there is one mesh, and both views look at it.
+      // claim -- there is one mesh, and both views look at it -- and the
+      // corners are what the display-rectangle proof is measured on.
       equipmentBoxes: (Array.isArray(T.equipmentMeshes) ? T.equipmentMeshes : []).map((m) => {
         const item = m.userData.equipment;
-        // What the renderer draws is DISPLAY geometry. A display rectangle is a
-        // shared, cached box; every other class is an extruded outline.
-        const outline = Array.isArray(item.display_polygon)
-          && item.display_shape !== 'ORIENTED_RECTANGLE';
-        if (!outline) {
-          const p = m.geometry.parameters;
-          return {
-            id: item.id, x: m.position.x, y: m.position.y, z: m.position.z,
-            w: p.width, h: p.height, d: p.depth, outline: false,
-            tier: item.footprint_status, vertexError: 0, floorY: m.position.y - p.height / 2,
-            shape: item.display_shape,
-          };
-        }
-        // An extruded outline has no box parameters -- it has vertices. Measure
-        // the drawn thing itself: its extent on the machine's own axes, the
-        // plane it rises from, and how far each served vertex is from a vertex
-        // the renderer actually drew.
+        const p = m.geometry.parameters;
+        // Every machine is a shared cached box turned about +Y. Read the
+        // corners out of the mesh's own world matrix rather than recomputing
+        // them: what is under test is what the renderer drew.
+        m.updateMatrixWorld(true);
         const attr = m.geometry.attributes.position;
-        // The machine's own axes IN THE SCENE. A three.js rotation of +theta
-        // about +Y sends the local x axis to (cos theta, -sin theta) in the
-        // (x, z) plane, because the canonical frame reflects z -- so the axis
-        // to measure along is -theta here, not +theta. Measuring on +theta
-        // reports a rotated machine as up to 170 mm larger than it is.
-        const t = -(item.rotation_deg || 0) * Math.PI / 180;
-        const cos = Math.cos(t);
-        const sin = Math.sin(t);
-        let minu = Infinity; let maxu = -Infinity;
-        let minv = Infinity; let maxv = -Infinity;
-        let miny = Infinity; let maxy = -Infinity;
-        const drawn = [];
+        // The mesh's OWN world matrix, applied by hand because three.js is an
+        // ES module here and has no page global. Column-major, as three.js
+        // stores it. The rotation convention therefore comes from the renderer,
+        // not from this test -- which is the point.
+        const e = m.matrixWorld.elements;
+        const corners = [];
+        let miny = Infinity;
         for (let i = 0; i < attr.count; i += 1) {
-          const wx = attr.getX(i) + m.position.x;
-          const wy = attr.getY(i) + m.position.y;
-          const wz = attr.getZ(i) + m.position.z;
-          const u = wx * cos + wz * sin;
-          const v = -wx * sin + wz * cos;
-          if (u < minu) minu = u; if (u > maxu) maxu = u;
-          if (v < minv) minv = v; if (v > maxv) maxv = v;
-          if (wy < miny) miny = wy; if (wy > maxy) maxy = wy;
-          drawn.push([wx, wz]);
-        }
-        let vertexError = 0;
-        for (const p of item.display_polygon) {
-          let best = Infinity;
-          for (const [dx, dz] of drawn) {
-            const d = Math.hypot(dx - p.x, dz - p.z);
-            if (d < best) best = d;
-          }
-          if (best > vertexError) vertexError = best;
+          const lx = attr.getX(i);
+          const ly = attr.getY(i);
+          const lz = attr.getZ(i);
+          const wx = e[0] * lx + e[4] * ly + e[8] * lz + e[12];
+          const wy = e[1] * lx + e[5] * ly + e[9] * lz + e[13];
+          const wz = e[2] * lx + e[6] * ly + e[10] * lz + e[14];
+          if (wy < miny) miny = wy;
+          const x = Math.round(wx * 1e6) / 1e6;
+          const z = Math.round(wz * 1e6) / 1e6;
+          if (!corners.some((c) => c[0] === x && c[1] === z)) corners.push([x, z]);
         }
         return {
-          id: item.id,
-          x: m.position.x, y: m.position.y, z: m.position.z,
-          w: maxu - minu, h: maxy - miny, d: maxv - minv,
-          outline: true, tier: item.footprint_status, vertexError, floorY: miny,
+          id: item.id, x: m.position.x, y: m.position.y, z: m.position.z,
+          w: p.width, h: p.height, d: p.depth,
+          tier: item.footprint_status, floorY: miny,
           shape: item.display_shape,
+          corners,
         };
       }),
+      // How many DISTINCT box geometries the whole equipment layer costs. A
+      // count, not a uuid: the identity of a cached geometry is a runtime
+      // detail that changes whenever the layer is rebuilt, and it is the
+      // SHARING that is under test.
+      equipmentGeometries: new Set(
+        (Array.isArray(T.equipmentMeshes) ? T.equipmentMeshes : []).map((m) => m.geometry.uuid)
+      ).size,
       // Walls and openings are instanced: a few objects carrying hundreds of
       // spans. Counted as objects, because that is what the scene holds.
       wallMeshes: T.wallMeshes ? T.wallMeshes.length : 0,
@@ -289,38 +268,34 @@ async function snapshot(page) {
           return acc;
         }, {}),
         displayClassMissing: (geo.equipment || []).filter(
-          (e) => !['ORIENTED_RECTANGLE', 'CHAMFERED_RECTANGLE', 'SIMPLIFIED_POLYGON', 'UNRESOLVED']
-            .includes(e.display_shape)
+          (e) => !['MEASURED_RECTANGLE', 'UNRESOLVED'].includes(e.display_shape)
         ).length,
         displayRectangles: (geo.equipment || []).filter(
-          (e) => e.display_shape === 'ORIENTED_RECTANGLE'
+          (e) => e.display_shape === 'MEASURED_RECTANGLE'
         ).length,
         displayOnUnresolved: (geo.equipment || []).filter(
-          (e) => !e.footprint && (e.display_polygon || e.display_shape !== 'UNRESOLVED')
+          (e) => !e.footprint && e.display_shape !== 'UNRESOLVED'
         ).length,
-        displayVertexMax: (geo.equipment || []).reduce(
-          (n, e) => Math.max(n, Array.isArray(e.display_polygon) ? e.display_polygon.length : 0), 0
+        // NO DISPLAY GEOMETRY REACHES THE CLIENT. Not a smaller polygon -- none
+        // at all. This is the structural half of the proof: the renderer has
+        // one source for where a machine is, so there is nothing for a display
+        // defect to move it with.
+        displayGeometryOnWire: (geo.equipment || []).filter(
+          (e) => 'display_polygon' in e || 'display_vertices' in e
+        ).length,
+        // The cost of the abstraction, as served. Every rectangle contains the
+        // outline it was measured from, so this is never negative.
+        displayAreaErrorMin: (geo.equipment || []).reduce(
+          (n, e) => (typeof e.display_area_error === 'number'
+            ? Math.min(n, e.display_area_error) : n), Infinity
         ),
-        displayVertexTotal: (geo.equipment || []).reduce(
-          (n, e) => n + (Array.isArray(e.display_polygon) ? e.display_polygon.length : 0), 0
+        displayAreaErrorMax: (geo.equipment || []).reduce(
+          (n, e) => (typeof e.display_area_error === 'number'
+            ? Math.max(n, e.display_area_error) : n), 0
         ),
-        displayVertexMean: (() => {
-          const drawn = (geo.equipment || []).filter((e) => Array.isArray(e.display_polygon));
-          if (!drawn.length) return 0;
-          return drawn.reduce((n, e) => n + e.display_polygon.length, 0) / drawn.length;
-        })(),
         measuredVertexTotal: (geo.equipment || []).reduce(
           (n, e) => n + (Array.isArray(e.footprint_polygon) ? e.footprint_polygon.length : 0), 0
         ),
-        displaySimplerThanMeasured: (() => {
-          const d = (geo.equipment || []).reduce(
-            (n, e) => n + (Array.isArray(e.display_polygon) ? e.display_polygon.length : 0), 0
-          );
-          const m = (geo.equipment || []).reduce(
-            (n, e) => n + (Array.isArray(e.footprint_polygon) ? e.footprint_polygon.length : 0), 0
-          );
-          return m === 0 || d < m;
-        })(),
         // The served extent, by id, so the scene can be measured against it.
         equipmentFootprints: (geo.equipment || []).reduce((acc, e) => {
           if (e.footprint) acc[e.id] = { width: e.footprint.width, depth: e.footprint.depth };
@@ -1105,19 +1080,9 @@ async function run() {
       let rotMismatch = 0;
       let worstRot = 0;
       let turnedBoxes = 0;
-      let unturnedOutlines = 0;
       for (const drawn of s.equipmentRotations) {
         const e = served.get(drawn.id);
         if (!e || e.deg == null) { rotMismatch++; continue; }
-        if (drawn.outline) {
-          // An outline is drawn from world coordinates that already carry the
-          // angle. Turning the mesh as well would double it, so the mesh must
-          // be unturned -- and the vertex check below proves the angle is in
-          // the geometry rather than merely absent from the mesh.
-          unturnedOutlines++;
-          if (Math.abs(drawn.y) > 1e-9) rotMismatch++;
-          continue;
-        }
         turnedBoxes++;
         const expected = e.deg * Math.PI / 180;
         const d = Math.abs((drawn.y - expected) % (Math.PI * 2));
@@ -1126,8 +1091,8 @@ async function run() {
         if (wrapped > 1e-9) rotMismatch++;
       }
       check(rotMismatch === 0, 'every drawn asset carries the rotation the CAD stated',
-        `${turnedBoxes} boxes turned to the CAD angle, ${unturnedOutlines} outlines drawn `
-        + `pre-turned, ${rotMismatch} mismatched, worst ${(worstRot * 180 / Math.PI).toFixed(6)} deg`);
+        `${turnedBoxes} boxes turned to the CAD angle, ${rotMismatch} mismatched, `
+        + `worst ${(worstRot * 180 / Math.PI).toFixed(6)} deg`);
 
       // 2D -> 3D. There is exactly ONE mesh per asset and both views look at
       // it, so this measures that the mesh sits where the API said and is the
@@ -1139,19 +1104,14 @@ async function run() {
       let invented = 0;
       let sizedBoxes = 0;
       let markerBoxes = 0;
-      let worstVertex = 0;
-      let outlineCount = 0;
       const heights = new Set();
       for (const box of s.equipmentBoxes) {
         const e = served.get(box.id);
         if (!e) { invented++; continue; }
         worstPos = Math.max(worstPos, Math.abs(box.x - e.x), Math.abs(box.z - e.z));
-        if (box.outline) { outlineCount++; worstVertex = Math.max(worstVertex, box.vertexError); }
-        // Every block stands ON the floor: its lowest face is the floor plane,
-        // not an arbitrary elevation. A box is centred on its origin and an
-        // extruded outline rises from it, so both are reduced to the same
-        // question -- where is the bottom.
-        if (Math.abs(box.floorY) > 1e-9) offFloor++;
+        // Every block stands ON the floor: its lowest drawn vertex is the floor
+        // plane, not an arbitrary elevation.
+        if (Math.abs(box.floorY) > FLOAT32_TOL_M) offFloor++;
         if (box.tier === 'MEASURED_CAD' || box.tier === 'OBSERVED_CAD'
           || box.tier === 'APPROXIMATION') {
           sizedBoxes++;
@@ -1159,10 +1119,6 @@ async function run() {
           // of a Float32 buffer is not bit-identical to the number that went
           // in, and a micrometre is not a height difference.
           heights.add(Number(box.h.toFixed(6)));
-          // A drawn outline must BE the served outline: every served vertex is
-          // a vertex the renderer drew. This is what proves the angle, the
-          // mirror and the shape all survived into the scene.
-          if (box.vertexError > FLOAT32_TOL_M) invented++;
         } else {
           markerBoxes++;
           // A marker must not carry a shape. A non-square one would mean a
@@ -1189,72 +1145,96 @@ async function run() {
         'exactly the assets without an extent are drawn as markers',
         `${markerBoxes} vs ${s.api.equipmentUnresolved}`);
 
-      // The DRAWN extent against the SERVED extent, measured on the machine's
-      // own axes so a box and an outline are held to the same standard. An
-      // outline is measured off its vertices, which is where the tolerance
-      // comes from: the extrusion is exact, the float arithmetic that rotates
-      // a vertex into the machine frame is not.
+      // The DRAWN extent against the SERVED extent.
       let worstDrawnBox = 0;
-      let worstDrawnOutline = 0;
       for (const box of s.equipmentBoxes) {
         const e = served.get(box.id);
         if (!e) continue;
         const fp = s.api.equipmentFootprints[box.id];
         if (!fp) continue;
-        const d = Math.max(Math.abs(box.w - fp.width), Math.abs(box.d - fp.depth));
-        if (box.outline) worstDrawnOutline = Math.max(worstDrawnOutline, d);
-        else worstDrawnBox = Math.max(worstDrawnBox, d);
+        worstDrawnBox = Math.max(worstDrawnBox,
+          Math.abs(box.w - fp.width), Math.abs(box.d - fp.depth));
       }
       check(worstDrawnBox < FLOAT32_TOL_M,
         'every asset with an extent is drawn at exactly that extent',
-        `worst ${worstDrawnBox.toExponential(2)} m across ${sizedBoxes - outlineCount} boxes`);
-      // An outline is drawn from vertices published at millimetre resolution,
-      // so the extent measured back off those vertices agrees with the served
-      // width and depth to a millimetre and no better. That quantum is the
-      // whole tolerance: it is the model's own published precision, not slack
-      // for a shape that drifted.
-      check(worstDrawnOutline <= SERVED_COORDINATE_QUANTUM_M,
-        'every drawn outline reproduces its served extent to the published precision',
-        `worst ${(worstDrawnOutline * 1000).toFixed(3)} mm across ${outlineCount} outlines`);
-      check(worstVertex < FLOAT32_TOL_M,
-        'every drawn outline is the served outline, vertex for vertex',
-        `worst ${worstVertex.toExponential(2)} m across ${outlineCount} outlines`);
+        `worst ${worstDrawnBox.toExponential(2)} m across ${sizedBoxes} boxes`);
       check(s.api.equipmentApproxWithoutSource === 0,
         'every approximated extent declares CAD_CORRELATED provenance',
         `${s.api.equipmentApproxWithoutSource} without it`);
 
-      const rectanglesAsSharedBoxes = s.equipmentBoxes
-        .filter((b) => b.shape === 'ORIENTED_RECTANGLE')
-        .every((b) => b.outline === false);
-      // -- Display geometry: derived, and provably harmless ---------------
+      // -- THE DISPLAY RECTANGLE, AND THE PROOF THAT DRAWING IT MOVES NOTHING
       //
-      // The display layer exists so an operator sees a clean symbol instead of
-      // a 34-vertex hull. The whole risk in that is a shape that quietly moves,
-      // turns or resizes a machine, so what is asserted here is that it did
-      // none of those -- measured on the DRAWN mesh, not on the record.
+      // Every machine with a measured extent is drawn as one oriented
+      // rectangle. The risk in that is a symbol that quietly moves, turns or
+      // resizes a machine, and it is answered twice over:
+      //
+      //   STRUCTURALLY -- there is no display geometry to draw with. No display
+      //   polygon, centre, angle or size reaches the client, so the renderer
+      //   builds the rectangle from position, rotation_deg and footprint and
+      //   from nothing else.
+      //
+      //   MEASURED -- the four corners the renderer actually put on screen are
+      //   compared, in world coordinates, with the corners the ONE canonical
+      //   helper generates from the served record. Not the record against
+      //   itself: the browser against Node.
       check(s.api.displayClassMissing === 0,
         'every equipment record carries exactly one display class',
         `${s.api.displayClassMissing} without one; ${JSON.stringify(s.api.displayShapes)}`);
-      check(s.api.displayVertexMax <= 12,
-        'no display outline exceeds the vertex budget',
-        `max ${s.api.displayVertexMax} vertices, mean ${s.api.displayVertexMean.toFixed(2)}`);
+      check(s.api.displayGeometryOnWire === 0,
+        'the display layer owns no coordinates: none are served',
+        `${s.api.displayGeometryOnWire} record(s) carry display geometry on the wire`);
       check(s.api.displayOnUnresolved === 0,
-        'an unresolved footprint acquires no display shape',
-        `${s.api.displayOnUnresolved} unresolved record(s) carry display geometry`);
-      check(s.api.displaySimplerThanMeasured,
-        'the drawn outlines are simpler than the measurement they came from',
-        `${s.api.displayVertexTotal} display vertices against `
-        + `${s.api.measuredVertexTotal} measured`);
-      // Position and rotation residual between physical and display: zero, by
-      // construction, because a display shape carries neither -- it is built
-      // around the record's own centre. Asserted on the DRAWN mesh anyway.
-      check(worstPos < 1e-9,
-        'display simplification moved no machine',
-        `worst centre delta ${worstPos} m across ${s.equipmentBoxes.length} drawn assets`);
-      check(s.api.displayRectangles > 0 && rectanglesAsSharedBoxes,
-        'a display rectangle is drawn as a shared cached box, not as an outline',
-        `${s.api.displayRectangles} rectangles, none extruded`);
+        'an unresolved footprint acquires no rectangle',
+        `${s.api.displayOnUnresolved} unresolved record(s) claim one`);
+      check(s.api.displayAreaErrorMin >= 0,
+        'a rectangle never cuts inside the outline it was measured from',
+        `worst claimed +${(s.api.displayAreaErrorMax * 100).toFixed(1)}%, `
+        + `smallest ${(s.api.displayAreaErrorMin * 100).toFixed(1)}%`);
 
+      let cornerWorst = 0;
+      let cornerChecked = 0;
+      let cornerCountWrong = 0;
+      for (const box of s.equipmentBoxes) {
+        const e = served.get(box.id);
+        const fp = s.api.equipmentFootprints[box.id];
+        if (!e || !fp || e.deg == null) continue;
+        if (!Array.isArray(box.corners) || box.corners.length !== 4) {
+          cornerCountWrong += 1;
+          continue;
+        }
+        cornerChecked += 1;
+        const want = blocks.twinBoxCorners(e.x, e.z, fp.width, fp.depth, e.deg);
+        // Nearest-neighbour both ways: a drawn corner must be a generated one
+        // AND a generated corner must be drawn, so neither a swap nor a
+        // collapse can pass.
+        for (const [wx, wz] of want) {
+          let best = Infinity;
+          for (const [dx, dz] of box.corners) best = Math.min(best, Math.hypot(dx - wx, dz - wz));
+          cornerWorst = Math.max(cornerWorst, best);
+        }
+        for (const [dx, dz] of box.corners) {
+          let best = Infinity;
+          for (const [wx, wz] of want) best = Math.min(best, Math.hypot(dx - wx, dz - wz));
+          cornerWorst = Math.max(cornerWorst, best);
+        }
+      }
+      check(cornerCountWrong === 0,
+        'every drawn machine is a four-cornered rectangle in plan',
+        `${cornerCountWrong} with a different corner count`);
+      check(cornerChecked === s.api.displayRectangles && cornerChecked > 0,
+        'every measured machine is drawn as a rectangle',
+        `${cornerChecked} checked against ${s.api.displayRectangles} served`);
+      check(cornerWorst <= SERVED_COORDINATE_QUANTUM_M,
+        'the drawn rectangle IS the record: same centre, same size, same angle',
+        `worst corner ${(cornerWorst * 1000).toFixed(3)} mm across ${cornerChecked} machines`);
+      check(worstPos < 1e-9,
+        'drawing the rectangle moved no machine',
+        `worst centre delta ${worstPos} m across ${s.equipmentBoxes.length} drawn assets`);
+      // One shared, cached geometry per distinct size: 270 machines must not
+      // cost 270 geometries.
+      check(s.equipmentGeometries < s.equipmentBoxes.length / 2,
+        'display rectangles share cached box geometries',
+        `${s.equipmentGeometries} geometries across ${s.equipmentBoxes.length} machines`);
     }
 
     // -- The invented machine-form layer is gone ---------------------------
@@ -1689,7 +1669,29 @@ async function run() {
     await page.waitForTimeout(450);
   }
   const restored = await snapshot(page);
-  check(JSON.stringify(restored) === JSON.stringify(baseline), 'restoring reproduces the baseline snapshot');
+  // Name the field that moved. "the snapshot differs" is not a diagnosis, and
+  // this snapshot has two dozen keys.
+  const snapshotDrift = Object.keys(baseline).filter(
+    (k) => JSON.stringify(baseline[k]) !== JSON.stringify(restored[k])
+  );
+  check(snapshotDrift.length === 0, 'restoring reproduces the baseline snapshot',
+    snapshotDrift.map((k) => {
+      const a = baseline[k];
+      const b = restored[k];
+      if (Array.isArray(a) && Array.isArray(b) && a.length === b.length) {
+        for (let i = 0; i < a.length; i += 1) {
+          if (JSON.stringify(a[i]) !== JSON.stringify(b[i])) {
+            const fields = Object.keys(a[i] || {}).filter(
+              (f) => JSON.stringify(a[i][f]) !== JSON.stringify(b[i][f])
+            );
+            return `${k}[${i}] ${fields.map(
+              (f) => `${f} ${JSON.stringify(a[i][f])} -> ${JSON.stringify(b[i][f])}`
+            ).join(', ')}`;
+          }
+        }
+      }
+      return `${k}: ${JSON.stringify(a).slice(0, 120)} -> ${JSON.stringify(b).slice(0, 120)}`;
+    }).join(' | '));
   console.log('');
 
   // ── The raw CAD reference overlay ──

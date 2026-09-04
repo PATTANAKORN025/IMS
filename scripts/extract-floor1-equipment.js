@@ -543,7 +543,6 @@ function main() {
     let displayShapeCount = 0;
     let measuredVertexTotal = 0;
     let worstDisplayClaim = 0;
-    let worstDisplayDrop = 0;
     const reference = [];
     for (const m of measured) {
       seq += 1;
@@ -582,22 +581,24 @@ function main() {
         ? B.simplifyHull(m.hull, SERVED_HULL_VERTICES, B.supportVertices(m.hull, ins.rot))
         : null;
 
-      // DISPLAY geometry, derived from the physical measurement and from
-      // nothing else. It is a second, simpler outline for the operator map;
-      // it never replaces the measurement and it carries no position of its
-      // own -- every display shape is built around the SAME record position,
-      // in the machine's own frame, from the measured extent. See
-      // docs/equipment-display-geometry.md.
+      // DISPLAY representation. Every machine whose extent was measured is
+      // drawn as ONE oriented rectangle on its own axes; everything else gets
+      // a marker. The record carries the CLASS and the cost of the
+      // abstraction, and NO GEOMETRY: there is no display centre, no display
+      // angle, no display size and no display polygon, here or on the wire.
+      // The renderer generates four corners from the record's own position,
+      // rotation_deg and footprint. See docs/equipment-display-geometry.md.
       const display = ok
-        ? B.displayGeometry(m.hull, box)
-        : { shape: 'UNRESOLVED', polygon: null, area_error: null };
+        ? B.displayRectangle(m.hull, box)
+        : { shape: 'UNRESOLVED', area_error: null };
       displayShapes[display.shape] = (displayShapes[display.shape] || 0) + 1;
-      if (display.polygon) {
+      if (display.shape === 'MEASURED_RECTANGLE') {
         displayShapeCount += 1;
-        displayVertexTotal += display.polygon.length;
-        displayVertexMax = Math.max(displayVertexMax, display.polygon.length);
-        if (display.area_error > worstDisplayClaim) worstDisplayClaim = display.area_error;
-        if (display.area_error < worstDisplayDrop) worstDisplayDrop = display.area_error;
+        displayVertexTotal += 4;
+        displayVertexMax = 4;
+        if (display.area_error !== null && display.area_error > worstDisplayClaim) {
+          worstDisplayClaim = display.area_error;
+        }
       }
 
       // The measurement, in the CAD's own frame. Written before the canonical
@@ -649,17 +650,17 @@ function main() {
           ? served.map(([x, y]) => ({ x: mx(x), z: mz(y) }))
           : null,
         footprint_polygon_area_m2: served ? round3(B.polygonArea(served) / 1e6) : null,
-        // --- display geometry (derived; the renderer draws THIS) ---------
+        // --- display representation (derived; the renderer draws THIS) ---
+        // A class and a cost. No coordinates: the rectangle is generated from
+        // position, rotation_deg and footprint above, which is why display
+        // simplification has nothing to move a machine with.
         display_shape: display.shape,
-        display_polygon: display.polygon
-          ? display.polygon.map(([x, y]) => ({ x: mx(x), z: mz(y) }))
-          : null,
-        display_vertices: display.polygon ? display.polygon.length : 0,
-        // Signed: >= 0 where the display shape contains the measurement
-        // (rectangle, chamfer), <= 0 where it drops slivers of it (simplified
-        // polygon). Never a licence to move, turn or resize the machine.
+        display_vertices: display.shape === 'MEASURED_RECTANGLE' ? 4 : 0,
+        // >= 0 always: the oriented box CONTAINS the hull it was measured
+        // from, so this is floor the rectangle claims and the measurement does
+        // not show. Never a licence to move, turn or resize the machine.
         display_area_error: display.area_error === null ? null : round3(display.area_error),
-        display_source: display.polygon ? 'derived_from_measured_footprint' : null,
+        display_source: display.shape === 'MEASURED_RECTANGLE' ? 'measured_extent' : null,
         footprint_hull_vertices: ok ? m.hull.length : 0,
         footprint_fill: ok && box.width * box.depth > 0
           ? round3(B.polygonArea(m.hull) / (box.width * box.depth)) : null,
@@ -905,11 +906,12 @@ function main() {
           + 'subtractive only and is never allowed to empty a block.',
       },
       display: {
-        note: 'Derived from the physical measurement, deterministically, and never the '
-          + 'other way round. Display shapes carry no position of their own: each is '
-          + "built around the record's own centre, in the machine's own frame, from the "
-          + 'measured extent. The measured outline stays in the record for '
-          + 'reconciliation and inspection.',
+        note: 'The normal operator view draws every machine with a measured extent as ONE '
+          + "oriented rectangle on the machine's own axes. That is a visualisation "
+          + 'abstraction, not a claim that the source footprint is rectangular. The '
+          + 'display layer owns no coordinates: the rectangle is generated from the '
+          + "record's own position, rotation and measured width and depth. The measured "
+          + 'outline stays in the record for reconciliation and inspection.',
         by_shape: displayShapes,
         vertices: {
           total: displayVertexTotal,
@@ -919,7 +921,8 @@ function main() {
         },
         area_error: {
           worst_claimed: round3(worstDisplayClaim),
-          worst_dropped: round3(worstDisplayDrop),
+          note: 'Share of floor the rectangle claims beyond the measured outline. Always '
+            + '>= 0: an oriented box contains the hull it was measured from.',
         },
       },
       footprint: {

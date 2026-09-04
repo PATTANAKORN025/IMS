@@ -246,7 +246,6 @@ test('an equipment projection emits exactly the documented key set', () => {
   assert.deepStrictEqual(Object.keys(out).sort(), [
     'confidence',
     'display_area_error',
-    'display_polygon',
     'display_shape',
     'display_source',
     'footprint',
@@ -322,55 +321,61 @@ test('a measured outline is served vertex by vertex, or not at all', () => {
   assert.strictEqual(noExtent.footprint_shape, null);
 });
 
-test('display geometry is served beside the measurement, never instead of it', () => {
-  const poly = [{ x: 0, z: 0 }, { x: 2, z: 0 }, { x: 2, z: 1 }, { x: 0, z: 1 }];
+test('the display record is a class and a cost, never geometry', () => {
   const out = wire.projectEquipment(validEquipment({
     footprint_shape: 'irregular',
     footprint_polygon: [{ x: 0, z: 0 }, { x: 2, z: 0 }, { x: 2, z: 1 }],
-    display_shape: 'ORIENTED_RECTANGLE',
-    display_polygon: poly,
-    display_source: 'derived_from_measured_footprint',
-    display_area_error: 0.02,
+    display_shape: 'MEASURED_RECTANGLE',
+    display_source: 'measured_extent',
+    display_area_error: 0.205,
   }), {});
-  assert.deepStrictEqual(out.display_polygon, poly);
-  assert.strictEqual(out.display_shape, 'ORIENTED_RECTANGLE');
-  assert.strictEqual(out.display_source, 'derived_from_measured_footprint');
-  assert.strictEqual(out.display_area_error, 0.02);
-  // the measurement is still there: display never replaces it
+  assert.strictEqual(out.display_shape, 'MEASURED_RECTANGLE');
+  assert.strictEqual(out.display_source, 'measured_extent');
+  assert.strictEqual(out.display_area_error, 0.205);
+  // No display coordinates reach the client, so the renderer has exactly one
+  // source for where a machine is: position, rotation_deg and footprint.
+  assert.ok(!('display_polygon' in out));
+  assert.ok(!('display_vertices' in out));
+  // and the measurement is still there: display never replaces it
   assert.strictEqual(out.footprint_polygon.length, 3);
 });
 
-test('a display outline with no class, or a bad vertex, is dropped whole', () => {
-  const poly = [{ x: 0, z: 0 }, { x: 2, z: 0 }, { x: 2, z: 1 }, { x: 0, z: 1 }];
-  const noClass = wire.projectEquipment(validEquipment({
-    display_polygon: poly, display_source: 'derived_from_measured_footprint',
+test('a display polygon smuggled into the document never reaches the wire', () => {
+  const out = wire.projectEquipment(validEquipment({
+    display_shape: 'MEASURED_RECTANGLE',
+    display_source: 'measured_extent',
+    display_polygon: [{ x: 0, z: 0 }, { x: 2, z: 0 }, { x: 2, z: 1 }, { x: 0, z: 1 }],
+    display_vertices: 4,
   }), {});
-  assert.strictEqual(noClass.display_polygon, null);
-  assert.strictEqual(noClass.display_shape, null);
-
-  const badVertex = wire.projectEquipment(validEquipment({
-    display_shape: 'SIMPLIFIED_POLYGON',
-    display_polygon: [{ x: 0, z: 0 }, { x: 2, z: Infinity }, { x: 2, z: 1 }],
-    display_source: 'derived_from_measured_footprint',
-  }), {});
-  assert.strictEqual(badVertex.display_polygon, null);
-  assert.strictEqual(badVertex.display_source, null);
-
-  const invented = wire.projectEquipment(validEquipment({
-    display_shape: 'TEST-INVENTED', display_polygon: poly,
-  }), {});
-  assert.strictEqual(invented.display_shape, null);
-  assert.strictEqual(invented.display_polygon, null);
+  assert.ok(!('display_polygon' in out));
+  assert.ok(!('display_vertices' in out));
 });
 
-test('an unresolved record carries no display outline either', () => {
+test('an invented display class or source is dropped, not echoed', () => {
+  const invented = wire.projectEquipment(validEquipment({
+    display_shape: 'TEST-INVENTED', display_source: 'TEST-INVENTED',
+  }), {});
+  assert.strictEqual(invented.display_shape, null);
+  assert.strictEqual(invented.display_source, null);
+  // the old vocabulary is gone with the polygons it described
+  for (const gone of ['ORIENTED_RECTANGLE', 'CHAMFERED_RECTANGLE', 'SIMPLIFIED_POLYGON']) {
+    assert.strictEqual(
+      wire.projectEquipment(validEquipment({ display_shape: gone }), {}).display_shape, null,
+      `${gone} must no longer be a servable display class`,
+    );
+  }
+});
+
+test('a record with no served extent cannot be drawn as a rectangle', () => {
   const out = wire.projectEquipment(validEquipment({
     footprint: null, footprint_status: 'UNRESOLVED',
-    display_shape: 'ORIENTED_RECTANGLE',
-    display_polygon: [{ x: 0, z: 0 }, { x: 2, z: 0 }, { x: 2, z: 1 }, { x: 0, z: 1 }],
-    display_source: 'derived_from_measured_footprint',
+    display_shape: 'MEASURED_RECTANGLE',
+    display_source: 'measured_extent',
+    display_area_error: 0.2,
   }), {});
-  assert.strictEqual(out.display_polygon, null);
+  // Corrected DOWN, not echoed: a marker may not acquire an extent by being
+  // labelled one in the private document.
+  assert.strictEqual(out.display_shape, 'UNRESOLVED');
   assert.strictEqual(out.display_source, null);
   assert.strictEqual(out.display_area_error, null);
 });

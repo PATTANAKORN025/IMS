@@ -296,105 +296,129 @@ test('point-in-polygon answers for a footprint', () => {
   assert.strictEqual(B.pointInPolygon(1, 0.5, [[0, 0], [1, 1]]), false);
 });
 
-console.log('cad-blocks: display geometry');
+console.log('cad-blocks: display representation');
 
-/** Every display class must leave the machine exactly where it was. */
-function assertPlacementPreserved(box, display) {
+/**
+ * THE PROOF, in the form the model makes possible.
+ *
+ * The display layer owns no coordinates, so "did it move the machine" is
+ * answered by generating the drawn rectangle from the record's OWN numbers and
+ * measuring it back. Anything a defect could do to a machine would show here.
+ */
+function assertRectanglePreserves(cx, cz, width, depth, rotationDeg) {
+  const twin = B.twinBoxCorners(cx, cz, width, depth, rotationDeg);
+  assert.strictEqual(twin.length, 4, 'a display rectangle has four corners');
   const flat = [];
-  for (const [x, y] of display.polygon) flat.push(x, y);
-  const ext = B.orientedExtent(flat, box.angle_deg);
-  near(ext.cx, box.cx, 1e-9);
-  near(ext.cy, box.cy, 1e-9);
-  near(ext.width, box.width, 1e-9);
-  near(ext.depth, box.depth, 1e-9);
+  for (const [x, z] of twin) flat.push(x, z);
+  // Measured on the machine's own axis, which the reflected frame puts at
+  // minus the served rotation. One convention, one helper, both sides.
+  const ext = B.orientedExtent(flat, -rotationDeg);
+  near(ext.cx, cx, 1e-9);
+  near(ext.cy, cz, 1e-9);
+  near(ext.width, width, 1e-9);
+  near(ext.depth, depth, 1e-9);
 }
 
-test('a boxy machine displays as its own oriented rectangle', () => {
+test('a measured extent displays as one rectangle, and carries no geometry', () => {
   const hull = B.convexHull(RECT);
   const box = B.orientedExtent(RECT, 0);
-  const d = B.displayGeometry(hull, box);
-  assert.strictEqual(d.shape, 'ORIENTED_RECTANGLE');
-  assert.strictEqual(d.polygon.length, 4);
+  const d = B.displayRectangle(hull, box);
+  assert.strictEqual(d.shape, 'MEASURED_RECTANGLE');
   near(d.area_error, 0);
-  assertPlacementPreserved(box, d);
+  // The record is a class and a cost. No centre, no angle, no size, no
+  // polygon: there is nothing here a renderer could place a machine with.
+  assert.deepStrictEqual(Object.keys(d).sort(), ['area_error', 'shape']);
 });
 
-test('a cut-cornered machine displays as a chamfered rectangle, exactly', () => {
-  const pts = [0.5, 0, 3.5, 0, 4, 0.5, 4, 1.5, 3.5, 2, 0.5, 2, 0, 1.5, 0, 0.5];
+test('the rectangle claims the floor between the outline and its own box', () => {
+  // A plus-shaped machine: the oriented box contains it and says so.
+  const pts = [1, 0, 2, 0, 2, 1, 3, 1, 3, 2, 2, 2, 2, 3, 1, 3, 1, 2, 0, 2, 0, 1, 1, 1];
   const hull = B.convexHull(pts);
   const box = B.orientedExtent(pts, 0);
-  const d = B.displayGeometry(hull, box);
-  assert.strictEqual(d.shape, 'CHAMFERED_RECTANGLE');
-  assert.strictEqual(d.polygon.length, 8);
-  // The octagon IS its own chamfer, so the display claims no extra floor.
-  near(d.area_error, 0, 1e-12);
-  assertPlacementPreserved(box, d);
+  const d = B.displayRectangle(hull, box);
+  assert.strictEqual(d.shape, 'MEASURED_RECTANGLE');
+  const boxArea = box.width * box.depth;
+  near(d.area_error, (boxArea - B.polygonArea(hull)) / B.polygonArea(hull), 1e-12);
+  // An oriented box CONTAINS the hull it was measured from, so the cost of the
+  // abstraction can never be negative: the rectangle never clips a machine.
+  assert.ok(d.area_error >= 0, `area_error ${d.area_error}`);
 });
 
-test('a chamfered outline stays simple: it contains the hull it simplifies', () => {
-  // The winding of the two vertices a cut corner produces is not cosmetic.
-  // Emitting them in the wrong order crosses the outline over itself, and a
-  // self-crossing polygon measures SMALLER than the hull it must contain.
-  const pts = [1, 0, 5, 0, 6, 1, 6, 3, 5, 4, 1, 4, 0, 3, 0, 1];
-  const hull = B.convexHull(pts);
-  const box = B.orientedExtent(pts, 0);
-  const d = B.displayGeometry(hull, box);
-  assert.ok(B.polygonArea(d.polygon) >= B.polygonArea(hull) - 1e-9,
-    'a chamfer must contain the hull it simplifies');
-});
-
-test('the corner cut is the largest one that removes no measured point', () => {
-  const pts = [0.5, 0, 3.5, 0, 4, 0.5, 4, 1.5, 3.5, 2, 0.5, 2, 0, 1.5, 0, 0.5];
-  const hull = B.convexHull(pts);
-  const box = B.orientedExtent(pts, 0);
-  const cuts = B.chamferCuts(hull, box);
-  assert.strictEqual(cuts.length, 4);
-  for (const c of cuts) near(c, 0.5, 1e-9);
-  const poly = B.chamferPolygon(box, cuts);
-  for (const [x, y] of hull) {
-    const onEdge = poly.some(([px, py]) => Math.hypot(px - x, py - y) < 1e-9);
-    assert.ok(B.pointInPolygon(x, y, poly) || onEdge, `hull vertex ${x},${y} was cut away`);
-  }
-});
-
-test('a genuinely non-rectangular machine displays as a simplified polygon', () => {
-  const pts = [];
-  for (let i = 0; i < 40; i += 1) {
-    pts.push(Math.cos(i / 40 * Math.PI * 2) * 5, Math.sin(i / 40 * Math.PI * 2) * 2);
-  }
-  const hull = B.convexHull(pts);
-  const box = B.orientedExtent(pts, 0);
-  const d = B.displayGeometry(hull, box);
-  assert.strictEqual(d.shape, 'SIMPLIFIED_POLYGON');
-  assert.ok(d.polygon.length >= 4 && d.polygon.length <= B.DISPLAY_MAX_VERTICES,
-    `${d.polygon.length} vertices`);
-  // it may drop measured area, it may never claim any
-  assert.ok(d.area_error <= 1e-12, `area_error ${d.area_error}`);
-  assertPlacementPreserved(box, d);
-});
-
-test('a rotated machine keeps its angle, centre and size in every class', () => {
-  for (const angle of [17, 45, 90, 213.5]) {
-    const t = angle * Math.PI / 180;
-    const pts = [];
-    for (const [x, y] of [[-2, -1], [2, -1], [2, 1], [-2, 1], [2.4, 0]]) {
-      pts.push(10 + x * Math.cos(t) - y * Math.sin(t), -4 + x * Math.sin(t) + y * Math.cos(t));
-    }
-    const hull = B.convexHull(pts);
-    const box = B.orientedExtent(pts, angle);
-    const d = B.displayGeometry(hull, box);
-    assert.ok(B.DISPLAY_SHAPES.has(d.shape), d.shape);
-    assertPlacementPreserved(box, d);
-  }
-});
-
-test('an unresolved footprint yields no display polygon at all', () => {
-  assert.deepStrictEqual(B.displayGeometry([], null),
-    { shape: 'UNRESOLVED', polygon: null, area_error: null });
+test('no measured extent yields no rectangle and no invented size', () => {
+  assert.deepStrictEqual(B.displayRectangle([], null),
+    { shape: 'UNRESOLVED', area_error: null });
   assert.deepStrictEqual(
-    B.displayGeometry(B.convexHull(RECT), { width: 0, depth: 0, cx: 0, cy: 0, angle_deg: 0 }),
-    { shape: 'UNRESOLVED', polygon: null, area_error: null },
-  );
+    B.displayRectangle(B.convexHull(RECT), { width: 0, depth: 0, cx: 0, cy: 0, angle_deg: 0 }),
+    { shape: 'UNRESOLVED', area_error: null });
+  assert.deepStrictEqual(
+    B.displayRectangle(B.convexHull(RECT), { width: 2, depth: NaN, cx: 0, cy: 0, angle_deg: 0 }),
+    { shape: 'UNRESOLVED', area_error: null });
+});
+
+test('the display class is one of exactly two', () => {
+  assert.deepStrictEqual([...B.DISPLAY_SHAPES].sort(),
+    ['MEASURED_RECTANGLE', 'UNRESOLVED']);
+});
+
+test('the drawn rectangle preserves centre, size and angle at every angle', () => {
+  // Cardinal angles, an off-axis machine, and its mirror image. A sign error
+  // in the frame is invisible at 0 and 180 and obvious at 70.2.
+  for (const rot of [0, 90, 180, 270, 70.2, -70.2, 359.99]) {
+    assertRectanglePreserves(12.5, -8.25, 4.317, 2.104, rot);
+  }
+});
+
+test('the drawn rectangle preserves a very large and a very small machine', () => {
+  assertRectanglePreserves(0, 0, 36.4, 2.24, 12.5); // longest measured on this floor
+  assertRectanglePreserves(-31.007, 44.912, 0.612, 0.601, 70.2); // near the 600 mm floor
+});
+
+test('a mirrored INSERT is displayed as the machine the mirror produces', () => {
+  // An L drawn in a block, placed once as drawn and once with sx = -1. The
+  // mirror is in the geometry before anything is measured, so the rectangle
+  // for the mirrored instance is the mirrored machine's own rectangle -- it is
+  // never un-mirrored, and never shared with its twin.
+  const blockPts = [[0, 0], [4, 0], [4, 1], [1, 1], [1, 3], [0, 3]];
+  const place = (sx) => {
+    const t = B.affine({ x: 10, y: 5, rot: 70.2, sx, sy: 1 }, [0, 0]);
+    const pts = [];
+    for (const p of blockPts) {
+      const [x, y] = B.applyTo(t, p);
+      pts.push(x, y);
+    }
+    return { flat: pts, mirrored: B.isMirrored(t) };
+  };
+  const asDrawn = place(1);
+  const mirrored = place(-1);
+  assert.strictEqual(asDrawn.mirrored, false);
+  assert.strictEqual(mirrored.mirrored, true);
+  for (const inst of [asDrawn, mirrored]) {
+    // A mirrored instance's own axis is the mirrored angle; measure on the
+    // axis the extractor records, not on the un-mirrored one.
+    const box = B.minAreaRect(B.convexHull(inst.flat));
+    const d = B.displayRectangle(B.convexHull(inst.flat), box);
+    assert.strictEqual(d.shape, 'MEASURED_RECTANGLE');
+    assertRectanglePreserves(box.cx, box.cy, box.width, box.depth, -box.angle_deg);
+  }
+  // and the two instances are not the same machine on the floor
+  const a = B.minAreaRect(B.convexHull(asDrawn.flat));
+  const b = B.minAreaRect(B.convexHull(mirrored.flat));
+  assert.ok(Math.hypot(a.cx - b.cx, a.cy - b.cy) > 1,
+    'a mirrored instance must not land on top of its twin, or this proves nothing');
+});
+
+test('the display function is deterministic and reads nothing but its inputs', () => {
+  const pts = [0, 0, 5, 0.2, 5.2, 2, 3, 3.4, 0.1, 2.2];
+  const hull = B.convexHull(pts);
+  const box = B.orientedExtent(pts, 0);
+  const first = B.displayRectangle(hull, box);
+  assert.deepStrictEqual(first, B.displayRectangle(hull, box));
+  // and it does not mutate what it was handed
+  const hullBefore = JSON.stringify(hull);
+  const boxBefore = JSON.stringify(box);
+  B.displayRectangle(hull, box);
+  assert.strictEqual(JSON.stringify(hull), hullBefore);
+  assert.strictEqual(JSON.stringify(box), boxBefore);
 });
 
 test('overlap does not depend on which way round a polygon is wound', () => {
@@ -437,12 +461,6 @@ test('a twin-frame box is built on the reflected angle', () => {
     'measuring on the wrong angle must not agree, or this test proves nothing');
 });
 
-test('the display function is deterministic', () => {
-  const pts = [0, 0, 5, 0.2, 5.2, 2, 3, 3.4, 0.1, 2.2];
-  const hull = B.convexHull(pts);
-  const box = B.orientedExtent(pts, 0);
-  assert.deepStrictEqual(B.displayGeometry(hull, box), B.displayGeometry(hull, box));
-});
 
 console.log(`\n${passed} passed, ${failed} failed`);
 process.exit(failed === 0 ? 0 : 1);

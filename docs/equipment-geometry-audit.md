@@ -73,7 +73,7 @@ tests** that need no drawing: base-point subtraction, rotation, uniform and
 mirrored scale, mirror detection by determinant, three-level composition,
 associativity, oriented extent, minimum-area fit, shape classification,
 extent-preserving simplification, convex intersection under either winding, and
-the display-geometry derivation.
+the display-rectangle derivation at seven angles and under mirroring.
 
 ### 2.2 Why a hull, and why that loses nothing
 
@@ -248,21 +248,22 @@ machines sitting squarely on top of them.
 > polygon intersection that returned nothing: the canonical frame reflects z, so
 > a polygon counter-clockwise in the CAD arrives clockwise, and the clip put
 > every point outside. Fixed, with unit tests, in `convexIntersection`. See
-> [equipment-display-geometry.md §8](equipment-display-geometry.md#8-overlap-and-a-correction).
+> [equipment-display-geometry.md §10](equipment-display-geometry.md#10-overlap-and-room-crossings).
 
 ### Browser regression
 
-`tests/playwright/factory-twin-regression.js`, **430 assertions, 0 failures**,
+`tests/playwright/factory-twin-regression.js`, **473 assertions, 0 failures**,
 including:
 
-- every drawn asset carries the rotation the CAD stated — 131 boxes turned to
-  the CAD angle, 213 outlines drawn pre-turned, 0 mismatched
-- **every drawn outline is the served outline, vertex for vertex** (worst
-  8.9 × 10⁻⁷ m, which is Float32 buffer precision)
+- every drawn asset carries the rotation the CAD stated — 344 boxes turned to
+  the CAD angle, 0 mismatched, worst 0.000000°
+- **the drawn rectangle IS the record** — the four floor-plane corners the
+  renderer put on screen, matched both ways against corners generated in Node
+  by the one canonical helper (worst 0.001 mm across 270 machines)
 - exactly the 270 assets with an extent are drawn with one, and exactly the 74
   without are drawn as markers
-- every asset with an extent is drawn at exactly that extent (boxes: 0.0)
-- no drawn asset invents an extent
+- every asset with an extent is drawn at exactly that extent (worst 0.0)
+- no drawn asset invents an extent, and no display geometry is served at all
 - every CAD asset remains `UNMAPPED` with a null device id
 
 ---

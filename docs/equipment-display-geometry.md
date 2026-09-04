@@ -20,26 +20,32 @@ physical measurement itself is obtained.
 
 ---
 
-## 1. The problem
+## 1. The decision, stated plainly
 
-The measured footprint is a **convex hull of the block's own geometry** —
-every bracket, pipe stub and access step the vendor drew. It is the right
-answer for reconciliation: it is what the CAD says, at millimetre residuals.
-It is the wrong symbol for an operational map. 213 machines carrying 34-vertex
-hulls read as noise, and noise on a floor plan is not neutral — it makes a
-map harder to act on.
+> **Normal EAP display intentionally represents every resolved equipment asset
+> as an oriented rectangle derived from measured CAD center, width, depth and
+> rotation. The rectangle is a visualization abstraction, not a claim that the
+> source CAD footprint is rectangular.**
 
-So the model now holds **two** geometries per machine, and they have different
-jobs:
+The measured footprint is a **convex hull of the block's own geometry** — every
+bracket, pipe stub and access step the vendor drew. It is the right answer for
+reconciliation: it is what the CAD says, at millimetre residuals. It is the
+wrong symbol for an operational map. An operator asks six questions of a floor
+plan — where is the machine, how big is it, which way does it face, which area
+is it in, is it mapped to IMS, and if so what is it doing — and a 40-vertex
+hull answers none of them better than a rectangle does, while competing with
+all of them for attention.
+
+So the model holds **two** geometries per machine, and they have different jobs:
 
 | | Physical | Display |
 |---|---|---|
-| What it is | the measurement | a derived symbol |
-| Where it comes from | the CAD block, transformed | the physical geometry, deterministically |
-| Vertices | up to 16 served, full hull kept privately | 4 to 12 |
+| What it is | the measurement | a drawing convention |
+| Where it comes from | the CAD block, transformed | the physical record, at draw time |
+| Vertices | up to 16 served, full hull kept privately | 4, generated |
 | Who draws it | the inspection layer, on request | the renderer, always |
 | Who checks against it | the reconciliation | nothing — it is the derived side |
-| May it move a machine | it defines where the machine is | **never** |
+| May it move a machine | it defines where the machine is | **it has nothing to move one with** |
 
 ---
 
@@ -47,150 +53,218 @@ jobs:
 
 ```
 RAW CAD → CAD TRANSFORM → PHYSICAL EQUIPMENT MODEL → RECONCILIATION
-        → DISPLAY GEOMETRY → 2D EAP → 3D DERIVED VIEW
+        → DISPLAY RECTANGLE → 2D EAP → 3D DERIVED VIEW
 ```
 
-One canonical physical model, one derivation from it. The renderer has **no
-geometry of its own**: it does not re-measure, re-fit or re-place anything, and
-there is no second implementation of the transform chain anywhere in the client.
-The 2D plan and the 3D view are the **same meshes** seen from different angles,
-so they cannot disagree about where a machine is or how large it is.
-
-`display_geometry = f(physical_geometry)` is pure, deterministic and unit
-tested (`scripts/lib/cad-blocks.js`, `tests/unit/floor1-cad-blocks.test.js`).
-No manual coordinate appears anywhere in it.
+One canonical physical model. The renderer has **no geometry of its own**: it
+does not re-measure, re-fit or re-place anything, and there is no second
+implementation of the transform chain anywhere in the client. The 2D plan and
+the 3D view are the **same meshes** seen from different angles, so they cannot
+disagree about where a machine is or how large it is.
 
 ---
 
-## 3. Classification
+## 3. The display record owns no coordinates
 
-Every record carries exactly one class. Assignment is by measured evidence, not
-by appearance.
+This is the whole design, and it is what makes the acceptance criterion
+provable rather than merely tested.
 
-### A — `ORIENTED_RECTANGLE` (57 machines)
+A record's display fields are:
 
-The hull fills **≥ 97 %** of its own oriented box. The machine *is* a box, so
-it is drawn as one: the measured centre, the measured width and depth, the
-measured rotation. Rendered from a **shared, cached box geometry** turned to the
-machine's angle — one allocation per distinct size, not one per machine.
-
-### B — `CHAMFERED_RECTANGLE` (46 machines)
-
-A rectangle with its corners cut. The cut is not chosen; it is **solved**. For
-the corner at `(+hw, +hd)` in the machine's own frame, a symmetric cut of depth
-`d` removes everything with `u + v > (hw + hd) − d`, so the largest cut that
-removes **no measured point** is exactly
-
-```
-d = (hw + hd) − max(u + v)   over the measured hull
+```json
+{ "display_shape": "MEASURED_RECTANGLE", "display_source": "measured_extent",
+  "display_area_error": 0.205 }
 ```
 
-— an equality, not a search. Four corners, four cuts, 4 to 8 vertices. Each cut
-leaves the box's four extreme ordinates untouched, so **width, depth and centre
-survive exactly**. A corner whose cut is under 2 % of the shorter side is left
-square rather than given a cosmetic bevel.
+A class and a cost. **No centre, no angle, no size, no polygon** — not in the
+private document, not on the wire, not in the client. The renderer builds the
+rectangle from `position`, `rotation_deg` and `footprint`, which are the
+physical record's own fields, and from nothing else.
 
-Accepted only when the chamfer is within **6 %** of the measured area. That
-threshold is where rounded shapes start passing — a 5 × 2 ellipse chamfers to
-within 10.8 % of its own area, and an ellipse is not a rectangle with its
-corners cut off. Real cut-cornered machines here land under 3 %.
+So the required assertions
 
-### C — `SIMPLIFIED_POLYGON` (167 machines)
+```
+display.centerX === physical.centerX
+display.centerY === physical.centerY
+display.width   === physical.width
+display.depth   === physical.depth
+display.rotation === physical.rotation
+```
 
-Genuinely not a rectangle. The measured hull is reduced to at most **12**
-vertices by repeatedly dropping the vertex whose removal loses the least area —
-**except** the vertices the oriented extent is measured to, which are protected.
-That protection is the whole reason width, depth and centre survive the
-reduction: an unprotected simplification once published a width and an outline
-that disagreed by **286 mm**, and the browser regression is what caught it.
+hold **by identity, not by tolerance**. There is no second copy of any of those
+five numbers that could drift from the first.
 
-### D — `UNRESOLVED` (74 machines)
+Two classes exist and no more:
 
-No measured footprint, so **no display polygon at all**. A uniform marker is
-drawn at the CAD-stated position. No dimension is invented, and the wire refuses
-to serve a display outline for a record with no footprint even if the private
-document grew one.
+- **`MEASURED_RECTANGLE`** — 270 machines. An oriented rectangle on the
+  machine's own axes.
+- **`UNRESOLVED`** — 74 machines. No measured extent, so no rectangle. A
+  uniform marker of a constant size stands at the CAD-stated position and
+  carries no dimensional claim. The wire refuses to serve a rectangle for a
+  record with no footprint even if the private document labels it one.
 
----
+### One rotation convention
 
-## 4. Tolerances, measured
-
-| | Bound | Measured |
-|---|---:|---:|
-| Machine moved by derivation | 0 (1 mm publication quantum) | **0 moved**, worst 0.500 mm |
-| Machine resized by derivation | 0 (1 mm publication quantum) | **0 resized**, worst 1.075 mm |
-| Rectangle width/depth vs measured | exact | worst 1.000 mm |
-| Measured outline left uncovered | ≤ 5 % | **2.3 %** |
-| Floor claimed beyond the measurement | ≤ 7 % | **6.0 %** |
-| Display vertices per machine | 4–12 | mean **9.44**, max **12** |
-
-The millimetre in the first three rows is not slack. Coordinates are published
-in metres to three decimals, so an extent measured back off two published
-vertices differs from a separately published width by half a millimetre at each
-end and by nothing else.
-
-`display_area_error` is signed and travels with every record:
-`(display area − measured area) / measured area`. Rectangles and chamfers
-**contain** the hull, so theirs is ≥ 0; simplified polygons only drop slivers,
-so theirs is ≤ 0. Worst claimed **+6.0 %**, worst dropped **−3.9 %**.
+The canonical frame reflects z, so a machine served at +30° has its own axis at
+−30° in (x, z). That sign has been got wrong once already, so there is exactly
+one corner generator — `twinBoxCorners` in `scripts/lib/cad-blocks.js` — and
+its client counterpart is the single `mesh.rotation.y = CAD_ROTATION_SIGN · θ`
+in the renderer. The validator, the reconciliation and the browser regression
+all measure against that one helper; none of them reimplements it. Unit tests
+cover 0°, 90°, 180°, 270°, 70.2°, −70.2° and 359.99°, a very large machine, a
+machine near the 600 mm size floor, and a mirrored INSERT against its
+un-mirrored twin.
 
 ---
 
-## 5. What is preserved, and what enforces it
+## 4. The proof that drawing rectangles changed zero positions
 
-| Preserved | Enforced by |
-|---|---|
-| `position` | display shapes carry **no centre of their own** — every one is built around the record's own position |
-| `rotation_deg` | display shapes carry **no angle of their own** — the machine's own axes are the frame each is built in |
-| `footprint.width` / `.depth` | the support vertices of the oriented extent are protected from every reduction |
-| the measured outline | kept in the record, drawn by the inspection layer, used by the reconciliation |
-| CAD provenance | private, unchanged, never served |
-| room polygons, walls, IMS mapping | untouched by this pass |
+Measured on the current build, at three independent layers.
 
-Three independent layers check it: the geometry validator (per record, in the
-document), the CAD reconciliation (residuals, against the measurement written
-before the canonical transform), and the browser regression (against the mesh
-the renderer actually drew).
+| Assertion | Where | Result |
+|---|---|---|
+| Machines moved | validator, reconciliation, browser | **0 of 344** |
+| Machines resized | validator, reconciliation | **0 of 270**, worst 0.000 mm |
+| Rotations changed | reconciliation | **0 of 344**, worst 0.0000° |
+| Drawn centre vs served position | browser, on the mesh | **0 m**, 344 assets |
+| Drawn corners vs generated corners | browser vs Node | worst **0.001 mm**, 270 machines |
+| Drawn extent vs served width/depth | browser, on the mesh | worst **0.00e+0 m**, 270 boxes |
+| Display geometry on the wire | browser, on the payload | **0 records** |
+| Unresolved acquiring an extent | wire, validator, reconciliation, browser | **0** |
+
+The corner check is the strongest of these: it takes the four floor-plane
+corners the renderer actually put on screen — read out of the mesh's own world
+matrix, so the rotation convention comes from the renderer and not from the
+test — and matches them **both ways** against corners generated in Node by the
+canonical helper from the served record. Neither a swapped corner nor a
+collapsed one can pass it. The residual is 0.001 mm, which is the micrometre
+rounding the probe itself applies.
 
 ---
 
-## 6. Inspection
+## 5. The cost of the abstraction, published per record
+
+A rectangle covers floor the machine does not occupy. This is not an error and
+it is not hidden: it is the price of the decision in §1, it is measured, and it
+travels with every record as `display_area_error` —
+`(box area − measured area) / measured area`.
+
+| | Value |
+|---|---:|
+| Median rectangle | **+20.5 %** more floor than its measured outline |
+| p90 | +31.6 % |
+| p95 | +44.0 % |
+| Worst | **+65.1 %** |
+| Rectangles claiming more than 30 % | 119 of 270 |
+| Measured outline left uncovered | **0.04 %** worst |
+
+The sign can only be positive: an oriented box **contains** the hull it was
+measured from, so a rectangle can never cut inside a machine. The 0.04 %
+uncovered is the millimetre publication quantum of the served outline poking
+past its own box, not a rectangle clipping a machine.
+
+The reconciliation gates both the worst (limit 70 %) and the **median** (limit
+25 %), so this price cannot grow unnoticed — which matters, because it is
+exactly the number that would move if the extraction started measuring
+something larger than a machine.
+
+An operator who needs the truth switches on **Measured outlines** and sees it.
+The inspector states it per machine, in words, on the record.
+
+---
+
+## 6. What this replaced, and why
+
+The previous pass derived a simpler *outline* per machine: 57
+`ORIENTED_RECTANGLE`, 46 `CHAMFERED_RECTANGLE` (corner cuts solved by the
+equality `d = (hw + hd) − max(u + v)` over the hull), 167 `SIMPLIFIED_POLYGON`
+(≤ 12 vertices with the extent's support vertices protected). It was faithful:
+mean 9.44 vertices against 40 measured, worst 6.0 % claimed, worst 3.9 %
+dropped.
+
+It was also **three shapes where one would do**, and the fidelity bought
+nothing an operator uses. Four consequences of dropping it:
+
+1. **A shape class no longer varies with a machine's drafting.** Two identical
+   machines drawn by two vendors could land in two different display classes;
+   an operator reading the map has no way to know that difference is about the
+   drawing rather than about the machine.
+2. **The display layer stopped owning coordinates.** Simplified outlines were
+   real polygons in world space — the thing that could, in principle, drift.
+   Now there is nothing to drift.
+3. **Simplification defects became impossible rather than tested.** An
+   unprotected vertex reduction once published a width and an outline that
+   disagreed by 286 mm. That whole failure mode is gone with the code.
+4. **The renderer draws 67 cached boxes instead of 213 extrusions.**
+
+What was lost is honest to state: the map no longer shows that a machine has a
+cut corner or an L-shaped body. That information is in the record, in the
+inspector, and in the inspection layer — and it is now the *only* place it is,
+which is a clearer contract than having a half-faithful version of it on the
+operator map.
+
+---
+
+## 7. Inspection
 
 Layer **Measured outlines**, off by default. Every measured outline as
 line-work, **one merged object and one draw call** for all 213 of them — this
 is a diagnostic layer and an operator's frame budget should not pay 213 draw
 calls for something switched off.
 
-The inspector adds, per machine: the measured outline class, the drawn display
-class, the handing (mirrored or as drawn), the room relationship, and whether
-its outline shares floor with a neighbour. Provenance — source file, layer,
-block name, entity handle, transform chain — stays in the private document and
-is never served.
+The inspector adds, per machine: the measured outline class, what it is drawn
+as, the share of floor the rectangle claims beyond the measurement, the handing
+(mirrored or as drawn), the room relationship, and whether its outline shares
+floor with a neighbour. Provenance — source file, layer, block name, entity
+handle, transform chain — stays in the private document and is never served.
 
 ---
 
-## 7. Labels
+## 8. Labels
 
 An **HTML overlay**, deliberately not geometry. A label drawn in the scene is a
 thing on the floor, and an operator should never have to work out whether a
 rectangle is a machine or a caption. The overlay cannot intercept a click, so
 picking still goes to the canvas underneath.
 
-Level of detail, not a global switch: a caption appears only when the machine it
-names is at least **46 px** across on screen, at most **40** are shown at once
-(largest first), and the measured size is added only above **190 px**. Nothing
-about the machine changes with zoom — world dimensions are untouched. Only
-whether its name is legible does.
+Level of detail, not a global switch:
+
+| Zoom | Shown |
+|---|---|
+| Building / full floor | nothing, unless a machine is selected |
+| Intermediate (≥ 46 px across) | the model id, largest first, at most 40 |
+| Close (≥ 190 px across) | the id and the measured size |
+| Selected, at any zoom | the id and the measured size |
+
+Nothing about a machine changes with zoom — world dimensions are untouched.
+Only whether its name is legible does. There is no machine *type* to show: the
+CAD names blocks, not assets.
 
 ---
 
-## 8. Overlap, and a correction
+## 9. Colour
 
-Machines are **never moved** to resolve an overlap. Overlap is detected,
-recorded on the record (`overlaps_neighbour`), surfaced in the inspector, and
-left there.
+Geometry colour encodes **no** physical classification. Every resolved machine
+is the same neutral slate rectangle; an unresolved marker is dimmer and more
+transparent, which is the resolved/unresolved distinction the model is required
+to make visible and not a classification of the machine.
 
-**A previously reported figure was wrong.** The last pass reported *23*
+No machine is green, amber or red. Operational colour is reserved for
+IMS-backed state, and **0 machines are mapped to IMS**, so every machine's
+status is `UNKNOWN` and looks like it. A CAD asset will take operational colour
+on the day an authoritative mapping exists and not before.
+
+---
+
+## 10. Overlap and room crossings
+
+Machines are **never moved** — not to resolve an overlap, not to centre one in
+a room, not to align one to a wall, and not to snap one to a grid. Both facts
+are detected, recorded on the record, surfaced in the inspector, and left
+there. There is no glyph on the map: 163 of 270 machines carrying a warning is
+not a warning.
+
+**A previously reported figure was wrong.** An earlier pass reported *23*
 overlapping machines and *1 of 270* machines touching a structural column. Both
 came from a polygon intersection that silently returned nothing:
 
@@ -211,6 +285,7 @@ counter-clockwise convex hull) and both have unit tests. Corrected figures:
 | Machines whose outline overlaps a neighbour | 23 | **163** |
 | Overlapping pairs (partial / one inside another) | 14 / 5 | **432 / 31** |
 | Machines whose outline touches a column | 1 of 270 | **115 of 270** |
+| Machines crossing a room boundary | 70 | 70 |
 
 These are **upper bounds on physical interference, not collision counts**. The
 outlines are convex: the hull of an L- or U-shaped machine covers space the
@@ -219,47 +294,58 @@ machine registers as fully contained by it. The worst single column overlap is
 **6.3 % of one outline**, and only 3 pairs have centres closer than 0.5 m —
 a systematic placement error would look nothing like that.
 
-No warning glyph is drawn on the map. 163 of 270 machines carrying a warning is
-not a warning; the flag is in the inspector and in the reconciliation output,
-where it can be read against its cause.
+Note that these are measured on the **outlines**, not on the display
+rectangles. A rectangle covering 20 % more floor would report more contact
+still; the QA metric stays on the measurement, where it means something.
 
 ---
 
-## 9. 3D
+## 11. 3D
 
-Derived from the same records and nothing else: physical centre, physical
-rotation, physical width and depth, display outline extruded. Height is **not
-in evidence** — a plan carries no elevation — so every machine is extruded to
-the same declared presentation constant and `height_status` stays `unknown`.
-A varying height would look like data.
+Derived from the same record and nothing else: physical centre, physical
+rotation, physical width and depth, extruded. Height is **not in evidence** — a
+plan carries no elevation — so every machine is extruded to the same declared
+presentation constant, `height_status` stays `unknown`, and the regression
+asserts that exactly one height exists across every drawn block. A varying
+height would look like data.
 
 ---
 
-## 10. Performance
+## 12. Performance
 
-The renderer never builds a mesh from the measured outline.
+The renderer never builds a mesh from any outline. Measured at 1920 × 1080, in
+CI, under a software rasteriser:
 
-| | Before | After |
+| | Before (chamfer/polygon pass) | After |
 |---|---:|---:|
-| Extruded outline vertices (213 machines) | 36,648 | **25,224** |
-| Polygon vertices served for drawing | 3,283 | **2,321** |
-| Display rectangles drawn from a shared cached box | 0 | **57** |
-| Measured outlines drawn, by default | — | **0** (1 draw call when switched on) |
+| Distinct equipment geometries | 310 total in scene | **67** for 344 machines |
+| Equipment geometry vertices | 25,224 extruded | **1,608** (shared boxes) |
+| Polygon vertices served for drawing | 2,321 | **0** |
+| Triangles | 20,388 | **14,536** |
+| Scene geometries | 310 | **141** |
+| Draw calls | 670 | 670 |
+| Cached geometries / materials | 27 / 8 | 71 / 8 |
+| Measured outlines drawn, by default | 0 | **0** (1 draw call when switched on) |
+| Boot to first drawn machine | — | **~1.2 s** |
 
-Measured at 1920 × 1080: 670 draw calls, 20,388 triangles, 310 geometries, 27
-cached geometries and 8 cached materials, boot ~5.2 s under a software
-rasteriser in CI.
+Draw calls are unchanged because they are bounded by mesh count, not by mesh
+complexity, and instancing is still deferred: the machines already share
+geometry and material, and an instanced batch would cost the per-mesh picking
+and per-mesh inspector the operator view depends on.
 
 ---
 
-## 11. Known limitations
+## 13. Known limitations
 
-1. **The measurement itself is a convex hull**, so both geometries are outer
-   bounds of a concave machine. Display simplification does not add that error;
-   it inherits it.
-2. **A chamfer can claim up to 6 % more floor** than the measurement, and a
-   simplified polygon can drop up to 3.9 % of it. Both are bounded, measured and
-   published per record.
-3. **No machine type is drawn.** The CAD names blocks, not assets, so the label
-   carries the model id and the class — never a vendor's name.
-4. **Overlap is measured on convex outlines** and over-reports contact, as above.
+1. **The measurement itself is a convex hull**, so the outline is already an
+   outer bound of a concave machine. The rectangle is an outer bound of that.
+   Both are published; neither is presented as the machine's true perimeter.
+2. **A rectangle claims a median 20.5 % and up to 65.1 % more floor** than the
+   measurement. Bounded, gated, published per record, visible in the inspector,
+   and switchable against the truth in one click.
+3. **No machine type is drawn**, because the CAD names blocks, not assets. The
+   label carries the model id and nothing that came out of the drawing.
+4. **Overlap and column contact are measured on convex outlines** and
+   over-report contact, as above.
+5. **0 machines are mapped to IMS.** Every machine's status is `UNKNOWN`, and
+   no status colour is drawn on any of them.

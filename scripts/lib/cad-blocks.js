@@ -469,185 +469,58 @@ function pointInPolygon(x, y, poly) {
  * operator: a 34-vertex hull of a machine's every bracket and pipe stub reads
  * as noise on a floor map, and 213 of them read as a mess.
  *
- * So the model derives a SECOND, simpler outline for display -- and derives it,
- * deterministically, from the physical one. Nothing here is drawn by hand,
- * nudged, or chosen for appearance. The rules below are the whole function.
+ * The normal operator view therefore draws ONE symbol for every machine whose
+ * extent was measured: an oriented rectangle, on the machine's own axes, at the
+ * measured centre, at the measured width and depth, at the measured rotation.
  *
- * WHAT IT MUST NEVER DO, and what enforces that:
+ * That is a deliberate VISUALISATION ABSTRACTION. It is not a claim that the
+ * source footprint is rectangular -- the measured outline says otherwise for
+ * most machines, it stays in the record, and the inspection layer draws it.
  *
- *   move a machine        every display shape is built around the SAME record
- *                         position; it carries no centre of its own
- *   re-angle a machine    the machine's own axes are the frame every shape is
- *                         built in
- *   resize a machine      the vertices the extent is measured to are preserved
- *                         by construction, so width and depth survive exactly
- *   invent an extent      an unresolved footprint yields no display polygon at
- *                         all, and the renderer draws a uniform marker
+ * The abstraction is safe in the only way that matters because the display
+ * layer OWNS NO COORDINATES. There is no display centre, no display angle, no
+ * display width and no display polygon anywhere in the model or on the wire.
+ * A renderer is handed the record's own position, rotation_deg and footprint
+ * and generates four corners from them, so "did display simplification move a
+ * machine" is not a question a defect can answer wrongly: there is nothing to
+ * move it with.
  *
- * The display outline also CONTAINS the measured hull in every case, so a
- * simplification can never clip a machine narrower than the drawing has it.
+ * An unresolved footprint yields no rectangle at all, and the renderer draws a
+ * uniform marker whose size is a constant and carries no dimensional claim.
  * ------------------------------------------------------------------ */
 
-/** A hull filling at least this much of its own box is drawn as that box. */
-const DISPLAY_RECT_FILL = 0.97;
-
 /**
- * A hull whose CHAMFERED box is within this much of the hull's own area is
- * drawn as that chamfer. Above it the shape is not a cut-cornered rectangle
- * and simplifying it as one would claim floor the machine does not occupy.
+ * The display representation of one machine, and the cost of the abstraction.
  *
- * Set at 6%, which is where a rounded shape starts passing: a 5 x 2 ellipse
- * chamfers to within 10.8% of its own area, and an ellipse is not a rectangle
- * with its corners cut off. Real cut-cornered machines land under 3%.
+ * `hull` is the measured outline and `box` its oriented extent, in the same
+ * coordinates. Returns `{ shape, area_error }` and DELIBERATELY NO GEOMETRY:
+ *
+ *   MEASURED_RECTANGLE  the extent was measured. Drawn from the record's own
+ *                       centre, width, depth and rotation -- see
+ *                       twinBoxCorners for the canonical corner generator.
+ *   UNRESOLVED          no measured extent. No rectangle, no invented size.
+ *
+ * `area_error` is `(box area - measured area) / measured area`: the share of
+ * floor the rectangle claims that the measurement does not show. It is always
+ * >= 0, because the oriented box contains the hull it was measured from. It is
+ * the honest price of the abstraction and it travels with every record.
  */
-const DISPLAY_CHAMFER_TOL = 0.06;
-
-/** Vertex budget for a simplified display outline. */
-const DISPLAY_MAX_VERTICES = 12;
-
-/** A chamfer smaller than this share of the shorter side is not a chamfer. */
-const MIN_CHAMFER_SHARE = 0.02;
-
-/**
- * The corner cuts that turn the oriented box into the smallest chamfered
- * rectangle still containing the hull.
- *
- * For the corner at (+hw, +hd) in the machine's own frame, a symmetric cut of
- * depth d removes everything with u + v > (hw + hd) - d. The largest cut that
- * removes no hull point is therefore exactly
- *
- *     d = (hw + hd) - max(u + v)
- *
- * over the hull -- an equality, not a search. The same holds for the other
- * three corners with the signs flipped. Each cut leaves the box's four extreme
- * ordinates untouched, so width, depth and centre are preserved exactly.
- */
-function chamferCuts(hull, box) {
-  if (!Array.isArray(hull) || hull.length < 3 || !box) return null;
-  const t = (box.angle_deg || 0) * Math.PI / 180;
-  const cos = Math.cos(t);
-  const sin = Math.sin(t);
-  const hw = box.width / 2;
-  const hd = box.depth / 2;
-  if (!(hw > 0) || !(hd > 0)) return null;
-  // corner order: (+,+), (-,+), (-,-), (+,-)
-  const best = [-Infinity, -Infinity, -Infinity, -Infinity];
-  for (const [x, y] of hull) {
-    const dx = x - box.cx;
-    const dy = y - box.cy;
-    const u = dx * cos + dy * sin;
-    const v = -dx * sin + dy * cos;
-    if (u + v > best[0]) best[0] = u + v;
-    if (-u + v > best[1]) best[1] = -u + v;
-    if (-u - v > best[2]) best[2] = -u - v;
-    if (u - v > best[3]) best[3] = u - v;
+function displayRectangle(hull, box) {
+  if (!box || !(box.width > 0) || !(box.depth > 0)) {
+    return { shape: 'UNRESOLVED', area_error: null };
   }
-  const limit = Math.min(hw, hd);
-  return best.map((m) => {
-    const d = (hw + hd) - m;
-    if (!Number.isFinite(d) || d <= 0) return 0;
-    return Math.min(d, limit);
-  });
-}
-
-/** The chamfered box itself, in world coordinates. Four to eight vertices. */
-function chamferPolygon(box, cuts) {
-  const t = (box.angle_deg || 0) * Math.PI / 180;
-  const cos = Math.cos(t);
-  const sin = Math.sin(t);
-  const hw = box.width / 2;
-  const hd = box.depth / 2;
-  const toWorld = (u, v) => [box.cx + u * cos - v * sin, box.cy + u * sin + v * cos];
-  // Walked counter-clockwise in the machine's own frame. Each corner replaces
-  // itself with the point where the INCOMING edge is cut and the point where
-  // the OUTGOING edge is cut, in that order -- swapping them crosses the
-  // outline over itself and the polygon stops being simple, which shows up as
-  // an area smaller than the hull it is supposed to contain.
-  const corners = [
-    { u: hw, v: hd, in: (d) => [hw, hd - d], out: (d) => [hw - d, hd] },
-    { u: -hw, v: hd, in: (d) => [-hw + d, hd], out: (d) => [-hw, hd - d] },
-    { u: -hw, v: -hd, in: (d) => [-hw, -hd + d], out: (d) => [-hw + d, -hd] },
-    { u: hw, v: -hd, in: (d) => [hw - d, -hd], out: (d) => [hw, -hd + d] },
-  ];
-  const out = [];
-  corners.forEach((c, i) => {
-    const d = cuts && Number.isFinite(cuts[i]) ? cuts[i] : 0;
-    const share = d / Math.min(hw * 2, hd * 2);
-    if (share < MIN_CHAMFER_SHARE) { out.push(toWorld(c.u, c.v)); return; }
-    // Two vertices, one on each edge meeting at this corner. The extreme
-    // ordinate on both edges is retained, so the extent does not move.
-    out.push(toWorld(...c.in(d)));
-    out.push(toWorld(...c.out(d)));
-  });
-  return out;
-}
-
-/**
- * The display outline for one machine, and the class it was drawn as.
- *
- * `hull` is the measured outline and `box` its oriented extent, both in the
- * same coordinates. Returns `{ shape, polygon, area_error }`, where
- * `area_error` is `(display area - measured area) / measured area`, signed and
- * meaningful in both directions:
- *
- *   ORIENTED_RECTANGLE and CHAMFERED_RECTANGLE CONTAIN the hull, so the error
- *   is >= 0 -- floor claimed that the measurement does not show, bounded by
- *   the class rules above.
- *
- *   SIMPLIFIED_POLYGON only ever removes hull vertices, so the error is <= 0
- *   -- measured floor the display drops. It can never clip the machine
- *   narrower or shorter than measured, because the vertices the extent is
- *   taken to are protected from removal.
- */
-function displayGeometry(hull, box, maxVertices) {
-  const max = maxVertices || DISPLAY_MAX_VERTICES;
-  if (!Array.isArray(hull) || hull.length < 3 || !box || !(box.width > 0) || !(box.depth > 0)) {
-    return { shape: 'UNRESOLVED', polygon: null, area_error: null };
-  }
-  const hullArea = polygonArea(hull);
   const boxArea = box.width * box.depth;
-  if (!(hullArea > 0) || !(boxArea > 0)) {
-    return { shape: 'UNRESOLVED', polygon: null, area_error: null };
+  if (!Number.isFinite(boxArea) || !(boxArea > 0)) {
+    return { shape: 'UNRESOLVED', area_error: null };
   }
-  const boxPoly = boxCorners(box.cx, box.cy, box.width, box.depth, box.angle_deg);
-
-  // A. the machine IS a box
-  if (hullArea / boxArea >= DISPLAY_RECT_FILL) {
-    return {
-      shape: 'ORIENTED_RECTANGLE',
-      polygon: boxPoly,
-      area_error: (boxArea - hullArea) / hullArea,
-    };
-  }
-
-  // B. a box with its corners cut
-  const cuts = chamferCuts(hull, box);
-  if (cuts) {
-    const cham = chamferPolygon(box, cuts);
-    const chamArea = polygonArea(cham);
-    const err = (chamArea - hullArea) / hullArea;
-    if (err <= DISPLAY_CHAMFER_TOL && cham.length <= max) {
-      return { shape: 'CHAMFERED_RECTANGLE', polygon: cham, area_error: err };
-    }
-  }
-
-  // C. genuinely not a rectangle. Simplified, with the vertices the extent is
-  // measured to protected, so width, depth and centre survive the reduction.
-  const simple = simplifyHull(hull, max, supportVertices(hull, box.angle_deg));
-  const simpleArea = polygonArea(simple);
+  const hullArea = Array.isArray(hull) && hull.length >= 3 ? polygonArea(hull) : 0;
   return {
-    shape: 'SIMPLIFIED_POLYGON',
-    polygon: simple,
-    // Simplification only ever REMOVES hull area, so the display shape claims
-    // no floor the measurement does not. The error is reported as the share of
-    // the measured area it drops.
-    area_error: (simpleArea - hullArea) / hullArea,
+    shape: 'MEASURED_RECTANGLE',
+    area_error: hullArea > 0 ? (boxArea - hullArea) / hullArea : null,
   };
 }
 
-const DISPLAY_SHAPES = new Set([
-  'ORIENTED_RECTANGLE', 'CHAMFERED_RECTANGLE', 'SIMPLIFIED_POLYGON', 'UNRESOLVED',
-]);
+const DISPLAY_SHAPES = new Set(['MEASURED_RECTANGLE', 'UNRESOLVED']);
 
 module.exports = {
   ANNOTATION_TYPES,
@@ -672,13 +545,8 @@ module.exports = {
   boxCorners,
   twinBoxCorners,
   pointInPolygon,
-  chamferCuts,
-  chamferPolygon,
-  displayGeometry,
+  displayRectangle,
   DISPLAY_SHAPES,
-  DISPLAY_RECT_FILL,
-  DISPLAY_CHAMFER_TOL,
-  DISPLAY_MAX_VERTICES,
   RECT_FILL,
   POLYGON_FILL,
 };
