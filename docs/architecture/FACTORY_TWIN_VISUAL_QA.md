@@ -132,24 +132,30 @@ same build, headless Chromium.
 
 | Viewport | Boot | Frame (median) | Frame p95 | API | JS heap |
 |---|---:|---:|---:|---:|---:|
-| 1366x768 | 1046 ms | 58.2 ms | 67.3 ms | 278 ms | 14 MB |
-| 1920x1080 | 1309 ms | 98.7 ms | 122.8 ms | 319 ms | 14 MB |
-| 2560x1440 | 1633 ms | 157.3 ms | 185.9 ms | 481 ms | 10 MB |
-| 3840x2160 | 2655 ms | 322.7 ms | 382.3 ms | 996 ms | 10 MB |
+| 1366x768 | 1546 ms | 69.5 ms | 80.5 ms | 224 ms | 13 MB |
+| 1920x1080 | 1400 ms | 114.6 ms | 133.5 ms | 357 ms | 11 MB |
+| 2560x1440 | 1797 ms | 191.7 ms | 216.3 ms | 590 ms | 11 MB |
+| 3840x2160 | 2997 ms | 471.8 ms | 516.7 ms | 1477 ms | 10 MB |
 
-Scene composition, **constant across all four viewports**: 493 draw calls,
-16,228 triangles, 120 geometries (80 cached), 8 materials. Zero console errors
+Scene composition, **constant across all four viewports**: 550 draw calls,
+16,444 triangles, 150 geometries (80 cached), 8 materials. Zero console errors
 at every viewport.
 
-The composition grew from the previous baseline of 418 draw calls and 4,546
-triangles. Both increases are geometry that is now drawn rather than
-optimisation lost: equipment is extruded from its measured footprint instead of
-drawn as a flat pad, and the 211 unpaired CAD wall faces reach the plan for the
-first time (one additional draw call for all of them).
+The composition grew from 493 draw calls and 16,228 triangles when the room
+layer went from 8 polygons to 32: the drawing's own closed area boundaries are
+now served, so 24 more rooms are drawn.
+
+**The rooms are not what the extra time costs.** Hiding the whole room layer
+removes 115 draw calls and buys **1.7 ms of 118.8 ms, or 1.4 %**. The timings
+above sit higher than the previous baseline (98.7 ms at 1920x1080) but this
+measurement does not attribute that to the room work, and neither does anything
+else here: it is a different container on a different run of a software
+rasteriser, and run-to-run variance on this host is the more likely reading.
+Recorded as unattributed rather than blamed on the nearest change.
 
 ### What the frame time is actually bound by
 
-Frame time fits **36.5 ms per megapixel plus 19.9 ms fixed** across the four
+Frame time fits **55.5 ms per megapixel plus 11.2 ms fixed** across the four
 viewports, at unchanged scene composition. That is a fill-rate signature.
 
 The benchmark tests it directly rather than arguing from the fit. It hides
@@ -157,24 +163,35 @@ layers one at a time and reports what each removal buys, at 1920x1080:
 
 | Scene | Draw calls | Triangles | Frame (median) | Change |
 |---|---:|---:|---:|---:|
-| All layers | 493 | 16,228 | 94.0 ms | |
-| Without equipment and columns | 67 | 11,116 | 87.5 ms | -6.5 ms |
-| Shell only | 4 | 18 | 67.3 ms | -20.2 ms |
-| Empty scene | 0 | 0 | 16.5 ms | -50.8 ms |
+| All layers | 550 | 16,444 | 136.6 ms | |
+| Without equipment and columns | 124 | 11,332 | 121.1 ms | -15.5 ms |
+| Shell only | 4 | 18 | 74.0 ms | -47.1 ms |
+| Empty scene | 0 | 0 | 16.8 ms | -57.2 ms |
 
-**Removing 426 of 493 draw calls -- 86% of them -- changed the frame by 6.5 ms
-of 94.0 ms, or 7%.** An empty scene still costs 16.5 ms, which is compositing
+**Removing 426 of 550 draw calls -- 77% of them -- changed the frame by 15.5 ms
+of 136.6 ms, or 11%.** An empty scene still costs 16.8 ms, which is compositing
 and not this application at all.
+
+Two further measurements at 1920x1080, taken the same way:
+
+| Change | Draw calls | Frame (median) | Cost |
+|---|---:|---:|---:|
+| Room layer hidden | 550 -> 435 | 118.8 -> 117.1 ms | **1.4 %** |
+| Raw CAD overlay switched on | 550 -> 562 | 118.8 -> 129.8 ms | **8.5 %** |
+
+The overlay's 9,416 segments cost twelve draw calls and about 11 ms when it is
+open. It is off by default and fetched only on first use, so a floor view that
+never opens it pays neither.
 
 ### Why instancing stays deferred
 
 Columns and equipment are 202 and 224 individual meshes, and instancing them is
 the obvious optimisation. The sweep above is why it has not been done: the
-entire draw-call population of both layers is worth 6.5 ms in a 94 ms frame,
+entire draw-call population of both layers is worth 15.5 ms in a 136.6 ms frame,
 and the change is not free -- both layers are picked, so an InstancedMesh needs
 an instanceId-to-record map, and the regression suite reconciles per-mesh
-counts that would have to be rewritten. That is real risk and rework against a
-7% ceiling on a number that does not describe production hardware anyway.
+counts that would have to be rewritten. That is real risk and rework against an
+11% ceiling on a number that does not describe production hardware anyway.
 
 The lever is recorded, not taken. If a measurement on real hardware ever shows
 draw calls mattering, the sweep is the thing to re-run first.
@@ -182,7 +199,7 @@ draw calls mattering, the sweep is the thing to re-run first.
 > [!WARNING]
 > **None of these numbers is a GPU measurement and none may be quoted as the
 > twin's real performance.** Headless Chromium rasterises in software. On real
-> hardware, 16,228 triangles and 493 draw calls is a trivial scene.
+> hardware, 16,444 triangles and 550 draw calls is a trivial scene.
 
 Redundant work **was** removed from that pointer path — one ray per hover
 instead of three, a cursor write only when the value changes, and an inspector
@@ -223,7 +240,7 @@ Two candidates remain deliberately unimplemented:
 
 | Candidate | Status | Why |
 |---|---|---|
-| **Instancing** | DEFERRED | Would collapse 418 draw calls to roughly 4. Visual equivalence cannot be demonstrated under software rasterisation, and optimising against that risks changing rendering for no real gain. Recorded as the available lever if a real-hardware measurement ever justifies it. |
+| **Instancing** | DEFERRED | Would collapse the 426 column and equipment draw calls to roughly 2. Visual equivalence cannot be demonstrated under software rasterisation, and optimising against that risks changing rendering for no real gain. Recorded as the available lever if a real-hardware measurement ever justifies it. |
 | **On-demand rendering** | DEFERRED | Would stop the loop when nothing changes. Damped orbit controls need continuous frames, so this is a behaviour change to interaction, not a tidy-up. |
 | **Caching the server-side projection** | DEFERRED | The geometry route re-reads and re-projects the private files per request. At one request per page load, with the measured API latency above, there is no demonstrated problem to fix -- and an optimisation adopted because it sounds faster is how a cache-invalidation bug gets introduced into the one path that must never serve stale evidence. |
 

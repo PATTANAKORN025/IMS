@@ -332,19 +332,33 @@ than it is.
 That is the reason room boundaries do not come from walls. Four properties of
 the extraction produce it, and all four are in the extractor, not the drawing:
 
-| Property | Effect |
-|---|---|
-| Only axis-aligned segments are kept (`dx < 1` or `dy < 1` mm) | any angled or curved wall is discarded entirely |
-| Only paired faces become walls | 1,392 faces produce no wall |
-| Unpaired faces below 2 m are dropped | 1,181 short runs are lost, and short runs are what close corners |
-| Merge gap 120 mm, corner closure ≤ half a thickness | fragments that meet across a column do not join |
+| Property | Effect | Measured cost |
+|---|---|---|
+| Only paired faces become walls | 1,392 faces produce no wall | the largest cause |
+| Unpaired faces below 2 m are dropped | 1,181 short runs are lost, and short runs are what close corners | large |
+| Merge gap 120 mm, corner closure ≤ half a thickness | fragments that meet across a column do not join | moderate |
+| Only axis-aligned segments are kept (`dx < 1` or `dy < 1` mm) | any angled wall is discarded | **small — see below** |
 
-Fixing this requires re-running the extraction against `Floor1.dxf` with
-non-axis-aligned support and full face retention. That work is **open, not
-blocked**: the drawing is on this host and every figure above was measured by
-reading it. An earlier version of this section recorded the DXF as unavailable;
-that was wrong, and the correction matters because it was the stated reason the
-wall model had not been improved.
+**The axis-alignment limit is not the main cause, and this ordering is
+corrected.** Counted off the raw reference, the wall-role layers carry 8,227
+segments, of which 1,775 (21.6 %) are not axis-aligned — but only **61** of
+those reach 2 m, and **52 of the 61 are on the structural layer**, which also
+carries column outlines and 28 mm detail rectangles. Supporting angled segments
+would therefore add tens of segments, not hundreds of walls, and would draw
+column chamfers as walls unless that layer is separated first.
+
+The real work is face pairing and retention, and separating the structural
+layer's three kinds of content: wall faces, column outlines, and hatch detail
+whose median segment is 250 mm. That is **open, not blocked** — the drawing is
+on this host and every figure here was measured by reading it. An earlier
+version of this section recorded the DXF as unavailable; that was wrong, and
+the correction matters because it was the stated reason the wall model had not
+been improved.
+
+It is deliberately not attempted in the same pass as the room work. A wall
+model rebuilt in a hurry on a layer that mixes walls with columns would put
+invented walls on the floor, which is the failure this whole reconstruction
+exists to avoid.
 
 **Rooms no longer depend on any of this.** They come from the drawing's own
 closed area boundaries (§0.2), so the wall graph is now a measure of the wall
