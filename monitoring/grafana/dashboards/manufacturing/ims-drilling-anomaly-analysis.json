@@ -1,0 +1,536 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "#00F2FE",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    {
+      "title": "1 · Machine Cards",
+      "type": "link",
+      "icon": "dashboard",
+      "url": "/d/ims-drilling-machine-cards/ims-drilling-machine-cards",
+      "targetBlank": false,
+      "includeVars": true,
+      "keepTime": true,
+      "asDropdown": false
+    },
+    {
+      "title": "2 · Fleet List",
+      "type": "link",
+      "icon": "dashboard",
+      "url": "/d/ims-drilling-fleet-list/ims-drilling-fleet-list",
+      "targetBlank": false,
+      "includeVars": true,
+      "keepTime": true,
+      "asDropdown": false
+    },
+    {
+      "title": "3 · Machine Detail",
+      "type": "link",
+      "icon": "dashboard",
+      "url": "/d/ims-drilling-machine-detail/ims-drilling-machine-detail",
+      "targetBlank": false,
+      "includeVars": true,
+      "keepTime": true,
+      "asDropdown": false
+    },
+    {
+      "title": "4 · History",
+      "type": "link",
+      "icon": "dashboard",
+      "url": "/d/ims-drilling-history/ims-drilling-history",
+      "targetBlank": false,
+      "includeVars": true,
+      "keepTime": true,
+      "asDropdown": false
+    },
+    {
+      "title": "5 · Anomaly Analysis",
+      "type": "link",
+      "icon": "dashboard",
+      "url": "/d/ims-drilling-anomaly-analysis/ims-drilling-anomaly-analysis",
+      "targetBlank": false,
+      "includeVars": true,
+      "keepTime": true,
+      "asDropdown": false
+    },
+    {
+      "title": "6 · Settings",
+      "type": "link",
+      "icon": "dashboard",
+      "url": "/d/ims-drilling-settings/ims-drilling-settings",
+      "targetBlank": false,
+      "includeVars": true,
+      "keepTime": true,
+      "asDropdown": false
+    }
+  ],
+  "liveNow": true,
+  "panels": [
+    {
+      "id": 9000,
+      "title": "",
+      "type": "text",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 3
+      },
+      "transparent": true,
+      "description": "Shared navigation for the six linked DRILLING operator pages.",
+      "options": {
+        "mode": "markdown",
+        "content": "# IMS DRILLING · 5 · Anomaly Analysis\n\n[1 · Machine Cards](/d/ims-drilling-machine-cards/ims-drilling-machine-cards?orgId=1&${machine_id:queryparam}&${focus_machine:queryparam}&${status_filter:queryparam}&${event_filter:queryparam}&${program_search:queryparam}&${stale_hours:queryparam}&${stop_minutes:queryparam}&${alarm_burst:queryparam}&${raw_limit:queryparam}&from=${__from}&to=${__to}) · [2 · Fleet List](/d/ims-drilling-fleet-list/ims-drilling-fleet-list?orgId=1&${machine_id:queryparam}&${focus_machine:queryparam}&${status_filter:queryparam}&${event_filter:queryparam}&${program_search:queryparam}&${stale_hours:queryparam}&${stop_minutes:queryparam}&${alarm_burst:queryparam}&${raw_limit:queryparam}&from=${__from}&to=${__to}) · [3 · Machine Detail](/d/ims-drilling-machine-detail/ims-drilling-machine-detail?orgId=1&${machine_id:queryparam}&${focus_machine:queryparam}&${status_filter:queryparam}&${event_filter:queryparam}&${program_search:queryparam}&${stale_hours:queryparam}&${stop_minutes:queryparam}&${alarm_burst:queryparam}&${raw_limit:queryparam}&from=${__from}&to=${__to}) · [4 · History](/d/ims-drilling-history/ims-drilling-history?orgId=1&${machine_id:queryparam}&${focus_machine:queryparam}&${status_filter:queryparam}&${event_filter:queryparam}&${program_search:queryparam}&${stale_hours:queryparam}&${stop_minutes:queryparam}&${alarm_burst:queryparam}&${raw_limit:queryparam}&from=${__from}&to=${__to}) · **[5 · Anomaly Analysis](/d/ims-drilling-anomaly-analysis/ims-drilling-anomaly-analysis?orgId=1&${machine_id:queryparam}&${focus_machine:queryparam}&${status_filter:queryparam}&${event_filter:queryparam}&${program_search:queryparam}&${stale_hours:queryparam}&${stop_minutes:queryparam}&${alarm_burst:queryparam}&${raw_limit:queryparam}&from=${__from}&to=${__to})** · [6 · Settings](/d/ims-drilling-settings/ims-drilling-settings?orgId=1&${machine_id:queryparam}&${focus_machine:queryparam}&${status_filter:queryparam}&${event_filter:queryparam}&${program_search:queryparam}&${stale_hours:queryparam}&${stop_minutes:queryparam}&${alarm_burst:queryparam}&${raw_limit:queryparam}&from=${__from}&to=${__to})\n\n[← Apex 3 Floor 1 — 2D](/factory-twin-3d/?view=2d) · [← Apex 3 Floor 1 — 3D](/factory-twin-3d/?view=3d) · **Source:** `public.machine_event` · **Policy:** latest known state; no 15-minute expiry"
+      }
+    },
+    {
+      "id": 14,
+      "title": "RULE-BASED ANOMALIES — WHAT / WHEN / MACHINE / EVIDENCE / SEVERITY",
+      "type": "table",
+      "datasource": {
+        "type": "postgres",
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 3,
+        "w": 24,
+        "h": 14
+      },
+      "description": "Transparent rule-based observations only; not ML and not active-alarm lifecycle.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#64748B",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Severity"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "CRITICAL": {
+                        "index": 0,
+                        "text": "CRITICAL",
+                        "color": "#EF4444"
+                      },
+                      "HIGH": {
+                        "index": 1,
+                        "text": "HIGH",
+                        "color": "#F59E0B"
+                      },
+                      "MEDIUM": {
+                        "index": 2,
+                        "text": "MEDIUM",
+                        "color": "#00F2FE"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [],
+        "enablePagination": true
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          },
+          "rawSql": "WITH latest_status AS (\n  SELECT DISTINCT ON (equipment_id) equipment_id,event_time,event_type,event_message\n  FROM public.machine_event WHERE message_type='status' ORDER BY equipment_id,event_time DESC,id DESC\n), status_points AS (\n  SELECT equipment_id,event_time,event_type,event_message,LEAD(event_time) OVER (PARTITION BY equipment_id ORDER BY event_time,id) AS next_time\n  FROM public.machine_event WHERE message_type='status' AND $__timeFilter(event_time)\n), alarm_bursts AS (\n  SELECT equipment_id,date_bin(INTERVAL '5 minutes',event_time,TIMESTAMPTZ '1970-01-01') AS bucket,COUNT(*) AS errors,MIN(event_code) AS example_code\n  FROM public.machine_event WHERE message_type='alarm' AND level='E' AND $__timeFilter(event_time)\n  GROUP BY equipment_id,bucket HAVING COUNT(*)>=${alarm_burst:raw}\n), anomalies AS (\n  SELECT 'CRITICAL'::TEXT AS severity,'Telemetry age exceeds setting'::TEXT AS anomaly,equipment_id,event_time AS detected_at,\n    'Latest state='||event_type||'; age='||ROUND(EXTRACT(EPOCH FROM (NOW()-event_time))/3600)::TEXT||'h' AS evidence,'>'||${stale_hours:raw}||' hours' AS threshold\n  FROM latest_status WHERE NOW()-event_time>(${stale_hours:raw}||' hours')::INTERVAL\n  UNION ALL SELECT 'HIGH','Long observed STOP',equipment_id,event_time,\n    'STOP duration='||ROUND(EXTRACT(EPOCH FROM (next_time-event_time))/60)::TEXT||'m; '||COALESCE(event_message,''),'>'||${stop_minutes:raw}||' minutes'\n  FROM status_points WHERE event_type='STOP' AND next_time IS NOT NULL AND next_time-event_time>(${stop_minutes:raw}||' minutes')::INTERVAL\n  UNION ALL SELECT 'HIGH','Historical error burst',equipment_id,bucket,errors::TEXT||' level-E records in 5m; example='||COALESCE(example_code,''),'>='||${alarm_burst:raw}||' records / 5m' FROM alarm_bursts\n  UNION ALL SELECT 'MEDIUM','Tool reached reported life',equipment_id,event_time,COALESCE(event_code,'')||' '||COALESCE(event_message,''),'event_code=0119'\n    FROM public.machine_event WHERE event_code='0119' AND $__timeFilter(event_time)\n  UNION ALL SELECT 'MEDIUM','Decoder reported a problem',equipment_id,event_time,COALESCE(decode_status,'NULL')||': '||COALESCE(decode_error,''),'decode_status not successful'\n    FROM public.machine_event WHERE $__timeFilter(event_time) AND (decode_error IS NOT NULL OR COALESCE(UPPER(decode_status),'') NOT IN ('SUCCESS','DECODED','OK','DECODED_MSGMANAGE'))\n)\nSELECT severity AS \"Severity\",anomaly AS \"What\",equipment_id AS \"Machine\",detected_at AS \"When\",evidence AS \"Evidence\",threshold AS \"Rule\"\nFROM anomalies ORDER BY detected_at DESC,severity LIMIT 200",
+          "format": "table"
+        }
+      ]
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": [
+    "IMS",
+    "DRILLING",
+    "manufacturing",
+    "real-data",
+    "machine-event",
+    "six-page-suite"
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "machine_id",
+        "label": "Machine",
+        "type": "query",
+        "datasource": {
+          "type": "postgres",
+          "uid": "timescaledb"
+        },
+        "definition": "SELECT 'All' AS __text, 'All' AS __value UNION ALL SELECT DISTINCT equipment_id AS __text, equipment_id AS __value FROM public.machine_event WHERE equipment_id IS NOT NULL ORDER BY 1",
+        "query": "SELECT 'All' AS __text, 'All' AS __value UNION ALL SELECT DISTINCT equipment_id AS __text, equipment_id AS __value FROM public.machine_event WHERE equipment_id IS NOT NULL ORDER BY 1",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "All"
+          ]
+        },
+        "options": [],
+        "refresh": 1,
+        "sort": 1,
+        "hide": 2,
+        "skipUrlSync": false,
+        "multi": true,
+        "includeAll": false,
+        "allValue": null
+      },
+      {
+        "name": "focus_machine",
+        "label": "Focus machine",
+        "type": "query",
+        "datasource": {
+          "type": "postgres",
+          "uid": "timescaledb"
+        },
+        "definition": "SELECT DISTINCT equipment_id AS __text, equipment_id AS __value FROM public.machine_event WHERE equipment_id IS NOT NULL ORDER BY 1",
+        "query": "SELECT DISTINCT equipment_id AS __text, equipment_id AS __value FROM public.machine_event WHERE equipment_id IS NOT NULL ORDER BY 1",
+        "current": {
+          "selected": true,
+          "text": "DRL054-M",
+          "value": "DRL054-M"
+        },
+        "options": [],
+        "refresh": 1,
+        "sort": 1,
+        "hide": 2,
+        "skipUrlSync": false,
+        "multi": false,
+        "includeAll": false,
+        "allValue": null
+      },
+      {
+        "name": "status_filter",
+        "label": "Status",
+        "type": "custom",
+        "query": "All,RUN,STOP",
+        "hide": 2,
+        "skipUrlSync": false,
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "All"
+        },
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "All"
+          },
+          {
+            "selected": false,
+            "text": "RUN",
+            "value": "RUN"
+          },
+          {
+            "selected": false,
+            "text": "STOP",
+            "value": "STOP"
+          }
+        ],
+        "multi": false,
+        "includeAll": false
+      },
+      {
+        "name": "event_filter",
+        "label": "Evidence type",
+        "type": "custom",
+        "query": "All,status,event,alarm",
+        "hide": 2,
+        "skipUrlSync": false,
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "All"
+        },
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "All"
+          },
+          {
+            "selected": false,
+            "text": "status",
+            "value": "status"
+          },
+          {
+            "selected": false,
+            "text": "event",
+            "value": "event"
+          },
+          {
+            "selected": false,
+            "text": "alarm",
+            "value": "alarm"
+          }
+        ],
+        "multi": false,
+        "includeAll": false
+      },
+      {
+        "name": "program_search",
+        "label": "Program contains",
+        "type": "textbox",
+        "query": "",
+        "current": {
+          "selected": true,
+          "text": "",
+          "value": ""
+        },
+        "options": [
+          {
+            "selected": true,
+            "text": "",
+            "value": ""
+          }
+        ],
+        "hide": 2,
+        "skipUrlSync": false
+      },
+      {
+        "name": "stale_hours",
+        "label": "Stale after (hours)",
+        "type": "custom",
+        "query": "24,72,168,720",
+        "hide": 0,
+        "skipUrlSync": false,
+        "current": {
+          "selected": true,
+          "text": "168",
+          "value": "168"
+        },
+        "options": [
+          {
+            "selected": false,
+            "text": "24",
+            "value": "24"
+          },
+          {
+            "selected": false,
+            "text": "72",
+            "value": "72"
+          },
+          {
+            "selected": true,
+            "text": "168",
+            "value": "168"
+          },
+          {
+            "selected": false,
+            "text": "720",
+            "value": "720"
+          }
+        ],
+        "multi": false,
+        "includeAll": false
+      },
+      {
+        "name": "stop_minutes",
+        "label": "Long STOP (minutes)",
+        "type": "custom",
+        "query": "15,30,60,240",
+        "hide": 0,
+        "skipUrlSync": false,
+        "current": {
+          "selected": true,
+          "text": "30",
+          "value": "30"
+        },
+        "options": [
+          {
+            "selected": false,
+            "text": "15",
+            "value": "15"
+          },
+          {
+            "selected": true,
+            "text": "30",
+            "value": "30"
+          },
+          {
+            "selected": false,
+            "text": "60",
+            "value": "60"
+          },
+          {
+            "selected": false,
+            "text": "240",
+            "value": "240"
+          }
+        ],
+        "multi": false,
+        "includeAll": false
+      },
+      {
+        "name": "alarm_burst",
+        "label": "Error burst / 5m",
+        "type": "custom",
+        "query": "3,5,10,20",
+        "hide": 0,
+        "skipUrlSync": false,
+        "current": {
+          "selected": true,
+          "text": "5",
+          "value": "5"
+        },
+        "options": [
+          {
+            "selected": false,
+            "text": "3",
+            "value": "3"
+          },
+          {
+            "selected": true,
+            "text": "5",
+            "value": "5"
+          },
+          {
+            "selected": false,
+            "text": "10",
+            "value": "10"
+          },
+          {
+            "selected": false,
+            "text": "20",
+            "value": "20"
+          }
+        ],
+        "multi": false,
+        "includeAll": false
+      },
+      {
+        "name": "raw_limit",
+        "label": "Evidence rows",
+        "type": "custom",
+        "query": "100,250,500",
+        "hide": 2,
+        "skipUrlSync": false,
+        "current": {
+          "selected": true,
+          "text": "250",
+          "value": "250"
+        },
+        "options": [
+          {
+            "selected": false,
+            "text": "100",
+            "value": "100"
+          },
+          {
+            "selected": true,
+            "text": "250",
+            "value": "250"
+          },
+          {
+            "selected": false,
+            "text": "500",
+            "value": "500"
+          }
+        ],
+        "multi": false,
+        "includeAll": false
+      }
+    ]
+  },
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m"
+    ],
+    "time_options": [
+      "1h",
+      "6h",
+      "12h",
+      "24h",
+      "2d",
+      "7d",
+      "30d"
+    ]
+  },
+  "timezone": "browser",
+  "title": "IMS Drilling — 5 Anomaly Analysis",
+  "uid": "ims-drilling-anomaly-analysis",
+  "version": 1,
+  "weekStart": "",
+  "description": "Transparent rule-based anomaly observations; not ML and not an active-alarm lifecycle."
+}

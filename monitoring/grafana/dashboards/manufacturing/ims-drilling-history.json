@@ -97,12 +97,12 @@
       "description": "Shared navigation for the six linked DRILLING operator pages.",
       "options": {
         "mode": "markdown",
-        "content": "# IMS DRILLING · 3 · Machine Detail\n\n[1 · Machine Cards](/d/ims-drilling-machine-cards/ims-drilling-machine-cards?orgId=1&${machine_id:queryparam}&${focus_machine:queryparam}&${status_filter:queryparam}&${event_filter:queryparam}&${program_search:queryparam}&${stale_hours:queryparam}&${stop_minutes:queryparam}&${alarm_burst:queryparam}&${raw_limit:queryparam}&from=${__from}&to=${__to}) · [2 · Fleet List](/d/ims-drilling-fleet-list/ims-drilling-fleet-list?orgId=1&${machine_id:queryparam}&${focus_machine:queryparam}&${status_filter:queryparam}&${event_filter:queryparam}&${program_search:queryparam}&${stale_hours:queryparam}&${stop_minutes:queryparam}&${alarm_burst:queryparam}&${raw_limit:queryparam}&from=${__from}&to=${__to}) · **[3 · Machine Detail](/d/ims-drilling-machine-detail/ims-drilling-machine-detail?orgId=1&${machine_id:queryparam}&${focus_machine:queryparam}&${status_filter:queryparam}&${event_filter:queryparam}&${program_search:queryparam}&${stale_hours:queryparam}&${stop_minutes:queryparam}&${alarm_burst:queryparam}&${raw_limit:queryparam}&from=${__from}&to=${__to})** · [4 · History](/d/ims-drilling-history/ims-drilling-history?orgId=1&${machine_id:queryparam}&${focus_machine:queryparam}&${status_filter:queryparam}&${event_filter:queryparam}&${program_search:queryparam}&${stale_hours:queryparam}&${stop_minutes:queryparam}&${alarm_burst:queryparam}&${raw_limit:queryparam}&from=${__from}&to=${__to}) · [5 · Anomaly Analysis](/d/ims-drilling-anomaly-analysis/ims-drilling-anomaly-analysis?orgId=1&${machine_id:queryparam}&${focus_machine:queryparam}&${status_filter:queryparam}&${event_filter:queryparam}&${program_search:queryparam}&${stale_hours:queryparam}&${stop_minutes:queryparam}&${alarm_burst:queryparam}&${raw_limit:queryparam}&from=${__from}&to=${__to}) · [6 · Settings](/d/ims-drilling-settings/ims-drilling-settings?orgId=1&${machine_id:queryparam}&${focus_machine:queryparam}&${status_filter:queryparam}&${event_filter:queryparam}&${program_search:queryparam}&${stale_hours:queryparam}&${stop_minutes:queryparam}&${alarm_burst:queryparam}&${raw_limit:queryparam}&from=${__from}&to=${__to})\n\n[← Apex 3 Floor 1 — 2D](/factory-twin-3d/?view=2d) · [← Apex 3 Floor 1 — 3D](/factory-twin-3d/?view=3d) · **Source:** `public.machine_event` · **Policy:** latest known state; no 15-minute expiry"
+        "content": "# IMS DRILLING · 4 · History\n\n[1 · Machine Cards](/d/ims-drilling-machine-cards/ims-drilling-machine-cards?orgId=1&${machine_id:queryparam}&${focus_machine:queryparam}&${status_filter:queryparam}&${event_filter:queryparam}&${program_search:queryparam}&${stale_hours:queryparam}&${stop_minutes:queryparam}&${alarm_burst:queryparam}&${raw_limit:queryparam}&from=${__from}&to=${__to}) · [2 · Fleet List](/d/ims-drilling-fleet-list/ims-drilling-fleet-list?orgId=1&${machine_id:queryparam}&${focus_machine:queryparam}&${status_filter:queryparam}&${event_filter:queryparam}&${program_search:queryparam}&${stale_hours:queryparam}&${stop_minutes:queryparam}&${alarm_burst:queryparam}&${raw_limit:queryparam}&from=${__from}&to=${__to}) · [3 · Machine Detail](/d/ims-drilling-machine-detail/ims-drilling-machine-detail?orgId=1&${machine_id:queryparam}&${focus_machine:queryparam}&${status_filter:queryparam}&${event_filter:queryparam}&${program_search:queryparam}&${stale_hours:queryparam}&${stop_minutes:queryparam}&${alarm_burst:queryparam}&${raw_limit:queryparam}&from=${__from}&to=${__to}) · **[4 · History](/d/ims-drilling-history/ims-drilling-history?orgId=1&${machine_id:queryparam}&${focus_machine:queryparam}&${status_filter:queryparam}&${event_filter:queryparam}&${program_search:queryparam}&${stale_hours:queryparam}&${stop_minutes:queryparam}&${alarm_burst:queryparam}&${raw_limit:queryparam}&from=${__from}&to=${__to})** · [5 · Anomaly Analysis](/d/ims-drilling-anomaly-analysis/ims-drilling-anomaly-analysis?orgId=1&${machine_id:queryparam}&${focus_machine:queryparam}&${status_filter:queryparam}&${event_filter:queryparam}&${program_search:queryparam}&${stale_hours:queryparam}&${stop_minutes:queryparam}&${alarm_burst:queryparam}&${raw_limit:queryparam}&from=${__from}&to=${__to}) · [6 · Settings](/d/ims-drilling-settings/ims-drilling-settings?orgId=1&${machine_id:queryparam}&${focus_machine:queryparam}&${status_filter:queryparam}&${event_filter:queryparam}&${program_search:queryparam}&${stale_hours:queryparam}&${stop_minutes:queryparam}&${alarm_burst:queryparam}&${raw_limit:queryparam}&from=${__from}&to=${__to})\n\n[← Apex 3 Floor 1 — 2D](/factory-twin-3d/?view=2d) · [← Apex 3 Floor 1 — 3D](/factory-twin-3d/?view=3d) · **Source:** `public.machine_event` · **Policy:** latest known state; no 15-minute expiry"
       }
     },
     {
-      "id": 3,
-      "title": "CURRENT STATE",
+      "id": 10,
+      "title": "OBSERVED RUN / STOP PERFORMANCE",
       "type": "stat",
       "datasource": {
         "type": "postgres",
@@ -111,10 +111,10 @@
       "gridPos": {
         "x": 0,
         "y": 3,
-        "w": 4,
-        "h": 4
+        "w": 8,
+        "h": 5
       },
-      "description": "Latest known operational state.",
+      "description": "Observed state ratio inside the selected time range; not vendor OEE.",
       "fieldConfig": {
         "defaults": {
           "noValue": "NO_DATA",
@@ -130,6 +130,113 @@
                 "value": null
               }
             ]
+          },
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null+nan",
+                "result": {
+                  "color": "#64748B",
+                  "text": "NO_DATA",
+                  "index": 9
+                }
+              }
+            }
+          ]
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Run Ratio %"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Run Time"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Stop Time"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "wideLayout": true,
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "showPercentChange": false,
+        "percentChangeColorMode": "standard",
+        "noValue": "NO_DATA"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "timescaledb"
+          },
+          "rawSql": "WITH observed AS (\n  SELECT MIN(event_time) AS first_event, MAX(event_time) AS last_event FROM public.machine_event WHERE equipment_id=${focus_machine:sqlstring}\n), bounds AS (\n  SELECT GREATEST($__timeFrom()::timestamptz,first_event) AS from_ts, LEAST($__timeTo()::timestamptz,last_event) AS to_ts FROM observed\n), seed AS (\n  SELECT m.event_type,m.event_time,m.id FROM public.machine_event m CROSS JOIN bounds b\n  WHERE m.equipment_id=${focus_machine:sqlstring} AND m.message_type='status' AND m.event_time<b.from_ts\n  ORDER BY m.event_time DESC,m.id DESC LIMIT 1\n), points AS (\n  SELECT * FROM seed UNION ALL\n  SELECT m.event_type,m.event_time,m.id FROM public.machine_event m CROSS JOIN bounds b\n  WHERE m.equipment_id=${focus_machine:sqlstring} AND m.message_type='status' AND m.event_time>=b.from_ts AND m.event_time<=b.to_ts\n), segments AS (\n  SELECT event_type,GREATEST(event_time,from_ts) AS segment_start,LEAST(LEAD(event_time,1,to_ts) OVER (ORDER BY event_time,id),to_ts) AS segment_end\n  FROM points CROSS JOIN bounds\n), durations AS (\n  SELECT event_type,GREATEST(EXTRACT(EPOCH FROM (segment_end-segment_start)),0) AS seconds FROM segments WHERE segment_end>segment_start\n)\nSELECT ROUND((100.0*COALESCE(SUM(seconds) FILTER (WHERE event_type='RUN'),0)/NULLIF(SUM(seconds),0))::NUMERIC,1) AS \"Run Ratio %\",\n       COALESCE(SUM(seconds) FILTER (WHERE event_type='RUN'),0)::DOUBLE PRECISION AS \"Run Time\",\n       COALESCE(SUM(seconds) FILTER (WHERE event_type='STOP'),0)::DOUBLE PRECISION AS \"Stop Time\"\nFROM durations",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "title": "OPERATIONAL STATE HISTORY",
+      "type": "status-history",
+      "datasource": {
+        "type": "postgres",
+        "uid": "timescaledb"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 3,
+        "w": 16,
+        "h": 5
+      },
+      "description": "Adaptive status sampling over the selected time range.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
           },
           "mappings": [
             {
@@ -167,224 +274,7 @@
                 }
               }
             }
-          ]
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "values": false,
-          "calcs": [
-            "lastNotNull"
           ],
-          "fields": ""
-        },
-        "orientation": "auto",
-        "textMode": "value_and_name",
-        "wideLayout": true,
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "showPercentChange": false,
-        "percentChangeColorMode": "standard",
-        "noValue": "NO_DATA"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "type": "postgres",
-            "uid": "timescaledb"
-          },
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: latest known status. */\nSELECT CASE WHEN event_type='RUN' THEN 4 WHEN event_type='STOP' THEN 3 ELSE 5 END AS \"State\"\nFROM public.machine_event WHERE equipment_id=${focus_machine:sqlstring} AND message_type='status'\nORDER BY event_time DESC, id DESC LIMIT 1",
-          "format": "table"
-        }
-      ]
-    },
-    {
-      "id": 4,
-      "title": "LATEST SOURCE TIME",
-      "type": "stat",
-      "datasource": {
-        "type": "postgres",
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 4,
-        "y": 3,
-        "w": 4,
-        "h": 4
-      },
-      "description": "Source timestamp of the current-state evidence.",
-      "fieldConfig": {
-        "defaults": {
-          "noValue": "NO_DATA",
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "#00F2FE"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#00F2FE",
-                "value": null
-              }
-            ]
-          },
-          "mappings": [
-            {
-              "type": "special",
-              "options": {
-                "match": "null+nan",
-                "result": {
-                  "color": "#64748B",
-                  "text": "NO_DATA",
-                  "index": 9
-                }
-              }
-            }
-          ],
-          "unit": "dateTimeAsIso"
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "values": false,
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": ""
-        },
-        "orientation": "auto",
-        "textMode": "value_and_name",
-        "wideLayout": true,
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "showPercentChange": false,
-        "percentChangeColorMode": "standard",
-        "noValue": "NO_DATA"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "type": "postgres",
-            "uid": "timescaledb"
-          },
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: source timestamp. */\nSELECT (EXTRACT(EPOCH FROM event_time)*1000)::DOUBLE PRECISION AS \"Source Time\"\nFROM public.machine_event WHERE equipment_id=${focus_machine:sqlstring} AND message_type='status'\nORDER BY event_time DESC, id DESC LIMIT 1",
-          "format": "table"
-        }
-      ]
-    },
-    {
-      "id": 5,
-      "title": "RUN HITS — LATEST MESSAGE",
-      "type": "stat",
-      "datasource": {
-        "type": "postgres",
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 8,
-        "y": 3,
-        "w": 4,
-        "h": 4
-      },
-      "description": "Vendor-reported Run Hits value; semantics are not promoted to production output.",
-      "fieldConfig": {
-        "defaults": {
-          "noValue": "NO_DATA",
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "#00F2FE"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#00F2FE",
-                "value": null
-              }
-            ]
-          },
-          "mappings": [
-            {
-              "type": "special",
-              "options": {
-                "match": "null+nan",
-                "result": {
-                  "color": "#64748B",
-                  "text": "NO_DATA",
-                  "index": 9
-                }
-              }
-            }
-          ],
-          "decimals": 0
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "values": false,
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": ""
-        },
-        "orientation": "auto",
-        "textMode": "value_and_name",
-        "wideLayout": true,
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "showPercentChange": false,
-        "percentChangeColorMode": "standard",
-        "noValue": "NO_DATA"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "datasource": {
-            "type": "postgres",
-            "uid": "timescaledb"
-          },
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: latest Run Hits evidence. */\nSELECT (regexp_match(event_message,'Run Hits\\s*:\\s*([0-9]+)','i'))[1]::DOUBLE PRECISION AS \"Run Hits\"\nFROM public.machine_event\nWHERE equipment_id=${focus_machine:sqlstring} AND message_type='status' AND event_message ~* 'Run Hits\\s*:'\nORDER BY event_time DESC, id DESC LIMIT 1",
-          "format": "table"
-        }
-      ]
-    },
-    {
-      "id": 6,
-      "title": "LATEST NC PROGRAM",
-      "type": "table",
-      "datasource": {
-        "type": "postgres",
-        "uid": "timescaledb"
-      },
-      "gridPos": {
-        "x": 12,
-        "y": 3,
-        "w": 12,
-        "h": 4
-      },
-      "description": "Latest PROGRAM_LOAD evidence exactly as decoded.",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "custom": {
-            "align": "auto",
-            "cellOptions": {
-              "type": "auto"
-            },
-            "inspect": false
-          },
-          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -398,18 +288,18 @@
         "overrides": []
       },
       "options": {
-        "cellHeight": "sm",
-        "footer": {
-          "countRows": false,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
+        "colWidth": 0.9,
+        "rowHeight": 0.9,
+        "showValue": "never",
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
         },
-        "showHeader": true,
-        "sortBy": [],
-        "enablePagination": true
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
       },
       "targets": [
         {
@@ -418,14 +308,14 @@
             "type": "postgres",
             "uid": "timescaledb"
           },
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: latest observed program load. */\nSELECT event_time AS \"Loaded At\", event_code AS \"Code\", event_message AS \"Program Evidence\"\nFROM public.machine_event WHERE equipment_id=${focus_machine:sqlstring} AND event_type='PROGRAM_LOAD'\nORDER BY event_time DESC, id DESC LIMIT 1",
-          "format": "table"
+          "rawSql": "WITH sampled AS (\n  SELECT DISTINCT ON (date_bin('$__interval'::interval,event_time,TIMESTAMPTZ '1970-01-01'))\n    date_bin('$__interval'::interval,event_time,TIMESTAMPTZ '1970-01-01') AS time,equipment_id,event_type\n  FROM public.machine_event\n  WHERE equipment_id=${focus_machine:sqlstring} AND message_type='status' AND $__timeFilter(event_time)\n  ORDER BY date_bin('$__interval'::interval,event_time,TIMESTAMPTZ '1970-01-01'),event_time DESC,id DESC\n)\nSELECT time,equipment_id AS metric,CASE WHEN event_type='RUN' THEN 4 WHEN event_type='STOP' THEN 3 ELSE 5 END AS value FROM sampled ORDER BY time",
+          "format": "time_series"
         }
       ]
     },
     {
-      "id": 7,
-      "title": "TOOL DIAMETER — SIX SPINDLES",
+      "id": 12,
+      "title": "DAILY OBSERVED REPORT",
       "type": "table",
       "datasource": {
         "type": "postgres",
@@ -433,11 +323,11 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 7,
-        "w": 10,
-        "h": 6
+        "y": 8,
+        "w": 12,
+        "h": 8
       },
-      "description": "Six diameter values parsed from the latest 0215 message; no tolerance is assumed.",
+      "description": "Daily counts derived only from machine_event evidence.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -484,26 +374,26 @@
             "type": "postgres",
             "uid": "timescaledb"
           },
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: latest decoded tool-diameter evidence. */\nWITH latest AS (\n  SELECT event_time, regexp_match(event_message,'^T([0-9]+)\\s+tool diameter:\\s*([0-9.]+)\\s+([0-9.]+)\\s+([0-9.]+)\\s+([0-9.]+)\\s+([0-9.]+)\\s+([0-9.]+)','i') AS m\n  FROM public.machine_event WHERE equipment_id=${focus_machine:sqlstring} AND event_code='0215'\n  ORDER BY event_time DESC, id DESC LIMIT 1\n)\nSELECT event_time AS \"Measured At\", m[1] AS \"Tool\", u.ordinality AS \"Spindle\", ROUND(u.diameter::NUMERIC,3) AS \"Diameter\"\nFROM latest CROSS JOIN LATERAL unnest(m[2:7]) WITH ORDINALITY AS u(diameter,ordinality)\nORDER BY u.ordinality",
+          "rawSql": "SELECT (event_time AT TIME ZONE 'Asia/Bangkok')::DATE AS \"Date (Asia/Bangkok)\",\n  COUNT(*) FILTER (WHERE message_type='status' AND event_type='RUN') AS \"RUN Records\",\n  COUNT(*) FILTER (WHERE message_type='status' AND event_type='STOP') AS \"STOP Records\",\n  SUM(CASE WHEN event_code='0201' AND event_message ~* 'Run Hits\\s*:' THEN (regexp_match(event_message,'Run Hits\\s*:\\s*([0-9]+)','i'))[1]::INTEGER ELSE 0 END) AS \"Reported Run Hits\",\n  COUNT(*) FILTER (WHERE event_type='PROGRAM_LOAD') AS \"Program Loads\",\n  COUNT(*) FILTER (WHERE event_code='0119') AS \"Tool-Life Events\",\n  COUNT(*) FILTER (WHERE message_type='alarm' AND level='E') AS \"Historical Errors\"\nFROM public.machine_event WHERE equipment_id=${focus_machine:sqlstring} AND $__timeFilter(event_time)\nGROUP BY 1 ORDER BY 1 DESC",
           "format": "table"
         }
       ]
     },
     {
-      "id": 8,
-      "title": "LATEST DECODED ERROR — HISTORICAL",
+      "id": 13,
+      "title": "EVENT / TOOL / ERROR EVIDENCE",
       "type": "table",
       "datasource": {
         "type": "postgres",
         "uid": "timescaledb"
       },
       "gridPos": {
-        "x": 10,
-        "y": 7,
-        "w": 10,
-        "h": 6
+        "x": 12,
+        "y": 8,
+        "w": 12,
+        "h": 8
       },
-      "description": "Latest level-E record for diagnostic context; not labelled active without trigger/reset lifecycle.",
+      "description": "Raw decoded evidence for investigation, capped by the row-limit setting.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -550,29 +440,13 @@
             "type": "postgres",
             "uid": "timescaledb"
           },
-          "rawSql": "/* NO_TIMEFILTER_INTENTIONAL: historical error reference, not active lifecycle. */\nWITH latest AS (\n  SELECT *, NULLIF(regexp_replace(event_code,'[^0-9]','','g'),'')::INTEGER AS code_num\n  FROM public.machine_event WHERE equipment_id=${focus_machine:sqlstring} AND message_type='alarm' AND level='E'\n  ORDER BY event_time DESC, id DESC LIMIT 1\n)\nSELECT event_time AS \"When\", CASE WHEN event_code ~ '^[0-9]{4}$' THEN 'E'||event_code ELSE event_code END AS \"Code\",\n  CASE WHEN code_num BETWEEN 101 AND 121 OR code_num=701 THEN 'Safety / interlock'\n       WHEN code_num BETWEEN 202 AND 324 OR code_num BETWEEN 601 AND 605 THEN 'Axis / motion'\n       WHEN code_num BETWEEN 403 AND 419 THEN 'Spindle / tool'\n       WHEN code_num BETWEEN 501 AND 519 THEN 'Program / tool table' ELSE 'Unclassified' END AS \"Category\",\n  CASE WHEN code_num BETWEEN 101 AND 121 OR code_num=701 THEN 'Startup / safety check'\n       WHEN code_num BETWEEN 202 AND 324 THEN 'Home / axis motion'\n       WHEN code_num BETWEEN 403 AND 419 THEN 'Tool change / measurement'\n       WHEN code_num BETWEEN 501 AND 519 THEN 'Program selection / validation'\n       WHEN code_num BETWEEN 601 AND 605 THEN 'Drilling setup / depth' ELSE 'Unknown phase' END AS \"Likely Phase\",\n  event_message AS \"Observed Message\", troubleshooting_method AS \"Troubleshooting\"\nFROM latest",
+          "rawSql": "SELECT event_time AS \"Time\",message_type AS \"Type\",event_type AS \"Event\",event_code AS \"Code\",event_message AS \"Message\",level AS \"Level\",decode_status AS \"Decode\",decoder_version AS \"Decoder\"\nFROM public.machine_event WHERE equipment_id=${focus_machine:sqlstring} AND $__timeFilter(event_time)\n  AND (${event_filter:sqlstring}='All' OR message_type=${event_filter:sqlstring})\nORDER BY event_time DESC,id DESC LIMIT ${raw_limit:raw}",
           "format": "table"
         }
       ]
-    },
-    {
-      "id": 9,
-      "title": "REFERENCE SPEC",
-      "type": "text",
-      "gridPos": {
-        "x": 20,
-        "y": 7,
-        "w": 4,
-        "h": 6
-      },
-      "description": "Reference facts from the supplied DG operation manual, separated from telemetry.",
-      "options": {
-        "mode": "markdown",
-        "content": "### DG Series\n\n- PCB drilling machine\n- 6 heads / spindle measurements\n- Reference: supplied operation manual\n\n**Not supplied by telemetry:** RPM, axis position, tool limits, active interlock state."
-      }
     }
   ],
-  "refresh": "10s",
+  "refresh": "30s",
   "schemaVersion": 39,
   "tags": [
     "IMS",
@@ -673,7 +547,7 @@
         "label": "Evidence type",
         "type": "custom",
         "query": "All,status,event,alarm",
-        "hide": 2,
+        "hide": 0,
         "skipUrlSync": false,
         "current": {
           "selected": true,
@@ -841,7 +715,7 @@
         "label": "Evidence rows",
         "type": "custom",
         "query": "100,250,500",
-        "hide": 2,
+        "hide": 0,
         "skipUrlSync": false,
         "current": {
           "selected": true,
@@ -893,9 +767,9 @@
     ]
   },
   "timezone": "browser",
-  "title": "IMS Drilling — 3 Machine Detail",
-  "uid": "ims-drilling-machine-detail",
+  "title": "IMS Drilling — 4 History",
+  "uid": "ims-drilling-history",
   "version": 1,
   "weekStart": "",
-  "description": "Single-machine current evidence, program, tool diameters, historical error and reference specification."
+  "description": "Historical state, daily observed counts and raw decoded evidence for the selected drilling machine."
 }
