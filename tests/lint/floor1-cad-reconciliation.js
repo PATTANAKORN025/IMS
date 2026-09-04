@@ -51,6 +51,27 @@ const SIZE_TOL_MM = 1.0;
 /** Rotation is copied verbatim; the tolerance covers the degree rounding only. */
 const ROTATION_TOL_DEG = 0.01;
 
+/**
+ * Wall reconstruction ratchets.
+ *
+ * FIDELITY is the fraction of the wall face the model draws that actually
+ * exists in the drawing. It is set just under the measured 99.8% because the
+ * only wall length in the model the drawing does not draw is corner closure --
+ * 11.5 m of extension across 257 corners, appearing on two faces each -- and
+ * that is bounded by construction. A drop here means walls are being invented.
+ *
+ * COVERAGE is the fraction of the drawing's wall-capable line-work the model
+ * reproduces, as walls or as thickness-less line-work. Measured 94.2%.
+ *
+ * ANGLED is a floor, not a target: the drawing contains 70 m of wall that is
+ * not axis-aligned, and a model reporting none of it has regressed to
+ * bucketing faces into horizontal and vertical.
+ */
+const MIN_WALL_FIDELITY = 0.99;
+const MIN_WALL_COVERAGE = 0.93;
+const MIN_ANGLED_WALLS = 10;
+
+
 let failures = 0;
 const worst = { pos: 0, size: 0, rot: 0 };
 
@@ -249,7 +270,228 @@ console.log(`  wall excursion       ${Math.max(wallExcursion, 0).toFixed(3)} m b
   + `envelope (allowed ${WALL_ENVELOPE_PAD_M} m for the outer skin)`);
 console.log(`  wall connectivity    ${wa.connectivity != null ? `${(wa.connectivity * 100).toFixed(1)}%` : 'not recorded'}`
   + `${wa.unpaired_faces != null ? `, ${wa.unpaired_faces} faces unpaired` : ''}`);
-console.log(`  openings             ${openings.length} preserved, none bridged`);
+/* -- walls against the RAW drawing ------------------------------------ */
+//
+// Everything above compares the wall model against the model's own declared
+// envelope, which cannot see the failure that mattered: walls that are placed
+// perfectly and are not walls. The structural layer carries 216 column squares
+// and 96 steel sections as CLOSED loops, and a closed loop's two long sides are
+// parallel, fully overlapping and a wall thickness apart. Paired blind they
+// produced 82 "walls" made of structure, and no check that only looked at the
+// model could tell.
+//
+// So the walls are measured against the raw CAD reference, in both directions,
+// because either alone is meaningless. FIDELITY asks what fraction of the wall
+// face the model draws exists in the drawing -- a model that invents walls
+// fails this. COVERAGE asks what fraction of the drawing's wall line-work the
+// model reproduces -- a model that draws nothing fails this. The reference
+// separates structural sections into their own role, so the denominator is
+// wall-capable line-work rather than every line on a wall layer.
+{
+  const rawPath = path.join(PRIVATE_DIR, 'floor1-raw-cad.json');
+  if (!fs.existsSync(rawPath)) {
+    console.log('  walls vs raw CAD     SKIP -- no raw reference deployed');
+  } else {
+    const rawDoc = JSON.parse(fs.readFileSync(rawPath, 'utf8'));
+    const WALL_ROLES = new Set(['structure', 'walls-interior', 'walls-cleanroom',
+      'walls-movable', 'partitions']);
+    const halfW = geometry.envelope.width / 2;
+    const halfD = geometry.envelope.depth / 2;
+
+    // Raw wall-capable line-work, in the model's own frame so the two sets are
+    // directly comparable. The reference is in CAD millimetres, +y up.
+    const rawSegs = [];
+    for (const role of Array.isArray(rawDoc.roles) ? rawDoc.roles : []) {
+      if (!WALL_ROLES.has(role.id)) continue;
+      const s = role.segments || [];
+      for (let i = 0; i < s.length; i += 4) {
+        const x1 = s[i] / 1000 - halfW;
+        const z1 = -(s[i + 1] / 1000 - halfD);
+        const x2 = s[i + 2] / 1000 - halfW;
+        const z2 = -(s[i + 3] / 1000 - halfD);
+        const len = Math.hypot(x2 - x1, z2 - z1);
+        if (len > 0) rawSegs.push({ x1, z1, x2, z2, len });
+      }
+    }
+
+    // The model's own drawn faces: a wall is a centreline plus a thickness, and
+    // what the drawing has is the two faces, so the comparison is face to face.
+    const modelSegs = [];
+    for (const w of walls) {
+      const dx = w.x2 - w.x1;
+      const dz = w.z2 - w.z1;
+      const len = Math.hypot(dx, dz);
+      if (!(len > 0)) continue;
+      const nx = -dz / len;
+      const nz = dx / len;
+      const t = w.thickness || 0;
+      for (const sgn of [-0.5, 0.5]) {
+        modelSegs.push({
+          x1: w.x1 + nx * t * sgn, z1: w.z1 + nz * t * sgn,
+          x2: w.x2 + nx * t * sgn, z2: w.z2 + nz * t * sgn, len,
+        });
+      }
+    }
+    const lineSegs = (Array.isArray(geometry.wall_lines) ? geometry.wall_lines : [])
+      .map((w) => ({
+        x1: w.x1, z1: w.z1, x2: w.x2, z2: w.z2,
+        len: Math.hypot(w.x2 - w.x1, w.z2 - w.z1),
+      }))
+      .filter((w) => w.len > 0);
+
+    // A uniform grid over the segments, indexed by every cell a segment's
+    // bounding box spans. Indexing sampled points instead leaves a segment
+    // absent from cells it passes through, and a lookup there then reports the
+    // drawing as empty where it is not -- an error that inflated this very
+    // measurement twenty-fold before it was caught.
+    const CELL = 2;   // metres
+    const buildGrid = (segs) => {
+      const g = new Map();
+      for (const f of segs) {
+        const cx0 = Math.floor(Math.min(f.x1, f.x2) / CELL);
+        const cx1 = Math.floor(Math.max(f.x1, f.x2) / CELL);
+        const cz0 = Math.floor(Math.min(f.z1, f.z2) / CELL);
+        const cz1 = Math.floor(Math.max(f.z1, f.z2) / CELL);
+        for (let cx = cx0; cx <= cx1; cx++) {
+          for (let cz = cz0; cz <= cz1; cz++) {
+            const k = `${cx}|${cz}`;
+            if (!g.has(k)) g.set(k, []);
+            g.get(k).push(f);
+          }
+        }
+      }
+      return g;
+    };
+    const distTo = (px, pz, f) => {
+      const dx = f.x2 - f.x1;
+      const dz = f.z2 - f.z1;
+      const l2 = dx * dx + dz * dz;
+      let t = l2 === 0 ? 0 : ((px - f.x1) * dx + (pz - f.z1) * dz) / l2;
+      t = Math.max(0, Math.min(1, t));
+      return Math.hypot(px - (f.x1 + t * dx), pz - (f.z1 + t * dz));
+    };
+    const covered = (sample, grid, tol) => {
+      let total = 0;
+      let on = 0;
+      for (const f of sample) {
+        const n = Math.max(2, Math.ceil(f.len / 0.1));
+        for (let i = 0; i < n; i++) {
+          const px = f.x1 + ((f.x2 - f.x1) * (i + 0.5)) / n;
+          const pz = f.z1 + ((f.z2 - f.z1) * (i + 0.5)) / n;
+          total += f.len / n;
+          const cx = Math.floor(px / CELL);
+          const cz = Math.floor(pz / CELL);
+          let hit = false;
+          for (let ax = cx - 1; ax <= cx + 1 && !hit; ax++) {
+            for (let az = cz - 1; az <= cz + 1 && !hit; az++) {
+              for (const g of grid.get(`${ax}|${az}`) || []) {
+                if (distTo(px, pz, g) <= tol) { hit = true; break; }
+              }
+            }
+          }
+          if (hit) on += f.len / n;
+        }
+      }
+      return { total, on };
+    };
+
+    const TOL_M = 0.06;
+    const rawGrid = buildGrid(rawSegs);
+    const modelGrid = buildGrid(modelSegs.concat(lineSegs));
+    const fidelity = covered(modelSegs, rawGrid, TOL_M);
+    const coverage = covered(rawSegs, modelGrid, TOL_M);
+
+    const fidPct = fidelity.total > 0 ? fidelity.on / fidelity.total : 1;
+    const covPct = coverage.total > 0 ? coverage.on / coverage.total : 0;
+
+    if (fidPct < MIN_WALL_FIDELITY) {
+      fail(`only ${(fidPct * 100).toFixed(1)}% of the wall face the model draws exists in the `
+        + `drawing (floor ${(MIN_WALL_FIDELITY * 100).toFixed(0)}%) -- `
+        + `${((fidelity.total - fidelity.on)).toFixed(1)} m is drawn where the CAD draws nothing`);
+    }
+    if (covPct < MIN_WALL_COVERAGE) {
+      fail(`the model reproduces only ${(covPct * 100).toFixed(1)}% of the drawing's wall `
+        + `line-work (floor ${(MIN_WALL_COVERAGE * 100).toFixed(0)}%)`);
+    }
+
+    // A direction test rather than a displacement one: raw dx and dz in metres
+    // would call a 30 m wall that drifts 4 mm "angled" and a short wall at 20
+    // degrees "straight".
+    const angled = walls.filter((w) => {
+      const dx = w.x2 - w.x1;
+      const dz = w.z2 - w.z1;
+      const len = Math.hypot(dx, dz);
+      if (len === 0) return false;
+      return Math.abs(dx / len) > 0.002 && Math.abs(dz / len) > 0.002;
+    });
+    if (angled.length < MIN_ANGLED_WALLS) {
+      fail(`${angled.length} angled walls, baseline ${MIN_ANGLED_WALLS} -- the drawing contains `
+        + 'walls that are not axis-aligned, and a model with none of them has gone back to '
+        + 'bucketing faces into horizontal and vertical');
+    }
+
+    // OPENINGS. A wall must not close a doorway the drawing leaves open. The
+    // check is not "is an opening inside a wall body" -- on this floor the
+    // drawing itself runs the wall faces straight through every door and puts
+    // the door on top as a block, so that question answers "yes" for reasons
+    // that have nothing to do with the model. The question that means something
+    // is whether the model put wall where the DRAWING has a gap.
+    let insideWall = 0;
+    let closedByModel = 0;
+    for (const o of openings) {
+      let host = null;
+      for (const w of walls) {
+        const dx = w.x2 - w.x1;
+        const dz = w.z2 - w.z1;
+        const len = Math.hypot(dx, dz);
+        if (!(len > 0)) continue;
+        const ux = dx / len;
+        const uz = dz / len;
+        const t = ux * (o.position.x - w.x1) + uz * (o.position.z - w.z1);
+        const c = -uz * (o.position.x - w.x1) + ux * (o.position.z - w.z1);
+        if (t < 0.1 || t > len - 0.1) continue;
+        if (Math.abs(c) > (w.thickness || 0) / 2) continue;
+        host = { w, ux, uz, t };
+        break;
+      }
+      if (!host) continue;
+      insideWall++;
+      // Does the drawing have line-work on BOTH faces at this exact point? If
+      // it does, the wall body there is the drawing's, not the model's.
+      let onFaces = 0;
+      for (const sgn of [-0.5, 0.5]) {
+        const px = host.w.x1 + host.ux * host.t - host.uz * (host.w.thickness || 0) * sgn;
+        const pz = host.w.z1 + host.uz * host.t + host.ux * (host.w.thickness || 0) * sgn;
+        const cx = Math.floor(px / CELL);
+        const cz = Math.floor(pz / CELL);
+        let hit = false;
+        for (let ax = cx - 1; ax <= cx + 1 && !hit; ax++) {
+          for (let az = cz - 1; az <= cz + 1 && !hit; az++) {
+            for (const g of rawGrid.get(`${ax}|${az}`) || []) {
+              if (distTo(px, pz, g) <= TOL_M) { hit = true; break; }
+            }
+          }
+        }
+        if (hit) onFaces++;
+      }
+      if (onFaces < 2) closedByModel++;
+    }
+    if (closedByModel > 0) {
+      fail(`${closedByModel} opening(s) sit inside a wall body where the drawing has a gap -- `
+        + 'the model closed an opening the CAD leaves open');
+    }
+
+    console.log(`  walls vs raw CAD     ${fidelity.on.toFixed(1)} of ${fidelity.total.toFixed(1)} m `
+      + `of model wall face lies on drawn CAD line-work = ${(fidPct * 100).toFixed(1)}% `
+      + `(floor ${(MIN_WALL_FIDELITY * 100).toFixed(0)}%)`);
+    console.log(`  drawing reproduced   ${coverage.on.toFixed(1)} of ${coverage.total.toFixed(1)} m `
+      + `of wall-capable CAD line-work = ${(covPct * 100).toFixed(1)}% `
+      + `(floor ${(MIN_WALL_COVERAGE * 100).toFixed(0)}%)`);
+    console.log(`  angled walls         ${angled.length} preserved (baseline ${MIN_ANGLED_WALLS})`);
+    console.log(`  openings             ${openings.length} served, ${insideWall} inside a wall `
+      + `body because the DRAWING runs its faces through them, ${closedByModel} closed by the model`);
+  }
+}
 
 /* -- wall topology --------------------------------------------------- */
 //
@@ -270,7 +512,7 @@ console.log(`  openings             ${openings.length} preserved, none bridged`)
 // present state; the check fails if the numbers get worse, never if they get
 // better, and any improvement is expected to move them down deliberately.
 const TOPOLOGY_SNAP_M = 0.10;
-const MAX_DANGLING_BASELINE = 1100;
+const MAX_DANGLING_BASELINE = 900;
 const MIN_ROOM_SIZED_BASELINE = 3;
 
 // A served room must agree with the area the drawing prints for it to within
@@ -279,6 +521,7 @@ const MIN_ROOM_SIZED_BASELINE = 3;
 // extraction and a room that passes reconciliation are the same set by
 // construction -- if they ever diverge, one of the two has been edited alone.
 const ROOM_AREA_TOL = 0.35;
+
 
 function wallTopology(runs, faces) {
   const segs = [];

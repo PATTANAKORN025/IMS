@@ -192,6 +192,32 @@ Two column families exist and must not be conflated:
   within 2 m of a raster column, which is expected, and is *not* evidence
   against either set.
 
+### The wall layers do not contain only walls
+
+The structural layer carries four different kinds of thing at once, and nothing
+in the file distinguishes them:
+
+| On `00.Wall FCD` | Count | What it is |
+|---|---:|---|
+| Column squares (900 / 850 / 1000 mm) | 216 | structure, already extracted as columns |
+| Pile caps (3750 mm) | 8 in-window | foundations |
+| Steel sections (310 × 675, 251 × 575, and similar) | 96 | **every one within 2.5 m of a CAD column** |
+| Open line-work | 2,448 segments | the exterior wall, and wall faces |
+
+The first three are **closed loops**. A closed loop's two long sides are
+parallel, fully overlapping and 251–500 mm apart, which is exactly what a wall
+looks like to a rule that measures geometry alone — pairing them blind produced
+82 "walls" made of structure. The property that separates them is that a wall is
+drawn as two independent faces while a section is one closed loop.
+
+That rule is layer-specific, not universal: on `00.Wall IN` a closed loop **is**
+a wall footprint (75 × 2600 and 75 × 5250, all far from any column).
+
+Wall-layer line-work is also **duplicated in places** — entity pairs tracing the
+same line at the same coordinates, 43 of them on this floor. And 1,775 of 8,227
+wall-layer segments are not axis-aligned, though only 61 reach 2 m: the drawing
+holds roughly 70 m of genuinely canted wall, the longest a 23.7 m run at 70.2°.
+
 ### Area boundaries — two closure encodings in one layer
 
 `00.Area Line` holds 33 polylines: **32 closed rings and one stray two-point

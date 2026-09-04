@@ -466,7 +466,7 @@ async function run() {
     const raw = rawRes.ok() ? await rawRes.json() : null;
     check(rawRes.status() === 200, 'the raw CAD reference answers', `got ${rawRes.status()}`);
     if (raw && raw.available) {
-      const ROLES = new Set(['structure', 'columns', 'column-caps', 'walls-interior',
+      const ROLES = new Set(['structure', 'structure-sections', 'columns', 'column-caps', 'walls-interior',
         'walls-cleanroom', 'walls-movable', 'partitions', 'doors', 'windows',
         'openings-airshower', 'area-boundaries', 'area-annotation']);
       const badKeys = [];
@@ -626,6 +626,46 @@ async function run() {
     check(s.api.walls === 0 || s.wallMeshes <= 2,
       'walls are instanced, not one mesh each',
       `${s.wallMeshes} mesh(es) for ${s.api.walls} walls`);
+    // ANGLED WALLS REACH THE RENDERER. The drawing contains 70 m of wall that
+    // is not axis-aligned, and for a long time the model contained none of it:
+    // the extraction bucketed faces into horizontal and vertical by an absolute
+    // 1 mm test, so anything canted was discarded. Serving them is only half
+    // the fix -- an instanced box that is never rotated would draw them
+    // axis-aligned anyway -- so what is asserted here is the rotation actually
+    // applied to the instances, read back out of the instance matrices.
+    const angledInstances = await page.evaluate(async () => {
+      const out = { fromApi: 0, rotated: 0 };
+      const geo = await (await fetch('api/floor-geometry')).json();
+      // A DIRECTION test, not a displacement one. Comparing raw dx and dz in
+      // metres calls a 30 m wall that drifts 4 mm "angled" while calling a
+      // 0.5 m wall at 20 degrees straight, and then the two halves of this
+      // check are measuring different things.
+      for (const w of geo.walls || []) {
+        const dx = w.x2 - w.x1;
+        const dz = w.z2 - w.z1;
+        const len = Math.hypot(dx, dz);
+        if (len === 0) continue;
+        if (Math.abs(dx / len) > 0.002 && Math.abs(dz / len) > 0.002) out.fromApi++;
+      }
+      for (const mesh of window.__twin.wallMeshes) {
+        // The instance matrix is column-major, sixteen floats per instance. Its
+        // first column is the box's local x axis after the transform, which is
+        // the wall's own direction; a wall that was never turned has that axis
+        // lying exactly on x or on z.
+        const a = mesh.instanceMatrix.array;
+        for (let i = 0; i < mesh.count; i++) {
+          const ax = a[i * 16 + 0];
+          const az = a[i * 16 + 2];
+          const len = Math.hypot(ax, az);
+          if (len === 0) continue;
+          if (Math.abs(ax / len) > 0.002 && Math.abs(az / len) > 0.002) out.rotated++;
+        }
+      }
+      return out;
+    });
+    check(angledInstances.fromApi === 0 || angledInstances.rotated >= angledInstances.fromApi,
+      'every angled wall the API serves is drawn turned, not squared up',
+      `${angledInstances.rotated} rotated instances for ${angledInstances.fromApi} angled walls`);
     check(s.perSublayer.equipment === s.api.equipment,
       'equipment sub-layer holds exactly the served CAD assets',
       `${s.perSublayer.equipment} vs ${s.api.equipment}`);

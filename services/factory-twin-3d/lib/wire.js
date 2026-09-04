@@ -69,6 +69,7 @@ const ALLOWED_CONFIDENCE = new Set(['high', 'medium', 'low', 'HIGH', 'MEDIUM', '
  */
 const ALLOWED_CAD_ROLE = new Set([
   'structure',
+  'structure-sections',
   'columns',
   'column-caps',
   'walls-interior',

@@ -54,9 +54,9 @@ unrecognised basis is rejected rather than assumed harmless.
 | Raster equipment slots | 243 | SUPERSEDED | Retained in the private document, served nowhere, drawn nowhere |
 | Monitored devices | 23 | NOT DRAWN | Live telemetry is real; no device has an established position, so none is placed on the floor |
 | Physical mappings | 0 | BLOCKED | No authoritative record relates the namespaces |
-| Functional zones (rendered) | 17 | OBSERVED_CAD | Area-layer boundaries accepted against printed areas |
-| Functional zones (withheld) | 20 | WITHHELD | Failed area validation or party to an unresolved conflict |
-| Interior walls | 866 runs | MEASURED_CAD plan | Face pairing, collinear merging and corner closure from the CAD; thickness measured between drawn faces |
+| Rooms (rendered) | 32 | MEASURED_CAD | The drawing's own closed boundaries on the area layer; 27 carry the drawing's own name, 5 are closed but unlabelled |
+| Rooms (label only, no boundary) | 6 | UNRESOLVED | The printed area refutes the only containing boundary, or no boundary contains the label |
+| Interior walls | 587 runs | MEASURED_CAD plan | Direction-based face pairing, collinear merging and corner closure from the CAD; thickness measured between drawn faces. 10 of them are not axis-aligned |
 | Wall height | — | PRESENTATION_ONLY | Declared 2.6 m constant; no elevation exists in the drawing |
 | Doors, windows, air showers | 52 | OBSERVED_CAD | Block insertion points on the opening layers |
 | Lift pits | 0 | BLOCKED | Symbols merge with adjacent structure |
@@ -278,93 +278,137 @@ floor area the drawing explicitly draws.
 
 ---
 
-## 0.4 Wall assembly, and the removal of every invented position
+## 0.4 Wall assembly
 
-### Walls are assembled, not dumped
+### The drawing does not label its walls
 
-The drawing splits one physical wall into many face segments — at every column,
-tee and detail it passes. Rendered raw, a wall reads as dashes.
+Every difficulty in this section comes from one fact: **the wall layers do not
+contain only walls**, and nothing in the file says which line is which.
+
+`00.Wall FCD` is the structural layer, and it carries four different kinds of
+thing at once — the building's exterior wall as open line-work, all 216 column
+squares, the pile caps, and 96 steel sections. The sections are the problem. A
+310 × 675 or 251 × 575 rectangle is a **closed loop** whose two long sides are
+parallel, fully overlapping, and 251–500 mm apart, which is indistinguishable
+from a wall to any rule that measures geometry alone. Every one of those 96 sits
+within 2.5 m of a CAD column.
+
+The property that separates them is not size, position or proximity: **a wall is
+drawn as two independent faces; a section is one closed loop.** On the
+structural layer a closed loop is structure, and is excluded. On the interior
+and partition layers a closed loop is a wall footprint and is kept — the
+75 × 2600 and 75 × 5250 loops on the interior layer are real walls, and every
+one of them is far from any column.
+
+The drawing also contains **copy-pasted geometry**: entity pairs tracing the
+same line at the same place. Left in, they emit two walls where the building has
+one — the 23.7 m canted wall came out four times. Faces with identical endpoints
+are de-duplicated; 43 entities on this floor.
+
+### Direction, not axis
+
+The previous rule bucketed faces into horizontal and vertical with an **absolute
+1 mm test**, which failed twice over:
+
+- a wall drawn 2 mm out of square across 10 m is not axis-aligned by that test
+  and was discarded — **89 m of wall on this floor**;
+- a wall at 45 or 70 degrees was not representable at all, so the model
+  contained **zero** angled walls while the drawing contains **70 m** of them,
+  including a 23.7 m canted wall 200 mm thick.
+
+Pairing now works in each face's own direction. That removes both failures and
+adds no new tolerance: the half-degree direction bucket **replaces** the 1 mm
+axis test rather than joining it.
+
+### The steps
 
 | Step | Rule | Result |
 |---|---|---|
-| Pair faces | Parallel, 50–600 mm apart, ≥60% overlap | 931 faces paired; thickness is the measured gap |
-| Merge runs | Same axis, centreline within 1 mm, thickness within 5 mm, gap ≤ 120 mm | 866 runs |
-| Close corners | Extend an end only where a perpendicular wall actually crosses, by ≤ half its thickness | 380 corners |
+| Read faces | Wall layers, ≥500 mm, structural closed loops excluded, duplicates dropped | 1,816 faces, 43 duplicates removed |
+| Pair faces | Same direction ±0.5°, 50–600 mm apart, ≥60 % overlap | 639 walls; thickness is the measured gap |
+| Merge runs | Same direction, centreline within 1 mm, thickness within 5 mm, gap ≤ 120 mm, **and no opening in the gap** | 587 runs, 52 merged |
+| Close corners | Extend an end only where another wall's centreline actually crosses, by ≤ half its thickness, **and not over an opening** | 257 corners, 11.5 m total extension |
 
-The 120 mm merge gap is deliberately far below a door leaf, so **an opening is
-never bridged**. Connectivity is **measured and published, not asserted**:
-71.3% of run ends meet another run. A free end is usually a real doorway or a
-wall stopping at a column, so the figure is reported rather than "fixed".
+Below 500 mm the drawing is detailing — hatch ticks, chamfers, bolt outlines —
+and admitting it makes the pairing find walls inside sections: measured,
+dropping the floor to 100 mm more than triples the number of closed loops that
+pair into a "wall".
 
-Faces the extractor could not pair, and that are at least 2 m long, are kept as
-**lines with no thickness**. They appear in the 2D plan, where they are real
-drawn geometry, and are **never extruded** — a thickness nobody measured is
-exactly what must not be invented.
+### What it measures against the drawing
 
-**They did not appear until 2026-09-03.** The extractor wrote them, the
-renderer drew them, the documentation above described them — and the wire
-projection never carried the field, so `geometry.wall_lines` arrived at the
-browser as `undefined` and `buildWallLines()` returned on an empty list every
-time. Every plan this service served was missing 211 of the drawing's wall runs,
-and nothing in the code, the tests or this document said so, because each half
-was individually correct.
+Two directions, because either alone is meaningless. **Fidelity** asks what
+fraction of the wall face the model draws exists in the drawing; a model that
+invents walls fails it. **Coverage** asks what fraction of the drawing's
+wall-capable line-work the model reproduces; a model that draws nothing fails
+it. The raw CAD reference separates structural sections into their own role, so
+the denominator is wall-capable line-work rather than every line on a wall
+layer.
 
-Two things now make it visible rather than merely fixed. The wire shape carries
-**no thickness field at all** — not null, not zero — so an unpaired face cannot
-be extruded downstream even by accident, and the evidence panel counts these
-faces on their own row instead of adding them to the 866 walls. Folding a
-weaker claim into a stronger total is how a measurement gets invented.
+| | Before | After |
+|---|---:|---:|
+| Wall runs | 866 | **587** |
+| Line-work served (no thickness) | 211 | **512** |
+| Model wall face that exists in the drawing | 93.6 % | **99.8 %** |
+| …in metres drawn where the CAD draws nothing | 292.1 m | **7.0 m** |
+| Drawing's wall line-work reproduced | 84.0 % | **94.2 %** |
+| …missing | 1,050.3 m | **383.3 m** |
+| Angled walls | **0** | **10** |
+| Dangling wall-graph ends | 1,055 | **815** |
+| Enclosed regions in the wall graph | 39 | **52** |
+
+The 7.0 m that the drawing does not draw is corner closure and nothing else:
+257 extensions totalling 11.5 m of centreline, appearing on two faces each and
+bounded by half the crossing wall's thickness. It is the only wall length in the
+model that is not a line in the CAD, and it is measured and published rather
+than left to be discovered.
+
+Unpaired faces — 512 of them — are kept as **lines with no thickness**. They are
+real drawn geometry, they appear in the 2D plan, and they are **never
+extruded**. They were previously filtered to 2 m and longer, which discarded
+most of the drawing's shorter wall line-work for no reason beyond tidiness;
+that filter is gone and the coverage figure above is most of what it bought.
+
+### Openings
+
+**No opening is closed by the model, and that is checked rather than claimed.**
+
+The check that used to accompany this section printed "openings preserved, none
+bridged" unconditionally — it verified only that openings lay inside the
+envelope. Measured properly, 8 openings do sit inside a wall body. All 8 are
+there because **the drawing itself runs both wall faces straight through the
+door** and places the door on top as a block; the raw reference has line-work on
+both faces at each of those points. The model closed **zero**.
+
+Cutting a real hole would need the door block's own width, which lives inside
+the block definition and is not expanded — 393 block references on carried
+layers. Until that is done, an opening is a position and a kind, never a gap the
+model invented.
 
 ### What is still wrong with the wall model
 
-Connectivity is 71.3% and 1,392 of 2,323 faces are unpaired, and neither figure
-is a rendering problem. Reconstructed as a graph — 866 centrelines plus the 211
-kept faces, split at every crossing and snapped at 100 mm — the wall model
-produces 1,649 nodes, 1,348 edges and **1,055 dangling endpoints**. It closes
-39 regions, of which **the largest is 25 m² and only 3 reach the size of the
-smallest labelled area on the floor (9 m²), against 37 labelled areas in the
-drawing**. No room closes.
+Connectivity is 65.8 % and 538 faces are unpaired. Reconstructed as a graph —
+587 centrelines plus the 512 kept faces, split at every crossing and snapped at
+100 mm — the wall model produces 1,563 nodes, 1,441 edges and **815 dangling
+endpoints**. It closes 52 regions, of which the largest is 17 m² and only 4
+reach the size of the smallest labelled area on the floor (9 m²).
 
 The building envelope is deliberately left out of that graph. Adding it would
 close one 14,000 m² region and make the wall model look far better connected
 than it is.
 
-That is the reason room boundaries do not come from walls. Four properties of
-the extraction produce it, and all four are in the extractor, not the drawing:
+**Rooms do not depend on any of this.** They come from the drawing's own closed
+area boundaries (§0.2), so the wall graph measures the wall model's own quality
+rather than being the thing room boundaries are inferred from. Connectivity in
+particular is reported, never optimised toward: a free end is usually a real
+doorway or a wall stopping at a column.
 
-| Property | Effect | Measured cost |
-|---|---|---|
-| Only paired faces become walls | 1,392 faces produce no wall | the largest cause |
-| Unpaired faces below 2 m are dropped | 1,181 short runs are lost, and short runs are what close corners | large |
-| Merge gap 120 mm, corner closure ≤ half a thickness | fragments that meet across a column do not join | moderate |
-| Only axis-aligned segments are kept (`dx < 1` or `dy < 1` mm) | any angled wall is discarded | **small — see below** |
-
-**The axis-alignment limit is not the main cause, and this ordering is
-corrected.** Counted off the raw reference, the wall-role layers carry 8,227
-segments, of which 1,775 (21.6 %) are not axis-aligned — but only **61** of
-those reach 2 m, and **52 of the 61 are on the structural layer**, which also
-carries column outlines and 28 mm detail rectangles. Supporting angled segments
-would therefore add tens of segments, not hundreds of walls, and would draw
-column chamfers as walls unless that layer is separated first.
-
-The real work is face pairing and retention, and separating the structural
-layer's three kinds of content: wall faces, column outlines, and hatch detail
-whose median segment is 250 mm. That is **open, not blocked** — the drawing is
-on this host and every figure here was measured by reading it. An earlier
-version of this section recorded the DXF as unavailable; that was wrong, and
-the correction matters because it was the stated reason the wall model had not
-been improved.
-
-It is deliberately not attempted in the same pass as the room work. A wall
-model rebuilt in a hurry on a layer that mixes walls with columns would put
-invented walls on the floor, which is the failure this whole reconstruction
-exists to avoid.
-
-**Rooms no longer depend on any of this.** They come from the drawing's own
-closed area boundaries (§0.2), so the wall graph is now a measure of the wall
-model's own quality rather than the thing room boundaries are inferred from.
-The metrics above are published by `tests/lint/floor1-cad-reconciliation.js` on
-every commit so the gap cannot quietly widen.
+The remaining gap is face pairing and retention. 538 faces have no parallel
+partner within 50–600 mm — typically a wall whose far side is off-layer, or a
+face the 500 mm floor cut in half — and each of those is a wall the model
+draws as a line and cannot extrude. Closing that means deciding what the
+structural layer's remaining open line-work is, entity by entity, and it is not
+attempted here: a wall model rebuilt in a hurry on a layer that mixes walls with
+columns would put invented walls on the floor.
 
 ### Every invented machine position is deleted
 

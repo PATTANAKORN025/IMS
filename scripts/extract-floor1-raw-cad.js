@@ -64,6 +64,12 @@ const ROLE_OF = new Map([
   ['CAP', 'column-caps'],
   ['COL', 'columns'],
   ['00.Wall FCD', 'structure'],
+  // Split out below, not here: the structural layer carries BOTH the exterior
+  // wall as open line-work and every column square, pile cap and steel section
+  // as a closed loop. They are different things and the reference has to be
+  // able to show one without the other, so a closed loop on this layer becomes
+  // 'structure-sections' instead. See roleFor().
+
   ['00.Wall IN', 'walls-interior'],
   ['00.Wall Clean room', 'walls-cleanroom'],
   ['00-WALL', 'walls-interior'],
@@ -87,6 +93,25 @@ const ROLE_OF = new Map([
   ['00.Area Line', 'area-boundaries'],
   ['00.Area', 'area-annotation'],
 ]);
+
+const STRUCTURAL_LAYER = '00.Wall FCD';
+
+/**
+ * The role an entity belongs to.
+ *
+ * One layer, two roles. A closed loop on the structural layer is a section
+ * through a column, a cap or a steel member -- 216 column squares and 96
+ * sections, every one of the latter within 2.5 m of a CAD column. Its two long
+ * sides are parallel and a wall thickness apart, which is exactly why the wall
+ * reconstruction has to exclude them and exactly why the reference has to be
+ * able to draw them separately: comparing a wall model against a drawing that
+ * mixes walls with sections is comparing against the wrong thing.
+ */
+function roleFor(e) {
+  const role = ROLE_OF.get(e.layer);
+  if (role === 'structure' && e.closed) return 'structure-sections';
+  return role;
+}
 
 /** Entity types this reference draws. Everything else is counted, not drawn. */
 const DRAWN = new Set(['LWPOLYLINE', 'POLYLINE', 'LINE', 'ARC', 'CIRCLE']);
@@ -300,7 +325,7 @@ async function main() {
   let segments = 0;
   for (const e of kept) {
     if (!inWindow(e.xs, e.ys)) { outOfWindow++; continue; }
-    const role = ROLE_OF.get(e.layer);
+    const role = roleFor(e);
     const seg = segmentsOf(e);
     if (seg.length === 0) continue;
     // Rebase to the envelope corner. CAD axes and units are untouched.
