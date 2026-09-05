@@ -51,8 +51,12 @@ Three findings matter more than the number:
    **BLOCKED on evidence**, not merely unfinished.
 2. **Position must be taken from the geometry, not the insertion point.** 68 of
    the 331 nodes have an INSERT insertion point *outside* the floor envelope
-   while the geometry they draw is inside it. Any census that filters on the
-   insertion point loses them — including, today, the equipment pipeline (§K).
+   while the geometry they draw is inside it. The cause was measured, not
+   guessed: the block behind the 40-machine grid draws its body roughly **880 m
+   from its own base point**, so the drawing compensates with an insertion point
+   equally far outside the floor and the geometry lands where it belongs. Any
+   census that filters on the insertion point loses them — including, today, the
+   equipment pipeline (§K).
 3. **A repeated block's hull is not its machine.** The largest family's hull
    measures 19.1 × 11.3 m, but 98 % of its own points lie inside
    **4.63 × 2.13 m**, and its instances are pitched 4.01 m apart. The second
@@ -132,7 +136,7 @@ definition is the same machine model, drawn once and placed many times.
 | Family | Nodes | Median drawn size (m) | Rotations | Mirrored | Zone |
 |---|---:|---|---|---:|---|
 | FAM-01 | 76 | 19.08 × 11.30 (body ≈ 4.63 × 2.13) | 90 / 270 | 36 | FZ-F1-0001 (35), FZ-F1-0002 (41) |
-| FAM-02 | 40 | 4.70 × 2.07 | 90 / 270 | 0 | FZ-F1-0001 |
+| FAM-02 | 40 | 4.70 × 2.07 (body ≈ 4.32 × 1.81) | 90 / 270 | 0 | FZ-F1-0001 |
 | FAM-03 | 27 | 19.45 × 11.77 (body ≈ 5.30 × 2.15) | 90 / 270 | 16 | FZ-F1-0001 |
 | FAM-04 | 12 | 3.78 × 2.20 | 90 / 180 | 2 | 6 zones |
 | FAM-05 | 10 | 1.81 × 1.69 | 90 / 270 | 6 | FZ-F1-0036 |
@@ -383,6 +387,15 @@ including a complete 8 × 5 grid of 40 machines; the remaining 6 sit on
 machine-type layers the equipment extractor does not read. That is a real gap
 in the equipment pipeline, recorded here and **not fixed in this task** — no
 renderer, model or runtime file was touched.
+
+**Why the equipment pipeline misses them.** Measured on the block itself: its
+geometry is drawn about 880 m from its base point, and the INSERT carries an
+equal and opposite offset. The drawn machine is inside the floor; the stated
+insertion point is not. Nothing is wrong with the drawing — it is a valid
+transform — but a filter applied to the insertion point rejects a machine that
+is plainly on the floor. FAM-02's own body measures 4.32 × 1.81 m against a
+4.70 × 2.07 m hull, so unlike the two large families it needs no
+hull-versus-body correction.
 
 **Method, reproducible:** stream the DXF; hull every block definition in its own
 coordinates with annotation entities and drafting layers removed; expand nested
