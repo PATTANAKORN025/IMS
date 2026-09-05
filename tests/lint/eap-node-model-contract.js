@@ -236,6 +236,68 @@ check(placed.every((c) => c.cad_placement.frame === 'CAD_WORLD_MM'
 check(placed.every((c) => c.mapping_state === 'DIRECT'),
   'only a DIRECT cell carries a CAD placement');
 
+/* ---- spatial registration ------------------------------------------------
+   The failure this guards against is a world position appearing on a cell whose
+   identity nobody established -- which is what a fitted transform quietly
+   applied to the whole floor would produce. A position may exist only where the
+   evidence level says it was earned. */
+const SPATIAL_LEVELS = ['DIRECT', 'STRUCTURAL', 'SET_LEVEL', 'LAYOUT_ONLY'];
+const reg = model.spatial_registration || {};
+check(cells.every((c) => SPATIAL_LEVELS.includes(c.spatial_evidence)),
+  'every cell carries a declared spatial evidence level');
+const spatial = {};
+for (const c of cells) {
+  spatial[c.spatial_evidence] = (spatial[c.spatial_evidence] || 0) + 1;
+}
+eq(spatial.DIRECT || 0, DIRECT_CELLS, 'cells with DIRECT spatial evidence');
+eq((spatial.DIRECT || 0) + (spatial.STRUCTURAL || 0) + (spatial.SET_LEVEL || 0)
+  + (spatial.LAYOUT_ONLY || 0), EAP_CELLS, 'spatial evidence levels sum to the population');
+check(SPATIAL_LEVELS.every((l) => l in (reg.evidence_levels || {})),
+  'the registration declares all four evidence levels, collapsed into none');
+const positioned = cells.filter((c) => c.cad_world_position);
+eq(positioned.length, spatial.DIRECT || 0,
+  'cells carrying a CAD world position');
+check(positioned.every((c) => c.spatial_evidence === 'DIRECT'
+  || c.spatial_evidence === 'STRUCTURAL'),
+'a world position exists only where the evidence is DIRECT or STRUCTURAL');
+check(positioned.every((c) => c.cad_world_position.frame === 'CAD_WORLD_MM'
+  && Number.isFinite(c.cad_world_position.x_mm)
+  && Number.isFinite(c.cad_world_position.y_mm)),
+'every world position names its frame and is finite');
+check(positioned.every((c) => c.cad_placement
+  && c.cad_placement.x_mm === c.cad_world_position.x_mm
+  && c.cad_placement.y_mm === c.cad_world_position.y_mm),
+'a world position agrees with the CAD placement it came from');
+check(cells.filter((c) => c.spatial_evidence === 'SET_LEVEL'
+  || c.spatial_evidence === 'LAYOUT_ONLY')
+  .every((c) => c.cad_world_position === null && c.registration_residual_mm === null),
+'a SET_LEVEL or LAYOUT_ONLY cell carries no world position and no residual');
+check(cells.filter((c) => c.spatial_evidence !== 'DIRECT')
+  .every((c) => c.cad_handle === null),
+'the registration wrote no CAD handle');
+check(cells.filter((c) => c.spatial_evidence === 'DIRECT')
+  .every((c) => c.registration_method === 'CAD_INSTANCE_IDENTITY'
+    && c.registration_residual_mm === 0),
+'a DIRECT cell is placed by identity, not by a transform');
+check(reg.global_transform_valid === false,
+  'no global transform is claimed valid');
+check(Array.isArray(reg.transforms_tested) && reg.transforms_tested.length >= 3,
+  'the transforms that were tested are recorded with their residuals');
+check((reg.transforms_tested || []).every((t) => t.residual_mm
+  && Number.isFinite(t.residual_mm.p50) && typeof t.verdict === 'string'),
+'every tested transform records a residual and a verdict');
+check(typeof reg.anisotropy_note === 'string' && /anisotropic/i.test(reg.anisotropy_note),
+  'the anisotropy is recorded rather than silently removed');
+const zoneReg = reg.zones || [];
+eq(zoneReg.length, 12, 'zones carrying a registration entry');
+eq(zoneReg.reduce((s, z) => s + z.eap_cells, 0), EAP_CELLS,
+  'registration zone table sums to the cell population');
+check(zoneReg.every((z) => typeof z.stop_reason === 'string' && z.stop_reason.length > 20),
+  'every zone states why its registration stops where it does');
+check(zoneReg.filter((z) => z.cad_world_region).every(
+  (z) => z.cad_world_region.derivation.includes('not a position')),
+'a zone world region says it is a region, not a position');
+
 /* ---- the registration is not allowed to become per-cell proof ----------- */
 check(typeof model.affine_use === 'string' && /zone-level/i.test(model.affine_use),
   'the CAD-to-image registration is marked zone-level only');
