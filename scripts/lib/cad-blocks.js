@@ -462,65 +462,123 @@ function pointInPolygon(x, y, poly) {
 }
 
 /* ------------------------------------------------------------------ *
- * DISPLAY GEOMETRY
+ * OPERATIONAL FOOTPRINT
  *
- * The measured convex outline is RECONCILIATION geometry. It is the right
- * answer to "what did the CAD draw", and the wrong thing to put in front of an
- * operator: a 34-vertex hull of a machine's every bracket and pipe stub reads
- * as noise on a floor map, and 213 of them read as a mess.
+ * The physical extent is measured on the machine's INSERT rotation, which is
+ * the right axis to RECONCILE on: it is the angle the drawing states. It is not
+ * always the axis the machine's own body lies on. A block can draw its body at
+ * a constant angle inside its own definition -- a press turned 18.85 degrees
+ * within the block, placed by an INSERT at 0 -- and measuring that body on the
+ * INSERT axis reports a box larger than the machine in both directions.
  *
- * The normal operator view therefore draws ONE symbol for every machine whose
- * extent was measured: an oriented rectangle, on the machine's own axes, at the
- * measured centre, at the measured width and depth, at the measured rotation.
+ * The OPERATIONAL footprint corrects only that: the same measured geometry,
+ * measured again on the axis the BLOCK ITSELF draws its body on. It is:
  *
- * That is a deliberate VISUALISATION ABSTRACTION. It is not a claim that the
- * source footprint is rectangular -- the measured outline says otherwise for
- * most machines, it stays in the record, and the inspection layer draws it.
+ *   DERIVED       from the physical measurement, never replacing it
+ *   CONTAINING    every measured point stays inside it, so nothing is clipped
+ *   PER BLOCK     the offset is a property of the block definition, identical
+ *                 for every instance of it, not a per-machine fit
+ *   BOUNDED       an offset beyond OPERATIONAL_AXIS_LIMIT_DEG is not applied;
+ *                 the CAD rotation is preserved and the record is FLAGGED
  *
- * The abstraction is safe in the only way that matters because the display
- * layer OWNS NO COORDINATES. There is no display centre, no display angle, no
- * display width and no display polygon anywhere in the model or on the wire.
- * A renderer is handed the record's own position, rotation_deg and footprint
- * and generates four corners from them, so "did display simplification move a
- * machine" is not a question a defect can answer wrongly: there is nothing to
- * move it with.
- *
- * An unresolved footprint yields no rectangle at all, and the renderer draws a
- * uniform marker whose size is a constant and carries no dimensional claim.
+ * What it deliberately does NOT do is make the machine smaller than measured.
+ * A rectangle around a non-rectangular machine covers floor the machine does
+ * not occupy, and no choice of axis removes that: the minimum-area rectangle
+ * is the smallest rectangle that exists, and where it is still much larger
+ * than the outline, the outline is not rectangular. That excess is measured,
+ * published per record, and left alone.
  * ------------------------------------------------------------------ */
 
 /**
- * The display representation of one machine, and the cost of the abstraction.
+ * The signed angle from `b` to `a`, folded into (-45, 45].
  *
- * `hull` is the measured outline and `box` its oriented extent, in the same
- * coordinates. Returns `{ shape, area_error }` and DELIBERATELY NO GEOMETRY:
- *
- *   MEASURED_RECTANGLE  the extent was measured. Drawn from the record's own
- *                       centre, width, depth and rotation -- see
- *                       twinBoxCorners for the canonical corner generator.
- *   UNRESOLVED          no measured extent. No rectangle, no invented size.
- *
- * `area_error` is `(box area - measured area) / measured area`: the share of
- * floor the rectangle claims that the measurement does not show. It is always
- * >= 0, because the oriented box contains the hull it was measured from. It is
- * the honest price of the abstraction and it travels with every record.
+ * A rectangle is the same rectangle under a quarter turn, so an axis is only
+ * ever defined modulo 90 degrees. `angleDelta` answers "how far apart" and is
+ * unsigned, which is right for a residual and wrong for an offset: applying an
+ * unsigned offset turns half the machines the wrong way, and a machine turned
+ * the wrong way measures LARGER than the one it was supposed to improve.
  */
-function displayRectangle(hull, box) {
-  if (!box || !(box.width > 0) || !(box.depth > 0)) {
-    return { shape: 'UNRESOLVED', area_error: null };
-  }
-  const boxArea = box.width * box.depth;
-  if (!Number.isFinite(boxArea) || !(boxArea > 0)) {
-    return { shape: 'UNRESOLVED', area_error: null };
-  }
-  const hullArea = Array.isArray(hull) && hull.length >= 3 ? polygonArea(hull) : 0;
-  return {
-    shape: 'MEASURED_RECTANGLE',
-    area_error: hullArea > 0 ? (boxArea - hullArea) / hullArea : null,
-  };
+function axisOffset(a, b) {
+  let d = ((a || 0) - (b || 0) + 45) % 90;
+  if (d < 0) d += 90;
+  return d - 45;
 }
 
-const DISPLAY_SHAPES = new Set(['MEASURED_RECTANGLE', 'UNRESOLVED']);
+/** The whole display vocabulary. A rectangle, or a marker. */
+const DISPLAY_SHAPES = new Set(['OPERATIONAL_RECTANGLE', 'UNRESOLVED']);
+
+/** Beyond this the block's body axis is not the INSERT axis -- flag, don't move. */
+const OPERATIONAL_AXIS_LIMIT_DEG = 5;
+
+/** An enclosing group must be at least this many times the area of the rest. */
+const ENVELOPE_AREA_RATIO = 3;
+
+/**
+ * Which of a block's geometry groups, if any, is an ENVELOPE drawn AROUND the
+ * machine rather than part of its body.
+ *
+ * `groups` is `[{ key, hull }, ...]`: the block's physical geometry split by
+ * layer and entity type, each already hulled. A group qualifies only if
+ *
+ *   1. every point of every OTHER group lies inside its hull, and
+ *   2. its own area is at least ENVELOPE_AREA_RATIO times theirs, and
+ *   3. what remains without it is still a polygon.
+ *
+ * That is a structural test -- containment and scale -- not a search for
+ * whichever group happens to shrink the box most. Only one group can satisfy
+ * it, because two groups cannot each contain the other and be three times its
+ * area. Returns the index, or -1.
+ *
+ * A group that merely makes the box big does NOT qualify, and must not: an
+ * arm, a conveyor stub or an access step is part of the machine, and removing
+ * it to improve a metric would be reporting a machine smaller than the drawing
+ * has it.
+ */
+function envelopeGroup(groups) {
+  if (!Array.isArray(groups) || groups.length < 2) return -1;
+  for (let i = 0; i < groups.length; i += 1) {
+    const mine = groups[i] && groups[i].hull;
+    if (!Array.isArray(mine) || mine.length < 3) continue;
+    const rest = [];
+    for (let j = 0; j < groups.length; j += 1) {
+      if (j === i || !groups[j] || !Array.isArray(groups[j].hull)) continue;
+      for (const p of groups[j].hull) rest.push(p);
+    }
+    if (rest.length < 3) continue;
+    const restHull = convexHull(rest.reduce((f, p) => { f.push(p[0], p[1]); return f; }, []));
+    if (restHull.length < 3) continue;
+    const mineArea = polygonArea(mine);
+    const restArea = polygonArea(restHull);
+    if (!(mineArea > 0) || !(restArea > 0)) continue;
+    if (mineArea < restArea * ENVELOPE_AREA_RATIO) continue;
+    let contained = true;
+    for (const [x, y] of restHull) {
+      if (!pointInPolygon(x, y, mine)) { contained = false; break; }
+    }
+    if (contained) return i;
+  }
+  return -1;
+}
+
+/**
+ * The operational rectangle for one machine, in the coordinates the hull is in.
+ *
+ * `offsetDeg` is the block's own body-axis offset, already decided and already
+ * bounded by the caller. The rectangle is measured on `rotationDeg + offsetDeg`
+ * and therefore CONTAINS the hull by construction -- an oriented extent always
+ * does, on any axis.
+ */
+function operationalRectangle(hull, rotationDeg, offsetDeg) {
+  if (!Array.isArray(hull) || hull.length < 3) return null;
+  const flat = [];
+  for (const [x, y] of hull) flat.push(x, y);
+  const ext = orientedExtent(flat, (rotationDeg || 0) + (offsetDeg || 0));
+  if (!ext || !(ext.width > 0) || !(ext.depth > 0)) return null;
+  return {
+    cx: ext.cx, cy: ext.cy, width: ext.width, depth: ext.depth,
+    angle_deg: (rotationDeg || 0) + (offsetDeg || 0), offset_deg: offsetDeg || 0,
+  };
+}
 
 module.exports = {
   ANNOTATION_TYPES,
@@ -545,7 +603,11 @@ module.exports = {
   boxCorners,
   twinBoxCorners,
   pointInPolygon,
-  displayRectangle,
+  axisOffset,
+  envelopeGroup,
+  operationalRectangle,
+  OPERATIONAL_AXIS_LIMIT_DEG,
+  ENVELOPE_AREA_RATIO,
   DISPLAY_SHAPES,
   RECT_FILL,
   POLYGON_FILL,

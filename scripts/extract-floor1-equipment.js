@@ -198,6 +198,12 @@ async function readDxf(src) {
   let poly = null;
   let block = null;
   let pending = null;   // accumulating points for the current block
+  // The same physical points a second time, split by (layer, entity type). The
+  // union is identical -- the hull of a union of hulls is the hull of the union
+  // -- so this costs a grouping, not a different measurement. It exists so the
+  // operational footprint can ask a STRUCTURAL question of the geometry: is one
+  // of these groups drawn AROUND all the others.
+  let pendingGroups = null;
 
   // Hulled at ENDBLK and the points discarded: peak memory is one block's
   // geometry, not the drawing's.
@@ -206,7 +212,13 @@ async function readDxf(src) {
     block.hull = B.convexHull(pending || []);
     block.draftHull = B.convexHull(block.draftingPts);
     block.draftingPts = [];
+    block.groups = [];
+    for (const [key, pts] of (pendingGroups || new Map())) {
+      const h = B.convexHull(pts);
+      if (h.length) block.groups.push({ key, hull: h });
+    }
     pending = null;
+    pendingGroups = null;
     block = null;
   };
 
@@ -228,6 +240,10 @@ async function readDxf(src) {
     }
     block.physical += 1;
     pending.push(...pts);
+    const gk = `${e.layer}|${e.type}`;
+    let g = pendingGroups.get(gk);
+    if (!g) { g = []; pendingGroups.set(gk, g); }
+    g.push(...pts);
   };
 
   const flush = () => {
@@ -306,11 +322,12 @@ async function readDxf(src) {
           block = {
             name: value, bx: 0, by: 0, entities: 0, physical: 0, drafting: 0,
             annotation: 0, other: 0, layers: new Set(), nested: [], hull: [],
-            draftingPts: [],
+            draftingPts: [], groups: [],
           };
           blocks.set(value, block);
         }
         pending = [];
+        pendingGroups = new Map();
       } else if (c === 10 && block) block.bx = Number(value);
       else if (c === 20 && block) block.by = Number(value);
       continue;
@@ -380,7 +397,7 @@ async function readDxf(src) {
 function resolveHull(name, blocks, cache, stack, stats) {
   if (cache.has(name)) return cache.get(name);
   const empty = {
-    hull: [], hullWithDrafting: [], depth: 0, entities: 0, physical: 0,
+    hull: [], hullWithDrafting: [], groups: [], depth: 0, entities: 0, physical: 0,
     drafting: 0, annotation: 0, layers: 0,
   };
   const b = blocks.get(name);
@@ -388,13 +405,22 @@ function resolveHull(name, blocks, cache, stack, stats) {
   if (stack.has(name) || stack.size > MAX_NESTING) {
     stats.recursion_guard += 1;
     return {
-      ...empty, hull: b.hull.slice(), entities: b.physical, physical: b.physical,
+      ...empty, hull: b.hull.slice(), groups: b.groups.slice(), entities: b.physical,
+      physical: b.physical,
       drafting: b.drafting, annotation: b.annotation, layers: b.layers.size,
     };
   }
   stack.add(name);
   const pts = [];
   for (const [x, y] of b.hull) pts.push(x, y);
+  // Groups merge across nesting levels by their own key: a nested block's
+  // line-work on a layer is the same group as the parent's line-work on it.
+  const groupPts = new Map();
+  for (const g of b.groups) {
+    let a = groupPts.get(g.key);
+    if (!a) { a = []; groupPts.set(g.key, a); }
+    for (const [x, y] of g.hull) a.push(x, y);
+  }
   let depth = 0;
   let entities = b.physical;
   for (const n of b.nested) {
@@ -405,6 +431,14 @@ function resolveHull(name, blocks, cache, stack, stats) {
     const flat = [];
     for (const [x, y] of r.hull) flat.push(x, y);
     pts.push(...B.applyTo(T, flat));
+    for (const g of r.groups) {
+      const gf = [];
+      for (const [x, y] of g.hull) gf.push(x, y);
+      const moved = B.applyTo(T, gf);
+      let a = groupPts.get(g.key);
+      if (!a) { a = []; groupPts.set(g.key, a); }
+      a.push(...moved);
+    }
     depth = Math.max(depth, 1 + r.depth);
     entities += r.entities;
   }
@@ -414,9 +448,15 @@ function resolveHull(name, blocks, cache, stack, stats) {
   // can defend.
   const draftFlat = [];
   for (const [x, y] of (b.draftHull || [])) draftFlat.push(x, y);
+  const groups = [];
+  for (const [key, a] of groupPts) {
+    const h = B.convexHull(a);
+    if (h.length) groups.push({ key, hull: h });
+  }
   const out = {
     hull: B.convexHull(pts),
     hullWithDrafting: B.convexHull(pts.concat(draftFlat)),
+    groups,
     depth,
     entities,
     physical: b.physical,
@@ -514,6 +554,39 @@ function main() {
       const box = B.orientedExtent(placed, ins.rot);
       const fitted = B.minAreaRect(hull);
 
+      // --- operational footprint ------------------------------------------
+      //
+      // The SAME measured geometry, asked two structural questions:
+      //
+      //   1. is one geometry group drawn AROUND all the others -- an enclosure,
+      //      not a body. Containment plus a scale ratio, never "whichever group
+      //      makes the box smaller", which would be fitting the metric.
+      //   2. what axis does the block draw its body on. That is a property of
+      //      the BLOCK, identical for every instance of it, and it is verified
+      //      to be so rather than assumed.
+      //
+      // The physical hull above is untouched by both.
+      const worldGroups = r.groups.map((g) => {
+        const gf = [];
+        for (const [x, y] of g.hull) gf.push(x, y);
+        return { key: g.key, hull: B.convexHull(B.applyTo(T, gf)) };
+      }).filter((g) => g.hull.length >= 3);
+      const envIdx = B.envelopeGroup(worldGroups);
+      let opHull = hull;
+      if (envIdx >= 0) {
+        const rest = [];
+        worldGroups.forEach((g, i) => {
+          if (i === envIdx) return;
+          for (const [x, y] of g.hull) rest.push(x, y);
+        });
+        const rh = B.convexHull(rest);
+        // Never allowed to empty a machine, same discipline as the drafting
+        // filter: an exclusion that leaves nothing measurable is not applied.
+        if (rh.length >= 3) opHull = rh;
+      }
+      const opFitted = B.minAreaRect(opHull);
+      const rawOffset = opFitted ? B.axisOffset(opFitted.angle_deg, ins.rot) : 0;
+
       // How much of the extent came from the drafting layers, measured rather
       // than assumed.
       if (r.hullWithDrafting && r.hullWithDrafting.length && !r.drafting_kept) {
@@ -525,7 +598,52 @@ function main() {
           if (d > 1) { draftingTrimmed += 1; maxDraftTrimMm = Math.max(maxDraftTrimMm, d); }
         }
       }
-      measured.push({ ins, r, box, fitted, hull, T });
+      measured.push({
+        ins, r, box, fitted, hull, T,
+        opHull,
+        envelopeExcluded: envIdx >= 0 && opHull !== hull,
+        rawOffset,
+      });
+    }
+
+    /* -- the block body axis ------------------------------------------ */
+    //
+    // The offset between a machine's INSERT rotation and the axis its own block
+    // draws its body on. Claimed to be a property of the BLOCK -- so it is
+    // measured on every instance and the claim is CHECKED, not assumed: the
+    // spread within a (block, handing) group is reported, and the value used is
+    // the group's median, so no single instance can move a machine on its own.
+    //
+    // Handing matters. A mirror negates the body angle, so a mirrored instance
+    // of a block has the opposite offset from an unmirrored one, and pooling
+    // the two would average a machine and its reflection into neither.
+    //
+    // Only machine-scale instances vote. A block placed once as a machine and
+    // twenty times as a 40 mm mark has twenty axes that mean nothing, and
+    // pooling them puts a machine on the axis of a tick.
+    const machineScale = (m) => {
+      if (!m.box) return false;
+      const area = (m.box.width * m.box.depth) / 1e6;
+      return m.box.width >= MIN_SIDE_MM && m.box.depth >= MIN_SIDE_MM
+        && m.box.width <= MAX_SIDE_MM && m.box.depth <= MAX_SIDE_MM
+        && area >= MIN_AREA_M2 && area <= MAX_AREA_M2;
+    };
+    const axisGroups = new Map();
+    for (const m of measured) {
+      if (!Number.isFinite(m.rawOffset) || !machineScale(m)) continue;
+      const k = `${m.ins.block}|${B.isMirrored(m.T) ? 'M' : 'D'}`;
+      if (!axisGroups.has(k)) axisGroups.set(k, []);
+      axisGroups.get(k).push(m.rawOffset);
+    }
+    const axisOf = new Map();
+    let axisSpreadWorst = 0;
+    let axisGroupsOffAxis = 0;
+    for (const [k, list] of axisGroups) {
+      list.sort((a, b2) => a - b2);
+      const med = list[Math.floor(list.length / 2)];
+      axisSpreadWorst = Math.max(axisSpreadWorst, list[list.length - 1] - list[0]);
+      axisOf.set(k, med);
+      if (Math.abs(med) > 0.5) axisGroupsOffAxis += 1;
     }
 
     /* -- machine scale ------------------------------------------------ */
@@ -543,6 +661,10 @@ function main() {
     let displayShapeCount = 0;
     let measuredVertexTotal = 0;
     let worstDisplayClaim = 0;
+    let axisApplied = 0;
+    let axisFlagged = 0;
+    let envelopesExcluded = 0;
+    const opExcess = [];
     const reference = [];
     for (const m of measured) {
       seq += 1;
@@ -588,11 +710,32 @@ function main() {
       // angle, no display size and no display polygon, here or on the wire.
       // The renderer generates four corners from the record's own position,
       // rotation_deg and footprint. See docs/equipment-display-geometry.md.
-      const display = ok
-        ? B.displayRectangle(m.hull, box)
+      // The block's own body axis, bounded. Beyond the limit the geometry is
+      // saying something the INSERT does not, and the rule is to say so rather
+      // than to turn the machine: the CAD rotation is preserved and the record
+      // carries orientation_geometry_mismatch for an engineer to look at.
+      const axisKey = `${ins.block}|${m.T && B.isMirrored(m.T) ? 'M' : 'D'}`;
+      const groupOffset = ok && axisOf.has(axisKey) ? axisOf.get(axisKey) : 0;
+      const axisMismatch = Math.abs(groupOffset) > B.OPERATIONAL_AXIS_LIMIT_DEG;
+      const axisApplyDeg = axisMismatch ? 0 : groupOffset;
+      if (ok && axisMismatch) axisFlagged += 1;
+      else if (ok && Math.abs(axisApplyDeg) > 0.001) axisApplied += 1;
+      if (ok && m.envelopeExcluded) envelopesExcluded += 1;
+
+      const opRect = ok ? B.operationalRectangle(m.opHull, ins.rot, axisApplyDeg) : null;
+      // Measured against the geometry the rectangle is drawn around, which is
+      // the operational hull -- the same hull, minus an enclosure where one was
+      // found structurally. Always >= 0: an oriented extent contains its hull.
+      const opHullArea = ok ? B.polygonArea(m.opHull) : 0;
+      const opExcessValue = opRect && opHullArea > 0
+        ? (opRect.width * opRect.depth) / opHullArea - 1 : null;
+      if (opExcessValue !== null) opExcess.push(opExcessValue);
+
+      const display = ok && opRect
+        ? { shape: 'OPERATIONAL_RECTANGLE', area_error: opExcessValue }
         : { shape: 'UNRESOLVED', area_error: null };
       displayShapes[display.shape] = (displayShapes[display.shape] || 0) + 1;
-      if (display.shape === 'MEASURED_RECTANGLE') {
+      if (display.shape === 'OPERATIONAL_RECTANGLE') {
         displayShapeCount += 1;
         displayVertexTotal += 4;
         displayVertexMax = 4;
@@ -650,17 +793,46 @@ function main() {
           ? served.map(([x, y]) => ({ x: mx(x), z: mz(y) }))
           : null,
         footprint_polygon_area_m2: served ? round3(B.polygonArea(served) / 1e6) : null,
-        // --- display representation (derived; the renderer draws THIS) ---
-        // A class and a cost. No coordinates: the rectangle is generated from
-        // position, rotation_deg and footprint above, which is why display
-        // simplification has nothing to move a machine with.
+        // --- operational footprint (derived; the renderer draws THIS) ----
+        //
+        // A SIZE and an AXIS OFFSET, and no coordinates. The rectangle is
+        // generated from position, rotation_deg and these two, which is why
+        // the display layer has nothing to move a machine with. The physical
+        // footprint above is untouched and remains the engineering reference.
         display_shape: display.shape,
-        display_vertices: display.shape === 'MEASURED_RECTANGLE' ? 4 : 0,
-        // >= 0 always: the oriented box CONTAINS the hull it was measured
+        display_vertices: display.shape === 'OPERATIONAL_RECTANGLE' ? 4 : 0,
+        // >= 0 always: an oriented extent CONTAINS the hull it was measured
         // from, so this is floor the rectangle claims and the measurement does
         // not show. Never a licence to move, turn or resize the machine.
         display_area_error: display.area_error === null ? null : round3(display.area_error),
-        display_source: display.shape === 'MEASURED_RECTANGLE' ? 'measured_extent' : null,
+        display_source: display.shape === 'OPERATIONAL_RECTANGLE'
+          ? 'filtered_physical_footprint' : null,
+        operational_footprint: opRect
+          ? {
+            width: round3(opRect.width / 1000),
+            depth: round3(opRect.depth / 1000),
+            // The rectangle's OWN measured centre, carried as a delta from the
+            // canonical position rather than as a second position. It is zero
+            // wherever the body axis is the INSERT axis, and non-zero only
+            // because measuring one hull on two axes gives two extent centres:
+            // drawing the operational size at the physical centre would cut
+            // measured geometry away on the machines that were re-measured.
+            // The delta cannot place a machine on its own -- position still
+            // does that, untouched -- and it is measured, never chosen.
+            offset_x: round3(mx(opRect.cx) - mx(cx)),
+            offset_z: round3(mz(opRect.cy) - mz(cy)),
+          }
+          : null,
+        // Degrees ADDED to rotation_deg to reach the machine's own body axis.
+        // A property of the block, identical for every instance of it.
+        operational_axis_offset_deg: opRect ? round3(axisApplyDeg) : null,
+        // The block's geometry puts its body on an axis the INSERT does not
+        // state. NOT acted on: the CAD rotation is what the machine is drawn
+        // at, and this says an engineer should look.
+        orientation_geometry_mismatch: ok ? axisMismatch : false,
+        // One geometry group was drawn AROUND all the others and is excluded
+        // from the operational size. Structural: containment and scale.
+        operational_excludes_enclosure: ok ? Boolean(m.envelopeExcluded) : false,
         footprint_hull_vertices: ok ? m.hull.length : 0,
         footprint_fill: ok && box.width * box.depth > 0
           ? round3(B.polygonArea(m.hull) / (box.width * box.depth)) : null,
@@ -905,6 +1077,20 @@ function main() {
           + 'text, attributes and DIMENSION entities by entity type. The layer filter is '
           + 'subtractive only and is never allowed to empty a block.',
       },
+      operational_axis: {
+        note: 'Offset between a machine INSERT rotation and the axis its own block draws '
+          + 'its body on. Measured per instance and verified to be a property of the '
+          + 'block: the spread below is the worst disagreement between instances of one '
+          + 'block and handing. Beyond the limit the offset is NOT applied -- the CAD '
+          + 'rotation is preserved and the record is flagged.',
+        limit_deg: B.OPERATIONAL_AXIS_LIMIT_DEG,
+        groups: axisGroups.size,
+        groups_off_axis: axisGroupsOffAxis,
+        worst_spread_deg: round3(axisSpreadWorst),
+        applied: axisApplied,
+        flagged_mismatch: axisFlagged,
+        enclosures_excluded: envelopesExcluded,
+      },
       display: {
         note: 'The normal operator view draws every machine with a measured extent as ONE '
           + "oriented rectangle on the machine's own axes. That is a visualisation "
@@ -921,8 +1107,16 @@ function main() {
         },
         area_error: {
           worst_claimed: round3(worstDisplayClaim),
-          note: 'Share of floor the rectangle claims beyond the measured outline. Always '
-            + '>= 0: an oriented box contains the hull it was measured from.',
+          median: opExcess.length
+            ? round3(opExcess.slice().sort((a, b2) => a - b2)[Math.floor(opExcess.length / 2)])
+            : null,
+          p95: opExcess.length
+            ? round3(opExcess.slice().sort((a, b2) => a - b2)[Math.floor(opExcess.length * 0.95)])
+            : null,
+          note: 'Share of floor the operational rectangle claims beyond the geometry it is '
+            + 'drawn around. Always >= 0: an oriented extent contains its own hull. Where '
+            + 'it is large the machine is not rectangular, and no rectangle can be smaller '
+            + 'without cutting measured geometry away.',
         },
       },
       footprint: {

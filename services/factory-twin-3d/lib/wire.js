@@ -142,10 +142,42 @@ const ALLOWED_FOOTPRINT_SHAPE = new Set([
  * generates four corners from the record's own position, rotation_deg and
  * footprint, so nothing in this vocabulary can move, turn or resize a machine.
  */
-const ALLOWED_DISPLAY_SHAPE = new Set(['MEASURED_RECTANGLE', 'UNRESOLVED']);
+const ALLOWED_DISPLAY_SHAPE = new Set(['OPERATIONAL_RECTANGLE', 'UNRESOLVED']);
 
 /** What the rectangle was derived from. A fixed enum, never prose. */
-const ALLOWED_DISPLAY_SOURCE = new Set(['measured_extent']);
+const ALLOWED_DISPLAY_SOURCE = new Set(['filtered_physical_footprint']);
+
+/**
+ * The operational rectangle's measured size, and the delta from the machine's
+ * position to that rectangle's own measured centre. Metres.
+ *
+ * WHY A DELTA AND NOT A POSITION. The physical extent is measured on the
+ * INSERT axis and the operational extent on the body axis; one hull measured
+ * on two axes has two extent centres. The delta is the difference between
+ * them -- measured, bounded by the machine's own size, and useless on its own:
+ * it places nothing without the canonical position it is added to, which no
+ * part of the display layer may change. Drawing the operational size at the
+ * physical centre instead would cut measured geometry off the machines whose
+ * body axis is not their INSERT axis.
+ *
+ * The delta is zero for every machine measured on its INSERT axis, which is
+ * most of them.
+ */
+function operationalSize(value) {
+  if (!value || typeof value !== 'object') return null;
+  const width = num(value.width);
+  const depth = num(value.depth);
+  if (width === null || depth === null || width <= 0 || depth <= 0) return null;
+  const offsetX = num(value.offset_x);
+  const offsetZ = num(value.offset_z);
+  if (offsetX === null || offsetZ === null) return null;
+  // A delta longer than the machine is not a delta, it is a move. Half the
+  // diagonal is the furthest an extent centre can travel while still being a
+  // centre of the same geometry.
+  const limit = Math.hypot(width, depth) / 2;
+  if (Math.abs(offsetX) > limit || Math.abs(offsetZ) > limit) return null;
+  return { width, depth, offset_x: offsetX, offset_z: offsetZ };
+}
 
 /**
  * Whether a physical machine is bound to an IMS device, and nothing else.
@@ -630,8 +662,21 @@ function projectEquipment(item, mapping) {
       : fromEnum(item.display_shape, ALLOWED_DISPLAY_SHAPE),
     display_source: footprint === null ? null
       : fromEnum(item.display_source, ALLOWED_DISPLAY_SOURCE),
+    // The OPERATIONAL size, and the offset from the CAD rotation to the axis
+    // the block draws its body on. A machine with no physical extent gets
+    // neither, so a marker can never acquire a size through this path.
+    operational_footprint: footprint === null ? null
+      : operationalSize(item.operational_footprint),
+    operational_axis_offset_deg: footprint === null ? null
+      : num(item.operational_axis_offset_deg),
+    // The block's geometry puts its body on an axis the INSERT does not state.
+    // Reported for an engineer; never acted on -- the CAD rotation stands.
+    orientation_geometry_mismatch: item.orientation_geometry_mismatch === true,
+    // One geometry group was drawn AROUND all the others and is left out of the
+    // operational size. The measured outline still carries it.
+    operational_excludes_enclosure: item.operational_excludes_enclosure === true,
     // The price of the abstraction: the share of floor the rectangle claims
-    // beyond the measured outline. Reported per record, never acted on.
+    // beyond the geometry it is drawn around. Reported per record, never acted on.
     display_area_error: footprint === null ? null : num(item.display_area_error),
     // Two machines whose OUTLINES share floor. Measured on convex outlines, so
     // it over-reports: the convex hull of an L-shaped machine covers space the

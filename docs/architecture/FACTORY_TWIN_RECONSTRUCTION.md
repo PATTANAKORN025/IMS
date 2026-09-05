@@ -50,7 +50,7 @@ unrecognised basis is rejected rather than assumed harmless.
 | Equipment positions | 344 | MEASURED_CAD | CAD `INSERT` records: insertion point, rotation and scale stated by the drawing |
 | Equipment extents | 270 of 344 | MEASURED_CAD | The block's own geometry, transformed through the whole INSERT chain — mirror and nesting included — and measured on the machine's own axes |
 | Equipment outlines, measured | 213 of 270 | MEASURED_CAD | The measured convex outline, served where the machine is not a box; an outer bound, not a concave outline. Drawn only by the inspection layer |
-| Equipment outlines, drawn | 270 of 344 | DERIVED | Display geometry: 57 oriented rectangles, 46 chamfered rectangles, 167 simplified polygons, 4–12 vertices each. Derived from the measurement, around the same measured centre, angle and size — see [equipment-display-geometry.md](../equipment-display-geometry.md) |
+| Equipment outlines, drawn | 270 of 344 | DERIVED | One operational rectangle each: the same measured geometry, measured on the axis the block draws its body on, at that measurement's own centre. Claims a median 14.3 % more floor than the geometry it is drawn around, and no rectangle can claim less — see [equipment-display-geometry.md](../equipment-display-geometry.md) and [equipment-operational-footprint-v2.md](../equipment-operational-footprint-v2.md) |
 | Equipment extents withheld | 74 of 344 | UNRESOLVED | Below machine scale (73) or a block that draws a region rather than one asset (1). Position kept, no size claimed |
 | Equipment height | — | BLOCKED | A plan view carries no equipment elevation |
 | Raster equipment slots | 243 | SUPERSEDED | Retained in the private document, served nowhere, drawn nowhere |

@@ -259,6 +259,10 @@ test('an equipment projection emits exactly the documented key set', () => {
     'ims_device_id',
     'mapping_status',
     'mirrored',
+    'operational_axis_offset_deg',
+    'operational_excludes_enclosure',
+    'operational_footprint',
+    'orientation_geometry_mismatch',
     'overlaps_neighbour',
     'position',
     'rotation_deg',
@@ -321,34 +325,87 @@ test('a measured outline is served vertex by vertex, or not at all', () => {
   assert.strictEqual(noExtent.footprint_shape, null);
 });
 
-test('the display record is a class and a cost, never geometry', () => {
+test('the display record is a size and a cost, never a position', () => {
   const out = wire.projectEquipment(validEquipment({
     footprint_shape: 'irregular',
     footprint_polygon: [{ x: 0, z: 0 }, { x: 2, z: 0 }, { x: 2, z: 1 }],
-    display_shape: 'MEASURED_RECTANGLE',
-    display_source: 'measured_extent',
-    display_area_error: 0.205,
+    display_shape: 'OPERATIONAL_RECTANGLE',
+    display_source: 'filtered_physical_footprint',
+    display_area_error: 0.143,
+    operational_footprint: {
+      width: 1.9, depth: 0.95, offset_x: 0.021, offset_z: -0.017,
+    },
+    operational_axis_offset_deg: -2.145,
   }), {});
-  assert.strictEqual(out.display_shape, 'MEASURED_RECTANGLE');
-  assert.strictEqual(out.display_source, 'measured_extent');
-  assert.strictEqual(out.display_area_error, 0.205);
-  // No display coordinates reach the client, so the renderer has exactly one
-  // source for where a machine is: position, rotation_deg and footprint.
+  assert.strictEqual(out.display_shape, 'OPERATIONAL_RECTANGLE');
+  assert.strictEqual(out.display_source, 'filtered_physical_footprint');
+  assert.strictEqual(out.display_area_error, 0.143);
+  assert.deepStrictEqual(out.operational_footprint, {
+    width: 1.9, depth: 0.95, offset_x: 0.021, offset_z: -0.017,
+  });
+  assert.strictEqual(out.operational_axis_offset_deg, -2.145);
+  // A SIZE, an ANGLE OFFSET and a CENTRE DELTA -- all three relative, all
+  // three useless without the record's own position and rotation, which the
+  // display layer cannot touch.
   assert.ok(!('display_polygon' in out));
   assert.ok(!('display_vertices' in out));
   // and the measurement is still there: display never replaces it
   assert.strictEqual(out.footprint_polygon.length, 3);
+  assert.deepStrictEqual(out.footprint, validEquipment().footprint);
 });
 
 test('a display polygon smuggled into the document never reaches the wire', () => {
   const out = wire.projectEquipment(validEquipment({
-    display_shape: 'MEASURED_RECTANGLE',
-    display_source: 'measured_extent',
+    display_shape: 'OPERATIONAL_RECTANGLE',
+    display_source: 'filtered_physical_footprint',
     display_polygon: [{ x: 0, z: 0 }, { x: 2, z: 0 }, { x: 2, z: 1 }, { x: 0, z: 1 }],
     display_vertices: 4,
   }), {});
   assert.ok(!('display_polygon' in out));
   assert.ok(!('display_vertices' in out));
+});
+
+test('an operational size that is not two positive numbers is dropped whole', () => {
+  const bad = [
+    { width: 2 }, { width: 2, depth: 0 }, { width: -2, depth: 1 },
+    { width: '2', depth: 1 }, { width: Infinity, depth: 1 }, 'TEST', 7, [],
+    // a size with no measured centre is not servable either: the renderer
+    // would fall back to the physical centre and cut geometry away
+    { width: 2, depth: 1 }, { width: 2, depth: 1, offset_x: 0.1 },
+    { width: 2, depth: 1, offset_x: 0.1, offset_z: NaN },
+    { width: 2, depth: 1, offset_x: '0', offset_z: 0 },
+    // and a delta longer than the machine is a move, not a measurement
+    { width: 2, depth: 1, offset_x: 4, offset_z: 0 },
+    { width: 2, depth: 1, offset_x: 0, offset_z: -4 },
+  ];
+  for (const value of bad) {
+    const out = wire.projectEquipment(validEquipment({
+      display_shape: 'OPERATIONAL_RECTANGLE', operational_footprint: value,
+    }), {});
+    assert.strictEqual(out.operational_footprint, null,
+      `${JSON.stringify(value)} must not be served as a size`);
+  }
+});
+
+test('the operational centre delta reaches the wire and never folds into position', () => {
+  const src = validEquipment({
+    display_shape: 'OPERATIONAL_RECTANGLE',
+    display_source: 'filtered_physical_footprint',
+    display_area_error: 0.1,
+    operational_footprint: {
+      width: 1.9, depth: 0.95, offset_x: -0.045, offset_z: 0.031,
+    },
+    operational_axis_offset_deg: 3.855,
+  });
+  const before = { x: src.position.x, z: src.position.z };
+  const out = wire.projectEquipment(src, {});
+  // The delta is served as a delta. Adding it to the position on the wire
+  // would publish a machine standing where the CAD does not put it, and the
+  // record would no longer be able to say what moved.
+  assert.strictEqual(out.position.x, before.x);
+  assert.strictEqual(out.position.z, before.z);
+  assert.strictEqual(out.operational_footprint.offset_x, -0.045);
+  assert.strictEqual(out.operational_footprint.offset_z, 0.031);
 });
 
 test('an invented display class or source is dropped, not echoed', () => {
@@ -357,8 +414,9 @@ test('an invented display class or source is dropped, not echoed', () => {
   }), {});
   assert.strictEqual(invented.display_shape, null);
   assert.strictEqual(invented.display_source, null);
-  // the old vocabulary is gone with the polygons it described
-  for (const gone of ['ORIENTED_RECTANGLE', 'CHAMFERED_RECTANGLE', 'SIMPLIFIED_POLYGON']) {
+  // the vocabularies this replaced are gone with the geometry they described
+  for (const gone of ['ORIENTED_RECTANGLE', 'CHAMFERED_RECTANGLE', 'SIMPLIFIED_POLYGON',
+    'MEASURED_RECTANGLE']) {
     assert.strictEqual(
       wire.projectEquipment(validEquipment({ display_shape: gone }), {}).display_shape, null,
       `${gone} must no longer be a servable display class`,
@@ -369,15 +427,32 @@ test('an invented display class or source is dropped, not echoed', () => {
 test('a record with no served extent cannot be drawn as a rectangle', () => {
   const out = wire.projectEquipment(validEquipment({
     footprint: null, footprint_status: 'UNRESOLVED',
-    display_shape: 'MEASURED_RECTANGLE',
-    display_source: 'measured_extent',
+    display_shape: 'OPERATIONAL_RECTANGLE',
+    display_source: 'filtered_physical_footprint',
     display_area_error: 0.2,
+    operational_footprint: { width: 2, depth: 1, offset_x: 0, offset_z: 0 },
+    operational_axis_offset_deg: 3,
   }), {});
-  // Corrected DOWN, not echoed: a marker may not acquire an extent by being
+  // Corrected DOWN, not echoed: a marker may not acquire a size by being
   // labelled one in the private document.
   assert.strictEqual(out.display_shape, 'UNRESOLVED');
   assert.strictEqual(out.display_source, null);
   assert.strictEqual(out.display_area_error, null);
+  assert.strictEqual(out.operational_footprint, null);
+  assert.strictEqual(out.operational_axis_offset_deg, null);
+});
+
+test('the orientation and enclosure flags are booleans, never echoed prose', () => {
+  const out = wire.projectEquipment(validEquipment({
+    orientation_geometry_mismatch: 'TEST-YES', operational_excludes_enclosure: 1,
+  }), {});
+  assert.strictEqual(out.orientation_geometry_mismatch, false);
+  assert.strictEqual(out.operational_excludes_enclosure, false);
+  const set = wire.projectEquipment(validEquipment({
+    orientation_geometry_mismatch: true, operational_excludes_enclosure: true,
+  }), {});
+  assert.strictEqual(set.orientation_geometry_mismatch, true);
+  assert.strictEqual(set.operational_excludes_enclosure, true);
 });
 
 test('an invented shape or zone status is dropped, not echoed', () => {

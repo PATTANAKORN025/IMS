@@ -20,7 +20,10 @@ what is still unresolved.
 ---
 
 The shape an operator actually sees is derived from this measurement and is
-documented separately: [equipment-display-geometry.md](equipment-display-geometry.md).
+documented separately: [equipment-display-geometry.md](equipment-display-geometry.md),
+and the operational footprint the operator view is drawn from — body axis,
+filtering rules, containment proof and acceptance audit — in
+[equipment-operational-footprint-v2.md](equipment-operational-footprint-v2.md).
 
 ---
 
@@ -252,7 +255,7 @@ machines sitting squarely on top of them.
 
 ### Browser regression
 
-`tests/playwright/factory-twin-regression.js`, **473 assertions, 0 failures**,
+`tests/playwright/factory-twin-regression.js`, **518 assertions, 0 failures**,
 including:
 
 - every drawn asset carries the rotation the CAD stated — 344 boxes turned to

@@ -158,7 +158,7 @@ async function snapshot(page) {
       coords: T.snapshotCoordinates(),
       resources: T.resourceStats(),
       footprintMeshes: T.footprintMeshes.length,
-      equipmentMeshes: Array.isArray(T.equipmentMeshes) ? T.equipmentMeshes.length : 0,
+      equipmentMeshes: Array.isArray(T.equipmentInstances) ? T.equipmentInstances.length : 0,
       // The invented-machine-form layer is DELETED. Read defensively and
       // assert it stays absent: a number here would mean drawn volumes nobody
       // measured had come back on a floor read from CAD.
@@ -167,56 +167,89 @@ async function snapshot(page) {
       equipmentCensus: T.equipmentCensus ? T.equipmentCensus() : null,
       // Rotation actually applied to the drawn pads, so the reconciliation can
       // compare the SCENE against the API rather than the API against itself.
-      equipmentRotations: (Array.isArray(T.equipmentMeshes) ? T.equipmentMeshes : []).map(
-        (m) => ({ id: m.userData.equipment.id, y: m.rotation.y })
+      equipmentRotations: (Array.isArray(T.equipmentInstances) ? T.equipmentInstances : []).map(
+        (i) => ({ id: i.item.id, y: i.rotY })
       ),
-      // The DRAWN box: its world placement, its extruded size, and the four
-      // floor-plane corners the renderer actually put on screen. This is what
-      // makes "2D and 3D are the same geometry" an assertion rather than a
-      // claim -- there is one mesh, and both views look at it -- and the
-      // corners are what the display-rectangle proof is measured on.
-      equipmentBoxes: (Array.isArray(T.equipmentMeshes) ? T.equipmentMeshes : []).map((m) => {
-        const item = m.userData.equipment;
-        const p = m.geometry.parameters;
-        // Every machine is a shared cached box turned about +Y. Read the
-        // corners out of the mesh's own world matrix rather than recomputing
-        // them: what is under test is what the renderer drew.
-        m.updateMatrixWorld(true);
-        const attr = m.geometry.attributes.position;
-        // The mesh's OWN world matrix, applied by hand because three.js is an
-        // ES module here and has no page global. Column-major, as three.js
-        // stores it. The rotation convention therefore comes from the renderer,
-        // not from this test -- which is the point.
-        const e = m.matrixWorld.elements;
-        const corners = [];
-        let miny = Infinity;
-        for (let i = 0; i < attr.count; i += 1) {
-          const lx = attr.getX(i);
-          const ly = attr.getY(i);
-          const lz = attr.getZ(i);
-          const wx = e[0] * lx + e[4] * ly + e[8] * lz + e[12];
-          const wy = e[1] * lx + e[5] * ly + e[9] * lz + e[13];
-          const wz = e[2] * lx + e[6] * ly + e[10] * lz + e[14];
-          if (wy < miny) miny = wy;
-          const x = Math.round(wx * 1e6) / 1e6;
-          const z = Math.round(wz * 1e6) / 1e6;
-          if (!corners.some((c) => c[0] === x && c[1] === z)) corners.push([x, z]);
+      // The DRAWN box, read out of the INSTANCE MATRIX the renderer uploaded.
+      //
+      // Instancing is where a display layer could most easily lose a machine:
+      // a matrix is composed once, in bulk, and nothing about a wrong one looks
+      // wrong. So the matrices are decomposed back into a position, a turn and
+      // a size, and the four floor-plane corners are generated from them. This
+      // is what the renderer actually put on screen, not what it was asked to.
+      equipmentBoxes: (() => {
+        const out = [];
+        for (const mesh of (Array.isArray(T.equipmentBatches) ? T.equipmentBatches : [])) {
+          const list = mesh.userData.instances || [];
+          const e = mesh.matrix.elements; // batch transform, expected identity
+          for (let i = 0; i < list.length; i += 1) {
+            const inst = list[i];
+            // three.js is an ES module here with no page global, so the
+            // instance buffer is read directly rather than through Matrix4.
+            const a = mesh.instanceMatrix.array;
+            const o = i * 16;
+            // Column-major, as three.js stores it. Basis vector lengths are the
+            // scale; the translation column is the position.
+            const sx = Math.hypot(a[o + 0], a[o + 1], a[o + 2]);
+            const sy = Math.hypot(a[o + 4], a[o + 5], a[o + 6]);
+            const sz = Math.hypot(a[o + 8], a[o + 9], a[o + 10]);
+            const px = a[o + 12];
+            const py = a[o + 13];
+            const pz = a[o + 14];
+            // Turn about +Y. A rotation about +Y puts -sin(theta) in m31,
+            // which is element 2 of the column-major array -- getting that sign
+            // wrong reports every machine at minus its own angle, and shows up
+            // as a doubled error rather than as an obvious one.
+            const rotY = Math.atan2(-a[o + 2] / (sx || 1), a[o + 0] / (sx || 1));
+            // Corners straight off the matrix BASIS rather than off a
+            // reconstructed angle: no convention to get wrong twice.
+            const exX = a[o + 0] / (sx || 1);
+            const exZ = a[o + 2] / (sx || 1);
+            const ezX = a[o + 8] / (sz || 1);
+            const ezZ = a[o + 10] / (sz || 1);
+            const hw = sx / 2;
+            const hd = sz / 2;
+            const corners = [];
+            for (const [u, v] of [[hw, hd], [-hw, hd], [-hw, -hd], [hw, -hd]]) {
+              corners.push([
+                Math.round((px + u * exX + v * ezX) * 1e6) / 1e6,
+                Math.round((pz + u * exZ + v * ezZ) * 1e6) / 1e6,
+              ]);
+            }
+            out.push({
+              id: inst.item.id,
+              x: px, y: py, z: pz, w: sx, h: sy, d: sz,
+              rotY,
+              batchIdentity: e[0] === 1 && e[5] === 1 && e[10] === 1
+                && e[12] === 0 && e[13] === 0 && e[14] === 0,
+              tier: inst.item.footprint_status,
+              floorY: py - sy / 2,
+              shape: inst.item.display_shape,
+              corners,
+            });
+          }
         }
-        return {
-          id: item.id, x: m.position.x, y: m.position.y, z: m.position.z,
-          w: p.width, h: p.height, d: p.depth,
-          tier: item.footprint_status, floorY: miny,
-          shape: item.display_shape,
-          corners,
-        };
-      }),
+        return out;
+      })(),
+      // The placement the renderer computed, in full precision, before any
+      // buffer: the record's own position, the size it was told to draw, and
+      // the angle it turned to. "Nothing moved" is proved here.
+      equipmentPlacements: (Array.isArray(T.equipmentInstances) ? T.equipmentInstances : []).map(
+        (i) => ({ id: i.item.id, x: i.x, y: i.y, z: i.z, w: i.w, d: i.d, h: i.h, rotY: i.rotY })
+      ),
       // How many DISTINCT box geometries the whole equipment layer costs. A
       // count, not a uuid: the identity of a cached geometry is a runtime
       // detail that changes whenever the layer is rebuilt, and it is the
       // SHARING that is under test.
       equipmentGeometries: new Set(
-        (Array.isArray(T.equipmentMeshes) ? T.equipmentMeshes : []).map((m) => m.geometry.uuid)
+        (Array.isArray(T.equipmentBatches) ? T.equipmentBatches : []).map((m) => m.geometry.uuid)
       ).size,
+      equipmentBatchCount: Array.isArray(T.equipmentBatches) ? T.equipmentBatches.length : 0,
+      equipmentSceneObjects: (() => {
+        let n = 0;
+        T.sublayers.equipment.traverse((o) => { if (o.isMesh || o.isInstancedMesh) n += 1; });
+        return n;
+      })(),
       // Walls and openings are instanced: a few objects carrying hundreds of
       // spans. Counted as objects, because that is what the scene holds.
       wallMeshes: T.wallMeshes ? T.wallMeshes.length : 0,
@@ -268,11 +301,84 @@ async function snapshot(page) {
           return acc;
         }, {}),
         displayClassMissing: (geo.equipment || []).filter(
-          (e) => !['MEASURED_RECTANGLE', 'UNRESOLVED'].includes(e.display_shape)
+          (e) => !['OPERATIONAL_RECTANGLE', 'UNRESOLVED'].includes(e.display_shape)
         ).length,
         displayRectangles: (geo.equipment || []).filter(
-          (e) => e.display_shape === 'MEASURED_RECTANGLE'
+          (e) => e.display_shape === 'OPERATIONAL_RECTANGLE'
         ).length,
+        // The operational size, by id, and the axis offset it is drawn on.
+        operationalFootprints: (geo.equipment || []).reduce((acc, e) => {
+          if (e.operational_footprint) {
+            acc[e.id] = {
+              width: e.operational_footprint.width,
+              depth: e.operational_footprint.depth,
+              offset: e.operational_axis_offset_deg || 0,
+              offset_x: e.operational_footprint.offset_x || 0,
+              offset_z: e.operational_footprint.offset_z || 0,
+            };
+          }
+          return acc;
+        }, {}),
+        // An operational rectangle may be tighter than the physical extent --
+        // that is the point -- but never larger.
+        operationalLargerThanPhysical: (geo.equipment || []).filter(
+          (e) => e.operational_footprint && e.footprint
+            && e.operational_footprint.width * e.operational_footprint.depth
+              > e.footprint.width * e.footprint.depth + 1e-6
+        ).length,
+        // A record that says its body axis disagrees with the INSERT must NOT
+        // have been turned: the flag exists instead of the turn.
+        flaggedButTurned: (geo.equipment || []).filter(
+          (e) => e.orientation_geometry_mismatch
+            && Math.abs(e.operational_axis_offset_deg || 0) > 1e-9
+        ).length,
+        axisOverLimit: (geo.equipment || []).filter(
+          (e) => Math.abs(e.operational_axis_offset_deg || 0) > 5 + 1e-9
+        ).length,
+        axisOffsetApplied: (geo.equipment || []).filter(
+          (e) => Math.abs(e.operational_axis_offset_deg || 0) > 0.001
+        ).length,
+        orientationFlagged: (geo.equipment || []).filter(
+          (e) => e.orientation_geometry_mismatch
+        ).length,
+        enclosuresExcluded: (geo.equipment || []).filter(
+          (e) => e.operational_excludes_enclosure
+        ).length,
+        // The §22 cases, picked from the served record by their own properties
+        // rather than by an id list that would rot the first time the drawing
+        // is re-read.
+        visualCases: (() => {
+          const eq = (geo.equipment || []).filter((e) => e.footprint);
+          const pick = (fn) => { const m = eq.filter(fn); return m.length ? m[0].id : null; };
+          const bySize = eq.slice().sort(
+            (a, b) => b.footprint.width * b.footprint.depth - a.footprint.width * a.footprint.depth
+          );
+          const near = (deg) => pick((e) => Math.abs(((e.rotation_deg % 360) + 360) % 360 - deg) < 0.5);
+          return {
+            axis0: near(0),
+            axis90: near(90),
+            offAxis: pick((e) => {
+              const r = ((e.rotation_deg % 360) + 360) % 360;
+              return Math.abs(r % 90) > 5 && Math.abs(r % 90) < 85;
+            }),
+            mirrored: pick((e) => e.mirrored),
+            longest: bySize.length
+              ? eq.slice().sort((a, b) => Math.max(b.footprint.width, b.footprint.depth)
+                - Math.max(a.footprint.width, a.footprint.depth))[0].id : null,
+            smallest: eq.length
+              ? eq.slice().sort((a, b) => Math.min(a.footprint.width, a.footprint.depth)
+                - Math.min(b.footprint.width, b.footprint.depth))[0].id : null,
+            largest: bySize.length ? bySize[0].id : null,
+            overlapping: pick((e) => e.overlaps_neighbour),
+            roomCrossing: pick((e) => e.zone_status === 'CROSSES_ROOM_BOUNDARY'),
+            enclosure: pick((e) => e.operational_excludes_enclosure),
+            flagged: pick((e) => e.orientation_geometry_mismatch),
+            unresolved: (() => {
+              const u = (geo.equipment || []).filter((e) => !e.footprint);
+              return u.length ? u[0].id : null;
+            })(),
+          };
+        })(),
         displayOnUnresolved: (geo.equipment || []).filter(
           (e) => !e.footprint && e.display_shape !== 'UNRESOLVED'
         ).length,
@@ -301,9 +407,25 @@ async function snapshot(page) {
           if (e.footprint) acc[e.id] = { width: e.footprint.width, depth: e.footprint.depth };
           return acc;
         }, {}),
-        equipmentPositions: (geo.equipment || []).map(
-          (e) => ({ id: e.id, x: e.position.x, z: e.position.z, deg: e.rotation_deg })
-        ),
+        equipmentPositions: (geo.equipment || []).map((e) => {
+          // The served delta from the machine's position to the operational
+          // rectangle's own measured centre. Zero unless the record also
+          // carries a body-axis offset -- the two are one measurement.
+          const op = e.operational_footprint;
+          const has = op && Number.isFinite(op.offset_x) && Number.isFinite(op.offset_z);
+          return {
+            id: e.id,
+            x: e.position.x,
+            z: e.position.z,
+            deg: e.rotation_deg,
+            ox: has ? op.offset_x : 0,
+            oz: has ? op.offset_z : 0,
+            axis: e.operational_axis_offset_deg || 0,
+            enclosure: e.operational_excludes_enclosure === true,
+            w: op && Number.isFinite(op.width) ? op.width : null,
+            d: op && Number.isFinite(op.depth) ? op.depth : null,
+          };
+        }),
         equipmentUnresolved: (geo.equipment || []).filter(
           (e) => e.footprint_status === 'UNRESOLVED'
         ).length,
@@ -705,9 +827,12 @@ async function run() {
     const expectedStructural = s.api.columns
       + (measuredPlate ? s.footprintMeshes : syntheticPlate)
       + s.wallMeshes + s.openingMeshes;
-    // One pad per CAD equipment record and nothing else. No monitored device,
-    // no invented machine form, no raster slot.
-    const expectedOperational = s.api.equipment;
+    // The equipment layer is INSTANCED: a handful of batches carry every
+    // machine, so the count that means anything is the number of INSTANCES,
+    // checked separately below. What the mesh count must still show is that
+    // nothing else has crept into the operational layer -- no monitored
+    // device, no invented machine form, no raster slot.
+    const expectedOperational = s.equipmentBatchCount;
     check(s.perLayer.structural === expectedStructural,
       'structural meshes = columns + floor plate + traced outline',
       `${s.perLayer.structural} vs ${expectedStructural}`);
@@ -764,9 +889,12 @@ async function run() {
     check(angledInstances.fromApi === 0 || angledInstances.rotated >= angledInstances.fromApi,
       'every angled wall the API serves is drawn turned, not squared up',
       `${angledInstances.rotated} rotated instances for ${angledInstances.fromApi} angled walls`);
-    check(s.perSublayer.equipment === s.api.equipment,
-      'equipment sub-layer holds exactly the served CAD assets',
-      `${s.perSublayer.equipment} vs ${s.api.equipment}`);
+    check(s.perSublayer.equipment === s.equipmentBatchCount,
+      'the equipment sub-layer holds only the instanced batches',
+      `${s.perSublayer.equipment} object(s) for ${s.api.equipment} assets`);
+    check(s.equipmentMeshes === s.api.equipment,
+      'every served CAD asset is drawn as exactly one instance',
+      `${s.equipmentMeshes} instance(s) vs ${s.api.equipment} served`);
     check(s.perLayer.operational === expectedOperational,
       'operational meshes = CAD equipment, and nothing else',
       `${s.perLayer.operational} vs ${expectedOperational}`);
@@ -1084,7 +1212,11 @@ async function run() {
         const e = served.get(drawn.id);
         if (!e || e.deg == null) { rotMismatch++; continue; }
         turnedBoxes++;
-        const expected = e.deg * Math.PI / 180;
+        // The CAD rotation, plus the offset the record states between it and
+        // the axis the machine's own block draws its body on. The offset is a
+        // published number; it is not recomputed here.
+        const op = s.api.operationalFootprints[drawn.id];
+        const expected = (e.deg + (op ? op.offset : 0)) * Math.PI / 180;
         const d = Math.abs((drawn.y - expected) % (Math.PI * 2));
         const wrapped = Math.min(d, Math.PI * 2 - d);
         worstRot = Math.max(worstRot, wrapped);
@@ -1104,11 +1236,22 @@ async function run() {
       let invented = 0;
       let sizedBoxes = 0;
       let markerBoxes = 0;
+      let worstUpload = 0;
       const heights = new Set();
+      // THE placement, in full precision, as the renderer computed it before
+      // any buffer. This is where "nothing moved" has to be exact; the Float32
+      // instance buffer below is checked separately and to its own precision.
+      for (const inst of s.equipmentPlacements) {
+        const e = served.get(inst.id);
+        if (!e) { invented++; continue; }
+        worstPos = Math.max(worstPos,
+          Math.abs(inst.x - (e.x + e.ox)), Math.abs(inst.z - (e.z + e.oz)));
+      }
       for (const box of s.equipmentBoxes) {
         const e = served.get(box.id);
         if (!e) { invented++; continue; }
-        worstPos = Math.max(worstPos, Math.abs(box.x - e.x), Math.abs(box.z - e.z));
+        worstUpload = Math.max(worstUpload,
+          Math.abs(box.x - (e.x + e.ox)), Math.abs(box.z - (e.z + e.oz)));
         // Every block stands ON the floor: its lowest drawn vertex is the floor
         // plane, not an arbitrary elevation.
         if (Math.abs(box.floorY) > FLOAT32_TOL_M) offFloor++;
@@ -1128,9 +1271,28 @@ async function run() {
       }
       check(invented === 0, 'no drawn asset invents an extent',
         `${invented} asset(s) drawn with a shape they do not have`);
-      check(worstPos < 1e-9,
+      check(worstPos === 0,
         'the 3D box is the 2D footprint extruded, at the same coordinates',
-        `worst position delta ${worstPos} m across ${s.equipmentBoxes.length} boxes`);
+        `worst position delta ${worstPos} m across ${s.equipmentPlacements.length} placements`);
+      // THE DELTA IS A MEASUREMENT, NOT A NUDGE. It exists only where the
+      // record says its body axis is not its INSERT axis, it is bounded by the
+      // machine's own size, and nothing else in the layer may carry one.
+      let deltaWithoutAxis = 0;
+      let deltaOverSize = 0;
+      let worstDelta = 0;
+      for (const e of s.api.equipmentPositions) {
+        const mag = Math.hypot(e.ox, e.oz);
+        worstDelta = Math.max(worstDelta, mag);
+        if (mag > 1e-9 && Math.abs(e.axis) < 1e-9 && !e.enclosure) deltaWithoutAxis++;
+        if (e.w !== null && e.d !== null && mag > Math.hypot(e.w, e.d) / 2) deltaOverSize++;
+      }
+      check(deltaWithoutAxis === 0 && deltaOverSize === 0,
+        'the rectangle centre delta is a re-measurement, never a free move',
+        `worst ${(worstDelta * 1000).toFixed(1)} mm, ${deltaWithoutAxis} with nothing re-measured, `
+        + `${deltaOverSize} beyond the machine's own size`);
+      check(worstUpload < FLOAT32_TOL_M,
+        'the instance matrix uploaded is the placement, to Float32 precision',
+        `worst ${worstUpload.toExponential(2)} m across ${s.equipmentBoxes.length} instances`);
       check(offFloor === 0, 'every equipment block stands on the floor plane',
         `${offFloor} floating`);
       // Height is PRESENTATION_ONLY, so it must be IDENTICAL everywhere. A
@@ -1150,33 +1312,42 @@ async function run() {
       for (const box of s.equipmentBoxes) {
         const e = served.get(box.id);
         if (!e) continue;
-        const fp = s.api.equipmentFootprints[box.id];
-        if (!fp) continue;
+        const op = s.api.operationalFootprints[box.id];
+        if (!op) continue;
         worstDrawnBox = Math.max(worstDrawnBox,
-          Math.abs(box.w - fp.width), Math.abs(box.d - fp.depth));
+          Math.abs(box.w - op.width), Math.abs(box.d - op.depth));
       }
+      // An instance matrix is a Float32 buffer, so a size read back off the
+      // GPU-bound array differs from the served metre in the seventh decimal.
+      // The number that has to be exact is the one the renderer PLACED, which
+      // is checked against the record on the instance list below.
       check(worstDrawnBox < FLOAT32_TOL_M,
-        'every asset with an extent is drawn at exactly that extent',
+        'every asset with an extent is drawn at exactly its operational size',
         `worst ${worstDrawnBox.toExponential(2)} m across ${sizedBoxes} boxes`);
       check(s.api.equipmentApproxWithoutSource === 0,
         'every approximated extent declares CAD_CORRELATED provenance',
         `${s.api.equipmentApproxWithoutSource} without it`);
 
-      // -- THE DISPLAY RECTANGLE, AND THE PROOF THAT DRAWING IT MOVES NOTHING
+      // -- THE OPERATIONAL RECTANGLE, AND THE PROOF THAT DRAWING IT MOVES
+      //    NOTHING
       //
       // Every machine with a measured extent is drawn as one oriented
-      // rectangle. The risk in that is a symbol that quietly moves, turns or
-      // resizes a machine, and it is answered twice over:
+      // rectangle at its operational size. The risk is a symbol that quietly
+      // moves, turns or resizes a machine, and instancing raises it: 270
+      // matrices are composed in bulk and a wrong one looks like a right one.
+      // So it is answered three ways:
       //
-      //   STRUCTURALLY -- there is no display geometry to draw with. No display
-      //   polygon, centre, angle or size reaches the client, so the renderer
-      //   builds the rectangle from position, rotation_deg and footprint and
-      //   from nothing else.
+      //   STRUCTURALLY -- no display coordinates exist. A size and an offset
+      //   reach the client; the position and the rotation are the physical
+      //   record's own.
       //
-      //   MEASURED -- the four corners the renderer actually put on screen are
-      //   compared, in world coordinates, with the corners the ONE canonical
-      //   helper generates from the served record. Not the record against
-      //   itself: the browser against Node.
+      //   MEASURED -- the corners are recovered from the INSTANCE MATRIX the
+      //   renderer uploaded and matched, both ways, against corners generated
+      //   in Node by the one canonical helper from the served record.
+      //
+      //   BOUNDED -- an operational rectangle may be tighter than the physical
+      //   extent, never larger, and a record that flags its body axis must not
+      //   have been turned by it.
       check(s.api.displayClassMissing === 0,
         'every equipment record carries exactly one display class',
         `${s.api.displayClassMissing} without one; ${JSON.stringify(s.api.displayShapes)}`);
@@ -1187,26 +1358,35 @@ async function run() {
         'an unresolved footprint acquires no rectangle',
         `${s.api.displayOnUnresolved} unresolved record(s) claim one`);
       check(s.api.displayAreaErrorMin >= 0,
-        'a rectangle never cuts inside the outline it was measured from',
+        'a rectangle never cuts inside the geometry it is drawn around',
         `worst claimed +${(s.api.displayAreaErrorMax * 100).toFixed(1)}%, `
         + `smallest ${(s.api.displayAreaErrorMin * 100).toFixed(1)}%`);
+      check(s.api.operationalLargerThanPhysical === 0,
+        'the body axis tightens a rectangle, never grows one',
+        `${s.api.operationalLargerThanPhysical} larger than their measured extent`);
+      check(s.api.flaggedButTurned === 0,
+        'a flagged body axis is reported, never acted on',
+        `${s.api.orientationFlagged} flagged, ${s.api.flaggedButTurned} turned anyway`);
+      check(s.api.axisOverLimit === 0,
+        'no rectangle is turned beyond the body-axis limit',
+        `${s.api.axisOverLimit} over 5 degrees; ${s.api.axisOffsetApplied} offsets applied`);
 
       let cornerWorst = 0;
       let cornerChecked = 0;
       let cornerCountWrong = 0;
+      let batchTransformed = 0;
       for (const box of s.equipmentBoxes) {
         const e = served.get(box.id);
-        const fp = s.api.equipmentFootprints[box.id];
-        if (!e || !fp || e.deg == null) continue;
+        const op = s.api.operationalFootprints[box.id];
+        if (!box.batchIdentity) batchTransformed += 1;
+        if (!e || !op || e.deg == null) continue;
         if (!Array.isArray(box.corners) || box.corners.length !== 4) {
           cornerCountWrong += 1;
           continue;
         }
         cornerChecked += 1;
-        const want = blocks.twinBoxCorners(e.x, e.z, fp.width, fp.depth, e.deg);
-        // Nearest-neighbour both ways: a drawn corner must be a generated one
-        // AND a generated corner must be drawn, so neither a swap nor a
-        // collapse can pass.
+        const want = blocks.twinBoxCorners(
+          e.x + op.offset_x, e.z + op.offset_z, op.width, op.depth, e.deg + op.offset);
         for (const [wx, wz] of want) {
           let best = Infinity;
           for (const [dx, dz] of box.corners) best = Math.min(best, Math.hypot(dx - wx, dz - wz));
@@ -1218,6 +1398,9 @@ async function run() {
           cornerWorst = Math.max(cornerWorst, best);
         }
       }
+      check(batchTransformed === 0,
+        'an instanced batch adds no transform of its own',
+        `${batchTransformed} batch(es) carry a non-identity matrix`);
       check(cornerCountWrong === 0,
         'every drawn machine is a four-cornered rectangle in plan',
         `${cornerCountWrong} with a different corner count`);
@@ -1227,14 +1410,73 @@ async function run() {
       check(cornerWorst <= SERVED_COORDINATE_QUANTUM_M,
         'the drawn rectangle IS the record: same centre, same size, same angle',
         `worst corner ${(cornerWorst * 1000).toFixed(3)} mm across ${cornerChecked} machines`);
-      check(worstPos < 1e-9,
-        'drawing the rectangle moved no machine',
-        `worst centre delta ${worstPos} m across ${s.equipmentBoxes.length} drawn assets`);
-      // One shared, cached geometry per distinct size: 270 machines must not
-      // cost 270 geometries.
-      check(s.equipmentGeometries < s.equipmentBoxes.length / 2,
-        'display rectangles share cached box geometries',
-        `${s.equipmentGeometries} geometries across ${s.equipmentBoxes.length} machines`);
+      check(worstPos === 0,
+        'the rectangle is drawn where the record puts it, to the last bit',
+        `worst centre delta ${worstPos} m across ${s.equipmentPlacements.length} drawn assets`);
+
+      // -- Instancing -----------------------------------------------------
+      //
+      // The point of it: 344 machines cost a handful of objects, one geometry
+      // and one material per tier, and picking still names the exact machine.
+      check(s.equipmentSceneObjects === s.equipmentBatchCount
+        && s.equipmentSceneObjects > 0 && s.equipmentSceneObjects <= 4,
+        'the equipment layer is drawn by a few instanced batches, not one object per machine',
+        `${s.equipmentSceneObjects} scene object(s) for ${s.equipmentBoxes.length} machines`);
+      check(s.equipmentGeometries === 1,
+        'every machine shares ONE box geometry',
+        `${s.equipmentGeometries} geometr(ies) across the batches`);
+
+      // -- The §22 visual cases -------------------------------------------
+      //
+      // Chosen from the served record by their own properties, so the list
+      // cannot rot when the drawing is re-read. Each is verified as DRAWN:
+      // where it is, how big it is, which way it faces.
+      const drawnById = new Map(s.equipmentBoxes.map((b) => [b.id, b]));
+      const placementById = new Map(s.equipmentPlacements.map((i) => [i.id, i]));
+      const cases = s.api.visualCases;
+      const caseNames = Object.keys(cases);
+      let caseChecked = 0;
+      let caseFailed = 0;
+      const caseNotes = [];
+      for (const name of caseNames) {
+        const id = cases[name];
+        if (!id) continue;
+        const box = drawnById.get(id);
+        const e = served.get(id);
+        if (!box || !e) { caseFailed += 1; caseNotes.push(`${name}: not drawn`); continue; }
+        caseChecked += 1;
+        const op = s.api.operationalFootprints[id];
+        const placed = placementById.get(id);
+        // Against the record's own centre PLUS its published rectangle delta:
+        // the machine's position is untouched, and the rectangle is drawn at
+        // the centre the same geometry has on the axis it was measured on.
+        const moved = placed
+          ? Math.max(Math.abs(placed.x - (e.x + e.ox)), Math.abs(placed.z - (e.z + e.oz)))
+          : Infinity;
+        if (moved !== 0) { caseFailed += 1; caseNotes.push(`${name}: moved ${moved}`); continue; }
+        if (op) {
+          const sized = Math.max(Math.abs(box.w - op.width), Math.abs(box.d - op.depth));
+          if (sized > FLOAT32_TOL_M) {
+            caseFailed += 1;
+            caseNotes.push(`${name}: size ${sized}`);
+            continue;
+          }
+          const wantY = (e.deg + op.offset) * Math.PI / 180;
+          const dY = Math.abs(((box.rotY - wantY) % (Math.PI * 2)));
+          const wrapped = Math.min(dY, Math.PI * 2 - dY);
+          if (wrapped > 1e-6) {
+            caseFailed += 1;
+            caseNotes.push(`${name}: angle ${(wrapped * 180 / Math.PI).toFixed(6)} deg`);
+            continue;
+          }
+        } else if (box.w !== box.d) {
+          caseFailed += 1;
+          caseNotes.push(`${name}: an unresolved marker is not square`);
+        }
+      }
+      check(caseFailed === 0 && caseChecked >= 10,
+        'every named visual case is drawn where, and as, the record says',
+        `${caseChecked} of ${caseNames.length} case(s) checked${caseNotes.length ? ': ' + caseNotes.join('; ') : ''}`);
     }
 
     // -- The invented machine-form layer is gone ---------------------------
@@ -1461,6 +1703,12 @@ async function run() {
         const v = obj.position.clone().project(T.camera);
         return Math.abs(v.x) <= 1 && Math.abs(v.y) <= 1 && v.z < 1;
       };
+      // An equipment INSTANCE is not an Object3D: it is a placement record, so
+      // it is projected through the same camera by the page's own helper.
+      const framedPoint = (p) => {
+        const v = T.projectPoint(p.x, p.y, p.z);
+        return Math.abs(v.x) <= 1 && Math.abs(v.y) <= 1 && v.z < 1;
+      };
       let structTotal = 0;
       let structVisible = 0;
       T.layers.structural.traverse((o) => {
@@ -1474,8 +1722,8 @@ async function run() {
         structVisible,
         // The CAD equipment is everything operational on the floor now: no
         // monitored device is drawn, and no raster slot exists.
-        slotsFramed: T.equipmentMeshes.filter(framed).length,
-        slotTotal: T.equipmentMeshes.length,
+        slotsFramed: T.equipmentInstances.filter(framedPoint).length,
+        slotTotal: T.equipmentInstances.length,
       };
     });
     check(inOverview.view === 'overview', 'overview preset activates');
@@ -1803,7 +2051,7 @@ async function run() {
     // outline is the geometry the display shape was derived FROM, and a caption
     // is a caption. Neither may add a mesh to the floor, and neither may move a
     // coordinate.
-    const drawnAssets = await page.evaluate(() => window.__twin.equipmentMeshes.length);
+    const drawnAssets = await page.evaluate(() => window.__twin.equipmentInstances.length);
     if (drawnAssets === 0) {
       skip('the measured outlines are an inspection layer, off by default', NO_GEOMETRY);
       skip('machine labels are an overlay, not geometry', NO_GEOMETRY);
@@ -1814,8 +2062,8 @@ async function run() {
           visible: T.sublayers.measured.visible,
           objects: T.sublayers.measured.children.length,
           outlines: T.measuredOutlineCount(),
-          equipmentMeshes: T.equipmentMeshes.length,
-          positions: T.equipmentMeshes.map((m) => [m.position.x, m.position.y, m.position.z]),
+          equipmentMeshes: T.equipmentInstances.length,
+          positions: T.equipmentInstances.map((i) => [i.x, i.y, i.z]),
         };
       });
       check(before.visible === false,
@@ -1830,8 +2078,8 @@ async function run() {
         T.setLayerVisible('measured', true);
         return {
           visible: T.sublayers.measured.visible,
-          equipmentMeshes: T.equipmentMeshes.length,
-          positions: T.equipmentMeshes.map((m) => [m.position.x, m.position.y, m.position.z]),
+          equipmentMeshes: T.equipmentInstances.length,
+          positions: T.equipmentInstances.map((i) => [i.x, i.y, i.z]),
         };
       });
       check(after.visible === true && after.equipmentMeshes === before.equipmentMeshes,
@@ -1862,6 +2110,8 @@ async function run() {
           shownInDom: shown.length,
           text: shown.slice(0, 3).map((el) => el.textContent.trim()),
           sceneChildren: T.sublayers.equipment.children.length,
+          batches: T.equipmentBatches.length,
+          instanceCount: T.equipmentBatches.reduce((n, b) => n + b.count, 0),
           hostPointerEvents: host ? getComputedStyle(host).pointerEvents : null,
         };
       });
@@ -1869,9 +2119,12 @@ async function run() {
         && labels.shownInDom === labels.stats.shown,
         'machine labels are capped and the DOM matches the count',
         `${labels.stats.shown} shown, cap ${labels.stats.max}, ${labels.shownInDom} in the DOM`);
-      check(labels.sceneChildren === drawnAssets,
+      // Instanced: the equipment layer holds one child per tier, never one per
+      // machine, and captioning changes neither that count nor the instances.
+      check(labels.sceneChildren === labels.batches
+        && labels.instanceCount === drawnAssets,
         'machine labels are an overlay, not geometry',
-        `${labels.sceneChildren} meshes for ${drawnAssets} assets, ${labels.stats.shown} captions`);
+        `${labels.sceneChildren} batch mesh(es) carrying ${labels.instanceCount} of ${drawnAssets} assets, ${labels.stats.shown} captions`);
       check(labels.hostPointerEvents === 'none',
         'labels never intercept a click meant for the floor',
         `pointer-events: ${labels.hostPointerEvents}`);

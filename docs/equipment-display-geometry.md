@@ -16,7 +16,10 @@ nothing.
 > block name or machine identity appears here.
 
 See [equipment-geometry-audit.md](equipment-geometry-audit.md) for how the
-physical measurement itself is obtained.
+physical measurement itself is obtained, and
+[equipment-operational-footprint-v2.md](equipment-operational-footprint-v2.md)
+for the operational footprint the rectangle is now measured from — the body
+axis, its centre, the filtering rules and the acceptance audit.
 
 ---
 
@@ -52,8 +55,8 @@ So the model holds **two** geometries per machine, and they have different jobs:
 ## 2. The pipeline, and the rule about it
 
 ```
-RAW CAD → CAD TRANSFORM → PHYSICAL EQUIPMENT MODEL → RECONCILIATION
-        → DISPLAY RECTANGLE → 2D EAP → 3D DERIVED VIEW
+RAW CAD → CAD TRANSFORM → PHYSICAL EQUIPMENT MODEL → PHYSICAL RECONCILIATION
+        → OPERATIONAL FOOTPRINT → 2D EAP → 3D DERIVED VIEW
 ```
 
 One canonical physical model. The renderer has **no geometry of its own**: it
@@ -72,32 +75,31 @@ provable rather than merely tested.
 A record's display fields are:
 
 ```json
-{ "display_shape": "MEASURED_RECTANGLE", "display_source": "measured_extent",
-  "display_area_error": 0.205 }
+{ "display_shape": "OPERATIONAL_RECTANGLE",
+  "display_source": "filtered_physical_footprint",
+  "display_area_error": 0.143,
+  "operational_footprint": { "width": …, "depth": …, "offset_x": …, "offset_z": … },
+  "operational_axis_offset_deg": … }
 ```
 
-A class and a cost. **No centre, no angle, no size, no polygon** — not in the
+A class, a cost, and a **relative** measurement: a size, an angle offset and a
+centre delta. **No absolute centre, no absolute angle, no polygon** — not in the
 private document, not on the wire, not in the client. The renderer builds the
-rectangle from `position`, `rotation_deg` and `footprint`, which are the
-physical record's own fields, and from nothing else.
+rectangle from `position`, `rotation_deg` and those three, and from nothing
+else. Every one of the three is zero-able: with a zero offset and a zero delta
+the rectangle is the physical extent at the physical centre, which is what most
+machines get.
 
-So the required assertions
-
-```
-display.centerX === physical.centerX
-display.centerY === physical.centerY
-display.width   === physical.width
-display.depth   === physical.depth
-display.rotation === physical.rotation
-```
-
-hold **by identity, not by tolerance**. There is no second copy of any of those
-five numbers that could drift from the first.
+Why the delta exists, why it can never move a machine, and what rejects one
+that tries, is
+[equipment-operational-footprint-v2.md §3](equipment-operational-footprint-v2.md#3-derivation-rules).
+`position` and `rotation_deg` are never written back, and every check that asks
+"did anything move" reads them, not the drawn rectangle.
 
 Two classes exist and no more:
 
-- **`MEASURED_RECTANGLE`** — 270 machines. An oriented rectangle on the
-  machine's own axes.
+- **`OPERATIONAL_RECTANGLE`** — 270 machines. An oriented rectangle on the
+  machine's own body axis.
 - **`UNRESOLVED`** — 74 machines. No measured extent, so no rectangle. A
   uniform marker of a constant size stands at the CAD-stated position and
   carries no dimensional claim. The wire refuses to serve a rectangle for a
@@ -124,6 +126,7 @@ Measured on the current build, at three independent layers.
 | Assertion | Where | Result |
 |---|---|---|
 | Machines moved | validator, reconciliation, browser | **0 of 344** |
+| Physical position / rotation / dimension residual vs the previous build | regenerated document, field by field | **0** |
 | Machines resized | validator, reconciliation | **0 of 270**, worst 0.000 mm |
 | Rotations changed | reconciliation | **0 of 344**, worst 0.0000° |
 | Drawn centre vs served position | browser, on the mesh | **0 m**, 344 assets |
@@ -151,20 +154,24 @@ travels with every record as `display_area_error` —
 
 | | Value |
 |---|---:|
-| Median rectangle | **+20.5 %** more floor than its measured outline |
-| p90 | +31.6 % |
-| p95 | +44.0 % |
+| Median rectangle | **+14.3 %** more floor than the geometry it is drawn around |
+| p90 | +31.2 % |
+| p95 | +31.2 % |
 | Worst | **+65.1 %** |
-| Rectangles claiming more than 30 % | 119 of 270 |
-| Measured outline left uncovered | **0.04 %** worst |
+| Rectangles claiming more than 30 % | 113 of 270 |
+| Measured geometry left outside the rectangle | **0.654 mm** worst |
 
 The sign can only be positive: an oriented box **contains** the hull it was
 measured from, so a rectangle can never cut inside a machine. The 0.04 %
 uncovered is the millimetre publication quantum of the served outline poking
 past its own box, not a rectangle clipping a machine.
 
+A rectangle cannot go below this without cutting measured geometry away: the
+minimum-area rectangle of the same hulls has the same median. See
+[equipment-operational-footprint-v2.md §7](equipment-operational-footprint-v2.md#7-area-quality--and-the-limit).
+
 The reconciliation gates both the worst (limit 70 %) and the **median** (limit
-25 %), so this price cannot grow unnoticed — which matters, because it is
+20 %), so this price cannot grow unnoticed — which matters, because it is
 exactly the number that would move if the extraction started measuring
 something larger than a machine.
 
@@ -302,8 +309,9 @@ still; the QA metric stays on the measurement, where it means something.
 
 ## 11. 3D
 
-Derived from the same record and nothing else: physical centre, physical
-rotation, physical width and depth, extruded. Height is **not in evidence** — a
+Derived from the same record and nothing else: the operational centre, the
+operational rotation, the operational width and depth, extruded. The 2D symbol
+and the 3D box are the same instances, so they cannot disagree. Height is **not in evidence** — a
 plan carries no elevation — so every machine is extruded to the same declared
 presentation constant, `height_status` stays `unknown`, and the regression
 asserts that exactly one height exists across every drawn block. A varying
@@ -323,15 +331,18 @@ CI, under a software rasteriser:
 | Polygon vertices served for drawing | 2,321 | **0** |
 | Triangles | 20,388 | **14,536** |
 | Scene geometries | 310 | **141** |
-| Draw calls | 670 | 670 |
-| Cached geometries / materials | 27 / 8 | 71 / 8 |
+| Draw calls | 670 | **328** |
+| Equipment scene objects | 344 | **2** |
 | Measured outlines drawn, by default | 0 | **0** (1 draw call when switched on) |
 | Boot to first drawn machine | — | **~1.2 s** |
 
-Draw calls are unchanged because they are bounded by mesh count, not by mesh
-complexity, and instancing is still deferred: the machines already share
-geometry and material, and an instanced batch would cost the per-mesh picking
-and per-mesh inspector the operator view depends on.
+Instancing is now implemented: the 344 machines are two `InstancedMesh` batches
+sharing one unit box, and picking still resolves each ray to exactly one record
+through the hit's `instanceId`. It halved the draw calls and did **not** improve
+frame time, because the CI renderer is a software rasteriser and frame time
+there is bound by pixel count, not by draw calls. The measured numbers, both
+what improved and what did not, are in
+[equipment-operational-footprint-v2.md §10](equipment-operational-footprint-v2.md#10-instancing-benchmark).
 
 ---
 
@@ -340,8 +351,9 @@ and per-mesh inspector the operator view depends on.
 1. **The measurement itself is a convex hull**, so the outline is already an
    outer bound of a concave machine. The rectangle is an outer bound of that.
    Both are published; neither is presented as the machine's true perimeter.
-2. **A rectangle claims a median 20.5 % and up to 65.1 % more floor** than the
-   measurement. Bounded, gated, published per record, visible in the inspector,
+2. **A rectangle claims a median 14.3 % and up to 65.1 % more floor** than the
+   measurement, and no rectangle can claim less without cutting measured
+   geometry away. Bounded, gated, published per record, visible in the inspector,
    and switchable against the truth in one click.
 3. **No machine type is drawn**, because the CAD names blocks, not assets. The
    label carries the model id and nothing that came out of the drawing.

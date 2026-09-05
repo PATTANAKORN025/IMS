@@ -109,9 +109,10 @@ const ROTATION_TOL_DEG = 0.01;
  * and what the inspection layer draws; it is not replaced by anything here.
  */
 const DISPLAY_QUANTUM_M = 0.0011;
-const MAX_DISPLAY_UNCOVERED = 0.005;
 const MAX_RECT_CLAIMED = 0.70;
-const MAX_RECT_CLAIMED_MEDIAN = 0.25;
+const MAX_RECT_CLAIMED_MEDIAN = 0.20;
+/** Beyond this a record may not act on its own body axis. */
+const OPERATIONAL_AXIS_LIMIT_DEG = 5;
 
 const MIN_EQUIPMENT_POSITION = 0.99;
 const MIN_FOOTPRINT_OVERLAP = 0.95;
@@ -404,19 +405,26 @@ if (worstFalsePositive > MAX_FOOTPRINT_FALSE_POSITIVE) {
 // The canonical frame reflects z, so a machine's own axis in (x, z) lies at
 // MINUS the served rotation. Measuring on +rotation reports a turned machine as
 // larger than it is, which is a mistake this file made once already.
-const DISPLAY_SHAPES = new Set(['MEASURED_RECTANGLE', 'UNRESOLVED']);
+const DISPLAY_SHAPES = new Set(['OPERATIONAL_RECTANGLE', 'UNRESOLVED']);
 const displayTally = {};
 let displayMoved = 0;
 let displayResized = 0;
 let worstDisplayMove = 0;
 let worstDisplayResize = 0;
 let measuredVertices = 0;
-let worstUncovered = 0;
+let worstHullOutsideMm = 0;
+let hullOutside = 0;
 let worstClaimed = 0;
 const claimed = [];
 let displayOnUnresolved = 0;
 let classMissing = 0;
 let rectangles = 0;
+let grewBeyondPhysical = 0;
+let axisApplied = 0;
+let axisFlagged = 0;
+let axisOverLimit = 0;
+let enclosuresExcluded = 0;
+let smallerThanPhysical = 0;
 
 for (const item of equipment) {
   const shape = item.display_shape;
@@ -425,61 +433,126 @@ for (const item of equipment) {
 
   if (!item.footprint) {
     // An unresolved footprint may not acquire one by being drawn.
-    if (shape !== 'UNRESOLVED' || item.display_polygon || item.display_vertices) {
+    if (shape !== 'UNRESOLVED' || item.display_polygon || item.operational_footprint) {
       displayOnUnresolved += 1;
     }
     continue;
   }
-  if (shape !== 'MEASURED_RECTANGLE') {
+  if (shape !== 'OPERATIONAL_RECTANGLE') {
     fail(`${item.id}: measured footprint but display class ${shape}`);
+    continue;
+  }
+  const op = item.operational_footprint;
+  if (!op || !(op.width > 0) || !(op.depth > 0)) {
+    fail(`${item.id}: measured footprint with no operational size to draw it at`);
     continue;
   }
   rectangles += 1;
   measuredVertices += Array.isArray(item.footprint_polygon) ? item.footprint_polygon.length : 4;
+  if (item.orientation_geometry_mismatch) axisFlagged += 1;
+  if (item.operational_excludes_enclosure) enclosuresExcluded += 1;
+  const offset = Number.isFinite(item.operational_axis_offset_deg)
+    ? item.operational_axis_offset_deg : 0;
+  if (Math.abs(offset) > 0.001) axisApplied += 1;
+  if (Math.abs(offset) > OPERATIONAL_AXIS_LIMIT_DEG + 1e-9) axisOverLimit += 1;
+  // A flagged record must NOT have been turned: that is the whole meaning of
+  // the flag. Preserving the CAD rotation and then quietly turning the
+  // rectangle anyway would be the silent override the policy forbids.
+  if (item.orientation_geometry_mismatch && Math.abs(offset) > 1e-9) {
+    fail(`${item.id}: flagged orientation_geometry_mismatch but the rectangle was turned `
+      + `by ${offset} deg anyway`);
+  }
+  const physArea = item.footprint.width * item.footprint.depth;
+  const opArea = op.width * op.depth;
+  if (opArea > physArea + 1e-6) grewBeyondPhysical += 1;
+  else if (opArea < physArea - 1e-6) smallerThanPhysical += 1;
 
   // Generated the way the renderer generates it: from the record's own centre,
-  // measured width and depth, and measured rotation, through the ONE canonical
-  // corner helper. Nothing else is available to build it from.
-  const corners = blocks.twinBoxCorners(item.position.x, item.position.z,
-    item.footprint.width, item.footprint.depth, item.rotation_deg);
+  // its operational size, and its rotation plus the stated axis offset,
+  // through the ONE canonical corner helper.
+  // The rectangle's own measured centre: position plus the delta the record
+  // publishes. The delta exists because one hull measured on two axes has two
+  // extent centres; without it the operational size would be drawn at the
+  // physical centre and would cut measured geometry away.
+  const rectX = item.position.x + (Number.isFinite(op.offset_x) ? op.offset_x : 0);
+  const rectZ = item.position.z + (Number.isFinite(op.offset_z) ? op.offset_z : 0);
+  const corners = blocks.twinBoxCorners(rectX, rectZ,
+    op.width, op.depth, item.rotation_deg + offset);
   const flat = [];
   for (const [x, z] of corners) flat.push(x, z);
-  const ext = blocks.orientedExtent(flat, -item.rotation_deg);
-  const move = Math.max(Math.abs(ext.cx - item.position.x), Math.abs(ext.cy - item.position.z));
-  const resize = Math.max(Math.abs(ext.width - item.footprint.width),
-    Math.abs(ext.depth - item.footprint.depth));
+  const ext = blocks.orientedExtent(flat, -(item.rotation_deg + offset));
+  const move = Math.max(Math.abs(ext.cx - rectX), Math.abs(ext.cy - rectZ));
+  const resize = Math.max(Math.abs(ext.width - op.width), Math.abs(ext.depth - op.depth));
   worstDisplayMove = Math.max(worstDisplayMove, move);
   worstDisplayResize = Math.max(worstDisplayResize, resize);
   if (move > DISPLAY_QUANTUM_M) displayMoved += 1;
   if (resize > DISPLAY_QUANTUM_M) displayResized += 1;
 
-  // Against the MEASUREMENT, not against itself. The rectangle must cover the
-  // measured hull entirely, and whatever it covers beyond it is the price.
-  const measured = Array.isArray(item.footprint_polygon) && item.footprint_polygon.length >= 3
-    ? item.footprint_polygon.map((v) => [v.x, v.z])
-    : corners;
-  const measuredArea = blocks.polygonArea(measured);
-  const rectArea = blocks.polygonArea(corners);
-  const inter = blocks.polygonArea(blocks.convexIntersection(corners, measured));
-  if (measuredArea > 0) {
-    worstUncovered = Math.max(worstUncovered, (measuredArea - inter) / measuredArea);
-    const over = (rectArea - inter) / measuredArea;
-    worstClaimed = Math.max(worstClaimed, over);
-    claimed.push(over);
+  // Against the MEASUREMENT ITSELF -- the full hull in the measurement
+  // reference, in CAD millimetres, not the simplified outline the wire carries
+  // and not the served box. That matters here in a way it did not before: an
+  // operational rectangle is deliberately TIGHTER than the physical box, so
+  // comparing it with the box would report the intended tightening as a
+  // failure to cover the machine. The hull is what it actually has to cover.
+  //
+  // The exception is declared on the record: where an enclosure was excluded
+  // from the operational size, the rectangle does not cover the hull, on
+  // purpose, and says so.
+  const ref = referenceById.get(item.id);
+  const hull = ref && Array.isArray(ref.hull_mm) && ref.hull_mm.length >= 3 ? ref.hull_mm : null;
+  if (hull) {
+    const ang = item.rotation_deg + offset;
+    // WHERE THE RECTANGLE IS ACTUALLY DRAWN, converted back to the CAD frame.
+    // Re-fitting a centre to the hull here would test a rectangle nobody
+    // draws: it would pass whether or not the model publishes the delta the
+    // renderer needs, which is exactly the hole this closes.
+    const drawnCx = frame.twinXToCad(rectX, HALF_W);
+    const drawnCy = frame.twinZToCad(rectZ, HALF_D);
+    // The measurement is in the CAD frame, where the machine's axis is +ang;
+    // the canonical frame reflects z, which is why the served corners above use
+    // the negated angle and these do not.
+    const t = ang * Math.PI / 180;
+    const cos = Math.cos(t);
+    const sin = Math.sin(t);
+    const hw = (op.width * 1000) / 2;
+    const hd = (op.depth * 1000) / 2;
+    let outMm = 0;
+    for (const [x, y] of hull) {
+      const dx = x - drawnCx;
+      const dy = y - drawnCy;
+      outMm = Math.max(outMm,
+        Math.abs(dx * cos + dy * sin) - hw, Math.abs(-dx * sin + dy * cos) - hd);
+    }
+    if (!item.operational_excludes_enclosure) {
+      worstHullOutsideMm = Math.max(worstHullOutsideMm, outMm);
+      if (outMm > CORNER_TOL_MM) hullOutside += 1;
+    }
+    const hullArea = blocks.polygonArea(hull);
+    if (hullArea > 0) {
+      const over = (op.width * op.depth * 1e6) / hullArea - 1;
+      worstClaimed = Math.max(worstClaimed, over);
+      claimed.push(over);
+    }
   }
 }
 
 claimed.sort((a, b) => a - b);
 const medianClaimed = claimed.length ? claimed[Math.floor(claimed.length / 2)] : 0;
+const p95Claimed = claimed.length ? claimed[Math.floor(claimed.length * 0.95)] : 0;
 
 console.log(`  display classes      ${JSON.stringify(displayTally)}`);
 console.log(`  rectangle vs record  ${displayMoved} moved, ${displayResized} resized `
   + `(worst move ${(worstDisplayMove * 1000).toFixed(3)} mm, worst resize `
   + `${(worstDisplayResize * 1000).toFixed(3)} mm) across ${rectangles} rectangles`);
+console.log(`  operational size     ${smallerThanPhysical} tighter than the measured extent, `
+  + `${grewBeyondPhysical} larger (must be 0); axis offset applied to ${axisApplied}, `
+  + `flagged and NOT applied on ${axisFlagged}, enclosure excluded on ${enclosuresExcluded}`);
 console.log(`  drawn vertices       ${rectangles * 4} against ${measuredVertices} measured`);
-console.log(`  abstraction cost     worst ${(worstUncovered * 100).toFixed(2)}% of the measured `
-  + `outline uncovered, ${(medianClaimed * 100).toFixed(1)}% median / `
-  + `${(worstClaimed * 100).toFixed(1)}% worst claimed beyond it`);
+console.log(`  rectangle vs hull    ${hullOutside} rectangle(s) cut measured geometry away, `
+  + `worst ${worstHullOutsideMm.toFixed(3)} mm outside`);
+console.log(`  abstraction cost     ${(medianClaimed * 100).toFixed(1)}% median / `
+  + `${(p95Claimed * 100).toFixed(1)}% p95 / ${(worstClaimed * 100).toFixed(1)}% worst claimed `
+  + 'beyond the measured geometry');
 
 if (classMissing) {
   fail(`${classMissing} equipment record(s) carry no display class`);
@@ -489,25 +562,34 @@ if (displayOnUnresolved) {
     + 'not invent an extent');
 }
 if (displayMoved) {
-  fail(`${displayMoved} display rectangle(s) sit off their own record's position by more than `
-    + `${(DISPLAY_QUANTUM_M * 1000).toFixed(1)} mm`);
+  fail(`${displayMoved} operational rectangle(s) sit off their own record's position by `
+    + `more than ${(DISPLAY_QUANTUM_M * 1000).toFixed(1)} mm`);
 }
 if (displayResized) {
-  fail(`${displayResized} display rectangle(s) differ from their measured extent by more than `
-    + `${(DISPLAY_QUANTUM_M * 1000).toFixed(1)} mm`);
+  fail(`${displayResized} operational rectangle(s) differ from their declared size by more `
+    + `than ${(DISPLAY_QUANTUM_M * 1000).toFixed(1)} mm`);
 }
-if (worstUncovered > MAX_DISPLAY_UNCOVERED) {
-  fail(`a display rectangle leaves ${(worstUncovered * 100).toFixed(2)}% of its measured `
-    + `outline uncovered (limit ${(MAX_DISPLAY_UNCOVERED * 100).toFixed(1)}%) -- an oriented `
-    + 'box contains the hull it was measured from');
+if (grewBeyondPhysical) {
+  fail(`${grewBeyondPhysical} operational rectangle(s) are LARGER than the measured extent `
+    + '-- the body axis may tighten a box, never grow one');
+}
+if (axisOverLimit) {
+  fail(`${axisOverLimit} record(s) act on a body-axis offset beyond the `
+    + `${OPERATIONAL_AXIS_LIMIT_DEG} degree limit`);
+}
+if (hullOutside) {
+  fail(`${hullOutside} operational rectangle(s) cut measured geometry away (worst `
+    + `${worstHullOutsideMm.toFixed(3)} mm outside, tolerance ${CORNER_TOL_MM} mm) -- an `
+    + 'oriented extent contains the hull it was measured from, and the only records '
+    + 'allowed not to are the ones declaring an excluded enclosure');
 }
 if (worstClaimed > MAX_RECT_CLAIMED) {
-  fail(`a display rectangle claims ${(worstClaimed * 100).toFixed(1)}% more floor than its `
-    + `measured outline (limit ${(MAX_RECT_CLAIMED * 100).toFixed(0)}%)`);
+  fail(`an operational rectangle claims ${(worstClaimed * 100).toFixed(1)}% more floor than `
+    + `its measured outline (limit ${(MAX_RECT_CLAIMED * 100).toFixed(0)}%)`);
 }
 if (medianClaimed > MAX_RECT_CLAIMED_MEDIAN) {
-  fail(`the median display rectangle claims ${(medianClaimed * 100).toFixed(1)}% more floor `
-    + `than its measured outline (limit ${(MAX_RECT_CLAIMED_MEDIAN * 100).toFixed(0)}%)`);
+  fail(`the median operational rectangle claims ${(medianClaimed * 100).toFixed(1)}% more `
+    + `floor than its measured outline (limit ${(MAX_RECT_CLAIMED_MEDIAN * 100).toFixed(0)}%)`);
 }
 
 /* -- structure ------------------------------------------------------- */

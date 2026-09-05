@@ -296,129 +296,184 @@ test('point-in-polygon answers for a footprint', () => {
   assert.strictEqual(B.pointInPolygon(1, 0.5, [[0, 0], [1, 1]]), false);
 });
 
-console.log('cad-blocks: display representation');
+console.log('cad-blocks: operational footprint');
 
-/**
- * THE PROOF, in the form the model makes possible.
- *
- * The display layer owns no coordinates, so "did it move the machine" is
- * answered by generating the drawn rectangle from the record's OWN numbers and
- * measuring it back. Anything a defect could do to a machine would show here.
- */
-function assertRectanglePreserves(cx, cz, width, depth, rotationDeg) {
-  const twin = B.twinBoxCorners(cx, cz, width, depth, rotationDeg);
-  assert.strictEqual(twin.length, 4, 'a display rectangle has four corners');
-  const flat = [];
-  for (const [x, z] of twin) flat.push(x, z);
-  // Measured on the machine's own axis, which the reflected frame puts at
-  // minus the served rotation. One convention, one helper, both sides.
-  const ext = B.orientedExtent(flat, -rotationDeg);
-  near(ext.cx, cx, 1e-9);
-  near(ext.cy, cz, 1e-9);
-  near(ext.width, width, 1e-9);
-  near(ext.depth, depth, 1e-9);
-}
-
-test('a measured extent displays as one rectangle, and carries no geometry', () => {
-  const hull = B.convexHull(RECT);
-  const box = B.orientedExtent(RECT, 0);
-  const d = B.displayRectangle(hull, box);
-  assert.strictEqual(d.shape, 'MEASURED_RECTANGLE');
-  near(d.area_error, 0);
-  // The record is a class and a cost. No centre, no angle, no size, no
-  // polygon: there is nothing here a renderer could place a machine with.
-  assert.deepStrictEqual(Object.keys(d).sort(), ['area_error', 'shape']);
-});
-
-test('the rectangle claims the floor between the outline and its own box', () => {
-  // A plus-shaped machine: the oriented box contains it and says so.
-  const pts = [1, 0, 2, 0, 2, 1, 3, 1, 3, 2, 2, 2, 2, 3, 1, 3, 1, 2, 0, 2, 0, 1, 1, 1];
-  const hull = B.convexHull(pts);
-  const box = B.orientedExtent(pts, 0);
-  const d = B.displayRectangle(hull, box);
-  assert.strictEqual(d.shape, 'MEASURED_RECTANGLE');
-  const boxArea = box.width * box.depth;
-  near(d.area_error, (boxArea - B.polygonArea(hull)) / B.polygonArea(hull), 1e-12);
-  // An oriented box CONTAINS the hull it was measured from, so the cost of the
-  // abstraction can never be negative: the rectangle never clips a machine.
-  assert.ok(d.area_error >= 0, `area_error ${d.area_error}`);
-});
-
-test('no measured extent yields no rectangle and no invented size', () => {
-  assert.deepStrictEqual(B.displayRectangle([], null),
-    { shape: 'UNRESOLVED', area_error: null });
-  assert.deepStrictEqual(
-    B.displayRectangle(B.convexHull(RECT), { width: 0, depth: 0, cx: 0, cy: 0, angle_deg: 0 }),
-    { shape: 'UNRESOLVED', area_error: null });
-  assert.deepStrictEqual(
-    B.displayRectangle(B.convexHull(RECT), { width: 2, depth: NaN, cx: 0, cy: 0, angle_deg: 0 }),
-    { shape: 'UNRESOLVED', area_error: null });
-});
-
-test('the display class is one of exactly two', () => {
-  assert.deepStrictEqual([...B.DISPLAY_SHAPES].sort(),
-    ['MEASURED_RECTANGLE', 'UNRESOLVED']);
-});
-
-test('the drawn rectangle preserves centre, size and angle at every angle', () => {
-  // Cardinal angles, an off-axis machine, and its mirror image. A sign error
-  // in the frame is invisible at 0 and 180 and obvious at 70.2.
-  for (const rot of [0, 90, 180, 270, 70.2, -70.2, 359.99]) {
-    assertRectanglePreserves(12.5, -8.25, 4.317, 2.104, rot);
+test('the axis offset is signed, and folded into a quarter turn', () => {
+  // A rectangle is the same rectangle under a quarter turn, so an axis is only
+  // defined modulo 90. An UNSIGNED fold turns half the machines the wrong way,
+  // and a machine turned the wrong way measures LARGER, not smaller: this is
+  // the bug the signed fold exists to prevent.
+  near(B.axisOffset(-114.388, 180), -24.388, 1e-9);
+  near(B.axisOffset(87.855, 270), -2.145, 1e-9);
+  near(B.axisOffset(30, 30), 0, 1e-12);
+  near(B.axisOffset(120, 30), 0, 1e-12); // a quarter turn is the same axis
+  near(B.axisOffset(35, 30), 5, 1e-12);
+  near(B.axisOffset(25, 30), -5, 1e-12);
+  // and it always lands inside the half-open quarter turn
+  for (let a = -400; a <= 400; a += 7.3) {
+    const d = B.axisOffset(a, 17);
+    assert.ok(d > -45.0000001 && d <= 45.0000001, `${a} -> ${d}`);
   }
 });
 
-test('the drawn rectangle preserves a very large and a very small machine', () => {
-  assertRectanglePreserves(0, 0, 36.4, 2.24, 12.5); // longest measured on this floor
-  assertRectanglePreserves(-31.007, 44.912, 0.612, 0.601, 70.2); // near the 600 mm floor
-});
+test('re-measuring on the body axis moves the centre, and the centre must travel with it', () => {
+  // An L drawn at 20 degrees inside its own block. Measured on the INSERT axis
+  // (0) and on the body axis (20) the SAME hull gives two different extents --
+  // and two different centres. Drawing the body-axis SIZE at the INSERT-axis
+  // CENTRE cuts measured geometry away, which is why the centre is published
+  // with the size rather than assumed to be the machine's position.
+  const t = 20 * Math.PI / 180;
+  const shape = [[0, 0], [4, 0], [4, 1], [1.5, 1], [1.5, 3], [0, 3]];
+  const hull = B.convexHull(shape.reduce((f, [x, y]) => {
+    f.push(x * Math.cos(t) - y * Math.sin(t), x * Math.sin(t) + y * Math.cos(t));
+    return f;
+  }, []));
 
-test('a mirrored INSERT is displayed as the machine the mirror produces', () => {
-  // An L drawn in a block, placed once as drawn and once with sx = -1. The
-  // mirror is in the geometry before anything is measured, so the rectangle
-  // for the mirrored instance is the mirrored machine's own rectangle -- it is
-  // never un-mirrored, and never shared with its twin.
-  const blockPts = [[0, 0], [4, 0], [4, 1], [1, 1], [1, 3], [0, 3]];
-  const place = (sx) => {
-    const t = B.affine({ x: 10, y: 5, rot: 70.2, sx, sy: 1 }, [0, 0]);
-    const pts = [];
-    for (const p of blockPts) {
-      const [x, y] = B.applyTo(t, p);
-      pts.push(x, y);
+  const onInsert = B.operationalRectangle(hull, 0, 0);
+  const onBody = B.operationalRectangle(hull, 0, 20);
+  assert.ok(onBody.width * onBody.depth < onInsert.width * onInsert.depth,
+    'the body axis is the tighter measurement, which is the point of measuring it');
+  const travelled = Math.hypot(onBody.cx - onInsert.cx, onBody.cy - onInsert.cy);
+  assert.ok(travelled > 0.01, `the extent centre moved ${travelled}`);
+
+  // At its OWN centre the body-axis rectangle contains every hull point.
+  const cos = Math.cos(t);
+  const sin = Math.sin(t);
+  const outside = (cx, cy) => {
+    let worst = 0;
+    for (const [x, y] of hull) {
+      const dx = x - cx;
+      const dy = y - cy;
+      worst = Math.max(worst,
+        Math.abs(dx * cos + dy * sin) - onBody.width / 2,
+        Math.abs(-dx * sin + dy * cos) - onBody.depth / 2);
     }
-    return { flat: pts, mirrored: B.isMirrored(t) };
+    return worst;
   };
-  const asDrawn = place(1);
-  const mirrored = place(-1);
-  assert.strictEqual(asDrawn.mirrored, false);
-  assert.strictEqual(mirrored.mirrored, true);
-  for (const inst of [asDrawn, mirrored]) {
-    // A mirrored instance's own axis is the mirrored angle; measure on the
-    // axis the extractor records, not on the un-mirrored one.
-    const box = B.minAreaRect(B.convexHull(inst.flat));
-    const d = B.displayRectangle(B.convexHull(inst.flat), box);
-    assert.strictEqual(d.shape, 'MEASURED_RECTANGLE');
-    assertRectanglePreserves(box.cx, box.cy, box.width, box.depth, -box.angle_deg);
-  }
-  // and the two instances are not the same machine on the floor
-  const a = B.minAreaRect(B.convexHull(asDrawn.flat));
-  const b = B.minAreaRect(B.convexHull(mirrored.flat));
-  assert.ok(Math.hypot(a.cx - b.cx, a.cy - b.cy) > 1,
-    'a mirrored instance must not land on top of its twin, or this proves nothing');
+  assert.ok(outside(onBody.cx, onBody.cy) < 1e-9,
+    'the operational rectangle contains the geometry it was measured from');
+  // and at the physical centre it does not -- the failure this guards against
+  assert.ok(outside(onInsert.cx, onInsert.cy) > 0.001,
+    'drawing the body-axis size at the INSERT-axis centre cuts geometry away');
 });
 
-test('the display function is deterministic and reads nothing but its inputs', () => {
-  const pts = [0, 0, 5, 0.2, 5.2, 2, 3, 3.4, 0.1, 2.2];
+test('a rectangle measured on its own axis is the minimum-area rectangle', () => {
+  // The operational rectangle claims to be the tightest one available. That is
+  // only true if the axis it is measured on is the minimum-area axis, so this
+  // checks the two agree rather than trusting either.
+  const t = 18.85 * Math.PI / 180;
+  const pts = [];
+  for (const [x, y] of [[-2, -1], [2, -1], [2, 1], [-2, 1]]) {
+    pts.push(x * Math.cos(t) - y * Math.sin(t), x * Math.sin(t) + y * Math.cos(t));
+  }
   const hull = B.convexHull(pts);
-  const box = B.orientedExtent(pts, 0);
-  const first = B.displayRectangle(hull, box);
-  assert.deepStrictEqual(first, B.displayRectangle(hull, box));
-  // and it does not mutate what it was handed
-  const hullBefore = JSON.stringify(hull);
-  const boxBefore = JSON.stringify(box);
-  B.displayRectangle(hull, box);
-  assert.strictEqual(JSON.stringify(hull), hullBefore);
-  assert.strictEqual(JSON.stringify(box), boxBefore);
+  const offset = B.axisOffset(B.minAreaRect(hull).angle_deg, 0);
+  near(Math.abs(offset), 18.85, 1e-6);
+  const rect = B.operationalRectangle(hull, 0, offset);
+  near(rect.width * rect.depth, 8, 1e-9); // the true area of a 4 x 2 rectangle
+  // measured on the INSERT axis instead, the same machine reports much larger
+  const naive = B.operationalRectangle(hull, 0, 0);
+  assert.ok(naive.width * naive.depth > 9.5,
+    `measuring off-axis must cost area, got ${naive.width * naive.depth}`);
+});
+
+test('the operational rectangle contains every measured point, at every angle', () => {
+  // The one invariant that matters: tightening the box may never cut geometry
+  // off the machine. Checked at the cardinal angles, an off-axis machine, its
+  // mirror, and the wrap.
+  const pts = [0, 0, 4, 0, 4, 1, 1.5, 1, 1.5, 3, 0, 3]; // an L
+  for (const rot of [0, 90, 180, 270, 70.2, -70.2, 359.99]) {
+    for (const mirror of [1, -1]) {
+      const t = B.affine({ x: 11, y: -7, rot, sx: mirror, sy: 1 }, [0, 0]);
+      const placed = B.applyTo(t, pts);
+      const hull = B.convexHull(placed);
+      const offset = B.axisOffset(B.minAreaRect(hull).angle_deg, rot);
+      const rect = B.operationalRectangle(hull, rot, offset);
+      assert.ok(rect, `no rectangle at ${rot} mirror ${mirror}`);
+      const ang = rect.angle_deg * Math.PI / 180;
+      const cos = Math.cos(ang);
+      const sin = Math.sin(ang);
+      for (const [x, y] of hull) {
+        const dx = x - rect.cx;
+        const dy = y - rect.cy;
+        const u = Math.abs(dx * cos + dy * sin);
+        const v = Math.abs(-dx * sin + dy * cos);
+        assert.ok(u <= rect.width / 2 + 1e-9 && v <= rect.depth / 2 + 1e-9,
+          `a measured point fell outside the rectangle at ${rot}, mirror ${mirror}`);
+      }
+      // and it is never larger than the extent measured on the INSERT axis
+      const onInsert = B.operationalRectangle(hull, rot, 0);
+      assert.ok(rect.width * rect.depth <= onInsert.width * onInsert.depth + 1e-9,
+        'the body axis may tighten a box, never grow one');
+    }
+  }
+});
+
+test('a mirrored machine takes the opposite body-axis offset from its twin', () => {
+  // A reflection negates the body angle. Pooling a block's mirrored and
+  // unmirrored instances would average a machine and its reflection into an
+  // axis neither of them has, which is why they are grouped by handing.
+  const pts = [0, 0, 4, 0, 4, 1, 1.5, 1, 1.5, 3, 0, 3];
+  const offsetFor = (mirror) => {
+    const t = B.affine({ x: 0, y: 0, rot: 0, sx: mirror, sy: 1 }, [0, 0]);
+    const hull = B.convexHull(B.applyTo(t, pts));
+    return { offset: B.axisOffset(B.minAreaRect(hull).angle_deg, 0), mirrored: B.isMirrored(t) };
+  };
+  const drawn = offsetFor(1);
+  const mirrored = offsetFor(-1);
+  assert.strictEqual(drawn.mirrored, false);
+  assert.strictEqual(mirrored.mirrored, true);
+  near(mirrored.offset, -drawn.offset, 1e-9);
+});
+
+test('an enclosure is found by containment and scale, not by what shrinks the box', () => {
+  const ring = { key: 'ring', hull: B.convexHull([-10, -6, 10, -6, 10, 6, -10, 6]) };
+  const body = { key: 'body', hull: B.convexHull([-2, -1, 2, -1, 2, 1, -2, 1]) };
+  assert.strictEqual(B.envelopeGroup([ring, body]), 0);
+  assert.strictEqual(B.envelopeGroup([body, ring]), 1);
+
+  // A long ARM makes the box far bigger than the body and is NOT an enclosure:
+  // it does not contain the body. Excluding it would report a machine smaller
+  // than the drawing has it, which is the failure this rule must not have.
+  const arm = { key: 'arm', hull: B.convexHull([2, -0.2, 14, -0.2, 14, 0.2, 2, 0.2]) };
+  assert.strictEqual(B.envelopeGroup([arm, body]), -1);
+
+  // Containment without the scale ratio is not an enclosure either: a body
+  // drawn just inside its own outline is one machine, not two things.
+  const snug = { key: 'snug', hull: B.convexHull([-2.2, -1.1, 2.2, -1.1, 2.2, 1.1, -2.2, 1.1]) };
+  assert.strictEqual(B.envelopeGroup([snug, body]), -1);
+
+  // and one group on its own is never an enclosure -- there is nothing to enclose
+  assert.strictEqual(B.envelopeGroup([ring]), -1);
+  assert.strictEqual(B.envelopeGroup([]), -1);
+});
+
+test('at most one group can be an enclosure', () => {
+  // Two groups cannot each contain the other and be three times its area, so
+  // the rule cannot strip a machine down by degrees.
+  const a = { key: 'a', hull: B.convexHull([-10, -6, 10, -6, 10, 6, -10, 6]) };
+  const b = { key: 'b', hull: B.convexHull([-3, -2, 3, -2, 3, 2, -3, 2]) };
+  const c = { key: 'c', hull: B.convexHull([-1, -1, 1, -1, 1, 1, -1, 1]) };
+  const idx = B.envelopeGroup([a, b, c]);
+  assert.strictEqual(idx, 0);
+  // and with the outermost gone, the next one is not automatically an
+  // enclosure: it has to earn it on the same two tests
+  const rest = [b, c];
+  const second = B.envelopeGroup(rest);
+  assert.ok(second === -1 || second === 0, `unexpected ${second}`);
+});
+
+test('a degenerate input yields no rectangle rather than a default one', () => {
+  assert.strictEqual(B.operationalRectangle([], 0, 0), null);
+  assert.strictEqual(B.operationalRectangle([[0, 0], [1, 1]], 0, 0), null);
+  assert.strictEqual(B.operationalRectangle(null, 0, 0), null);
+});
+
+console.log('cad-blocks: display vocabulary');
+
+test('the display vocabulary is a rectangle or a marker, and nothing else', () => {
+  assert.deepStrictEqual([...B.DISPLAY_SHAPES].sort(),
+    ['OPERATIONAL_RECTANGLE', 'UNRESOLVED']);
 });
 
 test('overlap does not depend on which way round a polygon is wound', () => {
