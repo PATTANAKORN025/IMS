@@ -55,8 +55,10 @@ Three findings matter more than the number:
    insertion point loses them — including, today, the equipment pipeline (§K).
 3. **A repeated block's hull is not its machine.** The largest family's hull
    measures 19.1 × 11.3 m, but 98 % of its own points lie inside
-   **4.63 × 2.13 m**, and its instances are pitched 4.01 m apart. The hull is
-   inflated by ellipse line-work; the machine is the pitch.
+   **4.63 × 2.13 m**, and its instances are pitched 4.01 m apart. The second
+   largest measures 5.30 × 2.15 m inside a 19.45 × 11.77 m hull at a 4.32 m
+   pitch. Both hulls are inflated by ellipses drawn around the machine; the
+   machine is the pitch.
 
 The expected example total of 209 is **not** reproduced, and was not aimed at.
 The CAD says 331, with 131 more candidates unresolved for want of layer
@@ -131,7 +133,7 @@ definition is the same machine model, drawn once and placed many times.
 |---|---:|---|---|---:|---|
 | FAM-01 | 76 | 19.08 × 11.30 (body ≈ 4.63 × 2.13) | 90 / 270 | 36 | FZ-F1-0001 (35), FZ-F1-0002 (41) |
 | FAM-02 | 40 | 4.70 × 2.07 | 90 / 270 | 0 | FZ-F1-0001 |
-| FAM-03 | 27 | 19.45 × 11.77 | 90 / 270 | 16 | FZ-F1-0001 |
+| FAM-03 | 27 | 19.45 × 11.77 (body ≈ 5.30 × 2.15) | 90 / 270 | 16 | FZ-F1-0001 |
 | FAM-04 | 12 | 3.78 × 2.20 | 90 / 180 | 2 | 6 zones |
 | FAM-05 | 10 | 1.81 × 1.69 | 90 / 270 | 6 | FZ-F1-0036 |
 | FAM-06 … FAM-07 | 6 each | 4.17 × 4.37, 1.09 × 0.61 | 0 / 180 | 4, 0 | press |
@@ -224,12 +226,14 @@ size, with the drawing varying only rotation and handing.
 
 - **Hull inflation by ellipse line-work.** FAM-01's hull is 19.08 × 11.30 m,
   but 98 % of its own geometry lies within **4.63 × 2.13 m** and its instances
-  are pitched **4.01 m** apart. The point-density check was run on FAM-01 only;
-  FAM-03 (19.45 × 11.77 m hull, 4.32 m pitch) and FAM-12 (19.61 × 9.65 m hull)
-  show the same hull-versus-pitch signature but were not measured that way, so
-  their body size is inferred, not established. 111 nodes have a hull over
-  100 m²; they are drawn around, not built that large. The census counts
-  INSERTs, so this affects reported *size*, never the *count*.
+  are pitched **4.01 m** apart. FAM-03 measures the same way: hull
+  19.45 × 11.77 m, body **5.30 × 2.15 m**, pitch 4.32 m. Both blocks carry
+  hundreds of ELLIPSE entities with multi-metre axes — swing or service circles
+  drawn around the machine — and it is those, expanded, that produce the hull.
+  FAM-12 (19.61 × 9.65 m hull) shows the same signature but was not measured
+  that way, so its body size is inferred. 111 nodes have a hull over 100 m²;
+  they are drawn around, not built that large. The census counts INSERTs, so
+  this affects reported *size*, never the *count*.
 - **Mirrored instances: 90 nodes.** A mirrored INSERT is a different physical
   handing of the same machine, and is kept as its own node.
 - **Rotations** are almost entirely axis-aligned: 0° (69), 90° (104), 180°
