@@ -353,6 +353,10 @@ function renderInspector(cell) {
       : 'none &mdash; drawn but not attached'),
     row('Mapping state', cell.mapping_state),
     row('Unit state', cell.unit_state),
+    row('Spatial evidence', cell.spatial_evidence),
+    row('Drawn in', cell.world_render_permitted
+      ? 'reference-layout frame (a world position exists for this cell)'
+      : 'reference-layout frame only'),
     row('Confidence', cell.confidence),
     row('CAD evidence', ev.has_cad_instance
       ? `one named instance (${ev.relation})`
@@ -362,6 +366,24 @@ function renderInspector(cell) {
     row('Footprint', `${cell.footprint.width.toFixed(2)} &times; ${cell.footprint.depth.toFixed(2)} (${cell.footprint.geometry_confidence.toLowerCase()} confidence)`),
   ];
   const notes = [`<p class="note">${cell.status_reason}.</p>`];
+  /* The spatial evidence is the fact most easily mistaken for something
+     stronger, so each level says in words what it does and does not establish. */
+  if (cell.spatial_evidence === 'SET_LEVEL') {
+    notes.push('<p class="note">Set-level registration: the zone holding this cell is placed '
+      + 'in the drawing, but nothing places this individual machine, so it is drawn '
+      + 'in the reference-layout frame.</p>');
+  } else if (cell.spatial_evidence === 'LAYOUT_ONLY') {
+    notes.push('<p class="note warn">Layout only: no CAD correspondence was '
+      + 'established for this cell at any level.</p>');
+  } else if (cell.world_render_permitted) {
+    notes.push('<p class="note">A world position is established for this cell. The '
+      + 'map still draws the reference-layout frame, which is the only frame all '
+      + '210 cells share.</p>');
+  }
+  if (!cell.live_status_eligible) {
+    notes.push(`<p class="note">Live status is not eligible here: `
+      + `${cell.live_status_blocked_by}.</p>`);
+  }
   if (cell.mapping_state !== 'DIRECT') {
     notes.push('<p class="note warn">Identity unresolved: the drawing carries no machine '
       + 'number, so this cell is placed and grouped but not bound to one CAD instance.</p>');
@@ -383,6 +405,11 @@ function renderCounts() {
     ['Cells with no unit', c.cells_unassigned_to_a_unit],
     ['Identity DIRECT', c.mapping_state.DIRECT || 0],
     ['Identity AMBIGUOUS', c.mapping_state.AMBIGUOUS || 0],
+    ['Spatial DIRECT', c.spatial_evidence.DIRECT || 0],
+    ['Spatial STRUCTURAL', c.spatial_evidence.STRUCTURAL || 0],
+    ['Spatial SET_LEVEL', c.spatial_evidence.SET_LEVEL || 0],
+    ['Spatial LAYOUT_ONLY', c.spatial_evidence.LAYOUT_ONLY || 0],
+    ['Live status eligible', c.cells_live_status_eligible],
   ];
   countsTable.innerHTML = rows
     .map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join('');
@@ -497,6 +524,10 @@ window.__eap = {
     return out;
   },
   units: () => (payload ? payload.machine_units : []),
+  contract: () => (payload
+    ? { renderer: payload.renderer_contract, live: payload.live_status_contract,
+      footprint: payload.footprint_contract }
+    : null),
   pick: (cellId) => {
     const inst = instances.find((i) => i.cell.cell_id === cellId);
     if (!inst) return null;

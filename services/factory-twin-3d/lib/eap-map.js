@@ -40,6 +40,39 @@ const CONFIDENCES = new Set(['HIGH', 'MEDIUM', 'LOW']);
 const AGGREGATIONS = new Set(['SINGLE_CELL', 'AGGREGATED_STATION']);
 const IMS_STATES = new Set(['NOT_MAPPED']);
 const GEOMETRY_SOURCES = new Set(['COLOUR_STRIP', 'COLOUR_RECT', 'UNLIT_BORDER']);
+const SPATIAL_EVIDENCE = new Set(['DIRECT', 'STRUCTURAL', 'SET_LEVEL', 'LAYOUT_ONLY']);
+const REGISTRATION_METHODS = new Set([
+  'CAD_INSTANCE_IDENTITY', 'ZONE_SET_CORRESPONDENCE', 'NONE',
+]);
+
+/**
+ * The renderer contract, in one place because it is the rule the rest of the
+ * system will be tempted to break.
+ *
+ * A world-space footprint may only be drawn where the cell's position in the
+ * world was actually established -- by identity, or by a structural registration
+ * that survived its own residual test. Everywhere else the cell is drawn in the
+ * reference-layout frame, and the payload says so, so a client cannot mistake a
+ * schematic position for a surveyed one.
+ */
+function worldRenderPermitted(spatial) {
+  return spatial === 'DIRECT' || spatial === 'STRUCTURAL';
+}
+
+/**
+ * Live status eligibility.
+ *
+ * Two conditions, and both are needed. There must be an authoritative mapping
+ * from this cell to an IMS machine -- there is none today, on any cell. And the
+ * cell must be more than a drawing on a schematic: a LAYOUT_ONLY cell is not
+ * known to correspond to anything in the plant, so even once mappings exist it
+ * cannot carry a machine's state. Encoding both now means the rule holds when
+ * the first mapping arrives rather than being remembered at that point.
+ */
+function liveStatusEligible(spatial, imsMapped) {
+  if (!imsMapped) return false;
+  return spatial !== 'LAYOUT_ONLY';
+}
 
 function enumOr(value, allowed, fallback) {
   return allowed.has(value) ? value : fallback;
@@ -104,6 +137,7 @@ function projectCadEvidence(raw, hasInstance) {
 function projectCell(raw) {
   const footprint = projectFootprint(raw.eap_footprint);
   const mappingState = enumOr(raw.mapping_state, MAPPING_STATES, 'AMBIGUOUS');
+  const spatialEvidence = enumOr(raw.spatial_evidence, SPATIAL_EVIDENCE, 'LAYOUT_ONLY');
   return {
     cell_id: String(raw.eap_cell_id),
     zone_id: String(raw.zone_id),
@@ -119,12 +153,24 @@ function projectCell(raw) {
     machine_unit_id: typeof raw.machine_unit_id === 'string' ? raw.machine_unit_id : null,
     confidence: enumOr(raw.confidence, CONFIDENCES, 'LOW'),
     cad_evidence: projectCadEvidence(raw.cad_evidence, Boolean(raw.cad_handle)),
+    // Where this cell stands in the world, and on what evidence. The evidence
+    // level crosses the wire; the CAD-world millimetres behind it never do --
+    // they would locate the facility, and a client needs to know whether a
+    // world position exists, not what it is.
+    spatial_evidence: spatialEvidence,
+    has_cad_world_position: Boolean(raw.cad_world_position),
+    registration_method: enumOr(raw.registration_method, REGISTRATION_METHODS, 'NONE'),
+    registration_confidence: enumOr(raw.registration_confidence, CONFIDENCES, 'LOW'),
+    world_render_permitted: worldRenderPermitted(spatialEvidence),
     // No mapping from a cell to an IMS machine exists, so there is no status to
     // report. UNKNOWN is the honest value and the only one this route can emit.
     status: 'UNKNOWN',
     status_reason: 'no authoritative IMS mapping exists for this cell',
     // Evidence about the reference image, not a machine state.
     reference_status_drawn: Boolean(raw.status_colour_present),
+    live_status_eligible: liveStatusEligible(spatialEvidence, false),
+    live_status_blocked_by: 'no authoritative IMS mapping exists for any cell on '
+      + 'this floor',
   };
 }
 
@@ -228,8 +274,10 @@ function project(model) {
   const cells = model.eap_cells.map(projectCell);
   const units = model.machine_units.map(projectUnit);
   const byState = {};
+  const bySpatial = {};
   for (const cell of cells) {
     byState[cell.mapping_state] = (byState[cell.mapping_state] || 0) + 1;
+    bySpatial[cell.spatial_evidence] = (bySpatial[cell.spatial_evidence] || 0) + 1;
   }
   const stations = units.filter((u) => u.aggregation_type === 'AGGREGATED_STATION');
   return {
@@ -240,6 +288,28 @@ function project(model) {
       rule: 'the 2D map and the 3D box read one footprint; there is no independent '
         + '3D geometry',
       height: 'PRESENTATION_ONLY',
+      canonical_frame: 'EAP_LAYOUT_FRAME',
+      note: 'the footprint every cell carries is the reference-layout one. A CAD '
+        + 'world position, where it exists, is a separate fact and is not the '
+        + 'drawn footprint.',
+    },
+    renderer_contract: {
+      DIRECT: 'the world position of this cell is established, so a world-space '
+        + 'footprint may be rendered from CAD evidence',
+      STRUCTURAL: 'as DIRECT: the set correspondence is proven and a fitted '
+        + 'transform reproduced it',
+      SET_LEVEL: 'render at set or zone semantic level only; the zone is placed, '
+        + 'the individual machine is not',
+      LAYOUT_ONLY: 'reference-layout frame only',
+      unresolved_cells: 'always drawn. An unresolved identity is a fact about the '
+        + 'evidence, never a reason to hide a machine.',
+      never: 'no cell is moved to fit the drawing, and no world position is '
+        + 'inferred from a neighbour, an offset, a screen size or a machine number',
+    },
+    live_status_contract: {
+      rule: 'a cell may show live status only when an authoritative IMS mapping '
+        + 'exists for it AND its spatial evidence is better than LAYOUT_ONLY',
+      state_today: 'no mapping exists for any cell, so every status is UNKNOWN',
     },
     counts: {
       cells: cells.length,
@@ -251,6 +321,10 @@ function project(model) {
       cells_unassigned_to_a_unit: cells.filter((c) => c.unit_state === 'UNASSIGNED').length,
       mapping_state: byState,
       cells_with_a_cad_instance: cells.filter((c) => c.cad_evidence.has_cad_instance).length,
+      cells_with_a_cad_world_position: cells.filter((c) => c.has_cad_world_position).length,
+      cells_world_render_permitted: cells.filter((c) => c.world_render_permitted).length,
+      cells_live_status_eligible: cells.filter((c) => c.live_status_eligible).length,
+      spatial_evidence: bySpatial,
       reference_status_drawn: cells.filter((c) => c.reference_status_drawn).length,
     },
     zones: zoneOutlines(cells),
@@ -259,4 +333,7 @@ function project(model) {
   };
 }
 
-module.exports = { loadModel, project, projectCell, projectUnit, zoneOutlines };
+module.exports = {
+  loadModel, project, projectCell, projectUnit, zoneOutlines,
+  worldRenderPermitted, liveStatusEligible,
+};

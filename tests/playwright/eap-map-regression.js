@@ -312,6 +312,61 @@ async function main() {
   check(!/RUN|IDLE|DOWN|ALARM/.test(raw),
     'no reference-layout status colour is projected as a machine state');
 
+  section('11b. the operational-footprint contract reaches the screen');
+  const contract = await page.evaluate(() => window.__eap.contract());
+  for (const level of ['DIRECT', 'STRUCTURAL', 'SET_LEVEL', 'LAYOUT_ONLY']) {
+    check(Boolean(contract && contract.renderer && contract.renderer[level]),
+      `the renderer contract states the rule for ${level}`);
+  }
+  check(/always drawn/i.test((contract.renderer || {}).unresolved_cells || ''),
+    'the contract says unresolved cells are always drawn');
+  const spatial = await page.evaluate(async () => {
+    const res = await fetch('/api/eap-map');
+    const body = await res.json();
+    const by = {};
+    for (const c of body.cells) by[c.spatial_evidence] = (by[c.spatial_evidence] || 0) + 1;
+    return {
+      by,
+      counts: body.counts,
+      positionedWithoutEvidence: body.cells.filter(
+        (c) => c.has_cad_world_position && !c.world_render_permitted).length,
+      permittedWithoutPosition: body.cells.filter(
+        (c) => c.world_render_permitted && !c.has_cad_world_position).length,
+      layoutOnlyEligible: body.cells.filter(
+        (c) => c.spatial_evidence === 'LAYOUT_ONLY' && c.live_status_eligible).length,
+      eligible: body.cells.filter((c) => c.live_status_eligible).length,
+      positionedWithoutIdentity: body.cells.filter(
+        (c) => c.has_cad_world_position && !c.cad_evidence.has_cad_instance).length,
+    };
+  });
+  eq(spatial.by.DIRECT || 0, 40, 'cells with DIRECT spatial evidence');
+  eq(spatial.by.STRUCTURAL || 0, 0, 'cells with STRUCTURAL spatial evidence');
+  eq(spatial.by.SET_LEVEL || 0, 167, 'cells with SET_LEVEL spatial evidence');
+  eq(spatial.by.LAYOUT_ONLY || 0, 3, 'cells with LAYOUT_ONLY spatial evidence');
+  eq(spatial.counts.cells_with_a_cad_world_position, 40,
+    'cells carrying a CAD world position');
+  eq(spatial.positionedWithoutEvidence, 0,
+    'no cell holds a world position without the evidence that permits one');
+  eq(spatial.permittedWithoutPosition, 0,
+    'no cell is permitted a world render without a world position');
+  eq(spatial.layoutOnlyEligible, 0,
+    'no LAYOUT_ONLY cell is eligible for live status');
+  eq(spatial.eligible, 0,
+    'no cell is eligible for live status while no IMS mapping exists');
+  /* World position and CAD identity are independent by design. Today they
+     coincide on all 40; the check is that the payload can tell them apart. */
+  check(spatial.positionedWithoutIdentity === 0,
+    'today every world position also has an identity, and both are reported separately');
+  const inspected = await page.evaluate((id) => window.__eap.pick(id),
+    drawn.find((d) => d.zone_id === 'H').cell_id);
+  check(inspected && inspected.spatial_evidence === 'LAYOUT_ONLY',
+    'a bonding cell reports LAYOUT_ONLY spatial evidence');
+  const panelText = await page.textContent('#inspector');
+  check(/LAYOUT_ONLY/.test(panelText),
+    'the inspector states the spatial evidence level');
+  check(/Live status is not eligible/i.test(panelText),
+    'the inspector states why live status is not eligible');
+
   section('12. status semantics');
   const statuses = await page.evaluate(async () => {
     const res = await fetch('/api/eap-map');
