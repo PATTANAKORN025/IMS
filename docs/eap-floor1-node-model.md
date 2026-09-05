@@ -299,7 +299,7 @@ model it reports SKIP and exits zero.
 
 ## J. Where the data lives
 
-`services/factory-twin-3d/private/floor1-eap-node-model.json`, schema `2.0.0` — private
+`services/factory-twin-3d/private/floor1-eap-node-model.json`, schema `2.1.0` — private
 and gitignored, and the canonical contract for the renderer phase. It opens with a
 machine-readable summary:
 
@@ -318,6 +318,19 @@ candidates, 210 cell records, 171 unit records), the per-zone table, the golden 
 its measurements, the two known discrepancies, the 40 grid links, and the affine
 registration marked zone-level-only. Coordinates, block names, layer names and drawing
 area labels stay out of this report.
+
+## J2. The footprint layer
+
+Schema `2.1.0` adds one EAP operational footprint per cell -- the geometry the renderer
+reads. Each is a measured rectangle from the reference layout, in the `EAP_LAYOUT_FRAME`
+declared alongside it, with rotation 0 and no height. The 40 cells with a named CAD
+instance also carry `cad_placement`: that instance's real-world millimetre position and
+rotation, from the transformed body position, held as evidence and never drawn.
+
+The frame is a schematic and says so: the reference compresses vertical distances against
+horizontal ones by about 1.46, so it must not be used to measure anything on the floor.
+See `eap-operational-map-renderer.md` for how the footprints were measured and what the
+renderer does with them.
 
 ## K. Scope
 

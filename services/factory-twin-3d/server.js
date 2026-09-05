@@ -9,6 +9,7 @@ const { MachineState, MACHINE_STATE_THEME } = require('./lib/contracts');
 const { buildDiagnostics } = require('./lib/diagnostics');
 const wire = require('./lib/wire');
 const schematic = require('./lib/schematic');
+const eapMap = require('./lib/eap-map');
 const floors = require('./lib/floors');
 
 const PORT = process.env.PORT || 4100;
@@ -795,6 +796,26 @@ app.get('/api/floor-schematic', (req, res) => {
     ...schematic.projectSchematic(loadPrivateSchematic(floorId)),
     generated_at: new Date().toISOString(),
   });
+});
+
+// The EAP operational map.
+//
+// This is a different layer from /api/floor-geometry, and the separation is the
+// point. Floor geometry answers "where is the equipment, measured from the
+// drawing"; this answers "what does the operational layout show". The two have
+// different populations -- 331 CAD candidates against 210 operational cells --
+// and blending them is what produced a display that matched neither.
+//
+// lib/eap-map projects the private model field by field. Nothing here builds
+// the payload inline, for the same reason the diagnostics route does not: an
+// object literal at the route is where a private field eventually gets added by
+// accident.
+app.get('/api/eap-map', (req, res) => {
+  const model = eapMap.loadModel(PRIVATE_DIR);
+  if (!model) return res.status(404).json({ error: 'not found' });
+  const payload = eapMap.project(model);
+  if (!payload) return res.status(503).json({ error: 'model unavailable' });
+  res.status(200).json({ ...payload, generated_at: new Date().toISOString() });
 });
 
 // Safe aggregate diagnostics. Deliberately counts and flags only: no

@@ -203,6 +203,39 @@ eq(pp.cad_candidates, 5, 'PP: CAD candidates');
 eq(pp.deficit, 2, 'PP: deficit');
 eq(pp.labels, 'UNREADABLE', 'PP: labels stay unreadable');
 
+/* ---- one footprint per cell, and only one ------------------------------- */
+const footprints = cells.filter((c) => c.eap_footprint);
+eq(footprints.length, EAP_CELLS, 'cells carrying an EAP footprint');
+check(footprints.every((c) => c.eap_footprint.frame === 'EAP_LAYOUT_FRAME'),
+  'every footprint is in the EAP layout frame');
+check(footprints.every((c) => c.eap_footprint.rotation_deg === 0),
+  'every footprint rotation is zero, as the reference draws them');
+check(footprints.every((c) => c.eap_footprint.width > 0 && c.eap_footprint.depth > 0),
+  'every footprint has a positive extent');
+check(footprints.every((c) => Number.isFinite(c.eap_footprint.x)
+  && Number.isFinite(c.eap_footprint.z)),
+'every footprint has a finite position');
+check(footprints.every((c) => c.eap_footprint.height === null
+  && c.eap_footprint.height_state === 'PRESENTATION_ONLY'),
+'no footprint carries a height; height is presentation-only');
+check(footprints.every((c) => c.eap_footprint.provenance === 'REFERENCE_LAYOUT'),
+  'every footprint declares the reference layout as its provenance');
+const frame = model.eap_frame || {};
+eq(frame.id, 'EAP_LAYOUT_FRAME', 'the model declares the EAP frame');
+eq(frame.is_metric, false, 'the EAP frame declares itself non-metric');
+check(typeof frame.warning === 'string' && /schematic/i.test(frame.warning),
+  'the EAP frame carries its schematic warning');
+/* The CAD placement is evidence, kept apart from the drawn footprint so the map
+   can never accidentally draw a machine at its CAD-world millimetre position in
+   a frame that is not metric. */
+const placed = cells.filter((c) => c.cad_placement);
+eq(placed.length, DIRECT_CELLS, 'cells carrying a CAD placement as evidence');
+check(placed.every((c) => c.cad_placement.frame === 'CAD_WORLD_MM'
+  && c.cad_placement.placement_rule === 'TRANSFORMED_BODY_POSITION'),
+'every CAD placement names its frame and the transformed-body rule');
+check(placed.every((c) => c.mapping_state === 'DIRECT'),
+  'only a DIRECT cell carries a CAD placement');
+
 /* ---- the registration is not allowed to become per-cell proof ----------- */
 check(typeof model.affine_use === 'string' && /zone-level/i.test(model.affine_use),
   'the CAD-to-image registration is marked zone-level only');

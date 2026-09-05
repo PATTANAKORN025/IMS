@@ -54,6 +54,7 @@ run("Factory Twin Orientation Proof", "node tests/lint/floor1-orientation.js");
 // cells, machine units. This asserts the arithmetic that ties them together and
 // refuses a CAD handle that does not resolve, which is what a fabricated
 // instance identity would look like.
+run("EAP Map Wire Tests", "node tests/unit/eap-map-wire.test.js");
 run("EAP Node Model Contract", "node tests/lint/eap-node-model-contract.js");
 
 // 2. Run Linters
