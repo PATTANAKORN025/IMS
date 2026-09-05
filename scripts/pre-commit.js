@@ -50,6 +50,11 @@ run("Factory Twin CAD Reconciliation", "node tests/lint/floor1-cad-reconciliatio
 // names, because every check that compared the model against itself passed
 // while the floor rendered mirrored.
 run("Factory Twin Orientation Proof", "node tests/lint/floor1-orientation.js");
+// The EAP node model keeps three populations apart -- CAD candidates, layout
+// cells, machine units. This asserts the arithmetic that ties them together and
+// refuses a CAD handle that does not resolve, which is what a fabricated
+// instance identity would look like.
+run("EAP Node Model Contract", "node tests/lint/eap-node-model-contract.js");
 
 // 2. Run Linters
 run("Dashboard Linter", "node tests/lint/dashboard-linter.js");

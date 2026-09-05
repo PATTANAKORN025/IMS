@@ -6,10 +6,13 @@
 
 # Floor 1 EAP Node Model
 
-Status: **built. 331 → 210 → 171, with 170 of 210 cells still carrying no CAD handle.**
+Status: **hardened and canonical. 331 → 210 → 171, with 170 of 210 cells still
+carrying no CAD handle.**
 
-Continues from `45e7514`. The reconciliation there produced three counts that this
-model now keeps apart as first-class entities instead of one blended number.
+Continues from `45e7514` and `0a1b69c`. The reconciliation produced three counts; this
+model keeps them apart as first-class entities instead of one blended number, and the
+private JSON is now the data contract the renderer phase reads. A contract check runs in
+pre-commit and fails on any attempt to blend the levels or to fill a null handle.
 
 ## A. The three entity types
 
@@ -35,8 +38,19 @@ CAD_CANDIDATE  ──many-to-one──▶  EAP_LAYOUT_CELL  ──one-to-one or 
 anywhere. Where it happens to be 1:1 the model says so explicitly and says on what
 evidence.
 
-`EAP_LAYOUT_CELL → MACHINE_UNIT` is one-to-one for 160 cells and aggregating for 11
-stations covering 48 cells. Two cells attach to no unit at all. 160 + 48 + 2 = 210.
+`EAP_LAYOUT_CELL → MACHINE_UNIT` decomposes exactly, and the two decompositions are
+different sums over the same population:
+
+```
+171 machine units   = 160 single-cell units  +  11 aggregated station units
+210 EAP cells       = 160 cells in single-cell units
+                    +  48 cells inside the 11 aggregated stations
+                    +   2 cells attached to no machine unit
+```
+
+A cell attached to no unit is **not** a machine unit. The two unattached cells are
+counted in the 210 and in neither term of the 171. That is the whole reason the two
+sums are stated separately.
 
 ## C. Reconciliation
 
@@ -51,24 +65,49 @@ stations covering 48 cells. Two cells attach to no unit at all. 160 + 48 + 2 = 2
 | EAP → machine unit, aggregated into a station | 11 stations over 48 cells |
 | EAP cells attached to no machine unit | 2 |
 | **EAP cells total** | **210** |
-| EAP cell mapping: DIRECT | 40 |
-| EAP cell mapping: MANY_TO_ONE | 0 |
-| EAP cell mapping: AMBIGUOUS | 170 |
-| EAP cell mapping: UNMATCHED | 0 |
+| EAP cell mapping state: DIRECT | 40 |
+| EAP cell mapping state: SET_LEVEL | 0 |
+| EAP cell mapping state: AMBIGUOUS | 170 |
+| EAP cell mapping state: UNASSIGNED | 0 |
+| EAP cell unit state: ATTACHED | 208 |
+| EAP cell unit state: UNASSIGNED | 2 |
 
 Set-level and many-to-one both landing on 121 is a coincidence of this floor, not a
 shared derivation: 121 set-level is 161 confirmed candidates minus the 40 grid
 instances, 121 many-to-one is the sub-component population.
 
-`MANY_TO_ONE` is zero **on the cell side** and 121 on the candidate side, and that is
-the honest reading. In the six zones where several CAD candidates collapse onto one
-cell, the collapse is proved at zone level but *which* candidate lands on *which* cell
-is not, so those cells are `AMBIGUOUS`, not `MANY_TO_ONE`. Marking them `MANY_TO_ONE`
-would claim a per-cell assignment nobody has.
+### The state vocabulary, and why it has two axes
 
-`UNMATCHED` is zero because every one of the twelve layout zones links to at least one
-CAD zone. That is not the same as every cell having a candidate — see the deficit
-column below.
+A cell carries two independent states. Collapsing them into one field is what produced
+the earlier confusion, so the contract keeps them apart.
+
+**`mapping_state` — how the cell relates to the CAD.**
+
+| State | Cells | Meaning |
+|---|---:|---|
+| `DIRECT` | 40 | one named CAD instance is bound to this cell |
+| `SET_LEVEL` | 0 | the exact CAD subset serving the cell is known *and ordered*, so the instance follows from the ordering |
+| `AMBIGUOUS` | 170 | the cell belongs to a linked CAD zone or set, but nothing picks the instance out of that set |
+| `UNASSIGNED` | 0 | the cell belongs to no CAD zone at all |
+
+`SET_LEVEL` is declared and currently empty. Several zones have a *closed* set — zone A
+is 4 candidates against 4 cells, zone C is 41 against 41 — but a closed set is not an
+ordered one, and without an ordering rule the bijection cannot name which candidate is
+which. Only the 8 × 5 grid supplies that ordering, and it is `DIRECT`.
+
+`UNMATCHED` is deliberately **not** in the vocabulary. A cell whose zone or set
+relationship is known is `AMBIGUOUS`; calling it unmatched would understate what is
+actually known about it.
+
+**`unit_state` — whether the cell attaches to a machine unit.** `ATTACHED` 208,
+`UNASSIGNED` 2. This axis says nothing about CAD, and the CAD axis says nothing about
+units. The two unattached cells are `AMBIGUOUS` on the CAD axis and `UNASSIGNED` on the
+unit axis at the same time.
+
+On the candidate side, 121 candidates are `MANY_TO_ONE`: in six zones several of them
+collapse onto one cell. That collapse is proved at zone level and not per cell, which is
+exactly why the receiving cells are `AMBIGUOUS` rather than `MANY_TO_ONE` — marking them
+otherwise would claim a per-cell assignment nobody has.
 
 ## D. Zone table
 
@@ -210,6 +249,39 @@ Their labels are not legible at the reference image's resolution and are recorde
 six-box assumption is not carried forward, and the count was not reduced to make the
 floor total reach 209.
 
+## H2. The record shapes, and the check that holds them
+
+Each of the 171 machine units declares:
+
+| Field | Meaning |
+|---|---|
+| `unit_id` | `MU-F1-nnnn`, stable |
+| `zone_id` | one of the twelve operational zones |
+| `cell_ids[]` | the EAP cells this unit owns; disjoint across units |
+| `aggregation_type` | `SINGLE_CELL` or `AGGREGATED_STATION` |
+| `aggregation_evidence` | the drawn structure that proves the merge; required on every station |
+| `cad_evidence` | CAD zone ids, candidate count in that zone, handles where any exist, and the relation (`DIRECT` or `ZONE_SET`) |
+| `ims_mapping_state` | `NOT_MAPPED` on all 171 |
+| `confidence` | `HIGH` / `MEDIUM` / `LOW`, inherited from the zone link |
+
+`ims_mapping_state` is `NOT_MAPPED` everywhere because no authoritative mapping data
+exists. A CAD candidate, an EAP cell, a machine unit, an IMS machine and a telemetry
+device are five different things, and only the first three are established here.
+
+Each of the 210 cells declares `eap_cell_id`, `layout_label`, `zone_id`, `zone_caption`,
+`process_group`, `status_colour_present`, `mapping_state`, `unit_state`,
+`machine_unit_id`, `cad_handle`, `machine_node_id`, `block_family`, position and
+rotation where a handle exists, `cad_evidence`, `layout_evidence` and `confidence`.
+
+`tests/lint/eap-node-model-contract.js` runs in pre-commit and asserts the model rather
+than describing it. It fails on 331/210/171 drifting, on either decomposition not
+summing, on `DIRECT` ≠ 40 or `AMBIGUOUS` ≠ 170, on a cell claimed by two units, on a
+`cad_handle` that does not resolve to a candidate in the same document, on an
+`AMBIGUOUS` cell that has acquired a handle, on a unit missing a required field, on an
+aggregation without stated evidence, on the golden case losing any of its measurements,
+and on either known discrepancy being quietly closed. On a clone without the private
+model it reports SKIP and exits zero.
+
 ## I. What this model still does not establish
 
 1. No per-machine CAD identity outside the 40-instance grid.
@@ -227,10 +299,25 @@ floor total reach 209.
 
 ## J. Where the data lives
 
-`services/factory-twin-3d/private/floor1-eap-node-model.json` — private and gitignored.
-It carries all three entity arrays, both relations, the per-zone table, the 40 grid
-links, and the affine registration marked zone-level-only. Coordinates, block names,
-layer names and drawing area labels stay out of this report.
+`services/factory-twin-3d/private/floor1-eap-node-model.json`, schema `2.0.0` — private
+and gitignored, and the canonical contract for the renderer phase. It opens with a
+machine-readable summary:
+
+```json
+{
+  "cad_candidates": 331,
+  "eap_cells": 210,
+  "machine_units": 171,
+  "direct_cad_eap": 40,
+  "ambiguous_eap_cells": 170
+}
+```
+
+and carries the state vocabulary, the declared invariants, all three entity arrays (331
+candidates, 210 cell records, 171 unit records), the per-zone table, the golden case with
+its measurements, the two known discrepancies, the 40 grid links, and the affine
+registration marked zone-level-only. Coordinates, block names, layer names and drawing
+area labels stay out of this report.
 
 ## K. Scope
 
