@@ -224,8 +224,10 @@ size, with the drawing varying only rotation and handing.
 
 - **Hull inflation by ellipse line-work.** FAM-01's hull is 19.08 × 11.30 m,
   but 98 % of its own geometry lies within **4.63 × 2.13 m** and its instances
-  are pitched **4.01 m** apart. FAM-03 (pitch 4.32 m) and FAM-12
-  (19.61 × 9.65 m hull) show the same pattern. 111 nodes have a hull over
+  are pitched **4.01 m** apart. The point-density check was run on FAM-01 only;
+  FAM-03 (19.45 × 11.77 m hull, 4.32 m pitch) and FAM-12 (19.61 × 9.65 m hull)
+  show the same hull-versus-pitch signature but were not measured that way, so
+  their body size is inferred, not established. 111 nodes have a hull over
   100 m²; they are drawn around, not built that large. The census counts
   INSERTs, so this affects reported *size*, never the *count*.
 - **Mirrored instances: 90 nodes.** A mirrored INSERT is a different physical
