@@ -125,7 +125,7 @@ async function main() {
 
   section('1. every operational cell is drawn');
   eq(drawn.length, CELLS, 'cells drawn into the scene');
-  eq(scene.cells, CELLS, 'instance count on the cell batch');
+  eq(scene.cells, CELLS, 'cells drawn across the visible panes');
   eq(counts.cells_with_a_footprint, CELLS, 'cells the payload carried a footprint for');
   const ids = new Set(drawn.map((d) => d.cell_id));
   eq(ids.size, CELLS, 'every drawn cell has a distinct id');
@@ -137,7 +137,8 @@ async function main() {
   eq(byState.AMBIGUOUS || 0, AMBIGUOUS, 'cells drawn in mapping state AMBIGUOUS');
   check(!drawn.some((d) => d.mapping_state === 'AMBIGUOUS' && !(d.width > 0 && d.depth > 0)),
     'an unresolved cell is drawn at full size, not shrunk to a dot');
-  eq(scene.markers, AMBIGUOUS, 'identity-confidence markers, one per unresolved cell');
+  eq(scene.markers, CELLS - DIRECT,
+    'identity-confidence markers, one per cell that is not world-positioned');
 
   section('3. machine units and the locked aggregations');
   eq(units.length, UNITS, 'machine units served');
@@ -233,7 +234,7 @@ async function main() {
   let moved = 0;
   let resized = 0;
   let rotated = 0;
-  for (const d of drawn) {
+  for (const d of drawn.filter((x) => x.frame === 'EAP_LAYOUT_FRAME')) {
     const f = served[d.cell_id];
     if (!f) continue;
     if (Math.abs(f.x - d.x) > 1e-3 || Math.abs(f.z - d.z) > 1e-3) moved += 1;
@@ -248,22 +249,92 @@ async function main() {
   'no NaN or Infinity in any drawn transform');
 
   section('8. instancing, not 210 meshes');
-  eq(scene.batches, 2, 'instanced batches in the scene');
-  check(scene.geometries <= 3, 'geometry count stays at the shared unit box plus lines',
+  check(scene.batches >= 2 && scene.batches <= 5,
+    'cells and markers are instanced batches, not one mesh per machine',
+    `batches ${scene.batches}`);
+  check(scene.geometries <= 8, 'geometry count stays small: one shared box plus lines',
     `geometries ${scene.geometries}`);
-  check(scene.drawCalls <= 6, 'draw calls stay in single figures',
+  check(scene.drawCalls <= 10, 'draw calls stay in single figures',
     `draw calls ${scene.drawCalls}`);
 
+  section('8b. the dual-frame renderer');
+  const paneList = await page.evaluate(() => window.__eap.panes());
+  eq(paneList.length, 2, 'AUTO mode shows both frames');
+  const worldPane = paneList.find((p) => p.name === 'world');
+  const layoutPane = paneList.find((p) => p.name === 'layout');
+  eq(worldPane && worldPane.frame, 'FLOOR1_WORLD_M', 'the world pane names its frame');
+  eq(layoutPane && layoutPane.frame, 'EAP_LAYOUT_FRAME', 'the layout pane names its frame');
+  eq(worldPane && worldPane.cells, DIRECT, 'the world pane holds the registered cells');
+  eq(layoutPane && layoutPane.cells, CELLS - DIRECT,
+    'the layout pane holds every cell the world pane cannot');
+  check(worldPane.rect.x + worldPane.rect.w <= layoutPane.rect.x,
+    'the two panes do not overlap, so the frames are never visually merged');
+  check(await page.evaluate(() => window.__eap.floorLoaded()),
+    'the CAD floor plan is loaded as world-space context');
+
+  section('8c. world-space cells use the verified CAD placement');
+  const worldDrawn = await page.evaluate(() => window.__eap.drawnIn('world'));
+  const servedWorld = await page.evaluate(async () => {
+    const res = await fetch('/api/eap-map');
+    const body = await res.json();
+    const out = {};
+    for (const c of body.cells) if (c.world_footprint) out[c.cell_id] = c.world_footprint;
+    return out;
+  });
+  eq(worldDrawn.length, DIRECT, 'cells drawn in world space');
+  check(worldDrawn.every((d) => d.spatial_evidence === 'DIRECT'),
+    'only DIRECT cells are drawn in world space');
+  let wMoved = 0;
+  let wResized = 0;
+  let wTurned = 0;
+  for (const d of worldDrawn) {
+    const f = servedWorld[d.cell_id];
+    if (!f) continue;
+    if (Math.abs(f.x - d.x) > 1e-3 || Math.abs(f.z - d.z) > 1e-3) wMoved += 1;
+    if (Math.abs(f.width - d.width) > 1e-3 || Math.abs(f.depth - d.depth) > 1e-3) wResized += 1;
+    const dr = Math.abs(((f.rotation_deg - d.rotation_deg) % 360 + 540) % 360 - 180);
+    if (dr > 0.05) wTurned += 1;
+  }
+  eq(wMoved, 0, 'no world-space cell was moved between the wire and the screen');
+  eq(wResized, 0, 'no world-space cell was resized');
+  eq(wTurned, 0, 'every world-space rotation is the CAD instance rotation');
+  /* The registered cells must land inside the floor the plan draws, not beside
+     it: that is what "spatially aligned with the CAD environment" means. */
+  const inside = worldDrawn.every((d) => Math.abs(d.x) < 90 && Math.abs(d.z) < 62);
+  check(inside, 'every world-space cell lands inside the floor envelope');
+
+  section('8d. frame separation holds in every mode');
+  for (const [modeName, wantPanes, wantCells] of [
+    ['WORLD', 1, DIRECT], ['EAP', 1, CELLS], ['AUTO', 2, CELLS],
+  ]) {
+    await page.evaluate((m) => window.__eap.setMode(m), modeName);
+    await page.waitForTimeout(400);
+    const st = await page.evaluate(() => ({
+      panes: window.__eap.panes(),
+      cells: window.__eap.drawnCells(),
+      drawn: window.__eap.drawn().map((d) => ({ f: d.frame, e: d.spatial_evidence })),
+    }));
+    eq(st.panes.length, wantPanes, `${modeName}: panes on screen`);
+    eq(st.cells, wantCells, `${modeName}: cells drawn`);
+    check(st.drawn.every((d) => (d.e === 'DIRECT' ? true : d.f === 'EAP_LAYOUT_FRAME')),
+      `${modeName}: a SET_LEVEL or LAYOUT_ONLY cell is never drawn in world space`);
+    check(st.drawn.filter((d) => d.f === 'FLOOR1_WORLD_M')
+      .every((d) => d.e === 'DIRECT'),
+    `${modeName}: only DIRECT evidence reaches the world frame`);
+  }
+  await page.evaluate(() => window.__eap.setMode('AUTO'));
+  await page.waitForTimeout(400);
+
   section('9. the 3D view derives from the same footprint');
-  await page.evaluate(() => window.__eap.setMode('3d'));
+  await page.evaluate(() => window.__eap.setView('3d'));
   await page.waitForTimeout(500);
   const drawn3d = await page.evaluate(() => window.__eap.drawn());
   eq(drawn3d.length, CELLS, 'cells drawn in the 3D view');
-  const byId = new Map(drawn.map((d) => [d.cell_id, d]));
+  const byId = new Map(drawn.map((d) => [`${d.pane}:${d.cell_id}`, d]));
   let differs = 0;
   let sameHeight = 0;
   for (const d of drawn3d) {
-    const flat = byId.get(d.cell_id);
+    const flat = byId.get(`${d.pane}:${d.cell_id}`);
     if (!flat) continue;
     if (Math.abs(flat.x - d.x) > 1e-3 || Math.abs(flat.z - d.z) > 1e-3
       || Math.abs(flat.width - d.width) > 1e-3 || Math.abs(flat.depth - d.depth) > 1e-3) {
@@ -274,8 +345,13 @@ async function main() {
   eq(differs, 0, '3D uses the same x, z, width and depth as 2D');
   eq(sameHeight, 0, 'only the height differs, and it is presentation-only');
   const batches3d = await page.evaluate(() => window.__eap.batches());
-  eq(batches3d, 2, 'the 3D view is the same two batches, not a second model');
-  await page.evaluate(() => window.__eap.setMode('2d'));
+  // 3D adds one instanced batch for the floor's columns, which are line
+  // geometry (no batch) in 2D; the cell and marker batches are exactly the ones
+  // already counted in `scene`, not a second model.
+  check(batches3d >= scene.batches && batches3d <= scene.batches + 1,
+    'the 3D view reuses the same cell and marker batches, not a second model',
+    `2D ${scene.batches} vs 3D ${batches3d}`);
+  await page.evaluate(() => window.__eap.setView('2d'));
   await page.waitForTimeout(300);
 
   section('10. picking resolves one cell and reports its evidence');

@@ -19,10 +19,12 @@
     --ink-dim: #97a3b5;
     --ink-faint: #6b7688;
     --accent: #63a4ff;
-    --cell: #8f9bad;
-    --cell-direct: #cfd8e6;
-    --cell-unassigned: #6f7a8c;
+    --cell: #7b8698;
+    --cell-world: #bcd0ea;
+    --cell-unassigned: #5b6472;
     --warn: #d8a657;
+    --region: #4a6b8a;
+    --ok: #7fd1a6;
   }
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
@@ -31,10 +33,11 @@
     color: var(--ink);
     font: 13px/1.45 ui-sans-serif, system-ui, "Segoe UI", Roboto, Arial, sans-serif;
     display: grid;
-    grid-template-columns: 1fr 320px;
-    grid-template-rows: auto 1fr;
+    grid-template-columns: 1fr 340px;
+    grid-template-rows: auto auto 1fr;
     overflow: hidden;
   }
+  aside { grid-column: 2; grid-row: 2 / 4; }
   header {
     grid-column: 1 / -1;
     display: flex;
@@ -60,7 +63,47 @@
   }
   button:hover { border-color: var(--line-strong); }
   button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
-  #stage { position: relative; overflow: hidden; }
+  .group-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--ink-faint);
+  }
+  .divider { width: 1px; height: 18px; background: var(--line); margin: 0 4px; }
+  #panes {
+    grid-column: 1;
+    grid-row: 2;
+    display: flex;
+    gap: 2px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--line);
+  }
+  .pane-tag {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 5px 12px;
+    background: var(--surface);
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .pane-tag strong { font-size: 12px; font-weight: 600; }
+  .pane-tag span { font-size: 11px; color: var(--ink-faint); }
+  .pane-tag .pane-warn { color: var(--warn); }
+  .badge {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 2px;
+    font-size: 10px;
+    letter-spacing: .04em;
+    border: 1px solid var(--line-strong);
+    color: var(--ink-dim);
+  }
+  .badge.ok { color: var(--ok); border-color: var(--ok); }
+  .badge.warn { color: var(--warn); border-color: var(--warn); }
+  .swatch.outline { background: transparent; border: 1px solid var(--region); }
+  #stage { position: relative; overflow: hidden; grid-column: 1; grid-row: 3; }
   #stage canvas { display: block; }
   #labels { position: absolute; inset: 0; pointer-events: none; }
   aside {
@@ -89,7 +132,8 @@
   .legend-row { display: flex; align-items: center; gap: 8px; margin: 4px 0; font-size: 12px; }
   .swatch { width: 18px; height: 10px; border-radius: 1px; flex: none; }
   .chip { width: 6px; height: 6px; border-radius: 50%; flex: none; }
-  @media (max-width: 1100px) { body { grid-template-columns: 1fr 280px; } }
+  @media (max-width: 1400px) { body { grid-template-columns: 1fr 300px; } }
+  @media (min-width: 2200px) { body { font-size: 14px; grid-template-columns: 1fr 400px; } }
 </style>
 <script type="importmap">
   {
@@ -106,11 +150,19 @@
     <span class="sub" id="headline">loading&hellip;</span>
     <span class="spacer"></span>
     <div class="controls">
+      <span class="group-label">Frame</span>
+      <button id="modeAuto" aria-pressed="true">Auto</button>
+      <button id="modeWorld" aria-pressed="false">World</button>
+      <button id="modeEap" aria-pressed="false">EAP</button>
+      <span class="divider"></span>
+      <span class="group-label">View</span>
       <button id="view2d" aria-pressed="true">2D</button>
       <button id="view3d" aria-pressed="false">3D</button>
       <button id="fit">Fit</button>
     </div>
   </header>
+
+  <div id="panes"></div>
 
   <div id="stage">
     <canvas id="labels"></canvas>
@@ -127,12 +179,12 @@
 
     <h2>Legend</h2>
     <div class="legend-row">
-      <span class="swatch" style="background:var(--cell-direct)"></span>
-      <span>Cell with a named CAD instance</span>
+      <span class="swatch" style="background:var(--cell-world)"></span>
+      <span>Registered cell, on the CAD floor plan</span>
     </div>
     <div class="legend-row">
       <span class="swatch" style="background:var(--cell)"></span>
-      <span>Cell, CAD instance unresolved</span>
+      <span>Schematic cell, CAD position not established</span>
     </div>
     <div class="legend-row">
       <span class="swatch" style="background:var(--cell-unassigned)"></span>
@@ -142,15 +194,29 @@
       <span class="chip" style="background:var(--warn)"></span>
       <span>Identity-confidence marker</span>
     </div>
+    <div class="legend-row">
+      <span class="swatch outline"></span>
+      <span>Zone placed in the drawing, machines inside it not</span>
+    </div>
     <p class="note">
-      Every cell is drawn. An unresolved identity is marked, never hidden.
+      Every cell is drawn. An unresolved position is marked, never hidden.
     </p>
 
-    <h2>Spatial evidence</h2>
+    <h2>Two frames</h2>
     <p class="note">
-      A cell is drawn in the reference-layout frame. Where its world position is
-      established the panel says so; a set-level registration places the zone, not the
-      machine. No cell is moved to fit the drawing.
+      <strong>FLOOR1_WORLD_M</strong> is the CAD floor plan, in metres. 40 cells whose
+      CAD instance is identified stand in it at that instance&rsquo;s own measured
+      position.
+    </p>
+    <p class="note">
+      <strong>EAP_LAYOUT_FRAME</strong> is the reference layout&rsquo;s own frame &mdash;
+      schematic and anisotropic. The other 170 cells live there because nothing places
+      them on the real floor.
+    </p>
+    <p class="note">
+      The two are never merged and no transform takes one to the other. A set-level
+      registration places a zone, not a machine, so those zones appear on the floor plan
+      as outlines with their machines left in the schematic.
     </p>
 
     <h2>Status</h2>

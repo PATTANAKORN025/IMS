@@ -134,10 +134,13 @@ function projectCadEvidence(raw, hasInstance) {
   };
 }
 
-function projectCell(raw) {
+function projectCell(raw, env, bodies) {
   const footprint = projectFootprint(raw.eap_footprint);
   const mappingState = enumOr(raw.mapping_state, MAPPING_STATES, 'AMBIGUOUS');
   const spatialEvidence = enumOr(raw.spatial_evidence, SPATIAL_EVIDENCE, 'LAYOUT_ONLY');
+  const worldFootprint = projectWorldFootprint(
+    { ...raw, spatial_evidence: spatialEvidence }, env,
+    bodies && bodies.get(raw.machine_node_id));
   return {
     cell_id: String(raw.eap_cell_id),
     zone_id: String(raw.zone_id),
@@ -158,6 +161,11 @@ function projectCell(raw) {
     // they would locate the facility, and a client needs to know whether a
     // world position exists, not what it is.
     spatial_evidence: spatialEvidence,
+    // The frame this cell is drawn in. A cell is never quietly moved between
+    // the two: it draws in world space only when its world position was
+    // established, and the payload says which frame each one is in.
+    spatial_frame: worldFootprint ? 'FLOOR1_WORLD_M' : 'EAP_LAYOUT_FRAME',
+    world_footprint: worldFootprint,
     has_cad_world_position: Boolean(raw.cad_world_position),
     registration_method: enumOr(raw.registration_method, REGISTRATION_METHODS, 'NONE'),
     registration_confidence: enumOr(raw.registration_confidence, CONFIDENCES, 'LOW'),
@@ -199,7 +207,34 @@ function projectUnit(raw) {
  * honest about what it is -- the extent of the cells in that zone -- and is
  * labelled that way.
  */
-function zoneOutlines(cells) {
+function zoneOutlines(cells, model, env) {
+  const regions = new Map();
+  const zoneReg = (model && model.spatial_registration && model.spatial_registration.zones)
+    || [];
+  for (const z of zoneReg) {
+    const r = z.cad_world_region;
+    if (!env || !r || r.frame !== 'CAD_WORLD_MM') continue;
+    // A LAYOUT_ONLY zone has no established correspondence to place, so its
+    // candidates' extent is not a registration and is not published as one.
+    if (z.spatial_evidence === 'LAYOUT_ONLY') continue;
+    const a = cadToTwin(r.x_mm[0], r.y_mm[0], env);
+    const b = cadToTwin(r.x_mm[1], r.y_mm[1], env);
+    regions.set(z.zone_id, {
+      frame: 'FLOOR1_WORLD_M',
+      x: Number(((a.x + b.x) / 2).toFixed(4)),
+      z: Number(((a.z + b.z) / 2).toFixed(4)),
+      width: Number(Math.abs(b.x - a.x).toFixed(4)),
+      depth: Number(Math.abs(b.z - a.z).toFixed(4)),
+      cad_candidates: z.cad_candidates,
+      cells_registered_to_a_point: z.cells_registered_to_a_point,
+      derivation: 'extent of this zone’s CAD candidate bodies; the zone is '
+        + 'placed, the individual machines in it are not',
+    });
+  }
+  return zoneOutlinesInner(cells, regions);
+}
+
+function zoneOutlinesInner(cells, regions) {
   const byZone = new Map();
   for (const cell of cells) {
     if (!cell.footprint) continue;
@@ -236,6 +271,9 @@ function zoneOutlines(cells) {
       depth: z.max_z - z.min_z,
     },
     derivation: 'bounding extent of the cells in this zone; not a room boundary',
+    // Where the drawing places this zone, when the registration established it.
+    // A region, never a position for any one machine in it.
+    cad_world_region: regions.get(z.zone_id) || null,
   }));
 }
 
@@ -248,6 +286,86 @@ function projectFrame(raw) {
     axes: typeof raw.axes === 'string' ? raw.axes : null,
     extent: { width: num(extent.width), depth: num(extent.depth) },
     warning: typeof raw.warning === 'string' ? raw.warning : null,
+  };
+}
+
+/**
+ * The canonical Floor 1 frame, applied here rather than assumed.
+ *
+ * The model holds CAD-world millimetres. The floor this map draws on is already
+ * published in twin metres by /api/floor-geometry -- walls, columns and zones
+ * all live there -- so a DIRECT cell has to land in that same frame or it will
+ * sit next to the right wall by accident rather than by construction.
+ *
+ * The transform is the one in scripts/lib/floor1-frame.js, restated here because
+ * the service image does not carry that module:
+ *
+ *     x_twin =  x_cad/1000 - halfWidth
+ *     z_twin = -(y_cad/1000 - halfDepth)
+ *     phi    = +theta          (CAD_ROTATION_SIGN)
+ *
+ * The z axis is REFLECTED, which is why the rotation sign is stated explicitly:
+ * both halves flip together or a machine ends up correctly placed and wrongly
+ * turned. The half-extents come from the floor geometry's own envelope rather
+ * than a constant, so the two documents cannot drift apart.
+ */
+const CAD_ROTATION_SIGN = 1;
+
+function loadEnvelope(privateDir) {
+  const file = path.join(privateDir, 'floor1-geometry.json');
+  if (!fs.existsSync(file)) return null;
+  try {
+    const doc = JSON.parse(fs.readFileSync(file, 'utf8'));
+    const env = doc && doc.envelope;
+    if (!env || !(env.width > 0) || !(env.depth > 0)) return null;
+    return { halfWidth: env.width / 2, halfDepth: env.depth / 2 };
+  } catch (err) {
+    return null;
+  }
+}
+
+function cadToTwin(xMm, yMm, env) {
+  return {
+    x: Number((xMm / 1000 - env.halfWidth).toFixed(4)),
+    z: Number((-(yMm / 1000 - env.halfDepth)).toFixed(4)),
+  };
+}
+
+/**
+ * The world footprint of a cell whose position in the world is established.
+ *
+ * Size and rotation come from the identified CAD instance's own measured body,
+ * not from the schematic footprint: the schematic frame is anisotropic, so its
+ * width and depth are not lengths. Returns null unless the cell is entitled to a
+ * world position AND the numbers behind it are complete -- a half-built world
+ * footprint would draw a machine in the wrong place on the real floor plan,
+ * which is worse than drawing it in the schematic.
+ */
+function projectWorldFootprint(raw, env, body) {
+  if (!env) return null;
+  if (!worldRenderPermitted(raw.spatial_evidence)) return null;
+  const pos = raw.cad_world_position;
+  if (!pos || pos.frame !== 'CAD_WORLD_MM') return null;
+  const x = num(pos.x_mm);
+  const y = num(pos.y_mm);
+  const rot = num(pos.rotation_deg);
+  // The measured body of the identified instance. It lives on the candidate
+  // record, not the cell, and without it there is no size to draw -- so the
+  // cell falls back to the schematic rather than being given an assumed one.
+  const width = num(body && body.width_mm);
+  const depth = num(body && body.depth_mm);
+  if (x === null || y === null || rot === null) return null;
+  if (!(width > 0) || !(depth > 0)) return null;
+  const p = cadToTwin(x, y, env);
+  return {
+    frame: 'FLOOR1_WORLD_M',
+    x: p.x,
+    z: p.z,
+    rotation_deg: Number((CAD_ROTATION_SIGN * rot).toFixed(3)),
+    width: Number((width / 1000).toFixed(4)),
+    depth: Number((depth / 1000).toFixed(4)),
+    height_state: 'PRESENTATION_ONLY',
+    source: 'the identified CAD instance, placed by its transformed body position',
   };
 }
 
@@ -267,11 +385,15 @@ function loadModel(privateDir) {
  * rather than copied from the model's own summary, so a payload can never claim
  * a population it did not actually send.
  */
-function project(model) {
+function project(model, env) {
   if (!model || !Array.isArray(model.eap_cells) || !Array.isArray(model.machine_units)) {
     return null;
   }
-  const cells = model.eap_cells.map(projectCell);
+  const bodies = new Map();
+  for (const r of model.cad_candidates || []) {
+    bodies.set(r.machine_node_id, { width_mm: r.width_mm, depth_mm: r.depth_mm });
+  }
+  const cells = model.eap_cells.map((c) => projectCell(c, env, bodies));
   const units = model.machine_units.map(projectUnit);
   const byState = {};
   const bySpatial = {};
@@ -324,16 +446,25 @@ function project(model) {
       cells_with_a_cad_world_position: cells.filter((c) => c.has_cad_world_position).length,
       cells_world_render_permitted: cells.filter((c) => c.world_render_permitted).length,
       cells_live_status_eligible: cells.filter((c) => c.live_status_eligible).length,
+      cells_in_world_frame: cells.filter((c) => c.spatial_frame === 'FLOOR1_WORLD_M').length,
+      cells_in_layout_frame: cells.filter((c) => c.spatial_frame === 'EAP_LAYOUT_FRAME').length,
       spatial_evidence: bySpatial,
       reference_status_drawn: cells.filter((c) => c.reference_status_drawn).length,
     },
-    zones: zoneOutlines(cells),
+    frames: {
+      FLOOR1_WORLD_M: 'the canonical Floor 1 frame, metres, shared with the floor '
+        + 'plan this map draws on',
+      EAP_LAYOUT_FRAME: 'the reference layout’s own frame, non-metric and '
+        + 'anisotropic; the only frame all 210 cells have',
+      rule: 'the two are never merged and no transform takes one to the other',
+    },
+    zones: zoneOutlines(cells, model, env),
     cells,
     machine_units: units,
   };
 }
 
 module.exports = {
-  loadModel, project, projectCell, projectUnit, zoneOutlines,
-  worldRenderPermitted, liveStatusEligible,
+  loadModel, loadEnvelope, project, projectCell, projectUnit, zoneOutlines,
+  worldRenderPermitted, liveStatusEligible, cadToTwin, projectWorldFootprint,
 };

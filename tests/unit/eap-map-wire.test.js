@@ -397,5 +397,130 @@ test('schema compatibility: the fields the renderer already reads are unchanged'
   assert.strictEqual(out.status, 'UNKNOWN');
 });
 
+/* ---- the world frame -----------------------------------------------------
+   The projection into the canonical Floor 1 frame is the one place a cell can
+   silently end up in the wrong spot on a real floor plan: a sign error in the
+   reflected z axis, or a rotation that did not flip with it, both produce a
+   plausible-looking machine standing somewhere it is not. */
+
+const ENV = { halfWidth: 87.25, halfDepth: 60.15 };
+
+test('the canonical frame is applied, reflection and all', () => {
+  // x_twin = x/1000 - halfWidth, z_twin = -(y/1000 - halfDepth)
+  assert.deepStrictEqual(eapMap.cadToTwin(0, 0, ENV), { x: -87.25, z: 60.15 });
+  assert.deepStrictEqual(eapMap.cadToTwin(174500, 120300, ENV), { x: 87.25, z: -60.15 });
+  const mid = eapMap.cadToTwin(87250, 60150, ENV);
+  assert.strictEqual(mid.x, 0);
+  assert.strictEqual(mid.z, 0);
+});
+
+test('a DIRECT cell gets a world footprint from its own CAD instance', () => {
+  const out = eapMap.projectCell(privateCell(), ENV,
+    new Map([['MN-F1-0044', { width_mm: 4700, depth_mm: 2068 }]]));
+  assert.ok(out.world_footprint, 'a DIRECT cell must reach the world frame');
+  assert.strictEqual(out.spatial_frame, 'FLOOR1_WORLD_M');
+  assert.strictEqual(out.world_footprint.frame, 'FLOOR1_WORLD_M');
+  // The size is the measured CAD body, not the schematic rectangle.
+  assert.strictEqual(out.world_footprint.width, 4.7);
+  assert.strictEqual(out.world_footprint.depth, 2.068);
+  assert.notStrictEqual(out.world_footprint.width, out.footprint.width);
+  // The rotation is the CAD rotation, carried with the sign the frame requires.
+  assert.strictEqual(out.world_footprint.rotation_deg, 90);
+  // The projection rounds to 0.1 mm, so the comparison carries that tolerance
+  // rather than demanding a float it never promised.
+  assert.ok(Math.abs(out.world_footprint.x - (16.2425 - ENV.halfWidth)) < 1e-4,
+    `x ${out.world_footprint.x}`);
+  assert.ok(Math.abs(out.world_footprint.z + (116.69825 - ENV.halfDepth)) < 1e-4,
+    `z ${out.world_footprint.z}`);
+});
+
+test('a cell without the evidence never reaches the world frame', () => {
+  for (const level of ['SET_LEVEL', 'LAYOUT_ONLY']) {
+    const out = eapMap.projectCell(privateCell({
+      spatial_evidence: level,
+      cad_world_position: { frame: 'CAD_WORLD_MM', x_mm: 1, y_mm: 2, rotation_deg: 0 },
+    }), ENV, new Map([['MN-F1-0044', { width_mm: 1000, depth_mm: 1000 }]]));
+    assert.strictEqual(out.world_footprint, null, `${level} reached the world frame`);
+    assert.strictEqual(out.spatial_frame, 'EAP_LAYOUT_FRAME');
+  }
+});
+
+test('a world footprint with no measured body falls back rather than guessing', () => {
+  // No body on the candidate: there is no size to draw, and an assumed one
+  // would put a wrong-sized machine on a real floor plan.
+  const out = eapMap.projectCell(privateCell(), ENV, new Map());
+  assert.strictEqual(out.world_footprint, null);
+  assert.strictEqual(out.spatial_frame, 'EAP_LAYOUT_FRAME');
+  assert.ok(out.footprint, 'the schematic footprint is still there to draw');
+});
+
+test('a world footprint in the wrong frame is rejected', () => {
+  const out = eapMap.projectCell(privateCell({
+    cad_world_position: { frame: 'EAP_LAYOUT_FRAME', x_mm: 1, y_mm: 2, rotation_deg: 0 },
+  }), ENV, new Map([['MN-F1-0044', { width_mm: 1000, depth_mm: 1000 }]]));
+  assert.strictEqual(out.world_footprint, null);
+});
+
+test('the world frame carries no millimetres and no CAD identity', () => {
+  const out = eapMap.projectCell(privateCell(), ENV,
+    new Map([['MN-F1-0044', { width_mm: 4700, depth_mm: 2068 }]]));
+  const text = JSON.stringify(out.world_footprint);
+  assert.ok(!text.includes('16242'), 'the world footprint leaked a CAD millimetre');
+  assert.ok(!text.includes('2AF31'), 'the world footprint leaked a CAD handle');
+});
+
+test('the payload names both frames and refuses to bridge them', () => {
+  const out = eapMap.project({
+    eap_frame: { id: 'EAP_LAYOUT_FRAME', extent_m: { width: 174.5, depth: 89.3 },
+      axes: 'x right, z down', warning: 'schematic' },
+    eap_cells: [privateCell(), privateCell({
+      eap_cell_id: 'EAP-F1-0002', spatial_evidence: 'SET_LEVEL',
+      cad_world_position: null, cad_handle: null, machine_node_id: null,
+    })],
+    machine_units: [],
+    cad_candidates: [{ machine_node_id: 'MN-F1-0044', width_mm: 4700, depth_mm: 2068 }],
+  }, ENV);
+  assert.ok(out.frames.FLOOR1_WORLD_M);
+  assert.ok(out.frames.EAP_LAYOUT_FRAME);
+  assert.ok(/never merged/i.test(out.frames.rule));
+  assert.strictEqual(out.counts.cells_in_world_frame, 1);
+  assert.strictEqual(out.counts.cells_in_layout_frame, 1);
+});
+
+test('a zone world region is published only where the registration earned one', () => {
+  const model = {
+    eap_frame: { id: 'EAP_LAYOUT_FRAME', extent_m: { width: 174.5, depth: 89.3 },
+      axes: 'x right, z down', warning: 'schematic' },
+    eap_cells: [privateCell({ spatial_evidence: 'SET_LEVEL', cad_world_position: null })],
+    machine_units: [],
+    cad_candidates: [],
+    spatial_registration: {
+      zones: [
+        { zone_id: 'B', spatial_evidence: 'SET_LEVEL', cad_candidates: 102,
+          cells_registered_to_a_point: 40,
+          cad_world_region: { frame: 'CAD_WORLD_MM', x_mm: [0, 20000],
+            y_mm: [0, 10000] } },
+        { zone_id: 'H', spatial_evidence: 'LAYOUT_ONLY', cad_candidates: 16,
+          cells_registered_to_a_point: 0,
+          cad_world_region: { frame: 'CAD_WORLD_MM', x_mm: [0, 1000],
+            y_mm: [0, 1000] } },
+      ],
+    },
+  };
+  const out = eapMap.project(model, ENV);
+  const zoneB = out.zones.find((z) => z.zone_id === 'B');
+  assert.ok(zoneB.cad_world_region, 'a SET_LEVEL zone publishes its region');
+  assert.strictEqual(zoneB.cad_world_region.frame, 'FLOOR1_WORLD_M');
+  assert.ok(/not a position for any one machine/i.test(zoneB.cad_world_region.derivation)
+    || /individual machines in it are not/i.test(zoneB.cad_world_region.derivation));
+  // A LAYOUT_ONLY zone established nothing, so its candidates' extent is not a
+  // registration and is not published as one.
+  const model2 = { ...model, eap_cells: [privateCell({ zone_id: 'H',
+    spatial_evidence: 'LAYOUT_ONLY', cad_world_position: null })] };
+  const out2 = eapMap.project(model2, ENV);
+  const zoneH = out2.zones.find((z) => z.zone_id === 'H');
+  assert.strictEqual(zoneH.cad_world_region, null);
+});
+
 console.log('='.repeat(50));
 console.log(`${passed} passed${process.exitCode ? ', failures above' : ''}`);

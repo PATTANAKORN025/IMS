@@ -813,7 +813,7 @@ app.get('/api/floor-schematic', (req, res) => {
 app.get('/api/eap-map', (req, res) => {
   const model = eapMap.loadModel(PRIVATE_DIR);
   if (!model) return res.status(404).json({ error: 'not found' });
-  const payload = eapMap.project(model);
+  const payload = eapMap.project(model, eapMap.loadEnvelope(PRIVATE_DIR));
   if (!payload) return res.status(503).json({ error: 'model unavailable' });
   res.status(200).json({ ...payload, generated_at: new Date().toISOString() });
 });
