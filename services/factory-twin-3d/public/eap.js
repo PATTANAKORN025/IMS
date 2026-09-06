@@ -27,8 +27,14 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-const ENDPOINT = '/api/eap-map';
-const FLOOR_ENDPOINT = '/api/floor-geometry';
+// Relative, not absolute: the page is served at "/" directly but also behind
+// the reverse proxy at "/factory-twin-3d/", which strips its own prefix
+// before forwarding. An absolute "/api/..." path resolves against the site
+// origin and misses that prefix entirely; a relative path resolves against
+// the current document's own URL and reaches the right host either way --
+// the same convention app.js already uses for exactly this reason.
+const ENDPOINT = 'api/eap-map';
+const FLOOR_ENDPOINT = 'api/floor-geometry';
 
 /* Presentation constants. Height is one of them: no authoritative CAD height
    exists for any cell, so the 3D view picks a viewing height and the payload
