@@ -214,9 +214,6 @@ function zoneOutlines(cells, model, env) {
   for (const z of zoneReg) {
     const r = z.cad_world_region;
     if (!env || !r || r.frame !== 'CAD_WORLD_MM') continue;
-    // A LAYOUT_ONLY zone has no established correspondence to place, so its
-    // candidates' extent is not a registration and is not published as one.
-    if (z.spatial_evidence === 'LAYOUT_ONLY') continue;
     const a = cadToTwin(r.x_mm[0], r.y_mm[0], env);
     const b = cadToTwin(r.x_mm[1], r.y_mm[1], env);
     regions.set(z.zone_id, {
@@ -227,6 +224,13 @@ function zoneOutlines(cells, model, env) {
       depth: Number(Math.abs(b.z - a.z).toFixed(4)),
       cad_candidates: z.cad_candidates,
       cells_registered_to_a_point: z.cells_registered_to_a_point,
+      spatial_evidence: z.spatial_evidence,
+      // LAYOUT_ONLY: the extent is a real CAD measurement (the candidates'
+      // own positions), but the link tying this extent to this layout zone's
+      // name is weak -- LOW confidence, position-only, an unnamed CAD zone.
+      // The rectangle is not invented, so it is published; the renderer draws
+      // it distinctly rather than omitting a whole process area from the map.
+      link_confidence: enumOr(z.cad_link_confidence, CONFIDENCES, 'LOW'),
       derivation: 'extent of this zone’s CAD candidate bodies; the zone is '
         + 'placed, the individual machines in it are not',
     });

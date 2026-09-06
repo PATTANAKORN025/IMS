@@ -513,13 +513,17 @@ test('a zone world region is published only where the registration earned one', 
   assert.strictEqual(zoneB.cad_world_region.frame, 'FLOOR1_WORLD_M');
   assert.ok(/not a position for any one machine/i.test(zoneB.cad_world_region.derivation)
     || /individual machines in it are not/i.test(zoneB.cad_world_region.derivation));
-  // A LAYOUT_ONLY zone established nothing, so its candidates' extent is not a
-  // registration and is not published as one.
+  // A LAYOUT_ONLY zone established no registration, but its candidates' extent
+  // is still a real CAD measurement -- only the name-to-zone link is weak. It is
+  // published, flagged LOW/LAYOUT_ONLY, rather than hiding the whole process
+  // area from the map.
   const model2 = { ...model, eap_cells: [privateCell({ zone_id: 'H',
     spatial_evidence: 'LAYOUT_ONLY', cad_world_position: null })] };
   const out2 = eapMap.project(model2, ENV);
   const zoneH = out2.zones.find((z) => z.zone_id === 'H');
-  assert.strictEqual(zoneH.cad_world_region, null);
+  assert.ok(zoneH.cad_world_region, 'a LAYOUT_ONLY zone still publishes its measured extent');
+  assert.strictEqual(zoneH.cad_world_region.spatial_evidence, 'LAYOUT_ONLY');
+  assert.strictEqual(zoneH.cad_world_region.link_confidence, 'LOW');
 });
 
 console.log('='.repeat(50));
