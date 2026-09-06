@@ -57,6 +57,11 @@ const USER = process.env.GRAFANA_ADMIN_USER || process.env.GRAFANA_USER || 'admi
 const PASS = process.env.GRAFANA_ADMIN_PASSWORD || process.env.GRAFANA_PASS;
 const DIRECT_URL = process.env.TWIN_DIRECT_URL || null;
 const TWIN_URL = DIRECT_URL || `${BASE_URL}/factory-twin-3d/`;
+// The bare service root now serves the EAP operational map (eap.html), the
+// canonical Factory Twin entry point. This suite tests the older physical
+// twin specifically -- window.__twin, layer toggles, the CAD reference
+// overlay -- which stays reachable at its own filename rather than at root.
+const PHYSICAL_TWIN_URL = `${TWIN_URL}index.html`;
 
 const VIEWPORTS = [
   { name: '1366x768', width: 1366, height: 768 },
@@ -536,7 +541,7 @@ async function run() {
   // stack trace unless NODE_ENV happens to be production.
   if (DIRECT_URL) {
     console.log('Service response hygiene:');
-    await page.goto(TWIN_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
+    await page.goto(PHYSICAL_TWIN_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
     const probe = 'private/floor1-zones.json';
     const res = await page.request.get(TWIN_URL + probe, { failOnStatusCode: false });
     const body = await res.text();
@@ -800,7 +805,7 @@ async function run() {
     page.on('console', onConsole);
     page.on('requestfailed', onFailed);
 
-    await page.goto(TWIN_URL, { waitUntil: 'networkidle', timeout: 60000 });
+    await page.goto(PHYSICAL_TWIN_URL, { waitUntil: 'networkidle', timeout: 60000 });
     // Wait for the scene, not for machines. A deployment with no monitored
     // devices is a valid deployment -- CI runs against a database that has
     // none -- and waiting on a device that will never arrive would turn an

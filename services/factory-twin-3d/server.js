@@ -170,6 +170,23 @@ app.get('/api/build', (req, res) => {
   });
 });
 
+// ── Canonical entry point ──
+// The EAP operational map (eap.html) is the Factory Twin a user should land
+// on at the bare service root -- it reads the current node model, not the
+// retired 344-record physical CAD equipment pipeline. An explicit route is
+// used rather than renaming index.html or relying on express.static's
+// default-index behaviour, so the choice of canonical page is one line to
+// find and one line to change, not an artifact of file naming.
+//
+// The older physical-twin page stays exactly where it was, unmoved and
+// undeleted: tests/playwright/factory-twin-regression.js exercises it
+// directly (window.__twin, layer toggles, the CAD reference overlay), and it
+// remains reachable at its own filename, /factory-twin-3d/index.html, via the
+// static middleware below. Nothing about it changes in this phase.
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'eap.html'));
+});
+
 // ── Static frontend + vendored Three.js (no CDN dependency -- this
 // container has no host port, only reachable via the proxy's auth_request
 // gate, so the frontend must not depend on fetching a script from a
