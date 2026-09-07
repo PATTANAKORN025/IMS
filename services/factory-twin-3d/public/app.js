@@ -1470,11 +1470,19 @@ const MARKER_HEIGHT_M = 0.08;
  * neighbour spacing, so it reads a step back. UNRESOLVED claims no size at all
  * and is a faint marker.
  */
+// A pale, near-white fill read fine as a single machine but merges adjoining
+// ones into one undifferentiated slab wherever the CAD packs them tight --
+// which several zones on this floor do. Darkening and desaturating the fill
+// (no colour change in kind, only in value) keeps the same evidence-tier
+// distinction while giving equipment its own tonal register: dark enough to
+// read as "material sitting on the floor" against the pale zone tint above
+// it, and far enough from the wall/boundary blue that a dense cluster of
+// boxes does not read as one continuous field.
 const EQUIPMENT_TIER_STYLE = Object.freeze({
-  MEASURED_CAD: { color: 0x8fa7c9, opacity: 0.92 },
-  OBSERVED_CAD: { color: 0x8fa7c9, opacity: 0.92 },
-  APPROXIMATION: { color: 0x6d829f, opacity: 0.7 },
-  UNRESOLVED: { color: 0x44536a, opacity: 0.5 },
+  MEASURED_CAD: { color: 0x4d6483, opacity: 0.95 },
+  OBSERVED_CAD: { color: 0x4d6483, opacity: 0.95 },
+  APPROXIMATION: { color: 0x3c516c, opacity: 0.8 },
+  UNRESOLVED: { color: 0x2b3a4d, opacity: 0.55 },
 });
 
 // One record per CAD asset: the served record plus the world placement it was
@@ -2626,9 +2634,31 @@ function updateMachineLabels() {
     candidates.sort((a, b) => (b.selected === a.selected ? b.px - a.px : (b.selected ? 1 : -1)));
   }
 
-  const shown = Math.min(candidates.length, LABEL_MAX);
+  // Screen-space collision rejection. The size gate above bounds HOW MANY
+  // machines are large enough to caption; it says nothing about whether two
+  // of them sit close enough on screen that their chips print on top of each
+  // other. In this floor's densest zones several similarly-sized machines
+  // stand shoulder to shoulder, and without this a "40 shown" budget was
+  // spent on a stack of overlapping, unreadable text rather than 40 readable
+  // captions. A candidate is kept only if it clears every already-accepted
+  // label by roughly one chip's footprint; the selected machine is exempt,
+  // same as the size gate, so the one an operator is looking at is never the
+  // one dropped for standing next to another.
+  const accepted = [];
+  const kept = [];
+  for (const c of candidates) {
+    if (kept.length >= LABEL_MAX) break;
+    const clear = c.selected || accepted.every(
+      (a) => Math.abs(a.x - c.x) >= 78 || Math.abs(a.y - c.y) >= 20
+    );
+    if (!clear) continue;
+    accepted.push(c);
+    kept.push(c);
+  }
+
+  const shown = kept.length;
   for (let i = 0; i < shown; i += 1) {
-    const c = candidates[i];
+    const c = kept[i];
     const el = labelElement(i);
     const mapped = Boolean(c.item.ims_device_id);
     const dims = (c.selected || c.px >= LABEL_DETAIL_PX) && c.item.footprint
