@@ -142,6 +142,7 @@
       border-radius: var(--radius); padding: 5px 8px; font: inherit; font-size: 12px;
     }
     .btn { border-color: var(--line); }
+    a.btn { text-decoration: none; display: inline-block; }
     /* Focus is never removed, only restyled. Keyboard operators are operators. */
     :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
@@ -336,6 +337,11 @@
       <button type="button" class="btn" id="drawer-toggle" aria-expanded="false" aria-controls="drawer">
         Inspection
       </button>
+      <!-- The EAP operational map is a separate page (its own WebGL context,
+           its own census-of-210-cells model) reached deliberately from here,
+           not a mode this scene switches into and not the page a visitor
+           lands on first. -->
+      <a class="btn" id="eap-link" href="eap.html">EAP Operational Map</a>
     </header>
 
     <!-- The eight plant states. Rendered by app.js from the shared vocabulary

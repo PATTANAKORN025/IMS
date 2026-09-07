@@ -171,20 +171,24 @@ app.get('/api/build', (req, res) => {
 });
 
 // ── Canonical entry point ──
-// The EAP operational map (eap.html) is the Factory Twin a user should land
-// on at the bare service root -- it reads the current node model, not the
-// retired 344-record physical CAD equipment pipeline. An explicit route is
-// used rather than renaming index.html or relying on express.static's
-// default-index behaviour, so the choice of canonical page is one line to
-// find and one line to change, not an artifact of file naming.
+// index.html -- the physical Floor 1 twin: real building envelope, walls,
+// columns, zones and equipment footprints, live /api/state telemetry, and
+// the evidence-tiered inspector -- is the Factory Twin a user should land on
+// at the bare service root. This reverses an earlier phase that made the EAP
+// operational map (eap.html) canonical instead; that made the census view
+// the product a visitor saw first, when the census is one operational layer
+// of the twin, not the twin itself. An explicit route is used rather than
+// relying on express.static's default-index behaviour, so the choice of
+// canonical page is one line to find and one line to change, not an
+// artifact of file naming.
 //
-// The older physical-twin page stays exactly where it was, unmoved and
-// undeleted: tests/playwright/factory-twin-regression.js exercises it
-// directly (window.__twin, layer toggles, the CAD reference overlay), and it
-// remains reachable at its own filename, /factory-twin-3d/index.html, via the
-// static middleware below. Nothing about it changes in this phase.
+// eap.html stays exactly where it was, unmoved and undeleted: reachable at
+// its own filename, /factory-twin-3d/eap.html, via the static middleware
+// below, and linked from the physical twin's own topbar as an operational
+// layer a viewer opens deliberately. Nothing about its model, its 210/40/167/3
+// evidence counts, or tests/playwright/eap-map-regression.js changes here.
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'eap.html'));
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // ── Static frontend + vendored Three.js (no CDN dependency -- this

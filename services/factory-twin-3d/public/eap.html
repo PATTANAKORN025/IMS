@@ -66,6 +66,15 @@
     cursor: pointer;
   }
   button:hover { border-color: var(--line-strong); }
+  #twin-link {
+    color: var(--ink-dim);
+    text-decoration: none;
+    font-size: 12px;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 5px 10px;
+  }
+  #twin-link:hover { color: var(--ink); border-color: var(--line-strong); }
   button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
   .group-label {
     font-size: 10px;
@@ -160,6 +169,7 @@
 </head>
 <body>
   <header>
+    <a id="twin-link" href="./" title="Back to the physical Floor 1 twin">&larr; Factory Twin</a>
     <h1>Floor 1 &mdash; EAP Operational Map</h1>
     <span class="sub" id="headline">loading&hellip;</span>
     <span class="spacer"></span>
