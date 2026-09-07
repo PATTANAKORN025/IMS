@@ -2440,6 +2440,19 @@ async function boot() {
       max: LABEL_MAX,
     }),
     updateMachineLabels,
+    // Zone captions are WebGL sprites, not DOM nodes, so a regression cannot
+    // read their screen rect with getBoundingClientRect() the way it reads a
+    // machine label's. This exposes the same projection the collision-
+    // rejection pass itself uses, as plain DOMRect-shaped objects, so a test
+    // can assert "no machine label overlaps a visible zone caption" against
+    // the real render, not a re-implementation of the math.
+    zoneLabelRects: () => {
+      const w = renderer.domElement.clientWidth;
+      const h = renderer.domElement.clientHeight;
+      return visibleZoneLabelRects(w, h).map((r) => ({
+        left: r.x - r.halfW, right: r.x + r.halfW, top: r.y - r.halfH, bottom: r.y + r.halfH,
+      }));
+    },
     measuredOutlineCount: () => measuredOutlineCount,
     footprintMeshes,
     wallMeshes,
@@ -2568,6 +2581,61 @@ window.addEventListener('resize', () => {
 const labelHost = document.getElementById('machine-labels');
 /** Below this on-screen width, in pixels, a machine is too small to caption. */
 const LABEL_MIN_PX = 46;
+
+// Content-aware chip-width estimate for collision rejection.
+//
+// A first pass estimated width as a character count times one guessed glyph
+// width, calibrated by eye against one screenshot. It under-rejected: the
+// `--mono` custom property `.machine-label` (index.html) asks for is never
+// actually defined anywhere, so the resolved font is whatever this browser's
+// generic `monospace` falls back to, which is not the same face -- or the
+// same glyph width -- on every platform this renders on. A guessed constant
+// tuned against one rendering environment is exactly the kind of estimate
+// that quietly stops matching reality somewhere else.
+//
+// This measures instead of guessing: an offscreen, never-attached canvas 2D
+// context has its font set to the label's own COMPUTED font (read once from
+// a live pooled label element and cached, never per candidate) and calls
+// measureText() on the exact string that will be rendered. That is
+// deterministic in the sense the brief asks for -- the same text always
+// measures the same width -- while also being correct for whatever font the
+// browser actually resolved, not a guess about which one that would be.
+// measureText() touches no layout and reflows nothing; it is not the
+// getBoundingClientRect() read the brief says to avoid.
+//
+// CHROME_PX covers everything in a chip that is not the measured text: the
+// status dot (6px) plus its 4px right margin, the chip's 4px+4px horizontal
+// padding, and its 1px+1px border -- read directly off the same CSS rule
+// (index.html, #machine-labels .machine-label / .dot) rather than
+// re-measured, since border/padding/margin are declared constants, not
+// rendered text. A small safety margin is added on top: over-estimating a
+// chip's width costs a little floor space between captions; under-estimating
+// is the defect this exists to fix. Height is not content-dependent -- a
+// chip is always exactly one line -- so it stays a constant.
+const LABEL_CHIP_CHROME_PX = 20; // dot(6)+margin(4)+padding(4+4)+border(1+1)
+const LABEL_CHIP_SAFETY_PX = 4;
+const LABEL_CHIP_HEIGHT_PX = 20;
+
+const labelMeasureCanvas = document.createElement('canvas');
+const labelMeasureCtx = labelMeasureCanvas.getContext('2d');
+let cachedLabelFont = null;
+
+/** The `.machine-label` chip's actual computed font, read once and cached. */
+function labelFont() {
+  if (cachedLabelFont) return cachedLabelFont;
+  const probe = labelElement(0); // pooled, hidden by default -- not a throwaway node
+  const cs = getComputedStyle(probe);
+  cachedLabelFont = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+  return cachedLabelFont;
+}
+
+/** Half-width, in CSS pixels, of the chip this exact text will render as. */
+function chipHalfWidth(idText, dimsText) {
+  labelMeasureCtx.font = labelFont();
+  const textPx = labelMeasureCtx.measureText(idText + dimsText).width;
+  return (LABEL_CHIP_CHROME_PX + LABEL_CHIP_SAFETY_PX + textPx) / 2;
+}
+
 /** And above this one it is close enough to carry its measured size as well. */
 const LABEL_DETAIL_PX = 190;
 /** Hard cap. Whatever the zoom, the plan does not become a wall of text. */
@@ -2594,6 +2662,32 @@ function labelElement(i) {
  * Reads the scene; writes only DOM. No mesh, no material and no served value is
  * touched, so labelling cannot move, resize or restyle a machine.
  */
+/**
+ * Screen-space rectangles of the zone captions currently visible (major
+ * zones always, minor zones only in inspection mode -- see
+ * setMinorZoneLabels). Read from the sprites' own world transform, the same
+ * way a machine's screen position is read: a project() and a pixels-per-metre
+ * scale, never a DOM measurement. There are at most a few dozen zone labels,
+ * so this is cheap to recompute every call rather than cached and invalidated.
+ */
+function visibleZoneLabelRects(width, height) {
+  const rects = [];
+  for (const sprite of zoneLabels) {
+    if (!sprite.visible) continue;
+    labelVec.set(sprite.position.x, sprite.position.y, sprite.position.z).project(camera);
+    if (labelVec.z < -1 || labelVec.z > 1) continue;
+    const x = (labelVec.x * 0.5 + 0.5) * width;
+    const y = (-labelVec.y * 0.5 + 0.5) * height;
+    // A generous off-screen margin, not an exact bound: a caption straddling
+    // the edge should still block a machine label from landing under its
+    // visible half.
+    if (x < -200 || y < -200 || x > width + 200 || y > height + 200) continue;
+    const scale = worldToPixels(sprite.position, width);
+    rects.push({ x, y, halfW: (sprite.scale.x * scale) / 2, halfH: (sprite.scale.y * scale) / 2 });
+  }
+  return rects;
+}
+
 function updateMachineLabels() {
   labelsPending = false;
   if (!labelHost) return;
@@ -2627,7 +2721,14 @@ function updateMachineLabels() {
       const px = fp && finite(fp.width) && finite(fp.depth)
         ? Math.min(fp.width, fp.depth) * scale : 0;
       if (!selected && px < LABEL_MIN_PX) continue;
-      candidates.push({ item, x, y, px, selected });
+      // The dims suffix and the collision footprint it will occupy are decided
+      // HERE, once, from the same condition the render loop used to re-derive
+      // on its own -- so what is measured for collision is exactly what gets
+      // drawn, never an estimate of a different chip than the one that ships.
+      const showDims = (selected || px >= LABEL_DETAIL_PX) && fp;
+      const dimsText = showDims ? ` ${fp.width} × ${fp.depth} m` : '';
+      const halfW = chipHalfWidth(item.id, dimsText);
+      candidates.push({ item, x, y, px, selected, dimsText, halfW });
     }
     // Selected first, then largest on screen: the caption an operator went
     // looking for cannot be pushed out of the budget by the floor around it.
@@ -2640,18 +2741,29 @@ function updateMachineLabels() {
   // other. In this floor's densest zones several similarly-sized machines
   // stand shoulder to shoulder, and without this a "40 shown" budget was
   // spent on a stack of overlapping, unreadable text rather than 40 readable
-  // captions. A candidate is kept only if it clears every already-accepted
-  // label by roughly one chip's footprint; the selected machine is exempt,
-  // same as the size gate, so the one an operator is looking at is never the
-  // one dropped for standing next to another.
+  // captions.
+  //
+  // The gap required between two candidates is each chip's OWN estimated
+  // half-width, not a shared guess -- a short id next to a long id-plus-
+  // dimensions chip needs an asymmetric gap, and a fixed constant here is
+  // exactly what under-rejected at 4K and at high zoom, where more chips
+  // cross into carrying the dimensions suffix at once. Zone captions are
+  // read into the same obstacle list, so a machine label cannot land on top
+  // of an already-visible zone name either. The selected machine is exempt
+  // from both, same as the size gate: the one an operator is looking at is
+  // never the one dropped for standing next to another label.
+  const zoneRects = visibleZoneLabelRects(width, height);
   const accepted = [];
   const kept = [];
   for (const c of candidates) {
     if (kept.length >= LABEL_MAX) break;
-    const clear = c.selected || accepted.every(
-      (a) => Math.abs(a.x - c.x) >= 78 || Math.abs(a.y - c.y) >= 20
+    const clearOfLabels = accepted.every(
+      (a) => Math.abs(a.x - c.x) >= (a.halfW + c.halfW) || Math.abs(a.y - c.y) >= LABEL_CHIP_HEIGHT_PX
     );
-    if (!clear) continue;
+    const clearOfZones = zoneRects.every(
+      (z) => Math.abs(z.x - c.x) >= (z.halfW + c.halfW) || Math.abs(z.y - c.y) >= (z.halfH + LABEL_CHIP_HEIGHT_PX / 2)
+    );
+    if (!c.selected && !(clearOfLabels && clearOfZones)) continue;
     accepted.push(c);
     kept.push(c);
   }
@@ -2661,8 +2773,7 @@ function updateMachineLabels() {
     const c = kept[i];
     const el = labelElement(i);
     const mapped = Boolean(c.item.ims_device_id);
-    const dims = (c.selected || c.px >= LABEL_DETAIL_PX) && c.item.footprint
-      ? `<span class="dim">${c.item.footprint.width} × ${c.item.footprint.depth} m</span>` : '';
+    const dims = c.dimsText ? `<span class="dim">${c.dimsText.trim()}</span>` : '';
     // The id is a model identifier (EQP-F1-nnnn), not a CAD block or layer
     // name, and never a vendor's. textContent is not used because of the two
     // spans; both are built here, neither carries served free text.
