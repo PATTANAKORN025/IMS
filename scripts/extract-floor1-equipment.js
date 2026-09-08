@@ -217,6 +217,22 @@ async function readDxf(src) {
       const h = B.convexHull(pts);
       if (h.length) block.groups.push({ key, hull: h });
     }
+    // A drawn service/swing arc (a full or near-full ELLIPSE the block's own
+    // body sits inside, physically distinct from the drafting-layer filter
+    // above) is excluded from the block's PHYSICAL hull here, at the same
+    // per-block stage the drafting filter runs at -- so every instance of
+    // this block measures its real body, not the arc it swings through.
+    // envelopeGroup() below (used for the OPERATIONAL layer) requires exact
+    // hull containment and is unaffected; this is a narrower, ELLIPSE-only,
+    // bbox-coverage test for the PHYSICAL measurement itself. See
+    // classifyEllipseRole's own doc comment for the evidence and the
+    // difference between the two.
+    const ellipseRole = B.classifyEllipseRole(block.groups);
+    if (ellipseRole) {
+      block.hull = ellipseRole.bodyHull;
+      block.ellipse_corrected = true;
+      block.ellipse_role_evidence = ellipseRole.evidence;
+    }
     pending = null;
     pendingGroups = null;
     block = null;
@@ -398,7 +414,7 @@ function resolveHull(name, blocks, cache, stack, stats) {
   if (cache.has(name)) return cache.get(name);
   const empty = {
     hull: [], hullWithDrafting: [], groups: [], depth: 0, entities: 0, physical: 0,
-    drafting: 0, annotation: 0, layers: 0,
+    drafting: 0, annotation: 0, layers: 0, ellipse_corrected: false, ellipse_role_evidence: null,
   };
   const b = blocks.get(name);
   if (!b) { stats.missing_definition += 1; return empty; }
@@ -408,6 +424,7 @@ function resolveHull(name, blocks, cache, stack, stats) {
       ...empty, hull: b.hull.slice(), groups: b.groups.slice(), entities: b.physical,
       physical: b.physical,
       drafting: b.drafting, annotation: b.annotation, layers: b.layers.size,
+      ellipse_corrected: !!b.ellipse_corrected, ellipse_role_evidence: b.ellipse_role_evidence || null,
     };
   }
   stack.add(name);
@@ -423,6 +440,10 @@ function resolveHull(name, blocks, cache, stack, stats) {
   }
   let depth = 0;
   let entities = b.physical;
+  // Propagated, not re-decided: a parent whose own body is a corrected block
+  // is itself ellipse-corrected, the same way drafting_kept and depth
+  // already climb the recursion.
+  let ellipseCorrected = !!b.ellipse_corrected;
   for (const n of b.nested) {
     const child = blocks.get(n.block);
     const r = resolveHull(n.block, blocks, cache, stack, stats);
@@ -441,6 +462,7 @@ function resolveHull(name, blocks, cache, stack, stats) {
     }
     depth = Math.max(depth, 1 + r.depth);
     entities += r.entities;
+    if (r.ellipse_corrected) ellipseCorrected = true;
   }
   stack.delete(name);
   // The drafting geometry is kept separately so its effect on the extent can be
@@ -463,6 +485,8 @@ function resolveHull(name, blocks, cache, stack, stats) {
     drafting: b.drafting,
     annotation: b.annotation,
     layers: b.layers.size,
+    ellipse_corrected: ellipseCorrected,
+    ellipse_role_evidence: b.ellipse_role_evidence || null,
   };
   if (out.hull.length === 0 && out.hullWithDrafting.length > 0) {
     // Four Floor 1 machine blocks draw their entire body on a layer named for
@@ -527,6 +551,7 @@ function main() {
     let draftingTrimmed = 0;
     let draftingKept = 0;
     let maxDraftTrimMm = 0;
+    let ellipseCorrectedCount = 0;
 
     const measured = [];
     const rejects = { no_geometry: 0, below_scale: 0, above_scale: 0, off_area: 0 };
@@ -540,6 +565,7 @@ function main() {
       if (ins.sx < 0 || ins.sy < 0) mirrored += 1;
       if (r.depth > 0) nested += 1;
       if (r.drafting_kept) draftingKept += 1;
+      if (r.ellipse_corrected) ellipseCorrectedCount += 1;
 
       if (!r.hull.length) { rejects.no_geometry += 1; measured.push({ ins, r, box: null }); continue; }
 
@@ -836,7 +862,14 @@ function main() {
         footprint_hull_vertices: ok ? m.hull.length : 0,
         footprint_fill: ok && box.width * box.depth > 0
           ? round3(B.polygonArea(m.hull) / (box.width * box.depth)) : null,
-        footprint_note: ok ? null : unresolvedNote(reason),
+        footprint_note: ok
+          ? (r.ellipse_corrected
+            ? 'ELLIPSE_CORRECTED: a drawn service/swing-arc envelope was excluded from the physical '
+              + 'footprint (classifyEllipseRole, area ratio and body-bbox-coverage evidence carried in '
+              + 'measurement.ellipse_role_evidence); position and extent are measured from the '
+              + 'machine\'s own body, not the arc.'
+            : null)
+          : unresolvedNote(reason),
         unresolved_reason: ok ? null : reason,
         measurement: {
           block_entities: r.entities,
@@ -848,6 +881,8 @@ function main() {
           fitted_angle_deg: ok && m.fitted ? round3(m.fitted.angle_deg) : null,
           rotation_residual_deg: fittedDelta,
           drafting_layers_kept: !!r.drafting_kept,
+          ellipse_corrected: !!r.ellipse_corrected,
+          ellipse_role_evidence: r.ellipse_role_evidence || null,
         },
         confidence: ok ? (familySize >= 3 ? 'high' : 'medium') : 'low',
         source: 'floor1_dxf',
@@ -1073,9 +1108,13 @@ function main() {
         drafting_layers_trimmed_from: draftingTrimmed,
         max_drafting_trim_mm: round3(maxDraftTrimMm),
         drafting_layers_kept_because_block_would_be_empty: draftingKept,
+        ellipse_service_envelope_excluded: ellipseCorrectedCount,
         note: 'Dimension chains, centrelines and Defpoints are excluded by layer name; '
           + 'text, attributes and DIMENSION entities by entity type. The layer filter is '
-          + 'subtractive only and is never allowed to empty a block.',
+          + 'subtractive only and is never allowed to empty a block. A drawn service/swing-arc '
+          + 'ELLIPSE that the machine body sits inside (area ratio + body-bbox-coverage evidence, '
+          + 'see lib/cad-blocks.js classifyEllipseRole) is excluded from the PHYSICAL footprint the '
+          + 'same way; the count above is instances, not block definitions.',
       },
       operational_axis: {
         note: 'Offset between a machine INSERT rotation and the axis its own block draws '

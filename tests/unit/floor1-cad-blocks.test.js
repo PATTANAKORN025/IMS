@@ -463,6 +463,64 @@ test('at most one group can be an enclosure', () => {
   assert.ok(second === -1 || second === 0, `unexpected ${second}`);
 });
 
+test('an ELLIPSE service/swing envelope is excluded even when it does not fully contain the body', () => {
+  // A near-full ellipse (approximated here as a coarse polygon -- the real
+  // function only ever sees ELLIPSE-tessellated points, never a true curve)
+  // around a body whose corner pokes 5% past the ellipse's own rim: real
+  // Floor 1 evidence (A$Cc7467117 / A$C776c247d) has exactly this shape --
+  // 6.7% and 8.4% of the body's hull area outside the ellipse's hull -- and
+  // envelopeGroup() correctly refuses both on containment alone.
+  const ellipsePts = [];
+  for (let a = 0; a < 32; a += 1) {
+    const t = (a / 32) * Math.PI * 2;
+    ellipsePts.push(10 * Math.cos(t), 6 * Math.sin(t));
+  }
+  const ellipse = { key: '00.Machine|ELLIPSE', hull: B.convexHull(ellipsePts) };
+  // Body sits mostly inside the ellipse; one corner (11, 0.5) pokes outside
+  // the rim (ellipse boundary at y=0.5 is x = 10*sqrt(1-0.5^2/36) ~= 9.97).
+  const body = { key: '00.Machine|LINE', hull: B.convexHull([-2, -1, 2, -1, 2, 1, -2, 1, 11, 0.5]) };
+  assert.strictEqual(B.envelopeGroup([ellipse, body]), -1,
+    'containment-only envelopeGroup must still refuse this -- the body genuinely pokes out');
+  const role = B.classifyEllipseRole([ellipse, body]);
+  assert.ok(role, 'the ellipse-specific, bbox-coverage test must fire where envelopeGroup does not');
+  assert.strictEqual(role.role, 'SERVICE_SWING_ENVELOPE');
+  assert.strictEqual(role.excluded, 0);
+  assert.ok(role.evidence.areaRatio >= 3);
+  assert.ok(role.evidence.bodyBboxCoverage >= 0.9);
+  // The corrected body hull is the small body, not the huge ellipse.
+  assert.ok(B.polygonArea(role.bodyHull) < B.polygonArea(ellipse.hull) / 3);
+});
+
+test('classifyEllipseRole never fires on a non-ELLIPSE group, however large', () => {
+  // The same shape and ratio as the case above, but keyed as a LINE group --
+  // a real large enclosing shape (a fence, a rail) is envelopeGroup's
+  // territory or nothing's; this function has no opinion on it.
+  const bigPts = [];
+  for (let a = 0; a < 32; a += 1) {
+    const t = (a / 32) * Math.PI * 2;
+    bigPts.push(10 * Math.cos(t), 6 * Math.sin(t));
+  }
+  const big = { key: '00.Machine|LINE', hull: B.convexHull(bigPts) };
+  const body = { key: '00.Machine|ARC', hull: B.convexHull([-2, -1, 2, -1, 2, 1, -2, 1, 11, 0.5]) };
+  assert.strictEqual(B.classifyEllipseRole([big, body]), null);
+});
+
+test('classifyEllipseRole refuses a genuine round machine body, not just a huge one', () => {
+  // Area ratio alone is not enough: an ellipse only modestly larger than a
+  // body it does not mostly cover must not qualify.
+  const ellipse = { key: '00.Machine|ELLIPSE', hull: B.convexHull([-3, -3, 3, -3, 3, 3, -3, 3]) };
+  const farBody = { key: '00.Machine|LINE', hull: B.convexHull([8, 8, 9, 8, 9, 9, 8, 9]) };
+  assert.strictEqual(B.classifyEllipseRole([ellipse, farBody]), null,
+    'a small, distant body must not be swallowed by an unrelated ellipse');
+});
+
+test('classifyEllipseRole requires the area-ratio floor, coverage alone is not enough', () => {
+  const ellipse = { key: '00.Machine|ELLIPSE', hull: B.convexHull([-2, -1, 2, -1, 2, 1, -2, 1]) };
+  const body = { key: '00.Machine|LINE', hull: B.convexHull([-1.8, -0.9, 1.8, -0.9, 1.8, 0.9, -1.8, 0.9]) };
+  assert.strictEqual(B.classifyEllipseRole([ellipse, body]), null,
+    'body is fully covered but nearly the same size as the ellipse -- not an envelope');
+});
+
 test('a degenerate input yields no rectangle rather than a default one', () => {
   assert.strictEqual(B.operationalRectangle([], 0, 0), null);
   assert.strictEqual(B.operationalRectangle([[0, 0], [1, 1]], 0, 0), null);

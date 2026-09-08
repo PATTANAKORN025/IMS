@@ -560,6 +560,93 @@ function envelopeGroup(groups) {
   return -1;
 }
 
+/** An ellipse group's own body-bbox coverage must reach this to qualify. */
+const BODY_BBOX_COVERAGE = 0.9;
+
+/**
+ * Whether an ELLIPSE-type geometry group is a drawn SERVICE/SWING ENVELOPE
+ * rather than part of the machine's own body -- a looser, complementary test
+ * to envelopeGroup() above, not a replacement for it.
+ *
+ * envelopeGroup() requires the candidate to fully CONTAIN every other
+ * group's hull -- zero tolerance, because cutting a group that pokes out
+ * even slightly would report a machine smaller than the drawing has it.
+ * That is correct for an ARBITRARY enclosing group (a fence, a guard rail
+ * -- anything could be a real structural boundary), but an ELLIPSE
+ * specifically has a second, independent physical reading measured
+ * directly off this drawing: a full-circle or near-full swing arc around a
+ * machine whose OWN body legitimately has a foot, a panel or a base
+ * protruding past the arc's own rim by a few percent of the body's
+ * bounding box -- geometry a pure containment test correctly refuses to
+ * exclude, but which real evidence (blocks A$Cc7467117 and A$C776c247d:
+ * 6.7% and 8.4% of the body's own hull area lies outside the ellipse's
+ * hull) shows is still, overwhelmingly, an envelope.
+ *
+ * Qualifies only when, for the SAME ellipse group envelopeGroup() would
+ * have inspected:
+ *   1. its own area is at least ENVELOPE_AREA_RATIO times the combined
+ *      body's, and
+ *   2. the body's own AXIS-ALIGNED bounding box is at least
+ *      BODY_BBOX_COVERAGE covered by the ellipse's axis-aligned bounding
+ *      box -- a coarser, more permissive measure than hull containment,
+ *      deliberately: it is asking "does the body sit inside roughly where
+ *      the arc sweeps", not "does every last vertex of the body's exact
+ *      outline sit inside the arc's exact outline".
+ * Never fires on a non-ELLIPSE group -- unlike envelopeGroup, which has no
+ * opinion on entity type, this function is deliberately narrower than it,
+ * because the physical justification above is specific to a swing/service
+ * arc, not to an arbitrary large shape.
+ *
+ * Returns { excluded, bodyHull, role, evidence } or null. `excluded` is the
+ * ellipse's own index into `groups`; `bodyHull` is the convex hull of every
+ * other group combined -- the corrected physical measurement.
+ */
+function classifyEllipseRole(groups) {
+  if (!Array.isArray(groups) || groups.length < 2) return null;
+  for (let i = 0; i < groups.length; i += 1) {
+    const g = groups[i];
+    if (!g || typeof g.key !== 'string' || !g.key.includes('ELLIPSE')) continue;
+    const mine = g.hull;
+    if (!Array.isArray(mine) || mine.length < 3) continue;
+    const restFlat = [];
+    for (let j = 0; j < groups.length; j += 1) {
+      if (j === i || !groups[j] || !Array.isArray(groups[j].hull)) continue;
+      for (const [x, y] of groups[j].hull) restFlat.push(x, y);
+    }
+    if (restFlat.length < 6) continue;
+    const bodyHull = convexHull(restFlat);
+    if (bodyHull.length < 3) continue;
+    const mineArea = polygonArea(mine);
+    const bodyArea = polygonArea(bodyHull);
+    if (!(mineArea > 0) || !(bodyArea > 0)) continue;
+    if (mineArea < bodyArea * ENVELOPE_AREA_RATIO) continue;
+
+    const mineFlat = [];
+    for (const [x, y] of mine) mineFlat.push(x, y);
+    const ellipseBox = orientedExtent(mineFlat, 0);
+    const bodyBox = orientedExtent(restFlat, 0);
+    if (!ellipseBox || !bodyBox) continue;
+    const bodyBoxPoly = boxCorners(bodyBox.cx, bodyBox.cy, bodyBox.width, bodyBox.depth, 0);
+    const ellipseBoxPoly = boxCorners(ellipseBox.cx, ellipseBox.cy, ellipseBox.width, ellipseBox.depth, 0);
+    const overlapArea = polygonArea(convexIntersection(bodyBoxPoly, ellipseBoxPoly));
+    const bodyBoxArea = bodyBox.width * bodyBox.depth;
+    if (!(bodyBoxArea > 0)) continue;
+    const coverage = overlapArea / bodyBoxArea;
+    if (coverage < BODY_BBOX_COVERAGE) continue;
+
+    return {
+      excluded: i,
+      bodyHull,
+      role: 'SERVICE_SWING_ENVELOPE',
+      evidence: {
+        areaRatio: mineArea / bodyArea,
+        bodyBboxCoverage: coverage,
+      },
+    };
+  }
+  return null;
+}
+
 /**
  * The operational rectangle for one machine, in the coordinates the hull is in.
  *
@@ -605,9 +692,11 @@ module.exports = {
   pointInPolygon,
   axisOffset,
   envelopeGroup,
+  classifyEllipseRole,
   operationalRectangle,
   OPERATIONAL_AXIS_LIMIT_DEG,
   ENVELOPE_AREA_RATIO,
+  BODY_BBOX_COVERAGE,
   DISPLAY_SHAPES,
   RECT_FILL,
   POLYGON_FILL,
