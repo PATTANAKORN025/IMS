@@ -171,26 +171,25 @@ app.get('/api/build', (req, res) => {
 });
 
 // ── Canonical entry point ──
-// eap.html -- the EAP Factory Twin: the reference layout's machine
-// population (210 cells, 199 lit, 171 machine units), zone navigation and
-// click-to-inspect -- is the page a user should land on at the bare service
-// root. This reverses the PREVIOUS phase's choice (physical Floor 1 twin
-// canonical, EAP a linked layer): that phase reasoned the census view was
-// one operational layer, not the twin itself, but the actual operator-facing
-// product decision is the opposite -- the EAP layout is what a factory floor
-// visitor recognizes and needs first, and the physical CAD reconstruction is
-// the secondary, engineering-facing view. An explicit route is used rather
-// than relying on express.static's default-index behaviour, so the choice
-// of canonical page is one line to find and one line to change, not an
-// artifact of file naming.
+// index.html -- the physical Floor 1 twin: real building envelope, walls,
+// columns, zones and equipment footprints, live /api/state telemetry, and
+// the evidence-tiered inspector -- is the Factory Twin a user should land on
+// at the bare service root. This reverses the PREVIOUS phase's choice
+// (EAP map canonical): the physical CAD reconstruction -- now carrying the
+// validated ellipse correction, PRODUCTION_LINE decomposition and
+// TRUE_POLYGON rendering -- is the product a floor visitor should land on,
+// with the EAP census as the operational layer reached deliberately. An
+// explicit route is used rather than relying on express.static's
+// default-index behaviour, so the choice of canonical page is one line to
+// find and one line to change, not an artifact of file naming.
 //
-// index.html stays exactly where it was, unmoved and undeleted: reachable at
-// its own filename, /factory-twin-3d/index.html, via the static middleware
-// below, and linked from the EAP twin's own topbar (#twin-link) as the
-// engineering view a viewer opens deliberately. Nothing about its model or
-// tests/playwright/factory-twin-regression.js changes here.
+// eap.html stays exactly where it was, unmoved and undeleted: reachable at
+// its own filename, /factory-twin-3d/eap.html, via the static middleware
+// below, and linked from the physical twin's own topbar as an operational
+// layer a viewer opens deliberately -- its model, its simulated-status
+// layer and its 210/40/171/12 evidence counts are untouched here.
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'eap.html'));
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // ── Static frontend + vendored Three.js (no CDN dependency -- this

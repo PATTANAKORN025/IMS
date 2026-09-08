@@ -502,6 +502,7 @@ async function snapshot(page) {
             enclosure: e.operational_excludes_enclosure === true,
             w: op && Number.isFinite(op.width) ? op.width : null,
             d: op && Number.isFinite(op.depth) ? op.depth : null,
+            isTruePolygon: e.display_representation === 'TRUE_POLYGON',
           };
         }),
         equipmentUnresolved: (geo.equipment || []).filter(
@@ -1343,8 +1344,16 @@ async function run() {
       for (const inst of s.equipmentPlacements) {
         const e = served.get(inst.id);
         if (!e) { invented++; continue; }
-        worstPos = Math.max(worstPos,
-          Math.abs(inst.x - (e.x + e.ox)), Math.abs(inst.z - (e.z + e.oz)));
+        // offset_x/offset_z describe an OPERATIONAL_RECTANGLE's own fitted
+        // centre, relative to the record's position -- meaningless for a
+        // TRUE_POLYGON record, which draws its own already-absolute served
+        // outline and is placed at (0, item.position.y, 0) with no offset
+        // added (see buildTruePolygonMeshes / the polygonInstances entry in
+        // app.js). Comparing against position+offset for one of those would
+        // be checking a delta the record never claims to have moved by.
+        const wantX = e.isTruePolygon ? e.x : e.x + e.ox;
+        const wantZ = e.isTruePolygon ? e.z : e.z + e.oz;
+        worstPos = Math.max(worstPos, Math.abs(inst.x - wantX), Math.abs(inst.z - wantZ));
       }
       for (const box of s.equipmentBoxes) {
         const e = served.get(box.id);
