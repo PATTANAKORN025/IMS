@@ -426,6 +426,15 @@ services:
     container_name: ims-factory-twin-3d
     <<: *default-restart
     init: true
+    # Read-only mount, host-only, never baked into the image (see
+    # Dockerfile's comment). This repo's own checkout has nothing real
+    # here -- services/factory-twin-3d/private/ is gitignored -- so a
+    # public clone runs with this mount pointing at an empty directory and
+    # server.js's loadPrivateLayout() falls back to the synthetic grid.
+    # A private production environment drops a real LayoutApex3-F1.json
+    # (and/or a reference image) at this same host path, no rebuild needed.
+    volumes:
+      - ./services/factory-twin-3d/private:/app/private:ro
     environment:
       PGHOST: ims-pgbouncer
       PGPORT: "5432"

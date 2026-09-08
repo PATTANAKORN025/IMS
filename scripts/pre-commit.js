@@ -32,6 +32,30 @@ run("Parser v2 Tests", "node tests/unit/v2-parser.test.js");
 run("Query Budget Linter Tests", "node tests/unit/query-budget-linter.test.js");
 run("Gate Decision Tests", "node tests/unit/gate.test.js");
 run("Security Exception Matching Tests", "node tests/unit/security-exceptions.test.js");
+run("Factory Twin Mapping Contract Tests", "node tests/unit/factory-twin-mapping.test.js");
+run("Factory Twin MES Import Boundary Tests", "node tests/unit/factory-twin-mes-import.test.js");
+run("Factory Twin Geometry Mutation Tests", "node tests/unit/factory-twin-geometry-mutation.test.js");
+run("Factory Twin Diagnostics Sanitization Tests", "node tests/unit/factory-twin-diagnostics.test.js");
+run("Factory Twin Evidence Pipeline Tests", "node tests/unit/factory-twin-evidence.test.js");
+run("Factory Twin Wire Projection Tests", "node tests/unit/factory-twin-wire.test.js");
+run("Factory Twin Floor Registry Tests", "node tests/unit/factory-twin-floors.test.js");
+run("Factory Twin Schematic Layer Tests", "node tests/unit/factory-twin-schematic.test.js");
+run("Factory Twin Operational Status Tests", "node tests/unit/factory-twin-operational-status.test.js");
+// The machine-form suite is gone with the layer it covered: invented machine
+// bodies drawn over raster-derived positions. What replaced it is stricter, not
+// looser -- the CAD reconciliation below compares the served model back against
+// the drawing record by record and reports residuals.
+run("Factory Twin CAD Reconciliation", "node tests/lint/floor1-cad-reconciliation.js");
+// Orientation is checked against the CAD's own coordinates and its own place
+// names, because every check that compared the model against itself passed
+// while the floor rendered mirrored.
+run("Factory Twin Orientation Proof", "node tests/lint/floor1-orientation.js");
+// The EAP node model keeps three populations apart -- CAD candidates, layout
+// cells, machine units. This asserts the arithmetic that ties them together and
+// refuses a CAD handle that does not resolve, which is what a fabricated
+// instance identity would look like.
+run("EAP Map Wire Tests", "node tests/unit/eap-map-wire.test.js");
+run("EAP Node Model Contract", "node tests/lint/eap-node-model-contract.js");
 
 // 2. Run Linters
 run("Dashboard Linter", "node tests/lint/dashboard-linter.js");
