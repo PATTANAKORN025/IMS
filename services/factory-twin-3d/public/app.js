@@ -596,6 +596,18 @@ function basicMaterial(color, opacity) {
   return m;
 }
 
+// Same styling as basicMaterial, DoubleSide only -- see buildTruePolygonMeshes
+// for why an extruded, arbitrarily-wound CAD polygon needs it.
+function polygonMaterial(color, opacity) {
+  const key = `polygon|${color}|${opacity}`;
+  let m = materialCache.get(key);
+  if (!m) {
+    m = new THREE.MeshBasicMaterial({ color, transparent: true, opacity, side: THREE.DoubleSide });
+    materialCache.set(key, m);
+  }
+  return m;
+}
+
 // The renderer is the second barrier, not a consumer that trusts the wire.
 // The server already projects every field, but a truthiness check is not a
 // shape check: an envelope that arrived as a string passes `if (envelope)` and
@@ -960,7 +972,6 @@ function buildFloor(geometry) {
 
   const columns = asArray(geometry.columns);
   const zones = asArray(geometry.zones);
-  const equipment = asArray(geometry.equipment);
 
   // Building framing comes from the measured envelope, not from constants.
   // The bounds are retained so a resize can refit for the new aspect ratio.
@@ -1035,10 +1046,85 @@ function buildFloor(geometry) {
     layers.functional.add(zoneOutline);
   }
 
-  // EQUIPMENT, read out of the CAD as block references.
-  //
-  // Two claims of different strength live on one record and are drawn
-  // differently on purpose:
+  // Equipment is NOT built here. It is driven entirely by applyDisplayMode
+  // (called once, right after this function returns, with whatever mode is
+  // active) so there is exactly one path onto the floor for a machine --
+  // never a direct buildFloor render that a later mode switch has to
+  // reconcile against.
+}
+
+/**
+ * EQUIPMENT, read out of the CAD as block references.
+ *
+ * Split out of buildFloor so a display-mode switch can rebuild ONLY this --
+ * walls, columns and zones do not change when an operator picks a different
+ * evidence filter, and rebuilding them on every switch would cost a fresh
+ * DXF-derived layer for a filter that touches none of it.
+ *
+ * Two claims of different strength live on one record and are drawn
+ * differently on purpose:
+ */
+/**
+ * The canonical display-policy projection: API evidence -> the exact asset
+ * ids a mode renders. This is the ONLY place that decision is made -- both
+ * applyDisplayMode (below) and a regression asking "what SHOULD be on
+ * screen" call this same function, so there is no second copy of the rule to
+ * drift out of step with the render it is supposed to describe.
+ *
+ *   PRIMARY           resolved, primary-pipeline evidence only
+ *   PRIMARY_AUDIT     PRIMARY plus UNRESOLVED markers, still no recovered pass
+ *   PRIMARY_RECOVERED PRIMARY plus everything the recovery pass found
+ *   ALL_ENGINEERING   everything
+ *
+ * Deduplication is NOT a mode: a proven duplicate (duplicate_of set) is
+ * suppressed at every mode, including ALL_ENGINEERING, because it is not a
+ * second machine to audit into view -- it is the same machine, so showing it
+ * twice would not be more complete, it would be wrong.
+ */
+function getDisplayAssetIds(mode) {
+  const ids = [];
+  for (const item of rawApiEquipment) {
+    if (!item || typeof item.id !== 'string') continue;
+    if (item.duplicate_of) continue; // one physical asset, one render, always
+    const resolved = !!item.footprint;
+    const recovered = item.evidence_tier === 'RECOVERED';
+    let show;
+    if (mode === 'PRIMARY') show = resolved && !recovered;
+    else if (mode === 'PRIMARY_AUDIT') show = !recovered;
+    else if (mode === 'PRIMARY_RECOVERED') show = resolved || recovered;
+    else show = true; // ALL_ENGINEERING, and the default for an unknown mode
+    if (show) ids.push(item.id);
+  }
+  return ids.sort();
+}
+
+/**
+ * Applies a display mode: filters the ALREADY-FETCHED rawApiEquipment (never
+ * a second fetch -- a mode switch is a client-side render decision, not an
+ * evidence change) and rebuilds ONLY the equipment layer from the result.
+ * rawApiEquipment itself is never touched, so the API's own evidence survives
+ * every switch unchanged -- provable by re-fetching and diffing, which the
+ * regression does.
+ */
+function applyDisplayMode(mode) {
+  activeDisplayMode = mode;
+  const ids = new Set(getDisplayAssetIds(mode));
+  const filtered = rawApiEquipment.filter((item) => item && ids.has(item.id));
+  buildEquipmentLayer(filtered);
+  requestRender();
+}
+
+function buildEquipmentLayer(equipment) {
+  // A repeat call (a display-mode switch) must cost exactly what a fresh
+  // call costs, never more: every InstancedMesh batch from the PREVIOUS call
+  // is removed from the scene before this one adds its own. The batches'
+  // geometry is the shared, cached unit box (boxGeometry()) and is never
+  // disposed here -- disposing a cache entry every other consumer still
+  // points at would blank them, not free anything real. TRUE_POLYGON meshes
+  // dispose their own (unique, per-record) geometry inside
+  // buildTruePolygonMeshes, which this also calls below.
+  for (const mesh of equipmentBatches) sublayers.equipment.remove(mesh);
+  equipmentBatches.length = 0;
   //
   //   POSITION and ROTATION are MEASURED_CAD. An INSERT entity states an
   //   insertion point and a rotation angle; nothing is traced, snapped,
@@ -1063,8 +1149,21 @@ function buildFloor(geometry) {
   // angle, scale to its own operational size. A matrix cannot introduce a
   // coordinate; it can only place the record's.
   const instances = [];
+  // TRUE_POLYGON records claim their own measured outline, not a rectangle --
+  // see the coordinate-contract note above buildTruePolygonMeshes. They are
+  // pulled out of the box-instancing loop below and given their own geometry
+  // path; everything else is completely unchanged from before this branch
+  // existed. A TRUE_POLYGON record with no usable polygon (missing/degenerate)
+  // is NOT dropped -- it falls through to the same box path every other
+  // record uses, so a bad polygon loses shape fidelity, never the machine.
+  const polygonItems = [];
   for (const item of equipment) {
     if (!item || !finitePoint(item.position, true)) continue;
+    if (item.display_representation === 'TRUE_POLYGON'
+      && Array.isArray(item.footprint_polygon) && item.footprint_polygon.length >= 3) {
+      polygonItems.push(item);
+      continue;
+    }
     const fp = item.footprint;
     const op = item.operational_footprint;
     const tier = item.footprint_status;
@@ -1106,8 +1205,18 @@ function buildFloor(geometry) {
 
   const machines = instances.filter((i) => i.sized);
   const markers = instances.filter((i) => !i.sized);
+  // A TRUE_POLYGON record carries no box instance (it was pulled out above),
+  // but the label pass and the coordinate snapshot both walk
+  // equipmentInstances expecting one entry per equipment record -- so it gets
+  // the same minimal {item, x, y, z} shape a marker does. Labels read
+  // item.footprint directly for on-screen size, not inst.w/h/d, so nothing
+  // else is needed here.
+  const polygonInstances = polygonItems.map((item) => ({
+    item, sized: true,
+    x: item.position.x, y: item.position.y, z: item.position.z,
+  }));
   equipmentInstances.length = 0;
-  equipmentInstances.push(...machines, ...markers);
+  equipmentInstances.push(...machines, ...markers, ...polygonInstances);
 
   const unit = boxGeometry(1, 1, 1);
   const build = (list, style, name) => {
@@ -1151,7 +1260,85 @@ function buildFloor(geometry) {
   const kMesh = build(markers, EQUIPMENT_TIER_STYLE.UNRESOLVED, 'equipment-markers');
   if (kMesh) equipmentBatches.push(kMesh);
 
+  buildTruePolygonMeshes(polygonItems);
   buildMeasuredOutlines(equipment);
+}
+
+/**
+ * TRUE_POLYGON primary render: the record's own measured, served outline,
+ * extruded to the same presentation height a box gets -- not a rectangle
+ * standing in for a shape that isn't one.
+ *
+ * COORDINATE CONTRACT (do not re-derive this by reading the box path above):
+ * footprint_polygon is already WORLD-SPACE twin-frame metres -- mx()/mz()
+ * applied ONCE to the fully-composed CAD hull, the exact way `position` above
+ * is built from the same coordinate space (see server-side
+ * extract-floor1-equipment.js:792-794 and floor1-frame.js). So a vertex is
+ * used AS-IS:
+ *   - NOT translated by item.position (the polygon is not "centred" on it --
+ *     it already contains its own placement)
+ *   - NOT rotated by item.rotation_deg (the polygon's own boundary already
+ *     encodes the CAD rotation; rotating it again would turn an already-
+ *     turned shape)
+ *   - NOT scaled by operational_footprint (that field does not apply here --
+ *     see the display_representation exemption in
+ *     tests/lint/floor1-cad-reconciliation.js)
+ * The ONLY transform applied below is the fixed -90 degrees about local X
+ * that every extrusion needs to lie flat on the floor plane instead of
+ * standing up along the extrude axis -- a constant of the THREE.ExtrudeGeometry
+ * convention, identical for every record, never a second application of the
+ * machine's own placement.
+ */
+let polygonMeshes = [];
+function buildTruePolygonMeshes(items) {
+  for (const mesh of polygonMeshes) {
+    sublayers.equipment.remove(mesh);
+    // Geometry is unique per mesh and disposed; material is cache-shared
+    // (polygonMaterial) with every other record of the same tier and must
+    // not be -- disposing it here would blank every OTHER polygon still on
+    // screen.
+    mesh.geometry.dispose();
+  }
+  polygonMeshes = [];
+  for (const item of items) {
+    const poly = item.footprint_polygon;
+    // Shape's 2D y is built as -worldZ, not worldZ: the -90deg X rotation
+    // below that turns "extrude along Z" into "extrude along world Y" also
+    // flips the sign of the shape's own y axis when it lands back in world
+    // space, and this pre-flip is what cancels that -- proven, not assumed,
+    // by carrying the rotation matrix through by hand: rotateX(-90) sends
+    // local (x, y, z) to world (x, z, -y), so shape-y = -worldZ is exactly
+    // the value that makes the landed world-z equal worldZ again.
+    const pts = poly
+      .filter((p) => finite(p.x) && finite(p.z))
+      .map((p) => new THREE.Vector2(p.x, -p.z));
+    if (pts.length < 3) continue;
+    const shape = new THREE.Shape(pts);
+    const tier = item.footprint_status || 'UNRESOLVED';
+    const style = EQUIPMENT_TIER_STYLE[tier] || EQUIPMENT_TIER_STYLE.UNRESOLVED;
+    const geom = new THREE.ExtrudeGeometry(shape, {
+      depth: EQUIPMENT_PRESENTATION_HEIGHT_M,
+      bevelEnabled: false,
+    });
+    // Extrude's local Z is height; rotate -90deg about X so local Z becomes
+    // world Y (up) and the shape's own (x, z) plane becomes world (x, z) --
+    // no other axis moves, no coordinate is added.
+    geom.rotateX(-Math.PI / 2);
+    // A simplified CAD hull's vertex winding is not guaranteed consistent
+    // (see B.simplifyHull), so the side faces' outward normal is not either
+    // -- DoubleSide is the generic fix, not a per-record one, and costs
+    // nothing extra for a flat presentation slab nobody lights.
+    const material = polygonMaterial(style.color, style.opacity);
+    const mesh = new THREE.Mesh(geom, material);
+    mesh.name = `equipment-polygon-${item.id}`;
+    mesh.position.set(0, item.position.y, 0);
+    mesh.userData.item = item;
+    sublayers.equipment.add(mesh);
+    polygonMeshes.push(mesh);
+  }
+  // Picked the same way an InstancedMesh batch is -- see pickEquipment()'s
+  // generic branch for a hit with no instanceId.
+  equipmentBatches.push(...polygonMeshes);
 }
 
 /**
@@ -1492,6 +1679,14 @@ const EQUIPMENT_TIER_STYLE = Object.freeze({
 const equipmentInstances = [];
 const equipmentBatches = []; // THREE.InstancedMesh[], one per tier
 const columnMeshes = []; // THREE.Mesh[], one per detected column, userData.column set
+// The exact array /api/floor-geometry returned, kept for two reasons: it is
+// what getDisplayAssetIds/applyDisplayMode filter FROM (so a mode switch is
+// never a second fetch), and it is what a regression reads back to prove a
+// mode switch never mutates the API's own evidence -- see
+// getRawApiEquipment() below. Replaced wholesale on the next successful
+// fetch, never mutated in place.
+let rawApiEquipment = [];
+let activeDisplayMode = 'ALL_ENGINEERING';
 let latestStateById = new Map(); // deviceId -> state row from /api/state
 // The two fetches race: geometry can land after the first poll, and the roll-up
 // needs both. Keeping the last rows lets either arrival render a complete panel
@@ -1565,6 +1760,10 @@ function pickEquipment(event) {
   if (!equipmentBatches.length) return null;
   const hits = raycaster.intersectObjects(equipmentBatches, false);
   for (const hit of hits) {
+    // A TRUE_POLYGON record is its own single Mesh, not one instance among
+    // many in a batch, and carries its item directly -- same pick loop, one
+    // more branch, not a second pick path.
+    if (hit.object.userData.item) return hit.object.userData.item;
     const list = hit.object.userData.instances;
     if (!list || hit.instanceId === undefined || hit.instanceId === null) continue;
     const inst = list[hit.instanceId];
@@ -2359,7 +2558,9 @@ async function boot() {
     const geoRes = await fetch(geometryUrl);
     if (geoRes.ok) {
       const geo = await geoRes.json();
+      rawApiEquipment = Array.isArray(geo.equipment) ? geo.equipment : [];
       buildFloor(geo);
+      applyDisplayMode(activeDisplayMode);
       // Separate call: the zone layer is independent of the envelope, and
       // buildPhysicalSlots returns early when no envelope file exists.
       const drawn = buildFunctionalZones(geo);
@@ -2410,6 +2611,13 @@ async function boot() {
     renderer,
     equipmentInstances,
     equipmentBatches,
+    // The display-mode contract (FT-07A/B): the canonical projection, the
+    // switch that applies it, and the raw fetched evidence it filters --
+    // never mutated by the switch, so a regression can diff it before/after.
+    getDisplayAssetIds,
+    applyDisplayMode,
+    getRawApiEquipment: () => rawApiEquipment,
+    getDisplayMode: () => activeDisplayMode,
     // A point projected through the live camera. Equipment instances are
     // placement records rather than Object3Ds, so a caller with no THREE in
     // scope still needs one honest way to ask where one lands on screen.

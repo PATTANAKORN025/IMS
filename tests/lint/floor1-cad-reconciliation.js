@@ -194,11 +194,17 @@ let widthWithin = 0;
 let depthWithin = 0;
 let anchorChecked = 0;
 let worstAnchor = 0;
+let noInsertionAnchor = 0;
 let worstCorner = 0;
 let worstFalsePositive = 0;
 let worstFalseNegative = 0;
 const overlaps = [];
 const rotationResiduals = [];
+// Grouping/provenance records (PHYSICAL_STATION, PRODUCTION_LINE, ...)
+// deferred out of the main loop above -- verified against their children
+// below, once every equipment record (including the children themselves)
+// has been through the normal per-record checks.
+const pendingStationChildren = [];
 
 for (const item of equipment) {
   const ref = referenceById.get(item.id);
@@ -225,20 +231,34 @@ for (const item of equipment) {
   // block scale, so it cannot be used for extent -- but an insertion point is
   // an insertion point, and if the two readings of the drawing disagree about
   // where a machine is placed, one of them is wrong.
-  const insX = frame.twinXToCad(item.insertion_point.x, HALF_W);
-  const insY = frame.twinZToCad(item.insertion_point.z, HALF_D);
-  let bestAnchor = Infinity;
-  for (const [ax, ay] of bundleAnchors) {
-    const d = Math.hypot(ax - insX, ay - insY);
-    if (d < bestAnchor) bestAnchor = d;
-  }
-  if (Number.isFinite(bestAnchor)) {
-    anchorChecked++;
-    worstAnchor = Math.max(worstAnchor, bestAnchor);
-    if (bestAnchor > POSITION_TOL_MM) {
-      fail(`${item.id}: insertion point is ${bestAnchor.toFixed(3)} mm from the nearest `
-        + 'INSERT in the independent bundle extraction');
+  //
+  // A DRAWN_GEOMETRY_ANCHORED record (insertion_point: null -- its own INSERT
+  // point falls outside the floor envelope, so it is not used as a position;
+  // see scripts/recover-floor1-outside-envelope-equipment.js) has no
+  // insertion point to run through this specific cross-check. That is not a
+  // gap in ITS reconciliation: the position/rotation checks above and below
+  // already ran against ref.box_mm, the independently re-measured centre,
+  // which is the stronger of the two anchors this file compares against. This
+  // one check is skipped for exactly the record type it does not apply to,
+  // counted separately, never silently folded into "checked and fine".
+  if (item.insertion_point) {
+    const insX = frame.twinXToCad(item.insertion_point.x, HALF_W);
+    const insY = frame.twinZToCad(item.insertion_point.z, HALF_D);
+    let bestAnchor = Infinity;
+    for (const [ax, ay] of bundleAnchors) {
+      const d = Math.hypot(ax - insX, ay - insY);
+      if (d < bestAnchor) bestAnchor = d;
     }
+    if (Number.isFinite(bestAnchor)) {
+      anchorChecked++;
+      worstAnchor = Math.max(worstAnchor, bestAnchor);
+      if (bestAnchor > POSITION_TOL_MM) {
+        fail(`${item.id}: insertion point is ${bestAnchor.toFixed(3)} mm from the nearest `
+          + 'INSERT in the independent bundle extraction');
+      }
+    }
+  } else {
+    noInsertionAnchor += 1;
   }
 
   const rotExpected = frame.cadRotationToTwinDegrees(ref.rotation_deg);
@@ -250,7 +270,21 @@ for (const item of equipment) {
   if (item.footprint_status === 'UNRESOLVED') {
     unresolvedCount++;
     if (item.footprint) fail(`${item.id}: UNRESOLVED but carries a footprint`);
-    if (ref.resolved) fail(`${item.id}: UNRESOLVED in the model but measured in the CAD`);
+    // A grouping/provenance node (PHYSICAL_STATION, PRODUCTION_LINE, or any
+    // future entity type built the same way) is not a machine: it
+    // legitimately claims no rectangle of its own when the geometry the CAD
+    // measured there is represented by its children instead (see the
+    // deferred check below, which reconciles THEM). Generic on the
+    // structural claim itself -- child_component_handles -- not on
+    // entity_type's exact spelling and not on any one handle, so a new
+    // grouping type needs no change here to be held to the same bar.
+    const isGroupingNodeWithChildren = Array.isArray(item.child_component_handles)
+      && item.child_component_handles.length > 0;
+    if (ref.resolved && !isGroupingNodeWithChildren) {
+      fail(`${item.id}: UNRESOLVED in the model but measured in the CAD`);
+    } else if (isGroupingNodeWithChildren) {
+      pendingStationChildren.push(item);
+    }
     continue;
   }
   if (item.footprint_status === 'APPROXIMATION') { approximated++; continue; }
@@ -314,6 +348,48 @@ for (const item of equipment) {
   }
 }
 
+// Grouping-node contract: "child geometry must reconcile", never "own
+// rectangle must reconcile". A PHYSICAL_STATION, a PRODUCTION_LINE, or any
+// future entity type built the same way is a grouping/provenance node -- it
+// may legitimately claim no rectangle of its own (checked above), but ONLY
+// if what it points at is real: every declared child must exist, must
+// itself carry a resolved footprint, and must itself have an independent
+// CAD measurement behind it (already proven per-child by the ordinary loop
+// above, re-checked here explicitly so a grouping node cannot declare
+// children that don't actually back its claim). Generic on the structural
+// claim (child_component_handles), never on entity_type's exact spelling
+// and never on any one handle -- this runs for every record making the
+// claim, whether it is handle 3347 (kljlay) or 1357DD (the production
+// line) or any other, with no code change needed for the next one.
+if (pendingStationChildren.length) {
+  const byHandle = new Map(equipment.map((e) => [e.cad_source_handle, e]));
+  for (const groupingNode of pendingStationChildren) {
+    let reconciledChildren = 0;
+    for (const handle of groupingNode.child_component_handles) {
+      const child = byHandle.get(handle);
+      if (!child) {
+        fail(`${groupingNode.id}: declares child component handle ${handle} that does not exist in the served equipment`);
+        continue;
+      }
+      if (child.footprint_status === 'UNRESOLVED' || !child.footprint) {
+        fail(`${groupingNode.id}: child component ${child.id} (${handle}) has no reconciled geometry of its own`);
+        continue;
+      }
+      const childRef = referenceById.get(child.id);
+      if (!childRef || !childRef.resolved) {
+        fail(`${groupingNode.id}: child component ${child.id} (${handle}) has no independent CAD measurement to reconcile against`);
+        continue;
+      }
+      reconciledChildren++;
+    }
+    if (reconciledChildren === 0) {
+      fail(`${groupingNode.id}: ${groupingNode.entity_type || 'grouping node'} declares no reconciled child components -- nothing backs its claim to represent measured CAD geometry`);
+    }
+    console.log(`  ${groupingNode.entity_type || 'grouping node'} ${groupingNode.id} (${groupingNode.cad_source_handle}): ${reconciledChildren} of `
+      + `${groupingNode.child_component_handles.length} declared children reconcile`);
+  }
+}
+
 // A machine standing ON a structural column would be the signature of a
 // transform error, and the columns come from a DIFFERENT extraction of the same
 // drawing -- so this is an independent check on placement, not a restatement of
@@ -355,7 +431,8 @@ console.log(`  equipment            ${equipment.length} records, ${matched} reco
 console.log(`  position             ${posWithin1} within 1 mm, ${posWithin5} within 5 mm, `
   + `worst ${worst.pos.toFixed(4)} mm`);
 console.log(`  insertion vs bundle  ${anchorChecked} checked against an independent extraction, `
-  + `worst ${worstAnchor.toFixed(4)} mm`);
+  + `worst ${worstAnchor.toFixed(4)} mm`
+  + (noInsertionAnchor ? ` (${noInsertionAnchor} DRAWN_GEOMETRY_ANCHORED record(s) have no insertion point to check here)` : ''));
 console.log(`  rotation             ${rotWithin} within ${ROTATION_TOL_DEG} deg, worst ${worst.rot.toFixed(4)} deg`);
 console.log(`  extents measured     ${resolved} MEASURED_CAD (${widthWithin} width and `
   + `${depthWithin} depth within ${SIZE_TOL_MM} mm)`);
@@ -528,7 +605,16 @@ for (const item of equipment) {
       if (outMm > CORNER_TOL_MM) hullOutside += 1;
     }
     const hullArea = blocks.polygonArea(hull);
-    if (hullArea > 0) {
+    // The abstraction-cost ceiling measures the cost of a DELIBERATE
+    // decision to draw a machine as one rectangle (see this file's header
+    // comment). A record whose display_representation is TRUE_POLYGON has
+    // made a DIFFERENT decision -- it is not claiming a rectangle at all,
+    // it is claiming its own served, already-strictly-checked polygon (the
+    // outline-overlap/false-positive checks above run on exactly that, and
+    // still apply in full). Exempting it from a cost that measures a claim
+    // it never makes is not raising the ceiling for anyone still making
+    // that claim -- generic on the field, not on any handle.
+    if (hullArea > 0 && item.display_representation !== 'TRUE_POLYGON') {
       const over = (op.width * op.depth * 1e6) / hullArea - 1;
       worstClaimed = Math.max(worstClaimed, over);
       claimed.push(over);

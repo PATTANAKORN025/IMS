@@ -144,6 +144,21 @@ const ALLOWED_FOOTPRINT_SHAPE = new Set([
  */
 const ALLOWED_DISPLAY_SHAPE = new Set(['OPERATIONAL_RECTANGLE', 'UNRESOLVED']);
 
+/**
+ * The REPRESENTATION a resolved record has chosen for itself, as distinct
+ * from display_shape above: display_shape says whether a drawable extent
+ * exists at all (OPERATIONAL_RECTANGLE vs UNRESOLVED); this says which
+ * geometry the renderer draws that extent WITH, for a record that has one.
+ * TRUE_POLYGON declares the record is not claiming a rectangle -- its
+ * abstraction-cost is exempted on exactly this basis in
+ * tests/lint/floor1-cad-reconciliation.js -- and must be drawn from its own
+ * served footprint_polygon, never boxed. Missing or invalid projects to null,
+ * the same convention display_shape already uses, and a null value is the
+ * renderer's cue to fall back to the box path -- so a record written before
+ * this field existed changes nothing about how it renders.
+ */
+const ALLOWED_DISPLAY_REPRESENTATION = new Set(['OPERATIONAL_RECTANGLE', 'TRUE_POLYGON']);
+
 /** What the rectangle was derived from. A fixed enum, never prose. */
 const ALLOWED_DISPLAY_SOURCE = new Set(['filtered_physical_footprint']);
 
@@ -660,6 +675,11 @@ function projectEquipment(item, mapping) {
     // never acquire an extent through this field.
     display_shape: footprint === null ? 'UNRESOLVED'
       : fromEnum(item.display_shape, ALLOWED_DISPLAY_SHAPE),
+    // A TRUE_POLYGON claim with no servable outline beside it would tell the
+    // renderer to draw a shape that never arrived -- gated on the projected
+    // polygon, not on the private record's own say-so.
+    display_representation: (footprint === null || polygon === null) ? null
+      : fromEnum(item.display_representation, ALLOWED_DISPLAY_REPRESENTATION),
     display_source: footprint === null ? null
       : fromEnum(item.display_source, ALLOWED_DISPLAY_SOURCE),
     // The OPERATIONAL size, and the offset from the CAD rotation to the axis
@@ -698,6 +718,18 @@ function projectEquipment(item, mapping) {
     // device behind it would otherwise light a machine up on the map.
     mapping_status: deviceId ? 'MAPPED_TO_IMS' : 'UNMAPPED_TO_IMS',
     status: deviceId ? 'IMS_CONNECTED' : 'UNMAPPED',
+    // The id of the OTHER record proven (FT-06) to be the same physical
+    // asset drawn twice in the CAD. An id, not a claim -- the renderer's
+    // dedup contract decides what to do with it, this only ever states
+    // whether one exists, never invents which is primary and which is not.
+    duplicate_of: token(item.duplicate_of),
+    // A private-only note ('RECOVERED: ...', never itself served -- it is
+    // prose) reduced to the one enum fact a renderer needs from it: was this
+    // record found by the primary insertion-point pipeline, or only by the
+    // additive outside-envelope recovery pass. Never inferred from id range,
+    // handle, or any other field that happens to correlate with it today.
+    evidence_tier: typeof item.footprint_note === 'string'
+      && item.footprint_note.startsWith('RECOVERED:') ? 'RECOVERED' : 'PRIMARY',
   };
 }
 

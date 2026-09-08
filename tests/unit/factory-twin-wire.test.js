@@ -246,8 +246,11 @@ test('an equipment projection emits exactly the documented key set', () => {
   assert.deepStrictEqual(Object.keys(out).sort(), [
     'confidence',
     'display_area_error',
+    'display_representation',
     'display_shape',
     'display_source',
+    'duplicate_of',
+    'evidence_tier',
     'footprint',
     'footprint_polygon',
     'footprint_shape',
@@ -422,6 +425,66 @@ test('an invented display class or source is dropped, not echoed', () => {
       `${gone} must no longer be a servable display class`,
     );
   }
+});
+
+test('a TRUE_POLYGON record with a servable outline is drawn from it', () => {
+  const out = wire.projectEquipment(validEquipment({
+    footprint_shape: 'irregular',
+    footprint_polygon: [{ x: 0, z: 0 }, { x: 2, z: 0 }, { x: 2, z: 1 }],
+    display_shape: 'OPERATIONAL_RECTANGLE',
+    display_representation: 'TRUE_POLYGON',
+  }), {});
+  assert.strictEqual(out.display_representation, 'TRUE_POLYGON');
+  assert.strictEqual(out.footprint_polygon.length, 3);
+});
+
+test('a TRUE_POLYGON claim with no servable outline beside it is not carried', () => {
+  const out = wire.projectEquipment(validEquipment({
+    // No footprint_polygon at all: the private record's own say-so is not
+    // enough, the projected outline decides.
+    display_shape: 'OPERATIONAL_RECTANGLE',
+    display_representation: 'TRUE_POLYGON',
+  }), {});
+  assert.strictEqual(out.display_representation, null);
+});
+
+test('an invented display_representation is dropped, not echoed', () => {
+  const out = wire.projectEquipment(validEquipment({
+    footprint_shape: 'irregular',
+    footprint_polygon: [{ x: 0, z: 0 }, { x: 2, z: 0 }, { x: 2, z: 1 }],
+    display_representation: 'TEST-INVENTED',
+  }), {});
+  assert.strictEqual(out.display_representation, null);
+});
+
+test('duplicate_of carries the id of the proven-duplicate primary, nothing else', () => {
+  const out = wire.projectEquipment(validEquipment({ duplicate_of: 'EQP-F1-0003' }), {});
+  assert.strictEqual(out.duplicate_of, 'EQP-F1-0003');
+  assert.strictEqual(wire.projectEquipment(validEquipment({ duplicate_of: null }), {}).duplicate_of, null);
+  assert.strictEqual(
+    wire.projectEquipment(validEquipment({ duplicate_of: 'not a safe token!' }), {}).duplicate_of, null);
+});
+
+test('evidence_tier is derived from the private note, never carries the note itself', () => {
+  const recovered = wire.projectEquipment(validEquipment({
+    footprint_note: 'RECOVERED: position borrowed from floor1-machine-nodes.json',
+  }), {});
+  assert.strictEqual(recovered.evidence_tier, 'RECOVERED');
+  assert.ok(!('footprint_note' in recovered));
+  assert.ok(!JSON.stringify(recovered).includes('borrowed'));
+  assert.strictEqual(wire.projectEquipment(validEquipment(), {}).evidence_tier, 'PRIMARY');
+  assert.strictEqual(
+    wire.projectEquipment(validEquipment({ footprint_note: 'some other note' }), {}).evidence_tier,
+    'PRIMARY');
+});
+
+test('a record with no served extent cannot claim TRUE_POLYGON either', () => {
+  const out = wire.projectEquipment(validEquipment({
+    footprint: null, footprint_status: 'UNRESOLVED',
+    footprint_polygon: [{ x: 0, z: 0 }, { x: 2, z: 0 }, { x: 2, z: 1 }],
+    display_representation: 'TRUE_POLYGON',
+  }), {});
+  assert.strictEqual(out.display_representation, null);
 });
 
 test('a record with no served extent cannot be drawn as a rectangle', () => {
