@@ -107,30 +107,62 @@ for (const r of ((equipReference && equipReference.equipment) || [])) {
 const equipment = Array.isArray(geometry.equipment) ? geometry.equipment : [];
 const pairs = [];
 let insertionMatched = 0;
+// A record is INSERT_ANCHORED when its position came from a CAD INSERT's own
+// insertion point (every record this pipeline has produced until now) and
+// carries insertion_point accordingly. A record whose position instead came
+// from measuring drawn geometry directly -- because its own INSERT point
+// falls outside the floor envelope and would misplace it, see
+// scripts/recover-floor1-outside-envelope-equipment.js -- has no insertion
+// point to check this proof against, and null already says so; the existing
+// convention this whole schema uses for "not established" is not
+// duplicated with a second field for the same fact. Excluded from the
+// insertion-anchor proof below, but counted and reported, never silently
+// dropped from the total.
+let noInsertionAnchor = 0;
 for (const e of equipment) {
-  // The record's own insertion point, back through the inverse transform,
-  // against the independent bundle. This is the frame proof: an insertion
-  // point is a single CAD number with no measurement in it.
-  const insX = frame.twinXToCad(e.insertion_point.x, HALF_W);
-  const insY = frame.twinZToCad(e.insertion_point.z, HALF_D);
-  let hit = null;
-  for (let dx = -1; dx <= 1 && !hit; dx++) {
-    for (let dy = -1; dy <= 1 && !hit; dy++) {
-      hit = cadByKey.get(`${Math.round(insX) + dx}:${Math.round(insY) + dy}`) || null;
+  // The insertion-bundle cross-check applies only to an INSERT_ANCHORED
+  // record; a DRAWN_GEOMETRY_ANCHORED one has none, and that is unrelated to
+  // whether it has a measured-centre reference to be ordered against below --
+  // the two anchors are independent facts about the same record, so one being
+  // absent must never fall through into skipping the other's check too.
+  if (!e.insertion_point) {
+    noInsertionAnchor += 1;
+  } else {
+    // The record's own insertion point, back through the inverse transform,
+    // against the independent bundle. This is the frame proof: an insertion
+    // point is a single CAD number with no measurement in it.
+    const insX = frame.twinXToCad(e.insertion_point.x, HALF_W);
+    const insY = frame.twinZToCad(e.insertion_point.z, HALF_D);
+    let hit = null;
+    for (let dx = -1; dx <= 1 && !hit; dx++) {
+      for (let dy = -1; dy <= 1 && !hit; dy++) {
+        hit = cadByKey.get(`${Math.round(insX) + dx}:${Math.round(insY) + dy}`) || null;
+      }
     }
+    if (hit) insertionMatched++;
   }
-  if (hit) insertionMatched++;
   // Ordering is checked on the drawn position against the measured centre,
   // which is what an operator actually sees placed on the floor.
   const anchor = referenceById.get(e.id);
   if (anchor) pairs.push({ e, cad: { ax: anchor[0], ay: anchor[1] } });
 }
-check(insertionMatched === equipment.length,
-  'every equipment record maps back onto a CAD INSERT through the inverse transform',
-  `${insertionMatched} of ${equipment.length}`);
+const insertAnchored = equipment.length - noInsertionAnchor;
+check(insertionMatched === insertAnchored,
+  'every INSERT-anchored equipment record maps back onto a CAD INSERT through the inverse transform',
+  `${insertionMatched} of ${insertAnchored}`
+    + (noInsertionAnchor ? ` (${noInsertionAnchor} record(s) are DRAWN_GEOMETRY_ANCHORED and excluded from this proof, not counted toward it)` : ''));
+// A DRAWN_GEOMETRY_ANCHORED record has no entry in floor1-equipment-reference.json
+// either -- that file is the primary pipeline's own pre-transform measurement of
+// exactly the population it produced, and does not yet cover a record it never
+// measured. This is reported as a real, unresolved coverage gap, not narrowed
+// away: a record with no independent measurement to order against is a record
+// this proof cannot vouch for, and the check says so by failing until one exists.
+const uncoveredByReference = equipment.length - pairs.length;
 check(pairs.length === equipment.length,
   'every equipment record has a CAD measurement to be ordered against',
-  `${pairs.length} of ${equipment.length}`);
+  `${pairs.length} of ${equipment.length}`
+    + (uncoveredByReference ? ` (${uncoveredByReference} record(s) have no entry in `
+      + 'floor1-equipment-reference.json yet)' : ''));
 
 /* -- 2 and 3. ordering ------------------------------------------------- */
 //
