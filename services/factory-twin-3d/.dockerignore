@@ -1,0 +1,13 @@
+# This is the build context Docker actually uses for this service
+# (docker-compose.yaml: factory-twin-3d.build.context: ./services/
+# factory-twin-3d) -- a .dockerignore at the repo root does NOT apply
+# here, since Docker only honors one in the context root itself. This
+# file is the one that actually matters for this service's isolation.
+#
+# Defense-in-depth, not a replacement for the Dockerfile's existing
+# explicit allowlist COPY (COPY server.js / COPY lib / COPY public --
+# never COPY . .). If that ever changes to a wildcard COPY, this file is
+# what stops private/ from being sent to the Docker daemon at all, before
+# any COPY instruction could act on it.
+private/
+node_modules/
