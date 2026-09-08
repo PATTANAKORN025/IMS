@@ -8,6 +8,7 @@ const { Pool } = require('pg');
 const { MachineState, MACHINE_STATE_THEME } = require('./lib/contracts');
 const { buildDiagnostics } = require('./lib/diagnostics');
 const wire = require('./lib/wire');
+const mappingLib = require('./lib/mapping');
 const schematic = require('./lib/schematic');
 const eapMap = require('./lib/eap-map');
 const floors = require('./lib/floors');
@@ -251,21 +252,30 @@ function loadPrivateGeometry(floorId) {
   }
 }
 
-// Reads private/floor1-asset-mapping.json if present -- physicalSlotId ->
-// device_id | null. Absent/malformed both fall back to an empty mapping
-// (every slot UNMAPPED), never invented. This is the ONLY place a real
-// physical-slot<->device_id correspondence would ever be introduced, and
-// this repo's own copy of the file (if any) has every entry null: no
-// authoritative mapping exists.
+// FT-14: reads private/floor1-asset-mapping.json if present -- the file
+// holds { mappings: PhysicalIdentityMapping[] } (lib/mapping.js's canonical
+// evidence-gated shape), keyed here by asset_id for O(1) lookup. Absent,
+// malformed, or internally invalid (a duplicate asset_id, a confirmed record
+// missing evidence, two confirmed records claiming one device, ...) all fall
+// back to an EMPTY table -- every asset UNRESOLVED -- fail-closed exactly
+// like loadPrivateGeometry(). This is the ONLY place a real asset<->device
+// correspondence may be introduced, and this repo's own copy of the file (if
+// any) has zero CONFIRMED entries: no authoritative evidence source exists
+// yet (see docs/superpowers/specs/2026-09-08-ft14-asset-identity-evidence-
+// design.md).
 function loadPrivateAssetMapping(floorId) {
   const filePath = floors.documentPath(PRIVATE_DIR, floorId, 'mapping');
   if (!filePath || !fs.existsSync(filePath)) return {};
   try {
     const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-    if (typeof parsed.mapping !== 'object' || parsed.mapping === null) throw new Error('missing mapping{}');
-    return parsed.mapping;
+    if (!Array.isArray(parsed.mappings)) throw new Error('missing mappings[]');
+    const result = mappingLib.validateMappings(parsed.mappings);
+    if (!result.ok) throw new Error(`invalid mapping records: ${result.errors.join('; ')}`);
+    const byAssetId = {};
+    for (const record of parsed.mappings) byAssetId[record.asset_id] = record;
+    return byAssetId;
   } catch (err) {
-    console.error(`private asset-mapping file present but unusable (treating all slots UNMAPPED): ${err.message}`);
+    console.error(`private asset-mapping file present but unusable (treating all assets UNRESOLVED): ${err.message}`);
     return {};
   }
 }
@@ -868,7 +878,11 @@ app.get('/api/diagnostics', (req, res) => {
     ...buildDiagnostics({
       geometry,
       zoneMeta: zoneLayer.meta,
-      confirmedMappings: Object.values(mapping).filter(Boolean).length,
+      // FT-14: counts real CONFIRMED lifecycle entries, never truthy-device-id
+      // (a CONFLICTING or DEPRECATED record can carry a device id too, and
+      // must not count as confirmed here).
+      confirmedMappings: Object.values(mapping)
+        .filter((r) => r && r.mapping_status === mappingLib.MappingStatus.CONFIRMED).length,
       runtime: { ...runtimeCounters, uptimeSeconds: Math.floor(process.uptime()) },
       // Coverage only -- lib/diagnostics reduces this to counts and can emit
       // no name, label or coordinate from it.

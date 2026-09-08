@@ -244,13 +244,19 @@ test('an added private field on a column is not carried', () => {
 test('an equipment projection emits exactly the documented key set', () => {
   const out = wire.projectEquipment(validEquipment(), {});
   assert.deepStrictEqual(Object.keys(out).sort(), [
+    'alarm_eligible',
     'confidence',
     'display_area_error',
     'display_representation',
     'display_shape',
     'display_source',
+    'drill_down_eligible',
     'duplicate_of',
+    'evidence_confidence',
+    'evidence_source',
+    'evidence_source_record',
     'evidence_tier',
+    'evidence_verified_at',
     'footprint',
     'footprint_polygon',
     'footprint_shape',
@@ -259,7 +265,9 @@ test('an equipment projection emits exactly the documented key set', () => {
     'geometry_status',
     'height_status',
     'id',
+    'identity_status',
     'ims_device_id',
+    'live_status_eligible',
     'mapping_status',
     'mirrored',
     'operational_axis_offset_deg',
@@ -710,10 +718,14 @@ test('inherited property names never answer a mapping lookup', () => {
   }
 });
 
-test('a mapping value that is not a token does not map', () => {
+test('a mapping value with no valid lifecycle status does not map', () => {
+  // Not a validateMappings()-shaped record at all -- an object with the
+  // wrong fields entirely, e.g. a stale pre-FT-14 shape. resolveMapping()
+  // refuses to guess a status; no lifecycle, no mapping.
   const out = wire.projectEquipment(validEquipment(), { 'eqp-0001': { device_id: 'TEST-OBJ' } });
   assert.strictEqual(out.ims_device_id, null);
   assert.strictEqual(out.status, 'UNMAPPED');
+  assert.strictEqual(out.identity_status, 'unresolved');
 });
 
 test('an explicit null mapping entry stays unmapped', () => {
@@ -722,10 +734,85 @@ test('an explicit null mapping entry stays unmapped', () => {
   assert.strictEqual(out.status, 'UNMAPPED');
 });
 
-test('a real authoritative mapping entry does map', () => {
-  const out = wire.projectEquipment(validEquipment(), { 'eqp-0001': 'TEST-DEVICE-01' });
+test('a real authoritative (confirmed) mapping entry does map', () => {
+  const confirmed = {
+    asset_id: 'eqp-0001', mapping_status: 'confirmed', ims_device_id: 'TEST-DEVICE-01',
+    mes_machine_id: null, confidence: 'high', source: 'test-harness',
+    source_record: 'unit-test-1', verified_at: '2026-01-01T00:00:00Z',
+  };
+  const out = wire.projectEquipment(validEquipment(), { 'eqp-0001': confirmed });
   assert.strictEqual(out.ims_device_id, 'TEST-DEVICE-01');
   assert.strictEqual(out.status, 'IMS_CONNECTED');
+  assert.strictEqual(out.identity_status, 'confirmed');
+  assert.strictEqual(out.evidence_source, 'test-harness');
+  assert.strictEqual(out.evidence_source_record, 'unit-test-1');
+  assert.strictEqual(out.evidence_verified_at, '2026-01-01T00:00:00Z');
+  assert.strictEqual(out.evidence_confidence, 'high');
+  assert.strictEqual(out.live_status_eligible, true);
+  assert.strictEqual(out.alarm_eligible, true);
+  assert.strictEqual(out.drill_down_eligible, true);
+});
+
+test('a conflicting mapping never becomes usable, but stays visible in the audit trail', () => {
+  const conflicting = {
+    asset_id: 'eqp-0001', mapping_status: 'conflicting', ims_device_id: 'TEST-DEVICE-01',
+    mes_machine_id: null, confidence: 'medium', source: 'mes-export',
+    source_record: 'row-42', verified_at: '2026-01-01T00:00:00Z',
+  };
+  const out = wire.projectEquipment(validEquipment(), { 'eqp-0001': conflicting });
+  assert.strictEqual(out.ims_device_id, null, 'a stale device id must never reach the wire while conflicting');
+  assert.strictEqual(out.mapping_status, 'UNMAPPED_TO_IMS');
+  assert.strictEqual(out.status, 'UNMAPPED');
+  assert.strictEqual(out.identity_status, 'conflicting', 'the real lifecycle state must still be visible');
+  assert.strictEqual(out.evidence_source, 'mes-export', 'evidence travels regardless of eligibility');
+  assert.strictEqual(out.live_status_eligible, false);
+  assert.strictEqual(out.alarm_eligible, false);
+  assert.strictEqual(out.drill_down_eligible, false);
+});
+
+test('a deprecated mapping never becomes usable, but stays visible in the audit trail', () => {
+  const deprecated = {
+    asset_id: 'eqp-0001', mapping_status: 'deprecated', ims_device_id: 'TEST-DEVICE-OLD',
+    mes_machine_id: null, confidence: 'high', source: 'engineer-walkdown',
+    source_record: 'form-2025-11', verified_at: '2025-11-01T00:00:00Z',
+  };
+  const out = wire.projectEquipment(validEquipment(), { 'eqp-0001': deprecated });
+  assert.strictEqual(out.ims_device_id, null);
+  assert.strictEqual(out.status, 'UNMAPPED');
+  assert.strictEqual(out.identity_status, 'deprecated');
+  assert.strictEqual(out.live_status_eligible, false);
+  assert.strictEqual(out.alarm_eligible, false);
+  assert.strictEqual(out.drill_down_eligible, false);
+});
+
+test('an unresolved asset carries no evidence and no fabricated fallback identity', () => {
+  const out = wire.projectEquipment(validEquipment(), {});
+  assert.strictEqual(out.identity_status, 'unresolved');
+  assert.strictEqual(out.ims_device_id, null);
+  assert.strictEqual(out.evidence_source, null);
+  assert.strictEqual(out.evidence_source_record, null);
+  assert.strictEqual(out.evidence_verified_at, null);
+  assert.strictEqual(out.live_status_eligible, false);
+  assert.strictEqual(out.alarm_eligible, false);
+  assert.strictEqual(out.drill_down_eligible, false);
+});
+
+test('a PHYSICAL_COMPONENT child resolves under its own asset_id, never its parent station\'s', () => {
+  // The parent (EQP-F1-0002) is confirmed; the child (EQP-F1-0002-C01) has no
+  // entry of its own. A cascade bug would let the child inherit the parent's
+  // device -- it must not.
+  const table = {
+    'EQP-F1-0002': {
+      asset_id: 'EQP-F1-0002', mapping_status: 'confirmed', ims_device_id: 'STATION-DEVICE',
+      mes_machine_id: null, confidence: 'high', source: 'test', source_record: 't1',
+      verified_at: '2026-01-01T00:00:00Z',
+    },
+  };
+  const child = wire.projectEquipment(validEquipment({ id: 'EQP-F1-0002-C01' }), table);
+  assert.strictEqual(child.ims_device_id, null, 'a child must never inherit its parent station\'s device');
+  assert.strictEqual(child.identity_status, 'unresolved');
+  const parent = wire.projectEquipment(validEquipment({ id: 'EQP-F1-0002' }), table);
+  assert.strictEqual(parent.ims_device_id, 'STATION-DEVICE');
 });
 
 // ── Functional zones ──

@@ -201,6 +201,16 @@ function operationalSize(value) {
  */
 const ALLOWED_MAPPING_STATUS = new Set(['MAPPED_TO_IMS', 'UNMAPPED_TO_IMS']);
 
+/** FT-14 canonical identity lifecycle, straight from mapping.js's MappingStatus
+ * -- never collapsed to the two-value ALLOWED_MAPPING_STATUS above, so a
+ * CONFLICTING or DEPRECATED record stays visibly distinct from UNRESOLVED. */
+const ALLOWED_MAPPING_LIFECYCLE = new Set(['unresolved', 'confirmed', 'conflicting', 'deprecated']);
+
+/** Evidence confidence for a FT-14 identity mapping. Separate from the
+ * geometry-measurement ALLOWED_CONFIDENCE above (different vocabulary --
+ * this one includes 'unknown', the honest default for an unresolved asset). */
+const ALLOWED_MAPPING_CONFIDENCE = new Set(['high', 'medium', 'low', 'unknown']);
+
 /** How a machine sits in the room its centre falls in. */
 const ALLOWED_ZONE_STATUS = new Set([
   'INSIDE_ROOM', 'CROSSES_ROOM_BOUNDARY', 'OUTSIDE_ROOM', 'ROOM_BY_CENTRE_ONLY',
@@ -257,26 +267,11 @@ function point2(p) {
   return x === null || z === null ? null : { x, z };
 }
 
-/**
- * Looks a slot id up in the mapping document without letting an inherited
- * property answer.
- *
- * This is not hypothetical tidiness. On a plain object, `mapping['constructor']`
- * answers with a function and `mapping['__proto__']` can answer with a value
- * JSON.parse placed there, so a slot whose id happened to be one of those would
- * have been served `status: 'IMS_CONNECTED'` — a CONFIRMED mapping conjured
- * out of a property lookup, in the one system whose central rule is that a
- * mapping may only come from an authoritative record.
- */
-function deviceIdFor(mapping, slotId) {
-  if (!mapping || typeof mapping !== 'object') return null;
-  // An identifier that is not a safe token cannot establish a mapping. This
-  // rules out `__proto__`, which JSON.parse places as a genuine own property
-  // and which an ownership check alone would therefore accept.
-  if (token(slotId) === null) return null;
-  if (!Object.prototype.hasOwnProperty.call(mapping, slotId)) return null;
-  return token(mapping[slotId]);
-}
+// FT-14: the canonical identity engine. mapping.resolveMapping() is the only
+// place a device/machine correspondence may come from -- see lib/mapping.js's
+// own header for why proximity, numbering, EAP zone membership and parent/
+// child grouping are all refused as evidence.
+const mappingLib = require('./mapping');
 
 /**
  * projectSlot IS GONE, along with the slots[] layer it served.
@@ -628,7 +623,16 @@ function projectEquipment(item, mapping) {
   const footprint = claimsExtent && width !== null && depth !== null
     ? { width, depth }
     : null;
-  const deviceId = deviceIdFor(mapping, item.id);
+  // FT-14: item.id is the CAD equipment/component's own asset_id namespace
+  // value -- a PHYSICAL_COMPONENT child (e.g. EQP-F1-0002-C01) is resolved
+  // under its OWN id, never its PHYSICAL_STATION/PRODUCTION_LINE parent's;
+  // nothing here consults the parent, the zone or the position.
+  const identity = mappingLib.resolveMapping(mapping, item.id);
+  const elig = mappingLib.eligibility(identity.mapping_status);
+  // A CONFLICTING or DEPRECATED record may still carry a stale ims_device_id
+  // internally (kept for the audit trail below) -- it must never reach the
+  // wire as a usable device id. Only CONFIRMED, with eligibility open, may.
+  const deviceId = elig.live_status_eligible ? token(identity.ims_device_id) : null;
 
   // The measured outline, where the machine is not a box. Rebuilt vertex by
   // vertex: a polygon is served only if EVERY vertex is a pair of finite
@@ -713,11 +717,33 @@ function projectEquipment(item, mapping) {
     zone_id: token(item.zone_id),
     zone_status: fromEnum(item.zone_status, ALLOWED_ZONE_STATUS),
     ims_device_id: deviceId,
-    // Derived from the mapping the server holds, NEVER from the private
-    // record's own claim: a document that asserted MAPPED_TO_IMS without a
-    // device behind it would otherwise light a machine up on the map.
+    // Derived from the canonical mapping engine's CURRENT lifecycle state,
+    // NEVER from the private geometry record's own claim: a document that
+    // asserted MAPPED_TO_IMS without an eligible mapping behind it would
+    // otherwise light a machine up on the map. These two fields are kept for
+    // API back-compatibility (existing clients read them by name) but are
+    // DERIVED PROJECTIONS of identity.mapping_status below, never an
+    // independent source of truth -- a CONFLICTING or DEPRECATED mapping
+    // reads exactly like UNMAPPED_TO_IMS here, on purpose.
     mapping_status: deviceId ? 'MAPPED_TO_IMS' : 'UNMAPPED_TO_IMS',
     status: deviceId ? 'IMS_CONNECTED' : 'UNMAPPED',
+    // FT-14 audit trail. identity_status is the real lifecycle value (never
+    // collapsed to MAPPED/UNMAPPED) so an inspector can show a CONFLICTING or
+    // DEPRECATED record as what it is, not as silence. evidence_* travel
+    // regardless of eligibility -- "why is this asset in this state" must be
+    // answerable even when the answer is "it isn't eligible".
+    identity_status: fromEnum(identity.mapping_status, ALLOWED_MAPPING_LIFECYCLE),
+    evidence_source: token(identity.source),
+    evidence_source_record: token(identity.source_record),
+    evidence_verified_at: typeof identity.verified_at === 'string'
+      && !Number.isNaN(Date.parse(identity.verified_at)) ? identity.verified_at : null,
+    evidence_confidence: fromEnum(identity.confidence, ALLOWED_MAPPING_CONFIDENCE),
+    // The one place FT-15 (telemetry), FT-16 (alarm/RCA) and any drill-down
+    // must check before doing anything identity-dependent -- never re-derive
+    // eligibility from ims_device_id truthiness.
+    live_status_eligible: elig.live_status_eligible,
+    alarm_eligible: elig.alarm_eligible,
+    drill_down_eligible: elig.drill_down_eligible,
     // The id of the OTHER record proven (FT-06) to be the same physical
     // asset drawn twice in the CAD. An id, not a claim -- the renderer's
     // dedup contract decides what to do with it, this only ever states
@@ -750,7 +776,6 @@ module.exports = {
   zoneName,
   num,
   token,
-  deviceIdFor,
   projectColumn,
   projectZoneBox,
   projectEnvelope,

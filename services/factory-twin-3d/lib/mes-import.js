@@ -171,11 +171,15 @@ function planImport(records, ctx = {}) {
       physical_slot_id: slot ?? null,
       state,
       // Mapping records are emitted in the shape lib/mapping.js validates, so
-      // one contract governs identity everywhere.
+      // one contract governs identity everywhere. mapping.asset_id, not
+      // physical_slot_id -- the field this record itself carries above is
+      // this MES export's own vocabulary for the position it proposes; the
+      // canonical identity engine's key is asset_id regardless of what an
+      // import happened to call it.
       mapping:
         slot != null
           ? {
-              physical_slot_id: slot,
+              asset_id: slot,
               ims_device_id: null, // never asserted by a MES import
               mes_machine_id: id,
               mapping_status:
