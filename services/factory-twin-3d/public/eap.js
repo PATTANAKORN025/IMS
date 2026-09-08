@@ -26,6 +26,7 @@
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { OPERATIONAL_STATUS, STATUS_ORDER, DATA_QUALITY } from './operational-status.js';
 
 // Relative, not absolute: the page is served at "/" directly but also behind
 // the reverse proxy at "/factory-twin-3d/", which strips its own prefix
@@ -402,6 +403,39 @@ function buildSchema() {
   zoneMesh = null;
 }
 
+/**
+ * SIMULATED machine status -- client-side only, never touches /api/state,
+ * TimescaleDB, Node-RED or any production telemetry, and never written
+ * anywhere. This floor has 0 confirmed IMS mappings today, so a real status
+ * board would be entirely UNMAPPED; the simulation exists so this view reads
+ * as a working operational twin while that mapping work is separate,
+ * ongoing, real-CAD-first work -- it is a stand-in for status, never for
+ * identity or mapping, both of which stay exactly as honestly reported
+ * everywhere else on this page (mapping_state, IMS mapping, CAD identity).
+ *
+ * Deterministic, not random: the same cell always simulates the same state
+ * across a reload, from a plain string hash of its own cell_id, through the
+ * SAME eight-state vocabulary (operational-status.js) the physical twin's
+ * legend already uses -- reused, not reinvented, per that module's own
+ * "EXACTLY EIGHT machine states" rule. Only applied to a cell actually
+ * attached to a machine unit (unit_state === 'ATTACHED'); a cell attached to
+ * no machine has no machine state to simulate one for.
+ */
+const SIM_STATES = STATUS_ORDER.filter((k) => k !== 'OFF'); // a floor mid-shift is not powered down
+let simulationOn = true;
+
+function hashString(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i += 1) h = (Math.imul(h, 31) + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+/** Returns a key into OPERATIONAL_STATUS, or null if this cell has none simulated. */
+function simulatedStateFor(cell) {
+  if (!simulationOn || !cell || cell.unit_state !== 'ATTACHED') return null;
+  return SIM_STATES[hashString(cell.cell_id) % SIM_STATES.length];
+}
+
 function build() {
   if (isMapMode()) buildMap(); else buildSchema();
   paintStates();
@@ -415,6 +449,8 @@ function paintStates() {
     let hex;
     if (isMapMode()) hex = C.world;
     else hex = cell.unit_state === 'UNASSIGNED' ? C.layoutUnassigned : C.layout;
+    const simKey = simulatedStateFor(cell);
+    if (simKey) hex = OPERATIONAL_STATUS[simKey].hex;
     if (selected && cell.cell_id === selected.cell_id) hex = C.selected;
     else if (hovered && cell.cell_id === hovered.cell_id) hex = C.hover;
     cellMesh.setColorAt(i, colour.setHex(hex));
@@ -711,6 +747,12 @@ function renderCellInspector(cell) {
     row('IMS mapping', unit ? unit.ims_mapping_state : 'NOT_MAPPED'),
     row('Live status', `${cell.status} &mdash; `
       + `${cell.live_status_eligible ? 'eligible' : 'not eligible'}`),
+    row('Simulated status', (() => {
+      const simKey = simulatedStateFor(cell);
+      if (!simKey) return `${simulationOn ? 'none (not attached to a machine unit)' : 'OFF (simulation disabled)'}`;
+      const s = OPERATIONAL_STATUS[simKey];
+      return `${s.glyph} ${s.label} <span class="note" style="display:inline">(SIMULATED, source = EAP, simulation = ON)</span>`;
+    })()),
   ];
   const notes = [];
   if (cell.spatial_evidence === 'DIRECT') {
@@ -873,6 +915,14 @@ document.getElementById('modeEap').addEventListener('click', () => setMode('EAP'
 document.getElementById('view2d').addEventListener('click', () => setView('2d'));
 document.getElementById('view3d').addEventListener('click', () => setView('3d'));
 document.getElementById('fit').addEventListener('click', resetCamera);
+const simToggleBtn = document.getElementById('simToggle');
+if (simToggleBtn) {
+  simToggleBtn.setAttribute('aria-pressed', String(simulationOn));
+  simToggleBtn.addEventListener('click', () => {
+    const next = window.__eap.setSimulation(!simulationOn);
+    simToggleBtn.textContent = next ? 'Simulation: ON' : 'Simulation: OFF';
+  });
+}
 drawerClose.addEventListener('click', closeDrawer);
 window.addEventListener('resize', resize);
 
@@ -1018,6 +1068,21 @@ window.__eap = {
   selection: () => selected,
   selectedZoneId: () => (selectedZone ? selectedZone.zone.zone_id : null),
   hovered: () => hovered,
+  // SIMULATED STATUS -- client-side only, see simulatedStateFor's own
+  // comment. Never touches /api/state or any production telemetry source.
+  isSimulationOn: () => simulationOn,
+  setSimulation: (on) => {
+    simulationOn = Boolean(on);
+    paintStates();
+    if (simToggleBtn) simToggleBtn.setAttribute('aria-pressed', String(simulationOn));
+    renderInspector();
+    return simulationOn;
+  },
+  simulatedStatus: (cellId) => {
+    const cell = cellRecords.find((c) => c.cell_id === cellId);
+    const key = cell ? simulatedStateFor(cell) : null;
+    return key ? { key, ...OPERATIONAL_STATUS[key], simulation: true, status_source: 'SIMULATED' } : null;
+  },
 };
 
 tick();

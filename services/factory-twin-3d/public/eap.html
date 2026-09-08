@@ -169,7 +169,7 @@
 </head>
 <body>
   <header>
-    <a id="twin-link" href="./" title="Back to the physical Floor 1 twin">&larr; Factory Twin</a>
+    <a id="twin-link" href="index.html" title="Open the physical Floor 1 CAD twin (engineering view)">Physical Twin &rarr;</a>
     <h1>Floor 1 &mdash; EAP Operational Map</h1>
     <span class="sub" id="headline">loading&hellip;</span>
     <span class="spacer"></span>
@@ -183,6 +183,8 @@
       <button id="view2d" aria-pressed="true">2D</button>
       <button id="view3d" aria-pressed="false">3D</button>
       <button id="fit">Fit floor</button>
+      <span class="divider"></span>
+      <button id="simToggle" aria-pressed="true" title="Simulated status is client-side only and never reaches production telemetry">Simulation: ON</button>
     </div>
     <span class="mode-note" id="mode-note"></span>
   </header>
@@ -257,9 +259,24 @@
     <h2>Status</h2>
     <p class="note">
       No authoritative mapping from a cell to an IMS machine exists, so every cell's
-      status is <strong>UNKNOWN</strong>. The reference layout's colours are a snapshot
-      of another system and are not drawn here.
+      <strong>live</strong> status is <strong>UNKNOWN</strong>. The reference layout's
+      colours are a snapshot of another system and are not drawn here.
     </p>
+
+    <h2>Simulated status</h2>
+    <p class="note warn">
+      <strong>SIMULATED &mdash; not live telemetry.</strong> Deterministic per cell,
+      client-side only. Never read from, or written to, /api/state, TimescaleDB,
+      Node-RED or any production system. Toggle with the header button.
+    </p>
+    <div class="legend-row"><span class="chip" style="background:#22c55e"></span><span>&#9679; Run</span></div>
+    <div class="legend-row"><span class="chip" style="background:#f59e0b"></span><span>&#9650; Idle</span></div>
+    <div class="legend-row"><span class="chip" style="background:#ef4444"></span><span>&#9670; Down</span></div>
+    <div class="legend-row"><span class="chip" style="background:#38bdf8"></span><span>&#9689; Initial</span></div>
+    <div class="legend-row"><span class="chip" style="background:#3b82f6"></span><span>&#9671; PM</span></div>
+    <div class="legend-row"><span class="chip" style="background:#a855f7"></span><span>&#9644; Stop</span></div>
+    <div class="legend-row"><span class="chip" style="background:#94a3b8"></span><span>? Undefined</span></div>
+    <div class="legend-row"><span class="chip" style="background:#64748b"></span><span>&#9675; Unmapped (not a machine state)</span></div>
 
     <h2>Frame</h2>
     <p class="note" id="frame-note"></p>

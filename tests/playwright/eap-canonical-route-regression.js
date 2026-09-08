@@ -3,20 +3,21 @@
  * Canonical entry-point regression.
  *
  * The bare service root (GET /, which the proxy maps to the user-facing
- * http://localhost:3000/factory-twin-3d/) must serve the physical Floor 1
- * twin -- the Factory Twin -- not the EAP operational map, and not merely
- * return 200 while showing something else. A route change is easy to get
- * backwards (right status, wrong page), so this checks the actual page: its
- * DOM, its globals, and a rendered screenshot, not just the HTTP response
- * code.
+ * http://localhost:3000/factory-twin-3d/) must serve the EAP Factory Twin --
+ * the reference-layout machine population, zone navigation and click-to-
+ * inspect -- not the physical CAD twin, and not merely return 200 while
+ * showing something else. A route change is easy to get backwards (right
+ * status, wrong page), so this checks the actual page: its DOM, its
+ * globals, and a rendered screenshot, not just the HTTP response code.
  *
- * This inverts an earlier phase's assertions, which made the EAP map
- * canonical. The EAP map is an operational layer reached deliberately from
- * inside the physical twin, not the page a visitor lands on first, so
- * eap.html is asserted to still work at its own filename and to still be
- * reachable via a link from the root page -- nothing in this phase is
- * allowed to make the explicit path stop working, or to delete the EAP
- * model or its 210/40/167/3 evidence counts.
+ * This inverts the PREVIOUS phase's assertions, which made the physical
+ * Floor 1 CAD twin canonical again after an even earlier phase had made the
+ * EAP map canonical first. The operator-facing product decision is that the
+ * EAP layout -- the population a factory floor visitor actually recognizes
+ * -- is what a visitor should land on; the physical CAD reconstruction is
+ * the secondary, engineering-facing view, reached deliberately via
+ * #twin-link. Nothing here is allowed to make the physical twin's own
+ * explicit path (/index.html) stop working, or to change its model.
  *
  * Usage:
  *   EAP_URL=http://127.0.0.1:4199/ node tests/playwright/eap-canonical-route-regression.js
@@ -89,7 +90,7 @@ async function loadEap(page, url) {
     hasStage: Boolean(document.getElementById('stage')),
     hasTwinLink: (() => {
       const a = document.getElementById('twin-link');
-      return Boolean(a);
+      return Boolean(a && /index\.html$/.test(a.getAttribute('href') || ''));
     })(),
     title: document.title,
   }));
@@ -112,21 +113,21 @@ async function main() {
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
 
-  section('1. GET / serves the physical Floor 1 twin, not the EAP map');
-  const root = await loadTwin(page, new URL('/', BASE).toString());
+  section('1. GET / serves the EAP Factory Twin, not the physical CAD twin');
+  const root = await loadEap(page, new URL('/', BASE).toString());
   eq(root.status, 200, 'the bare root returns HTTP 200');
-  check(root.dom.hasTwinGlobal, 'window.__twin is defined at the root route');
-  check(!root.dom.hasEapGlobal, 'window.__eap is NOT defined -- the EAP map script never '
-    + 'loaded at the root route');
-  check(root.dom.hasAppRoot, 'the physical twin\'s #app root is present in the DOM at /');
-  check(/Factory Twin/i.test(root.dom.title), 'the page title is the physical twin, not '
-    + 'the EAP map', root.dom.title);
-  check(Boolean(root.dom.canvas) && root.dom.canvas.w > 0 && root.dom.canvas.h > 0,
-    'the WebGL canvas has non-zero rendered dimensions',
-    JSON.stringify(root.dom.canvas));
+  check(root.dom.hasEapGlobal, 'window.__eap is defined at the root route');
+  check(!root.dom.hasTwinGlobal, 'window.__twin is NOT defined at the root route -- the '
+    + 'physical twin script never loaded there');
+  check(root.dom.hasStage, 'the EAP twin\'s #stage root is present in the DOM at /');
+  check(/EAP/i.test(root.dom.title), 'the page title is the EAP twin, not the physical twin',
+    root.dom.title);
+  eq(root.eapState.counts.cells, 210, '/ represents all 210 EAP cells');
+  eq(root.eapState.counts.cells_in_world_frame, 40, '/ has 40 DIRECT cells on the real floor');
+  eq(root.eapState.drawnZones, 12, '/ draws all 12 process zones');
 
-  section('2. the root page links to the EAP map as an operational layer');
-  check(root.dom.hasEapLink, 'an #eap-link anchor pointing at eap.html is present in the topbar');
+  section('2. the root page links to the physical CAD twin as an engineering layer');
+  check(root.dom.hasTwinLink, 'a #twin-link anchor pointing at index.html is present in the header');
 
   section('3. a screenshot of / is actually non-empty');
   const shotPath = path.join(os.tmpdir(), `twin-canonical-root-${Date.now()}.png`);
@@ -136,22 +137,20 @@ async function main() {
     `${stat.size} bytes`);
   fs.unlinkSync(shotPath);
 
-  section('4. /eap.html still works, unchanged, as the operational layer');
-  const explicit = await loadEap(page, new URL('eap.html', BASE).toString());
-  eq(explicit.status, 200, '/eap.html returns HTTP 200');
-  check(explicit.dom.hasEapGlobal, 'window.__eap is defined at /eap.html');
-  check(!explicit.dom.hasTwinGlobal, 'window.__twin is NOT defined at /eap.html -- it is its '
-    + 'own page, its own WebGL context');
-  eq(explicit.eapState.counts.cells, 210, '/eap.html still represents all 210 cells');
-  eq(explicit.eapState.counts.cells_in_world_frame, 40, '/eap.html still has 40 DIRECT cells on the real floor');
-  eq(explicit.eapState.drawnZones, 12, '/eap.html still draws all 12 process zones');
-  check(explicit.dom.hasTwinLink, 'a #twin-link anchor back to the physical twin is present '
-    + 'in the EAP page\'s header');
-
-  section('5. index.html still serves the physical twin at its own filename');
+  section('4. /index.html still works, unchanged, as the physical CAD (engineering) twin');
   const explicitTwin = await loadTwin(page, new URL('index.html', BASE).toString());
   eq(explicitTwin.status, 200, '/index.html returns HTTP 200');
+  check(explicitTwin.dom.hasTwinGlobal, 'window.__twin is defined at /index.html');
+  check(!explicitTwin.dom.hasEapGlobal, 'window.__eap is NOT defined at /index.html -- it is '
+    + 'its own page, its own WebGL context');
   check(explicitTwin.dom.hasAppRoot, '/index.html still serves the physical twin\'s #app root');
+  check(explicitTwin.dom.hasEapLink, 'a #eap-link anchor back to the EAP twin is present in '
+    + 'the physical twin\'s topbar');
+
+  section('5. eap.html still serves the EAP twin at its own filename');
+  const explicit = await loadEap(page, new URL('eap.html', BASE).toString());
+  eq(explicit.status, 200, '/eap.html returns HTTP 200');
+  eq(explicit.eapState.counts.cells, 210, '/eap.html still represents all 210 cells');
 
   await browser.close();
   console.log(`\n${'='.repeat(58)}`);
