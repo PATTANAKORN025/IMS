@@ -165,13 +165,25 @@
       border-right: 1px solid var(--line);
       white-space: nowrap;
       min-width: 0;
+      /* FT-18: this cell is a real activation target (opens the device
+         list) -- cursor and hover give the affordance a click already
+         implied, :focus-visible's existing global rule already covers
+         keyboard operation. */
+      cursor: pointer;
     }
+    .ss-cell:hover { background: var(--line); }
     .ss-glyph { font-size: 13px; line-height: 1; }
     .ss-label { color: var(--text-dim); font-size: 11.5px; letter-spacing: .04em; }
     .ss-value { color: var(--text); font-variant-numeric: tabular-nums; font-weight: 600; font-size: 14px; }
     /* A state this deployment cannot derive is dimmed AND shows a dash, never a
-       zero: a zero is a measurement, a dash is the absence of one. */
-    .ss-cell.ss-off { opacity: .42; }
+       zero: a zero is a measurement, a dash is the absence of one.
+       FT-18: dimming used to be a flat opacity on the whole cell, which
+       crushed .ss-label's contrast to 2.21:1 against the page background
+       (axe-core, real measured violation -- WCAG AA needs 4.5:1). The
+       label TEXT is the actual disclosure ("OFF"/"Initial"/"PM"/"Stop"
+       still readable) -- only the glyph and the dash de-emphasize now,
+       which is the part that is genuinely decorative. */
+    .ss-cell.ss-off .ss-glyph, .ss-cell.ss-off .ss-value { opacity: .42; }
     .ss-cell.ss-off .ss-value { font-weight: 400; }
     .ss-sep { width: 1px; background: var(--line-2); margin: 8px 6px; flex: 0 0 auto; }
     .ss-quality .ss-label { font-style: italic; }

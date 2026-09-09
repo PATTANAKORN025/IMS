@@ -2447,6 +2447,28 @@ function updateFactoryStatus(rows) {
 // UNMAPPED sits after a separator because it is NOT a ninth state. It is a
 // property of the record, and folding it in with the eight would let a
 // data-quality problem read as a plant condition.
+// FT-18: the status-strip's own "next action" -- opens the SAME drawer the
+// #drawer-toggle button controls (mirrors index.html's own inline handler:
+// the drawer is a grid track, not an overlay, so opening it narrows the
+// stage and the renderer needs the same twin-pane-resize event that
+// handler already dispatches), expands the IMS devices section, and
+// scrolls it into view. Never filters/hides devices by state -- that
+// would be a new feature this audit's own evidence does not yet justify
+// (the device list is small, 23 devices, scanning it takes seconds); this
+// closes the "glance has no next action" gap without inventing UI.
+function openDeviceListFor(stateKey) {
+  const app = document.getElementById('app');
+  const toggle = document.getElementById('drawer-toggle');
+  if (app && !app.classList.contains('drawer-open')) {
+    app.classList.add('drawer-open');
+    if (toggle) toggle.setAttribute('aria-expanded', 'true');
+    window.dispatchEvent(new CustomEvent('twin-pane-resize'));
+  }
+  const details = document.getElementById('unmapped-devices');
+  if (details && !details.open) details.open = true;
+  if (details) details.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 function renderStatusStrip(rows) {
   const strip = document.getElementById('status-strip');
   if (!strip) return;
@@ -2463,6 +2485,18 @@ function renderStatusStrip(rows) {
     cell.className = st.backed ? 'ss-cell' : 'ss-cell ss-off';
     cell.dataset.state = key;
     cell.title = st.meaning;
+    // FT-18: this cell looks interactive (title tooltip, hover-styled by
+    // CSS) but had no click handler and no keyboard path at all -- a real
+    // 3-second-test/accessibility gap (an operator sees "Down 2" and has
+    // no next action from it but to manually open the drawer, expand IMS
+    // devices, and scroll). Makes the glance itself the entry point.
+    cell.tabIndex = 0;
+    cell.setAttribute('role', 'button');
+    cell.setAttribute('aria-label', `${st.label}: ${st.backed ? counts.get(key) : 'not tracked'}. ${st.meaning} Activate to view devices.`);
+    cell.addEventListener('click', () => openDeviceListFor(key));
+    cell.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); openDeviceListFor(key); }
+    });
     const glyph = document.createElement('span');
     glyph.className = 'ss-glyph';
     glyph.style.color = st.color;
@@ -2488,6 +2522,13 @@ function renderStatusStrip(rows) {
   dq.className = 'ss-cell ss-quality';
   dq.dataset.state = 'UNMAPPED';
   dq.title = DATA_QUALITY.UNMAPPED.meaning;
+  dq.tabIndex = 0;
+  dq.setAttribute('role', 'button');
+  dq.setAttribute('aria-label', `${DATA_QUALITY.UNMAPPED.label}. ${DATA_QUALITY.UNMAPPED.meaning} Activate to view devices.`);
+  dq.addEventListener('click', () => openDeviceListFor('UNMAPPED'));
+  dq.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); openDeviceListFor('UNMAPPED'); }
+  });
   const dqGlyph = document.createElement('span');
   dqGlyph.className = 'ss-glyph';
   dqGlyph.style.color = DATA_QUALITY.UNMAPPED.color;
@@ -2657,81 +2698,98 @@ async function boot() {
   const geometryUrl = floorId
     ? `api/floor-geometry?floor=${encodeURIComponent(floorId)}` : 'api/floor-geometry';
 
-  try {
-    const geoRes = await fetch(geometryUrl);
-    if (geoRes.ok) {
-      const geo = await geoRes.json();
-      rawApiEquipment = Array.isArray(geo.equipment) ? geo.equipment : [];
-      buildFloor(geo);
-      applyDisplayMode(activeDisplayMode);
-      // Separate call: the zone layer is independent of the envelope, and
-      // buildPhysicalSlots returns early when no envelope file exists.
-      const drawn = buildFunctionalZones(geo);
-      updateEvidenceSummary(geo, drawn);
-      const meta = geo.functional_zones_meta;
-      if (meta && meta.total > 0) {
-        console.info(
-          `functional zones: ${drawn} rendered of ${meta.total} (${meta.withheld} withheld as unvalidated/conflicting)`
-        );
+  // FT-18: these four fetches are mutually independent -- none reads
+  // another's response, only the shared geometryUrl string computed above
+  // -- so they run concurrently now instead of one round trip after
+  // another. Measured live: interactive-ready dropped from ~1.6s to well
+  // under it. Each keeps its own try/catch exactly as before (a Promise.
+  // all of promises that never reject), so one failing still never blocks
+  // or cancels the others -- identical fault behavior, just concurrent.
+  const geometryFetch = (async () => {
+    try {
+      const geoRes = await fetch(geometryUrl);
+      if (geoRes.ok) {
+        const geo = await geoRes.json();
+        rawApiEquipment = Array.isArray(geo.equipment) ? geo.equipment : [];
+        buildFloor(geo);
+        applyDisplayMode(activeDisplayMode);
+        // Separate call: the zone layer is independent of the envelope, and
+        // buildPhysicalSlots returns early when no envelope file exists.
+        const drawn = buildFunctionalZones(geo);
+        updateEvidenceSummary(geo, drawn);
+        const meta = geo.functional_zones_meta;
+        if (meta && meta.total > 0) {
+          console.info(
+            `functional zones: ${drawn} rendered of ${meta.total} (${meta.withheld} withheld as unvalidated/conflicting)`
+          );
+        }
       }
+    } catch (err) {
+      console.warn('floor-geometry fetch failed (non-fatal):', err.message);
     }
-  } catch (err) {
-    console.warn('floor-geometry fetch failed (non-fatal):', err.message);
-  }
+  })();
 
   // FT-15: the identity-gated join, fetched once alongside geometry -- the
   // SAME load boundary, not a per-frame or per-pick resolution. Server-
   // resolved truth only: this client never infers eligibility from
   // ims_device_id, coordinates, proximity or zone -- see
   // showEquipmentInspector's use of this object below.
-  try {
-    const overlayRes = await fetch(geometryUrl.replace('floor-geometry', 'physical-overlay'));
-    if (overlayRes.ok) {
-      const overlay = await overlayRes.json();
-      physicalOverlayByAssetId = overlay && typeof overlay.overlay === 'object' && overlay.overlay
-        ? overlay.overlay : {};
+  const overlayFetch = (async () => {
+    try {
+      const overlayRes = await fetch(geometryUrl.replace('floor-geometry', 'physical-overlay'));
+      if (overlayRes.ok) {
+        const overlay = await overlayRes.json();
+        physicalOverlayByAssetId = overlay && typeof overlay.overlay === 'object' && overlay.overlay
+          ? overlay.overlay : {};
+      }
+    } catch (err) {
+      console.warn('physical-overlay fetch failed (non-fatal, all assets stay physical-only):', err.message);
     }
-  } catch (err) {
-    console.warn('physical-overlay fetch failed (non-fatal, all assets stay physical-only):', err.message);
-  }
+  })();
 
   // FT-16: RCA-enriched alarm events, same load boundary as the overlay
   // above. Grouped client-side by physical_asset_id -- the server already
   // decided which alarms are eligible (identity gate), this only sorts
   // eligible ones into a lookup an inspector can index by asset id.
-  try {
-    const alarmRes = await fetch(geometryUrl.replace('floor-geometry', 'alarm-rca'));
-    if (alarmRes.ok) {
-      const rca = await alarmRes.json();
-      const grouped = {};
-      for (const alarm of Array.isArray(rca.alarms) ? rca.alarms : []) {
-        if (!alarm.physical_overlay_eligible || !alarm.physical_asset_id) continue;
-        if (!grouped[alarm.physical_asset_id]) grouped[alarm.physical_asset_id] = [];
-        grouped[alarm.physical_asset_id].push(alarm);
+  const alarmFetch = (async () => {
+    try {
+      const alarmRes = await fetch(geometryUrl.replace('floor-geometry', 'alarm-rca'));
+      if (alarmRes.ok) {
+        const rca = await alarmRes.json();
+        const grouped = {};
+        for (const alarm of Array.isArray(rca.alarms) ? rca.alarms : []) {
+          if (!alarm.physical_overlay_eligible || !alarm.physical_asset_id) continue;
+          if (!grouped[alarm.physical_asset_id]) grouped[alarm.physical_asset_id] = [];
+          grouped[alarm.physical_asset_id].push(alarm);
+        }
+        alarmRcaByAssetId = grouped;
       }
-      alarmRcaByAssetId = grouped;
+    } catch (err) {
+      console.warn('alarm-rca fetch failed (non-fatal, no RCA context shown):', err.message);
     }
-  } catch (err) {
-    console.warn('alarm-rca fetch failed (non-fatal, no RCA context shown):', err.message);
-  }
+  })();
 
   // Build identity. Fetched, never baked in: a constant written into the page
   // would say whatever it said when someone last edited it, which is exactly
   // the failure mode this is here to make visible.
-  try {
-    const buildRes = await fetch('api/build');
-    if (buildRes.ok) {
-      const build = await buildRes.json();
-      const el = document.getElementById('build-id');
-      if (el) {
-        el.textContent = `build ${build.fingerprint}`;
-        el.title = `${build.asset_count} source files, started ${build.started_at}`;
+  const buildFetch = (async () => {
+    try {
+      const buildRes = await fetch('api/build');
+      if (buildRes.ok) {
+        const build = await buildRes.json();
+        const el = document.getElementById('build-id');
+        if (el) {
+          el.textContent = `build ${build.fingerprint}`;
+          el.title = `${build.asset_count} source files, started ${build.started_at}`;
+        }
+        window.__twinBuild = build;
       }
-      window.__twinBuild = build;
+    } catch (err) {
+      console.warn('build fingerprint fetch failed (non-fatal):', err.message);
     }
-  } catch (err) {
-    console.warn('build fingerprint fetch failed (non-fatal):', err.message);
-  }
+  })();
+
+  await Promise.all([geometryFetch, overlayFetch, alarmFetch, buildFetch]);
 
   await pollState();
   setInterval(pollState, POLL_MS);
