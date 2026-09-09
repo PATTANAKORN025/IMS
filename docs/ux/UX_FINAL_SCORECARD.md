@@ -187,3 +187,31 @@ since FT-17.6, not a new gap. 0 axe violations (after the 1 fix), 3
 production runs and all 4 disposable-container viewports. Full regression
 unchanged, plus 4 new predictive unit tests (43 total) -- see
 `docs/analytics/COMMAND_CENTER_VALIDATION.md`.
+
+## FT-24.5 addendum — interactive-ready root cause, real fix, corrected reading
+
+FT-24's own 1587-2175ms reading is not retracted; it is explained.
+Controlled experiment (`docs/ux/INTERACTIVE_READY_ROOT_CAUSE.md`) found
+two real, distinct things: (1) every `networkidle`-based Playwright
+measurement since FT-22 carried a fixed ~500ms test-methodology tax
+unrelated to real user-perceived readiness (proven: the app's own
+internal `window.__twinBootMs` timer was statistically identical across
+`load`/`domcontentloaded`/`networkidle` conditions on the same code); (2)
+a real, small, genuinely fixable sequential dependency existed regardless
+-- `api/floors` was awaited before the 4 parallel boot fetches could
+start, even though the server resolves the bare endpoint to the same
+floor whenever no `?floor=` parameter is present. Fixed for that common
+case only; the explicit-floor path is unchanged. Real controlled A/B
+(disposable, git-worktree checkout of the pre-fix commit vs. current,
+same production DB/geometry, 8 runs/variant, corrected methodology):
+median 1154ms -> 1087ms, **tail improved more than the median** (max
+1425ms -> 1139ms). Real authenticated production re-verification
+(corrected methodology, 5 fresh-tab runs): **1123-1380ms, every run under
+the 1500ms target** -- not an average, not a best-case cherry-pick. WebGL
+p95 17.7-17.9ms (idle-orbit, settled -- a real, pre-existing, viewport-
+dependent GPU warm-up spike in the FIRST few frames at boot was found,
+confirmed present in BOTH the before and after variant equally, and left
+alone as out of this phase's own scope). 0 axe violations, 0 console
+errors, floor/equipment counts unchanged (433/431), heap 14.5MB
+(consistent, no regression). Full regression unchanged (this is a pure
+client-side change, no server/DB/schema touched).

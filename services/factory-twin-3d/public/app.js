@@ -3128,9 +3128,33 @@ async function boot() {
   // and the default floor requested instead. The client therefore cannot ask
   // for a floor the server would refuse, and cannot be steered into building a
   // request path out of a string somebody put in the URL bar.
-  const floorId = await setUpFloorSelector();
-  const geometryUrl = floorId
-    ? `api/floor-geometry?floor=${encodeURIComponent(floorId)}` : 'api/floor-geometry';
+  //
+  // FT-24.5: a real, measured sequential dependency -- api/floors's own
+  // round trip (100-250ms, real production trace) previously sat entirely
+  // BEFORE the geometry/overlay/alarm/build fetches could even start,
+  // because geometryUrl needed floorId first. That wait is provably
+  // unnecessary in the overwhelmingly common case: with no `?floor=` in
+  // the address, server.js's own requestedFloor() resolves the SAME bare
+  // endpoint to floors.defaultFloor(list) -- byte-identical to what
+  // setUpFloorSelector()'s client-side fallback (`body.default`) would
+  // also have produced. So the bare endpoint is safe to use IMMEDIATELY,
+  // without waiting for the catalogue, whenever no floor was explicitly
+  // requested. A bookmarked non-default floor (`?floor=X` present) still
+  // takes the original, unchanged, sequential, catalogue-validated path
+  // -- untrusted input must still be checked against the real list before
+  // it reaches a fetch URL; only the common no-param case gets to skip
+  // the wait.
+  const requestedFloorParam = new URLSearchParams(window.location.search).get('floor');
+  let geometryUrl;
+  let floorSelectorReady;
+  if (requestedFloorParam) {
+    const floorId = await setUpFloorSelector();
+    geometryUrl = floorId ? `api/floor-geometry?floor=${encodeURIComponent(floorId)}` : 'api/floor-geometry';
+    floorSelectorReady = Promise.resolve();
+  } else {
+    geometryUrl = 'api/floor-geometry';
+    floorSelectorReady = setUpFloorSelector();
+  }
 
   // FT-19: #data-quality's initial markup is "Loading floor evidence…" and,
   // before this fix, the ONLY place that ever changed was inside the `if
@@ -3270,7 +3294,7 @@ async function boot() {
     }
   })();
 
-  await Promise.all([geometryFetch, overlayFetch, alarmFetch, buildFetch]);
+  await Promise.all([geometryFetch, overlayFetch, alarmFetch, buildFetch, floorSelectorReady]);
 
   await pollState();
   setInterval(pollState, POLL_MS);
