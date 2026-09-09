@@ -50,6 +50,10 @@ run("Repo Hygiene Linter", "node tests/lint/repo-hygiene-linter.js");
 // (never a "latest telemetry" substitute), and that alarm identity gating
 // is exactly as strict as FT-14/FT-15's own -- no alarm-specific shortcut.
 run("Factory Twin Alarm/RCA Tests", "node tests/unit/factory-twin-alarm.test.js");
+// FT-17: bounded time ranges, tier selection matching the existing CAGG
+// tiering contract, and no fabricated metric value when the schema
+// genuinely cannot support it at the requested range.
+run("Factory Twin Analytics Tests", "node tests/unit/factory-twin-analytics.test.js");
 run("Factory Twin Floor Registry Tests", "node tests/unit/factory-twin-floors.test.js");
 run("Factory Twin Schematic Layer Tests", "node tests/unit/factory-twin-schematic.test.js");
 run("Factory Twin Operational Status Tests", "node tests/unit/factory-twin-operational-status.test.js");

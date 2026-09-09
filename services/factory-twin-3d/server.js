@@ -11,6 +11,7 @@ const wire = require('./lib/wire');
 const mappingLib = require('./lib/mapping');
 const telemetry = require('./lib/telemetry');
 const alarmLib = require('./lib/alarm');
+const analytics = require('./lib/analytics');
 const schematic = require('./lib/schematic');
 const eapMap = require('./lib/eap-map');
 const floors = require('./lib/floors');
@@ -707,31 +708,12 @@ WITH ctx AS (
   WHERE a.logid = $1 AND a.logdate = $2
 )`;
 
-// The cheap list: no LATERAL correlation at all -- just the alarm, its
-// severity/category/lifecycle, same shape as the Alarm Console dashboard's
-// own real_alarms CTE. Active alarms (not RESOLVED, or predating lifecycle
-// tracking) across the SAME discovered device list /api/state and
-// /api/physical-overlay already use -- no second device-discovery
-// mechanism. Bounded to 24 hours for the same reason the Alarm Console
-// bounds its own live query, just wider (RCA needs more lookback than "is
-// this happening right now") -- 293 rows at measurement time, comfortably
-// cheap without a LATERAL join.
-const ALARM_RCA_LIST_BASE_SQL = `
-SELECT
-  a.logid, a.logdate, a.errorcode, a.equipmentid, a.related_log_id,
-  m.severity, m.alarm_msg, c.category,
-  l.status AS lifecycle_status, l.resolved_at,
-  a.factory
-FROM public.ldi_alarm_log a
-JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT
-LEFT JOIN public.v_ldi_alarm_category c ON c.alarm_code = a.errorcode::TEXT
-LEFT JOIN public.ldi_alarm_lifecycle l ON l.logdate = a.logdate AND l.logid = a.logid
-WHERE a.equipmentid = ANY($1::text[])
-  AND m.severity IN ('Critical', 'Major')
-  AND l.status IS DISTINCT FROM 'RESOLVED'
-  AND a.logdate > NOW() - INTERVAL '24 hours'
-ORDER BY (CASE m.severity WHEN 'Critical' THEN 0 WHEN 'Major' THEN 1 ELSE 2 END), a.logdate DESC
-LIMIT 100`;
+// The cheap list shape (no LATERAL correlation) now lives inline in
+// queryAlarmHistory() below, whose WHERE clause is built per-request from
+// FT-17's own device_id/alarm_code/severity/from/to/state filters --
+// same shape, same Alarm-Console-dashboard lineage, same 100-row cap and
+// 24h default bound (see queryAlarmHistory's own comment), just no
+// longer a fixed template now that it has real filters to honor.
 
 // One specific alarm, active or not, WITH its exact/nearest correlation --
 // a resolved alarm's RCA context must stay reachable (test #13, "cleared
@@ -774,8 +756,72 @@ function rcaRowToExactEvent(row) {
 // comment for the measured cost this avoids. With this deployment's real
 // mapping table (0 CONFIRMED entries) that second pass runs zero times.
 async function queryAlarmRCA(deviceIds, mappingByAssetId) {
-  if (!Array.isArray(deviceIds) || deviceIds.length === 0) return [];
-  const result = await pool.query(ALARM_RCA_LIST_BASE_SQL, [deviceIds]);
+  return queryAlarmHistory({ deviceIds }, mappingByAssetId);
+}
+
+// FT-17 Phase 6: extends the FT-16 list query with device_id/alarm_code/
+// severity/from/to/state filters, rather than a second endpoint or a
+// second correlation implementation -- same base SQL shape, same
+// eligibility-gated second-pass correlation, same 100-row cap. Any filter
+// left unset falls back to the exact default FT-16 already shipped
+// (severity Critical/Major, last 24h, not RESOLVED) so existing callers
+// (queryAlarmRCA above, the /api/alarm-rca route with no query params)
+// are unaffected.
+async function queryAlarmHistory(filters, mappingByAssetId) {
+  const deviceIds = Array.isArray(filters.deviceIds) ? filters.deviceIds : DEVICE_IDS;
+  if (deviceIds.length === 0) return [];
+
+  const params = [deviceIds];
+  const where = ['a.equipmentid = ANY($1::text[])'];
+
+  if (typeof filters.alarmCode === 'string' && filters.alarmCode) {
+    params.push(filters.alarmCode);
+    where.push(`a.errorcode = $${params.length}`);
+  }
+  if (typeof filters.severity === 'string' && filters.severity) {
+    params.push(filters.severity);
+    where.push(`m.severity = $${params.length}`);
+  } else {
+    where.push(`m.severity IN ('Critical', 'Major')`);
+  }
+  if (Number.isFinite(filters.fromMs)) {
+    params.push(new Date(filters.fromMs).toISOString());
+    where.push(`a.logdate >= $${params.length}`);
+  }
+  if (Number.isFinite(filters.toMs)) {
+    params.push(new Date(filters.toMs).toISOString());
+    where.push(`a.logdate <= $${params.length}`);
+  }
+  if (!Number.isFinite(filters.fromMs) && !Number.isFinite(filters.toMs)) {
+    // No explicit range: the same 24h query-budget bound FT-16 already
+    // measured and fixed (see ALARM_RCA_CTE's own comment) -- an explicit
+    // from/to opts INTO a wider, caller-accepted cost instead.
+    where.push(`a.logdate > NOW() - INTERVAL '24 hours'`);
+  }
+  // 'unresolved' and 'active' are the same real fact in this schema --
+  // migration 077 has no separate lifecycle value for it -- kept as two
+  // accepted spellings because Phase 6 names both.
+  if (filters.state === 'active' || filters.state === 'unresolved') {
+    where.push(`l.status IS DISTINCT FROM 'RESOLVED'`);
+  } else if (filters.state === 'cleared') {
+    where.push(`l.status = 'RESOLVED'`);
+  }
+
+  const sql = `
+SELECT
+  a.logid, a.logdate, a.errorcode, a.equipmentid, a.related_log_id,
+  m.severity, m.alarm_msg, c.category,
+  l.status AS lifecycle_status, l.resolved_at,
+  a.factory
+FROM public.ldi_alarm_log a
+JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT
+LEFT JOIN public.v_ldi_alarm_category c ON c.alarm_code = a.errorcode::TEXT
+LEFT JOIN public.ldi_alarm_lifecycle l ON l.logdate = a.logdate AND l.logid = a.logid
+WHERE ${where.join(' AND ')}
+ORDER BY (CASE m.severity WHEN 'Critical' THEN 0 WHEN 'Major' THEN 1 ELSE 2 END), a.logdate DESC
+LIMIT 100`;
+
+  const result = await pool.query(sql, params);
   const reverseIndex = alarmLib.reverseIdentityIndex(mappingByAssetId);
 
   const events = [];
@@ -833,7 +879,35 @@ app.get('/api/alarm-rca', async (req, res) => {
       return res.status(200).json({ alarm: event, queried_at: new Date().toISOString() });
     }
 
-    const alarms = await queryAlarmRCA(DEVICE_IDS, mappingByAssetId);
+    // FT-17 Phase 6: device_id/alarm_code/severity/from/to/state are all
+    // optional -- with none supplied this is byte-for-byte the FT-16
+    // default (queryAlarmRCA's own delegation confirms the same query
+    // shape). from/to accept epoch milliseconds, matching the rest of
+    // this service's ms-based conventions (e.g. alarm_logdate_ms).
+    const q = req.query;
+    let requestedDeviceIds = DEVICE_IDS;
+    if (typeof q.device_id === 'string' && q.device_id) {
+      // Only a device this deployment actually discovered may be queried
+      // -- same discipline as /api/physical-overlay's confirmedDeviceIds.
+      requestedDeviceIds = DEVICE_IDS.includes(q.device_id) ? [q.device_id] : [];
+    }
+    const filters = {
+      deviceIds: requestedDeviceIds,
+      alarmCode: typeof q.alarm_code === 'string' ? q.alarm_code : undefined,
+      severity: typeof q.severity === 'string' ? q.severity : undefined,
+      fromMs: q.from !== undefined ? Number(q.from) : undefined,
+      toMs: q.to !== undefined ? Number(q.to) : undefined,
+      state: typeof q.state === 'string' ? q.state : undefined,
+    };
+    if (Number.isFinite(filters.fromMs) || Number.isFinite(filters.toMs)) {
+      const range = analytics.validateRange(
+        Number.isFinite(filters.fromMs) ? filters.fromMs : 0,
+        Number.isFinite(filters.toMs) ? filters.toMs : Date.now(),
+      );
+      if (!range.ok) return res.status(400).json({ error: range.error });
+    }
+
+    const alarms = await queryAlarmHistory(filters, mappingByAssetId);
     res.status(200).json({
       alarms,
       counts: {
@@ -846,6 +920,116 @@ app.get('/api/alarm-rca', async (req, res) => {
         // exact/nearest correlation found nothing) -- the eligibility
         // check first is what disambiguates the two.
         unresolvedEvent: alarms.filter((a) => a.physical_overlay_eligible && !a.exact_event).length,
+      },
+      queried_at: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'internal error' });
+  }
+});
+
+// FT-17 Phase 5: the one canonical historical telemetry endpoint. Reuses
+// the EXISTING tiering contract (migrations 043/044, docs/architecture/
+// GRAFANA_DESIGN_SYSTEM.md §10, enforced for dashboards by tests/lint/
+// query-budget-linter.js) via lib/analytics.js's tierForRange() -- never
+// a fresh range-scan against raw ldi_data. min/max/median/p95/stddev
+// exist nowhere but raw ldi_data (no CAGG tier stores them), so they are
+// only ever computed for a request whose own span already resolves to
+// the 1-minute tier (<= 6h) -- the same "short window against raw" shape
+// this codebase's own Cpk/StdDev panels already use, never approximated
+// from an averaged tier.
+app.get('/api/telemetry-history', async (req, res) => {
+  try {
+    const { device_id: deviceId, metric } = req.query;
+
+    if (typeof deviceId !== 'string' || !DEVICE_IDS.includes(deviceId)) {
+      return res.status(404).json({ error: 'device not found' });
+    }
+    if (!analytics.isValidMetric(metric)) {
+      return res.status(400).json({ error: 'invalid metric', valid_metrics: analytics.AVG_METRICS });
+    }
+
+    let fromMs;
+    let toMs;
+    if (typeof req.query.range === 'string') {
+      const spanMs = analytics.rangeToMs(req.query.range);
+      if (spanMs === null) {
+        return res.status(400).json({ error: 'invalid range', supported_ranges: analytics.SUPPORTED_RANGES });
+      }
+      toMs = Date.now();
+      fromMs = toMs - spanMs;
+    } else {
+      fromMs = Number(req.query.from);
+      toMs = Number(req.query.to);
+    }
+    const validated = analytics.validateRange(fromMs, toMs);
+    if (!validated.ok) return res.status(400).json({ error: validated.error });
+
+    const tier = analytics.tierForRange(validated.spanMs);
+    const from = new Date(fromMs).toISOString();
+    const to = new Date(toMs).toISOString();
+
+    const trendResult = await pool.query(
+      `SELECT bucket, avg_${metric} AS value, sample_count
+       FROM public.${tier}
+       WHERE eqp_id = $1 AND bucket >= $2 AND bucket <= $3
+       ORDER BY bucket ASC`,
+      [deviceId, from, to],
+    );
+    const points = trendResult.rows.map((row) => analytics.projectTrendPoint(row, true));
+
+    let totalSamples = 0;
+    let weightedSum = 0;
+    let firstTimestamp = null;
+    let lastTimestamp = null;
+    for (const p of points) {
+      if (p.value !== null) { weightedSum += p.value * p.sample_count; totalSamples += p.sample_count; }
+      if (firstTimestamp === null) firstTimestamp = p.timestamp;
+      lastTimestamp = p.timestamp;
+    }
+
+    const extendedAvailable = analytics.extendedStatsAvailable(validated.spanMs);
+    let extended = {
+      min: null, max: null, median: null, p95: null, stddev: null,
+      quality: analytics.Quality.UNAVAILABLE,
+    };
+    if (extendedAvailable) {
+      const statsResult = await pool.query(
+        `SELECT MIN(${metric}) AS min, MAX(${metric}) AS max,
+                PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY ${metric}) AS median,
+                PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY ${metric}) AS p95,
+                STDDEV_SAMP(${metric}) AS stddev,
+                COUNT(${metric}) AS n
+         FROM public.ldi_data
+         WHERE eqp_id = $1 AND "time" >= $2 AND "time" <= $3`,
+        [deviceId, from, to],
+      );
+      const s = statsResult.rows[0];
+      const n = Number(s.n) || 0;
+      extended = {
+        min: n > 0 ? Number(s.min) : null,
+        max: n > 0 ? Number(s.max) : null,
+        median: n > 0 ? Number(s.median) : null,
+        p95: n > 0 ? Number(s.p95) : null,
+        stddev: n > 1 ? Number(s.stddev) : null, // STDDEV_SAMP is undefined for n<=1
+        quality: analytics.classifyQuality({ metricSupported: true, sampleCount: n, minSamplesForValid: 2 }),
+      };
+    }
+
+    res.status(200).json({
+      device_id: deviceId,
+      metric,
+      from,
+      to,
+      tier,
+      points,
+      summary: {
+        avg: totalSamples > 0 ? weightedSum / totalSamples : null,
+        sample_count: totalSamples,
+        first_timestamp: firstTimestamp,
+        last_timestamp: lastTimestamp,
+        ...extended,
       },
       queried_at: new Date().toISOString(),
     });

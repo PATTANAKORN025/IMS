@@ -291,6 +291,13 @@
     .mini-pill { font-size: 9.5px; padding: 0 5px; border-radius: 3px; color: #06121f; font-weight: 600; }
     .machine-id { font-weight: 600; }
     .machine-row-detail, .machine-row-alarm { color: var(--text-dim); font-size: 10.5px; display: flex; gap: 10px; }
+    .btn-mini { margin-top: 4px; font-size: 10px; padding: 2px 6px; border-radius: 3px; border: 1px solid var(--line); background: transparent; color: var(--text); cursor: pointer; }
+    #device-history { margin-top: 8px; font-size: 11px; }
+    .history-controls { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 6px; }
+    #history-device-label { font-weight: 600; }
+    .history-ranges button { font-size: 10px; padding: 2px 6px; border-radius: 3px; border: 1px solid var(--line); background: transparent; color: var(--text); cursor: pointer; }
+    .history-ranges button[aria-pressed="true"] { background: var(--line); }
+    #history-alarms { margin-top: 4px; color: var(--text-dim); font-size: 10.5px; }
     #diagnostics-body { margin-top: 8px; font-size: 11px; }
     #diagnostics-body .k { color: var(--text-dim); }
     .ev { display: inline-block; width: 1.1em; text-align: center; }
@@ -416,6 +423,30 @@
         </p>
         <div id="machine-list"></div>
       </details>
+
+      <!-- FT-17: device-level historical trend + alarm markers. Deliberately
+           device-level, not attached to any CAD object -- no CONFIRMED
+           mapping exists yet (see the note above), so there is no physical
+           asset to attach this to without fabricating one. -->
+      <h2>Device history</h2>
+      <div id="device-history" hidden>
+        <div class="history-controls">
+          <span id="history-device-label"></span>
+          <select id="history-metric">
+            <option value="temperature">Temperature</option>
+            <option value="humidity">Humidity</option>
+            <option value="air_vacuum">Air vacuum</option>
+            <option value="scan_speed">Scan speed</option>
+          </select>
+          <div class="history-ranges" role="group" aria-label="Time range">
+            <button type="button" data-history-range="1h" aria-pressed="true">1h</button>
+            <button type="button" data-history-range="24h" aria-pressed="false">24h</button>
+            <button type="button" data-history-range="7d" aria-pressed="false">7d</button>
+          </div>
+        </div>
+        <div id="history-summary" aria-live="polite">Select a device's History button above.</div>
+        <div id="history-alarms"></div>
+      </div>
 
       <h2>Diagnostics</h2>
       <details id="diagnostics">

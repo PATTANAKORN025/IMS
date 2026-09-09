@@ -2307,8 +2307,83 @@ function stateRowHtml(row) {
         <span>Grid: ${gridRefText}</span>
       </div>
       <div class="machine-row-alarm">${alarmText}</div>
+      <button type="button" class="btn-mini" data-history-device="${row.device_id}">History</button>
     </div>`;
 }
+
+// ── FT-17: device history (device-level, never attached to a CAD object --
+// no CONFIRMED mapping exists yet, see #unmapped-devices' own note) ──
+const deviceHistoryEl = document.getElementById('device-history');
+const historyDeviceLabelEl = document.getElementById('history-device-label');
+const historyMetricEl = document.getElementById('history-metric');
+const historySummaryEl = document.getElementById('history-summary');
+const historyAlarmsEl = document.getElementById('history-alarms');
+let historyDeviceId = null;
+let historyRange = '1h';
+
+async function renderDeviceHistory() {
+  if (!historyDeviceId) return;
+  historyDeviceLabelEl.textContent = historyDeviceId;
+  historySummaryEl.textContent = 'Loading…';
+  historyAlarmsEl.textContent = '';
+  const metric = historyMetricEl.value;
+  try {
+    const res = await fetch(`api/telemetry-history?device_id=${encodeURIComponent(historyDeviceId)}`
+      + `&metric=${encodeURIComponent(metric)}&range=${encodeURIComponent(historyRange)}`);
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      historySummaryEl.textContent = `Unavailable: ${body.error || res.status}`;
+      return;
+    }
+    const data = await res.json();
+    const s = data.summary;
+    const fmt = (v) => (v === null || v === undefined ? '—' : Number(v).toFixed(2));
+    historySummaryEl.innerHTML = `
+      <div>avg <b>${fmt(s.avg)}</b> · min <b>${fmt(s.min)}</b> · max <b>${fmt(s.max)}</b>
+        · p95 <b>${fmt(s.p95)}</b> · stddev <b>${fmt(s.stddev)}</b></div>
+      <div class="hint">${s.sample_count} sample(s) · ${data.points.length} bucket(s) from ${data.tier}
+        · quality ${s.quality}</div>`;
+  } catch (err) {
+    historySummaryEl.textContent = `Fetch failed: ${err.message}`;
+  }
+
+  // Real alarm markers for the same device+window -- never fabricated,
+  // and never attached to a physical asset here (device-level only).
+  try {
+    const spanMs = { '1h': 3600000, '24h': 86400000, '7d': 604800000 }[historyRange] || 3600000;
+    const to = Date.now();
+    const from = to - spanMs;
+    const alarmRes = await fetch(`api/alarm-rca?device_id=${encodeURIComponent(historyDeviceId)}&from=${from}&to=${to}`);
+    if (alarmRes.ok) {
+      const alarmData = await alarmRes.json();
+      historyAlarmsEl.textContent = alarmData.alarms.length
+        ? `${alarmData.alarms.length} alarm(s) in this window: `
+          + alarmData.alarms.slice(0, 5).map((a) => `${a.alarm_code} (${a.severity})`).join(', ')
+        : 'No alarms in this window.';
+    }
+  } catch (err) {
+    console.warn('device-history alarm fetch failed (non-fatal):', err.message);
+  }
+}
+
+if (machineListEl) {
+  machineListEl.addEventListener('click', (event) => {
+    const btn = event.target.closest('[data-history-device]');
+    if (!btn) return;
+    historyDeviceId = btn.getAttribute('data-history-device');
+    deviceHistoryEl.hidden = false;
+    renderDeviceHistory();
+  });
+}
+if (historyMetricEl) historyMetricEl.addEventListener('change', renderDeviceHistory);
+const historyRangeButtons = document.querySelectorAll('[data-history-range]');
+historyRangeButtons.forEach((btn) => {
+  btn.addEventListener('click', () => {
+    historyRange = btn.getAttribute('data-history-range');
+    historyRangeButtons.forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+    renderDeviceHistory();
+  });
+});
 
 function applyState(payload) {
   // Live state changes machine colours and labels. Ask for the frame that
@@ -2714,6 +2789,13 @@ async function boot() {
     getPhysicalOverlay: () => physicalOverlayByAssetId,
     // FT-16: the exact grouped object the inspector's RCA rows read from.
     getAlarmRCA: () => alarmRcaByAssetId,
+    // FT-17: real, callable, testable -- the same fetch renderDeviceHistory
+    // uses, exposed directly so a regression can drive it without a real
+    // mouse click.
+    fetchTelemetryHistory: (deviceId, metric, range) => fetch(
+      `api/telemetry-history?device_id=${encodeURIComponent(deviceId)}`
+      + `&metric=${encodeURIComponent(metric)}&range=${encodeURIComponent(range)}`,
+    ).then((r) => r.json()),
     // A point projected through the live camera. Equipment instances are
     // placement records rather than Object3Ds, so a caller with no THREE in
     // scope still needs one honest way to ask where one lands on screen.
