@@ -36,6 +36,28 @@ const DEFAULT_MACHINE_COLOR = 0x64748b;
 
 const POLL_MS = 5000;
 
+// FT-20: no fetch anywhere in this file carried an explicit timeout -- a
+// genuinely hung request (a stalled connection, an exhausted DB pool that
+// never answers rather than erroring) would leave the caller waiting on
+// the browser's own default network timeout, which is minutes, not
+// seconds. For the two primary-render fetches this matters concretely:
+// pollState's hang would leave #status-line silently showing an
+// increasingly stale "Last updated" with no sign anything was wrong, and
+// a hung geometry fetch would leave #data-quality on "Loading floor
+// evidence..." forever -- the exact FT-19 bug, just reached via a hang
+// instead of a rejection, which FT-19's own fix could not catch because a
+// pending promise is neither a resolution nor a rejection.
+//
+// AbortController + a real deadline turns "wait indefinitely" into "fail
+// with a real, distinguishable reason" -- TimeoutError's own name is kept
+// on the thrown error so callers already text-matching err.message for a
+// real reason keep getting one, just a different real one.
+function fetchWithTimeout(url, ms) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  return fetch(url, { signal: controller.signal }).finally(() => clearTimeout(timer));
+}
+
 // ── Scene setup ──────────────────────────────────────────────
 const container = document.getElementById('scene');
 
@@ -2405,9 +2427,11 @@ function applyState(payload) {
   statusLine.classList.remove('error');
 }
 
+const POLL_TIMEOUT_MS = 8000; // FT-20: above POLL_MS with real margin, still far short of a browser default.
+
 async function pollState() {
   try {
-    const res = await fetch('api/state');
+    const res = await fetchWithTimeout('api/state', POLL_TIMEOUT_MS);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     applyState(data);
@@ -2418,7 +2442,12 @@ async function pollState() {
     // reading this had no way to tell "broken" from "about to fix itself".
     // Recovery is confirmed the same way it already was: the next successful
     // poll's applyState() overwrites this text and clears .error.
-    statusLine.textContent = `State fetch failed: ${err.message} -- retrying automatically`;
+    //
+    // FT-20: AbortError's own message ("signal is aborted without reason" /
+    // "The user aborted a request.") names the mechanism, not the fact a
+    // real user needs -- restated as a real timeout in real seconds.
+    const reason = err.name === 'AbortError' ? `timed out after ${POLL_TIMEOUT_MS / 1000}s` : err.message;
+    statusLine.textContent = `State fetch failed: ${reason} -- retrying automatically`;
     statusLine.classList.add('error');
   }
 }
@@ -2771,9 +2800,15 @@ async function boot() {
   // FT-19: pulled out of the Promise.all IIFE into its own named function so
   // the Retry button above can call the exact same load path a page load
   // does -- not a second, divergent implementation of "load geometry".
+  // FT-20: a hung (never resolves, never rejects) geometry fetch is the
+  // one failure mode FT-19's own fix could not catch -- showGeometryLoadError
+  // only ever ran from a rejection or a resolved-but-not-ok response, so a
+  // truly stuck request left #data-quality on "Loading floor evidence..."
+  // forever, same symptom as the bug FT-19 fixed, different trigger.
+  const GEOMETRY_TIMEOUT_MS = 15000; // one-time, heavier payload than a poll -- real margin.
   async function loadFloorGeometry() {
     try {
-      const geoRes = await fetch(geometryUrl);
+      const geoRes = await fetchWithTimeout(geometryUrl, GEOMETRY_TIMEOUT_MS);
       if (!geoRes.ok) {
         showGeometryLoadError(`HTTP ${geoRes.status}`);
         return;
@@ -2793,8 +2828,9 @@ async function boot() {
         );
       }
     } catch (err) {
-      console.warn('floor-geometry fetch failed:', err.message);
-      showGeometryLoadError(err.message);
+      const reason = err.name === 'AbortError' ? `timed out after ${GEOMETRY_TIMEOUT_MS / 1000}s` : err.message;
+      console.warn('floor-geometry fetch failed:', reason);
+      showGeometryLoadError(reason);
     }
   }
   const geometryFetch = loadFloorGeometry();

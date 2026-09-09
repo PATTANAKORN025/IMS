@@ -90,15 +90,37 @@ which only runs when the fetch itself fails):
 | Frame p95 | 17.9ms | 17.9ms (unchanged, re-measured) | <25ms |
 | JS heap, steady state | 10.0MB | **37.3MB**, flat across 30s / 6 poll cycles (zero growth, ruled out as a leak) | — (no stated target) |
 
-The heap figure is reported as a real discrepancy against FT-18's own
-number, not smoothed over: `renderer.info` shows 88 GPU geometries, 22
-textures, 356 draw calls for the real, fully-loaded floor (433 assets,
-202 columns, 587 walls) — a plausible size for that much real geometry.
-FT-19's own diff (event listeners, one DOM banner, no new geometry)
-cannot plausibly cause a 27MB difference, so it is left as an open,
-disclosed discrepancy rather than attributed to a cause this session did
-not verify. See `UX_FINAL_SCORECARD.md` for the same note against the
-scorecard's own performance score.
+The heap figure was reported as a real discrepancy against FT-18's own
+number, not smoothed over, and left open pending investigation.
+
+## FT-20 update: the heap discrepancy is fully resolved (not a regression)
+
+Full investigation in `UX_MEMORY_ANALYSIS.md`. Summary: a controlled A/B
+build (FT-18's exact commit vs. current HEAD, identical real production
+data via the same private-geometry bind mount) measured **10.00MB on
+both commits, byte-identical GPU resource counts**. The FT-19/re-check
+37.3MB and 72.2MB readings were traced to a real, reproducible Chromium
+behavior — measuring `performance.memory` in a browser tab that had
+just navigated away from Grafana's own (heavier) React SPA during
+login — not to anything Factory Twin's own code retains. A fresh tab in
+the same authenticated session read exactly 10.00MB. A forced CDP
+garbage collection did not move the contaminated reading at all,
+ruling out "uncollected garbage" as the explanation and confirming this
+is a per-tab-history artifact of the measurement path, not a leak.
+
+A full 15-minute soak (7 checkpoints: cold, 10s, 30s, 1m, 5m, 10m, 15m;
+180 real poll cycles of the status-strip's full teardown/rebuild) on
+current HEAD, real production data, showed **zero heap movement at any
+checkpoint** (11.20MB flat throughout) and a real CDP heap-snapshot scan
+found zero leaked/detached DOM nodes (4 hits for "Detached", all V8
+internal `ArrayBuffer` machinery, none a DOM element).
+
+| Metric | FT-18 | FT-19 (reported) | FT-20 (re-measured) | Target |
+|---|---:|---:|---:|---:|
+| Interactive-ready (real production, warm, fresh tab) | 1287-1371ms | 1390-1526ms | consistent, unchanged mechanism | <1500ms |
+| Frame p95 | 17.9ms | 17.9ms | 18.0-18.2ms (re-measured, unchanged) | <25ms |
+| JS heap, steady state (fresh tab, correct methodology) | 10.0MB | 37.3MB (contaminated-tab artifact) | **10.00-12.70MB**, confirmed via A/B + 15m soak + fresh-tab control | — (no stated target) |
+| Heap growth over 15 minutes | not measured | not measured | **0 (byte-identical at all 7 checkpoints)** | — |
 
 ## Not measured this phase (disclosed gap)
 

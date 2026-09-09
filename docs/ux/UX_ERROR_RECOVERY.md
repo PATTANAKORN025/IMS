@@ -1,10 +1,15 @@
-# FT-19 — Error & Recovery UX (Factory Twin)
+# FT-19/FT-20 — Error & Recovery UX (Factory Twin)
 
 Every user-facing failure state in `/factory-twin-3d/`, answered against the
 same four questions: what happened, what data may be stale, what can the
 user do, did recovery succeed. Grounded in real code reads and real
 Playwright-driven fault injection against a disposable container and real
 production (`localhost:3000/factory-twin-3d/`) — not asserted.
+
+**FT-20 addendum:** closed the one real gap FT-19 left open — a
+genuinely HUNG request (never resolves, never rejects) bypassed FT-19's
+own fix entirely, since that fix only ever ran from a rejection or a
+resolved-but-not-ok response. See "Timeout" below.
 
 ## API unavailable / fetch throws (boot-time geometry)
 
@@ -61,6 +66,50 @@ the operator's core "what does the floor look like" question. Recorded
 as a deliberate severity distinction from the geometry fetch above, not
 an oversight.
 
+## Timeout (FT-20)
+
+**Before this phase (real, confirmed defect):** no fetch anywhere in
+`app.js` carried an explicit timeout. A genuinely hung request — not
+rejected, not resolved, the promise simply never settles (an exhausted
+DB connection pool that stalls rather than errors is a realistic real
+cause) — left the caller waiting on the browser's own default network
+timeout, which is minutes. Concretely: a hung `pollState` fetch left
+`#status-line` silently showing an increasingly stale "Last updated"
+timestamp with zero sign anything was wrong; a hung geometry fetch
+reproduced FT-19's OWN original bug (`#data-quality` stuck on "Loading
+floor evidence..." forever) through a different door FT-19's fix could
+not close, because a pending promise is neither a resolution nor a
+rejection.
+
+**Fixed:** a shared `fetchWithTimeout(url, ms)` helper (`AbortController`
++ a real deadline) wraps both `pollState`'s `/api/state` fetch (8s — real
+margin above the 5s poll interval, still short) and `loadFloorGeometry`
+(15s — one-time, heavier payload, real margin). `AbortError`'s own
+message ("signal is aborted without reason") names the mechanism, not
+the fact a user needs, so it is restated as `timed out after Xs` before
+display — the same deterministic-real-reason standard as every other
+error text in this file.
+1. What happened? `State fetch failed: timed out after 8s -- retrying
+   automatically` / `Floor geometry unavailable (timed out after 15s).
+   Retry`.
+2. What may be stale? Same answer as the existing failure paths above —
+   the last successful render stays on screen, explicitly labelled by
+   the "Last updated" timestamp for polling, or the Retry-button state
+   for the one-time geometry load.
+3. What can the user do? Nothing for the poll (automatic retry every
+   5s, stated); the real `Retry` button for geometry.
+4. Did recovery succeed? Verified via real fault injection: a route
+   handler that intercepts the FIRST request and never resolves it
+   (a genuine hang, not `route.abort()`), confirming (a) the timeout
+   fires at the stated deadline, (b) the message is exact and
+   user-visible, (c) zero uncaught promise rejections
+   (`AbortController` rejection is caught by the existing `try/catch`,
+   not new unhandled-rejection surface), and (d) the SAME endpoint
+   succeeding on a later request (poll interval, or a manual Retry)
+   recovers cleanly — `#status-line`/`#data-quality` overwrite with the
+   real success state exactly as the pre-existing recovery path already
+   did.
+
 ## WebGL initialization / context loss
 
 **Before this phase (real, confirmed defect):** zero
@@ -89,7 +138,11 @@ manually refreshing the page, unprompted.
    reloads rather than tearing down in place, for the identical reason).
    Verified via `WEBGL_lose_context.loseContext()` fault injection, real
    disposable container AND real production: banner appears within one
-   frame of context loss in both.
+   frame of context loss in both. **FT-20 addendum:** also verified the
+   FULL round trip, not just the loss — calling `restoreContext()` on
+   the same extension confirmed `webglcontextrestored` fires and
+   triggers the real page reload, landing back on a clean, working twin
+   with the banner hidden again.
 
 ## Authentication failure
 
@@ -113,7 +166,8 @@ categories, and every category has an honest recovery path:
 | Secondary context, one-time | overlay/alarm-rca/build | Silent (console only) | Manual page reload only |
 | GPU/rendering | context loss | Explicit banner + Reload button | Manual, or automatic on restore event |
 | User-triggered fetch | device-history | Explicit reason in-panel | Manual, re-trigger via existing controls |
+| Hung request (FT-20) | either primary fetch above | Same explicit text, `timed out after Xs` | Same as that category (automatic poll / manual Retry) |
 
 No category answers "what happened" with a generic message — every
-real failure text in this file states the real HTTP status or the real
-`Error.message`.
+real failure text in this file states the real HTTP status, the real
+`Error.message`, or (FT-20) a real stated timeout duration.
