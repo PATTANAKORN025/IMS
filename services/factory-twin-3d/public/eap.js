@@ -1432,13 +1432,50 @@ function tick() {
   }
 }
 
+/**
+ * FT-SCADA-AUDIT: real defect, found by forcing the exact failures Phase 5
+ * of this audit asked for (malformed JSON, an unexpectedly-shaped {}
+ * payload), not by inspection alone -- a 200 response that is not valid
+ * JSON, or is valid JSON missing the fields this page reads, threw an
+ * uncaught exception straight out of load() (`mapRes.json()` parse errors
+ * and `payload.counts.cells_with_a_footprint` on an undefined `counts`
+ * were never guarded). The page was left silently stuck on "loading…"
+ * forever with no on-screen sign anything was wrong -- not a fabricated
+ * state, but not a safe failure either. Guarded here the same way the
+ * existing `!mapRes.ok` branch already was: an honest headline, `payload`
+ * left `null` so nothing downstream (rebuild, renderCounts, the state
+ * breakdown) mistakes a failed load for real data.
+ */
+function isWellFormedEapPayload(p) {
+  return Boolean(p) && typeof p === 'object'
+    && Array.isArray(p.cells) && Array.isArray(p.zones) && Array.isArray(p.machine_units)
+    && p.counts && typeof p.counts === 'object';
+}
+
 async function load() {
-  const mapRes = await fetch(ENDPOINT, { headers: { accept: 'application/json' } });
+  let mapRes;
+  try {
+    mapRes = await fetch(ENDPOINT, { headers: { accept: 'application/json' } });
+  } catch (err) {
+    headline.textContent = 'EAP model unreachable -- network error';
+    return;
+  }
   if (!mapRes.ok) {
     headline.textContent = 'EAP model not deployed on this host';
     return;
   }
-  payload = await mapRes.json();
+  let parsed;
+  try {
+    parsed = await mapRes.json();
+  } catch (err) {
+    headline.textContent = 'EAP model failed to load -- malformed response';
+    return;
+  }
+  if (!isWellFormedEapPayload(parsed)) {
+    headline.textContent = 'EAP model failed to load -- unexpected response shape';
+    return;
+  }
+  payload = parsed;
   try {
     const floorRes = await fetch(FLOOR_ENDPOINT, { headers: { accept: 'application/json' } });
     if (floorRes.ok) floor = await floorRes.json();
