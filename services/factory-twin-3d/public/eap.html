@@ -280,6 +280,12 @@
       client-side only. Never read from, or written to, /api/state, TimescaleDB,
       Node-RED or any production system. Toggle with the header button.
     </p>
+    <!-- FT-EAP-STATE: always visible, never only on hover or click -- the same
+         "HUD is the accessibility fallback" rule app.js's own status list
+         already follows (design section referenced in its own comment), so a
+         viewer who cannot resolve the map's colours still has the same
+         numbers as plain text, unconditionally, not behind an interaction. -->
+    <table id="stateBreakdown" aria-label="Factory-wide simulated state distribution"></table>
     <!-- FT-EAP-UX: real gap found comparing this legend against the plant's
          own full 7-state vocabulary (operational-status.js's STATUS_ORDER) --
          Off had no row at all. Simulation deliberately never assigns Off to a

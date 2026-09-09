@@ -440,15 +440,109 @@ function hashString(s) {
   return Math.abs(h);
 }
 
-/** Returns a key into OPERATIONAL_STATUS, or null if this cell has none simulated. */
+/**
+ * FT-EAP-STATE: the one canonical operational-state record every caller on
+ * this page reads, instead of each re-deriving its own notion of "what
+ * state is this cell in". It carries exactly the fields a real integration
+ * would need later (object_id, state, state_source, observed_at, quality,
+ * reason) -- geometry, position and identity stay on `cell` and are never
+ * duplicated here, so this record is state, and only state.
+ *
+ * There is one real source on this page, and it is not a machine: it is a
+ * deterministic hash of the cell's own id (see the module comment above).
+ * `state_source` says exactly that -- 'SIMULATED', never 'IMS' or 'LDI' --
+ * because no authoritative mapping exists to source a real one from
+ * (eap-map.js's own wire payload: status UNKNOWN on every cell, reason "no
+ * authoritative IMS mapping exists"). Nothing here upgrades that.
+ *
+ * `quality` is never 'OK': nothing on this page is a real observation, so
+ * nothing earns the quality label a real one would. Three quality values,
+ * each a distinct, disclosed reason a cell has no *state* to show --
+ * deliberately never collapsed into OFF, which is a real plant state this
+ * simulation could assign and chooses not to (SIM_STATES excludes it):
+ *
+ *   SIMULATED   a state was generated -- the only case `state` is non-null.
+ *   NO_DATA     cell has no machine unit attached; there is nothing to
+ *               simulate a state FOR, not merely one that came back empty.
+ *   UNAVAILABLE simulation is turned off; the source itself is not running,
+ *               which is not the same fact as the source running and
+ *               finding nothing.
+ *
+ * `observed_at` is always null. The simulation has no clock -- it is a
+ * pure function of cell_id, not a sampled reading -- so there is no real
+ * observation time to report, and stamping one on would misrepresent a
+ * static function call as telemetry.
+ */
+function resolveOperationalState(cell) {
+  const objectId = cell ? cell.cell_id : null;
+  if (!simulationOn) {
+    return {
+      object_id: objectId, state: null, state_source: 'NONE',
+      observed_at: null, quality: 'UNAVAILABLE', reason: 'simulation disabled',
+    };
+  }
+  if (!cell || cell.unit_state !== 'ATTACHED') {
+    return {
+      object_id: objectId, state: null, state_source: 'NONE',
+      observed_at: null, quality: 'NO_DATA',
+      reason: 'cell not attached to a machine unit',
+    };
+  }
+  const state = SIM_STATES[hashString(cell.cell_id) % SIM_STATES.length];
+  return {
+    object_id: objectId, state, state_source: 'SIMULATED',
+    observed_at: null, quality: 'SIMULATED',
+    reason: 'deterministic per-cell simulation, not live telemetry',
+  };
+}
+
+/** Back-compat convenience: the key into OPERATIONAL_STATUS, or null. Every
+ *  real caller goes through resolveOperationalState(); this just unwraps it
+ *  for the two call sites (paintStates' colour write, the legacy inspector
+ *  string) that only ever wanted the key. */
 function simulatedStateFor(cell) {
-  if (!simulationOn || !cell || cell.unit_state !== 'ATTACHED') return null;
-  return SIM_STATES[hashString(cell.cell_id) % SIM_STATES.length];
+  return resolveOperationalState(cell).state;
+}
+
+/**
+ * FT-EAP-STATE Phase 4: per-zone and factory-wide state distribution, always
+ * reconciled to a total. `NO_DATA` and `UNAVAILABLE` are counted alongside
+ * the seven machine states, never folded into one of them and never
+ * dropped, so `total` always equals the exact cell count handed in -- a
+ * silent mismatch here would mean a cell was counted twice or not at all.
+ */
+function stateBreakdownOf(cells) {
+  const counts = new Map();
+  for (const key of [...STATUS_ORDER, 'NO_DATA', 'UNAVAILABLE']) counts.set(key, 0);
+  let total = 0;
+  for (const cell of cells) {
+    const rec = resolveOperationalState(cell);
+    const key = rec.state || rec.quality; // a real state, or the quality that stood in for one
+    counts.set(key, (counts.get(key) || 0) + 1);
+    total += 1;
+  }
+  const reconciled = [...counts.values()].reduce((a, b) => a + b, 0) === total;
+  if (!reconciled) {
+    // Should be unreachable -- every cell maps to exactly one bucket above --
+    // so this is a real internal-consistency alarm, not routine logging.
+    console.warn('EAP state breakdown did not reconcile: total', total, 'summed',
+      [...counts.values()].reduce((a, b) => a + b, 0));
+  }
+  return { total, counts, reconciled };
+}
+
+function factoryStateBreakdown() {
+  return stateBreakdownOf(payload ? payload.cells : []);
+}
+
+function zoneStateBreakdown(zoneId) {
+  return stateBreakdownOf(payload ? payload.cells.filter((c) => c.zone_id === zoneId) : []);
 }
 
 function build() {
   if (isMapMode()) buildMap(); else buildSchema();
   paintStates();
+  renderStateBreakdown();
 }
 
 /* Hover and selection are colour writes into the existing instance buffers. No
@@ -766,10 +860,18 @@ function renderCellInspector(cell) {
     row('Live status', `${cell.status} &mdash; `
       + `${cell.live_status_eligible ? 'eligible' : 'not eligible'}`),
     row('Simulated status', (() => {
-      const simKey = simulatedStateFor(cell);
-      if (!simKey) return `${simulationOn ? 'none (not attached to a machine unit)' : 'OFF (simulation disabled)'}`;
-      const s = OPERATIONAL_STATUS[simKey];
-      return `${s.glyph} ${s.label} <span class="note" style="display:inline">(SIMULATED, source = EAP, simulation = ON)</span>`;
+      // FT-EAP-STATE: reads the one canonical resolver, not a re-derived
+      // string. Real bug fixed here -- the previous text described
+      // simulation-off as "OFF (simulation disabled)", which named the real
+      // OFF plant state for a cell that was never assigned it, exactly the
+      // NO_DATA/UNAVAILABLE-vs-OFF conflation this contract exists to
+      // prevent. UNAVAILABLE and NO_DATA are now named as themselves.
+      const rec = resolveOperationalState(cell);
+      if (rec.quality === 'UNAVAILABLE') return `UNAVAILABLE &mdash; ${rec.reason}`;
+      if (rec.quality === 'NO_DATA') return `NO_DATA &mdash; ${rec.reason}`;
+      const s = OPERATIONAL_STATUS[rec.state];
+      return `${s.glyph} ${s.label} <span class="note" style="display:inline">`
+        + `(state_source = ${rec.state_source}, quality = ${rec.quality})</span>`;
     })()),
   ];
   const notes = [];
@@ -811,7 +913,21 @@ function renderZoneInspector(rec) {
   const notes = [`<p class="note">${r.derivation}.</p>`];
   const drawerBtn = rec.unresolved > 0
     ? '<button id="drawerBtn" type="button">Open zone drawer</button>' : '';
-  inspector.innerHTML = `<dl>${parts.join('')}</dl>${notes.join('')}`
+  // FT-EAP-STATE Phase 4: this zone's own simulated-state distribution,
+  // reconciled to its own cell count -- the same resolver and the same
+  // reconciliation check as the factory-wide table, just filtered to this
+  // zone's cells, so the two can never silently disagree on a cell.
+  const { total: zTotal, counts: zCounts } = zoneStateBreakdown(rec.zone.zone_id);
+  const zRows = [...STATUS_ORDER, 'NO_DATA', 'UNAVAILABLE']
+    .map((key) => [key, zCounts.get(key) || 0])
+    .filter(([, n]) => n > 0)
+    .map(([key, n]) => {
+      const meta = OPERATIONAL_STATUS[key] || SIM_QUALITY_DISPLAY[key];
+      return row(`${meta.glyph} ${meta.label}`, String(n));
+    }).join('');
+  const stateTable = `<p class="note">Simulated state in this zone `
+    + `(${zTotal} of ${rec.zone.cells}):</p><dl>${zRows}</dl>`;
+  inspector.innerHTML = `<dl>${parts.join('')}</dl>${notes.join('')}${stateTable}`
     + `<button id="zoneFocusBtn" type="button">Focus this zone</button> ${drawerBtn}`;
   document.getElementById('zoneFocusBtn').addEventListener('click', () => {
     focusOn(r.x, r.z, Math.max(r.width, 6), Math.max(r.depth, 6));
@@ -843,6 +959,40 @@ function renderCounts() {
   ];
   countsTable.innerHTML = rows
     .map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join('');
+}
+
+/** Display metadata for the two quality buckets that are not a machine state
+ *  at all -- kept local and separate from OPERATIONAL_STATUS (real plant
+ *  vocabulary) and from operational-status.js's own DATA_QUALITY (which
+ *  means "no authoritative IMS link", a different fact than "not attached
+ *  to a machine unit in this reference layout" or "simulation switched
+ *  off"). Conflating either into the shared module would blur a distinction
+ *  that module exists specifically to keep separate. */
+const SIM_QUALITY_DISPLAY = {
+  NO_DATA: { label: 'No data (unattached)', glyph: '○', color: '#475569' },
+  UNAVAILABLE: { label: 'Unavailable (sim off)', glyph: '–', color: '#475569' },
+};
+
+/**
+ * FT-EAP-STATE Phase 5: the always-visible, text-and-glyph answer to "what
+ * is the factory state" -- the same role app.js's own HUD list plays for
+ * the physical twin (that page's own comment: "the accessibility fallback").
+ * Never hover- or click-gated, so a viewer who cannot resolve the map's
+ * colours reads the identical numbers as plain rows, unconditionally.
+ */
+function renderStateBreakdown() {
+  const table = document.getElementById('stateBreakdown');
+  if (!table || !payload) return;
+  const { total, counts, reconciled } = factoryStateBreakdown();
+  const rows = [...STATUS_ORDER, 'NO_DATA', 'UNAVAILABLE'].map((key) => {
+    const meta = OPERATIONAL_STATUS[key] || SIM_QUALITY_DISPLAY[key];
+    const n = counts.get(key) || 0;
+    if (n === 0 && (key === 'NO_DATA' || key === 'UNAVAILABLE')) return ''; // only show when it applies
+    return `<tr><td><span class="chip" style="background:${meta.color}"></span> `
+      + `<span aria-hidden="true">${meta.glyph}</span> ${meta.label}</td><td>${n}</td></tr>`;
+  }).join('');
+  table.innerHTML = `${rows}<tr><td><strong>Total</strong></td><td><strong>${total}</strong></td></tr>`;
+  if (!reconciled) table.innerHTML += '<tr><td colspan="2" class="note warn">reconciliation failed -- see console</td></tr>';
 }
 
 /* ------------------------------------------------------------------ modes -- */
@@ -1097,12 +1247,29 @@ window.__eap = {
     paintStates();
     if (simToggleBtn) simToggleBtn.setAttribute('aria-pressed', String(simulationOn));
     renderInspector();
+    renderStateBreakdown();
     return simulationOn;
   },
   simulatedStatus: (cellId) => {
     const cell = cellRecords.find((c) => c.cell_id === cellId);
     const key = cell ? simulatedStateFor(cell) : null;
     return key ? { key, ...OPERATIONAL_STATUS[key], simulation: true, status_source: 'SIMULATED' } : null;
+  },
+  // FT-EAP-STATE: the canonical state contract (Phase 2) and its Phase 4
+  // roll-ups, exposed for QA/regression -- the exact records the map, the
+  // inspector and the always-visible breakdown table all read, so a test
+  // checks the one real source instead of re-deriving its own copy.
+  operationalState: (cellId) => {
+    const cell = cellRecords.find((c) => c.cell_id === cellId) || null;
+    return resolveOperationalState(cell);
+  },
+  factoryStateBreakdown: () => {
+    const { total, counts, reconciled } = factoryStateBreakdown();
+    return { total, reconciled, counts: Object.fromEntries(counts) };
+  },
+  zoneStateBreakdown: (zoneId) => {
+    const { total, counts, reconciled } = zoneStateBreakdown(zoneId);
+    return { total, reconciled, counts: Object.fromEntries(counts) };
   },
 };
 
