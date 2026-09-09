@@ -280,6 +280,18 @@
       client-side only. Never read from, or written to, /api/state, TimescaleDB,
       Node-RED or any production system. Toggle with the header button.
     </p>
+    <!-- FT-EAP-UX: real gap found comparing this legend against the plant's
+         own full 7-state vocabulary (operational-status.js's STATUS_ORDER) --
+         Off had no row at all. Simulation deliberately never assigns Off to a
+         cell (eap.js's own SIM_STATES excludes it: "a floor mid-shift is not
+         powered down"), so it is shown dimmed with its own real meaning
+         rather than omitted -- a legend is a reference for what the vocabulary
+         MEANS, not just a tally of what happened to be simulated this load. -->
+    <!-- Dims only the decorative chip, never the label text -- an opacity on
+         the whole row crushed real text contrast the exact same way twice
+         before in this codebase (the physical twin's .ss-off and .st-off
+         fixes); this is that same fix applied here rather than repeated. -->
+    <div class="legend-row"><span class="chip" style="background:#475569;opacity:.6"></span><span>&#9632; Off <span class="note" style="display:inline">(listed for completeness; never assigned by this simulation)</span></span></div>
     <div class="legend-row"><span class="chip" style="background:#22c55e"></span><span>&#9679; Run</span></div>
     <div class="legend-row"><span class="chip" style="background:#f59e0b"></span><span>&#9650; Idle</span></div>
     <div class="legend-row"><span class="chip" style="background:#ef4444"></span><span>&#9670; Down</span></div>
