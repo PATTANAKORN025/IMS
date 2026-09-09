@@ -110,6 +110,16 @@ let cam3d = null;
 let controls = null;
 let extent = { w: 180, d: 130 };
 let rect = { x: 0, y: 0, w: 0, h: 0 };
+// FT-24.6: real measured hotspot -- drawLabels() redrew up to ~210 static
+// text labels on a full-canvas 2D context EVERY frame (60/s), even at
+// complete idle with no camera motion (OrbitControls damping was never
+// enabled here, so nothing was actually moving). Real profiling: p95
+// 37.9ms idle, all 4 viewports -- over the 25ms target, entirely this one
+// call. Labels only need to be redrawn when something that affects their
+// screen position or content actually changes: camera pan/zoom, a
+// resize, a mode/view switch, or a fresh model load -- never on an
+// unchanged frame. Starts true so the first real frame always draws.
+let labelsDirty = true;
 
 let cellMesh = null;
 let cellRecords = [];       // parallel to cellMesh instances
@@ -479,6 +489,10 @@ function resize() {
   const w = stage.clientWidth;
   const h = stage.clientHeight;
   if (!w || !h) return;
+  // Covers every real caller: a genuine window resize, and rebuild()
+  // (mode switch, view switch, initial load) which always ends by calling
+  // this -- one injection point, not three separate ones to keep in sync.
+  labelsDirty = true;
   const ratio = Math.min(window.devicePixelRatio || 1, 2);
   renderer.setSize(w, h, false);
   labelCanvas.width = Math.round(w * ratio);
@@ -504,6 +518,10 @@ function attachControls() {
   controls.target.set(0, 0, 0);
   controls.enableRotate = view === '3d';
   controls.screenSpacePanning = view !== '3d';
+  // Labels are screen-space text keyed to the camera's current projection
+  // -- OrbitControls' own 'change' event fires on every real pan/zoom/
+  // rotate, which is exactly (and only) when their positions can differ.
+  controls.addEventListener('change', () => { labelsDirty = true; });
   controls.update();
 }
 
@@ -875,7 +893,10 @@ function tick() {
   renderer.setViewport(0, 0, rect.w, rect.h);
   if (controls) controls.update();
   renderer.render(scene, activeCam());
-  drawLabels();
+  if (labelsDirty) {
+    drawLabels();
+    labelsDirty = false;
+  }
   frames += 1;
   const now = performance.now();
   if (now - lastSample >= 1000) {

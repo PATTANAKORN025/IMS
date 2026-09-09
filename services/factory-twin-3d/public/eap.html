@@ -17,7 +17,13 @@
     --line-strong: #4a586e;
     --ink: #e6eaf0;
     --ink-dim: #97a3b5;
-    --ink-faint: #6b7688;
+    /* FT-24.6: real axe-core finding on this page (never previously
+       audited) -- #6b7688 measured 3.22-3.98:1 against this page's real
+       surfaces, below the 4.5:1 AA minimum for the several real text uses
+       below (mode-note, group-label, aside h2, dt). #828da0 clears 4.5:1
+       against every surface this token is actually used on, computed
+       before writing it, while staying visibly dimmer than --ink-dim. */
+    --ink-faint: #828da0;
     --accent: #63a4ff;
     --cell: #8b96a8;
     --cell-world: #c7dbf5;
@@ -189,7 +195,12 @@
     <span class="mode-note" id="mode-note"></span>
   </header>
 
-  <div id="stage">
+  <!-- FT-24.6: real axe findings on this page -- no <main> landmark existed
+       at all (landmark-one-main), and the canvas/#labels content sat
+       outside every landmark as a result (region). The WebGL canvas and
+       its label overlay ARE the page's main content, so <main> is the
+       correct element here, not a cosmetic wrapper change. -->
+  <main id="stage">
     <canvas id="labels"></canvas>
     <div id="zoneDrawer" hidden>
       <div class="drawer-head">
@@ -199,9 +210,9 @@
       <div id="zoneDrawerBody"></div>
       <canvas id="zoneDrawerCanvas"></canvas>
     </div>
-  </div>
+  </main>
 
-  <aside>
+  <aside tabindex="0" aria-label="Selection, population, legend and frame reference">
     <h2>Selection</h2>
     <div id="inspector">
       <p class="note">Click a cell or a zone.</p>
