@@ -38,6 +38,10 @@ run("Factory Twin Geometry Mutation Tests", "node tests/unit/factory-twin-geomet
 run("Factory Twin Diagnostics Sanitization Tests", "node tests/unit/factory-twin-diagnostics.test.js");
 run("Factory Twin Evidence Pipeline Tests", "node tests/unit/factory-twin-evidence.test.js");
 run("Factory Twin Wire Projection Tests", "node tests/unit/factory-twin-wire.test.js");
+// FT-15: the identity-gated join between real device telemetry and a
+// physical CAD asset. Holds the critical invariant -- zero confirmed
+// mappings means zero physical live attachments, whatever telemetry exists.
+run("Factory Twin Telemetry Overlay Tests", "node tests/unit/factory-twin-telemetry.test.js");
 run("Factory Twin Floor Registry Tests", "node tests/unit/factory-twin-floors.test.js");
 run("Factory Twin Schematic Layer Tests", "node tests/unit/factory-twin-schematic.test.js");
 run("Factory Twin Operational Status Tests", "node tests/unit/factory-twin-operational-status.test.js");

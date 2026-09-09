@@ -9,6 +9,7 @@ const { MachineState, MACHINE_STATE_THEME } = require('./lib/contracts');
 const { buildDiagnostics } = require('./lib/diagnostics');
 const wire = require('./lib/wire');
 const mappingLib = require('./lib/mapping');
+const telemetry = require('./lib/telemetry');
 const schematic = require('./lib/schematic');
 const eapMap = require('./lib/eap-map');
 const floors = require('./lib/floors');
@@ -435,6 +436,13 @@ WITH s AS (
     v.board_no,
     v.total_board,
     v.factory,
+    -- FT-15: has_data/is_stale/time are v_ldi_machine_latest_full's own
+    -- freshness facts (migration 052), selected through untouched -- st
+    -- below still collapses them into /api/state's existing 4-state
+    -- contract on its own, unrelated to these three passing through.
+    v.has_data,
+    v.is_stale,
+    v."time" AS last_seen,
     CASE
       WHEN EXISTS (
         SELECT 1 FROM public.ldi_alarm_log a
@@ -492,6 +500,9 @@ SELECT
   s.total_board,
   s.mo,
   s.factory,
+  s.has_data,
+  s.is_stale,
+  s.last_seen,
   COALESCE(alarm_ctx.n, 0) AS alarm_count,
   alarm_ctx.owner AS alarm_owner,
   alarm_ctx.elapsed AS alarm_elapsed,
@@ -513,36 +524,118 @@ const STATE_CODE_TO_MACHINE_STATE = {
   3: MachineState.DOWN, // active Critical/Major alarm
 };
 
+// FT-15: the one place device telemetry is queried, shared by /api/state
+// (unchanged response shape) and /api/physical-overlay (FT-15's identity-
+// gated join). Extracted so a physical overlay never runs its own second
+// device-discovery/query path -- it queries EXACTLY this, for a subset of
+// the SAME discovered device ids, never an id from the mapping file that
+// was not itself discovered as real.
+//
+// has_data/is_stale do not exist on this route's rows before this change --
+// STATE_SQL's own `st` CASE already collapses "no data" and "stale" into
+// state=0 (UNDEFINED) upstream, in SQL, which is correct for /api/state's
+// existing 4-state contract and is left untouched. FT-15's freshness needs
+// the two facts un-collapsed, so they are selected here as their own
+// columns without changing what `st`/state already computes.
+async function queryDeviceState(deviceIds) {
+  if (!Array.isArray(deviceIds) || deviceIds.length === 0) return [];
+  const result = await pool.query(STATE_SQL, [deviceIds]);
+  return result.rows.map((row) => {
+    const machineState = STATE_CODE_TO_MACHINE_STATE[row.state] || MachineState.UNDEFINED;
+    const theme = MACHINE_STATE_THEME[machineState];
+    return {
+      device_id: row.eqp_id,
+      state: row.state,
+      machine_state: machineState,
+      state_label: theme.label,
+      state_color: `#${theme.color.toString(16).padStart(6, '0')}`,
+      board_no: row.board_no,
+      total_board: row.total_board,
+      mo: row.mo,
+      factory: row.factory,
+      has_data: row.has_data,
+      is_stale: row.is_stale,
+      last_seen: row.last_seen,
+      alarm:
+        row.alarm_count > 0
+          ? {
+              count: row.alarm_count,
+              owner: row.alarm_owner,
+              elapsed: row.alarm_elapsed,
+              related_log_id: row.alarm_related_log_id,
+              logdate_ms: row.alarm_logdate_ms,
+            }
+          : null,
+    };
+  });
+}
+
 app.get('/api/state', async (req, res) => {
   try {
-    const result = await pool.query(STATE_SQL, [DEVICE_IDS]);
-    const rows = result.rows.map((row) => {
-      const machineState = STATE_CODE_TO_MACHINE_STATE[row.state] || MachineState.UNDEFINED;
-      const theme = MACHINE_STATE_THEME[machineState];
-      return {
-        device_id: row.eqp_id,
-        state: row.state,
-        machine_state: machineState,
-        state_label: theme.label,
-        state_color: `#${theme.color.toString(16).padStart(6, '0')}`,
-        board_no: row.board_no,
-        total_board: row.total_board,
-        mo: row.mo,
-        factory: row.factory,
-        alarm:
-          row.alarm_count > 0
-            ? {
-                count: row.alarm_count,
-                owner: row.alarm_owner,
-                elapsed: row.alarm_elapsed,
-                related_log_id: row.alarm_related_log_id,
-                logdate_ms: row.alarm_logdate_ms,
-              }
-            : null,
-      };
-    });
+    const rows = await queryDeviceState(DEVICE_IDS);
     res.status(200).json({
       machines: rows,
+      queried_at: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'internal error' });
+  }
+});
+
+// FT-15: the identity-gated join between real device telemetry and a
+// physical CAD asset. Separate route from /api/state (device telemetry)
+// and from /api/floor-geometry (physical geometry + identity fields) on
+// purpose -- Phase 6's "clear separation" is a route boundary, not just a
+// field naming convention, so a client cannot accidentally treat one as
+// the other.
+//
+// Every asset_id this deployment's geometry could carry is resolved
+// through lib/mapping.js's canonical table; only a CONFIRMED entry with a
+// real, currently-discovered device behind it ever produces an overlay
+// entry (see lib/telemetry.js's resolvePhysicalOverlay). With zero
+// CONFIRMED mappings (this repo's own state -- no authoritative CAD-to-IMS
+// evidence source exists yet), this route always answers an empty overlay.
+app.get('/api/physical-overlay', async (req, res) => {
+  try {
+    const list = catalogue();
+    const floorId = requestedFloor(req, list);
+    if (floorId === null && list.length > 0) return res.status(404).json({ error: 'not found' });
+    const geometry = loadPrivateGeometry(floorId);
+    const assetIds = geometry && Array.isArray(geometry.equipment)
+      ? geometry.equipment.map((e) => e && e.id).filter((id) => typeof id === 'string')
+      : [];
+    const mappingByAssetId = loadPrivateAssetMapping(floorId);
+
+    // Only a CONFIRMED entry whose device is one this deployment actually
+    // discovered may ever be queried -- an asset_id's mapping file cannot
+    // by itself cause an arbitrary string to reach the telemetry query.
+    const confirmedDeviceIds = [];
+    for (const assetId of assetIds) {
+      const identity = mappingLib.resolveMapping(mappingByAssetId, assetId);
+      if (identity.mapping_status !== mappingLib.MappingStatus.CONFIRMED) continue;
+      if (typeof identity.ims_device_id === 'string' && DEVICE_IDS.includes(identity.ims_device_id)) {
+        confirmedDeviceIds.push(identity.ims_device_id);
+      }
+    }
+
+    const deviceRows = await queryDeviceState([...new Set(confirmedDeviceIds)]);
+    const telemetryByDeviceId = new Map();
+    for (const row of deviceRows) {
+      const t = telemetry.projectDeviceTelemetry(row);
+      if (t) telemetryByDeviceId.set(t.device_id, t);
+    }
+
+    const from = typeof req.query.from === 'string' ? req.query.from : 'now-6h';
+    const to = typeof req.query.to === 'string' ? req.query.to : 'now';
+    const { overlayByAssetId, counts } = telemetry.resolvePhysicalOverlay(
+      assetIds, mappingByAssetId, telemetryByDeviceId, { from, to }
+    );
+
+    res.status(200).json({
+      floor: floorId,
+      overlay: overlayByAssetId,
+      counts,
       queried_at: new Date().toISOString(),
     });
   } catch (err) {

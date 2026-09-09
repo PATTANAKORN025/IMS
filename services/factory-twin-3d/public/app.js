@@ -1687,6 +1687,13 @@ const columnMeshes = []; // THREE.Mesh[], one per detected column, userData.colu
 // fetch, never mutated in place.
 let rawApiEquipment = [];
 let activeDisplayMode = 'ALL_ENGINEERING';
+// FT-15: asset_id -> physical-overlay entry, from /api/physical-overlay.
+// Fetched ONCE per geometry load (see the fetch site below), never
+// re-resolved per render frame or per pick -- identity resolution is a
+// load/update-boundary cost, not a per-frame one. Empty today: this
+// deployment has zero CONFIRMED CAD-to-IMS mappings, so this object stays
+// {} and every asset keeps rendering exactly as FT-14 left it.
+let physicalOverlayByAssetId = {};
 let latestStateById = new Map(); // deviceId -> state row from /api/state
 // The two fetches race: geometry can land after the first poll, and the roll-up
 // needs both. Keeping the last rows lets either arrival render a complete panel
@@ -1982,6 +1989,14 @@ function render(badge, badgeClass, title, rows, note) {
 
 function showEquipmentInspector(item) {
   const mapped = item.status === 'IMS_CONNECTED' && item.ims_device_id;
+  // FT-15: server-resolved truth only -- an overlay entry exists ONLY when
+  // the server's own resolvePhysicalOverlay found a CONFIRMED mapping AND
+  // real telemetry behind it (see lib/telemetry.js). This client never
+  // re-derives eligibility itself; it only ever displays what the overlay
+  // object already decided. `mapped` above (unchanged from FT-14) and this
+  // lookup normally agree -- an overlay entry cannot exist for an asset
+  // `mapped` calls false, since both trace back to the same CONFIRMED fact.
+  const overlay = mapped ? physicalOverlayByAssetId[item.id] : undefined;
   const tier = item.footprint_status;
   const sized = (tier === 'MEASURED_CAD' || tier === 'OBSERVED_CAD'
     || tier === 'APPROXIMATION') && item.footprint;
@@ -2005,6 +2020,16 @@ function showEquipmentInspector(item) {
       ['Asset', item.id],
       ['Identity', mapped ? `mapped to ${item.ims_device_id}` : 'no confirmed machine'],
       ['Mapping status', item.mapping_status ?? item.status],
+      // FT-15: only ever rendered when the server's overlay carries a real
+      // entry -- for every asset today (0 confirmed mappings), this whole
+      // block is simply absent, and the inspector reads exactly as it did
+      // before this phase.
+      ...(overlay ? [
+        ['Live state', `${overlay.state} (${overlay.freshness})`],
+        ['Last seen', overlay.last_seen ?? 'unknown'],
+        ['Alarm', overlay.alarm ? `${overlay.alarm.owner} — ${overlay.alarm.elapsed}` : 'none active'],
+        ...(overlay.drill_down_url ? [['Drill-down', overlay.drill_down_url]] : []),
+      ] : []),
       ['Position x / z', `${item.position.x} / ${item.position.z} m`],
       ['Rotation', item.rotation_deg == null ? 'unknown' : `${item.rotation_deg}°`],
       ['Position evidence', item.geometry_status ?? 'unknown'],
@@ -2576,6 +2601,22 @@ async function boot() {
     console.warn('floor-geometry fetch failed (non-fatal):', err.message);
   }
 
+  // FT-15: the identity-gated join, fetched once alongside geometry -- the
+  // SAME load boundary, not a per-frame or per-pick resolution. Server-
+  // resolved truth only: this client never infers eligibility from
+  // ims_device_id, coordinates, proximity or zone -- see
+  // showEquipmentInspector's use of this object below.
+  try {
+    const overlayRes = await fetch(geometryUrl.replace('floor-geometry', 'physical-overlay'));
+    if (overlayRes.ok) {
+      const overlay = await overlayRes.json();
+      physicalOverlayByAssetId = overlay && typeof overlay.overlay === 'object' && overlay.overlay
+        ? overlay.overlay : {};
+    }
+  } catch (err) {
+    console.warn('physical-overlay fetch failed (non-fatal, all assets stay physical-only):', err.message);
+  }
+
   // Build identity. Fetched, never baked in: a constant written into the page
   // would say whatever it said when someone last edited it, which is exactly
   // the failure mode this is here to make visible.
@@ -2618,6 +2659,9 @@ async function boot() {
     applyDisplayMode,
     getRawApiEquipment: () => rawApiEquipment,
     getDisplayMode: () => activeDisplayMode,
+    // FT-15: the exact object the inspector reads from, for a regression to
+    // prove it stays {} while 0 mappings are confirmed.
+    getPhysicalOverlay: () => physicalOverlayByAssetId,
     // A point projected through the live camera. Equipment instances are
     // placement records rather than Object3Ds, so a caller with no THREE in
     // scope still needs one honest way to ask where one lands on screen.
