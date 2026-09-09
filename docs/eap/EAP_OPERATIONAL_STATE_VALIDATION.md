@@ -138,3 +138,87 @@ Deployed; real authenticated Playwright session against
 | 3-second test | PASS | PASS — factory state visible in DOM on load, no interaction required |
 | Frame p95 | bounded | 29.0ms idle — unchanged from FT-24.6's own post-fix range |
 | Regression | PASS | PASS — 308 physical-twin unit tests + 32 eap-map-wire + 5 lint suites + 3 full-browser Playwright suites (one new) |
+
+---
+
+## FT-EAP-STATE-03 addendum — real/simulated adapter split
+
+Continues from `878a1bdd`. Full source-discovery evidence in
+`EAP_OPERATIONAL_SOURCE_AUDIT.md`; full contract spec in
+`EAP_REAL_SIM_STATE_CONTRACT.md`. This addendum is this phase's own real
+verification evidence.
+
+### Coverage (Phase 5, real numbers, disposable container, EAP mode)
+
+| Population | Count | % of 210 |
+|---|---:|---:|
+| Total EAP cells | 210 | 100% |
+| Real operational state (`source_type: REAL` reaching the caller) | 0 | 0% — the REAL adapter is asked on every resolution and confirmed `UNAVAILABLE` every time |
+| Simulated state generated (`quality: SIMULATION`) | 171 | 81.4% — matches the 171 machine units / cells with `unit_state: ATTACHED` |
+| No data (`quality: NO_DATA`) | 39 | 18.6% — cells with no machine unit attached |
+| Stale (`quality: STALE`) | 0 | 0% — unreachable without a real source (see contract doc) |
+
+Every resolved record's `source_type` is `SIMULATED` — re-verified by a
+new regression assertion (`eap-operational-state-regression.js`, section
+2), not merely claimed.
+
+### Real refactor evidence
+
+`operational-state-adapters.js` (new file) now owns the resolution logic
+FT-EAP-STATE originally inlined into `eap.js`. `resolveOperationalState`
+in `eap.js` is an unchanged-signature, one-argument wrapper — every
+existing call site (`paintStates`, the cell/zone inspectors, the
+breakdown tables, `window.__eap.operationalState`) needed zero changes.
+
+Field rename, applied consistently: `state_source` → `source_type`;
+quality value `SIMULATED` → `SIMULATION` (to avoid colliding with the new
+`source_type: 'SIMULATED'` value one field over). Verified via the updated
+regression suite and a real DOM read of the cell inspector:
+
+```
+Operational state row: ▬ Stop [SIMULATED] (quality = SIMULATION) —
+  deterministic per-cell simulation, not live telemetry
+```
+
+### Regression (zero tolerated)
+
+| Suite | Result |
+|---|---|
+| `tests/unit/*` (8 suites) | 308/308, unaffected (no server-side change) |
+| `tests/lint/*` (5 suites) | 0 errors |
+| `tests/playwright/eap-operational-state-regression.js` | 0 failures, 8 sections (2 new assertions) |
+| `tests/playwright/eap-map-regression.js` | 0 failures |
+| `tests/playwright/eap-canonical-route-regression.js` | 0 failures |
+| `tests/playwright/eap-webgl-context-lifecycle-regression.js` | 0 failures — re-run to confirm the state-adapter refactor did not disturb the recovery lifecycle it shares a file with |
+
+### Accessibility, performance (real measurement, disposable container)
+
+| Check | Result |
+|---|---|
+| Axe violations, all 4 viewports, a real cell selected (badge visible) | 0 |
+| Idle frame p50/p95 | 21.9 / 26.5ms — unchanged from prior baseline |
+| Simulation toggle round-trip (state resolve + 2 full breakdown re-renders) | 41ms |
+| `/api/eap-map` payload | 311,714 bytes — byte-identical to the prior phase; server untouched |
+
+### Real production verification
+
+Deployed; real authenticated session against
+`http://localhost:3000/factory-twin-3d/eap.html`, EAP mode, a real
+attached cell selected: `source_type` confirmed `SIMULATED` for every
+resolved cell, breakdown totals reconciled (210/210), 0 console errors, 0
+axe violations.
+
+### Final gate
+
+| Metric | Result | Target |
+|---|---|---|
+| Authoritative source found | **No** — explicitly proven, not assumed (`EAP_OPERATIONAL_SOURCE_AUDIT.md`) | explicitly proven |
+| Real state coverage | 0% (0 of 210) | measured |
+| Simulated coverage | 81.4% generated (171/210), 18.6% NO_DATA (39/210) | measured |
+| State mapping | 100% documented (`EAP_REAL_SIM_STATE_CONTRACT.md`) | 100% documented |
+| Source/quality distinction | 100% — every record carries both, never merged, badge visually distinct | 100% |
+| Zone reconciliation | 100% — 12/12 zones, sum to 210 | 100% |
+| Accessibility | 0 violations, all 4 viewports | 0 violations |
+| State-update latency | 41ms round-trip for a full toggle + re-render (no polling exists to measure a per-update latency against) | measured |
+| Frame p95 | 26.5ms idle, unchanged from baseline | bounded |
+| Regression | PASS — 308 unit + 32 eap-wire + 5 lint + 4 browser suites | PASS |

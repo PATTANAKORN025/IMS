@@ -95,11 +95,17 @@ async function main() {
   }
   check(oneBucket, 'every record is exactly one of {a real state} or {a quality flag}');
   check(noOffFromNoDataOrUnavailable, 'NO_DATA/UNAVAILABLE never reported as the real OFF state');
+  check(allStates.every((r) => (r.state !== null ? r.quality === 'SIMULATION' : true)),
+    'every generated state carries quality SIMULATION -- never presented as a VALID real observation');
 
-  section('2. state_source and observed_at are honest');
-  const sourcesOk = allStates.every((r) => (r.state === null ? r.state_source === 'NONE'
-    : r.state_source === 'SIMULATED'));
-  check(sourcesOk, 'state_source is SIMULATED only when a state was actually generated, NONE otherwise');
+  section('2. source_type and observed_at are honest');
+  // FT-EAP-STATE-03: the REAL adapter is asked first, every time, and
+  // answers UNAVAILABLE unconditionally in this deployment (see
+  // docs/eap/EAP_OPERATIONAL_SOURCE_AUDIT.md) -- so every record actually
+  // returned comes from the SIMULATED adapter, whether it generated a real
+  // state or is itself reporting NO_DATA/UNAVAILABLE for this cell.
+  check(allStates.every((r) => r.source_type === 'SIMULATED'),
+    'every resolved record is source_type SIMULATED -- the REAL adapter has nothing to contribute today');
   check(allStates.every((r) => r.observed_at === null),
     'observed_at is null for every record -- simulation has no clock, none is fabricated');
 

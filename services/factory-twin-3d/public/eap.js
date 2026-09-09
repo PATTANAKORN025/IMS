@@ -27,6 +27,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { OPERATIONAL_STATUS, STATUS_ORDER, DATA_QUALITY } from './operational-status.js';
+import { SOURCE_TYPE, createOperationalStateResolver } from './operational-state-adapters.js';
 
 // Relative, not absolute: the page is served at "/" directly but also behind
 // the reverse proxy at "/factory-twin-3d/", which strips its own prefix
@@ -566,25 +567,6 @@ function buildSchema() {
   zoneMesh = null;
 }
 
-/**
- * SIMULATED machine status -- client-side only, never touches /api/state,
- * TimescaleDB, Node-RED or any production telemetry, and never written
- * anywhere. This floor has 0 confirmed IMS mappings today, so a real status
- * board would be entirely UNMAPPED; the simulation exists so this view reads
- * as a working operational twin while that mapping work is separate,
- * ongoing, real-CAD-first work -- it is a stand-in for status, never for
- * identity or mapping, both of which stay exactly as honestly reported
- * everywhere else on this page (mapping_state, IMS mapping, CAD identity).
- *
- * Deterministic, not random: the same cell always simulates the same state
- * across a reload, from a plain string hash of its own cell_id, through the
- * SAME eight-state vocabulary (operational-status.js) the physical twin's
- * legend already uses -- reused, not reinvented, per that module's own
- * "EXACTLY EIGHT machine states" rule. Only applied to a cell actually
- * attached to a machine unit (unit_state === 'ATTACHED'); a cell attached to
- * no machine has no machine state to simulate one for.
- */
-const SIM_STATES = STATUS_ORDER.filter((k) => k !== 'OFF'); // a floor mid-shift is not powered down
 let simulationOn = true;
 
 function hashString(s) {
@@ -594,59 +576,26 @@ function hashString(s) {
 }
 
 /**
- * FT-EAP-STATE: the one canonical operational-state record every caller on
- * this page reads, instead of each re-deriving its own notion of "what
+ * FT-EAP-STATE-03: the one canonical operational-state record every caller
+ * on this page reads, instead of each re-deriving its own notion of "what
  * state is this cell in". It carries exactly the fields a real integration
- * would need later (object_id, state, state_source, observed_at, quality,
- * reason) -- geometry, position and identity stay on `cell` and are never
+ * would need (object_id, state, source_type, observed_at, quality, reason)
+ * -- geometry, position and identity stay on `cell` and are never
  * duplicated here, so this record is state, and only state.
  *
- * There is one real source on this page, and it is not a machine: it is a
- * deterministic hash of the cell's own id (see the module comment above).
- * `state_source` says exactly that -- 'SIMULATED', never 'IMS' or 'LDI' --
- * because no authoritative mapping exists to source a real one from
- * (eap-map.js's own wire payload: status UNKNOWN on every cell, reason "no
- * authoritative IMS mapping exists"). Nothing here upgrades that.
- *
- * `quality` is never 'OK': nothing on this page is a real observation, so
- * nothing earns the quality label a real one would. Three quality values,
- * each a distinct, disclosed reason a cell has no *state* to show --
- * deliberately never collapsed into OFF, which is a real plant state this
- * simulation could assign and chooses not to (SIM_STATES excludes it):
- *
- *   SIMULATED   a state was generated -- the only case `state` is non-null.
- *   NO_DATA     cell has no machine unit attached; there is nothing to
- *               simulate a state FOR, not merely one that came back empty.
- *   UNAVAILABLE simulation is turned off; the source itself is not running,
- *               which is not the same fact as the source running and
- *               finding nothing.
- *
- * `observed_at` is always null. The simulation has no clock -- it is a
- * pure function of cell_id, not a sampled reading -- so there is no real
- * observation time to report, and stamping one on would misrepresent a
- * static function call as telemetry.
+ * The real work is in operational-state-adapters.js: this function is a
+ * thin, single-argument wrapper (unchanged call signature from every
+ * existing call site) around createOperationalStateResolver()'s own
+ * resolve(), which always asks the REAL adapter first and only falls back
+ * to SIMULATED because that call genuinely answers UNAVAILABLE -- see that
+ * module and docs/eap/EAP_OPERATIONAL_SOURCE_AUDIT.md for why.
  */
+const operationalStateResolver = createOperationalStateResolver({
+  statusOrder: STATUS_ORDER, hashString,
+});
+
 function resolveOperationalState(cell) {
-  const objectId = cell ? cell.cell_id : null;
-  if (!simulationOn) {
-    return {
-      object_id: objectId, state: null, state_source: 'NONE',
-      observed_at: null, quality: 'UNAVAILABLE', reason: 'simulation disabled',
-    };
-  }
-  if (!cell || cell.unit_state !== 'ATTACHED') {
-    return {
-      object_id: objectId, state: null, state_source: 'NONE',
-      observed_at: null, quality: 'NO_DATA',
-      reason: 'cell not attached to a machine unit',
-    };
-  }
-  const state = SIM_STATES[hashString(cell.cell_id) % SIM_STATES.length];
-  return {
-    object_id: objectId, state, state_source: 'SIMULATED',
-    observed_at: null, quality: 'SIMULATED',
-    reason: 'deterministic per-cell simulation, not live telemetry',
-  };
+  return operationalStateResolver.resolve(cell, { simulationOn });
 }
 
 /** Back-compat convenience: the key into OPERATIONAL_STATUS, or null. Every
@@ -658,11 +607,12 @@ function simulatedStateFor(cell) {
 }
 
 /**
- * FT-EAP-STATE Phase 4: per-zone and factory-wide state distribution, always
- * reconciled to a total. `NO_DATA` and `UNAVAILABLE` are counted alongside
- * the seven machine states, never folded into one of them and never
- * dropped, so `total` always equals the exact cell count handed in -- a
- * silent mismatch here would mean a cell was counted twice or not at all.
+ * FT-EAP-STATE Phase 4/FT-EAP-STATE-03: per-zone and factory-wide state
+ * distribution, always reconciled to a total. `NO_DATA` and `UNAVAILABLE`
+ * are counted alongside the seven machine states, never folded into one of
+ * them and never dropped, so `total` always equals the exact cell count
+ * handed in -- a silent mismatch here would mean a cell was counted twice
+ * or not at all.
  */
 function stateBreakdownOf(cells) {
   const counts = new Map();
@@ -670,7 +620,11 @@ function stateBreakdownOf(cells) {
   let total = 0;
   for (const cell of cells) {
     const rec = resolveOperationalState(cell);
-    const key = rec.state || rec.quality; // a real state, or the quality that stood in for one
+    // A real state (RUN/DOWN/...), or the quality that stood in for one --
+    // SIMULATION/VALID/STALE never appear as bucket keys here because
+    // `state` is non-null in exactly those cases; only NO_DATA and
+    // UNAVAILABLE ever reach this fallback, by construction.
+    const key = rec.state || rec.quality;
     counts.set(key, (counts.get(key) || 0) + 1);
     total += 1;
   }
@@ -1231,19 +1185,18 @@ function renderCellInspector(cell) {
     row('IMS mapping', unit ? unit.ims_mapping_state : 'NOT_MAPPED'),
     row('Live status', `${cell.status} &mdash; `
       + `${cell.live_status_eligible ? 'eligible' : 'not eligible'}`),
-    row('Simulated status', (() => {
-      // FT-EAP-STATE: reads the one canonical resolver, not a re-derived
-      // string. Real bug fixed here -- the previous text described
-      // simulation-off as "OFF (simulation disabled)", which named the real
-      // OFF plant state for a cell that was never assigned it, exactly the
-      // NO_DATA/UNAVAILABLE-vs-OFF conflation this contract exists to
-      // prevent. UNAVAILABLE and NO_DATA are now named as themselves.
+    row('Operational state', (() => {
+      // FT-EAP-STATE-03 Phase 8: state, source and quality shown as three
+      // distinct facts, never merged into one -- a viewer must be able to
+      // tell "RUN, SIMULATED" apart from a real "RUN" at a glance, and
+      // "NO DATA" apart from the real OFF state it is never allowed to be
+      // confused with (the bug this whole contract exists to prevent).
       const rec = resolveOperationalState(cell);
-      if (rec.quality === 'UNAVAILABLE') return `UNAVAILABLE &mdash; ${rec.reason}`;
-      if (rec.quality === 'NO_DATA') return `NO_DATA &mdash; ${rec.reason}`;
-      const s = OPERATIONAL_STATUS[rec.state];
-      return `${s.glyph} ${s.label} <span class="note" style="display:inline">`
-        + `(state_source = ${rec.state_source}, quality = ${rec.quality})</span>`;
+      const stateLabel = rec.state ? `${OPERATIONAL_STATUS[rec.state].glyph} ${OPERATIONAL_STATUS[rec.state].label}`
+        : rec.quality.replace('_', ' ');
+      return `${stateLabel} <span class="badge ${rec.source_type === SOURCE_TYPE.REAL ? 'ok' : 'warn'}">`
+        + `${rec.source_type}</span> <span class="note" style="display:inline">`
+        + `(quality = ${rec.quality}) &mdash; ${rec.reason}</span>`;
     })()),
   ];
   const notes = [];
