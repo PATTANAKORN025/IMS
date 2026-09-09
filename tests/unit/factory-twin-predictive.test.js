@@ -316,6 +316,172 @@ test('canonical response: contains every required top-level field, cleanly separ
   assert.strictEqual(response.observed.freshness, Freshness.LIVE);
 });
 
+// ── FT-23 Phase 1/2: decision hierarchy + evidence compression ──
+test('buildEvidenceBullets: always exactly 5 lines (Cpk/EWMA/CUSUM/Nelson/drift), even for a clean stable process', () => {
+  const values = Array.from({ length: 20 }, () => 10);
+  const timestampsMs = values.map((_, i) => Date.now() + i * HOUR);
+  const cpk = { cpk: 2.0, state: spc.StabilityState.CAPABLE };
+  const trajectory = { classification: predictive.TrajectoryClassification.STABLE, reason: null };
+  const ewma = spc.computeEwma({ values });
+  const cusum = spc.computeCusum({ values });
+  const nelson = [];
+  const drift = spc.computeDriftVelocity({ values, timestampsMs });
+  const driftIntel = predictive.computeDriftIntelligence({ ewma, cusum, nelson, drift });
+  const bullets = predictive.buildEvidenceBullets({ cpk, trajectory, ewma, cusum, nelson, driftIntel });
+  assert.strictEqual(bullets.length, 5);
+  assert.ok(bullets.some((b) => b.includes('Cpk stable')));
+  assert.ok(bullets.some((b) => b.includes('EWMA within control limits')));
+  assert.ok(bullets.some((b) => b.includes('no Nelson-rule violations')));
+});
+
+test('buildContextLines: names sample count, homogeneity, and only mentions freshness when not LIVE', () => {
+  const mixedBaselineClean = { heterogeneity_detected: false };
+  const linesLive = predictive.buildContextLines({ sampleCount: 212, rangeLabel: '15m', mixedBaseline: mixedBaselineClean, freshness: Freshness.LIVE });
+  assert.ok(linesLive.some((l) => l.includes('212 valid sample')));
+  assert.ok(linesLive.some((l) => l.includes('homogeneous 15m window')));
+  assert.ok(!linesLive.some((l) => l.includes('freshness')));
+
+  const linesStale = predictive.buildContextLines({ sampleCount: 50, rangeLabel: '1h', mixedBaseline: mixedBaselineClean, freshness: Freshness.STALE });
+  assert.ok(linesStale.some((l) => l.includes('freshness: STALE')));
+
+  const mixedBaselineFlagged = { heterogeneity_detected: true };
+  const linesMixed = predictive.buildContextLines({ sampleCount: 100, rangeLabel: '6h', mixedBaseline: mixedBaselineFlagged, freshness: Freshness.LIVE });
+  assert.ok(linesMixed.some((l) => l.includes('possible mixed-baseline')));
+});
+
+test('buildDecisionSummary: PRIMARY SIGNAL state matches trajectory classification, next_action is the plant\'s own OCAP text', () => {
+  const values = Array.from({ length: 20 }, () => 10);
+  const timestampsMs = values.map((_, i) => Date.now() + i * HOUR);
+  const cpk = { cpk: 0.8, state: spc.StabilityState.INTERVENTION };
+  const trajectory = { classification: predictive.TrajectoryClassification.DECLINING, reason: null };
+  const ewma = spc.computeEwma({ values });
+  const cusum = spc.computeCusum({ values });
+  const nelson = [];
+  const drift = spc.computeDriftVelocity({ values, timestampsMs });
+  const driftIntel = predictive.computeDriftIntelligence({ ewma, cusum, nelson, drift });
+  const mixedBaseline = { heterogeneity_detected: false };
+  const risk = { level: predictive.RiskLevel.HIGH, evidence: ['Cpk state: INTERVENTION'] };
+  const summary = predictive.buildDecisionSummary({ cpk, trajectory, risk, ewma, cusum, nelson, driftIntel, mixedBaseline, sampleCount: 40, rangeLabel: '1h', freshness: Freshness.LIVE });
+  assert.strictEqual(summary.primary_signal.subject, 'PROCESS CAPABILITY');
+  assert.strictEqual(summary.primary_signal.state, 'DECLINING');
+  assert.strictEqual(summary.primary_signal.risk_level, predictive.RiskLevel.HIGH);
+  assert.strictEqual(summary.next_action, predictive.OCAP_NEXT_ACTION.INTERVENTION);
+  assert.strictEqual(summary.secondary_evidence.length, 5);
+});
+
+// ── FT-23 Phase 4: action continuity ──
+test('selectEvidenceEvent: prefers the mixed-baseline change point only when heterogeneity was actually detected', () => {
+  const rows = Array.from({ length: 10 }, (_, i) => ({ tMs: i, factory: '2', mo: `MO-${i}`, logId: `LOG-${i}`, process: 'LDI' }));
+  const cusum = { points: [] };
+  // heterogeneity_detected: false -- change_point_index alone must NOT be
+  // enough (it is populated any time CUSUM signals at all, real or not
+  // heterogeneous) or an ordinary shift gets mislabeled "suspected baseline
+  // change-point" while mixed_baseline itself reports nothing.
+  const notFlagged = predictive.selectEvidenceEvent({ rows, mixedBaseline: { heterogeneity_detected: false, change_point_index: 4 }, cusum });
+  assert.strictEqual(notFlagged.reason, 'most recent sample');
+
+  const flagged = predictive.selectEvidenceEvent({ rows, mixedBaseline: { heterogeneity_detected: true, change_point_index: 4 }, cusum });
+  assert.strictEqual(flagged.mo, 'MO-4');
+  assert.strictEqual(flagged.reason, 'suspected baseline change-point');
+});
+
+test('selectEvidenceEvent: falls back to the first CUSUM-signaled sample when no change-point is flagged', () => {
+  const rows = Array.from({ length: 10 }, (_, i) => ({ tMs: i, factory: '2', mo: `MO-${i}`, logId: `LOG-${i}`, process: 'LDI' }));
+  const mixedBaseline = { change_point_index: null };
+  const cusum = { points: [{ signal: 'none' }, { signal: 'none' }, { signal: 'high' }, { signal: 'high' }] };
+  const event = predictive.selectEvidenceEvent({ rows, mixedBaseline, cusum });
+  assert.strictEqual(event.mo, 'MO-2');
+  assert.strictEqual(event.reason, 'first CUSUM-signaled sample');
+});
+
+test('selectEvidenceEvent: falls back to the most recent sample when nothing else is flagged', () => {
+  const rows = Array.from({ length: 10 }, (_, i) => ({ tMs: i, factory: '2', mo: `MO-${i}`, logId: `LOG-${i}`, process: 'LDI' }));
+  const mixedBaseline = { change_point_index: null };
+  const cusum = { points: [{ signal: 'none' }, { signal: 'none' }] };
+  const event = predictive.selectEvidenceEvent({ rows, mixedBaseline, cusum });
+  assert.strictEqual(event.mo, 'MO-9');
+  assert.strictEqual(event.reason, 'most recent sample');
+});
+
+test('selectEvidenceEvent: null for an empty row set, never a fabricated event', () => {
+  assert.strictEqual(predictive.selectEvidenceEvent({ rows: [], mixedBaseline: {}, cusum: { points: [] } }), null);
+});
+
+test('canonical response: action.exact_event/machine_snapshot_url are built from a real row when factory/mo/log_id are present', () => {
+  const t0 = Date.now() - HOUR;
+  const rowCount = 40;
+  const values = Array.from({ length: rowCount }, () => [2, 2, 2]);
+  const rows = values.map((v, i) => ({ tMs: t0 + i * (HOUR / rowCount), values: v, tolerance: 4, factory: '2', mo: 'MO-999', process: 'LDI', logId: `LOG-${i}` }));
+  const pooledValues = rows.flatMap((r) => r.values);
+  const seriesValues = rows.map((r) => spc.mean(r.values));
+  const seriesTimestampsMs = rows.map((r) => r.tMs);
+  const cpk = spc.computeCpk({ values: pooledValues, tolerance: 4 });
+  const ewma = spc.computeEwma({ values: seriesValues });
+  const cusum = spc.computeCusum({ values: seriesValues });
+  const nelson = spc.evaluateNelsonRules(seriesValues, spc.mean(seriesValues), spc.sampleStddev(seriesValues));
+  const drift = spc.computeDriftVelocity({ values: seriesValues, timestampsMs: seriesTimestampsMs });
+
+  const response = predictive.buildCanonicalResponse({
+    deviceId: 'LDI-TEST', metric: 'PE', from: new Date(t0).toISOString(), to: new Date(t0 + HOUR).toISOString(),
+    baselineDefinition: 'test fixture', rangeLabel: '1h', sampleCount: seriesValues.length,
+    lastValidSampleMs: seriesTimestampsMs[seriesTimestampsMs.length - 1], rowLimitHit: false,
+    cpk, ewma, cusum, nelson, drift, rows, fromMs: t0, toMs: t0 + HOUR, tolerance: 4, nowMs: t0 + HOUR + 1000,
+  });
+
+  assert.ok(response.action.exact_event, 'exact_event should be populated when rows carry factory/mo/log_id');
+  assert.strictEqual(response.action.exact_event.mo, 'MO-999');
+  assert.strictEqual(response.action.exact_event.device_id, 'LDI-TEST');
+  assert.ok(response.action.machine_snapshot_url, 'machine_snapshot_url should be built when factory/mo are real');
+  assert.ok(response.action.machine_snapshot_url.startsWith('/d/ims-ldi-machine-snapshot/'));
+  assert.strictEqual(response.action.related_alarms, null, 'related_alarms is filled by server.js after this pure function returns, not here');
+  assert.ok(response.decision_summary);
+  assert.strictEqual(response.decision_summary.secondary_evidence.length, 5);
+});
+
+// ── FT-23 Phase 5: executive summary (pure aggregation) ──
+test('buildExecutiveSummary: counts risk levels and capability direction correctly', () => {
+  const entries = [
+    { device_id: 'LDI-01', metric: 'PE', cpk: 0.5, cpk_state: 'INTERVENTION', trajectory: 'declining', risk: 'HIGH', evidence: ['x'], drift: { direction: 'up', velocity_per_hour: 2, persistence: 'sustained' } },
+    { device_id: 'LDI-02', metric: 'JE', cpk: 1.1, cpk_state: 'ASSESSMENT', trajectory: 'stable', risk: 'MEDIUM', evidence: ['y'], drift: { direction: 'flat', velocity_per_hour: 0, persistence: 'none' } },
+    { device_id: 'LDI-03', metric: 'PE', cpk: 5.0, cpk_state: 'CAPABLE', trajectory: 'improving', risk: 'NONE', evidence: [], drift: { direction: 'down', velocity_per_hour: 0.1, persistence: 'transient' } },
+  ];
+  const summary = predictive.buildExecutiveSummary(entries, { range: '1h', from: 'a', to: 'b' });
+  assert.strictEqual(summary.fleet.devices_scanned, 3);
+  assert.strictEqual(summary.fleet.high_risk_count, 1);
+  assert.strictEqual(summary.fleet.medium_risk_count, 1);
+  assert.strictEqual(summary.capability_direction.declining, 1);
+  assert.strictEqual(summary.capability_direction.improving, 1);
+  assert.strictEqual(summary.capability_direction.stable, 1);
+});
+
+test('buildExecutiveSummary: highest_risks excludes NONE-risk devices and sorts HIGH before MEDIUM', () => {
+  const entries = [
+    { device_id: 'LDI-01', metric: 'PE', cpk: 5.0, cpk_state: 'CAPABLE', trajectory: 'stable', risk: 'NONE', evidence: [], drift: { direction: 'flat', velocity_per_hour: 0, persistence: 'none' } },
+    { device_id: 'LDI-02', metric: 'JE', cpk: 1.1, cpk_state: 'ASSESSMENT', trajectory: 'stable', risk: 'MEDIUM', evidence: [], drift: { direction: 'flat', velocity_per_hour: 0, persistence: 'none' } },
+    { device_id: 'LDI-03', metric: 'PE', cpk: 0.5, cpk_state: 'INTERVENTION', trajectory: 'declining', risk: 'HIGH', evidence: [], drift: { direction: 'up', velocity_per_hour: 1, persistence: 'sustained' } },
+  ];
+  const summary = predictive.buildExecutiveSummary(entries, { range: '1h', from: 'a', to: 'b' });
+  assert.strictEqual(summary.highest_risks.length, 2);
+  assert.strictEqual(summary.highest_risks[0].device_id, 'LDI-03');
+  assert.strictEqual(summary.highest_risks[1].device_id, 'LDI-02');
+});
+
+test('buildExecutiveSummary: major_drift prefers sustained persistence over raw velocity magnitude', () => {
+  const entries = [
+    { device_id: 'LDI-01', metric: 'PE', cpk: 5.0, cpk_state: 'CAPABLE', trajectory: 'stable', risk: 'LOW', evidence: [], drift: { direction: 'up', velocity_per_hour: 10, persistence: 'transient' } },
+    { device_id: 'LDI-02', metric: 'JE', cpk: 3.0, cpk_state: 'CAPABLE', trajectory: 'stable', risk: 'LOW', evidence: [], drift: { direction: 'down', velocity_per_hour: -1, persistence: 'sustained' } },
+  ];
+  const summary = predictive.buildExecutiveSummary(entries, { range: '1h', from: 'a', to: 'b' });
+  assert.strictEqual(summary.major_drift[0].device_id, 'LDI-02', 'sustained drift should rank above a larger but transient velocity');
+});
+
+test('buildExecutiveSummary: no fake KPIs -- an empty fleet scan yields honest zeros, not invented numbers', () => {
+  const summary = predictive.buildExecutiveSummary([], { range: '1h', from: 'a', to: 'b' });
+  assert.strictEqual(summary.fleet.devices_scanned, 0);
+  assert.strictEqual(summary.highest_risks.length, 0);
+  assert.strictEqual(summary.major_drift.length, 0);
+});
+
 console.log('='.repeat(70));
 console.log(`Results: ${passed} passed, ${failed} failed`);
 if (failed > 0) process.exit(1);

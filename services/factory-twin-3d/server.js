@@ -1137,12 +1137,18 @@ async function fetchSpcSeries(deviceId, metric, fromMs, toMs) {
   let rows; // per-row detail (FT-22 capability trajectory needs each row's own values+tolerance, not just the flattened pool)
   let tolerance = NaN;
 
+  // FT-23 Phase 4: factory/mo/log_id/process travel on every row now, not
+  // just time+metric columns -- real, unambiguous fields straight off
+  // ldi_data (this device_id is already a confirmed real IMS device, no
+  // CAD-to-IMS mapping ambiguity involved), so a predictive finding's
+  // drill-down link and RCA correlation are built from an EXACT row, never
+  // approximated or invented (see lib/predictive.js's selectEvidenceEvent).
   if (isComposite) {
     const columns = metric === 'PE' ? spc.PE_COLUMNS : spc.JE_COLUMNS;
     const toleranceColumn = metric === 'PE' ? 'pe_setting' : 'je_setting';
     const notNullClause = columns.map((c) => `${c} IS NOT NULL`).join(' OR ');
     const result = await pool.query(
-      `SELECT "time", ${columns.join(', ')}, ${toleranceColumn}
+      `SELECT "time", ${columns.join(', ')}, ${toleranceColumn}, factory, mo, process, log_id
        FROM public.ldi_data
        WHERE eqp_id = $1 AND "time" >= $2 AND "time" <= $3 AND (${notNullClause})
        ORDER BY "time" ASC
@@ -1168,12 +1174,15 @@ async function fetchSpcSeries(deviceId, metric, fromMs, toMs) {
       seriesTimestampsMs.push(tMs);
       const t = Number(row[toleranceColumn]);
       if (Number.isFinite(t)) tolerances.push(t);
-      rows.push({ tMs, values: rowValues, tolerance: Number.isFinite(t) ? t : NaN });
+      rows.push({
+        tMs, values: rowValues, tolerance: Number.isFinite(t) ? t : NaN,
+        factory: row.factory ?? null, mo: row.mo ?? null, process: row.process ?? null, logId: row.log_id ?? null,
+      });
     }
     tolerance = tolerances.length > 0 ? spc.mean(tolerances) : NaN;
   } else {
     const result = await pool.query(
-      `SELECT "time", ${metric} AS value
+      `SELECT "time", ${metric} AS value, factory, mo, process, log_id
        FROM public.ldi_data
        WHERE eqp_id = $1 AND "time" >= $2 AND "time" <= $3 AND ${metric} IS NOT NULL
        ORDER BY "time" ASC
@@ -1186,7 +1195,10 @@ async function fetchSpcSeries(deviceId, metric, fromMs, toMs) {
     // No tolerance/spec-limit column exists for a general process metric
     // in this schema -- Cpk stays UNAVAILABLE rather than inventing one.
     tolerance = NaN;
-    rows = seriesValues.map((v, i) => ({ tMs: seriesTimestampsMs[i], values: [v], tolerance: NaN }));
+    rows = result.rows.map((r, i) => ({
+      tMs: seriesTimestampsMs[i], values: [seriesValues[i]], tolerance: NaN,
+      factory: r.factory ?? null, mo: r.mo ?? null, process: r.process ?? null, logId: r.log_id ?? null,
+    }));
   }
 
   const baselineDefinition = isComposite
@@ -1263,9 +1275,29 @@ app.get('/api/predictive', async (req, res) => {
 
     const response = predictive.buildCanonicalResponse({
       deviceId, metric, from, to, baselineDefinition,
+      rangeLabel: typeof req.query.range === 'string' ? req.query.range : 'custom range',
       sampleCount: seriesValues.length, lastValidSampleMs, rowLimitHit,
       cpk, ewma, cusum, nelson, drift, rows, fromMs, toMs, tolerance,
     });
+
+    // FT-23 Phase 4: real alarm/RCA correlation for the SAME device+window,
+    // via the SAME queryAlarmHistory() the existing /api/alarm-rca route
+    // already uses -- not a second alarm-lookup implementation. Capped to
+    // 3 for the response; eligibility-gated exact_event/drill_down_url on
+    // each entry are already handled inside that pipeline.
+    try {
+      const list = catalogue();
+      const floorId = requestedFloor(req, list);
+      const mappingByAssetId = floorId === null ? {} : loadPrivateAssetMapping(floorId);
+      const relatedAlarms = await queryAlarmHistory({ deviceIds: [deviceId], fromMs, toMs }, mappingByAssetId);
+      response.action.related_alarms = relatedAlarms.slice(0, 3);
+    } catch (alarmErr) {
+      // A failed alarm correlation must never take down the predictive
+      // response itself -- report it as unavailable, not as a 500.
+      console.error('predictive alarm correlation failed (non-fatal):', alarmErr.message);
+      response.action.related_alarms = [];
+    }
+
     res.status(200).json(response);
   } catch (err) {
     console.error(err);
@@ -1280,6 +1312,75 @@ app.get('/api/predictive', async (req, res) => {
 // bounded per-device row count, same query-budget discipline as everywhere
 // else in this service.
 const PREDICTIVE_FLEET_PER_DEVICE_LIMIT = 2000;
+// FT-23 Phase 8: real measurement (see PREDICTIVE_PERFORMANCE.md) found
+// running this scan TWICE in parallel (PE+JE, for executive-summary) at
+// the full per-device row depth cost ~100-160ms at a 6h range -- over the
+// <100ms target. The executive view is a fleet-wide overview, not the
+// per-device deep-dive panel, so it does not need the same row depth: a
+// smaller, still-real, still-bounded limit cuts query cost roughly
+// proportionally without changing risk-ranking's own existing, tested
+// 2000-row behavior.
+const EXECUTIVE_SUMMARY_PER_DEVICE_LIMIT = 500;
+
+// FT-23 — pulled the query + per-device computation out of the
+// risk-ranking route so /api/predictive/risk-ranking and the new
+// /api/predictive/executive-summary run the EXACT same fleet scan (same
+// SQL shape, same per-device math), just at a caller-chosen row depth, not
+// two implementations that could disagree. Returns the ranking entries
+// (unsorted) plus how many devices reported data.
+async function runFleetRiskScan(metric, fromMs, toMs, perDeviceLimit = PREDICTIVE_FLEET_PER_DEVICE_LIMIT) {
+  const from = new Date(fromMs).toISOString();
+  const to = new Date(toMs).toISOString();
+  const columns = metric === 'PE' ? spc.PE_COLUMNS : spc.JE_COLUMNS;
+  const toleranceColumn = metric === 'PE' ? 'pe_setting' : 'je_setting';
+  const notNullClause = columns.map((c) => `${c} IS NOT NULL`).join(' OR ');
+  const result = await pool.query(
+    `SELECT eqp_id, "time", ${columns.join(', ')}, ${toleranceColumn} FROM (
+       SELECT eqp_id, "time", ${columns.join(', ')}, ${toleranceColumn},
+              ROW_NUMBER() OVER (PARTITION BY eqp_id ORDER BY "time" DESC) AS rn
+       FROM public.ldi_data
+       WHERE eqp_id = ANY($1) AND "time" >= $2 AND "time" <= $3 AND (${notNullClause})
+     ) sub WHERE rn <= $4
+     ORDER BY eqp_id ASC, "time" ASC`,
+    [DEVICE_IDS, from, to, perDeviceLimit],
+  );
+
+  const byDevice = new Map();
+  for (const row of result.rows) {
+    if (!byDevice.has(row.eqp_id)) byDevice.set(row.eqp_id, []);
+    const rowValues = columns.map((c) => Number(row[c])).filter((v) => Number.isFinite(v));
+    if (rowValues.length === 0) continue;
+    const t = Number(row[toleranceColumn]);
+    byDevice.get(row.eqp_id).push({ tMs: new Date(row.time).getTime(), values: rowValues, tolerance: Number.isFinite(t) ? t : NaN });
+  }
+
+  const rankings = [];
+  for (const [deviceId, rows] of byDevice.entries()) {
+    const pooledValues = rows.flatMap((r) => r.values);
+    const seriesValues = rows.map((r) => spc.mean(r.values));
+    const seriesTimestampsMs = rows.map((r) => r.tMs);
+    const tolerances = rows.map((r) => r.tolerance).filter((t) => Number.isFinite(t));
+    const tolerance = tolerances.length > 0 ? spc.mean(tolerances) : NaN;
+
+    const cpk = spc.computeCpk({ values: pooledValues, tolerance });
+    const ewma = spc.computeEwma({ values: seriesValues });
+    const cusum = spc.computeCusum({ values: seriesValues });
+    const nelson = ewma.quality === analytics.Quality.INSUFFICIENT_DATA
+      ? [] : spc.evaluateNelsonRules(seriesValues, spc.mean(seriesValues), spc.sampleStddev(seriesValues));
+    const drift = spc.computeDriftVelocity({ values: seriesValues, timestampsMs: seriesTimestampsMs });
+    const trajectory = predictive.computeCapabilityTrajectory({ rows, fromMs, toMs });
+    const driftIntel = predictive.computeDriftIntelligence({ ewma, cusum, nelson, drift });
+    const mixedBaseline = predictive.computeMixedBaselineSignal({ seriesValues, seriesTimestampsMs, nelson, cusum });
+    const risk = predictive.assessRisk({ cpk, trajectoryClassification: trajectory.classification, driftIntel, mixedBaseline, nelsonViolationCount: nelson.length });
+
+    rankings.push({
+      device_id: deviceId, metric, sample_count: seriesValues.length, cpk_state: cpk.state, cpk: cpk.cpk,
+      trajectory: trajectory.classification, risk: risk.level, evidence: risk.evidence,
+      drift: { direction: driftIntel.direction, velocity_per_hour: driftIntel.velocity_per_hour, persistence: driftIntel.persistence },
+    });
+  }
+  return { rankings, devicesScanned: byDevice.size };
+}
 
 app.get('/api/predictive/risk-ranking', async (req, res) => {
   try {
@@ -1306,55 +1407,51 @@ app.get('/api/predictive/risk-ranking', async (req, res) => {
 
     const from = new Date(fromMs).toISOString();
     const to = new Date(toMs).toISOString();
-    const columns = metric === 'PE' ? spc.PE_COLUMNS : spc.JE_COLUMNS;
-    const toleranceColumn = metric === 'PE' ? 'pe_setting' : 'je_setting';
-    const notNullClause = columns.map((c) => `${c} IS NOT NULL`).join(' OR ');
-    const result = await pool.query(
-      `SELECT eqp_id, "time", ${columns.join(', ')}, ${toleranceColumn} FROM (
-         SELECT eqp_id, "time", ${columns.join(', ')}, ${toleranceColumn},
-                ROW_NUMBER() OVER (PARTITION BY eqp_id ORDER BY "time" DESC) AS rn
-         FROM public.ldi_data
-         WHERE eqp_id = ANY($1) AND "time" >= $2 AND "time" <= $3 AND (${notNullClause})
-       ) sub WHERE rn <= $4
-       ORDER BY eqp_id ASC, "time" ASC`,
-      [DEVICE_IDS, from, to, PREDICTIVE_FLEET_PER_DEVICE_LIMIT],
-    );
+    const { rankings, devicesScanned } = await runFleetRiskScan(metric, fromMs, toMs);
+    rankings.sort((a, b) => predictive.RISK_ORDER[b.risk] - predictive.RISK_ORDER[a.risk]);
 
-    const byDevice = new Map();
-    for (const row of result.rows) {
-      if (!byDevice.has(row.eqp_id)) byDevice.set(row.eqp_id, []);
-      const rowValues = columns.map((c) => Number(row[c])).filter((v) => Number.isFinite(v));
-      if (rowValues.length === 0) continue;
-      const t = Number(row[toleranceColumn]);
-      byDevice.get(row.eqp_id).push({ tMs: new Date(row.time).getTime(), values: rowValues, tolerance: Number.isFinite(t) ? t : NaN });
+    res.status(200).json({ metric, from, to, devices_scanned: devicesScanned, per_device_row_limit: PREDICTIVE_FLEET_PER_DEVICE_LIMIT, rankings, queried_at: new Date().toISOString() });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'internal error' });
+  }
+});
+
+// FT-23 Phase 5 — executive summary. Runs the SAME fleet scan as
+// risk-ranking above, once per composite metric (PE, JE -- the only ones a
+// Cpk-based risk verdict means anything for), in parallel, then a pure
+// aggregation (lib/predictive.js's buildExecutiveSummary) -- no new query
+// shape, no fabricated KPI, just counts and top-N over data already
+// computed for the per-device panel and the risk-ranking endpoint.
+app.get('/api/predictive/executive-summary', async (req, res) => {
+  try {
+    let fromMs;
+    let toMs;
+    if (typeof req.query.range === 'string') {
+      const spanMs = analytics.rangeToMs(req.query.range);
+      if (spanMs === null) return res.status(400).json({ error: 'invalid range', supported_ranges: analytics.SUPPORTED_RANGES });
+      toMs = Date.now();
+      fromMs = toMs - spanMs;
+    } else {
+      fromMs = Number(req.query.from);
+      toMs = Number(req.query.to);
+    }
+    const validated = analytics.validateRange(fromMs, toMs);
+    if (!validated.ok) return res.status(400).json({ error: validated.error });
+    if (!analytics.extendedStatsAvailable(validated.spanMs)) {
+      return res.status(400).json({ error: 'SPC requires individual raw samples; only ranges of 6 hours or less are supported', max_supported_range: '6h' });
     }
 
-    const rankings = [];
-    for (const [deviceId, rows] of byDevice.entries()) {
-      const pooledValues = rows.flatMap((r) => r.values);
-      const seriesValues = rows.map((r) => spc.mean(r.values));
-      const seriesTimestampsMs = rows.map((r) => r.tMs);
-      const tolerances = rows.map((r) => r.tolerance).filter((t) => Number.isFinite(t));
-      const tolerance = tolerances.length > 0 ? spc.mean(tolerances) : NaN;
-
-      const cpk = spc.computeCpk({ values: pooledValues, tolerance });
-      const ewma = spc.computeEwma({ values: seriesValues });
-      const cusum = spc.computeCusum({ values: seriesValues });
-      const nelson = ewma.quality === analytics.Quality.INSUFFICIENT_DATA
-        ? [] : spc.evaluateNelsonRules(seriesValues, spc.mean(seriesValues), spc.sampleStddev(seriesValues));
-      const drift = spc.computeDriftVelocity({ values: seriesValues, timestampsMs: seriesTimestampsMs });
-      const trajectory = predictive.computeCapabilityTrajectory({ rows, fromMs, toMs });
-      const driftIntel = predictive.computeDriftIntelligence({ ewma, cusum, nelson, drift });
-      const mixedBaseline = predictive.computeMixedBaselineSignal({ seriesValues, seriesTimestampsMs, nelson, cusum });
-      const risk = predictive.assessRisk({ cpk, trajectoryClassification: trajectory.classification, driftIntel, mixedBaseline, nelsonViolationCount: nelson.length });
-
-      rankings.push({ device_id: deviceId, metric, sample_count: seriesValues.length, cpk_state: cpk.state, cpk: cpk.cpk, trajectory: trajectory.classification, risk: risk.level, evidence: risk.evidence });
-    }
-
-    const riskOrder = { HIGH: 3, MEDIUM: 2, LOW: 1, NONE: 0 };
-    rankings.sort((a, b) => riskOrder[b.risk] - riskOrder[a.risk]);
-
-    res.status(200).json({ metric, from, to, devices_scanned: byDevice.size, per_device_row_limit: PREDICTIVE_FLEET_PER_DEVICE_LIMIT, rankings, queried_at: new Date().toISOString() });
+    const from = new Date(fromMs).toISOString();
+    const to = new Date(toMs).toISOString();
+    const [peResult, jeResult] = await Promise.all([
+      runFleetRiskScan('PE', fromMs, toMs, EXECUTIVE_SUMMARY_PER_DEVICE_LIMIT),
+      runFleetRiskScan('JE', fromMs, toMs, EXECUTIVE_SUMMARY_PER_DEVICE_LIMIT),
+    ]);
+    const allEntries = [...peResult.rankings, ...jeResult.rankings];
+    const summary = predictive.buildExecutiveSummary(allEntries, { range: typeof req.query.range === 'string' ? req.query.range : 'custom range', from, to });
+    summary.per_device_row_limit = EXECUTIVE_SUMMARY_PER_DEVICE_LIMIT;
+    res.status(200).json(summary);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'internal error' });

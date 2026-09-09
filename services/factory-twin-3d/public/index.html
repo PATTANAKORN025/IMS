@@ -369,6 +369,33 @@
     #fleet-risk-result { margin-top: 4px; }
     .fleet-risk-row { display: flex; gap: 6px; align-items: center; padding: 2px 0; border-top: 1px solid var(--line); }
     .fleet-risk-row:first-child { border-top: 0; }
+    /* FT-23 Phase 1: PRIMARY SIGNAL carries deliberately heavier visual
+       weight (larger text, its own bordered block) than every tier below
+       it -- SECONDARY EVIDENCE/CONTEXT/NEXT ACTION are all real information,
+       never hidden, but none of them competes with the primary verdict for
+       the reader's first glance. */
+    .pi-primary { margin-top: 8px; padding: 6px 8px; border: 1px solid var(--line-2); border-radius: var(--radius); background: var(--panel-2); display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+    .pi-primary-state { font-size: 15px; font-weight: 700; letter-spacing: .02em; }
+    .pi-evidence-list { margin: 2px 0 0; padding-left: 16px; }
+    .pi-evidence-list li { margin: 1px 0; }
+    .pi-next-action { margin-top: 8px; padding: 4px 0 4px 8px; border-left: 3px solid var(--accent); font-size: 11px; }
+    /* Phase 3: a clearly separate notice, not folded silently into the
+       evidence list -- amber (warn), never the crit/danger colour, because
+       this is a caution about INTERPRETATION, not itself a fault state. */
+    .mixed-baseline-banner { margin-top: 6px; padding: 5px 7px; border: 1px solid var(--warn); border-radius: var(--radius); background: rgba(245, 158, 11, 0.08); font-size: 10.5px; }
+    .mixed-baseline-banner b { color: var(--warn); }
+    /* Phase 4: action continuity -- a real drill-down link plus any real
+       correlated alarms, never styled to look like a CALCULATED/FORECAST
+       claim (no left-border colour token reused from those). */
+    .action-links { margin-top: 8px; font-size: 11px; }
+    .action-alarms { margin-top: 6px; font-size: 10.5px; }
+    .action-alarms a { margin-left: 4px; }
+    /* Phase 5: executive summary. */
+    #exec-summary-panel { margin-top: 6px; font-size: 10.5px; }
+    #exec-summary-result { margin-top: 4px; }
+    .exec-fleet-counts { display: flex; gap: 10px; margin-bottom: 6px; }
+    .exec-count { padding: 2px 6px; border-radius: 3px; background: var(--panel-2); border: 1px solid var(--line-2); }
+    .exec-section-title { font-size: 9px; font-weight: 700; letter-spacing: .07em; color: var(--text-dim); display: block; margin: 6px 0 2px; }
     #diagnostics-body { margin-top: 8px; font-size: 11px; }
     #diagnostics-body .k { color: var(--text-dim); }
     .ev { display: inline-block; width: 1.1em; text-align: center; }
@@ -580,6 +607,23 @@
           <summary>Fleet risk ranking (same metric/range, PE/JE only)</summary>
           <div id="fleet-risk-result" aria-live="polite">Loading is deferred until this is opened.</div>
         </details>
+      </details>
+
+      <!-- FT-23 Phase 5: executive summary. Fleet-wide, device-independent
+           (unlike the panel above, it needs no History selection first) --
+           its own lazy fetch, only on its own toggle. -->
+      <h2>Executive intelligence</h2>
+      <details id="exec-summary-panel">
+        <summary>Fleet risk overview &middot; capability direction &middot; major drift</summary>
+        <p class="hint">Highest current process risks, capability direction, and major drift across the fleet (PE/JE only, real data, no fabricated KPIs).</p>
+        <div class="history-controls">
+          <div class="history-ranges" id="exec-summary-ranges" role="group" aria-label="Executive summary window">
+            <button type="button" data-exec-range="15m" aria-pressed="false">15m</button>
+            <button type="button" data-exec-range="1h" aria-pressed="true">1h</button>
+            <button type="button" data-exec-range="6h" aria-pressed="false">6h</button>
+          </div>
+        </div>
+        <div id="exec-summary-result" aria-live="polite">Loading is deferred until this is opened.</div>
       </details>
 
       <h2>Diagnostics</h2>

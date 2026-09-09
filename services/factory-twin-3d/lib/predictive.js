@@ -326,6 +326,14 @@ function computeMixedBaselineSignal({ seriesValues, seriesTimestampsMs, nelson, 
   const insufficientHomogeneousSamples = heterogeneityDetected && Math.min(front.length, back.length) < spc.MIN_SAMPLES_FOR_CONFIDENT_CPK;
   if (insufficientHomogeneousSamples) evidence.push(`each candidate homogeneous segment has fewer than ${spc.MIN_SAMPLES_FOR_CONFIDENT_CPK} samples -- a separate Cpk per segment would not itself be confident`);
 
+  // FT-23 Phase 3: the plain-language "what is safe to conclude" text a
+  // MIXED BASENLINE SUSPECTED banner needs -- deterministic, not a new
+  // judgment call per window, and null when nothing was flagged (never
+  // shown, never a hedge on an otherwise clean window).
+  const safeInterpretation = heterogeneityDetected
+    ? 'Treat the Cpk/EWMA/CUSUM figures for this window as descriptive only -- do not use them alone to authorize a line-stop or a capability sign-off until the suspected sub-populations are separated (e.g. by recipe/product change) and re-analyzed individually.'
+    : null;
+
   return {
     heterogeneity_detected: heterogeneityDetected,
     change_point_index: changePointIndex,
@@ -334,6 +342,7 @@ function computeMixedBaselineSignal({ seriesValues, seriesTimestampsMs, nelson, 
     two_sample_z: twoSampleZ,
     insufficient_homogeneous_samples: insufficientHomogeneousSamples,
     evidence,
+    safe_interpretation: safeInterpretation,
     quality: analytics.Quality.VALID,
     reason: null,
   };
@@ -384,6 +393,220 @@ function assessRisk({ cpk, trajectoryClassification, driftIntel, mixedBaseline, 
   return { level, evidence };
 }
 
+// ── FT-23 Phase 1/2: decision hierarchy + evidence compression ─────────
+//
+// Nothing below computes a new number -- every line is a plain-language
+// restatement of a field already present elsewhere in the response
+// (cpk/trajectory/ewma/cusum/nelson/drift). The point is presentation, not
+// analysis: PRIMARY SIGNAL / SECONDARY EVIDENCE / CONTEXT / NEXT ACTION so
+// a caller (UI or otherwise) does not have to re-derive the same hierarchy
+// itself, and so every rule still gets shown -- Phase 2's own "do not hide
+// underlying evidence" -- rather than only the ones that fired.
+
+// The plant's own OCAP Stage 1/2 language (docs/architecture/LDI_SPC_GUIDE.md),
+// moved here from what used to be a client-side-only copy in app.js so
+// there is exactly one authoritative copy of this text, not two that could
+// drift apart.
+const OCAP_NEXT_ACTION = Object.freeze({
+  CAPABLE: 'No action needed -- process is within capability.',
+  ASSESSMENT: 'OCAP Stage 1: review the control chart for a sudden shift vs. gradual drift; check RCA for correlating thermal/vacuum anomalies; tune recipe parameters.',
+  INTERVENTION: 'OCAP Stage 2: process is not capable of meeting tolerance. Engineering must authorize a line stop and quarantine panels from the last 60 minutes.',
+  UNKNOWN: 'No tolerance recorded for this metric, or too few samples -- Cpk cannot be established yet.',
+});
+
+/**
+ * Always exactly 5 lines, one per underlying signal, present or absent --
+ * "Cpk stable" is as much evidence as "Cpk declining". This is what Phase
+ * 2 calls evidence compression: the same five facts a caller would
+ * otherwise have to read out of cpk/trend/calculated.signals/drift
+ * separately, restated as plain sentences, never filtered down to only
+ * the alarming ones.
+ * @param {Object} p
+ * @param {ReturnType<typeof spc.computeCpk>} p.cpk
+ * @param {ReturnType<typeof computeCapabilityTrajectory>} p.trajectory
+ * @param {ReturnType<typeof spc.computeEwma>} p.ewma
+ * @param {ReturnType<typeof spc.computeCusum>} p.cusum
+ * @param {ReturnType<typeof spc.evaluateNelsonRules>} p.nelson
+ * @param {ReturnType<typeof computeDriftIntelligence>} p.driftIntel
+ */
+function buildEvidenceBullets({ cpk, trajectory, ewma, cusum, nelson, driftIntel }) {
+  const bullets = [];
+
+  if (trajectory.classification === TrajectoryClassification.STABLE
+    || trajectory.classification === TrajectoryClassification.IMPROVING
+    || trajectory.classification === TrajectoryClassification.DECLINING) {
+    bullets.push(`Cpk ${trajectory.classification} (currently ${Number.isFinite(cpk.cpk) ? cpk.cpk.toFixed(2) : 'n/a'}, ${cpk.state})`);
+  } else {
+    bullets.push(`Cpk trajectory ${trajectory.classification.toLowerCase().replace(/_/g, ' ')}${trajectory.reason ? ` -- ${trajectory.reason}` : ''}`);
+  }
+
+  const ewmaOutCount = (ewma.points || []).filter((pt) => pt.outOfControl).length;
+  bullets.push(ewmaOutCount === 0
+    ? 'EWMA within control limits'
+    : `EWMA ${driftIntel.direction === 'down' ? 'falling' : driftIntel.direction === 'up' ? 'rising' : 'elevated'} -- ${ewmaOutCount} of ${ewma.points.length} point(s) beyond control limit`);
+
+  const cusumSignaling = (cusum.points || []).some((pt) => pt.signal !== 'none');
+  bullets.push(cusumSignaling
+    ? `CUSUM shift detected (${driftIntel.persistence})`
+    : 'CUSUM: no shift detected');
+
+  bullets.push(nelson.length === 0
+    ? 'no Nelson-rule violations'
+    : `Nelson rule(s) ${nelson.map((v) => v.rule).join(', ')} triggered`);
+
+  bullets.push(driftIntel.velocity_per_hour === null
+    ? 'drift: not enough samples to establish a trend'
+    : `drift ${driftIntel.direction} at ${Math.abs(driftIntel.velocity_per_hour).toFixed(3)} units/hour`);
+
+  return bullets;
+}
+
+/**
+ * The CONTEXT tier -- how much this assessment should be trusted, in plain
+ * language, before anyone acts on the PRIMARY SIGNAL above it.
+ * @param {Object} p
+ * @param {number} p.sampleCount
+ * @param {string} p.rangeLabel
+ * @param {ReturnType<typeof computeMixedBaselineSignal>} p.mixedBaseline
+ * @param {string} p.freshness
+ */
+function buildContextLines({ sampleCount, rangeLabel, mixedBaseline, freshness }) {
+  const lines = [`${sampleCount} valid sample(s)`];
+  lines.push(mixedBaseline.heterogeneity_detected
+    ? `possible mixed-baseline ${rangeLabel} window (see mixed-baseline notice)`
+    : `homogeneous ${rangeLabel} window (no mixed-baseline signal)`);
+  if (freshness !== telemetry.Freshness.LIVE) lines.push(`data freshness: ${freshness}`);
+  return lines;
+}
+
+/**
+ * The four-tier decision hierarchy Phase 1 asks for. PRIMARY SIGNAL is
+ * deliberately the only thing rendered with heavy visual weight by a UI
+ * consuming this -- everything else is supporting detail, present but
+ * subordinate, never competing for the same attention.
+ * @param {Object} p
+ * @param {ReturnType<typeof spc.computeCpk>} p.cpk
+ * @param {ReturnType<typeof computeCapabilityTrajectory>} p.trajectory
+ * @param {ReturnType<typeof assessRisk>} p.risk
+ * @param {ReturnType<typeof spc.computeEwma>} p.ewma
+ * @param {ReturnType<typeof spc.computeCusum>} p.cusum
+ * @param {ReturnType<typeof spc.evaluateNelsonRules>} p.nelson
+ * @param {ReturnType<typeof computeDriftIntelligence>} p.driftIntel
+ * @param {ReturnType<typeof computeMixedBaselineSignal>} p.mixedBaseline
+ * @param {number} p.sampleCount
+ * @param {string} p.rangeLabel
+ * @param {string} p.freshness
+ */
+function buildDecisionSummary({ cpk, trajectory, risk, ewma, cusum, nelson, driftIntel, mixedBaseline, sampleCount, rangeLabel, freshness }) {
+  const stateForDisplay = trajectory.classification === TrajectoryClassification.STABLE
+    || trajectory.classification === TrajectoryClassification.IMPROVING
+    || trajectory.classification === TrajectoryClassification.DECLINING
+    ? trajectory.classification.toUpperCase()
+    : trajectory.classification; // INSUFFICIENT_DATA / UNAVAILABLE / STALE are already display-ready
+
+  return {
+    primary_signal: { subject: 'PROCESS CAPABILITY', state: stateForDisplay, risk_level: risk.level },
+    secondary_evidence: buildEvidenceBullets({ cpk, trajectory, ewma, cusum, nelson, driftIntel }),
+    context: buildContextLines({ sampleCount, rangeLabel, mixedBaseline, freshness }),
+    next_action: OCAP_NEXT_ACTION[cpk.state] || OCAP_NEXT_ACTION.UNKNOWN,
+  };
+}
+
+// ── FT-23 Phase 4: action continuity ────────────────────────────────────
+//
+// Picks ONE real row from the same rows[] fetchSpcSeries() already
+// fetched -- never an invented or averaged event -- to be "the" exact
+// event a finding drills down to. Preference order is itself evidence-
+// driven, not arbitrary: the moment a suspected baseline split occurred is
+// more actionable than "the most recent sample" when one was found; the
+// moment a sustained shift began is the next most useful; a stable window
+// with nothing to investigate falls back to the freshest observation.
+
+/**
+ * @param {Object} p
+ * @param {{tMs:number, factory:string|null, mo:string|null, logId:string|null, process:string|null}[]} p.rows
+ * @param {ReturnType<typeof computeMixedBaselineSignal>} p.mixedBaseline
+ * @param {ReturnType<typeof spc.computeCusum>} p.cusum
+ * @returns {{tMs:number, factory:string|null, mo:string|null, logId:string|null, process:string|null, reason:string}|null}
+ */
+function selectEvidenceEvent({ rows, mixedBaseline, cusum }) {
+  if (!Array.isArray(rows) || rows.length === 0) return null;
+
+  // change_point_index is populated by computeMixedBaselineSignal any time
+  // CUSUM signals at all (it is also the source for the SAME first-signal
+  // index the fallback branch below would find on its own) -- it is only
+  // real evidence of a SUSPECTED BASELINE split when heterogeneity_detected
+  // is actually true. Without this guard, a window with an ordinary,
+  // non-heterogeneous CUSUM shift would be mislabeled "suspected baseline
+  // change-point" even though mixed_baseline itself reports no such thing.
+  if (mixedBaseline && mixedBaseline.heterogeneity_detected && mixedBaseline.change_point_index !== null && rows[mixedBaseline.change_point_index]) {
+    return { ...rows[mixedBaseline.change_point_index], reason: 'suspected baseline change-point' };
+  }
+  const firstSignalIdx = cusum && cusum.points ? cusum.points.findIndex((pt) => pt.signal !== 'none') : -1;
+  if (firstSignalIdx >= 0 && rows[firstSignalIdx]) {
+    return { ...rows[firstSignalIdx], reason: 'first CUSUM-signaled sample' };
+  }
+  return { ...rows[rows.length - 1], reason: 'most recent sample' };
+}
+
+// ── FT-23 Phase 5: executive summary (pure aggregation) ─────────────────
+//
+// Takes ranking entries already computed by server.js's per-device risk
+// scan (one per device+metric, itself built from lib/spc.js/this module's
+// own already-verified functions) and aggregates them -- counts and
+// top-N selection only, no new metric, no invented KPI. `entries` is
+// expected to carry {device_id, metric, cpk_state, cpk, trajectory, risk,
+// evidence, drift:{direction, velocity_per_hour, persistence}}.
+
+const RISK_ORDER = Object.freeze({ HIGH: 3, MEDIUM: 2, LOW: 1, NONE: 0 });
+
+/**
+ * @param {Array} entries
+ * @param {{range:string, from:string, to:string}} window
+ */
+function buildExecutiveSummary(entries, window) {
+  const list = Array.isArray(entries) ? entries : [];
+
+  const fleet = { devices_scanned: new Set(list.map((e) => e.device_id)).size, high_risk_count: 0, medium_risk_count: 0, low_risk_count: 0 };
+  const capabilityDirection = { declining: 0, improving: 0, stable: 0, unknown: 0 };
+  for (const e of list) {
+    if (e.risk === 'HIGH') fleet.high_risk_count++;
+    else if (e.risk === 'MEDIUM') fleet.medium_risk_count++;
+    else if (e.risk === 'LOW') fleet.low_risk_count++;
+    if (e.trajectory === TrajectoryClassification.DECLINING) capabilityDirection.declining++;
+    else if (e.trajectory === TrajectoryClassification.IMPROVING) capabilityDirection.improving++;
+    else if (e.trajectory === TrajectoryClassification.STABLE) capabilityDirection.stable++;
+    else capabilityDirection.unknown++;
+  }
+
+  const highestRisks = [...list]
+    .filter((e) => e.risk !== 'NONE')
+    .sort((a, b) => (RISK_ORDER[b.risk] - RISK_ORDER[a.risk])
+      || ((Number.isFinite(a.cpk) ? a.cpk : Infinity) - (Number.isFinite(b.cpk) ? b.cpk : Infinity)))
+    .slice(0, 5)
+    .map((e) => ({ device_id: e.device_id, metric: e.metric, risk: e.risk, cpk: e.cpk, cpk_state: e.cpk_state, trajectory: e.trajectory, evidence: e.evidence }));
+
+  const majorDrift = [...list]
+    .filter((e) => e.drift && Number.isFinite(e.drift.velocity_per_hour) && e.drift.direction !== 'flat')
+    .sort((a, b) => {
+      const aSustained = a.drift.persistence === 'sustained' ? 1 : 0;
+      const bSustained = b.drift.persistence === 'sustained' ? 1 : 0;
+      if (aSustained !== bSustained) return bSustained - aSustained;
+      return Math.abs(b.drift.velocity_per_hour) - Math.abs(a.drift.velocity_per_hour);
+    })
+    .slice(0, 3)
+    .map((e) => ({ device_id: e.device_id, metric: e.metric, direction: e.drift.direction, velocity_per_hour: e.drift.velocity_per_hour, persistence: e.drift.persistence }));
+
+  return {
+    generated_at: new Date().toISOString(),
+    window,
+    fleet,
+    highest_risks: highestRisks,
+    capability_direction: capabilityDirection,
+    major_drift: majorDrift,
+  };
+}
+
 // ── Forecast ─────────────────────────────────────────────────────────
 //
 // A single OLS extrapolation, one bucket-width past the data already shown
@@ -420,7 +643,7 @@ function buildForecast(trajectory, bucketMs) {
  */
 function buildCanonicalResponse(p) {
   const {
-    deviceId, metric, from, to, baselineDefinition,
+    deviceId, metric, from, to, baselineDefinition, rangeLabel = 'custom range',
     sampleCount, lastValidSampleMs, rowLimitHit,
     cpk, ewma, cusum, nelson, drift, rows, fromMs, toMs, nowMs = Date.now(),
   } = p;
@@ -446,6 +669,30 @@ function buildCanonicalResponse(p) {
   if (confidenceLevel === 'HIGH' && trajectory.points.filter((pt) => Number.isFinite(pt.cpk)).length < 3) { confidenceLevel = 'MEDIUM'; confidenceReasons.push('fewer than 3 valid capability-trajectory buckets'); }
   if (confidenceReasons.length === 0) confidenceReasons.push('sufficient samples, live data, no heterogeneity detected');
 
+  const decisionSummary = buildDecisionSummary({ cpk, trajectory, risk, ewma, cusum, nelson, driftIntel, mixedBaseline, sampleCount, rangeLabel, freshness });
+
+  // FT-23 Phase 4: ONE real row from rows[] -- never invented, never
+  // averaged -- picked by selectEvidenceEvent's own evidence-driven
+  // preference order. machine_snapshot_url reuses telemetry.js's own
+  // buildDrillDownUrl (the SAME builder the alarm/RCA pipeline already
+  // uses), not a second URL scheme -- device_id/factory/mo/log_id/time
+  // here come directly from a real ldi_data row, with no CAD-to-IMS
+  // mapping ambiguity involved (unlike the alarm pipeline's own physical-
+  // asset eligibility gate, which answers a different question this
+  // route never asks).
+  const evidenceEvent = selectEvidenceEvent({ rows, mixedBaseline, cusum });
+  const machineSnapshotUrl = evidenceEvent
+    ? telemetry.buildDrillDownUrl({
+      machineId: deviceId,
+      factory: evidenceEvent.factory,
+      mo: evidenceEvent.mo,
+      eventTimeMs: evidenceEvent.tMs,
+      logId: evidenceEvent.logId,
+      from,
+      to,
+    })
+    : null;
+
   return {
     metric,
     window: { from, to, sample_count: sampleCount },
@@ -470,6 +717,25 @@ function buildCanonicalResponse(p) {
     },
     forecast,
     confidence: { level: confidenceLevel, reasons: confidenceReasons },
+    decision_summary: decisionSummary,
+    action: {
+      exact_event: evidenceEvent ? {
+        device_id: deviceId,
+        factory: evidenceEvent.factory,
+        mo: evidenceEvent.mo,
+        process: evidenceEvent.process,
+        timestamp: new Date(evidenceEvent.tMs).toISOString(),
+        log_id: evidenceEvent.logId,
+        from,
+        to,
+        selection_reason: evidenceEvent.reason,
+      } : null,
+      machine_snapshot_url: machineSnapshotUrl,
+      // Filled in by server.js after this pure function returns -- a real
+      // DB correlation (the SAME queryAlarmHistory() the existing alarm/RCA
+      // pipeline already uses), never fabricated here.
+      related_alarms: null,
+    },
     source_event: {
       device_id: deviceId,
       metric,
@@ -494,6 +760,13 @@ module.exports = {
   computeDriftIntelligence,
   computeMixedBaselineSignal,
   assessRisk,
+  OCAP_NEXT_ACTION,
+  buildEvidenceBullets,
+  buildContextLines,
+  buildDecisionSummary,
+  selectEvidenceEvent,
+  RISK_ORDER,
+  buildExecutiveSummary,
   buildForecast,
   buildCanonicalResponse,
 };

@@ -2423,15 +2423,14 @@ let spcRange = '1h';
 
 const fmt2 = (v) => (v === null || v === undefined || !Number.isFinite(v) ? '—' : v.toFixed(2));
 
-// The plant's own OCAP next-action, not an invented recommendation --
-// docs/architecture/LDI_SPC_GUIDE.md's own Stage 1/Stage 2 language.
-const SPC_NEXT_ACTION = {
-  CAPABLE: 'No action needed -- process is within capability.',
-  ASSESSMENT: 'OCAP Stage 1: review the control chart for a sudden shift vs. gradual drift; check RCA for correlating thermal/vacuum anomalies; tune recipe parameters.',
-  INTERVENTION: 'OCAP Stage 2: process is not capable of meeting tolerance. Engineering must authorize a line stop and quarantine panels from the last 60 minutes.',
-  UNKNOWN: 'No tolerance recorded for this metric, or too few samples -- Cpk cannot be established yet.',
-};
-
+// FT-23 Phase 1/2/3/4: renders the server's own decision_summary/action
+// fields (lib/predictive.js) into a real visual hierarchy -- PRIMARY
+// SIGNAL heaviest, SECONDARY EVIDENCE/CONTEXT/NEXT ACTION progressively
+// lighter -- rather than every statistical line reading with equal weight.
+// The OCAP next-action text itself now has exactly one source
+// (lib/predictive.js's OCAP_NEXT_ACTION); this file no longer keeps its
+// own copy.
+//
 // FT-22: this panel's one fetch moved from /api/spc to /api/predictive (a
 // strict superset -- see server.js's fetchSpcSeries()) so opening the panel
 // is still exactly one request, not two. Reuses the SAME esc() every other
@@ -2449,22 +2448,22 @@ async function renderSpc() {
       return;
     }
     const data = await res.json();
-    const { calculated, observed, forecast, confidence, window: win } = data;
-    const { cpk, drift, trend, mixed_baseline: mixed, risk, signals } = calculated;
-    const nelson = signals.nelson_violations;
-    const nextAction = SPC_NEXT_ACTION[cpk.state] || SPC_NEXT_ACTION.UNKNOWN;
-    const trajectory = trend.capability_trajectory;
+    const { calculated, observed, forecast, confidence, decision_summary: decision, action, window: win } = data;
+    const { mixed_baseline: mixed } = calculated;
 
-    // Q1/Q2: is it stable, is capability declining -- from the SAME two
-    // fields the canonical contract already carries (cpk.state,
-    // trajectory.classification), never a third derived vocabulary.
-    const stableLine = `Cpk <b>${fmt2(cpk.cpk)}</b> (${esc(cpk.state)}, n=${cpk.n}) &middot; trajectory: <b>${esc(trajectory.classification)}</b>`;
-    // Q3/Q4: why, and how strong -- risk.evidence already names the exact
-    // rule/signal, confidence.reasons already names what would make it
-    // more or less trustworthy.
-    const evidenceLine = risk.evidence.map(esc).join('; ');
-    const mixedLine = mixed.heterogeneity_detected
-      ? `<div class="hint">Possible mixed-baseline window: ${mixed.evidence.map(esc).join('; ')}</div>` : '';
+    const mixedBanner = mixed.heterogeneity_detected ? `
+      <div class="mixed-baseline-banner" role="note">
+        <b>MIXED BASELINE SUSPECTED</b>
+        <div>Why: ${mixed.evidence.map(esc).join('; ')}</div>
+        <div>Affected window: ${new Date(win.from || observed.last_valid_sample).toLocaleString()} &ndash; ${observed.last_valid_sample ? new Date(observed.last_valid_sample).toLocaleTimeString() : '—'}${mixed.change_point_timestamp ? ` (suspected split near ${new Date(mixed.change_point_timestamp).toLocaleTimeString()})` : ''}</div>
+        <div>Safe interpretation: ${esc(mixed.safe_interpretation)}</div>
+      </div>` : '';
+
+    const alarmsBlock = action.related_alarms && action.related_alarms.length > 0 ? `
+      <div class="action-alarms">
+        <span class="pi-label">RELATED ALARMS</span>
+        ${action.related_alarms.map((a) => `<div>${esc(a.severity || '')} ${esc(a.alarm_code)} -- ${esc(a.alarm_msg || '')} (${a.event_time ? new Date(a.event_time).toLocaleString() : '—'})${a.drill_down_url ? ` <a href="${esc(a.drill_down_url)}" target="_blank" rel="noopener">RCA</a>` : ''}</div>`).join('')}
+      </div>` : '';
 
     spcResultEl.innerHTML = `
       <div class="pi-block pi-observed">
@@ -2473,15 +2472,21 @@ async function renderSpc() {
         &middot; last: ${observed.last_valid_sample ? new Date(observed.last_valid_sample).toLocaleTimeString() : '—'}
         (${esc(observed.freshness)})${observed.row_limit_hit ? ' &middot; row limit reached' : ''}
       </div>
-      <div class="pi-block pi-calculated">
-        <span class="pi-label">CALCULATED</span>
-        <div>${stableLine} &middot; <span class="pi-risk pi-risk-${esc(risk.level)}">${esc(risk.level)} RISK</span></div>
-        <div>Why: ${evidenceLine || 'no adverse signal found'}</div>
-        <div>Drift: ${drift.velocity_per_hour === null ? 'not enough samples to establish a trend' : `${fmt2(drift.velocity_per_hour)} units/hour, ${esc(drift.direction)} (${esc(drift.persistence)})`}</div>
-        <div>Pattern check: ${nelson.length === 0 ? 'no Nelson-rule violations' : `rule(s) ${nelson.map((v) => v.rule).join(', ')} triggered`}</div>
-        ${mixedLine}
-        <div class="hint">How strong: confidence <b>${esc(confidence.level)}</b> (${confidence.reasons.map(esc).join('; ')})</div>
+
+      <div class="pi-primary">
+        <span class="pi-label">${esc(decision.primary_signal.subject)}</span>
+        <span class="pi-primary-state">${esc(decision.primary_signal.state)}</span>
+        <span class="pi-risk pi-risk-${esc(decision.primary_signal.risk_level)}">${esc(decision.primary_signal.risk_level)} RISK</span>
       </div>
+
+      <div class="pi-block pi-calculated">
+        <span class="pi-label">SECONDARY EVIDENCE</span>
+        <ul class="pi-evidence-list">${decision.secondary_evidence.map((e) => `<li>${esc(e)}</li>`).join('')}</ul>
+        <span class="pi-label" style="margin-top:6px">CONTEXT</span>
+        <div class="hint">${decision.context.map(esc).join(' &middot; ')} &middot; confidence <b>${esc(confidence.level)}</b> (${confidence.reasons.map(esc).join('; ')})</div>
+        ${mixedBanner}
+      </div>
+
       <div class="pi-block pi-forecast">
         <span class="pi-label">FORECAST</span>
         ${forecast.next_window_cpk_estimate === null
@@ -2489,7 +2494,11 @@ async function renderSpc() {
           : `Next-window Cpk estimate: <b>${fmt2(forecast.next_window_cpk_estimate)}</b> (${esc(forecast.confidence)} confidence)`}
         <div class="hint">${esc(forecast.method)}</div>
       </div>
-      <div class="hint" style="margin-top:6px">Next: ${esc(nextAction)}</div>`;
+
+      <div class="pi-next-action"><span class="pi-label">NEXT ACTION</span>${esc(decision.next_action)}</div>
+
+      ${action.machine_snapshot_url ? `<div class="action-links"><a href="${esc(action.machine_snapshot_url)}" target="_blank" rel="noopener">Open Machine Snapshot for this event</a> <span class="hint">(${esc(action.exact_event.selection_reason)}, ${new Date(action.exact_event.timestamp).toLocaleString()})</span></div>` : ''}
+      ${alarmsBlock}`;
   } catch (err) {
     spcResultEl.textContent = `Fetch failed: ${err.message}`;
   }
@@ -2546,6 +2555,71 @@ async function renderFleetRisk() {
 }
 if (fleetRiskPanelEl) {
   fleetRiskPanelEl.addEventListener('toggle', () => { if (fleetRiskPanelEl.open) renderFleetRisk(); });
+}
+
+// FT-23 Phase 5: executive summary -- device-independent, its own lazy
+// fetch (opens only on its own toggle or its own range buttons, never on
+// the SPC/fleet-risk panels' triggers, and never on the 5-second state
+// poll). No fake KPIs: every number here is a count or a top-N slice of
+// data already computed by /api/predictive/risk-ranking's own per-device
+// math (server.js's runFleetRiskScan), never a separate invented figure.
+const execSummaryPanelEl = document.getElementById('exec-summary-panel');
+const execSummaryResultEl = document.getElementById('exec-summary-result');
+const execSummaryRangeButtons = document.querySelectorAll('[data-exec-range]');
+let execSummaryRange = '1h';
+
+async function renderExecSummary() {
+  if (!execSummaryResultEl) return;
+  execSummaryResultEl.textContent = 'Loading…';
+  try {
+    const res = await fetch(`api/predictive/executive-summary?range=${encodeURIComponent(execSummaryRange)}`);
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      execSummaryResultEl.textContent = `Unavailable: ${body.error || res.status}`;
+      return;
+    }
+    const data = await res.json();
+    const { fleet, highest_risks: highestRisks, capability_direction: capDir, major_drift: majorDrift } = data;
+
+    const risksHtml = highestRisks.length === 0
+      ? '<div class="hint">No device is currently at elevated risk.</div>'
+      : highestRisks.map((r) => `
+        <div class="fleet-risk-row">
+          <span class="pi-risk pi-risk-${esc(r.risk)}">${esc(r.risk)}</span>
+          <b>${esc(r.device_id)}</b> / ${esc(r.metric)} &middot; Cpk ${fmt2(r.cpk)} (${esc(r.cpk_state)}) &middot; ${esc(r.trajectory)}
+          <div class="hint">${r.evidence.map(esc).join('; ')}</div>
+        </div>`).join('');
+
+    const driftHtml = majorDrift.length === 0
+      ? '<div class="hint">No major drift detected in this window.</div>'
+      : majorDrift.map((d) => `<div>${esc(d.device_id)} / ${esc(d.metric)}: ${esc(d.direction)} at ${fmt2(Math.abs(d.velocity_per_hour))} units/hour (${esc(d.persistence)})</div>`).join('');
+
+    execSummaryResultEl.innerHTML = `
+      <div class="exec-fleet-counts">
+        <span class="exec-count pi-risk-HIGH" style="background:transparent;border-color:var(--crit)">HIGH: ${fleet.high_risk_count}</span>
+        <span class="exec-count" style="border-color:var(--warn)">MEDIUM: ${fleet.medium_risk_count}</span>
+        <span class="exec-count">LOW: ${fleet.low_risk_count}</span>
+        <span class="hint">${fleet.devices_scanned} device/metric combination(s) scanned</span>
+      </div>
+      <span class="exec-section-title">HIGHEST CURRENT PROCESS RISKS</span>
+      ${risksHtml}
+      <span class="exec-section-title">CAPABILITY DIRECTION</span>
+      <div>declining: ${capDir.declining} &middot; improving: ${capDir.improving} &middot; stable: ${capDir.stable} &middot; unknown: ${capDir.unknown}</div>
+      <span class="exec-section-title">MAJOR DRIFT</span>
+      ${driftHtml}`;
+  } catch (err) {
+    execSummaryResultEl.textContent = `Fetch failed: ${err.message}`;
+  }
+}
+execSummaryRangeButtons.forEach((btn) => {
+  btn.addEventListener('click', () => {
+    execSummaryRange = btn.getAttribute('data-exec-range');
+    execSummaryRangeButtons.forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+    renderExecSummary();
+  });
+});
+if (execSummaryPanelEl) {
+  execSummaryPanelEl.addEventListener('toggle', () => { if (execSummaryPanelEl.open) renderExecSummary(); });
 }
 
 function applyState(payload) {

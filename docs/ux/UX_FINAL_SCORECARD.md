@@ -130,3 +130,27 @@ PE, 6h), all under the 100ms target; the fleet ranking runs as ONE query
 across all devices (a partitioned window function), not one per device.
 Full regression unchanged, plus 27 new predictive unit tests (synthetic
 fixtures) — see `docs/analytics/PREDICTIVE_VALIDATION.md`.
+
+## FT-23 addendum — decision UX / executive intelligence
+
+Presentation layer over FT-21/FT-22's existing SPC/predictive outputs, no
+new statistics. Four-tier decision hierarchy (PRIMARY SIGNAL heaviest
+visual weight, SECONDARY EVIDENCE always exactly 5 lines -- never hides a
+signal, CONTEXT, NEXT ACTION), a MIXED BASELINE SUSPECTED banner (never
+suppresses a real violation), real action continuity (exact
+device/factory/mo/process/log_id row, a real Machine Snapshot deep link
+via the existing `telemetry.buildDrillDownUrl`, real correlated alarms via
+the existing `queryAlarmHistory`), and a fleet-wide executive summary with
+no fabricated KPIs. Found and fixed 1 real code defect
+(`selectEvidenceEvent` mislabeling an ordinary CUSUM shift as a "suspected
+baseline change-point" whenever `change_point_index` was set, regardless of
+whether heterogeneity was actually detected) and 1 real performance
+regression (`executive-summary?range=6h` sustained p95 104-143ms, fixed by
+a smaller, still-real per-device row limit for the fleet-wide view --
+re-measured p95 69ms across two clean 40-run samples, one unreproduced
+243ms outlier disclosed rather than hidden). Verified end-to-end on one
+real, currently-true production finding (LDI-05/PE, mixed-baseline
+suspected) all the way through to a working Machine Snapshot URL and real
+correlated RCA alarms. 0 axe violations, all 4 viewports. Full regression
+unchanged, plus 12 new predictive unit tests (39 total) -- see
+`docs/analytics/DECISION_UX_VALIDATION.md`.
