@@ -99,12 +99,16 @@ async function main() {
     camera: window.__eap.cameraSnapshot(),
     selection: window.__eap.selection() && window.__eap.selection().cell_id,
     cells: window.__eap.drawnCells(),
-    bannerHidden: document.getElementById('webgl-lost').hidden,
   }));
   eq(JSON.stringify(after.camera), JSON.stringify(before.camera), 'camera pan target and zoom preserved exactly');
   eq(after.selection, before.selection, 'selected cell preserved');
   eq(after.cells, before.cells, 'full cell population redrawn after recovery');
-  check(after.bannerHidden, 'banner hidden again once recovered');
+  // The RECOVERED banner ("3D view restored.") is shown for a real,
+  // readable moment before auto-hiding -- see RECOVERED_DISPLAY_MS -- so
+  // hiding is checked after that window, not the instant READY is reached.
+  await page.waitForTimeout(1200);
+  const bannerHiddenAfterDisplay = await page.evaluate(() => document.getElementById('webgl-lost').hidden);
+  check(bannerHiddenAfterDisplay, 'banner hidden again once the RECOVERED confirmation has been shown');
 
   section('2. zone drawer (its own 2D canvas, never WebGL) is untouched throughout');
   await page.evaluate(() => window.__eap.setMode('AUTO'));
@@ -152,9 +156,9 @@ async function main() {
     retryHidden: document.getElementById('webgl-retry').hidden,
     text: document.getElementById('webgl-status-text').textContent,
   }));
-  check(!failedUi.retryHidden, 'Retry 3D view button shown once FAILED');
-  check(/temporarily unavailable/i.test(failedUi.text) && /panel on the left/i.test(failedUi.text),
-    'FAILED text names the real fallback and the still-working panel, not a fabricated cause');
+  check(!failedUi.retryHidden, 'Retry 3D button shown once FAILED');
+  check(/could not be restored/i.test(failedUi.text) && /operational data remains available/i.test(failedUi.text),
+    'FAILED text (Phase 6\'s exact wording) names the real fallback, not a fabricated cause');
   await page.evaluate(() => document.getElementById('webgl-retry').focus());
   const retryFocused = await page.evaluate(() => document.activeElement.id === 'webgl-retry');
   check(retryFocused, 'Retry button is keyboard-focusable');

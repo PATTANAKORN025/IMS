@@ -80,18 +80,106 @@ const drawerBody = document.getElementById('zoneDrawerBody');
 const drawerCanvas = document.getElementById('zoneDrawerCanvas');
 const drawerCtx = drawerCanvas.getContext('2d');
 const drawerClose = document.getElementById('zoneDrawerClose');
+// Looked up here, ahead of the renderer-construction block below, because
+// showCreationFailure() can run synchronously at module-init time (a GPU
+// unavailable at boot) -- before that point, a `const` declared further
+// down the file (where the rest of the webgl-lifecycle code naturally
+// lives) would still be in its temporal dead zone.
+const webglStatusText = document.getElementById('webgl-status-text');
+const webglLostBanner = document.getElementById('webgl-lost');
+const webglRetryBtn = document.getElementById('webgl-retry');
+const webglReloadBtn = document.getElementById('webgl-reload');
 
-const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-renderer.setClearColor(C.bg, 1);
-stage.insertBefore(renderer.domElement, labelCanvas);
+// FT-WEBGL-RECOVERY-02: READY -> LOST -> RESTORING -> REBUILDING ->
+// VERIFYING -> RECOVERED (immediately followed by a return to READY -- a
+// one-frame transition, not a state anything waits in), or, whenever the
+// browser never answers a restore request OR verification finds the
+// rebuilt scene is not actually working, -> FAILED. See
+// attemptContextRecovery() and verifyRecovery() further down. Declared
+// here, ahead of renderer construction, for the same reason as the DOM
+// lookups just above: showCreationFailure() can run synchronously at
+// module-init time, before a `const` declared further down (where the
+// rest of this lifecycle's code naturally lives) would be initialized.
+const WebglLifecycle = Object.freeze({
+  READY: 'READY',
+  LOST: 'LOST',
+  RESTORING: 'RESTORING',
+  REBUILDING: 'REBUILDING',
+  VERIFYING: 'VERIFYING',
+  RECOVERED: 'RECOVERED',
+  FAILED: 'FAILED',
+});
+let webglLifecycle = WebglLifecycle.READY;
+let contextLossCount = 0; // observability only; also what a repeated-loss test reads back
+// Phase 5 race protection: bumped on every new loss episode. Any recovery
+// attempt in flight from an OLDER episode checks its own captured value of
+// this against the live one before each step that would otherwise mutate
+// shared state or declare a verdict -- if a newer loss has since arrived,
+// that attempt is stale and abandons itself rather than fighting (or
+// wrongly finishing) the episode that actually matters now.
+let recoveryGeneration = 0;
+// Real browsers usually fire webglcontextrestored automatically within a
+// second or two of preventDefault() being called, if the underlying driver
+// issue actually resolved. If it does not fire within this window, the
+// context is not coming back on its own, and staying in LOST forever with
+// no further sign of life is a worse user experience than naming that.
+const CONTEXT_RESTORE_TIMEOUT_MS = 8000;
+let contextRestoreTimer = null;
 
-// FT-EAP-CTXLIFECYCLE: this canvas has its own WebGL context, separate from
-// the physical twin's (own renderer, own GPU resources). FT-EAP-CTXLOSS gave
-// it the same detect-and-reload fix app.js's FT-19 already had; this phase
-// replaces the reload with a full in-app recovery lifecycle (READY -> LOST
-// -> RESTORING -> REBUILDING -> RECOVERED, falling back to FAILED), on the
-// strength of a fact FT-EAP-CTXLOSS's own reload decision under-weighted:
+// Phase 6: short, lifecycle-specific text. LOST/FAILED are shown in the
+// aria="alert" banner (a viewer needs to be told); RESTORING/REBUILDING/
+// VERIFYING are set on the same element too (so a screen reader that is
+// already reading the banner hears the real stage, not silence) but are
+// typically sub-second and never require an action; RECOVERED is shown
+// just long enough to be a real, readable confirmation before the banner
+// clears itself.
+const WEBGL_STATUS_MESSAGES = Object.freeze({
+  LOST: '3D view temporarily unavailable. Live operational data remains available.',
+  RESTORING: 'Restoring 3D view…',
+  REBUILDING: 'Rebuilding 3D view…',
+  VERIFYING: 'Verifying 3D view…',
+  RECOVERED: '3D view restored.',
+  FAILED: '3D view could not be restored. Live operational data remains available.',
+  CREATION_FAILED: '3D view could not start. Live operational data remains available.',
+});
+const RECOVERED_DISPLAY_MS = 900; // long enough to actually read "3D view restored."
+
+// FT-WEBGL-RECOVERY-02 Phase 1: webglcontextcreationerror fires on the
+// canvas itself, synchronously, inside the getContext() call THREE's
+// WebGLRenderer constructor makes internally -- by the time `new
+// THREE.WebGLRenderer()` either returns or throws, it is too late to
+// attach a listener to anything THREE hands back. So the canvas is made by
+// hand, with the listener attached first, and construction is wrapped: a
+// GPU genuinely unavailable at boot (not a runtime loss -- total absence,
+// no driver to reset) previously threw an uncaught exception straight out
+// of this module with no on-screen sign anything was wrong at all.
+const glCanvas = document.createElement('canvas');
+let contextCreationFailed = false;
+glCanvas.addEventListener('webglcontextcreationerror', (ev) => {
+  contextCreationFailed = true;
+  console.error('[eap] webglcontextcreationerror', ev.statusMessage || '(no status message)');
+});
+let renderer = null;
+let rendererAvailable = false;
+try {
+  renderer = new THREE.WebGLRenderer({
+    canvas: glCanvas, antialias: true, powerPreference: 'high-performance',
+  });
+  rendererAvailable = !contextCreationFailed;
+} catch (err) {
+  console.error('[eap] WebGLRenderer construction failed', err);
+}
+if (rendererAvailable) {
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setClearColor(C.bg, 1);
+  stage.insertBefore(renderer.domElement, labelCanvas);
+}
+
+// FT-EAP-CTXLIFECYCLE / FT-WEBGL-RECOVERY-02: this canvas has its own WebGL
+// context, separate from the physical twin's (own renderer, own GPU
+// resources). The lifecycle below (READY -> LOST -> RESTORING -> REBUILDING
+// -> VERIFYING -> RECOVERED, falling back to FAILED) replaces a bare
+// detect-and-reload, on the strength of a fact that decision under-weighted:
 // this page keeps the ENTIRE application state that matters (payload,
 // cellRecords, zoneRecords, mode, view, selected, selectedZone, and the
 // camera objects cam2d/cam3d themselves) as plain JS values that a GPU
@@ -99,22 +187,42 @@ stage.insertBefore(renderer.domElement, labelCanvas);
 // programs are invalidated, never a JS heap object. Calling build() again
 // after a restore is not a hand-patched partial reconstruction: it is the
 // exact, already-tested code path every mode/view switch already takes,
-// recreating every GPU resource uniformly from the still-intact payload --
-// so nothing is "silently missing" the way an ad-hoc incremental patch-up
-// risked. See attemptContextRecovery() below for the real mechanics.
-renderer.domElement.addEventListener('webglcontextlost', (ev) => {
-  ev.preventDefault();
-  handleContextLost();
-});
-renderer.domElement.addEventListener('webglcontextrestored', () => {
-  attemptContextRecovery();
-});
+// recreating every GPU resource uniformly from the still-intact payload.
+// VERIFYING exists because "the browser fired webglcontextrestored" is not
+// the same fact as "the rebuilt scene actually renders" -- see
+// verifyRecovery() below for what is actually checked before RECOVERED is
+// declared, not assumed.
+if (rendererAvailable) {
+  renderer.domElement.addEventListener('webglcontextlost', (ev) => {
+    ev.preventDefault();
+    handleContextLost();
+  });
+  renderer.domElement.addEventListener('webglcontextrestored', () => {
+    attemptContextRecovery();
+  });
+} else {
+  // Phase 1: no runtime loss occurred -- there was never a context to lose.
+  // Distinct from LOST (which implies "was working, might come back on its
+  // own"): this page's 3D view never started, so it goes straight to
+  // FAILED with wording that says so, rather than the LOST/RESTORING text
+  // that would misrepresent a boot-time absence as a recoverable outage.
+  showCreationFailure();
+}
 document.getElementById('webgl-reload')?.addEventListener('click', () => window.location.reload());
 document.getElementById('webgl-retry')?.addEventListener('click', () => {
-  // The one real action available to a page whose browser did not restore
-  // the context on its own: ask it to. A genuinely dead GPU process will not
-  // answer this either, which is why Reload stays visible right beside it.
-  renderer.forceContextRestore();
+  if (rendererAvailable) {
+    // The one real action available to a page whose browser did not restore
+    // the context on its own: ask it to. A genuinely dead GPU process will
+    // not answer this either, which is why Reload stays visible beside it.
+    renderer.forceContextRestore();
+  } else {
+    // Nothing was ever constructed to retry in place -- the whole scene
+    // graph downstream of this line assumes a live renderer exists by the
+    // time build() first runs. A fresh load is the honest retry here, not
+    // a partial in-session reconstruction of a page that never finished
+    // booting its 3D view the first time.
+    window.location.reload();
+  }
 });
 
 const scene = new THREE.Scene();
@@ -135,24 +243,6 @@ let payload = null;
 let floor = null;
 let mode = 'AUTO';          // AUTO | WORLD | EAP
 let view = '2d';            // 2d | 3d
-
-// FT-EAP-CTXLIFECYCLE: READY -> LOST -> RESTORING -> REBUILDING -> RECOVERED
-// (which is immediately followed by a return to READY -- it is a one-frame
-// transition, not a state anything waits in) -- or, when the browser never
-// answers a restore request, LOST -> FAILED. See attemptContextRecovery().
-const WebglLifecycle = Object.freeze({
-  READY: 'READY', LOST: 'LOST', RESTORING: 'RESTORING',
-  REBUILDING: 'REBUILDING', RECOVERED: 'RECOVERED', FAILED: 'FAILED',
-});
-let webglLifecycle = WebglLifecycle.READY;
-let contextLossCount = 0; // observability only; also what a repeated-loss test reads back
-// Real browsers usually fire webglcontextrestored automatically within a
-// second or two of preventDefault() being called, if the underlying driver
-// issue actually resolved. If it does not fire within this window, the
-// context is not coming back on its own, and staying in LOST forever with
-// no further sign of life is a worse user experience than naming that.
-const CONTEXT_RESTORE_TIMEOUT_MS = 8000;
-let contextRestoreTimer = null;
 
 let cam2d = null;
 let cam3d = null;
@@ -643,6 +733,7 @@ function makeCameras() {
 }
 
 function resize() {
+  if (!rendererAvailable) return; // Phase 1: no GPU context ever existed to size
   const w = stage.clientWidth;
   const h = stage.clientHeight;
   if (!w || !h) return;
@@ -708,26 +799,29 @@ function focusOn(cx, cz, w, d) {
 }
 
 function resetCamera() {
+  if (!rendererAvailable) return; // Phase 1: no camera exists to reset
   makeCameras();
   attachControls();
   resize();
 }
 
 /* ------------------------------------------------------- webgl lifecycle -- */
-
-const webglStatusText = document.getElementById('webgl-status-text');
-const webglLostBanner = document.getElementById('webgl-lost');
-const webglRetryBtn = document.getElementById('webgl-retry');
+/* webglStatusText/webglLostBanner/webglRetryBtn/webglReloadBtn are declared
+   near the top of this file, ahead of the renderer-construction block --
+   see that declaration's own comment for why. WEBGL_STATUS_MESSAGES,
+   RECOVERED_DISPLAY_MS, WebglLifecycle and its state are declared there
+   too, for the same reason. */
 
 function setWebglLifecycle(next) {
   webglLifecycle = next;
-  // console, not the aria-live banner, for the two transient internal
-  // stages -- RESTORING/REBUILDING are real but typically sub-second, and
-  // flooding a screen reader with two announcements a recovery apart is
-  // worse than one clear one. LOST and FAILED are the two states a viewer
-  // actually needs to be told about, and each writes its own banner text
-  // where it happens below, not here.
   console.log('[eap] webgl lifecycle ->', next);
+}
+
+function showWebglBanner(messageKey, { retryVisible = false, reloadVisible = true } = {}) {
+  if (webglStatusText) webglStatusText.textContent = WEBGL_STATUS_MESSAGES[messageKey];
+  if (webglRetryBtn) webglRetryBtn.hidden = !retryVisible;
+  if (webglReloadBtn) webglReloadBtn.hidden = !reloadVisible;
+  if (webglLostBanner) webglLostBanner.hidden = false;
 }
 
 /** Runs on webglcontextlost. Not `if (controls) controls.enabled = false;`
@@ -737,23 +831,28 @@ function setWebglLifecycle(next) {
  *  re-enables it -- see attemptContextRecovery(). */
 function handleContextLost() {
   contextLossCount += 1;
+  // Phase 5: a new loss episode. Whatever recovery attempt was in flight
+  // from an OLDER episode (rare, but repeated real-world loss can do this)
+  // is now stale -- every check inside it compares its own captured
+  // generation against the live one and abandons itself rather than
+  // finishing against a context that is not the one that matters anymore.
+  recoveryGeneration += 1;
   setWebglLifecycle(WebglLifecycle.LOST);
   if (controls) controls.enabled = false;
   hovered = null;
   hoveredZone = null;
-  if (webglStatusText) {
-    webglStatusText.textContent = '3D rendering lost the GPU context. This can happen '
-      + 'after the computer sleeps, a graphics driver reset, or memory pressure. '
-      + 'Attempting automatic recovery. The panel on the left is unaffected -- '
-      + 'population, legend and any current selection stay available.';
-  }
-  if (webglRetryBtn) webglRetryBtn.hidden = true; // nothing to retry yet -- still waiting on the browser
-  if (webglLostBanner) webglLostBanner.hidden = false;
+  // Reload is intentionally NOT offered while automatic recovery might
+  // still work on its own -- Phase 6's "last resort only." It reappears in
+  // showFailedFallback() once that has genuinely failed.
+  showWebglBanner('LOST', { retryVisible: false, reloadVisible: false });
   clearTimeout(contextRestoreTimer);
+  const myGeneration = recoveryGeneration;
   contextRestoreTimer = setTimeout(() => {
     // The browser never fired webglcontextrestored on its own. Escalate to
-    // the fallback Phase 5 asks for, rather than sitting in LOST silently.
-    if (webglLifecycle === WebglLifecycle.LOST) showFailedFallback();
+    // the fallback Phase 6 asks for, rather than sitting in LOST silently.
+    if (myGeneration === recoveryGeneration && webglLifecycle === WebglLifecycle.LOST) {
+      showFailedFallback();
+    }
   }, CONTEXT_RESTORE_TIMEOUT_MS);
 }
 
@@ -766,21 +865,40 @@ function handleContextLost() {
  * plain JS variable that a GPU event cannot touch -- so "preservation" here
  * mostly means "do not call the one function (makeCameras) that would
  * overwrite it with a fresh default," not reconstructing anything from a
- * snapshot.
+ * snapshot. webglcontextrestored firing is the start of recovery, not its
+ * conclusion -- see verifyRecovery() for what actually earns RECOVERED.
  */
 function attemptContextRecovery() {
+  // Phase 5: a second webglcontextrestored (some drivers do fire it more
+  // than once for one real event) must not start a second, concurrent
+  // rebuild racing the first.
+  if (webglLifecycle === WebglLifecycle.RESTORING
+    || webglLifecycle === WebglLifecycle.REBUILDING
+    || webglLifecycle === WebglLifecycle.VERIFYING) {
+    return;
+  }
   clearTimeout(contextRestoreTimer);
+  const myGeneration = recoveryGeneration; // this attempt's own token
   setWebglLifecycle(WebglLifecycle.RESTORING);
-  try {
-    // attachControls() below builds a brand new OrbitControls bound to the
-    // SAME still-valid camera object; it always resets .target to the
-    // origin as part of that construction (see its own comment), so the
-    // real pan position has to be carried across that one line by hand.
-    const savedTarget = controls ? controls.target.clone() : null;
-    const savedZoom2d = cam2d ? cam2d.zoom : null;
-    const savedZoom3d = cam3d ? cam3d.zoom : null;
+  showWebglBanner('RESTORING', { retryVisible: false, reloadVisible: false });
 
-    setWebglLifecycle(WebglLifecycle.REBUILDING);
+  // attachControls() below builds a brand new OrbitControls bound to the
+  // SAME still-valid camera object; it always resets .target to the origin
+  // as part of that construction (see its own comment), so the real pan
+  // position has to be carried across that one line by hand.
+  const savedTarget = controls ? controls.target.clone() : null;
+  const savedZoom2d = cam2d ? cam2d.zoom : null;
+  const savedZoom3d = cam3d ? cam3d.zoom : null;
+  const savedSelectedId = selected ? selected.cell_id : null;
+  const savedSelectedZoneId = selectedZone ? selectedZone.zone.zone_id : null;
+  // What VERIFYING checks the rebuild against -- captured before build()
+  // runs, so it reflects the population this recovery is meant to restore,
+  // not whatever build() happens to leave behind if something goes wrong.
+  const expectedCellCount = cellRecords.length;
+
+  setWebglLifecycle(WebglLifecycle.REBUILDING);
+  showWebglBanner('REBUILDING', { retryVisible: false, reloadVisible: false });
+  try {
     // Recreates every GPU resource (instanced meshes, line geometry,
     // materials) from cellRecords/zoneRecords, which were never cleared --
     // the exact path a mode/view switch already exercises and every EAP
@@ -806,36 +924,102 @@ function attemptContextRecovery() {
     controls.update();
     resize();
 
-    // Phase 2/4: selection is a reference into the cellRecords/zoneRecords
-    // array build() just replaced with fresh objects carrying the same
-    // ids -- re-resolved by id rather than left pointing at the old,
-    // now-orphaned array so nothing downstream holds a stale reference.
-    if (selected) selected = cellRecords.find((c) => c.cell_id === selected.cell_id) || null;
-    if (selectedZone) {
-      selectedZone = zoneRecords.find((z) => z.zone.zone_id === selectedZone.zone.zone_id) || null;
+    // Selection is a reference into the cellRecords/zoneRecords array
+    // build() just replaced with fresh objects carrying the same ids --
+    // re-resolved by id rather than left pointing at the old, now-orphaned
+    // array so nothing downstream holds a stale reference.
+    if (savedSelectedId) selected = cellRecords.find((c) => c.cell_id === savedSelectedId) || null;
+    if (savedSelectedZoneId) {
+      selectedZone = zoneRecords.find((z) => z.zone.zone_id === savedSelectedZoneId) || null;
     }
     renderInspector();
-
-    if (webglLostBanner) webglLostBanner.hidden = true;
-    setWebglLifecycle(WebglLifecycle.RECOVERED);
-    setWebglLifecycle(WebglLifecycle.READY);
   } catch (err) {
-    // Phase 6, "recovery failure": whatever went wrong, the honest response
-    // is the same fallback a browser that never restores at all gets, not a
-    // silently half-working 3D view.
-    console.error('[eap] context recovery failed', err);
-    showFailedFallback();
+    console.error('[eap] rebuild failed during recovery', err);
+    if (myGeneration === recoveryGeneration) showFailedFallback();
+    return;
   }
+
+  if (myGeneration !== recoveryGeneration) return; // superseded by a newer loss while rebuilding
+  setWebglLifecycle(WebglLifecycle.VERIFYING);
+  showWebglBanner('VERIFYING', { retryVisible: false, reloadVisible: false });
+  verifyRecovery(myGeneration, expectedCellCount);
+}
+
+/**
+ * webglcontextrestored firing, and even a rebuild completing without
+ * throwing, are not proof the view actually works -- a context can be
+ * restored and then immediately re-lost, or the GPU driver issue that
+ * caused the original loss can still be active. This is the watchdog
+ * Phase 4 asks for: real checks against the live renderer/scene, and one
+ * real observed frame of progression through tick()'s own normal path
+ * (not a second, parallel render call), before RECOVERED is declared.
+ */
+function verifyRecovery(myGeneration, expectedCellCount) {
+  if (myGeneration !== recoveryGeneration) return; // a newer loss owns the lifecycle now
+  let ok = true;
+  let reason = '';
+  try {
+    const gl = renderer.getContext();
+    if (!gl || gl.isContextLost()) { ok = false; reason = 'context reports lost immediately after restore'; }
+    if (ok && cellMesh && cellMesh.count !== expectedCellCount) {
+      ok = false;
+      reason = `cell instance count ${cellMesh.count} != expected ${expectedCellCount}`;
+    }
+    if (ok && scene.children.length === 0) { ok = false; reason = 'scene has no content after rebuild'; }
+  } catch (err) {
+    ok = false;
+    reason = err.message;
+  }
+  if (!ok) {
+    console.error('[eap] recovery verification failed:', reason);
+    if (myGeneration === recoveryGeneration) showFailedFallback();
+    return;
+  }
+
+  // Frame progression: tick() itself renders while VERIFYING (see its own
+  // guard), so two real animation frames observed here are two real,
+  // ordinary frames of this page's own normal render path -- not a
+  // synthetic double-call standing in for it.
+  const framesAtStart = totalFramesRendered;
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    if (myGeneration !== recoveryGeneration) return; // superseded meanwhile
+    if (totalFramesRendered <= framesAtStart) {
+      console.error('[eap] recovery verification failed: no frame progression observed');
+      showFailedFallback();
+      return;
+    }
+    finishRecovery(myGeneration);
+  }));
+}
+
+function finishRecovery(myGeneration) {
+  if (myGeneration !== recoveryGeneration) return;
+  setWebglLifecycle(WebglLifecycle.RECOVERED);
+  showWebglBanner('RECOVERED', { retryVisible: false, reloadVisible: false });
+  setWebglLifecycle(WebglLifecycle.READY);
+  setTimeout(() => {
+    // Only clear the banner if nothing newer has happened meanwhile --
+    // otherwise this stale timer would hide a LOST/FAILED banner a later
+    // episode is legitimately still showing.
+    if (myGeneration === recoveryGeneration && webglLifecycle === WebglLifecycle.READY && webglLostBanner) {
+      webglLostBanner.hidden = true;
+    }
+  }, RECOVERED_DISPLAY_MS);
 }
 
 function showFailedFallback() {
   setWebglLifecycle(WebglLifecycle.FAILED);
-  if (webglStatusText) {
-    webglStatusText.textContent = '3D view temporarily unavailable. Live operational '
-      + 'data remains available in the panel on the left.';
-  }
-  if (webglRetryBtn) webglRetryBtn.hidden = false;
-  if (webglLostBanner) webglLostBanner.hidden = false;
+  showWebglBanner('FAILED', { retryVisible: true, reloadVisible: true });
+}
+
+/** Phase 1: the GPU was never available at all -- see the WebGLRenderer
+ *  construction guard near the top of this file. Reuses the FAILED state
+ *  (the UI treatment -- Retry, Reload, a calm banner -- is identical) but
+ *  its own distinct message, since "could not be restored" would claim a
+ *  working view that never existed to restore. */
+function showCreationFailure() {
+  setWebglLifecycle(WebglLifecycle.FAILED);
+  showWebglBanner('CREATION_FAILED', { retryVisible: true, reloadVisible: true });
 }
 
 /* ------------------------------------------------------------------ zone drawer -- */
@@ -1186,6 +1370,12 @@ function renderStateBreakdown() {
 /* ------------------------------------------------------------------ modes -- */
 
 function rebuild() {
+  // Phase 1: with no GPU context, load() still fetches and renders every
+  // plain-DOM fact (headline, population counts, legend, the simulated-
+  // state breakdown) -- only the 3D scene itself is skipped, which is
+  // exactly what showCreationFailure()'s own banner already told the
+  // viewer to expect.
+  if (!rendererAvailable) return;
   build();
   makeCameras();
   attachControls();
@@ -1224,16 +1414,28 @@ function setView(next) {
 let frames = 0;
 let lastSample = performance.now();
 let fps = 0;
+// Real bug found by testing recovery, not by reasoning about it: `frames`
+// above resets to 0 on every fps sample window (about once a second), so
+// verifyRecovery() briefly used it as a "did rendering progress" check and
+// failed a real, correctly-recovering context on the unlucky timing where
+// the reset landed between its start-capture and its two-frame-later check
+// (framesAtStart=19, sampled 1 two real frames later -- 1 <= 19, a false
+// FAILED for a context that had, in fact, rendered a real new frame). This
+// counter is purpose-built for that check instead: it only ever increases.
+let totalFramesRendered = 0;
 
 function tick() {
   requestAnimationFrame(tick);
-  if (!payload || !cam2d) return;
-  // FT-EAP-CTXLIFECYCLE Phase 3: stop rendering on a lost/recovering context
-  // as an explicit app decision, not by relying on three.js's own internal
-  // no-op-while-lost guard. RECOVERED is never observed here -- it is set
-  // and immediately advanced to READY within the same synchronous call, one
+  if (!rendererAvailable || !payload || !cam2d) return;
+  // FT-WEBGL-RECOVERY-02 Phase 3/4: stop rendering on a lost/recovering
+  // context as an explicit app decision, not by relying on three.js's own
+  // internal no-op-while-lost guard. VERIFYING is deliberately included --
+  // verifyRecovery() observes THIS loop's own real frame progression, so
+  // rendering has to actually happen here while verifying, not in a second,
+  // parallel render call. RECOVERED is never observed here -- it is set and
+  // immediately advanced to READY within the same synchronous call, one
   // event-loop turn before this function's next invocation.
-  if (webglLifecycle !== WebglLifecycle.READY) return;
+  if (webglLifecycle !== WebglLifecycle.READY && webglLifecycle !== WebglLifecycle.VERIFYING) return;
   renderer.setViewport(0, 0, rect.w, rect.h);
   if (controls) controls.update();
   renderer.render(scene, activeCam());
@@ -1242,6 +1444,7 @@ function tick() {
     labelsDirty = false;
   }
   frames += 1;
+  totalFramesRendered += 1;
   const now = performance.now();
   if (now - lastSample >= 1000) {
     fps = (frames * 1000) / (now - lastSample);
@@ -1291,36 +1494,42 @@ if (simToggleBtn) {
 drawerClose.addEventListener('click', closeDrawer);
 window.addEventListener('resize', resize);
 
-renderer.domElement.addEventListener('click', (ev) => {
-  const cell = pickCellAt(ev.clientX, ev.clientY);
-  if (cell) {
-    selected = cell;
-    selectedZone = null;
-  } else {
-    const zone = isMapMode() ? pickZoneAt(ev.clientX, ev.clientY) : null;
-    selected = null;
-    selectedZone = zone;
-  }
-  paintStates();
-  renderInspector();
-});
-
-let hoverPending = false;
-renderer.domElement.addEventListener('pointermove', (ev) => {
-  if (hoverPending) return;
-  hoverPending = true;
-  const { clientX, clientY } = ev;
-  requestAnimationFrame(() => {
-    hoverPending = false;
-    const next = pickCellAt(clientX, clientY);
-    const nextZone = !next && isMapMode() ? pickZoneAt(clientX, clientY) : null;
-    const changed = (next && next.cell_id) !== (hovered && hovered.cell_id);
-    hovered = next;
-    hoveredZone = nextZone;
-    renderer.domElement.style.cursor = (next || nextZone) ? 'pointer' : 'default';
-    if (changed) paintStates();
+// Phase 1: renderer.domElement was never inserted into the DOM when GPU
+// context creation failed (the canvas the events would bind to does not
+// exist as a live element for a pointer to ever reach), so there is
+// nothing real for either listener to attach to.
+if (rendererAvailable) {
+  renderer.domElement.addEventListener('click', (ev) => {
+    const cell = pickCellAt(ev.clientX, ev.clientY);
+    if (cell) {
+      selected = cell;
+      selectedZone = null;
+    } else {
+      const zone = isMapMode() ? pickZoneAt(ev.clientX, ev.clientY) : null;
+      selected = null;
+      selectedZone = zone;
+    }
+    paintStates();
+    renderInspector();
   });
-});
+
+  let hoverPending = false;
+  renderer.domElement.addEventListener('pointermove', (ev) => {
+    if (hoverPending) return;
+    hoverPending = true;
+    const { clientX, clientY } = ev;
+    requestAnimationFrame(() => {
+      hoverPending = false;
+      const next = pickCellAt(clientX, clientY);
+      const nextZone = !next && isMapMode() ? pickZoneAt(clientX, clientY) : null;
+      const changed = (next && next.cell_id) !== (hovered && hovered.cell_id);
+      hovered = next;
+      hoveredZone = nextZone;
+      renderer.domElement.style.cursor = (next || nextZone) ? 'pointer' : 'default';
+      if (changed) paintStates();
+    });
+  });
+}
 
 /* Test surface: the regression asserts what was drawn, so it reads the instance
    matrices back rather than the records they came from. */
@@ -1376,10 +1585,11 @@ window.__eap = {
   drawnMarkers: () => (markerMesh ? markerMesh.count : 0),
   drawnZones: () => zoneRecords.length,
   batches: () => scene.children.filter((o) => o.isInstancedMesh).length,
-  geometries: () => renderer.info.memory.geometries,
-  drawCalls: () => renderer.info.render.calls,
-  triangles: () => renderer.info.render.triangles,
+  geometries: () => (rendererAvailable ? renderer.info.memory.geometries : 0),
+  drawCalls: () => (rendererAvailable ? renderer.info.render.calls : 0),
+  triangles: () => (rendererAvailable ? renderer.info.render.triangles : 0),
   fps: () => fps,
+  totalFramesRendered: () => totalFramesRendered,
   drawn: () => readInstances(),
   units: () => (payload ? payload.machine_units : []),
   zoneList: () => (payload ? payload.zones : []),
@@ -1440,8 +1650,10 @@ window.__eap = {
   // attemptContextRecovery() drive; nothing here is a second, parallel copy.
   webglLifecycle: () => webglLifecycle,
   contextLossCount: () => contextLossCount,
-  simulateContextLoss: () => renderer.forceContextLoss(),
-  simulateContextRestore: () => renderer.forceContextRestore(),
+  simulateContextLoss: () => (rendererAvailable ? renderer.forceContextLoss() : undefined),
+  simulateContextRestore: () => (rendererAvailable ? renderer.forceContextRestore() : undefined),
+  rendererAvailable: () => rendererAvailable,
+  recoveryGeneration: () => recoveryGeneration,
   cameraSnapshot: () => (cam2d && cam3d ? {
     view,
     zoom2d: cam2d.zoom,

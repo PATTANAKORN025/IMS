@@ -223,18 +223,20 @@
       <div id="zoneDrawerBody"></div>
       <canvas id="zoneDrawerCanvas"></canvas>
     </div>
-    <!-- FT-EAP-CTXLIFECYCLE: shown from webglcontextlost through recovery or
-         failure (eap.js). role="alert" because this is the one state that
-         needs an interrupting announcement -- this canvas has stopped
-         rendering, not merely gone stale. Text is set per lifecycle stage
-         (LOST/RESTORING/REBUILDING/FAILED) by setWebglLifecycle(); the two
-         actions are static markup, shown/hidden by stage -- Retry only once
-         automatic recovery has actually failed, Reload always available as
-         the last-resort escape hatch Phase 5 asks to keep. -->
+    <!-- FT-WEBGL-RECOVERY-02: shown from webglcontextlost (or a boot-time
+         webglcontextcreationerror) through recovery or failure (eap.js).
+         role="alert" because this is the one state that needs an
+         interrupting announcement -- this canvas has stopped rendering, not
+         merely gone stale. Text is set per lifecycle stage (LOST/
+         RESTORING/REBUILDING/VERIFYING/RECOVERED/FAILED) by
+         showWebglBanner(); both actions are shown/hidden by stage -- Retry
+         only once automatic recovery has actually failed (or never started
+         at all), Reload only alongside it as the explicit last resort, not
+         offered while an automatic attempt might still work on its own. -->
     <div id="webgl-lost" hidden role="alert">
       <p id="webgl-status-text"></p>
-      <button type="button" id="webgl-retry" hidden>Retry 3D view</button>
-      <button type="button" id="webgl-reload">Reload page</button>
+      <button type="button" id="webgl-retry" hidden>Retry 3D</button>
+      <button type="button" id="webgl-reload" hidden>Reload page</button>
     </div>
   </main>
 
