@@ -1320,7 +1320,7 @@ const PREDICTIVE_FLEET_PER_DEVICE_LIMIT = 2000;
 // smaller, still-real, still-bounded limit cuts query cost roughly
 // proportionally without changing risk-ranking's own existing, tested
 // 2000-row behavior.
-const EXECUTIVE_SUMMARY_PER_DEVICE_LIMIT = 500;
+const EXECUTIVE_SUMMARY_PER_DEVICE_LIMIT = 300;
 
 // FT-23 — pulled the query + per-device computation out of the
 // risk-ranking route so /api/predictive/risk-ranking and the new
@@ -1334,16 +1334,36 @@ async function runFleetRiskScan(metric, fromMs, toMs, perDeviceLimit = PREDICTIV
   const columns = metric === 'PE' ? spc.PE_COLUMNS : spc.JE_COLUMNS;
   const toleranceColumn = metric === 'PE' ? 'pe_setting' : 'je_setting';
   const notNullClause = columns.map((c) => `${c} IS NOT NULL`).join(' OR ');
-  const result = await pool.query(
-    `SELECT eqp_id, "time", ${columns.join(', ')}, ${toleranceColumn} FROM (
-       SELECT eqp_id, "time", ${columns.join(', ')}, ${toleranceColumn},
-              ROW_NUMBER() OVER (PARTITION BY eqp_id ORDER BY "time" DESC) AS rn
+  // FT-24 Phase 3/8: an EARLIER version of this query added factory/process
+  // to every row of the main scan so the Command Center could show
+  // "machine / process" -- real measurement (DECISION_UX_VALIDATION.md's
+  // FT-24 addendum) found this pushed executive-summary's sustained p95
+  // back over 100ms (more bytes per row, times up to perDeviceLimit rows,
+  // times every device, times 2 metrics). factory/process is a display
+  // fact that only needs ONE value per device (the most recent), not a
+  // copy on every one of up to `perDeviceLimit` rows -- moved to its own
+  // tiny DISTINCT ON query below (bounded to <= DEVICE_IDS.length rows)
+  // instead of bloating the heavy per-sample scan.
+  const [result, latestMetaResult] = await Promise.all([
+    pool.query(
+      `SELECT eqp_id, "time", ${columns.join(', ')}, ${toleranceColumn} FROM (
+         SELECT eqp_id, "time", ${columns.join(', ')}, ${toleranceColumn},
+                ROW_NUMBER() OVER (PARTITION BY eqp_id ORDER BY "time" DESC) AS rn
+         FROM public.ldi_data
+         WHERE eqp_id = ANY($1) AND "time" >= $2 AND "time" <= $3 AND (${notNullClause})
+       ) sub WHERE rn <= $4
+       ORDER BY eqp_id ASC, "time" ASC`,
+      [DEVICE_IDS, from, to, perDeviceLimit],
+    ),
+    pool.query(
+      `SELECT DISTINCT ON (eqp_id) eqp_id, factory, process
        FROM public.ldi_data
-       WHERE eqp_id = ANY($1) AND "time" >= $2 AND "time" <= $3 AND (${notNullClause})
-     ) sub WHERE rn <= $4
-     ORDER BY eqp_id ASC, "time" ASC`,
-    [DEVICE_IDS, from, to, perDeviceLimit],
-  );
+       WHERE eqp_id = ANY($1) AND "time" >= $2 AND "time" <= $3
+       ORDER BY eqp_id, "time" DESC`,
+      [DEVICE_IDS, from, to],
+    ),
+  ]);
+  const latestMetaByDevice = new Map(latestMetaResult.rows.map((r) => [r.eqp_id, { factory: r.factory ?? null, process: r.process ?? null }]));
 
   const byDevice = new Map();
   for (const row of result.rows) {
@@ -1373,10 +1393,23 @@ async function runFleetRiskScan(metric, fromMs, toMs, perDeviceLimit = PREDICTIV
     const mixedBaseline = predictive.computeMixedBaselineSignal({ seriesValues, seriesTimestampsMs, nelson, cusum });
     const risk = predictive.assessRisk({ cpk, trajectoryClassification: trajectory.classification, driftIntel, mixedBaseline, nelsonViolationCount: nelson.length });
 
+    const lastRow = rows[rows.length - 1];
+    const meta = latestMetaByDevice.get(deviceId);
     rankings.push({
       device_id: deviceId, metric, sample_count: seriesValues.length, cpk_state: cpk.state, cpk: cpk.cpk,
+      sample_quality: cpk.quality,
       trajectory: trajectory.classification, risk: risk.level, evidence: risk.evidence,
       drift: { direction: driftIntel.direction, velocity_per_hour: driftIntel.velocity_per_hour, persistence: driftIntel.persistence },
+      // FT-24 Phase 3: "machine / process" + a real next-action for the
+      // Command Center's own risk cards -- the SAME OCAP text
+      // decision_summary already uses (lib/predictive.js's own single
+      // authoritative copy), not a second recommendation. factory/process
+      // come from the small DISTINCT ON query above, not from `rows`.
+      factory: meta ? meta.factory : null,
+      process: meta ? meta.process : null,
+      last_valid_sample: lastRow ? new Date(lastRow.tMs).toISOString() : null,
+      next_action: predictive.buildNextActionText(cpk.state, risk.level),
+      mixed_baseline_detected: mixedBaseline.heterogeneity_detected,
     });
   }
   return { rankings, devicesScanned: byDevice.size };

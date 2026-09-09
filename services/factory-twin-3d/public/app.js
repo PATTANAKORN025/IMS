@@ -2383,21 +2383,35 @@ async function renderDeviceHistory() {
   }
 }
 
+// FT-24: pulled out of the machine-list click handler so the Command
+// Center's own "Inspect" action can drive the SAME device-selection path
+// -- not a second implementation of "what happens when a device is
+// picked". spcPanelEl/renderSpc are declared further down this same
+// module scope; safe to reference here because this function only ever
+// runs on a later click/call, long after the whole script (including
+// those declarations) has executed.
+// `renderSpcAfter=false` (Command Center's own Inspect handler uses this)
+// skips the conditional render below -- that caller applies its own
+// single, transition-aware render immediately after calling this, and
+// doing BOTH would fire /api/predictive twice for one click (a real
+// over-fetch bug found during this phase's own testing).
+function selectDeviceForHistory(deviceId, { renderSpcAfter = true } = {}) {
+  historyDeviceId = deviceId;
+  deviceHistoryEl.hidden = false;
+  renderDeviceHistory();
+  if (!renderSpcAfter) return;
+  // FT-21: SPC shares historyDeviceId -- if the panel is already open
+  // (an engineer left it expanded), a new device pick must refresh it
+  // too, or it would keep showing the PREVIOUS device's stability data
+  // under the new device's label elsewhere on screen.
+  if (spcPanelEl && spcPanelEl.open) renderSpc();
+}
+
 if (machineListEl) {
   machineListEl.addEventListener('click', (event) => {
     const btn = event.target.closest('[data-history-device]');
     if (!btn) return;
-    historyDeviceId = btn.getAttribute('data-history-device');
-    deviceHistoryEl.hidden = false;
-    renderDeviceHistory();
-    // FT-21: SPC shares historyDeviceId -- if the panel is already open
-    // (an engineer left it expanded), a new device pick must refresh it
-    // too, or it would keep showing the PREVIOUS device's stability data
-    // under the new device's label elsewhere on screen. spcPanelEl/renderSpc
-    // are declared further down this same module scope; safe to reference
-    // here because this callback only ever runs on a later click, long
-    // after the whole script (including those declarations) has executed.
-    if (spcPanelEl && spcPanelEl.open) renderSpc();
+    selectDeviceForHistory(btn.getAttribute('data-history-device'));
   });
 }
 if (historyMetricEl) historyMetricEl.addEventListener('change', renderDeviceHistory);
@@ -2620,6 +2634,147 @@ execSummaryRangeButtons.forEach((btn) => {
 });
 if (execSummaryPanelEl) {
   execSummaryPanelEl.addEventListener('toggle', () => { if (execSummaryPanelEl.open) renderExecSummary(); });
+}
+
+// ── FT-24: Executive Command Center ─────────────────────────────────────
+// PLANT STATE -> RISK PRIORITY -> CAPABILITY/TREND -> EVIDENCE -> ACTION,
+// in that visual order. No new calculation anywhere in this section:
+// PLANT STATE reuses the SAME lastStateRows/STATUS_ORDER/statusForMachineState
+// the existing #status-strip already renders from (no new fetch); RISK
+// PRIORITY/CAPABILITY/EVIDENCE reuse /api/predictive/executive-summary
+// (FT-23, unchanged); "Inspect" hands off to selectDeviceForHistory() +
+// the existing SPC panel (FT-21/22/23) for ACTION -- the SAME Machine
+// Snapshot link / alarm correlation code, not a second implementation.
+const ccDialogEl = document.getElementById('command-center-dialog');
+const ccOpenBtn = document.getElementById('command-center-open');
+const ccCloseBtn = document.getElementById('command-center-close');
+const ccPlantStateEl = document.getElementById('cc-plant-state');
+const ccResultEl = document.getElementById('cc-result');
+const ccRangeButtons = document.querySelectorAll('[data-cc-range]');
+let ccRange = '1h';
+
+function renderCcPlantState() {
+  if (!ccPlantStateEl) return;
+  const counts = new Map(STATUS_ORDER.map((k) => [k, 0]));
+  for (const row of lastStateRows) {
+    const key = statusForMachineState(row && row.machine_state);
+    counts.set(key, (counts.get(key) || 0) + 1);
+  }
+  ccPlantStateEl.innerHTML = `<span class="pi-label">PLANT STATE</span>`
+    + STATUS_ORDER.filter((k) => counts.get(k) > 0)
+      .map((k) => `<span class="cc-state-pill">${esc(OPERATIONAL_STATUS[k].label)}: ${counts.get(k)}</span>`).join('');
+}
+
+async function renderCommandCenter() {
+  renderCcPlantState();
+  if (!ccResultEl) return;
+  ccResultEl.textContent = 'Loading…';
+  try {
+    const res = await fetch(`api/predictive/executive-summary?range=${encodeURIComponent(ccRange)}`);
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      ccResultEl.textContent = `Unavailable: ${body.error || res.status}`;
+      return;
+    }
+    const data = await res.json();
+    const { highest_risks: risks, capability_direction: capDir, fleet } = data;
+
+    if (risks.length === 0) {
+      ccResultEl.innerHTML = `<span class="exec-section-title">RISK PRIORITY</span><div class="hint">No device is at elevated risk in this window (${fleet.devices_scanned} device/metric combination(s) scanned).</div>`;
+      return;
+    }
+
+    const top = risks[0];
+    const rest = risks.slice(1);
+    const inspectBtn = (r) => `<button type="button" class="btn-mini cc-inspect" data-device="${esc(r.device_id)}" data-metric="${esc(r.metric)}">Inspect →</button>`;
+    // Phase 4's own explicit instruction: never let a mixed-baseline flag
+    // read as an equipment-failure claim. The full why/window/safe-
+    // interpretation text (FT-23's own banner) is one click away via
+    // Inspect -- this compact card only ever flags it, never expands it,
+    // which is exactly the "decision compression" this phase asks for.
+    const mixedNote = top.mixed_baseline_detected
+      ? '<div class="hint">Mixed baseline suspected (not necessarily equipment failure) -- see Inspect for full detail.</div>' : '';
+
+    ccResultEl.innerHTML = `
+      <span class="exec-section-title">RISK PRIORITY</span>
+      <div class="cc-top-risk">
+        <div class="cc-top-risk-line">
+          <span class="pi-risk pi-risk-${esc(top.risk)}">${esc(top.risk)} RISK</span>
+          <b class="cc-top-risk-device">${esc(top.device_id)}</b> / ${esc(top.metric)}
+          <span class="cc-top-risk-trend">capability ${esc(top.trajectory)}</span>
+        </div>
+        <div>${esc(top.process || 'process n/a')}${top.factory ? ` &middot; factory ${esc(top.factory)}` : ''} &middot; Cpk <b>${fmt2(top.cpk)}</b> (${esc(top.cpk_state)}) &middot; sample quality ${esc(top.sample_quality || '—')}</div>
+        <span class="pi-label" style="margin-top:4px">EVIDENCE</span>
+        <ul class="pi-evidence-list">${top.evidence.map((e) => `<li>${esc(e)}</li>`).join('')}</ul>
+        ${mixedNote}
+        <div class="pi-next-action" style="margin-top:6px"><span class="pi-label">NEXT ACTION</span>${esc(top.next_action || '—')}</div>
+        ${inspectBtn(top)}
+      </div>
+      ${rest.length > 0 ? `<span class="exec-section-title">OTHER ELEVATED RISKS</span>${rest.map((r) => `
+        <div class="fleet-risk-row">
+          <span class="pi-risk pi-risk-${esc(r.risk)}">${esc(r.risk)}</span>
+          <b>${esc(r.device_id)}</b> / ${esc(r.metric)} &middot; ${esc(r.process || 'process n/a')} &middot; Cpk ${fmt2(r.cpk)} &middot; ${esc(r.trajectory)}${r.mixed_baseline_detected ? ' &middot; mixed-baseline suspected' : ''}
+          ${inspectBtn(r)}
+        </div>`).join('')}` : ''}
+      <span class="exec-section-title">CAPABILITY / TREND (fleet-wide)</span>
+      <div>declining: ${capDir.declining} &middot; improving: ${capDir.improving} &middot; stable: ${capDir.stable} &middot; unknown: ${capDir.unknown}</div>`;
+  } catch (err) {
+    ccResultEl.textContent = `Fetch failed: ${err.message}`;
+  }
+}
+
+if (ccOpenBtn && ccDialogEl && typeof ccDialogEl.showModal === 'function') {
+  ccOpenBtn.addEventListener('click', () => {
+    ccDialogEl.showModal();
+    renderCommandCenter();
+  });
+}
+if (ccCloseBtn && ccDialogEl) ccCloseBtn.addEventListener('click', () => ccDialogEl.close());
+ccRangeButtons.forEach((btn) => {
+  btn.addEventListener('click', () => {
+    ccRange = btn.getAttribute('data-cc-range');
+    ccRangeButtons.forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+    renderCommandCenter();
+  });
+});
+
+// ACTION: hands off to the existing, already-verified device-selection +
+// SPC-panel path -- never a second Machine Snapshot link or alarm
+// correlation. Closing the dialog first (native <dialog> already returns
+// focus to the opener button on close) then driving the drawer open keeps
+// exactly one modal/overlay state active at a time.
+if (ccResultEl) {
+  ccResultEl.addEventListener('click', (event) => {
+    const btn = event.target.closest('.cc-inspect');
+    if (!btn) return;
+    const deviceId = btn.getAttribute('data-device');
+    const metric = btn.getAttribute('data-metric');
+    ccDialogEl.close();
+    const appEl = document.getElementById('app');
+    if (appEl && !appEl.classList.contains('drawer-open')) document.getElementById('drawer-toggle').click();
+    const devicesDetails = document.getElementById('unmapped-devices');
+    if (devicesDetails) devicesDetails.open = true;
+    spcMetric = metric;
+    if (spcMetricEl) spcMetricEl.value = metric;
+    // Device+metric MUST be set before the panel opens/renders, and the
+    // panel must render EXACTLY once -- a real over-fetch bug found during
+    // this phase's own testing (3 /api/predictive requests per Inspect
+    // click, not 1, from three independent triggers all firing for the
+    // same click). renderSpcAfter:false stops selectDeviceForHistory from
+    // adding a second trigger; the branch below is the ONLY remaining one,
+    // and it is itself transition-aware: setting `.open = true` fires a
+    // native 'toggle' event only on an actual false->true transition, so
+    // exactly one of these two branches ever renders.
+    selectDeviceForHistory(deviceId, { renderSpcAfter: false });
+    if (spcPanelEl) {
+      if (spcPanelEl.open) renderSpc(); // already open: no toggle event will fire, render explicitly
+      else spcPanelEl.open = true; // closed -> open: the panel's own toggle listener renders once
+    }
+    requestAnimationFrame(() => {
+      const target = document.getElementById('spc-panel');
+      if (target) target.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' });
+    });
+  });
 }
 
 function applyState(payload) {

@@ -387,7 +387,15 @@
     /* Phase 4: action continuity -- a real drill-down link plus any real
        correlated alarms, never styled to look like a CALCULATED/FORECAST
        claim (no left-border colour token reused from those). */
+    /* FT-24: a real color-contrast defect found during this phase's own
+       testing -- no rule anywhere in this file set an explicit link
+       colour, so both of these anchors rendered in the browser's default
+       link blue (#0000EE), measured at 1.86-1.93:1 against this app's dark
+       panel backgrounds -- far under the 4.5:1 AA minimum. --accent
+       (already used and contrast-verified elsewhere in this file, 8+:1
+       here) makes both real, working links. */
     .action-links { margin-top: 8px; font-size: 11px; }
+    .action-links a, .action-alarms a { color: var(--accent); }
     .action-alarms { margin-top: 6px; font-size: 10.5px; }
     .action-alarms a { margin-left: 4px; }
     /* Phase 5: executive summary. */
@@ -396,6 +404,30 @@
     .exec-fleet-counts { display: flex; gap: 10px; margin-bottom: 6px; }
     .exec-count { padding: 2px 6px; border-radius: 3px; background: var(--panel-2); border: 1px solid var(--line-2); }
     .exec-section-title { font-size: 9px; font-weight: 700; letter-spacing: .07em; color: var(--text-dim); display: block; margin: 6px 0 2px; }
+
+    /* FT-24: Executive Command Center. PRIMARY SIGNAL (the top risk) is
+       deliberately the single largest, boldest thing in this dialog --
+       everything else (plant state pills, the "other risks" list,
+       capability-direction counts) is real but visually subordinate, per
+       Phase 1's own "primary signals must dominate" instruction. */
+    #command-center-dialog {
+      width: min(560px, 92vw); max-height: 85vh; overflow-y: auto;
+      background: var(--panel); color: var(--text); border: 1px solid var(--line-2);
+      border-radius: var(--radius); padding: 14px 16px; font-size: 12px;
+    }
+    #command-center-dialog::backdrop { background: rgba(0, 0, 0, 0.55); }
+    .cc-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .cc-header h2 { margin: 0; font-size: 15px; }
+    #cc-plant-state { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+    .cc-state-pill { font-size: 10.5px; padding: 2px 7px; border-radius: 3px; background: var(--panel-2); border: 1px solid var(--line-2); }
+    .cc-top-risk { margin-top: 8px; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: var(--radius); background: var(--panel-2); }
+    .cc-top-risk-line { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin: 4px 0; }
+    .cc-top-risk-device { font-size: 19px; font-weight: 700; }
+    .cc-top-risk-trend { color: var(--text-dim); font-size: 11px; }
+    #command-center-dialog .pi-risk { font-size: 12px; padding: 1px 7px; }
+    #command-center-dialog .cc-inspect { margin-top: 6px; }
+    #command-center-dialog .fleet-risk-row { align-items: flex-start; flex-wrap: wrap; }
+    #command-center-dialog .fleet-risk-row .cc-inspect { margin-top: 0; margin-left: auto; }
     #diagnostics-body { margin-top: 8px; font-size: 11px; }
     #diagnostics-body .k { color: var(--text-dim); }
     .ev { display: inline-block; width: 1.1em; text-align: center; }
@@ -442,12 +474,44 @@
       <button type="button" class="btn" id="drawer-toggle" aria-expanded="false" aria-controls="drawer">
         Inspection
       </button>
+      <!-- FT-24: Executive Command Center. A native <dialog> -- real
+           top-layer stacking, built-in Escape-to-close and light-dismiss
+           via the backdrop, and a real modal focus trap the browser itself
+           enforces, rather than a hand-rolled div this codebase would have
+           to get right on its own. -->
+      <button type="button" class="btn" id="command-center-open" aria-haspopup="dialog" aria-controls="command-center-dialog">
+        Command Center
+      </button>
       <!-- The EAP operational map is a separate page (its own WebGL context,
            its own census-of-210-cells model) reached deliberately from here,
            not a mode this scene switches into and not the page a visitor
            lands on first. -->
       <a class="btn" id="eap-link" href="eap.html">EAP Operational Map</a>
     </header>
+
+    <!-- FT-24: PLANT STATE -> RISK PRIORITY -> CAPABILITY/TREND -> EVIDENCE
+         -> ACTION, in that visual order, top to bottom. Reuses the SAME
+         contracts as everything else on this page: lastStateRows (the
+         existing /api/state poll, no new fetch) for plant state,
+         /api/predictive/executive-summary (FT-23) for risk/trend/evidence,
+         and "Inspect" hands off to the existing device-history/SPC panel
+         (FT-17/21/22/23, unchanged) for action continuity -- no second
+         Machine-Snapshot-link or alarm-correlation implementation. -->
+    <dialog id="command-center-dialog" aria-labelledby="command-center-title">
+      <div class="cc-header">
+        <h2 id="command-center-title">Executive Command Center</h2>
+        <button type="button" class="btn-mini" id="command-center-close" aria-label="Close Command Center">Close</button>
+      </div>
+      <div id="cc-plant-state" aria-live="polite"></div>
+      <div class="history-controls">
+        <div class="history-ranges" id="cc-ranges" role="group" aria-label="Command Center analysis window">
+          <button type="button" data-cc-range="15m" aria-pressed="false">15m</button>
+          <button type="button" data-cc-range="1h" aria-pressed="true">1h</button>
+          <button type="button" data-cc-range="6h" aria-pressed="false">6h</button>
+        </div>
+      </div>
+      <div id="cc-result" aria-live="polite">Loading…</div>
+    </dialog>
 
     <!-- The eight plant states. Rendered by app.js from the shared vocabulary
          so a state cannot appear here without existing in the code that

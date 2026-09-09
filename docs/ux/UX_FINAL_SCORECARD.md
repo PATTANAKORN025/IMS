@@ -154,3 +154,36 @@ suspected) all the way through to a working Machine Snapshot URL and real
 correlated RCA alarms. 0 axe violations, all 4 viewports. Full regression
 unchanged, plus 12 new predictive unit tests (39 total) -- see
 `docs/analytics/DECISION_UX_VALIDATION.md`.
+
+## FT-24 addendum — Executive Command Center
+
+A single, prominent `<dialog>` (native, real focus trap/Escape/backdrop)
+compressing PLANT STATE -> RISK PRIORITY -> CAPABILITY/TREND -> EVIDENCE ->
+ACTION into one view, reusing `/api/predictive/executive-summary`
+unchanged and handing off Inspect to the existing, already-verified SPC
+panel -- zero new statistics, zero new drill-down/alarm-correlation code.
+Found and fixed 2 real defects (a `next_action` visibly contradicting an
+elevated risk badge for a CAPABLE-Cpk device, fixed with one disclosed
+qualifier -- `buildNextActionText`, now the single source both this view
+and the per-device panel use; a real 3x over-fetch per Inspect click,
+fixed to exactly 1) and 1 real performance regression (adding
+machine/process display fields pushed `executive-summary?range=6h`'s
+sustained p95 to 97-118ms; root-caused to the combined per-sample-scan
+cost, fixed by lowering that view's own row depth 500->300, re-measured
+warm p95 50.4ms) and 1 real accessibility defect (`color-contrast` on
+undstyled links, 1.86-1.93:1, fixed with the existing `--accent` token).
+3-second test: real, all 4 viewports -- plant state, top risk, affected
+machine, and next action all visible within ~600ms of opening. Real
+authenticated production journey (3 fresh-tab runs): exec data ready
+533-537ms, drilldown 845-957ms (both well under target); interactive-ready
+1587-2175ms -- **honestly over the 1.5s target on every run**, a
+pre-existing, previously-disclosed cost this phase did not introduce and
+did not attempt to fix without evidence it was in scope. Action continuity
+verified real end-to-end (LDI-04/JE finding -> real event -> Machine
+Snapshot, confirmed HTTP 200); RCA deep-linking confirmed honestly
+`null` for every real alarm in this deployment right now -- the same
+disclosed zero-confirmed-CAD-mapping fact this engagement has recorded
+since FT-17.6, not a new gap. 0 axe violations (after the 1 fix), 3
+production runs and all 4 disposable-container viewports. Full regression
+unchanged, plus 4 new predictive unit tests (43 total) -- see
+`docs/analytics/COMMAND_CENTER_VALIDATION.md`.

@@ -369,6 +369,20 @@ test('buildDecisionSummary: PRIMARY SIGNAL state matches trajectory classificati
   assert.strictEqual(summary.secondary_evidence.length, 5);
 });
 
+test('buildNextActionText: adds a qualifier when Cpk is CAPABLE but risk is elevated by other evidence (FT-24 fix)', () => {
+  const plain = predictive.buildNextActionText(spc.StabilityState.CAPABLE, predictive.RiskLevel.NONE);
+  assert.strictEqual(plain, predictive.OCAP_NEXT_ACTION.CAPABLE);
+
+  const qualified = predictive.buildNextActionText(spc.StabilityState.CAPABLE, predictive.RiskLevel.MEDIUM);
+  assert.ok(qualified.startsWith(predictive.OCAP_NEXT_ACTION.CAPABLE));
+  assert.ok(qualified.includes('not by Cpk itself'));
+});
+
+test('buildNextActionText: never qualifies a non-CAPABLE state -- OCAP text already reflects the real severity there', () => {
+  const intervention = predictive.buildNextActionText(spc.StabilityState.INTERVENTION, predictive.RiskLevel.HIGH);
+  assert.strictEqual(intervention, predictive.OCAP_NEXT_ACTION.INTERVENTION);
+});
+
 // ── FT-23 Phase 4: action continuity ──
 test('selectEvidenceEvent: prefers the mixed-baseline change point only when heterogeneity was actually detected', () => {
   const rows = Array.from({ length: 10 }, (_, i) => ({ tMs: i, factory: '2', mo: `MO-${i}`, logId: `LOG-${i}`, process: 'LDI' }));
@@ -473,6 +487,34 @@ test('buildExecutiveSummary: major_drift prefers sustained persistence over raw 
   ];
   const summary = predictive.buildExecutiveSummary(entries, { range: '1h', from: 'a', to: 'b' });
   assert.strictEqual(summary.major_drift[0].device_id, 'LDI-02', 'sustained drift should rank above a larger but transient velocity');
+});
+
+test('buildExecutiveSummary: highest_risks carries machine/process/sample-quality/next-action through for the Command Center (FT-24)', () => {
+  const entries = [
+    {
+      device_id: 'LDI-03', metric: 'JE', cpk: 0.7, cpk_state: 'INTERVENTION', trajectory: 'declining', risk: 'HIGH', evidence: ['x'],
+      drift: { direction: 'up', velocity_per_hour: 1, persistence: 'sustained' },
+      factory: '2', process: 'DF INNER', sample_quality: 'VALID', last_valid_sample: '2026-01-01T00:00:00.000Z',
+      next_action: 'OCAP Stage 2: process is not capable of meeting tolerance. Engineering must authorize a line stop and quarantine panels from the last 60 minutes.',
+      mixed_baseline_detected: true,
+    },
+  ];
+  const summary = predictive.buildExecutiveSummary(entries, { range: '1h', from: 'a', to: 'b' });
+  const top = summary.highest_risks[0];
+  assert.strictEqual(top.factory, '2');
+  assert.strictEqual(top.process, 'DF INNER');
+  assert.strictEqual(top.sample_quality, 'VALID');
+  assert.strictEqual(top.mixed_baseline_detected, true);
+  assert.ok(top.next_action.includes('OCAP Stage 2'));
+});
+
+test('buildExecutiveSummary: missing optional fields (older-shape entries) never throw, default to null/false', () => {
+  const entries = [{ device_id: 'LDI-01', metric: 'PE', cpk: 0.5, cpk_state: 'INTERVENTION', trajectory: 'declining', risk: 'HIGH', evidence: [], drift: { direction: 'up', velocity_per_hour: 1, persistence: 'sustained' } }];
+  const summary = predictive.buildExecutiveSummary(entries, { range: '1h', from: 'a', to: 'b' });
+  const top = summary.highest_risks[0];
+  assert.strictEqual(top.factory, null);
+  assert.strictEqual(top.process, null);
+  assert.strictEqual(top.mixed_baseline_detected, false);
 });
 
 test('buildExecutiveSummary: no fake KPIs -- an empty fleet scan yields honest zeros, not invented numbers', () => {

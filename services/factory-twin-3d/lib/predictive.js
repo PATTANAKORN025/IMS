@@ -479,6 +479,23 @@ function buildContextLines({ sampleCount, rangeLabel, mixedBaseline, freshness }
   return lines;
 }
 
+// FT-24: a real inconsistency found during this phase's own testing (see
+// DECISION_UX_VALIDATION.md) -- OCAP_NEXT_ACTION is keyed on Cpk state
+// alone, so a device with a CAPABLE Cpk but an elevated risk.level (from
+// declining trajectory, sustained drift, or a mixed-baseline flag -- none
+// of which OCAP_NEXT_ACTION knows about) rendered "No action needed" next
+// to a MEDIUM/HIGH risk badge. Never invents a NEW recommendation --
+// composes the SAME OCAP text with a real, disclosed qualifier pointing
+// back to the evidence already shown, only when the two would otherwise
+// visibly disagree.
+function buildNextActionText(cpkState, riskLevel) {
+  const base = OCAP_NEXT_ACTION[cpkState] || OCAP_NEXT_ACTION.UNKNOWN;
+  if (cpkState === spc.StabilityState.CAPABLE && riskLevel && riskLevel !== RiskLevel.NONE) {
+    return `${base} Risk is elevated by trajectory/drift/mixed-baseline evidence above, not by Cpk itself -- review that evidence before treating "no action" as final.`;
+  }
+  return base;
+}
+
 /**
  * The four-tier decision hierarchy Phase 1 asks for. PRIMARY SIGNAL is
  * deliberately the only thing rendered with heavy visual weight by a UI
@@ -508,7 +525,7 @@ function buildDecisionSummary({ cpk, trajectory, risk, ewma, cusum, nelson, drif
     primary_signal: { subject: 'PROCESS CAPABILITY', state: stateForDisplay, risk_level: risk.level },
     secondary_evidence: buildEvidenceBullets({ cpk, trajectory, ewma, cusum, nelson, driftIntel }),
     context: buildContextLines({ sampleCount, rangeLabel, mixedBaseline, freshness }),
-    next_action: OCAP_NEXT_ACTION[cpk.state] || OCAP_NEXT_ACTION.UNKNOWN,
+    next_action: buildNextActionText(cpk.state, risk.level),
   };
 }
 
@@ -584,7 +601,18 @@ function buildExecutiveSummary(entries, window) {
     .sort((a, b) => (RISK_ORDER[b.risk] - RISK_ORDER[a.risk])
       || ((Number.isFinite(a.cpk) ? a.cpk : Infinity) - (Number.isFinite(b.cpk) ? b.cpk : Infinity)))
     .slice(0, 5)
-    .map((e) => ({ device_id: e.device_id, metric: e.metric, risk: e.risk, cpk: e.cpk, cpk_state: e.cpk_state, trajectory: e.trajectory, evidence: e.evidence }));
+    .map((e) => ({
+      device_id: e.device_id, metric: e.metric, risk: e.risk, cpk: e.cpk, cpk_state: e.cpk_state,
+      trajectory: e.trajectory, evidence: e.evidence,
+      // FT-24 Phase 3: "machine/process/sample quality/next action" for the
+      // Command Center's own risk cards -- already computed by the fleet
+      // scan, never a second per-risk fetch. Optional-chained so this
+      // still works if a caller (e.g. an older test fixture) passes
+      // entries without these fields.
+      factory: e.factory ?? null, process: e.process ?? null, sample_quality: e.sample_quality ?? null,
+      last_valid_sample: e.last_valid_sample ?? null, next_action: e.next_action ?? null,
+      mixed_baseline_detected: e.mixed_baseline_detected ?? false,
+    }));
 
   const majorDrift = [...list]
     .filter((e) => e.drift && Number.isFinite(e.drift.velocity_per_hour) && e.drift.direction !== 'flat')
@@ -761,6 +789,7 @@ module.exports = {
   computeMixedBaselineSignal,
   assessRisk,
   OCAP_NEXT_ACTION,
+  buildNextActionText,
   buildEvidenceBullets,
   buildContextLines,
   buildDecisionSummary,
