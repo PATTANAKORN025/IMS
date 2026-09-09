@@ -98,6 +98,27 @@ renderer.domElement.setAttribute(
   'Three-dimensional view of Floor 1. Machine state and evidence counts are also available as text in the panel on the left.'
 );
 
+// FT-19: GPU context loss (driver reset, sleep/wake, memory pressure) had no
+// handler at all before this -- the canvas would simply stop drawing, with
+// no on-screen sign anything was wrong, and no user-facing recovery path.
+// preventDefault() is required for the browser to ever fire
+// webglcontextrestored at all; without it the context is gone for good.
+// Restoration does not re-answer this: three.js does not automatically
+// re-upload every GPU resource (geometries, textures, shadow maps) after a
+// restore, and rebuilding all of that in place risks silently missing one on
+// a floor plan whose whole job is to be believed. A reload is the same
+// choice this app already makes for a floor switch (see setUpFloorSelector's
+// own comment) -- consistent, not a new policy.
+renderer.domElement.addEventListener('webglcontextlost', (ev) => {
+  ev.preventDefault();
+  const banner = document.getElementById('webgl-lost');
+  if (banner) banner.hidden = false;
+});
+renderer.domElement.addEventListener('webglcontextrestored', () => {
+  window.location.reload();
+});
+document.getElementById('webgl-reload')?.addEventListener('click', () => window.location.reload());
+
 const controls = new OrbitControls(camera, renderer.domElement);
 // Damping keeps the camera gliding after the pointer stops, which is exactly
 // the kind of continued motion a reduced-motion preference asks not to see.
@@ -2391,7 +2412,13 @@ async function pollState() {
     const data = await res.json();
     applyState(data);
   } catch (err) {
-    statusLine.textContent = `State fetch failed: ${err.message}`;
+    // FT-19: the error itself was already deterministic (exact message, not
+    // "something went wrong"), and setInterval already retries every 5s
+    // without any code change here -- but the retry was silent, so a user
+    // reading this had no way to tell "broken" from "about to fix itself".
+    // Recovery is confirmed the same way it already was: the next successful
+    // poll's applyState() overwrites this text and clears .error.
+    statusLine.textContent = `State fetch failed: ${err.message} -- retrying automatically`;
     statusLine.classList.add('error');
   }
 }
@@ -2466,7 +2493,10 @@ function openDeviceListFor(stateKey) {
   }
   const details = document.getElementById('unmapped-devices');
   if (details && !details.open) details.open = true;
-  if (details) details.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // FT-19: was hardcoded 'smooth' regardless of the reduced-motion flag this
+  // file already computes for OrbitControls damping (line ~106) -- an
+  // inconsistency, not a second decision. Same preference, same answer here.
+  if (details) details.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' });
 }
 
 function renderStatusStrip(rows) {
@@ -2698,36 +2728,76 @@ async function boot() {
   const geometryUrl = floorId
     ? `api/floor-geometry?floor=${encodeURIComponent(floorId)}` : 'api/floor-geometry';
 
-  // FT-18: these four fetches are mutually independent -- none reads
+  // FT-19: #data-quality's initial markup is "Loading floor evidence…" and,
+  // before this fix, the ONLY place that ever changed was inside the `if
+  // (geoRes.ok)` branch below -- a failed fetch, a thrown error, or a non-ok
+  // status all left it reading "Loading…" forever. A real, confirmed defect:
+  // the one fetch that draws the entire floor could fail silently (console
+  // only) while the UI kept claiming it was still loading, with no way for a
+  // user to tell "slow" from "broken" and no way to retry short of a full
+  // page reload. Fixed by giving failure its own deterministic text (what
+  // happened) and a real retry action (what the user can do) -- resolves
+  // FT-18's own disclosed P2-1 gap for this endpoint specifically.
+  function showGeometryLoadError(reasonText) {
+    const quality = document.getElementById('data-quality');
+    if (!quality) return;
+    quality.classList.remove('quality-measured');
+    quality.classList.add('quality-error');
+    quality.textContent = '';
+    const msg = document.createElement('span');
+    msg.textContent = `Floor geometry unavailable (${reasonText}). `;
+    quality.appendChild(msg);
+    const retry = document.createElement('button');
+    retry.type = 'button';
+    retry.className = 'btn-mini';
+    retry.textContent = 'Retry';
+    retry.addEventListener('click', () => {
+      retry.disabled = true;
+      retry.textContent = 'Retrying…';
+      loadFloorGeometry().finally(() => {
+        retry.disabled = false;
+        retry.textContent = 'Retry';
+      });
+    });
+    quality.appendChild(retry);
+  }
+
+  // FT-18: mutually independent -- none of the four boot fetches reads
   // another's response, only the shared geometryUrl string computed above
-  // -- so they run concurrently now instead of one round trip after
-  // another. Measured live: interactive-ready dropped from ~1.6s to well
-  // under it. Each keeps its own try/catch exactly as before (a Promise.
-  // all of promises that never reject), so one failing still never blocks
-  // or cancels the others -- identical fault behavior, just concurrent.
-  const geometryFetch = (async () => {
+  // -- so they run concurrently. Each keeps its own try/catch (a Promise.all
+  // of promises that never reject), so one failing still never blocks or
+  // cancels the others -- identical fault behavior, just concurrent.
+  //
+  // FT-19: pulled out of the Promise.all IIFE into its own named function so
+  // the Retry button above can call the exact same load path a page load
+  // does -- not a second, divergent implementation of "load geometry".
+  async function loadFloorGeometry() {
     try {
       const geoRes = await fetch(geometryUrl);
-      if (geoRes.ok) {
-        const geo = await geoRes.json();
-        rawApiEquipment = Array.isArray(geo.equipment) ? geo.equipment : [];
-        buildFloor(geo);
-        applyDisplayMode(activeDisplayMode);
-        // Separate call: the zone layer is independent of the envelope, and
-        // buildPhysicalSlots returns early when no envelope file exists.
-        const drawn = buildFunctionalZones(geo);
-        updateEvidenceSummary(geo, drawn);
-        const meta = geo.functional_zones_meta;
-        if (meta && meta.total > 0) {
-          console.info(
-            `functional zones: ${drawn} rendered of ${meta.total} (${meta.withheld} withheld as unvalidated/conflicting)`
-          );
-        }
+      if (!geoRes.ok) {
+        showGeometryLoadError(`HTTP ${geoRes.status}`);
+        return;
+      }
+      const geo = await geoRes.json();
+      rawApiEquipment = Array.isArray(geo.equipment) ? geo.equipment : [];
+      buildFloor(geo);
+      applyDisplayMode(activeDisplayMode);
+      // Separate call: the zone layer is independent of the envelope, and
+      // buildPhysicalSlots returns early when no envelope file exists.
+      const drawn = buildFunctionalZones(geo);
+      updateEvidenceSummary(geo, drawn);
+      const meta = geo.functional_zones_meta;
+      if (meta && meta.total > 0) {
+        console.info(
+          `functional zones: ${drawn} rendered of ${meta.total} (${meta.withheld} withheld as unvalidated/conflicting)`
+        );
       }
     } catch (err) {
-      console.warn('floor-geometry fetch failed (non-fatal):', err.message);
+      console.warn('floor-geometry fetch failed:', err.message);
+      showGeometryLoadError(err.message);
     }
-  })();
+  }
+  const geometryFetch = loadFloorGeometry();
 
   // FT-15: the identity-gated join, fetched once alongside geometry -- the
   // SAME load boundary, not a per-frame or per-pick resolution. Server-

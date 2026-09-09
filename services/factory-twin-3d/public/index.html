@@ -98,7 +98,12 @@
       gap: 8px;
       white-space: nowrap;
     }
-    .brand b { font-size: 14px; letter-spacing: .06em; }
+    /* FT-19: was <b>, which axe-core's page-has-heading-one flagged (real,
+       pre-existing, unrelated to any FT-19/FT-18 edit -- the page had no
+       level-one heading at all, only the drawer's own <h2>s). This IS the
+       page's title, so it is the correct level-one heading; margin/font
+       reset so becoming a real <h1> changes no visual pixel. */
+    .brand h1 { margin: 0; font-weight: bold; font-size: 14px; letter-spacing: .06em; }
     .brand span { color: var(--text-dim); font-size: 11px; letter-spacing: .1em; }
     #data-quality {
       flex: 1 1 260px;
@@ -111,6 +116,16 @@
       font-size: 11.5px;
     }
     #data-quality.quality-measured { color: #9fd7a2; }
+    /* FT-19: a fetch failure previously left #data-quality stuck on its
+       initial "Loading floor evidence…" text forever -- see app.js's
+       showGeometryLoadError. This state needs a visible Retry button, so
+       the topbar's usual overflow:hidden/nowrap truncation is lifted only
+       here, and only while the error is showing. */
+    #data-quality.quality-error {
+      color: var(--crit); white-space: normal; overflow: visible;
+      display: flex; align-items: center; gap: 6px;
+    }
+    #data-quality.quality-error .btn-mini { margin-top: 0; flex: none; }
     #status-line { color: var(--text-dim); font-size: 11px; white-space: nowrap; }
     #status-line.error { color: var(--crit); }
     #build-id {
@@ -197,8 +212,10 @@
     #scene { position: absolute; inset: 0; }
     #scene canvas { display: block; }
 
-    /* The ONLY thing that ever sits over the floor, and only after a click.
-       Cornered, capped, scrollable, and dismissible. */
+    /* One of two things that ever sit over the floor. This one, after a
+       click: cornered, capped, scrollable, and dismissible. The other is
+       #webgl-lost below, shown only when there is no floor drawing left to
+       sit beside -- the GPU context itself is gone, not merely stale. */
     #inspector {
       position: absolute;
       left: 12px;
@@ -259,6 +276,20 @@
        rule separates the two so the list does not read as six equal layers. */
     /* Machine labels. Purely an overlay: pointer events pass through to the
        canvas, so labelling never changes what an operator can click. */
+    /* FT-19: WebGL context loss (GPU driver reset, sleep/wake, memory
+       pressure) previously left the canvas frozen or black with zero
+       on-screen explanation -- app.js had no webglcontextlost listener at
+       all. This is the ONE failure mode where the floor is not stale, it is
+       not drawing, so the message has to be where the drawing would be. The
+       HUD (topbar, drawer, device list) is unaffected and keeps polling --
+       this banner says so explicitly rather than implying the whole page
+       is down. */
+    #webgl-lost {
+      position: absolute; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 14px;
+      text-align: center; padding: 24px; background: rgba(11, 16, 23, .92);
+    }
+    #webgl-lost p { max-width: 420px; color: var(--text); font-size: 13px; line-height: 1.5; margin: 0; }
     #machine-labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
     #machine-labels .machine-label {
       position: absolute; transform: translate(-50%, -50%);
@@ -332,7 +363,7 @@
 <body>
   <div id="app">
     <header id="topbar">
-      <div class="brand"><b>FACTORY TWIN</b> <span>FLOOR 1</span></div>
+      <div class="brand"><h1>FACTORY TWIN</h1> <span>FLOOR 1</span></div>
 
       <div class="seg" id="view-controls" role="group" aria-label="View">
         <button type="button" data-view="plan" aria-pressed="true">2D Plan</button>
@@ -375,6 +406,16 @@
       <div id="machine-labels" aria-hidden="true"></div>
       <!-- Context panel. Hidden until the operator selects something. -->
       <div id="inspector" hidden aria-live="polite"></div>
+      <!-- FT-19: shown only on webglcontextlost (app.js). role="alert" because
+           this is the one state that needs an interrupting announcement --
+           the 3D view has stopped rendering, not merely gone stale. -->
+      <div id="webgl-lost" hidden role="alert">
+        <p>3D rendering lost the GPU context. This can happen after the
+          computer sleeps, a graphics driver reset, or memory pressure. The
+          panel on the left keeps reporting live data -- only the 3D view is
+          affected.</p>
+        <button type="button" class="btn" id="webgl-reload">Reload to recover</button>
+      </div>
     </main>
 
     <aside id="drawer" aria-label="Inspection">

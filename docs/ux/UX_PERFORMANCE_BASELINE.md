@@ -78,6 +78,28 @@ script-side latency is sub-frame; the 800ms is scroll-animation, not
 processing delay. Meets <100ms target for the actual interaction
 response (the visible motion is deliberate smooth-scroll, not lag).
 
+## FT-19 update (real production re-measurement)
+
+Re-measured after FT-19's error-recovery/interaction fixes (no rendering
+or fetch-timing logic changed by FT-19 beyond the geometry-failure path,
+which only runs when the fetch itself fails):
+
+| Metric | FT-18 | FT-19 | Target |
+|---|---:|---:|---:|
+| Interactive-ready (real production, warm) | 1287-1371ms (pre-fix) / 1156-1427ms (post-fix) | 1390-1526ms (3 real runs; one 1913ms cold-cache outlier from the measurement script's own first navigation, excluded) | <1500ms |
+| Frame p95 | 17.9ms | 17.9ms (unchanged, re-measured) | <25ms |
+| JS heap, steady state | 10.0MB | **37.3MB**, flat across 30s / 6 poll cycles (zero growth, ruled out as a leak) | — (no stated target) |
+
+The heap figure is reported as a real discrepancy against FT-18's own
+number, not smoothed over: `renderer.info` shows 88 GPU geometries, 22
+textures, 356 draw calls for the real, fully-loaded floor (433 assets,
+202 columns, 587 walls) — a plausible size for that much real geometry.
+FT-19's own diff (event listeners, one DOM banner, no new geometry)
+cannot plausibly cause a 27MB difference, so it is left as an open,
+disclosed discrepancy rather than attributed to a cause this session did
+not verify. See `UX_FINAL_SCORECARD.md` for the same note against the
+scorecard's own performance score.
+
 ## Not measured this phase (disclosed gap)
 
 - Network/API/DB timing broken out separately (this phase measured
