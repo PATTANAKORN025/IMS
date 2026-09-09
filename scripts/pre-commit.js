@@ -42,6 +42,10 @@ run("Factory Twin Wire Projection Tests", "node tests/unit/factory-twin-wire.tes
 // physical CAD asset. Holds the critical invariant -- zero confirmed
 // mappings means zero physical live attachments, whatever telemetry exists.
 run("Factory Twin Telemetry Overlay Tests", "node tests/unit/factory-twin-telemetry.test.js");
+// FT-15.1: catches a plugin bundle, source map, compiled binary or
+// oversized file before it is committed -- not just Grafana plugins again,
+// anything shaped like that anywhere in the tree.
+run("Repo Hygiene Linter", "node tests/lint/repo-hygiene-linter.js");
 run("Factory Twin Floor Registry Tests", "node tests/unit/factory-twin-floors.test.js");
 run("Factory Twin Schematic Layer Tests", "node tests/unit/factory-twin-schematic.test.js");
 run("Factory Twin Operational Status Tests", "node tests/unit/factory-twin-operational-status.test.js");

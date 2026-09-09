@@ -161,3 +161,15 @@ Apex3Layout/
 *factory-layout*
 private/
 
+
+# Grafana plugins -- installed at container start (GF_INSTALL_PLUGINS,
+# docker-compose.yaml's grafana service) for the 5 community panels, and
+# core-bundled inside the grafana/grafana:13.1.2 image itself for the rest
+# (elasticsearch, zipkin datasources; the Explore apps -- traces/logs/
+# metrics-drilldown/pyroscope -- preinstalled since Grafana 11). Committing
+# 677 files / 137MB of installed plugin bundles, source maps and binaries
+# was pure duplication of what Docker already reproduces on its own; the
+# bind mount (./monitoring/grafana/plugins:/var/lib/grafana/plugins) still
+# persists them on the host across restarts, it just does not need Git to.
+monitoring/grafana/plugins/
+*.map

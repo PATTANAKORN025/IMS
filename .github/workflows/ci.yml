@@ -23,6 +23,9 @@ jobs:
 
       - name: Scan for confidential private facility data
         run: node tests/lint/private-data-leak-scanner.js
+
+      - name: Repo hygiene (block plugin bundles, source maps, binaries, oversized files)
+        run: node tests/lint/repo-hygiene-linter.js
         # Structural/path-based only (private/ directory segments, the
         # Apex3Layout name, CAD extensions, this repo's own private-data
         # filenames) -- never reads file contents or a real facility
@@ -328,6 +331,13 @@ jobs:
           GRAFANA_ADMIN_USER: admin
           GRAFANA_ADMIN_PASSWORD: change-me-please
         run: node tests/playwright/factory-twin-failure-modes.js
+
+      - name: Factory Twin inspector E2E (real click -> identity gate)
+        env:
+          GRAFANA_URL: http://127.0.0.1:3000
+          GRAFANA_ADMIN_USER: admin
+          GRAFANA_ADMIN_PASSWORD: change-me-please
+        run: node tests/playwright/factory-twin-inspector-e2e.js
 
       - name: Twin service logs on failure
         if: failure()
