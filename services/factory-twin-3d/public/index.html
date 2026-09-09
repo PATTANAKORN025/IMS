@@ -349,6 +349,26 @@
     .history-ranges button { font-size: 10px; padding: 2px 6px; border-radius: 3px; border: 1px solid var(--line); background: transparent; color: var(--text); cursor: pointer; }
     .history-ranges button[aria-pressed="true"] { background: var(--line); }
     #history-alarms { margin-top: 4px; color: var(--text-dim); font-size: 10.5px; }
+    /* FT-22: OBSERVED / CALCULATED / FORECAST must read as three different
+       kinds of claim, not three panels that look alike -- a left border +
+       an explicit text label on each, not colour alone (colour-contrast and
+       colour-blind safe; the label is the real signal, colour reinforces
+       it). Forecast additionally gets a dashed border -- the one visual
+       cue reserved for "this did not happen yet". */
+    .pi-block { margin-top: 8px; padding: 4px 0 4px 8px; border-left: 3px solid var(--line-2); }
+    .pi-label { font-size: 9px; font-weight: 700; letter-spacing: .07em; color: var(--text-dim); display: block; margin-bottom: 2px; }
+    .pi-observed { border-left-color: var(--text-dim); }
+    .pi-calculated { border-left-color: var(--accent); }
+    .pi-forecast { border-left-color: var(--warn); border-left-style: dashed; }
+    .pi-risk { font-weight: 700; padding: 0 5px; border-radius: 3px; font-size: 10px; }
+    .pi-risk-HIGH { background: var(--crit); color: #1a0505; }
+    .pi-risk-MEDIUM { background: var(--warn); color: #2a1a00; }
+    .pi-risk-LOW { background: var(--line-2); color: var(--text); }
+    .pi-risk-NONE { background: var(--ok); color: #06210f; }
+    #fleet-risk-panel { margin-top: 6px; font-size: 10.5px; }
+    #fleet-risk-result { margin-top: 4px; }
+    .fleet-risk-row { display: flex; gap: 6px; align-items: center; padding: 2px 0; border-top: 1px solid var(--line); }
+    .fleet-risk-row:first-child { border-top: 0; }
     #diagnostics-body { margin-top: 8px; font-size: 11px; }
     #diagnostics-body .k { color: var(--text-dim); }
     .ev { display: inline-block; width: 1.1em; text-align: center; }
@@ -515,15 +535,20 @@
         <div id="history-alarms"></div>
       </div>
 
-      <!-- FT-21: process stability. Individual-sample analysis (Cpk/EWMA/
-           CUSUM/Nelson rules), so only short windows are supported -- the
-           SAME raw-data-only boundary this deployment already enforces for
-           min/max/median/p95/stddev (lib/analytics.js extendedStatsAvailable),
-           reused rather than a second rule. Lazy: only fetched while this
-           panel is open, same discipline as Diagnostics/Raw CAD reference. -->
-      <h2>Process stability (SPC)</h2>
+      <!-- FT-21/FT-22: process stability + predictive intelligence.
+           Individual-sample analysis (Cpk/EWMA/CUSUM/Nelson rules), so only
+           short windows are supported -- the SAME raw-data-only boundary
+           this deployment already enforces for min/max/median/p95/stddev
+           (lib/analytics.js extendedStatsAvailable), reused rather than a
+           second rule. Lazy: only fetched while this panel is open, same
+           discipline as Diagnostics/Raw CAD reference. FT-22 switched the
+           single fetch this panel makes from /api/spc to /api/predictive
+           (a strict superset -- same Cpk/EWMA/CUSUM/Nelson fields, plus
+           capability trajectory/drift intelligence/mixed-baseline/risk/
+           forecast) so opening this panel is still exactly one request. -->
+      <h2>Process stability &amp; predictive intelligence</h2>
       <details id="spc-panel">
-        <summary>Cpk &middot; EWMA &middot; CUSUM &middot; Nelson rules</summary>
+        <summary>Cpk &middot; EWMA &middot; CUSUM &middot; Nelson rules &middot; trajectory &middot; risk</summary>
         <p class="hint">
           Cpk uses the same formula and thresholds as the Machine Snapshot
           and Engineering Analytics dashboards (Assessment &lt; 1.33,
@@ -546,6 +571,15 @@
           </div>
         </div>
         <div id="spc-result" aria-live="polite">Select a device's History button above.</div>
+        <!-- FT-22: fleet risk ranking. Nested, closed by default, and its
+             own separately-lazy fetch (/api/predictive/risk-ranking) so
+             opening the SPC panel above never fires it -- opened here only
+             on demand, matching this panel's own "closed = no fetch"
+             convention one level down. -->
+        <details id="fleet-risk-panel">
+          <summary>Fleet risk ranking (same metric/range, PE/JE only)</summary>
+          <div id="fleet-risk-result" aria-live="polite">Loading is deferred until this is opened.</div>
+        </details>
       </details>
 
       <h2>Diagnostics</h2>

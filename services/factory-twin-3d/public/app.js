@@ -2432,49 +2432,120 @@ const SPC_NEXT_ACTION = {
   UNKNOWN: 'No tolerance recorded for this metric, or too few samples -- Cpk cannot be established yet.',
 };
 
+// FT-22: this panel's one fetch moved from /api/spc to /api/predictive (a
+// strict superset -- see server.js's fetchSpcSeries()) so opening the panel
+// is still exactly one request, not two. Reuses the SAME esc() every other
+// innerHTML-writing renderer in this file already uses (defined above,
+// near the inspector renderers) -- not a second escaping helper.
 async function renderSpc() {
   if (!spcResultEl) return;
   if (!historyDeviceId) { spcResultEl.textContent = "Select a device's History button above."; return; }
   spcResultEl.textContent = 'Loading…';
   try {
-    const res = await fetch(`api/spc?device_id=${encodeURIComponent(historyDeviceId)}&metric=${encodeURIComponent(spcMetric)}&range=${encodeURIComponent(spcRange)}`);
+    const res = await fetch(`api/predictive?device_id=${encodeURIComponent(historyDeviceId)}&metric=${encodeURIComponent(spcMetric)}&range=${encodeURIComponent(spcRange)}`);
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
       spcResultEl.textContent = `Unavailable: ${body.error || res.status}`;
       return;
     }
     const data = await res.json();
-    const { cpk, drift, nelson_violations: nelson } = data;
+    const { calculated, observed, forecast, confidence, window: win } = data;
+    const { cpk, drift, trend, mixed_baseline: mixed, risk, signals } = calculated;
+    const nelson = signals.nelson_violations;
     const nextAction = SPC_NEXT_ACTION[cpk.state] || SPC_NEXT_ACTION.UNKNOWN;
-    const driftLine = drift.velocityPerHour === null
-      ? 'Drift: not enough samples to establish a trend.'
-      : `Drift: ${fmt2(drift.velocityPerHour)} units/hour`
-        + (drift.accelerating === null ? '' : drift.accelerating ? ' (accelerating).' : ' (steady or slowing).');
-    const nelsonLine = nelson.length === 0
-      ? 'Pattern check: no Nelson-rule violations.'
-      : `Pattern check: rule(s) ${nelson.map((v) => v.rule).join(', ')} triggered (${nelson.map((v) => v.name).join('; ')}).`;
+    const trajectory = trend.capability_trajectory;
+
+    // Q1/Q2: is it stable, is capability declining -- from the SAME two
+    // fields the canonical contract already carries (cpk.state,
+    // trajectory.classification), never a third derived vocabulary.
+    const stableLine = `Cpk <b>${fmt2(cpk.cpk)}</b> (${esc(cpk.state)}, n=${cpk.n}) &middot; trajectory: <b>${esc(trajectory.classification)}</b>`;
+    // Q3/Q4: why, and how strong -- risk.evidence already names the exact
+    // rule/signal, confidence.reasons already names what would make it
+    // more or less trustworthy.
+    const evidenceLine = risk.evidence.map(esc).join('; ');
+    const mixedLine = mixed.heterogeneity_detected
+      ? `<div class="hint">Possible mixed-baseline window: ${mixed.evidence.map(esc).join('; ')}</div>` : '';
 
     spcResultEl.innerHTML = `
-      <div><b>${data.metric}</b> on <b>${data.device_id}</b> &middot; ${data.sample_count} sample(s) since ${data.last_valid_sample ? new Date(data.last_valid_sample).toLocaleTimeString() : '—'}</div>
-      <div>Cpk: <b>${fmt2(cpk.cpk)}</b> (${cpk.state}) &middot; n=${cpk.n} &middot; ${cpk.reason || 'within confidence threshold'}</div>
-      <div>${driftLine}</div>
-      <div>${nelsonLine}</div>
-      <div class="hint" style="margin-top:6px">Next: ${nextAction}</div>`;
+      <div class="pi-block pi-observed">
+        <span class="pi-label">OBSERVED</span>
+        <b>${esc(data.metric)}</b> on <b>${esc(data.device_id)}</b> &middot; ${win.sample_count} sample(s)
+        &middot; last: ${observed.last_valid_sample ? new Date(observed.last_valid_sample).toLocaleTimeString() : '—'}
+        (${esc(observed.freshness)})${observed.row_limit_hit ? ' &middot; row limit reached' : ''}
+      </div>
+      <div class="pi-block pi-calculated">
+        <span class="pi-label">CALCULATED</span>
+        <div>${stableLine} &middot; <span class="pi-risk pi-risk-${esc(risk.level)}">${esc(risk.level)} RISK</span></div>
+        <div>Why: ${evidenceLine || 'no adverse signal found'}</div>
+        <div>Drift: ${drift.velocity_per_hour === null ? 'not enough samples to establish a trend' : `${fmt2(drift.velocity_per_hour)} units/hour, ${esc(drift.direction)} (${esc(drift.persistence)})`}</div>
+        <div>Pattern check: ${nelson.length === 0 ? 'no Nelson-rule violations' : `rule(s) ${nelson.map((v) => v.rule).join(', ')} triggered`}</div>
+        ${mixedLine}
+        <div class="hint">How strong: confidence <b>${esc(confidence.level)}</b> (${confidence.reasons.map(esc).join('; ')})</div>
+      </div>
+      <div class="pi-block pi-forecast">
+        <span class="pi-label">FORECAST</span>
+        ${forecast.next_window_cpk_estimate === null
+          ? `Not available -- ${esc(forecast.reason)}`
+          : `Next-window Cpk estimate: <b>${fmt2(forecast.next_window_cpk_estimate)}</b> (${esc(forecast.confidence)} confidence)`}
+        <div class="hint">${esc(forecast.method)}</div>
+      </div>
+      <div class="hint" style="margin-top:6px">Next: ${esc(nextAction)}</div>`;
   } catch (err) {
     spcResultEl.textContent = `Fetch failed: ${err.message}`;
   }
 }
 
-if (spcMetricEl) spcMetricEl.addEventListener('change', () => { spcMetric = spcMetricEl.value; renderSpc(); });
+if (spcMetricEl) spcMetricEl.addEventListener('change', () => { spcMetric = spcMetricEl.value; renderSpc(); if (fleetRiskPanelEl && fleetRiskPanelEl.open) renderFleetRisk(); });
 spcRangeButtons.forEach((btn) => {
   btn.addEventListener('click', () => {
     spcRange = btn.getAttribute('data-spc-range');
     spcRangeButtons.forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
     renderSpc();
+    if (fleetRiskPanelEl && fleetRiskPanelEl.open) renderFleetRisk();
   });
 });
 if (spcPanelEl) {
   spcPanelEl.addEventListener('toggle', () => { if (spcPanelEl.open) renderSpc(); });
+}
+
+// FT-22: fleet risk ranking -- composite metrics (PE/JE) only, the only
+// ones with a real tolerance column. Its own lazy fetch, independent of
+// the per-device panel above: opening #spc-panel never fires this: it
+// fires only on its OWN toggle, matching the "closed = no fetch"
+// convention one level down.
+const fleetRiskPanelEl = document.getElementById('fleet-risk-panel');
+const fleetRiskResultEl = document.getElementById('fleet-risk-result');
+
+async function renderFleetRisk() {
+  if (!fleetRiskResultEl) return;
+  if (!['PE', 'JE'].includes(spcMetric)) {
+    fleetRiskResultEl.textContent = `Fleet risk ranking needs PE or JE (has a real tolerance column) -- ${spcMetric} does not.`;
+    return;
+  }
+  fleetRiskResultEl.textContent = 'Loading…';
+  try {
+    const res = await fetch(`api/predictive/risk-ranking?metric=${encodeURIComponent(spcMetric)}&range=${encodeURIComponent(spcRange)}`);
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      fleetRiskResultEl.textContent = `Unavailable: ${body.error || res.status}`;
+      return;
+    }
+    const data = await res.json();
+    if (data.rankings.length === 0) {
+      fleetRiskResultEl.textContent = `No device reported ${data.metric} in this window.`;
+      return;
+    }
+    fleetRiskResultEl.innerHTML = data.rankings.slice(0, 10).map((r) => `
+      <div class="fleet-risk-row">
+        <span class="pi-risk pi-risk-${esc(r.risk)}">${esc(r.risk)}</span>
+        <b>${esc(r.device_id)}</b> / ${esc(r.metric)} &middot; Cpk ${fmt2(r.cpk)} (${esc(r.cpk_state)}) &middot; ${esc(r.trajectory)}
+      </div>`).join('');
+  } catch (err) {
+    fleetRiskResultEl.textContent = `Fetch failed: ${err.message}`;
+  }
+}
+if (fleetRiskPanelEl) {
+  fleetRiskPanelEl.addEventListener('toggle', () => { if (fleetRiskPanelEl.open) renderFleetRisk(); });
 }
 
 function applyState(payload) {

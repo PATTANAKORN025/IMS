@@ -13,6 +13,7 @@ const telemetry = require('./lib/telemetry');
 const alarmLib = require('./lib/alarm');
 const analytics = require('./lib/analytics');
 const spc = require('./lib/spc');
+const predictive = require('./lib/predictive');
 const schematic = require('./lib/schematic');
 const eapMap = require('./lib/eap-map');
 const floors = require('./lib/floors');
@@ -1071,103 +1072,139 @@ app.get('/api/telemetry-history', async (req, res) => {
 // query-budget contract bounds every other range-scan in this service.
 const SPC_ROW_LIMIT = 5000;
 
+// Validates device_id/metric/range the same way for every SPC-family
+// endpoint (/api/spc, /api/predictive) -- one validation path, not two that
+// could silently drift apart. Returns {error: {status, body}} or {fromMs,
+// toMs}.
+function validateSpcRequest(req) {
+  const { device_id: deviceId, metric } = req.query;
+  if (typeof deviceId !== 'string' || !DEVICE_IDS.includes(deviceId)) {
+    return { error: { status: 404, body: { error: 'device not found' } } };
+  }
+  if (!spc.isValidSpcMetric(metric)) {
+    return { error: { status: 400, body: { error: 'invalid metric', valid_metrics: [...spc.SPC_COMPOSITE_METRICS, ...analytics.AVG_METRICS] } } };
+  }
+  let fromMs;
+  let toMs;
+  if (typeof req.query.range === 'string') {
+    const spanMs = analytics.rangeToMs(req.query.range);
+    if (spanMs === null) {
+      return { error: { status: 400, body: { error: 'invalid range', supported_ranges: analytics.SUPPORTED_RANGES } } };
+    }
+    toMs = Date.now();
+    fromMs = toMs - spanMs;
+  } else {
+    fromMs = Number(req.query.from);
+    toMs = Number(req.query.to);
+  }
+  const validated = analytics.validateRange(fromMs, toMs);
+  if (!validated.ok) return { error: { status: 400, body: { error: validated.error } } };
+  if (!analytics.extendedStatsAvailable(validated.spanMs)) {
+    return {
+      error: {
+        status: 400,
+        body: {
+          error: 'SPC requires individual raw samples; only ranges of 6 hours or less are supported (the same raw-data boundary this service already uses for min/max/median/p95/stddev)',
+          max_supported_range: '6h',
+        },
+      },
+    };
+  }
+  return { deviceId, metric, fromMs, toMs };
+}
+
+// FT-21 — process stability (Cpk/EWMA/CUSUM/Nelson rules/drift velocity),
+// lib/spc.js. SPC needs the true individual-sample sequence, never an
+// AVG-of-AVG bucket -- exactly the same "raw ldi_data only, <= 6h" rule
+// analytics.extendedStatsAvailable() already enforces for min/max/median/
+// p95/stddev above, reused verbatim rather than a second boundary.
+//
+// FT-22 — pulled the raw-scan + reshape into fetchSpcSeries() below so
+// /api/spc and the new /api/predictive run the EXACT same query and the
+// exact same per-row shaping; nothing here is a second, parallel read of
+// ldi_data that could silently disagree with the other.
+/**
+ * @returns {Promise<{pooledValues:number[], seriesValues:number[], seriesTimestampsMs:number[], tolerance:number, rows:{tMs:number,values:number[],tolerance:number}[], isComposite:boolean, baselineDefinition:string, rowLimitHit:boolean}>}
+ */
+async function fetchSpcSeries(deviceId, metric, fromMs, toMs) {
+  const from = new Date(fromMs).toISOString();
+  const to = new Date(toMs).toISOString();
+  const isComposite = spc.SPC_COMPOSITE_METRICS.includes(metric);
+
+  let pooledValues; // every individual reading, for Cpk (order doesn't matter)
+  let seriesValues; // one value per row/timestamp, for EWMA/CUSUM/Nelson/drift
+  let seriesTimestampsMs;
+  let rows; // per-row detail (FT-22 capability trajectory needs each row's own values+tolerance, not just the flattened pool)
+  let tolerance = NaN;
+
+  if (isComposite) {
+    const columns = metric === 'PE' ? spc.PE_COLUMNS : spc.JE_COLUMNS;
+    const toleranceColumn = metric === 'PE' ? 'pe_setting' : 'je_setting';
+    const notNullClause = columns.map((c) => `${c} IS NOT NULL`).join(' OR ');
+    const result = await pool.query(
+      `SELECT "time", ${columns.join(', ')}, ${toleranceColumn}
+       FROM public.ldi_data
+       WHERE eqp_id = $1 AND "time" >= $2 AND "time" <= $3 AND (${notNullClause})
+       ORDER BY "time" ASC
+       LIMIT $4`,
+      [deviceId, from, to, SPC_ROW_LIMIT],
+    );
+    pooledValues = [];
+    seriesValues = [];
+    seriesTimestampsMs = [];
+    rows = [];
+    const tolerances = [];
+    for (const row of result.rows) {
+      const rowValues = columns.map((c) => Number(row[c])).filter((v) => Number.isFinite(v));
+      if (rowValues.length === 0) continue;
+      pooledValues.push(...rowValues);
+      // The X-bar convention: each row/board event is one SUBGROUP, its
+      // own PE/JE readings averaged into ONE point on the time series --
+      // classical SPC subgrouping, not an arbitrary shortcut. Cpk itself
+      // (above) still pools every individual reading, matching the
+      // existing dashboard panels exactly.
+      seriesValues.push(spc.mean(rowValues));
+      const tMs = new Date(row.time).getTime();
+      seriesTimestampsMs.push(tMs);
+      const t = Number(row[toleranceColumn]);
+      if (Number.isFinite(t)) tolerances.push(t);
+      rows.push({ tMs, values: rowValues, tolerance: Number.isFinite(t) ? t : NaN });
+    }
+    tolerance = tolerances.length > 0 ? spc.mean(tolerances) : NaN;
+  } else {
+    const result = await pool.query(
+      `SELECT "time", ${metric} AS value
+       FROM public.ldi_data
+       WHERE eqp_id = $1 AND "time" >= $2 AND "time" <= $3 AND ${metric} IS NOT NULL
+       ORDER BY "time" ASC
+       LIMIT $4`,
+      [deviceId, from, to, SPC_ROW_LIMIT],
+    );
+    seriesValues = result.rows.map((r) => Number(r.value));
+    seriesTimestampsMs = result.rows.map((r) => new Date(r.time).getTime());
+    pooledValues = seriesValues;
+    // No tolerance/spec-limit column exists for a general process metric
+    // in this schema -- Cpk stays UNAVAILABLE rather than inventing one.
+    tolerance = NaN;
+    rows = seriesValues.map((v, i) => ({ tMs: seriesTimestampsMs[i], values: [v], tolerance: NaN }));
+  }
+
+  const baselineDefinition = isComposite
+    ? `pooled mean/STDDEV_SAMP of every ${metric === 'PE' ? 'PE1-6' : 'JE1-4'} reading in this window; tolerance = AVG(${metric === 'PE' ? 'pe_setting' : 'je_setting'}) over the same window`
+    : `mean/STDDEV_SAMP of ${metric} readings in this window; no tolerance column exists for this metric, Cpk is UNAVAILABLE`;
+
+  return { pooledValues, seriesValues, seriesTimestampsMs, rows, tolerance, isComposite, baselineDefinition, rowLimitHit: seriesValues.length >= SPC_ROW_LIMIT };
+}
+
 app.get('/api/spc', async (req, res) => {
   try {
-    const { device_id: deviceId, metric } = req.query;
-
-    if (typeof deviceId !== 'string' || !DEVICE_IDS.includes(deviceId)) {
-      return res.status(404).json({ error: 'device not found' });
-    }
-    if (!spc.isValidSpcMetric(metric)) {
-      return res.status(400).json({
-        error: 'invalid metric',
-        valid_metrics: [...spc.SPC_COMPOSITE_METRICS, ...analytics.AVG_METRICS],
-      });
-    }
-
-    let fromMs;
-    let toMs;
-    if (typeof req.query.range === 'string') {
-      const spanMs = analytics.rangeToMs(req.query.range);
-      if (spanMs === null) {
-        return res.status(400).json({ error: 'invalid range', supported_ranges: analytics.SUPPORTED_RANGES });
-      }
-      toMs = Date.now();
-      fromMs = toMs - spanMs;
-    } else {
-      fromMs = Number(req.query.from);
-      toMs = Number(req.query.to);
-    }
-    const validated = analytics.validateRange(fromMs, toMs);
-    if (!validated.ok) return res.status(400).json({ error: validated.error });
-
-    // SPC is individual-sample analysis -- it cannot run against a
-    // pre-averaged CAGG bucket without silently claiming a stability
-    // finding about the average of averages rather than the process
-    // itself. Same boundary analytics.js's own extended stats already use.
-    if (!analytics.extendedStatsAvailable(validated.spanMs)) {
-      return res.status(400).json({
-        error: 'SPC requires individual raw samples; only ranges of 6 hours or less are supported (the same raw-data boundary this service already uses for min/max/median/p95/stddev)',
-        max_supported_range: '6h',
-      });
-    }
-
+    const validated = validateSpcRequest(req);
+    if (validated.error) return res.status(validated.error.status).json(validated.error.body);
+    const { deviceId, metric, fromMs, toMs } = validated;
     const from = new Date(fromMs).toISOString();
     const to = new Date(toMs).toISOString();
-    const isComposite = spc.SPC_COMPOSITE_METRICS.includes(metric);
 
-    let pooledValues; // every individual reading, for Cpk (order doesn't matter)
-    let seriesValues; // one value per row/timestamp, for EWMA/CUSUM/Nelson/drift
-    let seriesTimestampsMs;
-    let tolerance = NaN;
-
-    if (isComposite) {
-      const columns = metric === 'PE' ? spc.PE_COLUMNS : spc.JE_COLUMNS;
-      const toleranceColumn = metric === 'PE' ? 'pe_setting' : 'je_setting';
-      const notNullClause = columns.map((c) => `${c} IS NOT NULL`).join(' OR ');
-      const result = await pool.query(
-        `SELECT "time", ${columns.join(', ')}, ${toleranceColumn}
-         FROM public.ldi_data
-         WHERE eqp_id = $1 AND "time" >= $2 AND "time" <= $3 AND (${notNullClause})
-         ORDER BY "time" ASC
-         LIMIT $4`,
-        [deviceId, from, to, SPC_ROW_LIMIT],
-      );
-      pooledValues = [];
-      seriesValues = [];
-      seriesTimestampsMs = [];
-      const tolerances = [];
-      for (const row of result.rows) {
-        const rowValues = columns.map((c) => Number(row[c])).filter((v) => Number.isFinite(v));
-        if (rowValues.length === 0) continue;
-        pooledValues.push(...rowValues);
-        // The X-bar convention: each row/board event is one SUBGROUP, its
-        // own PE/JE readings averaged into ONE point on the time series --
-        // classical SPC subgrouping, not an arbitrary shortcut. Cpk itself
-        // (above) still pools every individual reading, matching the
-        // existing dashboard panels exactly.
-        seriesValues.push(spc.mean(rowValues));
-        seriesTimestampsMs.push(new Date(row.time).getTime());
-        const t = Number(row[toleranceColumn]);
-        if (Number.isFinite(t)) tolerances.push(t);
-      }
-      tolerance = tolerances.length > 0 ? spc.mean(tolerances) : NaN;
-    } else {
-      const result = await pool.query(
-        `SELECT "time", ${metric} AS value
-         FROM public.ldi_data
-         WHERE eqp_id = $1 AND "time" >= $2 AND "time" <= $3 AND ${metric} IS NOT NULL
-         ORDER BY "time" ASC
-         LIMIT $4`,
-        [deviceId, from, to, SPC_ROW_LIMIT],
-      );
-      seriesValues = result.rows.map((r) => Number(r.value));
-      seriesTimestampsMs = result.rows.map((r) => new Date(r.time).getTime());
-      pooledValues = seriesValues;
-      // No tolerance/spec-limit column exists for a general process metric
-      // in this schema -- Cpk stays UNAVAILABLE rather than inventing one.
-      tolerance = NaN;
-    }
+    const { pooledValues, seriesValues, seriesTimestampsMs, tolerance, baselineDefinition, rowLimitHit } = await fetchSpcSeries(deviceId, metric, fromMs, toMs);
 
     const cpk = spc.computeCpk({ values: pooledValues, tolerance });
     const ewma = spc.computeEwma({ values: seriesValues });
@@ -1182,13 +1219,11 @@ app.get('/api/spc', async (req, res) => {
       metric,
       from,
       to,
-      baseline_definition: isComposite
-        ? `pooled mean/STDDEV_SAMP of every ${metric === 'PE' ? 'PE1-6' : 'JE1-4'} reading in this window; tolerance = AVG(${metric === 'PE' ? 'pe_setting' : 'je_setting'}) over the same window`
-        : `mean/STDDEV_SAMP of ${metric} readings in this window; no tolerance column exists for this metric, Cpk is UNAVAILABLE`,
+      baseline_definition: baselineDefinition,
       sample_count: seriesValues.length,
       last_valid_sample: seriesTimestampsMs.length > 0
         ? new Date(seriesTimestampsMs[seriesTimestampsMs.length - 1]).toISOString() : null,
-      row_limit_hit: seriesValues.length >= SPC_ROW_LIMIT,
+      row_limit_hit: rowLimitHit,
       cpk,
       ewma: { target: ewma.target, sigma: ewma.sigma, quality: ewma.quality, reason: ewma.reason, points: ewma.points },
       cusum: { target: cusum.target, sigma: cusum.sigma, k: cusum.k, h: cusum.h, quality: cusum.quality, reason: cusum.reason, points: cusum.points },
@@ -1196,6 +1231,130 @@ app.get('/api/spc', async (req, res) => {
       drift,
       queried_at: new Date().toISOString(),
     });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'internal error' });
+  }
+});
+
+// FT-22 — predictive process intelligence, lib/predictive.js. Reuses
+// fetchSpcSeries() (the SAME query /api/spc runs) and every lib/spc.js
+// primitive already verified above -- see lib/predictive.js's own header
+// for why this is a synthesis of existing evidence, not a new statistics
+// engine or a second Cpk definition.
+app.get('/api/predictive', async (req, res) => {
+  try {
+    const validated = validateSpcRequest(req);
+    if (validated.error) return res.status(validated.error.status).json(validated.error.body);
+    const { deviceId, metric, fromMs, toMs } = validated;
+    const from = new Date(fromMs).toISOString();
+    const to = new Date(toMs).toISOString();
+
+    const { pooledValues, seriesValues, seriesTimestampsMs, rows, tolerance, baselineDefinition, rowLimitHit } = await fetchSpcSeries(deviceId, metric, fromMs, toMs);
+
+    const cpk = spc.computeCpk({ values: pooledValues, tolerance });
+    const ewma = spc.computeEwma({ values: seriesValues });
+    const cusum = spc.computeCusum({ values: seriesValues });
+    const nelson = ewma.quality === analytics.Quality.INSUFFICIENT_DATA
+      ? []
+      : spc.evaluateNelsonRules(seriesValues, spc.mean(seriesValues), spc.sampleStddev(seriesValues));
+    const drift = spc.computeDriftVelocity({ values: seriesValues, timestampsMs: seriesTimestampsMs });
+    const lastValidSampleMs = seriesTimestampsMs.length > 0 ? seriesTimestampsMs[seriesTimestampsMs.length - 1] : null;
+
+    const response = predictive.buildCanonicalResponse({
+      deviceId, metric, from, to, baselineDefinition,
+      sampleCount: seriesValues.length, lastValidSampleMs, rowLimitHit,
+      cpk, ewma, cusum, nelson, drift, rows, fromMs, toMs, tolerance,
+    });
+    res.status(200).json(response);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'internal error' });
+  }
+});
+
+// FT-22 — fleet-wide risk ranking. Composite metrics only (PE/JE) --
+// the only ones with a real tolerance column, so the only ones a Cpk-based
+// risk verdict can mean anything for. ONE query across every device
+// (window function partitioned per eqp_id, not a per-device round trip) --
+// bounded per-device row count, same query-budget discipline as everywhere
+// else in this service.
+const PREDICTIVE_FLEET_PER_DEVICE_LIMIT = 2000;
+
+app.get('/api/predictive/risk-ranking', async (req, res) => {
+  try {
+    const { metric } = req.query;
+    if (!spc.SPC_COMPOSITE_METRICS.includes(metric)) {
+      return res.status(400).json({ error: 'invalid metric', valid_metrics: spc.SPC_COMPOSITE_METRICS });
+    }
+    let fromMs;
+    let toMs;
+    if (typeof req.query.range === 'string') {
+      const spanMs = analytics.rangeToMs(req.query.range);
+      if (spanMs === null) return res.status(400).json({ error: 'invalid range', supported_ranges: analytics.SUPPORTED_RANGES });
+      toMs = Date.now();
+      fromMs = toMs - spanMs;
+    } else {
+      fromMs = Number(req.query.from);
+      toMs = Number(req.query.to);
+    }
+    const validated = analytics.validateRange(fromMs, toMs);
+    if (!validated.ok) return res.status(400).json({ error: validated.error });
+    if (!analytics.extendedStatsAvailable(validated.spanMs)) {
+      return res.status(400).json({ error: 'SPC requires individual raw samples; only ranges of 6 hours or less are supported', max_supported_range: '6h' });
+    }
+
+    const from = new Date(fromMs).toISOString();
+    const to = new Date(toMs).toISOString();
+    const columns = metric === 'PE' ? spc.PE_COLUMNS : spc.JE_COLUMNS;
+    const toleranceColumn = metric === 'PE' ? 'pe_setting' : 'je_setting';
+    const notNullClause = columns.map((c) => `${c} IS NOT NULL`).join(' OR ');
+    const result = await pool.query(
+      `SELECT eqp_id, "time", ${columns.join(', ')}, ${toleranceColumn} FROM (
+         SELECT eqp_id, "time", ${columns.join(', ')}, ${toleranceColumn},
+                ROW_NUMBER() OVER (PARTITION BY eqp_id ORDER BY "time" DESC) AS rn
+         FROM public.ldi_data
+         WHERE eqp_id = ANY($1) AND "time" >= $2 AND "time" <= $3 AND (${notNullClause})
+       ) sub WHERE rn <= $4
+       ORDER BY eqp_id ASC, "time" ASC`,
+      [DEVICE_IDS, from, to, PREDICTIVE_FLEET_PER_DEVICE_LIMIT],
+    );
+
+    const byDevice = new Map();
+    for (const row of result.rows) {
+      if (!byDevice.has(row.eqp_id)) byDevice.set(row.eqp_id, []);
+      const rowValues = columns.map((c) => Number(row[c])).filter((v) => Number.isFinite(v));
+      if (rowValues.length === 0) continue;
+      const t = Number(row[toleranceColumn]);
+      byDevice.get(row.eqp_id).push({ tMs: new Date(row.time).getTime(), values: rowValues, tolerance: Number.isFinite(t) ? t : NaN });
+    }
+
+    const rankings = [];
+    for (const [deviceId, rows] of byDevice.entries()) {
+      const pooledValues = rows.flatMap((r) => r.values);
+      const seriesValues = rows.map((r) => spc.mean(r.values));
+      const seriesTimestampsMs = rows.map((r) => r.tMs);
+      const tolerances = rows.map((r) => r.tolerance).filter((t) => Number.isFinite(t));
+      const tolerance = tolerances.length > 0 ? spc.mean(tolerances) : NaN;
+
+      const cpk = spc.computeCpk({ values: pooledValues, tolerance });
+      const ewma = spc.computeEwma({ values: seriesValues });
+      const cusum = spc.computeCusum({ values: seriesValues });
+      const nelson = ewma.quality === analytics.Quality.INSUFFICIENT_DATA
+        ? [] : spc.evaluateNelsonRules(seriesValues, spc.mean(seriesValues), spc.sampleStddev(seriesValues));
+      const drift = spc.computeDriftVelocity({ values: seriesValues, timestampsMs: seriesTimestampsMs });
+      const trajectory = predictive.computeCapabilityTrajectory({ rows, fromMs, toMs });
+      const driftIntel = predictive.computeDriftIntelligence({ ewma, cusum, nelson, drift });
+      const mixedBaseline = predictive.computeMixedBaselineSignal({ seriesValues, seriesTimestampsMs, nelson, cusum });
+      const risk = predictive.assessRisk({ cpk, trajectoryClassification: trajectory.classification, driftIntel, mixedBaseline, nelsonViolationCount: nelson.length });
+
+      rankings.push({ device_id: deviceId, metric, sample_count: seriesValues.length, cpk_state: cpk.state, cpk: cpk.cpk, trajectory: trajectory.classification, risk: risk.level, evidence: risk.evidence });
+    }
+
+    const riskOrder = { HIGH: 3, MEDIUM: 2, LOW: 1, NONE: 0 };
+    rankings.sort((a, b) => riskOrder[b.risk] - riskOrder[a.risk]);
+
+    res.status(200).json({ metric, from, to, devices_scanned: byDevice.size, per_device_row_limit: PREDICTIVE_FLEET_PER_DEVICE_LIMIT, rankings, queried_at: new Date().toISOString() });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'internal error' });

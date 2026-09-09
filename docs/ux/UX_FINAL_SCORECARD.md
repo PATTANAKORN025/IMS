@@ -107,3 +107,26 @@ all 4 viewports, after the fix — see `docs/analytics/SPC_VALIDATION.md`).
 API p95 27-31ms, no unbounded arrays, no duplicate/polled requests
 (verified via real request-log instrumentation). Full regression
 unchanged: geometry/orientation/reconciliation all still PASSED.
+
+## FT-22 addendum — predictive process intelligence
+
+`docs/analytics/PREDICTIVE_SPEC.md`: capability trajectory (Cpk(t)),
+drift intelligence, mixed-baseline detection, deterministic risk
+prioritization, and a disclosed OLS forecast (never presented as fact —
+always labeled `FORECAST`, capped at `MEDIUM` confidence) — all composed
+from FT-21's own already-verified Cpk/EWMA/CUSUM/Nelson/drift primitives,
+no new statistics engine. The SPC panel's one fetch moved from `/api/spc`
+to `/api/predictive` (a strict superset), so opening it is still exactly
+1 request. Found and fixed 2 real defects during testing (both disclosed
+in `PREDICTIVE_VALIDATION.md`): a trajectory-classification threshold
+using OR instead of AND (false "improving" on a huge-Cpk near-zero-sigma
+process), and a two-sample z-test returning `null` instead of a saturated
+signal for a zero-variance-both-halves step-function split (which would
+have silently downgraded the strongest possible evidence to "no signal").
+1 further real accessibility defect found and fixed (`.pi-label` contrast,
+3.6-3.9:1, below AA) — 0 axe violations after, all 4 viewports. API p95
+21-67ms across both new endpoints (worst case: fleet-wide risk ranking,
+PE, 6h), all under the 100ms target; the fleet ranking runs as ONE query
+across all devices (a partitioned window function), not one per device.
+Full regression unchanged, plus 27 new predictive unit tests (synthetic
+fixtures) — see `docs/analytics/PREDICTIVE_VALIDATION.md`.
