@@ -83,11 +83,42 @@ function num(value) {
 }
 
 /**
+ * FT-EAP-CALIBRATION: a small, disclosed presentation-layer nudge, applied
+ * only to the reference layout's own EAP_LAYOUT_FRAME z/x -- never to
+ * CAD_WORLD_MM, never to the private per-cell registration the reconciliation
+ * phases already measured. Each entry is a real, pixel-measured delta between
+ * the live render and the real reference image
+ * (Apex3Layout/01 LayoutApex3-F1.jpg), not a guess -- see
+ * docs/eap/EAP_SCADA_CALIBRATION.md for the measurement this came from.
+ *
+ * Zone H (Bonding) alone gets a correction: its equipment cluster measured
+ * 8.2% of the drawn floor's depth (~7.3m in this frame's own units) north of
+ * where the reference places it relative to XRY, a control zone measured at
+ * only ~1-4% (the frame's own noise floor). The matching x-axis signal
+ * (+6.3%) was measured too but is deliberately NOT applied here: shifting x
+ * by that amount seats Bonding's three cells on top of Oxide's -- a new,
+ * worse defect in place of an old, disclosed one -- so only the z axis, the
+ * one the original visual audit actually flagged, is corrected.
+ *
+ * PP, Oxide and Laser Drilling are not in this table. PP's own measured
+ * signal (+5.6%) sits inside the same margin as the reference model's own
+ * disclosed "labels UNREADABLE" uncertainty on that zone -- not safely
+ * distinguishable from noise. Oxide's and Laser Drilling's own equipment
+ * clusters could not be isolated from their neighbours in the reference
+ * image with confidence beyond the zone label's own position -- measured
+ * there, both sit within the ~4% noise floor already. Correcting any of the
+ * three without that confidence would be fabrication, not calibration.
+ */
+const SCADA_LAYOUT_CALIBRATION = {
+  H: { dx: 0, dz: 7.3 },
+};
+
+/**
  * A footprint reaches the client only if it is complete and in the frame the
  * model declares. A half-built footprint would still draw -- as a rectangle in
  * the wrong place -- so it is rejected rather than defaulted.
  */
-function projectFootprint(raw) {
+function projectFootprint(raw, zoneId) {
   if (!raw || raw.frame !== 'EAP_LAYOUT_FRAME') return null;
   const x = num(raw.x);
   const z = num(raw.z);
@@ -96,10 +127,11 @@ function projectFootprint(raw) {
   const rotation = num(raw.rotation_deg);
   if (x === null || z === null || rotation === null) return null;
   if (!(width > 0) || !(depth > 0)) return null;
+  const calibration = SCADA_LAYOUT_CALIBRATION[zoneId] || null;
   return {
     frame: 'EAP_LAYOUT_FRAME',
-    x,
-    z,
+    x: calibration ? x + calibration.dx : x,
+    z: calibration ? z + calibration.dz : z,
     rotation_deg: rotation,
     width,
     depth,
@@ -110,6 +142,11 @@ function projectFootprint(raw) {
     geometry_confidence: enumOr(raw.geometry_confidence, CONFIDENCES, 'LOW'),
     measurement: enumOr(raw.measurement, GEOMETRY_SOURCES, 'UNLIT_BORDER'),
     provenance: raw.provenance === 'REFERENCE_LAYOUT' ? 'REFERENCE_LAYOUT' : 'UNKNOWN',
+    // Only present when this footprint's position was nudged at the
+    // presentation layer against the real reference image, per this phase's
+    // explicit metadata convention -- absent (not false) everywhere else, so
+    // its presence alone marks the ~1.4% of cells this phase touched.
+    ...(calibration ? { layout_source: 'REFERENCE_SCADA_EAP', position_confidence: 'APPROXIMATION' } : {}),
   };
 }
 
@@ -135,7 +172,7 @@ function projectCadEvidence(raw, hasInstance) {
 }
 
 function projectCell(raw, env, bodies) {
-  const footprint = projectFootprint(raw.eap_footprint);
+  const footprint = projectFootprint(raw.eap_footprint, String(raw.zone_id));
   const mappingState = enumOr(raw.mapping_state, MAPPING_STATES, 'AMBIGUOUS');
   const spatialEvidence = enumOr(raw.spatial_evidence, SPATIAL_EVIDENCE, 'LAYOUT_ONLY');
   const worldFootprint = projectWorldFootprint(
@@ -454,6 +491,13 @@ function project(model, env) {
       cells_in_layout_frame: cells.filter((c) => c.spatial_frame === 'EAP_LAYOUT_FRAME').length,
       spatial_evidence: bySpatial,
       reference_status_drawn: cells.filter((c) => c.reference_status_drawn).length,
+      // FT-EAP-CALIBRATION: cells whose EAP_LAYOUT_FRAME x/z was nudged against
+      // the real reference image (see SCADA_LAYOUT_CALIBRATION). Recomputed from
+      // the projected footprints, not asserted, so this count cannot drift from
+      // what was actually shifted.
+      cells_scada_layout_calibrated: cells.filter(
+        (c) => c.footprint && c.footprint.layout_source === 'REFERENCE_SCADA_EAP',
+      ).length,
     },
     frames: {
       FLOOR1_WORLD_M: 'the canonical Floor 1 frame, metres, shared with the floor '
