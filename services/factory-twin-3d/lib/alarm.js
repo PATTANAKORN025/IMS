@@ -30,6 +30,10 @@
 'use strict';
 
 const mapping = require('./mapping');
+// FT-17.6: the ONE drill-down URL builder this deployment has -- reused,
+// never reimplemented. See buildDrillDownUrl's own header for the
+// var-clicked_series/var-log_id history this module's URLs inherit.
+const telemetry = require('./telemetry');
 
 /** @readonly @enum {string} */
 const AlarmLifecycle = Object.freeze({
@@ -127,13 +131,15 @@ function alarmEligibility(mappingStatus) {
  * @param {{identity_state: string, physical_asset_id: string|null}} identity
  * @param {Object|null} exactEvent - the resolved telemetry event, or null
  * @param {Object[]|null} contextWindow - bounded preceding/following rows, or null (not fetched)
+ * @param {{from: string, to: string}} [drillDownWindow] - Grafana relative-time strings for the drill-down link only (e.g. 'now-6h'/'now') -- unrelated to any from/to the caller used to SEARCH for this alarm
  * @returns {Object|null}
  */
-function buildAlarmEvent(row, identity, exactEvent, contextWindow) {
+function buildAlarmEvent(row, identity, exactEvent, contextWindow, drillDownWindow) {
   if (!row || typeof row !== 'object') return null;
   if (typeof row.device_id !== 'string' || !row.device_id) return null;
   const elig = alarmEligibility(identity.identity_state);
   const active = isActive(row.lifecycle_status);
+  const dw = drillDownWindow && typeof drillDownWindow === 'object' ? drillDownWindow : {};
   return {
     alarm_id: row.logid,
     device_id: row.device_id,
@@ -157,6 +163,24 @@ function buildAlarmEvent(row, identity, exactEvent, contextWindow) {
     // queryAlarmRCA, which never even computes these for an ineligible row.
     exact_event: elig.physical_overlay_eligible ? exactEvent : null,
     optional_context: elig.physical_overlay_eligible ? (contextWindow ?? null) : null,
+    // FT-17.6: the SAME builder telemetry.js's physical-overlay already
+    // uses -- never a second URL implementation. event_time is the
+    // alarm's OWN logdate (a real, NOT NULL column on every row this
+    // function is ever called with) -- never "now": unlike the overlay's
+    // "no active alarm, show current snapshot" case, there is no
+    // legitimate reason to fall back to the current time for an alarm
+    // event that, by definition, already has one.
+    drill_down_url: elig.machine_drilldown_eligible
+      ? telemetry.buildDrillDownUrl({
+          machineId: row.device_id,
+          factory: row.factory ?? null,
+          mo: row.mo ?? null,
+          eventTimeMs: new Date(row.logdate).getTime(),
+          logId: row.related_log_id ?? null,
+          from: dw.from || 'now-6h',
+          to: dw.to || 'now',
+        })
+      : null,
   };
 }
 

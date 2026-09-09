@@ -685,6 +685,11 @@ WITH ctx AS (
     -- preferring the matched ldi_data row and only falling back when the
     -- correlation itself found nothing.
     COALESCE(ev.factory, a.factory) AS factory,
+    -- FT-17.6: mo travels with the same already-joined correlation row --
+    -- free (no extra query), and is the Machine Snapshot dashboard's own
+    -- optional var-mo (real default $__all when unset, never required for
+    -- a panel to show data -- unlike clicked_series/log_id/event_time_ms).
+    ev.mo,
     ev.process, ev.temperature, ev.humidity, ev.air_vacuum,
     ev.scan_speed, ev.resist_dosage, ev.pe_1, ev.je_1, ev.match_type
   FROM public.ldi_alarm_log a
@@ -692,12 +697,12 @@ WITH ctx AS (
   LEFT JOIN public.v_ldi_alarm_category c ON c.alarm_code = a.errorcode::TEXT
   LEFT JOIN public.ldi_alarm_lifecycle l ON l.logdate = a.logdate AND l.logid = a.logid
   LEFT JOIN LATERAL (
-    SELECT d1.factory, d1.process, d1.temperature, d1.humidity, d1.air_vacuum,
+    SELECT d1.factory, d1.mo, d1.process, d1.temperature, d1.humidity, d1.air_vacuum,
            d1.scan_speed, d1.resist_dosage, d1.pe_1, d1.je_1, 'exact'::text AS match_type
     FROM public.ldi_data d1
     WHERE d1.log_id = a.related_log_id
     UNION ALL
-    (SELECT d2.factory, d2.process, d2.temperature, d2.humidity, d2.air_vacuum,
+    (SELECT d2.factory, d2.mo, d2.process, d2.temperature, d2.humidity, d2.air_vacuum,
             d2.scan_speed, d2.resist_dosage, d2.pe_1, d2.je_1, 'nearest'::text AS match_type
      FROM public.ldi_data d2
      WHERE a.related_log_id IS NULL AND d2.eqp_id = a.equipmentid
@@ -829,13 +834,27 @@ LIMIT 100`;
     const identity = alarmLib.identityForDevice(row.equipmentid, reverseIndex);
     const elig = alarmLib.alarmEligibility(identity.identity_state);
     let exactEvent = null;
+    let mo = null;
+    let factory = row.factory ?? null; // a.factory, from the cheap base query -- may be stale
     if (elig.physical_overlay_eligible) {
       // eslint-disable-next-line no-await-in-loop
       const correlated = await pool.query(ALARM_RCA_ONE_SQL, [row.logid, row.logdate]);
-      if (correlated.rows.length > 0) exactEvent = rcaRowToExactEvent(correlated.rows[0]);
+      if (correlated.rows.length > 0) {
+        exactEvent = rcaRowToExactEvent(correlated.rows[0]);
+        // mo/factory travel only on the correlated row (the base list
+        // query above never selects mo, and only has ldi_alarm_log's own
+        // possibly-stale factory -- see ALARM_RCA_CTE's own comment on
+        // COALESCE(ev.factory, a.factory)). FT-17.6 found this drifting
+        // live: the base row's factory ("2") disagreed with the
+        // correlated, authoritative one ("3") for the same alarm on the
+        // SAME request -- the drill-down URL must use the one exact_event
+        // itself reports, not silently disagree with it.
+        mo = correlated.rows[0].mo ?? null;
+        factory = correlated.rows[0].factory ?? factory;
+      }
     }
-    const alarmRow = { ...row, device_id: row.equipmentid };
-    const event = alarmLib.buildAlarmEvent(alarmRow, identity, exactEvent, null);
+    const alarmRow = { ...row, device_id: row.equipmentid, mo, factory };
+    const event = alarmLib.buildAlarmEvent(alarmRow, identity, exactEvent, null, { from: 'now-6h', to: 'now' });
     if (event) events.push(event);
   }
   return events;
@@ -875,7 +894,9 @@ app.get('/api/alarm-rca', async (req, res) => {
       }
 
       const alarmRow = { ...row, device_id: row.equipmentid };
-      const event = alarmLib.buildAlarmEvent(alarmRow, identity, rcaRowToExactEvent(row), contextWindow);
+      const event = alarmLib.buildAlarmEvent(
+        alarmRow, identity, rcaRowToExactEvent(row), contextWindow, { from: 'now-6h', to: 'now' },
+      );
       return res.status(200).json({ alarm: event, queried_at: new Date().toISOString() });
     }
 

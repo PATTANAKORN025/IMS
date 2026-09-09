@@ -236,6 +236,144 @@ test('17b. an ineligible alarm never reaches a drill-down at all', () => {
   assert.strictEqual(elig.machine_drilldown_eligible, false);
 });
 
+// ── FT-17.6: buildAlarmEvent's own drill_down_url, wired to the ONE
+// existing telemetry.buildDrillDownUrl builder -- never a second one. ──
+
+test('FT17.6-1. an active, confirmed alarm carries a real drill_down_url', () => {
+  const row = alarmRow();
+  const identity = identityForDevice(row.device_id, reverseIdentityIndex(CONFIRMED_TABLE));
+  const event = buildAlarmEvent(row, identity, exactEventOf(row), null, { from: 'now-6h', to: 'now' });
+  assert.ok(event.drill_down_url, 'expected a real URL for an eligible alarm');
+});
+
+test('FT17.6-2. the URL\'s var-event_time_ms is the alarm\'s OWN event_time, never "now"', () => {
+  const row = alarmRow({ logdate: '2026-03-15T08:30:00.000Z' });
+  const identity = identityForDevice(row.device_id, reverseIdentityIndex(CONFIRMED_TABLE));
+  const event = buildAlarmEvent(row, identity, exactEventOf(row), null, { from: 'now-6h', to: 'now' });
+  const expectedMs = new Date('2026-03-15T08:30:00.000Z').getTime();
+  assert.ok(event.drill_down_url.includes(`var-event_time_ms=${expectedMs}`));
+});
+
+test('FT17.6-3. a real related_log_id is carried as var-log_id', () => {
+  const row = alarmRow({ related_log_id: 'DATA-EXACT-1' });
+  const identity = identityForDevice(row.device_id, reverseIdentityIndex(CONFIRMED_TABLE));
+  const event = buildAlarmEvent(row, identity, exactEventOf(row), null, { from: 'now-6h', to: 'now' });
+  assert.ok(event.drill_down_url.includes('var-log_id=DATA-EXACT-1'));
+});
+
+test('FT17.6-4. var-clicked_series is always present, matching the device', () => {
+  const row = alarmRow();
+  const identity = identityForDevice(row.device_id, reverseIdentityIndex(CONFIRMED_TABLE));
+  const event = buildAlarmEvent(row, identity, exactEventOf(row), null, { from: 'now-6h', to: 'now' });
+  assert.ok(event.drill_down_url.includes(`var-clicked_series=${row.device_id}`));
+});
+
+test('FT17.6-5. var-machine_id matches the alarm\'s device', () => {
+  const row = alarmRow();
+  const identity = identityForDevice(row.device_id, reverseIdentityIndex(CONFIRMED_TABLE));
+  const event = buildAlarmEvent(row, identity, exactEventOf(row), null, { from: 'now-6h', to: 'now' });
+  assert.ok(event.drill_down_url.includes(`var-machine_id=${row.device_id}`));
+});
+
+test('FT17.6-6. var-factory matches the alarm\'s (COALESCE-resolved) factory', () => {
+  const row = alarmRow({ factory: '3' });
+  const identity = identityForDevice(row.device_id, reverseIdentityIndex(CONFIRMED_TABLE));
+  const event = buildAlarmEvent(row, identity, exactEventOf(row), null, { from: 'now-6h', to: 'now' });
+  assert.ok(event.drill_down_url.includes('var-factory=3'));
+});
+
+test('FT17.6-7. var-mo is carried through when the correlated row has one', () => {
+  const row = alarmRow({ mo: 'MO-778899' });
+  const identity = identityForDevice(row.device_id, reverseIdentityIndex(CONFIRMED_TABLE));
+  const event = buildAlarmEvent(row, identity, exactEventOf(row), null, { from: 'now-6h', to: 'now' });
+  assert.ok(event.drill_down_url.includes('var-mo=MO-778899'));
+});
+
+test('FT17.6-8. from/to are carried through as given, never hardcoded elsewhere', () => {
+  const row = alarmRow();
+  const identity = identityForDevice(row.device_id, reverseIdentityIndex(CONFIRMED_TABLE));
+  const event = buildAlarmEvent(row, identity, exactEventOf(row), null, { from: 'now-24h', to: 'now-1h' });
+  assert.ok(event.drill_down_url.includes('from=now-24h'));
+  assert.ok(event.drill_down_url.includes('to=now-1h'));
+});
+
+test('FT17.6-9. unmapped identity: no drill_down_url, ever', () => {
+  const row = alarmRow({ device_id: 'TEST-DEVICE-99', equipmentid: 'TEST-DEVICE-99' });
+  const identity = identityForDevice(row.device_id, reverseIdentityIndex(CONFIRMED_TABLE));
+  const event = buildAlarmEvent(row, identity, exactEventOf(row), null, { from: 'now-6h', to: 'now' });
+  assert.strictEqual(event.drill_down_url, null);
+});
+
+test('FT17.6-10. conflicting identity: no drill_down_url, even with a real correlated event', () => {
+  const table = { 'EQP-F1-9002': { asset_id: 'EQP-F1-9002', mapping_status: MappingStatus.CONFLICTING, ims_device_id: 'TEST-DEVICE-02' } };
+  const row = alarmRow({ device_id: 'TEST-DEVICE-02', equipmentid: 'TEST-DEVICE-02' });
+  const identity = identityForDevice(row.device_id, reverseIdentityIndex(table));
+  const event = buildAlarmEvent(row, identity, exactEventOf(row), null, { from: 'now-6h', to: 'now' });
+  assert.strictEqual(event.drill_down_url, null);
+});
+
+test('FT17.6-11. deprecated identity: no drill_down_url', () => {
+  const table = { 'EQP-F1-9003': { asset_id: 'EQP-F1-9003', mapping_status: MappingStatus.DEPRECATED, ims_device_id: 'TEST-DEVICE-03' } };
+  const row = alarmRow({ device_id: 'TEST-DEVICE-03', equipmentid: 'TEST-DEVICE-03' });
+  const identity = identityForDevice(row.device_id, reverseIdentityIndex(table));
+  const event = buildAlarmEvent(row, identity, exactEventOf(row), null, { from: 'now-6h', to: 'now' });
+  assert.strictEqual(event.drill_down_url, null);
+});
+
+test('FT17.6-12. missing related_log_id: URL still built, simply without var-log_id', () => {
+  const row = alarmRow({ related_log_id: null });
+  const identity = identityForDevice(row.device_id, reverseIdentityIndex(CONFIRMED_TABLE));
+  const event = buildAlarmEvent(row, identity, exactEventOf(row), null, { from: 'now-6h', to: 'now' });
+  assert.ok(event.drill_down_url);
+  assert.ok(!event.drill_down_url.includes('var-log_id'));
+});
+
+test('FT17.6-13. unresolved RCA (no exact/nearest match): drill_down_url still builds -- eligibility is an identity fact, not an RCA-resolution fact', () => {
+  const row = alarmRow({ match_type: null });
+  const identity = identityForDevice(row.device_id, reverseIdentityIndex(CONFIRMED_TABLE));
+  const event = buildAlarmEvent(row, identity, exactEventOf(row), null, { from: 'now-6h', to: 'now' });
+  assert.strictEqual(event.exact_event, null);
+  assert.ok(event.drill_down_url, 'drill-down still works: it targets the alarm\'s own event_time, not the RCA correlation');
+});
+
+test('FT17.6-14. a cleared (RESOLVED) alarm still carries a valid drill_down_url', () => {
+  const row = alarmRow({ lifecycle_status: AlarmLifecycle.RESOLVED, resolved_at: '2026-01-01T10:15:00.000Z' });
+  const identity = identityForDevice(row.device_id, reverseIdentityIndex(CONFIRMED_TABLE));
+  const event = buildAlarmEvent(row, identity, exactEventOf(row), null, { from: 'now-6h', to: 'now' });
+  assert.strictEqual(event.active, false);
+  assert.ok(event.drill_down_url);
+});
+
+test('FT17.6-15. a device_id containing characters requiring encoding round-trips correctly', () => {
+  // Checked by round-tripping through URLSearchParams itself, not by
+  // hand-matching an escape sequence: encodeURIComponent and
+  // URLSearchParams both escape space/slash correctly but DIFFERENTLY
+  // (%20 vs +) -- the real guarantee is that parsing the built URL's own
+  // query string reproduces the original value, not that it matches any
+  // one particular escaping scheme.
+  const row = alarmRow({ device_id: 'TEST DEVICE/01', equipmentid: 'TEST DEVICE/01' });
+  const table = { 'EQP-F1-9004': { asset_id: 'EQP-F1-9004', mapping_status: MappingStatus.CONFIRMED, ims_device_id: 'TEST DEVICE/01' } };
+  const identity = identityForDevice(row.device_id, reverseIdentityIndex(table));
+  const event = buildAlarmEvent(row, identity, exactEventOf(row), null, { from: 'now-6h', to: 'now' });
+  const parsed = new URLSearchParams(event.drill_down_url.split('?')[1]);
+  assert.strictEqual(parsed.get('var-machine_id'), 'TEST DEVICE/01');
+  assert.strictEqual(parsed.get('var-clicked_series'), 'TEST DEVICE/01');
+});
+
+test('FT17.6-16. no fallback to "now": an alarm from far in the past still uses its own timestamp', () => {
+  const row = alarmRow({ logdate: '2020-01-01T00:00:00.000Z' });
+  const identity = identityForDevice(row.device_id, reverseIdentityIndex(CONFIRMED_TABLE));
+  const before = Date.now();
+  const event = buildAlarmEvent(row, identity, exactEventOf(row), null, { from: 'now-6h', to: 'now' });
+  const after = Date.now();
+  const expectedMs = new Date('2020-01-01T00:00:00.000Z').getTime();
+  const parsed = new URLSearchParams(event.drill_down_url.split('?')[1]);
+  const actualMs = Number(parsed.get('var-event_time_ms'));
+  assert.strictEqual(actualMs, expectedMs);
+  assert.ok(actualMs < before, 'a 2020 timestamp must be far earlier than the test\'s own current time');
+  assert.ok(!(actualMs >= before && actualMs <= after), 'must not equal a Date.now() taken during this call');
+});
+
 // ── 18. context window does not replace exact event ──
 test('18. exact_event and optional_context are separate fields; context never overwrites the event', () => {
   const row = alarmRow();
