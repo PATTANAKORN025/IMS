@@ -95,14 +95,16 @@ export function makeSimulatedOperationalStateAdapter({ statusOrder, hashString }
   return Object.freeze({
     source_type: SOURCE_TYPE.SIMULATED,
     isAvailable: () => true,
-    /** @param {{ simulationOn: boolean }} ctx */
+    /** @param {{ demoModeOn: boolean }} ctx -- checked here too (not only by
+     *  the orchestrator's own gate) so this adapter is still correct if a
+     *  test or a future caller ever resolves through it directly. */
     resolve: (cell, ctx) => {
       const objectId = cell ? cell.cell_id : null;
-      if (!ctx || !ctx.simulationOn) {
+      if (!ctx || !ctx.demoModeOn) {
         return {
           object_id: objectId, state: null, source_type: SOURCE_TYPE.SIMULATED,
           quality: OPERATIONAL_STATE_QUALITY.UNAVAILABLE, observed_at: null,
-          reason: 'simulation disabled',
+          reason: 'demo mode disabled',
         };
       }
       if (!cell || cell.unit_state !== 'ATTACHED') {
@@ -129,16 +131,35 @@ export function makeSimulatedOperationalStateAdapter({ statusOrder, hashString }
  * assumed it would. The day a real adapter exists and sometimes answers
  * VALID or STALE, this function's own callers change nothing.
  */
+/**
+ * FT-EAP-STATE-04 Phase 4: production source policy.
+ *
+ * PRODUCTION mode is REAL ONLY. The real adapter is asked, its answer is
+ * returned exactly as given -- REAL/UNAVAILABLE today, REAL/VALID or
+ * REAL/STALE the day a real source exists -- and SIMULATED is never
+ * consulted, regardless of what REAL answers. An operator viewing this
+ * page with demo mode off must see the plant's own honest "no data,"
+ * never a generated number standing in for one without being asked to.
+ *
+ * DEMO mode is the explicit, deliberate exception: only because a viewer
+ * turned it on does an UNAVAILABLE real answer get replaced with a
+ * simulated one -- never automatically, never silently. This is the one
+ * real change from FT-EAP-STATE-03's own resolver, which fell through to
+ * SIMULATED unconditionally whenever REAL was unavailable; that was an
+ * automatic fallback this phase's own brief explicitly forbids.
+ */
 export function createOperationalStateResolver({ statusOrder, hashString }) {
   const real = RealOperationalStateAdapter;
   const simulated = makeSimulatedOperationalStateAdapter({ statusOrder, hashString });
   return {
     real,
     simulated,
+    /** @param {{ demoModeOn: boolean }} ctx */
     resolve(cell, ctx) {
       const realResult = real.resolve(cell, ctx);
       if (realResult.quality !== OPERATIONAL_STATE_QUALITY.UNAVAILABLE) return realResult;
-      return simulated.resolve(cell, ctx);
+      if (!ctx || !ctx.demoModeOn) return realResult; // PRODUCTION: real's own answer, no fallback
+      return simulated.resolve(cell, ctx); // DEMO: explicit, deliberate substitution
     },
   };
 }

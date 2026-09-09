@@ -137,7 +137,21 @@ async function main() {
   eq(fbOff.counts.UNAVAILABLE, TOTAL_CELLS, 'every cell reads UNAVAILABLE with simulation off');
   eq(STATES.reduce((s, k) => s + (fbOff.counts[k] || 0), 0), 0,
     'no real state is reported for any cell while simulation is off');
+  // FT-EAP-STATE-04 Phase 4: PRODUCTION policy -- with demo mode off, the
+  // record returned must be the REAL adapter's own answer, never a silent
+  // substitution from SIMULATED.
+  const offStates = await page.evaluate((ids) => ids.map((id) => window.__eap.operationalState(id)),
+    await page.evaluate(() => window.__eap.drawn().map((c) => c.cell_id)));
+  check(offStates.every((r) => r.source_type === 'REAL'),
+    'every record with demo mode off is source_type REAL -- no silent fallback to SIMULATED');
+  check(offStates.every((r) => /no authoritative APEX3 operational-state source/.test(r.reason)),
+    'reason cites the real source audit, not "simulation disabled"');
+  const noteOff = await page.$eval('#opDataSourceNote', (el) => el.textContent);
+  check(/REAL SOURCE UNAVAILABLE/.test(noteOff), 'operational-data-source note shows the production/no-source message');
   await page.evaluate(() => window.__eap.setSimulation(true));
+  const noteOn = await page.$eval('#opDataSourceNote', (el) => el.textContent);
+  check(/DEMO MODE/.test(noteOn) && /SIMULATED/.test(noteOn),
+    'operational-data-source note shows the demo-mode message once re-enabled');
 
   section('6. the always-visible breakdown table matches window.__eap, not a second copy');
   const fbOn = await page.evaluate(() => window.__eap.factoryStateBreakdown());

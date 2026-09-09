@@ -586,16 +586,21 @@ function hashString(s) {
  * The real work is in operational-state-adapters.js: this function is a
  * thin, single-argument wrapper (unchanged call signature from every
  * existing call site) around createOperationalStateResolver()'s own
- * resolve(), which always asks the REAL adapter first and only falls back
- * to SIMULATED because that call genuinely answers UNAVAILABLE -- see that
- * module and docs/eap/EAP_OPERATIONAL_SOURCE_AUDIT.md for why.
+ * resolve(). FT-EAP-STATE-04 Phase 4: PRODUCTION (`simulationOn === false`,
+ * this page's default-off framing for that toggle now doubling as the
+ * production/demo switch) is REAL ONLY -- the resolver returns the real
+ * adapter's own UNAVAILABLE answer with no substitution. DEMO
+ * (`simulationOn === true`) is the one explicit, deliberate exception that
+ * lets a simulated value stand in -- never an automatic fallback. See that
+ * module and docs/eap/EAP_OPERATIONAL_SOURCE_AUDIT.md for why REAL has
+ * nothing to answer with today.
  */
 const operationalStateResolver = createOperationalStateResolver({
   statusOrder: STATUS_ORDER, hashString,
 });
 
 function resolveOperationalState(cell) {
-  return operationalStateResolver.resolve(cell, { simulationOn });
+  return operationalStateResolver.resolve(cell, { demoModeOn: simulationOn });
 }
 
 /** Back-compat convenience: the key into OPERATIONAL_STATUS, or null. Every
@@ -650,6 +655,7 @@ function build() {
   if (isMapMode()) buildMap(); else buildSchema();
   paintStates();
   renderStateBreakdown();
+  renderOperationalDataSourceNote();
 }
 
 /* Hover and selection are colour writes into the existing instance buffers. No
@@ -1320,6 +1326,26 @@ function renderStateBreakdown() {
   if (!reconciled) table.innerHTML += '<tr><td colspan="2" class="note warn">reconciliation failed -- see console</td></tr>';
 }
 
+/**
+ * FT-EAP-STATE-04 Phase 7: the one line that must be true regardless of
+ * mode, always visible, never behind a click. PRODUCTION (demo off) states
+ * plainly that no real source exists -- not "loading," not silence, an
+ * honest UNAVAILABLE naming the audit doc. DEMO states just as plainly
+ * that every value on screen is generated. Neither phrasing could be
+ * mistaken for the other at a glance.
+ */
+function renderOperationalDataSourceNote() {
+  const note = document.getElementById('opDataSourceNote');
+  if (!note) return;
+  note.innerHTML = simulationOn
+    ? '<strong>DEMO MODE &mdash; SIMULATED.</strong> Every operational-state value on '
+      + 'this map is generated, not observed. No live source feeds it.'
+    : '<strong>OPERATIONAL DATA &mdash; REAL SOURCE UNAVAILABLE.</strong> No authoritative '
+      + 'APEX3 operational-state source is integrated for this floor (see '
+      + 'docs/eap/EAP_OPERATIONAL_SOURCE_AUDIT.md). Every cell reads REAL / UNAVAILABLE, '
+      + 'not a fabricated state.';
+}
+
 /* ------------------------------------------------------------------ modes -- */
 
 function rebuild() {
@@ -1427,6 +1453,14 @@ async function load() {
   modeNote.textContent = 'Auto: the real floor plan, with zone regions you can open for the '
     + 'cells that are not individually placed on it.';
   renderCounts();
+  // Plain DOM, independent of rebuild()'s own renderer-availability gate --
+  // Phase 1's own promise ("load() still fetches and renders every
+  // plain-DOM fact... only the 3D scene itself is skipped") only holds if
+  // these two are called here directly rather than solely from build(),
+  // which resetCamera()'s early return means never runs at all when
+  // rendererAvailable is false.
+  renderStateBreakdown();
+  renderOperationalDataSourceNote();
   rebuild();
 }
 
@@ -1622,6 +1656,7 @@ window.__eap = {
     if (simToggleBtn) simToggleBtn.setAttribute('aria-pressed', String(simulationOn));
     renderInspector();
     renderStateBreakdown();
+    renderOperationalDataSourceNote();
     return simulationOn;
   },
   simulatedStatus: (cellId) => {

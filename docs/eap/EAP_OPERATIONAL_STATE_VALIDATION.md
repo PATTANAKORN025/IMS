@@ -222,3 +222,83 @@ axe violations.
 | State-update latency | 41ms round-trip for a full toggle + re-render (no polling exists to measure a per-update latency against) | measured |
 | Frame p95 | 26.5ms idle, unchanged from baseline | bounded |
 | Regression | PASS — 308 unit + 32 eap-wire + 5 lint + 4 browser suites | PASS |
+
+---
+
+## FT-EAP-STATE-04 addendum — production/demo source policy
+
+Continues from `fc8358a1`. Full audit addendum in
+`EAP_OPERATIONAL_SOURCE_AUDIT.md` (complete `mes-import.js` read), full
+policy/spec in `EAP_REAL_STATE_INTEGRATION.md`, full coverage numbers in
+`EAP_REAL_STATE_COVERAGE.md`. This addendum is this phase's own real
+verification evidence.
+
+### The real fix (Phase 4)
+
+`createOperationalStateResolver().resolve()` no longer falls through from
+REAL to SIMULATED automatically. A `demoModeOn` flag (eap.js's existing
+`simulationOn`, now correctly reframed) gates the fallback: production
+(off) returns REAL's own `UNAVAILABLE` answer untouched; demo (on, the
+shipped default) is the one explicit case that substitutes a simulated
+value. Verified real, disposable container and production, both
+identical:
+
+```
+demoModeOn=false -> every one of 210 cells: source_type=REAL, quality=UNAVAILABLE,
+  reason="no authoritative APEX3 operational-state source exists..."
+demoModeOn=true  -> source_type=SIMULATED distribution (171 generated, 39 NO_DATA)
+```
+
+### UI (Phase 7)
+
+New always-visible `#opDataSourceNote`, verified present and correctly
+worded in both modes, and — verified separately — even with WebGL context
+creation forced to fail (zero GPU):
+
+| Mode | Note text (verified via DOM read) |
+|---|---|
+| Production | "OPERATIONAL DATA — REAL SOURCE UNAVAILABLE. No authoritative APEX3 operational-state source is integrated for this floor..." |
+| Demo | "DEMO MODE — SIMULATED. Every operational-state value on this map is generated, not observed..." |
+
+### Regression (zero tolerated)
+
+| Suite | Result |
+|---|---|
+| `tests/unit/*` (9 suites, `factory-twin-mes-import.test.js` now included) | 100% pass, unaffected |
+| `tests/lint/*` (5 suites) | 0 errors |
+| `tests/playwright/eap-operational-state-regression.js` | 0 failures, 8 sections (4 new assertions for the production/demo policy) |
+| `tests/playwright/eap-map-regression.js` | 0 failures |
+| `tests/playwright/eap-canonical-route-regression.js` | 0 failures |
+| `tests/playwright/eap-webgl-context-lifecycle-regression.js` | 0 failures — re-run to confirm the resolver change didn't disturb the recovery lifecycle sharing its file |
+
+### Accessibility (real, both modes, all 4 viewports)
+
+| Viewport | Demo mode | Production mode |
+|---|---:|---:|
+| 1366x768 | 0 violations | 0 violations |
+| 1920x1080 | 0 violations | 0 violations |
+| 2560x1440 | 0 violations | 0 violations |
+| 3840x2160 | 0 violations | 0 violations |
+
+### Real production verification
+
+Deployed; real authenticated session, `http://localhost:3000/factory-twin-3d/eap.html`:
+toggled to production mode, confirmed all 210 cells read `REAL /
+UNAVAILABLE`, confirmed the note text, confirmed factory breakdown still
+reconciles (210/210), 0 console errors, toggled back to the shipped demo
+default before ending the session.
+
+### Final report
+
+| Metric | Result | Status |
+|---|---:|---|
+| Authoritative source | None found — proven, complete `mes-import.js` audit included | Outcome B, no third outcome manufactured |
+| Real state coverage | 0/210 (0%) | measured |
+| Real stale | 0/210 (0%) — unreachable, no real source to go stale | measured |
+| Real no-data | 0/210 (0%) — the finding is source-level (UNAVAILABLE), not object-level | measured |
+| Simulated | 210/210 in demo mode (171 generated + 39 NO_DATA); 0/210 in production | measured |
+| State mapping | 100% documented — no real source states exist to map, table says so honestly | 100% |
+| Zone reconciliation | 100%, both modes | 100% |
+| Accessibility | 0 violations, 4 viewports × 2 modes | 0 |
+| Performance | 41ms toggle round-trip, frame p95 unchanged, payload unchanged (server untouched) | measured |
+| Regression | PASS — 308 unit + 32 eap-wire + 5 lint + 4 browser suites | PASS |

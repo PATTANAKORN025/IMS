@@ -90,3 +90,30 @@ states, not a fact inferred from a missing adapter. If a real source is
 ever integrated (an authoritative EAP-cell-to-machine mapping plus a real
 PLC/SCADA/MES/historian feed), this is the one file that changes — no
 caller elsewhere in `eap.js` needs to.
+
+---
+
+## FT-EAP-STATE-04 addendum — complete `mes-import.js` audit (Phase 2)
+
+Read in full this phase (all 200 lines, not a skim). Re-confirms and
+completes the finding above with the exact detail Phase 2 asked for:
+
+| Question | Answer |
+|---|---|
+| Intended source | "A future structured export from the external manufacturing system" — its own header's words. No name, format spec, or connection detail for that system exists anywhere in this repo. |
+| Input format | A plain in-memory JS array of records (`mes_id`, `process_group`, `status`, `source_timestamp`, `physical_slot_id`) handed to `planImport(records, ctx)` by a caller — not a file format, not a wire protocol, not parsed from anything. |
+| Why disconnected | Stated plainly in its own header: "It is deliberately NOT connected to that system, and no real export exists yet." |
+| Real upstream dependency | **None.** No `fetch`, no HTTP client, no file read, no `process.env` reference anywhere in the file (confirmed by grep) — it is a pure, synchronous transform of whatever array the caller already has. |
+| Wired into any live route? | **No.** `grep -r "mes-import\|planImport\|MesImportState"` across `services/factory-twin-3d` finds only the file itself and its own dedicated unit test (`tests/unit/factory-twin-mes-import.test.js`, 1 suite, run this phase, passing). `server.js` never imports it. |
+| Production-safe? | Yes, in the narrow sense that it does nothing when never called — which is its current, actual state in production. |
+| External endpoint/env var required | **None defined.** A real integration would need an actual connector (endpoint, auth, polling or push) that does not exist in this repository in any form — this module only validates and plans against data already in hand. |
+| Does it produce operational state? | **No.** Its `status` field is passed through opaquely (`rec.status ?? null`) and never mapped to the plant vocabulary; its whole purpose is machine **identity/mapping** (`MesImportState`: unmapped/candidate/confirmed/rejected), explicitly barred from ever touching geometry or asserting an `ims_device_id`. It is not a state feed by design, not merely by omission. |
+
+**Conclusion unchanged, now with complete evidence**: `mes-import.js` is a
+real, tested, well-designed *import boundary* for a system that does not
+exist in this deployment — a stub with real validation logic, not a
+disguised live connection. It was correctly left disconnected before this
+phase and is correctly left disconnected now; activating it "merely to
+produce state" (explicitly forbidden by this phase's own brief) would
+mean feeding it fabricated records, which is exactly the kind of
+manufactured third outcome this phase's own Final Decision rules out.
