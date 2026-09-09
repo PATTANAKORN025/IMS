@@ -46,6 +46,10 @@ run("Factory Twin Telemetry Overlay Tests", "node tests/unit/factory-twin-teleme
 // oversized file before it is committed -- not just Grafana plugins again,
 // anything shaped like that anywhere in the tree.
 run("Repo Hygiene Linter", "node tests/lint/repo-hygiene-linter.js");
+// FT-16: proves the RCA event stays the SAME event the alarm fired on
+// (never a "latest telemetry" substitute), and that alarm identity gating
+// is exactly as strict as FT-14/FT-15's own -- no alarm-specific shortcut.
+run("Factory Twin Alarm/RCA Tests", "node tests/unit/factory-twin-alarm.test.js");
 run("Factory Twin Floor Registry Tests", "node tests/unit/factory-twin-floors.test.js");
 run("Factory Twin Schematic Layer Tests", "node tests/unit/factory-twin-schematic.test.js");
 run("Factory Twin Operational Status Tests", "node tests/unit/factory-twin-operational-status.test.js");

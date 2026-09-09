@@ -10,6 +10,7 @@ const { buildDiagnostics } = require('./lib/diagnostics');
 const wire = require('./lib/wire');
 const mappingLib = require('./lib/mapping');
 const telemetry = require('./lib/telemetry');
+const alarmLib = require('./lib/alarm');
 const schematic = require('./lib/schematic');
 const eapMap = require('./lib/eap-map');
 const floors = require('./lib/floors');
@@ -636,6 +637,216 @@ app.get('/api/physical-overlay', async (req, res) => {
       floor: floorId,
       overlay: overlayByAssetId,
       counts,
+      queried_at: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'internal error' });
+  }
+});
+
+// FT-16: the exact/nearest telemetry correlation, inlined from
+// public.v_ldi_alarm_context's own LATERAL sub-select (053/057/058/062/063
+// -- see lib/alarm.js's header for the full history) rather than FROM'd
+// directly, because that view does not expose logid, which the lifecycle
+// join below needs and which this endpoint's own alarm_id field is. This
+// is the SAME two-tier rule the view already encodes -- 'exact' on
+// related_log_id when present, 'nearest' prior row for the same equipment
+// within 5 minutes only when related_log_id is null -- never a new or
+// looser one. match_type is null only when NEITHER branch found a row.
+//
+// EXPLAIN ANALYZE showed this LATERAL is an inherently per-row cost
+// against the ldi_data hypertable (log_id is not the partitioning column,
+// so even an exact-match lookup considers every chunk) -- ~1.9s to
+// correlate all 2,533 currently-unresolved alarms (no operator ack/
+// resolve write-path exists yet, migration 077's own note, so "not
+// RESOLVED" today means nearly every alarm ever fired). Adding a covering
+// index would be the real fix but is out of scope (no DB schema changes,
+// this task's own standing rule).
+//
+// The actual fix that IS in scope: this correlation is only ever KEPT for
+// an alarm whose device has a CONFIRMED physical mapping (lib/alarm.js's
+// buildAlarmEvent nulls it out for every other identity state) -- with
+// today's 0 confirmed mappings, every one of those 1.9s was spent
+// computing a value that gets thrown away 100% of the time. So the LIST
+// query below does NOT run this CTE at all; queryAlarmRCA() resolves
+// identity FIRST (cheap, in-memory) and runs this correlation only for
+// the handful of rows (today: zero) whose device is actually eligible.
+const ALARM_RCA_CTE = `
+WITH ctx AS (
+  SELECT
+    a.logid, a.logdate, a.errorcode, a.equipmentid, a.related_log_id,
+    m.severity, m.alarm_msg,
+    c.category,
+    l.status AS lifecycle_status, l.resolved_at,
+    -- a.factory (ldi_alarm_log's own column) can be stale/wrong for a
+    -- machine -- same fallback the Alarm Console dashboard already uses,
+    -- preferring the matched ldi_data row and only falling back when the
+    -- correlation itself found nothing.
+    COALESCE(ev.factory, a.factory) AS factory,
+    ev.process, ev.temperature, ev.humidity, ev.air_vacuum,
+    ev.scan_speed, ev.resist_dosage, ev.pe_1, ev.je_1, ev.match_type
+  FROM public.ldi_alarm_log a
+  JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT
+  LEFT JOIN public.v_ldi_alarm_category c ON c.alarm_code = a.errorcode::TEXT
+  LEFT JOIN public.ldi_alarm_lifecycle l ON l.logdate = a.logdate AND l.logid = a.logid
+  LEFT JOIN LATERAL (
+    SELECT d1.factory, d1.process, d1.temperature, d1.humidity, d1.air_vacuum,
+           d1.scan_speed, d1.resist_dosage, d1.pe_1, d1.je_1, 'exact'::text AS match_type
+    FROM public.ldi_data d1
+    WHERE d1.log_id = a.related_log_id
+    UNION ALL
+    (SELECT d2.factory, d2.process, d2.temperature, d2.humidity, d2.air_vacuum,
+            d2.scan_speed, d2.resist_dosage, d2.pe_1, d2.je_1, 'nearest'::text AS match_type
+     FROM public.ldi_data d2
+     WHERE a.related_log_id IS NULL AND d2.eqp_id = a.equipmentid
+       AND d2."time" <= a.logdate AND d2."time" >= a.logdate - INTERVAL '5 minutes'
+     ORDER BY d2."time" DESC LIMIT 1)
+    LIMIT 1
+  ) ev ON true
+  WHERE a.logid = $1 AND a.logdate = $2
+)`;
+
+// The cheap list: no LATERAL correlation at all -- just the alarm, its
+// severity/category/lifecycle, same shape as the Alarm Console dashboard's
+// own real_alarms CTE. Active alarms (not RESOLVED, or predating lifecycle
+// tracking) across the SAME discovered device list /api/state and
+// /api/physical-overlay already use -- no second device-discovery
+// mechanism. Bounded to 24 hours for the same reason the Alarm Console
+// bounds its own live query, just wider (RCA needs more lookback than "is
+// this happening right now") -- 293 rows at measurement time, comfortably
+// cheap without a LATERAL join.
+const ALARM_RCA_LIST_BASE_SQL = `
+SELECT
+  a.logid, a.logdate, a.errorcode, a.equipmentid, a.related_log_id,
+  m.severity, m.alarm_msg, c.category,
+  l.status AS lifecycle_status, l.resolved_at,
+  a.factory
+FROM public.ldi_alarm_log a
+JOIN public.ldi_alarm_ms_code m ON a.errorcode::TEXT = m.alarm_code::TEXT
+LEFT JOIN public.v_ldi_alarm_category c ON c.alarm_code = a.errorcode::TEXT
+LEFT JOIN public.ldi_alarm_lifecycle l ON l.logdate = a.logdate AND l.logid = a.logid
+WHERE a.equipmentid = ANY($1::text[])
+  AND m.severity IN ('Critical', 'Major')
+  AND l.status IS DISTINCT FROM 'RESOLVED'
+  AND a.logdate > NOW() - INTERVAL '24 hours'
+ORDER BY (CASE m.severity WHEN 'Critical' THEN 0 WHEN 'Major' THEN 1 ELSE 2 END), a.logdate DESC
+LIMIT 100`;
+
+// One specific alarm, active or not, WITH its exact/nearest correlation --
+// a resolved alarm's RCA context must stay reachable (test #13, "cleared
+// alarm"), the list above just does not surface it by default, and this
+// route never gains the 24h bound: an old alarm's RCA context must stay
+// reachable regardless of age.
+const ALARM_RCA_ONE_SQL = `${ALARM_RCA_CTE}
+SELECT * FROM ctx`;
+
+// A bounded window of real telemetry rows around an event -- separate from
+// and never a replacement for the exact/nearest row above. Only ever
+// queried for a single alarm's own detail view (never for the list), and
+// only when the caller explicitly asks (?context=1) -- this is real extra
+// DB work, not something every alarm refresh should pay for.
+const ALARM_CONTEXT_WINDOW_SQL = `
+(SELECT * FROM public.ldi_data WHERE eqp_id = $1 AND "time" <= $2 ORDER BY "time" DESC LIMIT $3)
+UNION ALL
+(SELECT * FROM public.ldi_data WHERE eqp_id = $1 AND "time" > $2 ORDER BY "time" ASC LIMIT $3)
+ORDER BY "time" ASC`;
+
+function rcaRowToExactEvent(row) {
+  if (!row || row.match_type == null) return null;
+  return {
+    resolution: alarmLib.resolveEventType(row.match_type),
+    factory: row.factory ?? null,
+    process: row.process ?? null,
+    temperature: row.temperature ?? null,
+    humidity: row.humidity ?? null,
+    air_vacuum: row.air_vacuum ?? null,
+    scan_speed: row.scan_speed ?? null,
+    resist_dosage: row.resist_dosage ?? null,
+    pe_1: row.pe_1 ?? null,
+    je_1: row.je_1 ?? null,
+  };
+}
+
+// FT-16 perf: identity is resolved BEFORE ever considering the expensive
+// exact/nearest correlation, and that correlation is queried only for a
+// row whose device is actually eligible -- see ALARM_RCA_CTE's own
+// comment for the measured cost this avoids. With this deployment's real
+// mapping table (0 CONFIRMED entries) that second pass runs zero times.
+async function queryAlarmRCA(deviceIds, mappingByAssetId) {
+  if (!Array.isArray(deviceIds) || deviceIds.length === 0) return [];
+  const result = await pool.query(ALARM_RCA_LIST_BASE_SQL, [deviceIds]);
+  const reverseIndex = alarmLib.reverseIdentityIndex(mappingByAssetId);
+
+  const events = [];
+  for (const row of result.rows) {
+    const identity = alarmLib.identityForDevice(row.equipmentid, reverseIndex);
+    const elig = alarmLib.alarmEligibility(identity.identity_state);
+    let exactEvent = null;
+    if (elig.physical_overlay_eligible) {
+      // eslint-disable-next-line no-await-in-loop
+      const correlated = await pool.query(ALARM_RCA_ONE_SQL, [row.logid, row.logdate]);
+      if (correlated.rows.length > 0) exactEvent = rcaRowToExactEvent(correlated.rows[0]);
+    }
+    const alarmRow = { ...row, device_id: row.equipmentid };
+    const event = alarmLib.buildAlarmEvent(alarmRow, identity, exactEvent, null);
+    if (event) events.push(event);
+  }
+  return events;
+}
+
+app.get('/api/alarm-rca', async (req, res) => {
+  try {
+    const list = catalogue();
+    const floorId = requestedFloor(req, list);
+    if (floorId === null && list.length > 0) return res.status(404).json({ error: 'not found' });
+    const mappingByAssetId = loadPrivateAssetMapping(floorId);
+
+    if (req.query.logid && req.query.logdate) {
+      const { logid, logdate } = req.query;
+      const single = await pool.query(ALARM_RCA_ONE_SQL, [logid, logdate]);
+      if (single.rows.length === 0) return res.status(404).json({ error: 'not found' });
+      const row = single.rows[0];
+      const reverseIndex = alarmLib.reverseIdentityIndex(mappingByAssetId);
+      const identity = alarmLib.identityForDevice(row.equipmentid, reverseIndex);
+      const elig = alarmLib.alarmEligibility(identity.identity_state);
+
+      let contextWindow = null;
+      // Real extra DB work, and never fabricated as a substitute for a
+      // missing exact event -- only fetched when both the caller asked
+      // AND identity is eligible AND an exact/nearest event actually
+      // resolved (a context window around an unresolved event would
+      // itself be an invented correlation).
+      if (req.query.context === '1' && elig.physical_overlay_eligible && row.match_type != null) {
+        const n = Number(req.query.context_rows) > 0 && Number(req.query.context_rows) <= 20
+          ? Number(req.query.context_rows) : 5;
+        const windowResult = await pool.query(ALARM_CONTEXT_WINDOW_SQL, [row.equipmentid, row.logdate, n]);
+        contextWindow = windowResult.rows.map((r) => ({
+          time: r.time, temperature: r.temperature, humidity: r.humidity,
+          air_vacuum: r.air_vacuum, scan_speed: r.scan_speed, resist_dosage: r.resist_dosage,
+          pe_1: r.pe_1, je_1: r.je_1, state: r.state,
+        }));
+      }
+
+      const alarmRow = { ...row, device_id: row.equipmentid };
+      const event = alarmLib.buildAlarmEvent(alarmRow, identity, rcaRowToExactEvent(row), contextWindow);
+      return res.status(200).json({ alarm: event, queried_at: new Date().toISOString() });
+    }
+
+    const alarms = await queryAlarmRCA(DEVICE_IDS, mappingByAssetId);
+    res.status(200).json({
+      alarms,
+      counts: {
+        total: alarms.length,
+        active: alarms.filter((a) => a.active).length,
+        physicalOverlayEligible: alarms.filter((a) => a.physical_overlay_eligible).length,
+        exactEvent: alarms.filter((a) => a.exact_event && a.exact_event.resolution === 'exact').length,
+        // exact_event is null both when ineligible (never queried into the
+        // response) and when eligible-but-genuinely-unresolved (the
+        // exact/nearest correlation found nothing) -- the eligibility
+        // check first is what disambiguates the two.
+        unresolvedEvent: alarms.filter((a) => a.physical_overlay_eligible && !a.exact_event).length,
+      },
       queried_at: new Date().toISOString(),
     });
   } catch (err) {

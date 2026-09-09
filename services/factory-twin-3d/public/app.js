@@ -1694,6 +1694,12 @@ let activeDisplayMode = 'ALL_ENGINEERING';
 // deployment has zero CONFIRMED CAD-to-IMS mappings, so this object stays
 // {} and every asset keeps rendering exactly as FT-14 left it.
 let physicalOverlayByAssetId = {};
+// FT-16: asset_id -> array of RCA-enriched alarm events, from
+// /api/alarm-rca. Same load boundary as the overlay above -- fetched once
+// alongside geometry, never per frame. Empty today for the same reason:
+// 0 CONFIRMED mappings means every alarm's physical_asset_id is null, so
+// nothing groups under a real asset_id.
+let alarmRcaByAssetId = {};
 let latestStateById = new Map(); // deviceId -> state row from /api/state
 // The two fetches race: geometry can land after the first poll, and the roll-up
 // needs both. Keeping the last rows lets either arrival render a complete panel
@@ -1997,6 +2003,11 @@ function showEquipmentInspector(item) {
   // lookup normally agree -- an overlay entry cannot exist for an asset
   // `mapped` calls false, since both trace back to the same CONFIRMED fact.
   const overlay = mapped ? physicalOverlayByAssetId[item.id] : undefined;
+  // FT-16: RCA context, gated the same way -- only ever looked up for an
+  // asset the server's own overlay already deemed eligible. alarm-rca.js
+  // (server-side) has already applied the identity gate before this array
+  // exists at all; this is a display lookup, not a second gate.
+  const rcaAlarms = overlay ? (alarmRcaByAssetId[item.id] || []) : [];
   const tier = item.footprint_status;
   const sized = (tier === 'MEASURED_CAD' || tier === 'OBSERVED_CAD'
     || tier === 'APPROXIMATION') && item.footprint;
@@ -2030,6 +2041,25 @@ function showEquipmentInspector(item) {
         ['Alarm', overlay.alarm ? `${overlay.alarm.owner} — ${overlay.alarm.elapsed}` : 'none active'],
         ...(overlay.drill_down_url ? [['Drill-down', overlay.drill_down_url]] : []),
       ] : []),
+      // FT-16: RCA detail, one active alarm at a time (Alarm above already
+      // gives the count/owner/elapsed summary from FT-15). Exact event and
+      // context window are kept as visibly separate rows -- never merged --
+      // so a context reading can never be mistaken for the event that
+      // actually fired the alarm.
+      ...(rcaAlarms.length > 0 ? (() => {
+        const a = rcaAlarms[0];
+        const rows = [
+          ['RCA alarm code', `${a.alarm_code}${a.severity ? ` (${a.severity})` : ''}`],
+          ['RCA event time', a.event_time],
+          ['RCA event resolution', a.exact_event ? a.exact_event.resolution : 'RCA_EVENT_UNRESOLVED'],
+        ];
+        if (a.exact_event) {
+          rows.push(['RCA exact reading',
+            `temp ${a.exact_event.temperature ?? '?'} / humidity ${a.exact_event.humidity ?? '?'}`]);
+        }
+        if (rcaAlarms.length > 1) rows.push(['RCA other active alarms', String(rcaAlarms.length - 1)]);
+        return rows;
+      })() : []),
       ['Position x / z', `${item.position.x} / ${item.position.z} m`],
       ['Rotation', item.rotation_deg == null ? 'unknown' : `${item.rotation_deg}°`],
       ['Position evidence', item.geometry_status ?? 'unknown'],
@@ -2617,6 +2647,26 @@ async function boot() {
     console.warn('physical-overlay fetch failed (non-fatal, all assets stay physical-only):', err.message);
   }
 
+  // FT-16: RCA-enriched alarm events, same load boundary as the overlay
+  // above. Grouped client-side by physical_asset_id -- the server already
+  // decided which alarms are eligible (identity gate), this only sorts
+  // eligible ones into a lookup an inspector can index by asset id.
+  try {
+    const alarmRes = await fetch(geometryUrl.replace('floor-geometry', 'alarm-rca'));
+    if (alarmRes.ok) {
+      const rca = await alarmRes.json();
+      const grouped = {};
+      for (const alarm of Array.isArray(rca.alarms) ? rca.alarms : []) {
+        if (!alarm.physical_overlay_eligible || !alarm.physical_asset_id) continue;
+        if (!grouped[alarm.physical_asset_id]) grouped[alarm.physical_asset_id] = [];
+        grouped[alarm.physical_asset_id].push(alarm);
+      }
+      alarmRcaByAssetId = grouped;
+    }
+  } catch (err) {
+    console.warn('alarm-rca fetch failed (non-fatal, no RCA context shown):', err.message);
+  }
+
   // Build identity. Fetched, never baked in: a constant written into the page
   // would say whatever it said when someone last edited it, which is exactly
   // the failure mode this is here to make visible.
@@ -2662,6 +2712,8 @@ async function boot() {
     // FT-15: the exact object the inspector reads from, for a regression to
     // prove it stays {} while 0 mappings are confirmed.
     getPhysicalOverlay: () => physicalOverlayByAssetId,
+    // FT-16: the exact grouped object the inspector's RCA rows read from.
+    getAlarmRCA: () => alarmRcaByAssetId,
     // A point projected through the live camera. Equipment instances are
     // placement records rather than Object3Ds, so a caller with no THREE in
     // scope still needs one honest way to ask where one lands on screen.
