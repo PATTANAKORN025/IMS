@@ -223,17 +223,18 @@
       <div id="zoneDrawerBody"></div>
       <canvas id="zoneDrawerCanvas"></canvas>
     </div>
-    <!-- FT-EAP-CTXLOSS: shown only on webglcontextlost (eap.js). role="alert"
-         because this is the one state that needs an interrupting
-         announcement -- this canvas has stopped rendering, not merely gone
-         stale -- matching app.js's own FT-19 pattern for the physical twin's
-         canvas, applied here for the first time. -->
+    <!-- FT-EAP-CTXLIFECYCLE: shown from webglcontextlost through recovery or
+         failure (eap.js). role="alert" because this is the one state that
+         needs an interrupting announcement -- this canvas has stopped
+         rendering, not merely gone stale. Text is set per lifecycle stage
+         (LOST/RESTORING/REBUILDING/FAILED) by setWebglLifecycle(); the two
+         actions are static markup, shown/hidden by stage -- Retry only once
+         automatic recovery has actually failed, Reload always available as
+         the last-resort escape hatch Phase 5 asks to keep. -->
     <div id="webgl-lost" hidden role="alert">
-      <p>3D rendering lost the GPU context. This can happen after the
-        computer sleeps, a graphics driver reset, or memory pressure. The
-        panel on the left is unaffected -- population, legend and any
-        current selection stay available. Only the 3D view is affected.</p>
-      <button type="button" id="webgl-reload">Reload to recover</button>
+      <p id="webgl-status-text"></p>
+      <button type="button" id="webgl-retry" hidden>Retry 3D view</button>
+      <button type="button" id="webgl-reload">Reload page</button>
     </div>
   </main>
 
