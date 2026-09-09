@@ -105,6 +105,19 @@
   .swatch.outline.dashed { border-style: dashed; border-color: var(--region-layout); }
   #stage { position: relative; overflow: hidden; grid-column: 1; grid-row: 2; }
   #stage canvas { display: block; }
+  /* FT-EAP-CTXLOSS: this page's WebGL context is its own -- separate canvas,
+     separate renderer, separate GPU resources from the physical twin's --
+     and app.js's FT-19 fix never reached it. A driver reset, sleep/wake or
+     memory pressure here left this canvas frozen with zero on-screen sign
+     anything was wrong, while the aside (selection, population, legend)
+     kept working, because that content is plain DOM, not WebGL. Same
+     failure mode, same fix, applied to the context that was missing it. */
+  #webgl-lost {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 14px;
+    text-align: center; padding: 24px; background: rgba(18, 21, 26, .92);
+  }
+  #webgl-lost p { max-width: 420px; color: var(--ink); font-size: 13px; line-height: 1.5; margin: 0; }
   #labels { position: absolute; inset: 0; pointer-events: none; }
   #zoneDrawer {
     position: absolute;
@@ -209,6 +222,18 @@
       </div>
       <div id="zoneDrawerBody"></div>
       <canvas id="zoneDrawerCanvas"></canvas>
+    </div>
+    <!-- FT-EAP-CTXLOSS: shown only on webglcontextlost (eap.js). role="alert"
+         because this is the one state that needs an interrupting
+         announcement -- this canvas has stopped rendering, not merely gone
+         stale -- matching app.js's own FT-19 pattern for the physical twin's
+         canvas, applied here for the first time. -->
+    <div id="webgl-lost" hidden role="alert">
+      <p>3D rendering lost the GPU context. This can happen after the
+        computer sleeps, a graphics driver reset, or memory pressure. The
+        panel on the left is unaffected -- population, legend and any
+        current selection stay available. Only the 3D view is affected.</p>
+      <button type="button" id="webgl-reload">Reload to recover</button>
     </div>
   </main>
 

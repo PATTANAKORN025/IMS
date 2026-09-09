@@ -86,6 +86,29 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 renderer.setClearColor(C.bg, 1);
 stage.insertBefore(renderer.domElement, labelCanvas);
 
+// FT-EAP-CTXLOSS: this canvas has its own WebGL context, separate from the
+// physical twin's (own renderer, own GPU resources) -- app.js's FT-19 fix
+// for GPU context loss (driver reset, sleep/wake, memory pressure) never
+// covered it, so this canvas had no on-screen sign of failure at all until
+// now. Same cause, same fix: preventDefault() so webglcontextrestored can
+// ever fire, and a reload on restore rather than an in-place rebuild --
+// three.js does not re-upload every GPU resource automatically, and this
+// map's whole job is to be believed, so a partial, silently-incomplete
+// restore is worse than the reload this page already treats a floor
+// switch the same way as (see setUpFloorSelector-equivalent comments in
+// app.js). The aside (selection, population, legend) is plain DOM and is
+// never affected -- the banner says so rather than implying the page is
+// down.
+renderer.domElement.addEventListener('webglcontextlost', (ev) => {
+  ev.preventDefault();
+  const banner = document.getElementById('webgl-lost');
+  if (banner) banner.hidden = false;
+});
+renderer.domElement.addEventListener('webglcontextrestored', () => {
+  window.location.reload();
+});
+document.getElementById('webgl-reload')?.addEventListener('click', () => window.location.reload());
+
 const scene = new THREE.Scene();
 scene.add(new THREE.AmbientLight(0xffffff, 0.9));
 const key = new THREE.DirectionalLight(0xffffff, 0.5);
